@@ -1,0 +1,46 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<!DOCTYPE KDevPrjSession>
+<KDevPrjSession>
+ <DocsAndViews NumberOfDocuments="2" >
+  <Doc0 NumberOfViews="1" URL="file:///home/Local_Data/nguyenhn/chorist/pmip_fsm.c" >
+   <View0 line="27" Type="Source" />
+  </Doc0>
+  <Doc1 NumberOfViews="1" URL="file:///home/Local_Data/nguyenhn/chorist/pmip_handler.c" >
+   <View0 line="284" Type="Source" />
+  </Doc1>
+ </DocsAndViews>
+ <pluginList>
+  <kdevdebugger>
+   <breakpointList/>
+  </kdevdebugger>
+  <kdevbookmarks>
+   <bookmarks>
+    <bookmark url="/homes/ahmed/Desktop/chorist/pmip_fsm.c" >
+     <mark line="54" />
+    </bookmark>
+    <bookmark url="/home/all/chorist/pmip_msgs.c" >
+     <mark line="716" />
+     <mark line="872" />
+    </bookmark>
+    <bookmark url="/home/Local_Data/nguyenhn/chorist/pmip_handler.c" >
+     <mark line="1" />
+    </bookmark>
+    <bookmark url="/home/Local_Data/nguyenhn/chorist/mipl/vt.c" >
+     <mark line="581" />
+    </bookmark>
+    <bookmark url="/home/all/chorist/mipl/hash.c" >
+     <mark line="177" />
+    </bookmark>
+    <bookmark url="/home/Local_Data/nguyenhn/chorist/pmip_fsm.c" >
+     <mark line="301" />
+    </bookmark>
+   </bookmarks>
+  </kdevbookmarks>
+  <kdevvalgrind>
+   <executable path="" params="" />
+   <valgrind path="" params="" />
+   <calltree path="" params="" />
+   <kcachegrind path="" />
+  </kdevvalgrind>
+ </pluginList>
+</KDevPrjSession>
