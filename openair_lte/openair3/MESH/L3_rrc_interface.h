@@ -7,8 +7,7 @@
 \brief Ask RRC to establish a radio bearer
  */
 void rrm_rb_establish_req(LCHAN_DESC *Lchan_desc,       //!< Logical Channel Descriptor Array
-			  MAC_MEAS_DESC *Mac_meas_desc, //!< MAC Measurement descriptors for RB 
-			  RLC_MEAS_DESC *Rlc_meas_desc, //!< RLC Measurement descriptors for RB 
+			  MAC_RLC_MEAS_DESC *Mac_rlc_meas_desc, //!< MAC/RLC Measurement descriptors for RB 
 			  L2_ID *L2_id,                 //!< Layer 2 (MAC) IDs for link
 			  unsigned int Trans_id,        //!< Transaction ID
 			  unsigned char *L3_info,       //!< Optional L3 Information
@@ -32,8 +31,7 @@ void rrc_rb_establish_cfm(RB_ID Rb_id,                  //!< Radio Bearer ID use
 \brief Ask RRC to modify the QoS/Measurements of a radio bearer
  */
 void rrm_rb_modify_req(LCHAN_DESC *Lchan_desc,       //!< Logical Channel Descriptor Array
-		       MAC_MEAS_DESC *Mac_meas_desc, //!< MAC Measurement descriptors for RB 
-		       RLC_MEAS_DESC *Rlc_meas_desc, //!< RLC Measurement descriptors for RB 
+		       MAC_RLC_MEAS_DESC *Mac_meas_desc, //!< MAC/RLC Measurement descriptors for RB 
 		       RB_ID Rb_id,                  //!< Radio Bearer ID
 		       unsigned int Trans_id       //!< Transaction ID
 		       );
@@ -63,12 +61,11 @@ void rrc_rb_release_resp(unsigned int Trans_id       //!< Transaction ID
 /*
 \brief RRC measurement indication 
  */
-void rrc_rb_meas_ind(RB_ID Rb_id,                 //!< Radio Bearer ID
-		     L2_ID L2_id,                 //!< Layer 2 (MAC) IDs for link
-		     MEAS_MODE Meas_mode,         //!< Measurement mode (periodic or event-driven)
-		     MAC_MEAS_T Mac_meas_t,       //!< MAC measurements
-		     RLC_MEAS_T Rlc_meas_t,       //!< RLC measurements
-		     unsigned int Trans_id      //!< Transaction ID
+void rrc_rb_meas_ind(RB_ID Rb_id,                     //!< Radio Bearer ID
+		     L2_ID L2_id,                     //!< Layer 2 (MAC) IDs for link
+		     MEAS_MODE Meas_mode,             //!< Measurement mode (periodic or event-driven)
+		     MAC_RLC_MEAS_T Mac_rlc_meas_t,   //!< MAC/RLC measurements
+		     unsigned int Trans_id            //!< Transaction ID
 		     );
 
 /*
@@ -129,4 +126,5 @@ void rrc_MR_loss_ind(L2_ID L2_id       //!< Layer 2 (MAC) ID
  */
 void rrm_MR_release_all(L2_ID L2_id       //!< Layer 2 (MAC) ID
 			);
-/* @} */
+/** @} */
+
