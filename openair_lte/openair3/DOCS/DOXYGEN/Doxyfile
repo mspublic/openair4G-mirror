@@ -69,6 +69,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 INPUT                  = $(OPENAIR3_DIR)/MESH/L3_rrc_interface.h \
 			 $(OPENAIR3_DIR)/MESH/L3_rrc_defs.h \
+			 $(OPENAIR3_DIR)/MESH/cmm_rrm_interface.h \
+			 $(OPENAIR3_DIR)/MESH/cmm_ral_interface.h \
 
 FILE_PATTERNS          = *.h
 RECURSIVE              = NO

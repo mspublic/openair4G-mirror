@@ -75,8 +75,17 @@ typedef struct {
 /*!\brief Layer 3 Info types for RRC messages
  */
 typedef enum {
-  IPv4_ADDR=0,   /*!< IPv4 Address*/
+  NONE=0,        /*!< No information*/
+  IPv4_ADDR,   /*!< IPv4 Address*/
   IPv6_ADDR     /*!< IPv6 Address*/
 } L3_INFO_T;
+
+/*!\brief Layer 3 Info types for RRC messages
+ */
+typedef enum {
+  BROADCAST=0,        /*!< Broadcast bearer*/
+  UNICAST,            /*!< Unicast bearer*/
+  MULTICAST           /*!< Multicast bearer*/
+} RB_TYPE;
 
 /** @} */
