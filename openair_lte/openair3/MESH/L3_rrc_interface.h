@@ -32,7 +32,7 @@ void rrc_rb_establish_cfm(RB_ID Rb_id,                  //!< Radio Bearer ID use
 /**
 \brief RRC Connection Establishment indication.  Message received by RRM in CH at completion of attachment phase of a new MR 
 (after configuration MR IPAddr). Here L3_info contains MR IPAddr. Message received by RRCI in MR after configuration of initial RBs and reception of CH IPAddr.  Here L3_info contains CH IPAddr.  For MR the RBID's of basic IP services are also required.
- */
+*/
 void rrc_cx_establish_ind(L2_ID L2_id,                  //!< Layer 2 (MAC) ID
 			  unsigned int Trans_id,        //!< Transaction ID
 			  unsigned char *L3_info,       //!< Optional L3 Information
@@ -44,7 +44,8 @@ void rrc_cx_establish_ind(L2_ID L2_id,                  //!< Layer 2 (MAC) ID
 /**
 \brief RRCI Connection Establishment response.  Received by RRC in MR at completion of attachment phase and
 address configuration of a new MR. L3_info contains IPAddr of MR.
- */
+*/
+
 void rrci_cx_establish_resp(unsigned int Trans_id,        //!< Transaction ID
 			    unsigned char *L3_info,       //!< Optional L3 Information
 			    L3_INFO_T L3_info_t         //!< Type of L3 Information
@@ -147,7 +148,17 @@ void rrc_MR_loss_ind(L2_ID L2_id       //!< Layer 2 (MAC) ID
 /**
 \brief Release all resources for MR
  */
+
 void rrm_MR_release_all(L2_ID L2_id       //!< Layer 2 (MAC) ID
 			);
+/**
+\brief MR attachement indication. Sent by RRC to RRM to indicate the MAC ID of a new MR attached to CH at layer 2 
+ */
+
+void rrc_MR_attach_ind(L2_id L2_id
+		       );
+
+
+
 /** @} */
 

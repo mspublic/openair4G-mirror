@@ -97,6 +97,20 @@ void cmm_attach_cnf(L3_INFO_T L3_info_t,       //!< Type of L3 Information
 
 
 /**
+  \brief  Message sent by RRM to CMM to indicate attachement at layer 2 of a new MR 
+*/
+void rrm_MR_attach_ind(L2_ID L2_id      //!< MR Layer 2 (MAC) ID
+			);
+
+/**
+  \brief  Message sent by RRM to CMM to indicate that the node function is Cluster head. CMM initializes then the CH configuration 
+*/
+void router_is_CH_ind(L2_ID L2_id      //!< CH Layer 2 (MAC) ID
+			);
+
+
+
+/**
   \brief 
 */
 void rrci_CH_synch_ind(void);
