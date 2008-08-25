@@ -156,9 +156,12 @@ static int __tunnel_del(struct mip6_tnl *tnl)
 
 	if (tnl->users == 0) {
 		struct ifreq ifr;
+		dbg("list_del\n");
 		list_del(&tnl->list);
+		dbg("hash_del\n");
 		hash_delete(&tnl_hash, &tnl->parm.laddr, &tnl->parm.raddr);
 		strcpy(ifr.ifr_name, tnl->parm.name);
+		dbg("ioctl\n");
 		if ((res = ioctl(tnl_fd, SIOCDELTUNNEL, &ifr)) < 0) {
 			TDBG("SIOCDELTUNNEL failed status %d %s\n", 
 			     errno, strerror(errno));

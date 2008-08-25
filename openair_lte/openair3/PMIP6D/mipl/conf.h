@@ -54,17 +54,19 @@ struct mip6_config {
 	/* CN options */
 	char DoRouteOptimizationCN;
 
-  /* PMIP MAG options */
-  struct in6_addr lma_addr;    // address of CH
-  struct in6_addr mag_addr_ingress;    //ingress address of MR
-  struct in6_addr mag_addr_egress;    //egress address of entity "Either CH OR MR ".
-  struct in6_addr our_addr;
-  struct in6_addr Home_Network_Prefix; // home network address common for all CH domain!
-  struct timespec LifeTime;   // Life time of Proxy Binding Cache Entry.
-  struct timespec LifeTime_CN;   // Life time of Proxy Binding Cache Entry (for CN).
-  struct timespec N_RetsTime;     //N_Retransmissions times before Final Deletion of the entry task.
-  struct timespec CH_bce_expire;  //Additional lifetime for CH bce refresh request.
+	/* PMIP MAG options */
+	struct in6_addr lma_addr;    // address of CH
+	struct in6_addr mag_addr_ingress;    //ingress address of MR
+	struct in6_addr mag_addr_egress;    //egress address of entity "Either CH OR MR ".
+	struct in6_addr our_addr;
+	struct in6_addr Home_Network_Prefix; // home network address common for all CH domain!
+  struct timespec PBU_LifeTime;   // Life time CH side.
+  struct timespec PBA_LifeTime;   // Life time MR side.
+	struct timespec N_RetsTime;     //N_Retransmissions times before Final Deletion of the entry task.
 	int Max_Rets;		//indicates the maximum number of message retransmissions
+	int tunneling_enabled;
+	int pndisc_enabled;
+	int dtun_enabled;	
 };
 
 struct net_iface {

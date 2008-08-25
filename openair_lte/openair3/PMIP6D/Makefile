@@ -1,10 +1,8 @@
-#Replace ./kernel by your kernel source directory '/usr/src/linux/'
-KERNEL_INCLUDE=./kernel/include
-
 #commands
 CC=gcc
 
-#variables
+#flags & variables
+KERNEL_INCLUDE=./kernel/include
 INCLUDES=-I./ -I./include -I./mipl -isystem $(KERNEL_INCLUDE)
 LIBS=-lpthread -ldl -lrt 
 DEFINES= -DHAVE_STRUCT_IP6_EXT -D_GNU_SOURCE -DENABLE_VT -UTEST_PMIP \
@@ -13,7 +11,6 @@ DEFINES= -DHAVE_STRUCT_IP6_EXT -D_GNU_SOURCE -DENABLE_VT -UTEST_PMIP \
 -DPACKAGE_NAME='"MIPL Mobile IPv6 for Linux"' \
 -DPACKAGE_VERSION='"2.0.2"' \
 -DPACKAGE_COPYRIGHT='"(C)"'
-
 CFLAGS=-Wall -g $(DEFINES)
 LDFLAGS=$(LIBS) 
 

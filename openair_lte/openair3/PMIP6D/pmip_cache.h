@@ -28,7 +28,8 @@ struct pmip_entry {
 	struct in6_addr LinkLocal;	/* Link Local Address  for MN */
 	struct timespec add_time;       /* When was the binding added or modified */
 	struct timespec lifetime;      	/* lifetime sent in this BU, in seconds */
-	uint16_t seqno;			/* sequence number of the latest BU */
+	uint16_t seqno_in;			/* sequence number for response messages */
+	uint16_t seqno_out;			/* sequence number for created messages */
 	uint16_t PBU_flags;			/* PBU flags */
 	uint8_t PBA_flags;			/* PBA flags */
 	int type;			/* Entry type */
@@ -85,6 +86,8 @@ struct in6_addr *ADDR2ID(struct in6_addr *addr,int plen);
 struct in6_addr *ID2ADDR(struct in6_addr *prefix,struct in6_addr *id);
 struct in6_addr *solicited_mcast(struct in6_addr *id);
 
+
+extern pthread_rwlock_t pmip_lock; /* Protects proxy binding cache */
 
 
 #endif //__pmip_cache_h

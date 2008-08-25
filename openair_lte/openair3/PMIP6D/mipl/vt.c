@@ -768,7 +768,7 @@ static int pmip_cache_vt_dump(void *data, void *arg)
 	}
 	fprintf(vh->vh_stream, " / %ld", bce->lifetime.tv_sec);
 
-	fprintf(vh->vh_stream, " seq %u", bce->seqno);
+	fprintf(vh->vh_stream, " seq %u", bce->seqno_out);
 
 	fprintf(vh->vh_stream, "\n");
 

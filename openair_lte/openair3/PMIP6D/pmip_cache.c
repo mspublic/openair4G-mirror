@@ -35,10 +35,11 @@
 //ADDR2ID converts an address into an ID.
 struct in6_addr *ADDR2ID(struct in6_addr *addr,int plen)
 {
-	struct in6_addr id=in6addr_any;
+	static struct in6_addr id;
+	id=in6addr_any;
 	if(plen ==64)
 	{
-		memcpy(&id.in6_u.u6_addr32[2], addr->in6_u.u6_addr32[2],sizeof(__identifier));
+		memcpy(&id.in6_u.u6_addr32[2], (struct in6_addr *)addr->in6_u.u6_addr32[2],sizeof(__identifier));
 	}
 	return &id;
 }
@@ -48,7 +49,8 @@ struct in6_addr *ADDR2ID(struct in6_addr *addr,int plen)
 //NUD_ADDR converts an ID into a Link Local Address!
 struct in6_addr *link_local_addr(struct in6_addr *id)
 {
-	struct in6_addr ADDR =in6addr_any;
+	static struct in6_addr ADDR;
+	ADDR =in6addr_any;
 
 	ADDR.s6_addr32[0] = htonl(0xfe800000);
 
@@ -107,7 +109,7 @@ void dump_pbce(void *bce, void *os)
 	fprintf(out, " LMA_addr:     %x:%x:%x:%x:%x:%x:%x:%x\n",
 		NIP6ADDR(&e->LMA_addr));
 	fprintf(out, " lifetime %ld\n ", e->lifetime.tv_sec);
-	fprintf(out, " seqno %d\n", e->seqno);
+	fprintf(out, " seqno %d\n", e->seqno_out);
 
 	fflush(out);
 }
@@ -178,29 +180,13 @@ static int __pmipcache_insert(struct pmip_entry *bce)
 //PMIP cache start
 int pmip_cache_start(struct pmip_entry *bce)
 {
-	
-	if(is_mag()){
-
-		dbg("PMIP cache start triggered.. \n"); 
-		struct timespec expires;
-		clock_gettime(CLOCK_REALTIME, &bce->add_time);
-		tsadd(bce->add_time, bce->lifetime, expires);
-		add_task_abs(&expires, &bce->tqe, _EXPIRED);
-		dbg("Expiry Timer for PMIP cache entry is triggered.. \n"); 
-		return 0;
-	}
-	if(is_lma()){
-
-		dbg("PMIP cache start triggered.. \n"); 
-		struct timespec expires, lifetime;
-		clock_gettime(CLOCK_REALTIME, &bce->add_time);
-		//Add additional time for bce entry expriy at CH side.(To Reduce signalling!)
-		tsadd(bce->lifetime, conf.CH_bce_expire, lifetime);
-		tsadd(bce->add_time, lifetime, expires);
-		add_task_abs(&expires, &bce->tqe, _EXPIRED);
-		dbg("Expiry Timer for PMIP cache entry is triggered.. \n"); 
-		return 0;
-	}
+	dbg("PMIP cache start triggered.. \n"); 
+	struct timespec expires;
+	clock_gettime(CLOCK_REALTIME, &bce->add_time);
+	tsadd(bce->add_time, bce->lifetime, expires);
+	add_task_abs(&expires, &bce->tqe,(void *)_EXPIRED);
+	dbg("Expiry Timer for PMIP cache entry is triggered.. \n"); 
+	return 0;
 }
 
 struct pmip_entry * pmip_cache_add(struct pmip_entry *bce) /** return the added new entry */

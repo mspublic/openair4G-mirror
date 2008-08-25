@@ -20,8 +20,6 @@
 #include <signal.h>
 #include <syslog.h>
 #include <netinet/icmp6.h>
-
-
 #include <sys/socket.h>
 #include <stdio.h>
 #include <linux/types.h>
@@ -50,20 +48,18 @@ struct sockaddr_in6 nsaddr;
 int flag=0;
 extern struct sock icmp6_sock;
 
- //[-1 ltsec] [-2 ltnsec] [-3 dsec] [-4 dnsec]
 void usage(void)
 {
-	fprintf(stderr, "Usage: pmip6d  -s] [-c] [-m [-L LMA@] [-N MAG_IN@] [-E MAG_E@] \n");
-	fprintf(stderr, " -c:Cluster Head  -m:Mobile Router -L: LMA address -N: MAG address ingress -E: MAG address egress\n");
-	//fprintf(stderr, " -1:Lifetime_sec  -2:Lifetime_nsec -3: Delete_sec -4: Delete_nsec\n");
-	exit(2);
+	fprintf(stderr, "Usage: pmip6d  [-d] [-s] [-c] [-m] [-L LMA@] [-N MAG_IN@] [-E MAG_E@]");
+	fprintf(stderr, "\n\t-c:Run as Cluster Head (LMA) \n\t-m:Run as Mobile Router (MAG)\n\t-L: LMA address \n\t-N: MAG ingress address\n\t-E: MAG egress address\n\t-i: With IPv6-in-IPv6 tunneling\n\t-p: Do proxy arp for other MAGs\n\t-t:Dynamically create/delete tunnels\n");	
+	exit(0);
 }
 
 int get_options(int argc, char *argv[])
 {
 	int ch;
-	if (argc == 0)  usage();
-	while ((ch = getopt(argc, argv, "scmL:N:E:")) != EOF) {
+	if (argc == 1)  usage();
+	while ((ch = getopt(argc, argv, "dpiscmL:N:E:")) != EOF) {
 	  
 	switch(ch) {
 	case 'L':
@@ -93,42 +89,7 @@ int get_options(int argc, char *argv[])
 			}
 		}			
 		break;
-// 	case '1':
-// 		if (strchr(optarg, ':')) {
-// 			if (conf.LifeTime.tv_sec = atol(optarg)  <= 0) {
-// 				fprintf(stderr, "invalid lifetime (in seconds) %s\n", optarg);
-// 				exit(2);
-// 			
-// 			}
-// 		}			
-// 		break;
-// 	case '2':
-// 		if (strchr(optarg, ':')) {
-// 			if (conf.LifeTime.tv_nsec = atol(optarg)  <= 0) {
-// 				fprintf(stderr, "invalid lifetime (in nanoseconds) %s\n", optarg);
-// 				exit(2);
-// 			
-// 			}
-// 		}		
-// 		break;
-// 	case '3':
-// 		if (strchr(optarg, ':')) {
-// 			if (conf.N_RetsTime.tv_sec = atol(optarg)  <= 0) {
-// 				fprintf(stderr, "invalid Deletetime (in seconds) %s\n", optarg);
-// 				exit(2);
-// 			
-// 			}
-// 		}			
-// 		break;
-// 	case '4':
-// 		if (strchr(optarg, ':')) {
-// 			if (conf.N_RetsTime.tv_nsec = atol(optarg)  <= 0) {
-// 				fprintf(stderr, "invalid Deletetime (in nanoseconds) %s\n", optarg);
-// 				exit(2);
-// 			
-// 			}
-// 		}		
-// 		break;
+
 	case 'm':
 		conf.mip6_entity = MIP6_ENTITY_MAG;
 		break;
@@ -138,7 +99,15 @@ int get_options(int argc, char *argv[])
 	case 's':
 		flag=1;
 		break;
-
+	case 'i':
+		conf.tunneling_enabled=1;
+		break;
+	case 'p':
+		conf.pndisc_enabled=1;
+		break;
+	case 'd':
+		conf.dtun_enabled=1;
+		break;		
 	default:
 		usage();
 	}
@@ -174,19 +143,47 @@ void testcache()
 	dbg("exists an entry of type: %d\n", pmip_cache_exists(&addr1,&info.peer_addr));
 }
 
-////////////////////////////////////////////////////////////////////////
-static void reinit(void)
+static int PMIP_CACHE_DEL(void *data, void *arg)
 {
-	/* got SIGHUP, reread configuration and reinitialize */
-	dbg("got SIGHUP, reinitilize\n");
-	return;
+	struct pmip_entry *bce = (struct pmip_entry *)data;
+
+	if(is_mag())
+	{
+		//Delete existing route & rule for the deleted MN
+		mag_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->link);
+
+		int usercount = tunnel_getusers(bce->tunnel);
+		dbg("# of binding entries %d \n", usercount);
+		if (usercount == 1) {
+			route_del(bce->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0,&in6addr_any, 0,NULL);
+		}
+		//decrement users of old tunnel.
+		pmip_tunnel_del(bce->tunnel);
+	}
+	//Delete existing route for the deleted MN
+	if(is_lma())
+	{
+		lma_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->tunnel); 
+
+		//decrement users of old tunnel.
+		pmip_tunnel_del(bce->tunnel);
+	}
+
+	//Delete the Entry.
+	free_iov_data((struct iovec *)&bce->mh_vec,bce->iovlen);
+	pmip_bce_delete(bce);
+	return 0;	
 }
 
 static void terminate(void)
 {
-	/* got SIGINT, cleanup and exit */
-	syslog(LOG_INFO, "terminated (SIGINT)");
-	dbg("got SIGINT, exiting\n");
+	//Release the pmip cache ==> deletes the routes and rules and "default route on PMIP" and tunnels created.
+	dbg("TERMINATOR\n");
+	pmip_cache_iterate(PMIP_CACHE_DEL,NULL);
+
+	//delete the default rule.
+	rule_del(NULL,RT6_TABLE_MIP6,IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,&in6addr_any, 0, &in6addr_any, 0);
+
 	pthread_exit(NULL);
 }
 
@@ -209,26 +206,32 @@ static void *sigh(void *arg)
 		sigwait(&sigcatch, &signum);
 		switch (signum) {
 		case SIGHUP:
-			reinit();
-			break;
 		case SIGINT:
 		case SIGTERM:
+			terminate();
 #ifdef ENABLE_VT
 		case SIGPIPE:
 #endif
-			terminate();
 		default:
 			break;
 		}
 	}
 	pthread_exit(NULL);
 }
-////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
 {
 	pthread_t sigth;
 	sigset_t sigblock;
+
+	sigemptyset(&sigblock);
+	sigaddset(&sigblock, SIGHUP);
+	sigaddset(&sigblock, SIGINT);
+	sigaddset(&sigblock, SIGTERM);
+#ifdef ENABLE_VT
+	sigaddset(&sigblock, SIGPIPE);
+#endif
+	pthread_sigmask(SIG_BLOCK, &sigblock, NULL);
 
 	//Default Values for variables.
 	conf.Home_Network_Prefix = in6addr_any;
@@ -238,19 +241,19 @@ int main(int argc, char *argv[])
 	conf.our_addr = in6addr_loopback;
 	//Lifetime for PB entry
 	struct timespec lifetime1; //15 sec
-	lifetime1.tv_sec = 30;
+	lifetime1.tv_sec = 60;
 	lifetime1.tv_nsec = 0;
-	conf.LifeTime = lifetime1;
-	//Time for N_Retransmissions
-	struct timespec lifetime2; // 0.5 sec
-	lifetime2.tv_sec = 5;
+	conf.PBU_LifeTime = lifetime1;
+	struct timespec lifetime2; //15 sec
+	lifetime2.tv_sec = 30;
 	lifetime2.tv_nsec = 0;
-	conf.N_RetsTime = lifetime2;
-	struct timespec lifetime3; //15 sec
-	//Lifetime for CN entry
-	lifetime3.tv_sec = 30;
+	conf.PBA_LifeTime = lifetime2;
+	//Time for N_Retransmissions
+	struct timespec lifetime3; // 0.5 sec
+	lifetime3.tv_sec = 5;
 	lifetime3.tv_nsec = 0;
-	conf.LifeTime_CN = lifetime3;
+	conf.N_RetsTime = lifetime3;
+	
 	//Define the maximum # of message retransmissions.
 	int Max_rets = 5;
 	conf.Max_Rets = Max_rets;
@@ -291,14 +294,14 @@ int main(int argc, char *argv[])
 	if (vt_init() < 0)
 	{
 		dbg("vt initialization failed! \n");
-		return ;
+		return -1;
 	}
 	else dbg("vt is initialized!\n");
 
  	if (vt_start(VT_DEFAULT_HOSTNAME,VT_DEFAULT_SERVICE) < 0)
  	{
  		dbg("vt is NOT started! \n");
- 		return ;
+ 		return -1;
  	}
 
 #endif
@@ -310,7 +313,7 @@ int main(int argc, char *argv[])
 	if (pmip_cache_init() < 0) 
 	{
 		dbg("Cache initialization failed! \n");
-		return ;
+		return -1;
 	}
 	else dbg("Cache is initialized!\n");
 	//testcache(); //check the cache.
@@ -322,6 +325,7 @@ int main(int argc, char *argv[])
 	if(taskqueue_init() <0)
 	{
 		dbg("Task Queue Initialization failed....\n");
+		return -1;
 	}
 	else dbg("Task Queue Initialized....\n");
 	
@@ -331,7 +335,7 @@ int main(int argc, char *argv[])
 	if (tunnelctl_init() < 0) 
 	{
 		dbg("Tunnelcntl initialization failed! \n");
-		return ;
+		return -1;
 	}
 	else dbg("Tunnelcntl is initialized!\n");
 
@@ -348,14 +352,14 @@ int main(int argc, char *argv[])
 	if (mh_init() < 0)
 	{
 		dbg("Mobility Header initialization failed! \n");
-		return ;
+		return -1;
 	}
   	else dbg("Mobility Header is sucsessfully initialized! \n");
 		
 	if (icmp6_init() < 0)
 	{
 		dbg("ICMP socket initialization failed! \n");
-		return ;
+		return -1;
 	}
 	else dbg("ICMP socket is sucsessfully initialized! \n");
 #endif
@@ -407,10 +411,7 @@ int main(int argc, char *argv[])
 		/**
 		* Deletes the default route for MN prefix so routing is per unicast MN address!
 		**/
-		route_del(NULL, RT6_TABLE_MAIN, IP6_RT_PRIO_ADDRCONF, 
-		&in6addr_any, 0,
-		&conf.Home_Network_Prefix, 64,
-		NULL);
+		route_del((int)NULL, RT6_TABLE_MAIN, IP6_RT_PRIO_ADDRCONF,&in6addr_any, 0,&conf.Home_Network_Prefix, 64,NULL);
 
 #ifdef TEST_PMIP
 
@@ -453,8 +454,6 @@ int main(int argc, char *argv[])
 		//conf.lma_addr = host.sin6_addr;
 		memcpy(&conf.our_addr,&conf.lma_addr,sizeof(struct in6_addr));
 		dbg("Entity Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.our_addr));
-		struct timespec expire = {60,0};
-		conf.CH_bce_expire = expire;
 	
 		dbg("Initializing the PBU handler\n");
 		
@@ -478,10 +477,16 @@ int main(int argc, char *argv[])
 	return 0;
 	#endif
 
+	if (pthread_create(&sigth, NULL, sigh, NULL)){
+		dbg("Pthread for tracing Signals is not created!\n");
+		return -1;
+	}
 	dbg("The Entity is Ready to function...\n");
+	pthread_join(sigth, NULL);
 	
-	while (1) {
-	//dbg("Working...\n");
-	};
+	//Rlease all ressources on exit
+	tunnelctl_cleanup();
+		
+	return 0;
 }
 

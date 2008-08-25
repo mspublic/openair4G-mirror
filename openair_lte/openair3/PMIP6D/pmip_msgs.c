@@ -228,7 +228,7 @@ int mh_create_opt_serv_mag_addr(struct iovec *iov,struct in6_addr *Serv_MAG_addr
 	return 0;
 }
 
-void mh_send_pbu(const struct in6_addr_bundle *addrs,struct pmip_entry *bce, int oif)
+void mh_send_pbu(const struct in6_addr_bundle *addrs,struct pmip_entry *bce,  struct timespec *lifetime, int oif)
 {
 	int iovlen = 1;
 	struct ip6_mh_binding_update *pbu;
@@ -238,10 +238,10 @@ void mh_send_pbu(const struct in6_addr_bundle *addrs,struct pmip_entry *bce, int
 
 	if (!pbu)
 		return;
-	pbu->ip6mhbu_seqno = htons(bce->seqno);
+	pbu->ip6mhbu_seqno = htons(bce->seqno_out);
 	pbu->ip6mhbu_flags = htons(bce->PBU_flags);
-	pbu->ip6mhbu_lifetime = htons(bce->lifetime.tv_sec >> 2);
-	dbg("PBU lifetime = %d (%d s)\n",pbu->ip6mhbu_lifetime, bce->lifetime.tv_sec);
+	pbu->ip6mhbu_lifetime = htons(lifetime->tv_sec >> 2);
+	dbg("PBU lifetime = %d (%d s)\n",pbu->ip6mhbu_lifetime, conf.PBU_LifeTime);
 
 	__identifier MN_ID;
 	memcpy(&MN_ID, &bce->peer_addr.in6_u.u6_addr32[2], sizeof(__identifier));
@@ -289,7 +289,7 @@ void mh_send_pbu(const struct in6_addr_bundle *addrs,struct pmip_entry *bce, int
 
 
 
-void mh_send_pba(const struct in6_addr_bundle *addrs,struct pmip_entry *bce, int oif)
+void mh_send_pba(const struct in6_addr_bundle *addrs,struct pmip_entry *bce,  struct timespec *lifetime,  int oif)
 {
 	int iovlen = 1;
 	struct ip6_mh_binding_ack *pba;
@@ -305,8 +305,8 @@ void mh_send_pba(const struct in6_addr_bundle *addrs,struct pmip_entry *bce, int
 
 	pba->ip6mhba_status = bce->status;
 	pba->ip6mhba_flags = htons(bce->PBA_flags);//check since it is only one byte!!
-	pba->ip6mhba_seqno = htons(bce->seqno);
-	pba->ip6mhba_lifetime = htons(bce->lifetime.tv_sec >> 2);
+	pba->ip6mhba_seqno = htons(bce->seqno_in);
+	pba->ip6mhba_lifetime = htons(lifetime->tv_sec >> 2);
 
 	__identifier MN_ID;
 	memcpy(&MN_ID, &bce->peer_addr.in6_u.u6_addr32[2], sizeof(__identifier));
@@ -357,7 +357,7 @@ struct pmip_entry *mh_pbu_parse(struct ip6_mh_binding_update *pbu, ssize_t len,c
 	if (len < sizeof(struct ip6_mh_binding_update) ||
 	    mh_opt_parse(&pbu->ip6mhbu_hdr, len, 
 			 sizeof(struct ip6_mh_binding_update), &mh_opts) < 0)
-		return -1;
+		return 0;
 
 	static struct pmip_entry msg;
 	bzero(&msg,sizeof(msg));
@@ -376,7 +376,7 @@ struct pmip_entry *mh_pbu_parse(struct ip6_mh_binding_update *pbu, ssize_t len,c
 
 	dbg("Proxy Binding Update Lifetime: %d (%d s)\n",pbu->ip6mhbu_lifetime, msg.lifetime.tv_sec);
 
-	msg.seqno = ntohs(pbu->ip6mhbu_seqno);
+	msg.seqno_in = ntohs(pbu->ip6mhbu_seqno);
 	
 	msg.FLAGS = hasPBU;
 	dbg("FSM Flags: %d\n",msg.FLAGS);
@@ -441,7 +441,7 @@ struct pmip_entry * mh_pba_parse(struct ip6_mh_binding_ack *pba, ssize_t len,con
 	if (len < sizeof(struct ip6_mh_binding_ack) ||
 	    mh_opt_parse(&pba->ip6mhba_hdr, len, 
 			 sizeof(struct ip6_mh_binding_ack), &mh_opts) < 0)
-				return -1;
+				return 0;
 
 	dbg("Received PBU message for a MN...\n");
 
@@ -484,6 +484,7 @@ struct pmip_entry * mh_pba_parse(struct ip6_mh_binding_ack *pba, ssize_t len,con
 		dbg("No Existing Entry is found!\n");
 	else
 	{
+		if(ntohs(pba->ip6mhba_seqno)==msg->seqno_out){
 		//Delete timer (if any).
 		del_task(&msg->tqe);
 		//Modify the entry with additional info.
@@ -494,10 +495,11 @@ struct pmip_entry * mh_pba_parse(struct ip6_mh_binding_ack *pba, ssize_t len,con
 		dbg("Proxy Binding Ack Lifetime: %d (%d s)\n",pba->ip6mhba_lifetime, msg->lifetime.tv_sec);
 		msg->FLAGS = hasPBA;
 		dbg("FSM Flags: %d\n",msg->FLAGS);
-	}
-	return msg;
-	
+		}
+		else dbg("Seq# of PBA is Not equal to Seq# of PBU!\n");
 
+	}
+	return msg;	
 }
 
 #ifdef TEST_PMIP
@@ -521,7 +523,7 @@ int pmip_mh_send(const struct in6_addr_bundle *addrs, const struct iovec *mh_vec
 
 {
 
-	struct ip6_mh_opt_auth_data lbad;
+//	struct ip6_mh_opt_auth_data lbad;
 
 	struct sockaddr_in6 daddr;
 
@@ -533,7 +535,7 @@ int pmip_mh_send(const struct in6_addr_bundle *addrs, const struct iovec *mh_vec
 
 	struct cmsghdr *cmsg;
 
-	struct cmsghdr controlmsg;
+//	struct cmsghdr controlmsg;
 
 	int cmsglen;
 
@@ -545,7 +547,7 @@ int pmip_mh_send(const struct in6_addr_bundle *addrs, const struct iovec *mh_vec
 
 	int iov_count;
 
-	socklen_t rthlen = 0;
+//	socklen_t rthlen = 0;
 
 
 	iov_count = mh_try_pad(mh_vec, iov, iovlen);
@@ -683,10 +685,10 @@ void mh_send_pbreq(struct in6_addr_bundle *addrs,struct in6_addr *peer_addr,stru
 	
 		
 	//calculate the length of the message.
-	pbr->ip6mhpbrr_hdr.ip6mh_hdrlen = mh_length(&mh_vec,iovlen);
+	pbr->ip6mhpbrr_hdr.ip6mh_hdrlen = mh_length((struct iovec *) &mh_vec,iovlen);
 
 	dbg("send PBREQ....\n");
-	pmip_mh_send(addrs, &mh_vec, iovlen, link);
+	pmip_mh_send(addrs, (struct iovec *) &mh_vec, iovlen, link);
 	if(is_lma())
 	{
 		dbg("copy PBREQ message into PMIP entry iovec....\n");
@@ -717,7 +719,7 @@ struct pmip_entry *mh_pbreq_parse(struct ip6_mh_proxy_binding_request *pbr, ssiz
 	if (len < sizeof(struct ip6_mh_proxy_binding_request) ||
 	    mh_opt_parse(&pbr->ip6mhpbrr_hdr, len, 
 			 sizeof(struct ip6_mh_proxy_binding_request), &mh_opts) < 0)
-		return -1;
+		return 0;
 
 	
 	struct in6_addr peer_addr= in6addr_any, peer_prefix = in6addr_any;
@@ -745,7 +747,9 @@ struct pmip_entry *mh_pbreq_parse(struct ip6_mh_proxy_binding_request *pbr, ssiz
 	else
 	{
 		dbg("An Existing Entry is found!\n");
-		msg->seqno = ntohs(pbr->ip6mhpbrr_seqno);
+		msg->seqno_in = ntohs(pbr->ip6mhpbrr_seqno);
+		dbg("SEQUENCE# = %d\n",msg->seqno_in);
+
 		msg->FLAGS = hasPBREQ;
 	}
 	return msg;
@@ -786,10 +790,10 @@ void mh_send_pbres(struct in6_addr_bundle *addrs,struct in6_addr *peer_addr,stru
 
 
 	//calculate the length of the message.
-	pbre->ip6mhpbre_hdr.ip6mh_hdrlen = mh_length(&mh_vect,iovlen);
+	pbre->ip6mhpbre_hdr.ip6mh_hdrlen = mh_length((struct iovec *) &mh_vect,iovlen);
 
 	dbg("send PBRES....\n");
-	pmip_mh_send(addrs, &mh_vect, iovlen, link);
+	pmip_mh_send(addrs, (struct iovec *) &mh_vect, iovlen, link);
 	
 	free_iov_data(mh_vect, iovlen);
 	
@@ -814,7 +818,7 @@ struct pmip_entry *mh_pbres_parse(struct ip6_mh_proxy_binding_response *pbre, ss
 	if (len < sizeof(struct ip6_mh_proxy_binding_response) ||
 	    mh_opt_parse(&pbre->ip6mhpbre_hdr, len, 
 			 sizeof(struct ip6_mh_proxy_binding_response), &mh_opts) < 0)
-		return -1;
+		return 0;
 
 	
 	struct in6_addr peer_addr= in6addr_any, peer_prefix= in6addr_any, serv_mag = in6addr_any;
@@ -842,9 +846,9 @@ struct pmip_entry *mh_pbres_parse(struct ip6_mh_proxy_binding_response *pbre, ss
 		memcpy(&serv_mag ,&serv_mag_addr_opt->serv_mag_addr, sizeof(struct in6_addr));
 		dbg("Serv_mag_addrs for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&serv_mag));
 	} 
-
+	
 	if(is_mag()){
-		struct pmip_entry msg;
+		static struct pmip_entry msg;
 		memcpy(&msg.Serv_MAG_addr,&serv_mag , sizeof(struct in6_addr));
 		memcpy(&msg.peer_addr,&peer_addr,sizeof(struct in6_addr));
 		msg.FLAGS = hasPBRES;
@@ -859,13 +863,17 @@ struct pmip_entry *mh_pbres_parse(struct ip6_mh_proxy_binding_response *pbre, ss
 			dbg("No Existing Entry is found!\n");
 		else
 		{
-			dbg("An Existing Entry is found!\n");
-			msg->FLAGS = hasPBRES;
-			pmipcache_release_entry(msg);
+			if(ntohs(pbre->ip6mhpbre_seqno) == msg->seqno_out ){
+				dbg("An Existing Entry is found!\n");
+				msg->FLAGS = hasPBRES;
+				pmipcache_release_entry(msg);
+			}
+			else dbg("Seq# of PBRES is Not equal to Seq# of PBREQ!\n");
 		}
 		return msg;
 	}
 	
+	return 0;
 }
 #endif
 

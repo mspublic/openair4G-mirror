@@ -24,7 +24,7 @@
 #include "prefix.h"
 
 
-static uint16_t seqno_pbreq = 0;
+uint16_t seqno_pbreq = 0;
 
 //compare two addresses and returns 0 if the same, else -1.
 int COMPARE(struct in6_addr *addr1,struct in6_addr *addr2)
@@ -88,7 +88,7 @@ void _RET_PBU(struct tq_elem *tqe)
 	if(e->n_rets_counter ==0)
 		{
 			pthread_rwlock_unlock(&e->lock);
-			free_iov_data(&e->mh_vec,e->iovlen);
+			free_iov_data((struct iovec *)&e->mh_vec,e->iovlen);
 	
 			dbg("No PBA received from CH....\n");
 			dbg("Abort Trasmitting the PBU....\n");
@@ -133,16 +133,10 @@ void _EXPIRED(struct tq_elem *tqe)
 		struct pmip_entry *e = tq_data(tqe, struct pmip_entry, tqe);
 		pthread_rwlock_wrlock(&e->lock);
 
-			
-		if(e->n_rets_counter == conf.Max_Rets){
-			dbg("first time counter\n");
-			++e->seqno; }
-		
-		//Decrements the Retransmissions counter.
-		e->n_rets_counter--;
 
 		dbg("Retransmissions counter : %d\n",e->n_rets_counter);
-	
+
+		
 		if(e->n_rets_counter ==0)
 		{
 			if(is_mag())
@@ -152,10 +146,12 @@ void _EXPIRED(struct tq_elem *tqe)
 				addrs.dst= &conf.lma_addr;
 				
 				struct timespec Lifetime = {0,0};
-				e->lifetime=Lifetime;
 				
 				dbg("Create PBU for CH to delete the PMIP entry too....\n");
-				mh_send_pbu(&addrs,e,0);
+				
+				++e->seqno_out; 				
+
+				mh_send_pbu(&addrs,e,&Lifetime,0);
 
 				//Delete existing route & rule for the deleted MN
 				mag_remove_route(ID2ADDR(&e->peer_prefix,&e->peer_addr), e->link);
@@ -166,24 +162,23 @@ void _EXPIRED(struct tq_elem *tqe)
 					route_del(e->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0,&in6addr_any, 0,NULL);
 				}
 				//decrement users of old tunnel.
-				tunnel_del(e->tunnel,0,0);
+				pmip_tunnel_del(e->tunnel);
 			}
 			//Delete existing route for the deleted MN
 			if(is_lma())
 			{
-				//dbg("Delete old route for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(ID2ADDR(&e->peer_prefix,&e->peer_addr)));
-				//route_del(e->tunnel, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, ID2ADDR(&e->peer_prefix,&e->peer_addr), 128,NULL);
+				//dbg("Delete old route for: %x:%x:%x:%x:%x:%x:%x:%x\n", 
 				lma_remove_route(ID2ADDR(&e->peer_prefix,&e->peer_addr), e->tunnel); 
 
 				//decrement users of old tunnel.
-				tunnel_del(e->tunnel,0,0);
+				pmip_tunnel_del(e->tunnel);
 			}
 
 			//Delete entry for MN.
 
 			pthread_rwlock_unlock(&e->lock);
 
-			free_iov_data(&e->mh_vec,e->iovlen);
+			free_iov_data((struct iovec *)&e->mh_vec,e->iovlen);
 			pmip_bce_delete(e);
 			dbg("Number of lock ref %d \n", pmip_lock);
 			pthread_rwlock_unlock(&pmip_lock);
@@ -208,20 +203,24 @@ void _EXPIRED(struct tq_elem *tqe)
 			bzero(&addrs,sizeof(struct in6_addr_bundle));
 			addrs.src = &e->our_addr;
 			addrs.dst = &e->Serv_MAG_addr;
-			if ((e->n_rets_counter) == (conf.Max_Rets - 1)){
-			mh_send_pbreq(&addrs,&e->peer_addr, &e->peer_prefix, e->seqno, e->link, e);
+			if ((e->n_rets_counter) == (conf.Max_Rets)){
+			++e->seqno_out; 				
+			mh_send_pbreq(&addrs,&e->peer_addr, &e->peer_prefix, e->seqno_out, e->link, e);
 			}
 			else{
 			pmip_mh_send(&addrs, e->mh_vec, e->iovlen, e->link);
 			}
 		}
-		
 			struct timespec expires;
 			clock_gettime(CLOCK_REALTIME, &e->add_time);
 			tsadd(e->add_time, conf.N_RetsTime, expires);
 			// Add a new task for deletion of entry if No Na is received.
 			add_task_abs(&expires, &e->tqe, _EXPIRED);
 			dbg("Start the Timer for Retransmission/Deletion ....\n");
+
+			//Decrements the Retransmissions counter.
+			e->n_rets_counter--;
+
 			pthread_rwlock_unlock(&e->lock);
 	}
 	pthread_rwlock_unlock(&pmip_lock);
@@ -285,7 +284,6 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 		return;
 	}
 	
-
 	//CHECK target is not multicast.
 	if (ipv6_addr_is_multicast(&msg->nd_ns_target)) {  
 		dbg("ICMPv6 NS: multicast target address..\n");
@@ -301,12 +299,18 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 		memcpy(&id.in6_u.u6_addr32[2], &msg->nd_ns_target.in6_u.u6_addr32[2], sizeof(__identifier));
 		
 		int exist = pmip_cache_exists(&conf.our_addr,&id);
+
+		//Source checking
+		//struct in6_addr source_id = in6addr_any;
+		//memcpy(&source_id.in6_u.u6_addr32[2], &daddr->in6_u.u6_addr32[2], sizeof(__identifier));	
+		//int source_exist = pmip_cache_exists(&conf.our_addr,&source_id);
+
 			if(exist == BCE_PMIP || exist == BCE_TEMP) // if returns a type equal to 5 means there is a match.
 				{
 					dbg("Target entry exists!\n");
 					
 				}
- 			else 
+ 			else //TODO Check if the target is a PMIPv6 address & the source is registered as PMIPv6 address as well.
 				{		
 					dbg("No cache entry exists for Target!\n");
 					struct in6_addr mag_id = in6addr_any;
@@ -326,19 +330,19 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 					struct in6_addr prefix = in6addr_any;
 					memcpy(&prefix.in6_u.u6_addr32[0], &msg->nd_ns_target.in6_u.u6_addr32[2], sizeof(__identifier));
 
-					seqno_pbreq += seqno_pbreq+1;
-					dbg("seqno_pbreq=%d\n",seqno_pbreq);
 					//send PBREQ to CH.
 					mh_send_pbreq(&address,&id, &prefix,seqno_pbreq, 0, 0);
 					}
-
-					//TODO find Target location "address" then send NA on his behalf.
-					
-					dbg("Create NA as a reply for NS with option ....\n");
+					seqno_pbreq++;
 
 					//send an NA as ARP reply.
-					uint32_t na_flags = NDP_NA_ROUTER | NDP_NA_SOLICITED | NDP_NA_OVERRIDE;
-					ndisc_send_na(iif, &conf.mag_addr_ingress,saddr,&msg->nd_ns_target,na_flags);
+					//dbg("Create NA as a reply for NS with option ....\n");
+					//uint32_t na_flags = NDP_NA_ROUTER | NDP_NA_SOLICITED | NDP_NA_OVERRIDE;
+					uint32_t na_flags = NDP_NA_OVERRIDE;
+					ndisc_send_na(iif, &conf.mag_addr_ingress, saddr, &msg->nd_ns_target,na_flags);
+					//dbg("Do proxy ARP for the CN (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&msg->nd_ns_target));	
+					//proxy_nd_start(iif, &msg->nd_ns_target, &conf.mag_addr_ingress, 0);
+
 				}
 
   		return;
@@ -386,10 +390,8 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 			dbg("peer_prefix: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->peer_prefix));
 			memcpy(&bce->Serv_MAG_addr,&conf.our_addr,sizeof(struct in6_addr));
 			memcpy(&bce->LMA_addr,&conf.lma_addr,sizeof(struct in6_addr));
-			
-			bce->lifetime = conf.LifeTime;
-			dbg("PBU Lifetime: %d\n",bce->lifetime.tv_sec);
-			bce->seqno = 0;
+						
+			bce->seqno_out = 0;
 			uint16_t flags = IP6_MH_BU_ACK | IP6_MH_PBU;
 			bce->PBU_flags = flags;
 			bce->link = iif;
@@ -399,9 +401,9 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 			bzero(&Timestamp, sizeof(Timestamp));
 			bce->Timestamp= Timestamp;
 
-			struct in6_addr *link_local, ID;
+			struct in6_addr ID;
 			memcpy(&ID,&bce->peer_addr,sizeof(struct in6_addr));
-			link_local = link_local_addr(&ID);
+			struct in6_addr *link_local = link_local_addr((struct in6_addr *)&ID);
 
 			//struct in6_addr address=
 			memcpy(&bce->LinkLocal,link_local,sizeof(struct in6_addr));   // link local address of MN
@@ -453,7 +455,7 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 		else del_task(&bce->tqe); //Stop Network based movement detection, in case
 	
 		//Send First PBU.
-		mh_send_pbu(&addrs,bce,0);
+		mh_send_pbu(&addrs,bce,&conf.PBU_LifeTime,0);
 
 		//add a new task for PBU retransmission.
 		struct timespec expires;
@@ -583,7 +585,7 @@ static void pmip_recv_na(const struct icmp6_hdr *ih, ssize_t len,
 			del_task(&bce->tqe);
 			
 			//Send First PBU.
-			mh_send_pbu(&addrs,bce,0);
+			mh_send_pbu(&addrs,bce,&conf.PBU_LifeTime,0);
 	
 			//add a new task for PBU retransmission.
 			struct timespec expires;
