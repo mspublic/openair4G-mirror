@@ -1,9 +1,0 @@
-D/ipv4////
-D/ipv6////
-/nf_conntrack.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_compat.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_core.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_helper.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_l3proto.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_protocol.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
-/nf_conntrack_tuple.h/1.1.1.1/Wed Apr 23 13:21:08 2008//
