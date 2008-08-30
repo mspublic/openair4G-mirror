@@ -50,8 +50,23 @@ extern struct sock icmp6_sock;
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: pmip6d  [-d] [-s] [-c] [-m] [-L LMA@] [-N MAG_IN@] [-E MAG_E@]");
-	fprintf(stderr, "\n\t-c:Run as Cluster Head (LMA) \n\t-m:Run as Mobile Router (MAG)\n\t-L: LMA address \n\t-N: MAG ingress address\n\t-E: MAG egress address\n\t-i: With IPv6-in-IPv6 tunneling\n\t-p: Do proxy arp for other MAGs\n\t-t:Dynamically create/delete tunnels\n");	
+	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@] [-i] [-p] [-d]");
+	fprintf(stderr, "\n\t-s: allow capturing NS(DAD)"\
+		"\n\t-m:Run as Mobile Router (MAG)"\
+		"\n\t-c:Run as Cluster Head (LMA)"\
+		"\n\t-L: LMA address"\
+		"\n\t-N: MAG ingress address (toward MN)"\
+		"\n\t-E: MAG egress address (toward LMA)"
+		"\n\t-i: With IPv6-in-IPv6 tunneling"\
+		"\n\t-p: Do proxy arp for other MAGs"
+		"\n\t-t:Dynamically create/delete tunnels"\
+	"\nNotes:"\
+	"\n\t[-c] and [-m] are exclusive"\
+	"\n\t[-s] must always appears with [-m]"\
+	"\nExamples: "\
+	"\n\tRun as CH with IP-in-IP: ./pmip6d -c -i -L 2001:100::1"\
+        "\n\tRun as MR with IP-in-IP: ./pmip6d -m -s -i -L 2001:100::1 -E 2001:100::2 -N 2001:1::1\n"
+	);	
 	exit(0);
 }
 
