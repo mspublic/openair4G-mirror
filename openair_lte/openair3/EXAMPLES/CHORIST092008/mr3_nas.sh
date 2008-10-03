@@ -12,10 +12,10 @@ sudo sysctl -w net.ipv6.conf.all.forwarding=1
 sudo sysctl -w net.ipv6.conf.eth0.proxy_ndp=1
 sudo sysctl -w net.ipv6.conf.nasmesh0.proxy_ndp=1
 
-sudo ifconfig eth0 promisc
-sudo ip -6 addr add $MR3_EG6_ADDR/64 dev eth0
-$OPENAIR3_PMIP6D_PATH/pmip6d -m -s -L $CH2_IN6_ADDR -N $MR3_EG6_ADDR -E $MR3_IN6_ADDR
-./del_mpls.sh
+sudo ifconfig eth3 promisc
+sudo ip -6 addr add $MR3_EG6_ADDR/64 dev eth3
+#$OPENAIR3_PMIP6D_PATH/pmip6d -m -s -L $CH2_IN6_ADDR -N $MR3_EG6_ADDR -E $MR3_IN6_ADDR
+#./del_mpls.sh
 
 
 

@@ -12,6 +12,7 @@ echo Configuring interfaces on mr3
 sudo ifconfig nasmesh0 up
 sudo ifconfig nasmesh0 $MR3_IN_ADDR
 sudo ip -6 addr add $MR3_IN6_ADDR/64 dev nasmesh0
+sudo ip -6 addr add $MR3_EG6_ADDR/64 dev eth3
 
 echo Launching AS simulator
 xterm -hold -e sh start_openair2_mr3.sh &

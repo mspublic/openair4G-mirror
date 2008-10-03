@@ -14,6 +14,7 @@ echo Configuring interfaces on mr1
 sudo ifconfig nasmesh0 up
 sudo ifconfig nasmesh0 $MR1_IN_ADDR
 sudo ip -6 addr add $MR1_IN6_ADDR/64 dev nasmesh0
+#sudo ip -6 addr add $MR1_EG6_ADDR/64 dev eth2
 echo Launching AS simulator
 xterm -hold -e sh start_openair2_mr1.sh &
 
