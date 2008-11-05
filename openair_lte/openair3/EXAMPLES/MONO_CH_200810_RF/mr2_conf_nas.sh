@@ -45,7 +45,4 @@ echo eth0 is $MR2_EG_ADDR
 #echo No MPLS debug
 #echo "1" >/sys/mpls/debug
 
-watch -n1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
-
-./stop_rf.sh
 

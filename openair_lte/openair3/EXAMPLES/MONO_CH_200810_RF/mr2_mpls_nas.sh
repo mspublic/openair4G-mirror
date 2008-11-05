@@ -16,7 +16,7 @@ echo 'MN2->MN1'
 #Changed by Huu-Nghia, Philippe
 var=`mpls nhlfe add key 0 instructions push gen $MR2_LABEL_OUT nexthop nasmesh0 ipv6 $CH_ADDR |grep key | cut -c 17-26`
 sudo ip -6 route add $MN1_ADDR/128 via $CH_ADDR mpls $var
-sudo ip -6 route add $MN2_ADDR/128 dev eth2
+sudo ip -6 route add $MN2_ADDR/128 dev eth0
 
 echo 'MN1->MN2'
 #pop label 1001 and do Ip lookup.
