@@ -6,8 +6,10 @@ export OPENAIR2_DIR
 #echo "0" >/proc/sys/net/ipv6/conf/all/forwarding
 
 echo Launching AS and RF
-xterm -hold -e sh start_openair_mr1.sh &
+./start_openair_mr1.sh
 
+#Sleep to allow L2 modules to load
+sleep 1
 echo Installing NASMESH Driver
 sudo rmmod -f nasmesh
 sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko nas_IMEI=0x12345678,0x02000000
@@ -42,3 +44,6 @@ echo eth0 is $MR1_EG_ADDR
 #echo Starting routing ...
 #echo No MPLS debug
 #echo "1" >/sys/mpls/debug
+
+
+

@@ -6,7 +6,7 @@ echo Clusterhead address is $CH_ADDR
 
 sleep 1
 echo Launching AS and RF
-xterm -hold -e sh start_openair_ch.sh &
+./start_openair_ch.sh
 
 sleep 1
 # Installing NASMESH driver
@@ -41,6 +41,5 @@ echo No MPLS debug
 echo "0" >/sys/mpls/debug
 
 
-sleep 1
 
 #/etc/init.d/radvd restart

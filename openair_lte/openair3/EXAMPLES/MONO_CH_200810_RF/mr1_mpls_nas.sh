@@ -17,5 +17,5 @@ var=`mpls nhlfe add key 0 instructions push gen $MR1_LABEL_OUT nexthop nasmesh0 
 
 echo "Creating routes"
 sudo ip -6 route add $MN2_ADDR/128 via $CH_ADDR mpls $var
-sudo ip -6 route add $MN1_ADDR/128 dev eth1
+sudo ip -6 route add $MN1_ADDR/128 dev eth0
 

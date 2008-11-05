@@ -15,6 +15,6 @@ source txgains.sh
 ./openair_rf_cbmimo1 1 6 $CBMIMO1_m10_dBm 
 ./openair_rf_cbmimo1 1 1 1 0
 
-watch -n .1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
+#watch -n .1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
 
-./stop_rf.sh
+#./stop_rf.sh
