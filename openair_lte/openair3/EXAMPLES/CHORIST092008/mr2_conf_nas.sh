@@ -27,7 +27,6 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -x $MR2_IN6_ADDR2 -
 echo Classification rules for MR2 -Cluster 2 - MPLS User-plane Bearer
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -l $MR2_CH2_LABEL_OUT -m $MR2_CH2_LABEL_IN -r 13
 
-echo eth0 is $MR2_EG6_ADDR
 
 
 

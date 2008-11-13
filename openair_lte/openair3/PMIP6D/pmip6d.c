@@ -50,16 +50,17 @@ extern struct sock icmp6_sock;
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@] [-i] [-p] [-d]");
+	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@] [-i] [-p] [-d] [-A All-LMA@]");
 	fprintf(stderr, "\n\t-s: allow capturing NS(DAD)"\
-		"\n\t-m:Run as Mobile Router (MAG)"\
-		"\n\t-c:Run as Cluster Head (LMA)"\
+		"\n\t-m: Run as Mobile Router (MAG)"\
+		"\n\t-c: Run as Cluster Head (LMA)"\
 		"\n\t-L: LMA address"\
 		"\n\t-N: MAG ingress address (toward MN)"\
 		"\n\t-E: MAG egress address (toward LMA)"
 		"\n\t-i: With IPv6-in-IPv6 tunneling"\
 		"\n\t-p: Do proxy arp for other MAGs"
-		"\n\t-t:Dynamically create/delete tunnels"\
+		"\n\t-t: Dynamically create/delete tunnels"\
+		"\n\t-A: All-LMA Multicast Address"\
 	"\nNotes:"\
 	"\n\t[-c] and [-m] are exclusive"\
 	"\n\t[-s] must always appears with [-m]"\
@@ -74,7 +75,7 @@ int get_options(int argc, char *argv[])
 {
 	int ch;
 	if (argc == 1)  usage();
-	while ((ch = getopt(argc, argv, "dpiscmL:N:E:")) != EOF) {
+	while ((ch = getopt(argc, argv, "dpiscmL:N:E:A:")) != EOF) {
 	  
 	switch(ch) {
 	case 'L':
@@ -98,6 +99,16 @@ int get_options(int argc, char *argv[])
 	case 'E':
 		if (strchr(optarg, ':')) {
 			if (inet_pton(AF_INET6, optarg, (char*)&conf.mag_addr_egress) <= 0) {
+				fprintf(stderr, "invalid  address %s\n", optarg);
+				exit(2);
+			
+			}
+		}			
+		break;
+
+	case 'A':
+		if (strchr(optarg, ':')) {
+			if (inet_pton(AF_INET6, optarg, (char*)&conf.all_lma_addr) <= 0) {
 				fprintf(stderr, "invalid  address %s\n", optarg);
 				exit(2);
 			
@@ -130,7 +141,7 @@ int get_options(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	//Get source and dest 
+	//Ignore the rest 
 	while (argc > 1) {
 		argv++;
 		argc--;
@@ -194,10 +205,14 @@ static void terminate(void)
 {
 	//Release the pmip cache ==> deletes the routes and rules and "default route on PMIP" and tunnels created.
 	dbg("TERMINATOR\n");
+	dbg("Release pmip_cache...");
 	pmip_cache_iterate(PMIP_CACHE_DEL,NULL);
+	dbg("done!\n");
 
 	//delete the default rule.
+	dbg("Remove default rule...");
 	rule_del(NULL,RT6_TABLE_MIP6,IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,&in6addr_any, 0, &in6addr_any, 0);
+	dbg("done!\n");
 
 	pthread_exit(NULL);
 }
@@ -360,7 +375,10 @@ int main(int argc, char *argv[])
 	if (rule_add(NULL, RT6_TABLE_MIP6,
 		     IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,
 		     &in6addr_any, 0, &in6addr_any, 0) < 0)
+	{
+		dbg("Warning: Add default rule for RT6_TABLE_MIP6 failed, check root privilege/kernel options!\n");
 		return -1;
+	}
 
 
 #ifndef TEST_PMIP
@@ -499,7 +517,7 @@ int main(int argc, char *argv[])
 	dbg("The Entity is Ready to function...\n");
 	pthread_join(sigth, NULL);
 	
-	//Rlease all ressources on exit
+	//Release all ressources on exit
 	tunnelctl_cleanup();
 		
 	return 0;

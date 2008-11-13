@@ -49,9 +49,12 @@ install:
 	cp pmip6d $(VMS)/CH/hostfs/	
 	cp pmip6d $(VMS)/MR1/hostfs/
 	cp pmip6d $(VMS)/MR2/hostfs/	
-	cp pmip6d $(VMS)/MN1/hostfs/	
-	cp pmip6d $(VMS)/MN2/hostfs/
 		
+install_inter:
+	cp pmip6d $(VMS)/CH1/hostfs/
+	cp pmip6d $(VMS)/CH2/hostfs/
+	cp pmip6d $(VMS)/MR1/hostfs/
+	cp pmip6d $(VMS)/MR2/hostfs/
 
 check-kernel:
 ifeq ($(KERNEL_INCLUDE),)

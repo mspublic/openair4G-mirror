@@ -55,6 +55,7 @@ struct mip6_config {
 	char DoRouteOptimizationCN;
 
 	/* PMIP MAG options */
+	struct in6_addr all_lma_addr;    // All-LMA Multicast Address (Eurecom' Extension for SPMIPv6) 
 	struct in6_addr lma_addr;    // address of CH
 	struct in6_addr mag_addr_ingress;    //ingress address of MR
 	struct in6_addr mag_addr_egress;    //egress address of entity "Either CH OR MR ".

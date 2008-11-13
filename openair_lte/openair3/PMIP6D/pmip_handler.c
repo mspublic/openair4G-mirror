@@ -336,9 +336,9 @@ static void pmip_mag_recv_ns(const struct icmp6_hdr *ih, ssize_t len,
 					seqno_pbreq++;
 
 					//send an NA as ARP reply.
-					//dbg("Create NA as a reply for NS with option ....\n");
+					dbg("Create NA as a reply for NS with option ....\n");
 					//uint32_t na_flags = NDP_NA_ROUTER | NDP_NA_SOLICITED | NDP_NA_OVERRIDE;
-					uint32_t na_flags = NDP_NA_OVERRIDE;
+					uint32_t na_flags = NDP_NA_SOLICITED | NDP_NA_OVERRIDE;
 					ndisc_send_na(iif, &conf.mag_addr_ingress, saddr, &msg->nd_ns_target,na_flags);
 					//dbg("Do proxy ARP for the CN (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&msg->nd_ns_target));	
 					//proxy_nd_start(iif, &msg->nd_ns_target, &conf.mag_addr_ingress, 0);

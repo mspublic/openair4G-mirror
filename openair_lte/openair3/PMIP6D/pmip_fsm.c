@@ -18,6 +18,7 @@
 #include <pthread.h>
 
 extern pthread_rwlock_t pmip_lock; /* Protects proxy binding cache */
+extern uint16_t seqno_pbreq;
 
 /**
 	Finite State Machine; return 0 for success and -1 if no entry exists, pointer to NULL.
@@ -89,15 +90,22 @@ int pmip_fsm(struct in6_addr_bundle *addresses, struct pmip_entry *info, int iif
 		status = info->FLAGS & hasPBREQ;
 		if(status == hasPBREQ)
 		{
-			dbg("Create PBRES message...\n");
-
-			struct in6_addr_bundle addrs;
-			addrs.src = addresses->dst;
-			addrs.dst = addresses->src;
+			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
+			if (bce != NULL)
+			{ 
+				dbg("Create PBRES message...\n");
+				struct in6_addr_bundle addrs;
+				addrs.dst = addresses->src;
+				addrs.src = &conf.our_addr;
 			
-			//create a PB response.
-			mh_send_pbres(&addrs,&info->peer_addr,&info->LMA_addr,&info->Serv_MAG_addr,&info->peer_prefix,info->seqno_in,iif);
-			pmipcache_release_entry(info);
+				//create a PB response.
+				mh_send_pbres(&addrs,&bce->peer_addr,&bce->LMA_addr,&bce->Serv_MAG_addr, &info->peer_prefix,info->seqno_in,iif);
+				pmipcache_release_entry(bce);
+			}
+			else 
+			{
+				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x... Ignore!\n", &info->peer_addr);		
+			}
 		}
 
 		status = 0;
@@ -107,7 +115,7 @@ int pmip_fsm(struct in6_addr_bundle *addresses, struct pmip_entry *info, int iif
 			//TODO
 			// creat a tunnel for the CN under another MR!!
 			dbg("Route Optimization!!\n");
-			
+		
 		}
 
 	return 0;
@@ -265,32 +273,65 @@ int pmip_fsm(struct in6_addr_bundle *addresses, struct pmip_entry *info, int iif
 			return 0;
 			
 		}
+
 		status = 0;
 		status = info->FLAGS & hasPBREQ;
 		if(status == hasPBREQ)
 		{
-			dbg("Create PBRE message...\n");
-
-			struct in6_addr_bundle addrs;
-			addrs.src = addresses->dst;
-			addrs.dst = addresses->src;
+			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
+			if (bce != NULL)
+			{ 
+				dbg("Create PBRE message...\n");
+				struct in6_addr_bundle addrs;
+				//addrs.src = addresses->dst;
+				addrs.dst = addresses->src;
+				addrs.src = &conf.our_addr;
 			
-			//create a PB response.
-			mh_send_pbres(&addrs,&info->peer_addr,&info->LMA_addr,&info->Serv_MAG_addr,&info->peer_prefix,info->seqno_in,iif);
-			pmipcache_release_entry(info);
+				//create a PB response.
+				mh_send_pbres(&addrs, &bce->peer_addr, &bce->LMA_addr, &bce->Serv_MAG_addr, &bce->peer_prefix, bce->seqno_in, iif);
+				pmipcache_release_entry(bce);
+			}
+			else 
+			{												
+				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x ... Send PBREQ to All-LMA@\n", NIP6ADDR(&info->peer_addr));
+				//Never do a loop!
+				if (COMPARE(&conf.all_lma_addr, addresses->src) != 0 && COMPARE(&conf.all_lma_addr, addresses->dst) != 0)
+				{						
+					struct in6_addr_bundle addrs;			
+					addrs.dst = &conf.all_lma_addr; //TODO All_LMA@ need to be defined.
+					addrs.src = &conf.our_addr; 				
+					mh_send_pbreq(&addrs, &info->peer_addr, &info->peer_prefix,seqno_pbreq, iif, 0);
+					seqno_pbreq++;
+				}
+				else dbg("All-LMA@ is the same as the previous PBREQ-Generator@ ... Stop PBREQ chain!\n");				
+			}
 		}
 
 		status = 0;
 		status = info->FLAGS & hasPBRES;
 		if(status == hasPBRES)
 		{
-			//Delete the Task (if ANY)
-			del_task(&info->tqe);
-			//Reset the Retransmissions counter.
-			info->n_rets_counter = conf.Max_Rets;
-			//Add task for entry expiry.
-			pmip_cache_start(info);
-			dbg("Timer for Expiry is intialized!\n");
+			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
+			if (bce != NULL)
+			{
+				if(info->seqno_in == bce->seqno_out)
+				{
+					//Delete the Task (if ANY)
+					del_task(&bce->tqe);
+					//Reset the Retransmissions counter.
+					bce->n_rets_counter = conf.Max_Rets;
+					//Add task for entry expiry.
+					pmip_cache_start(bce);
+					dbg("Timer for Expiry is intialized!\n");
+				}
+				else dbg("Seq# of PBRES is Not equal to Seq# of PBREQ!\n");
+				pmipcache_release_entry(bce);
+			}
+			else 
+			{
+				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x... Response for a route optimization?\n",  NIP6ADDR(&info->peer_addr));
+				//TODO Check the session cache.
+			}	
 		}
 		return 0;
 	}
@@ -483,26 +524,38 @@ int lma_dereg_old_mag(struct pmip_entry * bce)
 //We apply some trick here to advoid create/delete of tunnel too frepquently.
 int pmip_tunnel_add(struct in6_addr *local, struct in6_addr *remote, int link)
 {
-	dbg("Create tunnel if neccessary\n");
-	int tunnel = tunnel_add(local, remote, link, 0, 0);
-	return tunnel;
+	if (conf.tunneling_enabled)
+	{
+		dbg("Creating IP-in-IP tunnel...\n");
+		int tunnel = tunnel_add(local, remote, link, 0, 0);
+		return tunnel;
+	}
+	else 
+	{
+		dbg("IP-in-IP tunneling is disabled, no tunnel is created\n");
+		return 0;
+	}
 }
 
 int pmip_tunnel_del(int ifindex)
 {
 	int res = 0;
-	dbg("Decrease reference number of tunnel %d\n", ifindex);
-	if (ifindex > 0)
+	if (conf.tunneling_enabled)
 	{
-		int usercount = tunnel_getusers(ifindex);
-		if (usercount > 1 || conf.dtun_enabled) res = tunnel_del(ifindex, 0, 0);
-		else if (usercount == 1) 
-		{ 
-			//TODO: Put the tunnel  in to the pool
-			//TODO: Set timer to delete the tunnel after a long stalled period
+		dbg("Decrease reference number of tunnel %d\n", ifindex);
+		if (ifindex > 0)
+		{
+			int usercount = tunnel_getusers(ifindex);
+			if (usercount > 1 || conf.dtun_enabled) res = tunnel_del(ifindex, 0, 0);
+			else if (usercount == 1) 
+			{ 
+				//TODO: Put the tunnel  in to the pool
+				//TODO: Set timer to delete the tunnel after a long stalled period
+			}
 		}
+		else res = -1;
 	}
-	else res = -1;
+	else dbg("IP-in-IP tunneling is disabled, no tunnel is deleted\n");
 	return res;
 }
 

@@ -10,7 +10,7 @@ echo /openair3/pmip6d/pmip6d -c -L $CH_ADDR
 sudo xterm -hold -e "$OPENAIR3_PMIP6D_PATH/pmip6d -c -L $CH_ADDR" & 
 #./ch_del_mpls.sh
 
-watch -n .1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
+watch -n .1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats ; cat /proc/openair1/openair1_state"
 
 
 ./stop_rf.sh

@@ -12,7 +12,7 @@ sudo insmod $OPENAIR2_DIR/RRC/MESH/openair_RRC.ko
 cd $OPENAIR1_DIR/USERSPACE_TOOLS/OPENAIR_RF
 source ./txgains.sh
 ./openair_rf_cbmimo1 1 0
-./openair_rf_cbmimo1 1 6 $CBMIMO1_m15_dBm 
+./openair_rf_cbmimo1 1 6 $CBMIMO1_m20_dBm 
 ./openair_rf_cbmimo1 1 3 1 8
 
 #watch -n1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"

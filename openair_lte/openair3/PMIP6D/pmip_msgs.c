@@ -443,7 +443,7 @@ struct pmip_entry * mh_pba_parse(struct ip6_mh_binding_ack *pba, ssize_t len,con
 			 sizeof(struct ip6_mh_binding_ack), &mh_opts) < 0)
 				return 0;
 
-	dbg("Received PBU message for a MN...\n");
+	dbg("Received PBA message for a MN...\n");
 
 	home_net_prefix = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_HOM_NET_PREX);
 	if (home_net_prefix)
@@ -689,7 +689,8 @@ void mh_send_pbreq(struct in6_addr_bundle *addrs,struct in6_addr *peer_addr,stru
 
 	dbg("send PBREQ....\n");
 	pmip_mh_send(addrs, (struct iovec *) &mh_vec, iovlen, link);
-	if(is_lma())
+
+	if(bce != NULL && is_lma())
 	{
 		dbg("copy PBREQ message into PMIP entry iovec....\n");
 		//copy the PBR message into the mh_vector for the entry for future retransmissions.
@@ -697,6 +698,7 @@ void mh_send_pbreq(struct in6_addr_bundle *addrs,struct in6_addr *peer_addr,stru
 		bce->iovlen = iovlen;
 	}
 	else
+
 	free_iov_data(mh_vec, iovlen);
 }
 
@@ -708,39 +710,38 @@ struct pmip_entry *mh_pbreq_parse(struct ip6_mh_proxy_binding_request *pbr, ssiz
 {
 	
 	static struct mh_options mh_opts; 
-	bzero(&mh_opts, sizeof(mh_opts));
-		
+	static struct pmip_entry msg;	
 	struct ip6_mh_opt_home_net_prefix  *home_net_prefix;
 	struct ip6_mh_opt_mn_identifier  *mh_id_opt;
-
+	
+	bzero(&mh_opts, sizeof(mh_opts));
+	bzero(&msg,sizeof(msg));
 
 	dbg("Parse PBREQ message....\n");
-	
+
 	if (len < sizeof(struct ip6_mh_proxy_binding_request) ||
 	    mh_opt_parse(&pbr->ip6mhpbrr_hdr, len, 
 			 sizeof(struct ip6_mh_proxy_binding_request), &mh_opts) < 0)
 		return 0;
 
-	
-	struct in6_addr peer_addr= in6addr_any, peer_prefix = in6addr_any;
 		 
 	home_net_prefix = mh_opt(&pbr->ip6mhpbrr_hdr, &mh_opts, IP6_MHOPT_HOM_NET_PREX);
 	if (home_net_prefix)
-	{
-		//copy
-		memcpy(&peer_prefix ,&home_net_prefix->ip6hnp_prefix, sizeof(struct in6_addr));
-	} 
-
+		msg.peer_prefix = home_net_prefix->ip6hnp_prefix;
 
 	mh_id_opt = mh_opt(&pbr->ip6mhpbrr_hdr, &mh_opts, IP6_MHOPT_MOB_IDENTIFIER);
 	if (mh_id_opt)
 	{
-		//copy
-		memcpy(&peer_addr.in6_u.u6_addr32[2],&mh_id_opt->mn_identifier,sizeof(__identifier));
-		dbg("Peer_addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&peer_addr));
+		//copy	
+		memcpy(&msg.peer_addr.in6_u.u6_addr32[2],&mh_id_opt->mn_identifier,sizeof(__identifier));
+		dbg("Peer Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&msg.peer_addr));
 	}
 
-	struct pmip_entry *msg;
+	msg.seqno_in = ntohs(pbr->ip6mhpbrr_seqno);
+	dbg("SEQUENCE# = %d\n",msg.seqno_in);
+	msg.FLAGS = hasPBREQ;
+
+/*	struct pmip_entry *msg;
 	msg = pmip_cache_get(&conf.our_addr,&peer_addr);
 	if(msg==NULL)
 		dbg("No Existing Entry is found!\n");
@@ -752,7 +753,8 @@ struct pmip_entry *mh_pbreq_parse(struct ip6_mh_proxy_binding_request *pbr, ssiz
 
 		msg->FLAGS = hasPBREQ;
 	}
-	return msg;
+*/
+	return &msg ;
 }
 
 /**
@@ -806,47 +808,53 @@ void mh_send_pbres(struct in6_addr_bundle *addrs,struct in6_addr *peer_addr,stru
 struct pmip_entry *mh_pbres_parse(struct ip6_mh_proxy_binding_response *pbre, ssize_t len,const struct in6_addr_bundle *in_addrs,int iif)
 {
 	
-	static struct mh_options mh_opts; 
+	static struct mh_options mh_opts;
+	static struct pmip_entry msg; 
 	bzero(&mh_opts, sizeof(mh_opts));
+	bzero(&msg,sizeof(msg));
 		
 	struct ip6_mh_opt_home_net_prefix * home_net_prefix;
 	struct ip6_mh_opt_mn_identifier * mh_id_opt;
 	struct ip6_mh_opt_serv_mag_addr * serv_mag_addr_opt;
+
 
 	dbg("Parse PBRES message....\n");
 	
 	if (len < sizeof(struct ip6_mh_proxy_binding_response) ||
 	    mh_opt_parse(&pbre->ip6mhpbre_hdr, len, 
 			 sizeof(struct ip6_mh_proxy_binding_response), &mh_opts) < 0)
-		return 0;
-
-	
-	struct in6_addr peer_addr= in6addr_any, peer_prefix= in6addr_any, serv_mag = in6addr_any;
-		 
+		return 0;	
+ 
 	home_net_prefix = mh_opt(&pbre->ip6mhpbre_hdr, &mh_opts, IP6_MHOPT_HOM_NET_PREX);
 	if (home_net_prefix)
 	{
 		//copy
-		memcpy(&peer_prefix ,&home_net_prefix->ip6hnp_prefix, sizeof(struct in6_addr));
+		msg.peer_prefix = home_net_prefix->ip6hnp_prefix;
+		dbg("Home Network Prefix: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&msg.peer_prefix));
 	} 
 
 
 	mh_id_opt = mh_opt(&pbre->ip6mhpbre_hdr, &mh_opts, IP6_MHOPT_MOB_IDENTIFIER);
 	if (mh_id_opt)
 	{
-		//copy
-		memcpy(&peer_addr.in6_u.u6_addr32[2],&mh_id_opt->mn_identifier,sizeof(__identifier));
-		dbg("Peer_addrs for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&peer_addr));
+		//copy	
+		memcpy(&msg.peer_addr.in6_u.u6_addr32[2],&mh_id_opt->mn_identifier,sizeof(__identifier));
+		dbg("Peer Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&msg.peer_addr));
 	}
 
 	serv_mag_addr_opt = mh_opt(&pbre->ip6mhpbre_hdr, &mh_opts, IP6_MHOPT_SERV_MAG_ADDR);
 	if (serv_mag_addr_opt)
 	{
-		//copy
-		memcpy(&serv_mag ,&serv_mag_addr_opt->serv_mag_addr, sizeof(struct in6_addr));
-		dbg("Serv_mag_addrs for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&serv_mag));
-	} 
-	
+		msg.Serv_MAG_addr = serv_mag_addr_opt->serv_mag_addr;
+		dbg("Serv_mag_addrs for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&msg.Serv_MAG_addr));
+	}
+
+	msg.seqno_in = ntohs(pbre->ip6mhpbre_seqno);
+	dbg("SEQUENCE# = %d\n",msg.seqno_in);
+	msg.FLAGS = hasPBRES;
+	return &msg;
+ 
+/*	
 	if(is_mag()){
 		static struct pmip_entry msg;
 		memcpy(&msg.Serv_MAG_addr,&serv_mag , sizeof(struct in6_addr));
@@ -874,6 +882,7 @@ struct pmip_entry *mh_pbres_parse(struct ip6_mh_proxy_binding_response *pbre, ss
 	}
 	
 	return 0;
+*/
 }
 #endif
 

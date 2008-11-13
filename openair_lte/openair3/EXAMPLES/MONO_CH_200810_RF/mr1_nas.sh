@@ -13,7 +13,7 @@ sudo ip -6 addr add $MR1_EG_ADDR/64 dev eth0
 sudo xterm -hold -e "$OPENAIR3_PMIP6D_PATH/pmip6d -m -s -L $CH_ADDR -N $MR1_EG_ADDR -E $MR1_IN_ADDR" &
 #$OPENAIR3_SCRIPTS_PATH/mr1_del_mpls.sh
 
-watch -n1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
+watch -n.1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats ; cat /proc/openair1/openair1_state"
 
 ./stop_rf.sh
 ./ch_del_mpls.sh
