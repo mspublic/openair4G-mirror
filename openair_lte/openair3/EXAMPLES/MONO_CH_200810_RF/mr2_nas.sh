@@ -19,7 +19,7 @@ sudo xterm -hold -e "$OPENAIR3_PMIP6D_PATH/pmip6d -m -s -L $CH_ADDR -N $MR2_EG_A
 #ip -6 route
 
 
-watch -n1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
+watch -n.1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats"
 
 ./stop_rf.sh
 ./ch_del_mpls.sh

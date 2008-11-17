@@ -6,7 +6,7 @@ echo Clusterhead address is $CH_ADDR
 
 sleep 1
 echo Launching AS and RF
-./start_openair_ch.sh
+./start_openair.sh 0 0
 
 sleep 1
 # Installing NASMESH driver
