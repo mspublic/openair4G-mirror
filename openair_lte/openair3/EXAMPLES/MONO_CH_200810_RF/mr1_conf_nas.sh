@@ -6,7 +6,7 @@ export OPENAIR2_DIR
 #echo "0" >/proc/sys/net/ipv6/conf/all/forwarding
 
 echo Launching AS and RF
-./start_openair.sh 0 8
+./start_openair.sh 1 8
 
 #Sleep to allow L2 modules to load
 sleep 1

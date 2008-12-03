@@ -97,6 +97,7 @@ if [ -c "$OA_DEV" ]; then
 else
     echo "creating $OA_DEV"
     sudo mknod $OA_DEV c 127 0
+    sudo chmod a+rw /dev/openair0
 fi
 
 ./openair_rf_cbmimo1 1 0
