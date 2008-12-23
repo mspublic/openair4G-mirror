@@ -60,7 +60,7 @@ typedef struct {
 	unsigned short start    ; ///< Identification du debut de message
 	unsigned char  inst     ; ///< Identification de l'instance RRM
 	unsigned char  msg_type ; ///< Identification du type message
-	unsigned int   size     ; ///< taille du message
+	unsigned int   size     ; ///< Taille du message
 	unsigned int   Trans_id ; ///< Identification de la transaction
 } msg_head_t ;
 
@@ -79,25 +79,6 @@ typedef struct {
 	char 		*data ; ///< message
 } msg_t ;
 
-/*!
-*******************************************************************************
-\brief  entete du message vers le PuSu
-*/
-typedef struct   { 
-	unsigned char type	; ///< type du message
-	unsigned char inst  ; ///< Identification de l'instance RRM
-	unsigned int  length; ///< taille du message
-} msg_pusu_head_t ;
-
-/*!
-*******************************************************************************
-\brief  Definition de la structure d'un message a envoyer sur le socket vers le
-    	PuSu
-*/
-typedef struct {
-	msg_pusu_head_t  head ; ///< entete du message
-	void 			*data ; ///< message
-} msg_pusu_t;
 
 /*!
 *******************************************************************************
@@ -114,17 +95,7 @@ int open_socket( sock_rrm_t *s 	,char *path_local, char *path_dest , int rrm_ins
 void close_socket(sock_rrm_t *sock ) ;
 int send_msg(sock_rrm_t *s 	,msg_t *msg ) ;
 char *recv_msg( sock_rrm_t *s ) ;	
-	
-/* *** Fonctions relatives a l'interface PUSU *** */
-
-
-int open_pusu_sock( char *path,int rrm_inst ) ;
-void close_pusu_sock( int sock  ) ;
-
-int connect_to_pusu_sock( char *path, int rrm_inst) ;	
-void disconnect_to_pusu_sock(int sock ) ;
-int send_msg_pusu( int sock , msg_pusu_t *msg ) ;
-	
+		
 #ifdef __cplusplus
 }
 #endif
