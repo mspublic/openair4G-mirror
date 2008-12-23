@@ -49,6 +49,7 @@
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
+#define NUM_SCENARIO  6
 #define PUSU_EMUL 
 
 #ifdef RRC_EMUL
@@ -89,13 +90,13 @@ node_info_t node_info[10] = {
  { .L2_id={{0x09,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv6_ADDR, .L3_info={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x09,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11} } 
 } ;
 	
-void print_pusu_msg( neighbor_entry_RRM_to_CMM_t *pEntry );
+//void print_pusu_msg( neighbor_entry_RRM_to_CMM_t *pEntry );
 
 static int flag_not_exit = 1 ;
 
 static pthread_t 		pthread_rrc_hnd, 
 						pthread_cmm_hnd , 
-						pthread_PuSu_hnd , // Publish Subscribe : -> routing CH
+						pthread_pusu_hnd , // Publish Subscribe : -> routing CH
 						pthread_action_differe_hnd;
 					
 pthread_mutex_t 		cmm_transact_exclu, 
@@ -114,7 +115,7 @@ actdiff_t 		*list_actdiff 	= NULL ;
 unsigned int 	cnt_actdiff 	= 512;
 
 
-extern void scenario(  sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm) ;
+extern void scenario(  int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm) ;
 
 /***************************************************************************** 
  * \brief  thread d'emulation de l'interface du Publish/subcribe (routingCH). 
@@ -125,12 +126,11 @@ static void * fn_pusu (
 	void * p_data /**< parametre du pthread */
 	)
 {
-    int s = *((int *) p_data) ; 
-    msg_pusu_head_t  header ;
-    int ret ;
+    sock_rrm_t *s = (sock_rrm_t *) p_data ; 
+    msg_head_t  *header ;
 
 #ifdef TRACE    
-	FILE *fd = fopen( "vcd/rrm2pusu.txt", "w") ;
+	FILE *fd = fopen( "VCD/rrm2pusu.txt", "w") ;
 	PNULL(fd) ;
 #endif
 
@@ -138,57 +138,68 @@ static void * fn_pusu (
 	
 	while (flag_not_exit)
 	{
-		int len_msg=recv(s, &header, sizeof(msg_pusu_head_t) , 0);
-		
-		if ( len_msg < 0 ) 
-		{
+		header = (msg_head_t *) recv_msg(s) ;
+		if (header == NULL ) 
+        {
 			fprintf(stderr,"Server closed connection\n");
 			flag_not_exit = 0;
-			break ;
-		}
-		
-		if ( !((len_msg  ==  sizeof(msg_pusu_head_t)  ) && (header.type == START_MSG_PUSU)) )
-        {
-            if (  ret  < 0) 
-            {
-            	fprintf(stderr,"Server closed connection\n");
-            	flag_not_exit = 0;
-            }
-            else
-            	fprintf(stderr,"Message  header is not valid\n");
         }
         else
         {
- 			int n = 0 ;
- 			char *data_msg = NULL ;
+ 			char *msg = NULL ;
  			
- 			if ( header.length > 0 )
+ 			if ( header->size > 0 )
  			{ 
- 				data_msg = (char *) calloc(1,header.length ) ; 
- 				n = recv(s, data_msg, header.length, 0);
-            	if (n < header.length ) 
-            	{
-                	if (n < 0) 
-                		perror("recv");
-                	flag_not_exit = 0;
-                	header.type = 0xFF ;
-           		}
+ 				msg = (char *) (header +1) ;
  			} 
 #ifdef TRACE
-			fprintf(fd,"%lf RRM->PUSU ROUTING \n",get_currentclock() );    
+			if ( header->msg_type < NB_MSG_RRM_PUSU )
+			fprintf(fd,"%lf RRM->PUSU %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_pusu_rrm[header->msg_type],header->msg_type,header->Trans_id);    
+			else
+			fprintf(fd,"%lf RRM->PUSU %-30s %d %d\n",get_currentclock(), "inconnu", header->msg_type,header->Trans_id);    
 			fflush(fd);
-#endif
-
-#ifdef PRINT_PUSU
-			fprintf(stderr, "PUSU:\n") ;
-			if (n>0)
-				print_pusu_msg( (neighbor_entry_RRM_to_CMM_t *) data_msg ) ; // printHex(data_msg,n,0);
-#endif
+#endif	
+			switch ( header->msg_type )
+			{ 
+				case RRM_PUBLISH_IND:
+					{
+						msg_fct( "[RRM]>[PUSU]:%d:RRM_PUBLISH_IND\n",header->inst);
+						send_msg( s, msg_pusu_resp( header->inst, PUSU_PUBLISH_RESP, header->Trans_id )) ;
+					}
+					break ;
+				case RRM_UNPUBLISH_IND:
+					{
+						msg_fct( "[RRM]>[PUSU]:%d:RRM_UNPUBLISH_IND\n",header->inst);
+						send_msg( s, msg_pusu_resp( header->inst, PUSU_UNPUBLISH_RESP, header->Trans_id )) ;
+					}
+					break ;
+				case RRM_LINK_INFO_IND:
+					{
+						msg_fct( "[RRM]>[PUSU]:%d:RRM_LINK_INFO_IND\n",header->inst);
+						send_msg( s, msg_pusu_resp( header->inst, PUSU_LINK_INFO_RESP, header->Trans_id )) ;
+					}
+					break ;
+				case RRM_SENSING_INFO_IND:
+					{
+						msg_fct( "[RRM]>[PUSU]:%d:RRM_SENSING_INFO_IND\n",header->inst);
+						send_msg( s, msg_pusu_resp( header->inst, PUSU_SENSING_INFO_RESP, header->Trans_id )) ;
+					}
+					break ;
+				case RRM_CH_LOAD_IND:
+					{
+						msg_fct( "[RRM]>[PUSU]:%d:RRM_CH_LOAD_IND\n",header->inst);
+						send_msg( s, msg_pusu_resp( header->inst, PUSU_CH_LOAD_RESP, header->Trans_id )) ;
+					}
+					break ;
+				default:
+					fprintf(stderr, "[RRM]>[PUSU]: msg unknown %d\n", header->msg_type) ;
+					//printHex(msg,n,1);
+			}
+			RRM_FREE(header);
         } 
 	}
 
-	fprintf(stderr,"... stopped RRC interfaces\n");
-	
+	fprintf(stderr,"... stopped PUSU interfaces\n");	
 #ifdef TRACE    
 	fclose(fd) ;
 #endif
@@ -196,6 +207,7 @@ static void * fn_pusu (
 	return NULL;
 }
 #endif /* PUSU_EMUL */
+
 #ifdef RRC_EMUL
 
 /***************************************************************************** 
@@ -210,7 +222,7 @@ static void * fn_rrc (
     msg_head_t *header ;
 
 #ifdef TRACE    
-	FILE *fd = fopen( "vcd/rrm2rrc.txt", "w") ;
+	FILE *fd = fopen( "VCD/rrm2rrc.txt", "w") ;
 	PNULL(fd) ;
 #endif
 
@@ -309,6 +321,12 @@ static void * fn_rrc (
 					}
 					break ;
 					
+				case RRM_RB_MEAS_RESP:
+					{
+						msg_fct( "[RRM]>[RRC]:%d:RRM_RB_MEAS_RESP\n",header->inst);
+					}
+					break ;
+					
 				case RRM_INIT_CH_REQ:
 					{
 						msg_fct( "[RRM]>[RRC]:%d:RRM_INIT_CH_REQ\n",header->inst);
@@ -321,7 +339,7 @@ static void * fn_rrc (
 					}
 					break ;
 				default :
-					fprintf(stderr, "RRC: msg unknown\n") ;
+					fprintf(stderr, "RRC: msg unknown %d\n", header->msg_type) ;
 					//printHex(msg,n,1);
 			}
 			
@@ -353,7 +371,7 @@ static void * fn_cmm (
     msg_head_t *header ;
 
 #ifdef TRACE    
-	FILE *fd = fopen( "vcd/rrm2cmm.txt", "w") ;
+	FILE *fd = fopen( "VCD/rrm2cmm.txt", "w") ;
 	PNULL(fd) ;
 #endif
 
@@ -386,11 +404,11 @@ static void * fn_cmm (
 			{ 
 				case RRM_CX_SETUP_CNF :
 					{
-						rrm_cx_setup_cnf_t *p = (rrm_cx_setup_cnf_t *) msg ;
+						// rrm_cx_setup_cnf_t *p = (rrm_cx_setup_cnf_t *) msg ;
 						msg_fct( "[RRM]>[CMM]:%d:RRM_CX_SETUP_CNF\n",header->inst);
 						
 						pthread_mutex_lock( &cmm_transact_exclu ) ;
-						del_item_transact( &cmm_transact_list, p->Trans_id );
+						del_item_transact( &cmm_transact_list, header->Trans_id );
 						pthread_mutex_unlock( &cmm_transact_exclu ) ;
 					}
 					break ;
@@ -420,7 +438,7 @@ static void * fn_cmm (
 						pthread_mutex_lock( &actdiff_exclu  ) ;
 														
 						add_actdiff(&list_actdiff,0.05, cnt_actdiff++, s,
-							    msg_cmm_attach_cnf(header->inst,p->L2_id,node_info[header->inst].L3_info_t,node_info[header->inst].L3_info,p->Trans_id ) ) ;
+							    msg_cmm_attach_cnf(header->inst,p->L2_id,node_info[header->inst].L3_info_t,node_info[header->inst].L3_info,header->Trans_id ) ) ;
 				
 						pthread_mutex_unlock( &actdiff_exclu ) ;
 					}
@@ -492,7 +510,7 @@ static void * fn_cmm (
 					}
 					break ;
 				default :
-					fprintf(stderr, "CMM:unknown msg\n") ;
+					fprintf(stderr, "CMM:unknown msg %d\n", header->msg_type) ;
 					//printHex(msg,n,1);
 			}
 			RRM_FREE(header);
@@ -538,8 +556,8 @@ int main( int argc , char **argv )
 #ifdef RRC_EMUL
 	sock_rrm_t s_rrc ;
 #endif /* RRC_EMUL */
-        sock_rrm_t s_cmm ; 
-	int s_pusu, sock ; 
+    sock_rrm_t s_cmm ; 
+    sock_rrm_t s_pusu ; 
     
 	/* ***** MUTEX ***** */ 
 	pthread_attr_t attr ;
@@ -555,18 +573,18 @@ int main( int argc , char **argv )
 	fprintf(stderr,"Emulation des interfaces\n");
 
 #ifdef RRC_EMUL
-        fprintf(stderr,"Trying to connect... RRM-RRC\n");
+    fprintf(stderr,"Trying to connect... RRM-RRC\n");
 	open_socket(&s_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH,0) ;
-        if (s_rrc.s  == -1) 
-           exit(1);
-        fprintf(stderr,"Connected... RRM-RRC\n");
+    if (s_rrc.s  == -1) 
+        exit(1);
+    fprintf(stderr,"Connected... RRM-RRC\n");
 #endif /* RRC_EMUL */
     
-        fprintf(stderr,"Trying to connect... RRM-CMM\n");
+    fprintf(stderr,"Trying to connect... RRM-CMM\n");
 	open_socket(&s_cmm,CMM_RRM_SOCK_PATH,RRM_CMM_SOCK_PATH,0) ;
-        if (s_cmm.s  == -1) 
-           exit(1);
-        fprintf(stderr,"Connected... RRM-CMM\n");
+    if (s_cmm.s  == -1) 
+        exit(1);
+    fprintf(stderr,"Connected... RRM-CMM\n");
     
 #ifdef RRC_EMUL
    /* Creation du thread RRC */
@@ -598,20 +616,14 @@ int main( int argc , char **argv )
 
 #ifdef PUSU_EMUL
 	/* ouverture des liens de communications */	
-	sock = open_pusu_sock( RRM_PUSU_SOCK_PATH , 0 );
-	{
-		struct sockaddr_un 	remote;
-		unsigned int 	t = sizeof(remote);
-		
-		if ((s_pusu = accept(sock, (struct sockaddr *)&remote, &t)) == -1) 
-		  {
-		    perror("accept");
-		    exit(1);
-		  }
-	}
+    fprintf(stderr,"Trying to connect... RRM-PUSU\n");
+	open_socket(&s_pusu,PUSU_RRM_SOCK_PATH,RRM_PUSU_SOCK_PATH,0) ;
+    if (s_pusu.s  == -1) 
+        exit(1);
+    fprintf(stderr,"Connected... RRM-PUSU\n");
     
 	/* Creation du thread Publish Subscribe (Routing CH) */	
-	ret = pthread_create (&pthread_PuSu_hnd , NULL, fn_pusu, &s_pusu );
+	ret = pthread_create (&pthread_pusu_hnd , NULL, fn_pusu, &s_pusu );
 	if (ret)
 	{
 		fprintf (stderr, "%s", strerror (ret));
@@ -619,7 +631,7 @@ int main( int argc , char **argv )
 #endif /*PUSU_EMUL */
 
 #ifdef RRC_EMUL
-    scenario( &s_rrc, &s_cmm );
+    scenario( NUM_SCENARIO, &s_rrc, &s_cmm );
 #endif /* RRC_EMUL */
 
 	printf("Taper [RETURN] to exit\n\n" );
@@ -632,11 +644,14 @@ int main( int argc , char **argv )
 	close_socket(&s_cmm);
 	
 #ifdef PUSU_EMUL
-	close_pusu_sock(sock) ;
+	close_socket(&s_pusu);
 #endif /*PUSU_EMUL */
    
 	/* Attente de la fin des threads. */
 	pthread_join (pthread_cmm_hnd, NULL);
+#ifdef PUSU_EMUL
+	pthread_join (pthread_pusu_hnd, NULL);
+#endif /*PUSU_EMUL */
 #ifdef RRC_EMUL
 	pthread_join (pthread_rrc_hnd, NULL);
 #endif /* RRC_EMUL */
@@ -644,60 +659,3 @@ int main( int argc , char **argv )
 	
 	return 0 ;	
 }
-
-#ifdef PUSU_EMUL
-
-void print_pusu_msg( neighbor_entry_RRM_to_CMM_t *pEntry )
-{
-	unsigned int i , j ;
-	QoS_metric_t *pQoS ;
-	encoded_value_t *pEncValue ;
-	
-	fprintf(stderr,"msg_pusu=\n");
-	if ( pEntry != NULL)
-	{ 
-		fprintf(stderr,"  @%p(.mac1=",	pEntry );
-		for ( i=0;i<8;i++)
-			fprintf(stderr,"%02X", 0xFF & pEntry->mac1[i]);
-			
-		fprintf(stderr,", .mac2=");
-		for ( i=0;i<8;i++)
-			fprintf(stderr,"%02X", 0xFF & pEntry->mac2[i]);
-			
-		fprintf(stderr,", .number_metric_uplink=%d, .number_metric_downlink=%d,",
-				pEntry->number_metric_uplink, pEntry->number_metric_downlink );
-				
-		pQoS = (QoS_metric_t *) &(pEntry->metric_uplink) ;
-		for ( j = 0 ; j < pEntry->number_metric_uplink; j++ )
-		{
-			fprintf(stderr,",\n   uplink%d (.type=%02X, .length=%d",j,pQoS->type, pQoS->length ) ;
-			pEncValue = (encoded_value_t *) &(pQoS->encoded_value) ;
-			fprintf(stderr,", .encoded_type=%02X",pEncValue->encoded_type ) ;
-			if (  pEncValue->encoded_type == RSSI_ENCODED_TYPE )
-			{
-				rssi_value_t *pRssi = (rssi_value_t *) pEncValue;
-				fprintf(stderr,",.value=%d)", pRssi->rssi );
-			}
-				
-			pQoS = (QoS_metric_t *) ( (char*) pQoS + pQoS->length ) ;
-		}
-		
-		for ( j = 0 ; j < pEntry->number_metric_uplink; j++ )
-		{
-			fprintf(stderr,"\n   downlink%d (.type=%02X, .length=%d",j,pQoS->type, pQoS->length ) ;
-			pEncValue = (encoded_value_t *) &(pQoS->encoded_value) ;
-			fprintf(stderr,", .encoded_type=%02X",pEncValue->encoded_type ) ;
-			if (  pEncValue->encoded_type == RSSI_ENCODED_TYPE )
-			{
-				rssi_value_t *pRssi = (rssi_value_t *) pEncValue;
-				fprintf(stderr,",.value=%d)", pRssi->rssi );
-			}
-				
-			pQoS = (QoS_metric_t *) ( (char*) pQoS + pQoS->length ) ;
-		}
-
-		
-	}
-	fprintf(stderr,"\n");
-}
-#endif /* PUSU_EMUL */
