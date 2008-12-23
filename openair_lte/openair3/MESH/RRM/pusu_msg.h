@@ -33,87 +33,83 @@ extern "C" {
 //! Definition de la taille de l'identification niveau 2
 #define IEEE80211_MAC_ADDR_LEN 8
 
+
 /*!
 *******************************************************************************
-\brief 	Definition de la valeur encode
+\brief  Enumeration des messages entre le RRM et PUSU 
 */
-typedef struct encoded_value{
-	unsigned char encoded_type ;  ///< type de la valeur
-	void        * value        ;  ///< pointeur sur la valeur encode               
-} encoded_value_t ;
+typedef enum { 
+	RRM_PUBLISH_IND = 0 	, ///< Annonce de nouveau service
+	PUSU_PUBLISH_RESP 		, ///< Reponse de PUSU_PUBLISH_IND
+	RRM_UNPUBLISH_IND  	    , ///< Annonce de retrait d'un service
+	PUSU_UNPUBLISH_RESP  	, ///< Reponse de PUSU_UNPUBLISH_IND 
+	RRM_LINK_INFO_IND   	, ///< Info sur un lien (oriente)
+	PUSU_LINK_INFO_RESP   	, ///< Reponse de PUSU_LINK_INFO_IND 
+	RRM_SENSING_INFO_IND   	, ///< Info sur un voisin (oriente)
+	PUSU_SENSING_INFO_RESP  , ///< Reponse de RRM_SENSING_INFO_IND 
+	RRM_CH_LOAD_IND   		, ///< Info sur la charge d'un cluster 
+	PUSU_CH_LOAD_RESP   	, ///< Reponse de PUSU_CH_LOAD_IND
+	NB_MSG_RRM_PUSU			  ///< Nombre de message de l'interface
+} MSG_RRM_PUSU_T ;
 
 /*!
 *******************************************************************************
-\brief 	Definition de la metrique de QoS
+\brief  Enumeration des services entre le RRM et PUSU 
 */
-typedef struct QoS_metric{
-	unsigned char 		type			;  ///< Type de metrique      
-	unsigned int 		length			;  ///< Nombre de metrique     
-	encoded_value_t *	encoded_value	;  ///< Metriques  
-} QoS_metric_t ;
+typedef enum { 
+	PUSU_RRM_SERVICE = 0xAA 	 ///< service d'un information RRM vers le TRM
+} SERVICE_RRM_PUSU_T ;
 
 /*!
 *******************************************************************************
-\brief 	Definition de la structure de donnee remontee au PUSU
-*/
-typedef struct neighbor_entry_RRM_to_CMM{
-	char mac1[IEEE80211_MAC_ADDR_LEN+1]	; ///< Adresse MAC1	
-	char mac2[IEEE80211_MAC_ADDR_LEN+1] ; ///< Adresse MAC2 	
-	int number_metric_uplink			; ///< Nombre de metrique pour le lien montant
-	int number_metric_downlink			; ///< Nombre de metrique pour le lien descendant
-	QoS_metric_t **  metric_uplink		; ///< metriques QoS pour le lien montant
-	QoS_metric_t **  metric_downlink	; ///< metriques QoS pour le lien descendant
-} neighbor_entry_RRM_to_CMM_t ;
-
-/*
- *  **************************************************************************
- */
-
-//! \brief encoded_type pour la metrique RRSI
-#define RSSI_ENCODED_TYPE    0x11
-//! \brief type pour la metrique de voisinage
-#define NEIGHBOR_METRIC_TYPE 0x22
-
-/*!
-*******************************************************************************
-\brief 	Definition de la metrique RSSI
+\brief 	Definition de publish/unpublish
 */
 typedef struct {
-	unsigned char encoded_type;  ///< Type de metrique (=RSSI_ENCODED_TYPE)
-	unsigned char rssi 		  ;  ///< la metrique RSSI              
-} rssi_value_t ;
+	int service_type ;  ///< type de service
+} pusu_publish_t ,  pusu_unpublish_t ;
 
 /*!
 *******************************************************************************
-\brief 	Definition de la metrique de voisinage
+\brief 	Definition des informations remontees au TRM relatives a un lien
 */
 typedef struct {
-	unsigned char 	type	; ///< type de metrique  (=NEIGHBOR_METRIC_TYPE)    
-	unsigned int 	length	; ///< Nombre de metriques     
-	rssi_value_t 	value   ; ///< la metrique RSSI
-} neighbor_metric_t ;
+  L2_ID         noeud1		 ;  ///< L2_ID du noeud 1
+  L2_ID         noeud2	     ;  ///< L2_ID du noeud 2
+  RB_ID         rb_id        ;  ///< identification du lien              
+  unsigned char rssi 		 ;  ///< metrique RSSI              
+  unsigned char spec_eff     ;  ///< metrique Efficacite spectrale
+} pusu_link_info_t;
 
 /*!
 *******************************************************************************
-\brief 	Definition du message de mesure de voisinage entre 2 MR envoye au PUSU
+\brief 	Definition des informations remontees au TRM relatives a un voisin
+        sans notion de lien etabli obligatoirement
 */
 typedef struct {
-		char mac1[IEEE80211_MAC_ADDR_LEN+1]  ; ///< Adresse MAC1	 	
-		char mac2[IEEE80211_MAC_ADDR_LEN+1]  ; ///< Adresse MAC2 	 	
-		int number_metric_uplink             ; ///< Nombre de metrique pour le lien montant
-		int number_metric_downlink           ; ///< Nombre de metrique pour le lien descendant (=0)
-		neighbor_metric_t neighbor_metric[2] ; ///< metriques QoS pour le lien montant
-} rrm_neighbor_meas_ind_t ;                  
+  L2_ID         noeud1		 ;  ///< L2_ID du noeud 1
+  L2_ID         noeud2	     ;  ///< L2_ID du noeud 2
+  unsigned char rssi 		 ;  ///< metrique RSSI              
+} pusu_sensing_info_t;
 
+/*!
+*******************************************************************************
+\brief 	Definition de la structure d'information de charge du cluster remontee
+        au TRM  
+*/
 typedef struct {
-		char mac1[IEEE80211_MAC_ADDR_LEN+1]  ; ///< Adresse MAC1 	
-		char mac2[IEEE80211_MAC_ADDR_LEN+1]  ; ///< Adresse MAC2  	
-		int number_metric_uplink             ; ///< Nombre de metrique pour le lien montant (=0)
-		int number_metric_downlink           ; ///< Nombre de metrique pour le lien descendant (=0:attach/1=detach)
-} rrm_mr_attach_ind_t ;
+  unsigned char load 		 ;  ///< la charge du cluster              
+} pusu_ch_load_t;
 
-msg_pusu_t *msg_rrm_neighbor_meas_ind(unsigned char inst, L2_ID L2_id1,unsigned char rssi1, L2_ID L2_id2, unsigned char rssi2 );
-msg_pusu_t *msg_rrm_mr_attach_ind(unsigned char inst,L2_ID L2_id_ch, L2_ID L2_id_mr, int flag_attach  );
+#ifdef TRACE
+extern const char *Str_msg_pusu_rrm[NB_MSG_RRM_PUSU] ;
+#endif
+
+msg_t *msg_rrm_publish_ind(unsigned char inst, int service, unsigned int Trans_id  );
+msg_t *msg_rrm_unpublish_ind(unsigned char inst, int service, unsigned int Trans_id  );
+msg_t *msg_rrm_link_info_ind(unsigned char inst, L2_ID noeud1, L2_ID noeud2, RB_ID rb_id, unsigned char rssi ,unsigned char spec_eff, unsigned int Trans_id ) ;
+msg_t *msg_rrm_sensing_info_ind(unsigned char inst, L2_ID noeud1, L2_ID noeud2, unsigned char rssi, unsigned int Trans_id ) ;
+msg_t *msg_rrm_ch_load_ind(unsigned char inst, unsigned char load, unsigned int Trans_id  );
+msg_t *msg_pusu_resp(unsigned char inst, MSG_RRM_PUSU_T response, unsigned int Trans_id );
 
 #ifdef __cplusplus
 }
