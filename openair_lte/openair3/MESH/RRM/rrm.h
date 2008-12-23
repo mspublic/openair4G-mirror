@@ -55,9 +55,6 @@ typedef struct {
 	file_head_t			file_recv_msg 		; ///< File des messages en reception
 	
 	struct {
-#ifdef TRACE    
-		FILE *fd 							; ///< Fichier pour trace de debug : action RRM->CCM 
-#endif
 		sock_rrm_t  	*s 					; ///< Socket associé a l'interface CMM
 		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface CMM
 		transaction_t 	*transaction		; ///< liste des transactions non terminees
@@ -66,9 +63,6 @@ typedef struct {
 	} cmm 									; ///<  info relatif a l'interface CMM
 	
 	struct {
-#ifdef TRACE    
-		FILE *fd 							; ///< Fichier pour trace de debug : action RRM->RRC
-#endif
 		sock_rrm_t  	*s 					; ///< Socket associé a l'interface RRC
 		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
 		transaction_t 	*transaction		; ///< liste des transactions non terminees
@@ -79,9 +73,11 @@ typedef struct {
 	} rrc 									; ///<  info relatif a l'interface rrc
 	
 	struct {
-		int  *s 							; ///< Socket associé a l'interface PUSU
-	} pusu 									; ///<  info relatif a l'interface pusu
-	
+		sock_rrm_t  	*s 					; ///< Socket associé a l'interface PUSU
+		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface PUSU
+		transaction_t 	*transaction		; ///< liste des transactions non terminees
+		pthread_mutex_t exclu				; ///< mutex pour le partage de structure
+	} pusu 									; ///< info relatif a l'interface pusu	
 
 } rrm_t ;
 
