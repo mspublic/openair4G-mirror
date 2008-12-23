@@ -35,7 +35,8 @@ extern "C" {
 typedef struct transaction_s {
 	unsigned int   					id          ; ///< Transaction ID
 	enum  { INT_RRC=0, ///< Interface avec le RRC
-			INT_CMM    ///< Interface avec le CMM
+			INT_CMM,   ///< Interface avec le CMM
+			INT_PUSU   ///< Interface avec le PUSU
 			}  						interf_id	; ///< interface 
 	unsigned int   					funct_id    ; ///< Transaction type
 	unsigned int   					ttl         ; ///< Time to live  of transaction
