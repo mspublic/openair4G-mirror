@@ -111,7 +111,6 @@ msg_t * msg_cmm_cx_setup_req(
 			memcpy( p->Src.L2_id, Src.L2_id, sizeof(L2_ID) )  ;
 			memcpy( p->Dst.L2_id, Dst.L2_id, sizeof(L2_ID) )  ;
 			p->QoS_class 	= QoS_class;
-			p->Trans_id 	= Trans_id ;
 		}
 		
 		msg->data = (char *) p ;
@@ -141,7 +140,6 @@ msg_t * msg_rrm_cx_setup_cnf(
 			init_cmm_msg_head(&(msg->head),inst,RRM_CX_SETUP_CNF, sizeof( rrm_cx_setup_cnf_t) ,Trans_id);
 			
 			p->Rb_id 		= Rb_id ;
-			p->Trans_id 	= Trans_id ;
 		}	
 		msg->data = (char *) p ;
 	}
@@ -172,7 +170,6 @@ msg_t * msg_cmm_cx_modify_req(
 		    init_cmm_msg_head(&(msg->head),inst,CMM_CX_MODIFY_REQ, sizeof( cmm_cx_modify_req_t ) ,Trans_id);
 			p->Rb_id 		= Rb_id  ;
 			p->QoS_class 	= QoS_class  ;
-			p->Trans_id 	= Trans_id ;
 		}
 		msg->data = (char *) p ;
 	}
@@ -193,14 +190,8 @@ msg_t * msg_rrm_cx_modify_cnf(
 	
 	if ( msg != NULL )
 	{
-		rrm_cx_modify_cnf_t *p = RRM_CALLOC(rrm_cx_modify_cnf_t , 1 ) ;
-
-		if ( p != NULL )
-		{
-			init_cmm_msg_head(&(msg->head),inst,RRM_CX_MODIFY_CNF, sizeof( rrm_cx_modify_cnf_t) ,Trans_id);			
-			p->Trans_id 	= Trans_id ;
-		}	
-		msg->data = (char *) p ;
+		init_cmm_msg_head(&(msg->head),inst,RRM_CX_MODIFY_CNF, 0 ,Trans_id);			
+		msg->data = NULL ;
 	}
 	return msg ;
 }
@@ -225,7 +216,6 @@ msg_t * msg_cmm_cx_release_req(
 		if ( p != NULL )
 		{
 			init_cmm_msg_head(&(msg->head),inst,CMM_CX_RELEASE_REQ, sizeof( cmm_cx_release_req_t ) ,Trans_id);
-			p->Trans_id 	= Trans_id ;
 			p->Rb_id	 	= Rb_id ;
 		}
 		
@@ -248,14 +238,8 @@ msg_t * msg_rrm_cx_release_cnf(
 	
 	if ( msg != NULL )
 	{
-		rrm_cx_release_cnf_t *p = RRM_CALLOC(rrm_cx_release_cnf_t , 1 ) ;
-
-		if ( p != NULL )
-		{
-			init_cmm_msg_head(&(msg->head),inst,RRM_CX_RELEASE_CNF, sizeof( rrm_cx_release_cnf_t) ,Trans_id);
-			p->Trans_id 	= Trans_id ;
-		}	
-		msg->data = (char *) p ;
+		init_cmm_msg_head(&(msg->head),inst,RRM_CX_RELEASE_CNF, 0 ,Trans_id);
+		msg->data = NULL ;
 	}
 	return msg ;
 }
@@ -280,7 +264,6 @@ msg_t * msg_cmm_cx_release_all_req(
 		if ( p != NULL )
 		{
 			init_cmm_msg_head(&(msg->head),inst,CMM_CX_RELEASE_ALL_REQ, sizeof( cmm_cx_release_all_req_t) ,Trans_id);			
-			p->Trans_id 	= Trans_id ;
 			memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
 		}	
 		msg->data = (char *) p ;
@@ -302,14 +285,8 @@ msg_t * msg_rrm_cx_release_all_cnf(
 	
 	if ( msg != NULL )
 	{
-		rrm_cx_release_all_cnf_t *p = RRM_CALLOC(rrm_cx_release_all_cnf_t , 1 ) ;
-
-		if ( p != NULL )
-		{
-			init_cmm_msg_head(&(msg->head),inst,RRM_CX_RELEASE_ALL_CNF, sizeof( rrm_cx_release_all_cnf_t) ,Trans_id);
-			p->Trans_id 	= Trans_id ;
-		}	
-		msg->data = (char *) p ;
+		init_cmm_msg_head(&(msg->head),inst,RRM_CX_RELEASE_ALL_CNF, 0 ,Trans_id);
+		msg->data = NULL ;
 	}
 	return msg ;
 }
@@ -339,15 +316,10 @@ msg_t * msg_rrci_attach_req(
 		{
 			init_cmm_msg_head(&(msg->head),inst,RRCI_ATTACH_REQ, sizeof( rrci_attach_req_t) ,Trans_id);
 			
-			p->Trans_id 	= Trans_id ;
 			memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
-			p->L3_info_t 	= L3_info_t ;
-			
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
+			p->L3_info_t 	= L3_info_t ;			
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
 					
 			p->DTCH_B_id 	= DTCH_B_id ;
 			p->DTCH_id 		= DTCH_id ;
@@ -383,11 +355,8 @@ msg_t * msg_rrm_attach_ind(
 			memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
 			p->L3_info_t 	= L3_info_t ;
 			
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
 					
 			p->DTCH_id 		= DTCH_id ;
 		}
@@ -421,13 +390,10 @@ msg_t * msg_cmm_attach_cnf(
 			
 			p->L3_info_t 	= L3_info_t ;
 			
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
+
 			memcpy( &p->L2_id, &L2_id, sizeof(L2_ID) );
-			p->Trans_id 	= Trans_id ;
 		}	
 		msg->data = (char *) p ;
 	}
@@ -577,12 +543,8 @@ msg_t * msg_cmm_init_ch_req(
 			init_cmm_msg_head(&(msg->head),inst, CMM_INIT_CH_REQ, sizeof( cmm_init_ch_req_t) ,0);
 
 			p->L3_info_t	= L3_info_t ;
-			
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
 		}		
 		msg->data = (char *) p ;
 	}
