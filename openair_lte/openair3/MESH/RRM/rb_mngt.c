@@ -36,6 +36,7 @@
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
 #include "cmm_msg.h"
+#include "pusu_msg.h"
 #include "msg_mngt.h"
 #include "rb_db.h"
 #include "neighbor_db.h"
@@ -66,11 +67,13 @@ int cmm_cx_setup_req(
 		    )
 {
 	int ret = -1 ;
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
 		L2_ID src_dst[2] ;
+		memcpy(&src_dst[0], &Src, sizeof(L2_ID)) ;
+		memcpy(&src_dst[1], &Dst, sizeof(L2_ID)) ;
 		
 		pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
 		add_item_transact( &(rrm->cmm.transaction), Trans_id,INT_CMM,CMM_CX_SETUP_REQ, 0,NO_PARENT);
@@ -83,10 +86,7 @@ int cmm_cx_setup_req(
 		add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,Trans_id,PARENT);
 		add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
 		pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-		
-		memcpy(&src_dst[0], &Src, sizeof(L2_ID)) ;
-		memcpy(&src_dst[1], &Dst, sizeof(L2_ID)) ;
-		
+				
 		PUT_MSG( 	rrm->rrc.s, 
 					msg_rrm_rb_establish_req(inst,				 
 						&Lchan_desc[QoS_class], 
@@ -100,7 +100,7 @@ int cmm_cx_setup_req(
 		  pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
 		  rrm->rrc.trans_cnt++ ;
 		  add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,0,NO_PARENT);
-		  add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
+		  add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB2, &src_dst[0] ) ;
 		  pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 		  
 		  
@@ -148,7 +148,7 @@ int cmm_cx_setup_req(
 				
 			add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,Trans_id,PARENT);
 
-			add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
+			add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_DTCH_B, &src_dst[0] ) ;
 
 			pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 			
@@ -171,7 +171,7 @@ void rrc_rb_establish_resp(
 		unsigned int Trans_id       			//!< Transaction ID
 		)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( (rrm->state == CLUSTERHEAD) 
 		|| (rrm->state == CLUSTERHEAD_INIT)
@@ -214,7 +214,7 @@ void rrc_rb_establish_cfm(
 	unsigned int Trans_id         //!< Transaction ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( (rrm->state == CLUSTERHEAD) 
 		|| (rrm->state == CLUSTERHEAD_INIT)
@@ -237,7 +237,7 @@ void rrc_rb_establish_cfm(
 			unsigned int parent_id = pTransact->parent_id ;
 			unsigned int status_parent = pTransact->parent_status ;
 			
-			update_rb_desc_(rrm->rrc.pRbEntry, Trans_id, Rb_id, RB_type );
+			update_rb_desc(rrm->rrc.pRbEntry, Trans_id, Rb_id, RB_type );
 			del_item_transact( &(rrm->rrc.transaction),Trans_id ) ;
 			pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 			
@@ -296,7 +296,7 @@ int cmm_cx_modify_req(
 {
 	int r ;
 	int ret = -1 ;
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -324,10 +324,9 @@ int cmm_cx_modify_req(
 				
 			add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_MODIFY_REQ,Trans_id,PARENT);
 			
-			add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, pRb->L2_id ) ;
-		}
-					
-		pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+			pRb->QoS_class =  QoS_class ; 
+			pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+		}	
 		
 		ret = 0 ;
 	}
@@ -345,7 +344,7 @@ void rrc_rb_modify_resp(
 		unsigned int Trans_id       			//!< Transaction ID
 		)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( (rrm->state == CLUSTERHEAD) || (rrm->state == CLUSTERHEAD_INIT) )
 	{
@@ -366,7 +365,7 @@ void rrc_rb_modify_cfm(
 	unsigned int Trans_id         //!< Transaction ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -390,7 +389,7 @@ void rrc_rb_modify_cfm(
 				// détruit l'ancienne description
 				del_rb_by_rbid( &(rrm->rrc.pRbEntry), Rb_id ) ;
 				// mise à jour de la nouvelle
-				update_rb_desc_(rrm->rrc.pRbEntry, Trans_id, Rb_id, RB_type );
+				update_rb_desc(rrm->rrc.pRbEntry, Trans_id, Rb_id, RB_type );
 			}
 			
 			del_item_transact( &(rrm->rrc.transaction),Trans_id ) ;
@@ -432,7 +431,7 @@ int cmm_cx_release_req(
 		    )
 {
 	int ret = -1 ;
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -459,10 +458,10 @@ int cmm_cx_release_req(
 */
 void rrc_rb_release_resp(
 	unsigned char  inst,    //!< Identification de l'instance
-	unsigned int Trans_id         //!< Transaction ID
+	unsigned int Trans_id   //!< Transaction ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -502,4 +501,57 @@ void rrc_rb_release_resp(
 		fprintf(stderr,"[RRM] RRC_RB_RELEASE_RESP (%d) is not allowed (Only CH):etat=%d\n",Trans_id,rrm->state);	
 }
 
-
+/*
+ *  =========================================================================
+ *  MESURES SUR UN RADIO BEARER
+ *  =========================================================================
+ */
+/*!
+*******************************************************************************
+\brief RRC measurement indication 
+ */
+void rrc_rb_meas_ind(
+			 unsigned char  inst ,            //!< Identification de l'instance
+			 RB_ID Rb_id,                     //!< Radio Bearer ID
+		     L2_ID L2_id,                     //!< Layer 2 (MAC) IDs for link
+		     MEAS_MODE Meas_mode,             //!< Measurement mode (periodic or event-driven)
+		     MAC_RLC_MEAS_T Mac_rlc_meas  ,   //!< MAC/RLC measurements
+		     unsigned int Trans_id            //!< Transaction ID
+		     )
+{
+	rrm_t *rrm = &rrm_inst[inst] ; 
+	
+	if ( rrm->state == CLUSTERHEAD )
+	{
+		PUT_MSG( rrm->rrc.s, msg_rrm_rb_meas_resp(inst,Trans_id) );
+		
+		if ( Meas_mode == PERIODIC )
+		{
+			RB_desc_t *pRb ;
+			int ii_rb = 1 ;
+			int transaction_link_info ;
+			
+			// update database of RB
+			pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
+			update_rb_meas( rrm->rrc.pRbEntry, Rb_id, &L2_id, &Mac_rlc_meas );	
+			pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
+		
+			pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+			rrm->pusu.trans_cnt++ ;
+			transaction_link_info = rrm->pusu.trans_cnt ;
+			add_item_transact( &(rrm->pusu.transaction), transaction_link_info,INT_PUSU,RRM_LINK_INFO_IND,0,NO_PARENT);
+			pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;	
+			
+			pRb = get_rb_desc_by_rbid( rrm->rrc.pRbEntry, Rb_id ) ;
+			if ( memcmp(&L2_id, &pRb->L2_id[1], sizeof(L2_ID ) )  == 0 )
+				ii_rb=0 ;
+				
+			PUT_MSG( rrm->pusu.s, 
+						msg_rrm_link_info_ind(inst, L2_id , pRb->L2_id[ii_rb] , Rb_id, 
+											Mac_rlc_meas.Rssi ,Mac_rlc_meas.Spec_eff, transaction_link_info ) 
+					);
+		}
+	}
+	else
+		fprintf(stderr,"[RRM] RRC_RB_MEAS_IND (%d) is not allowed (Only CH):etat=%d\n",Trans_id,rrm->state);	
+}
