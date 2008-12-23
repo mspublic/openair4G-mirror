@@ -58,8 +58,8 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
 	STRINGIZER(RRM_SENSING_MEAS_RESP	),
 	STRINGIZER(RRC_RB_MEAS_IND	       	),
 	STRINGIZER(RRM_RB_MEAS_RESP	       	),	
-	STRINGIZER(RRM_INIT_CH_REQ              ), 
-	STRINGIZER(RRM_INIT_MR_REQ              )	
+	STRINGIZER(RRM_INIT_CH_REQ          ), 
+	STRINGIZER(RRM_INIT_MR_REQ          )	
 } ;
 #endif
 
@@ -119,19 +119,8 @@ msg_t *msg_rrm_rb_establish_req(
 			p->Trans_id 	= Trans_id ;
 			
 			p->L3_info_t 	= L3_info_t ;	
-
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
-
-			//printf("=>rrm_rb_establish_req(%d):size %d , %d, L3_info_t %d, L3_addr %d \n",
-			//       inst,msg->head.size,sizeof( rrm_rb_establish_req_t),
-			//       p->L3_info_t,p->L3_info[0]); 
-
-			//			print_L2_id(&p->L2_id[0] ); printf("=>rrm_rb_establish_req(%d):L2_id src\n",inst); 
-			//print_L2_id(&p->L2_id[1] ); printf("=>rrm_rb_establish_req(%d):L2_id dst\n",inst); 
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
 		}		
 		msg->data = (char *) p ;			
 	}
@@ -267,11 +256,8 @@ msg_t * msg_rrci_cx_establish_resp(
 
 			p->Trans_id 	= Trans_id	 	;
 			p->L3_info_t 	= L3_info_t 	;
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( p->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( p->L3_info, L3_info, 16 );
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( p->L3_info, L3_info, L3_info_t );
 		}		
 		msg->data = (char *) p ;
 	}	
