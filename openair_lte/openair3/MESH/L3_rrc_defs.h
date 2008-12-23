@@ -72,9 +72,6 @@ typedef struct{
 }MAC_RLC_MEAS_T;
 #define MAC_RLC_MEAS_T_SIZE sizeof(MAC_RLC_MEAS_T)
 
-
-
-
 /*! MAC/PHY Measurement Structure*/
 
 typedef struct MAC_MEAS_T{
@@ -96,7 +93,6 @@ unsigned short Harq_delay_forgetting_factor;        /*!< \brief Forgetting facto
 unsigned short Bler_forgetting_factor;              /*!< \brief Forgetting factor for block error rate (times 1000) averaging*/
 unsigned short Spec_eff_forgetting_factor;          /*!< \brief Forgetting factor for Spectral efficiency averaging*/
 } MAC_AVG_T;
-
 
 /*! \brief Logical Channel ID structure */
 typedef struct {
@@ -154,10 +150,10 @@ typedef struct {
 /*!\brief Layer 3 Info types for RRC messages
  */
 typedef enum {
-  NONE_L3=0,        /*!< No information*/
-  IPv4_ADDR,   /*!< IPv4 Address*/
-  IPv6_ADDR,    /*!< IPv6 Address*/
-  MAC_ADDR
+  NONE_L3=0,       /*!< No information*/
+  IPv4_ADDR=4,     /*!< IPv4 Address*/
+  IPv6_ADDR=16,    /*!< IPv6 Address*/
+  MAC_ADDR=8
 } L3_INFO_T;
 
 /*!\brief Layer 3 Info types for RRC messages
