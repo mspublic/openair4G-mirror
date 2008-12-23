@@ -59,7 +59,7 @@ void rrc_MR_attach_ind(
 	L2_ID L2_id //!< Layer 2 (MAC) ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( (rrm->state == CLUSTERHEAD_INIT )|| (rrm->state == CLUSTERHEAD ))
 	{
@@ -87,7 +87,7 @@ void rrc_sensing_meas_resp(
 	unsigned int Trans_id       //!< Transaction ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -130,15 +130,11 @@ void rrc_cx_establish_ind(
 	RB_ID DTCH_id                 //!< RBID of default IP service (MR only)
 	)
 {
-	int r ;
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
 		PUT_MSG( rrm->cmm.s,msg_rrm_attach_ind(inst,L2_id,L3_info_t,L3_info, 0 )) ;
-		
-		r = send_msg_pusu( *rrm->pusu.s,msg_rrm_mr_attach_ind(inst,rrm->L2_id,L2_id, 0 )) ;
-		WARNING(r!=0);
 	}
 	else if ( rrm->state == MESHROUTER )
 	{
@@ -167,7 +163,7 @@ void rrc_phy_synch_to_CH_ind(
 		L2_ID L2_id 
 		)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( (rrm->state == ISOLATEDNODE)  || (rrm->state == MESHROUTER) )
 	{
@@ -196,8 +192,6 @@ void rrc_phy_synch_to_CH_ind(
        completion of L3 attachment phase of a new MR Here L3_info contains 
        MR IPAddr. 
 */
-
-
 void cmm_attach_cnf(
 	unsigned char  inst,       //!< Identification de l'instance
 	L2_ID L2_id,               //!< L2_id of CH ( Mesh Router can see 2 CH )
@@ -206,7 +200,7 @@ void cmm_attach_cnf(
 	unsigned int Trans_id      //!< Transaction ID
 	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == MESHROUTER )
 	{
@@ -261,10 +255,9 @@ void rrc_sensing_meas_ind(
 			unsigned int Trans_id             	//!< Transaction ID
 	)
 {
-	int r ;
 	int i ;
 	
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+	rrm_t *rrm = &rrm_inst[inst] ; 
 	
 	if ( rrm->state == CLUSTERHEAD )
 	{
@@ -272,22 +265,21 @@ void rrc_sensing_meas_ind(
 		
 		// update database of neighbor
 		set_Sensing_meas_neighbor( rrm->rrc.pNeighborEntry, &L2_id , NB_meas, Sensing_meas );	
-		
-		for (  i = 0 ; i< NB_meas ; i++)
-		{
-			unsigned char rssi = get_RSSI_neighbor(rrm->rrc.pNeighborEntry, &(Sensing_meas[i].L2_id), &L2_id);
-			
-			// send the message to PuSu (neighbor measure)	
-			r = send_msg_pusu( *rrm->pusu.s, 
-						msg_rrm_neighbor_meas_ind(inst,L2_id,Sensing_meas[i].Rssi, Sensing_meas[i].L2_id, rssi  ) );
-			WARNING(r!=0);
-		}
-		
-		/// \todo sensing_meas_ind to process
 			
 		pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
 		// send the response to rrc	
 		PUT_MSG( rrm->rrc.s, msg_rrm_sensing_meas_resp(inst,Trans_id) );
+
+		for (  i = 0 ; i< NB_meas ; i++)
+		{
+			pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+			rrm->pusu.trans_cnt++ ;
+			add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_SENSING_INFO_IND,0,NO_PARENT);
+			pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;	
+				
+			PUT_MSG( rrm->pusu.s, msg_rrm_sensing_info_ind(inst, L2_id,Sensing_meas[i].L2_id, Sensing_meas[i].Rssi, rrm->pusu.trans_cnt ) ) ;
+		}
+
 	}
 	else
 		fprintf(stderr,"[RRM] RRC_SENSING_MEAS_IND is not allowed (Only CH):etat=%d\n",rrm->state);
