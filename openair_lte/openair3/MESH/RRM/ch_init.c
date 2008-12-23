@@ -37,6 +37,7 @@
 #include "rrc_rrm_msg.h"
 #include "cmm_msg.h"
 #include "msg_mngt.h"
+#include "pusu_msg.h"
 #include "rb_db.h"
 #include "neighbor_db.h"
 #include "rrm_util.h"
@@ -63,15 +64,15 @@ void cmm_init_ch_req(
 
 	if ( rrm->state == CLUSTERHEAD_INIT )
 	{
+		L2_ID src_dst[2] ;
+		memcpy(&src_dst[0], &rrm->L2_id, sizeof(L2_ID)) ;
+		memcpy(&src_dst[1], &rrm->L2_id, sizeof(L2_ID)) ;
+		
 		if ( L3_info != NULL ) 
 		{
-			if ( L3_info_t == IPv4_ADDR ) 
-				memcpy( rrm->L3_info, L3_info, 4 );
-			else
-				if ( L3_info_t == IPv6_ADDR ) 
-					memcpy( rrm->L3_info, L3_info, MAX_L3_INFO );
-
 			rrm->L3_info_t = L3_info_t ;	
+			if ( L3_info_t != NONE_L3 ) 
+				memcpy( rrm->L3_info, L3_info, L3_info_t );
 		}
 
 		pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
@@ -86,10 +87,16 @@ void cmm_init_ch_req(
 							 )
 						) ;
 				
-		// add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_INIT_CH_REQ,0,NO_PARENT);
-		// add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
-
+		add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB0, &src_dst[0] ) ;
+		add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB1, &src_dst[0] ) ;
+		
 		pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+		
+		pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+		rrm->pusu.trans_cnt++ ;
+		add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_PUBLISH_IND,0,NO_PARENT);
+		pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
+		PUT_MSG(rrm->pusu.s, msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
 	}
 }
 
