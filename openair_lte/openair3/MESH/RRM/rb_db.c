@@ -121,10 +121,6 @@ RB_desc_t *add_rb(
 		RB_desc_t 				**rb_entry, ///< pointeur sur l'entree de la liste des RB
 		unsigned int 			Trans_id  , ///< transaction associee
 		QOS_CLASS_T 			QoS_class , ///< index de la classe de QoS
-		/*
-		const LCHAN_DESC 		*Lchan_desc, 
-		const MAC_RLC_MEAS_DESC *Mac_rlc_meas_desc,
-		*/
 		L2_ID 					*L2_id 	    ///< ID de niveau 2  des noeuds associes au RB
 	 ) 
 {
@@ -134,10 +130,7 @@ RB_desc_t *add_rb(
 	PNULL(pNewItem) ;
 	if ( pNewItem == NULL ) 
 		return NULL ;
-/*	
-	memcpy( &(pNewItem->Lchan_desc), Lchan_desc, sizeof(LCHAN_DESC) ) ;
-	memcpy( &(pNewItem->Mac_rlc_meas_desc), Mac_rlc_meas_desc, sizeof(MAC_RLC_MEAS_DESC) ) ;
-*/
+
 	pNewItem->QoS_class  =  QoS_class	;
 	
 	memcpy( &(pNewItem->L2_id[0]) , L2_id, 2*sizeof(L2_ID) ) ;
@@ -307,7 +300,7 @@ RB_desc_t *get_rb_desc_by_transid(
 		
 \return  aucune valeur
 */
-void update_rb_desc_(
+void update_rb_desc(
 	RB_desc_t 		*rb_entry, ///< pointeur sur un element de la liste des RB
 	unsigned int 	Trans_id , ///< transaction id 
 	RB_ID			Rb_id    , ///< RB id
@@ -325,4 +318,32 @@ void update_rb_desc_(
 	PRINT_RB_DB( rb_entry );
 }
 
+/*!
+*******************************************************************************
+\brief 	La fonction rafraichit  le champs Rb_meas d'un RB identifie dans la liste des RBs .
+		
+\return  aucune valeur
+*/
+void update_rb_meas(
+	RB_desc_t 			*rb_entry	, ///< pointeur sur un element de la liste des RB
+	RB_ID				Rb_id		, ///< RB id
+	L2_ID 				*L2_id   	, ///< ID de niveau 2 d'un des noeuds du RB 
+	MAC_RLC_MEAS_T		*Rb_meas      ///< mesure RB effectue par le noeud
+	)
+{
+	RB_desc_t *pItem = get_rb_desc_by_rbid(rb_entry,Rb_id);
+	
+	if ( pItem != NULL)
+	{  
+		if ( memcmp(L2_id, &pItem->L2_id[0], sizeof(L2_ID) ) == 0 ) 
+		{
+			memcpy( &pItem->Rb_meas[0],Rb_meas, sizeof(MAC_RLC_MEAS_T) ) ;
+		}
+		else
+		if ( memcmp(L2_id, &pItem->L2_id[1], sizeof(L2_ID) ) == 0 ) 
+		{
+			memcpy( &pItem->Rb_meas[1],Rb_meas, sizeof(MAC_RLC_MEAS_T) ) ;		
+		}
+	}
 
+}

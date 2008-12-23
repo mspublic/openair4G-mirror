@@ -37,7 +37,7 @@ typedef struct  RB_desc_s {
 	QOS_CLASS_T 		QoS_class			; ///< index sur la classe de QoS du RB
 	L2_ID 				L2_id[2] 			; ///< ID de niveau 2 des noeuds du RB 
 	MAC_RLC_MEAS_T		Rb_meas[2]			; ///< Description de mesures RB associes a chaque noeud 
-	struct  RB_desc_s   *next 				; ///< pointeur sur le prochain decripteur de RB
+	struct  RB_desc_s   *next 				; ///< pointeur sur le prochain descripteur de RB
 } RB_desc_t ;
 
 // ---------------------------------------------------------------------------
@@ -58,11 +58,18 @@ void del_all_rb( RB_desc_t **rb_entry ) ;
 RB_desc_t *get_rb_desc_by_rbid( RB_desc_t *rb_entry, RB_ID Rb_id ) ;
 RB_desc_t *get_rb_desc_by_transid(RB_desc_t *rb_entry, unsigned int Trans_id ) ;
 
-void update_rb_desc_(
+void update_rb_desc(
 	RB_desc_t 		*rb_entry, 
 	unsigned int 	Trans_id,  
 	RB_ID			Rb_id,
 	RB_TYPE			RB_type	
+	);
+	
+void update_rb_meas(
+	RB_desc_t 			*rb_entry	, 
+	RB_ID				Rb_id		,
+	L2_ID 				*L2_id   	, 
+	MAC_RLC_MEAS_T		*Rb_meas
 	);
 
 #ifdef __cplusplus
