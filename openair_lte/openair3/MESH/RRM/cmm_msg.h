@@ -64,7 +64,6 @@ typedef enum {
         une structure permettant le passage des parametres via un socket
 */
 typedef struct   { 
-	unsigned int 	Trans_id				; //!< Transaction ID
 	L2_ID        	Src 					; //!< L2 source MAC address 
 	L2_ID        	Dst 					; //!< L2 destination MAC address
 	QOS_CLASS_T  	QoS_class				; //!< QOS class index
@@ -76,7 +75,6 @@ typedef struct   {
         dans une structure permettant le passage des parametres via un socket
 */
 typedef struct   { 
-	unsigned int 	Trans_id				; //!< Transaction ID 
 	RB_ID 			Rb_id					; //!< L2 Rb_id
 } rrm_cx_setup_cnf_t , 
   cmm_cx_release_req_t ;
@@ -87,22 +85,9 @@ typedef struct   {
         dans une structure permettant le passage des parametres via un socket
 */
 typedef struct   { 
-	unsigned int 	Trans_id  				; //!< Transaction ID
 	RB_ID 			Rb_id 					; //!< L2 Rb_id
 	QOS_CLASS_T 	QoS_class				; //!< QOS class index
 } cmm_cx_modify_req_t;
-
-/*!
-*******************************************************************************
-\brief 	Definition des parametres des fonctions rrm_cx_modify_cnf(), 
-        rrm_cx_release_cnf() et rrm_cx_release_all_cnf() 
-        dans une structure permettant le passage des parametres via un socket
-*/
-typedef struct {
-	unsigned int 	Trans_id  				; //!< Transaction ID
-} rrm_cx_modify_cnf_t,
-  rrm_cx_release_cnf_t,
-  rrm_cx_release_all_cnf_t ;
 
 /*!
 *******************************************************************************
@@ -110,7 +95,6 @@ typedef struct {
         dans une structure permettant le passage des parametres via un socket
 */
 typedef struct {
-	unsigned int 	Trans_id  				; //!< Transaction ID
 	L2_ID 			L2_id 					; //!< L2 Rb_id 
 } cmm_cx_release_all_req_t;
 
@@ -120,7 +104,6 @@ typedef struct {
         dans une structure permettant le passage des parametres via un socket
 */
 typedef struct {
-	unsigned int 	Trans_id				; //!< Transaction ID   
 	L2_ID 			L2_id					; //!< Layer 2 (MAC) ID              
 	L3_INFO_T 		L3_info_t				; //!< Type of L3 Information     
 	unsigned char   L3_info[MAX_L3_INFO]	; //!< L3 addressing Information   
@@ -166,8 +149,7 @@ typedef struct {
         dans une structure permettant le passage des parametres via un socket
 */
 typedef struct {
-	unsigned int 	Trans_id				; //!< Transaction ID    
-        L2_ID L2_id;
+    L2_ID 			L2_id;
 	L3_INFO_T 		L3_info_t				; //!< Type of L3 Information
 	unsigned char 	L3_info[MAX_L3_INFO]	; //!< L3 addressing Information             
 } cmm_attach_cnf_t ;
