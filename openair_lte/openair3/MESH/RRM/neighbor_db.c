@@ -58,7 +58,7 @@ static int L2_ID_cmp(
 	L2_ID *L2_id2  ///< ID de niveau 2
 	)
 {
-	return bcmp( L2_id1, L2_id2, sizeof(L2_ID) ) ;
+	return memcmp( L2_id1, L2_id2, sizeof(L2_ID) ) ;
 }
 
 /*!
@@ -363,7 +363,7 @@ static neighbor_list_t *get_item_neighbor_list(
 	
 	while ( pCurrentItem != NULL)
 	{ 
-		if ( bcmp( &(pCurrentItem->L2_id),L2_id,2*sizeof(L2_ID)) == 0 )
+		if ( memcmp( &(pCurrentItem->L2_id),L2_id,2*sizeof(L2_ID)) == 0 )
 			break ;
 		pCurrentItem = pCurrentItem->next ;
 	}
