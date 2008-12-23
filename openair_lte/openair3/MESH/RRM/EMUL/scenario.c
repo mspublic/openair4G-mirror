@@ -50,8 +50,6 @@
 #include "rrm_constant.h"
 #include "emul_interface.h"
 
-#define NUM_SCENARIO  5
-
 extern msg_t *msg_rrc_rb_meas_ind(unsigned char inst, RB_ID Rb_id, L2_ID L2_id, MEAS_MODE Meas_mode, MAC_RLC_MEAS_T *Mac_rlc_meas_t, unsigned int Trans_id );
 extern msg_t *msg_rrc_sensing_meas_ind( unsigned char inst, L2_ID L2_id, unsigned int NB_meas, SENSING_MEAS_T *Sensing_meas, unsigned int Trans_id );
 extern msg_t *msg_rrc_sensing_meas_resp( unsigned char inst, unsigned int Trans_id )	;
@@ -174,18 +172,33 @@ static void prg_rrc_sensing_meas_ind( sock_rrm_t *s_rrc, double date, L2_ID *L2_
 	pthread_mutex_lock( &rrc_transact_exclu ) ;
 	add_item_transact( &rrc_transact_list, rrc_transaction, INT_RRC,RRC_SENSING_MEAS_IND,0,NO_PARENT);
 	pthread_mutex_unlock( &rrc_transact_exclu ) ;
+}
+
+static void prg_rrc_rb_meas_ind( sock_rrm_t *s_rrc, double date, RB_ID Rb_id, L2_ID *L2_id,MEAS_MODE Meas_mode,
+									MAC_RLC_MEAS_T *Mac_rlc_meas )
+{
+	rrc_transaction++;
+	pthread_mutex_lock( &actdiff_exclu  ) ;
+	add_actdiff(&list_actdiff,date, cnt_actdiff++, s_rrc,
+				msg_rrc_rb_meas_ind(0, Rb_id, *L2_id, Meas_mode, Mac_rlc_meas,  rrc_transaction ) ) ;
+	pthread_mutex_unlock( &actdiff_exclu ) ;
+				
+	pthread_mutex_lock( &rrc_transact_exclu ) ;
+	add_item_transact( &rrc_transact_list, rrc_transaction, INT_RRC,RRC_RB_MEAS_IND,0,NO_PARENT);
+	pthread_mutex_unlock( &rrc_transact_exclu ) ;
 }	
+
+
 /* =========================================================================== *
  * 								SCENARII 									   *
  * =========================================================================== */
 
-#if (NUM_SCENARIO == 0 )
 /**
  * \brief Cette fonction simule le passage de IN en CH (TIMEOUT) ,
  *        ensuite  l'ouverture d'un RB, la modification et finalement la
  *        libération.
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
+static void scenario0(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
 {
 	printf("\nSCENARIO 0: ...\n\n" ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD 
@@ -198,14 +211,12 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
 // ========================= Fermeture d'un RB
 	prg_releasing_RB( s_cmm, 2.5, 7 );
 }
-#endif
 
-#if (NUM_SCENARIO == 1 )
 /**
  * \brief Cette fonction simule le passage de IN en CH par la reception du 
  *        SYNCH d'un MR, et ensuite  l'ouverture d'un RB
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
+static void scenario1(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
 {
 	printf("\nSCENARIO 1: ...\n\n" ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD : RRC_PHY_SYNCH_TO_MR_IND
@@ -214,14 +225,12 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
 // ========================= Ouverture d'un RB
 	prg_opening_RB( s_cmm, 2.0, &L2_id_ch,&L2_id_mr,QOS_DTCH_USER1 );
 }
-#endif
 
-#if (NUM_SCENARIO == 2 )
 /**
  * \brief Cette fonction simule le passage de IN en CH ,
  *        puis l'attachement d'un MR et finalement l'ouverture d'un RB.
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
+static void scenario2(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 {
 	printf("\nSCENARIO 2: ...\n\n" ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD 
@@ -233,17 +242,14 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 // ========================= Indicateur d'une connexion établie
 	prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr,IPv6_ADDR,0,0);
 }
-#endif
 
-#if (NUM_SCENARIO == 3 )
 /**
  * \brief Cette fonction simule le passage de IN en MR par la reception du 
  *        SYNCH d'un CH
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
+static void scenario3(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 {
 	printf("\nSCENARIO 3: ...\n\n" ) ;
-									
 
 // ========================= Attachement d'un MR
 
@@ -259,16 +265,14 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 // ========================= Connexion etablit du MR au CH
 	prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv6_ADDR, 10, 20 ) ;
 }
-#endif
 
-#if (NUM_SCENARIO == 4 )
 /**
  * \brief Cette fonction simule le passage de IN en CH (TIMEOUT),
  *        puis l'attachement d'un MR ,
  * 		  puis l'ouverture d'un RB.
  *        puis la remontee de mesures du MR au CH.
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
+static void scenario4(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 {
 	SENSING_MEAS_T Sensing_meas[3]={
 		{ 15, {{0xAA,0xCC,0x33,0x55,0x11,0x00,0x22,0x00}} },
@@ -299,28 +303,26 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 	// Meas 4
 	prg_rrc_sensing_meas_ind( s_rrc, 5.75, &L2_id_mr, 0, Sensing_meas );
 }
-#endif
 
-#if (NUM_SCENARIO == 5 )
 /**
  * \brief Cette fonction simule le passage de IN en CH (TIMEOUT),
  *        puis l'attachement de 3 MR ,
  * 		  puis l'ouverture d'un RB.
  *        puis la remontee de mesures du MR au CH.
  */
-void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
+static void scenario5(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 {
-	SENSING_MEAS_T Sensing_meas[3]={
+	static SENSING_MEAS_T Sensing_meas[3]={
 		{ 15, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
 		{ 20, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x44,0x00}} },
 		{ 10, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x33,0x00}} }
 	};
-	SENSING_MEAS_T Sensing_meas2[3]={
+	static SENSING_MEAS_T Sensing_meas2[3]={
 		{ 16, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
 		{ 25, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}} },
 		{ 30, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x44,0x00}} }
 	};
-	SENSING_MEAS_T Sensing_meas3[3]={
+	static SENSING_MEAS_T Sensing_meas3[3]={
 		{ 14, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
 		{ 17, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}} },
 		{ 29, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x33,0x00}} }
@@ -358,5 +360,53 @@ void scenario(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 	prg_rrc_sensing_meas_ind( s_rrc, 5.50, &L2_id_mr3, 3, Sensing_meas3 );
 	
 }
-#endif
 
+/**
+ * \brief Cette fonction simule le passage de IN en CH (TIMEOUT) ,
+ *        ensuite  l'ouverture d'un RB, la modification et finalement la
+ *        libération.
+ */
+static void scenario6(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
+{
+	
+	static MAC_RLC_MEAS_T Meas1_CH= { .Rssi=25 , .Sinr={ 1,2,3,4, 5,6,7,8, 9,10,11,12, 13,14,15,16}, .Harq_delay =45,
+	                          .Bler=1234,  .rlc_sdu_buffer_occ=13,.rlc_sdu_loss_indicator=25000};
+	static MAC_RLC_MEAS_T Meas2_CH= { .Rssi=15 , .Sinr={ 1,2,3,4, 5,6,7,8, 9,10,11,12, 13,14,15,16}, .Harq_delay =35,
+	                          .Bler=4,  .rlc_sdu_buffer_occ=13,.rlc_sdu_loss_indicator=35000};
+	                          
+	static MAC_RLC_MEAS_T Meas1_MR= { .Rssi=35 , .Sinr={ 11,12,13,14, 15,16,17,18, 19,20,21,22, 23,24,25,26}, .Harq_delay =55,
+	                          .Bler=2134,  .rlc_sdu_buffer_occ=23,.rlc_sdu_loss_indicator=15000};
+
+	static MAC_RLC_MEAS_T Meas2_MR= { .Rssi=45 , .Sinr={ 11,12,13,14, 15,16,17,18, 19,20,21,22, 23,24,25,26}, .Harq_delay =25,
+	                          .Bler=3000,  .rlc_sdu_buffer_occ=11,.rlc_sdu_loss_indicator=300};
+	printf("\nSCENARIO 6: ...\n\n" ) ;
+// ========================= ISOLATED NODE to CLUSTERHEAD 
+	prg_phy_synch_to_MR( s_rrc, 0.1 );
+
+// ========================= Ouverture d'un RB
+	prg_opening_RB( s_cmm, 2.0, &L2_id_ch,&L2_id_mr,QOS_DTCH_USER1 );
+	
+
+	prg_rrc_rb_meas_ind( s_rrc, 2.5, 4 , &L2_id_mr,PERIODIC,&Meas1_MR )	 ;
+	prg_rrc_rb_meas_ind( s_rrc, 2.5, 4 , &L2_id_ch,PERIODIC,&Meas1_CH )	 ;
+
+	prg_rrc_rb_meas_ind( s_rrc, 2.7, 4 , &L2_id_ch,PERIODIC,&Meas2_CH )	 ;
+	prg_rrc_rb_meas_ind( s_rrc, 2.7, 4 , &L2_id_mr,PERIODIC,&Meas2_MR )	 ;
+
+}
+
+void scenario(int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
+{
+	switch ( num )
+	{
+		case 0 : scenario0(s_rrc,  s_cmm ) ; break ;
+		case 1 : scenario1(s_rrc,  s_cmm ) ; break ;
+		case 2 : scenario2(s_rrc,  s_cmm ) ; break ;
+		case 3 : scenario3(s_rrc,  s_cmm ) ; break ;
+		case 4 : scenario4(s_rrc,  s_cmm ) ; break ;
+		case 5 : scenario5(s_rrc,  s_cmm ) ; break ;
+		case 6 : scenario6(s_rrc,  s_cmm ) ; break ;
+		default:
+			fprintf( stderr,"Erreur : '%d' => Numero de test inconnu\n" , num ) ;
+	}
+}
