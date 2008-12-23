@@ -42,6 +42,7 @@
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
 #include "cmm_msg.h"
+#include "pusu_msg.h"
 #include "msg_mngt.h"
 #include "neighbor_db.h"
 #include "rb_db.h"
@@ -91,13 +92,15 @@ int   nb_inst = -1 ;
 static int flag_not_exit = 1 ;
 static pthread_t pthread_recv_rrc_msg_hnd, 
                  pthread_recv_cmm_msg_hnd , 
+                 pthread_recv_pusu_msg_hnd , 
                  pthread_send_msg_hnd , 
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
 
 #ifdef TRACE    
-static FILE *cmm2rrm_fd = NULL ;
-static FILE *rrc2rrm_fd = NULL ; 
+static FILE *cmm2rrm_fd  = NULL ;
+static FILE *rrc2rrm_fd  = NULL ; 
+static FILE *pusu2rrm_fd = NULL ; 
 #endif
 /*
 ** ----------------------------------------------------------------------------
@@ -122,21 +125,25 @@ static void * thread_processing_ttl (
 		for ( ii = 0 ; ii<nb_inst ; ii++ )
 		{
 			rrm_t *rrm = &rrm_inst[ii] ; 
-		
-			if ( *(rrm->pusu.s) != -1 )
-			{		
-				pthread_mutex_lock(   &( rrm->cmm.exclu )  ) ;
-				dec_all_ttl_transact( rrm->cmm.transaction ) ;
-				// Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
-				del_all_obseleted_transact( &(rrm->cmm.transaction));
-				pthread_mutex_unlock( &( rrm->cmm.exclu )  ) ;
-				
-				pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
-				dec_all_ttl_transact( rrm->rrc.transaction ) ;
-				// Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
-				del_all_obseleted_transact( &(rrm->rrc.transaction));
-				pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
-			}
+			
+			pthread_mutex_lock(   &( rrm->cmm.exclu )  ) ;
+			dec_all_ttl_transact( rrm->cmm.transaction ) ;
+			// Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
+			del_all_obseleted_transact( &(rrm->cmm.transaction));
+			pthread_mutex_unlock( &( rrm->cmm.exclu )  ) ;
+			
+			pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
+			dec_all_ttl_transact( rrm->rrc.transaction ) ;
+			// idem :commentaire ci-dessus
+			del_all_obseleted_transact( &(rrm->rrc.transaction));
+			pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
+			
+			pthread_mutex_lock(   &( rrm->pusu.exclu )  ) ;
+			dec_all_ttl_transact( rrm->pusu.transaction ) ;
+			// idem :commentaire ci-dessus
+			del_all_obseleted_transact( &(rrm->pusu.transaction));
+			pthread_mutex_unlock( &( rrm->pusu.exclu )  ) ;
+
 		}
 
 		cnt_timer++;
@@ -263,10 +270,10 @@ static void processing_msg_cmm(
 			{
 				cmm_cx_setup_req_t *p = (cmm_cx_setup_req_t *) msg ;
 				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_SETUP_REQ\n",header->inst);
-				if ( cmm_cx_setup_req(header->inst,p->Src,p->Dst,p->QoS_class,p->Trans_id ) )
+				if ( cmm_cx_setup_req(header->inst,p->Src,p->Dst,p->QoS_class,header->Trans_id ) )
 				{ /* RB_ID = 0xFFFF => RB error */
 					put_msg( &(rrm->file_send_msg), 
-								rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , p->Trans_id )) ;
+								rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , header->Trans_id )) ;
 				} 
 			}
 			break ;
@@ -274,14 +281,14 @@ static void processing_msg_cmm(
 			{
 				cmm_cx_modify_req_t *p = (cmm_cx_modify_req_t *) msg ;
 				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_MODIFY_REQ\n",header->inst);
-				cmm_cx_modify_req(header->inst,p->Rb_id,p->QoS_class,p->Trans_id )  ;
+				cmm_cx_modify_req(header->inst,p->Rb_id,p->QoS_class,header->Trans_id )  ;
 			}
 			break ;
 		case CMM_CX_RELEASE_REQ :
 			{
 				cmm_cx_release_req_t *p = (cmm_cx_release_req_t *) msg ;
 				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_REQ\n",header->inst);
-				cmm_cx_release_req(header->inst,p->Rb_id,p->Trans_id )  ;
+				cmm_cx_release_req(header->inst,p->Rb_id,header->Trans_id )  ;
 			}
 			break ;
 		case CMM_CX_RELEASE_ALL_REQ :
@@ -295,7 +302,7 @@ static void processing_msg_cmm(
 				cmm_attach_cnf_t *p = (cmm_attach_cnf_t *) msg ;
 				msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
 				
-				cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, p->Trans_id ) ;
+				cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
 			}
 			break ;
 		case CMM_INIT_MR_REQ :
@@ -324,7 +331,7 @@ static void processing_msg_cmm(
 static void processing_msg_rrc(
 	rrm_t *rrm			, ///< Donnee relative a une instance du RRM
 	msg_head_t *header	, ///< Entete du message
-	char *msg			, ///< Message reçu	
+	char *msg			, ///< Message recu	
 	int len_msg 		  ///< Longueur du message
 	)
 { 			
@@ -420,8 +427,85 @@ static void processing_msg_rrc(
 				rrc_sensing_meas_ind( header->inst,p->L2_id, p->NB_meas, p->Sensing_meas, p->Trans_id );			
 			}
 			break ;
+		case RRC_RB_MEAS_IND :
+			{
+				rrc_rb_meas_ind_t *p  = (rrc_rb_meas_ind_t *) msg ;
+				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND\n",header->inst);
+				rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas_t, p->Trans_id );			
+			}
+			break ;
+						
 		default :
 			fprintf(stderr,"RRC:\n") ;
+			printHex(msg,len_msg,1) ;
+	}
+	
+}
+
+/*!
+*******************************************************************************
+\brief  traitement des messages entrant sur l'interface PUSU
+          
+\return Aucune valeur
+*/
+static void processing_msg_pusu(
+	rrm_t *rrm			, ///< Donnee relative a une instance du RRM
+	msg_head_t *header	, ///< Entete du message
+	char *msg			, ///< Message recu	
+	int len_msg 		  ///< Longueur du message
+	)
+{ 	
+	transaction_t *pTransact ;
+	
+	pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+	pTransact = get_item_transact(rrm->pusu.transaction,header->Trans_id ) ;
+	if ( pTransact == NULL )
+	{
+		fprintf(stderr,"[RRM] %d PUSU Response (%d): unknown transaction\n",header->msg_type,header->Trans_id);
+	}
+	else
+	{
+		del_item_transact( &(rrm->pusu.transaction),header->Trans_id ) ;
+	}	
+	pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
+		
+#ifdef TRACE
+	if ( header->msg_type < NB_MSG_RRM_PUSU )
+	  fprintf(pusu2rrm_fd,"%lf PUSU->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_pusu_rrm[header->msg_type],header->msg_type,header->Trans_id);    
+	else
+	fprintf(pusu2rrm_fd,"%lf PUSU->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);    
+	fflush(pusu2rrm_fd);
+#endif
+	
+	switch ( header->msg_type )
+	{ 
+		case PUSU_PUBLISH_RESP:
+			{
+				msg_fct( "[RRC]>[RRM]:%d:PUSU_PUBLISH_RESP\n",header->inst );
+			}
+			break ;
+		case PUSU_UNPUBLISH_RESP:
+			{
+				msg_fct( "[RRC]>[RRM]:%d:PUSU_UNPUBLISH_RESP\n",header->inst );
+			}
+			break ;
+		case PUSU_LINK_INFO_RESP:
+			{
+				msg_fct( "[RRC]>[RRM]:%d:PUSU_LINK_INFO_RESP\n",header->inst );
+			}
+			break ;
+		case PUSU_SENSING_INFO_RESP:
+			{
+				msg_fct( "[RRC]>[RRM]:%d:PUSU_SENSING_INFO_RESP\n",header->inst );
+			}
+			break ;
+		case PUSU_CH_LOAD_RESP:
+			{
+				msg_fct( "[RRC]>[RRM]:%d:PUSU_CH_LOAD_RESP\n",header->inst );
+			}
+			break ;
+		default :
+			fprintf(stderr,"PUSU:%d:\n",header->msg_type) ;
 			printHex(msg,len_msg,1) ;
 	}
 	
@@ -465,8 +549,10 @@ static void rrm_scheduler (	)
 					
 					if ( pItem->s->s == rrm->cmm.s->s )
 						processing_msg_cmm( rrm , header , msg , header->size ) ;
-					else
+					else if ( pItem->s->s == rrm->rrc.s->s )
 						processing_msg_rrc( rrm , header , msg , header->size ) ;
+					else 
+						processing_msg_pusu( rrm , header , msg , header->size ) ;
 						
 					RRM_FREE( pItem->msg) ;
 				}
@@ -560,7 +646,7 @@ int main( int argc , char **argv )
 	int flag_cfg    =  0 ;
 	struct data_thread DataRrc;
  	struct data_thread DataCmm;
- 	int             sockPusu;
+ 	struct data_thread DataPusu;
 	pthread_attr_t attr ;	
 	
  	/* Vérification des arguments */
@@ -599,25 +685,32 @@ int main( int argc , char **argv )
 	pthread_attr_init( &attr ) ;
 	pthread_attr_setschedpolicy( &attr, SCHED_RR ) ;
 
-	DataRrc.name     	= "RRC" ;
+	DataRrc.name     		= "RRC" ;
 	DataRrc.sock_path_local	= RRM_RRC_SOCK_PATH ;
 	DataRrc.sock_path_dest	= RRC_RRM_SOCK_PATH ;
 	DataRrc.s.s	 			= -1  ; 
 	
-	DataCmm.name     	= "CMM" ;
+	DataCmm.name     		= "CMM" ;
 	DataCmm.sock_path_local	= RRM_CMM_SOCK_PATH ;
 	DataCmm.sock_path_dest	= CMM_RRM_SOCK_PATH ;
 	DataCmm.s.s  			= -1 ;
 
-	sockPusu  			    = -1 ;
-
+	DataPusu.name     		= "PUSU" ;
+	DataPusu.sock_path_local= RRM_PUSU_SOCK_PATH ;
+	DataPusu.sock_path_dest	= PUSU_RRM_SOCK_PATH ;
+	DataPusu.s.s  			= -1 ;
+	
 #ifdef TRACE    
-	cmm_fd = fopen( "vcd/cmm2rrm.txt" , "w") ;
-	PNULL(cmm_fd) ;
+	cmm2rrm_fd  = fopen( "VCD/cmm2rrm.txt" , "w") ;
+	PNULL(cmm2rrm_fd) ;
 
-	rrc_fd = fopen( "vcd/rrc2rrm.txt", "w") ;
-	PNULL(rrc_fd) ;
+	rrc2rrm_fd  = fopen( "VCD/rrc2rrm.txt", "w") ;
+	PNULL(rrc2rrm_fd) ;
+	
+	pusu2rrm_fd = fopen( "VCD/pusu2rrm.txt", "w") ;
+	PNULL(pusu2rrm_fd) ;
 #endif
+
 	for ( ii = 0 ; ii < nb_inst ; ii++ )
 	{
  		if ( !flag_cfg ) 
@@ -635,21 +728,23 @@ int main( int argc , char **argv )
 
 		pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
  		pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
- 		
+  		pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
+		
   		init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
 		init_file_msg( &(rrm_inst[ii].file_send_msg), 2 ) ;
 	
  		rrm_inst[ii].state           	= ISOLATEDNODE ; 
- 		rrm_inst[ii].cmm.trans_cnt	 	=  1;
- 		rrm_inst[ii].rrc.trans_cnt	 	=  1;
+ 		rrm_inst[ii].cmm.trans_cnt	 	=  1024;
+ 		rrm_inst[ii].rrc.trans_cnt	 	=  2048;
+ 		rrm_inst[ii].pusu.trans_cnt	 	=  3072;
  		rrm_inst[ii].rrc.s		 		= &DataRrc.s;
  		rrm_inst[ii].cmm.s		 		= &DataCmm.s;
- 		rrm_inst[ii].pusu.s		 		= &sockPusu;
+ 		rrm_inst[ii].pusu.s		 		= &DataPusu.s;
 		rrm_inst[ii].rrc.transaction 	= NULL ;
  		rrm_inst[ii].cmm.transaction 	= NULL ;
+ 		rrm_inst[ii].pusu.transaction 	= NULL ;
  		rrm_inst[ii].rrc.pNeighborEntry	= NULL ;
 	}
-
 	
 	/* Creation du thread de reception des messages RRC*/
 	fprintf(stderr,"Creation du thread RRC : %d\n", nb_inst);
@@ -662,6 +757,14 @@ int main( int argc , char **argv )
 	
 	/* Creation du thread de reception des messages CMM */
 	ret = pthread_create (&pthread_recv_cmm_msg_hnd , NULL, thread_recv_msg, &DataCmm );
+	if (ret)
+	{
+		fprintf (stderr, "%s", strerror (ret));
+		exit(-1) ;
+	}
+	
+	/* Creation du thread de reception des messages PUSU */
+	ret = pthread_create (&pthread_recv_pusu_msg_hnd , NULL, thread_recv_msg, &DataPusu );
 	if (ret)
 	{
 		fprintf (stderr, "%s", strerror (ret));
@@ -684,36 +787,20 @@ int main( int argc , char **argv )
 		exit(-1) ;
 	}
 
-	
-	{
-		int timeout_pusu = 10000 ;
-		while ( timeout_pusu!=0 )
-		{
-			sockPusu	 = connect_to_pusu_sock(RRM_PUSU_SOCK_PATH ,0 ) ;
-			if ( sockPusu != -1) 
-				break ;
-			usleep( 1000000);
-			timeout_pusu--;
-		}
-		
-		if ( timeout_pusu == 0 )
-		{
-			fprintf(stderr,"Abort: Timeout of PuSu socket\n");
-			exit(1) ;
-		}
-    }
     /* main loop */
 	rrm_scheduler( ) ;
 	
 	/* Attente de la fin des threads. */
 	pthread_join (pthread_recv_cmm_msg_hnd, NULL);
 	pthread_join (pthread_recv_rrc_msg_hnd, NULL);
+	pthread_join (pthread_recv_pusu_msg_hnd, NULL);
 	pthread_join (pthread_send_msg_hnd, NULL);
 	pthread_join (pthread_ttl_hnd, NULL);
 	
 #ifdef TRACE   
-	  fclose(cmm_fd ) ;
-	  fclose(rrc_fd ) ;
+	  fclose(cmm2rrm_fd ) ;
+	  fclose(rrc2rrm_fd ) ;
+	  fclose(pusu2rrm_fd ) ;
 #endif
 	
 	return 0 ;	
