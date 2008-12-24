@@ -13,7 +13,7 @@ int cmm_class_setup_req(L3ID_T L3id,           //!< L3 ID type (IPv4 Addr,IPv6 A
 			RBID_T Rbid,           //!< L2 RBID
 			L3QOS_T L3QoS,         //!< L3 QoS type (DSCP,EXP,ICMPV6)
 			void *QoS_id,          //!< L3 QoS id (DSCP #, EXP #, ICMPv6 message type)
-			unsigned int Trans_id  //!< Transaction ID
+			Transaction_t Trans_id  //!< Transaction ID
 			);
 
 /**
@@ -26,7 +26,7 @@ int cmm_class_release_req(L3ID_T L3id,           //!< L3 ID type (IPv4 Addr,IPv6
 			  RBID_T Rbid,           //!< L2 RBID
 			  L3QOS_T L3QoS,         //!< L3 QoS type (DSCP,EXP,ICMPV6)
 			  void *QoS_id,          //!< L3 QoS id (DSCP #, EXP #, ICMPv6 message type)
-			  unsigned int Trans_id  //!< Transaction ID
+			  Transaction_t Trans_id  //!< Transaction ID
 			  );
 
 
