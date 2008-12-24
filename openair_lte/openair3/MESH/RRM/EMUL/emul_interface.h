@@ -1,23 +1,23 @@
 /*!
 *******************************************************************************
 
-\file    	emul_interface.h
+\file       emul_interface.h
 
-\brief   	Fichier d'entête 
+\brief      Fichier d'entête 
 
-			Il contient les declarations de type, des defines relatif aux 
-			fonctions d'emulation  des interfaces du RRM (Radio Resource 
-			Management ).
+            Il contient les declarations de type, des defines relatif aux 
+            fonctions d'emulation  des interfaces du RRM (Radio Resource 
+            Management ).
 
-\author  	BURLOT Pascal
+\author     BURLOT Pascal
 
-\date    	15/07/08
+\date       15/07/08
 
    
 \par     Historique:
-			$Author$  $Date$  $Revision$
-			$Id$
-			$Log$
+            $Author$  $Date$  $Revision$
+            $Id$
+            $Log$
 
 *******************************************************************************
 */
@@ -30,18 +30,18 @@
 extern "C" {
 #endif
 
-extern pthread_mutex_t 	cmm_transact_exclu;
-extern pthread_mutex_t 	rrc_transact_exclu;
+extern pthread_mutex_t   cmm_transact_exclu;
+extern pthread_mutex_t   rrc_transact_exclu;
 
-extern unsigned int 	cmm_transaction; 
-extern unsigned int 	rrc_transaction;
+extern unsigned int      cmm_transaction; 
+extern unsigned int      rrc_transaction;
 
-extern pthread_mutex_t 	actdiff_exclu;
-extern actdiff_t 		*list_actdiff;
-extern unsigned int 	cnt_actdiff;
+extern pthread_mutex_t   actdiff_exclu;
+extern actdiff_t        *list_actdiff;
+extern unsigned int      cnt_actdiff;
 
-extern transaction_t  	*cmm_transact_list; 
-extern transaction_t  	*rrc_transact_list;
+extern transact_t       *cmm_transact_list; 
+extern transact_t       *rrc_transact_list;
 
 #ifdef __cplusplus
 }
