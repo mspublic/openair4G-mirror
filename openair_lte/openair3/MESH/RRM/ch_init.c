@@ -1,20 +1,20 @@
 /*!
 *******************************************************************************
 
-\file    	ch_init.c
+\file       ch_init.c
 
-\brief   	Fonctions permettant la gestion de la phase d'initialisation du 
-			cluster head.
+\brief      Fonctions permettant la gestion de la phase d'initialisation du 
+            cluster head.
 
-\author  	BURLOT Pascal
+\author     BURLOT Pascal
 
-\date    	29/08/08
+\date       29/08/08
 
    
 \par     Historique:
-			$Author$  $Date$  $Revision$
-			$Id$
-			$Log$
+            $Author$  $Date$  $Revision$
+            $Id$
+            $Log$
 
 *******************************************************************************
 */
@@ -46,88 +46,90 @@
 #include "rrm.h"
 #include "ch_init.h"
 
-
 //! Met un message dans la file des messages a envoyer
-#define PUT_MSG(s,m)  put_msg( 	&(rrm->file_send_msg),s,m) 
+#define PUT_MSG(s,m)  put_msg(  &(rrm->file_send_msg),s,m) 
 
 /*!
 *******************************************************************************
 \brief  Request to initialize the Cluster Head with L3 Information 
 */
 void cmm_init_ch_req(
-			unsigned char  inst,    //!< Identification de l'instance
-			L3_INFO_T L3_info_t, 	//!< Type of L3 Information
-		    void *L3_info			//!< L3 addressing Information
-		    )
+	Instance_t inst      , //!< Identification de l'instance
+	L3_INFO_T  L3_info_t , //!< Type of L3 Information
+	void      *L3_info     //!< L3 addressing Information
+	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+    rrm_t *rrm = &rrm_inst[inst] ; 
 
-	if ( rrm->state == CLUSTERHEAD_INIT )
-	{
-		L2_ID src_dst[2] ;
-		memcpy(&src_dst[0], &rrm->L2_id, sizeof(L2_ID)) ;
-		memcpy(&src_dst[1], &rrm->L2_id, sizeof(L2_ID)) ;
-		
-		if ( L3_info != NULL ) 
-		{
-			rrm->L3_info_t = L3_info_t ;	
-			if ( L3_info_t != NONE_L3 ) 
-				memcpy( rrm->L3_info, L3_info, L3_info_t );
-		}
+    if ( rrm->state == CLUSTERHEAD_INIT )
+    {
+        L2_ID src_dst[2] ;
+        memcpy(&src_dst[0], &rrm->L2_id, sizeof(L2_ID)) ;
+        memcpy(&src_dst[1], &rrm->L2_id, sizeof(L2_ID)) ;
+        
+        if ( L3_info != NULL ) 
+        {
+            rrm->L3_info_t = L3_info_t ;    
+            if ( L3_info_t != NONE_L3 ) 
+                memcpy( rrm->L3_info, L3_info, L3_info_t );
+        }
 
-		pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-		rrm->rrc.trans_cnt++ ;
+        pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+        rrm->rrc.trans_cnt++ ;
 
-		PUT_MSG(    rrm->rrc.s, 
-			      	msg_rrm_init_ch_req( inst,
-							 rrm->rrc.trans_cnt,
-							&Lchan_desc[QOS_SRB0], 
-							&Lchan_desc[QOS_SRB1], 
-							 rrm->L2_id
-							 )
-						) ;
-				
-		add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB0, &src_dst[0] ) ;
-		add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB1, &src_dst[0] ) ;
-		
-		pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-		
-		pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
-		rrm->pusu.trans_cnt++ ;
-		add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_PUBLISH_IND,0,NO_PARENT);
-		pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
-		PUT_MSG(rrm->pusu.s, msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
-	}
+        PUT_MSG(    rrm->rrc.s, 
+                    msg_rrm_init_ch_req( inst,
+                             rrm->rrc.trans_cnt,
+                            &Lchan_desc[QOS_SRB0], 
+                            &Lchan_desc[QOS_SRB1], 
+                             rrm->L2_id
+                             )
+                        ) ;
+                
+        add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB0, &src_dst[0] ) ;
+        add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB1, &src_dst[0] ) ;
+        
+        pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+        
+        pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+        rrm->pusu.trans_cnt++ ;
+        add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_PUBLISH_IND,0,NO_PARENT);
+        pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
+        PUT_MSG(rrm->pusu.s, msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
+    }
 }
 
 /*!
 *******************************************************************************
 \brief Mesh router PHY-Synch Indication
 */
-void rrc_phy_synch_to_MR_ind(unsigned char  inst,L2_ID L2_id )
+void rrc_phy_synch_to_MR_ind(
+	Instance_t inst      , //!< Identification de l'instance
+	L2_ID      L2_id       //!< L2 ID of MR
+	)
 {
-	rrm_t *rrm = &rrm_inst[inst] ; /// \todo rrm à passer en parametre
+    rrm_t *rrm = &rrm_inst[inst] ; 
 
-	if ( rrm->state == ISOLATEDNODE )
-	{
-	    /* Memorisation du L2_id du noeud ( c'est le niveau RRC qui a l'info ) */
-	    memcpy( &rrm->L2_id,  &L2_id, sizeof(L2_ID));
-	  
-		//--------------------------------------------
-		pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
-		
-		if ( rrm->rrc.pNeighborEntry  != NULL ) // Reset Neighborhood
-			del_all_neighbor( &(rrm->rrc.pNeighborEntry) );
-			
-		pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
+    if ( rrm->state == ISOLATEDNODE )
+    {
+        /* Memorisation du L2_id du noeud ( c'est le niveau RRC qui a l'info ) */
+        memcpy( &rrm->L2_id,  &L2_id, sizeof(L2_ID));
+      
+        //--------------------------------------------
+        pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
+        
+        if ( rrm->rrc.pNeighborEntry  != NULL ) // Reset Neighborhood
+            del_all_neighbor( &(rrm->rrc.pNeighborEntry) );
+            
+        pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
 
-		//--------------------------------------------
-		put_msg( &(rrm->file_send_msg), rrm->cmm.s, msg_router_is_CH_ind( inst,rrm->L2_id) ) ;
+        //--------------------------------------------
+        put_msg( &(rrm->file_send_msg), rrm->cmm.s, msg_router_is_CH_ind( inst,rrm->L2_id) ) ;
 
-		rrm->state = CLUSTERHEAD_INIT ; 
-	}
-	else
-		fprintf(stderr,"[RRM] RRC_PHY_SYNCH_TO_MR_IND/TIMEOUT_IN  is not allowed (Only IN):etat=%d\n",rrm->state);
+        rrm->state = CLUSTERHEAD_INIT ; 
+    }
+    else
+        fprintf(stderr,"[RRM] RRC_PHY_SYNCH_TO_MR_IND/TIMEOUT_IN  is not allowed (Only IN):etat=%d\n",rrm->state);
 }        
 
 
