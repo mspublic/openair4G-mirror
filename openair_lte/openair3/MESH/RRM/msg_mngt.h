@@ -41,9 +41,9 @@ typedef struct msg_file_s {
 \brief Entete de la file des messages reçus ou a envoyer		
 */
 typedef struct { 
-	int 			id 	; 	///< id
-	pthread_mutex_t mutex ; ///< Mutex associee
-	file_msg_t     *file ;  ///< point d'entree sur la file des messages
+	int 			     id 	; ///< id
+	pthread_mutex_t      mutex  ; ///< Mutex associee
+	file_msg_t          *file   ; ///< point d'entree sur la file des messages
 } file_head_t ;
 
 /*

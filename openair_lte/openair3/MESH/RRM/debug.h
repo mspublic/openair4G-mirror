@@ -1,20 +1,20 @@
 /*!
 *******************************************************************************
 
-\file    	debug.h
+\file       debug.h
 
-\brief   	Fichier d'entete contenant les declarations des types, des defines ,
-			et des fonctions relatives au debug .
+\brief      Fichier d'entete contenant les declarations des types, des defines ,
+            et des fonctions relatives au debug .
 
-\author  	BURLOT Pascal
+\author     BURLOT Pascal
 
-\date    	29/08/08
+\date       29/08/08
 
    
 \par     Historique:
-			$Author$  $Date$  $Revision$
-			$Id$
-			$Log$
+            $Author$  $Date$  $Revision$
+            $Id$
+            $Log$
 
 *******************************************************************************
 */
@@ -96,7 +96,7 @@
   }
 #else
 
-#define CALL(f)	(f)
+#define CALL(f) (f)
 #define ASSERT(cc)
 #define WARNING(cc) 
 #define PNULL(pp)

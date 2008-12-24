@@ -1,25 +1,25 @@
 /*!
 *******************************************************************************
 
-\file    	rrm.c
+\file       rrm.c
 
-\brief   	RRM (Radio Ressource Manager )
+\brief      RRM (Radio Ressource Manager )
 
-			Cette application a pour objet 
-			    - de gérer la ressource radio du cluster
-			    - de commander le RRC pour l'ouverture de RB
-			    - de recevoir des commandes du CMM
-			    - de gérer le voisinage
+            Cette application a pour objet 
+                - de gérer la ressource radio du cluster
+                - de commander le RRC pour l'ouverture de RB
+                - de recevoir des commandes du CMM
+                - de gérer le voisinage
 
-\author  	BURLOT Pascal
+\author     BURLOT Pascal
 
-\date    	10/07/08
+\date       10/07/08
 
    
 \par     Historique:
-			$Author$  $Date$  $Revision$
-			$Id$
-			$Log$
+            $Author$  $Date$  $Revision$
+            $Id$
+            $Log$
 
 *******************************************************************************
 */
@@ -66,13 +66,13 @@
 
 /*!
 *******************************************************************************
-\brief Structure de data passe en parametre au threads 		
+\brief Structure de data passe en parametre au threads      
 */
 struct data_thread {
-	char *name      		; ///< Nom du thread
-	char *sock_path_local 	; ///< fichier du "rrm->..." pour le socket Unix
-	char *sock_path_dest  	; ///< fichier du "...->rrm " pour le socket Unix
-	sock_rrm_t  s           ; ///< Descripteur du socket 
+    char *name              ; ///< Nom du thread
+    char *sock_path_local   ; ///< fichier du "rrm->..." pour le socket Unix
+    char *sock_path_dest    ; ///< fichier du "...->rrm " pour le socket Unix
+    sock_rrm_t  s           ; ///< Descripteur du socket 
 }  ;
 
 /*
@@ -114,44 +114,44 @@ static FILE *pusu2rrm_fd = NULL ;
 \return NULL
 */
 static void * thread_processing_ttl (
-	void * p_data /**< parametre du pthread */
-	)
+    void * p_data /**< parametre du pthread */
+    )
 {
-	int ii ;
-	fprintf(stderr,"TTL :starting ... \n"); fflush(stdout);
+    int ii ;
+    fprintf(stderr,"TTL :starting ... \n"); fflush(stdout);
 
-	while ( flag_not_exit)
-	{
-		for ( ii = 0 ; ii<nb_inst ; ii++ )
-		{
-			rrm_t *rrm = &rrm_inst[ii] ; 
-			
-			pthread_mutex_lock(   &( rrm->cmm.exclu )  ) ;
-			dec_all_ttl_transact( rrm->cmm.transaction ) ;
-			// Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
-			del_all_obseleted_transact( &(rrm->cmm.transaction));
-			pthread_mutex_unlock( &( rrm->cmm.exclu )  ) ;
-			
-			pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
-			dec_all_ttl_transact( rrm->rrc.transaction ) ;
-			// idem :commentaire ci-dessus
-			del_all_obseleted_transact( &(rrm->rrc.transaction));
-			pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
-			
-			pthread_mutex_lock(   &( rrm->pusu.exclu )  ) ;
-			dec_all_ttl_transact( rrm->pusu.transaction ) ;
-			// idem :commentaire ci-dessus
-			del_all_obseleted_transact( &(rrm->pusu.transaction));
-			pthread_mutex_unlock( &( rrm->pusu.exclu )  ) ;
+    while ( flag_not_exit)
+    {
+        for ( ii = 0 ; ii<nb_inst ; ii++ )
+        {
+            rrm_t *rrm = &rrm_inst[ii] ; 
+            
+            pthread_mutex_lock(   &( rrm->cmm.exclu )  ) ;
+            dec_all_ttl_transact( rrm->cmm.transaction ) ;
+            // Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
+            del_all_obseleted_transact( &(rrm->cmm.transaction));
+            pthread_mutex_unlock( &( rrm->cmm.exclu )  ) ;
+            
+            pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
+            dec_all_ttl_transact( rrm->rrc.transaction ) ;
+            // idem :commentaire ci-dessus
+            del_all_obseleted_transact( &(rrm->rrc.transaction));
+            pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
+            
+            pthread_mutex_lock(   &( rrm->pusu.exclu )  ) ;
+            dec_all_ttl_transact( rrm->pusu.transaction ) ;
+            // idem :commentaire ci-dessus
+            del_all_obseleted_transact( &(rrm->pusu.transaction));
+            pthread_mutex_unlock( &( rrm->pusu.exclu )  ) ;
 
-		}
+        }
 
-		cnt_timer++;
-		usleep( 200*1000 ) ;
-	}
-	fprintf(stderr,"... stopped TTL\n"); fflush(stdout);
-	return NULL;
-	
+        cnt_timer++;
+        usleep( 200*1000 ) ;
+    }
+    fprintf(stderr,"... stopped TTL\n"); fflush(stdout);
+    return NULL;
+    
 }
 
 /*!
@@ -161,40 +161,40 @@ static void * thread_processing_ttl (
 \return NULL
 */
 static void * thread_send_msg (
-	void * p_data /**< parametre du pthread */
-	)
+    void * p_data /**< parametre du pthread */
+    )
 {
-	int ii ;
-	int no_msg ;
-	fprintf(stderr,"Thread Send Message: starting ... \n"); 
-	fflush(stderr);
+    int ii ;
+    int no_msg ;
+    fprintf(stderr,"Thread Send Message: starting ... \n"); 
+    fflush(stderr);
 
-	while ( flag_not_exit)
-	{
-		no_msg = 0  ;
-		for ( ii = 0 ; ii<nb_inst ; ii++ )
-		{
-			rrm_t      *rrm = &rrm_inst[ii] ; 
-			file_msg_t *pItem ;
-		
-			pItem = get_msg( &(rrm->file_send_msg) ) ;
-		
-			if ( pItem == NULL ) 
-				no_msg++;
-			else
-			{	
-				int r =  send_msg( pItem->s, pItem->msg );
-				WARNING(r!=0);
-			}	
-			RRM_FREE( pItem ) ;
-		}
-		
-		if ( no_msg==nb_inst ) // Pas de message 
-			usleep(100000);
-	
-	}
-	fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
-	return NULL;
+    while ( flag_not_exit)
+    {
+        no_msg = 0  ;
+        for ( ii = 0 ; ii<nb_inst ; ii++ )
+        {
+            rrm_t      *rrm = &rrm_inst[ii] ; 
+            file_msg_t *pItem ;
+        
+            pItem = get_msg( &(rrm->file_send_msg) ) ;
+        
+            if ( pItem == NULL ) 
+                no_msg++;
+            else
+            {   
+                int r =  send_msg( pItem->s, pItem->msg );
+                WARNING(r!=0);
+            }   
+            RRM_FREE( pItem ) ;
+        }
+        
+        if ( no_msg==nb_inst ) // Pas de message 
+            usleep(100000);
+    
+    }
+    fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
+    return NULL;
 }
 
 /*!
@@ -204,43 +204,43 @@ static void * thread_send_msg (
 \return NULL
 */
 static void * thread_recv_msg (
-	void * p_data /**< parametre du pthread */
-	)
+    void * p_data /**< parametre du pthread */
+    )
 {
     msg_t *msg ;
-	struct data_thread *data = (struct data_thread *) p_data;
-	int sock ;
-	
-	fprintf(stderr,"%s interfaces :starting ... %s %s\n",data->name , data->sock_path_local, data->sock_path_dest); 
-	fflush(stderr);
+    struct data_thread *data = (struct data_thread *) p_data;
+    int sock ;
+    
+    fprintf(stderr,"%s interfaces :starting ... %s %s\n",data->name , data->sock_path_local, data->sock_path_dest); 
+    fflush(stderr);
 
-	/* ouverture des liens de communications */	
-	sock = open_socket( &data->s,  data->sock_path_local, data->sock_path_dest ,0 );
-	
-	if ( sock != -1 )
-	{
-		
-		while (flag_not_exit)
-		{
-			msg = (msg_t *) recv_msg(&data->s) ;
-			if (msg == NULL ) 
-			{
-				fprintf(stderr,"Server closed connection\n");
-				flag_not_exit = 0;
-			}
-			else
-			{	
-				int inst = msg->head.inst ;
-				rrm_t      *rrm = &rrm_inst[inst];
-				
-				put_msg( &(rrm->file_recv_msg), &data->s, msg) ;
-			}
-		}
-		close_socket(&data->s) ;
-	}
+    /* ouverture des liens de communications */ 
+    sock = open_socket( &data->s,  data->sock_path_local, data->sock_path_dest ,0 );
+    
+    if ( sock != -1 )
+    {
+        
+        while (flag_not_exit)
+        {
+            msg = (msg_t *) recv_msg(&data->s) ;
+            if (msg == NULL ) 
+            {
+                fprintf(stderr,"Server closed connection\n");
+                flag_not_exit = 0;
+            }
+            else
+            {   
+                int inst = msg->head.inst ;
+                rrm_t      *rrm = &rrm_inst[inst];
+                
+                put_msg( &(rrm->file_recv_msg), &data->s, msg) ;
+            }
+        }
+        close_socket(&data->s) ;
+    }
 
-	fprintf(stderr,"... stopped %s interfaces\n",data->name);
-	return NULL;
+    fprintf(stderr,"... stopped %s interfaces\n",data->name);
+    return NULL;
 }
 
 /*!
@@ -250,77 +250,77 @@ static void * thread_recv_msg (
 \return Auncune valeur
 */
 static void processing_msg_cmm( 
-	rrm_t 		*rrm		, ///< Donnee relative a une instance du RRM
-	msg_head_t 	*header		, ///< Entete du message
-	char 		*msg		, ///< Message recu	
-	int 		len_msg 	  ///< Longueur du message
-	)
+    rrm_t       *rrm        , ///< Donnee relative a une instance du RRM
+    msg_head_t  *header     , ///< Entete du message
+    char        *msg        , ///< Message recu 
+    int         len_msg       ///< Longueur du message
+    )
 {
 #ifdef TRACE
-	if ( header->msg_type < NB_MSG_CMM_RRM )
-	fprintf(cmm2rrm_fd,"%lf CMM->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_cmm_rrm[header->msg_type], header->msg_type,header->Trans_id);    
-	else
-	fprintf(cmm2rrm_fd,"%lf CMM->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);    
-	fflush(cmm2rrm_fd);
+    if ( header->msg_type < NB_MSG_CMM_RRM )
+    fprintf(cmm2rrm_fd,"%lf CMM->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_cmm_rrm[header->msg_type], header->msg_type,header->Trans_id);    
+    else
+    fprintf(cmm2rrm_fd,"%lf CMM->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);    
+    fflush(cmm2rrm_fd);
 #endif
-	
-	switch ( header->msg_type )
-	{ 
-		case CMM_CX_SETUP_REQ:
-			{
-				cmm_cx_setup_req_t *p = (cmm_cx_setup_req_t *) msg ;
-				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_SETUP_REQ\n",header->inst);
-				if ( cmm_cx_setup_req(header->inst,p->Src,p->Dst,p->QoS_class,header->Trans_id ) )
-				{ /* RB_ID = 0xFFFF => RB error */
-					put_msg( &(rrm->file_send_msg), 
-								rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , header->Trans_id )) ;
-				} 
-			}
-			break ;
-		case CMM_CX_MODIFY_REQ:
-			{
-				cmm_cx_modify_req_t *p = (cmm_cx_modify_req_t *) msg ;
-				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_MODIFY_REQ\n",header->inst);
-				cmm_cx_modify_req(header->inst,p->Rb_id,p->QoS_class,header->Trans_id )  ;
-			}
-			break ;
-		case CMM_CX_RELEASE_REQ :
-			{
-				cmm_cx_release_req_t *p = (cmm_cx_release_req_t *) msg ;
-				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_REQ\n",header->inst);
-				cmm_cx_release_req(header->inst,p->Rb_id,header->Trans_id )  ;
-			}
-			break ;
-		case CMM_CX_RELEASE_ALL_REQ :
-			{
-				//cmm_cx_release_all_req_t *p = (cmm_cx_release_all_req_t *) msg ;
-				msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_ALL_REQ\n",header->inst);
-			}
-			break ;
-		case CMM_ATTACH_CNF :
-			{
-				cmm_attach_cnf_t *p = (cmm_attach_cnf_t *) msg ;
-				msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
-				
-				cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
-			}
-			break ;
-		case CMM_INIT_MR_REQ :
-			{
-				msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_MR_REQ ????\n",header->inst);				
-			}
-			break ;
-		case CMM_INIT_CH_REQ :
-			{
-				cmm_init_ch_req_t *p = (cmm_init_ch_req_t *) msg ;
-				cmm_init_ch_req(header->inst,p->L3_info_t,&(p->L3_info[0]));
-				msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ\n",header->inst);
-			}
-			break ;			
-		default :
-			fprintf(stderr,"CMM:\n") ;
-			printHex(msg,len_msg,1) ;
-	}
+    
+    switch ( header->msg_type )
+    { 
+        case CMM_CX_SETUP_REQ:
+            {
+                cmm_cx_setup_req_t *p = (cmm_cx_setup_req_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_CX_SETUP_REQ\n",header->inst);
+                if ( cmm_cx_setup_req(header->inst,p->Src,p->Dst,p->QoS_class,header->Trans_id ) )
+                { /* RB_ID = 0xFFFF => RB error */
+                    put_msg( &(rrm->file_send_msg), 
+                                rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , header->Trans_id )) ;
+                } 
+            }
+            break ;
+        case CMM_CX_MODIFY_REQ:
+            {
+                cmm_cx_modify_req_t *p = (cmm_cx_modify_req_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_CX_MODIFY_REQ\n",header->inst);
+                cmm_cx_modify_req(header->inst,p->Rb_id,p->QoS_class,header->Trans_id )  ;
+            }
+            break ;
+        case CMM_CX_RELEASE_REQ :
+            {
+                cmm_cx_release_req_t *p = (cmm_cx_release_req_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_REQ\n",header->inst);
+                cmm_cx_release_req(header->inst,p->Rb_id,header->Trans_id )  ;
+            }
+            break ;
+        case CMM_CX_RELEASE_ALL_REQ :
+            {
+                //cmm_cx_release_all_req_t *p = (cmm_cx_release_all_req_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_ALL_REQ\n",header->inst);
+            }
+            break ;
+        case CMM_ATTACH_CNF :
+            {
+                cmm_attach_cnf_t *p = (cmm_attach_cnf_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
+                
+                cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
+            }
+            break ;
+        case CMM_INIT_MR_REQ :
+            {
+                msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_MR_REQ ????\n",header->inst);             
+            }
+            break ;
+        case CMM_INIT_CH_REQ :
+            {
+                cmm_init_ch_req_t *p = (cmm_init_ch_req_t *) msg ;
+                cmm_init_ch_req(header->inst,p->L3_info_t,&(p->L3_info[0]));
+                msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ\n",header->inst);
+            }
+            break ;         
+        default :
+            fprintf(stderr,"CMM:\n") ;
+            printHex(msg,len_msg,1) ;
+    }
 }
 /*!
 *******************************************************************************
@@ -329,117 +329,113 @@ static void processing_msg_cmm(
 \return Aucune valeur
 */
 static void processing_msg_rrc(
-	rrm_t *rrm			, ///< Donnee relative a une instance du RRM
-	msg_head_t *header	, ///< Entete du message
-	char *msg			, ///< Message recu	
-	int len_msg 		  ///< Longueur du message
-	)
-{ 			
+    rrm_t *rrm          , ///< Donnee relative a une instance du RRM
+    msg_head_t *header  , ///< Entete du message
+    char *msg           , ///< Message recu 
+    int len_msg           ///< Longueur du message
+    )
+{           
 #ifdef TRACE
-	if ( header->msg_type < NB_MSG_RRC_RRM )
-	  fprintf(rrc2rrm_fd,"%lf RRC->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_rrc_rrm[header->msg_type],header->msg_type,header->Trans_id);    
-	else
-	fprintf(rrc2rrm_fd,"%lf RRC->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);    
-	fflush(rrc2rrm_fd);
+    if ( header->msg_type < NB_MSG_RRC_RRM )
+      fprintf(rrc2rrm_fd,"%lf RRC->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_rrc_rrm[header->msg_type],header->msg_type,header->Trans_id);    
+    else
+    fprintf(rrc2rrm_fd,"%lf RRC->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);    
+    fflush(rrc2rrm_fd);
 #endif
-	
-	switch ( header->msg_type )
-	{ 
-		case RRC_RB_ESTABLISH_RESP:
-			{
-				rrc_generic_resp_t *p = (rrc_generic_resp_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_RESP\n",header->inst );
-				rrc_rb_establish_resp(header->inst,p->Trans_id) ;
-			}
-			break ;
-		case RRC_RB_ESTABLISH_CFM:
-			{
-				rrc_rb_establish_cfm_t *p = (rrc_rb_establish_cfm_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM\n",header->inst);
-				rrc_rb_establish_cfm(header->inst,p->Rb_id,p->RB_type,p->Trans_id) ;
-			}
-			break ;
-			
-		case RRC_RB_MODIFY_RESP:
-			{
-				rrc_generic_resp_t *p = (rrc_generic_resp_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP\n",header->inst);
-				rrc_rb_modify_resp(header->inst,p->Trans_id) ;
-			}
-			break ;
-		case RRC_RB_MODIFY_CFM:
-			{
-				rrc_rb_modify_cfm_t *p = (rrc_rb_modify_cfm_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM\n",header->inst);
-				rrc_rb_modify_cfm(header->inst,p->Rb_id,p->Trans_id) ;
-			}
-			break ;
-			
-		case RRC_RB_RELEASE_RESP:
-			{
-				rrc_generic_resp_t *p = (rrc_generic_resp_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_RELEASE_RESP\n",header->inst);
-				rrc_rb_release_resp(header->inst,p->Trans_id) ;
-			}
-			break ;
-		case RRC_MR_ATTACH_IND :
-			{
-				rrc_MR_attach_ind_t *p = (rrc_MR_attach_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND\n",header->inst);
-				rrc_MR_attach_ind(header->inst,p->L2_id) ;
-			}
-			break ;
-		case RRC_SENSING_MEAS_RESP:
-			{
-				rrc_generic_resp_t *p = (rrc_generic_resp_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_RESP\n",header->inst);
-				rrc_sensing_meas_resp(header->inst,p->Trans_id) ;
-			}
-			break ;			
-		case RRC_CX_ESTABLISH_IND:
-			{
-				rrc_cx_establish_ind_t *p = (rrc_cx_establish_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND\n",header->inst);
-				rrc_cx_establish_ind(header->inst,p->L2_id,p->Trans_id,
-									p->L3_info,p->L3_info_t,
-									p->DTCH_B_id,p->DTCH_id) ;	
-			}
-			break ;			
-		case RRC_PHY_SYNCH_TO_MR_IND :
-			{
-				rrc_phy_synch_to_MR_ind_t *p = (rrc_phy_synch_to_MR_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND\n",header->inst);
-				rrc_phy_synch_to_MR_ind(header->inst,p->L2_id) ;				
-			}
-			break ;
-		case RRC_PHY_SYNCH_TO_CH_IND :
-			{
-				rrc_phy_synch_to_CH_ind_t *p = (rrc_phy_synch_to_CH_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND\n",header->inst);
-				rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
-								
-			}
-			break ;
-		case RRC_SENSING_MEAS_IND :
-			{
-				rrc_sensing_meas_ind_t *p  = (rrc_sensing_meas_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND\n",header->inst);
-				rrc_sensing_meas_ind( header->inst,p->L2_id, p->NB_meas, p->Sensing_meas, p->Trans_id );			
-			}
-			break ;
-		case RRC_RB_MEAS_IND :
-			{
-				rrc_rb_meas_ind_t *p  = (rrc_rb_meas_ind_t *) msg ;
-				msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND\n",header->inst);
-				rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas_t, p->Trans_id );			
-			}
-			break ;
-						
-		default :
-			fprintf(stderr,"RRC:\n") ;
-			printHex(msg,len_msg,1) ;
-	}
-	
+    
+    switch ( header->msg_type )
+    { 
+        case RRC_RB_ESTABLISH_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_RESP\n",header->inst );
+                rrc_rb_establish_resp(header->inst,header->Trans_id) ;
+            }
+            break ;
+        case RRC_RB_ESTABLISH_CFM:
+            {
+                rrc_rb_establish_cfm_t *p = (rrc_rb_establish_cfm_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM\n",header->inst);
+                rrc_rb_establish_cfm(header->inst,p->Rb_id,p->RB_type,header->Trans_id) ;
+            }
+            break ;
+            
+        case RRC_RB_MODIFY_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP\n",header->inst);
+                rrc_rb_modify_resp(header->inst,header->Trans_id) ;
+            }
+            break ;
+        case RRC_RB_MODIFY_CFM:
+            {
+                rrc_rb_modify_cfm_t *p = (rrc_rb_modify_cfm_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM\n",header->inst);
+                rrc_rb_modify_cfm(header->inst,p->Rb_id,header->Trans_id) ;
+            }
+            break ;
+            
+        case RRC_RB_RELEASE_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_RELEASE_RESP\n",header->inst);
+                rrc_rb_release_resp(header->inst,header->Trans_id) ;
+            }
+            break ;
+        case RRC_MR_ATTACH_IND :
+            {
+                rrc_MR_attach_ind_t *p = (rrc_MR_attach_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND\n",header->inst);
+                rrc_MR_attach_ind(header->inst,p->L2_id) ;
+            }
+            break ;
+        case RRC_SENSING_MEAS_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_RESP\n",header->inst);
+                rrc_sensing_meas_resp(header->inst,header->Trans_id) ;
+            }
+            break ;         
+        case RRC_CX_ESTABLISH_IND:
+            {
+                rrc_cx_establish_ind_t *p = (rrc_cx_establish_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND\n",header->inst);
+                rrc_cx_establish_ind(header->inst,p->L2_id,header->Trans_id,
+                                    p->L3_info,p->L3_info_t,
+                                    p->DTCH_B_id,p->DTCH_id) ;  
+            }
+            break ;         
+        case RRC_PHY_SYNCH_TO_MR_IND :
+            {
+                rrc_phy_synch_to_MR_ind_t *p = (rrc_phy_synch_to_MR_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND\n",header->inst);
+                rrc_phy_synch_to_MR_ind(header->inst,p->L2_id) ;                
+            }
+            break ;
+        case RRC_PHY_SYNCH_TO_CH_IND :
+            {
+                rrc_phy_synch_to_CH_ind_t *p = (rrc_phy_synch_to_CH_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND\n",header->inst);
+                rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
+                                
+            }
+            break ;
+        case RRC_SENSING_MEAS_IND :
+            {
+                rrc_sensing_meas_ind_t *p  = (rrc_sensing_meas_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND\n",header->inst);
+                rrc_sensing_meas_ind( header->inst,p->L2_id, p->NB_meas, p->Sensing_meas, header->Trans_id );           
+            }
+            break ;
+        case RRC_RB_MEAS_IND :
+            {
+                rrc_rb_meas_ind_t *p  = (rrc_rb_meas_ind_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND\n",header->inst);
+                rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas, header->Trans_id );           
+            }
+            break ;
+                        
+        default :
+            fprintf(stderr,"RRC:\n") ;
+            printHex(msg,len_msg,1) ;
+    }
+    
 }
 
 /*!
@@ -449,66 +445,66 @@ static void processing_msg_rrc(
 \return Aucune valeur
 */
 static void processing_msg_pusu(
-	rrm_t *rrm			, ///< Donnee relative a une instance du RRM
-	msg_head_t *header	, ///< Entete du message
-	char *msg			, ///< Message recu	
-	int len_msg 		  ///< Longueur du message
-	)
-{ 	
-	transaction_t *pTransact ;
-	
-	pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
-	pTransact = get_item_transact(rrm->pusu.transaction,header->Trans_id ) ;
-	if ( pTransact == NULL )
-	{
-		fprintf(stderr,"[RRM] %d PUSU Response (%d): unknown transaction\n",header->msg_type,header->Trans_id);
-	}
-	else
-	{
-		del_item_transact( &(rrm->pusu.transaction),header->Trans_id ) ;
-	}	
-	pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
-		
+    rrm_t *rrm          , ///< Donnee relative a une instance du RRM
+    msg_head_t *header  , ///< Entete du message
+    char *msg           , ///< Message recu 
+    int len_msg           ///< Longueur du message
+    )
+{   
+    transact_t *pTransact ;
+    
+    pthread_mutex_lock( &( rrm->pusu.exclu ) ) ;
+    pTransact = get_item_transact(rrm->pusu.transaction,header->Trans_id ) ;
+    if ( pTransact == NULL )
+    {
+        fprintf(stderr,"[RRM] %d PUSU Response (%d): unknown transaction\n",header->msg_type,header->Trans_id);
+    }
+    else
+    {
+        del_item_transact( &(rrm->pusu.transaction),header->Trans_id ) ;
+    }   
+    pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
+        
 #ifdef TRACE
-	if ( header->msg_type < NB_MSG_RRM_PUSU )
-	  fprintf(pusu2rrm_fd,"%lf PUSU->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_pusu_rrm[header->msg_type],header->msg_type,header->Trans_id);    
-	else
-	fprintf(pusu2rrm_fd,"%lf PUSU->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);    
-	fflush(pusu2rrm_fd);
+    if ( header->msg_type < NB_MSG_RRM_PUSU )
+      fprintf(pusu2rrm_fd,"%lf PUSU->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_pusu_rrm[header->msg_type],header->msg_type,header->Trans_id);    
+    else
+    fprintf(pusu2rrm_fd,"%lf PUSU->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);    
+    fflush(pusu2rrm_fd);
 #endif
-	
-	switch ( header->msg_type )
-	{ 
-		case PUSU_PUBLISH_RESP:
-			{
-				msg_fct( "[RRC]>[RRM]:%d:PUSU_PUBLISH_RESP\n",header->inst );
-			}
-			break ;
-		case PUSU_UNPUBLISH_RESP:
-			{
-				msg_fct( "[RRC]>[RRM]:%d:PUSU_UNPUBLISH_RESP\n",header->inst );
-			}
-			break ;
-		case PUSU_LINK_INFO_RESP:
-			{
-				msg_fct( "[RRC]>[RRM]:%d:PUSU_LINK_INFO_RESP\n",header->inst );
-			}
-			break ;
-		case PUSU_SENSING_INFO_RESP:
-			{
-				msg_fct( "[RRC]>[RRM]:%d:PUSU_SENSING_INFO_RESP\n",header->inst );
-			}
-			break ;
-		case PUSU_CH_LOAD_RESP:
-			{
-				msg_fct( "[RRC]>[RRM]:%d:PUSU_CH_LOAD_RESP\n",header->inst );
-			}
-			break ;
-		default :
-			fprintf(stderr,"PUSU:%d:\n",header->msg_type) ;
-			printHex(msg,len_msg,1) ;
-	}
-	
+    
+    switch ( header->msg_type )
+    { 
+        case PUSU_PUBLISH_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:PUSU_PUBLISH_RESP\n",header->inst );
+            }
+            break ;
+        case PUSU_UNPUBLISH_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:PUSU_UNPUBLISH_RESP\n",header->inst );
+            }
+            break ;
+        case PUSU_LINK_INFO_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:PUSU_LINK_INFO_RESP\n",header->inst );
+            }
+            break ;
+        case PUSU_SENSING_INFO_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:PUSU_SENSING_INFO_RESP\n",header->inst );
+            }
+            break ;
+        case PUSU_CH_LOAD_RESP:
+            {
+                msg_fct( "[RRC]>[RRM]:%d:PUSU_CH_LOAD_RESP\n",header->inst );
+            }
+            break ;
+        default :
+            fprintf(stderr,"PUSU:%d:\n",header->msg_type) ;
+            printHex(msg,len_msg,1) ;
+    }
+    
 }
 
 /*!
@@ -517,53 +513,53 @@ static void processing_msg_pusu(
         (rrc ou cmm). 
 \return none
 */
-static void rrm_scheduler (	)
+static void rrm_scheduler ( )
 {
-	int ii ;
-	int no_msg ;
-	fprintf(stderr,"RRM Scheduler: starting ... \n"); 
-	fflush(stderr);
+    int ii ;
+    int no_msg ;
+    fprintf(stderr,"RRM Scheduler: starting ... \n"); 
+    fflush(stderr);
 
-	while ( flag_not_exit)
-	{
-		for ( ii = 0 ; ii<nb_inst ; ii++ )
-		{
-			rrm_t      *rrm = &rrm_inst[ii] ; 
-			file_msg_t *pItem ;
-		
-			pItem = get_msg( &(rrm->file_recv_msg)) ;
-		
-			if ( pItem == NULL ) 
-				no_msg++;
-			else
-			{	
-				msg_head_t *header = (msg_head_t *) pItem->msg;
-				char *msg = NULL ;
-				
-				if ( header != NULL )
-				{
-					if ( header->size > 0 )
-					{ 
-						msg = (char *) (header +1) ;
-					} 
-					
-					if ( pItem->s->s == rrm->cmm.s->s )
-						processing_msg_cmm( rrm , header , msg , header->size ) ;
-					else if ( pItem->s->s == rrm->rrc.s->s )
-						processing_msg_rrc( rrm , header , msg , header->size ) ;
-					else 
-						processing_msg_pusu( rrm , header , msg , header->size ) ;
-						
-					RRM_FREE( pItem->msg) ;
-				}
-				RRM_FREE( pItem ) ;
-			}
-		}	
-			
-		if ( no_msg == nb_inst ) 
-			usleep(1000);
-	}
-	fprintf(stderr,"... stopped RRM Scheduler\n"); fflush(stderr);
+    while ( flag_not_exit)
+    {
+        for ( ii = 0 ; ii<nb_inst ; ii++ )
+        {
+            rrm_t      *rrm = &rrm_inst[ii] ; 
+            file_msg_t *pItem ;
+        
+            pItem = get_msg( &(rrm->file_recv_msg)) ;
+        
+            if ( pItem == NULL ) 
+                no_msg++;
+            else
+            {   
+                msg_head_t *header = (msg_head_t *) pItem->msg;
+                char *msg = NULL ;
+                
+                if ( header != NULL )
+                {
+                    if ( header->size > 0 )
+                    { 
+                        msg = (char *) (header +1) ;
+                    } 
+                    
+                    if ( pItem->s->s == rrm->cmm.s->s )
+                        processing_msg_cmm( rrm , header , msg , header->size ) ;
+                    else if ( pItem->s->s == rrm->rrc.s->s )
+                        processing_msg_rrc( rrm , header , msg , header->size ) ;
+                    else 
+                        processing_msg_pusu( rrm , header , msg , header->size ) ;
+                        
+                    RRM_FREE( pItem->msg) ;
+                }
+                RRM_FREE( pItem ) ;
+            }
+        }   
+            
+        if ( no_msg == nb_inst ) 
+            usleep(1000);
+    }
+    fprintf(stderr,"... stopped RRM Scheduler\n"); fflush(stderr);
 }
 /*!
 *******************************************************************************
@@ -571,57 +567,57 @@ static void rrm_scheduler (	)
 */
 static void get_config_file(char *filename )
 {
-	FILE *fd = fopen( filename , "r" );
-	char buf_line[128] ;
-	int adresse[LENGTH_L2_ID] ;
-	int ii = 0 ;
-	
-	
-	if ( fd == NULL )
-		return ;
-		
-	while ( 1 )
-	{
-		fgets( buf_line, 127, fd ) ;
-		if (feof(fd))
-			break ;
-		
-		if ( buf_line[0] == '#' )
-			continue ;
-		if ( buf_line[0] == ' ' )
-			continue ;
-		if ( buf_line[0] == '\t' )
-			continue ;
-		if ( buf_line[0] == '\n' )
-			continue ;
-			
-		sscanf( buf_line, "%x %x %x %x %x %x %x %x",
-				          &adresse[0],&adresse[1],&adresse[2],&adresse[3],
-				          &adresse[4],&adresse[5],&adresse[6],&adresse[7]);
-		
- 		rrm_inst[ii].id              	= ii ; 
- 		rrm_inst[ii].L2_id.L2_id[0]	 	= adresse[0] &  0xFF ;
- 		rrm_inst[ii].L2_id.L2_id[1]	 	= adresse[1] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[2]	 	= adresse[2] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[3]	 	= adresse[3] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[4]	 	= adresse[4] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[5]	 	= adresse[5] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[6]	 	= adresse[6] &  0xFF;
- 		rrm_inst[ii].L2_id.L2_id[7]	 	= adresse[7] &  0xFF;
-		
-		print_L2_id( &rrm_inst[ii].L2_id ) ;
-		fprintf(stderr," (%d) %d \n", ii, buf_line[0] );
-		
-		ii++ ;
-		
-		adresse[0]=adresse[1]=adresse[2]=adresse[3]=adresse[4]=adresse[5]=adresse[6]=adresse[7]=0;
-		buf_line[0] = 0;
-	}
-	
-	
-	nb_inst = ii ;
-		
-	fclose(fd) ;	
+    FILE *fd = fopen( filename , "r" );
+    char buf_line[128] ;
+    int adresse[LENGTH_L2_ID] ;
+    int ii = 0 ;
+    
+    
+    if ( fd == NULL )
+        return ;
+        
+    while ( 1 )
+    {
+        fgets( buf_line, 127, fd ) ;
+        if (feof(fd))
+            break ;
+        
+        if ( buf_line[0] == '#' )
+            continue ;
+        if ( buf_line[0] == ' ' )
+            continue ;
+        if ( buf_line[0] == '\t' )
+            continue ;
+        if ( buf_line[0] == '\n' )
+            continue ;
+            
+        sscanf( buf_line, "%x %x %x %x %x %x %x %x",
+                          &adresse[0],&adresse[1],&adresse[2],&adresse[3],
+                          &adresse[4],&adresse[5],&adresse[6],&adresse[7]);
+        
+        rrm_inst[ii].id                 = ii ; 
+        rrm_inst[ii].L2_id.L2_id[0]     = adresse[0] &  0xFF ;
+        rrm_inst[ii].L2_id.L2_id[1]     = adresse[1] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[2]     = adresse[2] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[3]     = adresse[3] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[4]     = adresse[4] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[5]     = adresse[5] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[6]     = adresse[6] &  0xFF;
+        rrm_inst[ii].L2_id.L2_id[7]     = adresse[7] &  0xFF;
+        
+        print_L2_id( &rrm_inst[ii].L2_id ) ;
+        fprintf(stderr," (%d) %d \n", ii, buf_line[0] );
+        
+        ii++ ;
+        
+        adresse[0]=adresse[1]=adresse[2]=adresse[3]=adresse[4]=adresse[5]=adresse[6]=adresse[7]=0;
+        buf_line[0] = 0;
+    }
+    
+    
+    nb_inst = ii ;
+        
+    fclose(fd) ;    
 }
 /*!
 *******************************************************************************
@@ -629,8 +625,8 @@ static void get_config_file(char *filename )
 */
 static void help()
 {
-	fprintf(stderr,"syntax: rrm -i <nombre instance> \n" );
-	fprintf(stderr,"        rrm -f <config file> \n" );
+    fprintf(stderr,"syntax: rrm -i <nombre instance> \n" );
+    fprintf(stderr,"        rrm -f <config file> \n" );
 }
 
 /*!
@@ -640,170 +636,170 @@ static void help()
 
 int main( int argc , char **argv )
 {
-	int ii;
-	int c 			=  0;
-	int ret 		=  0;
-	int flag_cfg    =  0 ;
-	struct data_thread DataRrc;
- 	struct data_thread DataCmm;
- 	struct data_thread DataPusu;
-	pthread_attr_t attr ;	
-	
- 	/* Vérification des arguments */
-	while ((c = getopt(argc,argv,"i:f:h")) != -1)
-		switch (c) 
-		{
-			case 'i':
-				nb_inst=atoi(optarg);
-			break;
-			case 'f':
-				get_config_file(optarg);
-				flag_cfg = 1 ;
-			break;
-			case 'h':
-				help();
-				exit(0);
-			break;	
-			default:
-				help();
-				exit(0);				
-		}
+    int ii;
+    int c           =  0;
+    int ret         =  0;
+    int flag_cfg    =  0 ;
+    struct data_thread DataRrc;
+    struct data_thread DataCmm;
+    struct data_thread DataPusu;
+    pthread_attr_t attr ;   
+    
+    /* Vérification des arguments */
+    while ((c = getopt(argc,argv,"i:f:h")) != -1)
+        switch (c) 
+        {
+            case 'i':
+                nb_inst=atoi(optarg);
+            break;
+            case 'f':
+                get_config_file(optarg);
+                flag_cfg = 1 ;
+            break;
+            case 'h':
+                help();
+                exit(0);
+            break;  
+            default:
+                help();
+                exit(0);                
+        }
 
-	if (nb_inst <= 0 ) 
-	{
-		fprintf(stderr,"[RRM] Provide a node id\n");
-		exit(-1);
-	}
-	if (nb_inst >= MAX_RRM) 
-	{
-		fprintf(stderr,"[RRM] the instance number (%d) is upper than MAX_RRM (%d)\n", nb_inst, MAX_RRM);
-		exit(-1);
-	}
-	
-	/* ***** MUTEX ***** */ 
-	// initialise les attributs des threads
-	pthread_attr_init( &attr ) ;
-	pthread_attr_setschedpolicy( &attr, SCHED_RR ) ;
+    if (nb_inst <= 0 ) 
+    {
+        fprintf(stderr,"[RRM] Provide a node id\n");
+        exit(-1);
+    }
+    if (nb_inst >= MAX_RRM) 
+    {
+        fprintf(stderr,"[RRM] the instance number (%d) is upper than MAX_RRM (%d)\n", nb_inst, MAX_RRM);
+        exit(-1);
+    }
+    
+    /* ***** MUTEX ***** */ 
+    // initialise les attributs des threads
+    pthread_attr_init( &attr ) ;
+    pthread_attr_setschedpolicy( &attr, SCHED_RR ) ;
 
-	DataRrc.name     		= "RRC" ;
-	DataRrc.sock_path_local	= RRM_RRC_SOCK_PATH ;
-	DataRrc.sock_path_dest	= RRC_RRM_SOCK_PATH ;
-	DataRrc.s.s	 			= -1  ; 
-	
-	DataCmm.name     		= "CMM" ;
-	DataCmm.sock_path_local	= RRM_CMM_SOCK_PATH ;
-	DataCmm.sock_path_dest	= CMM_RRM_SOCK_PATH ;
-	DataCmm.s.s  			= -1 ;
+    DataRrc.name            = "RRC" ;
+    DataRrc.sock_path_local = RRM_RRC_SOCK_PATH ;
+    DataRrc.sock_path_dest  = RRC_RRM_SOCK_PATH ;
+    DataRrc.s.s             = -1  ; 
+    
+    DataCmm.name            = "CMM" ;
+    DataCmm.sock_path_local = RRM_CMM_SOCK_PATH ;
+    DataCmm.sock_path_dest  = CMM_RRM_SOCK_PATH ;
+    DataCmm.s.s             = -1 ;
 
-	DataPusu.name     		= "PUSU" ;
-	DataPusu.sock_path_local= RRM_PUSU_SOCK_PATH ;
-	DataPusu.sock_path_dest	= PUSU_RRM_SOCK_PATH ;
-	DataPusu.s.s  			= -1 ;
-	
+    DataPusu.name           = "PUSU" ;
+    DataPusu.sock_path_local= RRM_PUSU_SOCK_PATH ;
+    DataPusu.sock_path_dest = PUSU_RRM_SOCK_PATH ;
+    DataPusu.s.s            = -1 ;
+    
 #ifdef TRACE    
-	cmm2rrm_fd  = fopen( "VCD/cmm2rrm.txt" , "w") ;
-	PNULL(cmm2rrm_fd) ;
+    cmm2rrm_fd  = fopen( "VCD/cmm2rrm.txt" , "w") ;
+    PNULL(cmm2rrm_fd) ;
 
-	rrc2rrm_fd  = fopen( "VCD/rrc2rrm.txt", "w") ;
-	PNULL(rrc2rrm_fd) ;
-	
-	pusu2rrm_fd = fopen( "VCD/pusu2rrm.txt", "w") ;
-	PNULL(pusu2rrm_fd) ;
+    rrc2rrm_fd  = fopen( "VCD/rrc2rrm.txt", "w") ;
+    PNULL(rrc2rrm_fd) ;
+    
+    pusu2rrm_fd = fopen( "VCD/pusu2rrm.txt", "w") ;
+    PNULL(pusu2rrm_fd) ;
 #endif
 
-	for ( ii = 0 ; ii < nb_inst ; ii++ )
-	{
- 		if ( !flag_cfg ) 
- 		{
- 			rrm_inst[ii].id              	= ii ; 
-			rrm_inst[ii].L2_id.L2_id[0]	 	= ii;
-			rrm_inst[ii].L2_id.L2_id[1]	 	= 0x00;
-			rrm_inst[ii].L2_id.L2_id[2]	 	= 0x00;
-			rrm_inst[ii].L2_id.L2_id[3]	 	= 0xDE;
-			rrm_inst[ii].L2_id.L2_id[4]	 	= 0xAD;
-			rrm_inst[ii].L2_id.L2_id[5]	 	= 0xBE;
-			rrm_inst[ii].L2_id.L2_id[6]	 	= 0xAF;
-			rrm_inst[ii].L2_id.L2_id[7]	 	= 0x00;
-		}
+    for ( ii = 0 ; ii < nb_inst ; ii++ )
+    {
+        if ( !flag_cfg ) 
+        {
+            rrm_inst[ii].id                 = ii ; 
+            rrm_inst[ii].L2_id.L2_id[0]     = ii;
+            rrm_inst[ii].L2_id.L2_id[1]     = 0x00;
+            rrm_inst[ii].L2_id.L2_id[2]     = 0x00;
+            rrm_inst[ii].L2_id.L2_id[3]     = 0xDE;
+            rrm_inst[ii].L2_id.L2_id[4]     = 0xAD;
+            rrm_inst[ii].L2_id.L2_id[5]     = 0xBE;
+            rrm_inst[ii].L2_id.L2_id[6]     = 0xAF;
+            rrm_inst[ii].L2_id.L2_id[7]     = 0x00;
+        }
 
-		pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
- 		pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
-  		pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
-		
-  		init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
-		init_file_msg( &(rrm_inst[ii].file_send_msg), 2 ) ;
-	
- 		rrm_inst[ii].state           	= ISOLATEDNODE ; 
- 		rrm_inst[ii].cmm.trans_cnt	 	=  1024;
- 		rrm_inst[ii].rrc.trans_cnt	 	=  2048;
- 		rrm_inst[ii].pusu.trans_cnt	 	=  3072;
- 		rrm_inst[ii].rrc.s		 		= &DataRrc.s;
- 		rrm_inst[ii].cmm.s		 		= &DataCmm.s;
- 		rrm_inst[ii].pusu.s		 		= &DataPusu.s;
-		rrm_inst[ii].rrc.transaction 	= NULL ;
- 		rrm_inst[ii].cmm.transaction 	= NULL ;
- 		rrm_inst[ii].pusu.transaction 	= NULL ;
- 		rrm_inst[ii].rrc.pNeighborEntry	= NULL ;
-	}
-	
-	/* Creation du thread de reception des messages RRC*/
-	fprintf(stderr,"Creation du thread RRC : %d\n", nb_inst);
-	ret = pthread_create ( &pthread_recv_rrc_msg_hnd, NULL, thread_recv_msg , &DataRrc );
-	if (ret)
-	{
-		fprintf (stderr, "%s", strerror (ret));
-		exit(-1) ;
-	}
-	
-	/* Creation du thread de reception des messages CMM */
-	ret = pthread_create (&pthread_recv_cmm_msg_hnd , NULL, thread_recv_msg, &DataCmm );
-	if (ret)
-	{
-		fprintf (stderr, "%s", strerror (ret));
-		exit(-1) ;
-	}
-	
-	/* Creation du thread de reception des messages PUSU */
-	ret = pthread_create (&pthread_recv_pusu_msg_hnd , NULL, thread_recv_msg, &DataPusu );
-	if (ret)
-	{
-		fprintf (stderr, "%s", strerror (ret));
-		exit(-1) ;
-	}
-		
-	/* Creation du thread CMM d'envoi des messages */
-	ret = pthread_create (&pthread_send_msg_hnd, NULL, thread_send_msg, NULL );
-	if (ret)
-	{
-		fprintf (stderr, "%s", strerror (ret));
-		exit(-1) ;
-	}
+        pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
+        
+        init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
+        init_file_msg( &(rrm_inst[ii].file_send_msg), 2 ) ;
+    
+        rrm_inst[ii].state              = ISOLATEDNODE ; 
+        rrm_inst[ii].cmm.trans_cnt      =  1024;
+        rrm_inst[ii].rrc.trans_cnt      =  2048;
+        rrm_inst[ii].pusu.trans_cnt     =  3072;
+        rrm_inst[ii].rrc.s              = &DataRrc.s;
+        rrm_inst[ii].cmm.s              = &DataCmm.s;
+        rrm_inst[ii].pusu.s             = &DataPusu.s;
+        rrm_inst[ii].rrc.transaction    = NULL ;
+        rrm_inst[ii].cmm.transaction    = NULL ;
+        rrm_inst[ii].pusu.transaction   = NULL ;
+        rrm_inst[ii].rrc.pNeighborEntry = NULL ;
+    }
+    
+    /* Creation du thread de reception des messages RRC*/
+    fprintf(stderr,"Creation du thread RRC : %d\n", nb_inst);
+    ret = pthread_create ( &pthread_recv_rrc_msg_hnd, NULL, thread_recv_msg , &DataRrc );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
+    
+    /* Creation du thread de reception des messages CMM */
+    ret = pthread_create (&pthread_recv_cmm_msg_hnd , NULL, thread_recv_msg, &DataCmm );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
+    
+    /* Creation du thread de reception des messages PUSU */
+    ret = pthread_create (&pthread_recv_pusu_msg_hnd , NULL, thread_recv_msg, &DataPusu );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
+        
+    /* Creation du thread CMM d'envoi des messages */
+    ret = pthread_create (&pthread_send_msg_hnd, NULL, thread_send_msg, NULL );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
 
-	/* Creation du thread TTL */
-	ret = pthread_create (&pthread_ttl_hnd , NULL, thread_processing_ttl, NULL);
-	if (ret)
-	{
-		fprintf (stderr, "%s", strerror (ret));
-		exit(-1) ;
-	}
+    /* Creation du thread TTL */
+    ret = pthread_create (&pthread_ttl_hnd , NULL, thread_processing_ttl, NULL);
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
 
     /* main loop */
-	rrm_scheduler( ) ;
-	
-	/* Attente de la fin des threads. */
-	pthread_join (pthread_recv_cmm_msg_hnd, NULL);
-	pthread_join (pthread_recv_rrc_msg_hnd, NULL);
-	pthread_join (pthread_recv_pusu_msg_hnd, NULL);
-	pthread_join (pthread_send_msg_hnd, NULL);
-	pthread_join (pthread_ttl_hnd, NULL);
-	
+    rrm_scheduler( ) ;
+    
+    /* Attente de la fin des threads. */
+    pthread_join (pthread_recv_cmm_msg_hnd, NULL);
+    pthread_join (pthread_recv_rrc_msg_hnd, NULL);
+    pthread_join (pthread_recv_pusu_msg_hnd, NULL);
+    pthread_join (pthread_send_msg_hnd, NULL);
+    pthread_join (pthread_ttl_hnd, NULL);
+    
 #ifdef TRACE   
-	  fclose(cmm2rrm_fd ) ;
-	  fclose(rrc2rrm_fd ) ;
-	  fclose(pusu2rrm_fd ) ;
+      fclose(cmm2rrm_fd ) ;
+      fclose(rrc2rrm_fd ) ;
+      fclose(pusu2rrm_fd ) ;
 #endif
-	
-	return 0 ;	
+    
+    return 0 ;  
 }
 
 
