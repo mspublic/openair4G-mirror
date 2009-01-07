@@ -29,8 +29,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/socket.h>
-#include <sys/un.h>
 
 #include "debug.h"
 #include "L3_rrc_defs.h"
@@ -39,6 +37,14 @@
 
 //! \brief  Taille maximale de la charge utile
 #define SIZE_MAX_PAYLOAD    2048
+
+
+
+
+#include <sys/socket.h>
+#include <sys/un.h>
+
+
 
 /*!
 *******************************************************************************
