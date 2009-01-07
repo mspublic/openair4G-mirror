@@ -36,6 +36,19 @@ extern "C" {
 *******************************************************************************
 \brief Structure definissant une instance RRM       
 */
+
+
+#ifdef RRC_KERNEL_MODE
+
+#define RRC2RRM_FIFO 14
+#define RRM2RRC_FIFO 15
+  typedef struct{
+    int rrc_2_rrm_fifo;
+    int rrm_2_rrc_fifo;
+  }RRM_FIFOS; 
+#endif
+
+
 typedef struct {
     int  id                                 ; ///< identification de l'instance RRM
     
@@ -60,24 +73,34 @@ typedef struct {
         transact_t     *transaction        ; ///< liste des transactions non terminees
         pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
 
-    } cmm                                   ; ///<  info relatif a l'interface CMM
-    
-    struct {
-        sock_rrm_t      *s                  ; ///< Socket associé a l'interface RRC
-        unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface RRC
-        transact_t      *transaction        ; ///< liste des transactions non terminees
-        pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-        
-        neighbor_desc_t *pNeighborEntry     ; ///< Descripteur sur le voisinage
-        RB_desc_t       *pRbEntry           ; ///< Descripteur sur les RB (radio bearer) ouverts
-    } rrc                                   ; ///<  info relatif a l'interface rrc
-    
-    struct {
+
+	} cmm 									; ///<  info relatif a l'interface CMM
+	
+	struct {
+#ifdef TRACE    
+		FILE *fd 							; ///< Fichier pour trace de debug : action RRM->RRC
+#endif
+
+#ifndef RRC_KERNEL_MODE 
+		sock_rrm_t  	*s 					; ///< Socket associé a l'interface RRC
+#else
+	        RRM_FIFOS *s;
+#endif
+		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
+		transaction_t 	*transaction		; ///< liste des transactions non terminees
+		pthread_mutex_t exclu				; ///< mutex pour le partage de structure
+
+		neighbor_desc_t *pNeighborEntry 	; ///< Descripteur sur le voisinage
+		RB_desc_t 		*pRbEntry 			; ///< Descripteur sur les RB (radio bearer) ouverts
+	} rrc 									; ///<  info relatif a l'interface rrc
+	
+	struct {
         sock_rrm_t      *s                  ; ///< Socket associé a l'interface PUSU
         unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface PUSU
         transact_t     *transaction        ; ///< liste des transactions non terminees
         pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-    } pusu                                  ; ///< info relatif a l'interface pusu  
+	} pusu 									; ///<  info relatif a l'interface pusu
+	
 
 } rrm_t ;
 
