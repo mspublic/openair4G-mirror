@@ -23,12 +23,18 @@
 
 *******************************************************************************
 */
-#ifndef __RRC_MSG_H
-#define __RRC_MSG_H
+#ifndef __RRC_RRM_MSG_H
+#define __RRC_RRM_MSG_H
 
 
 #include "L3_rrc_defs.h"
+#include "COMMON/mac_rrc_primitives.h"
+#ifdef OPENAIR2_IN
 #include "rrm_sock.h"
+#else
+#include "RRC/MESH/rrc_rrm_interface.h" 
+#endif
+//#include "../../../openair2/RRC/MESH/rrc_rrm_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -230,9 +236,11 @@ extern const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] ;
  *          (sans le prefixe msg_ ) du fichier: L3_rrc_interface.h
  */          
 
+
 msg_t *msg_rrm_rb_establish_req( Instance_t inst,    
             const LCHAN_DESC *Lchan_desc, const MAC_RLC_MEAS_DESC *Mac_rlc_meas_desc, 
             L2_ID *L2_id, Transaction_t Trans_id, unsigned char *L3_info, L3_INFO_T L3_info_t );           
+
 
 msg_t *msg_rrm_rb_modify_req( Instance_t inst, 
             const LCHAN_DESC  *Lchan_desc, const MAC_RLC_MEAS_DESC *Mac_meas_desc, 
