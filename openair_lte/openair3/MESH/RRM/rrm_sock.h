@@ -23,6 +23,10 @@
 #ifndef RRM_SOCK_H
 #define RRM_SOCK_H
 
+
+
+
+
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -82,6 +86,18 @@ typedef struct {
 } msg_t ;
 
 
+
+/*!
+*******************************************************************************
+\brief  entete du message vers le PuSu
+*/
+//typedef struct   { 
+  //unsigned char type	; ///< type du message
+  //unsigned char inst  ; ///< Identification de l'instance RRM
+  //unsigned int  length; ///< taille du message
+  //} msg_pusu_head_t ;
+
+
 /*!
 *******************************************************************************
 \brief  Definition de la structure definissant le socket pour envoyer les messages
@@ -100,5 +116,6 @@ char *recv_msg( sock_rrm_t *s ) ;
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* RRM_SOCK_H */
