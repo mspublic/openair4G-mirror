@@ -92,8 +92,13 @@ int   nb_inst = -1 ;
 static int flag_not_exit = 1 ;
 static pthread_t pthread_recv_rrc_msg_hnd, 
                  pthread_recv_cmm_msg_hnd , 
+
+                 pthread_send_rrc_msg_hnd , 
+                 pthread_send_cmm_msg_hnd , 
+
                  pthread_recv_pusu_msg_hnd , 
                  pthread_send_msg_hnd , 
+
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
 
@@ -160,14 +165,16 @@ static void * thread_processing_ttl (
 
 \return NULL
 */
-static void * thread_send_msg (
+static void * thread_send_msg_cmm (
     void * p_data /**< parametre du pthread */
     )
 {
+
     int ii ;
     int no_msg ;
     fprintf(stderr,"Thread Send Message: starting ... \n"); 
     fflush(stderr);
+
 
     while ( flag_not_exit)
     {
@@ -195,6 +202,61 @@ static void * thread_send_msg (
     }
     fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
     return NULL;
+
+}
+
+
+
+/*!
+*******************************************************************************
+\brief  thread de traitement des messages sortants sur les sockets (rrc ou cmm). 
+
+\return NULL
+*/
+static void * thread_send_msg_rrc (
+	void * p_data /**< parametre du pthread */
+	)
+{
+  int ii ,taille;
+	int no_msg ;
+	fprintf(stderr,"Thread Send Message: starting ... \n"); 
+	fflush(stderr);
+
+	while ( flag_not_exit)
+	{
+		no_msg = 0  ;
+		for ( ii = 0 ; ii<nb_inst ; ii++ )
+		{
+			rrm_t      *rrm = &rrm_inst[ii] ; 
+			file_msg_t *pItem ;
+		
+			pItem = get_msg( &(rrm->file_send_msg) ) ;
+		
+			if ( pItem == NULL ) 
+				no_msg++;
+			else
+			{	
+			  
+#ifdef RRC_KERNEL_MODE
+			    taille = sizeof(msg_head_t)  ;  
+			    taille += pItem->msg->head.size ;
+			    write (RRM2RRC_FIFO,(char*) pItem->msg, taille);
+#else
+			    int r =  send_msg( pItem->s, pItem->msg );
+			    WARNING(r!=0);
+#endif
+			    
+			    
+			}	
+			RRM_FREE( pItem ) ;
+		}
+		
+		if ( no_msg==nb_inst ) // Pas de message 
+		  usleep(100000);
+		
+	}
+	fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
+	return NULL;
 }
 
 /*!
@@ -203,6 +265,7 @@ static void * thread_send_msg (
 
 \return NULL
 */
+
 static void * thread_recv_msg (
     void * p_data /**< parametre du pthread */
     )
@@ -243,6 +306,48 @@ static void * thread_recv_msg (
     return NULL;
 }
 
+/*******************************************************************************/
+#ifdef RRC_KERNEL_MODE
+char Header_buf[sizeof(msg_head_t)];
+char Data[2400];
+unsigned short Header_read_idx=0,Data_read_idx=0, Data_to_read=0,Header_size=sizeof(msg_head_t);
+static void * thread_recv_msg_fifo (void * p_data ){
+/*******************************************************************************/
+  msg_t *msg;
+  rrm_t *rrm;
+  msg_head_t *Header ;
+  int inst,bytes_read;
+  while (flag_not_exit){
+    if(Header_read_idx < Header_size){
+      bytes_read = read (RRC2RRM_FIFO,&Data[Header_read_idx],Header_size-Header_read_idx);
+      Header_read_idx+=bytes_read;
+      if(Header_read_idx == Header_size){
+	Data_to_read=Header->size;
+	Data_read_idx=Header_read_idx;
+	Header = (msg_head_t *) Data;
+      }
+      //msg("[fn_rrc]TTI %d: rcv_msg return Null\n",Rrc_xface->Frame_index);
+      else
+	break;
+    }
+    if (Data_to_read > 0 ){
+      bytes_read = read (RRM2RRC_FIFO,&Data[Data_read_idx],Data_to_read);
+      Data_to_read-=bytes_read;
+      Data_read_idx+=bytes_read;
+      if(Data_to_read > 0 ) 
+	break;
+      Header_read_idx=0;
+      Data_read_idx=0;
+      Data_to_read=0;
+      msg=(msg_t*)Data;
+      inst = msg->head.inst ;
+      rrm = &rrm_inst[inst];  
+      put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg) ;
+
+    }
+  }
+}
+#endif
 /*!
 *******************************************************************************
 \brief  traitement des messages entrant sur l'interface CMM
@@ -636,34 +741,37 @@ static void help()
 
 int main( int argc , char **argv )
 {
-    int ii;
-    int c           =  0;
-    int ret         =  0;
-    int flag_cfg    =  0 ;
-    struct data_thread DataRrc;
-    struct data_thread DataCmm;
-    struct data_thread DataPusu;
-    pthread_attr_t attr ;   
-    
-    /* Vérification des arguments */
-    while ((c = getopt(argc,argv,"i:f:h")) != -1)
-        switch (c) 
-        {
-            case 'i':
-                nb_inst=atoi(optarg);
-            break;
-            case 'f':
-                get_config_file(optarg);
-                flag_cfg = 1 ;
-            break;
-            case 'h':
-                help();
-                exit(0);
-            break;  
-            default:
-                help();
-                exit(0);                
-        }
+
+	int ii;
+	int c 			=  0;
+	int ret 		=  0;
+	int flag_cfg    =  0 ;
+	struct data_thread DataRrc;
+ 	struct data_thread DataCmm;
+	struct data_thread DataPusu;
+	pthread_attr_t attr ;	
+#ifdef RRC_KERNEL_MODE
+	RRM_FIFOS Rrm_fifos;
+#endif
+ 	/* Vérification des arguments */
+	while ((c = getopt(argc,argv,"i:f:h")) != -1)
+		switch (c) 
+		{
+			case 'i':
+				nb_inst=atoi(optarg);
+			break;
+			case 'f':
+				get_config_file(optarg);
+				flag_cfg = 1 ;
+			break;
+			case 'h':
+				help();
+				exit(0);
+			break;	
+			default:
+				help();
+				exit(0);				
+		}
 
     if (nb_inst <= 0 ) 
     {
@@ -681,15 +789,24 @@ int main( int argc , char **argv )
     pthread_attr_init( &attr ) ;
     pthread_attr_setschedpolicy( &attr, SCHED_RR ) ;
 
-    DataRrc.name            = "RRC" ;
-    DataRrc.sock_path_local = RRM_RRC_SOCK_PATH ;
-    DataRrc.sock_path_dest  = RRC_RRM_SOCK_PATH ;
-    DataRrc.s.s             = -1  ; 
-    
-    DataCmm.name            = "CMM" ;
-    DataCmm.sock_path_local = RRM_CMM_SOCK_PATH ;
-    DataCmm.sock_path_dest  = CMM_RRM_SOCK_PATH ;
-    DataCmm.s.s             = -1 ;
+
+
+#ifdef RRC_KERNEL_MODE
+	Rrm_fifos.rrc_2_rrm_fifo=RRC2RRM_FIFO ; 
+	Rrm_fifos.rrm_2_rrc_fifo=RRM2RRC_FIFO ; 
+#else
+	DataRrc.name     	= "RRC" ;
+	DataRrc.sock_path_local	= RRM_RRC_SOCK_PATH ;
+	DataRrc.sock_path_dest	= RRC_RRM_SOCK_PATH ;
+	DataRrc.s.s	 			= -1  ; 
+
+
+#endif
+
+	DataCmm.name     	= "CMM" ;
+	DataCmm.sock_path_local	= RRM_CMM_SOCK_PATH ;
+	DataCmm.sock_path_dest	= CMM_RRM_SOCK_PATH ;
+	DataCmm.s.s  			= -1 ;
 
     DataPusu.name           = "PUSU" ;
     DataPusu.sock_path_local= RRM_PUSU_SOCK_PATH ;
@@ -708,9 +825,9 @@ int main( int argc , char **argv )
 #endif
 
     for ( ii = 0 ; ii < nb_inst ; ii++ )
-    {
+      {
         if ( !flag_cfg ) 
-        {
+	  {
             rrm_inst[ii].id                 = ii ; 
             rrm_inst[ii].L2_id.L2_id[0]     = ii;
             rrm_inst[ii].L2_id.L2_id[1]     = 0x00;
@@ -720,86 +837,112 @@ int main( int argc , char **argv )
             rrm_inst[ii].L2_id.L2_id[5]     = 0xBE;
             rrm_inst[ii].L2_id.L2_id[6]     = 0xAF;
             rrm_inst[ii].L2_id.L2_id[7]     = 0x00;
-        }
-
-        pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
-        pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
+	  }
+	
+	pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
+	pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
         pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
-        
-        init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
-        init_file_msg( &(rrm_inst[ii].file_send_msg), 2 ) ;
-    
-        rrm_inst[ii].state              = ISOLATEDNODE ; 
+ 	
+	init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
+	init_file_msg( &(rrm_inst[ii].file_send_msg), 2 ) ;
+	
+	rrm_inst[ii].state           	= ISOLATEDNODE ; 
         rrm_inst[ii].cmm.trans_cnt      =  1024;
         rrm_inst[ii].rrc.trans_cnt      =  2048;
         rrm_inst[ii].pusu.trans_cnt     =  3072;
-        rrm_inst[ii].rrc.s              = &DataRrc.s;
-        rrm_inst[ii].cmm.s              = &DataCmm.s;
-        rrm_inst[ii].pusu.s             = &DataPusu.s;
-        rrm_inst[ii].rrc.transaction    = NULL ;
-        rrm_inst[ii].cmm.transaction    = NULL ;
-        rrm_inst[ii].pusu.transaction   = NULL ;
-        rrm_inst[ii].rrc.pNeighborEntry = NULL ;
-    }
-    
+	
+#ifdef RRC_KERNEL_MODE
+	rrm_inst[ii].rrc.s		 		= &Rrm_fifos;
+#else
+	rrm_inst[ii].rrc.s		 		= &DataRrc.s;
+#endif
+	rrm_inst[ii].cmm.s		 		= &DataCmm.s;
+	rrm_inst[ii].pusu.s             = &DataPusu.s;
+	
+	rrm_inst[ii].rrc.transaction 	= NULL ;
+	rrm_inst[ii].cmm.transaction 	= NULL ;
+	rrm_inst[ii].pusu.transaction   = NULL ;
+	rrm_inst[ii].rrc.pNeighborEntry	= NULL ;
+      }
+	
     /* Creation du thread de reception des messages RRC*/
     fprintf(stderr,"Creation du thread RRC : %d\n", nb_inst);
+#ifdef RRC_KERNEL_MODE
+    ret = pthread_create ( &pthread_recv_rrc_msg_hnd, NULL, thread_recv_msg_fifo , &DataRrc );
+    if (ret)
+      {
+	fprintf (stderr, "%s", strerror (ret));
+	exit(-1) ;
+      }
+#else
     ret = pthread_create ( &pthread_recv_rrc_msg_hnd, NULL, thread_recv_msg , &DataRrc );
     if (ret)
-    {
-        fprintf (stderr, "%s", strerror (ret));
-        exit(-1) ;
-    }
-    
+      {
+	fprintf (stderr, "%s", strerror (ret));
+	exit(-1) ;
+      }
+#endif
     /* Creation du thread de reception des messages CMM */
     ret = pthread_create (&pthread_recv_cmm_msg_hnd , NULL, thread_recv_msg, &DataCmm );
     if (ret)
-    {
-        fprintf (stderr, "%s", strerror (ret));
-        exit(-1) ;
-    }
+      {
+	fprintf (stderr, "%s", strerror (ret));
+	exit(-1) ;
+      }
+    
+    /* Creation du thread CMM d'envoi des messages */
+    ret = pthread_create (&pthread_send_cmm_msg_hnd, NULL, thread_send_msg_cmm, NULL );
+    if (ret)
+      {
+	fprintf (stderr, "%s", strerror (ret));
+		exit(-1) ;
+      }
     
     /* Creation du thread de reception des messages PUSU */
     ret = pthread_create (&pthread_recv_pusu_msg_hnd , NULL, thread_recv_msg, &DataPusu );
     if (ret)
-    {
+      {
         fprintf (stderr, "%s", strerror (ret));
         exit(-1) ;
-    }
-        
-    /* Creation du thread CMM d'envoi des messages */
-    ret = pthread_create (&pthread_send_msg_hnd, NULL, thread_send_msg, NULL );
-    if (ret)
-    {
-        fprintf (stderr, "%s", strerror (ret));
-        exit(-1) ;
-    }
+      }
 
+    
+    /* Creation du thread CMM d'envoi des messages */
+    ret = pthread_create (&pthread_send_rrc_msg_hnd, NULL, thread_send_msg_rrc, NULL );
+    if (ret)
+      {
+	fprintf (stderr, "%s", strerror (ret));
+	exit(-1) ;
+      }
+    
+    
     /* Creation du thread TTL */
     ret = pthread_create (&pthread_ttl_hnd , NULL, thread_processing_ttl, NULL);
     if (ret)
-    {
-        fprintf (stderr, "%s", strerror (ret));
-        exit(-1) ;
-    }
-
+      {
+	fprintf (stderr, "%s", strerror (ret));
+	exit(-1) ;
+	}
+    
     /* main loop */
+
     rrm_scheduler( ) ;
     
     /* Attente de la fin des threads. */
     pthread_join (pthread_recv_cmm_msg_hnd, NULL);
     pthread_join (pthread_recv_rrc_msg_hnd, NULL);
     pthread_join (pthread_recv_pusu_msg_hnd, NULL);
-    pthread_join (pthread_send_msg_hnd, NULL);
+    pthread_join (pthread_send_cmm_msg_hnd, NULL);
+    pthread_join (pthread_send_rrc_msg_hnd, NULL);
     pthread_join (pthread_ttl_hnd, NULL);
     
 #ifdef TRACE   
-      fclose(cmm2rrm_fd ) ;
-      fclose(rrc2rrm_fd ) ;
-      fclose(pusu2rrm_fd ) ;
+    fclose(cmm2rrm_fd ) ;
+    fclose(rrc2rrm_fd ) ;
+    fclose(pusu2rrm_fd ) ;
 #endif
     
     return 0 ;  
 }
 
-
+}
