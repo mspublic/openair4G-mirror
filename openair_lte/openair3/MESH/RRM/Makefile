@@ -13,7 +13,7 @@ EMUL        = $(CHEMIN)/EMUL
 VPATH		= $(CHEMIN):$(OPENAIR2_RRC):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I .  -I $(OPENAIR2_RRC) -I $(OPENAIR3_RRM) -I $(INTERFACE) -I$(OPENAIR2_DIR)
-CFLAGS		= -Wall  -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN -DWAIT_PASCAL
+CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
 LDFLAGS		= -lm 
 
 ifeq ($(OSTYPE),Cygwin)
