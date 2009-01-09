@@ -40,9 +40,6 @@
 extern "C" {
 #endif
 
-typedef unsigned char Instance_t;
-typedef unsigned int Transaction_t;
-
 /*!
 *******************************************************************************
 \brief  Enumeration des messages entre RRM/RRCI et le RRC
@@ -72,14 +69,6 @@ typedef enum {
     NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
 
 } MSG_RRC_RRM_T ;
-
-
-#ifdef WAIT_PASCAL
-typedef struct {
-	unsigned int 	Trans_id  	; //!< Transaction ID
-} rrc_generic_resp_t  ;
-
-#endif
 
 /*!
 *******************************************************************************
