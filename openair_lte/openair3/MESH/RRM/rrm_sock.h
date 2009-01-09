@@ -86,30 +86,6 @@ typedef struct {
 } msg_t ;
 
 
-
-#ifdef WAIT_PASCAL
-/*!
-*******************************************************************************
-\brief  entete du message vers le PuSu
-*/
-typedef struct   { 
-	unsigned char type	; ///< type du message
-	unsigned char inst  ; ///< Identification de l'instance RRM
-	unsigned int  length; ///< taille du message
-} msg_pusu_head_t ;
-
-/*!
-*******************************************************************************
-\brief  Definition de la structure d'un message a envoyer sur le socket vers le
-    	PuSu
-*/
-typedef struct {
-	msg_pusu_head_t  head ; ///< entete du message
-	void 			*data ; ///< message
-} msg_pusu_t;
-#endif
-
-
 /*!
 *******************************************************************************
 \brief  Definition de la structure definissant le socket pour envoyer les messages
