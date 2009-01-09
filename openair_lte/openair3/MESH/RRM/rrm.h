@@ -87,7 +87,7 @@ typedef struct {
 	        RRM_FIFOS *s;
 #endif
 		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
-		transaction_t 	*transaction		; ///< liste des transactions non terminees
+		transact_t 	    *transaction		; ///< liste des transactions non terminees
 		pthread_mutex_t exclu				; ///< mutex pour le partage de structure
 
 		neighbor_desc_t *pNeighborEntry 	; ///< Descripteur sur le voisinage
