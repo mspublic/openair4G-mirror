@@ -13,6 +13,14 @@
 
 #include "COMMON/mac_rrc_primitives.h"
 
+/*! \brief Transaction ID descriptor
+*/
+typedef unsigned int Transaction_t;
+
+/*! \brief Instance ID descriptor
+ */
+typedef unsigned char Instance_t;
+
 /*!\brief Radio Bearer ID descriptor
  */
 typedef unsigned short RB_ID;
@@ -20,12 +28,12 @@ typedef unsigned short RB_ID;
 
 typedef unsigned short QOS_CLASS_T;
 
-#define LCHAN_BCCH		0
-#define LCHAN_CCCH		1
-#define LCHAN_DCCH		2
-#define LCHAN_DTCH_B    	3
-#define LCHAN_DTCH		4
-#define LCHAN_MRBCH		5
+#define LCHAN_BCCH      0
+#define LCHAN_CCCH      1
+#define LCHAN_DCCH      2
+#define LCHAN_DTCH_B    3
+#define LCHAN_DTCH      4
+#define LCHAN_MRBCH     5
 
 /*!\brief Layer 2 Identifier
  */
@@ -61,10 +69,10 @@ typedef struct {
 /*!\brief Layer 3 Info types for RRC messages
  */
 typedef enum {
-  NONE_L3=0,        /*!< No information*/
-  IPv4_ADDR,   /*!< IPv4 Address*/
-  IPv6_ADDR,    /*!< IPv6 Address*/
-  MAC_ADDR
+  NONE_L3     = 0, //!< No information
+  IPv4_ADDR   = 4, //!< IPv4 Address = size Info
+  IPv6_ADDR   =16, //!< IPv6 Address = size Info
+  MAC_ADDR    = 8  //!< MAC Id       = size Info
 } L3_INFO_T;
 
 /*!\brief Layer 3 Info types for RRC messages
