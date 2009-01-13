@@ -29,9 +29,10 @@
 #include <string.h>
 #include <unistd.h>
 
+
 #include <sys/socket.h>
 #include <sys/un.h>
-
+#include <fcntl.h>
 #include <pthread.h>
 
 #include "debug.h"
@@ -52,6 +53,11 @@
 #include "rrm_util.h"
 #include "rrm.h"
 
+
+
+#ifdef RRC_KERNEL_MODE
+	RRM_FIFOS Rrm_fifos;
+#endif
 /*
 ** ----------------------------------------------------------------------------
 ** DEFINE LOCAL
@@ -97,7 +103,7 @@ static pthread_t pthread_recv_rrc_msg_hnd,
                  pthread_send_cmm_msg_hnd , 
 
                  pthread_recv_pusu_msg_hnd , 
-                 pthread_send_msg_hnd , 
+//pthread_send_msg_hnd , 
 
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
@@ -174,7 +180,7 @@ static void * thread_send_msg_cmm (
     int no_msg ;
     fprintf(stderr,"Thread Send Message: starting ... \n"); 
     fflush(stderr);
-
+            file_msg_t *pItem ;
 
     while ( flag_not_exit)
     {
@@ -182,18 +188,21 @@ static void * thread_send_msg_cmm (
         for ( ii = 0 ; ii<nb_inst ; ii++ )
         {
             rrm_t      *rrm = &rrm_inst[ii] ; 
-            file_msg_t *pItem ;
+
         
             pItem = get_msg( &(rrm->file_send_msg) ) ;
         
             if ( pItem == NULL ) 
                 no_msg++;
             else
-            {   
+            {
+	      printf("send msg cmm on s %d\n",pItem->s);   
                 int r =  send_msg( pItem->s, pItem->msg );
                 WARNING(r!=0);
             }   
+	    //	    printf("free 1\n");
             RRM_FREE( pItem ) ;
+	    //printf("free 11\n");
         }
         
         if ( no_msg==nb_inst ) // Pas de message 
@@ -219,16 +228,16 @@ static void * thread_send_msg_rrc (
 {
   int ii ,taille;
 	int no_msg ;
-	fprintf(stderr,"Thread Send Message: starting ... \n"); 
+	fprintf(stderr,"Thread Send Message To RRC: starting ... \n"); 
 	fflush(stderr);
-
+	file_msg_t *pItem ;
 	while ( flag_not_exit)
 	{
 		no_msg = 0  ;
 		for ( ii = 0 ; ii<nb_inst ; ii++ )
 		{
 			rrm_t      *rrm = &rrm_inst[ii] ; 
-			file_msg_t *pItem ;
+
 		
 			pItem = get_msg( &(rrm->file_send_msg) ) ;
 		
@@ -240,7 +249,8 @@ static void * thread_send_msg_rrc (
 #ifdef RRC_KERNEL_MODE
 			    taille = sizeof(msg_head_t)  ;  
 			    taille += pItem->msg->head.size ;
-			    write (RRM2RRC_FIFO,(char*) pItem->msg, taille);
+			    write (Rrm_fifos.rrm_2_rrc_fifo,(char*) pItem->msg, taille);
+			    printf("send msg to rrc\n");
 #else
 			    int r =  send_msg( pItem->s, pItem->msg );
 			    WARNING(r!=0);
@@ -248,7 +258,10 @@ static void * thread_send_msg_rrc (
 			    
 			    
 			}	
+
+			//printf("free 2\n");
 			RRM_FREE( pItem ) ;
+			//printf("free 22\n");
 		}
 		
 		if ( no_msg==nb_inst ) // Pas de message 
@@ -310,42 +323,55 @@ static void * thread_recv_msg (
 #ifdef RRC_KERNEL_MODE
 char Header_buf[sizeof(msg_head_t)];
 char Data[2400];
-unsigned short Header_read_idx=0,Data_read_idx=0, Data_to_read=0,Header_size=sizeof(msg_head_t);
+unsigned short Header_read_idx=0,Data_read_idx=0, Data_to_read=0,Header_size=sizeof(msg_head_t),READ_OK=1;
 static void * thread_recv_msg_fifo (void * p_data ){
 /*******************************************************************************/
   msg_t *msg;
   rrm_t *rrm;
   msg_head_t *Header ;
   int inst,bytes_read;
+  printf("[RRM]: RX MSG_FIFOS %d handler starting....\n",RRC2RRM_FIFO);
   while (flag_not_exit){
+    //  pthread_mutex_lock( &( rrm_inst[0].rrc.exclu ) ) ;
     if(Header_read_idx < Header_size){
-      bytes_read = read (RRC2RRM_FIFO,&Data[Header_read_idx],Header_size-Header_read_idx);
+      bytes_read = read (Rrm_fifos.rrc_2_rrm_fifo,&Data[Header_read_idx],Header_size-Header_read_idx);
+      if(bytes_read <0) continue;
       Header_read_idx+=bytes_read;
+      printf("[RRM]: RX MSG ON FIFOS %d: Header size %d, bytes_read %d\n",RRC2RRM_FIFO,Header_read_idx,bytes_read);
       if(Header_read_idx == Header_size){
+	Header=(msg_head_t*)Data;
 	Data_to_read=Header->size;
 	Data_read_idx=Header_read_idx;
+	printf("[RRM]: RX MSG ON FIFOS %d: Header read completed, Data size %d\n",RRC2RRM_FIFO,Data_to_read);
 	Header = (msg_head_t *) Data;
       }
       //msg("[fn_rrc]TTI %d: rcv_msg return Null\n",Rrc_xface->Frame_index);
       else
-	break;
+	continue;
     }
     if (Data_to_read > 0 ){
-      bytes_read = read (RRM2RRC_FIFO,&Data[Data_read_idx],Data_to_read);
+      bytes_read = read (Rrm_fifos.rrc_2_rrm_fifo,&Data[Data_read_idx],Data_to_read);
+      if(bytes_read <0) continue;
       Data_to_read-=bytes_read;
       Data_read_idx+=bytes_read;
+      printf("[RRM]: RX MSG ON FIFOS %d: data size %d\n",RRC2RRM_FIFO,Data_read_idx-Header_read_idx);
       if(Data_to_read > 0 ) 
-	break;
+	continue;
       Header_read_idx=0;
       Data_read_idx=0;
       Data_to_read=0;
       msg=(msg_t*)Data;
       inst = msg->head.inst ;
       rrm = &rrm_inst[inst];  
+      printf("[RRM]: RX MSG ON FIFOS %d: data read completed, Proccess on inst .... %d\n",RRC2RRM_FIFO,inst);
+      
       put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg) ;
-
+      printf("[RRM]: RX MSG ON FIFOS %d: data read completed, Proccess on inst done %d\n",RRC2RRM_FIFO,inst);
+	
     }
+    //      pthread_mutex_unlock( &( rrm_inst[0].rrc.exclu ) ) ;
   }
+      return NULL;
 }
 #endif
 /*!
@@ -509,15 +535,17 @@ static void processing_msg_rrc(
         case RRC_PHY_SYNCH_TO_MR_IND :
             {
                 rrc_phy_synch_to_MR_ind_t *p = (rrc_phy_synch_to_MR_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.....\n",header->inst);
                 rrc_phy_synch_to_MR_ind(header->inst,p->L2_id) ;                
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND Done\n",header->inst);
             }
             break ;
         case RRC_PHY_SYNCH_TO_CH_IND :
             {
                 rrc_phy_synch_to_CH_ind_t *p = (rrc_phy_synch_to_CH_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND....\n",header->inst);
                 rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND Done\n",header->inst);
                                 
             }
             break ;
@@ -624,46 +652,57 @@ static void rrm_scheduler ( )
     int no_msg ;
     fprintf(stderr,"RRM Scheduler: starting ... \n"); 
     fflush(stderr);
-
+    file_msg_t *pItem ;
     while ( flag_not_exit)
-    {
+      {
         for ( ii = 0 ; ii<nb_inst ; ii++ )
-        {
+	  {
             rrm_t      *rrm = &rrm_inst[ii] ; 
-            file_msg_t *pItem ;
-        
+	    pItem=NULL;
+	    
             pItem = get_msg( &(rrm->file_recv_msg)) ;
-        
+	    
             if ( pItem == NULL ) 
-                no_msg++;
+	      no_msg++;
             else
-            {   
+	      {   
                 msg_head_t *header = (msg_head_t *) pItem->msg;
                 char *msg = NULL ;
-                
+                printf("RRM: Sched: msg on s %d (cmm %d, rrc %d)\n",pItem->s->s,rrm->cmm.s->s,rrm->rrc.s->s);
                 if ( header != NULL )
-                {
+		  {
                     if ( header->size > 0 )
-                    { 
+		      { 
                         msg = (char *) (header +1) ;
-                    } 
+		      } 
                     
                     if ( pItem->s->s == rrm->cmm.s->s )
-                        processing_msg_cmm( rrm , header , msg , header->size ) ;
-                    else if ( pItem->s->s == rrm->rrc.s->s )
-                        processing_msg_rrc( rrm , header , msg , header->size ) ;
-                    else 
-                        processing_msg_pusu( rrm , header , msg , header->size ) ;
+		      processing_msg_cmm( rrm , header , msg , header->size ) ;
+		  
+		    else if ( pItem->s->s == rrm->rrc.s->s ){
+		      printf("Sched: proccess RRC msg....\n");
+		      processing_msg_rrc( rrm , header , msg , header->size ) ;
+		      printf("Sched: proccess RRC msg Done\n");
+		    }
+		    else 
+		      processing_msg_pusu( rrm , header , msg , header->size ) ;
                         
-                    RRM_FREE( pItem->msg) ;
-                }
-                RRM_FREE( pItem ) ;
-            }
-        }   
-            
+		//		RRM_FREE( pItem->msg) ;
+		    printf("free 3\n");
+		    RRM_FREE( pItem ) ;
+		    printf("free 33\n");
+		  }
+		//printf("RRM: Free pItem %p......\n",pItem);
+		//	    printf("free 3\n");
+		//RRM_FREE( pItem ) ;
+		//printf("free 33\n");
+		//printf("RRM: Free pItem %p Done\n",pItem);
+	    
+	      }   
+	  }
         if ( no_msg == nb_inst ) 
-            usleep(1000);
-    }
+	  usleep(1000);
+      }
     fprintf(stderr,"... stopped RRM Scheduler\n"); fflush(stderr);
 }
 /*!
@@ -739,6 +778,9 @@ static void help()
 \brief programme principale du RRM
 */
 
+
+
+
 int main( int argc , char **argv )
 {
 
@@ -750,9 +792,7 @@ int main( int argc , char **argv )
  	struct data_thread DataCmm;
 	struct data_thread DataPusu;
 	pthread_attr_t attr ;	
-#ifdef RRC_KERNEL_MODE
-	RRM_FIFOS Rrm_fifos;
-#endif
+
  	/* Vérification des arguments */
 	while ((c = getopt(argc,argv,"i:f:h")) != -1)
 		switch (c) 
@@ -783,6 +823,22 @@ int main( int argc , char **argv )
         fprintf(stderr,"[RRM] the instance number (%d) is upper than MAX_RRM (%d)\n", nb_inst, MAX_RRM);
         exit(-1);
     }
+
+    msg("RRM INIT :open fifos\n");
+#ifdef RRC_KERNEL_MODE
+  while (( Rrm_fifos.rrc_2_rrm_fifo= open ("/dev/rtf14", O_RDONLY )) < 0) {
+    printf ("[RRM][INIT] open fifo  /dev/rtf14 returned %d\n", Rrm_fifos.rrc_2_rrm_fifo);
+    usleep (100);
+  }
+
+  printf ("[RRM][INIT] open fifo  /dev/rtf14 returned %d\n", Rrm_fifos.rrc_2_rrm_fifo);
+  while (( Rrm_fifos.rrm_2_rrc_fifo= open ("/dev/rtf15", O_WRONLY |O_NONBLOCK  | O_NDELAY)) < 0) {//| O_BLOCK
+    printf ("[RRM][INIT] open fifo  /dev/rtf15 returned %d\n", Rrm_fifos.rrm_2_rrc_fifo);
+    usleep (100);
+  }
+
+    printf ("[RRM][INIT] open fifo  /dev/rtf15 returned %d\n", Rrm_fifos.rrm_2_rrc_fifo);
+#endif
     
     /* ***** MUTEX ***** */ 
     // initialise les attributs des threads
@@ -792,16 +848,16 @@ int main( int argc , char **argv )
 
 
 #ifdef RRC_KERNEL_MODE
-	Rrm_fifos.rrc_2_rrm_fifo=RRC2RRM_FIFO ; 
-	Rrm_fifos.rrm_2_rrc_fifo=RRM2RRC_FIFO ; 
-#else
+    //	Rrm_fifos.rrc_2_rrm_fifo=RRC2RRM_FIFO ; 
+    //Rrm_fifos.rrm_2_rrc_fifo=RRM2RRC_FIFO ; 
+#endif
 	DataRrc.name     	= "RRC" ;
 	DataRrc.sock_path_local	= RRM_RRC_SOCK_PATH ;
 	DataRrc.sock_path_dest	= RRC_RRM_SOCK_PATH ;
-	DataRrc.s.s	 			= -1  ; 
+	DataRrc.s.s  			= -1 ;
 
 
-#endif
+
 
 	DataCmm.name     	= "CMM" ;
 	DataCmm.sock_path_local	= RRM_CMM_SOCK_PATH ;
@@ -851,11 +907,13 @@ int main( int argc , char **argv )
         rrm_inst[ii].rrc.trans_cnt      =  2048;
         rrm_inst[ii].pusu.trans_cnt     =  3072;
 	
-#ifdef RRC_KERNEL_MODE
-	rrm_inst[ii].rrc.s		 		= &Rrm_fifos;
-#else
 	rrm_inst[ii].rrc.s		 		= &DataRrc.s;
+#ifdef RRC_KERNEL_MODE
+	rrm_inst[ii].rrc.sf		 		= &Rrm_fifos;
+	//	 rrm_inst[ii].rrc.s		 		= &rrm_inst[ii].id; 
 #endif
+
+
 	rrm_inst[ii].cmm.s		 		= &DataCmm.s;
 	rrm_inst[ii].pusu.s             = &DataPusu.s;
 	
@@ -865,6 +923,10 @@ int main( int argc , char **argv )
 	rrm_inst[ii].rrc.pNeighborEntry	= NULL ;
       }
 	
+    open_socket( &DataRrc.s,  DataRrc.sock_path_local, DataRrc.sock_path_dest ,0 );
+
+
+
     /* Creation du thread de reception des messages RRC*/
     fprintf(stderr,"Creation du thread RRC : %d\n", nb_inst);
 #ifdef RRC_KERNEL_MODE

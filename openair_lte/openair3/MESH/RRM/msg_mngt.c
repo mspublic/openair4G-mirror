@@ -34,7 +34,7 @@
 #include "msg_mngt.h"
 
 //! Selection locale du mode de debug
-#define DBG_MSG_MNGT 0
+#define DBG_MSG_MNGT 1
 
 #if DBG_MSG_MNGT==0
 //! Macro inactive
@@ -100,6 +100,7 @@ file_msg_t *put_msg(
     if ( pNewItem == NULL ) 
         return NULL ;
 
+    printf("MSG_MNGT: put msg on s %d\n",s->s);
     CALL(pthread_mutex_lock( &(file_hd->mutex) ));
         
     file_hd->file       = pNewItem          ;

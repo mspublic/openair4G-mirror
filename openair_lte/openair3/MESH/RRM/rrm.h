@@ -81,10 +81,11 @@ typedef struct {
 		FILE *fd 							; ///< Fichier pour trace de debug : action RRM->RRC
 #endif
 
-#ifndef RRC_KERNEL_MODE 
+
 		sock_rrm_t  	*s 					; ///< Socket associé a l'interface RRC
-#else
-	        RRM_FIFOS *s;
+
+#ifdef RRC_KERNEL_MODE 
+	        RRM_FIFOS *sf;
 #endif
 		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
 		transact_t 	    *transaction		; ///< liste des transactions non terminees

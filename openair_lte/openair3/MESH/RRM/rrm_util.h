@@ -40,7 +40,8 @@ extern "C" {
 
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
 #define RRM_MALLOC(t,n)   (t *) malloc( sizeof(t) * n ) 
-#define RRM_CALLOC(t,n)   (t *) calloc( n  , sizeof(t)) 
+#define RRM_CALLOC(t,n)   (t *) malloc( sizeof(t) * n ) 
+  //#define RRM_CALLOC(t,n)   (t *) calloc( n  , sizeof(t)) 
 #define RRM_MALLOC_STR(n) RRM_MALLOC(char,n+1)
 
 void print_L2_id(	L2_ID *id );
