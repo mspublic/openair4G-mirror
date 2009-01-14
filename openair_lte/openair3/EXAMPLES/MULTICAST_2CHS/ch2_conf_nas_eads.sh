@@ -69,7 +69,7 @@ sudo sh -c 'echo "0" >/sys/mpls/debug'
 
 sleep 1
 #rajout THC pour MULTICAST
-REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
+#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_ch2  &
 

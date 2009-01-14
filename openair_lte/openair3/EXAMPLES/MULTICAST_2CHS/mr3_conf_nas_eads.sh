@@ -37,7 +37,7 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR3_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH2_IN_ADDR -t 226.30.10.15 -r 12
 
 #rajout THC pour MULTICAST
-REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
+#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr3  &
 
