@@ -12,9 +12,9 @@
 
    
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+        P.BURLOT 2009-01-20 
+            + separation de la file de message CMM/RRM a envoyer en 2 files 
+              distinctes ( file_send_cmm_msg, file_send_rrc_msg)
 
 *******************************************************************************
 */
@@ -47,7 +47,9 @@
 #include "ch_init.h"
 
 //! Met un message dans la file des messages a envoyer
-#define PUT_MSG(s,m)  put_msg(  &(rrm->file_send_msg),s,m) 
+#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
+#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg),rrm->pusu.s,m) 
+#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg),rrm->rrc.s,m ) 
 
 /*!
 *******************************************************************************
@@ -77,7 +79,7 @@ void cmm_init_ch_req(
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;
 
-        PUT_MSG(    rrm->rrc.s, 
+        PUT_RRC_MSG( 
                     msg_rrm_init_ch_req( inst,
                              rrm->rrc.trans_cnt,
                             &Lchan_desc[QOS_SRB0], 
@@ -95,7 +97,7 @@ void cmm_init_ch_req(
         rrm->pusu.trans_cnt++ ;
         add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_PUBLISH_IND,0,NO_PARENT);
         pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
-        PUT_MSG(rrm->pusu.s, msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
+        PUT_PUSU_MSG(msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
     }
 }
 
@@ -123,8 +125,7 @@ void rrc_phy_synch_to_MR_ind(
             
         pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
 
-        //--------------------------------------------
-        put_msg( &(rrm->file_send_msg), rrm->cmm.s, msg_router_is_CH_ind( inst,rrm->L2_id) ) ;
+        PUT_CMM_MSG( msg_router_is_CH_ind( inst,rrm->L2_id)) ;
 
         rrm->state = CLUSTERHEAD_INIT ; 
     }
