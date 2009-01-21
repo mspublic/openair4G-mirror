@@ -1,6 +1,7 @@
 OSTYPE		= $(shell uname -o )
 
 EMUL_RRC        = 0
+RRC_KERNEL_MODE = 1
 
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
@@ -14,7 +15,7 @@ VPATH		= $(CHEMIN):$(OPENAIR2_RRC):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I .  -I $(OPENAIR2_RRC) -I $(OPENAIR3_RRM) -I $(INTERFACE) -I$(OPENAIR2_DIR)
 CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
-LDFLAGS		= -lm 
+LDFLAGS		= -lm
 
 ifeq ($(OSTYPE),Cygwin)
 
@@ -23,13 +24,13 @@ CFLAGS		+= -DCYGWIN
 
 else
 
-LDFLAGS		+= -lpthread -lrt 
-CFLAGS		+= -DLINUX 
+LDFLAGS		+= -lpthread -lrt
+CFLAGS		+= -DLINUX
 
 endif
 
 ifdef RRC_KERNEL_MODE
-CFLAGS		+= -DRRC_KERNEL_MODE 
+CFLAGS		+= -DRRC_KERNEL_MODE
 endif
 
 TARGET	    = emul_int rrm
@@ -79,25 +80,25 @@ emul_int: $(OBJ_EMUL)
 	@echo "Linkage $@  ($(OSTYPE))"
 	@echo '------------------------------'
 	$(CC) -o $@ $^ $(LDFLAGS)
-	
+
 rrm: $(OBJ)
 	@echo '=============================='
 	@echo "Linkage $@  ($(OSTYPE))"
 	@echo '------------------------------'
 	$(CC) -o $@ $^ $(LDFLAGS)
-	
+
 deps/%.d : %.c
 	@echo '------------------------------'
 	@echo Dependance $@
 	@echo '------------------------------'
 	$(CC) $(CFLAGS)  -M -MM  $< | sed -e "1s/^/obj\//" -e "s/: /: Makefile /" > $@
-	
+
 obj/%.o:%.c
 	@echo '------------------------------'
 	@echo Compilation $@
 	@echo '------------------------------'
 	@echo Dependance $^
-	@echo Dependance plus recente $?	
+	@echo Dependance plus recente $?
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
@@ -109,8 +110,8 @@ deps: $(DEP)
 
 clean:
 	rm -f  $(TARGET) $(OBJ) *.o  obj/*.o tags deps/*.d *.stackdump
-	
+
 cleanexe:
 	rm -f *.exe
-	
-	
+
+
