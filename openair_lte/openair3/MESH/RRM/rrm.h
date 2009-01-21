@@ -12,9 +12,9 @@
 
    
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+        P.BURLOT 2009-01-20 
+            + separation de la file de message CMM/RRM a envoyer en 2 files 
+              distinctes ( file_send_cmm_msg, file_send_rrc_msg)
 
 *******************************************************************************
 */
@@ -38,17 +38,6 @@ extern "C" {
 */
 
 
-#ifdef RRC_KERNEL_MODE
-
-#define RRC2RRM_FIFO 14
-#define RRM2RRC_FIFO 15
-  typedef struct{
-    int rrc_2_rrm_fifo;
-    int rrm_2_rrc_fifo;
-  }RRM_FIFOS; 
-#endif
-
-
 typedef struct {
     int  id                                 ; ///< identification de l'instance RRM
     
@@ -64,13 +53,14 @@ typedef struct {
 
     unsigned char       L3_info[MAX_L3_INFO]; ///< identification de niveau L3   
     
-    file_head_t         file_send_msg       ; ///< File des messages en emission
+    file_head_t         file_send_cmm_msg   ; ///< File des messages en emission
+    file_head_t         file_send_rrc_msg   ; ///< File des messages en emission
     file_head_t         file_recv_msg       ; ///< File des messages en reception
     
     struct {
         sock_rrm_t      *s                  ; ///< Socket associé a l'interface CMM
         unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface CMM
-        transact_t     *transaction        ; ///< liste des transactions non terminees
+        transact_t     *transaction         ; ///< liste des transactions non terminees
         pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
 
 
@@ -83,10 +73,6 @@ typedef struct {
 
 
 		sock_rrm_t  	*s 					; ///< Socket associé a l'interface RRC
-
-#ifdef RRC_KERNEL_MODE 
-	        RRM_FIFOS *sf;
-#endif
 		unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
 		transact_t 	    *transaction		; ///< liste des transactions non terminees
 		pthread_mutex_t exclu				; ///< mutex pour le partage de structure
