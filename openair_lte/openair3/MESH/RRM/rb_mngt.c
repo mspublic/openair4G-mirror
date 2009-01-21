@@ -12,9 +12,9 @@
 
    
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+        P.BURLOT 2009-01-20 
+            + separation de la file de message CMM/RRM a envoyer en 2 files 
+              distinctes ( file_send_cmm_msg, file_send_rrc_msg)
 
 *******************************************************************************
 */
@@ -47,7 +47,10 @@
 #include "rb_mngt.h"
 
 //! Met un message dans la file des messages a envoyer
-#define PUT_MSG(s,m)  put_msg(  &(rrm->file_send_msg),s,m) 
+#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
+#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg),rrm->pusu.s,m) 
+#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg),rrm->rrc.s,m ) 
+
 /*
  *  =========================================================================
  *  OUVERTURE D'UN RADIO BEARER
@@ -87,7 +90,7 @@ int cmm_cx_setup_req(
         add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
                 
-        PUT_MSG(    rrm->rrc.s, 
+        PUT_RRC_MSG(    
                     msg_rrm_rb_establish_req(inst,               
                         &Lchan_desc[QoS_class], 
                         &Mac_rlc_meas_desc[QoS_class],
@@ -104,7 +107,7 @@ int cmm_cx_setup_req(
           pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
           
           
-          PUT_MSG(  rrm->rrc.s, 
+          PUT_RRC_MSG(   
                 msg_rrm_rb_establish_req(inst,               
                              &Lchan_desc[QOS_SRB2], 
                              &Mac_rlc_meas_desc[QOS_SRB2],
@@ -137,7 +140,7 @@ int cmm_cx_setup_req(
             src_dst[1].L2_id[1]=0;          //memset( &src_dst[0], 0, 2*sizeof(L2_ID)) ;
 
             rrm->rrc.trans_cnt++ ;
-            PUT_MSG(    rrm->rrc.s, 
+            PUT_RRC_MSG(     
                         msg_rrm_rb_establish_req(inst,                   
                             &Lchan_desc[QOS_DTCH_B], 
                             &Mac_rlc_meas_desc[QOS_DTCH_B],
@@ -197,7 +200,7 @@ static void rb_release_req(
     )
 {
     rrm->rrc.trans_cnt++ ;                  
-    PUT_MSG( rrm->rrc.s, msg_rrm_rb_release_req(inst,Rb_id, rrm->rrc.trans_cnt) );
+    PUT_RRC_MSG( msg_rrm_rb_release_req(inst,Rb_id, rrm->rrc.trans_cnt) );
     add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt, INT_RRC, RRM_RB_RELEASE_REQ, parentTransact,status_parent);
 }
 
@@ -249,7 +252,7 @@ void rrc_rb_establish_cfm(
                 pTransactParent = get_item_transact(rrm->cmm.transaction,parent_id ) ;
                 if ( pTransactParent != NULL )
                 {
-                    PUT_MSG( rrm->cmm.s, msg_rrm_cx_setup_cnf(inst,Rb_id,pTransactParent->id ));
+                    PUT_CMM_MSG( msg_rrm_cx_setup_cnf(inst,Rb_id,pTransactParent->id ));
                     
                     if ( rrm->state == CLUSTERHEAD_INIT ) rrm->state = CLUSTERHEAD ;
                     
@@ -312,7 +315,7 @@ int cmm_cx_modify_req(
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             rrm->rrc.trans_cnt++ ;
                     
-            PUT_MSG( rrm->rrc.s, 
+            PUT_RRC_MSG( 
                         msg_rrm_rb_modify_req( inst,
                             &Lchan_desc[QoS_class], 
                             &Mac_rlc_meas_desc[QoS_class],
@@ -400,7 +403,7 @@ void rrc_rb_modify_cfm(
                 transact_t *pTransactParent = get_item_transact(rrm->cmm.transaction,parent_id ) ;
                 if ( pTransactParent != NULL )
                 {
-                    PUT_MSG( rrm->cmm.s, msg_rrm_cx_modify_cnf(inst,pTransactParent->id ));
+                    PUT_CMM_MSG( msg_rrm_cx_modify_cnf(inst,pTransactParent->id ));
                     del_item_transact( &(rrm->cmm.transaction),pTransactParent->id ) ;
                 }
                 else // la transaction parent est inconnue, on ne fait rien
@@ -487,7 +490,7 @@ void rrc_rb_release_resp(
                 transact_t *pTransactParent = get_item_transact(rrm->cmm.transaction,parent_id ) ;
                 if ( pTransactParent != NULL )
                 {
-                    PUT_MSG( rrm->cmm.s, msg_rrm_cx_release_cnf(inst,pTransactParent->id ) );
+                    PUT_CMM_MSG( msg_rrm_cx_release_cnf(inst,pTransactParent->id ) );
                     del_item_transact( &(rrm->cmm.transaction),pTransactParent->id ) ;
                 }   
                 else // la transaction parent est inconnue, on ne fait rien
@@ -522,7 +525,7 @@ void rrc_rb_meas_ind(
     
     if ( rrm->state == CLUSTERHEAD )
     {
-        PUT_MSG( rrm->rrc.s, msg_rrm_rb_meas_resp(inst,Trans_id) );
+        PUT_RRC_MSG( msg_rrm_rb_meas_resp(inst,Trans_id) );
         
         if ( Meas_mode == PERIODIC )
         {
@@ -545,7 +548,7 @@ void rrc_rb_meas_ind(
             if ( memcmp(&L2_id, &pRb->L2_id[1], sizeof(L2_ID ) )  == 0 )
                 ii_rb=0 ;
                 
-            PUT_MSG( rrm->pusu.s, 
+            PUT_PUSU_MSG(  
                         msg_rrm_link_info_ind(inst, L2_id , pRb->L2_id[ii_rb] , Rb_id, 
                                             Mac_rlc_meas.Rssi ,Mac_rlc_meas.Spec_eff, transaction_link_info ) 
                     );
