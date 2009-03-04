@@ -7,7 +7,8 @@
  *   Hussain & Daniel
  * Copyright: Eurecom Institute, (C) 2008
  ******************************************************************/
-#include "pmip_extern.h"
+
+#include "prefix.h"
 #include "mh.h"
 #include "debug.h"
 #include "conf.h"
@@ -16,513 +17,23 @@
 #include "rtnl.h"
 #include "tunnelctl.h"
 #include <pthread.h>
+#include "pmip_ro_cache.h"
+#include "pmip_extern.h"
+
+#ifdef FSM_DEBUG
+	#define dbg(...) dbgprint(__FUNCTION__, __VA_ARGS__)
+#else
+	#define dbg(...)
+#endif
 
 extern pthread_rwlock_t pmip_lock; /* Protects proxy binding cache */
 extern uint16_t seqno_pbreq;
-
-/**
-	Finite State Machine; return 0 for success and -1 if no entry exists, pointer to NULL.
-*/
-
-int pmip_fsm(struct in6_addr_bundle *addresses, struct pmip_entry *info, int iif)
-{
-	
-	if(!info)
-	{
-		dbg("No Existing Entry is found!\n");
-		return -1; 
-	}
-	
-	
-	if(is_mag())
-	{
-		uint32_t status = info->FLAGS & hasPBA;
-		if(status == hasPBA)
-		{
-			dbg("hasPBA: %d\n",hasPBA);
-			dbg("FLAGS: %d\n",info->FLAGS);
-			dbg("Proxy Binding Update Lifetime: %d\n",info->lifetime.tv_sec);
-			
-			//Change the BCE type.
-			info->type = BCE_PMIP;
-			dbg("New PMIP cache entry type: %d\n",info->type);
-			//Reset the Retransmissions counter.
-			info->n_rets_counter = conf.Max_Rets;
-			//Add task for entry expiry.
-			pmip_cache_start(info);
-			dbg("Timer for Expiry is intialized!\n");
-			
-			//create a tunnel between MAG and LMA.
-			info->tunnel = pmip_tunnel_add(&conf.our_addr, &conf.lma_addr, iif);
-
-			int usercount = tunnel_getusers(info->tunnel);
-			dbg("# of binding entries %d \n", usercount);
-			if (usercount == 1) {
-				dbg("Add routing entry for uplink traffic");
-				route_add(info->tunnel, RT6_TABLE_PMIP, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0,&in6addr_any, 0,NULL);
-			}
-
-			
-			mag_setup_route(ID2ADDR(&info->peer_prefix,&info->peer_addr), info->link);
-
-			mag_reg_update_proxy_ndisc(info);
-		
-			pmipcache_release_entry(info);
-
-		}
-
-		status = 0;
-		status = info->FLAGS & hasPBU;
-		if(status == hasPBU)
-		{
-			dbg("Checking the Cache for existing entry....\n");					
-			int exist = pmip_cache_exists(&conf.our_addr,&info->peer_addr);			
-			if(info->lifetime.tv_sec ==0 && info->lifetime.tv_nsec==0 && (exist==BCE_PMIP || exist==BCE_TEMP))
-			{		
-				struct pmip_entry *bce;
-				bce = pmip_cache_get(&conf.our_addr,&info->peer_addr); 
-				mag_dereg(bce, 0);
-			}	
-		}
-
-
-		status = 0;
-		status = info->FLAGS & hasPBREQ;
-		if(status == hasPBREQ)
-		{
-			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
-			if (bce != NULL)
-			{ 
-				dbg("Create PBRES message...\n");
-				struct in6_addr_bundle addrs;
-				addrs.dst = addresses->src;
-				addrs.src = &conf.our_addr;
-			
-				//create a PB response.
-				mh_send_pbres(&addrs,&bce->peer_addr,&bce->LMA_addr,&bce->Serv_MAG_addr, &info->peer_prefix,info->seqno_in,iif);
-				pmipcache_release_entry(bce);
-			}
-			else 
-			{
-				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x... Ignore!\n", &info->peer_addr);		
-			}
-		}
-
-		status = 0;
-		status = info->FLAGS & hasPBRES;
-		if(status == hasPBRES)
-		{
-			//TODO
-			// creat a tunnel for the CN under another MR!!
-			dbg("Route Optimization!!\n");
-		
-		}
-
-	return 0;
-	}
-
-	
-	if(is_lma())
-	{
-		
-		uint32_t status =info->FLAGS & hasPBU;
-		if(status == hasPBU )
-		{
-			dbg("Checking the Cache for existing entry....\n");
-						
-			int exist = pmip_cache_exists(&conf.our_addr,&info->peer_addr);
-			
-			if(info->lifetime.tv_sec ==0 && info->lifetime.tv_nsec==0) 
-				{
-					if (exist==BCE_PMIP || exist==BCE_TEMP) 
-					// if returns a type equal to 5 or 6 ==> means there is a match.
-					{
-					dbg("MN entry exists!\n");
-					dbg("Received PBU message with Lifetime = 0...\n");
-					
-					struct pmip_entry *bce;
-					bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);
-					
-					if(COMPARE(addresses->src, &bce->Serv_MAG_addr) == 0)
-					{
-						dbg("received PBU from Old Serving MAG!!!\n");
-						dbg("Delete old route for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(ID2ADDR(&bce->peer_prefix,&bce->peer_addr)));
-
-						//delete old route.
-						lma_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->tunnel); 						
-
-						//decrement users of old tunnel.
-						pmip_tunnel_del(bce->tunnel);
-
-						dbg("Delete PBU entry....\n");
-						pmipcache_release_entry(bce);
-						pmip_bce_delete(bce);
-						dbg("PBU entry deleted....\n");
-						return 0;	
-					}
-					pmipcache_release_entry(bce);
-					}
-					else 
-					{
-						dbg("lifetime = 0 with NO existing entry!!!\n");
-						return 0;					
-					}
-					
-				}			
-			else if (exist!=BCE_PMIP && exist!=BCE_TEMP)  //NO EXISTING ENTRY FOUND ==> CREATE A NEW ONE
-				{			
-					dbg("New MN is found....\n");
-					//set the type of entry to PMIP.
-					info->type = BCE_PMIP;
-					
-					dbg("info->our_addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->our_addr));
-					dbg("info->Serv_MAG : %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->Serv_MAG_addr));
-
-					struct pmip_entry *bce;
-					bce = pmip_cache_alloc(BCE_PMIP);
-					if (bce != NULL)	
-					{
-						*bce = *info;
-						bce->link = iif;
-						pmip_cache_add(bce);
-					}
-					
-					//create a tunnel between MAG and LMA.
-					bce->tunnel = pmip_tunnel_add(&conf.our_addr,&bce->Serv_MAG_addr,iif);
-
-					//add a route for peer address (incoming packets)
-					lma_setup_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->tunnel);
-					
-					//create the address bundle for PBA.
-					dbg("Create PBA...\n");
-					struct in6_addr_bundle addrs;
-					struct in6_addr src, dst;
-					src = info->our_addr;
-					dst = info->Serv_MAG_addr;
-					addrs.src= &src;
-					addrs.dst= &dst;
-					dbg("addrs.src Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(addrs.src));
-					dbg("addrs.dst Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(addrs.dst));
-										
-					//PBU was Accepted!
-					bce->status = 0;
-
-					//send PBA.
-					mh_send_pba(&addrs,info,&conf.PBA_LifeTime, 0);
-					
-					dbg("Number of lock ref %d \n", pmip_lock);
-
-					#ifdef TEST_PMIP
-					dbg("Sending the message pba through netbuf\n");
-					extern uint8_t netbuf[3000];
-					extern uint32_t netlen;		
-					pmip_mag_pba_handler.recv((struct ip6_mh *) netbuf, netlen, &addrs, 0);
-					#endif	
-				
-				}
-			else {
-				// life time is not zero and there is an existing entry ==> check Serv_MAG, if not same ==> modify it.
-				dbg("PBU for an existing entry ==> old MN\n");
-				struct pmip_entry *bce;
-				bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);
-
-				// MN moved to new  serving MAG.
-				if(COMPARE(&info->Serv_MAG_addr, &bce->Serv_MAG_addr) == -1) 
-				{
-					//Delete the Task
-					del_task(&bce->tqe);
-
-					dbg("Old MN with new Serving MAG...\n");
-					//send pbu with lifetime=0 to Old Serving MAG
-					lma_dereg_old_mag(bce);					
-					
-					//create a tunnel between MAG and LMA.
-					info->tunnel = pmip_tunnel_add(&conf.our_addr,&info->Serv_MAG_addr,iif);
-
-					//add a route for peer address.
-					lma_setup_route(ID2ADDR(&info->peer_prefix,&info->peer_addr), info->tunnel);
-					
-					//delete old route.
-					lma_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->tunnel);
-
-					//decrement users of old tunnel.
-					pmip_tunnel_del(bce->tunnel);
-					
-					//memcpy(&bce->Serv_MAG_addr,&info->Serv_MAG_addr,sizeof(struct in6_addr));
-					dbg("Update binding entry\n");
-					bce->Serv_MAG_addr = info->Serv_MAG_addr;
-					bce->lifetime = info->lifetime;
-					bce->n_rets_counter = conf.Max_Rets;
-					bce->link = iif;
-					bce->tunnel = info->tunnel;
-
-					//send a pba to new serving mag.
-					dbg("Create PBA to new Serving MAG...\n");
-					struct in6_addr_bundle addrs;
-					addrs.src= addresses->dst;
-					addrs.dst= addresses->src;
-					mh_send_pba(&addrs,bce,&conf.PBA_LifeTime, 0);
-
-					//Add task for entry expiry.
-					pmip_cache_start(bce);
-				}
-				//esle if the same Serv MAG ==> no change to the entry.		
-				pmipcache_release_entry(bce);
-			}
-
-			return 0;
-			
-		}
-
-		status = 0;
-		status = info->FLAGS & hasPBREQ;
-		if(status == hasPBREQ)
-		{
-			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
-			if (bce != NULL)
-			{ 
-				dbg("Create PBRE message...\n");
-				struct in6_addr_bundle addrs;
-				//addrs.src = addresses->dst;
-				addrs.dst = addresses->src;
-				addrs.src = &conf.our_addr;
-			
-				//create a PB response.
-				mh_send_pbres(&addrs, &bce->peer_addr, &bce->LMA_addr, &bce->Serv_MAG_addr, &bce->peer_prefix, bce->seqno_in, iif);
-				pmipcache_release_entry(bce);
-			}
-			else 
-			{												
-				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x ... Send PBREQ to All-LMA@\n", NIP6ADDR(&info->peer_addr));
-				//Never do a loop!
-				if (COMPARE(&conf.all_lma_addr, addresses->src) != 0 && COMPARE(&conf.all_lma_addr, addresses->dst) != 0)
-				{						
-					struct in6_addr_bundle addrs;			
-					addrs.dst = &conf.all_lma_addr; //TODO All_LMA@ need to be defined.
-					addrs.src = &conf.our_addr; 				
-					mh_send_pbreq(&addrs, &info->peer_addr, &info->peer_prefix,seqno_pbreq, iif, 0);
-					seqno_pbreq++;
-				}
-				else dbg("All-LMA@ is the same as the previous PBREQ-Generator@ ... Stop PBREQ chain!\n");				
-			}
-		}
-
-		status = 0;
-		status = info->FLAGS & hasPBRES;
-		if(status == hasPBRES)
-		{
-			struct pmip_entry *bce = pmip_cache_get(&conf.our_addr,&info->peer_addr);		
-			if (bce != NULL)
-			{
-				if(info->seqno_in == bce->seqno_out)
-				{
-					//Delete the Task (if ANY)
-					del_task(&bce->tqe);
-					//Reset the Retransmissions counter.
-					bce->n_rets_counter = conf.Max_Rets;
-					//Add task for entry expiry.
-					pmip_cache_start(bce);
-					dbg("Timer for Expiry is intialized!\n");
-				}
-				else dbg("Seq# of PBRES is Not equal to Seq# of PBREQ!\n");
-				pmipcache_release_entry(bce);
-			}
-			else 
-			{
-				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x... Response for a route optimization?\n",  NIP6ADDR(&info->peer_addr));
-				//TODO Check the session cache.
-			}	
-		}
-		return 0;
-	}
-	return 0;
-}	
-//===========================================================
-int mag_setup_route(struct in6_addr * pmip6_addr, int downlink)
-//===========================================================
-{
-	int res = 0;
-	if (conf.tunneling_enabled)
-	{
-		//add a rule for MN for uplink traffic from MN must querry the TABLE for PMIP --> tunneled
-		dbg("Uplink: Add new rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr)); 
-		res = rule_add(NULL, RT6_TABLE_PMIP, IP6_RULE_PRIO_PMIP6_FWD, RTN_UNICAST, pmip6_addr, 128, &in6addr_any, 0);
-		//add a route for downlink traffic through CH (any src) ==> MN
-		dbg("Downlink: Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
-		res |= route_add(downlink, RT6_TABLE_MIP6, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, pmip6_addr, 128,NULL);
-	}
-	return res;
-}
-//===========================================================
-int mag_remove_route(struct in6_addr * pmip6_addr, int downlink)
-//=========================================================== 
-{
-	int res = 0;
-	if (conf.tunneling_enabled)
-	{
-		//Delete existing rule for the deleted MN
-		dbg("Uplink: Delete old rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
-		res = rule_del(NULL, RT6_TABLE_PMIP, IP6_RULE_PRIO_PMIP6_FWD, RTN_UNICAST, pmip6_addr, 128, &in6addr_any, 0);
-		//Delete existing route for the deleted MN
-		dbg("Downlink: Delete old routes for: %x:%x:%x:%x:%x:%x:%x:%x from table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);	
-		res |= route_del(downlink, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, pmip6_addr, 128,NULL);
-	}
-	return res;
-}
-
-//===========================================================
-int lma_setup_route(struct in6_addr * pmip6_addr, int tunnel)
-//===========================================================
-{
-	int res = 0;
-	if (conf.tunneling_enabled)
-	{
-		dbg("Forward: Add new route for for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
-		res = route_add(tunnel, RT6_TABLE_MIP6, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
-	}
-	return res;
-}
-//===========================================================
-int lma_remove_route(struct in6_addr * pmip6_addr, int tunnel)
-//=========================================================== 
-{
-	int res = 0;
-	if (conf.tunneling_enabled)
-	{
-		//Delete existing rule for the deleted MN
-		dbg("Forward: Delete old route for: %x:%x:%x:%x:%x:%x:%x:%x from table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);	
-		res = route_del(tunnel, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, pmip6_addr, 128,NULL);
-	}
-	return res;
-}
-
-
-//===========================================================
-int mag_dereg(struct pmip_entry * bce, int propagate)
-//===========================================================
-{
-	//Delete existing route & rule for the deleted MN
-	int res = 0;
-	res = mag_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->link);
-	int usercount = tunnel_getusers(bce->tunnel);
-	dbg("# of binding entries %d \n", usercount);
-	if (usercount == 1)
-		route_del(bce->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0,&in6addr_any, 0,NULL);
-
-	//decrement users of old tunnel.
-	pmip_tunnel_del(bce->tunnel);
-	
-	if (propagate)
-	{
-		struct in6_addr_bundle addrs;
-		addrs.src= &conf.our_addr;
-		addrs.dst= &conf.lma_addr;			
-		struct timespec Lifetime = {0,0};
-		dbg("Create PBU for CH to delete the PMIP entry too....\n");
-		mh_send_pbu(&addrs, bce,&Lifetime, 0);
-	}	
-
-	//Proxy Arp for away from link MN
-	res |= mag_dereg_update_proxy_ndisc(bce);
-
-	//Delete PBU cache entry
-	dbg("Delete PBU entry....\n");
-	pmipcache_release_entry(bce);
-	pmip_bce_delete(bce);	
-	return res;	
-}
-
-
-//===========================================================
-int mag_dereg_update_proxy_ndisc(struct pmip_entry * bce)
-//===========================================================
-{
-	if (conf.pndisc_enabled)
-	{
-		dbg("Do proxy ARP for the away-from-link MN (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(ID2ADDR(&bce->peer_prefix,&bce->peer_addr)));	
-		proxy_nd_start(bce->link, ID2ADDR(&bce->peer_prefix,&bce->peer_addr), &conf.mag_addr_ingress, 0);
-	}
-}
-
-//===========================================================
-int mag_reg_update_proxy_ndisc(struct pmip_entry * bce)
-//===========================================================
-{
-	if (conf.pndisc_enabled)
-	{			
-		//Delete Proxy ARP for this MN 
-		dbg("Stop proxy ARP for the returning-link MN (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(ID2ADDR(&bce->peer_prefix,&bce->peer_addr)));	
-		proxy_nd_stop(bce->link, ID2ADDR(&bce->peer_prefix,&bce->peer_addr), 0);
-		
-		dbg("Do proxy ARP for the every MR(s)\n");
-		dbg("HARD CODED!\n");
-		int mr_count = 2;
-		int i;        
-		struct in6_addr mr_list[2];
-		struct in6_addr mr_ll[2];
-		inet_pton(AF_INET6, "fe80::fcfd:ff:fe00:300", &mr_ll[0]);
-		inet_pton(AF_INET6, "fe80::fcfd:ff:fe00:400", &mr_ll[1]);
-		inet_pton(AF_INET6, "2001:1::1", &mr_list[0]);
-		inet_pton(AF_INET6, "2001:1::2", &mr_list[1]);
-		for (i=0; i< mr_count; i++)
-		{
-			if (COMPARE(&conf.mag_addr_ingress, &mr_list[i]) != 0)
-			{
-				dbg("Proxy ARP for home link router!\n");
-				proxy_nd_stop(bce->link, &mr_ll[i], 0);
-				proxy_nd_start(bce->link, &mr_ll[i], &conf.mag_addr_ingress, 0);
-			}
-		}
-	
-	#if 0
-		//Find out all on-going communication.
-		//Do the Proxy Arp for the peer addresses
-		dbg("Do proxy ARP for the away-from-link peer MN(s)\n");
-		dbg("HARD CODED!\n");
-		struct in6_addr peer_list[2];
-		//int i;
-		inet_pton(AF_INET6, "::fcfd:ff:fe00:500", &peer_list[0]);
-		inet_pton(AF_INET6, "::fcfd:ff:fe00:600", &peer_list[1]);
-	
-		struct in6_addr cn_addr;
-		inet_pton(AF_INET6, "2000::1", &cn_addr);
-		proxy_nd_start(bce->link, &cn_addr, &conf.mag_addr_ingress, 0);
-		for (i=0; i<2; i++)
-		{
-			if (COMPARE(&bce->peer_addr, &peer_list[i]) != 0)
-			{ 
-				int exist = pmip_cache_exists(&conf.our_addr, &peer_list[i]);
-				if (exist != BCE_PMIP ) 
-				{
-					struct in6_addr pmip6_addr;
-					pmip6_addr = * ID2ADDR(&bce->peer_prefix, &peer_list[i]);
-					
-					dbg("Do proxy ARP for the away-from-link node (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&pmip6_addr));	
-					proxy_nd_start(bce->link, &pmip6_addr, &conf.mag_addr_ingress, 0);			
-				}
-			}
-		}
-	#endif
-	}
-	return 0;
-}
-
-//===========================================================
-int lma_dereg_old_mag(struct pmip_entry * bce)
-//===========================================================
-{
-	dbg("Sends a PBU with lifetime = 0 to Old MAG (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&bce->Serv_MAG_addr));
-	struct in6_addr_bundle addrs;
-	struct timespec lifetime = {0,0};
-	addrs.src= &conf.lma_addr;
- 	addrs.dst= &bce->Serv_MAG_addr;
-	mh_send_pbu(&addrs, bce,&lifetime, 0);
-
-	return 0;
-}
+void pmip_timer_retrans_pbu_handler(struct tq_elem *tqe);
 
 //We apply some trick here to advoid create/delete of tunnel too frepquently.
+//===========================================================
 int pmip_tunnel_add(struct in6_addr *local, struct in6_addr *remote, int link)
+//===========================================================
 {
 	if (conf.tunneling_enabled)
 	{
@@ -537,7 +48,9 @@ int pmip_tunnel_add(struct in6_addr *local, struct in6_addr *remote, int link)
 	}
 }
 
+//===========================================================
 int pmip_tunnel_del(int ifindex)
+//===========================================================
 {
 	int res = 0;
 	if (conf.tunneling_enabled)
@@ -558,4 +71,487 @@ int pmip_tunnel_del(int ifindex)
 	else dbg("IP-in-IP tunneling is disabled, no tunnel is deleted\n");
 	return res;
 }
+
+
+/** Finite State Machine; return 0 for success and -1 if error */
+
+//===========================================================
+int mag_fsm(struct msg_info* info)
+//===========================================================
+{
+	int result = 0;
+	struct pmip_entry *bce;	
+	int type = pmip_cache_exists(&conf.our_addr,&info->mn_iid);
+
+	switch (type)
+	{
+		//--------------------------------------
+		case BCE_NO_ENTRY:
+			if (info->msg_event == hasNS)
+			{
+				if (info->is_dad)
+				{
+					dbg("New MN is found, start Movement Detection ...\n");
+					bce = pmip_cache_alloc(BCE_HINT);					
+					result = mag_pmip_md(info, bce);
+					pmip_cache_add(bce);
+				}
+				//Either ARP or Unreachability detection!!					
+				else if (!ipv6_pfx_cmp(&info->ns_target, &conf.Home_Network_Prefix, PLEN))
+				{
+					dbg("Possible Trigger for RO  %x:%x:%x:%x:%x:%x:%x:%x- %x:%x:%x:%x:%x:%x:%x:%x ...\n", NIP6ADDR(&info->src), NIP6ADDR(&info->ns_target));			
+					result = mag_pmip_detect_ro(info);
+				}					
+			}
+
+			else if (info->msg_event == hasPBRES)
+			{
+				dbg("On-going Route Optimization\n");
+				mag_ro_fsm(type, info);
+			}
+
+			break;
+
+		//--------------------------------------
+		case BCE_HINT:
+			//If at Hint, we receive some NS for DAD --> override the last entry
+			if (info->msg_event == hasNS && info->is_dad)
+			{
+				dbg("Existing MN is found at BCE_HINT state, continue Movement Detection\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);
+				result = mag_pmip_md(info, bce);
+				pmipcache_release_entry(bce);
+			}					
+
+			//If this is an NA & addressing to MR & the entry is temporary created, this
+			//is the answer for the hint of network_based movment detection	
+ 			else if (info->msg_event == hasNA && IN6_ARE_ADDR_EQUAL(&conf.mag_addr_ingress, &info->dst))
+			{
+				dbg("Network-based Movement Detection - New attachment!\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);
+				del_task(&bce->tqe); //Stop Network-based movement detection
+				mag_start_registration(bce);
+				bce->type = BCE_TEMP;
+				pmipcache_release_entry(bce);
+			}
+			break;
+
+		//--------------------------------------
+		case BCE_TEMP:
+			if (info->msg_event == hasPBA)
+			{
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);
+				if (info->seqno == bce->seqno_out)
+				{
+					dbg("Finish Location Registration\n");
+					//Modify the entry with additional info.
+					del_task(&bce->tqe); //Delete timer retransmission PBU (if any)
+					bce->PBA_flags = info->PBA_flags;
+					bce->lifetime = info->lifetime;
+					mag_end_registration(bce, info->iif);			 					
+				}
+				else dbg("Seq# of PBA is Not equal to Seq# of sent PBU!\n");
+				pmipcache_release_entry(bce);
+			}
+			else if (info->msg_event == hasPBU && info->lifetime.tv_sec ==0 && info->lifetime.tv_nsec==0) //Location Deregistration 
+			{
+				dbg("Start Location De-registration on Demand\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid); 
+				mag_dereg(bce, 0);		
+			}
+
+			break;
+
+		//--------------------------------------
+		case BCE_PMIP:
+			if (info->msg_event == hasNA) 
+			{
+				//Reset couter, Delete task for entry deletion  & Add a new task for NS expiry.
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);				
+				bce->n_rets_counter = conf.Max_Rets; //Reset the Retransmissions Counter.
+				dbg("Reset the Reachability Counter = %d for %x:%x:%x:%x:%x:%x:%x:%x\n", bce->n_rets_counter, NIP6ADDR(&info->mn_iid));				
+				del_task(&bce->tqe);
+				pmip_cache_start(bce);				
+				pmipcache_release_entry(bce);
+			}
+			else if (info->msg_event == hasPBU && info->lifetime.tv_sec ==0 && info->lifetime.tv_nsec==0) //Location Deregistration
+			{
+				dbg("Start Location De-registration on Demand\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid); 
+				mag_dereg(bce, 0);		
+			}
+			else if (info->msg_event == hasPBREQ && info->PBREQ_action == PBREQ_LOCATE) //Heart Beat Messages only available for registered MN 
+			{
+				dbg("Hearbeat on Demand - I'm ALIVE\n");
+				struct in6_addr_bundle addrs;
+				addrs.src = &conf.our_addr;
+				addrs.dst = &info->src;				
+				mh_send_pbres(&addrs, NULL, &info->mn_addr, &info->mn_iid, NULL, NULL, info->seqno, PBRES_OK, info->iif); 
+			}
+			else if (info->msg_event == hasPBREQ && info->PBREQ_action == PBREQ_RO_INIT) 
+				mag_ro_fsm(type, info);
+			else if (info->msg_event == hasPBRES)
+			  mag_ro_fsm(type, info);
+			  
+			break;
+		default:
+			dbg("No action for this event (%d) at current state (%d) !\n", info->msg_event, type);
+	}
+	return result;
+	
+}
+
+
+//===========================================================
+int lma_fsm(struct msg_info* info)
+//===========================================================
+{
+	int result = 0;
+	struct pmip_entry *bce;	
+	int type = pmip_cache_exists(&conf.our_addr,&info->mn_iid);
+
+	switch (type)
+	{
+		//--------------------------------------
+		case BCE_NO_ENTRY:
+			dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x ... \n", NIP6ADDR(&info->mn_iid));
+			if(info->msg_event == hasPBU && (info->lifetime.tv_sec > 0 || info->lifetime.tv_nsec >0))
+			{
+				//Create New Proxy Binding Entry storing information
+				dbg("PBU for a new MN ... Location Registration\n");
+				bce = pmip_cache_alloc(BCE_PMIP);
+				if (bce != NULL)	
+				{								
+					lma_update_binding_entry(bce, info); //Save information into bce
+					lma_reg(bce);
+					get_mn_addr(bce);
+					info->mn_addr = bce->mn_addr;
+					lma_update_ro_cache(bce, info);
+					pmip_cache_add(bce);
+				}
+
+				//Advertise PBRes to All-LMA@ to start Location Deregistration in old LMA or maintain inter-cluster communication				
+				if (!IN6_ARE_ADDR_EQUAL(&conf.all_lma_addr, &in6addr_loopback))
+				{
+					dbg("Advertise PBRes to ALL-LMA@ ...\n");						
+					struct in6_addr_bundle addrs;			
+					addrs.src = &conf.our_addr;
+					addrs.dst = &conf.all_lma_addr; //TODO All_LMA@ need to be defined.
+					mh_send_pbres(&addrs, NULL, get_mn_addr(bce), &bce->mn_iid, &bce->mn_serv_mag_addr, &conf.our_addr, 0, PBRES_INTER_CLUSTER_MOBILITY, 0);
+				}
+			}
+
+			else if (info->msg_event == hasPBREQ)
+			{				
+				//Save the communication session in Destination Cache if neccessary
+				//CONVERT_ID2ADDR(&info->mn_addr, &info->mn_prefix, &info->mn_iid);		
+				struct pmip_ro_entry* de = pmip_ro_cache_get(&info->src_mn_addr, &info->mn_addr); //TODO our_addr must be replaced by addresses->src
+				if (de == NULL)
+				{ 					
+					de = pmip_ro_cache_alloc();
+					de->src_addr = info->src_mn_addr;
+					de->dst_addr = info->mn_addr;
+					if (pmip_ro_cache_add(de) != NULL)
+					{						
+						pthread_rwlock_rdlock(&pmip_ro_cache_lock);
+						pthread_rwlock_wrlock(&de->lock);
+						//TODO Start dcache timer					
+					}
+				}
+			
+				struct peer_list * pl;
+				pl = pmip_ro_peer_list_get(&info->mn_addr);
+				assert(pl);
+				int i;
+				for (i = 0; i<pl->count; i++)
+				{
+					dbg("%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&pl->peers[i]));
+				}
+				pmip_ro_peer_list_release(pl);
+
+
+				dbg("Update RO cache entry\n");
+				de->sender_addr = info->src;
+				de->src_serv_mag_addr = info->src_mag_addr;				
+				de->dst_iid = info->mn_iid;				
+				de->iif = info->iif;
+				de->action = PBREQ_LOCATE; //To be explicit.													
+				
+				//TODO Check lifetime of RO cache entry. If it is invalide then  Send PBREQ --> All-LMA 
+				dbg("Destination RO entry invalid for %x:%x:%x:%x:%x:%x:%x:%x ... Send PBREQ to All-LMA@\n", NIP6ADDR(&de->dst_addr));
+				if (IN6_ARE_ADDR_EQUAL(&conf.all_lma_addr, &info->src) || IN6_ARE_ADDR_EQUAL(&conf.all_lma_addr, &info->dst) || IN6_ARE_ADDR_EQUAL(&conf.all_lma_addr, &in6addr_loopback))
+					dbg("All-LMA@ cause a loop ... Stop PBREQ chain!\n"); //Never do a loop!
+				else {						
+					struct in6_addr_bundle addrs;			
+					addrs.src = &conf.our_addr;
+					addrs.dst = &conf.all_lma_addr; //TODO All_LMA@ need to be defined.
+					struct in6_addr * ptr_src_mn_addr = NULL;
+					struct in6_addr * ptr_src_mag_addr = NULL;
+					if (!IN6_ARE_ADDR_EQUAL(&de->src_serv_mag_addr, &in6addr_any)) ptr_src_mag_addr = &de->src_serv_mag_addr;
+					if (!IN6_ARE_ADDR_EQUAL(&de->src_addr, &in6addr_any)) ptr_src_mn_addr = &de->src_addr;							
+					mh_send_pbreq(&addrs, &de->dst_iid, &de->dst_addr, ptr_src_mag_addr, ptr_src_mn_addr, seqno_pbreq, PBREQ_LOCATE, 0, NULL); //Let the system find the outgoing interface
+					seqno_pbreq++;
+				}
+				if (de != NULL) pmip_ro_cache_release_entry(de);                 
+			}
+
+			else if (info->msg_event == hasPBRES)
+			{
+				dbg("No PMIP entry found for %x:%x:%x:%x:%x:%x:%x:%x... \n",  NIP6ADDR(&info->mn_addr));
+
+				if (info->PBRES_status == PBRES_INTER_CLUSTER_MOBILITY)
+				{
+					lma_update_ro_cache(NULL, info);
+					break;
+				}
+				struct pmip_ro_entry *de = pmip_ro_cache_get(&info->src_mn_addr, &info->mn_addr);		
+				if (de && info->PBRES_status == PBRES_OK) //TODO Check seqno & status
+				{
+					//Update other fields in the destination cache entry.		
+					de->dst_serv_mag_addr = info->mn_serv_mag_addr;
+					de->dst_serv_lma_addr = info->mn_serv_lma_addr;
+
+					//create a tunnel between LMA and LMA.
+					if (de->tunnel <= 0 && conf.tunneling_enabled)
+					{
+						de->tunnel = pmip_tunnel_add(&conf.our_addr, &de->dst_serv_lma_addr, info->iif);
+						dbg("Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(&de->dst_addr), RT6_TABLE_MIP6);
+						route_add(de->tunnel, RT6_TABLE_MIP6, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, &de->dst_addr, 128, NULL);			
+					}
+
+					dbg("Create PBRES message to answer MAG's PBREQ...\n");
+					struct in6_addr_bundle addrs;
+					addrs.src = &conf.our_addr;
+					addrs.dst = &de->sender_addr;
+					mh_send_pbres(&addrs, &de->src_addr, &de->dst_addr, &de->dst_iid, &de->dst_serv_mag_addr, &de->dst_serv_lma_addr, de->seqno, PBRES_OK, de->iif);	
+					pmip_ro_cache_release_entry(de);
+				}
+				
+			}
+
+			break;
+
+		//--------------------------------------
+		case BCE_PMIP:
+			if(info->msg_event == hasPBU && (info->lifetime.tv_sec > 0 || info->lifetime.tv_nsec >0))
+			{
+				// life time is not zero and there is an existing entry ==> check Serv_MAG, if not same ==> modify it.
+				dbg("PBU for an existing MN ... possible Location Registration\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);
+				if( !IN6_ARE_ADDR_EQUAL(&info->src, &bce->mn_serv_mag_addr) ) 
+				{
+ 					lma_dereg(bce, 1); //Inform the old MAG to deregister MN 									
+					lma_update_binding_entry(bce, info);
+					lma_reg(bce);
+				}	
+				pmipcache_release_entry(bce);
+			}
+
+			else if (info->msg_event == hasPBU && info->lifetime.tv_sec == 0 && info->lifetime.tv_nsec==0) 
+			{
+				dbg("PBU with Lifetime = 0... start Location De-registration\n");
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);					
+				if(IN6_ARE_ADDR_EQUAL(&info->src, &bce->mn_serv_mag_addr)) //Received PBU from old MAG!!!
+				{
+					lma_dereg(bce, 0);
+					pmipcache_release_entry(bce);
+					pmip_bce_delete(bce);
+				} else pmipcache_release_entry(bce);
+			}
+
+			else if (info->msg_event == hasPBREQ)
+			{ 
+				dbg("PMIP Cache hit, create PBRES\n");
+				struct in6_addr_bundle addrs;
+				addrs.dst = &info->src;
+				addrs.src = &conf.our_addr;
+			
+				//create a PB response.
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);
+				mh_send_pbres(&addrs, &info->src_mn_addr, get_mn_addr(bce), &bce->mn_iid, &bce->mn_serv_mag_addr, &conf.our_addr, info->seqno, PBRES_OK, info->iif);
+
+				//Is Inter-cluster? Check If we have created a tunnel before? If not --> create inter-cluster bidirectional tunnel
+				if (conf.tunneling_enabled)
+				{
+					pmip_tunnel_add(&conf.our_addr, &info->src, info->iif);
+ 					//if (!IN6_ARE_ADDR_EQUAL(&info->src_mag_addr, &in6addr_any)) pmip_tunnel_add(&conf.our_addr, &info->src_mag_addr, info->iif);
+				}
+
+				pmipcache_release_entry(bce);
+			}
+
+			else if (info->msg_event == hasPBRES) 
+			{
+				bce = pmip_cache_get(&conf.our_addr,&info->mn_iid);	
+ 				if (info->PBRES_status == PBRES_INTER_CLUSTER_MOBILITY) 
+ 				{
+ 					dbg("PBRes with Inter Cluster flag ... start Location De-registration\n");
+					lma_update_ro_cache(NULL, info);
+ 					lma_dereg(bce, 1);
+ 					pmipcache_release_entry(bce);
+ 					pmip_bce_delete(bce);
+ 					break;
+ 				} 
+ 				else 
+				if(info->seqno == bce->seqno_out) //Heart Beat Messages only available for registered MN
+				{					
+					dbg("Timer for Expiry is intialized!\n");
+					del_task(&bce->tqe); //Delete the Task (if ANY)
+					bce->n_rets_counter = conf.Max_Rets; //Reset the Retransmissions counter.					
+					pmip_cache_start(bce); //Add task for entry expiry.					
+				}
+				else dbg("Seq# of PBRES is Not equal to Seq# of PBREQ ... Ignore!\n");
+				pmipcache_release_entry(bce);
+			}
+			break;
+
+		default:
+			dbg("No action for this event (%d) at current state (%d) !\n", info->msg_event, type);
+
+	}
+	return result;	
+}
+	
+
+
+
+//===========================================================
+int mag_ro_fsm(int type, struct msg_info* info)
+//===========================================================
+{
+	int result = 0;
+	struct pmip_entry *bce;	
+	switch (type)
+	{
+		//--------------------------------------
+		case BCE_NO_ENTRY:
+			if (info->msg_event == hasPBRES)
+			{		
+				struct pmip_ro_entry *de = pmip_ro_cache_get(&info->src_mn_addr, &info->mn_addr);
+				if (de)
+				{
+					if (de->action == PBREQ_LOCATE)
+					{							
+					        dbg("Create NA as proxy arp for %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&de->dst_addr));
+					        uint32_t na_flags = NDP_NA_SOLICITED | NDP_NA_OVERRIDE;
+					        ndisc_send_na(de->iif, &conf.mag_addr_ingress, &de->src_addr, &de->dst_addr,na_flags);	
+
+						dbg("confirm PBREQ_LOCATE for an existing RO entry, update & start Route Optimization\n");	  
+						de->dst_serv_lma_addr = info->mn_serv_lma_addr;
+						de->dst_serv_mag_addr = info->mn_serv_mag_addr;
+
+						if (conf.ro_enabled)
+						{
+						  struct in6_addr_bundle address;
+						  address.src = &conf.our_addr;
+						  address.dst = &de->dst_serv_mag_addr;
+						  mh_send_pbreq(&address, &de->dst_addr, &de->dst_addr, &conf.our_addr, &de->src_addr, seqno_pbreq, PBREQ_RO_INIT, 0, NULL); //send PBREQ to peer MAG to setup tunnel.						 
+						}
+					}
+					pmip_ro_cache_release_entry(de);
+				} //if de
+			} //if hasPBRES
+			break;
+
+		//--------------------------------------
+		case BCE_PMIP:
+			if (info->msg_event == hasPBREQ) 
+			{
+				dbg("Action %d == %d?\n", info->PBREQ_action, PBREQ_LOCATE); 
+				if (info->PBREQ_action == PBREQ_LOCATE)
+			    {
+					dbg("PBREQ_LOCATE - Hearbeat on Demand - Return: I'm ALIVE\n");
+					struct in6_addr_bundle addrs;
+					addrs.src = &conf.our_addr;
+					addrs.dst = &info->src;				
+					mh_send_pbres(&addrs, NULL, &info->mn_addr, &info->mn_iid, NULL, NULL, info->seqno, PBRES_OK, info->iif); 
+			    }
+
+				else if (info->PBREQ_action == PBREQ_RO_INIT)
+				{
+						//Create/Update RO entry 
+						//Note that the connection is seen in a reverse way at this MAG
+						struct pmip_ro_entry *de = pmip_ro_cache_get(&info->mn_addr, &info->src_mn_addr);
+	
+						if (de == NULL)
+						{ 	
+							dbg("PBREQ_RO_INIT for new RO entry, create RO entry & do Route Optimization\n");				
+							de = pmip_ro_cache_alloc();
+							de->src_addr = info->mn_addr;
+							de->dst_addr = info->src_mn_addr;
+							de->dst_iid = de->dst_addr; //TODO
+							de->sender_addr = info->src;
+							if (pmip_ro_cache_add(de) != NULL)
+							{
+								pthread_rwlock_rdlock(&pmip_ro_cache_lock);
+								pthread_rwlock_wrlock(&de->lock);
+								//TODO Start dcache timer
+							}			
+						}
+						else dbg("PBREQ_RO_INIT for existing RO entry, update & do Route Optimization\n");
+	
+						if (de)
+						{	
+							de->src_serv_mag_addr = conf.our_addr;			
+	// 						de->iif = info->iif;	  
+	// 						de->dst_serv_lma_addr = info->mn_serv_lma_addr;
+							de->dst_serv_mag_addr = info->src_mag_addr;
+							de->action = info->PBREQ_action;
+									
+							if (conf.ro_enabled)
+							{							
+								//create a PBRES
+								struct in6_addr_bundle addrs;
+								addrs.src = &conf.our_addr;
+								addrs.dst = &de->dst_serv_mag_addr;
+								mh_send_pbres(&addrs, &de->src_addr, &de->dst_addr, &de->dst_iid, NULL, NULL, info->seqno, PBRES_OK, info->iif);					 
+	
+								//create a tunnel between MAG and serving MAG
+								if (conf.tunneling_enabled)
+								{
+									if (de->tunnel <= 0) de->tunnel = pmip_tunnel_add(&conf.our_addr,&de->dst_serv_mag_addr, info->iif);
+									dbg("Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(&de->dst_addr), RT6_TABLE_PMIP);
+									route_add(de->tunnel, RT6_TABLE_PMIP, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, &de->dst_addr, 128, NULL);
+								} //if tunneling_enabled
+							} //if ro_enabled
+							pmip_ro_cache_release_entry(de);
+						} //if de
+			    } //if PBREQ_RO_INIT
+			}
+
+
+			if (info->msg_event == hasPBRES)
+			{
+				//Note that the connection is seen from in the reverse way of the peer			
+				struct pmip_ro_entry *de = pmip_ro_cache_get(&info->mn_addr, &info->src_mn_addr);
+				//if (de && de->seqno != info->seqno)
+				// dbg("Seq# of PBRES is Not equal to Seq# of PBREQ ... Ignore!\n");
+				if (de) // && de->action == PBREQ_RO_INIT && info->PBRES_status == PBRES_OK) 
+				{
+					//This is the confirmation for RO
+					//create a tunnel between MAG and serving MAG
+					if (conf.ro_enabled && conf.tunneling_enabled)
+					{
+						if (de->tunnel <= 0) de->tunnel = pmip_tunnel_add(&conf.our_addr,&de->dst_serv_mag_addr, info->iif);			  
+						dbg("Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(&de->dst_addr), RT6_TABLE_PMIP);
+						route_add(de->tunnel, RT6_TABLE_PMIP, RTPROT_MIP,0, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0, &de->dst_addr, 128, NULL);						   	
+					}
+				}					
+				pmip_ro_cache_release_entry(de);
+			}
+			break;
+		default:
+			dbg("No action for this event (%d) at current state (%d) !\n", info->msg_event, type);
+	}
+	return result;
+	
+}
+
+
+//===========================================================
+int lma_ro_fsm(struct msg_info* info)
+//===========================================================
+{
+}
+
 

@@ -27,14 +27,16 @@
 #include <stdlib.h>
 #include "icmp6.h"
 #include <arpa/inet.h>
-#include "pmip_extern.h"
 #include "debug.h"
 #include "conf.h"
-#include "pmip_types.h"
-#include "pmip_cache.h"
 #include "time.h"
 #include "rtnl.h"
 #include "tunnelctl.h"
+
+#include "pmip_types.h"
+#include "pmip_cache.h"
+#include "pmip_extern.h"
+#include "pmip_ro_cache.h"
 
 #ifdef ENABLE_VT
 #include "vt.h"
@@ -50,7 +52,7 @@ extern struct sock icmp6_sock;
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@] [-i] [-p] [-d] [-A All-LMA@]");
+	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@ [-A All-LMA@]] [-i] [-p] [-d] [-o]");
 	fprintf(stderr, "\n\t-s: allow capturing NS(DAD)"\
 		"\n\t-m: Run as Mobile Router (MAG)"\
 		"\n\t-c: Run as Cluster Head (LMA)"\
@@ -59,7 +61,8 @@ void usage(void)
 		"\n\t-E: MAG egress address (toward LMA)"
 		"\n\t-i: With IPv6-in-IPv6 tunneling"\
 		"\n\t-p: Do proxy arp for other MAGs"
-		"\n\t-t: Dynamically create/delete tunnels"\
+		"\n\t-d: Dynamically create/delete tunnels"\
+		"\n\t-o: Enable Route Optimization"\
 		"\n\t-A: All-LMA Multicast Address"\
 	"\nNotes:"\
 	"\n\t[-c] and [-m] are exclusive"\
@@ -75,7 +78,7 @@ int get_options(int argc, char *argv[])
 {
 	int ch;
 	if (argc == 1)  usage();
-	while ((ch = getopt(argc, argv, "dpiscmL:N:E:A:")) != EOF) {
+	while ((ch = getopt(argc, argv, "odpiscmL:N:E:A:")) != EOF) {
 	  
 	switch(ch) {
 	case 'L':
@@ -133,7 +136,11 @@ int get_options(int argc, char *argv[])
 		break;
 	case 'd':
 		conf.dtun_enabled=1;
+		break;
+	case 'o':
+		conf.ro_enabled=1;
 		break;		
+		
 	default:
 		usage();
 	}
@@ -154,7 +161,7 @@ void init_mag_icmp_sock()
 	int on=1;
 	if (flag)
 	{
-		printf("Set SOLRAW, IPV6_ALL_SOLICTED_MCAST_ADDR = %d\n", IPV6_ALL_SOLICITED_MCAST_ADDR);
+		dbg("Set SOLRAW, IPV6_ALL_SOLICTED_MCAST_ADDR = %d\n", IPV6_ALL_SOLICITED_MCAST_ADDR);
 		if (setsockopt(icmp6_sock.fd, SOL_RAW, IPV6_ALL_SOLICITED_MCAST_ADDR, &on, sizeof(on))<0)
 		  perror("allow all solicited mcast address\n");	
 	}
@@ -163,33 +170,62 @@ void init_mag_icmp_sock()
 void testcache()
 {
 	struct pmip_entry info;
-	info.peer_addr.in6_u.u6_addr32[2] = 10;
+	info.mn_iid.in6_u.u6_addr32[2] = 10;
 	pmip_cache_add(&info);
 	struct in6_addr addr1= in6addr_any;
-	dbg("exists an entry of type: %d\n", pmip_cache_exists(&addr1,&info.peer_addr));
+	dbg("exists an entry of type: %d\n", pmip_cache_exists(&addr1,&info.mn_iid));
+
+
+	struct pmip_ro_entry* de = pmip_ro_cache_alloc();	
+	inet_pton(AF_INET6, "2001::700", &de->src_addr);
+	inet_pton(AF_INET6, "2001::800", &de->dst_addr);
+	pmip_ro_cache_add(de);	
+	pmip_ro_cache_exists(&de->src_addr, &de->dst_addr);
+
+	de = pmip_ro_cache_alloc();
+	inet_pton(AF_INET6, "2001::600", &de->src_addr);
+	inet_pton(AF_INET6, "2001::800", &de->dst_addr);
+	pmip_ro_cache_add(de);	
+	pmip_ro_cache_exists(&de->src_addr, &de->dst_addr);
+	pmip_ro_cache_exists(&de->src_addr, &de->dst_addr);
+	pmip_ro_cache_exists(&de->src_addr, &de->dst_addr);
+
+	struct in6_addr src, dst;
+	inet_pton(AF_INET6, "2001::600", &src);
+	inet_pton(AF_INET6, "2001::800", &dst);
+	pmip_ro_cache_exists(&src, &dst);
+
+	inet_pton(AF_INET6, "2001::700", &src);
+	inet_pton(AF_INET6, "2001::800", &dst);
+	pmip_ro_cache_exists(&src, &dst);
+
+	pmip_ro_cache_delete(&src, &dst);
+	pmip_ro_cache_exists(&src, &dst);
+	dbg("Cache test finished!\n");
+	exit(0);
 }
 
-static int PMIP_CACHE_DEL(void *data, void *arg)
+static int pmip_cache_delete_each(void *data, void *arg)
 {
 	struct pmip_entry *bce = (struct pmip_entry *)data;
 
 	if(is_mag())
 	{
-		//Delete existing route & rule for the deleted MN
-		mag_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->link);
+		//Delete existing route & rule for the deleted MN		
+		mag_remove_route( &bce->mn_addr, bce->link);
 
-		int usercount = tunnel_getusers(bce->tunnel);
+/*		int usercount = tunnel_getusers(bce->tunnel);
 		dbg("# of binding entries %d \n", usercount);
-		if (usercount == 1) {
+		if (usercount == 1) {*/
 			route_del(bce->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD,&in6addr_any, 0,&in6addr_any, 0,NULL);
-		}
+// 		}
 		//decrement users of old tunnel.
 		pmip_tunnel_del(bce->tunnel);
 	}
 	//Delete existing route for the deleted MN
 	if(is_lma())
 	{
-		lma_remove_route(ID2ADDR(&bce->peer_prefix,&bce->peer_addr), bce->tunnel); 
+		lma_remove_route(&bce->mn_addr, bce->tunnel); 
 
 		//decrement users of old tunnel.
 		pmip_tunnel_del(bce->tunnel);
@@ -201,19 +237,76 @@ static int PMIP_CACHE_DEL(void *data, void *arg)
 	return 0;	
 }
 
+
+static int pmip_ro_cache_delete_each(void *data, void *arg)
+{
+	struct pmip_ro_entry *de = (struct pmip_ro_entry *)data;
+
+	if(is_mag())
+	{
+		//Delete existing route & rule for the deleted ro association		
+		if (conf.ro_enabled && conf.tunneling_enabled)
+		{
+			dbg("Delete route for ro {%x:%x:%x:%x:%x:%x:%x:%x - %x:%x:%x:%x:%x:%x:%x:%x} in table %d\n", NIP6ADDR(&de->src_addr), NIP6ADDR(&de->dst_addr), RT6_TABLE_PMIP);
+			route_del(de->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, &de->dst_addr, 128, NULL);
+/*			if (de->tunnel > 0)
+			{		
+				int usercount = tunnel_getusers(de->tunnel);			
+				pmip_tunnel_del(de->tunnel); //decrement users of old tunnel.
+				dbg("Last #ro entries %d, decremented #ro entries %d \n", usercount, tunnel_getusers(de->tunnel));
+			}
+			else dbg("No tunnel need being deleted\n");*/
+		}
+	}
+
+	if(is_lma())
+	{
+		//Delete existing route & rule for the deleted ro association		
+		if (conf.tunneling_enabled)
+		{
+			dbg("Delete route for ro {%x:%x:%x:%x:%x:%x:%x:%x - %x:%x:%x:%x:%x:%x:%x:%x} in table %d\n", NIP6ADDR(&de->src_addr), NIP6ADDR(&de->dst_addr), RT6_TABLE_MIP6);
+			route_del(de->tunnel, RT6_TABLE_MIP6, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, &de->dst_addr, 128, NULL);			
+/*			if (de->tunnel > 0)
+			{
+				int usercount = tunnel_getusers(de->tunnel);			
+				pmip_tunnel_del(de->tunnel); //decrement users of old tunnel.
+				dbg("Last #ro entries %d, decremented #ro entries %d \n", usercount, tunnel_getusers(de->tunnel));
+			}
+			else dbg("No tunnel need being deleted\n"); 			*/
+		}
+
+	}
+
+	//Delete the Entry.
+	pmip_ro_delete(de);
+	return 0;	
+}
+
 static void terminate(void)
 {
 	//Release the pmip cache ==> deletes the routes and rules and "default route on PMIP" and tunnels created.
-	dbg("TERMINATOR\n");
-	dbg("Release pmip_cache...");
-	pmip_cache_iterate(PMIP_CACHE_DEL,NULL);
-	dbg("done!\n");
+	dbg("Release all occupied resources...\n");
+
+	icmp6_cleanup();
+	mh_cleanup();
+
+	dbg("Release ro_cache...\n");
+	pmip_ro_cache_iterate(pmip_ro_cache_delete_each,NULL);
+
+	dbg("Release pmip_cache...\n");
+	pmip_cache_iterate(pmip_cache_delete_each,NULL);
 
 	//delete the default rule.
-	dbg("Remove default rule...");
-	rule_del(NULL,RT6_TABLE_MIP6,IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,&in6addr_any, 0, &in6addr_any, 0);
-	dbg("done!\n");
+    dbg("Remove default rule referring to table 252 (MIP6 table) ...\n");
+    rule_del(NULL,RT6_TABLE_MIP6,IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,&in6addr_any, 0, &in6addr_any, 0);
 
+	tunnelctl_cleanup();
+
+	taskqueue_destroy();
+
+#ifdef ENABLE_VT
+	vt_fini();
+#endif
 	pthread_exit(NULL);
 }
 
@@ -254,6 +347,9 @@ int main(int argc, char *argv[])
 	pthread_t sigth;
 	sigset_t sigblock;
 
+	dbg("Starting Proxy Mobile IPv6, compiled on " __DATE__ " at " __TIME__ " ....\n");
+
+
 	sigemptyset(&sigblock);
 	sigaddset(&sigblock, SIGHUP);
 	sigaddset(&sigblock, SIGINT);
@@ -269,6 +365,8 @@ int main(int argc, char *argv[])
 	conf.mag_addr_egress = in6addr_loopback;
 	conf.lma_addr = in6addr_loopback;
 	conf.our_addr = in6addr_loopback;
+	conf.all_lma_addr = in6addr_loopback;
+
 	//Lifetime for PB entry
 	struct timespec lifetime1; //15 sec
 	lifetime1.tv_sec = 60;
@@ -337,18 +435,6 @@ int main(int argc, char *argv[])
 #endif
 
 	/**
- 	* Initializes PMIP cache.
- 	**/
-	dbg("Start Testing....\n");
-	if (pmip_cache_init() < 0) 
-	{
-		dbg("Cache initialization failed! \n");
-		return -1;
-	}
-	else dbg("Cache is initialized!\n");
-	//testcache(); //check the cache.
-
-	/**
  	* Initializes task queue and creates a task runner thread.
  	**/
 	
@@ -358,6 +444,24 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	else dbg("Task Queue Initialized....\n");
+
+	/**
+ 	* Initializes PMIP cache.
+ 	**/
+	if (pmip_cache_init() < 0) 
+	{
+		dbg("PMIP Binding Cache initialization failed! \n");
+		return -1;
+	}
+	else dbg("PMIP Binding Cache is initialized!\n");
+
+	if (pmip_ro_cache_init() < 0) 
+	{
+		dbg("PMIP RO Cache initialization failed! \n");
+		return -1;
+	}
+	else dbg("PMIP RO Cache is initialized!\n");
+	//testcache(); //check the cache.
 	
 	/**
  	* Initializes Tunnelcntl.
@@ -376,12 +480,10 @@ int main(int argc, char *argv[])
 		     IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST,
 		     &in6addr_any, 0, &in6addr_any, 0) < 0)
 	{
-		dbg("Warning: Add default rule for RT6_TABLE_MIP6 failed, check root privilege/kernel options!\n");
+		dbg("Add default rule for RT6_TABLE_MIP6 failed, insufficient privilege/kernel options missing!\n");
 		return -1;
 	}
 
-
-#ifndef TEST_PMIP
 	if (mh_init() < 0)
 	{
 		dbg("Mobility Header initialization failed! \n");
@@ -395,18 +497,16 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	else dbg("ICMP socket is sucsessfully initialized! \n");
-#endif
 
 	//Run the MAG Code
 	if (is_mag())
 	{
-		dbg("Running as MAG entity\n");
+		conf.our_addr = conf.mag_addr_egress;
+		conf.Home_Network_Prefix = get_node_prefix(&conf.mag_addr_ingress); //copy Home network prefix.
 
-		memcpy(&conf.our_addr,&conf.mag_addr_egress,sizeof(struct in6_addr));
+		dbg("Running as MAG entity\n");
 		dbg("Entity Egress Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.our_addr));
 		dbg("Entity Ingress Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.mag_addr_ingress));
-		//copy Home network prefix.
-		memcpy(&conf.Home_Network_Prefix, &conf.mag_addr_ingress.in6_u.u6_addr32[0], sizeof(__identifier));
 		dbg("Home Network Prefix Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.Home_Network_Prefix));
 
 		
@@ -420,7 +520,7 @@ int main(int argc, char *argv[])
 		dbg("Initializing the NA handler\n");
 
 		// to capture NA message
-		icmp6_handler_reg(ND_NEIGHBOR_ADVERT, &pmip_recv_na_handler);
+		icmp6_handler_reg(ND_NEIGHBOR_ADVERT, &pmip_mag_recv_na_handler);
 
 		dbg("Initializing the PBA handler\n");
 
@@ -445,39 +545,6 @@ int main(int argc, char *argv[])
 		* Deletes the default route for MN prefix so routing is per unicast MN address!
 		**/
 		route_del((int)NULL, RT6_TABLE_MAIN, IP6_RT_PRIO_ADDRCONF,&in6addr_any, 0,&conf.Home_Network_Prefix, 64,NULL);
-
-#ifdef TEST_PMIP
-
-		uint8_t outpack[1500];
-
-		dbg("Create NS for DAD ....\n");
-		struct nd_neighbor_solicit * msg = (struct nd_neighbor_solicit *) outpack;
-		bzero(outpack, sizeof(outpack));
-		int len = sizeof(struct nd_neighbor_solicit);
-		msg->nd_ns_hdr.icmp6_type = ND_NEIGHBOR_SOLICIT;
-		msg->nd_ns_hdr.icmp6_code = 0;
-		msg->nd_ns_hdr.icmp6_cksum = 0;	
-		
-		dbg("***************\nNS handler is triggered (1)....\n");
-
-		inet_pton(AF_INET6, "2000::ff:01", &msg->nd_ns_target);
-		struct in6_addr saddr = IN6ADDR_ANY_INIT;
-		struct in6_addr daddr = IN6ADDR_ANY_INIT;
-		pmip_mag_ns_handler.recv((struct icmp6_hdr*) msg, len, &saddr, &daddr, 0, 0);
-		sleep(1);
-
-		dbg("***************\nNS handler is triggered (2)....\n");
-		//msg->nd_ns_target.in6_u.u6_addr8[15] = 2;
-		inet_pton(AF_INET6, "fe80::ff:02", &msg->nd_ns_target);
-		pmip_mag_ns_handler.recv((struct icmp6_hdr*) msg, len, &saddr, &daddr, 0, 0);
-		sleep(1);
-
-		dbg("***************\nNS handler is triggered (3)....\n");
-		//msg->nd_ns_target.in6_u.u6_addr8[15] = 1;		
-		inet_pton(AF_INET6, "2000::ff:01", &msg->nd_ns_target);
-		pmip_mag_ns_handler.recv((struct icmp6_hdr*) msg, len, &saddr, &daddr, 0, 0);
-		sleep(1);
-#endif
 	}
 
 	//Run the LMA Code
@@ -485,7 +552,7 @@ int main(int argc, char *argv[])
 	{	   
 		dbg("Running as LMA entity\n");
 		//conf.lma_addr = host.sin6_addr;
-		memcpy(&conf.our_addr,&conf.lma_addr,sizeof(struct in6_addr));
+		conf.our_addr = conf.lma_addr;
 		dbg("Entity Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.our_addr));
 	
 		dbg("Initializing the PBU handler\n");
@@ -504,12 +571,6 @@ int main(int argc, char *argv[])
 		mh_handler_reg(IP6_MH_TYPE_PBRES, &pmip_pbres_handler);
 	 }
 
-	#ifdef TEST_PMIP
-	
-	dbg("END OF TESTING!\n");
-	return 0;
-	#endif
-
 	if (pthread_create(&sigth, NULL, sigh, NULL)){
 		dbg("Pthread for tracing Signals is not created!\n");
 		return -1;
@@ -517,9 +578,6 @@ int main(int argc, char *argv[])
 	dbg("The Entity is Ready to function...\n");
 	pthread_join(sigth, NULL);
 	
-	//Release all ressources on exit
-	tunnelctl_cleanup();
-		
 	return 0;
 }
 

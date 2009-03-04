@@ -153,9 +153,7 @@ int add_task_abs(const struct timespec *expires,
 {
 	pthread_mutex_lock(&mutex);
 	if (tsisset(tqi->expires)) {
-		dbg("test del start\n");
 		list_del(&tqi->list);
-		dbg("test del finish\n");
 	}
 	if (tqi == curr)
 		curr = NULL;

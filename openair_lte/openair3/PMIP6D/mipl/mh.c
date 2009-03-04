@@ -166,10 +166,6 @@ static void *mh_listen(void *arg)
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		pthread_rwlock_rdlock(&handler_lock);
 		
-		if (mh->ip6mh_type==IP6_MH_TYPE_PBRES)
-		{
-			dbg("************************ PBRES received!\n");
-		}
 		h = mh_handler_get(mh->ip6mh_type);
 		if (h)
 			h->recv(mh, len, &addrs, pktinfo.ipi6_ifindex);
@@ -842,7 +838,6 @@ ssize_t mh_recv(unsigned char *msg, size_t msglen,
 	}
 	mh = (struct ip6_mh *)msg;
 
-	dbg("************** Receive %d == %d < %d?\n", IP6_MH_TYPE_PBRES, mh->ip6mh_type,IP6_MH_TYPE_MAX );
 	if (mh->ip6mh_type > IP6_MH_TYPE_MAX) {
 		struct in6_addr *src, *dst, *hoa;
 		if (!IN6_IS_ADDR_UNSPECIFIED(rtaddr))

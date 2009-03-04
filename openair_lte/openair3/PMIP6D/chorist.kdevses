@@ -1,19 +1,44 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <!DOCTYPE KDevPrjSession>
 <KDevPrjSession>
+<<<<<<< .mine
+ <DocsAndViews NumberOfDocuments="7" >
+  <Doc0 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_msgs.c" >
+   <View0 line="885" Type="Source" />
+=======
  <DocsAndViews NumberOfDocuments="15" >
   <Doc0 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip6d.c" >
    <View0 line="409" Type="Source" />
+>>>>>>> .r91
   </Doc0>
+<<<<<<< .mine
+  <Doc1 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_ro_cache.c" >
+   <View0 line="22" Type="Source" />
+=======
   <Doc1 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_fsm.c" >
    <View0 line="332" Type="Source" />
+>>>>>>> .r91
   </Doc1>
+<<<<<<< .mine
+  <Doc2 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_lma_proc.c" >
+   <View0 line="129" Type="Source" />
+=======
   <Doc2 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_handler.c" >
    <View0 line="29" Type="Source" />
+>>>>>>> .r91
   </Doc2>
+<<<<<<< .mine
+  <Doc3 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_mag_proc.c" >
+   <View0 line="129" Type="Source" />
+=======
   <Doc3 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_msgs.c" >
    <View0 line="737" Type="Source" />
+>>>>>>> .r91
   </Doc3>
+<<<<<<< .mine
+  <Doc4 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_handler.c" >
+   <View0 line="0" Type="Source" />
+=======
   <Doc4 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/icmp6.h" >
    <View0 Type="Source" />
   </Doc4>
@@ -43,10 +68,17 @@
   </Doc12>
   <Doc13 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_extern.h" >
    <View0 line="46" Type="Source" />
+>>>>>>> .r91
   </Doc13>
   <Doc14 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_cache.c" >
    <View0 line="234" Type="Source" />
   </Doc14>
+  <Doc5 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_fsm.c" >
+   <View0 line="162" Type="Source" />
+  </Doc5>
+  <Doc6 NumberOfViews="1" URL="file:///homes/nguyenhn/working/openair3/PMIP6D/pmip_extern.h" >
+   <View0 line="35" Type="Source" />
+  </Doc6>
  </DocsAndViews>
  <pluginList>
   <kdevdebugger>
@@ -64,11 +96,11 @@
     <bookmark url="/home/Local_Data/nguyenhn/chorist/pmip_handler.c" >
      <mark line="1" />
     </bookmark>
-    <bookmark url="/home/Local_Data/nguyenhn/chorist/mipl/vt.c" >
-     <mark line="581" />
-    </bookmark>
     <bookmark url="/home/all/chorist/mipl/hash.c" >
      <mark line="177" />
+    </bookmark>
+    <bookmark url="/home/Local_Data/nguyenhn/chorist/mipl/vt.c" >
+     <mark line="581" />
     </bookmark>
     <bookmark url="/home/Local_Data/nguyenhn/chorist/pmip_fsm.c" >
      <mark line="301" />

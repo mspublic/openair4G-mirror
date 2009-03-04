@@ -13,6 +13,7 @@
 
 #include <netinet/in.h>
 
+#define CONN_PER_DEST      16;
 /*
  * Mobility Header Message Option Types
  * new mobility header options types defined
@@ -21,7 +22,22 @@
 #define IP6_MHOPT_MOB_IDENTIFIER 0x08	/* MOBILE NODE IDENTIFIER */
 #define IP6_MHOPT_TIME_STAMP	 0x09	/* Timestamp */
 #define IP6_MHOPT_LINK_ADDR	 0x0A	/* link local address*/
-#define IP6_MHOPT_SERV_MAG_ADDR	 0x0B	/* Serving MAG address*/
+
+/*
+ * Mobility Header Message Option Types
+ * Options for Route Optimization and Flow Binding
+*/
+#define IP6_MHOPT_DST_MN_ADDR	 0x0B	/* Destination CN's address*/
+#define IP6_MHOPT_SERV_MAG_ADDR	 0x0C	/* Destination CN's Serving MAG address*/
+#define IP6_MHOPT_SERV_LMA_ADDR	 0x0D	/* Destination CN's Serving LMA address*/
+#define IP6_MHOPT_SRC_MN_ADDR	 0x0E	/* Source MN's address*/
+#define IP6_MHOPT_SRC_MAG_ADDR	 0x0F	/* Source MN's Serving MAG address*/
+#define IP6_MHOPT_PMIP_MAX 		 IP6_MHOPT_SRC_MAG_ADDR		
+
+//must change in mh.h 
+//#define IP6_MHOPT_MAX 		IP6_MHOPT_PMIP_MAX 
+
+
 
 /*
  * New Mobility Header Message Types
@@ -75,23 +91,20 @@
 #endif
 
 //Define STATUS FLAGS for FSM.
-#if BYTE_ORDER == BIG_ENDIAN
-#define hasPBU			0x80000000	/* Has a PBU */	
-#define hasPBA			0x40000000	/* Has a PBA */	
-#define hasPBREQ		0x20000000	/* Has a PBRR */	
-#define hasPBRES		0x10000000	/* Has a PBRE */	
+#define hasNS			0x00000010	/* Has a PBU */
+#define hasNA			0x00000020	/* Has a PBU */
+#define hasPBU			0x00000008	/* Has a PBU */	
+#define hasPBA			0x00000004	/* Has a PBA */	
+#define hasPBREQ		0x00000002	/* Has a PBRR */	
+#define hasPBRES		0x00000001	/* Has a PBRE */
+#define PLEN	64
 
-// 	 hasID;			//TODO to be defined later as flags to specify which options to create or not
-// 	 hasTimeStamp;		
-// 	 hasPrefix;
-// 	 hasLinkLocal;
-
-#else				/* BYTE_ORDER == LITTLE_ENDIAN */
-#define hasPBU			0x00000080	/* Has a PBU */	
-#define hasPBA			0x00000040	/* Has a PBA */	
-#define hasPBREQ		0x00000020	/* Has a PBRR */	
-#define hasPBRES		0x00000010	/* Has a PBRE */	
-	
-#endif
-
+#define PBREQ_LOCATE					1 
+#define PBREQ_RO_TEST_INIT				2
+#define PBREQ_RO_INIT 					4
+ 	
+#define PBRES_OK						0
+#define PBRES_INTER_CLUSTER_MOBILITY	1
+#define PBRES_REASON_UNSPECIFIED		128
+					
 #endif

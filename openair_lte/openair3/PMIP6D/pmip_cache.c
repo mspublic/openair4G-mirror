@@ -1,77 +1,34 @@
 /*****************************************************************
  * C Implementation: pmip6d.c
- * Description: 
+ * Description: PMIP binding cache functions.
  * Author: 
  *   Christian Bonnet
  *   Huu-Nghia Nguyen
  *   Hussain & Daniel
  * Copyright: Eurecom Institute,(C) 2008
  ******************************************************************/
-#include "pmip_extern.h"
-#include "bcache.h"
-#include <netinet/in.h>
+
 #include "debug.h"
 #include "conf.h"
-#include "pmip_types.h"
-#include "hash.h"
-#include "util.h"
-#include "pmip_consts.h"
-#include "icmp6.h"
-#include "mh.h"
-#include "cn.h"
-#include <netinet/ip6mh.h>
-#include <pthread.h>
-#include <errno.h>
-#include "xfrm.h"
-#include "tunnelctl.h"
-#include "keygen.h"
 #include "vt.h"
+
+#include "pmip_consts.h"
+#include "pmip_types.h"
+#include "pmip_extern.h"
 #include "pmip_cache.h"
 
-/**
- *  Some defined Macros for ID & ADDRESS conversions.
- **/
+#define PMIP_CACHE_BUCKETS 32
 
-//ADDR2ID converts an address into an ID.
-struct in6_addr *ADDR2ID(struct in6_addr *addr,int plen)
-{
-	static struct in6_addr id;
-	id=in6addr_any;
-	if(plen ==64)
-	{
-		memcpy(&id.in6_u.u6_addr32[2], (struct in6_addr *)addr->in6_u.u6_addr32[2],sizeof(__identifier));
-	}
-	return &id;
-}
+#ifdef PMIP_CACHE_DEBUG
+	#define dbg(...) dbgprint(__FUNCTION__, __VA_ARGS__)
+#else
+	#define dbg(...)
+#endif
 
-
-
-//NUD_ADDR converts an ID into a Link Local Address!
-struct in6_addr *link_local_addr(struct in6_addr *id)
-{
-	static struct in6_addr ADDR;
-	ADDR =in6addr_any;
-
-	ADDR.s6_addr32[0] = htonl(0xfe800000);
-
-	//copy the MN_ID.
-	memcpy(&ADDR.in6_u.u6_addr32[2],&id->in6_u.u6_addr32[2],sizeof(__identifier));
-
-	return &ADDR;
-}
-
-
-/**
- *  PMIP binding cache functions.
- **/
-
-
-#define PMIPCACHE_BUCKETS 32
 static struct hash pmip_hash;
-
 static int pmip_cache_count = 0;
-
 pthread_rwlock_t pmip_lock; /* Protects proxy binding cache */
+
 
 /** 
  * get_pmip_cache_count - returns number of home and cache entries
@@ -102,12 +59,12 @@ void dump_pbce(void *bce, void *os)
 	default:
 		fprintf(out, "(Unknown)\n");
 	}
-	fprintf(out, " Peer_addr:    %x:%x:%x:%x:%x:%x:%x:%x\n",
-		NIP6ADDR(&e->peer_addr));
-	fprintf(out, " Serv_MAG_addr:%x:%x:%x:%x:%x:%x:%x:%x\n", 
-	     NIP6ADDR(&e->Serv_MAG_addr));
-	fprintf(out, " LMA_addr:     %x:%x:%x:%x:%x:%x:%x:%x\n",
-		NIP6ADDR(&e->LMA_addr));
+	fprintf(out, " MN IID:    %x:%x:%x:%x:%x:%x:%x:%x\n",
+		NIP6ADDR(&e->mn_iid));
+	fprintf(out, " MN Serving MAG Address:%x:%x:%x:%x:%x:%x:%x:%x\n", 
+	     NIP6ADDR(&e->mn_serv_mag_addr));
+	fprintf(out, " MN Serving LMA Address:     %x:%x:%x:%x:%x:%x:%x:%x\n",
+		NIP6ADDR(&e->mn_serv_lma_addr));
 	fprintf(out, " lifetime %ld\n ", e->lifetime.tv_sec);
 	fprintf(out, " seqno %d\n", e->seqno_out);
 
@@ -123,7 +80,7 @@ int pmip_cache_init(void)
 		return -1;
 
 	pthread_rwlock_wrlock(&pmip_lock);
-	ret = hash_init(&pmip_hash, DOUBLE_ADDR, PMIPCACHE_BUCKETS);
+	ret = hash_init(&pmip_hash, DOUBLE_ADDR, PMIP_CACHE_BUCKETS);
 	pthread_rwlock_unlock(&pmip_lock);
 
 	#ifdef ENABLE_VT
@@ -142,7 +99,6 @@ int pmip_cache_init(void)
  * Allocates a new binding cache entry. Returns allocated space for an entry or NULL if none
  * available.
  **/
-
 struct pmip_entry *pmip_cache_alloc(int type)
 {
 	struct pmip_entry *tmp;
@@ -150,7 +106,7 @@ struct pmip_entry *pmip_cache_alloc(int type)
 	tmp = malloc(sizeof(struct pmip_entry));
 
 	if (tmp == NULL){
-		dbg("NO memory allocated for PMIP entry..\n");
+		dbg("NO memory allocated for PMIP cache entry..\n");
 		return NULL;
 }
 	if (pthread_rwlock_init(&tmp->lock, NULL)) {
@@ -159,16 +115,16 @@ struct pmip_entry *pmip_cache_alloc(int type)
 	}
 	memset(tmp, 0, sizeof(*tmp));
 	INIT_LIST_HEAD(&tmp->tqe.list);
+	tmp->type = type;
 	dbg("PMIP cache entry is allocated..\n");
 	return tmp;
 }
 
 
-
 static int __pmipcache_insert(struct pmip_entry *bce)
 {
 	int ret;
-	ret = hash_add(&pmip_hash, bce, &bce->our_addr, &bce->peer_addr);
+	ret = hash_add(&pmip_hash, bce, &bce->our_addr, &bce->mn_iid);
 	if (ret)
 		return ret;
 
@@ -180,39 +136,33 @@ static int __pmipcache_insert(struct pmip_entry *bce)
 //PMIP cache start
 int pmip_cache_start(struct pmip_entry *bce)
 {
-	dbg("PMIP cache start triggered.. \n"); 
+	dbg("PMIP cache start is initialized.. \n"); 
 	struct timespec expires;
 	clock_gettime(CLOCK_REALTIME, &bce->add_time);
 	tsadd(bce->add_time, bce->lifetime, expires);
-	add_task_abs(&expires, &bce->tqe,(void *)_EXPIRED);
-	dbg("Expiry Timer for PMIP cache entry is triggered.. \n"); 
+	add_task_abs(&expires, &bce->tqe,(void *)pmip_timer_bce_expired_handler);
 	return 0;
 }
 
-struct pmip_entry * pmip_cache_add(struct pmip_entry *bce) /** return the added new entry */
+struct pmip_entry * pmip_cache_add(struct pmip_entry *bce) 
 {
-	int ret = 0;
-
-	dbg("Add cache entry for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->peer_addr));
-	dbg("PMIP cache entry type: %d\n",bce->type);
-
+	int ret = 1;
 	assert(bce);
 	bce->unreach = 0;
 	pthread_rwlock_wrlock(&pmip_lock);
 	if ((ret = __pmipcache_insert(bce)) != 0) {
 		pthread_rwlock_unlock(&pmip_lock);
-		dbg("PMIP ENTRY NOT INSERTED..\n");
+		dbg("WARNING: PMIP ENTRY NOT INSERTED..\n");
 		return ret;
 	}
-	
+
+	dbg("PMIP cache entry for: %x:%x:%x:%x:%x:%x:%x:%x with type %d is added\n", NIP6ADDR(&bce->mn_iid), bce->type);	
 	bce->n_rets_counter = conf.Max_Rets;
 	dbg("Retransmissions counter intialized: %d\n",bce->n_rets_counter);
 	if(bce->type == BCE_PMIP){
 		pmip_cache_start(bce);
-	}
-	
+	}	
 	pthread_rwlock_unlock(&pmip_lock);
-
 	return bce;		
 	
 }
@@ -232,12 +182,11 @@ struct pmip_entry *pmip_cache_get(const struct in6_addr *our_addr,const struct i
 
 	if (bce){ 
 		pthread_rwlock_wrlock(&bce->lock);
-		dbg("PMIP cache entry is found for: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->peer_addr));
-		dbg("PMIP cache entry type: %d\n",(bce->type));
+		dbg("PMIP cache entry is found for: %x:%x:%x:%x:%x:%x:%x:%x with type %d\n", NIP6ADDR(&bce->mn_iid), (bce->type));
 	}
 	else{
 		pthread_rwlock_unlock(&pmip_lock);
-		dbg("NO PMIP cache entry found...\n");
+		dbg("PMIP cache entry is not found...\n");
 		
 	}
 
@@ -253,7 +202,7 @@ void pmipcache_release_entry(struct pmip_entry *bce)
 	assert(bce);
 	pthread_rwlock_unlock(&bce->lock);
 	pthread_rwlock_unlock(&pmip_lock);
-	dbg("PMIP cache entry is released...\n");
+	dbg("PMIP cache entry is released\n");
 }
 
 int pmip_cache_exists(const struct in6_addr *our_addr, const struct in6_addr *peer_addr)
@@ -266,7 +215,7 @@ int pmip_cache_exists(const struct in6_addr *our_addr, const struct in6_addr *pe
         if (bce == NULL)
                 return -1;
 	
-	dbg("PMIP cache does exist with type: %d\n",(bce->type));
+	dbg("PMIP cache entry does exist with type: %d\n",(bce->type));
         type = bce->type;
         pmipcache_release_entry(bce);
 
@@ -286,7 +235,7 @@ void pmipcache_free(struct pmip_entry *bce)
 	 * pool. */
 	pthread_rwlock_destroy(&bce->lock);
 	free(bce);
-	dbg("Free PMIP cache entry...\n");
+	dbg("PMIP cache entry is free\n");
 }
 
 void pmip_bce_delete(struct pmip_entry *bce)
@@ -298,10 +247,10 @@ void pmip_bce_delete(struct pmip_entry *bce)
 		bce->cleanup(bce);
 
 	pmip_cache_count--;
-	hash_delete(&pmip_hash, &bce->our_addr, &bce->peer_addr);
+	hash_delete(&pmip_hash, &bce->our_addr, &bce->mn_iid);
 	pthread_rwlock_unlock(&bce->lock);
 	pmipcache_free(bce);
-	dbg("PMIP cache entry is Deleted.. Try again!!!\n");
+	dbg("PMIP cache entry is deleted!\n");
 }
 
 /**

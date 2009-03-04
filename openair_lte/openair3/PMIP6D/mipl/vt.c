@@ -699,7 +699,7 @@ static int pmip_cache_vt_dump(void *data, void *arg)
 	tsclear(ts_now);
 
 	fprintf_bl(vh, "peer_addr %x:%x:%x:%x:%x:%x:%x:%x",
-		   NIP6ADDR(&bce->peer_addr));
+		   NIP6ADDR(&bce->mn_iid));
 
 	
 	fprintf_b(vh, " status %s",
@@ -711,10 +711,10 @@ static int pmip_cache_vt_dump(void *data, void *arg)
 	fprintf(vh->vh_stream, "\n");
 
 	fprintf(vh->vh_stream, " Serv_MAG_addr %x:%x:%x:%x:%x:%x:%x:%x",
-		NIP6ADDR(&bce->Serv_MAG_addr));
+		NIP6ADDR(&bce->mn_serv_mag_addr));
 
 	fprintf(vh->vh_stream, " LMA_addr %x:%x:%x:%x:%x:%x:%x:%x",
-		NIP6ADDR(&bce->LMA_addr));
+		NIP6ADDR(&bce->mn_serv_lma_addr));
 
 	fprintf(vh->vh_stream, " local %x:%x:%x:%x:%x:%x:%x:%x",
 		NIP6ADDR(&bce->our_addr));

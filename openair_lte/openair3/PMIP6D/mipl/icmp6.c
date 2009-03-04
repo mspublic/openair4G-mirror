@@ -1,5 +1,5 @@
 /*
- * $Id: icmp6.c,v 1.1.1.1 2008/04/23 13:21:04 nguyenhn Exp $
+ * $Id: icmp6.c,v 1.3 2008/05/21 10:28:43 nguyenhn Exp $
  *
  * This file is part of the MIPL Mobile IPv6 for Linux.
  * 
@@ -42,6 +42,7 @@
 #include "util.h"
 #include "debug.h"
 #include "conf.h"
+#include <assert.h>
 
 enum {
 	ICMP6_DU = 0,
@@ -52,19 +53,15 @@ enum {
 	ICMP6_DRP = 6,
 	ICMP6_MPS = 7,
 	ICMP6_MPA = 8,
-	__ICMP6_SENTINEL = 9
+	ICMP6_NS = 9, // Modified by Nghia
+	__ICMP6_SENTINEL = 10 // Modified by Nghia
 };
 
-
-struct sock {
-	pthread_mutex_t send_mutex;
-	int fd;
-};
 
 static pthread_rwlock_t handler_lock;
 static struct icmp6_handler *handlers[__ICMP6_SENTINEL + 1];
 
-static struct sock icmp6_sock;
+struct sock icmp6_sock;
 static pthread_t icmp6_listener;
 
 static inline int icmp6_type_map(uint8_t type)
@@ -86,6 +83,11 @@ static inline int icmp6_type_map(uint8_t type)
 		return ICMP6_MPS;
 	case MIP_PREFIX_ADVERT:
 		return ICMP6_MPA;
+
+	// Modified by Nghia	
+	case ND_NEIGHBOR_SOLICIT:
+		return ICMP6_NS;	
+	
 	default:
 		return __ICMP6_SENTINEL;
 	}
@@ -215,8 +217,8 @@ int icmp6_init(void)
 	if (setsockopt(icmp6_sock.fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT,
 		       &val, sizeof(val)) < 0)
 		return -1;
-	ICMP6_FILTER_SETBLOCKALL(&filter);
-	ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &filter);
+	//ICMP6_FILTER_SETBLOCKALL(&filter);
+	//ICMP6_FILTER_SETPASS(ICMP6_DST_UNREACH, &filter);
 
 	if (is_ha()) {
 		ICMP6_FILTER_SETPASS(MIP_PREFIX_SOLICIT, &filter);
@@ -231,6 +233,12 @@ int icmp6_init(void)
 		ICMP6_FILTER_SETPASS(MIP_HA_DISCOVERY_REPLY, &filter);
 		ICMP6_FILTER_SETPASS(ICMP6_PARAM_PROB, &filter);
 	}
+
+	//Added by Nghia for PMIP	
+	if (is_mag()) {
+		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_SOLICIT, &filter);
+		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_ADVERT, &filter);
+	}	
 
 	if (setsockopt(icmp6_sock.fd, IPPROTO_ICMPV6, ICMP6_FILTER, 
 		       &filter, sizeof(struct icmp6_filter)) < 0)

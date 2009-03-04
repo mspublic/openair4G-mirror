@@ -63,7 +63,7 @@ static uint32_t calc_hash2(int s, const struct in6_addr *our_addr,
 		peer_addr->s6_addr32[0] ^
 		peer_addr->s6_addr32[1] ^
 		peer_addr->s6_addr32[2] ^
-		peer_addr->s6_addr32[3]) % s;
+		(peer_addr->s6_addr32[3] << 1)) % s;
 	
 }
 

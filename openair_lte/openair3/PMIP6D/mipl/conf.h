@@ -68,6 +68,7 @@ struct mip6_config {
 	int tunneling_enabled;
 	int pndisc_enabled;
 	int dtun_enabled;	
+	int ro_enabled; //Do Route Optimization
 };
 
 struct net_iface {

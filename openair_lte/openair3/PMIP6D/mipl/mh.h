@@ -13,7 +13,7 @@
 #define IP6_MH_TYPE_MAX IP6_MH_TYPE_PBRES
 //#define IP6_MHOPT_MAX IP6_MHOPT_BAUTH
 //For PMIP
-#define IP6_MHOPT_MAX IP6_MHOPT_SERV_MAG_ADDR
+#define IP6_MHOPT_MAX IP6_MHOPT_PMIP_MAX
 struct in6_addr_bundle {
 	struct in6_addr *src;
 	struct in6_addr *dst;

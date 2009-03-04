@@ -1,9 +1,14 @@
-/* $Id: icmp6.h,v 1.1.1.1 2008/04/23 13:21:04 nguyenhn Exp $ */
+/* $Id: icmp6.h,v 1.3 2008/05/21 10:28:43 nguyenhn Exp $ */
 
 #ifndef __ICMP6_H__
-#define __ICMP6_H__ 1
+#define __ICMP6_H__ 
 
 #include <netinet/icmp6.h>
+
+struct sock {
+	pthread_mutex_t send_mutex;
+	int fd;
+};
 
 struct icmp6_handler {
 	struct icmp6_handler *next;
