@@ -33,7 +33,7 @@ mipl/vt.o
 
 
 MR_OBJS = $(COMMON_OBJS) pmip6d.o \
-	pmip_cache.o pmip_handler.o pmip_msgs.o pmip_fsm.o pmip_ro_cache.o pmip_mag_proc.o pmip_lma_proc.o cmm_if.o
+	pmip_cache.o pmip_handler.o pmip_msgs.o pmip_fsm.o pmip_ro_cache.o pmip_mag_proc.o pmip_lma_proc.o 
 MR_SRCS = $(MR_OBJS,.o=.c)
 TARGETS = pmip6d
 
