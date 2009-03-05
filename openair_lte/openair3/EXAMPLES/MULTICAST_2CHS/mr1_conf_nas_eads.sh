@@ -7,6 +7,9 @@ sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko nas_IMEI=0x12345678,0x03000
 echo Classifcation rule for DTCH-Broadcast -reception of Router ADV
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x ff02::1 -y ff02::1 -r 3
 
+#Multicast
+#ifconfig eth1 192.168.8.1
+sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 echo Configuring interfaces on mr1
 #sudo ifconfig nasmesh0 up
 #sudo ifconfig nasmesh0 up
@@ -43,7 +46,6 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH1_IN_ADDR -t 2
 
 sleep 1
 #rajout THC pour MULTICAST
-#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr1  &
 
@@ -51,5 +53,4 @@ sleep 1
 
 echo Launching AS simulator
 xterm -T MR1 -hold -e sh start_openair2_mr1.sh &
-
 

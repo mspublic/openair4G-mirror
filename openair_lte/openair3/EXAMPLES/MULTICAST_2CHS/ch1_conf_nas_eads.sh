@@ -27,17 +27,12 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s CH1_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s MR1_IN_ADDR -t 226.30.10.14 -r 12
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR1_IN_ADDR -t 226.30.10.15 -r 12
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH1_IN_ADDR -t 226.30.10.15 -r 12
-
-
-
-
 #CH1<-> MR2 (IP Signaling)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -x $CH1_IN6_ADDR -y $MR2_IN6_ADDR1 -r 20
 #CH1<-> MR2 (MPLS user-plane bearer)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -l $MR2_CH1_LABEL_IN -m $MR2_CH1_LABEL_OUT -r 21
 #CH1<-> MR2 (MPLS PMIP signaling bearer)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c3 -i0 -z0 -l $CH1_MR2_CH2_LABEL_OUT -m $CH1_MR2_CH2_LABEL_IN -r 20
-
 
 #CH1<-> MR2 multicast EADS (rajout THC)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -s MR2_IN_ADDR -t 226.40.10.10 -r 20 
@@ -53,12 +48,13 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s CH1_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR2_IN_ADDR -t 226.40.10.15 -r 20 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH1_IN_ADDR -t 226.40.10.15 -r 20 
 
-
-
 #CH1 Broadcast (transmission of Router ADV)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x $CH1_IN6_ADDR -y ff02::1 -r 3
 
 echo Configuring interfaces on CH
+#Multicast
+#sudo ifconfig eth0 192.168.8.2
+sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 
 # Bring up openair NASMESH device and set IPv6 address
 sudo ifconfig nasmesh0 up
@@ -68,10 +64,8 @@ sudo ip -6 addr add $CH1_IN6_ADDR/64 dev nasmesh0
 echo nasmesh0 is $CH1_IN6_ADDR
 echo No MPLS debug
 sudo sh -c 'echo "0" >/sys/mpls/debug'
-
 sleep 1
 #rajout THC pour MULTICAST
-#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_ch2  &
 

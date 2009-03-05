@@ -30,9 +30,6 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s MR2_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR2_IN_ADDR -t 226.50.10.15 -r 20
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH2_IN_ADDR -t 226.50.10.15 -r 20
 
-
-
-
 #CH2<-> MR3 (IP Signaling)
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -x $CH2_IN6_ADDR -y $MR3_IN6_ADDR -r 28
 #CH2<-> MR3 (MPLS user-plane bearer)
@@ -54,9 +51,10 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s MR3_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c6 -i0 -z0 -s CH2_IN_ADDR -t 226.30.10.14 -r 28 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR3_IN_ADDR -t 226.30.10.15 -r 28 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH2_IN_ADDR -t 226.30.10.15 -r 28 
-
-
 echo Configuring interfaces on CH2
+##Multicast
+#ifconfig eth0 192.168.8.4
+sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 
 # Bring up openair NASMESH device and set IPv6 address
 sudo ifconfig nasmesh0 up
@@ -66,10 +64,8 @@ sudo ip -6 addr add $CH2_IN6_ADDR/64 dev nasmesh0
 echo nasmesh0 is $CH2_IN6_ADDR
 echo No MPLS debug
 sudo sh -c 'echo "0" >/sys/mpls/debug'
-
 sleep 1
 #rajout THC pour MULTICAST
-#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_ch2  &
 

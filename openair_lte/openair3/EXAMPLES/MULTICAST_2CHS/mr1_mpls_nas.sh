@@ -19,6 +19,15 @@ echo 'MN2->MN1'
 sudo mpls labelspace set dev nasmesh0 labelspace 0
 sudo mpls ilm add label gen $MR1_LABEL_IN labelspace 0 proto ipv6
 
+#MN1->MN3
+var=`mpls nhlfe add key 0 instructions push gen $MN1_MR1_CH1_MN3 nexthop nasmesh0 ipv6 $CH1_IN6_ADDR | grep key |cut -c 17-26`
+echo "Creating routes"
+sudo ip -6 route add $MN3_IN6_ADDR/128 via $CH1_IN6_ADDR mpls $var
+
+#MN3->MN1
+sudo mpls labelspace set dev nasmesh0 labelspace 0
+sudo mpls ilm add label gen $MN3_CH1_MR1_MN1 labelspace 0 proto ipv6
+
 sudo ip -6 route add $MN1_IN6_ADDR/128 dev $ETH_MR1
 
 

@@ -8,6 +8,9 @@ echo Classifcation rule for DTCH-Broadcast -reception of Router ADV
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x ff02::1 -y ff02::1 -r 11
 echo Configuring interfaces on mr3
 
+#Multicast
+#ifconfig eth1 192.168.8.5
+sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 #sudo ifconfig nasmesh0 up
 #sudo ifconfig nasmesh0 $MR3_IN_ADDR
 sudo ip link set nasmesh0 up
@@ -15,6 +18,7 @@ sudo ip addr add $MR3_IN_ADDR/32 dev nasmesh0
 sudo ip -6 addr add $MR3_IN6_ADDR/64 dev nasmesh0
 sudo ip addr add $MR3_EG_ADDR/32 dev $ETH_MR3
 sudo ip -6 addr add $MR3_EG6_ADDR/64 dev $ETH_MR3
+
 
 echo Classification rules for MR3 - Default DTCH UL for L3 signaling
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z0 -x $MR3_IN6_ADDR -y $CH2_IN6_ADDR -r 12
@@ -37,7 +41,6 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s MR3_IN_ADDR -t 2
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c7 -i0 -z0 -s CH2_IN_ADDR -t 226.30.10.15 -r 12
 
 #rajout THC pour MULTICAST
-#REFLECTOR_DIR=/home/uadmin/Documents/software/reflector_script
 echo Multicast state launched with config_ch2
 xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr3  &
 
@@ -46,7 +49,3 @@ sleep 1
 
 echo Launching AS simulator
 sudo xterm -T MR3 -hold -e sh start_openair2_mr3.sh &
-
-
-
-

@@ -39,9 +39,9 @@ MN1_IN6_ADDR=2001:660:5502::20
 MN2_IN6_ADDR=2001:660:5502::25
 
 # Put the right OPENAIR3 path here
-OPENAIR3_HOME=~/Devel/openair/trunk/openair3
+OPENAIR3_HOME=~/openair3
 OPENAIR3_PMIP6D_PATH=$OPENAIR3_HOME/pmip6d
 OPENAIR3_SCRIPTS_PATH=$OPENAIR3_HOME/scripts
 
 # Put the right OPENAIR2 path here
-OPENAIR2_DIR=~/Devel/openair/trunk/openair2_r220/
+OPENAIR2_DIR=~/openair2_r220/
