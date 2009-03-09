@@ -49,10 +49,11 @@ typedef __u32 in_addr_t;
 struct sockaddr_in6 nsaddr;
 int flag=0;
 extern struct sock icmp6_sock;
+char servicename[64];
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@ [-A All-LMA@]] [-i] [-p] [-d] [-o]");
+	fprintf(stderr, "Usage: pmip6d [-s -m -L LMA@ -N MAG_IN@ -E MAG_E@] [-c -L LMA@ [-A All-LMA@]] [-i] [-p] [-d] [-o] [-P port]");
 	fprintf(stderr, "\n\t-s: allow capturing NS(DAD)"\
 		"\n\t-m: Run as Mobile Router (MAG)"\
 		"\n\t-c: Run as Cluster Head (LMA)"\
@@ -64,6 +65,7 @@ void usage(void)
 		"\n\t-d: Dynamically create/delete tunnels"\
 		"\n\t-o: Enable Route Optimization"\
 		"\n\t-A: All-LMA Multicast Address"\
+		"\n\t-P: Virtual Terminal Port"\ 
 	"\nNotes:"\
 	"\n\t[-c] and [-m] are exclusive"\
 	"\n\t[-s] must always appears with [-m]"\
@@ -78,7 +80,7 @@ int get_options(int argc, char *argv[])
 {
 	int ch;
 	if (argc == 1)  usage();
-	while ((ch = getopt(argc, argv, "odpiscmL:N:E:A:")) != EOF) {
+	while ((ch = getopt(argc, argv, "odpiscmL:N:E:A:P:")) != EOF) {
 	  
 	switch(ch) {
 	case 'L':
@@ -117,6 +119,10 @@ int get_options(int argc, char *argv[])
 			
 			}
 		}			
+		break;
+
+	case 'P':
+		strcpy(servicename, optarg);		
 		break;
 
 	case 'm':
@@ -347,7 +353,7 @@ int main(int argc, char *argv[])
 	pthread_t sigth;
 	sigset_t sigblock;
 
-	dbg("Starting Proxy Mobile IPv6, compiled on " __DATE__ " at " __TIME__ " ....\n");
+	dbg("Starting Proxy Mobile IPv6 version " PMIP6D_VERSION ", compiled on " __DATE__ " at " __TIME__ " ....\n");
 
 
 	sigemptyset(&sigblock);
@@ -387,6 +393,9 @@ int main(int argc, char *argv[])
 	conf.Max_Rets = Max_rets;
 
 	//Get input Configuration parameters.
+	conf.vt_hostname = VT_DEFAULT_HOSTNAME;
+	strcpy(&servicename, VT_DEFAULT_SERVICE);	
+	conf.vt_service = &servicename;
 	get_options(argc, argv);
 
 	//Probe for the local address
@@ -426,12 +435,12 @@ int main(int argc, char *argv[])
 	}
 	else dbg("vt is initialized!\n");
 
- 	if (vt_start(VT_DEFAULT_HOSTNAME,VT_DEFAULT_SERVICE) < 0)
+ 	if (vt_start(conf.vt_hostname, conf.vt_service) < 0)
  	{
- 		dbg("vt is NOT started! \n");
+ 		dbg("vt can not start on port %s \n", conf.vt_service);
  		return -1;
  	}
-
+	else dbg("vt is listening on port %s\n", conf.vt_service);
 #endif
 
 	/**

@@ -8,6 +8,7 @@ LIBS=-lpthread -ldl -lrt
 DEFINES= -DHAVE_STRUCT_IP6_EXT -D_GNU_SOURCE -DENABLE_VT -DFSM_DEBUG -DPMIP_CACHE_DEBUG -DPEER_LIST \
 -DPACKAGE_BUGREPORT='"URL:http://svn.eurecom.fr/openairsvn/openair3"' \
 -DPACKAGE='"PMIP6D"' \
+-DPMIP6D_VERSION='"2.0"'\
 -DPACKAGE_NAME='"Proxy Mobile IPv6 for Linux (Built on top of MIPL)"' \
 -DPACKAGE_VERSION='"2.0.2"' \
 -DPACKAGE_COPYRIGHT='"(C)"'
