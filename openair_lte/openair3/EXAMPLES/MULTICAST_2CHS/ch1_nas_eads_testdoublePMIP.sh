@@ -19,10 +19,10 @@ var=`mpls nhlfe add key 0 instructions push gen $CH1_MR2_CH2_LABEL_OUT nexthop n
 echo "Creating routes"
 sudo ip -6 route add $CH2_IN6_ADDR/128 via $MR2_IN6_ADDR1 mpls $var
 
-echo $OPENAIR3_HOME/pmip6d/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR -P 7778
-sudo xterm -hold -e $OPENAIR3_HOME/pmip6d/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR -P 7778 &
+echo $OPENAIR3_HOME/PMIP6D/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR -P 7778
+sudo xterm -hold -e $OPENAIR3_HOME/PMIP6D/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR -P 7778 &
 sleep 1
-echo $OPENAIR3_HOME/pmip6d/pmip6d -m -s -L $CH1_IN6_ADDR -N $CH1_EG6_ADDR -E $CH1_IN6_ADDR
-sudo $OPENAIR3_HOME/pmip6d/pmip6d -m -s -L $CH1_IN6_ADDR -N $CH1_EG6_ADDR -E $CH1_IN6_ADDR
+echo $OPENAIR3_HOME/PMIP6D/pmip6d -m -s -L $CH1_IN6_ADDR -N $CH1_EG6_ADDR -E $CH1_IN6_ADDR
+sudo $OPENAIR3_HOME/PMIP6D/pmip6d -m -s -L $CH1_IN6_ADDR -N $CH1_EG6_ADDR -E $CH1_IN6_ADDR
 sleep 2
 ./del_mpls.sh
