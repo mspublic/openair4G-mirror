@@ -27,7 +27,7 @@
 #include "platform_constants.h"
 #else
 #define BCCH_PAYLOAD_SIZE_MAX 25
-#define CCCH_PAYLOAD_SIZE_MAX 25
+#define CCCH_PAYLOAD_SIZE_MAX 30
 #endif
 
 /*! \todo a definir les valeurs par defaut */
@@ -40,7 +40,7 @@ const  LCHAN_DESC        Lchan_desc[MAX_QOS_CLASS] =
     //    size      Blocks     Rate     Rate 
     { BCCH_PAYLOAD_SIZE_MAX, 15, 64,   128,    1,    0,   LCHAN_BCCH   }, // SRB0
     { CCCH_PAYLOAD_SIZE_MAX, 15, 64,   128,    1,    0,   LCHAN_CCCH   }, // SRB1
-    {      25,       20,        64,    128,    1,    0,   LCHAN_DCCH   }, // SRB2
+    {      30,       20,        64,    128,    1,    0,   LCHAN_DCCH   }, // SRB2
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH_B }, // DTCH_B
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },

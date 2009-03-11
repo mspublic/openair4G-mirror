@@ -1,7 +1,7 @@
 OSTYPE		= $(shell uname -o )
 
 EMUL_RRC        = 0
-RRC_KERNEL_MODE = 1
+#RRC_KERNEL_MODE = 1
 
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou

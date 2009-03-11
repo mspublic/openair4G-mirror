@@ -136,8 +136,8 @@ int cmm_cx_setup_req(
             memcpy(&src_dst[0], &Src, sizeof(L2_ID)) ;
             memcpy(&src_dst[1], &Dst, sizeof(L2_ID)) ;
 
-            src_dst[1].L2_id[0]=0;
-            src_dst[1].L2_id[1]=0;          //memset( &src_dst[0], 0, 2*sizeof(L2_ID)) ;
+            //src_dst[1].L2_id[0]=0;
+            //src_dst[1].L2_id[1]=0;          //memset( &src_dst[0], 0, 2*sizeof(L2_ID)) ;
 
             rrm->rrc.trans_cnt++ ;
             PUT_RRC_MSG(     
