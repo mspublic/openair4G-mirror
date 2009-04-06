@@ -87,9 +87,10 @@ void cmm_init_ch_req(
                              rrm->L2_id
                              )
                         ) ;
-                
-        add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB0, &src_dst[0] ) ;
-        add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB1, &src_dst[0] ) ;
+         
+        // On ne gere pas SRB0/1 car implicite
+        // add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB0, &src_dst[0] ) ;
+        // add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB1, &src_dst[0] ) ;
         
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
         

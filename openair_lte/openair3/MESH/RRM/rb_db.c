@@ -171,7 +171,8 @@ void del_rb_by_rbid(
         { 
             *ppPrevItem = pNextItem;    
             RRM_FREE( pCurrentItem ) ;
-            break ;
+            PRINT_RB_DB( *rb_entry );
+            return ;
         }
         ppPrevItem   = &(pCurrentItem->next) ;
         pCurrentItem = pNextItem ;
@@ -208,7 +209,8 @@ void del_rb_by_transid(
         { 
             *ppPrevItem = pNextItem;    
             RRM_FREE( pCurrentItem ) ;
-            break ;
+            PRINT_RB_DB( *rb_entry );
+            return ;
         }
         ppPrevItem   = &(pCurrentItem->next) ;
         pCurrentItem = pNextItem ;
