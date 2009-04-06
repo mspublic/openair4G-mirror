@@ -217,7 +217,7 @@ static void * thread_send_msg_cmm (
         }
 
         if ( no_msg==nb_inst ) // Pas de message
-            usleep(100000);
+            usleep(1000);
     }
     fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
     return NULL;
@@ -234,9 +234,7 @@ static void * thread_send_msg_rrc (
     )
 {
     int ii , status;
-#ifdef RRC_KERNEL_MODE
-    int taille;
-#endif
+
     int no_msg ;
     fprintf(stderr,"Thread Send Message To RRC: starting ... \n");
     fflush(stderr);
@@ -270,7 +268,7 @@ static void * thread_send_msg_rrc (
         }
 
         if ( no_msg==nb_inst ) // Pas de message
-            usleep(100000);
+            usleep(1000);
     }
     fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
     return NULL;
@@ -553,7 +551,7 @@ static void processing_msg_rrc(
         case RRC_MR_ATTACH_IND :
             {
                 rrc_MR_attach_ind_t *p = (rrc_MR_attach_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
                 rrc_MR_attach_ind(header->inst,p->L2_id) ;
             }
             break ;
@@ -566,7 +564,7 @@ static void processing_msg_rrc(
         case RRC_CX_ESTABLISH_IND:
             {
                 rrc_cx_establish_ind_t *p = (rrc_cx_establish_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
 
                 rrc_cx_establish_ind(header->inst,p->L2_id,header->Trans_id,
                                     p->L3_info,p->L3_info_t,
@@ -576,7 +574,7 @@ static void processing_msg_rrc(
         case RRC_PHY_SYNCH_TO_MR_IND :
             {
                 rrc_phy_synch_to_MR_ind_t *p = (rrc_phy_synch_to_MR_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... \n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
                 rrc_phy_synch_to_MR_ind(header->inst,p->L2_id) ;
                 //msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND Done\n",header->inst);
             }
@@ -584,7 +582,7 @@ static void processing_msg_rrc(
         case RRC_PHY_SYNCH_TO_CH_IND :
             {
                 rrc_phy_synch_to_CH_ind_t *p = (rrc_phy_synch_to_CH_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... %d\n",header->inst, p->Ch_index);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... %d (Noeud %02d)\n",header->inst, p->Ch_index, p->L2_id.L2_id[0]);
                 rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
                 //msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND Done\n",header->inst);
 
@@ -593,14 +591,14 @@ static void processing_msg_rrc(
         case RRC_SENSING_MEAS_IND :
             {
                 rrc_sensing_meas_ind_t *p  = (rrc_sensing_meas_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
                 rrc_sensing_meas_ind( header->inst,p->L2_id, p->NB_meas, p->Sensing_meas, header->Trans_id );
             }
             break ;
         case RRC_RB_MEAS_IND :
             {
                 rrc_rb_meas_ind_t *p  = (rrc_rb_meas_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
                 rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas, header->Trans_id );
             }
             break ;
