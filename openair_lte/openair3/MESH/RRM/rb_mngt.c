@@ -296,7 +296,6 @@ int cmm_cx_modify_req(
 	Transaction_t Trans_id    //!< Transaction ID
 	)
 {
-    int r ;
     int ret = -1 ;
     rrm_t *rrm = &rrm_inst[inst] ; 
     
@@ -322,9 +321,9 @@ int cmm_cx_modify_req(
                             Rb_id,
                             rrm->rrc.trans_cnt)
                         ) ;
-            WARNING(r!=0);
                 
             add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_MODIFY_REQ,Trans_id,PARENT);
+            add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &pRb->L2_id[0] ) ;
             
             pRb->QoS_class =  QoS_class ; 
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
