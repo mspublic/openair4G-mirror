@@ -431,12 +431,17 @@ static void * fn_cmm (
                     break ;
                 case RRCI_ATTACH_REQ :
                     {
+#ifndef PHY_EMUL
+                        float delai = 0.05 ;
+#else
+                        float delai = 0.00 ;
+#endif
                         rrci_attach_req_t *p = (rrci_attach_req_t *) msg ;
                         msg_fct( "[RRM]>[CMM]:%d:RRCI_ATTACH_REQ\n",header->inst);
                         //MSG_L2ID(p->L2_id);
                         pthread_mutex_lock( &actdiff_exclu  ) ;
 
-                        add_actdiff(&list_actdiff,0.05, cnt_actdiff++, s,
+                        add_actdiff(&list_actdiff,delai, cnt_actdiff++, s,
                                 msg_cmm_attach_cnf(header->inst,p->L2_id,node_info[header->inst].L3_info_t,node_info[header->inst].L3_info,header->Trans_id ) ) ;
 
                         pthread_mutex_unlock( &actdiff_exclu ) ;
@@ -450,6 +455,11 @@ static void * fn_cmm (
                 case RRM_MR_ATTACH_IND :
                     {
                         L2_ID L2_id_mr;
+#ifndef PHY_EMUL
+                        float delai = 0.05 ;
+#else
+                        float delai = 0.00 ;
+#endif
                         rrm_MR_attach_ind_t *p = (rrm_MR_attach_ind_t *) msg ;
 
                         msg_fct( "[RRM]>[CMM]:%d:RRM_MR_ATTACH_IND\n",header->inst);
@@ -458,7 +468,7 @@ static void * fn_cmm (
                         pthread_mutex_lock( &actdiff_exclu  ) ;
 
                         cmm_transaction++;
-                        add_actdiff(&list_actdiff,0.05, cnt_actdiff++, s,
+                        add_actdiff(&list_actdiff,delai, cnt_actdiff++, s,
                                     msg_cmm_cx_setup_req(header->inst,node_info[header->inst].L2_id,L2_id_mr, QOS_DTCH_D, cmm_transaction ) ) ;
 
                         pthread_mutex_unlock( &actdiff_exclu ) ;
@@ -470,6 +480,13 @@ static void * fn_cmm (
                     break ;
                 case ROUTER_IS_CH_IND :
                     {
+#ifndef PHY_EMUL
+                        float delai  = 0.O5 ;
+                        float delai2 = 0.O8 ;
+#else
+                        float delai  = 0.00 ;
+                        float delai2 = 0.00 ;
+#endif
                         router_is_CH_ind_t *p =(router_is_CH_ind_t *)msg ;
                         msg_fct( "[RRM]>[CMM]:%d:ROUTER_IS_CH_IND\n",header->inst);
 
@@ -478,11 +495,11 @@ static void * fn_cmm (
 
                         pthread_mutex_lock( &actdiff_exclu  ) ;
 
-                        add_actdiff(&list_actdiff,0.05, cnt_actdiff++,  s,
+                        add_actdiff(&list_actdiff,delai, cnt_actdiff++,  s,
                                     msg_cmm_init_ch_req( header->inst,node_info[header->inst].L3_info_t,node_info[header->inst].L3_info )) ;
 
                         cmm_transaction++;
-                        add_actdiff(&list_actdiff,0.08, cnt_actdiff++, s,
+                        add_actdiff(&list_actdiff,delai2, cnt_actdiff++, s,
                                     msg_cmm_cx_setup_req(header->inst,node_info[header->inst].L2_id,node_info[header->inst].L2_id, QOS_DTCH_B, cmm_transaction ) ) ;
 
                         pthread_mutex_unlock( &actdiff_exclu ) ;
