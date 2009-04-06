@@ -207,9 +207,9 @@ static void scenario0(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
 // ========================= Ouverture d'un RB
     prg_opening_RB( s_cmm, 2.0, &L2_id_ch,&L2_id_mr,QOS_DTCH_USER1 );
 // ========================= Modification d'un RB
-    prg_modifying_RB( s_cmm, 2.1 , 7, QOS_DTCH_USER2 );
+    prg_modifying_RB( s_cmm, 2.2 , 5, QOS_DTCH_USER2 );
 // ========================= Fermeture d'un RB
-    prg_releasing_RB( s_cmm, 2.5, 7 );
+    prg_releasing_RB( s_cmm, 2.5, 5 );
 }
 
 /**
