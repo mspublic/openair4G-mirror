@@ -1,7 +1,7 @@
 OSTYPE		= $(shell uname -o )
 
 EMUL_RRC        = 0
-#RRC_KERNEL_MODE = 1
+RRC_KERNEL_MODE = 1
 
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
@@ -11,7 +11,7 @@ OPENAIR2_RRC= $(OPENAIR2_DIR)/RRC/MESH/
 OPENAIR3_RRM= $(CHEMIN)
 INTERFACE   = $(CHEMIN)/..
 EMUL        = $(CHEMIN)/EMUL
-VPATH		= $(CHEMIN):$(OPENAIR2_RRC):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
+VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I .  -I $(OPENAIR2_RRC) -I $(OPENAIR3_RRM) -I $(INTERFACE) -I$(OPENAIR2_DIR)
 CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
