@@ -63,7 +63,7 @@ void rrc_MR_attach_ind(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( (rrm->state == CLUSTERHEAD_INIT )|| (rrm->state == CLUSTERHEAD ))
+    if ( (rrm->state == CLUSTERHEAD_INIT1 )|| (rrm->state == CLUSTERHEAD ))
     {
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         add_neighbor( &(rrm->rrc.pNeighborEntry), &L2_id ) ;
@@ -91,7 +91,7 @@ void rrc_sensing_meas_resp(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( rrm->state == CLUSTERHEAD )
+    if ( (rrm->state == CLUSTERHEAD_INIT1 )|| (rrm->state == CLUSTERHEAD ) )
     {
         //fprintf(stderr, "[RRM] RRC_SENSING_MEAS_RESP  is not coded %s %d \n",__FILE__ , __LINE__ );   
         

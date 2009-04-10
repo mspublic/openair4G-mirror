@@ -63,7 +63,7 @@ void cmm_init_ch_req(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
 
-    if ( rrm->state == CLUSTERHEAD_INIT )
+    if ( rrm->state == CLUSTERHEAD_INIT0 )
     {
         L2_ID src_dst[2] ;
         memcpy(&src_dst[0], &rrm->L2_id, sizeof(L2_ID)) ;
@@ -99,6 +99,7 @@ void cmm_init_ch_req(
         add_item_transact( &(rrm->pusu.transaction), rrm->pusu.trans_cnt,INT_PUSU,RRM_PUBLISH_IND,0,NO_PARENT);
         pthread_mutex_unlock( &( rrm->pusu.exclu ) ) ;
         PUT_PUSU_MSG(msg_rrm_publish_ind( inst, PUSU_RRM_SERVICE, rrm->pusu.trans_cnt  )) ;
+        
     }
 }
 
@@ -128,7 +129,8 @@ void rrc_phy_synch_to_MR_ind(
 
         PUT_CMM_MSG( msg_router_is_CH_ind( inst,rrm->L2_id)) ;
 
-        rrm->state = CLUSTERHEAD_INIT ; 
+        rrm->state = CLUSTERHEAD_INIT0 ; 
+        fprintf(stderr,"[RRM] CLUSTERHEAD_INIT0\n");
     }
     else
         fprintf(stderr,"[RRM] RRC_PHY_SYNCH_TO_MR_IND/TIMEOUT_IN  is not allowed (Only IN):etat=%d\n",rrm->state);

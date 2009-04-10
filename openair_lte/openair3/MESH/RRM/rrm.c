@@ -523,21 +523,21 @@ static void processing_msg_rrc(
         case RRC_RB_ESTABLISH_CFM:
             {
                 rrc_rb_establish_cfm_t *p = (rrc_rb_establish_cfm_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM (%d)\n",header->inst,p->Rb_id);
                 rrc_rb_establish_cfm(header->inst,p->Rb_id,p->RB_type,header->Trans_id) ;
             }
             break ;
 
         case RRC_RB_MODIFY_RESP:
             {
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP \n",header->inst);
                 rrc_rb_modify_resp(header->inst,header->Trans_id) ;
             }
             break ;
         case RRC_RB_MODIFY_CFM:
             {
                 rrc_rb_modify_cfm_t *p = (rrc_rb_modify_cfm_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM (%d)\n",header->inst,p->Rb_id);
                 rrc_rb_modify_cfm(header->inst,p->Rb_id,header->Trans_id) ;
             }
             break ;

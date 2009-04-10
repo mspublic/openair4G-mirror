@@ -42,9 +42,10 @@ typedef struct {
     int  id                                 ; ///< identification de l'instance RRM
     
     enum { 
-        ISOLATEDNODE=0  , ///< Node is in a isolated State
-        CLUSTERHEAD_INIT, ///< Node is in a Cluster Head initialization State 
-        CLUSTERHEAD     , ///< Node is in a Cluster Head State 
+        ISOLATEDNODE=0   , ///< Node is in a isolated State
+        CLUSTERHEAD_INIT0, ///< Node is in a Cluster Head initialization State  
+        CLUSTERHEAD_INIT1, ///< Node is in a Cluster Head initialization State 
+        CLUSTERHEAD      , ///< Node is in a Cluster Head State 
         MESHROUTER        ///< Node is in a Mesh Router State
         } state                             ; ///< etat de l'instance
     

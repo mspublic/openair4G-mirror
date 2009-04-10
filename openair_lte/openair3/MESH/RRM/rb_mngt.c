@@ -72,7 +72,7 @@ int cmm_cx_setup_req(
     int ret = -1 ;
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( rrm->state == CLUSTERHEAD )
+    if ( (rrm->state == CLUSTERHEAD_INIT1 ) || (rrm->state == CLUSTERHEAD ) )
     {
         L2_ID src_dst[2] ;
         memcpy(&src_dst[0], &Src, sizeof(L2_ID)) ;
@@ -83,7 +83,6 @@ int cmm_cx_setup_req(
         pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
         
         /** \todo Evaluer si le RB peut etre cree avant d'envoyer la commande au RRC */
-        
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;
         add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,Trans_id,PARENT);
@@ -116,12 +115,11 @@ int cmm_cx_setup_req(
                              rrm->L3_info,rrm->L3_info_t)   
                 ) ;
         }
-          ret = 0 ;
+        ret = 0 ;
     }
-    
     else
     {
-        if ( rrm->state == CLUSTERHEAD_INIT)    
+        if ( rrm->state == CLUSTERHEAD_INIT0 )    
         {
             L2_ID src_dst[2] ;
             
@@ -130,14 +128,10 @@ int cmm_cx_setup_req(
             pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
             
             /** \todo Evaluer si le RB peut etre cree avant de solliciter le RRC */
-            
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
 
             memcpy(&src_dst[0], &Src, sizeof(L2_ID)) ;
             memcpy(&src_dst[1], &Dst, sizeof(L2_ID)) ;
-
-            //src_dst[1].L2_id[0]=0;
-            //src_dst[1].L2_id[1]=0;          //memset( &src_dst[0], 0, 2*sizeof(L2_ID)) ;
 
             rrm->rrc.trans_cnt++ ;
             PUT_RRC_MSG(     
@@ -155,6 +149,8 @@ int cmm_cx_setup_req(
 
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             
+            rrm->state = CLUSTERHEAD_INIT1 ;
+            fprintf(stderr,"[RRM] CLUSTERHEAD_INIT1\n" );
             ret = 0 ;
         }
         else
@@ -177,7 +173,8 @@ void rrc_rb_establish_resp(
     rrm_t *rrm = &rrm_inst[inst] ; 
     
     if ( (rrm->state == CLUSTERHEAD) 
-        || (rrm->state == CLUSTERHEAD_INIT)
+        || (rrm->state == CLUSTERHEAD_INIT0)
+        || (rrm->state == CLUSTERHEAD_INIT1)
         )
     {
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
@@ -220,7 +217,8 @@ void rrc_rb_establish_cfm(
     rrm_t *rrm = &rrm_inst[inst] ; 
     
     if ( (rrm->state == CLUSTERHEAD) 
-        || (rrm->state == CLUSTERHEAD_INIT)
+        || (rrm->state == CLUSTERHEAD_INIT0)
+        || (rrm->state == CLUSTERHEAD_INIT1)
         )
     {
         transact_t *pTransact ;
@@ -254,7 +252,8 @@ void rrc_rb_establish_cfm(
                 {
                     PUT_CMM_MSG( msg_rrm_cx_setup_cnf(inst,Rb_id,pTransactParent->id ));
                     
-                    if ( rrm->state == CLUSTERHEAD_INIT ) rrm->state = CLUSTERHEAD ;
+                    if ( rrm->state == CLUSTERHEAD_INIT1 ) 
+                        rrm->state = CLUSTERHEAD ;
                     
                     del_item_transact( &(rrm->cmm.transaction),pTransactParent->id ) ;
                     pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
@@ -347,7 +346,10 @@ void rrc_rb_modify_resp(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( (rrm->state == CLUSTERHEAD) || (rrm->state == CLUSTERHEAD_INIT) )
+    if ( (rrm->state == CLUSTERHEAD) 
+            || (rrm->state == CLUSTERHEAD_INIT0) 
+            || (rrm->state == CLUSTERHEAD_INIT1) 
+            )
     {
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         set_ttl_transact(rrm->rrc.transaction,Trans_id, TTL_DEFAULT_VALUE) ;
