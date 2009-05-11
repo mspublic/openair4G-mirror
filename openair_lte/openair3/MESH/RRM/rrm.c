@@ -408,6 +408,7 @@ static void * thread_recv_msg_fifo (void * p_data )
             memcpy( msg_cpy, Data , taille ) ;
             put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg_cpy) ;
         }
+	
     }
     return NULL;
 }
@@ -863,6 +864,7 @@ int main( int argc , char **argv )
         usleep(100);
     }
     printf("[RRM][INIT] open fifo  /dev/rtf15 returned %d\n", Rrm_fifos.rrm_2_rrc_fifo);
+    
 #endif /* RRC_KERNEL_MODE */
 
     /* ***** MUTEX ***** */

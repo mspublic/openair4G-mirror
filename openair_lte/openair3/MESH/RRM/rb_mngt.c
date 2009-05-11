@@ -61,6 +61,7 @@
 *******************************************************************************
  \brief CMM connection setup request.  Only in CH.
 */
+
 int cmm_cx_setup_req(
 	Instance_t    inst      , //!< Identification de l'instance
 	L2_ID         Src       , //!< L2 source MAC address
@@ -105,7 +106,7 @@ int cmm_cx_setup_req(
           add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB2, &src_dst[0] ) ;
           pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
           
-          
+          printf("CONFIG SRB2\n");
           PUT_RRC_MSG(   
                 msg_rrm_rb_establish_req(inst,               
                              &Lchan_desc[QOS_SRB2], 
@@ -119,7 +120,11 @@ int cmm_cx_setup_req(
     }
     else
     {
+
+      //      if ( (rrm->state == CLUSTERHEAD_INIT))    
+
         if ( rrm->state == CLUSTERHEAD_INIT0 )    
+
         {
             L2_ID src_dst[2] ;
             
@@ -148,7 +153,7 @@ int cmm_cx_setup_req(
             add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_DTCH_B, &src_dst[0] ) ;
 
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-            
+
             rrm->state = CLUSTERHEAD_INIT1 ;
             fprintf(stderr,"[RRM] CLUSTERHEAD_INIT1\n" );
             ret = 0 ;
