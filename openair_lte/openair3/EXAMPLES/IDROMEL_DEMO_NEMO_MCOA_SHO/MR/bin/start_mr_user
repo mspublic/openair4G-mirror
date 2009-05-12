@@ -167,7 +167,7 @@ ip link set $IF2 up
 echo_warning "Configuring address on NEMO link"
 ip -6 addr add 2001:4:0:2::1/64 scope global dev $IF1
 ######################################################################
-killall -q mac_sim
+killall -q mac_sim_rrm rrm emul_int xterm
 
 cd $OPENAIR2_DIR
 sudo rmmod nasmesh
@@ -211,8 +211,12 @@ echo_warning "Starting radvd service"
 /etc/init.d/radvd start
 #sleep 3
 ######################################################################
-cd SIMULATION/USER_TOOLS/LAYER2_SIM
-xterm -e ./mac_sim -m2 -t ../../TOPOLOGIES/eth_2chs_1node.top &
+sudo rm -f /tmp/*socket*
+cd $OPENAIR3_DIR/MESH/RRM/
+xterm -T RRM -hold -e sh rrm_idromel.sh &
+sleep 5
+cd $OPENAIR2_DIR/SIMULATION/USER_TOOLS/LAYER2_SIM
+xterm -e ./mac_sim_rrm -m2 -t ../../TOPOLOGIES/eth_2chs_1node.top &
 wait_process_started mac_sim
 sleep 3
 check_ch1

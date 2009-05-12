@@ -25,7 +25,7 @@ MR_IN6_ADDR2_NO_MASK=`ip_no_mask $MR_IN6_ADDR2`
 MR_IN6_LLADDR2_NO_MASK=`ip_no_mask $MR_IN6_LLADDR2`
 
 /etc/init.d/radvd stop
-killall -q mac_sim
+killall -q mac_sim_rrm rrm emul_int xterm
 rmmod nasmesh
 
 sysctl -w net.ipv6.conf.all.accept_ra=0
@@ -66,8 +66,12 @@ ip -6 addr add $CH2_IN6_ADDR                       scope global dev nasmesh0
 route add -net 224.0.0.0 netmask 240.0.0.0 dev $CH2_EGRESS_ETHERNET_INTERFACE
 
 sleep 1
+sudo rm -f /tmp/*socket*
+cd $OPENAIR3_DIR/MESH/RRM/
+xterm -T RRM -hold -e sh rrm_idromel.sh &
+sleep 5
 cd $OPENAIR2_DIR/SIMULATION/USER_TOOLS/LAYER2_SIM
-./mac_sim -m1 -t ../../TOPOLOGIES/eth_2chs_1node.top &
+./mac_sim_rrm -m1 -t ../../TOPOLOGIES/eth_2chs_1node.top &
 
 sysctl -w net.ipv6.conf.nasmesh0.accept_ra=0
 sysctl -w net.ipv6.conf.nasmesh0.forwarding=1
