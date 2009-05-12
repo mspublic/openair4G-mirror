@@ -26,8 +26,8 @@
 #ifdef OPENAIR2
 #include "platform_constants.h"
 #else
-#define BCCH_PAYLOAD_SIZE_MAX 25
-#define CCCH_PAYLOAD_SIZE_MAX 30
+#define BCCH_PAYLOAD_SIZE_MAX 30
+#define CCCH_PAYLOAD_SIZE_MAX 18
 #endif
 
 /*! \todo a definir les valeurs par defaut */
