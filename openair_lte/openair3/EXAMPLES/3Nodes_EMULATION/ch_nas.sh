@@ -26,16 +26,16 @@ sudo ip -6 route add $CH2_IN6_ADDR/128 via $MR2_IN6_ADDR1 mpls $var
 
 echo 0 > /sys/mpls/debug
 
+# PMIP
+echo /openair3/pmip6d/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR
+sudo xterm -hold -e "$OPENAIR3_PMIP6D_PATH/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR" & 
+
 xterm -hold -e "cd /homes/foubert/Openair/openair2/SIMULATION/USER_TOOLS/LAYER2_SIM ; ./mac_sim -m0 -t $OPENAIR2_DIR/SIMULATION/TOPOLOGIES/eth_3nodes.top"
 
-# PMIP
-#echo /openair3/pmip6d/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR
-#sudo xterm -hold -e "$OPENAIR3_PMIP6D_PATH/pmip6d -c -L $CH1_IN6_ADDR -A $CH2_IN6_ADDR" & 
-
 #watch -n .1 "cat /proc/openair2/lchan_stats ; cat /proc/openair1/bch_stats ; cat /proc/openair1/openair1_state"
-
 #./stop_rf.sh
-#./del_mpls.sh
+sleep 2
+./del_mpls.sh
 #sleep 2
 #./del_mpls.sh
 
