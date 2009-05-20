@@ -102,7 +102,10 @@ fi
 
 ./openair_rf_cbmimo1 1 0
 ./openair_rf_cbmimo1 1 6 $CBMIMO1_POWER 
-#./openair_rf_cbmimo1 25 40
+if [ $2 -eq "8" ]; then
+    ./openair_rf_cbmimo1 1 25 40
+fi
+
 if [ $2 -eq "0" ]; then 
     ./openair_rf_cbmimo1 1 1 1 $2
 elif [ $2 -lt "8" ]; then
