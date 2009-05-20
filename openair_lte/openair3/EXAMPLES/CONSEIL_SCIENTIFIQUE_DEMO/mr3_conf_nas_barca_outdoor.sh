@@ -48,5 +48,3 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c14 -i0 -z0 -s $CH2_IN_ADDR -t
 echo Classifcation rule for DTCH-Broadcast - reception of Router ADV
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c15 -i0 -z0 -x ff02::1 -y ff02::1 -r 3
 
-echo Multicast state launched with config_mr3
-xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr3  &

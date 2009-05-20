@@ -72,8 +72,3 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c30 -i0 -z0 -s $CH2_IN_ADDR -t
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c31 -i0 -z0 -s $MR2_IN_ADDR -t 226.50.10.14 -r 12
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c32 -i0 -z0 -s $MR2_IN_ADDR -t 226.50.10.15 -r 12
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c33 -i0 -z0 -s $CH2_IN_ADDR -t 226.50.10.15 -r 12
-
-
-echo Multicast state launched with config_mr2
-xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr2_mesh  &
-xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_mr2_mn3  &

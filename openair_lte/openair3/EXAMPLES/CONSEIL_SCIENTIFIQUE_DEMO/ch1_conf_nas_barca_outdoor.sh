@@ -91,7 +91,3 @@ sudo ip -6 addr add $CH1_IN6_ADDR/64 dev nasmesh0
 echo No MPLS debug
 echo "0" > /sys/mpls/debug
 
-echo Multicast state launched with config_ch1
-xterm -hold -e /usr/bin/perl $REFLECTOR_DIR/reflector_launch.pl $REFLECTOR_DIR $REFLECTOR_DIR/config_ch1  &
-
-
