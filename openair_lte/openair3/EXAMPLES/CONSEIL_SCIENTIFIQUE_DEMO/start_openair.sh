@@ -8,6 +8,12 @@ if [ "$2" == "" ]; then
     exit
 fi
 
+if [ "$3" != "" ]; then
+    echo "Setting timing advance to" $3
+else 
+    echo "Using standard timing advance"
+fi
+
 if [ "$OPENAIR1_DIR" == "" ] ; then
     echo "Please set OPENAIR1_DIR environment variable"
     exit
@@ -102,10 +108,9 @@ fi
 
 ./openair_rf_cbmimo1 1 0
 ./openair_rf_cbmimo1 1 6 $CBMIMO1_POWER 
-if [ $2 -eq "8" ]; then
-    ./openair_rf_cbmimo1 1 25 40
+if [ "$3" != "" ]; then
+    ./openair_rf_cbmimo1 1 25 $3
 fi
-
 if [ $2 -eq "0" ]; then 
     ./openair_rf_cbmimo1 1 1 1 $2
 elif [ $2 -lt "8" ]; then
