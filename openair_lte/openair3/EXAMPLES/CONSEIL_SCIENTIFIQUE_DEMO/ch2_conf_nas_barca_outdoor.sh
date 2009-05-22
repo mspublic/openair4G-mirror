@@ -4,7 +4,7 @@ source params.sh
 sleep 1
 echo ClusterHead address is $CH2_IN6_ADDR
 echo Launching AS and RF
-./start_openair.sh 8 1
+./start_openair.sh 4 1
 
 # Installing NASMESH driver
 sudo rmmod -f nasmesh
