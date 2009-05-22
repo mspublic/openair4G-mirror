@@ -9,7 +9,7 @@ export OPENAIR2_DIR
 #echo "0" >/proc/sys/net/ipv6/conf/all/forwarding
 
 echo Launching AS and RF
-./start_openair.sh 8 10
+./start_openair.sh 4 10
 
 
 echo Installing NASMESH Driver
@@ -23,11 +23,11 @@ sudo ifconfig nasmesh0 10.0.0.5
 sudo ip -6 addr add $MR3_IN6_ADDR/64 dev nasmesh0
 
 echo Classification rules for MR3 - Default DTCH UL for L3 signaling
-$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x $MR3_IN6_ADDR -y $CH2_IN6_ADDR -r 4
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x $MR3_IN6_ADDR -y $CH2_IN6_ADDR -r 12
 echo Classification rules for MR3 - MPLS User-plane Bearer
-$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z0 -l $MN2_MR3_CH2_MN3 -m $MN3_CH2_MR3_MN2 -r 5
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z0 -l $MN2_MR3_CH2_MN3 -m $MN3_CH2_MR3_MN2 -r 13
 
-$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -l $MR3_LABEL_OUT -m $MR3_LABEL_IN -r 5
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -l $MR3_LABEL_OUT -m $MR3_LABEL_IN -r 13
 
 
 echo  EADS Multicast for MR3

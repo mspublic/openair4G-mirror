@@ -9,7 +9,7 @@ export OPENAIR2_DIR
 #echo "0" >/proc/sys/net/ipv6/conf/all/forwarding
 
 echo Launching AS and RF
-./start_openair.sh 0 8
+./start_openair.sh 2 8
 
 
 echo Installing NASMESH Driver
