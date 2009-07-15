@@ -17,7 +17,7 @@ sudo rmmod -f nasmesh
 sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko nas_IMEI=0x12345678,0x02000000
 
 
-sudo ifconfig eth0 10.0.1.3
+#sudo ifconfig eth0 10.0.1.3
 sudo ifconfig nasmesh0 up
 sudo ifconfig nasmesh0 10.0.0.3
 sudo ip -6 addr add $MR1_IN6_ADDR/64 dev nasmesh0

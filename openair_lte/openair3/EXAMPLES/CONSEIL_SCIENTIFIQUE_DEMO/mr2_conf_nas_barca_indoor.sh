@@ -18,7 +18,7 @@ $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x ff02::1 -y ff02:
 
 sudo ifconfig nasmesh0 up
 sudo ifconfig nasmesh0 10.0.0.4
-sudo ifconfig eth0 10.0.3.3
+#sudo ifconfig eth0 10.0.3.3
 sudo ip -6 addr add $MR2_IN6_ADDR1/64 dev nasmesh0
 sudo ip -6 addr add $MR2_IN6_ADDR2/64 dev nasmesh0
 
