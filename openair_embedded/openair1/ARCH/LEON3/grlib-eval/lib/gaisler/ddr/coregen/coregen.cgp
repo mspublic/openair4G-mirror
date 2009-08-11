@@ -1,0 +1,20 @@
+# Date: Tue Dec  4 18:19:49 2007
+SET addpads = False
+SET asysymbol = False
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = False
+SET designentry = VHDL
+SET device = xc5vlx110t
+SET devicefamily = virtex5
+SET flowvendor = Other
+SET formalverification = False
+SET foundationsym = False
+SET implementationfiletype = Ngc
+SET package = ff1136
+SET removerpms = False
+SET simulationfiles = Behavioral
+SET speedgrade = -2
+SET verilogsim = False
+SET vhdlsim = True
+SET workingdirectory = /homes/khalfall/work/openairinterface/arch/openair_CardBus_MIMO1/LEON3/grlib-eval/lib/gaisler/ddr/coregen/tmp
+

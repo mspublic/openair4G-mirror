@@ -1,0 +1,188 @@
+#!/bin/sh
+
+#Script file to set the transmitter at a given frequency and gain
+
+#Usage: setfreq [[--kHz|-k] kfreq] [[--MHz|-M] Mfreq]
+#(K. Khalfallah, Eurecom, Mob Com Dpt. Feb 2007)
+
+FREQ_MIN_MHZ=200
+FREQ_MAX_MHZ=8200
+FREQ_MIN_KHZ=$((FREQ_MIN_MHZ * 1000))
+FREQ_MAX_KHZ=$((FREQ_MAX_MHZ * 1000))
+
+thisscript=${0##*/}
+RFswitch=set_tx_old 
+if ! which $RFswitch 1>/dev/null 2>&1 ; then
+  echo "The $RFswitch tool is not reachable. Set your PATH env variable."
+  exit
+fi
+setfreqlo=setfreq_LO_board
+if ! which $setfreqlo 1>/dev/null 2>&1 ; then
+  echo "The $setfreqlo tool is not reachable. Set your PATH env variable."
+  exit
+fi
+
+
+usage() {
+  echo "  $thisscript: Tool to automatically configure the switches, the LFSW190410-50 Frequency Synthesizer"
+  echo "           and the ADF4108 Frequency Synthesizer of the RF prototyping chain, given one input frequency,"
+  echo "           indicated either in kHz or MHz."
+  echo "Usage:"
+  echo "  $thisscript [[--kHz|-k] kfreq] [[--MHz|-M] Mfreq][gain1][gain2] [--help|-h] [--verbose|-v]"
+  echo
+}
+
+# Check coherency of input parameters
+NARG=$#
+if [ $NARG -gt 8 -o $NARG -lt 1 ] ; then
+  usage; exit;
+fi
+# There is at least 1 argument, and at most 6 ones.
+
+# Some init
+error=0
+kHz_switch=0
+MHz_switch=0
+asked_help=0
+asked_verbose=0
+debug=0
+while [ $NARG != 0 ]
+do
+  if [ $1 = "--kHz" -o $1 = "-k" ] ; then
+    if [ $kHz_switch = 1 -o $MHz_switch = 1 ] ; then
+      echo "You can specify only one frequency."
+      error=1
+      shift 1; NARG=$(($NARG - 1))
+    else
+      kHz_switch=1
+      if [ ! $2 ] ; then
+        echo "Specify a frequency to --kHz|-k switch."
+        error=1
+        shift 1; NARG=$(($NARG - 1))
+      else
+        frequency_kHz=$2
+        shift 2; NARG=$(($NARG - 2))
+      fi
+    fi
+  elif [ $1 = "--MHz" -o $1 = "-M" ] ; then
+    if [ $kHz_switch = 1 -o $MHz_switch = 1 ] ; then
+      echo "You can specify only one frequency."
+      error=1
+      shift 1; NARG=$(($NARG - 1))
+    else
+      MHz_switch=1
+      if [ ! $2 ] ; then
+        echo "Specify a frequency to --MHz|-M switch."
+        error=1
+        shift 1; NARG=$(($NARG - 1))
+      else
+        frequency_MHz=$2
+        shift 2; NARG=$(($NARG - 2))
+      fi
+    fi
+  elif [ $1 = "--gain1" -o $1 = "-g1" ] ; then
+    if [ ! $2 ] ; then
+      echo "Specify a value for --gain1|-g1 switch."
+      error=1
+      shift 1; NARG=$(($NARG - 1))
+    else
+      gain1=$2
+      shift 2; NARG=$(($NARG - 2))
+    fi
+  elif [ $1 = "--gain2" -o $1 = "-g2" ] ; then
+    if [ ! $2 ] ; then
+      echo "Specify a value for --gain2|-g2 switch."
+      error=1
+      shift 1; NARG=$(($NARG - 1))
+    else
+      gain2=$2
+      shift 2; NARG=$(($NARG - 2))
+    fi	
+  elif [ $1 = "--help" -o $1 = "-h" ] ; then
+    asked_help=1
+    shift 1; NARG=$(($NARG - 1))
+  elif [ $1 = "--verbose" -o $1 = "-v" ] ; then
+    asked_verbose=1
+    shift 1; NARG=$(($NARG - 1))
+  elif [ $1 = "--debug" ] ; then
+    debug=1;
+    shift 1; NARG=$(($NARG - 1))
+  else
+    echo "Unknown option $1"
+    shift 1; NARG=$(($NARG - 1))
+    error=1
+  fi
+done
+
+if [ $asked_help = 1 ] ; then
+  usage
+elif [ $error = 1 ] ; then
+  echo "Type $thisscript [--help|-h] for help."
+  exit
+fi
+
+# If verbose mode, display the frequency
+if [ $asked_verbose = 1 -o $debug = 1 ] ; then
+  if [ $frequency_kHz ] ; then
+    echo "Ok, asked for $frequency_kHz kHz."
+  fi
+  if [ $frequency_MHz ] ; then
+    echo "Ok, asked for $frequency_MHz MHz."
+  fi
+  echo "Asked for gain1 = $gain1"
+  echo "          gain2 = $gain2"
+fi
+
+# Better to use only kHz (it's more simple to only have one unit).
+if [ $frequency_MHz ] ; then
+  frequency_kHz=$(($frequency_MHz * 1000))
+fi
+
+# Ok, 2 things to do:
+#   Action 1) Call setfreq_LO with proper frequency
+#   Action 2) Set on/off the "settx" switches according to the desired frequency
+#             The on/off configuration for each "settx" switch depends of the range of the value
+#             of variable $frequency_kHz, according to different predefined staged values:
+
+# This is Action 1)
+
+lo_frequency_kHz=$((frequency_kHz + 5000))
+if [ $lo_frequency_kHz -le 1900000 ] ; then
+  lo_frequency_kHz=$((8200000 - lo_frequency_kHz))
+#else
+  # Nothing to do (use same frequency)
+fi
+setfreqlo_command=$setfreqlo" --kHz "$lo_frequency_kHz
+if [ $asked_verbose = 1 -o $debug = 1 ] ; then
+  setfreqlo_command=$setfreqlo_command" -v"
+  echo "Action 1) Executing command: $setfreqlo_command"
+fi
+$setfreqlo_command 2>&1 | sed -e 's/^/             /'
+
+# This is Action 2)
+     tab_sw6=(1 1 1 1 1 0 0 0 1) # means tx 1
+     tab_sw7=(1 1 1 1 1 0 0 0 0)
+     tab_sw8=(1 1 1 1 1 0 0 0 0)
+     tab_sw9=(0 1 0 1 0 0 0 1 1)
+    tab_sw10=(0 0 1 1 0 0 1 0 1)
+    tab_sw11=(1 0 0 0 0 0 1 1 1)
+   
+
+if   [ $frequency_kHz                               -le 350000 ] ; then range=0 
+elif [ $frequency_kHz -gt 350000 -a $frequency_kHz  -le 560000 ] ; then range=1 
+elif [ $frequency_kHz -gt 560000 -a $frequency_kHz  -le 800000 ] ; then range=2
+elif [ $frequency_kHz -gt 800000 -a $frequency_kHz  -le 1220000 ] ; then range=3
+elif [ $frequency_kHz -gt 1220000 -a $frequency_kHz -le 1900000 ] ; then range=4
+elif [ $frequency_kHz -gt 1900000 -a $frequency_kHz -le 2125000 ] ; then range=5
+elif [ $frequency_kHz -gt 2125000 -a $frequency_kHz -le 3100000 ] ; then range=6
+elif [ $frequency_kHz -gt 3100000 -a $frequency_kHz -le 5350000 ] ; then range=7
+else                                                                     range=8 #direct LO in High
+#elif [ $frequency_kHz -gt 6200000 -a $frequency_kHz -le 8200000 ] ; then range=7
+fi
+switchcommand=$RFswitch" --gain1 "$gain1" --gain2 "$gain2" --swtx0 0 --swtx1 0 --swtx2 0 --swtx3 0 --swtx4 0 --swtx5 0 --swtx6 "${tab_sw6[range]}" --swtx7 "${tab_sw7[range]}" --swtx8 "${tab_sw8[range]}" --swtx9 "${tab_sw9[range]}" --swtx10 "${tab_sw10[range]}" --swtx11 "${tab_sw11[range]}
+if [ $asked_verbose = 1 -o $debug = 1 ] ; then
+  switchcommand=$switchcommand" -vv"
+  echo "Action 2) Executing command:"
+  echo "            "$switchcommand
+fi
+$switchcommand 2>&1 | sed -e 's/^/          /'

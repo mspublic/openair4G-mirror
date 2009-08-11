@@ -1,0 +1,10 @@
+grlib
+tech/altera/altera_mf
+tech/xilinx/unisim
+techmap
+fpu
+opencores
+spw
+gaisler
+esa
+eurecom

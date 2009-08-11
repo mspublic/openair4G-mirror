@@ -1,0 +1,15 @@
+    ____  ____
+   /   /\/   /
+  /___/  \  /    VENDOR      : Xilinx Inc.
+  \   \   \/     VERSION     : 9.1i (J.30)
+   \   \         APPLICATION : compxlib
+   /   /         CONTENTS    : Compilation Log
+  /___/   /\     FILENAME    : compxlib.log
+  \   \  /  \    CREATED ON  : Tue Apr  3 19:58:34 2007
+   \___\/\___\
+
+Release 9.1i - COMPXLIB J.30
+Copyright (c) 1995-2007 Xilinx, Inc.  All rights reserved.
+
+
+ERROR:CAEInterfaces - COMPXLIB[cmd]: invalid option '--help' specified

@@ -1,0 +1,95 @@
+Cardbus-MIMO-1 Wireless Com features Enable
+CONFIG_CMIMO1_ENABLE
+  Say Y here to enable Wireless Modem facilities of Cardbus-MIMO-1
+  board.
+  
+Cardbus-MIMO-1 I/O space address
+CONFIG_CMIMO1_IO
+  The control/data registers for all Cardbus-MIMO-1 features
+  occupy 4 kbytes, and are mapped in the AHB bus I/O area
+  (0xFFF00000 - 0xFFFFF000).
+  This setting defines at which address in the I/O area the
+  registers appear (HADDR[19:8]).
+
+RF Ctrl Port
+CONFIG_CMIMO1_RFCTRL_IO_OFFSET
+  This setting defines at which offset in the Cardbus-MIMO-1
+  I/O area the control registers for Radio-Frequency chains
+  appear (HADDR[7:0]).
+  There are 3 registers RF0, RF1 and RF2, all are 32 bits wide.
+  RF0 controls Frequency Synthesizers LFSW190410 and ADF4108,
+    along with LEDs 0 to 3.
+  RF1 for now only controls LEDs 4 to 7.
+  RF2 controls all the RF switches: SW_TX, SW_ANT, ..., SW_RX_OUT.
+  RF0 will be mapped first, RF1 4 bytes further and RF2 8 bytes later
+
+CONFIG_CMIMO1_ADAC_IO_OFFSET
+  This setting defines at which offset in the Cardbus-MIMO-1
+  I/O area the Register file to control ADAC converters appears.
+
+CONFIG_CMIMO1_SPI_IO_OFFSET
+  This setting defines at which offset in the Cardbus-MIMO-1
+  I/O area the Register file to control/config the SPI interface of
+  the native Widens RF appears.
+
+CONFIG_CMIMO1_IDROMEL_SPI_IO_OFFSET
+  This setting defines at which offset in the Cardbus-MIMO-1
+  I/O area the Register file to control/config the SPI interface of
+  the new Idromel RF appears.
+
+CONFIG_CMIMO1_HADDR
+  The Cardbus-MIMO-1 interface occupies a contiguous memory
+  block mapped into the global AHB address space, of size
+  1 to 256 Mbytes.
+  Specify here the Mbyte alignment for this block.
+  Together with the address mask, it will define a precise mapping.
+  (For now, this block contains the 4 RAM banks of ADAC converters,
+  ADC0, ADC1, DAC0, DAC1).
+
+CONFIG_CMIMO1_HMASK
+  The Cardbus-MIMO-1 interface occupies a contiguous memory
+  block mapped into the global AHB address space, of size
+  1 to 256 Mbytes.
+  Specify here the size you want for this segment by specifying
+  an address mask : a value of FFF corresponds to a size of
+  1 Mbyte, while a value of F00 corresponds to a size of
+  256 Mbytes.
+  Together with the alignment, it will define a precise mapping.
+  (For now, this block contains the 4 RAM banks of ADAC converters,
+  ADC0, ADC1, DAC0, DAC1).
+
+CONFIG_CMIMO1_ADAC_ADC0_HOFFSET
+  Each of the RAM banks (ADC0, ADC1, DAC0, DAC1) must be
+  aligned on a 64 KByte boundary.
+  Specify here the 64-Kbyte alignment for ADC0.
+
+CONFIG_CMIMO1_ADAC_RAMADC0_KBSZ_2
+  This setting defines the size in Kbytes of the ADC0 ram bank.
+
+CONFIG_CMIMO1_ADAC_ADC1_HOFFSET
+  Each of the RAM banks (ADC0, ADC1, DAC0, DAC1) must be
+  aligned on a 64 KByte boundary.
+  Specify here the 64-Kbyte alignment for ADC1.
+
+CONFIG_CMIMO1_ADAC_RAMADC1_KBSZ_2
+  This setting defines the size in Kbytes of the ADC1 ram bank.
+
+CONFIG_CMIMO1_ADAC_DAC0_HOFFSET
+  Each of the RAM banks (ADC0, ADC1, DAC0, DAC1) must be
+  aligned on a 64 KByte boundary.
+  Specify here the 64-Kbyte alignment for DAC0.
+
+CONFIG_CMIMO1_ADAC_RAMDAC0_KBSZ_2
+  This setting defines the size in Kbytes of the DAC0 ram bank.
+
+CONFIG_CMIMO1_ADAC_DAC1_HOFFSET
+  Each of the RAM banks (ADC0, ADC1, DAC0, DAC1) must be
+  aligned on a 64 KByte boundary.
+  Specify here the 64-Kbyte alignment for DAC1.
+
+CONFIG_CMIMO1_ADAC_RAMDAC1_KBSZ_2
+  This setting defines the size in Kbytes of the DAC1 ram bank.
+
+CONFIG_CMIMO1_IRQ
+  Irq index number for the CMIMO1 module to generate asynchronous
+  interrupts on the AHB backbone.
