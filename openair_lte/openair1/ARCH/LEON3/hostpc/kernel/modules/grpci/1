@@ -1,0 +1,13 @@
+:set number
+:set nohlsearch
+:set tw=511
+:set tabstop=4
+set noautoindent
+set nocindent
+
+" au BufNewFile,BufRead *Makefile.* setf automake
+au BufNewFile,BufRead Makefile.inc setlocal filetype=make
+hi DiffAdd      guibg=red     guifg=white
+hi DiffAdd      ctermbg=red   ctermfg=white
+
+au BufNewFile,BufRead Makefile.inc setlocal filetype=make

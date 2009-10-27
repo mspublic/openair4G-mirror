@@ -1,0 +1,14 @@
+sh mkdir synopsys
+sh mkdir synopsys/grlib 
+define_design_lib grlib -path synopsys/grlib 
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/stdlib/version.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/stdlib/stdlib.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/sparc/sparc.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/modgen/multlib.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/modgen/leaves.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/amba.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/devices.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/ahbctrl.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/apbctrl.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/ahbctrl_mb.vhd
+analyze -f VHDL -library grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/defmst.vhd

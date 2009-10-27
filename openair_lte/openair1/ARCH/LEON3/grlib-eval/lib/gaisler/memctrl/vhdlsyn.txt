@@ -1,0 +1,8 @@
+memctrl.vhd
+sdctrl.vhd
+sdmctrl.vhd
+srctrl.vhd
+ftsrctrl.vhd
+ftsdctrl.vhd
+ftsdmctrl.vhd
+ftmctrl.vhd

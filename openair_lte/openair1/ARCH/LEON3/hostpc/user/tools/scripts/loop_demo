@@ -1,0 +1,20 @@
+for i in `seq 1 500` ; do {
+ /openairinterface/openair_rf/openair_rf_cbmimo1 1 4 1
+  set_transmitter -M 5000 -g1 0 -g2 0 -v
+  sleep .1
+  set_receiver -M 5000 -g1 0 -g2 0 -v
+  sleep .1
+  set_transmitter -M 5000 -g1 63 -g2 63 -v
+  sleep .1
+  set_receiver -M 5000 -g1 63 -g2 63 -v
+  sleep .1
+  set_transmitter -M 500 -g1 0 -g2 0 -v
+  sleep .1
+  set_receiver -M 500 -g1 0 -g2 0 -v
+  sleep .1
+  set_transmitter -M 500 -g1 63 -g2 63 -v
+  sleep .1
+  set_receiver -M 500 -g1 63 -g2 63 -v
+  sleep .1
+} ;
+done
