@@ -214,12 +214,19 @@ int main (int argc, char **argv) {
   
   reconfigure_MACPHY(scenario);
   printf("reconfigure_MACPHY() done.\n");fflush(stdout);
+#ifdef OPENAIR_LTE
+  phy_init_top(NB_ANTENNAS_TX);
+#else
   phy_init(NB_ANTENNAS_TX);
+#endif
   printf("Initialized PHY variables\n");
+
+  printf("NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
 
   //mac_init();
   //printf("Initialized MAC variables\n");
 
+#ifndef OPENAIR_LTE
   chbch_size = (NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_CHBCH_SYMBOLS)>>3;
   chbch_pdu  = malloc(chbch_size);
 
@@ -228,6 +235,7 @@ int main (int argc, char **argv) {
   }
 
   printf("Filled CHBCH PDU with random data\n");
+#endif //OPENAIR_LTE
 
   dma_buffer_local = (char *)malloc(NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
 
@@ -363,19 +371,6 @@ int main (int argc, char **argv) {
 
 
 
-    /*
-    if ((rx_frame_file = fopen("rx_frame.dat","w")) == NULL)
-      {
-	printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
-	exit(0);
-      }
-
-
-    sleep(2);
-    fwrite(dma_buffer_local,4,SLOTS_PER_FRAME*SLOT_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
-    close(rx_frame_file);
-    */
-
     break;
 #endif
   case 4 : 
@@ -398,26 +393,6 @@ int main (int argc, char **argv) {
     fwrite(dma_buffer_local,4,NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
     fclose(rx_frame_file);
 
-    /*
-    if ((chbch_file = fopen("chbch.m","w")) == NULL)
-      {
-	printf("[openair][CHBCH_TEST][INFO] Cannot open chbch.m data file\n");
-	exit(0);
-      }
-
-
-    ioctl(openair_fd,openair_TEST_CHBCH,(void *)dma_buffer_local);
-
-    sleep(1);
-    fprintf(chbch_file,"sig = [");
-    for (i=0;i<SLOT_LENGTH_COMPLEX_SAMPLES;i++) {
-      printf("sample %d : %x (%x)\n",i,((unsigned int *)&dma_buffer_local)[i]/4,revbits(((unsigned int *)&dma_buffer_local)[i]));
-      fprintf(chbch_file,"%d+j*(%d)\n",((short *)&dma_buffer_local)[2*i],((short*)&dma_buffer_local)[1+(2*i)]);
-    }
-    fprintf(chbch_file,"];");
-    fclose(chbch_file);
-    */
-
     break;
 #ifdef CBMIMO1
 //#ifndef PHY_EMUL_IOCTL
@@ -426,13 +401,13 @@ int main (int argc, char **argv) {
 
     if ((rx_frame_file = fopen("rx_frame.dat","w")) == NULL)
       {
-	printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
+	printf("[openair][INFO] Cannot open rx_frame.m data file\n");
 	exit(0);
       }
 
     if ((rx_sig_fifo_fd = open("/dev/rtf59",O_RDONLY,0)) <0)
       {
-	printf("[openair][CHBCH_TEST][INFO] Cannot open rx_sig_fifo\n");
+	printf("[openair][INFO] Cannot open rx_sig_fifo\n");
 	exit(0);
       }
 
@@ -479,11 +454,12 @@ int main (int argc, char **argv) {
 
     if ((tx_frame_file = fopen("tx_frame.dat","w")) == NULL)
       {
-	printf("[openair][CHBCH_TEST][INFO] Cannot open tx_frame.dat data file\n");
+	printf("[openair][INFO] Cannot open tx_frame.dat data file\n");
 	exit(0);
       }
     
-    openair_generate_ofdm(1,0xffff,chbch_pdu);
+    //openair_generate_ofdm(1,0xffff,chbch_pdu);
+    openair_generate_ofdm(3,0,0);
     /*
     ((unsigned int *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0])[0] = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) | (64<<8); 
     */
@@ -515,9 +491,11 @@ int main (int argc, char **argv) {
     break;
 
   case 13:
-    printf("[openair][START][INFO] FS4 Test with DC\n");
+    //printf("[openair][START][INFO] FS4 Test with DC\n");
+    printf("[openair][START][INFO] FS4 Test\n");
     fc = atoi(argv[3]);
-    result=ioctl(openair_fd,openair_START_REAL_FS4_WITH_DC_TEST,&fc);
+    //result=ioctl(openair_fd,openair_START_REAL_FS4_WITH_DC_TEST,&fc);
+    result=ioctl(openair_fd,openair_START_FS4_TEST,&fc);
     break;
 
   case 14:        // SET RX RF MODE
@@ -540,25 +518,14 @@ int main (int argc, char **argv) {
     break;
 
 
-  case 17:        // DO CHBCH SYNCHRONIZATION
-    printf("[openair][START][INFO] Do CHBCH Synchronization\n");
+  case 17:        // DO SYNCHRONIZATION
+    printf("[openair][INFO] Do CHBCH Synchronization\n");
     
 
     
     ((unsigned char *)&dma_buffer_local[0])[0] = (unsigned char)((atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3));
     ((unsigned char *)&dma_buffer_local[0])[1] = (unsigned char)(atoi(argv[4]));
-    ioctl(openair_fd,openair_DO_CHBCH_SYNCH,(void *)dma_buffer_local);
-
-    /*
-    if ((rx_frame_file = fopen("rx_frame.dat","w")) == NULL)
-      {
-	printf("[openair][DO_CHBCH_SYNCH][INFO] Cannot open rx_frame.dat data file\n");
-	exit(0);
-      }
-   
-    fwrite(dma_buffer_local,4,320*64,rx_frame_file);
-    fclose(rx_frame_file);
-    */
+    ioctl(openair_fd,openair_DO_SYNCH,(void *)dma_buffer_local);
 
     break;
    

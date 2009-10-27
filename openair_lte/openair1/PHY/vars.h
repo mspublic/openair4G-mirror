@@ -23,6 +23,10 @@ unsigned int mchrach_error_cnt[2][8],sach_error_cnt=0;
 #include "PHY/TOOLS/twiddle4096.h"
 #include "PHY/TOOLS/twiddle32768.h"
 
+#ifdef OPENAIR_LTE
+#include "PHY/LTE_REFSIG/primary_synch.h"
+#endif
+
 PHY_VARS *PHY_vars;
 
 short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
@@ -31,11 +35,14 @@ unsigned int sync_pos;
 
 unsigned char dual_stream_flag = 0;
 
+#ifndef OPENAIR_LTE
 CHBCH_RX_t rx_mode = ML;
-
+#endif //OPENAIR_LTE
 unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
-
+#ifdef OPENAIR_LTE
+LTE_DL_FRAME_PARMS *lte_frame_parms;
+#endif
 
 #include "PHY/CODING/scrambler.h"
 

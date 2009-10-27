@@ -48,8 +48,9 @@ dump_config() {
     break;
   }	
 
-	for (n=0;n<PHY_config->total_no_chsch;n++)
-	{
+#ifndef OPENAIR_LTE
+  for (n=0;n<PHY_config->total_no_chsch;n++)
+    {
   msg("[openair][CONFIG]\n");
   msg("[openair][CONFIG] PHY_CHSCH %d\n",n);
   msg("[openair][CONFIG] -----------\n");
@@ -116,6 +117,7 @@ dump_config() {
   msg("[openair][CONFIG] MRBCH_POWER= %d dBm\n",PHY_config->PHY_mrbch.MRBCH_POWER_dBm);
 
   msg("[openair][CONFIG]\n");
+#endif //OPENAIR_LTE
 
 }
 
@@ -180,7 +182,7 @@ phyFraming_ProcessInitReq (int cfgNumber)
  }
  
  
- 
+#ifndef OPENAIR_LTE 
 int 
 phyCHBCH_ProcessInitReq (int cfgNumber)
  {
@@ -282,8 +284,10 @@ phySACH_ProcessInitReq (int cfgNumber)
  } 
  
  
+#endif //OPENAIR_LTE
 
-/* 
+#ifdef CONFIG_MAIN
+
 int
 main(int argc, char* argv[])
 {
@@ -302,4 +306,5 @@ main(int argc, char* argv[])
 reconfigure_MACPHY(inscenario);
 
 }
-*/ 
+ 
+#endif //CONFIG_MAIN

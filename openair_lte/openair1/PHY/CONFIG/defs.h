@@ -60,7 +60,7 @@ int phyFraming_ProcessInitReq(int cfgNumber);
  */
 void cfg_readPhyFraming(FILE *inconfig, int cfgNumber);
 
-
+#ifndef OPENAIR_LTE
  int phyCHSCH_ProcessInitReq(int);
 
  /*! \fn void cfg_readPhyCHSCH (FILE *inconfig, int cfgNumber)
@@ -151,6 +151,7 @@ PHY_SCH* cfg_getPhySCH(int cfgNumber);
 PHY_SACH* cfg_getPhySACH(int cfgNumber);
 
 /** @}*/
+#endif //OPENAIR_LTE
 #endif /*__CONFIG_DEFS_H__*/
 
 

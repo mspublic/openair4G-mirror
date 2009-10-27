@@ -5,6 +5,8 @@
 
 *@} */
 
+#include "PHY/defs.h"
+
 void phy_synch_time_init(void );
 
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
@@ -234,5 +236,9 @@ int phy_adjust_sync_CH2(int clear, int sch_index, short coef, SCH_t sch_type);
 
 int model_based_detection(void);
 
+/*! \fn void lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms)
+\brief This function allocates memory needed for the synchronization.
+\param frame_parms LTE DL frame parameter structure
+*/
 
 /** @} */ 

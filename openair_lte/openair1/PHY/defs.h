@@ -1,18 +1,34 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
+#ifdef OPENAIR_LTE
+#include "spec_defs_top.h"
+#include "impl_defs_top.h"
+#include "impl_defs_lte.h"
+#else //OPENAIR_LTE
 #include "spec_defs.h"
 #include "impl_defs.h"
+#endif //OPENAIR_LTE
+
 #include "PHY/INIT/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
-#include "PHY/TRANSPORT/defs.h"
 #include "PHY/MODULATION/defs.h"
+#ifndef OPENAIR_LTE
+#include "PHY/TRANSPORT/defs.h"
 #include "PHY/ESTIMATION/defs.h"
+#else //OPENAIR_LTE
+#include "PHY/LTE_TRANSPORT/defs.h"
+#include "PHY/LTE_ESTIMATION/defs.h"
+#include "PHY/LTE_REFSIG/defs.h"
+#endif //OPENAIR_LTE
+
+
 
 #ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
 #define msg printf   
 //use msg in the real-time thread context
 #define msg_nrt printf   

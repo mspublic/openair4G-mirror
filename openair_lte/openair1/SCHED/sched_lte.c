@@ -4,16 +4,16 @@
  // \date 02.06.2004   (initial WIDENS version)
  // updated 04.04.2006 (migration to 2.6.x kernels)
  // updated 01.06.2006 (updates by M. Guillaud for MIMO sounder, new HW tracking mechanism)
- // updated 01.08.2006 (integration of PLATON hardware support)
  // updated 15.01.2007 (RX/TX FIFO debug support, RK)
  // updated 21.05.2007 (structural changes,GET Frame fifo support, RK)
+ // Created LTE version 02.10.2009
  *  @{ 
  */
 
 /*
 * @addtogroup _physical_layer_ref_implementation_
 \section _process_scheduling_ Process Scheduling
-This section deals with real-time process scheduling for PHY and synchronization with certain hardware targets (PLATON,CBMIMO1).
+This section deals with real-time process scheduling for PHY and synchronization with certain hardware targets (CBMIMO1).
 */
 
 #ifndef USER_MODE
@@ -61,7 +61,6 @@ This section deals with real-time process scheduling for PHY and synchronization
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "PHY/TRANSPORT/defs.h"
 #include "extern.h"
 //#include "dummy_driver.h"
 
@@ -74,7 +73,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #endif
 
 #ifdef EMOS
-#include "phy_procedures_emos.h"
+#include "phy_procedures_emos_lte.h"
 #endif
 
 /// Mutex for instance count on MACPHY scheduling 
@@ -125,21 +124,35 @@ int exit_openair = 0;
 #define MAX_DRIFT_COMP 3000
 #endif // CBMIMO1
  
-#ifdef PLATON
-#define NUMBER_OF_CHUNKS_PER_SLOT 10
-#define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
-#define NS_PER_CHUNK 66667 // (7.68 msps, 512 samples per chunk 
-#define SYNCH_WAIT_TIME 2048
-#define SYNCH_WAIT_TIME_RUNNING 128  // number of symbols between SYNCH retries
-//#define SLOTS_PER_FRAME 15
-#define DRIFT_OFFSET 300
-#define MAX_DRIFT_COMP 10000
-#endif // PLATON
 #define MAX_SCHED_CNT 50000000
 
 
 unsigned char first_sync_call;
 
+void openair1_restart(void) {
+
+  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+  openair_daq_vars.tx_test=0;
+  openair_daq_vars.sync_state = 0;
+  mac_xface->frame = 0;
+
+  /*
+  if ((mac_xface->is_cluster_head) && (mac_xface->is_primary_cluster_head)) {
+    openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
+  }
+  else {
+    openair_daq_vars.mode = openair_NOT_SYNCHED;
+  }
+  */
+
+#ifndef EMOS		
+#ifdef OPENAIR2
+	  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+  mac_resynch();
+#endif //OPENAIR2
+#endif //EMOS
+
+}
 
 //-----------------------------------------------------------------------------
 /** MACPHY Thread */
@@ -153,7 +166,7 @@ static void * openair_thread(void *param) {
 #endif //  /* USER_MODE */
 
 
-  u8           next_slot, last_slot,i;
+  u8           next_slot, last_slot;
   unsigned int time_in,time_out;
 
 
@@ -193,65 +206,15 @@ static void * openair_thread(void *param) {
 
   openair_daq_vars.synch_source = 1; //by default we sync to CH1
 
-  for (i=0;i<PHY_config->total_no_chsch;i++){
-#ifdef DEBUG_PHY
-    msg("[OPENAIR][SCHED] Initializing CHSCH %d\n",i);
-#endif //DEBUG_PHY
-    phy_chsch_init_rt_part(i); 
-  }
-  for (i=0;i<PHY_config->total_no_sch;i++){
-#ifdef DEBUG_PHY
-    msg("[OPENAIR][SCHED] Initializing SCH %d\n",i);
-#endif //DEBUG_PHY
-    phy_sch_init_rt_part(i); 
-  }
-
   // Inner thread endless loop
   // exits on error or normally
   
-  sach_error_cnt = 0;
   openair_daq_vars.sched_cnt = 0;
   openair_daq_vars.instance_cnt = -1;
 
-#ifdef PLATON
-  for (i=0;i<NB_ANTENNAS_RX;i++)
-    Zero_Buffer(&PHY_vars->tx_vars[i].TX_DMA_BUFFER[0],
-		4*SLOT_LENGTH_BYTES_NO_PREFIX);
-#else
   Zero_Buffer(&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0],
   	      4*SLOT_LENGTH_BYTES_NO_PREFIX);
-#endif
 
-  // fk 20090324: This code is in phy_procedures_emos.c
-  /*
-#ifdef EMOS  
-  // Initialization of the TX signal for EMOS Part I: Pilot symbols
-  if (mac_xface->is_primary_cluster_head) {
-    for (i = 12; i < 21; i++)
-    {
-#ifdef CBMIMO1 
-      // cbmimo1 already removes the cyclic prefix
-      phy_generate_sch (0, 1, i, 0xFFFF, 0, NB_ANTENNAS_TX);
-#else  // User-space simulation or PLATON
-      phy_generate_sch (0, 1, i, 0xFFFF, 1, NB_ANTENNAS_TX);
-#endif
-    }
-  }
-  else if (mac_xface->is_secondary_cluster_head) {
-    for (i = 22; i < 31; i++)
-    {
-#ifdef CBMIMO1 
-      // cbmimo1 already removes the cyclic prefix
-      phy_generate_sch (0, 2, i, 0xFFFF, 0, NB_ANTENNAS_TX);
-#else  // User-space simulation or PLATON
-      phy_generate_sch (0, 2, i, 0xFFFF, 1, NB_ANTENNAS_TX);
-#endif
-    }
-  }
-
-#endif //EMOS	
-  */
-	
   while (exit_openair == 0){
     
     pthread_mutex_lock(&openair_mutex);
@@ -344,152 +307,17 @@ static void * openair_thread(void *param) {
   return(0);
 }
 
-#ifdef CBMIMO1
 
-static unsigned char dummy_mac_pdu[256] __attribute__((aligned(16)));
-static unsigned char dummy_mac_pdu2[256] __attribute__((aligned(16)));
-
-#define NUMBER_OF_CHSCH_SYNCH_RETRIES 8
-#define NUMBER_OF_SCH_SYNCH_RETRIES 8
-
-
-
-unsigned int find_chbch(void) {
-
-  unsigned int target_SCH_index;
-  unsigned char chbch_status=0;
-  int ret[2];
-  unsigned char chsch_indices[2] = {1, 2};
-  unsigned char *chbch_pdu_rx[2];
-  int rssi1_max,rssi2_max;
-
-  chbch_pdu_rx[0] = dummy_mac_pdu;
-  chbch_pdu_rx[1] = dummy_mac_pdu2;
-  
-  for (target_SCH_index = 1;
-       target_SCH_index < 4;
-       target_SCH_index++) {
-    
-    phy_channel_estimation_top(PHY_vars->rx_vars[0].offset,
-			       SYMBOL_OFFSET_CHSCH+target_SCH_index,
-			       0,
-			       target_SCH_index,
-			       NB_ANTENNAS_RX,
-			       CHSCH);
-  }
-
-  // get maximum rssi for first two CHSCH
-  rssi1_max = max(PHY_vars->PHY_measurements.rx_rssi_dBm[1][0],PHY_vars->PHY_measurements.rx_rssi_dBm[1][1]);  rssi2_max = max(PHY_vars->PHY_measurements.rx_rssi_dBm[2][0],PHY_vars->PHY_measurements.rx_rssi_dBm[2][1]);
-
-  // try to decode both streams
-  phy_decode_chbch_2streams_ml(chsch_indices,
-			       ML,
-			       NB_ANTENNAS_RX,
-			       NB_ANTENNAS_TX,
-			       chbch_pdu_rx,
-			       ret,
-			       CHBCH_PDU_SIZE);
-
-  if (ret[0] == 0) {  // first CHBCH is decoded correctly
-    PHY_vars->PHY_measurements.chbch_detection_count[1]++;
-    openair_daq_vars.synch_source = 1;
-    chbch_status = 1;
-  }
-  if (ret[1] == 0) {  // second CHBCH is decoded correctly
-    PHY_vars->PHY_measurements.chbch_detection_count[2]++;
-    if ( (chbch_status == 0) || (rssi2_max>rssi1_max) )   // first is not decoded or second has higher rssi
-      openair_daq_vars.synch_source = 2;
-    chbch_status += 2;
-
-  }
-
-  //  msg("Find CHBCH: chbch_status = %d (%d,%d), rssi1 %d dBm, rssi2 %d dBm\n",chbch_status,ret[0],ret[1],rssi1_max,rssi2_max);
-
-  return(chbch_status);
-}
-
-unsigned int find_mrbch(void) {
-
-  unsigned int target_SCH_index = MRSCH_INDEX;
-  unsigned char mrbch_status = 0;
-
-  phy_channel_estimation_top(PHY_vars->rx_vars[0].offset,
-			     SYMBOL_OFFSET_MRSCH,
-			     0,
-			     target_SCH_index,
-			     NB_ANTENNAS_RX,
-			     SCH);
-  
-  if (phy_decode_mrbch(target_SCH_index,
-#ifdef BIT8_RXDEMUX
-		       1,
-#endif
-		       NB_ANTENNAS_RX,
-		       NB_ANTENNAS_TXRX,
-		       (unsigned char*)&dummy_mac_pdu,
-#ifdef OPENAIR2
-		       sizeof(MRBCH_PDU)) == 0)
-#else
-                       MRBCH_PDU_SIZE) == 0) 
-#endif
-	
-  {
-    PHY_vars->PHY_measurements.mrbch_detection_count++;
-  
-#ifdef DEBUG_PHY
-    msg("[openair][SCHED][SYNCH] MRBCH %d detected successfully, RSSI Rx1 %d, RSSI Rx2 %d\n",
-	target_SCH_index,PHY_vars->PHY_measurements.rx_rssi_dBm[0][0],
-	target_SCH_index,PHY_vars->PHY_measurements.rx_rssi_dBm[0][1]);
-#endif	
-    mrbch_status = 1;
-  }
-
-  return(mrbch_status);
-
-}
-
-void openair1_restart(void) {
-
-  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-  openair_daq_vars.tx_test=0;
-  openair_daq_vars.sync_state = 0;
-  mac_xface->frame = 0;
-
-
-  if ((mac_xface->is_cluster_head) && (mac_xface->is_primary_cluster_head)) {
-    openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
-  }
-  else {
-    openair_daq_vars.mode = openair_NOT_SYNCHED;
-  }
-
-#ifndef EMOS		
-#ifdef OPENAIR2
-	  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-  mac_resynch();
-#endif //OPENAIR2
-#endif //EMOS
-
-}
-
-
-void openair_sync(void) {
-  // mode looking_for_CH, looking_for_MR
-  // synch_source SCH index
-
+void openair_sync() {
   int i;
   //int size,j;
-  int  status;
+  int status;
   int length;
   int ret;
   static unsigned char clear = 1;
-  static unsigned char clear_mesh = 1;
+  int Nsymb, sync_pos, sync_pos_slot;
 
-  static SCH_t searching_mode = CHSCH;
-  unsigned char target_SCH_index = 0;
-  static unsigned char SCH_retries = 0;
-  static unsigned char CHSCH_retries = 0;
-  unsigned char chbch_status,mrbch_status;
+  int *rxdata[NB_ANTENNAS_RX];
 
   RTIME time;
 
@@ -497,32 +325,18 @@ void openair_sync(void) {
 
   //openair_set_lo_freq_openair(openair_daq_vars.freq,openair_daq_vars.freq);	
 
-
   ret = setup_regs();
 
-
-#ifndef NOCARD_TEST
-  openair_get_frame();
-#else ///NOCARD_TEST
-  rf_cntl_packet.frame = mac_xface->frame;
-  rf_cntl_packet.rx_offset = 0;
-  rtf_put(rf_cntl_fifo,&rf_cntl_packet,sizeof(RF_CNTL_PACKET));
-  pthread_cond_wait(&openair_rx_fifo_cond,&openair_rx_fifo_mutex);
-#endif //NOCARD_TEST
-
-
+  openair_get_frame(); //received frame is stored in PHY_vars->RX_DMA_BUFFER
 
   // sleep during acquisition of frame
 
   time = rt_get_cpu_time_ns();
 
   for (i=0;i<2*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
-
-
 #ifdef RTAI_ENABLED
     rt_sleep(nano2count(NS_PER_CHUNK));
 #endif //
-
   }
   
   time = rt_get_cpu_time_ns();
@@ -563,334 +377,60 @@ void openair_sync(void) {
 
 #endif
 
-    // For debugging we overrule the searching_mode 
-    if (openair_daq_vars.node_running == 1) {
-      if ((mac_xface->is_cluster_head == 1) && (mac_xface->is_secondary_cluster_head == 1)) {
-	searching_mode = SCH;
-	target_SCH_index = MRSCH_INDEX; //this is needed for the initial synch of the 2nd CH. 
-	//	msg("[openair][openair SYNC] Synching to MRSCH %d\n",target_SCH_index);
-      }
-      else if (mac_xface->is_cluster_head == 0) {
-	//	msg("[openair][openair SYNC] Synching to CHSCH %d\n",target_SCH_index);
-	searching_mode = CHSCH;
-	target_SCH_index = 0;
-      }
-      else { //This should not happen
-	msg("[openair][openair SYNC] searching_mode for primary clusterhead undefined (mode %d)!\n");
-	exit_openair=1;
-      }
-    }
-
-    /*
-    //SENSING
-    openair_daq_vars.channel_vacant[openair_daq_vars.freq] = 
-      openair_daq_vars.channel_vacant[openair_daq_vars.freq] + model_based_detection();
-    msg("[OPENAIR][SCHED] Sensing results = [%d %d %d %d]\n",openair_daq_vars.channel_vacant[0],openair_daq_vars.channel_vacant[1],openair_daq_vars.channel_vacant[2],openair_daq_vars.channel_vacant[3]);
-    */
-    
     // Do initial timing acquisition
 
-    phy_synch_time((short*)PHY_vars->rx_vars[0].RX_DMA_BUFFER,
-		   &sync_pos,
-		   FRAME_LENGTH_COMPLEX_SAMPLES-768,
-		   768,
-		   searching_mode,
-		   target_SCH_index);
-    
-    
-    //msg("[openair][openair SYNC] sync_pos = %d\n",sync_pos);
+    rxdata[0] = PHY_vars->rx_vars[0].RX_DMA_BUFFER;
+    rxdata[1] = PHY_vars->rx_vars[1].RX_DMA_BUFFER;
+
+    sync_pos = lte_sync_time(rxdata, lte_frame_parms);
+
+    msg("[openair][openair SYNC] sync_pos = %d\n",sync_pos);
     
     PHY_vars->rx_vars[0].offset = sync_pos;
     
 #ifndef NOCARD_TEST
     pci_interface->frame_offset = sync_pos;
 #endif //NOCARD_TEST
+
+    // the sync is in the last symbol of the first slot, so the position wrt to the start of the frame is (frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*(Nsymb-1)+frame_parms->nb_prefix_sample;
+
+    Nsymb = (lte_frame_parms->Ncp==0)?14:12;
+    sync_pos_slot = (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(Nsymb-1)+lte_frame_parms->nb_prefix_samples;
+
+    rxdata[0] = &PHY_vars->rx_vars[0].RX_DMA_BUFFER[sync_pos-sync_pos_slot];
+    rxdata[1] = &PHY_vars->rx_vars[1].RX_DMA_BUFFER[sync_pos-sync_pos_slot];
     
-    openair_daq_vars.mode = openair_NOT_SYNCHED;
-
+    /*
+    slot_fep(lte_frame_parms,
+	     0,
+	     0,
+	     rxdata,
+	     dl_ch_estimates);
+    */
              
-    // Try to decode CHBCH
-    if (searching_mode == CHSCH) {
+    // Try to decode BCH
 
-      chbch_status = 0;
-      PHY_vars->PHY_measurements.chbch_search_count++;
-
-
-      chbch_status = find_chbch();
-
-      if ((chbch_status >0 ) && (openair_daq_vars.node_running == 1)) {
-	
-	
-	openair_daq_vars.mode = openair_SYNCHED_TO_CHSCH;
-	
-	PHY_vars->chbch_data[0].pdu_errors        = 0;
-	PHY_vars->chbch_data[0].pdu_errors_last   = 0;
-	PHY_vars->chbch_data[0].pdu_errors_conseq = 0;
-	PHY_vars->chbch_data[1].pdu_errors        = 0;
-	PHY_vars->chbch_data[1].pdu_errors_last   = 0;
-	PHY_vars->chbch_data[1].pdu_errors_conseq = 0;
-	PHY_vars->chbch_data[2].pdu_errors        = 0;
-	PHY_vars->chbch_data[2].pdu_errors_last   = 0;
-	PHY_vars->chbch_data[2].pdu_errors_conseq = 0;
-	PHY_vars->chbch_data[3].pdu_errors        = 0;
-	PHY_vars->chbch_data[3].pdu_errors_last   = 0;
-	PHY_vars->chbch_data[3].pdu_errors_conseq = 0;
-	
-	mac_xface->frame = 0;
-#ifndef EMOS		
-#ifdef OPENAIR2
-	//	msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-	mac_resynch();
-#endif //OPENAIR2
-#endif //EMOS
-	openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
-	
-	openair_daq_vars.last_adac_cnt=-1;            
-	
-	//	msg("[openair][SCHED][SYNCH] Resynching hardware\n");
-	// phy_adjust_synch(1,openair_daq_vars.synch_source,16384,CHSCH);
-	phy_adjust_synch_multi_CH(1,16384,CHSCH);
-
-	openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
-	
-	pci_interface->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-	
-      }
-      else {
-	if (chbch_status == 0) 
-#ifdef DEBUG_PHY
-	  msg("[openair][SCHED][SYNCH] No CHBCH detected successfully, retrying (%d/%d)... \n",
-	      CHSCH_retries,NUMBER_OF_CHSCH_SYNCH_RETRIES);
-#endif
-	openair_daq_vars.mode = openair_NOT_SYNCHED;
-
-      }
-	
-      //AGC mesh
-      if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-	//	  msg("[openair][SCHED][AGC] Running mesh AGC on CHSCHes\n" );
-	phy_adjust_gain_mesh (clear_mesh, 16384);
-	if (clear_mesh == 1)
-	  clear_mesh = 0;
-      }
-
-      CHSCH_retries++;
-      
-      if (CHSCH_retries == NUMBER_OF_CHSCH_SYNCH_RETRIES){
-	CHSCH_retries = 0;
-	searching_mode = SCH;
-
-	/*
-	if (!mac_xface->is_cluster_head) {
-	  openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
-	  clear_mesh=1;
-	  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-	    PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
-#ifdef CBMIMO1  
-	    openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
-#endif //CBMIMO1
-	  }
-	}
-	*/
-      }
-      
-    } // end of search for CHSCH
-    else { // Search for MRSCH
-
-      target_SCH_index = MRSCH_INDEX;
-      PHY_vars->PHY_measurements.mrbch_search_count++;
-
-      
-      mrbch_status = find_mrbch();
-
-
-      if (mrbch_status == 1) {
-	if (openair_daq_vars.node_running == 1) {
-
-	  msg("[openair][SCHED] Found MRBCH, gain = %d, offset =%d\n",PHY_vars->rx_vars[0].rx_total_gain_dB,PHY_vars->rx_vars[0].offset);
-	msg("[OPENAIR][SCHED]  Frame %d:, mrbch_pdu = ");
-	for (i=0; i<MRBCH_PDU_SIZE; i++)
-	  msg("%d, ",dummy_mac_pdu[i]);
-	msg("\n");
-
-	  
-	  openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
-	  
-	  PHY_vars->mrbch_data[0].pdu_errors        = 0;
-	  PHY_vars->mrbch_data[0].pdu_errors_last   = 0;
-	  PHY_vars->mrbch_data[0].pdu_errors_conseq = 0;
-	  
-	  mac_xface->frame = 0;
-	  
-#ifndef EMOS		
-#ifdef OPENAIR2
-	  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-	  mac_resynch();
-#endif //OPENAIR2
-#endif //EMOS
-	  openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
-	  
-	  openair_daq_vars.last_adac_cnt=-1;            
-	  
-	  phy_adjust_synch(1,MRSCH_INDEX,16384,SCH);
-	  
-	  openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
-	  
-	  pci_interface->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-	  
-	}
-	
-	
-      }
-      else {
-#ifdef DEBUG_PHY
-	msg("[openair][SCHED][SYNCH] MRBCH %d not detected successfully, retrying (%d/%d)... \n",
-	    target_SCH_index,SCH_retries,NUMBER_OF_SCH_SYNCH_RETRIES);
-#endif
-      }
-
-      // run AGC
+    // Do AGC
+    /*
       if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
 	//	msg("[openair][SCHED][AGC] Running AGC on MRSCH %d\n", target_SCH_index);
 	phy_adjust_gain (clear, 16384, target_SCH_index);
 	if (clear == 1)
 	  clear = 0;
       }
-
-      SCH_retries++;
-      if (SCH_retries == NUMBER_OF_SCH_SYNCH_RETRIES){
-	SCH_retries = 0;
-	searching_mode = CHSCH;
-
-	/*
-	if (mac_xface->is_cluster_head) {
-	  openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
-	  clear_mesh=1;
-	  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-	    PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
-#ifdef CBMIMO1  
-	    openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
-#endif //CBMIMO1
-	  }
-	}
-	*/
-      }
-
-    } // search for mrbch
-  
-
-  }
-  else {   // store frame to RX fifo and clear one shot flag
-
-    openair_daq_vars.one_shot_get_frame=0;
-    //    msg("[openair][SCHED] Putting RF_CNTL_FIFO info\n");
-
-    rtf_put(rf_cntl_fifo,&openair_daq_vars.sched_cnt,sizeof(int));
+    */
   }
 
 //  msg("[openair][SCHED][SYNCH] Returning\n");
+
 }
 
-void openair_sensing(void) {
-
-  int i;
-  int ret;
-  static unsigned char clear = 1;
-  static unsigned char clear_mesh = 1;
-  static unsigned int sensing_counter = 0;
-  int sensing_result;
-
-  RTIME time;
-
-  //msg("[OPENAIR][SENSING] freq=%d, freq_info=%d\n",openair_daq_vars.freq,openair_daq_vars.freq_info);
-  ret = setup_regs();
-  
-#ifndef NOCARD_TEST
-  openair_get_frame();
-#else ///NOCARD_TEST
-  rf_cntl_packet.frame = mac_xface->frame;
-  rf_cntl_packet.rx_offset = 0;
-  rtf_put(rf_cntl_fifo,&rf_cntl_packet,sizeof(RF_CNTL_PACKET));
-  pthread_cond_wait(&openair_rx_fifo_cond,&openair_rx_fifo_mutex);
-#endif //NOCARD_TEST
-
-  //  msg("[openair][openair SYNC] openair_get_frame done\n");
-  // sleep during acquisition of frame
-
-  time = rt_get_cpu_time_ns();
-
-  //  msg("Sleeping at %d ns... \n",(unsigned int)time);
-  for (i=0;i<2*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
-
-
-#ifdef RTAI_ENABLED
-    rt_sleep(nano2count(NS_PER_CHUNK));
-#endif //
-
-  }
-  
-  time = rt_get_cpu_time_ns();
-
-  //  msg("Awakening at %d ns... \n",(unsigned int)time);
-
-  if (openair_daq_vars.one_shot_get_frame == 0)  { // we're in a real-time mode so do basic decoding
- 
-
-    memcpy((void *)&PHY_vars->rx_vars[0].RX_DMA_BUFFER[FRAME_LENGTH_COMPLEX_SAMPLES],(void*)PHY_vars->rx_vars[0].RX_DMA_BUFFER,OFDM_SYMBOL_SIZE_BYTES);
-    memcpy((void *)&PHY_vars->rx_vars[1].RX_DMA_BUFFER[FRAME_LENGTH_COMPLEX_SAMPLES],(void*)PHY_vars->rx_vars[1].RX_DMA_BUFFER,OFDM_SYMBOL_SIZE_BYTES);
-    
-    //AGC mesh
-    if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      //	  msg("[openair][SCHED][AGC] Running mesh AGC on CHSCHes\n" );
-      phy_adjust_gain_mesh (clear_mesh, 16384);
-      if (clear_mesh == 1)
-	clear_mesh = 0;
-    }
-
-    sensing_counter++;
-      
-    openair_daq_vars.channel_vacant[openair_daq_vars.freq] = 0;
-
-    if (sensing_counter >= 12){
-
-      sensing_result = model_based_detection();
-
-      msg("[OPENAIR][SENSING] sensing_counter=%d, freq=%d, sensing_result=%d\n",sensing_counter,openair_daq_vars.freq,sensing_result);
-
-      if (sensing_result==1) {
-
-	openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
-	sensing_counter = 0;
-	clear_mesh=1;
-	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-	  PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
-#ifdef CBMIMO1  
-	  openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
-#endif //CBMIMO1
-	}
-      }
-      else {
-	openair_daq_vars.channel_vacant[openair_daq_vars.freq] = 1;
-      }
-    }
-  }
-}
-
-
-#endif // //CBMIMO1
-//-----------------------------------------------------------------------------
 
 static void * top_level_scheduler(void *param) {
   
 #ifdef CBMIMO1
   unsigned int adac_cnt;
 #endif // CBMIMO1
-#ifdef PLATON
-  unsigned int adac_cnt,chunk_count,chunk_offset,slot_count_new;
-#endif // PLATON
 
   int adac_offset;
   int first_increment = 0;
@@ -904,25 +444,6 @@ static void * top_level_scheduler(void *param) {
   msg("[openair][SCHED][top_level_scheduler] SLOTS_PER_FRAME=%d, NUMBER_OF_CHUNKS_PER_SLOT=%d, PHY_vars->mbox %p\n",SLOTS_PER_FRAME,NUMBER_OF_CHUNKS_PER_SLOT,(void*)mbox);
   //***************************************************************************************
 
-#ifdef PLATON    
-  for (i = 0; i < hardware_configuration.number_of_DAQ_cards; i++) {
-    setup_regs (i);
-    *rx_mbox[i] = 0;
-    *tx_mbox[i] = 0;
-  }    
-
-  // Arm slave DMA engines
-  for (i = 0; i <NB_ANTENNAS_RX; i++) {
-    if (i != hardware_configuration.master_id) {
-      msg ("[openair][sched][top_level_scheduler] Arming card %d\n", i);
-      daq_writel (DMA_ADC_ON + DMA_DAC_ON, m_device[i].data_base + PCI_START_STOP_DMA);
-    }
-  }
-  daq_writel (DMA_DAC_ON + CNT_DAC_ON + DMA_ADC_ON + CNT_ADC_ON, m_device[hardware_configuration.master_id].data_base + PCI_START_STOP_DMA);
-
-
-  //***************************************************************************************
-#endif // PLATON
 
 
 
@@ -934,19 +455,7 @@ static void * top_level_scheduler(void *param) {
 
   openair_daq_vars.sync_state=0;
 
-  for (i=0;i<4;i++) {
-    PHY_vars->PHY_measurements.chbch_detection_count[i]= 0;
-  }
-  PHY_vars->PHY_measurements.mrbch_detection_count= 0;
-  PHY_vars->PHY_measurements.chbch_search_count= 0;
-  PHY_vars->PHY_measurements.mrbch_search_count= 0;
-
-
   while (exit_openair == 0) {
-
-#ifdef PLATON
-    adac_cnt      = (*PHY_vars->mbox>>1)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
-#endif //
 
 #ifdef CBMIMO1
     adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
@@ -1000,26 +509,6 @@ static void * top_level_scheduler(void *param) {
       rt_sleep(nano2count(NUMBER_OF_CHUNKS_PER_SLOT * NS_PER_CHUNK));
 
     }
-
-    /*  
-    else if ((openair_daq_vars.mode == openair_NOT_SYNCHED) && (openair_daq_vars.node_id == PRIMARY_CH)) { //this is for cognitive operation
-      openair_sensing(); // this also does the sensing
-      
-      if (openair_daq_vars.channel_vacant[openair_daq_vars.freq]==1) { //check if the current frequency band is vacant
-	ret = setup_regs();
-	if (ret == 0) {
-	  msg("[OPENAIR][SCHED] Starting CH on frequency %d\n",openair_daq_vars.freq);
-	  openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
-	  openair_daq_vars.node_running = 1;
-	  openair_daq_vars.sync_state = 0;
-	}
-	else {
-	  msg("[OPENAIR][SCHED] Starting CH in cognitive mode failed\n");
-	}
-      }
-
-    }
-    */
 
     else {    // We're in synch with the CH or are a 1ary clusterhead
 #ifndef NOCARD_TEST

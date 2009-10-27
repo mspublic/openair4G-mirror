@@ -16,7 +16,7 @@ CCC = $(shell rtai-config --cc)
 RTAI_SUBVERSION=$(shell rtai-config --version | sed -e 's/^..\(.\).*$$/\1/')
 IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then echo true ; fi)
 
-EXTRA_CFLAGS = $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DCBMIMO1 -DBIGPHYSAREA -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DPHY_CONTEXT -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
+EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DCBMIMO1 -DBIGPHYSAREA -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DPHY_CONTEXT -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
@@ -60,8 +60,16 @@ else
 EXTRA_CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DNB_ANTENNAS_TXRX=2 
 endif
 
+ifdef OPENAIR1_LTE
+EXTRA_CFLAGS += -DOPENAIR1_LTE
+endif
+
 #CFLAGS += -I$(OPENAIR1_DIR) -I$(obj)/../LEON3/hostpc 
 EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR1_DIR)/ARCH/LEON3/hostpc
+
+ifdef OPENAIR_LTE
+EXTRA_CFLAGS += -DOPENAIR_LTE
+endif
 
 ifdef OPENAIR2
 EXTRA_CFLAGS += -DOPENAIR2 -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/UTIL/TIMER
@@ -92,11 +100,12 @@ openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/angle.o
 
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 
+ifndef OPENAIR_LTE
+
 ifdef EMOS
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation_emos.o
 openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/phase_comp.o
 endif
-
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/synch_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/adjust_sync.o
@@ -114,27 +123,45 @@ openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/chbch.o
 openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/mrbch.o
 openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/sach.o
 openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/tools.o
+else 
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
+#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch.c  
+#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_rx.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
+endif
 
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/rate_matching.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/viterbi.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/crc_byte.o
 
+ifndef OPENAIR_LTE
 openair_rf-objs += $(TOP_DIR)/PHY/INIT/init.o
-
-
+else
+openair_rf-objs += $(TOP_DIR)/PHY/INIT/init_top.o
+openair_rf-objs += $(TOP_DIR)/PHY/INIT/lte_init.o
+endif
 
 openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/bigphys.o
 openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/reserve_mem.o
 openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/amp.o
 
+ifndef OPENAIR_LTE
 openair_rf-objs += $(TOP_DIR)/SCHED/sched.o
+else
+openair_rf-objs += $(TOP_DIR)/SCHED/sched_lte.o
+endif
 
 # PHY Procedures
+ifndef OPENAIR_LTE
 ifdef EMOS
 openair_rf-objs += $(TOP_DIR)/SCHED/phy_procedures_emos.o
 else
 openair_rf-objs += $(TOP_DIR)/SCHED/phy_procedures.o
+endif
 endif
 
 openair_rf-objs += $(TOP_DIR)/MAC_INTERFACE/init.o
@@ -151,14 +178,7 @@ openair_rf-objs += $(TOP_DIR)/../openair2/PHY_INTERFACE/mac_phy_primitives.o
 endif
 
 
-
-
-
-
-
-
-
-
-
-
-
+ifdef OPENAIR1_LTE
+openair_rf-objs += $(TOP_DIR)/PHY/INIT/lte_init.o
+openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/lte_sync_time.o
+endif

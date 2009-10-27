@@ -5,13 +5,28 @@
 
 #ifdef RTAI_ENABLED
 #include <rtai.h>
-//#include <rtai_posix.h>
+//#include <rtai_posix.h>#ifdef EMOS
+#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
+#else
+#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
+#endif //EMOS
+// end navid 
+
 #include <rtai_fifos.h>
 #endif //RTAI_ENABLED
 
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
+#ifndef OPENAIR_LTE
+#ifdef EMOS
+#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
+#else
+#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
+#endif //EMOS
+#endif
+// end navid 
+
 #include <asm/segment.h>
 #include <asm/page.h>
 #include <asm/delay.h>
@@ -30,17 +45,10 @@
 
 #include <linux/errno.h>
 
-#ifdef KERNEL2_6
+
 //#include <linux/config.h>
 #include <linux/slab.h>
-#endif
 
-#ifdef KERNEL2_4
-#include <linux/malloc.h>
-#include <linux/wrapper.h>
-#endif
-
-#endif
 
 #ifdef BIGPHYSAREA
 #include <linux/bigphysarea.h>
@@ -286,7 +294,7 @@ static int __init openair_init_module( void )
 
 
 #ifdef BIGPHYSAREA
-printk("[openair][module] calling Bigphys_alloc_page...\n");
+  printk("[openair][module] calling Bigphys_alloc_page for %d ...\n", BIGPHYS_NUMPAGES);
   bigphys_ptr = (char *)bigphysarea_alloc_pages(BIGPHYS_NUMPAGES,0,GFP_KERNEL);
   if (bigphys_ptr == (char *)NULL) {
     printk("[openair][MODULE][ERROR] Cannot Allocate Memory for shared data\n");
@@ -367,6 +375,21 @@ printk("[openair][module] calling Bigphys_alloc_page...\n");
     openair_cleanup();
     return -1;
   }
+
+#ifdef OPENAIR_LTE
+  lte_frame_parms = malloc16(sizeof(LTE_DL_FRAME_PARMS));
+
+  if (lte_frame_parms) {
+    printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms allocated @ %p\n",lte_frame_parms);
+  }
+  else {
+    printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms cannot be allocated\n");
+    openair_cleanup();
+    return -1;
+  }
+#endif
+
+
   printk("[openair][MODULE][INFO] OPENAIR_CONFIG %x, OPENAIR_START_1ARY_CLUSTERHEAD %x,OPENAIR_START_NODE %x\n", openair_GET_CONFIG, openair_START_1ARY_CLUSTERHEAD, _IOR('o',3,long));
 
   //  for (i=0;i<10;i++)
@@ -429,6 +452,7 @@ static void  openair_cleanup(void) {
     if (PHY_config)
       kfree(PHY_config);
 #endif //RTAI_ENABLED
+
 
 #ifdef BIGPHYSAREA
   if (bigphys_ptr != (char *)NULL) {

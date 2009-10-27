@@ -69,6 +69,7 @@ int phy_init(unsigned char nb_antennas_tx) {
     printk("[openair][PHY][INIT]TERMINODE is preconfigured as a Cluster Head\n");
   printk("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
   printk("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
+  printk("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
 
 
     
@@ -1235,18 +1236,18 @@ int phy_init(unsigned char nb_antennas_tx) {
       PHY_vars->Sach_diagnostics[n][i].sach_demod_data = (short *)malloc16(8*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_SACH_SYMBOLS_MAX);
 
       if (PHY_vars->Sach_diagnostics[n][i].sach_demod_data) {
-	//#ifdef DEBUG_PHY    
+#ifdef DEBUG_PHY    
 	printk("[openair][PHY][INIT] Allocated %d bytes for sach_diagnostics[%d][%d] (%p)\n",
 	       8*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_SACH_SYMBOLS_MAX,n,i,PHY_vars->Sach_diagnostics[n][i].sach_demod_data);
-	//#endif
+#endif
 
       PHY_vars->Sach_diagnostics[n][i].sacch_demod_data = (short *)malloc16(2*4*SACCH_SIZE_BITS);
 
       if (PHY_vars->Sach_diagnostics[n][i].sacch_demod_data) {
-	//#ifdef DEBUG_PHY   
+#ifdef DEBUG_PHY   
 	printk("[openair][PHY][INIT] Allocated %d bytes for sacch_diagnostics[%d][%d] (%p)\n",
 	       2*4*SACCH_SIZE_BITS,n,i,PHY_vars->Sach_diagnostics[n][i].sacch_demod_data);
-	//#endif
+#endif
     }
     else
       return(-1);
@@ -1371,12 +1372,6 @@ int phy_init(unsigned char nb_antennas_tx) {
 #endif
 
   phy_synch_time_init();
-
-
-
-
-  printk("[openair][PHY][INIT] CHBCH 1 chbch_rxsig_f2[0] = %p\n",
-	 PHY_vars->chbch_data[1].rx_sig_f2[0]);
 
 
   generate_sach_64qam_table();

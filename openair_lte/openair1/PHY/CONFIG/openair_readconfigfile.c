@@ -135,7 +135,7 @@ PHY_FRAMING *cfg_getPhyFraming(int cfgNumber)
 	}
 }
 
-
+#ifndef OPENAIR_LTE
 void 
 cfg_readPhyCHBCH(FILE* config, int cfgNumber)
 {
@@ -506,3 +506,5 @@ PHY_SACH *cfg_getPhySACH(int cfgNumber)
       return NULL; //exit(1)??
     }
 }
+
+#endif //OPENAIR_LTE

@@ -225,8 +225,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	copy_from_user((char *)PHY_config,(char *)arg,sizeof(PHY_CONFIG));
 	dump_config();
 	printk("[openair][IOCTL] Allocating PHY variables\n");
-	
+
+#ifdef OPENAIR_LTE
+	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
+#else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
+#endif
 	if (openair_daq_vars.node_configured != 1) {
 	  printk("[openair][IOCTL] Error in configuring PHY\n");
 	  break;
@@ -234,6 +238,25 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 	else {
 	  printk("[openair][IOCTL] PHY Configuration successful\n");
+#ifdef OPENAIR_LTE
+	  lte_frame_parms->N_RB_DL            = 15;
+	  lte_frame_parms->Ncp                = 1;
+	  lte_frame_parms->Nid_cell           = 0;
+	  lte_frame_parms->nushift            = 1;
+	  lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
+	  lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
+	  lte_frame_parms->first_dlsch_symbol = 1;
+	  init_frame_parms(lte_frame_parms);
+	  
+	  lte_frame_parms->twiddle_fft      = twiddle_fft256;
+	  lte_frame_parms->twiddle_ifft     = twiddle_ifft256;
+	  lte_frame_parms->rev              = rev;
+
+	  lte_sync_time_init(lte_frame_parms);
+
+#endif
+
+
 #ifndef EMOS	  
 	  openair_daq_vars.node_configured = mac_init();
 	  if (openair_daq_vars.node_configured != 1)
@@ -318,21 +341,25 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[OPENAIR][IOCTL] MAC Init, is_cluster_head = %d (%p).slots_per_frame = %d (mac_xface %p)\n",mac_xface->is_cluster_head,&mac_xface->is_cluster_head,mac_xface->slots_per_frame,mac_xface);
        mac_xface->macphy_init();
 
-
+#ifndef OPENAIR_LTE
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
+#endif //OPENAIR_LTE
+
       openair_daq_vars.node_id = PRIMARY_CH;
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 	
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
-      ret = setup_regs();
+      //ret = setup_regs();
 
+      /*
       if (ret == 0) {
 	openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
 	openair_daq_vars.node_running = 1;
 	openair_daq_vars.sync_state = 0;
 	printk("[openair][IOCTL] Process initialization return code %d\n",ret);
       }
+      */
 
     }
     else {
@@ -375,7 +402,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[OPENAIR][IOCTL] MAC Init, is_cluster_head = %d (%p).slots_per_frame = %d (mac_xface %p)\n",mac_xface->is_cluster_head,&mac_xface->is_cluster_head,mac_xface->slots_per_frame,mac_xface);
        mac_xface->macphy_init();
 
+#ifndef OPENAIR_LTE
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
+#endif //OPENAIR_LTE
       openair_daq_vars.node_id = PRIMARY_CH;
       openair_daq_vars.freq = 0; //this is an initial value for the sensing
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
@@ -514,13 +543,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
 #endif // RTAI_ENABLED
 
+#ifndef OPENAIR_LTE
     for (i=0;i<4;i++) {
       PHY_vars->PHY_measurements.chbch_detection_count[i]= 0;
     }
     PHY_vars->PHY_measurements.mrbch_detection_count= 0;
     PHY_vars->PHY_measurements.chbch_search_count= 0;
     PHY_vars->PHY_measurements.mrbch_search_count= 0;
-    
+#endif //OPENAIR_LTE    
     break;
       
   case openair_GET_BUFFER:
@@ -605,7 +635,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
 
-    openair_daq_vars.tx_rx_switch_point = 0; //NUMBER_OF_SYMBOLS_PER_FRAME-2;
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME;
     openair_daq_vars.tx_test=1;
     ret = setup_regs();
 
@@ -684,7 +714,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
     openair_daq_vars.node_id = PRIMARY_CH;
-    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME>>1;
     ret = setup_regs();
 
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
@@ -1153,14 +1183,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
         break;
     }    break;
 
-    /*
-#ifdef EMOS 
-  case openair_START_EMOS_NODEB:
-    PHY_vars->PHY_measurements.Meas_flag ^= 0x1; //toggles the record flag
-    printk("[openair][IOCTL] Setting PHY_vars->PHY_measurements.Meas_flag to %d\n",PHY_vars->PHY_measurements.Meas_flag);
-    break;
-#endif //EMOS
-    */
 
   case openair_SET_TIMING_ADVANCE:
     openair_daq_vars.timing_advance = ((unsigned int *)arg)[0]; 
@@ -1175,8 +1197,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
 
   case openair_SET_RX_MODE:
-    rx_mode = ((unsigned int *)arg)[0]; 
-    msg("[openair][IOCTL] Set RX_MODE to %d\n",rx_mode);
+
+    //    rx_mode = ((unsigned int *)arg)[0]; 
+    //    msg("[openair][IOCTL] Set RX_MODE to %d\n",rx_mode);
 
     break;
 

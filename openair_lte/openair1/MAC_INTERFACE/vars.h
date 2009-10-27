@@ -21,6 +21,8 @@ ________________________________________________________________*/
 #include "PHY_INTERFACE/defs.h"
 #endif //USER_MODE
 
+#include "defs.h"
+
 #ifdef RTAI_ENABLED
 #include <rtai.h>
 #include <rtai_posix.h>

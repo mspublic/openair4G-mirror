@@ -49,6 +49,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
      */
     if (mac_xface->is_cluster_head == 0) {
 
+#ifndef OPENAIR_LTE
       len += sprintf(&buffer[len], "Frame count: %d\nCHSCH0 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH1 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH2 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH3 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nN0 (%d dBm/ %d dB,%d dBm/ %d dB)\n",
 		      mac_xface->frame,
 		      PHY_vars->PHY_measurements.rx_rssi_dBm[0][0],
@@ -114,13 +115,15 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 	 len += sprintf(&buffer[len], "MRBCH detection count: (%d/%d)\n",
 			PHY_vars->PHY_measurements.mrbch_detection_count,
 			PHY_vars->PHY_measurements.mrbch_search_count);
-	 
        }
 #endif //USER_MODE
-    }
+#endif //OPENAIR_LTE	 
+
+    } // is_clusterhead
 #ifndef USER_MODE
     else {
 
+#ifndef OPENAIR_LTE
       if (openair_daq_vars.node_running == 1)
          len += sprintf(&buffer[len], "\n\nCH TTI: %d  MRSCH RSSI (%d dBm,%d dBm), RX Gain %d dB\n",
                         mac_xface->frame,
@@ -130,7 +133,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 	 len += sprintf(&buffer[len], "MRBCH errors: %d (%d %%)\n",
 			PHY_vars->mrbch_data[0].pdu_errors,
 			PHY_vars->mrbch_data[0].pdu_fer);
-      
+#endif //OPENAIR_LTE      
     }
 #endif //USER_MODE
 
@@ -143,11 +146,14 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 #ifndef USER_MODE
 int add_openair1_stats()
 {
-  
+ 
+  msg("Creating openair1 proc entry\n"); 
   proc_openair1_root = proc_mkdir("openair1",0);
   
-  create_proc_info_entry("bch_stats", S_IFREG | S_IRUGO, proc_openair1_root, chbch_stats_read);
-  create_proc_info_entry("openair1_state", S_IFREG | S_IRUGO, proc_openair1_root, openair1_state_read);
+  //  create_proc_info_entry("bch_stats", S_IFREG | S_IRUGO, proc_openair1_root, chbch_stats_read);
+  //  create_proc_info_entry("openair1_state", S_IFREG | S_IRUGO, proc_openair1_root, openair1_state_read);
+  create_proc_read_entry("bch_stats", S_IFREG | S_IRUGO, proc_openair1_root, (read_proc_t*)&chbch_stats_read,NULL);
+  create_proc_read_entry("openair1_state", S_IFREG | S_IRUGO, proc_openair1_root, (read_proc_t*)&openair1_state_read,NULL);
   return 0;
 }
 /*
@@ -160,7 +166,7 @@ void remove_openair_stats()
     printk("[OPENAIR][CLEANUP] Removing openair proc entry\n");
     remove_proc_entry("bch_stats", proc_openair1_root);
     remove_proc_entry("openair1_state", proc_openair1_root);
-    remove_proc_entry("openair1",&proc_root);
+    remove_proc_entry("openair1",NULL);
   }
 }
 #endif

@@ -10,14 +10,14 @@ This section deals with basic functions for OFDM Modulation.
 
 #include "PHY/defs.h"
 
-static short temp[512*4] __attribute__((aligned(16)));
-//static short temp2[512*4] __attribute__((aligned(16)));
+static short temp[2048*4] __attribute__((aligned(16)));
+static short temp2[2048*4] __attribute__((aligned(16)));
 
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 	          int *output,                      /// pointer to complex output
 	          unsigned char log2fftsize,        /// log2(FFT_SIZE)
 	          unsigned char nb_symbols,         /// number of OFDM symbols
-	          unsigned char nb_prefix_samples,  /// cyclic prefix length
+	          unsigned short nb_prefix_samples,  /// cyclic prefix length
 		  short *twiddle_ifft,              /// pointer to precomputed twiddle table
 		  unsigned short *rev,              /// pointer to bit-reversal table
 		  Extension_t etype                /// type of extension
@@ -47,21 +47,18 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     switch (etype) {
     case CYCLIC_PREFIX:
       output_ptr = &output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)];
+      temp_ptr = (int *)temp;
+      
 
       //      msg("Doing cyclic prefix method\n");
 
       for (j=0;j<((1<<log2fftsize)) ; j++) {
-#ifdef PLATON
-	// flip I/Q and set TX bit
-	output_ptr[j] = ((*(int *)(&temp[1+(j<<2)]))<<PLATON_TX_SHIFT) | 0x00010001;
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif      
-
       }
 
-      for (k=-1;k>=-nb_prefix_samples;k--)
+      for (k=-1;k>=-nb_prefix_samples;k--) {
 	output_ptr[k] = output_ptr[--j];
+      }
       break;
 
     case CYCLIC_SUFFIX:
@@ -74,13 +71,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
       //      msg("Doing cyclic suffix method\n");
 
       for (j=0;j<(1<<log2fftsize) ; j++) {
-#ifdef PLATON
-	// flip I/Q and set TX bit
-	output_ptr[j] = ((*(int *)(&temp[1+(j<<2)]))<<PLATON_TX_SHIFT) | 0x00010001;
-	
-#else
 	output_ptr[j] = temp_ptr[2*j];
-#endif      
       }
       
       

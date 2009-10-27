@@ -11,32 +11,9 @@ ________________________________________________________________*/
 
 
 #include "types.h"
-#include "spec_defs.h"
+#include "spec_defs_top.h"
 
 
-
-/** @defgroup _ref_implementation_ OpenAirInterface Reference Implementation 
- * @defgroup _physical_layer_ref_implementation_ Physical Layer Reference Implementation
- * @ingroup _ref_implementation_  
- * @{
-
-
- * @defgroup _PHY_STRUCTURES_ Basic Structures and Memory Initialization
- * @ingroup _physical_layer_ref_implementation_
- * @{
- * This module is responsible for defining and initializing the PHY variables during static configuration of OpenAirInterface.
- */
-
-// *** Main definitions for L1 ***
-#define ZERO 0
-#define ONE 1
-#define FALSE 0
-#define TRUE 1
-#define MINUSONE (-1)
-#define WORD_SIZE 32                                          // Size of a word in bit
-
-
-//#define NB_ANTENNAS 2
 
 #define NUMBER_OF_OFDM_CARRIERS (PHY_config->PHY_framing.Nd)
 #define NUMBER_OF_SYMBOLS_PER_FRAME (PHY_config->PHY_framing.Nsymb)
@@ -53,17 +30,6 @@ ________________________________________________________________*/
 #ifdef EMOS
 #define EMOS_SCH_INDEX 1
 #endif //EMOS
-
-#ifndef OPENAIR2
-#define CHBCH_PDU_SIZE 144	// this is in bytes!
-#else
-#define CHBCH_PDU_SIZE (sizeof(CHBCH_PDU))
-#endif //OPENAIR2
-
-
-#define MRBCH_PDU_SIZE 19  // this is in bytes!  This will be commented when MAC has knowledge of MRBCH
-
-#define MRSCH_INDEX 3
 
 #define EXTENSION_TYPE (PHY_config->PHY_framing.Extension_type)
 
@@ -91,82 +57,8 @@ ________________________________________________________________*/
 #define FRAME_LENGTH_SAMPLES_NO_PREFIX (NUMBER_OF_SYMBOLS_PER_FRAME*OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX)
 #define FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX (FRAME_LENGTH_SAMPLES_NO_PREFIX/2)
 
-#define NB_RACH          1//(0x04)   // Number of RACH per mini-frame
-#define RACH_TIME_ALLOC  (0x01)   // Length 1 (2 without guard and pilot) groups, position 0 (after TX/RX SW)
-#define RACH0_FREQ_ALLOC (0xffff)   // 8 Frequency groups of 10 carriers
-#define SYMBOLS_PER_TIME_ALLOC 4     //
-#define TIME_ALLOC_TO_SLOT_SHIFT 6   // SLOTS are 16 symbols, time alloc are 4 symbols
-
-#define NUMBER_OF_SACH (3)
-
-#define NUMBER_OF_FREQUENCY_GROUPS 16
-#define NUMBER_OF_RACH_FREQUENCY_GROUPS 16
-#define NUMBER_OF_RACH_SYMBOLS 1
-
 #define NUMBER_OF_CARRIERS_PER_GROUP (NUMBER_OF_USEFUL_CARRIERS/NUMBER_OF_FREQUENCY_GROUPS)
-#define NUMBER_OF_SACH_DATA_CARRIERS_PER_GROUP (NUMBER_OF_CARRIERS_PER_GROUP-NUMBER_OF_SACH_PILOTS)                                       
-#define NUMBER_OF_CLUSTERS 2
-#define NUMBER_OF_TERMINALS_PER_CLUSTER  7 // make me reconfigurable 
-#define NUMBER_OF_FREQBANDS 4 
 
-#define NUMBER_OF_CHSCH_SYMBOLS (PHY_config->PHY_chsch[0].Nsymb)
-#define NUMBER_OF_CHSCH (4)
-#define NUMBER_OF_CHSCH_SYMBOLS_MAX (4)
-#define NUMBER_OF_SCH_SYMBOLS (PHY_config->PHY_sch[0].Nsymb)
-#define NUMBER_OF_SCH_SYMBOLS_MAX (4)
-#define NUMBER_OF_MRSCH_SYMBOLS (PHY_config->PHY_sch[1].Nsymb)
-#define NUMBER_OF_CHBCH_SYMBOLS (PHY_config->PHY_chbch[1].Nsymb)
-#define NUMBER_OF_CHBCH_PILOTS  (PHY_config->PHY_chbch[1].Npilot)
-#define NUMBER_OF_MRBCH_SYMBOLS (PHY_config->PHY_mrbch.Nsymb)
-#define NUMBER_OF_MRBCH_PILOTS  (PHY_config->PHY_mrbch.Npilot)
-#define CHBCH_FREQUENCY_REUSE_FACTOR (PHY_config->PHY_chbch[1].FreqReuse)
-#define CHBCH_FREQUENCY_REUSE_IND (PHY_config->PHY_chbch[1].FreqReuse_Ind)
-#define LOG2_NUMBER_OF_CHBCH_PILOTS 4   // in config later!!!
-#define LOG2_NUMBER_OF_MRBCH_PILOTS 3   // in config later!!!
-#define INTDEPTH_CHBCH          (PHY_config->PHY_chbch[1].IntDepth)
-#define CHBCH_PILOT_SPACING     (NUMBER_OF_USEFUL_CARRIERS/NUMBER_OF_CHBCH_PILOTS/CHBCH_FREQUENCY_REUSE_FACTOR)
-#define FIRST_CHBCH_PILOT_OFFSET (FIRST_CARRIER_OFFSET + (CHBCH_PILOT_SPACING>>1))
-
-#define SYMBOL_OFFSET_CHBCH           (PHY_config->PHY_chbch[1].symbol)
-#define SYMBOL_OFFSET_CHSCH           (PHY_config->PHY_chsch[0].symbol)
-#define SYMBOL_OFFSET_MRBCH           (PHY_vars->tx_rx_switch_point+7)
-#define SYMBOL_OFFSET_MRSCH           (PHY_vars->tx_rx_switch_point+6)
-#define SYMBOL_OFFSET_RACH_SCH        (NUMBER_OF_SYMBOLS_PER_FRAME-SYMBOLS_PER_TIME_ALLOC-1)
-
-#define SAMPLE_OFFSET_CHBCH           (SYMBOL_OFFSET_CHBCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)
-#define SAMPLE_OFFSET_CHSCH           (SYMBOL_OFFSET_CHSCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)
-#define SAMPLE_OFFSET_MRSCH           (SYMBOL_OFFSET_MRSCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)
-#define SAMPLE_OFFSET_MRBCH           (SYMBOL_OFFSET_MRBCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)
-
-#define SAMPLE_OFFSET_CHBCH_NO_PREFIX (SYMBOL_OFFSET_CHBCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX)
-#define SAMPLE_OFFSET_CHSCH_NO_PREFIX (SYMBOL_OFFSET_CHSCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX)
-//#define SAMPLE_OFFSET_SCH_NO_PREFIX   (SYMBOL_OFFSET_SCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX)
-#define SAMPLE_OFFSET_MRBCH_NO_PREFIX (SYMBOL_OFFSET_MRBCH*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX)
-
- 
-// fix me in case of multiclustering
-
-#define NUMBER_OF_SACH_SYMBOLS_MAX (NUMBER_OF_SYMBOLS_PER_FRAME)
-#define NUMBER_OF_SACH_PILOTS (PHY_config->PHY_sach.Npilot)
-#define LOG2_NUMBER_OF_SACH_PILOTS 3   // in config later!!!
-#define SACH_PILOT_SPACING     (1+(NUMBER_OF_USEFUL_CARRIERS/NUMBER_OF_SACH_PILOTS))
-#define FIRST_SACH_PILOT_OFFSET (FIRST_CARRIER_OFFSET + (SACH_PILOT_SPACING>>1))
-
-#define NUMBER_OF_GUARD_RACH_SYMBOLS 4
-#define NUMBER_OF_GUARD_SYMBOLS_END 4
-#define NUMBER_OF_UL_CONTROL_SYMBOLS 8 //(NUMBER_OF_GUARD_RACH_SYMBOLS+NUMBER_OF_MRBCH_SYMBOLS+NUMBER_OF_MRSCH_SYMBOLS)
-#define NUMBER_OF_DL_SACH_SYMBOLS (TX_RX_SWITCH_SYMBOL-(NUMBER_OF_CHSCH_SYMBOLS*NUMBER_OF_CHSCH)-NUMBER_OF_CHBCH_SYMBOLS)
-#define NUMBER_OF_UL_SACH_SYMBOLS (NUMBER_OF_SYMBOLS_PER_FRAME-TX_RX_SWITCH_SYMBOL-NUMBER_OF_UL_CONTROL_SYMBOLS-NUMBER_OF_GUARD_SYMBOLS_END)
-
-#define FIRST_DL_SACH_SYMBOL (NUMBER_OF_CHBCH_SYMBOLS+(NUMBER_OF_CHSCH_SYMBOLS*NUMBER_OF_CHSCH))
-#define FIRST_UL_SACH_SYMBOL (NUMBER_OF_UL_CONTROL_SYMBOLS+TX_RX_SWITCH_SYMBOL)
-
-#ifdef EMOS
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#else
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#endif //EMOS
-// end navid 
  
 #define RX_PRECISION (16)
 #define LOG2_RX_PRECISION (4)
@@ -199,29 +91,9 @@ ________________________________________________________________*/
 #define PHY_SYNCH_MIN_POWER 1000
 #define PHY_SYNCH_THRESHOLD 100
 
-#define FIRST_SACH_SLOT 8
 
-#define MAX_CHBCH_ERRORS 100
 
-#ifdef BIT8_TX
-#define CHSCH_AMP 128 
-#define SCH_AMP   128   
-#define MRSCH_AMP   128 
-#else
-#define CHSCH_AMP 1024 
-#define SCH_AMP 1024
-#define MRSCH_AMP 1024
-#endif
 #define ONE_OVER_SQRT2_Q15 23170
-#define LOG2_CHSCH_RX_F_AMP 7
-//#define LOG2_SCH_RX_F_AMP   7
-
-//#define CHSCH_AMP 512
-//#define SCH_AMP   512
-//#define LOG2_CHSCH_RX_F_AMP 10
-//#define LOG2_SCH_RX_F_AMP   10
-
-#define PLATON_TX_SHIFT 4
 
 #ifdef BIT8_RXMUX
 #define PERROR_SHIFT 0
@@ -303,20 +175,6 @@ enum MODE {
   SYNCHING,
   NOT_SYNCHED};
 
-/// SCH Channel Enumerator
-typedef enum {
-  CHSCH,
-  SCH
-} SCH_t;
-
-typedef enum {
-  MMSE,
-  MMSE_SIC,
-  ML,
-  ML_SIC,
-  SINGLE
-} CHBCH_RX_t;
-
 /// Data structure for transmission.
 typedef struct {
   /* RAW TX sample buffer */
@@ -336,8 +194,8 @@ typedef struct {
   unsigned int rx_total_gain_dB;
 } RX_VARS;
 
-
 /// Measurement Variables
+#ifndef OPENAIR_LTE
 typedef struct
 {
 
@@ -368,10 +226,13 @@ typedef struct {
   unsigned char  Coding_fmt;          /*!< \brief Coding format for this PDU*/
 } __attribute__((__packed__)) PHY_RESOURCES;
 #define PHY_RESOURCES_SIZE sizeof(PHY_RESOURCES)
+#endif //OPENAIR_LTE
+
 
 /// Static Configuration Structure
 typedef struct {
   PHY_FRAMING         PHY_framing;       /*!<\brief TTI Configuration*/
+#ifndef OPENAIR_LTE
   PHY_CHBCH           PHY_chbch[8];      /*!<\brief CHBCH Configuration*/
   PHY_MRBCH           PHY_mrbch;         /*!<\brief MRBCH Configuration*/
   PHY_CHSCH           PHY_chsch[8];      /*!<\brief CHSCH Configuration (up to 8)*/
@@ -380,29 +241,8 @@ typedef struct {
   int                 total_no_chsch;    /*!<\brief Number of CHSCH*/
   int                 total_no_chbch;    /*!<\brief Number of CHBCH*/
   int                 total_no_sch;      /*!<\brief Number of SCH*/
+#endif //OPENAIR_LTE
 } PHY_CONFIG;
-
-#ifdef PHY_CONTEXT
-#include "PHY/TRANSPORT/defs.h"
-
-/// SACH Diagnostics structure
-typedef struct
-{
-  unsigned char  active;                    /*!<\brief Activity indicator*/
-  unsigned short freq_alloc;                /*!<\brief Frequency allocation of last demod*/
-  unsigned char  nb_tb;                     /*!<\brief Number of allocated TBs in last demod*/
-  unsigned char  tb_size_bytes;             /*!<\brief Size of TB in bytes*/
-  short          nb_sacch_carriers;         /*!<\brief Number of sacch carriers is last demod*/
-  short          nb_sach_carriers;          /*!<\brief Number of sach carriers is last demod*/
-  short          *sacch_demod_data;         /*!<\brief Demodulated Sacch output*/
-  short          *sach_demod_data;          /*!<\brief Demodulated Sach output*/
-} SACH_DIAGNOSTICS; 
-
-//this is also defined in ../../openair2/COMMON/mac_rrc_primitives.h
-#ifndef OPENAIR2
-#define NB_CNX_CH 8 
-#endif
-#define NB_RAB_MAX 4
 
 /// Top-level PHY Data Structure  
 typedef struct
@@ -415,6 +255,7 @@ typedef struct
   unsigned int *mbox;                
 /// TX/RX switch position in symbols (for TDD)
   unsigned int tx_rx_switch_point;   
+#ifndef OPENAIR_LTE
 /// CHSCH variables (up to 8)
   CHSCH_data          chsch_data[8];   
 /// SCH variables (up to 8)
@@ -431,7 +272,7 @@ typedef struct
   PHY_MEASUREMENTS    PHY_measurements;
   /// Diagnostics for SACH Metering
   SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
-
+#endif //OPENAIR_LTE
 } PHY_VARS;
 
 
@@ -446,68 +287,6 @@ typedef struct{
   unsigned int rx_gain;
 } RF_CNTL_PACKET;
 #endif //NOCARD_TEST
-
-/** @} */
-
-/** @defgroup _PHY_TRANSPORT_CHANNEL_PROCEDURES_ Transport Channel Procedures
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with the physical layer procedures for all transport channels and pilot channels, namely
-- CHBCH generation/detection
-- SACH/SACCH (including RACH as a special case) generation/detection
-- MRBCH generation/detection
-- CHSCH generation
-- SCH generation
-* @} */
-
-/** @defgroup _PHY_PARAMETER_ESTIMATION_BLOCKS_ Parameter Estimation Blocks
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with the physical layer procedures related to parameter estimation, specifically
-- Initial timing/frequency estimation
-- Channel Estimation
-- Timing drift tracking
-- Automatic gain control
-* @} */
-
-
-/** @defgroup _PHY_MODULATION_BLOCKS_ OFDM Modulation Blocks
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with the physical layer procedures related to OFDM modulation.
-* @} */
-
-/** @defgroup _PHY_DSP_TOOLS_ DSP Tools
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with various DSP tools used by various blocks in the PHY. Specifically, 
-- Efficient fixed-point DFT/IDFT via the FFT/IFFT
-- Componentwise multiplication of complex vectors by complex vectors
-- Componentwise multiplication of complex vectors by a complex scalar
-* @} */
-
-/** @defgroup _PHY_CODING_BLOCKS_ Channel Coding Blocks
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with the physical layer procedures related to channel coding
-- Generic non-systematic rate 1/2 convolutional coder
-- 3GPP Turbo coder
-- Optimized 802.11 (64-state) Viterbi decoder
-- 3GPP CRC
-- Tausworthe pseudo-random puncturing (rate matching)
-* @} */
-
-/** @defgroup _PHY_CONFIG_BLOCKS_ Static Configuration Procedures
-* @ingroup _physical_layer_ref_implementation_
-* @{
-This section deals with the physical layer procedures related to static configuration of the Framing and Transport Channel parameters.
-* @} */
-
-/** @} */
-
-#endif //PHY_CONTEXT
-
-#else
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 

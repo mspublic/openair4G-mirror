@@ -17,9 +17,33 @@ void PHY_ofdm_mod(int *input,
 	          int *output,          
 	          unsigned char log2fftsize,       
 	          unsigned char nb_symbols,
-	          unsigned char nb_prefix_samples,        
+	          unsigned short nb_prefix_samples,        
 		  short *twiddle_ifft,
 		  unsigned short *rev,
 		  Extension_t etype
 		  );
+
+/** \fn void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned char l,
+	      unsigned char Ns,
+	      int **rxdata,
+	      int **rxdataF,
+	      int **dl_ch_estimates)
+This function implements the OFDM front end processor (FEP)
+
+@param frame_parms LTE DL Frame Parameters
+@param l symbol (0,1) - Note 1 means 3!
+@param Ns Slot number (0..19)
+@param rxdata received date in time domain (input)
+@param rxdataF received date in frequency domain (output)
+@param dl_ch_estimates estimated channel (output)
+*/
+#ifdef OPENAIR_LTE
+void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned char l,
+	      unsigned char Ns,
+	      int **rxdata,
+	      int **rxdataF,
+	      int **dl_ch_estimates);
+#endif
 /** @}*/
