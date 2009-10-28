@@ -227,6 +227,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	printk("[openair][IOCTL] Allocating PHY variables\n");
 
 #ifdef OPENAIR_LTE
+          lte_frame_parms = &PHY_config->lte_frame_parms;
+
 	  lte_frame_parms->N_RB_DL            = 15;
 	  lte_frame_parms->Ncp                = 1;
 	  lte_frame_parms->Nid_cell           = 0;
@@ -240,9 +242,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  lte_frame_parms->twiddle_ifft     = twiddle_ifft256;
 	  lte_frame_parms->rev              = rev;
 
+	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
 
-#endif
-#ifdef OPENAIR_LTE
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
 	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
 
@@ -251,6 +252,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	openair_daq_vars.node_configured += lte_sync_time_init(lte_frame_parms);
 	msg("[openair][IOCTL] lte_sync_time_init done: %d\n",openair_daq_vars.node_configured);
+
 
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);

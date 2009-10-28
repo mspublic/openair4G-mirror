@@ -241,6 +241,8 @@ typedef struct {
   int                 total_no_chsch;    /*!<\brief Number of CHSCH*/
   int                 total_no_chbch;    /*!<\brief Number of CHBCH*/
   int                 total_no_sch;      /*!<\brief Number of SCH*/
+#else
+  LTE_DL_FRAME_PARMS lte_frame_parms;
 #endif //OPENAIR_LTE
 } PHY_CONFIG;
 
@@ -272,7 +274,10 @@ typedef struct
   PHY_MEASUREMENTS    PHY_measurements;
   /// Diagnostics for SACH Metering
   SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
-#endif //OPENAIR_LTE
+#else
+  LTE_UE_COMMON lte_ue_common_vars;
+#endif
+
 } PHY_VARS;
 
 

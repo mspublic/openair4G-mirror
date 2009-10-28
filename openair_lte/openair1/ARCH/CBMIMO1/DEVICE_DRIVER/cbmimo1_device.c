@@ -359,6 +359,7 @@ static int __init openair_init_module( void )
     return -1;
   }
 
+/*
 #ifdef OPENAIR_LTE
   lte_frame_parms = malloc16(sizeof(LTE_DL_FRAME_PARMS));
 
@@ -382,7 +383,7 @@ static int __init openair_init_module( void )
     return -1;
   }
 #endif
-
+*/
 
   printk("[openair][MODULE][INFO] OPENAIR_CONFIG %x, OPENAIR_START_1ARY_CLUSTERHEAD %x,OPENAIR_START_NODE %x\n", openair_GET_CONFIG, openair_START_1ARY_CLUSTERHEAD, _IOR('o',3,long));
 

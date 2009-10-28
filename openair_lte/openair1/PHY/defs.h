@@ -3,8 +3,8 @@
 
 #ifdef OPENAIR_LTE
 #include "spec_defs_top.h"
-#include "impl_defs_top.h"
 #include "impl_defs_lte.h"
+#include "impl_defs_top.h"
 #else //OPENAIR_LTE
 #include "spec_defs.h"
 #include "impl_defs.h"
