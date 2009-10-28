@@ -42,6 +42,7 @@ unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
 #ifdef OPENAIR_LTE
 LTE_DL_FRAME_PARMS *lte_frame_parms;
+LTE_UE_COMMON *lte_ue_common_vars;
 #endif
 
 #include "PHY/CODING/scrambler.h"

@@ -317,8 +317,6 @@ void openair_sync() {
   static unsigned char clear = 1;
   int Nsymb, sync_pos, sync_pos_slot;
 
-  int *rxdata[NB_ANTENNAS_RX];
-
   RTIME time;
 
   openair_daq_vars.mode = openair_NOT_SYNCHED;
@@ -379,10 +377,7 @@ void openair_sync() {
 
     // Do initial timing acquisition
 
-    rxdata[0] = PHY_vars->rx_vars[0].RX_DMA_BUFFER;
-    rxdata[1] = PHY_vars->rx_vars[1].RX_DMA_BUFFER;
-
-    sync_pos = lte_sync_time(rxdata, lte_frame_parms);
+    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 
     msg("[openair][openair SYNC] sync_pos = %d\n",sync_pos);
     
@@ -397,16 +392,13 @@ void openair_sync() {
     Nsymb = (lte_frame_parms->Ncp==0)?14:12;
     sync_pos_slot = (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(Nsymb-1)+lte_frame_parms->nb_prefix_samples;
 
-    rxdata[0] = &PHY_vars->rx_vars[0].RX_DMA_BUFFER[sync_pos-sync_pos_slot];
-    rxdata[1] = &PHY_vars->rx_vars[1].RX_DMA_BUFFER[sync_pos-sync_pos_slot];
-    
-    /*
     slot_fep(lte_frame_parms,
 	     0,
 	     0,
-	     rxdata,
-	     dl_ch_estimates);
-    */
+	     lte_ue_common_vars->rxdata,
+	     lte_ue_common_vars->rxdataF,
+	     lte_ue_common_vars->dl_ch_estimates,
+	     sync_pos-sync_pos_slot);
              
     // Try to decode BCH
 

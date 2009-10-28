@@ -227,18 +227,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	printk("[openair][IOCTL] Allocating PHY variables\n");
 
 #ifdef OPENAIR_LTE
-	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
-#else
-	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
-#endif
-	if (openair_daq_vars.node_configured != 1) {
-	  printk("[openair][IOCTL] Error in configuring PHY\n");
-	  break;
-	}
-	
-	else {
-	  printk("[openair][IOCTL] PHY Configuration successful\n");
-#ifdef OPENAIR_LTE
 	  lte_frame_parms->N_RB_DL            = 15;
 	  lte_frame_parms->Ncp                = 1;
 	  lte_frame_parms->Nid_cell           = 0;
@@ -252,9 +240,28 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  lte_frame_parms->twiddle_ifft     = twiddle_ifft256;
 	  lte_frame_parms->rev              = rev;
 
-	  lte_sync_time_init(lte_frame_parms);
 
 #endif
+#ifdef OPENAIR_LTE
+	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
+	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
+
+	openair_daq_vars.node_configured += phy_init_lte(lte_frame_parms, lte_ue_common_vars);
+	msg("[openair][IOCTL] phy_init_lte done: %d\n",openair_daq_vars.node_configured);
+
+	openair_daq_vars.node_configured += lte_sync_time_init(lte_frame_parms);
+	msg("[openair][IOCTL] lte_sync_time_init done: %d\n",openair_daq_vars.node_configured);
+
+#else
+	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
+#endif
+	if (openair_daq_vars.node_configured < 0) {
+	  printk("[openair][IOCTL] Error in configuring PHY\n");
+	  break;
+	}
+	
+	else {
+	  printk("[openair][IOCTL] PHY Configuration successful\n");
 
 
 #ifndef EMOS	  
@@ -714,7 +721,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
     openair_daq_vars.node_id = PRIMARY_CH;
-    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME>>1;
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
     ret = setup_regs();
 
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);

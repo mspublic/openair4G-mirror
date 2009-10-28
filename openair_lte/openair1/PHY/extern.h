@@ -35,6 +35,7 @@ extern short primary_synch2[146];
 extern short primary_synch0_time[256];
 
 extern LTE_DL_FRAME_PARMS *lte_frame_parms;
+extern LTE_UE_COMMON *lte_ue_common_vars;
 #endif
 
 

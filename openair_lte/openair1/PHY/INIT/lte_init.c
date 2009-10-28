@@ -1,9 +1,16 @@
 #include "PHY/defs.h"
+#include "PHY/extern.h"
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
-  if (frame_parms->Ncp==1)
+  if (frame_parms->Ncp==1) {
     frame_parms->nb_prefix_samples = 512;
+    frame_parms->symbols_per_tti = 12;
+  }
+  else {
+    frame_parms->nb_prefix_samples = 256;
+    frame_parms->symbols_per_tti = 14;
+  }
   
   switch (frame_parms->N_RB_DL) {
   case 100:
@@ -48,4 +55,80 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
   }
 
   return(0);
+}
+
+
+int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
+		 LTE_UE_COMMON *lte_ue_common_vars) {
+
+  int i,j;
+
+  lte_ue_common_vars->rxdata = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+  if (lte_ue_common_vars->rxdata) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdata allocated at %p\n",
+	   lte_ue_common_vars->rxdata);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdata not allocated\n");
+    return(-1);
+  }
+
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) 
+    lte_ue_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
+
+  lte_ue_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+  if (lte_ue_common_vars->rxdataF) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdataF allocated at %p\n",
+	   lte_ue_common_vars->rxdataF);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdataF not allocated\n");
+    return(-1);
+  }
+
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    lte_ue_common_vars->rxdataF[i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
+    if (lte_ue_common_vars->rxdataF[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdataF[%d] allocated at %p\n",i,
+	     lte_ue_common_vars->rxdataF[i]);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdataF[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+  
+  lte_ue_common_vars->dl_ch_estimates = (int **)malloc16(frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx*sizeof(int*));
+  if (lte_ue_common_vars->dl_ch_estimates) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates allocated at %p\n",
+	   lte_ue_common_vars->dl_ch_estimates);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates not allocated\n");
+    return(-1);
+  }
+
+
+  for (i=0; i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx; i++) {
+    lte_ue_common_vars->dl_ch_estimates[i] = (int *)malloc16(frame_parms->symbols_per_tti*sizeof(int)*(96+frame_parms->ofdm_symbol_size));
+    if (lte_ue_common_vars->dl_ch_estimates[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] allocated at %p\n",i,
+	     lte_ue_common_vars->dl_ch_estimates[i]);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+  return(1);
 }

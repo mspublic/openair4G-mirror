@@ -16,9 +16,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
   LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
 #endif
 
-#ifndef OPENAIR_LTE
   switch (format) {
-
+#ifndef OPENAIR_LTE
   case 0 : // generate CHSCH + CHBCH (10 symbols out of 64)
     printf("Generate OFDM: CHSCH0,CHSCH1 + CHBCH\n");
     phy_generate_chbch(1,0,NB_ANTENNAS_TX,pdu);
@@ -37,7 +36,7 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 	     (void *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0],
 	     OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX*2);
     break;
-#ifdef OPENAIR_LTE
+#else
   case 3:
     txdataF    = (int **)malloc16(2*sizeof(int*));
     txdataF[0] = (int *)malloc16(sizeof(int)*FRAME_LENGTH_COMPLEX_SAMPLES);
@@ -56,12 +55,12 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     frame_parms->rev              = rev; //has been initialized in init_fft
 
     generate_pss(txdataF,
-		 CHSCH_AMP*4,
+		 256,
 		 frame_parms,
 		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
  
     generate_pilots(txdataF,
-		    CHSCH_AMP*4,
+		    256,
 		    frame_parms,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
@@ -91,7 +90,6 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
   default:
     break;
   }
-#endif
 }
    
 

@@ -5,6 +5,64 @@ static  __m128i alpha_128 __attribute__ ((aligned(16)));
 static  __m128i shift     __attribute__ ((aligned(16)));
 
 
+void multadd_complex_vector_real_scalar(short *x,
+					short alpha,
+					short *y,
+					unsigned char zero_flag,
+					unsigned int N) {
+
+  __m128i alpha_128,*x_128=(__m128i*)x,*y_128=(__m128i*)y;
+  int n;
+
+  alpha_128 = _mm_set1_epi16(alpha);
+
+  if (zero_flag == 1)
+    for (n=0;n<N>>2;n++) {
+      y_128[n] = _mm_slli_epi16(_mm_mulhi_epi16(x_128[n],alpha_128),1);
+    }
+  
+  else
+    for (n=0;n<N>>2;n++) {
+      y_128[n] = _mm_adds_epi16(y_128[n],_mm_slli_epi16(_mm_mulhi_epi16(x_128[n],alpha_128),1));
+    }
+
+}
+void multadd_real_vector_complex_scalar(short *x,
+					short *alpha,
+					short *y,
+					unsigned int N) {
+
+  unsigned int i;
+
+  // do 8 multiplications at a time
+  __m128i alpha_r_128,alpha_i_128,yr,yi,*x_128=(__m128i*)x,*y_128=(__m128i*)y;
+  int j;
+
+
+  //  printf("alpha = %d,%d\n",alpha[0],alpha[1]);
+  alpha_r_128 = _mm_set1_epi16(alpha[0]);
+  alpha_i_128 = _mm_set1_epi16(alpha[1]);
+
+
+  j=0;
+  for (i=0;i<N>>3;i++) {
+
+    yr     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_r_128,x_128[i]),1);
+    yi     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_i_128,x_128[i]),1);
+ 
+    //    print_shorts("yr",&yr);
+    //    print_shorts("yi",&yi);
+
+    y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpacklo_epi16(yr,yi));
+    //    print_shorts("y",&y_128[j]);
+    j++;
+    y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpackhi_epi16(yr,yi));
+    //    print_shorts("y",&y_128[j]);
+    j++;
+
+  }
+}
+
 int rotate_cpx_vector(short *x, 
 		      short *alpha, 
 		      short *y, 

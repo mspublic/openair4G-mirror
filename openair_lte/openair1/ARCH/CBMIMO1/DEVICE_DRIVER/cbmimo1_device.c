@@ -5,28 +5,13 @@
 
 #ifdef RTAI_ENABLED
 #include <rtai.h>
-//#include <rtai_posix.h>#ifdef EMOS
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#else
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#endif //EMOS
-// end navid 
-
+//#include <rtai_posix.h>
 #include <rtai_fifos.h>
 #endif //RTAI_ENABLED
 
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
-#ifndef OPENAIR_LTE
-#ifdef EMOS
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#else
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#endif //EMOS
-#endif
-// end navid 
-
 #include <asm/segment.h>
 #include <asm/page.h>
 #include <asm/delay.h>
@@ -42,13 +27,9 @@
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
-
 #include <linux/errno.h>
 
-
-//#include <linux/config.h>
-#include <linux/slab.h>
-
+#endif //USER_MODE
 
 #ifdef BIGPHYSAREA
 #include <linux/bigphysarea.h>
@@ -88,7 +69,9 @@ static int   init_module( void );
 static void  cleanup_module(void);
 #else
 static int   openair_init_module( void );
-static void  openair_cleanup_module(void);/*------------------------------------------------*/
+static void  openair_cleanup_module(void);
+
+/*------------------------------------------------*/
 /*   Prototypes                                   */
 /*------------------------------------------------*/
 int openair_device_open    (struct inode *inode,struct file *filp);
@@ -384,6 +367,17 @@ static int __init openair_init_module( void )
   }
   else {
     printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms cannot be allocated\n");
+    openair_cleanup();
+    return -1;
+  }
+
+  lte_ue_common_vars = malloc16(sizeof(LTE_UE_COMMON));
+
+  if (lte_ue_common_vars) {
+    printk("[OPENAIR][INIT_MODULE][INIT] lte_ue_common_vars allocated @ %p\n",lte_ue_common_vars);
+  }
+  else {
+    printk("[OPENAIR][INIT_MODULE][INIT] lte_ue_common_vars cannot be allocated\n");
     openair_cleanup();
     return -1;
   }

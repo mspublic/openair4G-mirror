@@ -48,6 +48,38 @@ struct complex32
 };
 
 #ifndef EXPRESSMIMO_TARGET
+/*!\fn void multadd_real_vector_complex_scalar(short *x1,short *alpha,short *y,unsigned int N)
+This function performs componentwise multiplication and accumulation of a complex scalar and a real vector.
+@param x Vector input (Q1.15)  
+@param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
+@param y Output (Q1.15) in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+@param N Length of x WARNING: N>=8
+
+The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
+*/
+void multadd_real_vector_complex_scalar(short *x,
+					short *alpha,
+					short *y,
+					unsigned int N
+					);
+
+/*!\fn void multadd_complex_vector_real_scalar(short *x1,short *alpha,short *y,unsigned char zero_flag,unsigned int N)
+This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
+@param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ... 
+@param alpha Scalar input (Q1.15) in the format  |Re0|
+@param y Output (Q1.15) in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+@param zero_flag Set output (y) to zero prior to accumulation
+@param N Length of x WARNING: N>=8
+
+The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
+*/
+void multadd_complex_vector_real_scalar(short *x,
+					short alpha,
+					short *y,
+					unsigned char zero_flag,
+					unsigned int N);
+
+
 /*!\fn int mult_cpx_vector(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors in repeated format.
 

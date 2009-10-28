@@ -20,7 +20,7 @@
 \param frame_parms LTE DL frame parameter structure
 */
 
-void lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms);
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms);
 
 /*! \fn void lte_sync_time_free()
 \brief This function frees the memory allocated by lte_sync_time_init.
@@ -38,5 +38,14 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 */
 
 short lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms);
+
+int lte_dl_channel_estimation(int **dl_ch_estimates,
+			      int **rxdataF,
+			      LTE_DL_FRAME_PARMS *frame_parms,
+			      unsigned char Ns,
+			      unsigned char p,
+			      unsigned char l,
+			      unsigned char symbol);
+
 
 /** @} */ 

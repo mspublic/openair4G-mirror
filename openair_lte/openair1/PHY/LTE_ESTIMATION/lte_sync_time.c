@@ -11,11 +11,21 @@
 int* sync_corr = NULL;
 
 
-void lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms) {
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned short ds = frame_parms->log2_symbol_size - 7;
   sync_corr = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti>>ds);
-
+    if (sync_corr) {
+#ifdef DEBUG_PHY
+      printk("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n",
+	     sync_corr);
+#endif
+    }
+    else {
+      printk("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
+      return(-1);
+    }
+    return (1);
 }
 
 void lte_sync_time_free(void) {

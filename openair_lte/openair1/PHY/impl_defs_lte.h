@@ -25,6 +25,7 @@ typedef struct {
   unsigned short nb_prefix_samples;
   unsigned short first_carrier_offset;
   unsigned int samples_per_tti;
+  unsigned short symbols_per_tti;
   unsigned char nb_antennas_tx;
   unsigned char nb_antennas_rx;
   unsigned char first_dlsch_symbol;   
@@ -39,6 +40,30 @@ typedef enum {
   ANTCYCLING,
   DUALSTREAM
 } MIMO_mode_t;
+
+typedef struct{
+  int **txdata;
+  int **txdataF;
+} LTE_eNB_COMMON;
+
+//typedef struct{
+//} LTE_eNB_DLSCH;
+
+typedef struct {
+  int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
+  int **rxdataF;          ///holds the received data in the frequency domain
+  int **dl_ch_estimates;  /// hold the channel estimates in frequency domain
+} LTE_UE_COMMON;
+
+typedef struct {
+  int **rxdataF_ext;
+  int **rxdataF_comp;
+  int **rxdataF_comp64qam;
+  int **dl_ch_estimates_ext;
+  int **dl_ch_mag;
+  int **dl_ch_magb;
+} LTE_UE_DLSCH;
+
 
 #endif
 

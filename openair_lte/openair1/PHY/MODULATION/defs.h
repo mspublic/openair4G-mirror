@@ -37,6 +37,7 @@ This function implements the OFDM front end processor (FEP)
 @param rxdata received date in time domain (input)
 @param rxdataF received date in frequency domain (output)
 @param dl_ch_estimates estimated channel (output)
+@param offset offset within rxdata (used for initial unsychronized estimate)
 */
 #ifdef OPENAIR_LTE
 void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
@@ -44,6 +45,7 @@ void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char Ns,
 	      int **rxdata,
 	      int **rxdataF,
-	      int **dl_ch_estimates);
+	      int **dl_ch_estimates,
+	      int offset);
 #endif
 /** @}*/
