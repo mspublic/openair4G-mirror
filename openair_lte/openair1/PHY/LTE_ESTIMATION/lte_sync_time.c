@@ -17,12 +17,12 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms) {
   sync_corr = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti>>ds);
     if (sync_corr) {
 #ifdef DEBUG_PHY
-      printk("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n",
+      msg("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n",
 	     sync_corr);
 #endif
     }
     else {
-      printk("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
+      msg("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
       return(-1);
     }
     return (1);
