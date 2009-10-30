@@ -31,7 +31,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms) {
 void lte_sync_time_free(void) {
 
 #ifdef USER_MODE
-  //free(sync_corr);
+  free(sync_corr);
 #endif
   sync_corr = NULL;
 

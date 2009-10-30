@@ -37,6 +37,15 @@ typedef struct PHY_FRAMING {
 } PHY_FRAMING;
 
 
+#ifdef IFFT_FPGA
+typedef char mod_sym_t;
+#else
+typedef int mod_sym_t;
+#endif
+
+
+
+
 #endif /*__PHY_SPEC_DEFS_TOP_H__ */ 
 
 

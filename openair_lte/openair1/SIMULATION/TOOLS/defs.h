@@ -1,3 +1,5 @@
+#include "PHY/TOOLS/defs.h"
+
 unsigned int *generate_gauss_LUT(unsigned char,unsigned char);
 int gauss(unsigned int *,unsigned char);
 

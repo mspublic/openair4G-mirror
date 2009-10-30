@@ -22,7 +22,9 @@ which occurs with probability
 */
 
 #include <assert.h>
-
+#include <stdlib.h>
+#include <math.h>
+#include "defs.h"
 
 /*!\brief This routine generates a Gaussian pdf lookup table (LUT).  The table has \f$2^{\mathrm{Nbits}-1}\f$ entries which represent
 the right half of the pdf.  The data stored in position \f$i\f$ is actually the scaled cumulative probability distribution, 
@@ -49,7 +51,7 @@ unsigned int *generate_gauss_LUT(unsigned char Nbits,
 
 #ifdef LUTDEBUG
     printf("pos %d : LUT_ptr[%d]=%x (%f)\n",i,i,LUT_ptr[i],(double)(erf(i*L/(double)(1<<(Nbits-1)))));
-#endif LUTDEBUG
+#endif //LUTDEBUG
   }
 
   return(LUT_ptr);
@@ -78,7 +80,7 @@ int gauss(unsigned int *gauss_LUT,
 
 #ifdef DEBUG
   printf("u = %u\n",u); 
-#endif DEBUG
+#endif //DEBUG
 
   // if it is larger than 2^31 (here negative), save the sign and rescale down to 31-bits.
 
@@ -88,7 +90,7 @@ int gauss(unsigned int *gauss_LUT,
 
 #ifdef DEBUG  
   printf("u = %x,s=%d\n",u,s); 
-#endif DEBUG
+#endif //DEBUG
 
   search_pos = (1<<(Nbits-2));   // starting position of the binary search
   step_size  = search_pos;
@@ -102,7 +104,7 @@ int gauss(unsigned int *gauss_LUT,
     tmpp1 = gauss_LUT[search_pos+1];
 #ifdef DEBUG
     printf("search_pos %d, step_size %d: t %x tm %x,tp %x\n",search_pos,step_size,tmp,tmpm1,tmpp1);
-#endif DEBUG
+#endif //DEBUG
     if (u <= tmp) 
       if (u >tmpm1) 
 	return s==0 ? (search_pos-1) : 1-search_pos;
@@ -173,4 +175,4 @@ void main(int argc,char **argv) {
   free(gauss_LUT_ptr);
 }
 
-#endif GAUSSMAIN
+#endif //GAUSSMAIN

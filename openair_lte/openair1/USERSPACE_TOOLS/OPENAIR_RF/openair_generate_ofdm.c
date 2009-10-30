@@ -46,8 +46,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     frame_parms->Ncp                = 1;
     frame_parms->Nid_cell           = 0;
     frame_parms->nushift            = 1;
-    frame_parms->nb_antennas_tx     = 1;
-    frame_parms->nb_antennas_rx     = 1;
+    frame_parms->nb_antennas_tx     = 2;
+    frame_parms->nb_antennas_rx     = 2;
     frame_parms->first_dlsch_symbol = 1;
     init_frame_parms(frame_parms);
     frame_parms->twiddle_fft      = twiddle_fft256;
@@ -73,6 +73,16 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 frame_parms->rev,           // bit-reversal permutation
 		 NONE);
+
+    PHY_ofdm_mod(txdataF[1],        // input
+		 PHY_vars->tx_vars[1].TX_DMA_BUFFER,         // output
+		 frame_parms->log2_symbol_size,                // log2_fft_size
+		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+		 frame_parms->nb_prefix_samples,               // number of prefix samples
+		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		 frame_parms->rev,           // bit-reversal permutation
+		 NONE);
+
 
 #ifdef BIT8_TXMUX
     bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);

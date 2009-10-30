@@ -24,7 +24,11 @@ ________________________________________________________________*/
 #define HALF_NUMBER_OF_USEFUL_CARRIERS (NUMBER_OF_USEFUL_CARRIERS>>1)
 #define HALF_NUMBER_OF_USEFUL_CARRIERS_BYTES (HALF_NUMBER_OF_USEFUL_CARRIERS>>2)
 #define FIRST_CARRIER_OFFSET (HALF_NUMBER_OF_USEFUL_CARRIERS+NUMBER_OF_ZERO_CARRIERS)
+#ifdef OPENAIR_LTE
+#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (PHY_config->lte_frame_parms.symbols_per_tti/2)
+#else
 #define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT 16
+#endif
 #define SLOTS_PER_FRAME  (NUMBER_OF_SYMBOLS_PER_FRAME/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT)
 
 #ifdef EMOS
@@ -178,7 +182,7 @@ enum MODE {
 /// Data structure for transmission.
 typedef struct {
   /* RAW TX sample buffer */
-  int *TX_DMA_BUFFER;
+  mod_sym_t *TX_DMA_BUFFER;
   /* Total transmit gain */           
   unsigned int tx_total_gain_dB;
   /* Dummy overlap for multi-antenna operation */                                                            

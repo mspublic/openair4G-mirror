@@ -46,7 +46,7 @@ int lte_dl_cell_spec(int *output,
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
 */
-void lte_dl_cell_spec_rx(int *output,
+int lte_dl_cell_spec_rx(int *output,
 			 LTE_DL_FRAME_PARMS *frame_parms,
 			 unsigned char Ns,
 			 unsigned char l,

@@ -74,9 +74,10 @@ int lte_dl_cell_spec(int *output,
     }
     //    printf("** k %d\n",k);
   }
+  return(0);
 }
 
-void lte_dl_cell_spec_rx(int *output,
+int lte_dl_cell_spec_rx(int *output,
 			 LTE_DL_FRAME_PARMS *frame_parms,
 			 unsigned char Ns,
 			 unsigned char l,
@@ -84,7 +85,7 @@ void lte_dl_cell_spec_rx(int *output,
 
 
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
-  unsigned short k;
+  unsigned short k=0;
   unsigned int qpsk[4];
   
   // This includes complex conjugate for channel estimation

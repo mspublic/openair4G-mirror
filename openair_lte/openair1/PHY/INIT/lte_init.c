@@ -58,6 +58,21 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 }
 
 
+void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
+
+  //phy_framing->fc_khz;
+  //phy_framing->fs_khz;
+  phy_framing->Nsymb = frame_parms->symbols_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  phy_framing->Nd = frame_parms->ofdm_symbol_size;     
+  phy_framing->log2Nd = frame_parms->log2_symbol_size;
+  phy_framing->Nc = frame_parms->nb_prefix_samples;    
+  phy_framing->Nz = frame_parms->ofdm_symbol_size - frame_parms->N_RB_DL*12;    
+  phy_framing->Nf = frame_parms->N_RB_DL;    
+  phy_framing->Extension_type = CYCLIC_PREFIX;
+} 
+
+
+
 int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
 		 LTE_UE_COMMON *lte_ue_common_vars) {
 

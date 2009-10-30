@@ -1,5 +1,8 @@
 /** @addtogroup _PHY_MODULATION_BLOCKS_
 * @{
+*/
+
+/**
 \fn void PHY_ofdm_mod(int *input,int *output,unsigned char log2fftsize,unsigned char nb_symbols,unsigned char nb_prefix_samples,short *twiddle_ifft,unsigned short *rev,Extension_t etype)
 This function performs OFDM modulation with cyclic extension or zero-padding.
 

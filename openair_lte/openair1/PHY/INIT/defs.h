@@ -31,6 +31,8 @@ int phy_init_top(unsigned char nb_antennas_tx);
 int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
 		 LTE_UE_COMMON *lte_ue_common_vars);
 
+void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
+
 #endif
 
 

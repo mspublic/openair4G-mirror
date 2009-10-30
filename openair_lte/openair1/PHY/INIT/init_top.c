@@ -58,6 +58,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
   int *tmp_ptr;
+  mod_sym_t *tmp_ptr_tx;
 
 
   int i,j,n,tb;
@@ -70,6 +71,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
     printk("[openair][PHY][INIT]TERMINODE is preconfigured as a Cluster Head\n");
   printk("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
   printk("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
+  printk("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
 
 
     
@@ -88,24 +90,24 @@ int phy_init_top(unsigned char nb_antennas_tx) {
     // Allocate memory for TX DMA Buffer
 
 
-    tmp_ptr = (int *)bigmalloc16(FRAME_LENGTH_BYTES+2*PAGE_SIZE);
+    tmp_ptr_tx = (mod_sym_t *)bigmalloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
 					  
-    if (tmp_ptr==NULL) {
+    if (tmp_ptr_tx==NULL) {
       printk("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
-	  (unsigned int)(FRAME_LENGTH_BYTES + 2*PAGE_SIZE));
+	  (unsigned int)(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t) + 2*PAGE_SIZE));
       return(-1);
     }
     else {
 #ifndef USER_MODE
-      pci_buffer[(2*i)] = (unsigned int)tmp_ptr;
-      tmp_ptr = (unsigned int*)(((unsigned int)tmp_ptr + PAGE_SIZE -1) & PAGE_MASK);
-      //      reserve_mem(tmp_ptr,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
+      pci_buffer[(2*i)] = (unsigned int)tmp_ptr_tx;
+      tmp_ptr_tx = (mod_sym_t*)(((unsigned int)tmp_ptr_tx + PAGE_SIZE -1) & PAGE_MASK);
+      //      reserve_mem(tmp_ptr_tx,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
 #endif // //USER_MODE
 #ifdef DEBUG_PHY
       printk("[PHY][INIT] TX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
-	  (void *)tmp_ptr,
-	  (void *)virt_to_phys(tmp_ptr),
-	  (unsigned int)(FRAME_LENGTH_BYTES+2*PAGE_SIZE));
+	  (void *)tmp_ptr_tx,
+	  (void *)virt_to_phys(tmp_ptr_tx),
+	     (unsigned int)(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE));
 #endif
     }
 
@@ -115,14 +117,14 @@ int phy_init_top(unsigned char nb_antennas_tx) {
     PHY_vars->tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 #endif
 
-    PHY_vars->tx_vars[i].TX_DMA_BUFFER = tmp_ptr;
+    PHY_vars->tx_vars[i].TX_DMA_BUFFER = tmp_ptr_tx;
 #ifdef DEBUG_PHY
     printk("[PHY][INIT] PHY_vars->tx_vars[%d].TX_DMA_BUFFER = %p\n",i,(void *)PHY_vars->tx_vars[i].TX_DMA_BUFFER);
 #endif
 
 
 #ifndef USER_MODE
-    TX_DMA_BUFFER[i] = tmp_ptr;
+    TX_DMA_BUFFER[i] = tmp_ptr_tx;
 #endif //USER_MODE
 
 
@@ -130,8 +132,8 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 #ifndef USER_MODE
 
 #ifdef PLATON
-    tx_dma_buffer[i]=tmp_ptr;
-    tx_mbox[i] = tmp_ptr + (FRAME_LENGTH_BYTES>>2);
+    tx_dma_buffer[i]=tmp_ptr_tx;
+    tx_mbox[i] = tmp_ptr_tx + (FRAME_LENGTH_BYTES>>2);
 #endif // //USER_MODE
 #endif // // PLATON
 
@@ -215,6 +217,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 #ifdef DEBUG_PHY    
   printk("[openair][PHY][INIT] Initializing FFT engine\n");
+  printk("[openair][PHY][INIT] Using %d point fft\n",NUMBER_OF_OFDM_CARRIERS);
 #endif
 
 #ifndef EXPRESSMIMO_TARGET
@@ -224,9 +227,6 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   init_fft(NUMBER_OF_OFDM_CARRIERS/2,LOG2_NUMBER_OF_OFDM_CARRIERS-1,rev_half);   // for interpolation of channel est
 #endif //EXPRESSMIMO_TARGET
 
-#ifdef DEBUG_PHY    
-  printk("[openair][PHY][INIT] Using %d point fft\n",NUMBER_OF_OFDM_CARRIERS);
-#endif
 
   twiddle_fft = (short *)malloc16(4095*4*2);
   twiddle_ifft = (short *)malloc16(4095*4*2);
