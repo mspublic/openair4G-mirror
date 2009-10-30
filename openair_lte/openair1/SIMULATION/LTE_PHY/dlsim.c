@@ -25,8 +25,8 @@ void main() {
     lte_frame_parms->Ncp                = 1;
     lte_frame_parms->Nid_cell           = 0;
     lte_frame_parms->nushift            = 1;
-    lte_frame_parms->nb_antennas_tx     = 2;
-    lte_frame_parms->nb_antennas_rx     = 2;
+    lte_frame_parms->nb_antennas_tx     = 1;
+    lte_frame_parms->nb_antennas_rx     = 1;
     lte_frame_parms->first_dlsch_symbol = 1;
     init_frame_parms(lte_frame_parms);
 
@@ -69,6 +69,8 @@ void main() {
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
  
+    write_output("txsigF0.m","txsF0", txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+
     PHY_ofdm_mod(txdataF[0],        // input
 		 txdata[0],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
@@ -93,12 +95,12 @@ void main() {
     sigma = 10;
     randominit();
     memcpy(lte_ue_common_vars->rxdata[0],txdata[0],FRAME_LENGTH_BYTES);
-    memcpy(lte_ue_common_vars->rxdata[1],txdata[1],FRAME_LENGTH_BYTES);
+    //memcpy(lte_ue_common_vars->rxdata[1],txdata[1],FRAME_LENGTH_BYTES);
     for (i=0; i<FRAME_LENGTH_SAMPLES; i++) {
       ((short*) lte_ue_common_vars->rxdata[0])[2*i]   += sqrt(sigma)*gaussdouble(0.0,1.0);
       ((short*) lte_ue_common_vars->rxdata[0])[2*i+1] += sqrt(sigma)*gaussdouble(0.0,1.0);
-      ((short*) lte_ue_common_vars->rxdata[1])[2*i]   += sqrt(sigma)*gaussdouble(0.0,1.0);
-      ((short*) lte_ue_common_vars->rxdata[1])[2*i+1] += sqrt(sigma)*gaussdouble(0.0,1.0);
+      //((short*) lte_ue_common_vars->rxdata[1])[2*i]   += sqrt(sigma)*gaussdouble(0.0,1.0);
+      //((short*) lte_ue_common_vars->rxdata[1])[2*i+1] += sqrt(sigma)*gaussdouble(0.0,1.0);
     }
 
     lte_sync_time_init(lte_frame_parms);
@@ -116,9 +118,9 @@ void main() {
 
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  //write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  //write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  //write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
 
 
   free(txdataF[0]);
