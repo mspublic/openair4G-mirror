@@ -9,6 +9,33 @@
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
 	((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
 	((pilots==1)&&(first_pilot==0)&&(((re<3))||((re>5)&&(re<9)))) \
+
+static short qam64_table[6][8];
+
+void generate_64qam_table() {
+
+  int a,b,c,index;
+
+
+  for (a=-1;a<=1;a+=2) 
+    for (b=-1;b<=1;b+=2) 
+      for (c=-1;c<=1;c+=2) {
+	index = (1+a)*2 + (1+b) + (1+c)/2;  
+	qam64_table[0][index] = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
+	
+	qam64_table[1][index] = b*(QAM64_n1 + a*(QAM64_n2 + (c*QAM64_n3))); // 1 0 2
+	
+	qam64_table[2][index] = b*(QAM64_n1 + c*(QAM64_n2 + (a*QAM64_n3))); // 1 2 0
+	
+	qam64_table[3][index] = c*(QAM64_n1 + a*(QAM64_n2 + (b*QAM64_n3))); // 2 0 1
+	
+	qam64_table[4][index] = c*(QAM64_n1 + b*(QAM64_n2 + (a*QAM64_n3))); // 2 1 0
+	
+	qam64_table[5][index] = a*(QAM64_n1 + c*(QAM64_n2 + (b*QAM64_n3))); // 0 2 1
+	//	printf("QAM64 i %d : %d\n",index,qam64_table[0][index]);
+      } 
+}
+
  
 void allocate_REs_in_RB(int **txdataF,
 			unsigned int *jj,
@@ -21,17 +48,37 @@ void allocate_REs_in_RB(int **txdataF,
 			unsigned char first_pilot,
 			unsigned short Ntti,
 			unsigned char mod_order,
-			unsigned short gain_lin_QPSK,
-			unsigned short gain_lin_16QAM1,
-			unsigned short gain_lin_16QAM2,
-			unsigned short gain_lin_64QAM1,
-			unsigned short gain_lin_64QAM2,
-			unsigned short gain_lin_64QAM3){
+			short amp) {
 
   unsigned int tti_offset;
   unsigned char re;
   unsigned short tti;
+  unsigned char qam64_table_offset_re = 0;
+  unsigned char qam64_table_offset_im = 0;
+  short gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2;
 
+  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  //  printf("DLSCH: gain_lin_QPSK = %d\n",gain_lin_QPSK);
+  
+  switch (mod_order) {
+  case 2:
+    // QPSK single stream
+    
+    break;
+  case 4:
+    //16QAM Single stream
+    gain_lin_16QAM1 = (short)(((int)amp*QAM16_n1)>>15);
+    gain_lin_16QAM2 = (short)(((int)amp*QAM16_n2)>>15);
+    
+    break;
+    
+  case 6:
+    //64QAM Single stream
+    break;
+  default:
+    break;
+  }
+  
   for (re=0;re<12;re++) {
 	    
     tti_offset = symbol_offset + re_offset + re;
@@ -132,11 +179,177 @@ void allocate_REs_in_RB(int **txdataF,
 	    
 	    
 	    break;
-	    /*
-	      case 6:  //64QAM
-	      txdataF[0][tti_offset] = ;
-	      break;
-	    */
+	   
+	  case 6:  //64QAM
+
+		    
+	    qam64_table_offset_re = 0;
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=4;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=2;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=1;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=4;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=2;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=1;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+
+
+	    // Antenna 1 => -x1*
+	    qam64_table_offset_re = 0;
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=4;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=2;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_re+=1;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=4;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=2;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    if ((output[*jj]&0xbf) == 0x81)
+	      qam64_table_offset_im+=1;
+	    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+	      output[*jj] &= 0xbf;
+	    }
+	    else
+	      *jj=*jj+1;
+	    
+	    // skip punctured bits
+	    while ((output[*jj] & 0x80) == 0)
+	      *jj=*jj+1;
+	    
+	    
+	    ((short *)&txdataF[1][tti_offset])[0]=-(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
+	    ((short *)&txdataF[1][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+	    
+	    
+		    break;
+	    
 	  }
 	}
 	else if (mimo_mode == ALAMOUTI){
@@ -292,7 +505,174 @@ void allocate_REs_in_RB(int **txdataF,
 	    
 	    break;
 	  case 6:   // 64-QAM
-	    break;
+
+	    // Antenna 0
+		    qam64_table_offset_re = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    qam64_table_offset_im = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
+		    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+
+
+		    // Antenna 1 => -x1*
+		    
+		    qam64_table_offset_re = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    qam64_table_offset_im = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    ((short *)&txdataF[1][tti_offset])[0]=-(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
+		    ((short *)&txdataF[1][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+		    
+		    break;
 	  }
 	  // fill in the rest of the ALAMOUTI precoding
 	  ((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0];
@@ -377,11 +757,90 @@ void allocate_REs_in_RB(int **txdataF,
 	    
 	    
 	    break;
-	    /*
+
 	      case 6:  //64QAM
-	      txdataF[0][tti_offset] = ;
-	      break;
-	    */
+		    qam64_table_offset_re = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_re+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    qam64_table_offset_im = 0;
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=4;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=2;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    if ((output[*jj]&0xbf) == 0x81)
+		      qam64_table_offset_im+=1;
+		    if ((output[*jj] & 0x40) !=0) { // bit is to be repeated
+		      output[*jj] &= 0xbf;
+		    }
+		    else
+		      *jj=*jj+1;
+
+		    // skip punctured bits
+		    while ((output[*jj] & 0x80) == 0)
+		      *jj=*jj+1;
+
+
+		    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
+		    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+
+
 	  }
 	}
 	else if (mimo_mode == DUALSTREAM) {
@@ -422,18 +881,17 @@ void generate_dlsch(int **txdataF,
 		    MIMO_mode_t mimo_mode,
 		    unsigned char crc_len) {
   
-  unsigned short i;
+  unsigned short i,j;
   unsigned short bytes_per_codeword=0,offset;
   unsigned int coded_bits_per_codeword;
   unsigned int crc=1;
   unsigned char input[6144];
-  unsigned char output[(6144*3*8*Ncwords)+12];
+  unsigned char output[((6144*3*8)+12)*Ncwords)];
   unsigned int output_offset=0;
   unsigned short iind;
   unsigned char nsymb,Nsymb;
   unsigned short symbol_offset;
   unsigned int jj;
-  short gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2,gain_lin_64QAM1,gain_lin_64QAM2,gain_lin_64QAM3;
   unsigned short l,rb,re_offset;
   unsigned int rb_alloc_ind;
   unsigned char pilots,pilot_pos,first_pilot,second_pilot;
@@ -506,7 +964,6 @@ void generate_dlsch(int **txdataF,
 			      );
     
     
-    
     printf("Rate Matching (coded bits %d,unpunctured/repeated bits %d,output off %d)...\n",
 	   coded_bits_per_codeword,
 	   (3*8*bytes_per_codeword)+12,
@@ -516,7 +973,12 @@ void generate_dlsch(int **txdataF,
 		  &output[output_offset],
 		  1,
 		  i);
-    
+    printf("Codeword:"); 
+    for (j=0;j<32;j++)
+      printf("%d ",output[output_offset+j]);
+    printf("\n");
+
+   
     output_offset+=(3*8*bytes_per_codeword)+12;
     // rate 1/3, 8 bytes/bit, 12 bit termination
     
@@ -532,32 +994,7 @@ void generate_dlsch(int **txdataF,
   //Modulation mapping + TTI interleaving (difference w.r.t. LTE specs)
   
   jj=0;
-  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
-  //  printf("DLSCH: gain_lin_QPSK = %d\n",gain_lin_QPSK);
-  
-  switch (mod_order) {
-  case 2:
-    // QPSK single stream
-    
-    break;
-  case 4:
-    //16QAM Single stream
-    gain_lin_16QAM1 = (short)(((int)amp*QAM16_n1)>>15);
-    gain_lin_16QAM2 = (short)(((int)amp*QAM16_n2)>>15);
-    
-    break;
-    
-  case 6:
-    //64QAM Single stream
-    gain_lin_64QAM1 = (short)(((int)amp*QAM64_n1)>>15);
-    gain_lin_64QAM2 = (short)(((int)amp*QAM64_n2)>>15);
-    gain_lin_64QAM3 = (short)(((int)amp*QAM64_n3)>>15);
-    
-    break;
-  default:
-    break;
-  }
-  
+
   
   for (l=symbol_offset;l<nsymb+symbol_offset;l++) {
     
@@ -608,12 +1045,7 @@ void generate_dlsch(int **txdataF,
 			     first_pilot,
 			     Ntti,
 			     mod_order,
-			     gain_lin_QPSK,
-			     gain_lin_16QAM1,
-			     gain_lin_16QAM2,
-			     gain_lin_64QAM1,
-			     gain_lin_64QAM2,
-			     gain_lin_64QAM3);
+			     amp);
 
 	re_offset+=12; // go to next RB
 	
