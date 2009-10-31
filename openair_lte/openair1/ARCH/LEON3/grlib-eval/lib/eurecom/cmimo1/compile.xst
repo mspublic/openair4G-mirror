@@ -1,3 +1,0 @@
-elaborate -ifmt vhdl -work_lib eurecom -ifn ../../lib/eurecom/cmimo1/cmimo1lib.vhd
-elaborate -ifmt vhdl -work_lib eurecom -ifn ../../lib/eurecom/cmimo1/cmimo1.vhd
-run -read_cores yes -fsm_extract no -iob true -ifn ../../lib/eurecom/cmimo1/cmimo1.vhd -bus_delimiter () -ifmt vhdl -p xc2v2000-fg676-6 -ofn cmimo1top
