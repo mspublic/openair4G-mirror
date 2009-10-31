@@ -1,3 +1,0 @@
-  if [ "$CONFIG_PCI_SIMPLE_TARGET"  != "y" ]; then
-    bool 'PCI interface, master-target     '  CONFIG_PCI_MASTER_TARGET
-  fi

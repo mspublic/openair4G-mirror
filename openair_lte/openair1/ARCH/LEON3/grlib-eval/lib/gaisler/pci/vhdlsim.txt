@@ -1,8 +1,0 @@
-pcitb.vhd
-pci_tbfunct.vhd
-pcitb_clkgen.vhd
-pcitb_monitor.vhd
-pcitb_arb.vhd
-pcitb_master.vhd
-pcitb_target.vhd
-

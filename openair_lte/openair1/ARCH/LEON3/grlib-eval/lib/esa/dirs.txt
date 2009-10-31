@@ -1,5 +1,0 @@
-devices
-memoryctrl
-pci
-misc
-leon2

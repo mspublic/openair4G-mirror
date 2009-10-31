@@ -1,5 +1,0 @@
-pcicomp.vhd
-pci_arb_pkg.vhd
-pci_arb.vhd 
-pciarb.vhd
-pciarbiter.vhd

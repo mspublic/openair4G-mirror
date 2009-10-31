@@ -1,7 +1,0 @@
-  if [ "$CONFIG_PCI_MASTER_TARGET"  = "y" ]; then
-    bool 	'PCI DMA controller               '  CONFIG_PCI_MASTER_TARGET_DMA
-# Added by Eurecom
-    if [ "$CONFIG_PCI_MASTER_TARGET_DMA" = "y" ]
-      int 'DMA engine interrupt                  ' CONFIG_PCIDMA_IRQ 4
-    fi
-  fi

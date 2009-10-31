@@ -1,1 +1,0 @@
-comp memory pads buffers clocks maps

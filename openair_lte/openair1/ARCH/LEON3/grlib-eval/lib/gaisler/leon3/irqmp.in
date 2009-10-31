@@ -1,1 +1,0 @@
-    bool 'Enable LEON3 interrupt controller    ' CONFIG_IRQ3_ENABLE

@@ -1,2 +1,0 @@
-clkbuf_xilinx.vhd
-techbuf.vhd

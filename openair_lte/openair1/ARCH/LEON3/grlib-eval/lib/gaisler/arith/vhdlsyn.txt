@@ -1,3 +1,0 @@
-arith.vhd
-div32.vhd
-mul32.vhd

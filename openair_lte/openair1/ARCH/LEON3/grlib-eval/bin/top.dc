@@ -1,5 +1,0 @@
-sh mkdir synopsys
-hdlin_ff_always_sync_set_reset = true
-hdlin_translate_off_skip_text = true
-suppress_errors = {VHDL-2285}
-include compile.dc

@@ -1,2 +1,0 @@
-SOFTINCLUDE $CDS_ROOT/tools/inca/files/cds.lib
-DEFINE grlib xncsim/grlib 

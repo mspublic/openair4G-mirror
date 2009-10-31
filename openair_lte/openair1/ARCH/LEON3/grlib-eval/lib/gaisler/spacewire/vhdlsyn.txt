@@ -1,2 +1,0 @@
-spacewire.vhd
-grspw.vhd
