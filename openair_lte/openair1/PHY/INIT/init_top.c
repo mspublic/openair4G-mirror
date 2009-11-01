@@ -157,7 +157,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 #endif //USER_MODE
 #ifdef DEBUG_PHY
-      printk("[PHY][INIT] RX_DMA_BUFFER %d at %p (%p), size %x\n",i,
+      printk("[PHY][INIT] RX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	  (void *)tmp_ptr,
 	  (void *)virt_to_phys(tmp_ptr),(unsigned int)(FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE));
 #endif
@@ -166,6 +166,10 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
     PHY_vars->rx_vars[i].RX_DMA_BUFFER = tmp_ptr;
+#ifdef DEBUG_PHY
+    msg("[PHY][INIT] PHY_vars->rx_vars[%d].RX_DMA_BUFFER = %p\n",i,PHY_vars->rx_vars[i].RX_DMA_BUFFER);
+#endif
+
 #ifdef PLATON
 #ifndef USER_MODE
     rx_mbox[i] = tmp_ptr + ((FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES)>>2);

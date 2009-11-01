@@ -74,7 +74,7 @@ void mac_cleanup(void)
 
 #ifdef OPENAIR2
   free16(Macphy_req_table[0].Macphy_req_table_entry,NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
-#endif OPENAIR2
+#endif //OPENAIR2
 
 }
 

@@ -90,8 +90,12 @@ int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-  for (i=0; i<frame_parms->nb_antennas_rx; i++) 
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     lte_ue_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdata[%d] = %p\n",i,lte_ue_common_vars->rxdata[i]);
+#endif
+  }
 
   lte_ue_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
   if (lte_ue_common_vars->rxdataF) {
@@ -145,5 +149,12 @@ int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
       return(-1);
     }
   }
+
+  // Initialize Gold sequence table
+  lte_gold(frame_parms);
+
+  // Initialize Sync
+  lte_sync_time_init(lte_frame_parms);
+
   return(1);
 }

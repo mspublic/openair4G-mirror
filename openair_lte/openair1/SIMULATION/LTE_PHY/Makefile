@@ -17,7 +17,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi.o 
-PHY_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  $(TOP_DIR)/SIMULATION/TOOLS/taus.o
+PHY_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  $(TOP_DIR)/SIMULATION/TOOLS/taus.o  $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
 
 
 
