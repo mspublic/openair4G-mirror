@@ -42,6 +42,7 @@ FD_lte_scope *form;
 //char demod_data[2048];
 
 short *channel[4],*channel_f[4],*rx_sig[4],*rx_sig_f2[4],*rx_sig_f3[4],*sach_data,*magh[4];
+int *sync_corr;
 char *demod_data,*rx_sig_f4;
 
 int length,offset;
@@ -57,7 +58,9 @@ void lte_scope_idle_callback(void) {
 
   float Re,Im;
   float mag_sig[NB_ANTENNAS_RX*NB_ANTENNAS_TX*(NUMBER_OF_OFDM_CARRIERS+96)],
-    sig_time[NB_ANTENNAS_RX*NB_ANTENNAS_TX*(NUMBER_OF_OFDM_CARRIERS+96)];
+    sig_time[NB_ANTENNAS_RX*NB_ANTENNAS_TX*(NUMBER_OF_OFDM_CARRIERS+96)],
+    sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
+    time2[FRAME_LENGTH_COMPLEX_SAMPLES];
   /*
     mag_h[NB_ANTENNAS_RX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*8],
     mag_sig2[NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*8],
@@ -105,9 +108,28 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  //fl_set_xyplot_data(form->scatter_sig,real_mf,imag_mf,136,"","","");
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
+
+
+  // channel_t_re = sync_corr
+
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES/2; i++)  {
+    sig2[i] = (float) (sync_corr[i]);
+    time2[i] = (float) i;
+  }
+
+  fl_set_xyplot_ybounds(form->channel_t_re,0,2e+09);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES/2,"","","");
+
+  // channel_t_im = rx_sig
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    sig2[i] = (float) (rx_sig[0][2*i]);
+    time2[i] = (float) i;
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
 
 
   usleep(10000);
@@ -173,6 +195,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
   printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates);
+  printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -197,6 +220,8 @@ int main(int argc, char *argv[]) {
     msg("channel_f[%d] = %p\n",i,channel_f[i]);
     rx_sig[i] = (short *)(mem_base + (unsigned int)PHY_vars->rx_vars[i].RX_DMA_BUFFER-(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   }
+  sync_corr = (short*)(mem_base + (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  write_output("sync_corr.m","synccorr",sync_corr,FRAME_LENGTH_COMPLEX_SAMPLES/2,1,2);
 
   sprintf(title, "LTE SCOPE"),
 

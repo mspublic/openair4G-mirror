@@ -53,6 +53,7 @@ typedef struct {
   int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF;          ///holds the received data in the frequency domain
   int **dl_ch_estimates;  /// hold the channel estimates in frequency domain
+  int *sync_corr;         /// holds output of the sync correlator
 } LTE_UE_COMMON;
 
 typedef struct {

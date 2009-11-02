@@ -20,7 +20,7 @@
 \param frame_parms LTE DL frame parameter structure
 */
 
-int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms);
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars);
 
 /*! \fn void lte_sync_time_free()
 \brief This function frees the memory allocated by lte_sync_time_init.

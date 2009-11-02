@@ -13,7 +13,6 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 
 #ifdef OPENAIR_LTE
   int **txdataF;
-  LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
 #endif
 
   switch (format) {
@@ -42,54 +41,43 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     txdataF[0] = (int *)malloc16(sizeof(int)*FRAME_LENGTH_COMPLEX_SAMPLES);
     txdataF[1] = (int *)malloc16(sizeof(int)*FRAME_LENGTH_COMPLEX_SAMPLES);
 
-    frame_parms->N_RB_DL            = 15;
-    frame_parms->Ncp                = 1;
-    frame_parms->Nid_cell           = 0;
-    frame_parms->nushift            = 1;
-    frame_parms->nb_antennas_tx     = 2;
-    frame_parms->nb_antennas_rx     = 2;
-    frame_parms->first_dlsch_symbol = 1;
-    init_frame_parms(frame_parms);
-    frame_parms->twiddle_fft      = twiddle_fft256;
-    frame_parms->twiddle_ifft      = twiddle_ifft256;
-    frame_parms->rev              = rev; //has been initialized in init_fft
-
     generate_pss(txdataF,
 		 256,
-		 frame_parms,
+		 lte_frame_parms,
 		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
  
     generate_pilots(txdataF,
 		    256,
-		    frame_parms,
+		    lte_frame_parms,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
+    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 
     PHY_ofdm_mod(txdataF[0],        // input
 		 PHY_vars->tx_vars[0].TX_DMA_BUFFER,         // output
-		 frame_parms->log2_symbol_size,                // log2_fft_size
+		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 frame_parms->nb_prefix_samples,               // number of prefix samples
-		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 frame_parms->rev,           // bit-reversal permutation
+		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		 lte_frame_parms->rev,           // bit-reversal permutation
 		 NONE);
 
     PHY_ofdm_mod(txdataF[1],        // input
 		 PHY_vars->tx_vars[1].TX_DMA_BUFFER,         // output
-		 frame_parms->log2_symbol_size,                // log2_fft_size
+		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 frame_parms->nb_prefix_samples,               // number of prefix samples
-		 frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 frame_parms->rev,           // bit-reversal permutation
+		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		 lte_frame_parms->rev,           // bit-reversal permutation
 		 NONE);
+
+
+    write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
 
 #ifdef BIT8_TXMUX
     bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);
 #endif //BIT8_TXMUX
-
-
-    write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,(512)*12,1,5);
 
 
     free(txdataF[0]);

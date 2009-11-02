@@ -36,14 +36,14 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
   case 15:
     frame_parms->ofdm_symbol_size = 256;
     frame_parms->log2_symbol_size = 8;
-    frame_parms->samples_per_tti = 1920;
+    frame_parms->samples_per_tti = 3840;
     frame_parms->first_carrier_offset = 166;
     frame_parms->nb_prefix_samples>>=3;
     break;
   case 6:
     frame_parms->ofdm_symbol_size = 128;
     frame_parms->log2_symbol_size = 7;
-    frame_parms->samples_per_tti = 960;
+    frame_parms->samples_per_tti = 1920;
     frame_parms->first_carrier_offset = 92;
     frame_parms->nb_prefix_samples>>=4;
     break;
@@ -154,7 +154,9 @@ int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
   lte_gold(frame_parms);
 
   // Initialize Sync
-  lte_sync_time_init(lte_frame_parms);
+  lte_sync_time_init(frame_parms,  lte_ue_common_vars);
+
+
 
   return(1);
 }

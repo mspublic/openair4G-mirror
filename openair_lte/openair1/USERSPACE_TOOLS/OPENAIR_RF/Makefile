@@ -59,6 +59,8 @@ PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
 # PHY ESTIMATION routines 
 ifndef OPENAIR_LTE
 PHY_OBJS += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation.o 
+else
+
 endif
 
 # PHY MODULATION routines
@@ -80,6 +82,8 @@ PHY_OBJS+=$(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o 
 # PHY Synch routines
 ifndef OPENAIR_LTE
 PHY_OBJS +=$(TOP_DIR)/PHY/ESTIMATION/synch_time.o 
+else
+PHY_OBJS +=$(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o 
 endif
 
 # Utility routines
@@ -91,7 +95,8 @@ PHY_OBJS +=$(TOP_DIR)/PHY/CONFIG/openair_configure.o $(TOP_DIR)/PHY/CONFIG/opena
 #PHY_OBJS +=$(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_generate_ofdm.o
 
 
-USERRFOBJS += $(PHY_OBJS) openair_rf.o load.o fix_fft2.o load_calibration_data.o openair_generate_ofdm.o
+USERRFOBJS += $(PHY_OBJS) openair_rf.o openair_generate_ofdm.o
+#load.o fix_fft2.o load_calibration_data.o 
 
 
 all:	openair_rf

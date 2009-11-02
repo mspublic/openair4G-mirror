@@ -11,15 +11,15 @@
 int* sync_corr = NULL;
 
 
-int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms) {
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars ) {
 
   unsigned short ds = frame_parms->log2_symbol_size - 7;
   sync_corr = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti>>ds);
     if (sync_corr) {
-#ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n",
-	     sync_corr);
-#endif
+      //#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n", sync_corr);
+      //#endif
+      common_vars->sync_corr = sync_corr;
     }
     else {
       msg("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
@@ -78,7 +78,8 @@ short lte_sync_time(int **rxdata, ///rx data in time domain
       }
     }
     // calculate the absolute value of sync_corr[n]
-    sync_corr[n] = (int)((short*)sync_corr)[2*n]*(int)((short*)sync_corr)[2*n]+(int)((short*)sync_corr)[2*n+1]*(int)((short*)sync_corr)[2*n+1];
+    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
+      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
     if (sync_corr[n]>peak_val) {
       peak_val = sync_corr[n];
       peak_pos = n<<ds;

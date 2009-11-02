@@ -43,20 +43,10 @@
 PHY_CONFIG PHY_config_mem;
 PHY_CONFIG *PHY_config;
 
-float estimate_freq(short *);
+//float estimate_freq(short *);
 
-unsigned int revbits(unsigned int x) {
+//unsigned int revbits(unsigned int x);
 
-  int i;
-  unsigned int ret = 0 ;
-
-
-  for (i=0;i<31;i++)
-
-    ret += (((x&(1<<i)) == 0) ? 0 : ((1<<(31-i))));
-
-  return ret;
-}
 //-----------------------------------------------------------------------------
 int main (int argc, char **argv) {
   //-----------------------------------------------------------------------------
@@ -190,7 +180,7 @@ int main (int argc, char **argv) {
     fprintf(stderr,"Error %d opening /dev/openair0\n",openair_fd);
     exit(-1);
   }
-  
+
   if((config = fopen("./config.cfg","r")) == NULL) // this can be configured
     {
       printf("[openair][CONFIG][INFO] openair configuration file <config.cfg> could not be found!");
@@ -203,25 +193,40 @@ int main (int argc, char **argv) {
       printf("[openair][CONFIG][INFO] openair scenario file <scenario.scn> could not be found!");
       exit(0);
     }
-
-  
-
-  printf("PHY_config\n"); fflush(stdout);
   
   PHY_config = (PHY_CONFIG *)&PHY_config_mem;
   PHY_vars = malloc(sizeof(PHY_VARS));
   mac_xface = malloc(sizeof(MAC_xface));
-  
+
   reconfigure_MACPHY(scenario);
-  printf("reconfigure_MACPHY() done.\n");fflush(stdout);
-#ifdef OPENAIR_LTE
-  phy_init_top(NB_ANTENNAS_TX);
-#else
+  printf("reconfigure_MACPHY() done.\n");
+
+#ifndef OPENAIR_LTE  
   phy_init(NB_ANTENNAS_TX);
+#else
+  lte_frame_parms = &(PHY_config->lte_frame_parms);
+  lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
+
+  lte_frame_parms->N_RB_DL            = 15;
+  lte_frame_parms->Ncp                = 1;
+  lte_frame_parms->Nid_cell           = 0;
+  lte_frame_parms->nushift            = 1;
+  lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
+  lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
+  lte_frame_parms->first_dlsch_symbol = 1;
+  
+  init_frame_parms(lte_frame_parms);
+  
+  phy_init_top(NB_ANTENNAS_TX);
+	  
+  lte_frame_parms->twiddle_fft      = twiddle_fft;
+  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
+  lte_frame_parms->rev              = rev;
+  
+  phy_init_lte(lte_frame_parms,lte_ue_common_vars);
 #endif
   printf("Initialized PHY variables\n");
 
-  printf("NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
 
   //mac_init();
   //printf("Initialized MAC variables\n");
@@ -664,7 +669,7 @@ case 24 :
   return 0;
 }
 
-
+/*
 float estimate_freq(short *buffer) {
 
   int i,j,tmp,tmp_re,tmp_im,max_f,max_point;
@@ -692,3 +697,17 @@ float estimate_freq(short *buffer) {
   }
   return(avg);
 }
+
+unsigned int revbits(unsigned int x) {
+
+  int i;
+  unsigned int ret = 0 ;
+
+
+  for (i=0;i<31;i++)
+
+    ret += (((x&(1<<i)) == 0) ? 0 : ((1<<(31-i))));
+
+  return ret;
+}
+*/

@@ -348,6 +348,9 @@ void openair_sync() {
       length=rtf_put(rx_sig_fifo,PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
       if (length < FRAME_LENGTH_BYTES)
 	msg("[openair][sched][rx_sig_fifo_handler] Didn't put %d bytes for antenna %d (put %d)\n",FRAME_LENGTH_BYTES,i,length);
+      else
+	msg("[openair][sched][rx_sig_fifo_handler] Worte %d bytes for antenna %d to fifo (put %d)\n",FRAME_LENGTH_BYTES,i,length);
+
     }    
 
     // signal that acquisition is done in control fifo
@@ -387,10 +390,9 @@ void openair_sync() {
     pci_interface->frame_offset = sync_pos;
 #endif //NOCARD_TEST
 
-    // the sync is in the last symbol of the first slot, so the position wrt to the start of the frame is (frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*(Nsymb-1)+frame_parms->nb_prefix_sample;
-
-    Nsymb = (lte_frame_parms->Ncp==0)?14:12;
-    sync_pos_slot = (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(Nsymb-1)+lte_frame_parms->nb_prefix_samples;
+    // the sync is in the last symbol of the first slot, so the position wrt to the start of the frame is 
+    sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1);
+    //      +CYCLIC_PREFIX_LENGTH;
 
     msg("[openair][openair SYNC] sync_pos_slot =%d\n",sync_pos_slot);
 
