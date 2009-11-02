@@ -31,7 +31,7 @@ void main() {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   
-  lte_frame_parms->N_RB_DL            = 50;
+  lte_frame_parms->N_RB_DL            = 15;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 1;
@@ -97,6 +97,7 @@ void main() {
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
   
+  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
   write_output("txsigF0.m","txsF0", txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   
   PHY_ofdm_mod(txdataF[0],        // input
@@ -160,11 +161,11 @@ void main() {
 
 
   write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS,1,1);
+  write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2,2,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
 
 
   free(txdataF[0]);

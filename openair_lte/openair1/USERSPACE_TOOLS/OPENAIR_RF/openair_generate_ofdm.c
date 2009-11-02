@@ -72,12 +72,15 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		 NONE);
 
 
-    write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    //write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
 
 #ifdef BIT8_TXMUX
     bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);
 #endif //BIT8_TXMUX
+
+
+    write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,5);
 
 
     free(txdataF[0]);
