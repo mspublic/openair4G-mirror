@@ -481,8 +481,8 @@ static void * fn_cmm (
                 case ROUTER_IS_CH_IND :
                     {
 #ifndef PHY_EMUL
-                        float delai  = 0.O5 ;
-                        float delai2 = 0.O8 ;
+                        float delai  = 0.05 ;
+                        float delai2 = 0.08 ;
 #else
                         float delai  = 0.00 ;
                         float delai2 = 0.00 ;
