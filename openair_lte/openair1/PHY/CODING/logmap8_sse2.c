@@ -7,6 +7,7 @@
 #include "emmintrin.h"
 #include "pmmintrin.h"
 #include "tmmintrin.h"
+#include "smmintrin.h"
 
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
@@ -14,13 +15,16 @@
 
 
 
+
+
+
 typedef short llr_t; // internal decoder data is 16-bit fixed
 typedef short channel_t;
 
-#define LLR_MAX 32767
-#define LLR_MIN -32768
-#define LLRTOT 16
+
 #define MAX 16383
+#define THRES 8192
+
 #define FRAME_LENGTH_MAX 6144
 #define STATES 8
 
@@ -84,9 +88,9 @@ __m128i mbot[6144] __attribute__ ((aligned(16)));
 void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length)
 {
   int k;
-  __m128i *alpha128=(__m128i *)alpha,mtmp,mtmp2,lsw,msw,new,mb;
+  __m128i *alpha128=(__m128i *)alpha,mtmp,mtmp2,lsw,msw,new,mb,newcmp;
 
-  __m128i TOP,BOT;
+  __m128i TOP,BOT,THRES128;
   
   llr_t old0,old1,old2, old3,old4, old5, old6, old7;
   llr_t new0,new1,new2, new3;
@@ -96,6 +100,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
   
   llr_t m11,m10;
+  
+  THRES128 = _mm_set1_epi16(THRES);
 
   alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
 
@@ -188,9 +194,23 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
 
 
-      *alpha128 = _mm_max_epi16(new,mb);
-      //      print_shorts("alpha128",alpha128);
+      //      *alpha128 = _mm_max_epi16(new,mb);
+      
+            
+      new = _mm_max_epi16(new,mb);
+      newcmp = _mm_cmpgt_epi16(new,THRES128);
 
+      if (_mm_testz_si128(newcmp,newcmp)) // if any states above THRES normalize
+	*alpha128 = new;
+      else {
+	//	print_shorts("new",&new);
+	*alpha128 = _mm_subs_epi16(new,THRES128);
+	//	printf("alpha overflow %d",k);
+	//	print_shorts(" ",alpha128);
+      }
+      //
+	  //      print_shorts("alpha",alpha128);
+	  
   }
 
 }
@@ -202,9 +222,9 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
   llr_t m_b0, m_b1, m_b2, m_b3, m_b4,m_b5, m_b6, m_b7;
   llr_t m11,m10; 
 
-  __m128i *beta128,new,mb,oldh,oldl;
+  __m128i *beta128,new,mb,oldh,oldl,THRES128,newcmp;
 
-
+  THRES128 = _mm_set1_epi16(THRES);
 
   beta128 = (__m128i*)&beta[(frame_length+3)*STATES];
 
@@ -221,8 +241,21 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
       new  = _mm_adds_epi16(oldl,mtop[k]);
 
       beta128--;
-      *beta128= _mm_max_epi16(new,mb);
-    };
+      //      *beta128= _mm_max_epi16(new,mb);
+            
+      new = _mm_max_epi16(new,mb);
+      //      print_shorts("alpha128",alpha128);
+
+      newcmp = _mm_cmpgt_epi16(new,THRES128);
+
+      if (_mm_testz_si128(newcmp,newcmp))
+	*beta128 = new;
+      else{
+	*beta128 = _mm_subs_epi16(new,THRES128);
+	//	printf("Beta overflow : %d\n",k);
+      }
+      
+    }
 }
 
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
@@ -238,7 +271,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
   __m128i m00_max,m01_max,m10_max,m11_max;
   __m128i *m11_128,*m10_128,*ext_128,*systematic_128;
   //
-  // LLR computation
+  // LLR computation, 8 consequtive bits per loop
   //
   for (k=0;k<(frame_length+3);k+=8)
     {
@@ -500,7 +533,20 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
        
    
       *ext_128 = _mm_subs_epi16(m10_max,_mm_adds_epi16(m01_max,*systematic_128));
-	    //            print_shorts("ext_128",ext_128);
+      /*
+      if ((((short *)ext_128)[0] > 8192) ||
+	  (((short *)ext_128)[1] > 8192) ||
+	  (((short *)ext_128)[2] > 8192) ||
+	  (((short *)ext_128)[3] > 8192) ||
+	  (((short *)ext_128)[4] > 8192) ||
+	  (((short *)ext_128)[5] > 8192) ||
+	  (((short *)ext_128)[6] > 8192) ||
+	  (((short *)ext_128)[7] > 8192)) {
+	printf("ext overflow %d:",k);
+	print_shorts("**ext_128",ext_128);
+      }
+      */
+
     }
 
 
@@ -568,7 +614,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
-    printf("\n*******************ITERATION %d\n\n",iteration_cnt);
+   printf("\n*******************ITERATION %d\n\n",iteration_cnt);
 #endif //DEBUG_LOGMAP
 
     threegpplte_interleaver_reset();

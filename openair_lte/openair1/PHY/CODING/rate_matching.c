@@ -121,6 +121,85 @@ int rate_matching(unsigned int N_coded,
   return(0);
 }
 
+int rate_matching_lte(unsigned int N_coded, 
+		      unsigned int N_input, 
+		      unsigned char *inPtr,
+		      unsigned int off){
+
+
+  unsigned int i,j,U,Umod,rep_flag=0;
+  unsigned int Mod_input;
+  int N_punctured;
+
+  if ((9*N_coded<(N_input<<2)) || (N_input<(N_coded>>1))) {
+    // check validity of parameters
+    // the first condition represents the case where the rate is greater than 2/3
+    // the second condition represents the case where the rate is less than 1/4
+    msg("[PHY][CODING] Rate matching parameter error (N_coded %d, N_input %d), exiting\n",N_coded,N_input);
+#ifdef USER_MODE
+
+    exit(-1);
+#else
+    return(-1);
+#endif
+  }
+
+  //initialize all bits as transmitted
+  for (i=0;i<N_input;i++)
+    inPtr[i] |= 0x80;
+
+  // No go puncture the bits that should be removed
+  i=0;
+  
+
+  pset_taus_seed(off);
+
+  N_punctured = N_input-N_coded;
+
+  if (N_punctured < 0) {  // Repeat bits instead of puncturing
+    N_punctured = -N_punctured;
+    rep_flag = 1;
+  }
+
+#ifdef USER_MODE
+#ifdef DEBUG_PHY
+  printf("rate_matching : N_coded %d, N_input %d\n",N_coded,N_input);
+  printf("rate_matching : N_punctured = %d (%d)\n",N_punctured,rep_flag);
+  printf("rate_matching : code rate = %f\n",(double)N_input/(double)N_coded/3.0);
+#endif
+#endif
+
+  Mod_input = (1<<(1+log2_approx(N_input)))-1;
+  
+  while (i < N_punctured) {
+    // generate N_punctured random positions in the input vector
+    do { // generate a modulo-N_input2 random variable
+      U = ptaus();
+      Umod = U&Mod_input;
+      //      printf("i %d, N_punctured %d U %u Umod %d Iptr[Umod] %x\n",i,N_punctured,U,Umod,inPtr[Umod]);
+    // check if the bit is already punctured/repeated, if so skip it and generate another RV 
+      if ((Umod < N_input) && (((inPtr[Umod]&0x80) == 0)||((inPtr[Umod]&0xc0) == 0xc0)))
+	Umod=N_input;
+
+    } while (Umod>=N_input);
+      
+    if (rep_flag == 0)
+      inPtr[Umod] &= 0x7f; // clear MSB to indicate bit is punctured
+    else
+      inPtr[Umod] |= 0xc0; // set MSB-1 to indicate bit is repeated
+
+  
+    
+#ifdef USER_MODE
+#ifdef DEBUG_PHY
+    printf("rate_matching : i= %d, U = %d\n",i,Umod);
+#endif
+#endif
+    i++;
+  }
+  return(0);
+}
+
 
 
 #ifdef MAIN

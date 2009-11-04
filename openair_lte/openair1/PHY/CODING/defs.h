@@ -97,6 +97,10 @@ int rate_matching(unsigned int N_coded,
 		   unsigned int off);
 
 
+int rate_matching_lte(unsigned int N_coded, 
+		      unsigned int N_input, 
+		      unsigned char *inPtr,
+		      unsigned int off);
 
 /*!\fn void threegpp_turbo_decoder(short *y, unsigned char *decoded_bytes,unsigned short n,unsigned short interleaver_f1,unsigned short interleaver_f2,unsigned char max_iterations,unsigned char crc_len)
 \brief This routine performs max-logmap detection for the 3GPP turbo code (with termination)
