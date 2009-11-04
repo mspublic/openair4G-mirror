@@ -2,7 +2,7 @@ CC = gcc-4
 
 TOP_DIR                    = ../../..
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -g -msse2 -mmmx -msse -msse3 -mssse3
+CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -g -msse2 -mmmx -msse -msse3 -mssse3 -msse4
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o $(TOP_DIR)/PHY/TOOLS/file_output.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/logmap8_sse2.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/rate_matching.o $(TOP_DIR)/PHY/CODING/crc_byte.o 
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
