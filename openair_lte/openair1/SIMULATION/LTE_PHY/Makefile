@@ -1,8 +1,8 @@
-CC = gcc-4
+CC = gcc
 
 TOP_DIR = ../..
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE
+CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE
 
 #CFLAGS += -DDEBUG_PHY
 

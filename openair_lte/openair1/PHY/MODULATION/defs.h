@@ -1,3 +1,5 @@
+#ifndef __MODULATION_DEFS__H__
+#define __MODULATION_DEFS__H__
 /** @addtogroup _PHY_MODULATION_BLOCKS_
 * @{
 */
@@ -52,3 +54,4 @@ void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      int offset);
 #endif
 /** @}*/
+#endif

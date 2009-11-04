@@ -1,6 +1,6 @@
-#include "PHY/defs.h"
-#include "defs.h"
 #include <string.h>
+#include "defs.h"
+#include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
 void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,

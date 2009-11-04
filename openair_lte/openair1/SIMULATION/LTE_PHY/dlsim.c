@@ -246,7 +246,7 @@ void main() {
   write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],2*600*12,1,1);
   write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr,600*3,1,0);
 
-
+  /*
   // Generate LLRs for decoding
   dlsch_decoding(lte_ue_dlsch_vars,
 		 lte_frame_parms,
@@ -257,10 +257,10 @@ void main() {
 		 0,
 		 3);
 
-
   printf("Decoded_output:\n");
   for (i=0;i<block_length/8;i++)
     printf("%d : %d\n",i,decoded_output[i]);
+  */
 
   free(txdataF[0]);
   free(txdataF[1]);

@@ -1,3 +1,4 @@
+#include "defs.h"
 #ifndef EXPRESSMIMO_TARGET
 /*! \brief 
 //  FFT base 2 in fixed point

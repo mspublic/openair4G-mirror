@@ -1,9 +1,9 @@
-#include "PHY/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "defs.h"
+#include "SIMULATION/RF/defs.h"
 
 
 void multipath_channel(struct complex **ch,

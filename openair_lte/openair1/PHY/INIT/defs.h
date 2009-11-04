@@ -1,3 +1,5 @@
+#ifndef __INIT_DEFS__H__
+#define __INIT_DEFS__H__
 /** @addtogroup _PHY_STRUCTURES_
  @{
 */
@@ -47,3 +49,5 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 #endif
 
 /** @} */
+#endif
+

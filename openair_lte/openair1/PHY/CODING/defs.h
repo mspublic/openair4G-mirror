@@ -1,3 +1,6 @@
+#ifndef __CODING_DEFS__H__
+#define __CODING_DEFS__H__
+
 /** @ingroup _PHY_CODING_BLOCKS_
  * @{
 \fn void ccodedot11_encode(unsigned int numbytes,unsigned char *inPtr,unsigned char *outPtr,unsigned char puncturing)
@@ -130,3 +133,4 @@ unsigned int crcbit (unsigned char * ,
 short reverseBits(int ,int);
 void phy_viterbi_dot11(char *,unsigned char *,unsigned short);
 
+#endif

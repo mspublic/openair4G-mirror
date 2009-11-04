@@ -1,3 +1,5 @@
+#ifndef __LTE_TRANSPORT_DEFS__H__
+#define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
 
 void allocate_REs_in_RB(int **txdataF,
@@ -36,3 +38,4 @@ void generate_pss(int **txdataF,
 		  short amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned short Ntti);
+#endif

@@ -1,3 +1,6 @@
+#ifndef __LTE_ESTIMATION_DEFS__H__
+#define __LTE_ESTIMATION_DEFS__H__
+
 /** @addtogroup _PHY_STRUCTURES_
 * @{
 \fn void phy_synch_time_init(void)
@@ -49,3 +52,4 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 
 
 /** @} */ 
+#endif

@@ -1,5 +1,7 @@
 /* Definitions for LTE Reference signals */
 /* Author R. Knopp / EURECOM / OpenAirInterface.org */
+#ifndef __LTE_REFSIG_DEFS__H__
+#define __LTE_REFSIG_DEFS__H__
 #include "PHY/defs.h"
 
 /** @ingroup _PHY_REF_SIG
@@ -52,3 +54,4 @@ int lte_dl_cell_spec_rx(int *output,
 			 unsigned char l,
 			 unsigned char p);
 
+#endif
