@@ -24,6 +24,7 @@ void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	frame_parms->log2_symbol_size>>1,
 	0);
   }
+
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
       lte_dl_channel_estimation(dl_ch_estimates,
@@ -36,4 +37,5 @@ void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     
 
   }
+
 }

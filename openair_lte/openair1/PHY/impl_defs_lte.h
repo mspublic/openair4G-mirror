@@ -59,10 +59,10 @@ typedef struct {
 typedef struct {
   int **rxdataF_ext;
   int **rxdataF_comp;
-  int **rxdataF_comp64qam;
   int **dl_ch_estimates_ext;
   int **dl_ch_mag;
   int **dl_ch_magb;
+  char *llr;
 } LTE_UE_DLSCH;
 
 

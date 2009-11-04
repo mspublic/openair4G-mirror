@@ -280,6 +280,7 @@ typedef struct
   SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
 #else
   LTE_UE_COMMON lte_ue_common_vars;
+  LTE_UE_DLSCH lte_ue_dlsch_vars;
 #endif
 
 } PHY_VARS;

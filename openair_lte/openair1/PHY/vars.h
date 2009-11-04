@@ -27,6 +27,8 @@ unsigned int mchrach_error_cnt[2][8],sach_error_cnt=0;
 #include "PHY/LTE_REFSIG/primary_synch.h"
 #endif
 
+#include "PHY/CODING/vars.h"
+
 PHY_VARS *PHY_vars;
 
 short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
@@ -43,6 +45,7 @@ unsigned short rev[1024],rev_times4[4096],rev_half[512];
 #ifdef OPENAIR_LTE
 LTE_DL_FRAME_PARMS *lte_frame_parms;
 LTE_UE_COMMON *lte_ue_common_vars;
+LTE_UE_DLSCH *lte_ue_dlsch_vars;
 #endif
 
 #include "PHY/CODING/scrambler.h"

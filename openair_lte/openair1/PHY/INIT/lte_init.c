@@ -73,8 +73,9 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING 
 
 
 
-int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
-		 LTE_UE_COMMON *lte_ue_common_vars) {
+int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
+		    LTE_UE_COMMON *lte_ue_common_vars,
+		    LTE_UE_DLSCH *lte_ue_dlsch_vars) {
 
   int i,j;
 
@@ -110,7 +111,8 @@ int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    lte_ue_common_vars->rxdataF[i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
+    //RK 2 times because of output format of FFT!  We should get rid of this
+    lte_ue_common_vars->rxdataF[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
     if (lte_ue_common_vars->rxdataF[i]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->rxdataF[%d] allocated at %p\n",i,
@@ -143,12 +145,44 @@ int phy_init_lte(LTE_DL_FRAME_PARMS *frame_parms,
       msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] allocated at %p\n",i,
 	     lte_ue_common_vars->dl_ch_estimates[i]);
 #endif
+
+      memset(lte_ue_common_vars->dl_ch_estimates[i],0,frame_parms->symbols_per_tti*sizeof(int)*(96+frame_parms->ofdm_symbol_size));
     }
     else {
       msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] not allocated\n",i);
       return(-1);
     }
   }
+
+  lte_ue_dlsch_vars->rxdataF_ext    = (int **)malloc16(2*sizeof(int*));
+  for (i=0;i<frame_parms->nb_antennas_rx;i++)
+    lte_ue_dlsch_vars->rxdataF_ext[i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+
+
+
+  lte_ue_dlsch_vars->rxdataF_comp    = (int **)malloc16(4*sizeof(int*));
+  for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
+    lte_ue_dlsch_vars->rxdataF_comp[i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
+
+  // TODO: the size of the following array can be reduced
+
+  lte_ue_dlsch_vars->dl_ch_estimates_ext = (int **)malloc16(4*sizeof(short*));
+  for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
+    lte_ue_dlsch_vars->dl_ch_estimates_ext[i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+ 
+
+  lte_ue_dlsch_vars->dl_ch_mag = (int **)malloc16(4*sizeof(short*));
+  for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
+      lte_ue_dlsch_vars->dl_ch_mag[i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+
+  lte_ue_dlsch_vars->dl_ch_magb = (int **)malloc16(4*sizeof(short*));
+  for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
+    lte_ue_dlsch_vars->dl_ch_magb[i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
+
+  lte_ue_dlsch_vars->llr = (short **)malloc16((2*(3*8*6144)+12)*sizeof(short));
+
+
+
 
   // Initialize Gold sequence table
   lte_gold(frame_parms);
