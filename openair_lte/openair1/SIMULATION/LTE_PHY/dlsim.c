@@ -12,15 +12,21 @@
 void main() {
 
   int i,aa;
-  double sigma2, sigma2_dB=20;
+  double sigma2, sigma2_dB=1;
   int **txdataF, **txdata;
   //LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=1; //0.0000005;
+  double aoa=.03,ricean_factor=0.0000005;
   int channel_length;
   struct complex **ch;
+
+  unsigned char Ns,l,m,mod_order=4;
+  unsigned int rb_alloc[4];
+  MIMO_mode_t mimo_mode = SISO;//ALAMOUTI;
+  unsigned char *input_data,*decoded_output;
+  unsigned short block_length=1600;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -28,45 +34,49 @@ void main() {
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
+  randominit();
+  set_taus_seed();
+  
+  crcTableInit();
+
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
+  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
   
-  lte_frame_parms->N_RB_DL            = 15;
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
-  lte_frame_parms->nb_antennas_tx     = 2;
-  lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 1;
-  init_frame_parms(lte_frame_parms);
-  
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-  
-  phy_init_top(NB_ANTENNAS_TX);
-  
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
-  
-  phy_init_lte(lte_frame_parms,lte_ue_common_vars);
-  
-  txdataF    = (int **)malloc16(2*sizeof(int*));
-  txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  
-  txdata    = (int **)malloc16(2*sizeof(int*));
-  txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  
-  /*
-    rxdataF    = (int **)malloc16(2*sizeof(int*));
-    rxdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    
-    rxdata    = (int **)malloc16(2*sizeof(int*));
-    rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
+    lte_frame_parms->N_RB_DL            = 25;
+    lte_frame_parms->Ncp                = 1;
+    lte_frame_parms->Nid_cell           = 0;
+    lte_frame_parms->nushift            = 1;
+    lte_frame_parms->nb_antennas_tx     = 1;
+    lte_frame_parms->nb_antennas_rx     = 1;
+    lte_frame_parms->first_dlsch_symbol = 2;
+    init_frame_parms(lte_frame_parms);
+
+    copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
+
+    phy_init_top(NB_ANTENNAS_TX);
+
+    lte_frame_parms->twiddle_fft      = twiddle_fft;
+    lte_frame_parms->twiddle_ifft     = twiddle_ifft;
+    lte_frame_parms->rev              = rev;
+
+    generate_64qam_table();
+    phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
+
+  rb_alloc[0] = 0x00000fff;  // RBs 0-31
+  rb_alloc[1] = 0x00000000;  // RBs 32-63
+  rb_alloc[2] = 0x00000000;  // RBs 64-95
+  rb_alloc[3] = 0x00000000;  // RBs 96-109
+
+
+    txdataF    = (int **)malloc16(2*sizeof(int*));
+    txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
+    txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
+
+    txdata    = (int **)malloc16(2*sizeof(int*));
+    txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
+    txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
+
   
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -74,23 +84,39 @@ void main() {
   r_im = malloc(2*sizeof(double*));
   
   for (i=0;i<2;i++) {
-
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
+    input_data     = (unsigned char*) malloc(block_length/8);
+    decoded_output = (unsigned char*) malloc(block_length/8);
+    for (i=0;i<block_length/8;i++)
+      input_data[i]= (unsigned char)(i%256);
 
+    generate_dlsch(txdataF,
+		   1024,
+		   lte_frame_parms,
+		   12, // number of allocated RB
+		   rb_alloc,  // RB allocation vector
+		   3,         // slot allocation (both slots)
+		   input_data,
+		   block_length/8,//Nbytes
+		   mod_order,   //  (mod_order),
+		   mimo_mode,   // Diversity/Alamouti,
+		   0,
+		   3); // crc_len
+    /* 
+    generate_pss(txdataF,
+		 1024,
+		 lte_frame_parms,
+		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+    */
   ch = (struct complex**) malloc(1 * 2 * sizeof(struct complex*));
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
 
-  generate_pss(txdataF,
-	       1024,
-	       lte_frame_parms,
-	       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-  
   generate_pilots(txdataF,
 		  1024,
 		  lte_frame_parms,
@@ -147,26 +173,94 @@ void main() {
       ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
       ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
-  }
-  
-  lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-  
-  slot_fep(lte_frame_parms,
-	   0,
-	   0,
-	   lte_ue_common_vars->rxdata,
-	   lte_ue_common_vars->rxdataF,
-	   lte_ue_common_vars->dl_ch_estimates,
-	   0);
+  }    
+    lte_sync_time_init(lte_frame_parms,lte_ue_common_vars);
+    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    lte_sync_time_free();
 
+    for (Ns=0;Ns<3;Ns++) {
+      for (l=0;l<6;l++) {
+	printf("Ns %d, l %d\n",Ns,l);
 
+	slot_fep(lte_frame_parms,
+		 l,
+		 Ns%20,
+		 lte_ue_common_vars->rxdata,
+		 lte_ue_common_vars->rxdataF,
+		 lte_ue_common_vars->dl_ch_estimates,
+		 0);
+	
+      if ((Ns==0) && (l==3)) // process symbols 0,1,2
+	for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+      
+      if ((Ns==1) && (l==0)) // process symbols 3,4,5
+	for (m=4;m<6;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+      if ((Ns==1) && (l==3)) // process symbols 6,7,8
+	for (m=7;m<9;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+      
+      if ((Ns==2) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
+	for (m=10;m<12;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+      
+	
+      }
+    }
+      
   write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2,2,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+/*
   write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
   write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
   write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+*/
+  write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,2,1);
+  write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],NUMBER_OF_USEFUL_CARRIERS*12,1,1);
+  write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],2*600*12,1,1);
+  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr,600*3,1,0);
 
+
+  // Generate LLRs for decoding
+  dlsch_decoding(lte_ue_dlsch_vars,
+		 lte_frame_parms,
+		 block_length/8,
+		 12,             //NB allocated RBs
+		 mod_order,
+		 decoded_output,
+		 0,
+		 3);
+
+
+  printf("Decoded_output:\n");
+  for (i=0;i<block_length/8;i++)
+    printf("%d : %d\n",i,decoded_output[i]);
 
   free(txdataF[0]);
   free(txdataF[1]);
