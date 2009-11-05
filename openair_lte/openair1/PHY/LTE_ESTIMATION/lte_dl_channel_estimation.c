@@ -45,7 +45,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   if (k > 6)
     k -=6;
   
-  printf("Channel Estimation : ch_offset %d, %d, %d, %d, %d, k=%d\n",ch_offset,frame_parms->ofdm_symbol_size,frame_parms->Ncp,l,Ns,k);
+  //printf("Channel Estimation : ch_offset %d, %d, %d, %d, %d, k=%d\n",ch_offset,frame_parms->ofdm_symbol_size,frame_parms->Ncp,l,Ns,k);
   
   switch (k) {
   case 0 :
@@ -519,7 +519,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     
     
     // Temporal Interpolation
-        printf("ch_offset %d\n",ch_offset);
+    // printf("ch_offset %d\n",ch_offset);
     
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
     if (ch_offset == 0) {
@@ -533,7 +533,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     } // this is 1/3,2/3 combination for pilots spaced be 3 symbols
     
     else {
-      printf("Interpolating 0->%d\n",4-frame_parms->Ncp);
+      //printf("Interpolating 0->%d\n",4-frame_parms->Ncp);
       
       dl_ch_prev = (short *)&dl_ch_estimates[(p<<1)+aarx][0];
       if (frame_parms->Ncp==0) {// pilot spacing 4 symbols (1/4,1/2,3/4 combination)

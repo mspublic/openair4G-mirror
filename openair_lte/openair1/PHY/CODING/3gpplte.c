@@ -135,6 +135,23 @@ void threegpplte_turbo_encoder(unsigned char *input,
 
 }
 
+inline short threegpp_interleaver_parameters(unsigned short bytes_per_codeword) {
+  if (bytes_per_codeword<=64)
+    return (bytes_per_codeword-5);
+  else if (bytes_per_codeword <=128)
+    return (59 + ((bytes_per_codeword-64)>>1));
+  else if (bytes_per_codeword <= 256)
+    return (91 + ((bytes_per_codeword-128)>>2));
+  else if (bytes_per_codeword <= 768)
+    return (123 + ((bytes_per_codeword-256)>>3));
+  else {
+#ifdef DEBUG_TURBO_ENCODER
+    printf("Illegal codeword size !!!\n");
+#endif 
+    return(-1);
+  }
+}
+
 
 #ifdef MAIN
 

@@ -164,7 +164,10 @@ int rate_matching_lte(unsigned int N_coded,
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
   printf("rate_matching : N_coded %d, N_input %d\n",N_coded,N_input);
-  printf("rate_matching : N_punctured = %d (%d)\n",N_punctured,rep_flag);
+  if (rep_flag)
+    printf("rate_matching : N_repeated = %d\n",N_punctured);
+  else
+    printf("rate_matching : N_punctured = %d\n",N_punctured);
   printf("rate_matching : code rate = %f\n",(double)N_input/(double)N_coded/3.0);
 #endif
 #endif

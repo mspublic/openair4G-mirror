@@ -25,6 +25,9 @@ unsigned int mchrach_error_cnt[2][8],sach_error_cnt=0;
 
 #ifdef OPENAIR_LTE
 #include "PHY/LTE_REFSIG/primary_synch.h"
+int *primary_synch0_time;
+int *primary_synch1_time;
+int *primary_synch2_time;
 #endif
 
 #include "PHY/CODING/vars.h"
