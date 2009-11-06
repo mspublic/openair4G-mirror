@@ -22,11 +22,11 @@ void main() {
   int channel_length;
   struct complex **ch;
 
-  unsigned char Ns,l,m,mod_order=4;
+  unsigned char Ns,l,m,mod_order=6;
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = SISO;//ALAMOUTI;
   unsigned char *input_data,*decoded_output;
-  unsigned short block_length=1600;
+  unsigned short block_length=2560;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -61,6 +61,7 @@ void main() {
     lte_frame_parms->rev              = rev;
 
     generate_64qam_table();
+    generate_16qam_table();
     phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
 
   rb_alloc[0] = 0x00000fff;  // RBs 0-31
@@ -180,15 +181,14 @@ void main() {
 
     for (Ns=0;Ns<3;Ns++) {
       for (l=0;l<6;l++) {
-	printf("Ns %d, l %d\n",Ns,l);
 
 	slot_fep(lte_frame_parms,
 		 l,
 		 Ns%20,
-		 lte_ue_common_vars->rxdata,
+		 txdata,//lte_ue_common_vars->rxdata,
 		 lte_ue_common_vars->rxdataF,
 		 lte_ue_common_vars->dl_ch_estimates,
-		 0);
+		 (Ns>>1)*lte_frame_parms->samples_per_tti);
 	
       if ((Ns==0) && (l==3)) // process symbols 0,1,2
 	for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
@@ -234,8 +234,7 @@ void main() {
     }
       
   write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2,2,1);
-  write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
 /*
   write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
   write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
@@ -243,10 +242,12 @@ void main() {
 */
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,2,1);
   write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],NUMBER_OF_USEFUL_CARRIERS*12,1,1);
-  write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],2*600*12,1,1);
+  write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],300*12,1,1);
   write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr,600*3,1,0);
 
-  /*
+  write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
+  write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
+
   // Generate LLRs for decoding
   dlsch_decoding(lte_ue_dlsch_vars,
 		 lte_frame_parms,
@@ -260,7 +261,6 @@ void main() {
   printf("Decoded_output:\n");
   for (i=0;i<block_length/8;i++)
     printf("%d : %d\n",i,decoded_output[i]);
-  */
 
   free(txdataF[0]);
   free(txdataF[1]);
