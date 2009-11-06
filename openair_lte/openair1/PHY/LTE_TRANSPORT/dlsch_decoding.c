@@ -54,6 +54,7 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
 		dummy_channel_output,
 		1,
 		rmseed);
+  write_output("decoder_llr.m","decllr",dlsch_llr,coded_bits_per_codeword,1,0);
 
   for (i=0;i<(3*8*block_length)+12;i++) {
     if ((dummy_channel_output[i]&0x40) != 0) { // bit was repeated

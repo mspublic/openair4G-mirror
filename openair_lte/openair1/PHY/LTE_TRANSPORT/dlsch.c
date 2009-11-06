@@ -13,28 +13,31 @@
 */
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
-static short qam64_table[6][8];
+static int qam64_table[8],qam16_table[4];
 
 void generate_64qam_table() {
 
   int a,b,c,index;
 
+  printf("QAM64_n1 %d\n",QAM64_n1);
   for (a=-1;a<=1;a+=2) 
     for (b=-1;b<=1;b+=2) 
       for (c=-1;c<=1;c+=2) {
 	index = (1+a)*2 + (1+b) + (1+c)/2;  
-	qam64_table[0][index] = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
+	qam64_table[index] = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
 	
-	qam64_table[1][index] = b*(QAM64_n1 + a*(QAM64_n2 + (c*QAM64_n3))); // 1 0 2
-	
-	qam64_table[2][index] = b*(QAM64_n1 + c*(QAM64_n2 + (a*QAM64_n3))); // 1 2 0
-	
-	qam64_table[3][index] = c*(QAM64_n1 + a*(QAM64_n2 + (b*QAM64_n3))); // 2 0 1
-	
-	qam64_table[4][index] = c*(QAM64_n1 + b*(QAM64_n2 + (a*QAM64_n3))); // 2 1 0
-	
-	qam64_table[5][index] = a*(QAM64_n1 + c*(QAM64_n2 + (b*QAM64_n3))); // 0 2 1
-	//	printf("QAM64 i %d : %d\n",index,qam64_table[0][index]);
+	printf("QAM64 i %d : %d\n",index,qam64_table[index]);
+      } 
+}
+
+void generate_16qam_table() {
+
+  int a,b,index;
+
+  for (a=-1;a<=1;a+=2) 
+    for (b=-1;b<=1;b+=2) {
+	index = (1+a) + (1+b)/2;  
+	qam16_table[index] = a*(QAM16_n1 + (b*QAM16_n2)); 
       } 
 }
 
@@ -57,6 +60,8 @@ void allocate_REs_in_RB(int **txdataF,
   unsigned char re;
   unsigned char qam64_table_offset_re = 0;
   unsigned char qam64_table_offset_im = 0;
+  unsigned char qam16_table_offset_re = 0;
+  unsigned char qam16_table_offset_im = 0;
   short gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2;
   short re_off=re_offset;
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
@@ -110,26 +115,28 @@ void allocate_REs_in_RB(int **txdataF,
 	    break;
 	    
 	  case 4:  //16QAM
-	    
-	    // Real part
-	    
-	    if (output[*jj]==0)
-	      ((short*)&txdataF[0][tti_offset])[0] = 
-		(-gain_lin_16QAM1) + ((output[*jj+1]==0) ? (gain_lin_16QAM2) : (-gain_lin_16QAM2));
-	    else
-	      ((short*)&txdataF[0][tti_offset])[0] = 
-		(gain_lin_16QAM1) + ((output[*jj+1]==0) ? (-gain_lin_16QAM2) : (gain_lin_16QAM2));
-	    *jj=*jj+2;
 
-	    //Imag part
-	    if (output[*jj]==0)
-	      ((short*)&txdataF[0][tti_offset])[1] = 
-		(-gain_lin_16QAM1) + ((output[*jj+1]==0) ? (gain_lin_16QAM2) : (-gain_lin_16QAM2));
-	    else
-	      ((short*)&txdataF[0][tti_offset])[1] = 
-		(gain_lin_16QAM1) + ((output[*jj+1]==0) ? (-gain_lin_16QAM2) : (gain_lin_16QAM2));
+	    qam16_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=1;
+	    *jj=*jj+1;
 	    
-	    *jj=*jj+2;
+	    
+	    qam16_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    
+
 	    	    
 	    break;
 	   
@@ -159,8 +166,8 @@ void allocate_REs_in_RB(int **txdataF,
 	      qam64_table_offset_im+=1;
 	    *jj=*jj+1;
 	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 	    break;
 
 	  }
@@ -397,8 +404,8 @@ void allocate_REs_in_RB(int **txdataF,
 		      *jj=*jj+1;
 
 
-		    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
-		    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+		    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[qam64_table_offset_re])>>14);
+		    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[qam64_table_offset_im])>>14);
 
 
 		    // Antenna 1 => -x1*
@@ -478,8 +485,8 @@ void allocate_REs_in_RB(int **txdataF,
 
 
 
-		    ((short *)&txdataF[1][tti_offset])[0]=-(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
-		    ((short *)&txdataF[1][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+		    ((short *)&txdataF[1][tti_offset])[0]=-(short)((amp*qam64_table[qam64_table_offset_re])>>14);
+		    ((short *)&txdataF[1][tti_offset])[1]=(short)((amp*qam64_table[qam64_table_offset_im])>>14);
 		    
 		    break;
 	  }
@@ -641,8 +648,8 @@ void allocate_REs_in_RB(int **txdataF,
 	      *jj=*jj+1;
 	    
 	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[0][qam64_table_offset_re])>>14);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[0][qam64_table_offset_im])>>14);
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)((amp*qam64_table[qam64_table_offset_re])>>14);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)((amp*qam64_table[qam64_table_offset_im])>>14);
 	    
 	    
 	  }
@@ -792,7 +799,7 @@ void generate_dlsch(int **txdataF,
 	output2[j2++] = output[j]&1;
     }
   }					
-
+  write_output("enc_output2.m","enc2",output2,j2,1,4);
   
   // rate 1/3, 8 bytes/bit, 12 bit termination
   
