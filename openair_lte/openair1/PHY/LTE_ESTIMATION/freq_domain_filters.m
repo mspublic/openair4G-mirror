@@ -2,8 +2,9 @@ channel_length = 128;
 factor = (1.5);
 filter_length = 96;
 
-F = real(fft([ones(1,1+channel_length/2) zeros(1,2048-channel_length-1) ones(1,channel_length/2)])/sqrt(filter_length*1024));
+F = real(fft([ones(1,1+channel_length/2) zeros(1,2048-channel_length-1) ones(1,channel_length/2)])/sqrt(2048));
 
+ 
 Ftrunk0  = floor(32767*[F((2049-filter_length/2):2048) F(1:filter_length/2)]);
 Ftrunk1  = floor(32767*[F((2048-filter_length/2):2048) F(1:-1+filter_length/2)]);
 Ftrunk2  = floor(32767*[F((2047-filter_length/2):2048) F(1:-2+filter_length/2)]);
