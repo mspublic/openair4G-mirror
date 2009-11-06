@@ -137,11 +137,11 @@ ________________________________________________________________*/
 #define QAM16_n2 10362
 
 ///First Amplitude for QAM64 (\f$ 2^14 \times 4/\sqrt{42}\f$)
-#define QAM64_n1 10112
+#define QAM64_n1 20225
 ///Second Amplitude for QAM64 (\f$ 2^14 \times 2/\sqrt{42}\f$)
-#define QAM64_n2 5056
+#define QAM64_n2 10112
 ///Third Amplitude for QAM64 (\f$ 2^14 \times 1/\sqrt{42}\f$)
-#define QAM64_n3 2528
+#define QAM64_n3 5056
 
 /// Size of SACCH PDU in Bytes
 #define SACCH_SIZE_BYTES (sizeof(UL_SACCH_PDU)+4) 

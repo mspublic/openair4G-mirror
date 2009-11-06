@@ -65,7 +65,8 @@ int lte_dl_cell_spec(int *output,
 
     mprime++;
 #ifdef DEBUG_DL_CELL_SPEC
-    printf("output[%d] = (%d,%d)\n",k,((short *)&output[k])[0],((short *)&output[k])[1]);
+    if (m<4)
+    printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k+=6;
     if (k >= frame_parms->ofdm_symbol_size) {
@@ -116,7 +117,8 @@ int lte_dl_cell_spec_rx(int *output,
 
     mprime++;
 #ifdef DEBUG_DL_CELL_SPEC
-    printf("output[%d] = (%d,%d)\n",k,((short *)&output[k])[0],((short *)&output[k])[1]);
+    if (m<4)
+    printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k++;
     //    printf("** k %d\n",k);
