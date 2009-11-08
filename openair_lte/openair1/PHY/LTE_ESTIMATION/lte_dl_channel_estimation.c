@@ -18,8 +18,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   int pilot[2][200] __attribute__((aligned(16)));
   unsigned char nu,aarx;
   unsigned short k;
-  unsigned int rb;
-  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2;
+  unsigned int rb,pilot_cnt;
+  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2;
   int ch_offset,symbol_offset;
   unsigned int n;
   int i;
@@ -51,27 +51,52 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   case 0 :
     f=filt24_0;
     f2=filt24_2;
+    fl=filt24_0l;
+    f2l2=filt24_2l2;
+    fr=filt24_2r;
+    f2r2=filt24_0r2;
     break;
   case 1 :
     f=filt24_1;
     f2=filt24_3;
+    fl=filt24_1l;
+    f2l2=filt24_3l2;
+    fr=filt24_3r;
+    f2r2=filt24_1r2;
     break;
   case 2 :
     f=filt24_2;
     f2=filt24_4;
+    fl=filt24_2l;
+    f2l2=filt24_4l2;
+    fr=filt24_4r;
+    f2r2=filt24_2r2;
     break;
   case 3 :
     f=filt24_3;
     f2=filt24_5;
+    fl=filt24_3l;
+    f2l2=filt24_5l2;
+    fr=filt24_5r;
+    f2r2=filt24_3r2;
     break;
   case 4 :
     f=filt24_4;
     f2=filt24_6;
+    fl=filt24_4l;
+    f2l2=filt24_6l2;
+    fr=filt24_6r;
+    f2r2=filt24_4r2;
     break;
   case 5 :
     f=filt24_5;
     f2=filt24_7;
-
+    fl=filt24_5l;
+    f2l2=filt24_7l2;
+    fr=filt24_7r;
+    f2r2=filt24_5r2;
+    break;
+  default:
     break;
   }
   
@@ -95,7 +120,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     if (frame_parms->N_RB_DL==50) {
       
       //First half of pilots
-      for (rb=0;rb<48;rb+=4) {
+      for (pilot_cnt=0;pilot_cnt<49;pilot_cnt+=2) {
 	
 	//	printf("%d\n",dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);	
 		
@@ -136,52 +161,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	rxF+=24;
 	dl_ch+=16;
 	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-	multadd_real_vector_complex_scalar(f,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=8;
-	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-	multadd_real_vector_complex_scalar(f2,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=16;
       }
-      
-      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-      multadd_real_vector_complex_scalar(f,
-					 ch,
-					 dl_ch,
-					 24);
-      pil+=2;    // Re Im
-      rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
-      dl_ch+=8;
-      
-      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-      multadd_real_vector_complex_scalar(f2,
-					 ch,
-					 dl_ch,
-					 24);
-      pil+=2;
-      rxF+=24;
-      dl_ch+=16;
-      
-      
       printf("Second half\n");
       //Second half of RBs
       
@@ -191,31 +171,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       rxF   = (short *)&rxdataF[aarx][(symbol_offset+1+k)<<1]; 
       
-      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      
-		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-      multadd_real_vector_complex_scalar(f,
-					 ch,
-					 dl_ch,
-					 24);
-      pil+=2;
-      rxF+=24;
-      dl_ch+=8;
-      
-      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      
-      		printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-      multadd_real_vector_complex_scalar(f2,
-					 ch,
-					 dl_ch,
-					 24);
-      pil+=2;
-      rxF+=24;
-      dl_ch+=16;
-      
-      for (rb=0;rb<48;rb+=4) {
+      for (pilot_cnt=0;pilot_cnt<49;pilot_cnt+=2) {
 	//      printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
 	//      printf("rx[%d][%d] -> (%d,%d)\n",p,
 	//     first_carrier_offset + nushift + 6*rb+(3*p),
@@ -274,7 +230,30 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     
     else if (frame_parms->N_RB_DL==25) {
       
-      for (rb=0;rb<24;rb+=4) {
+      // Treat first 2 pilots specially (left edge)
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      printf("pilot 0 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(fl,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;    // Re Im
+      rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
+      dl_ch+=8;
+      
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(f2l2,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;
+      rxF+=24;
+      dl_ch+=16;
+      
+      for (pilot_cnt=2;pilot_cnt<24;pilot_cnt+=2) {
 	/*	
 	printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
 	      printf("rx[%d][%d] -> (%d,%d)\n",p,
@@ -285,7 +264,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %d : rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 
 	multadd_real_vector_complex_scalar(f,
 					   ch,
@@ -297,7 +276,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-				printf("rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 	multadd_real_vector_complex_scalar(f2,
 					   ch,
 					   dl_ch,
@@ -306,34 +285,11 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	rxF+=24;
 	dl_ch+=16;
 	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-				printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-
-
-	multadd_real_vector_complex_scalar(f,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=8;
-	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-		      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[0],ch[0],ch[1],pil[0],pil[1]);
-	multadd_real_vector_complex_scalar(f2,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=16;
       }
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("pilot 24: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
                  
       multadd_real_vector_complex_scalar(f,
 					 ch,
@@ -348,7 +304,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-            			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("pilot 25: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
       multadd_real_vector_complex_scalar(f2,
 					 ch,
 					 dl_ch,
@@ -357,7 +313,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       rxF+=24;
       dl_ch+=16;
       
-      for (rb=0;rb<24;rb+=4) {
+      for (pilot_cnt=0;pilot_cnt<22;pilot_cnt+=2) {
 	/*
              printf("* pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
 	      printf("rx[%d][%d] -> (%d,%d)\n",p,
@@ -367,7 +323,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	*/
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);	
+	printf("pilot %d rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",26+pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);	
 	multadd_real_vector_complex_scalar(f,
 					   ch,
 					   dl_ch,
@@ -378,7 +334,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %d : rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",27+pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 	multadd_real_vector_complex_scalar(f2,
 					   ch,
 					   dl_ch,
@@ -387,28 +343,28 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	rxF+=24;
 	dl_ch+=16;
 	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-	multadd_real_vector_complex_scalar(f,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=8;
-	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      			printf("rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-	multadd_real_vector_complex_scalar(f2,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;    // Re Im
-	rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
-	dl_ch+=16;
       }
+
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      printf("pilot 49: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+
+      multadd_real_vector_complex_scalar(f2r2,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;    // Re Im
+      rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
+      dl_ch+=8;
+      
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      printf("pilot 50: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(fr,
+					 ch,
+					 dl_ch,
+					 24);
+
     }
     else if (frame_parms->N_RB_DL==15) {
       

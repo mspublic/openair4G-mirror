@@ -47,8 +47,8 @@ void multadd_real_vector_complex_scalar(short *x,
   j=0;
   for (i=0;i<N>>3;i++) {
 
-    yr     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_r_128,x_128[i]),1);
-    yi     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_i_128,x_128[i]),1);
+    yr     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_r_128,x_128[i]),2);
+    yi     = _mm_slli_epi16(_mm_mulhi_epi16(alpha_i_128,x_128[i]),2);
  
     //    print_shorts("yr",&yr);
     //    print_shorts("yi",&yi);
