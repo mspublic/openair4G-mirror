@@ -2,6 +2,164 @@
 #define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
 
+#define MAX_DLSCH_PAYLOAD_BYTES 768
+#define NSOFT 1827072
+#define LTE_NULL 2 
+
+typedef struct {
+  unsigned char active;
+  unsigned short payload_size_bytes;
+  unsigned char *payload;
+  unsigned int RTC;
+  unsigned char round;
+  unsigned char mod_order;
+  MIMO_mode_t mimo_mode;
+  unsigned char d[3][3*(96+3+(3*6144))];  // allow for up to 3 length-6144 codewords in a TTI
+  unsigned char w[3][3*6144];
+  unsigned char C;
+  unsigned char Nl;
+} LTE_eNb_HARQ_t;
+
+typedef struct {
+  LTE_eNb_HARQ_t *harq_processes[8];
+  unsigned char rvidx;
+  unsigned char crc_len;
+  unsigned char e[3][3*6144];
+  unsigned char Mdlharq;
+  unsigned char Kmimo;
+} LTE_eNb_DLSCH_t;
+
+typedef struct {
+  unsigned char active;
+  unsigned short payload_size_bytes;
+  unsigned char *payload;
+  unsigned int RTC;
+  unsigned char round;
+  unsigned char mod_order;
+  MIMO_mode_t mimo_mode;
+  short w[3][3*6144];
+  unsigned char C;
+  unsigned char Nl;
+} LTE_UE_HARQ_t;
+
+typedef struct {
+  LTE_UE_HARQ_t *harq_processes[8];
+  unsigned char rvidx;
+  unsigned char crc_len;
+  unsigned char Mdlharq;
+  unsigned char Kmimo;
+} LTE_UE_DLSCH_t;
+
+/** \fn unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w)
+\brief This is the subblock interleaving algorithm from 36-212 (Release 8, 8.6 2009-03) , pp. 15-16. 
+This function takes the d-sequence and generates the w-sequence.  The nu-sequence from 36-212 is implicit.
+\param D Number of systematic bits plus 4 (plus 4 for termination)
+\param d Pointer to input (d-sequence, turbo code output)
+\param w Pointer to output (w-sequence, interleaver output)
+\returns Interleaving matrix cardinality (Kpi from 36-212)
+*/
+
+unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w);
+
+void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
+
+/** \fn generate_dummy_w(unsigned int D, unsigned char *w)
+\brief This function generates a dummy interleaved sequence (first row) for receiver, in order to identify
+the NULL positions used to make the matrix complete.
+\param D Number of systematic bits plus 4 (plus 4 for termination)
+\param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
+\returns Interleaving matrix cardinality (Kpi from 36-212)
+*/
+
+unsigned int generate_dummy_w(unsigned int D, unsigned char *w);
+
+
+/** \fn lte_rate_matching_turbo(unsigned int RTC,
+			     unsigned int G, 
+			     unsigned char *w,
+			     unsigned char *e, 
+			     unsigned char C, 
+			     unsigned int Nsoft, 
+			     unsigned char Mdlharq,
+			     unsigned char Kmimo,
+			     unsigned char rvidx,
+			     unsigned char Qm, 
+			     unsigned char Nl, 
+			     unsigned char r)
+
+\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
+\param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
+\param G This the number of coded transport bits allocated in sub-frame
+\param w This is a pointer to the w-sequence (second interleaver output)
+\param e This is a pointer to the e-sequence (rate matching output, channel input/output bits)
+\param C Number of segments (codewords) in the sub-frame
+\param Nsoft Total number of soft bits (from UE capabilities in 36-306)
+\param Mdlharq Number of HARQ rounds 
+\param Kmimo MIMO capability for this DLSCH (0 = no MIMO)
+\param rvidx round index (0-3)
+\param Qm modulation order (2,4,6)
+\param Nl number of layers (1,2)
+\param r segment number
+*/
+
+
+void lte_rate_matching_turbo(unsigned int RTC,
+			     unsigned int G, 
+			     unsigned char *w,
+			     unsigned char *e, 
+			     unsigned char C, 
+			     unsigned int Nsoft, 
+			     unsigned char Mdlharq,
+			     unsigned char Kmimo,
+			     unsigned char rvidx,
+			     unsigned char Qm, 
+			     unsigned char Nl, 
+			     unsigned char r);
+
+/** \fn lte_rate_matching_turbo_rx(unsigned int RTC,
+				unsigned int G, 
+				short *w,
+				unsigned char *dummy_w,
+				short *soft_input, 
+				unsigned char C, 
+				unsigned int Nsoft, 
+				unsigned char Mdlharq,
+				unsigned char Kmimo,
+				unsigned char rvidx,
+				unsigned char Qm, 
+				unsigned char Nl, 
+				unsigned char r)
+
+\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
+\param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
+\param G This the number of coded transport bits allocated in sub-frame
+\param w This is a pointer to the soft w-sequence (second interleaver output) with soft-combined outputs from successive HARQ rounds 
+\param dummy_w This is the first row of the interleaver matrix for identifying/discarding the "LTE-NULL" positions
+\param soft_input This is a pointer to the soft channel output 
+\param C Number of segments (codewords) in the sub-frame
+\param Nsoft Total number of soft bits (from UE capabilities in 36-306)
+\param Mdlharq Number of HARQ rounds 
+\param Kmimo MIMO capability for this DLSCH (0 = no MIMO)
+\param rvidx round index (0-3)
+\param Qm modulation order (2,4,6)
+\param Nl number of layers (1,2)
+\param r segment number
+*/
+
+void lte_rate_matching_turbo_rx(unsigned int RTC,
+				unsigned int G, 
+				short *w,
+				unsigned char *dummy_w,
+				short *soft_input, 
+				unsigned char C, 
+				unsigned int Nsoft, 
+				unsigned char Mdlharq,
+				unsigned char Kmimo,
+				unsigned char rvidx,
+				unsigned char Qm, 
+				unsigned char Nl, 
+				unsigned char r);
+
 /** \fn allocate_REs_in_RB(int **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
@@ -57,15 +215,12 @@ void allocate_REs_in_RB(int **txdataF,
 void generate_dlsch(int **txdataF,
 		    short amp,
 		    LTE_DL_FRAME_PARMS *frame_parms,
+		    LTE_eNb_DLSCH_t *dlsch,
+		    unsigned char harq_pid,
 		    unsigned short N_RB,
 		    unsigned int  *rb_alloc,
-		    unsigned char slot_alloc,
-		    unsigned char *input_data,
-		    unsigned int Nbytes,
-		    unsigned char mod_order,
-		    MIMO_mode_t mimo_mode,
-		    unsigned char rmseed,
-		    unsigned char crc_len);
+		    unsigned char slot_alloc);
+
 
 void generate_pilots(int **txdataF,
 		     short amp,

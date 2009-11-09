@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc-4
 
 TOP_DIR = ../..
 
@@ -22,7 +22,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/crc_byte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/logmap8_sse2.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
