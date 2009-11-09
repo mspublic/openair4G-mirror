@@ -37,7 +37,7 @@ void PHY_ofdm_mod(int *input,
 This function implements the OFDM front end processor (FEP)
 
 @param frame_parms LTE DL Frame Parameters
-@param l symbol (0,1) - Note 1 means 3!
+@param l symbol 
 @param Ns Slot number (0..19)
 @param rxdata received date in time domain (input)
 @param rxdataF received date in frequency domain (output)

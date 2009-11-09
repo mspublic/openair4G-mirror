@@ -140,14 +140,14 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   for (i=0; i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx; i++) {
-    lte_ue_common_vars->dl_ch_estimates[i] = (int *)malloc16(frame_parms->symbols_per_tti*sizeof(int)*(96+frame_parms->ofdm_symbol_size));
+    lte_ue_common_vars->dl_ch_estimates[i] = (int *)malloc16(frame_parms->symbols_per_tti*sizeof(int)*(frame_parms->ofdm_symbol_size));
     if (lte_ue_common_vars->dl_ch_estimates[i]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] allocated at %p\n",i,
 	     lte_ue_common_vars->dl_ch_estimates[i]);
 #endif
 
-      memset(lte_ue_common_vars->dl_ch_estimates[i],0,frame_parms->symbols_per_tti*sizeof(int)*(96+frame_parms->ofdm_symbol_size));
+      memset(lte_ue_common_vars->dl_ch_estimates[i],0,frame_parms->symbols_per_tti*sizeof(int)*(frame_parms->ofdm_symbol_size));
     }
     else {
       msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates[%d] not allocated\n",i);

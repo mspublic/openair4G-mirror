@@ -2,15 +2,16 @@ CC = gcc
 
 TOP_DIR = ../..
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE
 
-#CFLAGS += -DDEBUG_PHY
+CFLAGS += -DDEBUG_PHY
 
 PHY_OBJS = $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_rx.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
@@ -37,7 +38,7 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 
-all: dlsim
+all: dlsim dlsim2
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -Wall -I$(TOP_DIR) -o $@ $<
@@ -45,8 +46,11 @@ $(OBJ) : %.o : %.c
 dlsim : $(OBJ) dlsim.c
 	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ) -lm
 
+dlsim2 : $(OBJ) dlsim2.c
+	$(CC) dlsim2.c -I$(TOP_DIR) -o dlsim2 $(CFLAGS) $(OBJ) -lm
+
 clean:
-	rm -f dlsim
+	rm -f dlsim dlsim2
 	rm -f $(PHY_OBJS)
 	rm -f *.o
 	rm -f *.exe*

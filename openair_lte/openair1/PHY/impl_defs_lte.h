@@ -14,6 +14,8 @@ ________________________________________________________________*/
 #include "spec_defs_top.h"
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
+#define LTE_CE_FILTER_LENGTH 5
+#define LTE_CE_OFFSET (LTE_CE_FILTER_LENGTH - frame_parms->nushift - 1)
 
 typedef struct {
   unsigned char N_RB_DL;                ///Number of resource blocks (RB) in DL

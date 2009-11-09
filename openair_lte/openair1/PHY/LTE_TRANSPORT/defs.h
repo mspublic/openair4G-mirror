@@ -83,4 +83,97 @@ int generate_pbch(int **txdataF,
 		  unsigned char *pbch_pdu);
 
 
+void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+		    int **rxdataF_comp,
+		    short *dlsch_llr,
+		    unsigned char symbol,
+		    unsigned short nb_rb);
+
+void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+		     int **rxdataF_comp,
+		     short *dlsch_llr,
+		     int **dl_ch_mag,
+		     unsigned char symbol,
+		     unsigned short nb_rb);
+
+void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
+		     int **rxdataF_comp,
+		     char *dlsch_llr,
+		     int **dl_ch_mag,
+		     int **dl_ch_magb,
+		     unsigned char symbol,
+		     unsigned short nb_rb);
+
+void dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
+		int **rxdataF_comp,
+		unsigned char l,
+		unsigned short nb_rb);
+
+void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
+		    int **rxdataF_comp,
+		    int **dl_ch_mag,
+		    int **dl_ch_magb,
+		    unsigned char symbol,
+		    unsigned short nb_rb);
+
+void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
+		  int **rxdataF_comp,
+		  int **dl_ch_mag,
+		  int **dl_ch_magb,
+		  unsigned char symbol,
+		  unsigned short nb_rb);
+
+void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
+			 int **rxdataF_comp,
+			 int **dl_ch_mag,
+			 int **dl_ch_magb,
+			 unsigned char symbol,
+			 unsigned short nb_rb);
+
+unsigned short dlsch_extract_rbs_single(int **rxdataF,
+					int **dl_ch_estimates,
+					int **rxdataF_ext,
+					int **dl_ch_estimates_ext,
+					unsigned int *rb_alloc,
+					unsigned char symbol,
+					LTE_DL_FRAME_PARMS *frame_parms);
+unsigned short dlsch_extract_rbs_dual(int **rxdataF,
+				      int **dl_ch_estimates,
+				      int **rxdataF_ext,
+				      int **dl_ch_estimates_ext,
+				      unsigned int *rb_alloc,
+				      unsigned char symbol,
+				      LTE_DL_FRAME_PARMS *frame_parms);
+
+
+void dlsch_channel_compensation(int **rxdataF_ext,
+				int **dl_ch_estimates_ext,
+				int **dl_ch_mag,
+				int **dl_ch_magb,
+				int **rxdataF_comp,
+				LTE_DL_FRAME_PARMS *frame_parms,
+				unsigned char symbol,
+				unsigned char mod_order,
+				unsigned short nb_rb,
+				unsigned char output_shift);
+
+
+void dlsch_channel_level(int **dl_ch_estimates_ext,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 int *avg,
+			 unsigned short nb_rb);
+
+void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
+	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	      LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned char symbol,
+	      unsigned int *rb_alloc,
+	      unsigned char mod_order,
+	      MIMO_mode_t mimo_mode);
+
+void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
+	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     MIMO_mode_t mimo_mode);
+
 #endif

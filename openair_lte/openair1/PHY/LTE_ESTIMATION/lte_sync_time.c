@@ -126,10 +126,12 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
   write_output("primary_syncF0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size*2,2,1);
   write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size*2,2,1);
   write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size*2,2,1);
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size*2,2,1);
+#endif
 #endif
 
   return (1);

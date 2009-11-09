@@ -20,7 +20,7 @@ void randominit()
   int i;
 
 
-  //srand((unsigned)time(NULL));
+  srand((unsigned)time(NULL));
 
   seed = (unsigned int) rand();
   if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
