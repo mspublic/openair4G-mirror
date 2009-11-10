@@ -193,6 +193,8 @@ int main(int argc, char **argv) {
   write_output("pbch_ch0_ext.m","pbch_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],12*4*6,1,1);
   write_output("pbch_rxF_comp.m","pbch_comp",lte_ue_dlsch_vars->rxdataF_comp[0],24*6,1,1);
   write_output("pbch_rxF_llr.m","pbch_llr",lte_ue_dlsch_vars->llr,24*6*2,1,0);
+  write_output("pbch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
+  write_output("pbch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
 
 
   free(txdataF[0]);

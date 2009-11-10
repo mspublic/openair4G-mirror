@@ -198,7 +198,7 @@ void lte_rate_matching_turbo_rx(unsigned int RTC,
 \param gain_lin_64QAM3
 */
 
-void allocate_REs_in_RB(int **txdataF,
+void allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
 			unsigned int symbol_offset,

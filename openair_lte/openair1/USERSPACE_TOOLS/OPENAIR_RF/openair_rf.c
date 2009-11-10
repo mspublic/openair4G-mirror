@@ -206,6 +206,7 @@ int main (int argc, char **argv) {
 #else
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
+  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
 
   lte_frame_parms->N_RB_DL            = 15;
   lte_frame_parms->Ncp                = 1;
@@ -223,7 +224,7 @@ int main (int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
-  phy_init_lte(lte_frame_parms,lte_ue_common_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
 #endif
   printf("Initialized PHY variables\n");
 

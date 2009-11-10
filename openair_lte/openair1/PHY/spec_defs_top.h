@@ -38,7 +38,7 @@ typedef struct PHY_FRAMING {
 
 
 #ifdef IFFT_FPGA
-typedef char mod_sym_t;
+typedef unsigned char mod_sym_t;
 #else
 typedef int mod_sym_t;
 #endif

@@ -1,10 +1,10 @@
-CC = gcc-4
+CC = gcc
 
 TOP_DIR = ../..
 
 CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE
 
-CFLAGS += -DDEBUG_PHY
+CFLAGS += -DDEBUG_PHY -DIFFT_FPGA
 
 PHY_OBJS = $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
@@ -23,6 +23,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/crc_byte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/logmap8_sse2.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o

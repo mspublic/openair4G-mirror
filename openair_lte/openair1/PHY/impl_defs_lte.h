@@ -45,7 +45,7 @@ typedef enum {
 
 typedef struct{
   int **txdata;
-  int **txdataF;
+  mod_sym_t **txdataF;
 } LTE_eNB_COMMON;
 
 //typedef struct{

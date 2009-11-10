@@ -27,6 +27,6 @@ for S1 in $S1_DB
 do
   for BETA in $BETA_DB 
     do
-    echo chbch_sim $S1 $N0 $FRAMES $N_TX $N_RX $ERRORS $RICE $AOA $FREQ $ICFLAG $(($S1-$BETA))
+    chbch_sim $S1 $N0 $FRAMES $N_TX $N_RX $ERRORS $RICE $AOA $FREQ $ICFLAG $(($S1-$BETA))
   done
 done
