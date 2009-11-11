@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 1;
-  lte_frame_parms->nb_antennas_tx     = 1;
-  lte_frame_parms->nb_antennas_rx     = 1;
+  lte_frame_parms->nb_antennas_tx     = 2;
+  lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 1;
   init_frame_parms(lte_frame_parms);
   
@@ -183,18 +183,20 @@ int main(int argc, char **argv) {
    //write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*12,2,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);
-  //write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][5]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
-  //write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
+  write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[2][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);
 
 
-  write_output("pbch_rxF_ext.m","pbch_ext",lte_ue_dlsch_vars->rxdataF_ext[0],12*4*6,1,1);
-  write_output("pbch_ch0_ext.m","pbch_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],12*4*6,1,1);
-  write_output("pbch_rxF_comp.m","pbch_comp",lte_ue_dlsch_vars->rxdataF_comp[0],24*6,1,1);
-  write_output("pbch_rxF_llr.m","pbch_llr",lte_ue_dlsch_vars->llr,24*6*2,1,0);
-  write_output("pbch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
-  write_output("pbch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
+  write_output("pbch00_ch0_ext.m","pbch00_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],12*4*6,1,1);
+  write_output("pbch01_ch0_ext.m","pbch01_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[1],12*4*6,1,1);
+  write_output("pbch10_ch0_ext.m","pbch10_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[2],12*4*6,1,1);
+  write_output("pbch11_ch0_ext.m","pbch11_ch0",lte_ue_dlsch_vars->dl_ch_estimates_ext[3],12*4*6,1,1);
+  write_output("pbch_rxF0_ext.m","pbch0_ext",lte_ue_dlsch_vars->rxdataF_ext[0],12*4*6,1,1);
+  write_output("pbch_rxF1_ext.m","pbch1_ext",lte_ue_dlsch_vars->rxdataF_ext[1],12*4*6,1,1);
+  write_output("pbch_rxF0_comp.m","pbch0_comp",lte_ue_dlsch_vars->rxdataF_comp[0],12*4*6,1,1);
+  write_output("pbch_rxF1_comp.m","pbch1_comp",lte_ue_dlsch_vars->rxdataF_comp[1],12*4*6,1,1);
+  write_output("pbch_rxF_llr.m","pbch_llr",lte_ue_dlsch_vars->llr,12*2*6*2,1,0);
 
 
   free(txdataF[0]);

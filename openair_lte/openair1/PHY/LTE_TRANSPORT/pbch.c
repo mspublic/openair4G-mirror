@@ -115,18 +115,10 @@ int generate_pbch(int **txdataF,
   bzero(pbch_coded_data,pbch_coded_bits);
   bzero(pbch_scrambled,pbch_coded_bits);
 
-#ifdef USER_MODE
-#ifdef DEBUG_PHY
-  char fname[40],vname[40];
-#endif //DEBUG_PHY
-#endif // USER_MODE
-
-  
   // Encode data
 
   // CRC attachment
   crc = crc16(pbch_pdu, pbch_crc_bits-16); 
-  printf("crc = %x\n", crc);
 
   // scramble crc with PBCH CRC mask (Table 5.3.1.1-1 of 3GPP 36.212-860)
   switch (frame_parms->nb_antennas_tx) {
@@ -140,7 +132,7 @@ int generate_pbch(int **txdataF,
     crc = crc ^ (unsigned short) 0xAAAA;
     break;
   default:
-    msg("[openair][PBCH] Unknown number of TX antennas!\n");
+    msg("[PBCH] Unknown number of TX antennas!\n");
     break;
   }
 
@@ -151,7 +143,7 @@ int generate_pbch(int **txdataF,
   pbch_data[6] = ((char*) &crc)[2];
   pbch_data[7] = ((char*) &crc)[3];
   for (i=0;i<8;i++) 
-    printf(" pbch_data[%d] = %x\n",i,pbch_data[i]);
+    printf("[PBCH] pbch_data[%d] = %x\n",i,pbch_data[i]);
 
   // this is not LTE compliant! LTE uses a rate 1/3 convolutional code
   threegpplte_turbo_encoder(pbch_data,
@@ -166,7 +158,7 @@ int generate_pbch(int **txdataF,
 			pbch_crc_bits*3+12, 
 			pbch_coded_data,
 			0) !=0 ) {
-    msg("[openair1][PBCH] Rate matching problem!\n");
+    msg("[PBCH] Rate matching problem!\n");
     return(-1);
   }
 
@@ -190,7 +182,7 @@ int generate_pbch(int **txdataF,
 	pbch_coded_data2[j2++] = pbch_coded_data[j]&1;
     }
   }					
-  printf("[openair][PHCH] rate matched bits=%d, pbch_coded_bits=%d, pbch_crc_bits=%d\n",j2,pbch_coded_bits,pbch_crc_bits);
+  printf("[PBCH] rate matched bits=%d, pbch_coded_bits=%d, pbch_crc_bits=%d\n",j2,pbch_coded_bits,pbch_crc_bits);
 
 
 #ifdef DEBUG_PHY
@@ -227,7 +219,7 @@ int generate_pbch(int **txdataF,
       first_pilot=0;
     }
 
-    printf("l=%d, pilots=%d, first_pilot=%d\n",l,pilots,first_pilot);
+    printf("[PBCH] l=%d, pilots=%d, first_pilot=%d\n",l,pilots,first_pilot);
 
     if (pilots==0) { // don't skip pilot symbols
       // This is not LTE, it guarantees that
@@ -237,7 +229,7 @@ int generate_pbch(int **txdataF,
       // cancellation isn't possible
       re_offset = frame_parms->ofdm_symbol_size-3*12;
       
-      for (rb=frame_parms->N_RB_DL/2-3;rb<frame_parms->N_RB_DL/2+3;rb++) {
+      for (rb=0;rb<6;rb++) {
 	
 	allocate_REs_in_RB(txdataF,
 			   &jj,
@@ -268,16 +260,16 @@ int generate_pbch(int **txdataF,
   return(0);
 }
 
-unsigned short pbch_extract_single(int **rxdataF,
-				   int **dl_ch_estimates,
-				   int **rxdataF_ext,
-				   int **dl_ch_estimates_ext,
-				   unsigned char symbol,
-				   LTE_DL_FRAME_PARMS *frame_parms) {
+unsigned short pbch_extract(int **rxdataF,
+			    int **dl_ch_estimates,
+			    int **rxdataF_ext,
+			    int **dl_ch_estimates_ext,
+			    unsigned char symbol,
+			    LTE_DL_FRAME_PARMS *frame_parms) {
 
 
   unsigned short rb,nb_rb=6;
-  unsigned char i,aarx;
+  unsigned char i,aarx,aatx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
   unsigned char nsymb = (frame_parms->Ncp==0) ? 7:6;
@@ -288,212 +280,42 @@ unsigned short pbch_extract_single(int **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
-	   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
-	   5+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
+    //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
+    //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
+    //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
 
-    dl_ch0     = &dl_ch_estimates[aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(6*12)];
     rxF_ext    = &rxdataF_ext[aarx][symbol_mod*(6*12)];
 
     for (rb=0; rb<nb_rb; rb++) {
-    
       // skip DC carrier
       if (rb==3) {
 	rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-	dl_ch0++;
       }
-      
-      memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	  
       for (i=0;i<12;i++) {
 	rxF_ext[i]=rxF[i<<1];
       }
-      dl_ch0+=12;
-      dl_ch0_ext+=12;
       rxF+=24;
       rxF_ext+=12;
     }
+
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+      dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
+      dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
+      for (rb=0; rb<nb_rb; rb++) {
+	// skip DC carrier
+	if (rb==3) {
+	  dl_ch0++;
+	}
+	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+	dl_ch0+=12;
+	dl_ch0_ext+=12;
+      }
+    }
+
   }
   return(0);
 }
-
-/*
-unsigned short dlsch_extract_rbs_dual(int **rxdataF,
-				      int **dl_ch_estimates,
-				      int **rxdataF_ext,
-				      int **dl_ch_estimates_ext,
-				      unsigned int *rb_alloc,
-				      unsigned char symbol,
-				      LTE_DL_FRAME_PARMS *frame_parms) {
-
-
-  unsigned short rb,nb_rb=0;
-  unsigned char rb_alloc_ind;
-  unsigned char i,aarx;
-  int *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
-  unsigned char symbol_mod;
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  //  printf("extract_rbs: symbol_mod %d\n",symbol_mod);
-  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-    
-    dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
-    dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
-    dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
-
-    rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
-    
-    rxF       = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-    
-    if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
-      for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
-	
-	if (rb < 32)
-	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-	else if (rb < 64)
-	  rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-	else if (rb < 96)
-	  rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-	else if (rb < 100)
-	  rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
-	else
-	  rb_alloc_ind = 0;
-	
-	// For second half of RBs skip DC carrier
-	if (rb==(frame_parms->N_RB_DL>>1)) {
-	  rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-	  dl_ch0++;
-	  dl_ch1++;
-	}
-	
-	if (rb_alloc_ind==1) {
-	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	  memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
-
-	    //printf("rb %d\n",rb);
-	    //for (i=0;i<12;i++)
-	    //printf("(%d %d)",((short *)dl_ch)[i<<1],((short*)dl_ch)[1+(i<<1)]);
-	    //printf("\n");
-	  
-	  for (i=0;i<12;i++) {
-	    rxF_ext[i]=rxF[i<<1];
-	    //	      printf("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
-	    //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
-	  }
-	  nb_rb++;
-	}
-	dl_ch0+=12;
-	dl_ch0_ext+=12;
-	dl_ch1+=12;
-	dl_ch1_ext+=12;
-	rxF+=24;
-	rxF_ext+=12;
-      }
-    else {  // Odd number of RBs
-      for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
-	
-	if (rb < 32)
-	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-	else if (rb < 64)
-	  rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-	else if (rb < 96)
-	  rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-	else if (rb < 100)
-	  rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
-	else
-	  rb_alloc_ind = 0;
-	
-	if (rb_alloc_ind==1) {
-	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	  memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
-	  for (i=0;i<12;i++)
-	    rxF_ext[i]=rxF[i<<1];
-	  nb_rb++;
-	  printf("RB %d (%d)\n",rb,nb_rb);
-
-	}
-	dl_ch0+=12;
-	dl_ch0_ext+=12;
-	dl_ch1+=12;
-	dl_ch1_ext+=12;
-	rxF+=24;
-	rxF_ext+=12;
-      }
-      // Do middle RB (around DC)
-      if (rb < 32)
-	rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-      else if (rb < 64)
-	rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-      else if (rb < 96)
-	rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-      else if (rb < 100)
-	rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
-      else
-	rb_alloc_ind = 0;
-	
-      if (rb_alloc_ind==1) {
-
-	for (i=0;i<6;i++) {
-	  dl_ch0_ext[i]=dl_ch0[i];
-	  dl_ch1_ext[i]=dl_ch1[i];
-	  rxF_ext[i]=rxF[i<<1];
-	}
-	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
-	for (;i<12;i++) {
-	  dl_ch0_ext[i]=dl_ch0[i+1];
-	  dl_ch1_ext[i]=dl_ch1[i+1];
-	  rxF_ext[i]=rxF[(1+i)<<1];
-	}
-	nb_rb++;
-	printf("RB %d (%d)\n",rb,nb_rb);
-      }
-      else {
-	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
-      }
-      dl_ch0+=13;
-      dl_ch0_ext+=12;
-      dl_ch1+=13;
-      dl_ch1_ext+=12;
-      rxF+=14;
-      rxF_ext+=12;
-      rb++;
-
-      for (;rb<frame_parms->N_RB_DL;rb++) {
-	  
-	if (rb < 32)
-	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-	else if (rb < 64)
-	  rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-	else if (rb < 96)
-	  rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-	else if (rb < 100)
-	  rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
-	else
-	  rb_alloc_ind = 0;
-	  
-	if (rb_alloc_ind==1) {
-	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	  memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
-	  for (i=0;i<12;i++)
-	    rxF_ext[i]=rxF[i<<1];
-	  nb_rb++;
-	  printf("RB %d (%d)\n",rb,nb_rb);
-	}
-	dl_ch0+=12;
-	dl_ch0_ext+=12;
-	dl_ch1+=12;
-	dl_ch1_ext+=12;
-	rxF+=24;
-	rxF_ext+=12;
-      }
-    }
-  }
-  return(nb_rb/frame_parms->nb_antennas_rx);
-}
-*/
 
 //compute average channel_level on each (TX,RX) antenna pair
 void pbch_channel_level(int **dl_ch_estimates_ext,
@@ -543,85 +365,29 @@ void pbch_channel_level(int **dl_ch_estimates_ext,
 
 void pbch_channel_compensation(int **rxdataF_ext,
 				int **dl_ch_estimates_ext,
-				int **dl_ch_mag,
-				int **dl_ch_magb,
 				int **rxdataF_comp,
 				LTE_DL_FRAME_PARMS *frame_parms,
 				unsigned char symbol,
-				unsigned char mod_order,
-				unsigned short nb_rb,
 				unsigned char output_shift) {
 
-  unsigned short rb;
-  __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128,mmtmp0,mmtmp1,mmtmp2,mmtmp3;
-  __m128i shift,QAM_amp128,QAM_amp128b;
+  unsigned short rb,nb_rb=6;
   unsigned char aatx,aarx,symbol_mod;
+  __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128,mmtmp0,mmtmp1,mmtmp2,mmtmp3;
   __m128i conjugate = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
 
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   
-  if (mod_order == 4)
-    QAM_amp128 = _mm_set1_epi16(QAM16_n1);
-  else if (mod_order == 6) {
-    QAM_amp128  = _mm_set1_epi16(QAM64_n1);
-    QAM_amp128b = _mm_set1_epi16(QAM64_n2);
-  }
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
       dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
-      dl_ch_mag128      = (__m128i *)&dl_ch_mag[(aatx<<1)+aarx][symbol*6*12];
-      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[(aatx<<1)+aarx][symbol*6*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*6*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*6*12];
+      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol_mod*6*12];
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol_mod*6*12];
 
 
       for (rb=0;rb<nb_rb;rb++) {
 	//printf("rb %d\n",rb);
-	if (mod_order>2) {  
-	  // get channel amplitude if not QPSK
-
-	  mmtmp0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
-
-	  mmtmp0 = _mm_srai_epi32(mmtmp0,output_shift);
-	  
-	  mmtmp1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
-	  mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
-	  mmtmp0 = _mm_packs_epi32(mmtmp0,mmtmp1);
-	   
-	  dl_ch_mag128[0] = _mm_unpacklo_epi16(mmtmp0,mmtmp0);
-	  dl_ch_mag128b[0] = dl_ch_mag128[0];
-	  dl_ch_mag128[0] = _mm_mulhi_epi16(dl_ch_mag128[0],QAM_amp128);
-	  dl_ch_mag128[0] = _mm_slli_epi16(dl_ch_mag128[0],1);
-
-	  dl_ch_mag128[1] = _mm_unpackhi_epi16(mmtmp0,mmtmp0);
-	  dl_ch_mag128b[1] = dl_ch_mag128[1];
-	  dl_ch_mag128[1] = _mm_mulhi_epi16(dl_ch_mag128[1],QAM_amp128);
-	  dl_ch_mag128[1] = _mm_slli_epi16(dl_ch_mag128[1],1);
-	  
-	  mmtmp0 = _mm_madd_epi16(dl_ch128[2],dl_ch128[2]);
-	  mmtmp0 = _mm_srai_epi32(mmtmp0,output_shift);
-	  mmtmp1 = _mm_packs_epi32(mmtmp0,mmtmp0);
-	  
-	  dl_ch_mag128[2] = _mm_unpacklo_epi16(mmtmp1,mmtmp1);
-	  dl_ch_mag128b[2] = dl_ch_mag128[2];
-
-	  dl_ch_mag128[2] = _mm_mulhi_epi16(dl_ch_mag128[2],QAM_amp128);
-	  dl_ch_mag128[2] = _mm_slli_epi16(dl_ch_mag128[2],1);	  
-
-
-	  dl_ch_mag128b[0] = _mm_mulhi_epi16(dl_ch_mag128b[0],QAM_amp128b);
-	  dl_ch_mag128b[0] = _mm_slli_epi16(dl_ch_mag128b[0],1);
-	  
-
-	  dl_ch_mag128b[1] = _mm_mulhi_epi16(dl_ch_mag128b[1],QAM_amp128b);
-	  dl_ch_mag128b[1] = _mm_slli_epi16(dl_ch_mag128b[1],1);
-	  
-	  dl_ch_mag128b[2] = _mm_mulhi_epi16(dl_ch_mag128b[2],QAM_amp128b);
-	  dl_ch_mag128b[2] = _mm_slli_epi16(dl_ch_mag128b[2],1);	  
-	  
-	}
 	
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
@@ -683,8 +449,6 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	//      	print_shorts("pack:",rxdataF_comp128+2);
       
 	dl_ch128+=3;
-	dl_ch_mag128+=3;
-	dl_ch_mag128b+=3;
 	rxdataF128+=3;
 	rxdataF_comp128+=3;
 	
@@ -692,8 +456,30 @@ void pbch_channel_compensation(int **rxdataF_ext,
     }
 }     
 
+void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
+			int **rxdataF_comp,
+			unsigned char symbol) {
 
-void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
+  unsigned char aatx, symbol_mod;
+  int i, nb_rb=6;
+  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  if (frame_parms->nb_antennas_rx>1) {
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol_mod*6*12];  
+      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol_mod*6*12];  
+      // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+      for (i=0;i<nb_rb*3;i++) {
+	rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
+      }
+    }
+  }
+}
+
+
+int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     MIMO_mode_t mimo_mode) {
@@ -701,12 +487,23 @@ void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   unsigned char log2_maxh,aatx,aarx;
   int avgs, avg[frame_parms->nb_antennas_tx*frame_parms->nb_antennas_rx];
 
-  int symbol;
-  int nb_rb = 6;
-  int mod_order = 2;
+  int symbol,i,ret;
+  //int nb_rb = 6;
+  //int mod_order = 2;
   int nsymb = (frame_parms->Ncp==0) ? 14:12;
   unsigned int pilots, first_pilot;
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
+  short* pbch_llr = lte_ue_dlsch_vars->llr;
+  unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
+
+  pbch_crc_bits    = 64;
+  pbch_crc_bytes   = pbch_crc_bits>>3;
+  pbch_coded_bits  = (frame_parms->Ncp==0) ? 36*6*2 : 24*6*2; //RE/RB * #RB * bits/RB (QPSK)
+  pbch_coded_bytes = pbch_coded_bits>>3;
+
+  unsigned char decoded_output[pbch_crc_bits];
+  short channel_output[(3*pbch_crc_bits)+12] __attribute__ ((aligned(16)));
+  unsigned char dummy_channel_output[pbch_coded_bits];
 
   for (symbol=(nsymb>>1);symbol<(nsymb>>1)+4;symbol++) {
 
@@ -722,26 +519,14 @@ void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
       first_pilot=0;
     }
 
-    if (pilots==0) { // don't skip pilot symbols
+    if (pilots==0) { 
 
-      if (frame_parms->nb_antennas_tx>1)
-	/*
-	  nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-	  lte_ue_common_vars->dl_ch_estimates,
-	  lte_ue_dlsch_vars->rxdataF_ext,
-	  lte_ue_dlsch_vars->dl_ch_estimates_ext,
-	  rb_alloc,
-	  symbol,
-	  frame_parms);
-	*/
-	msg("[openair][PBCH][RX] nb_antennas_tx>1 not yet implemented\n");
-      else
-	pbch_extract_single(lte_ue_common_vars->rxdataF,
-			    lte_ue_common_vars->dl_ch_estimates,
-			    lte_ue_dlsch_vars->rxdataF_ext,
-			    lte_ue_dlsch_vars->dl_ch_estimates_ext,
-			    symbol,
-			    frame_parms);
+      pbch_extract(lte_ue_common_vars->rxdataF,
+		   lte_ue_common_vars->dl_ch_estimates,
+		   lte_ue_dlsch_vars->rxdataF_ext,
+		   lte_ue_dlsch_vars->dl_ch_estimates_ext,
+		   symbol,
+		   frame_parms);
 
       pbch_channel_level(lte_ue_dlsch_vars->dl_ch_estimates_ext,
 			 frame_parms,
@@ -755,41 +540,104 @@ void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
       
       log2_maxh = 4+(log2_approx(avgs)/2);
-      printf("log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+      printf("[PBCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
       
       pbch_channel_compensation(lte_ue_dlsch_vars->rxdataF_ext,
 				lte_ue_dlsch_vars->dl_ch_estimates_ext,
-				lte_ue_dlsch_vars->dl_ch_mag,
-				lte_ue_dlsch_vars->dl_ch_magb,
 				lte_ue_dlsch_vars->rxdataF_comp,
 				frame_parms,
 				symbol,
-				mod_order,
-				nb_rb,
 				log2_maxh); // log2_maxh+I0_shift
-      /*
   
-  if (frame_parms->nb_antennas_rx > 1)
-    dlsch_detection_mrc(frame_parms,
-			lte_ue_dlsch_vars->rxdataF_comp,
-			lte_ue_dlsch_vars->dl_ch_mag,
-			lte_ue_dlsch_vars->dl_ch_magb,
-			symbol,
-			nb_rb);
-      
-    if (mimo_mode == SISO)
-      dlsch_siso(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,symbol,nb_rb);
-    else if (mimo_mode == ALAMOUTI)
-      dlsch_alamouti(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
-    else if (mimo_mode == ANTCYCLING)
-      dlsch_antcyc(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
-    else {
-      msg("dlsch_rx: Usupported MIMO mode\n");
-      exit (-1);
-    }
+      if (frame_parms->nb_antennas_rx > 1)
+	pbch_detection_mrc(frame_parms,
+			   lte_ue_dlsch_vars->rxdataF_comp,
+			   symbol);
 
-    memcpy(&lte_ue_dlsch_vars->llr[symbol%(nsymb>>1)*72],&lte_ue_dlsch_vars->rxdataF_comp[symbol%(nsymb>>1)*72],72*2*sizeof(int));
-  */
+	
+      if (mimo_mode == ALAMOUTI) {
+	//dlsch_alamouti(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
+	msg("[PBCH][RX] Alamouti receiver not yet implemented!\n");
+	exit(-1);
+      }
+      else if ((mimo_mode != ANTCYCLING) && (mimo_mode != SISO)) {
+	msg("[PBCH][RX] Unsupported MIMO mode\n");
+	exit (-1);
+      }
+
+      memcpy(pbch_llr,&(lte_ue_dlsch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),72*sizeof(int));
+      pbch_llr+=144;
+    }
   }
-}
+
+  //un-rate matching
+  bzero(dummy_channel_output,pbch_coded_bits);
+  if (rate_matching_lte(pbch_coded_bits, 
+			pbch_crc_bits*3+12, 
+			dummy_channel_output,
+			0) !=0 ) {
+    msg("[openair1][PBCH] Rate matching problem!\n");
+    return(-1);
+  }
+
+  coded_bits=0;
+  pbch_llr = lte_ue_dlsch_vars->llr;
+  for (i=0;i<(3*pbch_crc_bits)+12;i++) {
+    if ((dummy_channel_output[i]&0x40) != 0) { // bit was repeated
+      coded_bits++;
+      channel_output[i] = *pbch_llr;
+      //printf("%d,%d : %d (%d)\n",coded_bits,i,channel_output[i],dummy_channel_output[i]);
+      pbch_llr++;
+      coded_bits++;
+      channel_output[i] += *pbch_llr;
+      //printf("%d,%d : %d (%d)\n",coded_bits,i,channel_output[i],dummy_channel_output[i]);
+      pbch_llr++;
+    }
+    else if ((dummy_channel_output[i]&0x80) != 0) { // bit was transmitted
+      coded_bits++;
+      channel_output[i] = *pbch_llr;
+      //printf("%d,%d : %d (%d)\n",coded_bits,i,channel_output[i],dummy_channel_output[i]);
+      pbch_llr++;
+    }
+    else {     //bit was punctured
+      channel_output[i] = 0;
+    }      
+  }
+
+
+#ifdef DEBUG_PHY
+#ifdef USER_MODE
+  write_output("pbch_channel_out.m","pbch_chan_out",
+	       channel_output,
+	       3*pbch_crc_bits+12,
+	       1,
+	       4);
+#endif //USER_MODE
+#endif //DEBUG_PHY
+
+  //turbo decoding
+  bzero(decoded_output,pbch_crc_bits);//block_length);
+  ret = phy_threegpplte_turbo_decoder(channel_output,
+                                      decoded_output,
+                                      pbch_crc_bits,
+				      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
+				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
+                                      6,
+                                      2);
+
+#ifdef DEBUG_PHY
+#ifdef USER_MODE
+  write_output("pbch_decoded_out.m","pbch_dec_out",
+	       decoded_output,
+	       pbch_crc_bits,
+	       1,
+	       4);
+#endif //USER_MODE
+#endif //DEBUG_PHY
+
+  printf("[PBCH] ret=%d\n",ret);
+  for (i=0;i<8;i++) 
+    printf("[PBCH] decoded_output[%d] = %x\n",i,decoded_output[i]);
+  return(ret);
+
 }

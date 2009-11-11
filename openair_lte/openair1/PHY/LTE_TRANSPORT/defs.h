@@ -326,7 +326,7 @@ void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	      unsigned char mod_order,
 	      MIMO_mode_t mimo_mode);
 
-void rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
+int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     MIMO_mode_t mimo_mode);

@@ -64,7 +64,7 @@ typedef struct {
   int **dl_ch_estimates_ext;
   int **dl_ch_mag;
   int **dl_ch_magb;
-  char *llr;
+  short *llr;
 } LTE_UE_DLSCH;
 
 
