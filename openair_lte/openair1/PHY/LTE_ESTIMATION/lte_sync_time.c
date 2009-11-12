@@ -69,7 +69,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
 
   // generate oversampled sync_time sequences
   k=frame_parms->ofdm_symbol_size-36;
-  for (i=0; i<73; i++) {
+  for (i=0; i<72; i++) {
     syncF_tmp[2*k] = primary_synch0[2*i]>>2;  //we need to shift input to avoid overflow in fft
     syncF_tmp[2*k+1] = primary_synch0[2*i+1]>>2;
     k++;
@@ -88,7 +88,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
     
   k=frame_parms->ofdm_symbol_size-36;
-  for (i=0; i<73; i++) {
+  for (i=0; i<72; i++) {
     syncF_tmp[2*k] = primary_synch1[2*i]>>2;  //we need to shift input to avoid overflow in fft
     syncF_tmp[2*k+1] = primary_synch1[2*i+1]>>2;
     k++;
@@ -107,7 +107,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
       0) ;                           /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
   k=frame_parms->ofdm_symbol_size-36;
-  for (i=0; i<73; i++) {
+  for (i=0; i<72; i++) {
     syncF_tmp[2*k] = primary_synch2[2*i]>>2;  //we need to shift input to avoid overflow in fft
     syncF_tmp[2*k+1] = primary_synch2[2*i+1]>>2;
     k++;

@@ -1,13 +1,13 @@
 #include "defs.h"
 #include "PHY/defs.h"
 
-void generate_pilots(int **txdataF,
+void generate_pilots(mod_sym_t **txdataF,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned short Ntti) {
 
   
-  unsigned int tti,tti_offset,slot_offset,Nsymb;
+  unsigned int tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
   unsigned char second_pilot;
 
 
@@ -19,8 +19,14 @@ void generate_pilots(int **txdataF,
 	  
 	
     //    printf("Doing TX pilots for TTI %d\n",tti);
-    
+
+#ifdef IFFT_FPGA
+    tti_offset = tti*frame_parms->N_RB_DL*12*Nsymb;
+    samples_per_symbol = frame_parms->N_RB_DL*12;
+#else    
     tti_offset = tti*frame_parms->ofdm_symbol_size*Nsymb;
+    samples_per_symbol = frame_parms->ofdm_symbol_size;
+#endif
     slot_offset = (tti*2)%20;
     
     //    printf("tti %d : offset %d (slot %d)\n",tti,tti_offset,slot_offset);
@@ -37,7 +43,7 @@ void generate_pilots(int **txdataF,
     
     
     //antenna 0 symbol 3 slot 0
-    lte_dl_cell_spec(&txdataF[0][tti_offset+(second_pilot*frame_parms->ofdm_symbol_size)],
+    lte_dl_cell_spec(&txdataF[0][tti_offset+(second_pilot*samples_per_symbol)],
 		     amp,
 		     frame_parms,
 		     slot_offset,
@@ -45,7 +51,7 @@ void generate_pilots(int **txdataF,
 		     0);
     
     //antenna 0 symbol 0 slot 1
-    lte_dl_cell_spec(&txdataF[0][tti_offset+((Nsymb>>1)*frame_parms->ofdm_symbol_size)],
+    lte_dl_cell_spec(&txdataF[0][tti_offset+((Nsymb>>1)*samples_per_symbol)],
 		     amp,
 		     frame_parms,
 		     1+slot_offset,
@@ -53,7 +59,7 @@ void generate_pilots(int **txdataF,
 		     0);
         
     //antenna 0 symbol 3 slot 1
-    lte_dl_cell_spec(&txdataF[0][tti_offset+(((Nsymb>>1)+second_pilot)*frame_parms->ofdm_symbol_size)],
+    lte_dl_cell_spec(&txdataF[0][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
 		     amp,
 		     frame_parms,
 		     1+slot_offset,
@@ -72,7 +78,7 @@ void generate_pilots(int **txdataF,
 		       1);
       
       // antenna 1 symbol 3 slot 0
-      lte_dl_cell_spec(&txdataF[1][tti_offset+(second_pilot*frame_parms->ofdm_symbol_size)],
+      lte_dl_cell_spec(&txdataF[1][tti_offset+(second_pilot*samples_per_symbol)],
 		       amp,
 		       frame_parms,
 		       slot_offset,
@@ -80,7 +86,7 @@ void generate_pilots(int **txdataF,
 		       1);
       
       //antenna 1 symbol 0 slot 1
-      lte_dl_cell_spec(&txdataF[1][tti_offset+(Nsymb>>1)*frame_parms->ofdm_symbol_size],
+      lte_dl_cell_spec(&txdataF[1][tti_offset+(Nsymb>>1)*samples_per_symbol],
 		       amp,
 		       frame_parms,
 		       1+slot_offset,
@@ -88,7 +94,7 @@ void generate_pilots(int **txdataF,
 		       1);
       
       // antenna 1 symbol 3 slot 1
-      lte_dl_cell_spec(&txdataF[1][tti_offset+(((Nsymb>>1)+second_pilot)*frame_parms->ofdm_symbol_size)],
+      lte_dl_cell_spec(&txdataF[1][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
 		       amp,
 		       frame_parms,
 		       1+slot_offset,

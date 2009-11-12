@@ -8,17 +8,23 @@
 
 extern unsigned int lte_gold_table[20][2][14];
 
-int lte_dl_cell_spec(int *output,
-		      short amp,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      unsigned char Ns,
-		      unsigned char l,
-		      unsigned char p) {
+int lte_dl_cell_spec(mod_sym_t *output,
+		     short amp,
+		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char Ns,
+		     unsigned char l,
+		     unsigned char p) {
 
   unsigned char nu,mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k,a;
-  unsigned int qpsk[4];
+  mod_sym_t qpsk[4];
 
+#ifdef IFFT_FPGA
+  qpsk[0] = 4;
+  qpsk[1] = 3;
+  qpsk[2] = 2;
+  qpsk[3] = 1;
+#else
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
   ((short *)&qpsk[0])[1] = a;
@@ -28,6 +34,7 @@ int lte_dl_cell_spec(int *output,
   ((short *)&qpsk[2])[1] = a;
   ((short *)&qpsk[3])[0] = -a;
   ((short *)&qpsk[3])[1] = -a;
+#endif
 
   if ((p==0) && (l==0) )
     nu = 0;
@@ -47,9 +54,12 @@ int lte_dl_cell_spec(int *output,
   k = (nu + frame_parms->nushift);
   if (k > 6)
     k -=6;
-  
-  k+=frame_parms->first_carrier_offset;
 
+#ifdef IFFT_FPGA
+  k+=frame_parms->N_RB_DL*6;
+#else  
+  k+=frame_parms->first_carrier_offset;
+#endif
   for (m=0;m<frame_parms->N_RB_DL<<1;m++) {
 
     mprime_dword     = mprime>>4;
@@ -69,10 +79,16 @@ int lte_dl_cell_spec(int *output,
     printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 #endif
     k+=6;
+#ifdef IFFT_FPGA
+    if (k >= frame_parms->N_RB_DL*12) {
+      k-=frame_parms->N_RB_DL*12;
+    }
+#else
     if (k >= frame_parms->ofdm_symbol_size) {
       k++;  // skip DC carrier
       k-=frame_parms->ofdm_symbol_size;
     }
+#endif
     //    printf("** k %d\n",k);
   }
   return(0);

@@ -13,7 +13,8 @@ int main(int argc, char **argv) {
 
   int i,aa;
   double sigma2, sigma2_dB=0;
-  int **txdataF, **txdata;
+  mod_sym_t **txdataF;
+  int **txdata;
   //LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
@@ -56,9 +57,9 @@ int main(int argc, char **argv) {
   
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
   
-  txdataF    = (int **)malloc16(2*sizeof(int*));
-  txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
+  txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
+  txdataF[0] = (mod_sym_t *)malloc16(FRAME_LENGTH_BYTES);
+  txdataF[1] = (mod_sym_t *)malloc16(FRAME_LENGTH_BYTES);
   
   txdata    = (int **)malloc16(2*sizeof(int*));
   txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
@@ -111,8 +112,13 @@ int main(int argc, char **argv) {
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
   
-  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
+  //  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
+#ifdef IFFT_FPGA
+  write_output("txsigF0.m","txsF0", txdataF[0],300*120,1,4);
+  exit(0);
+#else
   write_output("txsigF0.m","txsF0", txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+#endif
   
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
     PHY_ofdm_mod(txdataF[aa],        // input
@@ -151,12 +157,12 @@ int main(int argc, char **argv) {
   //printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (s_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (s_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
   
-  //lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
   
   int Ns;
   int l;

@@ -30,7 +30,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms) {
 
     for (l=0;l<2;l++) {
       
-      x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + ((1+(frame_parms->Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10; //cinit
+      x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + (((1+(frame_parms->Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + (1+(frame_parms->Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       x1 = 1+ (1<<31);
       x2=x2 + ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);

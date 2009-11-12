@@ -92,7 +92,7 @@ void phy_generate_chbch_top(unsigned char chbch_ind) {
  *  * we use turbo code with rate 1/3, rate matching to the corresponding size
  */
 
-int generate_pbch(int **txdataF,
+int generate_pbch(mod_sym_t **txdataF,
 		  int amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned char *pbch_pdu) {
@@ -204,7 +204,7 @@ int generate_pbch(int **txdataF,
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
   unsigned int jj=0;
   unsigned int re_allocated=0;
-  unsigned int rb, re_offset;
+  unsigned int rb, re_offset, symbol_offset;
   for (l=(nsymb>>1);l<(nsymb>>1)+4;l++) {
     
     pilots=0;
@@ -227,14 +227,20 @@ int generate_pbch(int **txdataF,
       // do not interfere with data
       // LTE is eNb centric.  "Smart" Interference
       // cancellation isn't possible
+#ifdef IFFT_FPGA
+      re_offset = frame_parms->N_RB_DL*12-3*12;
+      symbol_offset = frame_parms->N_RB_DL*12*l;
+#else
       re_offset = frame_parms->ofdm_symbol_size-3*12;
+      symbol_offset = frame_parms->ofdm_symbol_size*l;
+#endif
       
       for (rb=0;rb<6;rb++) {
 	
 	allocate_REs_in_RB(txdataF,
 			   &jj,
 			   re_offset,
-			   frame_parms->ofdm_symbol_size*l,
+			   symbol_offset,
 			   pbch_coded_data2,
 			   SISO,
 			   pilots,

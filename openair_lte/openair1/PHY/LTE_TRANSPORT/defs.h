@@ -212,7 +212,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned char skip_dc,
 			LTE_DL_FRAME_PARMS *frame_parms);
 
-void generate_dlsch(int **txdataF,
+void generate_dlsch(mod_sym_t **txdataF,
 		    short amp,
 		    LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_eNb_DLSCH_t *dlsch,
@@ -222,17 +222,17 @@ void generate_dlsch(int **txdataF,
 		    unsigned char slot_alloc);
 
 
-void generate_pilots(int **txdataF,
+void generate_pilots(mod_sym_t **txdataF,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned short Ntti);
 
-void generate_pss(int **txdataF,
+void generate_pss(mod_sym_t **txdataF,
 		  short amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned short Ntti);
 
-int generate_pbch(int **txdataF,
+int generate_pbch(mod_sym_t **txdataF,
 		  int amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned char *pbch_pdu);

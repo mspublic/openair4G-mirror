@@ -27,12 +27,12 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms);
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
 */
-int lte_dl_cell_spec(int *output,
-		      short amp,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      unsigned char Ns,
-		      unsigned char l,
-		      unsigned char p);
+int lte_dl_cell_spec(mod_sym_t *output,
+		     short amp,
+		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char Ns,
+		     unsigned char l,
+		     unsigned char p);
 
 /*!
 \fn void lte_dl_cell_spec_rx(int *output,

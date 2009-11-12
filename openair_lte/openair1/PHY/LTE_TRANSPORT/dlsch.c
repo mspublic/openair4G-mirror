@@ -822,7 +822,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 #endif
 
 
-void generate_dlsch(int **txdataF,
+void generate_dlsch(mod_sym_t **txdataF,
 		    short amp,
 		    LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_eNb_DLSCH_t *dlsch,
