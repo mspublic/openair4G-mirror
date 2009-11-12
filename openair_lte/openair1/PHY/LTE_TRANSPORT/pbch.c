@@ -379,7 +379,7 @@ void pbch_channel_compensation(int **rxdataF_ext,
   unsigned short rb,nb_rb=6;
   unsigned char aatx,aarx,symbol_mod;
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128,mmtmp0,mmtmp1,mmtmp2,mmtmp3;
-  __m128i conjugate = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
+  __m128i conjugate = _mm_set_epi16(1,-1,1,-1,1,-1,1,-1);
 
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
