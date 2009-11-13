@@ -104,6 +104,9 @@ int setup_regs() {
   pci_interface->timing_advance = openair_daq_vars.timing_advance;
 
   pci_interface->cyclic_prefix_length  = CYCLIC_PREFIX_LENGTH;
+  printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",pci_interface->cyclic_prefix_length);
+
+
   pci_interface->log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
   pci_interface->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
   pci_interface->frame_offset = FRAME_LENGTH_COMPLEX_SAMPLES-1;

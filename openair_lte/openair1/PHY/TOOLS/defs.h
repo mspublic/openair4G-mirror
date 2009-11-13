@@ -14,10 +14,12 @@
 #include "express-mimo/simulator/baseband/C/defs.h"
 #endif //EXPRESSMIMO_TARGET
 
-//#ifdef USER_MODE
+#ifdef USER_MODE
 #define max(a,b) ((a)>(b) ? (a) : (b))
 #define min(a,b) ((a)<(b) ? (a) : (b))
-//#endif //USER_MODE
+#else
+#include <linux/kernel.h>
+#endif //USER_MODE
 
 
 //defined in rtai_math.h

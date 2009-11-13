@@ -208,7 +208,7 @@ int main (int argc, char **argv) {
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
 
-  lte_frame_parms->N_RB_DL            = 15;
+  lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 1;

@@ -110,16 +110,10 @@ int exit_openair = 0;
 #ifdef CBMIMO1
 #define NUMBER_OF_CHUNKS_PER_SLOT NUMBER_OF_OFDM_SYMBOLS_PER_SLOT
 #define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
-#ifdef CLOCK768
-#define NS_PER_CHUNK 41667 // (7.68 msps, 320 samples per OFDM symbol/CHUNK) //44308 // (6.5 msps, 288 samples per OFDM symbol)
-#else
-#define NS_PER_CHUNK 49231 // (6.5 msps, 320 samples per OFDM symbol/CHUNK)
-#endif
 #define SYNCH_WAIT_TIME 4096  // number of symbols between SYNCH retries
 #define SYNCH_WAIT_TIME_RUNNING 128  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
-#define NS_PER_SLOT (NS_PER_CHUNK * NUMBER_OF_CHUNKS_PER_SLOT)
-#define US_PER_SLOT (NS_PER_SLOT * 0.001)
+#define NS_PER_SLOT 500000
 
 #define MAX_DRIFT_COMP 3000
 #endif // CBMIMO1
@@ -333,7 +327,7 @@ void openair_sync() {
 
   for (i=0;i<2*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
 #ifdef RTAI_ENABLED
-    rt_sleep(nano2count(NS_PER_CHUNK));
+    rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
 #endif //
   }
   
@@ -380,7 +374,8 @@ void openair_sync() {
 
     // Do initial timing acquisition
 
-    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    sync_pos = 0;
 
     msg("[openair][openair SYNC] sync_pos = %d\n",sync_pos);
     
@@ -454,7 +449,7 @@ static void * top_level_scheduler(void *param) {
 
 #ifdef RTAI_ENABLED
   //  msg("[OPENAIR][SCHED] Sleeping ... MODE = %d\n",openair_daq_vars.mode);
-  rt_sleep(nano2count(2*NUMBER_OF_CHUNKS_PER_SLOT * NS_PER_CHUNK));
+  rt_sleep(nano2count(2*NS_PER_SLOT));
   //  msg("[OPENAIR][SCHED] Awakening ... MODE = %d\n",openair_daq_vars.mode);
 #endif //
 
@@ -475,7 +470,7 @@ static void * top_level_scheduler(void *param) {
       if (openair_daq_vars.synch_wait_cnt <= 0) {
 
 
-	rt_sleep(nano2count(NUMBER_OF_CHUNKS_PER_SLOT * NS_PER_CHUNK));
+	rt_sleep(nano2count(NS_PER_SLOT));
 
 #ifdef CBMIMO1  // Note this code cannot run on PLATON!!!
 	if (openair_daq_vars.tx_test == 0) 
@@ -493,7 +488,7 @@ static void * top_level_scheduler(void *param) {
 	  for (i=0;i<NB_ANTENNAS_RX;i++){
 	    bzero((void *)PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
 	  }
-	  rt_sleep(nano2count(NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK*SLOTS_PER_FRAME));
+	  rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
 	}
 #ifdef DEBUG_PHY
 	else {
@@ -511,7 +506,7 @@ static void * top_level_scheduler(void *param) {
       }
       openair_daq_vars.synch_wait_cnt--;
 
-      rt_sleep(nano2count(NUMBER_OF_CHUNKS_PER_SLOT * NS_PER_CHUNK));
+      rt_sleep(nano2count(NS_PER_SLOT));
 
     }
 
@@ -535,7 +530,7 @@ static void * top_level_scheduler(void *param) {
 
 	mac_xface->frame = 0;
   
-	openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
+	openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	
 	openair_daq_vars.last_adac_cnt=-1;            
 
@@ -557,7 +552,7 @@ static void * top_level_scheduler(void *param) {
 	  else
 	    {
 	      //msg("[openair][SCHED][top_level_scheduler] sync startup, current time=%llu, waiting for adac_cnt=0 (current adac_cnt=%d)\n",rt_get_time_ns(),adac_cnt); 
-	      rt_sleep(nano2count(NS_PER_CHUNK/2));  /* sleep for half a SYMBOL */
+	      rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT/2));  /* sleep for half a SYMBOL */
 	      
 	    }
 	  
@@ -595,8 +590,8 @@ static void * top_level_scheduler(void *param) {
 	      if (adac_offset>NUMBER_OF_CHUNKS_PER_SLOT)        /* adjust openair_daq_vars.scheduler_interval_ns to track the ADAC counter */
 		{
 		  openair_daq_vars.scheduler_interval_ns-= DRIFT_OFFSET;
-		  if (openair_daq_vars.scheduler_interval_ns < NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK - MAX_DRIFT_COMP)
-		    openair_daq_vars.scheduler_interval_ns = NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK - MAX_DRIFT_COMP;
+		  if (openair_daq_vars.scheduler_interval_ns < NS_PER_SLOT - MAX_DRIFT_COMP)
+		    openair_daq_vars.scheduler_interval_ns = NS_PER_SLOT - MAX_DRIFT_COMP;
 		    /*          msg("adac_offset=%d, openair_daq_vars.scheduler_interval_ns=%d\n",adac_offset,openair_daq_vars.scheduler_interval_ns);  */
 		}
 	      if (pthread_mutex_lock (&openair_mutex) != 0)                // Signal MAC_PHY Scheduler
@@ -621,8 +616,8 @@ static void * top_level_scheduler(void *param) {
 		first_increment = 1;
 	      }
 
-	      if (openair_daq_vars.scheduler_interval_ns > NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK + MAX_DRIFT_COMP)
-		openair_daq_vars.scheduler_interval_ns = NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK + MAX_DRIFT_COMP;
+	      if (openair_daq_vars.scheduler_interval_ns > NS_PER_SLOT + MAX_DRIFT_COMP)
+		openair_daq_vars.scheduler_interval_ns = NS_PER_SLOT + MAX_DRIFT_COMP;
 
 
 	      //	      msg("adac_offset=%d, openair_daq_vars.scheduler_interval_ns=%d, sleeping for 2us\n",adac_offset,openair_daq_vars.scheduler_interval_ns); 
@@ -718,7 +713,7 @@ int openair_sched_init(void) {
   
   mac_xface->frame = 0;
   
-  openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
+  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
   
   openair_daq_vars.last_adac_cnt=-1;            
   

@@ -1,4 +1,4 @@
-#include <string.h>
+//#include <string.h>
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
