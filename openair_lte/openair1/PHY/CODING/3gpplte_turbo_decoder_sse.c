@@ -1,6 +1,11 @@
+/* file: 3gpplte_turbo_decoder_sse.c
+   purpose: Routines for implementing decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
 
+   Note: This routine currently requires SSE2,SSSE3 and SSE4.1 equipped computers.  IT WON'T RUN OTHERWISE!
+*/
 
-/*!\brief Optimized LogMax Decoding*/
 ///
 ///
 
