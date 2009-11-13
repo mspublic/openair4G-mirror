@@ -12,6 +12,11 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
       if (dlsch->harq_processes[i]) {
 	if (dlsch->harq_processes[i]->payload)
 	  free(dlsch->harq_processes[i]->payload);
+	if (dlsch->harq_processes[i]->payload_segments) {
+	  for (r=0;r<8;r++)
+	    free(dlsch->harq_processes[i]->payload_segments[r]);
+	  free(dlsch->harq_processes[i]->payload_segments);
+	}
 	free(dlsch->harq_processes[i]);
       }
     }
@@ -34,6 +39,15 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned 
       dlsch->harq_processes[i] = (LTE_UE_HARQ_t *)malloc16(sizeof(LTE_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->payload = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+	if (!dlsch->harq_processes[i]->payload)
+	  exit_flag=1;
+	dlsch->harq_processes[i]->payload_segments = (unsigned char*)malloc16(sizeof(unsigned char *));	
+	if (!dlsch->harq_processes[i]->payload_segments)
+	  exit_flag=1;
+	else
+	  for (r=0;r<8;r++)
+	    dlsch->harq_processes[i]->payload_segments[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8));	
+	for (r=0;r
       }	else {
 	exit_flag=1;
       }

@@ -460,6 +460,11 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned char skip_dc,
 			LTE_DL_FRAME_PARMS *frame_parms) {
 
+<<<<<<< .mine
+void generate_dlsch(unsigned char *input_buffer,
+		    unsigned short input_buffer_length,
+		    int **txdataF,
+=======
   unsigned int tti_offset;
   unsigned char re;
   unsigned char qam64_table_offset = 0;
@@ -823,6 +828,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
 
 void generate_dlsch(mod_sym_t **txdataF,
+>>>>>>> .r42
 		    short amp,
 		    LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_eNb_DLSCH_t *dlsch,
@@ -850,6 +856,8 @@ void generate_dlsch(mod_sym_t **txdataF,
   unsigned char pilots,pilot_pos,first_pilot,second_pilot;
   unsigned char skip_dc;
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
+
+  lte_segmentation(input_buffer,input_buffer_length,dlsch->harq_processes[harq_pid]);
 
   if (bytes_per_codeword<=64)
     iind = (bytes_per_codeword-5);
