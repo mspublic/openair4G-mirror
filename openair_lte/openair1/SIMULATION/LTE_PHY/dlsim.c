@@ -109,7 +109,7 @@ void main() {
   //  input_data     = (unsigned char*) malloc(block_length/8);
   //  decoded_output = (unsigned char*) malloc(block_length/8);
 
-
+  
   for (i=0;i<(block_length/8)-3;i++)
     dlsch_eNb->harq_processes[0]->payload[i]= (unsigned char)(i%256);
 
@@ -129,14 +129,21 @@ void main() {
   dlsch_ue->harq_processes[0]->C                   = 0;
   dlsch_ue->rvidx                                  = 0;
 
-  generate_dlsch(txdataF,
-		 1024,
+  dlsch_encoding(input_buffer,
+		 input_buffer_length,
 		 lte_frame_parms,
 		 dlsch_eNb,
 		 0,               // harq_pid
-		 12, // number of allocated RB
-		 rb_alloc, // RB allocation vector
-		 3);   //slot_alloc
+		 12); // number of allocated RB
+
+  
+  dlsch_modulation(txdataF,
+		   1024,
+		   lte_frame_parms,
+		   dlsch_eNb,
+		   0,               // harq_pid
+		   rb_alloc); // RB allocation vector
+
 
     /* 
     generate_pss(txdataF,
