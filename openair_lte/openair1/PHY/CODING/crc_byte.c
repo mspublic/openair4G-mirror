@@ -1,10 +1,15 @@
-/*
-  May 10, 2001
-  Modified in June, 2001, to include  the length non multiple of 8
-  crc_byte.c
-  Byte oriented implementation of CRC's
+/* file: crc_byte.c
+   purpose: generate 3GPP LTE CRC. Byte-oriented implementation of CRC's
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
 
-  */
+   Original version by
+   P. Humblet
+   May 10, 2001
+   Modified in June, 2001, to include  the length non multiple of 8
+*/
+
+
 #ifndef USER_MODE
 #define __NO_VERSION__
 
@@ -14,9 +19,10 @@
 #include "defs.h"
 
 
-/*ref 25.222 v4.0.0 , p12 */
+/*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
-u32             poly24 = 0x80006100;    // 1000 0000 0000 0000 0110 0001  D^24 + D^23 + D^6 + D^5 + D + 1
+u32             poly24a = 0xc656fb00;    //1100 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
+u32             poly24b = 0x80006300;    // 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1
 u32             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
 u32             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
 u32             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
@@ -50,7 +56,8 @@ crcbit (unsigned char * inputptr, int octetlen, unsigned int poly)
 crc table initialization
 
 *********************************************************/
-static unsigned int      crc24Table[256];
+static unsigned int      crc24aTable[256];
+static unsigned int      crc24bTable[256];
 static unsigned short      crc16Table[256];
 static unsigned short      crc12Table[256];
 static unsigned char       crc8Table[256];
@@ -59,7 +66,8 @@ void crcTableInit (void)
 {
   unsigned char              c = 0;
   do {
-    crc24Table[c] = crcbit (&c, 1, poly24);
+    crc24aTable[c] = crcbit (&c, 1, poly24a);
+    crc24bTable[c] = crcbit (&c, 1, poly24b);
     crc16Table[c] = (u16) (crcbit (&c, 1, poly16) >> 16);
     crc12Table[c] = (u16) (crcbit (&c, 1, poly12) >> 16);
     crc8Table[c] = (u8) (crcbit (&c, 1, poly8) >> 24);
@@ -72,7 +80,7 @@ assuming initial byte is 0 padded (in MSB) if necessary
 
 *********************************************************/
 unsigned int
-crc24 (unsigned char * inptr, int bitlen)
+crc24a (unsigned char * inptr, int bitlen)
 {
 
   int             octetlen, resbit;
@@ -80,10 +88,25 @@ crc24 (unsigned char * inptr, int bitlen)
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
   while (octetlen-- > 0) {
-    crc = (crc << 8) ^ crc24Table[(*inptr++) ^ (crc >> 24)];
+    crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
   }
   if (resbit > 0)
-    crc = (crc << resbit) ^ crc24Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+    crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+  return crc;
+}
+
+crc24b (unsigned char * inptr, int bitlen)
+{
+
+  int             octetlen, resbit;
+  unsigned int             crc = 0;
+  octetlen = bitlen / 8;        /* Change in octets */
+  resbit = (bitlen % 8);
+  while (octetlen-- > 0) {
+    crc = (crc << 8) ^ crc24bTable[(*inptr++) ^ (crc >> 24)];
+  }
+  if (resbit > 0)
+    crc = (crc << resbit) ^ crc24bTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
   return crc;
 }
 

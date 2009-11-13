@@ -42,12 +42,21 @@ void threegpplte_turbo_encoder(unsigned char *input,
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
 
-/*!\fn void crc24(unsigned char *inPtr, int bitlen)
-\brief This computes a 24-bit crc based on 3GPP UMTS specifications.
+/*!\fn void crc24a(unsigned char *inPtr, int bitlen)
+\brief This computes a 24-bit crc ('a' variant for overall transport block) 
+based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-unsigned int crc24 (unsigned char *inPtr, int bitlen);
+unsigned int crc24a (unsigned char *inPtr, int bitlen);
+
+/*!\fn void crc24b(unsigned char *inPtr, int bitlen)
+\brief This computes a 24-bit crc ('b' variant for transport-block segments) 
+based on 3GPP UMTS/LTE specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits
+*/
+unsigned int crc24b (unsigned char *inPtr, int bitlen);
 
 /*!\fn void crc16(unsigned char *inPtr, int bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
