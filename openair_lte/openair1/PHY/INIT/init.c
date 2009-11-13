@@ -57,7 +57,7 @@ int phy_init(unsigned char nb_antennas_tx) {
 
 
   int *tmp_ptr;
-
+  unsigned int tx_dma_buffer_size_bytes;
 
   int i,j,n,tb;
 
@@ -87,12 +87,16 @@ int phy_init(unsigned char nb_antennas_tx) {
 
     // Allocate memory for TX DMA Buffer
 
-
-    tmp_ptr = (int *)bigmalloc16(FRAME_LENGTH_BYTES+2*PAGE_SIZE);
-					  
+#ifdef IFFT_FPGA
+    tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
+#else
+    tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
+#endif
+    tmp_ptr = (mod_sym_t*) bigmalloc16(tx_dma_buffer_size_bytes+2*PAGE_SIZE);
+			  
     if (tmp_ptr==NULL) {
       printk("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
-	  (unsigned int)(FRAME_LENGTH_BYTES + 2*PAGE_SIZE));
+	  (unsigned int)(tx_dma_buffer_size_bytes+2*PAGE_SIZE));
       return(-1);
     }
     else {
@@ -105,7 +109,7 @@ int phy_init(unsigned char nb_antennas_tx) {
       printk("[PHY][INIT] TX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	  (void *)tmp_ptr,
 	  (void *)virt_to_phys(tmp_ptr),
-	  (unsigned int)(FRAME_LENGTH_BYTES+2*PAGE_SIZE));
+	  (unsigned int)(tx_dma_buffer_size+2*PAGE_SIZE));
 #endif
     }
  

@@ -12,7 +12,7 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
   unsigned char level;
 
 #ifdef OPENAIR_LTE
-  int **txdataF;
+  mod_sym_t **txdataF;
 #endif
 
   switch (format) {
@@ -37,9 +37,14 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     break;
 #else
   case 3:
-    txdataF    = (int **)malloc16(2*sizeof(int*));
-    txdataF[0] = (int *)malloc16(sizeof(int)*FRAME_LENGTH_COMPLEX_SAMPLES);
-    txdataF[1] = (int *)malloc16(sizeof(int)*FRAME_LENGTH_COMPLEX_SAMPLES);
+    txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
+#ifdef IFFT_FPGA
+    txdataF[0] = (mod_sym_t *) PHY_vars->tx_vars[0].TX_DMA_BUFFER;
+    txdataF[1] = (mod_sym_t *) PHY_vars->tx_vars[1].TX_DMA_BUFFER;
+#else
+    txdataF[0] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
+    txdataF[1] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
+#endif
 
     generate_pss(txdataF,
 		 256,
@@ -51,8 +56,13 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		    lte_frame_parms,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
+#ifdef IFFT_FPGA
+    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->N_RB_DL,1,4);
+#else
     write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
+#endif
 
+#ifndef IFFT_FPGA
     PHY_ofdm_mod(txdataF[0],        // input
 		 PHY_vars->tx_vars[0].TX_DMA_BUFFER,         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
@@ -79,12 +89,11 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);
 #endif //BIT8_TXMUX
 
-
     write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,5);
-
 
     free(txdataF[0]);
     free(txdataF[1]);
+#endif
     free(txdataF);
 
 #endif

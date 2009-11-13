@@ -95,7 +95,7 @@ crc24a (unsigned char * inptr, int bitlen)
   return crc;
 }
 
-crc24b (unsigned char * inptr, int bitlen)
+unsigned int crc24b (unsigned char * inptr, int bitlen)
 {
 
   int             octetlen, resbit;

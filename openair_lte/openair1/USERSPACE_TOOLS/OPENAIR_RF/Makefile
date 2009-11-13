@@ -29,7 +29,7 @@ FNAME = cbmimo1
 endif
 
 ifdef OPENAIR_LTE
-CFLAGS += -DOPENAIR_LTE
+CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA
 endif
 
 ifdef IDROMEL_RF
