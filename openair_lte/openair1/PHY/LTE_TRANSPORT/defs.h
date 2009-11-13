@@ -14,63 +14,70 @@
 #define MAX_DLSCH_PAYLOAD_BYTES 768
 #define NSOFT 1827072
 #define LTE_NULL 2 
-
+#define MAX_NUM_DLSCH_SEGMENTS 8
 
 typedef struct {
-  unsigned char active;
-  unsigned short payload_size_bytes;
-  unsigned char *payload;
-  unsigned char *payload_segments[8];
-  unsigned int RTC;
-  unsigned char round;
-  unsigned char mod_order;
-  MIMO_mode_t mimo_mode;
-  unsigned char d[3][3*(96+3+(3*6144))];  // allow for up to 3 length-6144 codewords in a TTI
-  unsigned char w[3][3*6144];
-  unsigned int C;
-  unsigned int Cminus;
-  unsigned int Cplus;
-  unsigned int Kminus;
-  unsigned int Kplus;
-  unsigned int F;
-  unsigned char Nl;
+  unsigned char active; /// Flag indicating that this DLSCH is active (i.e. not the first round)
+  unsigned short payload_size_bytes;  /// The payload size in bytes
+  unsigned char *payload;             /// Pointer to the payload
+  unsigned char *payload_segments[MAX_NUM_DLSCH_SEGMENTS]; /// Pointers to up to 8 segments
+  unsigned int RTC[MAX_NUM_DLSCH_SEGMENTS];                /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  unsigned char round;                /// Index of current HARQ round for this DLSCH
+  unsigned char mod_order;            /// Modulation order of this DLSCH
+  MIMO_mode_t mimo_mode;              /// MIMO mode for this DLSCH
+  unsigned char d[MAX_NUM_DLSCH_SEGMENTS][3*(96+3+(3*6144))];  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
+  unsigned char w[MAX_NUM_DLSCH_SEGMENTS][3*6144];             /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
+  unsigned int C;                         /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  unsigned int Cminus;                    /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cplus;                     /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Kminus;                    /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kplus;                     /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int F;                         /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned char Nl;                       /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
 } LTE_eNb_HARQ_t;
 
 typedef struct {
-  LTE_eNb_HARQ_t *harq_processes[8];
-  unsigned char rvidx;
-  unsigned char crc_len;
-  unsigned char e[3][3*6144];
-  unsigned char Mdlharq;
-  unsigned char Kmimo;
+  LTE_eNb_HARQ_t *harq_processes[8];     /// Pointers to 8 HARQ processes for the DLSCH
+  unsigned char rvidx;                   /// Redundancy-version of the current sub-frame
+  unsigned char e[3*6144*MAX_NUM_DLSCH_SEGMENTS];             /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  unsigned char Mdlharq;  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
+  unsigned char Kmimo;    /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
 } LTE_eNb_DLSCH_t;
 
 typedef struct {
-  unsigned char active;
-  unsigned short payload_size_bytes;
-  unsigned char *payload;
-  unsigned char *payload_segments[8];
-  unsigned int RTC;
-  unsigned char round;
-  unsigned char mod_order;
+  unsigned char active;  /// Flag indicating that this DLSCH is active (i.e. not the first round)
+  unsigned short payload_size_bytes; /// The payload size in bytes
+  unsigned char *payload;  /// Pointer to the payload
+  unsigned char *payload_segments[MAX_NUM_DLSCH_SEGMENTS];  /// Pointers to up to 8 segments
+  unsigned int RTC[8]; /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  unsigned char round; /// Index of current HARQ round for this DLSCH
+  unsigned char mod_order; 
   MIMO_mode_t mimo_mode;
-  short w[3][3*6144];
-  unsigned int C;
-  unsigned int Cminus;
-  unsigned int Cplus;
-  unsigned int Kminus;
-  unsigned int Kplus;
-  unsigned int F;
-  unsigned char Nl;
+  short w[MAX_NUM_DLSCH_SEGMENTS][3*6144];   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  unsigned int C;  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  unsigned int Cminus;  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cplus;  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Kminus;  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kplus;  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int F;  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned char Nl;  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
 } LTE_UE_HARQ_t;
 
 typedef struct {
-  LTE_UE_HARQ_t *harq_processes[8];
-  unsigned char rvidx;
-  unsigned char crc_len;
-  unsigned char Mdlharq;
-  unsigned char Kmimo;
+  LTE_UE_HARQ_t *harq_processes[8];   /// Pointers to up to 8 HARQ processes
+  unsigned char rvidx;                /// redundancy version for this sub-frame
+  unsigned char Mdlharq;              /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
+  unsigned char Kmimo;                /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
 } LTE_UE_DLSCH_t;
+
+
+void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
+
+LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+
+void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
+
+LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
 /** \fn unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w)
 \brief This is the subblock interleaving algorithm from 36-212 (Release 8, 8.6 2009-03) , pp. 15-16. 
@@ -81,106 +88,6 @@ This function takes the d-sequence and generates the w-sequence.  The nu-sequenc
 \returns Interleaving matrix cardinality (Kpi from 36-212)
 */
 
-unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w);
-
-void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
-
-/** \fn generate_dummy_w(unsigned int D, unsigned char *w)
-\brief This function generates a dummy interleaved sequence (first row) for receiver, in order to identify
-the NULL positions used to make the matrix complete.
-\param D Number of systematic bits plus 4 (plus 4 for termination)
-\param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
-\returns Interleaving matrix cardinality (Kpi from 36-212)
-*/
-
-unsigned int generate_dummy_w(unsigned int D, unsigned char *w);
-
-
-/** \fn lte_rate_matching_turbo(unsigned int RTC,
-			     unsigned int G, 
-			     unsigned char *w,
-			     unsigned char *e, 
-			     unsigned char C, 
-			     unsigned int Nsoft, 
-			     unsigned char Mdlharq,
-			     unsigned char Kmimo,
-			     unsigned char rvidx,
-			     unsigned char Qm, 
-			     unsigned char Nl, 
-			     unsigned char r)
-
-\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
-\param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
-\param G This the number of coded transport bits allocated in sub-frame
-\param w This is a pointer to the w-sequence (second interleaver output)
-\param e This is a pointer to the e-sequence (rate matching output, channel input/output bits)
-\param C Number of segments (codewords) in the sub-frame
-\param Nsoft Total number of soft bits (from UE capabilities in 36-306)
-\param Mdlharq Number of HARQ rounds 
-\param Kmimo MIMO capability for this DLSCH (0 = no MIMO)
-\param rvidx round index (0-3)
-\param Qm modulation order (2,4,6)
-\param Nl number of layers (1,2)
-\param r segment number
-*/
-
-
-void lte_rate_matching_turbo(unsigned int RTC,
-			     unsigned int G, 
-			     unsigned char *w,
-			     unsigned char *e, 
-			     unsigned char C, 
-			     unsigned int Nsoft, 
-			     unsigned char Mdlharq,
-			     unsigned char Kmimo,
-			     unsigned char rvidx,
-			     unsigned char Qm, 
-			     unsigned char Nl, 
-			     unsigned char r);
-
-/** \fn lte_rate_matching_turbo_rx(unsigned int RTC,
-				unsigned int G, 
-				short *w,
-				unsigned char *dummy_w,
-				short *soft_input, 
-				unsigned char C, 
-				unsigned int Nsoft, 
-				unsigned char Mdlharq,
-				unsigned char Kmimo,
-				unsigned char rvidx,
-				unsigned char Qm, 
-				unsigned char Nl, 
-				unsigned char r)
-
-\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
-\param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
-\param G This the number of coded transport bits allocated in sub-frame
-\param w This is a pointer to the soft w-sequence (second interleaver output) with soft-combined outputs from successive HARQ rounds 
-\param dummy_w This is the first row of the interleaver matrix for identifying/discarding the "LTE-NULL" positions
-\param soft_input This is a pointer to the soft channel output 
-\param C Number of segments (codewords) in the sub-frame
-\param Nsoft Total number of soft bits (from UE capabilities in 36-306)
-\param Mdlharq Number of HARQ rounds 
-\param Kmimo MIMO capability for this DLSCH (0 = no MIMO)
-\param rvidx round index (0-3)
-\param Qm modulation order (2,4,6)
-\param Nl number of layers (1,2)
-\param r segment number
-*/
-
-void lte_rate_matching_turbo_rx(unsigned int RTC,
-				unsigned int G, 
-				short *w,
-				unsigned char *dummy_w,
-				short *soft_input, 
-				unsigned char C, 
-				unsigned int Nsoft, 
-				unsigned char Mdlharq,
-				unsigned char Kmimo,
-				unsigned char rvidx,
-				unsigned char Qm, 
-				unsigned char Nl, 
-				unsigned char r);
 
 /** \fn dlsch_encoding(unsigned char *input_buffer,
 		    unsigned short input_buffer_length,

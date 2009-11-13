@@ -136,18 +136,18 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w) {
 }
 
 
-void lte_rate_matching_turbo(unsigned int RTC,
-			     unsigned int G, 
-			     unsigned char *w,
-			     unsigned char *e, 
-			     unsigned char C, 
-			     unsigned int Nsoft, 
-			     unsigned char Mdlharq,
-			     unsigned char Kmimo,
-			     unsigned char rvidx,
-			     unsigned char Qm, 
-			     unsigned char Nl, 
-			     unsigned char r) {
+unsigned int lte_rate_matching_turbo(unsigned int RTC,
+				     unsigned int G, 
+				     unsigned char *w,
+				     unsigned char *e, 
+				     unsigned char C, 
+				     unsigned int Nsoft, 
+				     unsigned char Mdlharq,
+				     unsigned char Kmimo,
+				     unsigned char rvidx,
+				     unsigned char Qm, 
+				     unsigned char Nl, 
+				     unsigned char r) {
   
   
   unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,Nbmod,k;
@@ -192,22 +192,23 @@ void lte_rate_matching_turbo(unsigned int RTC,
     if (ind==Ncb)
       ind=0;
   }
+  return(E);
 }
 
 
-void lte_rate_matching_turbo_rx(unsigned int RTC,
-				unsigned int G, 
-				short *w,
-				unsigned char *dummy_w,
-				short *soft_input, 
-				unsigned char C, 
-				unsigned int Nsoft, 
-				unsigned char Mdlharq,
-				unsigned char Kmimo,
-				unsigned char rvidx,
-				unsigned char Qm, 
-				unsigned char Nl, 
-				unsigned char r) {
+unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
+					unsigned int G, 
+					short *w,
+					unsigned char *dummy_w,
+					short *soft_input, 
+					unsigned char C, 
+					unsigned int Nsoft, 
+					unsigned char Mdlharq,
+					unsigned char Kmimo,
+					unsigned char rvidx,
+					unsigned char Qm, 
+					unsigned char Nl, 
+					unsigned char r) {
   
   
   unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,Nbmod,k;
@@ -245,6 +246,7 @@ void lte_rate_matching_turbo_rx(unsigned int RTC,
 	ind=0;
     }
 
+    // Maximum-ratio combining of repeated bits and retransmissions
     w[ind] += soft_input[k];
 #ifdef RM_DEBUG
     printf("lte_rate_matching_turbo_rx: ind %d, w %d\n",ind,w[ind]);
@@ -253,6 +255,8 @@ void lte_rate_matching_turbo_rx(unsigned int RTC,
     if (ind==Ncb)
       ind=0;
   }
+  return(E);
+
 }
 
 

@@ -560,7 +560,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 					    unsigned short f1,
 					    unsigned short f2,
 					    unsigned char max_iterations,
-					    unsigned char crc_len) {
+					    unsigned char crc_type) {
   
   /*  y is a pointer to the input
     decoded_bytes is a pointer to the decoded output
@@ -571,13 +571,27 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   llr_t *yp = y;
   unsigned short i,pi;
   unsigned char iteration_cnt=0;
-  unsigned int crc,oldcrc;
+  unsigned int crc,oldcrc,crc_len;
 
-  if (crc_len > 3) {
+  if (crc_type > 3) {
     msg("Illegal crc length!\n");
     return 255;
   }
 
+  switch (crc_len) {
+  case 0:
+  case 1:
+    crc_len=3;
+    break;
+  case 2:
+    crc_len=2;
+    break;
+  case 3:
+    crc_len=1;
+    break;
+  default:
+    crc_len=3;
+  }
   for (i=0;i<n;i++) {
     systematic0[i] = *yp; yp++;
     yparity1[i] = *yp; yp++;
@@ -662,14 +676,21 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     // check status on output
 
     oldcrc= *((unsigned int *)(&decoded_bytes[(n>>3)-crc_len]));
-    switch (crc_len) {
+    switch (crc_type) {
 
-    case 0:
+    case 0: 
+      oldcrc&=0x000000ff;
+      crc = crc24a(decoded_bytes,
+		   n-24)>>24;
+      if (crc == oldcrc)
+	return(iteration_cnt);
+
+      break;
       break;
     case 1:
       oldcrc&=0x000000ff;
-      crc = crc24(decoded_bytes,
-		  n-8)>>24;
+      crc = crc24b(decoded_bytes,
+		  n-24)>>24;
       if (crc == oldcrc)
 	return(iteration_cnt);
 
@@ -684,8 +705,8 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       break;
     case 3:
       oldcrc&=0x00ffffff;
-      crc = crc24(decoded_bytes,
-		  n-24)>>8;
+      crc = crc8(decoded_bytes,
+		  n-8)>>8;
       if (crc == oldcrc)
 	return(iteration_cnt);
 
