@@ -142,6 +142,7 @@ void main() {
 
   dlsch_modulation(txdataF,
 		   1024,
+		   0,
 		   lte_frame_parms,
 		   dlsch_eNb,
 		   0,               // harq_pid
@@ -220,6 +221,7 @@ void main() {
   //    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
   //    lte_sync_time_free();
 
+  // Inner receiver scheduling for 3 slots
     for (Ns=0;Ns<3;Ns++) {
       for (l=0;l<6;l++) {
 

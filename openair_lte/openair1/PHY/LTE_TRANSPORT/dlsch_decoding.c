@@ -63,7 +63,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 }
 
 void  dlsch_decoding(unsigned short A,
-		     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+		     short *dlsch_llr,
 		     LTE_DL_FRAME_PARMS *lte_frame_parms,
 		     LTE_UE_DLSCH_t *dlsch,
 		     unsigned char harq_pid,
@@ -75,7 +75,6 @@ void  dlsch_decoding(unsigned short A,
   unsigned int ret;
   unsigned short iind;
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
-  short *dlsch_llr = lte_ue_dlsch_vars->llr;
   short coded_bits=0;
   unsigned char dummy_w[8][3*6144];
   unsigned int r,r_offset=0,Kr,Kr_bytes;

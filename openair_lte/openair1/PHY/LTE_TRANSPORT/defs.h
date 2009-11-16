@@ -174,6 +174,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
 /** \fn dlsch_modulation(int **txdataF,
 		      short amp,
+		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,
@@ -181,6 +182,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for DLSCH.  
 @param txdataF Table of pointers for frequency-domain TX signals
 @param amp Amplitude of signal
+@param sub_frame_offset Offset of this subframe in units of subframes (usually 0)
 @param frame_parms Pointer to frame descriptor
 @param dlsch Pointer to DLSCH descriptor for this allocation
 @param harq_pid Identifier of harq process
@@ -188,6 +190,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 */ 
 void dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
+		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,
