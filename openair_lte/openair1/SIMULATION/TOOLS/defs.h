@@ -5,7 +5,6 @@ int gauss(unsigned int *,unsigned char);
 
 double gaussdouble(double,double);
 void randominit(void);
- 
 
 //void QAM_input(struct complex *,short,int,int,char);
 
