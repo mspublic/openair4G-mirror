@@ -8,6 +8,8 @@
 
 #define MAX_TURBO_ITERATIONS 6
 
+#define LTE_NULL 2
+
 /** @ingroup _PHY_CODING_BLOCKS_
  * @{
 */
@@ -46,15 +48,16 @@ unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsig
 
 void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
 
-/** \fn generate_dummy_w(unsigned int D, unsigned char *w)
+/** \fn generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F)
 \brief This function generates a dummy interleaved sequence (first row) for receiver, in order to identify
 the NULL positions used to make the matrix complete.
 \param D Number of systematic bits plus 4 (plus 4 for termination)
 \param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
+\param F Number of filler bits due added during segmentation
 \returns Interleaving matrix cardinality (Kpi from 36-212)
 */
 
-unsigned int generate_dummy_w(unsigned int D, unsigned char *w);
+unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F);
 
 
 /** \fn lte_rate_matching_turbo(unsigned int RTC[8],
@@ -164,17 +167,19 @@ void ccodedot11_init(void);
 \brief This function initializes the trellis structure for decoding an 802.11 convolutional code.*/
 void ccodedot11_init_inv(void);		   
 
-/*\fn void threegpplte_turbo_encoder(unsigned char *input,unsigned short input_length_bytes,unsigned char *output,unsigned short interleaver_f1,unsigned short interleaver_f2)
+/*\fn void threegpplte_turbo_encoder(unsigned char *input,unsigned short input_length_bytes,unsigned char *output,unsigned char F,unsigned short interleaver_f1,unsigned short interleaver_f2)
 \brief This function implements a rate 1/3 8-state parralel concatenated turbo code (3GPP-LTE).
 @param input Pointer to input buffer
 @param input_length_bytes Number of bytes to encode
 @param output Pointer to output buffer
+@param F Number of filler bits at input
 @param interleaver_f1 F1 generator
 @param interleaver_f2 F2 generator
 */
 void threegpplte_turbo_encoder(unsigned char *input,
 			       unsigned short input_length_bytes,
 			       unsigned char *output,
+			       unsigned char F,
 			       unsigned short interleaver_f1,
 			       unsigned short interleaver_f2);
 
@@ -258,7 +263,8 @@ int rate_matching(unsigned int N_coded,
 @param max_iterations The maximum number of iterations to perform
 @param interleaver_f1 F1 generator
 @param interleaver_f2 F2 generator
-@param crc_len Length of 3GPP crc (0 none, 1 8-bit, 2 16-bit, 3 24-bit)
+@param crc_type Length of 3GPPLTE crc (CRC24a,CRC24b,CRC16,CRC8)
+@param F Number of filler bits at start of packet 
 @returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
 */
 unsigned char phy_threegpplte_turbo_decoder(short *y,
@@ -267,7 +273,8 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 					    unsigned short interleaver_f1,
 					    unsigned short interleaver_f2,
 					    unsigned char max_iterations,
-					    unsigned char crc_len);
+					    unsigned char crc_type,
+					    unsigned char F);
 
 
 /** @} */

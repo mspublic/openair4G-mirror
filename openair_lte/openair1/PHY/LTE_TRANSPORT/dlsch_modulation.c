@@ -798,6 +798,8 @@ void dlsch_modulation(int **txdataF,
   re_allocated=0;
   
   for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
+
+    //    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->harq_processes[harq_pid]->mod_order,l);
     
     pilots=0;
     if ((l==(nsymb>>1))){
@@ -816,7 +818,7 @@ void dlsch_modulation(int **txdataF,
       // do not interfere with data
       // LTE is eNb centric.  "Smart" Interference
       // cancellation isn't possible
-      printf("Generating DLSCH in %d\n",l);
+
       re_offset = frame_parms->first_carrier_offset;
       
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
@@ -843,7 +845,7 @@ void dlsch_modulation(int **txdataF,
 			     &jj,
 			     re_offset,
 			     frame_parms->ofdm_symbol_size*l,
-			     dlsch->e[0],
+			     dlsch->e,
 			     dlsch->harq_processes[harq_pid]->mimo_mode,
 			     pilots,
 			     first_pilot,

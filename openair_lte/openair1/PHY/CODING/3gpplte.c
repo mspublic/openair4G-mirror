@@ -1,3 +1,4 @@
+#include "defs.h"
 #include "lte_interleaver_inline.h"
 
 
@@ -49,10 +50,11 @@ inline void threegpplte_rsc_termination(unsigned char *x,unsigned char *z,unsign
 void threegpplte_turbo_encoder(unsigned char *input,
 			       unsigned short input_length_bytes,
 			       unsigned char *output,
+			       unsigned char F,
 			       unsigned short interleaver_f1,
 			       unsigned short interleaver_f2) {
   
-  int i;
+  int i,k=0;
   unsigned char *x;
   unsigned char b,z,zprime,xprime;
   unsigned char state0=0,state1=0;
@@ -84,7 +86,12 @@ void threegpplte_turbo_encoder(unsigned char *input,
 #ifdef DEBUG_TURBO_ENCODER
       printf("(x,z): (%d,%d),state0 %d\n",*x,z,state0);
 #endif //DEBUG_TURBO_ENCODER
-      
+
+      // Filler bits get punctured
+      if (k<F) {
+	*x = LTE_NULL;
+	z  = LTE_NULL;
+      }
 
       pi_pos          = pi>>3; 
       pi_bitpos       = pi&7;
@@ -100,6 +107,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
       x+=3;
 
       pi              = threegpplte_interleaver(interleaver_f1,interleaver_f2,input_length_bits);
+      k++;
     }
   }
   // Trellis termination

@@ -10,13 +10,16 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
   if (dlsch) {
     for (i=0;i<dlsch->Mdlharq;i++) {
       if (dlsch->harq_processes[i]) {
-	if (dlsch->harq_processes[i]->payload)
-	  free(dlsch->harq_processes[i]->payload);
-	if (dlsch->harq_processes[i]->payload_segments) {
+	if (dlsch->harq_processes[i]->b)
+	  free(dlsch->harq_processes[i]->b);
+	if (dlsch->harq_processes[i]->c) {
 	  for (r=0;r<8;r++)
-	    free(dlsch->harq_processes[i]->payload_segments[r]);
-	  free(dlsch->harq_processes[i]->payload_segments);
+	    free(dlsch->harq_processes[i]->c[r]);
+	  free(dlsch->harq_processes[i]->c);
 	}
+	for (r=0;r<8;r++)
+	  if (dlsch->harq_processes[i]->d[r])
+	    free(dlsch->harq_processes[i]->d[r]);
 	free(dlsch->harq_processes[i]);
       }
     }
@@ -37,13 +40,14 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_UE_HARQ_t *)malloc16(sizeof(LTE_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
-	dlsch->harq_processes[i]->payload = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
-	if (!dlsch->harq_processes[i]->payload)
+	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
+	if (!dlsch->harq_processes[i]->b)
 	  exit_flag=1;
 	for (r=0;r<8;r++) {
-	  dlsch->harq_processes[i]->payload_segments[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8);	
-	  if (!dlsch->harq_processes[i]->payload_segments[r])
+	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8);	
+	  if (!dlsch->harq_processes[i]->c[r])
 	    exit_flag=1;
+	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16((3*8*6144)+12+96);
 	}
       
       }	else {
@@ -58,22 +62,18 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
   return(NULL);
 }
 
-void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
+void  dlsch_decoding(unsigned short A,
+		     LTE_UE_DLSCH *lte_ue_dlsch_vars,
 		     LTE_DL_FRAME_PARMS *lte_frame_parms,
 		     LTE_UE_DLSCH_t *dlsch,
 		     unsigned char harq_pid,
 		     //		     unsigned short block_length,
 		     unsigned char nb_rb) {
 		     
-  unsigned short block_length;
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
-  unsigned char **decoded_output = dlsch->harq_processes[harq_pid]->payload_segments;
-
-
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret;
   unsigned short iind;
-  short d[8][(3*8*6144)+12+96] __attribute__ ((aligned(16)));
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
   short *dlsch_llr = lte_ue_dlsch_vars->llr;
   short coded_bits=0;
@@ -81,6 +81,7 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
 
+  printf("In dlsch_decoding\n");
   // This has to be updated for presence of PDCCH and PBCH
   coded_bits_per_codeword = (lte_frame_parms->Ncp == 0) ?
     ( nb_rb * (12 * mod_order) * (14-lte_frame_parms->first_dlsch_symbol-3)) :
@@ -89,9 +90,11 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
 
   if (dlsch->harq_processes[harq_pid]->active == 0) {
     // This is a new packet, so compute quantities regarding segmentation
+    printf("LTE_segmentation A %d\n",A);
+    dlsch->harq_processes[harq_pid]->B = A+24;
     lte_segmentation(NULL,
 		     NULL,
-		     dlsch->harq_processes[harq_pid]->payload_size_bytes<<3,
+		     dlsch->harq_processes[harq_pid]->B,
 		     &dlsch->harq_processes[harq_pid]->C,
 		     &dlsch->harq_processes[harq_pid]->Cplus,
 		     &dlsch->harq_processes[harq_pid]->Cminus,
@@ -109,7 +112,7 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
       Kr = dlsch->harq_processes[harq_pid]->Kminus;
     else
       Kr = dlsch->harq_processes[harq_pid]->Kplus;
-    Kr_bytes = Kr<<3;
+    Kr_bytes = Kr>>3;
     
     if (Kr_bytes<=64)
       iind = (Kr_bytes-5);
@@ -125,13 +128,14 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
     }
   
      
-    printf("f1 %d, f2 %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)]);
+    printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       dummy_w[r]);
+							       dummy_w[r],
+							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
     printf("Rate Matching (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d)...\n",
 	   coded_bits_per_codeword,
-	   (3*8*block_length)+12,
+	   Kr,
 	   mod_order,
 	   nb_rb);
 
@@ -152,19 +156,19 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
 					   0);
     
     sub_block_deinterleaving_turbo(4+Kr, 
-				   &d[r][96], 
+				   &dlsch->harq_processes[harq_pid]->d[r][96], 
 				   dlsch->harq_processes[harq_pid]->w[r]); 
     
     if (r==0) {
       write_output("decoder_llr.m","decllr",dlsch_llr,coded_bits_per_codeword,1,0);
-      write_output("decoder_in.m","dec",&d[96],(3*8*Kr_bytes)+12,1,0);
+      write_output("decoder_in.m","dec",&dlsch->harq_processes[harq_pid]->d[0][96],(3*8*Kr_bytes)+12,1,0);
       printf("decoder input :");
       for (i=0;i<(3*8*Kr_bytes)+12;i++)
-	printf("%d : %d\n",i,d[96+i]);
+	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[0][96+i]);
       printf("\n");
     }
     
-    memset(decoded_output,0,16);//block_length);
+    memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
     
     if (dlsch->harq_processes[harq_pid]->C == 1) 
       crc_type = CRC24_A;
@@ -173,13 +177,14 @@ void  dlsch_decoding(LTE_UE_DLSCH *lte_ue_dlsch_vars,
 
        
 
-    ret = phy_threegpplte_turbo_decoder(&d[r][96],
-					decoded_output[r],
+    ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
+					dlsch->harq_processes[harq_pid]->c[r],
 					Kr,
 					f1f2mat[iind*2],   
 					f1f2mat[(iind*2)+1], 
 					MAX_TURBO_ITERATIONS,
-					crc_type);
+					crc_type,
+					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
     if (ret==MAX_TURBO_ITERATIONS) // a Code segment is in error so break;
       break;

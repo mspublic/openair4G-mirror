@@ -18,14 +18,14 @@
 
 typedef struct {
   unsigned char active; /// Flag indicating that this DLSCH is active (i.e. not the first round)
-  unsigned short payload_size_bytes;  /// The payload size in bytes
-  unsigned char *payload;             /// Pointer to the payload
-  unsigned char *payload_segments[MAX_NUM_DLSCH_SEGMENTS]; /// Pointers to up to 8 segments
+  unsigned short B;  /// The payload + CRC size in bits, "B" from 36-212
+  unsigned char *b;             /// Pointer to the payload
+  unsigned char *c[MAX_NUM_DLSCH_SEGMENTS]; /// Pointers to up to 8 segments
   unsigned int RTC[MAX_NUM_DLSCH_SEGMENTS];                /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   unsigned char round;                /// Index of current HARQ round for this DLSCH
   unsigned char mod_order;            /// Modulation order of this DLSCH
   MIMO_mode_t mimo_mode;              /// MIMO mode for this DLSCH
-  unsigned char d[MAX_NUM_DLSCH_SEGMENTS][3*(96+3+(3*6144))];  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
+  unsigned char d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
   unsigned char w[MAX_NUM_DLSCH_SEGMENTS][3*6144];             /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
   unsigned int C;                         /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
   unsigned int Cminus;                    /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
@@ -46,14 +46,15 @@ typedef struct {
 
 typedef struct {
   unsigned char active;  /// Flag indicating that this DLSCH is active (i.e. not the first round)
-  unsigned short payload_size_bytes; /// The payload size in bytes
-  unsigned char *payload;  /// Pointer to the payload
-  unsigned char *payload_segments[MAX_NUM_DLSCH_SEGMENTS];  /// Pointers to up to 8 segments
+  unsigned short B; /// The payload + CRC size in bits
+  unsigned char *b;  /// Pointer to the payload
+  unsigned char *c[MAX_NUM_DLSCH_SEGMENTS];  /// Pointers to up to 8 segments
   unsigned int RTC[8]; /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   unsigned char round; /// Index of current HARQ round for this DLSCH
   unsigned char mod_order; 
   MIMO_mode_t mimo_mode;
   short w[MAX_NUM_DLSCH_SEGMENTS][3*6144];   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  short *d[MAX_NUM_DLSCH_SEGMENTS];   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
   unsigned int C;  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
   unsigned int Cminus;  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
   unsigned int Cplus;  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
