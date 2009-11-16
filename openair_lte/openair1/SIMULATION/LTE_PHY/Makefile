@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc-4
 
 TOP_DIR = ../..
 
@@ -8,8 +8,9 @@ CFLAGS += -DDEBUG_PHY
 
 PHY_OBJS = $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_rx.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
@@ -18,10 +19,11 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/crc_byte.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/logmap8.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
