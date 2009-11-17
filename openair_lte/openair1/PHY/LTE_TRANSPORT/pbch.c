@@ -100,7 +100,7 @@ int generate_pbch(mod_sym_t **txdataF,
 
 
   int i, l, j, j2;
-  unsigned int crc;
+  unsigned short crc;
 
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes;
   pbch_crc_bits    = 64;
@@ -118,15 +118,16 @@ int generate_pbch(mod_sym_t **txdataF,
   // Encode data
 
   // CRC attachment
-  crc = crc16(pbch_pdu, pbch_crc_bits-16); 
+  crc = (unsigned short) (crc16(pbch_pdu, pbch_crc_bits-16) >> 16); 
 
+  /*
   // scramble crc with PBCH CRC mask (Table 5.3.1.1-1 of 3GPP 36.212-860)
   switch (frame_parms->nb_antennas_tx) {
   case 1:
     crc = crc ^ (unsigned short) 0;
     break;
   case 2:
-    crc = crc ^ (unsigned short) 1;
+    crc = crc ^ (unsigned short) 0xFFFF;
     break;
   case 4:
     crc = crc ^ (unsigned short) 0xAAAA;
@@ -135,13 +136,14 @@ int generate_pbch(mod_sym_t **txdataF,
     msg("[PBCH] Unknown number of TX antennas!\n");
     break;
   }
+  */
 
   // Place crc
   // double check!!!
   for (i=0;i<6;i++) 
     pbch_data[i] = pbch_pdu[i];
-  pbch_data[6] = ((char*) &crc)[2];
-  pbch_data[7] = ((char*) &crc)[3];
+  pbch_data[6] = ((char*) &crc)[0];
+  pbch_data[7] = ((char*) &crc)[1];
   for (i=0;i<8;i++) 
     printf("[PBCH] pbch_data[%d] = %x\n",i,pbch_data[i]);
 
@@ -630,7 +632,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 				      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
 				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
                                       6,
-                                      2,
+                                      CRC16,
 				      0);
 
 #ifdef DEBUG_PHY

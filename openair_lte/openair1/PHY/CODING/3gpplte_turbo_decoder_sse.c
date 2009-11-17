@@ -615,15 +615,15 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     return 255;
   }
 
-  switch (crc_len) {
-  case 0:
-  case 1:
+  switch (crc_type) {
+  case CRC24_A:
+  case CRC24_B:
     crc_len=3;
     break;
-  case 2:
+  case CRC16:
     crc_len=2;
     break;
-  case 3:
+  case CRC8:
     crc_len=1;
     break;
   default:
@@ -715,7 +715,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     oldcrc= *((unsigned int *)(&decoded_bytes[(n>>3)-crc_len]));
     switch (crc_type) {
 
-    case 0: 
+    case CRC24_A: 
       oldcrc&=0x000000ff;
       crc = crc24a(decoded_bytes,
 		   n-24)>>24;
@@ -724,7 +724,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
       break;
       break;
-    case 1:
+    case CRC24_B:
       oldcrc&=0x000000ff;
       crc = crc24b(decoded_bytes,
 		  n-24)>>24;
@@ -732,7 +732,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 	return(iteration_cnt);
 
       break;
-    case 2:
+    case CRC16:
       oldcrc&=0x0000ffff;
       crc = crc16(decoded_bytes,
 		  n-16)>>16;
@@ -740,7 +740,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 	return(iteration_cnt);
 
       break;
-    case 3:
+    case CRC8:
       oldcrc&=0x00ffffff;
       crc = crc8(decoded_bytes,
 		  n-8)>>8;
