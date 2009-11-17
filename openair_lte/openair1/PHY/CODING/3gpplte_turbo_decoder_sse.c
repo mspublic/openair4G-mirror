@@ -4,6 +4,8 @@
    date: 21.10.2009 
 
    Note: This routine currently requires SSE2,SSSE3 and SSE4.1 equipped computers.  IT WON'T RUN OTHERWISE!
+
+   Changelog: 17.11.2009 FK SSE4.1 not required anymore
 */
 
 ///
@@ -12,7 +14,9 @@
 #include "emmintrin.h"
 #include "pmmintrin.h"
 #include "tmmintrin.h"
+#ifdef __SSE4_1_
 #include "smmintrin.h"
+#endif
 
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
@@ -103,7 +107,10 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
   llr_t m_b0,m_b1,m_b2, m_b3;
   //m_b4, m_b5, m_b6, m_b7;
 
-  
+#ifndef __SSE4_1__
+  int* newcmp_int;
+#endif
+
   llr_t m11,m10;
   
   THRES128 = _mm_set1_epi16(THRES);
@@ -208,7 +215,12 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       new = _mm_max_epi16(new,mb);
       newcmp = _mm_cmpgt_epi16(new,THRES128);
 
+#ifndef __SSE4_1__
+      newcmp_int = (int*) &newcmp;
+      if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
+#else
       if (_mm_testz_si128(newcmp,newcmp)) // if any states above THRES normalize
+#endif
 	*alpha128 = new;
       else {
 	//	print_shorts("new",&new);
@@ -231,6 +243,10 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
   llr_t m11,m10; 
 
   __m128i *beta128,*beta128_i,new,mb,oldh,oldl,THRES128,newcmp;
+
+#ifndef __SSE4_1__
+  int* newcmp_int;
+#endif
 
   THRES128 = _mm_set1_epi16(THRES);
 
@@ -263,7 +279,12 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
 
       newcmp = _mm_cmpgt_epi16(new,THRES128);
 
+#ifndef __SSE4_1__
+      newcmp_int = (int*) &newcmp;
+      if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
+#else
       if (_mm_testz_si128(newcmp,newcmp))
+#endif
 	*beta128 = new;
       else{
 	*beta128 = _mm_subs_epi16(new,THRES128);

@@ -149,6 +149,7 @@ int generate_pbch(mod_sym_t **txdataF,
   threegpplte_turbo_encoder(pbch_data,
 			    pbch_crc_bytes,
 			    pbch_coded_data,
+			    0,
 			    f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
 			    f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1]  // f2 (see 36121-820, page 14)
 			    );
@@ -629,7 +630,8 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 				      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
 				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
                                       6,
-                                      2);
+                                      2,
+				      0);
 
 #ifdef DEBUG_PHY
 #ifdef USER_MODE
