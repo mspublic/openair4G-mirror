@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv) {
 
-  int i,aa;
+  int i,l,aa;
   double sigma2, sigma2_dB=0;
   mod_sym_t **txdataF;
   int **txdata;
@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
   int channel_length;
   struct complex **ch;
   unsigned char pbch_pdu[6];
+  int sync_pos, sync_pos_slot;
 
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
@@ -156,37 +157,44 @@ int main(int argc, char **argv) {
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
   //printf("sigma2 = %g\n",sigma2);
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES-10; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+20] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1+20] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
   
-  lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  //sync_pos = 3348;
   
-  int Ns;
-  int l;
-   for (Ns=0;Ns<2;Ns++) {
-      for (l=0;l<6;l++) {
+  // the sync is in the last symbol of either the 0th or 10th slot
+  // however, the pbch is only in the 0th slot
+  // so we assume that sync_pos points to the 0th slot
+  // so the position wrt to the start of the frame is 
+  sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
+  
+  msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+  
+  if (sync_pos >= sync_pos_slot) {
+    
+    for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+      
+      slot_fep(lte_frame_parms,
+	       lte_ue_common_vars,
+	       l,
+	       1,
+	       sync_pos-sync_pos_slot,
+	       0);
+    }
+    
+    if (rx_pbch(lte_ue_common_vars,
+		lte_ue_pbch_vars,
+		lte_frame_parms,
+		SISO))
+      msg("pbch decoded sucessfully!\n");
+  }
 
-        slot_fep(lte_frame_parms,
-                 l,
-                 Ns%20,
-                 lte_ue_common_vars->rxdata,
-                 lte_ue_common_vars->rxdataF,
-                 lte_ue_common_vars->dl_ch_estimates,
-                 (Ns>>1)*lte_frame_parms->samples_per_tti);
-      }
-   }
-
-   rx_pbch(lte_ue_common_vars,
-	   lte_ue_pbch_vars,
-	   lte_frame_parms,
-	   SISO);
-
-
-   //write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*12,2,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);
   write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[1][0]),6*(96+lte_frame_parms->ofdm_symbol_size),1,1);

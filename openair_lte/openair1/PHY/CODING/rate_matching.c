@@ -110,12 +110,14 @@ int rate_matching(unsigned int N_coded,
 	inPtr[Umod + (j*N_input2)] |= 0xc0; // set MSB-1 to indicate bit is repeated
 
     }
-    
+
+    /*    
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
     printf("rate_matching : i= %d, U = %d\n",i,Umod);
 #endif
 #endif
+    */
     i++;
   }
   return(0);
@@ -192,12 +194,13 @@ int rate_matching_lte(unsigned int N_coded,
       inPtr[Umod] |= 0xc0; // set MSB-1 to indicate bit is repeated
 
   
-    
+    /*
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
     printf("rate_matching : i= %d, U = %d\n",i,Umod);
 #endif
 #endif
+    */
     i++;
   }
   return(0);

@@ -244,12 +244,11 @@ void main() {
       for (l=0;l<6;l++) {
 
 	slot_fep(lte_frame_parms,
+		 lte_ue_common_vars,
 		 l,
 		 Ns%20,
-		 lte_ue_common_vars->rxdata,
-		 lte_ue_common_vars->rxdataF,
-		 lte_ue_common_vars->dl_ch_estimates,
-		 (Ns>>1)*lte_frame_parms->samples_per_tti);
+		 (Ns>>1)*lte_frame_parms->samples_per_tti,
+		 0);
 	
       if ((Ns==0) && (l==3)) // process symbols 0,1,2
 	for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)

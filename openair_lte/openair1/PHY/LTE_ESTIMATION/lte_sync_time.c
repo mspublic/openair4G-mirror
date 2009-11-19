@@ -149,7 +149,7 @@ void lte_sync_time_free(void) {
 
 }
 
-short lte_sync_time(int **rxdata, ///rx data in time domain
+int lte_sync_time(int **rxdata, ///rx data in time domain
 		    LTE_DL_FRAME_PARMS *frame_parms) {
 
   // perform a time domain correlation using the oversampled sync sequence

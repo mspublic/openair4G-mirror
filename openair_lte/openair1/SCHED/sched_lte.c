@@ -361,7 +361,7 @@ void openair_sync() {
     memcpy((void *)&PHY_vars->rx_vars[1].RX_DMA_BUFFER[FRAME_LENGTH_COMPLEX_SAMPLES],(void*)PHY_vars->rx_vars[1].RX_DMA_BUFFER,OFDM_SYMBOL_SIZE_BYTES);
     
 #ifdef DEBUG_PHY
-    msg("[openair][openair SYNC] freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
+    msg("[openair][SCHED][SYNC] freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
 	(pci_interface->freq_info>>1)&3,
 	(pci_interface->freq_info>>3)&3,
 	pci_interface->adc_head[0],
@@ -376,58 +376,69 @@ void openair_sync() {
 
     // Do initial timing acquisition
 
-    //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-    sync_pos = 0;
+    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 
-    msg("[openair][openair SYNC] sync_pos = %d\n",sync_pos);
-    
     PHY_vars->rx_vars[0].offset = sync_pos;
     
 #ifndef NOCARD_TEST
     pci_interface->frame_offset = sync_pos;
 #endif //NOCARD_TEST
 
-    // the sync is in the last symbol of the first slot, so the position wrt to the start of the frame is 
-    sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1);
-    //      +CYCLIC_PREFIX_LENGTH;
-
-    msg("[openair][openair SYNC] sync_pos_slot =%d\n",sync_pos_slot);
-
-    if (sync_pos >= sync_pos_slot) {
+    // the sync is in the last symbol of either the 0th or 10th slot
+    // however, the pbch is only in the 0th slot
+    // so we assume that sync_pos points to the 0th slot
+    // so the position wrt to the start of the frame is 
+    sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
     
-      for (Ns=0;Ns<2;Ns++) {
-	for (l=0;l<6;l++) {
-	  
-	  slot_fep(lte_frame_parms,
-		   l,
-		   Ns%20,
-		   lte_ue_common_vars->rxdata,
-		   lte_ue_common_vars->rxdataF,
-		   lte_ue_common_vars->dl_ch_estimates,
-		   (Ns>>1)*lte_frame_parms->samples_per_tti);
-	}
+    msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+    
+    if (sync_pos >= sync_pos_slot) {
+      
+      for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+	
+	slot_fep(lte_frame_parms,
+	       lte_ue_common_vars,
+		 l,
+		 1,
+		 sync_pos-sync_pos_slot,
+		 0);
       }
+      
+      if (rx_pbch(lte_ue_common_vars,
+		  lte_ue_pbch_vars,
+		  lte_frame_parms,
+		  SISO)) {
 
-      /*
-      rx_pbch(lte_ue_common_vars,
-	      lte_ue_pbch_vars,
-	      lte_frame_parms,
-	      SISO);
-      */
+
+	if (openair_daq_vars.node_running == 1) {
+	  openair_daq_vars.mode = openair_SYNCHED;
+	  mac_xface->frame = 0;
+#ifndef EMOS		
+#ifdef OPENAIR2
+	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+	  mac_resynch();
+#endif //OPENAIR2
+#endif //EMOS
+	  openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
+	  openair_daq_vars.last_adac_cnt=-1;            
+	}
+
+	msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+      }
     }
 
     // Do AGC
     /*
       if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-	//	msg("[openair][SCHED][AGC] Running AGC on MRSCH %d\n", target_SCH_index);
-	phy_adjust_gain (clear, 16384, target_SCH_index);
-	if (clear == 1)
-	  clear = 0;
+        msg("[openair][SCHED][AGC] Running AGC on MRSCH %d\n", target_SCH_index);
+        phy_adjust_gain (clear, 16384, target_SCH_index);
+        if (clear == 1)
+        clear = 0;
       }
     */
   }
-
-//  msg("[openair][SCHED][SYNCH] Returning\n");
+  
+  msg("[openair][SCHED][SYNCH] Returning\n");
 
 }
 

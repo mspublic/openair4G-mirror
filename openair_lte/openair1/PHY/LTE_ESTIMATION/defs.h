@@ -34,8 +34,24 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
 
-short lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms);
+int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms);
 
+/*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,
+			      int **rxdataF,
+			      LTE_DL_FRAME_PARMS *frame_parms,
+			      unsigned char Ns,
+			      unsigned char p,
+			      unsigned char l,
+			      unsigned char symbol)
+\brief This function performs channel estimation including frequency and temporal interpolation
+\param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
+\param rxdataF pointer to received data in freq domain
+\param frame_parms pointer to LTE frame parameters
+\param Ns slot number (0..19)
+\param p antenna port 
+\param l symbol within slot
+\param symbol symbol within frame
+*/
 int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,
 			      LTE_DL_FRAME_PARMS *frame_parms,
@@ -44,6 +60,22 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      unsigned char l,
 			      unsigned char symbol);
 
+/*! \fn int lte_est_freq_offset(int **dl_ch_estimates,
+			LTE_DL_FRAME_PARMS frame_parms,
+			int aa,
+			int l)
+\brief Frequency offset estimation for LTE
+We estimate the frequency offset by calculating the phase difference between channel estimates for symbols carrying pilots (l==0 or l==3/4). We take a moving average of the phase difference.
+\param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
+\param frame_parms pointer to LTE frame parameters
+\param aa antenna port 
+\param l symbol within slot
+*/
+int lte_est_freq_offset(int **dl_ch_estimates,
+			LTE_DL_FRAME_PARMS frame_parms,
+			int aa,
+			int l,
+			int* freq_offset);
 
 /** @} */ 
 #endif

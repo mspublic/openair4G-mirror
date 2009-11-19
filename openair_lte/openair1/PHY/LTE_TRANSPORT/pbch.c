@@ -505,6 +505,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
   short* pbch_llr = lte_ue_pbch_vars->llr;
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
+  unsigned char max_interations;
 
   pbch_crc_bits    = 64;
   pbch_crc_bytes   = pbch_crc_bits>>3;
@@ -634,7 +635,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
                                       pbch_crc_bits,
 				      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
 				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
-                                      6,
+                                      max_interations,
                                       CRC16,
 				      0);
 
@@ -645,12 +646,12 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	       pbch_crc_bits,
 	       1,
 	       4);
-#endif //USER_MODE
-#endif //DEBUG_PHY
-
   printf("[PBCH] ret=%d\n",ret);
   for (i=0;i<8;i++) 
     printf("[PBCH] decoded_output[%d] = %x\n",i,decoded_output[i]);
-  return(ret);
+#endif //USER_MODE
+#endif //DEBUG_PHY
+
+  return(ret<=max_interations);
 
 }
