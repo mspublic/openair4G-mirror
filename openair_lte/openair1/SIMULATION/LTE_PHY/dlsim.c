@@ -11,7 +11,7 @@
 
 void main() {
 
-  int i,aa;
+  int i,aa,s;
   double sigma2, sigma2_dB=1;
   int **txdataF, **txdata;
   //LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS *)malloc(sizeof(LTE_DL_FRAME_PARMS));
@@ -22,15 +22,16 @@ void main() {
   int channel_length;
   struct complex **ch;
 
-  unsigned char Ns,l,m,mod_order=6;
+  unsigned char Ns,l,m,mod_order[2]={6,4};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = ALAMOUTI;
   unsigned char *input_data,*decoded_output;
 
-  LTE_eNb_DLSCH_t *dlsch_eNb;
-  LTE_UE_DLSCH_t *dlsch_ue;
+  LTE_eNb_DLSCH_t *dlsch_eNb[2];
+  LTE_UE_DLSCH_t *dlsch_ue[2];
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
+  unsigned int ret;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -88,7 +89,7 @@ void main() {
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
   
-  input_buffer_length = 758;
+  input_buffer_length = 768;
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
 
   for (i=0;i<2;i++) {
@@ -98,17 +99,35 @@ void main() {
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  dlsch_eNb = new_eNb_dlsch(1,8);
-  dlsch_ue  = new_ue_dlsch(1,8);
+  // Create transport channel structures for 2 transport blocks (MIMO)
+  for (i=0;i<2;i++) {
+    dlsch_eNb[i] = new_eNb_dlsch(1,8);
+    dlsch_ue[i]  = new_ue_dlsch(1,8);
+  
+    if (!dlsch_eNb[i]) {
+      printf("Can't get eNb dlsch structures\n");
+      exit(-1);
+    }
+    
+    if (!dlsch_ue[i]) {
+      printf("Can't get ue dlsch structures\n");
+      exit(-1);
+    }
 
-  if (!dlsch_eNb) {
-    printf("Can't get eNb dlsch structures\n");
-    exit(-1);
-  }
-
-  if (!dlsch_ue) {
-    printf("Can't get ue dlsch structures\n");
-    exit(-1);
+    dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
+    dlsch_eNb[i]->harq_processes[0]->layer_index        = 0;
+    dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
+    dlsch_eNb[i]->harq_processes[0]->active             = 0;
+    dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
+    dlsch_eNb[i]->rvidx                                 = 0;
+    
+    dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
+    dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
+    dlsch_ue[i]->harq_processes[0]->layer_index         = 0;
+    dlsch_ue[i]->harq_processes[0]->active              = 0;
+    dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
+    dlsch_ue[i]->rvidx                                  = 0;
+    
   }
 
   //  input_data     = (unsigned char*) malloc(block_length/8);
@@ -118,33 +137,25 @@ void main() {
   for (i=0;i<input_buffer_length;i++)
     input_buffer[i]= (unsigned char)(i%256);
 
-  dlsch_eNb->harq_processes[0]->mimo_mode          = mimo_mode;
-  dlsch_eNb->harq_processes[0]->mod_order          = mod_order;
-  dlsch_eNb->harq_processes[0]->active             = 0;
-  dlsch_eNb->harq_processes[0]->Nl                 = 1;
-  dlsch_eNb->rvidx                                 = 0;
-
-  dlsch_ue->harq_processes[0]->mimo_mode           = mimo_mode;
-  dlsch_ue->harq_processes[0]->mod_order           = mod_order;
-  dlsch_ue->harq_processes[0]->active              = 0;
-  dlsch_ue->harq_processes[0]->Nl                  = 1;
-  dlsch_ue->rvidx                                  = 0;
+  
 
   dlsch_encoding(input_buffer,
 		 (input_buffer_length<<3),
 		 lte_frame_parms,
-		 dlsch_eNb,
+		 dlsch_eNb[0],
 		 0,               // harq_pid
 		 25); // number of allocated RB
 
+#ifdef OUTPUT_DEBUG
   for (i=0;i<32;i++)
-    printf("Segment 0 %d : %d\n",i,dlsch_eNb->harq_processes[0]->c[0][i]);
+    printf("Segment 0 %d : %d\n",i,dlsch_eNb[0]->harq_processes[0]->c[0][i]);
+#endif 
 
   dlsch_modulation(txdataF,
 		   1024,
 		   0,
 		   lte_frame_parms,
-		   dlsch_eNb,
+		   dlsch_eNb[0],
 		   0,               // harq_pid
 		   rb_alloc); // RB allocation vector
 
@@ -165,9 +176,10 @@ void main() {
 		  lte_frame_parms,
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
-  
+#ifdef OUTPUT_DEBUG  
   write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
   write_output("txsigF0.m","txsF0", txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+#endif
   
   PHY_ofdm_mod(txdataF[0],        // input
 	       txdata[0],         // output
@@ -186,9 +198,11 @@ void main() {
 	       lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
 	       lte_frame_parms->rev,           // bit-reversal permutation
 	       CYCLIC_PREFIX);
-  
+
+#ifdef OUTPUT_DEBUG  
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  
+#endif
+
   // multipath channel
   randominit();
 
@@ -206,8 +220,9 @@ void main() {
 		    FRAME_LENGTH_COMPLEX_SAMPLES,
 		    channel_length,
 		    0);
-
+#ifdef OUTPUT_DEBUG
   write_output("channel0.m","chan0",ch[0],channel_length,1,7);
+#endif
 
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
@@ -275,7 +290,8 @@ void main() {
 	
       }
     }
-      
+
+#ifdef OUTPUT_DEBUG      
   write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
 
@@ -286,26 +302,31 @@ void main() {
   //write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,2,1);
   write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],NUMBER_OF_USEFUL_CARRIERS*12,1,1);
   write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],300*12,1,1);
-  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr,600*3,1,0);
+  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr[0],600*3,1,0);
 
   write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
   write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
+#endif OUTPUT_DEBUG
   
-  // Generate LLRs for decoding
-  //  memset(dlsch_ue->harq_processes[0]->w[0],0,12+(block_length*8*3));
-  printf("Calling decoding, dlsch_ue %p, active %d\n",dlsch_ue,dlsch_ue->harq_processes[0]->active);
-  dlsch_decoding(input_buffer_length<<3,
-		 lte_ue_dlsch_vars,
-		 lte_frame_parms,
-		 dlsch_ue,
-		 0,               //harq_pid
-		 25);             //NB allocated RBs
+  //  printf("Calling decoding, dlsch_ue %p, active %d\n",dlsch_ue,dlsch_ue[0]->harq_processes[0]->active);
 
-  printf("Decoded_output:\n");
-  for (i=0;i<dlsch_ue->harq_processes[0]->Kplus/8;i++)
-    printf("%d : %d\n",i,dlsch_ue->harq_processes[0]->c[0][i]);
-  
-  
+  ret = dlsch_decoding(input_buffer_length<<3,
+		       lte_ue_dlsch_vars->llr[0],		 
+		       lte_frame_parms,
+		       dlsch_ue[0],
+		       0,               //harq_pid
+		       25);             //NB allocated RBs
+
+  if (ret == 0)
+    printf("No DLSCH errors found\n");
+  /*
+  for (s=0;s<dlsch_ue[0]->harq_processes[0]->C;s++) {
+    printf("Decoded_output (Segment %d):\n",s);
+    for (i=0;i<dlsch_ue[0]->harq_processes[0]->Kplus/8;i++)
+      printf("%d : %x\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i]);
+  }
+  */
+
   free(txdataF[0]);
   free(txdataF[1]);
   free(txdataF);
