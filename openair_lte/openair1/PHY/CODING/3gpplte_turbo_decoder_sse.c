@@ -14,7 +14,7 @@
 #include "emmintrin.h"
 #include "pmmintrin.h"
 #include "tmmintrin.h"
-#ifdef __SSE4_1_
+#ifdef __SSE4_1__
 #include "smmintrin.h"
 #endif
 
@@ -101,11 +101,6 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
   __m128i TOP,BOT,THRES128;
   
-  llr_t old0,old1,old2, old3,old4, old5, old6, old7;
-  llr_t new0,new1,new2, new3;
-  // new4, new5, new6, new7;
-  llr_t m_b0,m_b1,m_b2, m_b3;
-  //m_b4, m_b5, m_b6, m_b7;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -237,10 +232,7 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F)
 {
   int k;
-  llr_t old0, old1, old2, old3, old4, old5, old6, old7;
-  llr_t new0, new1, new2, new3, new4, new5, new6, new7;
-  llr_t m_b0, m_b1, m_b2, m_b3, m_b4,m_b5, m_b6, m_b7;
-  llr_t m11,m10; 
+
 
   __m128i *beta128,*beta128_i,new,mb,oldh,oldl,THRES128,newcmp;
 
@@ -297,9 +289,7 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
 {
   int k;
-  llr_t m11,m10;
-  llr_t m00_1,m11_1,m00_2,m11_2,m00_3,m11_3,m00_4,m11_4;
-  llr_t m01_1,m10_1,m01_2,m10_2,m01_3,m10_3,m01_4,m10_4;
+
   __m128i *alpha128=(__m128i *)alpha,alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
   __m128i *alpha128_ptr,*beta128_ptr;
   __m128i *beta128=(__m128i *)beta,alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
@@ -727,7 +717,6 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24b(decoded_bytes,
 		  n-24)>>8;
-
       printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
       if (crc == oldcrc)
 	return(iteration_cnt);

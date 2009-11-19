@@ -12,6 +12,8 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
+//#define DEBUG_DLSCH_CODING 1
+
 /*
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
 	((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
@@ -139,7 +141,7 @@ void dlsch_encoding(unsigned char *a,
       }
     
   
-
+#ifdef DEBUG_DLSCH_CODING
   printf("Generating Code Segment %d (%d bits)\n",r,Kr);
   // generate codewords
   
@@ -148,6 +150,8 @@ void dlsch_encoding(unsigned char *a,
   printf("first_dlsch_symbol %d\n",frame_parms->first_dlsch_symbol);
   printf("Ncp %d\n",frame_parms->Ncp);
   printf("mod_order %d\n",mod_order);
+#endif
+
   offset=0;
   
   // This has to be updated for presence of PBCH/PSCH
@@ -172,8 +176,8 @@ void dlsch_encoding(unsigned char *a,
 			      f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
 			      f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
 			      );
-    if (r==0)
 #ifdef DEBUG_DLSCH_CODING
+    if (r==0)
       write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
 

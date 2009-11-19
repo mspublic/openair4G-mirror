@@ -3,6 +3,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
+//#define DEBUG_DLSCH_DECODING
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
   int i,r;

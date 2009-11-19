@@ -169,6 +169,7 @@ void dlsch_encoding(unsigned char *input_buffer,
 			unsigned int symbol_offset,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
+			unsigned char nu,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
@@ -404,12 +405,12 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
 		    unsigned char symbol,
 		    unsigned short nb_rb);
 
-/** \fn dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
-		    int **rxdataF_comp,
-		    int **dl_ch_mag,
-		    int **dl_ch_magb,
-		    unsigned char symbol,
-		    unsigned short nb_rb)
+/** \fn dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
+    int **rxdataF_comp,
+    int **dl_ch_mag,
+    int **dl_ch_magb,
+    unsigned char symbol,
+    unsigned short nb_rb)
 \brief This function does antenna selection (based on antenna cycling pattern) on RX and prepares LLR inputs by skipping pilots, PBCH and primary/secondary synchronization signals.  Note that this is not LTE, it is just included for comparison purposes.
 @param frame_parms Frame descriptor structure
 @param rxdataF_comp Compensated channel output
@@ -427,6 +428,7 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
 
 /** \fn dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rxdataF_comp,
+			 int **rho,
 			 int **dl_ch_mag,
 			 int **dl_ch_magb,
 			 unsigned char symbol,
