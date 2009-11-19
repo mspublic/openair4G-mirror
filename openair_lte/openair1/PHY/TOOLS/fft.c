@@ -75,6 +75,7 @@ void init_fft(unsigned short size, unsigned char logsize,unsigned short *local_r
 
 
   int i;
+  msg("[openair][FFT][INIT] Using %d point fft (%d, %p)\n",size,logsize,local_rev );
 
 
   for(i=0;i<size;i++) {

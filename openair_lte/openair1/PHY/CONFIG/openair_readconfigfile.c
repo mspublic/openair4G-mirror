@@ -7,6 +7,7 @@
  *  \warning
  */
 
+#include <stdio.h>
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"

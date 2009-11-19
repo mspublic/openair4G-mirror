@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
+
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
@@ -55,7 +56,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   
   txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
   txdataF[0] = (mod_sym_t *)malloc16(FRAME_LENGTH_BYTES);
@@ -179,9 +180,8 @@ int main(int argc, char **argv) {
       }
    }
 
-   // ATTENTION: I am using the dlsch_vars for the pbch for the moment!
    rx_pbch(lte_ue_common_vars,
-	   lte_ue_dlsch_vars,
+	   lte_ue_pbch_vars,
 	   lte_frame_parms,
 	   SISO);
 

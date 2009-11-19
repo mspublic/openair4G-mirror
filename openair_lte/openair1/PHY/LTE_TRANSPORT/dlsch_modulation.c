@@ -675,7 +675,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	}
 	*/
-	else if (mimo_mode == DUALSTREAM) {
+	else if (mimo_mode == DUALSTREAM0) {
 
 
 	}
@@ -696,7 +696,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 }
 #endif
 
-void dlsch_modulation(int **txdataF,
+void dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,

@@ -34,6 +34,19 @@
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
 
+#ifdef IFFT_FPGA
+void openair_generate_fs4(unsigned char IQ_imb) {
+
+  int i,j;
+
+  for (i=0;i<120;i++) {
+    for (j=0; j<300; j++)
+      ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+j] = 0; 
+    ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+127] = 148; // corresponds to 2^14 in mod_table
+  }
+
+}
+#else
 void openair_generate_fs4(unsigned char IQ_imb) {
 
   int i,j;
@@ -59,3 +72,4 @@ void openair_generate_fs4(unsigned char IQ_imb) {
   }
 
 }
+#endif

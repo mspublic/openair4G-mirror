@@ -94,7 +94,7 @@ int main (int argc, char **argv) {
   if (argc < 3) {
     printf("[openair][INFO] Usage %s  frequency(0,1,2,3)  action (0-14) params . . .  \n" , argv[0]);
     printf("[openair][INFO] ACTION DESCRIPTIONS\n");
-    printf("[openair][INFO] Action 0  : Configure PHY/MAC  (Kernel module and FPGA))\n");
+    printf("[openair][INFO] Action 0  : Configure PHY/MAC (Kernel module and FPGA) - param dual_tx (0/1)\n");
     printf("[openair][INFO] Action 1  : Start Primary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 2  : Start Secondary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 3  : Start Node - param 0/1 = frequency offset on/off - param NODE_ID\n");
@@ -207,6 +207,7 @@ int main (int argc, char **argv) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
@@ -224,7 +225,7 @@ int main (int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
 #endif
   printf("Initialized PHY variables\n");
 
@@ -254,6 +255,12 @@ int main (int argc, char **argv) {
   switch (action) {
 
   case 0 :
+
+    if (argc<4) {
+      printf("Please provide dual_tx parameter (0/1)\n");
+      exit(-1);
+    }
+    PHY_config->dual_tx = atoi(argv[3]);
 
 #ifdef PLATON
     if (loadFPGA2(openair_fd,argv[3]) < 0) {
@@ -465,14 +472,18 @@ int main (int argc, char **argv) {
       }
     
     //openair_generate_ofdm(1,0xffff,chbch_pdu);
-    openair_generate_ofdm(3,0,0);
+    openair_generate_ofdm(4,0,0);
     /*
     ((unsigned int *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0])[0] = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) | (64<<8); 
     */
 
     printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
-    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars[0].TX_DMA_BUFFER);
+    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars);
+#ifdef IFFT_FPGA
+    fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,1,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME,tx_frame_file);
+#else
     fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,tx_frame_file);
+#endif
     fclose(tx_frame_file);
 
 

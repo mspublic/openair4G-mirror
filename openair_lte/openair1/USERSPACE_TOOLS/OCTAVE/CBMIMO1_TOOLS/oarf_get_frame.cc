@@ -24,7 +24,6 @@
 #define FCNNAME "oarf_get_frame"
 
 #define TRACE 1
-#define NBANTENNAS 2
 
 extern PHY_CONFIG *PHY_config;
 
@@ -71,8 +70,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 
   unsigned int length;//mem_base;
 
-  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,NBANTENNAS);
-  short dma_buffer_local[2*NBANTENNAS*FRAME_LENGTH_COMPLEX_SAMPLES];
+  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_RX);
+  short dma_buffer_local[2*NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES];
   PHY_VARS *PHY_vars;
   PHY_CONFIG *PHY_config;
 
@@ -108,34 +107,30 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   ioctl(openair_fd,openair_GET_VARS,PHY_vars);
 
   printf("Getting PHY_vars->tx_vars[0].TX_DMA_BUFFER=%p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
+  printf("Getting PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
 
   printf("Getting PHY_config ...\n");
 
   ioctl(openair_fd,openair_GET_CONFIG,PHY_config);
 
-  printf("PHY_vars chbch_data.rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
-  printf("PHY_vars chsch_data.chsch_channel[0] = %p\n",PHY_vars->chsch_data[0].channel[0]);
-  printf("PHY_vars chsch_data.chsch_channel_f[0] = %p\n",PHY_vars->chsch_data[0].channel_f[0]);
-
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
   
   // Flush RX sig fifo
 
-  // 
   ((unsigned int *)&dma_buffer_local[0])[0] = 1 | ((freq&3)<<1) | ((freq&3)<<3);
   ioctl(openair_fd,openair_GET_BUFFER,(void *)dma_buffer_local);
 
 
 
-// wait for indication from RT process that a new frame is ready
+  // wait for indication from RT process that a new frame is ready
   read(rf_cntl_fifo_fd,(void *)dma_buffer_local,4);
 
   printf("Sched count %d\n",((int *)dma_buffer_local)[0]);
 
-  length = read(rx_sig_fifo_fd,(void *)dma_buffer_local,NBANTENNAS*FRAME_LENGTH_BYTES);
+  length = read(rx_sig_fifo_fd,(void *)dma_buffer_local,NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
   printf("Got %d bytes from sig fifo\n",length);
 
-  for (i=0;i<NBANTENNAS;i++)
+  for (i=0;i<NB_ANTENNAS_RX;i++)
     rx_sig[i] = (short *)(&dma_buffer_local[2*i*FRAME_LENGTH_COMPLEX_SAMPLES]);
 
   /*

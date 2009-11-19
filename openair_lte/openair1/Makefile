@@ -4,6 +4,9 @@ openair_rf_cbmimo1_softmodem.ko:
 openair_rf_cbmimo1_softmodem_lte.ko:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 && mv openair_rf.ko openair_rf_softmodem_lte.ko)
 
+openair_rf_cbmimo1_softmodem_lte2.ko:
+	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 && mv openair_rf.ko openair_rf_softmodem_lte2.ko)
+
 openair_rf_cbmimo1_l2.ko:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 DUALSTREAM=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_l2.ko)
 
@@ -88,6 +91,14 @@ install_cbmimo1_softmodem_lte:
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte.ko updatefirmware=1 ; \
 	else \
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte.ko ; \
+	fi
+
+install_cbmimo1_softmodem_lte2:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte2.ko updatefirmware=1 ; \
+	else \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte2.ko ; \
 	fi
 
 install_cbmimo1_l2:

@@ -20,6 +20,8 @@ typedef struct  {
   int rx_prefix_mode;         /// Receiver processing mode (0 no prefix removal, 1 prefix removal)
   int tx_rx_switch_point;     /// TX/RX switch position (Read by LEON during init)
   int timing_advance;         /// TX/RX switch position (Read by LEON during init)
+  int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
+  int tdd;                    /// 1 for TDD mode, 0 for FDD mode
   int node_id;                /// Node type (Read by LEON during init)
   int freq_info;              /// Frequency info (Read by LEON during init)
   int frame_offset;           /// Frame offset (Read by LEON during init and on resynch procedure)

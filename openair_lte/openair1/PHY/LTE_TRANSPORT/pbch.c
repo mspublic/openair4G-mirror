@@ -490,7 +490,7 @@ void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	     LTE_UE_PBCH *lte_ue_pbch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     MIMO_mode_t mimo_mode) {
 
@@ -503,7 +503,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   int nsymb = (frame_parms->Ncp==0) ? 14:12;
   unsigned int pilots, first_pilot;
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
-  short* pbch_llr = lte_ue_dlsch_vars->llr;
+  short* pbch_llr = lte_ue_pbch_vars->llr;
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
 
   pbch_crc_bits    = 64;
@@ -511,8 +511,10 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   pbch_coded_bits  = (frame_parms->Ncp==0) ? 36*6*2 : 24*6*2; //RE/RB * #RB * bits/RB (QPSK)
   pbch_coded_bytes = pbch_coded_bits>>3;
 
-  unsigned char decoded_output[pbch_crc_bits];
-  short channel_output[(3*pbch_crc_bits)+12] __attribute__ ((aligned(16)));
+  //unsigned char decoded_output[pbch_crc_bits];
+  //short channel_output[(3*pbch_crc_bits)+12] __attribute__ ((aligned(16)));
+  unsigned char *decoded_output = lte_ue_pbch_vars->decoded_output;
+  short *channel_output = lte_ue_pbch_vars->channel_output;
   unsigned char dummy_channel_output[pbch_coded_bits];
 
   for (symbol=(nsymb>>1);symbol<(nsymb>>1)+4;symbol++) {
@@ -533,12 +535,12 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
       pbch_extract(lte_ue_common_vars->rxdataF,
 		   lte_ue_common_vars->dl_ch_estimates,
-		   lte_ue_dlsch_vars->rxdataF_ext,
-		   lte_ue_dlsch_vars->dl_ch_estimates_ext,
+		   lte_ue_pbch_vars->rxdataF_ext,
+		   lte_ue_pbch_vars->dl_ch_estimates_ext,
 		   symbol,
 		   frame_parms);
 
-      pbch_channel_level(lte_ue_dlsch_vars->dl_ch_estimates_ext,
+      pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
 			 frame_parms,
 			 symbol,
 			 avg);
@@ -552,16 +554,16 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
       log2_maxh = 4+(log2_approx(avgs)/2);
       printf("[PBCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
       
-      pbch_channel_compensation(lte_ue_dlsch_vars->rxdataF_ext,
-				lte_ue_dlsch_vars->dl_ch_estimates_ext,
-				lte_ue_dlsch_vars->rxdataF_comp,
+      pbch_channel_compensation(lte_ue_pbch_vars->rxdataF_ext,
+				lte_ue_pbch_vars->dl_ch_estimates_ext,
+				lte_ue_pbch_vars->rxdataF_comp,
 				frame_parms,
 				symbol,
 				log2_maxh); // log2_maxh+I0_shift
   
       if (frame_parms->nb_antennas_rx > 1)
 	pbch_detection_mrc(frame_parms,
-			   lte_ue_dlsch_vars->rxdataF_comp,
+			   lte_ue_pbch_vars->rxdataF_comp,
 			   symbol);
 
 	
@@ -575,7 +577,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	exit (-1);
       }
 
-      memcpy(pbch_llr,&(lte_ue_dlsch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),72*sizeof(int));
+      memcpy(pbch_llr,&(lte_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),72*sizeof(int));
       pbch_llr+=144;
     }
   }
@@ -591,7 +593,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   }
 
   coded_bits=0;
-  pbch_llr = lte_ue_dlsch_vars->llr;
+  pbch_llr = lte_ue_pbch_vars->llr;
   for (i=0;i<(3*pbch_crc_bits)+12;i++) {
     if ((dummy_channel_output[i]&0x40) != 0) { // bit was repeated
       coded_bits++;

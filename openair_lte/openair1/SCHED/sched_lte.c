@@ -310,6 +310,8 @@ void openair_sync() {
   int ret;
   static unsigned char clear = 1;
   int Nsymb, sync_pos, sync_pos_slot;
+  int Ns;
+  int l;
 
   RTIME time;
 
@@ -392,23 +394,27 @@ void openair_sync() {
     msg("[openair][openair SYNC] sync_pos_slot =%d\n",sync_pos_slot);
 
     if (sync_pos >= sync_pos_slot) {
-      slot_fep(lte_frame_parms,
-	       0,
-	       0,
-	       lte_ue_common_vars->rxdata,
-	       lte_ue_common_vars->rxdataF,
-	       lte_ue_common_vars->dl_ch_estimates,
-	       sync_pos-sync_pos_slot);
     
-      /*  
-      for (i=0;i<96+256;i++){
-	msg("channel_f[0][%d] = %d, channel_f[0][%d] = %d\n", 2*i, ((short*) (lte_ue_common_vars->dl_ch_estimates[0]))[2*i], 2*i+1, ((short*) (lte_ue_common_vars->dl_ch_estimates[0]))[2*i+1]);
-	//msg("rxdataF[0][%d] = %d, rxdataF[0][%d] = %d\n", 2*i, ((short*) (lte_ue_common_vars->rxdataF[0]))[2*i], 2*i+1, ((short*) (lte_ue_common_vars->rxdataF[0]))[2*i+1]);
+      for (Ns=0;Ns<2;Ns++) {
+	for (l=0;l<6;l++) {
+	  
+	  slot_fep(lte_frame_parms,
+		   l,
+		   Ns%20,
+		   lte_ue_common_vars->rxdata,
+		   lte_ue_common_vars->rxdataF,
+		   lte_ue_common_vars->dl_ch_estimates,
+		   (Ns>>1)*lte_frame_parms->samples_per_tti);
+	}
       }
+
+      /*
+      rx_pbch(lte_ue_common_vars,
+	      lte_ue_pbch_vars,
+	      lte_frame_parms,
+	      SISO);
       */
     }
-             
-    // Try to decode BCH
 
     // Do AGC
     /*

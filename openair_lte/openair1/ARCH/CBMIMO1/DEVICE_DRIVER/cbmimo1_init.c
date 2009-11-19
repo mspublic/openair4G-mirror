@@ -127,6 +127,11 @@ int setup_regs() {
 
   pci_interface->tcxo_dac = openair_daq_vars.tcxo_dac;
 
+  printk("[openair][INIT] tdd = %d, dual_tx = %d\n",openair_daq_vars.tdd,openair_daq_vars.dual_tx);
+  pci_interface->tdd = openair_daq_vars.tdd;
+ 
+  pci_interface->dual_tx = openair_daq_vars.dual_tx;
+
 #endif // RTAI_ENABLED
     
   //  printk("[openair][INIT] : Returning\n");

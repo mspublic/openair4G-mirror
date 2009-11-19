@@ -8,19 +8,13 @@
 
 */
 
+#include "PHY/defs.h"
+
 #ifndef EXPRESSMIMO_TARGET
 #include <emmintrin.h>
 #else //EXPRESSMIMO_TARGET
 #include "express-mimo/simulator/baseband/C/defs.h"
 #endif //EXPRESSMIMO_TARGET
-
-#ifdef USER_MODE
-#define max(a,b) ((a)>(b) ? (a) : (b))
-#define min(a,b) ((a)<(b) ? (a) : (b))
-#else
-#include <linux/kernel.h>
-#endif //USER_MODE
-
 
 //defined in rtai_math.h
 #ifndef _RTAI_MATH_H

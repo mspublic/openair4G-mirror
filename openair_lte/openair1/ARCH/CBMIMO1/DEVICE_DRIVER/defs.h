@@ -85,6 +85,6 @@ void dump_config(void);
 
 int add_chbch_stats(void);
 void remove_chbch_stats(void);
-void remove_openair_stats();
-int add_openair1_stats();
+void remove_openair_stats(void);
+int add_openair1_stats(void);
 #endif

@@ -29,9 +29,9 @@ extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4
 extern unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
 #ifdef OPENAIR_LTE
-extern short primary_synch0[146];
-extern short primary_synch1[146];
-extern short primary_synch2[146];
+extern short primary_synch0[144];
+extern short primary_synch1[144];
+extern short primary_synch2[144];
 extern unsigned char primary_synch0_tab[72];
 extern unsigned char primary_synch1_tab[72];
 extern unsigned char primary_synch2_tab[72];
@@ -42,6 +42,7 @@ extern int *primary_synch2_time;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms;
 extern LTE_UE_COMMON *lte_ue_common_vars;
 extern LTE_UE_DLSCH *lte_ue_dlsch_vars;
+extern LTE_UE_PBCH *lte_ue_pbch_vars;
 #endif
 
 

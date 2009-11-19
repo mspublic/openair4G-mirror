@@ -8,11 +8,12 @@
 
 void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 
-  unsigned int i;
+  unsigned int i,l;
   unsigned char level;
 
 #ifdef OPENAIR_LTE
   mod_sym_t **txdataF;
+  unsigned char pbch_pdu[6];
 #endif
 
   switch (format) {
@@ -45,19 +46,27 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     txdataF[0] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
     txdataF[1] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
 #endif
-
     generate_pss(txdataF,
 		 256,
 		 lte_frame_parms,
 		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
- 
+
     generate_pilots(txdataF,
 		    256,
 		    lte_frame_parms,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
+    for (i=0;i<6;i++)
+      pbch_pdu[i] = i;
+    
+    generate_pbch(txdataF,
+		  256,
+		  lte_frame_parms,
+		  pbch_pdu);
+
+
 #ifdef IFFT_FPGA
-    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->N_RB_DL,1,4);
+    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->N_RB_DL*12,1,4);
 #else
     write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #endif
@@ -95,8 +104,34 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     free(txdataF[1]);
 #endif
     free(txdataF);
+    break;
+  case 4:
+    txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
+    txdataF[0] = (mod_sym_t *) PHY_vars->tx_vars[0].TX_DMA_BUFFER;
+    txdataF[1] = (mod_sym_t *) PHY_vars->tx_vars[1].TX_DMA_BUFFER;
 
+    for (l=1;l<120;l++) {
+      for (i=0;i<75;i+=3) {
+	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i] = 0x01020304;	
+	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i+1] = 0x04030201;
+	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i+2] = 0x02030104;
+	/*
+	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i] = 0x01020304;	
+	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i+1] = 0x04030201;
+	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i+2] = 0x02030104;
+	*/
+      }     
+    }
+    generate_pilots(txdataF,
+		    256,
+		    lte_frame_parms,
+		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+    generate_pss(txdataF,
+		 256,
+		 lte_frame_parms,
+		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 #endif
+
   default:
     break;
   }

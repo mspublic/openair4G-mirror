@@ -2,8 +2,7 @@
 #ifndef __CONFIG_EXTERN_H__
 #define __CONFIG_EXTERN_H__
 
-#include <stdio.h>
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 #include "defs.h"
 
 

@@ -1,13 +1,11 @@
 #ifndef __PHY_DEFS__H__
 #define __PHY_DEFS__H__
 
-
-
-
 #ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <string.h>
 #define msg printf   
 //use msg in the real-time thread context
 #define msg_nrt printf   
@@ -27,6 +25,10 @@
 #define virt_to_phys(x) (x)
 
 #define openair_sched_exit() exit(-1)
+
+#define max(a,b)  ((a>b) ? (a) : (b))
+#define min(a,b)  ((a<b) ? (a) : (b))
+
 #else // USER_MODE
 #include "ARCH/COMMON/defs.h"
 
@@ -60,7 +62,6 @@
 #else //CBMIMO1
 #define openair_get_mbox() (*(unsigned int *)PHY_vars->mbox>>1)
 #endif //CBMIMO1
-
 
 #endif // USERMODE
 

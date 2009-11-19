@@ -33,12 +33,12 @@ PHY_CONFIG PHY_config_mem;
 
 static bool any_bad_argument(const octave_value_list &args)
 {
-  octave_value v;
+  octave_value v,w;
 
-  if (args.length()!=3)
+  if (args.length()!=4)
   {
     error(FCNNAME);
-    error("syntax: oarf_config(freqband,configfile,scenariofile)");
+    error("syntax: oarf_config(freqband,configfile,scenariofile,dual_tx)");
     return true;
   }
 
@@ -64,6 +64,13 @@ static bool any_bad_argument(const octave_value_list &args)
       return true;
   }
 
+  w=args(3);
+  if (!w.is_real_scalar()) 
+  {
+    error(FCNNAME);
+    error("freqband must be real scalar");
+    return true;
+  }
   return false;
 }
 
@@ -83,6 +90,7 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   const int freq = args(0).int_value();  
   const std::string configfile = args(1).string_value();
   const std::string scenariofile = args(2).string_value();
+  const int dual_tx = args(3).int_value();  
 
   octave_value returnvalue;
   int openair_fd;
@@ -113,6 +121,8 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   PHY_config = (PHY_CONFIG *)&PHY_config_mem;
   reconfigure_MACPHY(scenario);
   fclose(config);
+
+  PHY_config->dual_tx = dual_tx;
 
   returnvalue=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 

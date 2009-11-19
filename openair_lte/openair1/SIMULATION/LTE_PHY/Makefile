@@ -31,11 +31,14 @@ PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
-PHY_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  $(TOP_DIR)/SIMULATION/TOOLS/taus.o  $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
 
+SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/taus.o  
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
 
-
-TOOLS_OBJS = $(TOP_DIR)/PHY/TOOLS/file_output.o
+TOOLS_OBJS  = $(TOP_DIR)/PHY/TOOLS/file_output.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
 
@@ -54,7 +57,7 @@ dlsim2 : $(OBJ) dlsim2.c
 
 clean:
 	rm -f dlsim dlsim2
-	rm -f $(PHY_OBJS)
+	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
 

@@ -80,10 +80,12 @@ typedef struct {
   unsigned char freq;
   unsigned int  freq_info;
   unsigned int  rx_gain_val;
-	unsigned int  rx_gain_mode;
+  unsigned int  rx_gain_mode;
   unsigned int  tcxo_dac;
   unsigned int  tx_rx_switch_point;
   unsigned int  timing_advance;
+  int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
+  int tdd;                    /// 1 for TDD mode, 0 for FDD mode
   unsigned int  rx_rf_mode;
   unsigned int  node_id;
   unsigned int  rach_detection_count;

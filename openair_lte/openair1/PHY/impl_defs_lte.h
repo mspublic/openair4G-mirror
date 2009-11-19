@@ -68,6 +68,15 @@ typedef struct {
   short *llr[2];
 } LTE_UE_DLSCH;
 
+typedef struct {
+  int **rxdataF_ext;
+  int **rxdataF_comp;
+  int **dl_ch_estimates_ext;
+  short *llr;
+  short *channel_output;
+  unsigned char *decoded_output;
+} LTE_UE_PBCH;
+
 
 #endif
 

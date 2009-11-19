@@ -72,7 +72,7 @@ ________________________________________________________________*/
 #define HALF_NUMBER_OF_USEFUL_CARRIERS_BYTES (HALF_NUMBER_OF_USEFUL_CARRIERS>>2)
 #define FIRST_CARRIER_OFFSET (HALF_NUMBER_OF_USEFUL_CARRIERS+NUMBER_OF_ZERO_CARRIERS)
 #ifdef OPENAIR_LTE
-#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (PHY_config->lte_frame_parms.symbols_per_tti/2)
+#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (NUMBER_OF_SYMBOLS_PER_FRAME/20)
 #else
 #define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT 16
 #endif
@@ -290,8 +290,9 @@ typedef struct {
   int                 total_no_chbch;    /*!<\brief Number of CHBCH*/
   int                 total_no_sch;      /*!<\brief Number of SCH*/
 #else
-  LTE_DL_FRAME_PARMS lte_frame_parms;
+  LTE_DL_FRAME_PARMS  lte_frame_parms;
 #endif //OPENAIR_LTE
+  int                 dual_tx;           /// 1 for two tx antennas, 0 for 1 tx antenna
 } PHY_CONFIG;
 
 /// Top-level PHY Data Structure  
@@ -325,6 +326,7 @@ typedef struct
 #else
   LTE_UE_COMMON lte_ue_common_vars;
   LTE_UE_DLSCH lte_ue_dlsch_vars;
+  LTE_UE_PBCH lte_ue_pbch_vars;
 #endif
 
 } PHY_VARS;

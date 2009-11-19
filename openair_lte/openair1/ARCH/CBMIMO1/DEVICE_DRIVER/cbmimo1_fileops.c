@@ -191,6 +191,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   static unsigned int bendian_fmw_off;
   unsigned int ioctl_ack_cnt = 0;
 
+  TX_VARS dummy_tx_vars[NB_ANTENNAS_TX];
+
   scale = &scale_mem;
 
   printk("[openair][IOCTL]:  : In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_START_1ARY_CLUSTERHEAD,openair_START_NODE);
@@ -230,6 +232,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms = &PHY_config->lte_frame_parms;
 	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
 	lte_ue_dlsch_vars = &PHY_vars->lte_ue_dlsch_vars;
+	lte_ue_pbch_vars = &PHY_vars->lte_ue_pbch_vars;
 	  
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
 	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
@@ -238,7 +241,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms->twiddle_ifft     = twiddle_ifft;
 	lte_frame_parms->rev              = rev;
 
-	openair_daq_vars.node_configured += phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars,lte_ue_dlsch_vars);
+	openair_daq_vars.node_configured += phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars,lte_ue_dlsch_vars, lte_ue_pbch_vars);
 	msg("[openair][IOCTL] phy_init_lte done: %d\n",openair_daq_vars.node_configured);
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
@@ -277,8 +280,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.mode    = openair_NOT_SYNCHED;
 	openair_daq_vars.node_running = 0;
 
-
 	openair_daq_vars.timing_advance = 19;
+
+	openair_daq_vars.dual_tx = PHY_config->dual_tx;
+#ifdef OPENAIR_LTE
+	openair_daq_vars.tdd = 0; //FDD
+#endif
 
 	mac_xface->is_cluster_head = 0;
 
@@ -637,7 +644,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
     openair_generate_fs4(0);//*((unsigned char *)arg));
 
-    for (i=0;i<16;i++)
+    for (i=0;i<256;i++)
       printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
 
 
@@ -696,13 +703,24 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_START_TX_SIG:
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-    openair_daq_vars.tx_test=1;    
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[0],
+    openair_daq_vars.tx_test=1;
+
+    copy_from_user((unsigned char*)dummy_tx_vars,
 		   (unsigned char*)arg,
-		   FRAME_LENGTH_BYTES);
+		   NB_ANTENNAS_TX*sizeof(TX_VARS));
+    
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0],
+		   (unsigned char*)dummy_tx_vars[0].TX_DMA_BUFFER,
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[1],
+		   (unsigned char*)dummy_tx_vars[1].TX_DMA_BUFFER,
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+
     printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
-    for (i=0;i<256;i++)
+    for (i=0;i<256;i++) {
       printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
+      printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[1])[i]);
+    }
 
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);

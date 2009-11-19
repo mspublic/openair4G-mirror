@@ -47,6 +47,7 @@ void main() {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
   
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
@@ -67,7 +68,7 @@ void main() {
   
   generate_64qam_table();
   generate_16qam_table();
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   
   rb_alloc[0] = 0x01ffffff;  // RBs 0-31
   rb_alloc[1] = 0x00000000;  // RBs 32-63
@@ -308,7 +309,7 @@ void main() {
 
   write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
   write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
-#endif OUTPUT_DEBUG
+#endif //OUTPUT_DEBUG
   
   //  printf("Calling decoding, dlsch_ue %p, active %d\n",dlsch_ue,dlsch_ue[0]->harq_processes[0]->active);
 

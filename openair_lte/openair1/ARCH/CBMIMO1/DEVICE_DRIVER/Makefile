@@ -60,15 +60,11 @@ else
 EXTRA_CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DNB_ANTENNAS_TXRX=2 
 endif
 
-ifdef OPENAIR1_LTE
-EXTRA_CFLAGS += -DOPENAIR1_LTE
-endif
-
 #CFLAGS += -I$(OPENAIR1_DIR) -I$(obj)/../LEON3/hostpc 
 EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR1_DIR)/ARCH/LEON3/hostpc
 
 ifdef OPENAIR_LTE
-EXTRA_CFLAGS += -DOPENAIR_LTE
+EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA
 endif
 
 ifdef OPENAIR2
@@ -127,8 +123,8 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
-#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch.c  
-#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_rx.o  
+#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.c  
+#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/slot_fep.o

@@ -2,7 +2,7 @@ CCC = gcc
 
 TOP_DIR = ../..
 
-CFLAGS = -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ 
+CFLAGS = -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ 
 #-DICC 
 
 ifdef DEBUGPHY
@@ -72,12 +72,14 @@ PHY_OBJS += $(TOP_DIR)/PHY/TRANSPORT/chsch.o $(TOP_DIR)/PHY/TRANSPORT/chbch.o $(
 else
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 endif
 
 # PHY Coding routines
-PHY_OBJS+=$(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/rate_matching.o
+PHY_OBJS+=$(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/rate_matching.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
 
 # PHY Synch routines
 ifndef OPENAIR_LTE

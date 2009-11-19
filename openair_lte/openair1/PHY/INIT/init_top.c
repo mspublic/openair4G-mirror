@@ -1,6 +1,11 @@
 /*!\brief Initilization and reconfiguration routines for LTE PHY */
 #ifndef USER_MODE
 #define __NO_VERSION__
+#endif
+
+#include "defs.h"
+#include "PHY/extern.h"
+#include "MAC_INTERFACE/extern.h"
 
 /*
 
@@ -11,33 +16,11 @@
 Blah Blah
 */
 
-
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif //
-
-#else
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-#define PAGE_SIZE 4096
-#endif // USER_MODE
-
-//#include "types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-//#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
-
+/*
 #ifndef USER_MODE
 #include "SCHED/defs.h"
-#ifdef PLATON
-
-#endif //PLATON
-
+#endif //USER_MODE
+*/
 
 #ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
@@ -46,13 +29,7 @@ Blah Blah
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
-
 #endif //CBMIMO1
-#endif //USER_MODE
-
-#ifdef USER_MODE
-#define printk printf
-#endif //USER_MODE
 
 int phy_init_top(unsigned char nb_antennas_tx) {
 
@@ -68,10 +45,10 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
   if (mac_xface->is_cluster_head == 1)
-    printk("[openair][PHY][INIT]TERMINODE is preconfigured as a Cluster Head\n");
-  printk("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
-  printk("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
-  printk("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
+    msg("[openair][PHY][INIT]TERMINODE is preconfigured as a Cluster Head\n");
+  msg("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
+  msg("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
+  msg("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);
 
 
     
@@ -93,7 +70,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
     tmp_ptr_tx = (mod_sym_t *)bigmalloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
 					  
     if (tmp_ptr_tx==NULL) {
-      printk("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
+      msg("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
 	  (unsigned int)(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t) + 2*PAGE_SIZE));
       return(-1);
     }
@@ -104,7 +81,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
       //      reserve_mem(tmp_ptr_tx,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
 #endif // //USER_MODE
 #ifdef DEBUG_PHY
-      printk("[PHY][INIT] TX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
+      msg("[PHY][INIT] TX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	  (void *)tmp_ptr_tx,
 	  (void *)virt_to_phys(tmp_ptr_tx),
 	     (unsigned int)(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE));
@@ -119,7 +96,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
     PHY_vars->tx_vars[i].TX_DMA_BUFFER = tmp_ptr_tx;
 #ifdef DEBUG_PHY
-    printk("[PHY][INIT] PHY_vars->tx_vars[%d].TX_DMA_BUFFER = %p\n",i,(void *)PHY_vars->tx_vars[i].TX_DMA_BUFFER);
+    msg("[PHY][INIT] PHY_vars->tx_vars[%d].TX_DMA_BUFFER = %p\n",i,(void *)PHY_vars->tx_vars[i].TX_DMA_BUFFER);
 #endif
 
 
@@ -143,7 +120,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 					  
     if (tmp_ptr==NULL) {
 #ifdef DEBUG_PHY
-      printk("[PHY][INIT] Could not allocate RX_DMA %d (%x bytes)\n",i, 
+      msg("[PHY][INIT] Could not allocate RX_DMA %d (%x bytes)\n",i, 
 	  FRAME_LENGTH_BYTES+2*OFDM_SYMBOL_SIZE_BYTES + 2*PAGE_SIZE);
 #endif
       return(-1);
@@ -157,7 +134,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 #endif //USER_MODE
 #ifdef DEBUG_PHY
-      printk("[PHY][INIT] RX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
+      msg("[PHY][INIT] RX_DMA_BUFFER %d at %p (%p), size 0x%x\n",i,
 	  (void *)tmp_ptr,
 	  (void *)virt_to_phys(tmp_ptr),(unsigned int)(FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE));
 #endif
@@ -189,9 +166,9 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 #ifndef NOCARD_TEST
 #ifndef PLATON
   // Allocate memory for PCI interface and store pointers to dma buffers
-  printk("[PHY][INIT] Setting up Leon PCI interface structure\n");
+  msg("[PHY][INIT] Setting up Leon PCI interface structure\n");
   pci_interface = (PCI_interface_t *)((unsigned int)(tmp_ptr + ((OFDM_SYMBOL_SIZE_BYTES+FRAME_LENGTH_BYTES+PAGE_SIZE)>>2)));
-  printk("[PHY][INIT] PCI interface at %p\n",pci_interface);
+  msg("[PHY][INIT] PCI interface at %p\n",pci_interface);
   openair_writel(pdev[0],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface));  
 
   mbox = (unsigned int)(&pci_interface->adac_cnt);
@@ -220,8 +197,8 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
 #ifdef DEBUG_PHY    
-  printk("[openair][PHY][INIT] Initializing FFT engine\n");
-  printk("[openair][PHY][INIT] Using %d point fft\n",NUMBER_OF_OFDM_CARRIERS);
+  msg("[openair][PHY][INIT] Initializing FFT engine\n");
+  msg("[openair][PHY][INIT] Using %d point fft (%d, %p)\n",NUMBER_OF_OFDM_CARRIERS,LOG2_NUMBER_OF_OFDM_CARRIERS,rev );
 #endif
 
 #ifndef EXPRESSMIMO_TARGET
@@ -240,7 +217,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   twiddle_ifft_half = (short*)malloc16(4095*4*2);
 
 #ifdef DEBUG_PHY    
-  printk("[openair][PHY][INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
+  msg("[openair][PHY][INIT] twiddle_fft= %p, twiddle_ifft=%p, twiddle_fft_times4=%p,twiddle_ifft_times4=%p\n",
 	 (void *)twiddle_fft,(void *)twiddle_ifft,(void *)twiddle_fft_times4,(void *)twiddle_ifft_times4);
 #endif
 
@@ -308,7 +285,7 @@ void phy_cleanup(void) {
   // stop PHY_thread
 
 
-  printk("[openair][PHY][INIT] cleanup\n");
+  msg("[openair][PHY][INIT] cleanup\n");
 
   for (i=0;i<NB_ANTENNAS_RX;i++) {
 
@@ -316,20 +293,20 @@ void phy_cleanup(void) {
 
     if (pci_buffer[2*i]) {
 #ifdef DEBUG_PHY    
-      printk("[openair][PHY][INIT] pci_buffer %d\n",2*i);
+      msg("[openair][PHY][INIT] pci_buffer %d\n",2*i);
 #endif    
       bigfree(pci_buffer[2*i],FRAME_LENGTH_BYTES+2*PAGE_SIZE);
       //      free_pages(pci_buffer[2*i],8);
 #ifdef DEBUG_PHY    
-      printk("[openair][PHY][INIT] Freed TX_DMA_BUFFER %d\n",i);
+      msg("[openair][PHY][INIT] Freed TX_DMA_BUFFER %d\n",i);
 #endif
     }
 #ifdef DEBUG_PHY    
-    printk("[openair][PHY][INIT] pci_buffer %d\n",1+(2*i));
+    msg("[openair][PHY][INIT] pci_buffer %d\n",1+(2*i));
 #endif
     if (pci_buffer[1+(2*i)]) {
 #ifdef DEBUG_PHY    
-      printk("[openair][PHY][INIT] pci_buffer %d\n",1+(2*i));
+      msg("[openair][PHY][INIT] pci_buffer %d\n",1+(2*i));
 #endif
       dummy_ptr = virt_to_phys(pci_buffer[1+(2*i)]);
       bigfree(pci_buffer[1+(2*i)],FRAME_LENGTH_BYTES+2*PAGE_SIZE);
@@ -337,20 +314,20 @@ void phy_cleanup(void) {
       
       //      free_pages(pci_buffer[1+(2*i)],8);
 #ifdef DEBUG_PHY    
-      printk("[openair][PHY][INIT] Freed RX_DMA_BUFFER %d\n",i);
+      msg("[openair][PHY][INIT] Freed RX_DMA_BUFFER %d\n",i);
 #endif
     }
 #else
     if (PHY_vars->tx_vars[i].TX_DMA_BUFFER) {
       free(PHY_vars->tx_vars[i].TX_DMA_BUFFER);
 #ifdef DEBUG_PHY    
-      printk("[openair][PHY] Freed PHY_vars->tx_vars[%d]\n",i);
+      msg("[openair][PHY] Freed PHY_vars->tx_vars[%d]\n",i);
 #endif
     }
 #endif // USER_MODE
   }
 
-  printk("[openair][CLEANUP] Done!\n");
+  msg("[openair][CLEANUP] Done!\n");
 }
 
 /*
