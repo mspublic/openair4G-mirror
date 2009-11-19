@@ -135,7 +135,7 @@ void main() {
 
   
   for (i=0;i<input_buffer_length;i++)
-    input_buffer[i]= (unsigned char)(i%256);
+    input_buffer[i]= (unsigned char)(taus()&0xff);
 
   
 
@@ -149,6 +149,8 @@ void main() {
 #ifdef OUTPUT_DEBUG
   for (i=0;i<32;i++)
     printf("Segment 0 %d : %d\n",i,dlsch_eNb[0]->harq_processes[0]->c[0][i]);
+  for (i=0;i<32;i++)
+    printf("Segment 1 %d : %d\n",i,dlsch_eNb[0]->harq_processes[0]->c[1][i]);
 #endif 
 
   dlsch_modulation(txdataF,
@@ -319,13 +321,14 @@ void main() {
 
   if (ret == 0)
     printf("No DLSCH errors found\n");
-  /*
+
+#ifdef OUTPUT_DEBUG  
   for (s=0;s<dlsch_ue[0]->harq_processes[0]->C;s++) {
     printf("Decoded_output (Segment %d):\n",s);
     for (i=0;i<dlsch_ue[0]->harq_processes[0]->Kplus/8;i++)
       printf("%d : %x\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i]);
   }
-  */
+#endif
 
   free(txdataF[0]);
   free(txdataF[1]);
