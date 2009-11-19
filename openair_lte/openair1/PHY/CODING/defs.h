@@ -10,11 +10,11 @@
 
 #define LTE_NULL 2
 
-/** @ingroup _PHY_CODING_BLOCKS_
+/** @addtogroup _PHY_CODING_BLOCKS_
  * @{
 */
 
-/* \fn lte_segmentation(unsigned char *input_buffer,
+/** \fn lte_segmentation(unsigned char *input_buffer,
 	  	        unsigned char **output_buffers,
 		        unsigned int B,
 		        unsigned int *C,
@@ -44,8 +44,23 @@ void lte_segmentation(unsigned char *input_buffer,
 		      unsigned int *Kminus,
 		      unsigned int *F);
 
+/** \fn unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w)
+\brief This is the subblock interleaving algorithm from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
+This function takes the d-sequence and generates the w-sequence.  The nu-sequence from 36-212 is implicit.
+\param D Number of systematic bits plus 4 (plus 4 for termination)
+\param d Pointer to input (d-sequence, turbo code output)
+\param w Pointer to output (w-sequence, interleaver output)
+\returns Interleaving matrix cardinality (\f$K_{\pi}\f$  from 36-212)
+*/
 unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w);
 
+/** \fn void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w)
+\brief This is the subblock deinterleaving algorithm from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
+This function takes the w-sequence and generates the d-sequence.  The nu-sequence from 36-212 is implicit.
+\param D Number of systematic bits plus 4 (plus 4 for termination)
+\param d Pointer to output (d-sequence, turbo code output)
+\param w Pointer to input (w-sequence, interleaver output)
+*/
 void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
 
 /** \fn generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F)
@@ -54,13 +69,13 @@ the NULL positions used to make the matrix complete.
 \param D Number of systematic bits plus 4 (plus 4 for termination)
 \param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
 \param F Number of filler bits due added during segmentation
-\returns Interleaving matrix cardinality (Kpi from 36-212)
+\returns Interleaving matrix cardinality (\f$K_{\pi}\f$ from 36-212)
 */
 
 unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F);
 
 
-/** \fn lte_rate_matching_turbo(unsigned int RTC[8],
+/** \fn unsigned int lte_rate_matching_turbo(unsigned int RTC,
 			     unsigned int G, 
 			     unsigned char *w,
 			     unsigned char *e, 
@@ -73,7 +88,7 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F)
 			     unsigned char Nl, 
 			     unsigned char r)
 
-\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
+\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix) for up to 8 segments
 \param G This the number of coded transport bits allocated in sub-frame
 \param w This is a pointer to the w-sequence (second interleaver output)
@@ -86,7 +101,7 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F)
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
-*/
+\returns \f$E\f$, the number of coded bits per segment */
 
 
 unsigned int lte_rate_matching_turbo(unsigned int RTC,
@@ -102,21 +117,21 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 				     unsigned char Nl, 
 				     unsigned char r);
 
-/** \fn lte_rate_matching_turbo_rx(unsigned int RTC,
-				unsigned int G, 
-				short *w,
-				unsigned char *dummy_w,
-				short *soft_input, 
-				unsigned char C, 
-				unsigned int Nsoft, 
-				unsigned char Mdlharq,
-				unsigned char Kmimo,
-				unsigned char rvidx,
-				unsigned char Qm, 
-				unsigned char Nl, 
-				unsigned char r)
-
-\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pp.16-18 )
+/** \fn unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
+    unsigned int G, 
+    short *w,
+    unsigned char *dummy_w,
+    short *soft_input, 
+    unsigned char C, 
+    unsigned int Nsoft, 
+    unsigned char Mdlharq,
+    unsigned char Kmimo,
+    unsigned char rvidx,
+    unsigned char Qm, 
+    unsigned char Nl, 
+    unsigned char r)
+    
+\brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
 \param G This the number of coded transport bits allocated in sub-frame
 \param w This is a pointer to the soft w-sequence (second interleaver output) with soft-combined outputs from successive HARQ rounds 
@@ -130,6 +145,7 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
+\returns \f$E\f$, the number of coded bits per segment 
 */
 
 unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
@@ -260,8 +276,9 @@ int rate_matching_lte(unsigned int N_coded,
 		      unsigned int off);
 
 
-/*!\fn void threegpp_turbo_decoder(short *y, unsigned char *decoded_bytes,unsigned short n,unsigned short interleaver_f1,unsigned short interleaver_f2,unsigned char max_iterations,unsigned char crc_len)
-\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination)
+/*!\fn void phy_threegpplte_turbo_decoder(short *y, unsigned char *decoded_bytes,unsigned short n,unsigned short interleaver_f1,unsigned short interleaver_f2,unsigned char max_iterations,unsigned char crc_type, unsigned char F)
+\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
+@param y LLR input (16-bit precision)
 @param decoded_bytes Pointer to decoded output
 @param n number of coded bits (including tail bits)
 @param max_iterations The maximum number of iterations to perform

@@ -9,12 +9,59 @@ ________________________________________________________________*/
 #ifndef __PHY_IMPLEMENTATION_DEFS_H__
 #define __PHY_IMPLEMENTATION_DEFS_H__
 
+/** @defgroup _ref_implementation_ OpenAirInterface LTE Implementation 
+ * @{
+ * @defgroup _physical_layer_ref_implementation_ Physical Layer Reference Implementation
+ * @ingroup _ref_implementation_  
+ * @{
+
+
+ * @defgroup _PHY_STRUCTURES_ Basic Structures and Memory Initialization
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for defining and initializing the PHY variables during static configuration of OpenAirInterface.
+ * @}
+
+ * @defgroup _PHY_DSP_TOOLS_ DSP Tools
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for basic signal processing related to inner-MODEM processing.
+ * @}
+
+ * @defgroup _PHY_MODULATION_ Modulation and Demodulation
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for procedures related to OFDMA modulation and demodulation.
+ * @}
+
+ * @defgroup _PHY_PARAMETER_ESTIMATION_BLOCKS_ Parameter Estimation
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for procedures related to OFDMA frequency-domain channel estimation for LTE Downlink Channels.
+ * @}
+
+ * @defgroup _PHY_CODING_BLOCKS_ Channel Coding/Decoding Functions
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for procedures related to channel coding/decoding, rate-matching, segementation and interleaving.
+ * @}
+
+ * @defgroup _PHY_TRANSPORT_ Transport/Physical Channel Processing
+ * @ingroup _physical_layer_ref_implementation_
+ * @{
+ * This module is responsible for defining and processing the PHY procedures (TX/RX) related to transport and physical channels.
+ * @}
+
+ * @} 
+ */
 
 #include "types.h"
 #include "spec_defs_top.h"
 
 
-
+/**@addtogroup _PHY_STRUCTURES_
+ * @{ 
+*/
 #define NUMBER_OF_OFDM_CARRIERS (PHY_config->PHY_framing.Nd)
 #define NUMBER_OF_SYMBOLS_PER_FRAME (PHY_config->PHY_framing.Nsymb)
 #define LOG2_NUMBER_OF_OFDM_CARRIERS (PHY_config->PHY_framing.log2Nd)
@@ -80,11 +127,6 @@ ________________________________________________________________*/
 #define SLOT_TIME_NS         (SLOT_LENGTH_SAMPLES*(1e3)/7.68)            // slot time in ns
 
 
-//#define GAIN_QPSK 1024              // Amplitude of QPSK transmit modulation
-//#define GAIN_QPSK_2ANT 724         // Amplitude of QPSK transmit modulation with 2 TX antennas (GAIN_QPSK/sqrt(2))
-//#define GAIN_16QAM 458             // Amplitude of 16QAM transmit modulation (GAIN_QPSK/sqrt(5))
-//#define GAIN_16QAM_2ANT 324        // Amplitude of 16QAM transmit modulation with 2 TX antennas (GAIN_16QAM/sqrt(2))    
-
 #define TARGET_RX_POWER 43		// Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 48		// Maximum digital power, such that signal does not saturate (value found by simulation)
 #define TARGET_RX_POWER_MIN 36		// Minimum digital power, anything below will be discarded (value found by simulation)
@@ -99,6 +141,22 @@ ________________________________________________________________*/
 
 #define ONE_OVER_SQRT2_Q15 23170
 
+
+// QAM amplitude definitions
+
+/// First Amplitude for QAM16 (\f$ 2^{15} \times 2/\sqrt{10}\f$)
+#define QAM16_n1 20724
+/// Second Amplitude for QAM16 (\f$ 2^{15} \times 1/\sqrt{10}\f$)
+#define QAM16_n2 10362
+
+///First Amplitude for QAM64 (\f$ 2^{14} \times 4/\sqrt{42}\f$)
+#define QAM64_n1 20225
+///Second Amplitude for QAM64 (\f$ 2^{14} \times 2/\sqrt{42}\f$)
+#define QAM64_n2 10112
+///Third Amplitude for QAM64 (\f$ 2^{14} \times 1/\sqrt{42}\f$)
+#define QAM64_n3 5056
+
+
 #ifdef BIT8_RXMUX
 #define PERROR_SHIFT 0
 #else
@@ -110,6 +168,7 @@ ________________________________________________________________*/
 
 #define CHBCH_RSSI_MIN -75
 
+#ifndef OPENAIR_LTE
 ///
 /// PHY-MAC Interface Defs 
 ///
@@ -129,20 +188,6 @@ ________________________________________________________________*/
 #define MAX_NUM_TB 32
 #define MAX_TB_SIZE_BYTES 128
 
-// QAM amplitude definitions
-
-/// First Amplitude for QAM16 (\f$ 2^15 \times 2/\sqrt{10}\f$)
-#define QAM16_n1 20724
-/// Second Amplitude for QAM16 (\f$ 2^15 \times 1/\sqrt{10}\f$)
-#define QAM16_n2 10362
-
-///First Amplitude for QAM64 (\f$ 2^14 \times 4/\sqrt{42}\f$)
-#define QAM64_n1 20225
-///Second Amplitude for QAM64 (\f$ 2^14 \times 2/\sqrt{42}\f$)
-#define QAM64_n2 10112
-///Third Amplitude for QAM64 (\f$ 2^14 \times 1/\sqrt{42}\f$)
-#define QAM64_n3 5056
-
 /// Size of SACCH PDU in Bytes
 #define SACCH_SIZE_BYTES (sizeof(UL_SACCH_PDU)+4) 
 /// Size of SACCH PDU in Bytes
@@ -155,6 +200,8 @@ ________________________________________________________________*/
 #define SACCH_ERROR 2
 #define SACH_MISSING 3
 #define SACH_PARAM_INVALID 10
+
+#endif //OPENAIR_LTE
 
 enum STATUS_RX {STATUS_RX_OFF,
 		STATUS_RX_ON,
@@ -185,9 +232,6 @@ typedef struct {
   mod_sym_t *TX_DMA_BUFFER;
   /* Total transmit gain */           
   unsigned int tx_total_gain_dB;
-  /* Dummy overlap for multi-antenna operation */                                                            
-  unsigned int dummy2[20];
-  unsigned char TX_STATUS;
 } TX_VARS ;  
 
 
@@ -299,4 +343,6 @@ typedef struct{
 #endif //NOCARD_TEST
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
-
+/**@}
+  *@}
+*/

@@ -96,7 +96,7 @@ void dlsch_encoding(unsigned char *a,
   unsigned int crc=1;
   unsigned short iind;
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
-  unsigned int Kr,Kr_bytes,r,r_offset;
+  unsigned int Kr,Kr_bytes,r,r_offset=0;
 
   if (dlsch->harq_processes[harq_pid]->active == 0) {  // this is a new packet
     
@@ -161,8 +161,10 @@ void dlsch_encoding(unsigned char *a,
     ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol-3)) :
     ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol-3)) ;
 
-    
+#ifdef DEBUG_DLSCH_CODING    
     printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+#endif
+
     threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
 			      Kr>>3, 
 			      &dlsch->harq_processes[harq_pid]->d[r][96],
@@ -171,7 +173,9 @@ void dlsch_encoding(unsigned char *a,
 			      f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
 			      );
     if (r==0)
+#ifdef DEBUG_DLSCH_CODING
       write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+#endif
 
       dlsch->harq_processes[harq_pid]->RTC[r] = 
 	sub_block_interleaving_turbo(4+(Kr_bytes*8), 
@@ -184,20 +188,21 @@ void dlsch_encoding(unsigned char *a,
 
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
   // outputs for each code segment, see Section 5.1.5 p.20
-  r_offset = 0;
+
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
+#ifdef DEBUG_DLSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
 	   coded_bits_per_codeword,
 	   Kr*3,
 	   mod_order,N_RB);
-    
+#endif
 
-      
+
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
 					coded_bits_per_codeword,  //G
 					dlsch->harq_processes[harq_pid]->w[r],
-					&dlsch->e[r_offset],
+					&dlsch->e[0],
 					dlsch->harq_processes[harq_pid]->C, // C
 					NSOFT,                    // Nsoft,
 					dlsch->Mdlharq,
@@ -206,8 +211,10 @@ void dlsch_encoding(unsigned char *a,
 					dlsch->harq_processes[harq_pid]->mod_order,
 					dlsch->harq_processes[harq_pid]->Nl,
 					r);                       // r
-    if (r==0)
-      write_output("enc_output.m","enc",dlsch->e,(3*8*Kr_bytes)+12,1,4);
+#ifdef DEBUG_DLSCH_CODING
+    if (r==dlsch->harq_processes[harq_pid]->C-1)
+      write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);
+#endif
   }
   
 }

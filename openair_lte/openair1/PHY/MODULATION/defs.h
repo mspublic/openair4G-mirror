@@ -1,11 +1,11 @@
 #ifndef __MODULATION_DEFS__H__
 #define __MODULATION_DEFS__H__
-/** @addtogroup _PHY_MODULATION_BLOCKS_
-* @{
+/** @addtogroup _PHY_MODULATION_
+ * @{
 */
 
 /**
-\fn void PHY_ofdm_mod(int *input,int *output,unsigned char log2fftsize,unsigned char nb_symbols,unsigned char nb_prefix_samples,short *twiddle_ifft,unsigned short *rev,Extension_t etype)
+\fn void PHY_ofdm_mod(int *input,int *output,unsigned char log2fftsize,unsigned char nb_symbols,unsigned short nb_prefix_samples,short *twiddle_ifft,unsigned short *rev,Extension_t etype)
 This function performs OFDM modulation with cyclic extension or zero-padding.
 
 @param input The sequence input samples in the frequency-domain.  This is a concatenation of the input symbols in SIMD redundant format
@@ -28,12 +28,14 @@ void PHY_ofdm_mod(int *input,
 		  Extension_t etype
 		  );
 
+#ifdef OPENAIR_LTE
 /** \fn void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char l,
 	      unsigned char Ns,
 	      int **rxdata,
 	      int **rxdataF,
-	      int **dl_ch_estimates)
+	      int **dl_ch_estimates,
+	      int offset)
 This function implements the OFDM front end processor (FEP)
 
 @param frame_parms LTE DL Frame Parameters
@@ -44,7 +46,7 @@ This function implements the OFDM front end processor (FEP)
 @param dl_ch_estimates estimated channel (output)
 @param offset offset within rxdata (used for initial unsychronized estimate)
 */
-#ifdef OPENAIR_LTE
+
 void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char l,
 	      unsigned char Ns,

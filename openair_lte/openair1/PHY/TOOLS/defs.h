@@ -50,7 +50,7 @@ struct complex32
 };
 
 #ifndef EXPRESSMIMO_TARGET
-/*!\fn void multadd_real_vector_complex_scalar(short *x1,short *alpha,short *y,unsigned int N)
+/*!\fn void multadd_real_vector_complex_scalar(short *x,short *alpha,short *y,unsigned int N)
 This function performs componentwise multiplication and accumulation of a complex scalar and a real vector.
 @param x Vector input (Q1.15)  
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
@@ -65,7 +65,7 @@ void multadd_real_vector_complex_scalar(short *x,
 					unsigned int N
 					);
 
-/*!\fn void multadd_complex_vector_real_scalar(short *x1,short *alpha,short *y,unsigned char zero_flag,unsigned int N)
+/*!\fn void multadd_complex_vector_real_scalar(short *x,short alpha,short *y,unsigned char zero_flag,unsigned int N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
 @param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ... 
 @param alpha Scalar input (Q1.15) in the format  |Re0|
@@ -321,7 +321,7 @@ int rotate_cpx_vector2(short *x,
 		       unsigned short output_shift,
 		       unsigned char format);
 
-/*!\fn int rotate_cpx_norep(short *x,short *alpha,short *y,unsigned int N,unsigned short output_shift)
+/*!\fn int rotate_cpx_vector_norep(short *x,short *alpha,short *y,unsigned int N,unsigned short output_shift)
 This function performs componentwise multiplication of a vector with a complex scalar.
 @param x Vector input (Q1.15)  in the format  |Re0  Im0|,......,|Re(N-1) Im(N-1)|
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
@@ -373,14 +373,14 @@ int add_real_vector64_scalar(short *x,
 			     short *y, 
 			     unsigned int N);
 
-/*!\fn int add_vector16(short *x,short *alpha,short *y,unsigned int N)
+/*!\fn int add_vector16(short *x,short *y,short *z,unsigned int N)
 This function performs componentwise addition of two vectors with Q1.15 components.
 @param x Vector input (Q1.15)  
 @param y Scalar input (Q1.15) 
-@param y Output (Q1.15) 
+@param z Scalar output (Q1.15) 
 @param N Length of x WARNING: N must be a multiple of 32
 
-The function implemented is : \f$\mathbf{y} = \mathbf{x} + \mathbf{y}\f$
+The function implemented is : \f$\mathbf{z} = \mathbf{x} + \mathbf{y}\f$
 */
 int add_vector16(short *x, 
 		 short *y, 

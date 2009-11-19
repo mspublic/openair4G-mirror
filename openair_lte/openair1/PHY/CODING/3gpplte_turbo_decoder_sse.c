@@ -716,20 +716,22 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     switch (crc_type) {
 
     case CRC24_A: 
-      oldcrc&=0x000000ff;
+      oldcrc&=0x00ffffff;
       crc = crc24a(decoded_bytes,
-		   n-24)>>24;
+		   n-24)>>8;
       if (crc == oldcrc)
 	return(iteration_cnt);
 
       break;
-      break;
     case CRC24_B:
-      oldcrc&=0x000000ff;
+      oldcrc&=0x00ffffff;
       crc = crc24b(decoded_bytes,
-		  n-24)>>24;
+		  n-24)>>8;
+
+      printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
       if (crc == oldcrc)
 	return(iteration_cnt);
+
 
       break;
     case CRC16:
@@ -741,9 +743,9 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
       break;
     case CRC8:
-      oldcrc&=0x00ffffff;
+      oldcrc&=0x000000ff;
       crc = crc8(decoded_bytes,
-		  n-8)>>8;
+		  n-8)>>24;
       if (crc == oldcrc)
 	return(iteration_cnt);
 

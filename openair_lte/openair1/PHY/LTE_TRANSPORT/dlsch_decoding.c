@@ -62,14 +62,13 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
   return(NULL);
 }
 
-void  dlsch_decoding(unsigned short A,
-		     short *dlsch_llr,
-		     LTE_DL_FRAME_PARMS *lte_frame_parms,
-		     LTE_UE_DLSCH_t *dlsch,
-		     unsigned char harq_pid,
-		     //		     unsigned short block_length,
-		     unsigned char nb_rb) {
-		     
+unsigned int  dlsch_decoding(unsigned short A,
+			     short *dlsch_llr,
+			     LTE_DL_FRAME_PARMS *lte_frame_parms,
+			     LTE_UE_DLSCH_t *dlsch,
+			     unsigned char harq_pid,
+			     unsigned char nb_rb) {
+  
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret;
@@ -80,7 +79,7 @@ void  dlsch_decoding(unsigned short A,
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
 
-  printf("In dlsch_decoding\n");
+
   // This has to be updated for presence of PDCCH and PBCH
   coded_bits_per_codeword = (lte_frame_parms->Ncp == 0) ?
     ( nb_rb * (12 * mod_order) * (14-lte_frame_parms->first_dlsch_symbol-3)) :
@@ -89,7 +88,6 @@ void  dlsch_decoding(unsigned short A,
 
   if (dlsch->harq_processes[harq_pid]->active == 0) {
     // This is a new packet, so compute quantities regarding segmentation
-    printf("LTE_segmentation A %d\n",A);
     dlsch->harq_processes[harq_pid]->B = A+24;
     lte_segmentation(NULL,
 		     NULL,
@@ -102,6 +100,7 @@ void  dlsch_decoding(unsigned short A,
 		     &dlsch->harq_processes[harq_pid]->F);
     //  CLEAR LLR's HERE for first packet in process
   }
+
 
   r_offset = 0;
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
@@ -122,50 +121,55 @@ void  dlsch_decoding(unsigned short A,
     else if (Kr_bytes <= 768)
       iind = 123 + ((Kr_bytes-256)>>3);
     else {
-      printf("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
+      msg("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
       exit(-1);
     }
   
-     
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+#ifdef DEBUG_DLSCH_DECODING     
+        printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+#endif
+
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
 							       dummy_w[r],
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
-    printf("Rate Matching (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d)...\n",
-	   coded_bits_per_codeword,
-	   Kr,
+#ifdef DEBUG_DLSCH_DECODING    
+    printf("Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
+	   r, coded_bits_per_codeword,
+	   Kr*3,
 	   mod_order,
-	   nb_rb);
-
-
+	   nb_rb,
+	   dlsch->harq_processes[harq_pid]->Nl);
+#endif    
 
     r_offset += lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
 					   coded_bits_per_codeword,
-					   dlsch->harq_processes[harq_pid]->w[r],
+			 		   dlsch->harq_processes[harq_pid]->w[r],
 					   dummy_w[r],
-					   &dlsch_llr[r_offset],
-					   1,
+					   dlsch_llr,
+					   dlsch->harq_processes[harq_pid]->C,
 					   NSOFT,
 					   dlsch->Mdlharq,
 					   dlsch->Kmimo,
 					   dlsch->rvidx,
 					   dlsch->harq_processes[harq_pid]->mod_order,
 					   dlsch->harq_processes[harq_pid]->Nl,
-					   0);
+					   r);
     
     sub_block_deinterleaving_turbo(4+Kr, 
 				   &dlsch->harq_processes[harq_pid]->d[r][96], 
 				   dlsch->harq_processes[harq_pid]->w[r]); 
-    
+#ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
       write_output("decoder_llr.m","decllr",dlsch_llr,coded_bits_per_codeword,1,0);
       write_output("decoder_in.m","dec",&dlsch->harq_processes[harq_pid]->d[0][96],(3*8*Kr_bytes)+12,1,0);
-      printf("decoder input :");
-      for (i=0;i<(3*8*Kr_bytes)+12;i++)
-	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[0][96+i]);
-      printf("\n");
     }
+
+    printf("decoder input(segment %d) :",r);
+    for (i=0;i<(3*8*Kr_bytes)+12;i++)
+      printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
+    printf("\n");
+#endif
     
     memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
     
@@ -185,9 +189,11 @@ void  dlsch_decoding(unsigned short A,
 					crc_type,
 					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
-    if (ret==MAX_TURBO_ITERATIONS) // a Code segment is in error so break;
-      break;
-  }
-  // Reassembly of packets
 
+    if (ret==(1+MAX_TURBO_ITERATIONS)) // a Code segment is in error so break;
+      return(1);
+  }
+  // Reassembly of Transport block here
+
+  return(0);
 }

@@ -153,8 +153,8 @@ int generate_pbch(mod_sym_t **txdataF,
 			    pbch_coded_data,
 			    0,
 			    f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
-			    f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1]  // f2 (see 36121-820, page 14)
-			    );
+			    f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
+			    0);
 
   // rate matching
   if (rate_matching_lte(pbch_coded_bits, 
@@ -246,6 +246,7 @@ int generate_pbch(mod_sym_t **txdataF,
 			   symbol_offset,
 			   pbch_coded_data2,
 			   SISO,
+			   0,
 			   pilots,
 			   first_pilot,
 			   2,

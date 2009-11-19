@@ -54,6 +54,7 @@ ________________________________________________________________*/
 #define EMOS_SCH_INDEX 1
 #endif //EMOS
 
+
 #ifndef OPENAIR2
 #define CHBCH_PDU_SIZE 144	// this is in bytes!
 #else
@@ -104,6 +105,8 @@ ________________________________________________________________*/
 #define NUMBER_OF_RACH_SYMBOLS 1
 
 #define NUMBER_OF_CARRIERS_PER_GROUP (NUMBER_OF_USEFUL_CARRIERS/NUMBER_OF_FREQUENCY_GROUPS)
+
+#ifndef OPENAIR_LTE
 #define NUMBER_OF_SACH_DATA_CARRIERS_PER_GROUP (NUMBER_OF_CARRIERS_PER_GROUP-NUMBER_OF_SACH_PILOTS)                                       
 #define NUMBER_OF_CLUSTERS 2
 #define NUMBER_OF_TERMINALS_PER_CLUSTER  7 // make me reconfigurable 
@@ -168,6 +171,8 @@ ________________________________________________________________*/
 #endif //EMOS
 // end navid 
  
+#endif OPENAIR_LTE
+
 #define RX_PRECISION (16)
 #define LOG2_RX_PRECISION (4)
 #define RX_OUTPUT_SHIFT (4)
@@ -358,6 +363,7 @@ typedef struct
   int            crc_status[2]; 		// crc status of the CHBCH
 #endif //EMOS
 } PHY_MEASUREMENTS;
+
 
 /// Physical Resource Descriptor
 typedef struct {

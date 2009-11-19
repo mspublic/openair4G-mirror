@@ -1,3 +1,5 @@
+#include "PHY/defs.h"
+
 void lte_segmentation(unsigned char *input_buffer,
 		      unsigned char **output_buffers,
 		      unsigned int B,
@@ -21,12 +23,16 @@ void lte_segmentation(unsigned char *input_buffer,
     if ((6144-L)*(*C) < B)
       *C=*C+1;
     Bprime = B+((*C)*L); 
+#ifdef DEBUG_SEGMENTATION
     printf("Bprime %d\n",Bprime);
+#endif
   }
 
   // Find K+
   Bprime_by_C  = Bprime/(*C);
-    printf("Bprime_by_C %d\n",Bprime_by_C);
+#ifdef DEBUG_SEGMENTATION
+  printf("Bprime_by_C %d\n",Bprime_by_C);
+#endif
     //  Bprime = Bprime_by_C>>3;
 
   if (Bprime_by_C <= 40) {
@@ -52,14 +58,18 @@ void lte_segmentation(unsigned char *input_buffer,
   else if (Bprime_by_C <=6144 ) { // increase by 8 bytes til here
 
    *Kplus = (Bprime_by_C>>6)<<6;
+#ifdef DEBUG_SEGMENTATION
     printf("Bprime_by_C_by_C %d , Kplus %d\n",Bprime_by_C,*Kplus);
+#endif 
     if (*Kplus < Bprime_by_C)
       *Kplus = *Kplus + 64;
+#ifdef DEBUG_SEGMENTATION
     printf("Bprime_by_C_by_C %d , Kplus2 %d\n",Bprime_by_C,*Kplus);
+#endif
     *Kminus = (*Kplus - 64);
   }
   else {
-    printf("Illegal codeword size !!!\n");
+    msg("lte_segmentation.c: Illegal codeword size !!!\n");
     exit(-1);
   }  
 
@@ -77,10 +87,11 @@ void lte_segmentation(unsigned char *input_buffer,
 
 
   *F = ((*Cplus)*(*Kplus) + (*Cminus)*(*Kminus) - (Bprime));
-
+#ifdef DEBUG_SEGMENTATION
   printf("C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, Bprime_bytes %d, Bprime %d, F %d\n",*C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
-
+#endif
   if ((input_buffer) && (output_buffers)) {
+
     for (k=0;k<*F>>3;k++) {
       output_buffers[0][k] = 0;
     } 
@@ -92,7 +103,7 @@ void lte_segmentation(unsigned char *input_buffer,
       else
 	Kr = *Kplus;
 
-      while (k<(Kr - L)) {
+      while (k<((Kr - L)>>3)) {
 	output_buffers[r][k] = input_buffer[s];
 	k++;
 	s++;

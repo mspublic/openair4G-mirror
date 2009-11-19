@@ -1,13 +1,6 @@
 #ifndef __LTE_ESTIMATION_DEFS__H__
 #define __LTE_ESTIMATION_DEFS__H__
 
-/** @addtogroup _PHY_STRUCTURES_
-* @{
-\fn void phy_synch_time_init(void)
-\brief Initialize the Initial Timing synchronization engine
-
-*@} */
-
 #include "PHY/defs.h"
 
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
@@ -18,9 +11,10 @@
 #define SYNCH_HYST 4
 
 
-/*! \fn void lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms)
+/*! \fn void lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars)
 \brief This function allocates memory needed for the synchronization.
 \param frame_parms LTE DL frame parameter structure
+\param common_vars LTE DL common RX variables structure
 */
 
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars);

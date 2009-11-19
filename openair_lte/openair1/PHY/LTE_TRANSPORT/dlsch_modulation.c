@@ -20,14 +20,12 @@ void generate_64qam_table() {
 
   int a,b,c,index;
 
-  printf("QAM64_n1 %d\n",QAM64_n1);
+
   for (a=-1;a<=1;a+=2) 
     for (b=-1;b<=1;b+=2) 
       for (c=-1;c<=1;c+=2) {
 	index = (1+a)*2 + (1+b) + (1+c)/2;  
 	qam64_table[index] = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
-	
-	printf("QAM64 i %d : %d\n",index,qam64_table[index]);
       } 
 }
 
@@ -44,12 +42,13 @@ void generate_16qam_table() {
 
 #ifndef IFFT_FPGA
  
-void allocate_REs_in_RB(int **txdataF,
+void allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
 			unsigned int symbol_offset,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
+			unsigned char nu,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
@@ -67,7 +66,6 @@ void allocate_REs_in_RB(int **txdataF,
   short gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2;
   short re_off=re_offset;
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
-  //  printf("DLSCH: gain_lin_QPSK = %d\n",gain_lin_QPSK);
   
   switch (mod_order) {
   case 2:
@@ -87,7 +85,10 @@ void allocate_REs_in_RB(int **txdataF,
   default:
     break;
   }
+#ifdef DEBUG_DLSCH_MODULATION
   printf("allocate_re : re_offset %d (%d), jj %d -> %d,%d\n",re_offset,skip_dc,*jj, output[*jj], output[1+*jj]);
+#endif
+
   for (re=0;re<12;re++) {
 
 
@@ -99,20 +100,16 @@ void allocate_REs_in_RB(int **txdataF,
 
     tti_offset = symbol_offset + re_off + re;
     if (is_not_pilot(pilots,first_pilot,re)) { 
-      //    printf("re %d, jj %d\n",re,*jj);     
+
       *re_allocated = *re_allocated + 1;
-      //      printf("Symbol %d, Re %d\n",symbol_offset/512,re);
-      //	    printf("symbol = %d, tti_offset = %d\n",l,tti_offset);
-	//	      printf("TTI %d\n",tti);
 
-
-	if (mimo_mode == SISO) {  //SISO mapping
+	if ((mimo_mode == SISO) || (mimo_mode == DUALSTREAM0)) {  //SISO mapping
 	  switch (mod_order) {
 	  case 2:  //QPSK
 
-	    ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[nu][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	      *jj = *jj + 1;
-	    ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[nu][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	      *jj = *jj + 1;
 	    break;
 	    
@@ -176,7 +173,6 @@ void allocate_REs_in_RB(int **txdataF,
 	  
 	  switch (mod_order) {
 	  case 2:  //QPSK
-	    //		  printf("jj %d,output[%d] %x\n",jj,jj,output[jj]);
 
 	    // first antenna position n -> x0
 	    
@@ -374,9 +370,7 @@ void allocate_REs_in_RB(int **txdataF,
 
 	  }
 	}
-	else if (mimo_mode == DUALSTREAM) {
 
-	}
 	else {
 	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
 	  exit(-1);
@@ -384,11 +378,7 @@ void allocate_REs_in_RB(int **txdataF,
 
     }
     else {
-      /*
-      printf("pilot in symbol_offset %d, re_offset %d, re %d (%d,%d)\n",symbol_offset,re_offset,re,
-	     ((short*)&txdataF[0][tti_offset])[0],
-	     ((short*)&txdataF[0][tti_offset])[1]);
-      */
+
     }
     if (mimo_mode == ALAMOUTI) {
       re++;  // adjacent carriers are taken care of by precoding
@@ -404,6 +394,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int symbol_offset,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
+			unsigned char nu,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
@@ -423,7 +414,12 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
   short re_off=re_offset;
   
 
-  printf("allocate_re : re_offset %d (%d), jj %d -> %d,%d\n",re_offset,skip_dc,*jj, output[*jj], output[1+*jj]);
+
+  if (nu>1) {
+    msg("dlsch_modulation.c: allocate_REs_in_RB, error, unknown layer index %d\n",nu);
+    exit(-1);
+  }
+
   for (re=0;re<12;re++) {
 
 
@@ -433,12 +429,8 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
     tti_offset = symbol_offset + re_off + re;
     if (is_not_pilot(pilots,first_pilot,re)) { 
-      //    printf("re %d, jj %d\n",re,*jj);     
-      *re_allocated = *re_allocated + 1;
-      //      printf("Symbol %d, Re %d\n",symbol_offset/512,re);
-      //	    printf("symbol = %d, tti_offset = %d\n",l,tti_offset);
-	//	      printf("TTI %d\n",tti);
 
+      *re_allocated = *re_allocated + 1;
 
 	if (mimo_mode == SISO) {  //SISO mapping
 	  switch (mod_order) {
@@ -452,7 +444,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qpsk_table_offset+=2;
 	    *jj=*jj+1;
 
-	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;
+	    txdataF[nu][tti_offset] = (mod_sym_t) qpsk_table_offset;
 
 	    break;
 	    
@@ -512,9 +504,6 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  switch (mod_order) {
 	  case 2:  //QPSK
-	    //		  printf("jj %d,output[%d] %x\n",jj,jj,output[jj]);
-
-	    // first antenna position (n,n+1) -> x0,-x1 
 	    
 	    qpsk_table_offset = 1;  //x0
 	    qpsk_table_offset2 = 1;  //x0*
@@ -684,72 +673,10 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 	/*
 	else if (mimo_mode == ANTCYCLING ) {
 
-	  switch (mod_order) {
-	  case 2:  //QPSK
-
-	    ((short*)&txdataF[re&1][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	      *jj = *jj + 1;
-	    ((short*)&txdataF[re&1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	      *jj = *jj + 1;
-	    break;
-	      
-	  case 4:  //16QAM
-
-	    qam16_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam16_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	    ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-	    
-	    
-	    break;
-	  
-	  case 6:  //64QAM
-
-	    qam64_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam64_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	    ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
-
-	  }
 	}
 	*/
 	else if (mimo_mode == DUALSTREAM) {
+
 
 	}
 	else {
@@ -759,11 +686,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
     }
     else {
-      /*
-      printf("pilot in symbol_offset %d, re_offset %d, re %d (%d,%d)\n",symbol_offset,re_offset,re,
-	     ((short*)&txdataF[0][tti_offset])[0],
-	     ((short*)&txdataF[0][tti_offset])[1]);
-      */
+
     }
     if (mimo_mode == ALAMOUTI) {
       re++;  // adjacent carriers are taken care of by precoding
@@ -781,12 +704,12 @@ void dlsch_modulation(int **txdataF,
 		      unsigned char harq_pid,
 		      unsigned int  *rb_alloc){
   
-  unsigned int i,j,j2;
+
   unsigned char nsymb;
   unsigned int jj,re_allocated;
   unsigned short l,rb,re_offset;
   unsigned int rb_alloc_ind;
-  unsigned char pilots,pilot_pos,first_pilot,second_pilot;
+  unsigned char pilots,first_pilot,second_pilot;
   unsigned char skip_dc;
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
 
@@ -800,8 +723,9 @@ void dlsch_modulation(int **txdataF,
   
   for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
 
-    //    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->harq_processes[harq_pid]->mod_order,l);
-    
+#ifdef DEBUG_DLSCH_MODULATION
+    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->harq_processes[harq_pid]->mod_order,l);
+#endif    
     pilots=0;
     if ((l==(nsymb>>1))){
       pilots=1;
@@ -835,7 +759,6 @@ void dlsch_modulation(int **txdataF,
 	else
 	  rb_alloc_ind = 0;
 
-	//	printf("rb %d, rb_alloc_ind %d\n",rb,rb_alloc_ind);
 	if ((rb == frame_parms->N_RB_DL>>1) && ((frame_parms->N_RB_DL&1)>0))
 	  skip_dc = 1;
 	else
@@ -848,6 +771,7 @@ void dlsch_modulation(int **txdataF,
 			     frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb)),
 			     dlsch->e,
 			     dlsch->harq_processes[harq_pid]->mimo_mode,
+			     dlsch->layer_index,
 			     pilots,
 			     first_pilot,
 			     mod_order,
@@ -869,6 +793,8 @@ void dlsch_modulation(int **txdataF,
 	
     }
   }
+#ifdef DEBUG_DLSCH_MODULATION
   printf("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
+#endif
 }
 

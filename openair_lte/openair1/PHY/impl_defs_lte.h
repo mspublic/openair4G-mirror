@@ -40,7 +40,7 @@ typedef enum {
   SISO,
   ALAMOUTI,
   ANTCYCLING,
-  DUALSTREAM
+  DUALSTREAM0
 } MIMO_mode_t;
 
 typedef struct{
@@ -64,7 +64,8 @@ typedef struct {
   int **dl_ch_estimates_ext;
   int **dl_ch_mag;
   int **dl_ch_magb;
-  short *llr;
+  int **rho;
+  short *llr[2];
 } LTE_UE_DLSCH;
 
 

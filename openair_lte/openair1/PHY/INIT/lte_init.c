@@ -180,7 +180,8 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
     lte_ue_dlsch_vars->dl_ch_magb[i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
 
-  lte_ue_dlsch_vars->llr = (short *)malloc16((2*(3*8*6144)+12)*sizeof(short));
+  lte_ue_dlsch_vars->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
+  lte_ue_dlsch_vars->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
 
 
 
