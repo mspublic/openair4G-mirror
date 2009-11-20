@@ -52,8 +52,12 @@ enum openair_ERROR {
 
 enum openair_SYNCH_STATUS {
       openair_NOT_SYNCHED=1,
+#ifdef OPENAIR_LTE
+      openair_SYNCHED,
+#else
       openair_SYNCHED_TO_CHSCH,
       openair_SYNCHED_TO_MRSCH,
+#endif
       openair_SCHED_EXIT};
 
 

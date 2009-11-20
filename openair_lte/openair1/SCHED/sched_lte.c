@@ -114,7 +114,6 @@ int exit_openair = 0;
 #define SYNCH_WAIT_TIME_RUNNING 128  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
 #define NS_PER_SLOT 500000
-
 #define MAX_DRIFT_COMP 3000
 #endif // CBMIMO1
  
@@ -302,7 +301,7 @@ static void * openair_thread(void *param) {
 }
 
 
-void openair_sync() {
+void openair_sync(void) {
   int i;
   //int size,j;
   int status;
@@ -376,7 +375,8 @@ void openair_sync() {
 
     // Do initial timing acquisition
 
-    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    sync_pos = 0;
 
     PHY_vars->rx_vars[0].offset = sync_pos;
     
@@ -419,7 +419,7 @@ void openair_sync() {
 	  mac_resynch();
 #endif //OPENAIR2
 #endif //EMOS
-	  openair_daq_vars.scheduler_interval_ns=NUMBER_OF_CHUNKS_PER_SLOT*NS_PER_CHUNK;        // initial guess
+	  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	  openair_daq_vars.last_adac_cnt=-1;            
 	}
 

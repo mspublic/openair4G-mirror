@@ -1,4 +1,3 @@
-#include <string.h>
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #include <pmmintrin.h>
@@ -144,8 +143,10 @@ int generate_pbch(mod_sym_t **txdataF,
     pbch_data[i] = pbch_pdu[i];
   pbch_data[6] = ((char*) &crc)[0];
   pbch_data[7] = ((char*) &crc)[1];
+#ifdef DEBUG_PHY
   for (i=0;i<8;i++) 
-    printf("[PBCH] pbch_data[%d] = %x\n",i,pbch_data[i]);
+    msg("[PBCH] pbch_data[%d] = %x\n",i,pbch_data[i]);
+#endif
 
   // this is not LTE compliant! LTE uses a rate 1/3 convolutional code
   threegpplte_turbo_encoder(pbch_data,
@@ -184,9 +185,10 @@ int generate_pbch(mod_sym_t **txdataF,
       if ((pbch_coded_data[j]&0x40)>0)
 	pbch_coded_data2[j2++] = pbch_coded_data[j]&1;
     }
-  }					
-  printf("[PBCH] rate matched bits=%d, pbch_coded_bits=%d, pbch_crc_bits=%d\n",j2,pbch_coded_bits,pbch_crc_bits);
-
+  }		
+#ifdef DEBUG_PHY			
+  msg("[PBCH] rate matched bits=%d, pbch_coded_bits=%d, pbch_crc_bits=%d\n",j2,pbch_coded_bits,pbch_crc_bits);
+#endif
 
 #ifdef DEBUG_PHY
 #ifdef USER_MODE
@@ -222,7 +224,9 @@ int generate_pbch(mod_sym_t **txdataF,
       first_pilot=0;
     }
 
-    printf("[PBCH] l=%d, pilots=%d, first_pilot=%d\n",l,pilots,first_pilot);
+#ifdef DEBUG_PHY
+    msg("[PBCH] l=%d, pilots=%d, first_pilot=%d\n",l,pilots,first_pilot);
+#endif
 
     if (pilots==0) { // don't skip pilot symbols
       // This is not LTE, it guarantees that
@@ -553,7 +557,9 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
       
       log2_maxh = 4+(log2_approx(avgs)/2);
-      printf("[PBCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+#ifdef DEBUG_PHY
+      msg("[PBCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+#endif
       
       pbch_channel_compensation(lte_ue_pbch_vars->rxdataF_ext,
 				lte_ue_pbch_vars->dl_ch_estimates_ext,
@@ -571,11 +577,11 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
       if (mimo_mode == ALAMOUTI) {
 	//dlsch_alamouti(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
 	msg("[PBCH][RX] Alamouti receiver not yet implemented!\n");
-	exit(-1);
+	return(-1);
       }
       else if ((mimo_mode != ANTCYCLING) && (mimo_mode != SISO)) {
 	msg("[PBCH][RX] Unsupported MIMO mode\n");
-	exit (-1);
+	return(-1);
       }
 
       memcpy(pbch_llr,&(lte_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),72*sizeof(int));

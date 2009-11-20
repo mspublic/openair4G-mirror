@@ -22,12 +22,18 @@ static int openair1_state_read(char *buffer, char **my_buffer, off_t off, int le
   case openair_NOT_SYNCHED:
     len += sprintf(&buffer[len], "NOT IN SYNCH\n");
     break;
+#ifdef OPENAIR_LTE
+  case openair_SYNCHED:
+    len += sprintf(&buffer[len], "SYNCHED\n");
+    break;
+#else
   case openair_SYNCHED_TO_CHSCH:
     len += sprintf(&buffer[len], "SYNCHED TO CH %d\n",openair_daq_vars.synch_source);
     break;
   case openair_SYNCHED_TO_MRSCH:
     len += sprintf(&buffer[len], "SYNCHED TO MR\n");
     break;
+#endif
   case openair_SCHED_EXIT:
     len += sprintf(&buffer[len], "EXITED\n");
     break;
@@ -144,7 +150,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
  * Initialize the module and add the /proc file.
  */
 #ifndef USER_MODE
-int add_openair1_stats()
+int add_openair1_stats(void)
 {
  
   msg("Creating openair1 proc entry\n"); 
@@ -159,7 +165,7 @@ int add_openair1_stats()
 /*
  * Unregister the file when the module is closed.
  */
-void remove_openair_stats()
+void remove_openair_stats(void)
 {
 
   if (proc_openair1_root) {

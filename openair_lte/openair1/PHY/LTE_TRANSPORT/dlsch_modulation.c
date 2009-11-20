@@ -1,4 +1,3 @@
-#include <string.h>
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
@@ -16,7 +15,7 @@
 
 static int qam64_table[8],qam16_table[4];
 
-void generate_64qam_table() {
+void generate_64qam_table(void) {
 
   int a,b,c,index;
 
@@ -29,7 +28,7 @@ void generate_64qam_table() {
       } 
 }
 
-void generate_16qam_table() {
+void generate_16qam_table(void) {
 
   int a,b,index;
 
@@ -42,7 +41,7 @@ void generate_16qam_table() {
 
 #ifndef IFFT_FPGA
  
-void allocate_REs_in_RB(mod_sym_t **txdataF,
+int allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
 			unsigned int symbol_offset,
@@ -373,7 +372,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	else {
 	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
-	  exit(-1);
+	  return(-1);
 	}
 
     }
@@ -388,7 +387,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 }
 
 #else
-void allocate_REs_in_RB(mod_sym_t **txdataF,
+int allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
 			unsigned int symbol_offset,
@@ -417,7 +416,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 
   if (nu>1) {
     msg("dlsch_modulation.c: allocate_REs_in_RB, error, unknown layer index %d\n",nu);
-    exit(-1);
+    return(-1);
   }
 
   for (re=0;re<12;re++) {
@@ -681,7 +680,7 @@ void allocate_REs_in_RB(mod_sym_t **txdataF,
 	}
 	else {
 	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
-	  exit(-1);
+	  return(-1);
 	}
 
     }

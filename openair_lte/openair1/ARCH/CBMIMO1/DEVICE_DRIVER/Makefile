@@ -28,7 +28,7 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
-EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -mmmx -msse -msse2 -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
+EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -mmmx -msse -msse2 -mssse3 -msse4 -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
 EXTRA_CFLAGS += -DMAX_MODULES=1
 
@@ -123,8 +123,8 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
-#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.c  
-#openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
@@ -134,6 +134,8 @@ openair_rf-objs += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/rate_matching.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/viterbi.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/crc_byte.o
+openair_rf-objs += $(TOP_DIR)/PHY/CODING/3gpplte.o
+openair_rf-objs += $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
 
 ifndef OPENAIR_LTE
 openair_rf-objs += $(TOP_DIR)/PHY/INIT/init.o

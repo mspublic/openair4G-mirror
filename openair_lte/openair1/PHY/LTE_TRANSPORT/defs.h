@@ -195,7 +195,7 @@ void dlsch_encoding(unsigned char *input_buffer,
 \param frame_parms Frame parameter descriptor
 */
 
-void allocate_REs_in_RB(mod_sym_t **txdataF,
+int allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned int *jj,
 			unsigned short re_offset,
 			unsigned int symbol_offset,
