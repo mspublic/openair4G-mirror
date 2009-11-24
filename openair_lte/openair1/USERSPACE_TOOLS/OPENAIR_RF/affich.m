@@ -1,8 +1,8 @@
 clear all
+close all
 
-fd = fopen("rx_frame.dat","r");
-
-temp = fread(fd,"int16");
+fd = fopen('rx_frame.dat','r');
+temp = fread(fd,'int16');
 fclose(fd);
 
 rxs = temp(1:2:length(temp)) + sqrt(-1)*temp(2:2:length(temp));
@@ -11,9 +11,12 @@ rxs = reshape(rxs,[],2);
 figure(1)
 plot(real(rxs))
 
-fd = fopen("tx_frame.dat","r");
+figure(2)
+plot(20*log10(abs(fftshift(fft(rxs)))))
 
-temp = fread(fd,"uint8");
+%%
+fd = fopen('tx_frame.dat','r');
+temp = fread(fd,'uint8');
 fclose(fd);
 
 %txs(:,1) = temp(1:4:length(temp)) + sqrt(-1)*temp(2:4:length(temp));
@@ -21,10 +24,10 @@ fclose(fd);
 
 load('../../PHY/LTE_REFSIG/mod_table.mat')
 
-txs = temp;
-
-figure(2)
-plot(real(txs))
+for i=1:length(temp)
+  txs(i) = table(temp(i)+1);
+end
 
 figure(3)
-plot(20*log10(abs(fftshift(fft(rxs)))))
+plot(real(txs))
+
