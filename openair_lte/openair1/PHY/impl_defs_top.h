@@ -273,9 +273,21 @@ typedef struct {
   unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
   unsigned char  Coding_fmt;          /*!< \brief Coding format for this PDU*/
 } __attribute__((__packed__)) PHY_RESOURCES;
-#define PHY_RESOURCES_SIZE sizeof(PHY_RESOURCES)
+
+
+#else //OPENAIR_LTE
+/// Physical Resource Descriptor
+typedef struct {
+  unsigned char  Time_alloc;           /*!<\brief Time allocation vector of DL-SACH reservation*/
+  unsigned int Freq_alloc[2];      /*!< \brief Frequency allocation vector of DL-SACH reservation*/
+  unsigned short Ifreq_alloc;      /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
+  unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
+  unsigned char  Coding_fmt;          /*!< \brief Coding format for this PDU*/
+} __attribute__((__packed__)) PHY_RESOURCES;
+
 #endif //OPENAIR_LTE
 
+#define PHY_RESOURCES_SIZE sizeof(PHY_RESOURCES)
 
 /// Static Configuration Structure
 typedef struct {

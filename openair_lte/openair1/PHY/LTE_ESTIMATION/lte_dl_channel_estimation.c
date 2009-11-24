@@ -45,7 +45,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   if (k > 6)
     k -=6;
   
-  //printf("Channel Estimation : ch_offset %d, %d, %d, %d, %d, k=%d\n",ch_offset,frame_parms->ofdm_symbol_size,frame_parms->Ncp,l,Ns,k);
+//  printf("Channel Estimation : ch_offset %d, %d, %d, %d, %d, k=%d\n",ch_offset,frame_parms->ofdm_symbol_size,frame_parms->Ncp,l,Ns,k);
   
   switch (k) {
   case 0 :
@@ -117,10 +117,33 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
     memset(dl_ch,0,4*(frame_parms->ofdm_symbol_size));
     
-    if (frame_parms->N_RB_DL==50) {
+    if ((frame_parms->N_RB_DL==50) || (frame_parms->N_RB_DL==100)) {
       
       //First half of pilots
-      for (pilot_cnt=0;pilot_cnt<49;pilot_cnt+=2) {
+      // Treat first 2 pilots specially (left edge)
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      // printf("pilot 0 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(fl,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;    // Re Im
+      rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
+      dl_ch+=8;
+      
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      // printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(f2l2,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;
+      rxF+=24;
+      dl_ch+=16;
+
+      for (pilot_cnt=2;pilot_cnt<((frame_parms->N_RB_DL>>1)-1);pilot_cnt+=2) {
 	
 	// printf("%d\n",dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);	
 		
@@ -166,7 +189,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
       
-      for (pilot_cnt=0;pilot_cnt<49;pilot_cnt+=2) {
+      for (pilot_cnt=0;pilot_cnt<((frame_parms->N_RB_DL>>1)-1);pilot_cnt+=2) {
 	// printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
 	// printf("rx[%d][%d] -> (%d,%d)\n",p,first_carrier_offset + nushift + 6*rb+(3*p),rxF[0],rxF[1]);
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
@@ -218,6 +241,27 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
 	dl_ch+=16;
       }
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      // printf("pilot 49: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+
+      multadd_real_vector_complex_scalar(f2r2,
+					 ch,
+					 dl_ch,
+					 24);
+      pil+=2;    // Re Im
+      rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
+      dl_ch+=8;
+      
+      ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
+      ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
+      // printf("pilot 50: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(fr,
+					 ch,
+					 dl_ch,
+					 24);
+
+
     }
     
     else if (frame_parms->N_RB_DL==25) {
@@ -460,7 +504,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       multadd_complex_vector_real_scalar(dl_ch_prev,21845,dl_ch_prev+(2*((frame_parms->ofdm_symbol_size)<<1)),1,frame_parms->ofdm_symbol_size);
       multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((frame_parms->ofdm_symbol_size)<<1)),0,frame_parms->ofdm_symbol_size);
-    } // this is 1/3,2/3 combination for pilots spaced be 3 symbols
+    } // this is 1/3,2/3 combination for pilots spaced by 3 symbols
     
     else {
       //printf("Interpolating 0->%d\n",4-frame_parms->Ncp);
