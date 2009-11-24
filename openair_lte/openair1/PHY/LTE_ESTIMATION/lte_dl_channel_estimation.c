@@ -125,7 +125,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	// printf("%d\n",dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);	
 		
 	// printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
-	// printf("rx[%d] -> (%d,%d)\n", k, rxF[0], rxF[1]);
+	// printf("rx[%d] -> (%d,%d)\n", k, /[0], rxF[1]);
 	
 	
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15); //Re
@@ -164,7 +164,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       if (k > 6)
 	k -=6;
       
-      rxF   = (short *)&rxdataF[aarx][(symbol_offset+1+k)<<1]; 
+      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
       
       for (pilot_cnt=0;pilot_cnt<49;pilot_cnt+=2) {
 	// printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
@@ -221,7 +221,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     }
     
     else if (frame_parms->N_RB_DL==25) {
-      
+      //printf("Channel estimation\n");
+
       // Treat first 2 pilots specially (left edge)
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
@@ -236,7 +237,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      // printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      //printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
       multadd_real_vector_complex_scalar(f2l2,
 					 ch,
 					 dl_ch,
@@ -288,7 +289,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       // printf("Second half\n");
       // Second half of RBs
-      rxF   = (short *)&rxdataF[aarx][(symbol_offset+1+k)<<1]; 
+      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
@@ -398,7 +399,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       //printf("Second half\n");
       //Second half of RBs
-      rxF   = (short *)&rxdataF[aarx][(symbol_offset+1+frame_parms->nushift + (3*p))<<1]; 
+      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+frame_parms->nushift + (3*p))<<1)]; 
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);

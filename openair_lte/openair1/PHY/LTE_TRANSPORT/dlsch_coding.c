@@ -60,25 +60,25 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b)
 	  exit_flag=1;
-	for (r=0;r<8;r++) {
+	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES>>3));  // account for filler in first segment and CRCs for multiple segment case
 	  if (!dlsch->harq_processes[i]->c[r])
-	    exit_flag=1;
+	    exit_flag=2;
 	}
       }	else {
-	exit_flag=1;
+	exit_flag=3;
       }
     }
 
     if (exit_flag==0) {
-      for (i=0;i<8;i++)
+      for (i=0;i<Mdlharq;i++)
 	for (j=0;j<96;j++)
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	    dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
       return(dlsch);
     }
   }
-
+  printf("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
   free_eNb_dlsch(dlsch);
   return(NULL);
   
@@ -163,7 +163,7 @@ void dlsch_encoding(unsigned char *a,
   */
   coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
     ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol-3)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol-3)) ;
+    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol-3)) ;  //number of bits per subframe = Number_of_resource_blocks*number_of_subcarriers per subblock(12)*bits_per_symbol*number_of_OFDM_Symbols_per_subframe
 
 #ifdef DEBUG_DLSCH_CODING    
     printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);

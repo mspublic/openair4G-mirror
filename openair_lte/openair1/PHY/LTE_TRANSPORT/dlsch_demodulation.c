@@ -283,7 +283,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i tmp0;
   //  unsigned char symbol_mod;
 
-  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
+//  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
 
   if (symbol == frame_parms->first_dlsch_symbol)
     llr128 = (__m128i*)&dlsch_llr[0];

@@ -31,3 +31,20 @@ int rf_rx(double **r_re,
 	  double pn_amp_dBc,
 	  double IQ_imb_dB,
 	  double IQ_phase); 
+
+void adc(double **r_re,
+	 double **r_im,
+	 unsigned int input_offset,
+	 unsigned int output_offset,
+	 int **output,
+	 unsigned int nb_rx_antennas,
+	 unsigned int length,
+	 unsigned char B);
+
+void dac(double **s_re,
+	 double **s_im,
+	 int **input,
+	 unsigned int nb_tx_antennas,
+	 unsigned int length,
+	 double amp_dBm,
+	 unsigned char B);

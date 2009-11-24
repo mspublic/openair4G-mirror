@@ -44,7 +44,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b)
 	  exit_flag=1;
-	for (r=0;r<8;r++) {
+	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8);	
 	  if (!dlsch->harq_processes[i]->c[r])
 	    exit_flag=1;

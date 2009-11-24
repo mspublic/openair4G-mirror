@@ -16,8 +16,12 @@
  */
 #define NSOFT 1827072
 #define LTE_NULL 2 
+
+// maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
+
 #define MAX_NUM_DLSCH_SEGMENTS 3
 #define MAX_DLSCH_PAYLOAD_BYTES 16384
+
 typedef struct {
 /// Flag indicating that this DLSCH is active (i.e. not the first round)
   unsigned char active;
