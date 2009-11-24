@@ -13,7 +13,7 @@ plot(real(rxs))
 
 fd = fopen("tx_frame.dat","r");
 
-temp = fread(fd,"int8");
+temp = fread(fd,"uint8");
 fclose(fd);
 
 %txs(:,1) = temp(1:4:length(temp)) + sqrt(-1)*temp(2:4:length(temp));
@@ -26,3 +26,5 @@ txs = temp;
 figure(2)
 plot(real(txs))
 
+figure(3)
+plot(20*log10(abs(fftshift(fft(rxs)))))

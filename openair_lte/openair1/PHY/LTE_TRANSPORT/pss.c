@@ -50,14 +50,14 @@ void generate_pss(mod_sym_t **txdataF,
     if (slot_offset%10==0) {
       // it occupies the inner 6 RBs, which start at
 #ifdef IFFT_FPGA
-      k = (frame_parms->N_RB_DL-3)*12;
+      k = (frame_parms->N_RB_DL-3)*12+5;
 #else
       k = frame_parms->ofdm_symbol_size-3*12;
 #endif
       //printf("[PSS] k = %d\n",k);
-      for (m=0;m<72;m++) {
+      for (m=5;m<67;m++) {
 #ifdef IFFT_FPGA
-	txdataF[0][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + (Nsymb/2-1)*frame_parms->N_RB_DL*12+k] = primary_synch0_tab[m];
+	txdataF[0][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + (Nsymb/2-1)*frame_parms->N_RB_DL*12+k] = primary_synch0_tab[m]+MOD_TABLE_PSS_OFFSET;
 #else
 	((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 				(Nsymb/2-1)*frame_parms->ofdm_symbol_size+k)] = 

@@ -12,7 +12,7 @@ int mult_cpx_vector(short *x1,
 		    unsigned int N, 
 		    unsigned short output_shift)
 {
-  // Multiply elementwise two complex vectors of N elements
+  // Multiply elementwise two complex vectors of N elements with repeated formatted output
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
   //            We assume x1 with a dinamic of 15 bit maximum
   //
@@ -150,16 +150,16 @@ int mult_cpx_vector_norep(short *x1,
 			   unsigned int N, 
 			   unsigned short output_shift)
 {
-  // Multiply elementwise two complex vectors of N elements
+  // Multiply elementwise two complex vectors of N elements with normal formatted output
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
   //            We assume x1 with a dinamic of 15 bit maximum
   //
   // x2       - input 2    in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
   //            We assume x2 with a dinamic of 14 bit maximum
   ///
-  // y        - output     in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+  // y        - output     in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  // N        - the size f the vectors (this function does N cpx mpy). WARNING: N>=4;
   //
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!
@@ -307,7 +307,7 @@ int mult_cpx_vector_norep2(short *x1,
 			   unsigned int N, 
 			   unsigned short output_shift)
 {
-  // Multiply elementwise two complex vectors of N elements
+  // Multiply elementwise two complex vectors of N elements with normal formatted output and no loop unrollin
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0 Re1 Im1 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
   //            We assume x1 with a dinamic of 15 bit maximum
   //
@@ -316,7 +316,7 @@ int mult_cpx_vector_norep2(short *x1,
   ///
   // y        - output     in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  // N        - the size f the vectors (this function does N cpx mpy). WARNING: N>=2;
   //
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!
@@ -347,7 +347,7 @@ int mult_cpx_vector_norep2(short *x1,
 
   //  printf("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
 
-  // we compute 4 cpx multiply for each loop
+  // we compute 2 cpx multiply for each loop
   for(i=0;i<(N>>1);i++)
   {
     
@@ -417,9 +417,9 @@ int mult_cpx_vector_norep_conj(short *x1,
   // x2       - input 2    in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
   //            We assume x2 with a dynamic of 14 bit maximum
   ///
-  // y        - output     in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+  // y        - output     in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  // N        - the size f the vectors (this function does N cpx mpy). WARNING: N>=4;
   //
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!
@@ -591,9 +591,9 @@ int mult_cpx_vector_norep_conj2(short *x1,
   // x2       - input 2    in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
   //            We assume x2 with a dynamic of 14 bit maximum
   ///
-  // y        - output     in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+  // y        - output     in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  // N        - the size f the vectors (this function does N cpx mpy). WARNING: N>=2;
   //
   // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
   //            WARNING: log2_amp>0 can cause overflow!!

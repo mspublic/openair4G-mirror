@@ -21,8 +21,8 @@ int lte_dl_cell_spec(mod_sym_t *output,
 
 #ifdef IFFT_FPGA
   qpsk[0] = 4;
-  qpsk[1] = 3;
-  qpsk[2] = 2;
+  qpsk[1] = 2;
+  qpsk[2] = 3;
   qpsk[3] = 1;
 #else
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
@@ -67,6 +67,7 @@ int lte_dl_cell_spec(mod_sym_t *output,
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2 
     output[k] = qpsk[(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    //output[k] = (lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);

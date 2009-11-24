@@ -111,6 +111,17 @@ int mult_cpx_vector_norep(short *x1,
 			   unsigned short output_shift);
 
 
+/*!\fn int mult_cpx_vector_norep2(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
+This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
+
+@param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+@param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
+@param y  Output in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+@param N  Length of Vector WARNING: N must be a multiple of 8 (no unrolling and two complex multiplies per cycle) 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+
+The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
+*/
 int mult_cpx_vector_norep2(short *x1, 
 			   short *x2, 
 			   short *y, 

@@ -10,6 +10,7 @@
 #include "PHY_INTERFACE/defs.h"
 #endif
 
+#define DEBUG_PHY
 
 #ifdef OPENAIR2
 /*!\brief This routine implements the MAC interface for the CHBCH on transmission.  It scans the MACPHY_REQ table
@@ -260,11 +261,15 @@ int generate_pbch(mod_sym_t **txdataF,
 			   frame_parms);
 
 	re_offset+=12; // go to next RB
-	
+
 	// check if we crossed the symbol boundary and skip DC
-	if (re_offset >= frame_parms->ofdm_symbol_size) {
-	    re_offset=1;
-	}
+#ifdef IFFT_FPGA
+	if (re_offset >= frame_parms->N_RB_DL*12) 
+	  re_offset = 0;
+#else
+	if (re_offset >= frame_parms->ofdm_symbol_size)
+	  re_offset=1;
+#endif
       }
 	
     }
@@ -646,17 +651,19 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 				      0);
 
 #ifdef DEBUG_PHY
+  msg("[PBCH] ret=%d\n",ret);
+  for (i=0;i<8;i++) 
+    msg("[PBCH] decoded_output[%d] = %x\n",i,decoded_output[i]);
 #ifdef USER_MODE
   write_output("pbch_decoded_out.m","pbch_dec_out",
 	       decoded_output,
 	       pbch_crc_bits,
 	       1,
 	       4);
-  printf("[PBCH] ret=%d\n",ret);
-  for (i=0;i<8;i++) 
-    printf("[PBCH] decoded_output[%d] = %x\n",i,decoded_output[i]);
 #endif //USER_MODE
 #endif //DEBUG_PHY
+
+
 
   return(ret<=max_interations);
 

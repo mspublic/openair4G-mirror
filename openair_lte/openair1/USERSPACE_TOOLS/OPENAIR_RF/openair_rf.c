@@ -472,7 +472,7 @@ int main (int argc, char **argv) {
       }
     
     //openair_generate_ofdm(1,0xffff,chbch_pdu);
-    openair_generate_ofdm(4,0,0);
+    openair_generate_ofdm(3,0,0);
     /*
     ((unsigned int *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0])[0] = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) | (64<<8); 
     */

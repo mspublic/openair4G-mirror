@@ -409,7 +409,7 @@ void openair_sync(void) {
 		  lte_frame_parms,
 		  SISO)) {
 
-
+	/*
 	if (openair_daq_vars.node_running == 1) {
 	  openair_daq_vars.mode = openair_SYNCHED;
 	  mac_xface->frame = 0;
@@ -422,6 +422,7 @@ void openair_sync(void) {
 	  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	  openair_daq_vars.last_adac_cnt=-1;            
 	}
+	*/
 
 	msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
       }

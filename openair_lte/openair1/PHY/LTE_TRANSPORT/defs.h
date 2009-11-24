@@ -8,6 +8,10 @@
 #define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
 
+#define MOD_TABLE_QPSK_OFFSET 1
+#define MOD_TABLE_16QAM_OFFSET 5
+#define MOD_TABLE_64QAM_OFFSET 21
+#define MOD_TABLE_PSS_OFFSET 85
 
 // Functions and structures below implement 36-212
 
