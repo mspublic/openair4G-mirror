@@ -18,7 +18,8 @@ void dac(double **s_re,
     }
   }
   V /= (aa*length);
-  amp = 50*pow(10.0,.05*amp_dBm)/V;
+  printf("DAC: 10*log10(V) %f (%f)\n",10*log10(V),V);
+  amp = pow(10.0,.05*amp_dBm)/V;
   amp = sqrt(amp);
 
   for (i=0;i<length;i++) {

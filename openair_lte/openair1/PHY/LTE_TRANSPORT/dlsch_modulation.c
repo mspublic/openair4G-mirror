@@ -5,6 +5,8 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
+//#define DEBUG_DLSCH_MODULATION
+
 /*
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
 	((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
@@ -85,7 +87,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     break;
   }
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("allocate_re : re_offset %d (%d), jj %d -> %d,%d\n",re_offset,skip_dc,*jj, output[*jj], output[1+*jj]);
+  printf("allocate_re : re_offset %d (%d), jj %d -> %d,%d, nu %d\n",re_offset,skip_dc,*jj, output[*jj], output[1+*jj],nu);
 #endif
 
   for (re=0;re<12;re++) {
@@ -723,7 +725,7 @@ void dlsch_modulation(mod_sym_t **txdataF,
   for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->harq_processes[harq_pid]->mod_order,l);
+    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d, nu %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->harq_processes[harq_pid]->mod_order, dlsch->layer_index,l);
 #endif    
     pilots=0;
     if ((l==(nsymb>>1))){
@@ -762,7 +764,11 @@ void dlsch_modulation(mod_sym_t **txdataF,
 	  skip_dc = 1;
 	else
 	  skip_dc = 0;
-	
+
+	if (dlsch->layer_index>1) {
+	  printf("layer_index %d: re_offset %d, symbol %d\n",dlsch->layer_index,re_offset,l); 
+	  exit(-1);
+	}
 	if (rb_alloc_ind > 0)
 	  allocate_REs_in_RB(txdataF,
 			     &jj,

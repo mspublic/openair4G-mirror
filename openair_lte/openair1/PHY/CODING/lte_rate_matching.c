@@ -13,6 +13,7 @@
 static unsigned int bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
 
 //#define RM_DEBUG 1
+//#define RM_DEBUG2 1
 
 unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w) {
 
@@ -82,7 +83,7 @@ void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
   Kpi = (RTC<<5);
   Kpi3 = Kpi*3;
   ND = Kpi - D;
-#ifdef RM_DEBUG
+#ifdef RM_DEBUG2
   printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d\n",RTC,Kpi,ND);
 #endif
@@ -91,7 +92,7 @@ void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   k=0;
   for (col=0;col<32;col++) {
-#ifdef RM_DEBUG
+#ifdef RM_DEBUG2
     printf("Col %d\n",col);
 #endif
     index = bitrev[col];

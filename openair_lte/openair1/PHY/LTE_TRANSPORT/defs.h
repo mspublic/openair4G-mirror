@@ -23,7 +23,7 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
 
-#define MAX_NUM_DLSCH_SEGMENTS 3
+#define MAX_NUM_DLSCH_SEGMENTS 2
 #define MAX_DLSCH_PAYLOAD_BYTES 16384
 
 typedef struct {
@@ -43,8 +43,6 @@ typedef struct {
   unsigned char mod_order;            
 /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-/// Layer index for this DLSCH
-  unsigned char layer_index;              
 /// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
   unsigned char d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];  
 /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -97,8 +95,6 @@ typedef struct {
   unsigned char mod_order; 
 /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-/// Layer index for this DLSCH
-  unsigned char layer_index;              
 /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
   short w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
 /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
@@ -122,6 +118,8 @@ typedef struct {
 typedef struct {
 /// Pointers to up to 8 HARQ processes
   LTE_UE_HARQ_t *harq_processes[8];   
+/// Layer index for this DLSCH
+  unsigned char layer_index;              
 /// redundancy version for this sub-frame
   unsigned char rvidx;                
 /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17

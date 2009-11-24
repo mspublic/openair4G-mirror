@@ -426,6 +426,13 @@ void mmxcopy(void *dest,void *src,int size);
 \brief Computes the signal energy per subcarrier
 */
 int signal_energy(int *,unsigned int);
+
+/*!\fn double signal_energy_fp(double **, double **,unsigned int, unsigned int);
+\brief Computes the signal energy per subcarrier
+*/
+double signal_energy_fp(double **s_re, double **s_im, unsigned int nb_antennas, unsigned int length);
+
+
 int iSqrt(int value);
 unsigned char log2_approx(unsigned int);
 unsigned char log2_approx64(unsigned long long int x);

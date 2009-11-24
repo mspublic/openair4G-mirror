@@ -92,6 +92,18 @@ int signal_energy(int *input,unsigned int length) {
   return((temp>0)?temp:1);
 }
 
+double signal_energy_fp(double **s_re,double **s_im,unsigned int nb_antennas,unsigned int length) {
+
+  int aa,i;
+  double V=0.0;
+
+  for (i=0;i<length;i++) {
+    for (aa=0;aa<nb_antennas;aa++) {
+      V= V + (s_re[aa][i]*s_re[aa][i]) + (s_im[aa][i]*s_im[aa][i]); 
+    }
+  }
+  return(10*log10(V/length/aa));
+}
 #else
 
 int signal_energy(int *input,unsigned int length) {

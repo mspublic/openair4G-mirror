@@ -12,7 +12,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_CODING 1
+#define DEBUG_DLSCH_CODING 1
 
 /*
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
@@ -58,14 +58,19 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       dlsch->harq_processes[i] = (LTE_eNb_HARQ_t *)malloc16(sizeof(LTE_eNb_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
-	if (!dlsch->harq_processes[i]->b)
+	if (!dlsch->harq_processes[i]->b) {
+	  printf("Can't get b\n");
 	  exit_flag=1;
+	}
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES>>3));  // account for filler in first segment and CRCs for multiple segment case
-	  if (!dlsch->harq_processes[i]->c[r])
+	  if (!dlsch->harq_processes[i]->c[r]) {
+	    printf("Can't get c\n");
 	    exit_flag=2;
+	  }
 	}
       }	else {
+	printf("Can't get harq_p\n");
 	exit_flag=3;
       }
     }

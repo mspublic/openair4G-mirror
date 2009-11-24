@@ -19,13 +19,13 @@ void main() {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.5;
+  double aoa=.03,ricean_factor=0.05;
   int channel_length;
   struct complex **ch;
 
-  unsigned char Ns,l,m,mod_order[2]={4,4};
+  unsigned char Ns,l,m,mod_order[2]={2,2};
   unsigned int rb_alloc[4];
-  MIMO_mode_t mimo_mode = SISO;
+  MIMO_mode_t mimo_mode = ALAMOUTI;
   unsigned char *input_data,*decoded_output;
 
   LTE_eNb_DLSCH_t *dlsch_eNb[2];
@@ -33,6 +33,7 @@ void main() {
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
+  unsigned int coded_bits_per_codeword,nsymb;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -53,9 +54,9 @@ void main() {
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
-  lte_frame_parms->nb_antennas_tx     = 1;
-  lte_frame_parms->nb_antennas_rx     = 1;
+  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nb_antennas_tx     = 2;
+  lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 2;
   init_frame_parms(lte_frame_parms);
   
@@ -91,7 +92,7 @@ void main() {
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
   
-  input_buffer_length = 768;
+  input_buffer_length = 384;
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
 
   for (i=0;i<2;i++) {
@@ -117,7 +118,7 @@ void main() {
     }
 
     dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
-    dlsch_eNb[i]->harq_processes[0]->layer_index        = 0;
+    dlsch_eNb[i]->layer_index        = 0;
     dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
     dlsch_eNb[i]->harq_processes[0]->active             = 0;
     dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
@@ -125,7 +126,7 @@ void main() {
     
     dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
     dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
-    dlsch_ue[i]->harq_processes[0]->layer_index         = 0;
+    dlsch_ue[i]->layer_index         = 0;
     dlsch_ue[i]->harq_processes[0]->active              = 0;
     dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
     dlsch_ue[i]->rvidx                                  = 0;
@@ -139,7 +140,11 @@ void main() {
   for (i=0;i<input_buffer_length;i++)
     input_buffer[i]= (unsigned char)(taus()&0xff);
 
+  nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
+
+  coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
   
+  printf("layer index %d\n",dlsch_eNb[0]->layer_index);
 
   dlsch_encoding(input_buffer,
 		 (input_buffer_length<<3),
@@ -303,9 +308,9 @@ void main() {
 //  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[3][48]),NUMBER_OF_USEFUL_CARRIERS,1,1);
 
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES,2,1);
-  write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],NUMBER_OF_USEFUL_CARRIERS*12,1,1);
+  write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars->dl_ch_estimates_ext[0],300*12,1,1);
   write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars->rxdataF_comp[0],300*12,1,1);
-  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr[0],600*3,1,0);
+  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars->llr[0],coded_bits_per_codeword,1,0);
 
   write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars->dl_ch_mag,300*12,1,1);
   write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars->dl_ch_magb,300*12,1,1);
@@ -327,7 +332,7 @@ void main() {
   for (s=0;s<dlsch_ue[0]->harq_processes[0]->C;s++) {
     printf("Decoded_output (Segment %d):\n",s);
     for (i=0;i<dlsch_ue[0]->harq_processes[0]->Kplus/8;i++)
-      printf("%d : %x\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i]);
+      printf("%d : %x (%x)\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i],dlsch_ue[0]->harq_processes[0]->c[s][i]-dlsch_eNb[0]->harq_processes[0]->c[s][i]);
   }
 #endif
 

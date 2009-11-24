@@ -3,7 +3,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-//#define DEBUG_DLSCH_DECODING
+#define DEBUG_DLSCH_DECODING
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
   int i,r;
@@ -156,10 +156,15 @@ unsigned int  dlsch_decoding(unsigned short A,
 					   dlsch->harq_processes[harq_pid]->mod_order,
 					   dlsch->harq_processes[harq_pid]->Nl,
 					   r);
-    
+
+    printf("Subblock deinterleaving, d %p w %p\n",
+	   dlsch->harq_processes[harq_pid]->d[r],
+	   dlsch->harq_processes[harq_pid]->w);
     sub_block_deinterleaving_turbo(4+Kr, 
 				   &dlsch->harq_processes[harq_pid]->d[r][96], 
+
 				   dlsch->harq_processes[harq_pid]->w[r]); 
+    /*
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
       write_output("decoder_llr.m","decllr",dlsch_llr,coded_bits_per_codeword,1,0);
@@ -171,16 +176,18 @@ unsigned int  dlsch_decoding(unsigned short A,
       printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     printf("\n");
 #endif
-    
+    */
+
+    printf("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
     memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
-    
+    printf("done\n");
     if (dlsch->harq_processes[harq_pid]->C == 1) 
       crc_type = CRC24_A;
     else 
       crc_type = CRC24_B;
 
        
-
+    printf("Turbo decoding\n");
     ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
 					dlsch->harq_processes[harq_pid]->c[r],
 					Kr,
