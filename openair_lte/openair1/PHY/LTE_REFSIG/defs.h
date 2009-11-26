@@ -6,7 +6,18 @@
 
 /** @ingroup _PHY_REF_SIG
  * @{
-\fn void lte_gold(LTE_DL_FRAME_PARMS *frame_parms)
+ */
+
+/*! \brief gold sequenquence generator
+\param x1 
+\param x2 this should be set to c_init if reset=1
+\param reset resets the generator
+\return 32 bits of the gold sequence
+*/
+unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char reset);
+
+
+/*! \fn void lte_gold(LTE_DL_FRAME_PARMS *frame_parms)
 \brief This function generates the LTE Gold sequence (36-211, Sec 7.2)
 @param frame_parms LTE DL Frame parameters
 */
