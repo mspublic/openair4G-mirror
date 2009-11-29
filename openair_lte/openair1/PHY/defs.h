@@ -33,6 +33,9 @@
 #include "ARCH/COMMON/defs.h"
 
 #include <rtai.h>
+#include <rtai_posix.h>
+#include <rtai_fifos.h>
+
 #define msg rt_printk
 #define msg_nrt printk
 

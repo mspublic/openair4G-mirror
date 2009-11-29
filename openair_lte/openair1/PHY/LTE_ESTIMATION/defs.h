@@ -77,5 +77,18 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 			int l,
 			int* freq_offset);
 
+/*! \brief Tracking of timing for LTE
+This function computes the time domain channel response, finds the peak and adjusts the timing in pci_interface.offset accordingly.
+\param frame_parms LTE DL frame parameter structure
+\param ue_common LTE DL common RX variables structure
+\param clear If clear==1 moving average filter is reset
+\param coeff Coefficient of the moving average filter (Q1.15)
+*/
+
+void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
+		      LTE_UE_COMMON *ue_common,
+		      unsigned char clear,
+		      short coef);
+
 /** @} */ 
 #endif

@@ -624,7 +624,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     yparity1[i] = *yp; yp++;
     yparity2[i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Position %d: (%d,%d,%d)\n",i,systematic0[i],yparity1[i],yparity2[i]);
+    msg("Position %d: (%d,%d,%d)\n",i,systematic0[i],yparity1[i],yparity2[i]);
 #endif //DEBUG_LOGMAP
 
   }
@@ -655,7 +655,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
-   printf("\n*******************ITERATION %d\n\n",iteration_cnt);
+   msg("\n*******************ITERATION %d\n\n",iteration_cnt);
 #endif //DEBUG_LOGMAP
 
     threegpplte_interleaver_reset();
@@ -681,7 +681,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     for (i=0;i<n;i++) {
       systematic1[pi] = (ext2[i] + systematic0[pi]);
 #ifdef DEBUG_LOGMAP
-      printf("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[pi],
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[pi],
 	     ext2[i]+systematic2[i]);
 #endif //DEBUG_LOGMAP
 
@@ -694,7 +694,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     for (i=n;i<n+3;i++) {
       systematic1[i] = (systematic0[i]);
 #ifdef DEBUG_LOGMAP
-      printf("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[i],
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[i],
 	     ext2[i]+systematic2[i]);
 #endif //DEBUG_LOGMAP
     }

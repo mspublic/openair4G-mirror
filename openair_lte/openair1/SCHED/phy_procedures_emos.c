@@ -61,7 +61,7 @@ static unsigned char  chbch_pdu2[CHBCH_PDU_SIZE] __attribute__ ((aligned(16)));	
 static unsigned char  mrbch_pdu[MRBCH_PDU_SIZE] __attribute__ ((aligned(16)));		// Creation of the MRBCH_PDU
 static int   channel_f_unpacked[NB_ANTENNAS_RX][NUMBER_OF_OFDM_CARRIERS_EMOS] __attribute__ ((aligned(16))); // Final estimated channel (unpacked)
 
-void phy_procedures(unsigned char last_slot)
+void phy_procedures_emos(unsigned char last_slot)
 {
 
   int i,aa;

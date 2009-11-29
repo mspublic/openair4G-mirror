@@ -125,11 +125,15 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
       frame_parms->log2_symbol_size/2,
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
+  // quick test - to be fixed later
+  for (i=0; i<frame_parms->ofdm_symbol_size; i++)
+    primary_synch1_time[i] = primary_synch0_time[2*i];
+
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
   write_output("primary_syncF0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size*2,2,1);
   write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size*2,2,1);
-  write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size*2,2,1);
+  write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size*2,2,1);
 #endif
 #endif
@@ -157,6 +161,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   unsigned int n, m, ar, peak_pos;
   int temp_re, temp_im, peak_val;
 
+    msg("[SYNC TIME] Calling sync_time.\n");
   if (sync_corr == NULL) {
     msg("[SYNC TIME] sync_corr not yet allocated! Exiting.\n");
     return(-1);
@@ -165,10 +170,19 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   peak_val = 0;
   peak_pos = 0;
 
-  for (n=0; n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti); n++) {
+  for (n=0; n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti); n+=4) {
     sync_corr[n] = 0;
-    //if (n%1000==0) printf("n=%d\n",n);
+#ifdef RTAI_ENABLED
+    if (n%frame_parms->samples_per_tti == 0) {
+      msg("[SYNC TIME] pausing for 100000ns, n=%d\n",n);
+      rt_sleep(nano2count(100000));
+    }
+#endif
     if (n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti)-frame_parms->ofdm_symbol_size) {
+      //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
+
+      //sync_corr[n] = dot_product(primary_synch1_time, &(rxdata[0][n]), frame_parms->ofdm_symbol_size, 15);
+
       for (m=0; m<frame_parms->ofdm_symbol_size; m++) {
 	for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	// sync_corr[n] += conj(primary_synch0_time[m])*rxdata[0][n+m];

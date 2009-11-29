@@ -480,6 +480,12 @@ This function is used by the EMOS to compensate the phase rotation of the RF. It
 @param perror_out phase error (output parameter)
 */
 void phy_phase_compensation (short *ref_sch, short *tgt_sch, short *out_sym, int ignore_prefix, int aa, struct complex16 *perror_out );
+
+int dot_product(short *x,
+		short *y,
+		unsigned int N, //must be a multiple of 8
+		unsigned char output_shift);
+
 /** @} */ 
 
 

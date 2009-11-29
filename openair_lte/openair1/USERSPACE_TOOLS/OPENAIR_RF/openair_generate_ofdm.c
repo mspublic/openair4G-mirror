@@ -49,7 +49,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     generate_pss(txdataF,
 		 256,
 		 lte_frame_parms,
-		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+		 1);
+    //LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
     generate_pilots(txdataF,
 		    256,

@@ -10,7 +10,7 @@
 #include "PHY_INTERFACE/defs.h"
 #endif
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 /* This implements the LTE PBCH channel with the following differences form the spec 3GPP 36.212-860
  *  * we do not use the OFDM symbols 0 and 3/4 (normal/extended CP respectively)
@@ -131,7 +131,19 @@ int generate_pbch(mod_sym_t **txdataF,
 #endif //DEBUG_PHY
 
   // scrambling
-  // TBD
+  pbch_scrambling(frame_parms,
+		  pbch_coded_data2,
+		  pbch_coded_bits);
+
+#ifdef DEBUG_PHY
+#ifdef USER_MODE
+  write_output("pbch_encoded_output3.m","pbch_encoded_out3",
+	       pbch_coded_data2,
+	       pbch_coded_bits,
+	       1,
+	       4);
+#endif //USER_MODE
+#endif //DEBUG_PHY
 
   // modulation and mapping 
   unsigned int nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -340,7 +352,6 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
 	//	print_ints("re",&mmtmp0);
-	
 	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
 	mmtmp1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
 	mmtmp1 = _mm_shufflehi_epi16(mmtmp1,_MM_SHUFFLE(2,3,0,1));
@@ -354,7 +365,7 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	//	print_ints("im(shift)",&mmtmp1);
 	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	//       	print_ints("c0",&mmtmp2);
+	//      print_ints("c0",&mmtmp2);
 	//	print_ints("c1",&mmtmp3);
 	rxdataF_comp128[0] = _mm_packs_epi32(mmtmp2,mmtmp3);
 	//	print_shorts("rx:",rxdataF128);
@@ -373,11 +384,11 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
 	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	
 	rxdataF_comp128[1] = _mm_packs_epi32(mmtmp2,mmtmp3);
 	//	print_shorts("rx:",rxdataF128+1);
 	//	print_shorts("ch:",dl_ch128+1);
 	//	print_shorts("pack:",rxdataF_comp128+1);	
+
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
 	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
@@ -390,11 +401,10 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
 	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	
 	rxdataF_comp128[2] = _mm_packs_epi32(mmtmp2,mmtmp3);
 	//	print_shorts("rx:",rxdataF128+2);
 	//	print_shorts("ch:",dl_ch128+2);
-	//      	print_shorts("pack:",rxdataF_comp128+2);
+	//      print_shorts("pack:",rxdataF_comp128+2);
       
 	dl_ch128+=3;
 	rxdataF128+=3;
@@ -426,6 +436,49 @@ void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
+void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char* coded_data,
+		     unsigned int length) {
+  int i;
+  unsigned char reset;
+  unsigned int x1, x2, s;
+
+  reset = 1;
+  // x1 is set in lte_gold_generic
+  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+
+  for (i=0; i<length; i++) {
+    if (i%32==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    coded_data[i] = (coded_data[i]&1) ^ ((s>>(i%32))&1);
+  }
+}
+
+void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		       short* llr,
+		       unsigned int length) {
+  int i;
+  unsigned char reset;
+  unsigned int x1, x2, s;
+
+  reset = 1;
+  // x1 is set in first call to lte_gold_generic
+  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+
+  for (i=0; i<length; i++) {
+    if (i%32==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    if (((s>>(i%32))&1)==1)
+      llr[i] = -llr[i];
+  }
+}
+
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PBCH *lte_ue_pbch_vars,
@@ -443,7 +496,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
   short* pbch_llr = lte_ue_pbch_vars->llr;
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
-  unsigned char max_interations;
+  unsigned char max_iterations = 6;
 
   pbch_crc_bits    = 64;
   pbch_crc_bytes   = pbch_crc_bits>>3;
@@ -523,6 +576,11 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     }
   }
 
+  //un-scrambling
+  pbch_unscrambling(frame_parms,
+		    lte_ue_pbch_vars->llr,
+		    pbch_coded_bits);
+
   //un-rate matching
   bzero(dummy_channel_output,pbch_coded_bits);
   if (rate_matching_lte(pbch_coded_bits, 
@@ -575,7 +633,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
                                       pbch_crc_bits,
 				      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
 				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
-                                      max_interations,
+                                      max_iterations,
                                       CRC16,
 				      0);
 
@@ -594,6 +652,6 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
 
 
-  return(ret<=max_interations);
+  return(ret<=max_iterations);
 
 }

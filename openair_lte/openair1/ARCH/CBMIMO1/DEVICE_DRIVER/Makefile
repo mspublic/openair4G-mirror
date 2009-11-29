@@ -122,6 +122,7 @@ else
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
@@ -155,7 +156,9 @@ openair_rf-objs += $(TOP_DIR)/SCHED/sched_lte.o
 endif
 
 # PHY Procedures
-ifndef OPENAIR_LTE
+ifdef OPENAIR_LTE
+openair_rf-objs += $(TOP_DIR)/SCHED/phy_procedures_lte.o
+else
 ifdef EMOS
 openair_rf-objs += $(TOP_DIR)/SCHED/phy_procedures_emos.o
 else

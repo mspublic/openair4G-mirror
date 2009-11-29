@@ -156,6 +156,35 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
 
+  lte_ue_common_vars->dl_ch_estimates_time = (int **)malloc16(frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx*sizeof(int*));
+  if (lte_ue_common_vars->dl_ch_estimates_time) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates_time allocated at %p\n",
+	   lte_ue_common_vars->dl_ch_estimates_time);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates_time not allocated_time\n");
+    return(-1);
+  }
+
+
+  for (i=0; i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx; i++) {
+    lte_ue_common_vars->dl_ch_estimates_time[i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+    if (lte_ue_common_vars->dl_ch_estimates_time[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates_time[%d] allocated at %p\n",i,
+	     lte_ue_common_vars->dl_ch_estimates_time[i]);
+#endif
+
+      memset(lte_ue_common_vars->dl_ch_estimates_time[i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_ue_common_vars->dl_ch_estimates_time[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+  
   // DLSCH
   lte_ue_dlsch_vars->rxdataF_ext    = (int **)malloc16(2*sizeof(int*));
   for (i=0;i<frame_parms->nb_antennas_rx;i++)

@@ -87,25 +87,19 @@ int setup_regs() {
   //  openair_writel(NUMBER_OF_SYMBOLS_PER_FRAME,// OFDM_SYMBOLS_PER_FRAME
   //		 OFDM_SYMBOLS_PER_FRAME_REG);  // setup PCI size
 
-//  if (openair_daq_vars.tx_test==0)
   pci_interface->ofdm_symbols_per_frame = NUMBER_OF_SYMBOLS_PER_FRAME;
-//  else
-//    pci_interface->ofdm_symbols_per_frame = 16;
-
-  printk("[openair][INIT] NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",pci_interface->ofdm_symbols_per_frame);
-
-  printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
+  //printk("[openair][INIT] NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",pci_interface->ofdm_symbols_per_frame);
 
   pci_interface->node_id = openair_daq_vars.node_id;
-
-  printk("[openair][INIT] TX_RX_SWITCH_POINT = %d\n",openair_daq_vars.tx_rx_switch_point);
+  //printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
 
   pci_interface->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+  //printk("[openair][INIT] TX_RX_SWITCH_POINT = %d\n",openair_daq_vars.tx_rx_switch_point);
+
   pci_interface->timing_advance = openair_daq_vars.timing_advance;
 
   pci_interface->cyclic_prefix_length  = CYCLIC_PREFIX_LENGTH;
-  printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",pci_interface->cyclic_prefix_length);
-
+  //printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",pci_interface->cyclic_prefix_length);
 
   pci_interface->log2_ofdm_symbol_size = LOG2_NUMBER_OF_OFDM_CARRIERS; 
   pci_interface->samples_per_frame = FRAME_LENGTH_COMPLEX_SAMPLES;
@@ -127,7 +121,7 @@ int setup_regs() {
 
   pci_interface->tcxo_dac = openair_daq_vars.tcxo_dac;
 
-  printk("[openair][INIT] tdd = %d, dual_tx = %d\n",openair_daq_vars.tdd,openair_daq_vars.dual_tx);
+  //printk("[openair][INIT] tdd = %d, dual_tx = %d\n",openair_daq_vars.tdd,openair_daq_vars.dual_tx);
   pci_interface->tdd = openair_daq_vars.tdd;
  
   pci_interface->dual_tx = openair_daq_vars.dual_tx;

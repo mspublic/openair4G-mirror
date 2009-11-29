@@ -621,5 +621,26 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     MIMO_mode_t mimo_mode);
 
+/*! \brief PBCH unscrambling
+This is similar to pbch_scrabling with the difference that inputs are signed shorts (llr values) and instead of flipping bits we change signs.
+\param frame_parms Pointer to frame descriptor
+\param coded_data Output of the coding and rate matching
+\param length Length of the sequence
+*/ 
+void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char* coded_data,
+		     unsigned int length);
+
+/*! \brief PBCH unscrambling
+This is similar to pbch_scrabling with the difference that inputs are signed shorts (llr values) and instead of flipping bits we change signs.
+\param frame_parms Pointer to frame descriptor
+\param llr Output of the demodulator
+\param length Length of the sequence
+*/ 
+void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		       short* llr,
+		       unsigned int length);
+
+
 /**@}*/
 #endif

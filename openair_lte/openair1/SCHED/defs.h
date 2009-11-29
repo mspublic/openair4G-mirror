@@ -3,7 +3,7 @@
 * @ingroup _PROCESS_SCHEDULING_
                           openair_sched.h  -  description
                              -------------------
-  \author Lionel GAUTHIER (wireless3G4Free Version), modified for openair by R. Knopp
+  \author Lionel GAUTHIER (wireless3G4Free Version), modified for openair by R. Knopp, modified for LTE by F. Kaltenberger
   \company EURECOM
   \email knopp@eurecom.fr
 * @{
@@ -104,13 +104,20 @@ void openair_sched_exit(char *);
 void openair1_restart(void);
 #endif //USER_MODE
 
-void phy_procedures(unsigned char last_slot);
+#ifdef OPENAIR_LTE
+void phy_procedures_lte(unsigned char last_slot);
+#else
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);
+#else
+void phy_procedures(unsigned char last_slot);
+#endif
 #endif 
 
+#ifndef OPENAIR_LTE
 unsigned int find_chbch(void);
 unsigned int find_mrbch(void);
+#endif
  
 #endif
 

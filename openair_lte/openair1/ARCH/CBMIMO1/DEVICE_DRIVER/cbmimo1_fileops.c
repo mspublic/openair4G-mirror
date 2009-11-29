@@ -536,8 +536,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
 
 
-     for (i=0;i<16;i++)
-    printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
+      // for (i=0;i<16;i++)
+      //printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
     }
     else {
       printk("[openair][STOP][ERROR] Cannot stop, radio is not configured ...\n");
@@ -644,10 +644,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
     openair_generate_fs4(0);//*((unsigned char *)arg));
 
-    for (i=0;i<256;i++)
-      printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
-
-
+    //    for (i=0;i<256;i++)
+    //      printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
     
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
     break;
@@ -664,6 +662,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.node_id = PRIMARY_CH;
     openair_daq_vars.tx_test=1;
     ret = setup_regs();
+    rt_set_oneshot_mode();
+
+    start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
@@ -717,10 +718,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
 
     printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
+    /*
     for (i=0;i<256;i++) {
       printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
       printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[1])[i]);
     }
+    */
 
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
@@ -743,8 +746,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 		   (unsigned char*)arg,
 		   FRAME_LENGTH_BYTES);
     printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x, TX_RX_SWITCH = %d\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES,(*((unsigned int *)arg_ptr)>>8)&0xff);
-    for (i=0;i<16;i++)
-      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
+
+    //    for (i=0;i<16;i++)
+    //      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
 
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);

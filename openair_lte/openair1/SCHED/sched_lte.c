@@ -125,7 +125,7 @@ unsigned char first_sync_call;
 void openair1_restart(void) {
 
   openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-  openair_daq_vars.tx_test=0;
+  //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
   mac_xface->frame = 0;
 
@@ -182,7 +182,7 @@ static void * openair_thread(void *param) {
   else if (mac_xface->is_secondary_cluster_head == 1)
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
   else
-    msg("[openair][SCHED][INFO] Configuring OPENAIR THREAD for regular node\n");
+    msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
   
   
   exit_openair = 0;
@@ -221,21 +221,40 @@ static void * openair_thread(void *param) {
     
     next_slot = (openair_daq_vars.slot_count + 1 ) % SLOTS_PER_FRAME;
     last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
-    //    msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
+
+    // msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
+
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
 
 #ifndef EMOS
       mac_xface->macphy_scheduler(last_slot); 
 #endif
-      //      phy_procedures(last_slot);
 
-      if (last_slot== 2)
+#ifdef OPENAIR_LTE
+      phy_procedures_lte(last_slot);
+#else
+#ifdef EMOS
+      phy_procedures_emos(last_slot);
+#else
+      phy_procedures(last_slot);
+#endif
+#endif 
+
+      if (last_slot==SLOTS_PER_FRAME-2)
       	mac_xface->frame++;
 
-      time_out = openair_get_mbox();
-      
+      //msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count = %d\n", mac_xface->frame, openair_daq_vars.slot_count);
 
+      time_out = openair_get_mbox();
+
+      if ((time_out - time_in) % NUMBER_OF_SYMBOLS_PER_FRAME > 4) { // we scheduled 4 symbols too late
+	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d,time_out %d, scheduler_interval_ns %d\n", mac_xface->frame, last_slot,
+	    time_in,time_out,openair_daq_vars.scheduler_interval_ns);
+	openair1_restart();
+      }
+
+      /*
 #ifdef CBMIMO1
       switch (last_slot) {
       case 0:
@@ -273,17 +292,16 @@ static void * openair_thread(void *param) {
 	}
 	break;
       }
-      //      }
 #endif //CBMIMO1
+      */
 
-	if ((mac_xface->is_primary_cluster_head == 0) && (last_slot == 0)) {
-	
-	
 #ifdef CBMIMO1  // Note this code cannot run on PLATON!!!
-	  if (openair_daq_vars.first_sync_call == 1)
-	    openair_daq_vars.first_sync_call = 0;
+      if ((mac_xface->is_primary_cluster_head == 0) && (last_slot == 0)) {
+	if (openair_daq_vars.first_sync_call == 1)
+	  openair_daq_vars.first_sync_call = 0;
+      }
 #endif // CBMIMO1
-	}
+
     } //  daq_mode != NOT_SYNCHED
   } // end while (1)
   
@@ -374,21 +392,16 @@ void openair_sync(void) {
 #endif
 
     // Do initial timing acquisition
-
-    //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-    sync_pos = 0;
-
-    PHY_vars->rx_vars[0].offset = sync_pos;
-    
-#ifndef NOCARD_TEST
-    pci_interface->frame_offset = sync_pos;
-#endif //NOCARD_TEST
+    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+    //    sync_pos = 0;
 
     // the sync is in the last symbol of either the 0th or 10th slot
     // however, the pbch is only in the 0th slot
     // so we assume that sync_pos points to the 0th slot
     // so the position wrt to the start of the frame is 
     sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
+
+    PHY_vars->rx_vars[0].offset = sync_pos - sync_pos_slot;
     
     msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
     
@@ -409,8 +422,14 @@ void openair_sync(void) {
 		  lte_frame_parms,
 		  SISO)) {
 
-	/*
+	msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+
 	if (openair_daq_vars.node_running == 1) {
+      
+#ifndef NOCARD_TEST
+	  pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
+#endif //NOCARD_TEST
+
 	  openair_daq_vars.mode = openair_SYNCHED;
 	  mac_xface->frame = 0;
 #ifndef EMOS		
@@ -422,9 +441,10 @@ void openair_sync(void) {
 	  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	  openair_daq_vars.last_adac_cnt=-1;            
 	}
-	*/
 
-	msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+      }
+      else {
+	msg("[openair][SCHED][SYNCH] PBCH not decoded!\n");
       }
     }
 
@@ -459,15 +479,15 @@ static void * top_level_scheduler(void *param) {
 
   openair_daq_vars.sched_cnt = 0;
 
-  msg("[openair][SCHED][top_level_scheduler] SLOTS_PER_FRAME=%d, NUMBER_OF_CHUNKS_PER_SLOT=%d, PHY_vars->mbox %p\n",SLOTS_PER_FRAME,NUMBER_OF_CHUNKS_PER_SLOT,(void*)mbox);
-  //***************************************************************************************
-
+  msg("[openair][SCHED][top_level_scheduler] SLOTS_PER_FRAME=%d, NUMBER_OF_CHUNKS_PER_SLOT=%d,  NUMBER_OF_CHUNKS_PER_FRAME=%d, PHY_vars->mbox %p\n",
+      SLOTS_PER_FRAME,NUMBER_OF_CHUNKS_PER_SLOT, NUMBER_OF_CHUNKS_PER_FRAME, (void*)mbox);
 
 
 
 #ifdef RTAI_ENABLED
   //  msg("[OPENAIR][SCHED] Sleeping ... MODE = %d\n",openair_daq_vars.mode);
   rt_sleep(nano2count(2*NS_PER_SLOT));
+  //rt_sleep(2*NS_PER_SLOT);
   //  msg("[OPENAIR][SCHED] Awakening ... MODE = %d\n",openair_daq_vars.mode);
 #endif //
 
@@ -489,6 +509,7 @@ static void * top_level_scheduler(void *param) {
 
 
 	rt_sleep(nano2count(NS_PER_SLOT));
+	//rt_sleep(NS_PER_SLOT);
 
 #ifdef CBMIMO1  // Note this code cannot run on PLATON!!!
 	if (openair_daq_vars.tx_test == 0) 
@@ -507,6 +528,7 @@ static void * top_level_scheduler(void *param) {
 	    bzero((void *)PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
 	  }
 	  rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
+	  //rt_sleep(NS_PER_SLOT*SLOTS_PER_FRAME);
 	}
 #ifdef DEBUG_PHY
 	else {
@@ -525,6 +547,7 @@ static void * top_level_scheduler(void *param) {
       openair_daq_vars.synch_wait_cnt--;
 
       rt_sleep(nano2count(NS_PER_SLOT));
+      //rt_sleep(NS_PER_SLOT));
 
     }
 
@@ -539,7 +562,8 @@ static void * top_level_scheduler(void *param) {
 	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
 	//openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
 
-	msg("OFDM_Symbols_per_frame %d, log2_symbol_size %d\n",NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);
+	msg("[openair][sched][top_level_scheduler] Starting RT acquisition, ofdm_symbols_per_frame %d, log2_symbol_size %d\n",
+	    NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);
 
 #ifdef CBMIMO1
 	openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
@@ -559,18 +583,20 @@ static void * top_level_scheduler(void *param) {
 
 	  if (adac_cnt==0)
 	    {
-	      //msg("[openair][SCHED][top_level_scheduler] got adac_cnt=0, starting acquisition\n");
+	      msg("[openair][SCHED][top_level_scheduler] got adac_cnt=0, starting acquisition\n");
 	      openair_daq_vars.sync_state=2; 
 	      openair_daq_vars.last_adac_cnt=0; 
 	      openair_daq_vars.slot_count=0;
 	      openair_daq_vars.sched_cnt = 0;
 	      first_increment = 0;
 	      rt_sleep(nano2count(openair_daq_vars.scheduler_interval_ns));          /* sleep for one slot  */
+	      //rt_sleep(openair_daq_vars.scheduler_interval_ns);          /* sleep for one slot  */
 	    }
 	  else
 	    {
-	      //msg("[openair][SCHED][top_level_scheduler] sync startup, current time=%llu, waiting for adac_cnt=0 (current adac_cnt=%d)\n",rt_get_time_ns(),adac_cnt); 
+	      //msg("[openair][SCHED][top_level_scheduler] sync startup, current time=%llu, waitig for adac_cnt=0 (current adac_cnt=%d)\n",rt_get_time_ns(),adac_cnt); 
 	      rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT/2));  /* sleep for half a SYMBOL */
+	      //rt_sleep(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT/2);  /* sleep for half a SYMBOL */
 	      
 	    }
 	  
@@ -579,8 +605,8 @@ static void * top_level_scheduler(void *param) {
       else if (openair_daq_vars.sync_state==2)                 /* acquisition running, track hardware.... */
 	{
 	  
-	  //	  if (mac_xface->frame % 100 == 0)
-	  //	    msg("[openair][SCHED] frame %d: scheduler interval %d\n",mac_xface->frame,openair_daq_vars.scheduler_interval_ns);
+	  // if (mac_xface->frame % 100 == 0)
+	  //   msg("[openair][SCHED] frame %d: scheduler interval %d\n",mac_xface->frame,openair_daq_vars.scheduler_interval_ns);
 	  
 	  adac_offset=((int)adac_cnt-((int)openair_daq_vars.slot_count*NUMBER_OF_CHUNKS_PER_SLOT));
 	  if (adac_offset > NUMBER_OF_CHUNKS_PER_FRAME)
@@ -588,20 +614,14 @@ static void * top_level_scheduler(void *param) {
 	  else if (adac_offset < 0)
 	    adac_offset += NUMBER_OF_CHUNKS_PER_FRAME;
 	  
-	  //if (mac_xface->frame % 100 == 0)
+	  // if (mac_xface->frame % 100 == 0)
 	  //  msg("[openair][SCHED] frame %d: adac_offset %d\n",mac_xface->frame,adac_offset);
 	  
-#ifdef CBMIMO1	  
 	  if (adac_offset > 20) {
-	    msg("[openair][sched][top_level_scheduler] Frame %d : Scheduling too late (adac_offset %d), exiting ...\n",mac_xface->frame,adac_offset);
-	    //	    exit_openair = 1;
-
-	    // restart CBMIMO1
-
+	    msg("[openair][sched][top_level_scheduler] Frame %d : Scheduling too late (adac_offset %d, adac_cnt %d, slot_count %d, tx_test = %d), restarting ...\n",
+		mac_xface->frame, adac_offset, adac_cnt, openair_daq_vars.slot_count,openair_daq_vars.tx_test);
 	    openair1_restart();
-
 	  }
-#endif //CBMIMO1
 
 	  if (adac_offset>=NUMBER_OF_CHUNKS_PER_SLOT)
 	    {
@@ -624,6 +644,7 @@ static void * top_level_scheduler(void *param) {
 	      openair_daq_vars.slot_count=(openair_daq_vars.slot_count+1) % SLOTS_PER_FRAME;
 	      openair_daq_vars.last_adac_cnt=adac_cnt;
 	      rt_sleep(nano2count(openair_daq_vars.scheduler_interval_ns));          
+	      //rt_sleep(openair_daq_vars.scheduler_interval_ns);          
 	      first_increment = 0;
 	    }
 	  else if (adac_offset<NUMBER_OF_CHUNKS_PER_SLOT)
@@ -640,6 +661,7 @@ static void * top_level_scheduler(void *param) {
 
 	      //	      msg("adac_offset=%d, openair_daq_vars.scheduler_interval_ns=%d, sleeping for 2us\n",adac_offset,openair_daq_vars.scheduler_interval_ns); 
 	      rt_sleep(nano2count(2000));
+	      //rt_sleep(2000);
 	    }
 	  
 	} // tracking mode
@@ -667,7 +689,10 @@ static void * top_level_scheduler(void *param) {
       
       
       openair_daq_vars.slot_count=(openair_daq_vars.slot_count+1) % SLOTS_PER_FRAME;
-      rt_sleep(nano2count(10000000));          /* sleep for one slot  */
+      rt_sleep(nano2count(openair_daq_vars.scheduler_interval_ns));          /* sleep for one slot  */
+      //rt_sleep(openair_daq_vars.scheduler_interval_ns);          /* sleep for one slot  */
+
+      msg("[openair][SCHED][top_level_thread] slot_count =%d, scheduler_interval_ns = %d\n",openair_daq_vars.slot_count, openair_daq_vars.scheduler_interval_ns);
 
       
 #endif //NOCARD_TEST      
