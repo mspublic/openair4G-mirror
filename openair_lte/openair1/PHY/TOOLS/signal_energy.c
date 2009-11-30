@@ -1,3 +1,5 @@
+#include "defs.h"
+
 #ifndef EXPRESSMIMO_TARGET
 #include "mmintrin.h"
 #endif //EXPRESSMIMO_TARGET

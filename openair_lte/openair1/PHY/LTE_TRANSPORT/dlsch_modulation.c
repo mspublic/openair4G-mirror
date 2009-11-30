@@ -697,7 +697,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 }
 #endif
 
-void dlsch_modulation(mod_sym_t **txdataF,
+int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
@@ -766,8 +766,8 @@ void dlsch_modulation(mod_sym_t **txdataF,
 	  skip_dc = 0;
 
 	if (dlsch->layer_index>1) {
-	  printf("layer_index %d: re_offset %d, symbol %d\n",dlsch->layer_index,re_offset,l); 
-	  exit(-1);
+	  msg("layer_index %d: re_offset %d, symbol %d\n",dlsch->layer_index,re_offset,l); 
+	  return(-1);
 	}
 	if (rb_alloc_ind > 0)
 	  allocate_REs_in_RB(txdataF,
@@ -798,6 +798,8 @@ void dlsch_modulation(mod_sym_t **txdataF,
 	
     }
   }
+
+  return (0);
 #ifdef DEBUG_DLSCH_MODULATION
   printf("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
 #endif

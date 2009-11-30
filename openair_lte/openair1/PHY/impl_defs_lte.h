@@ -15,7 +15,7 @@ ________________________________________________________________*/
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_CE_FILTER_LENGTH 5
-#define LTE_CE_OFFSET (LTE_CE_FILTER_LENGTH - frame_parms->nushift - 1)
+#define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {
@@ -78,6 +78,10 @@ typedef struct {
   short *llr;
   short *channel_output;
   unsigned char *decoded_output;
+  unsigned int pdu_errors;          /// Total number of PDU errors
+  unsigned int pdu_errors_last;     /// Total number of PDU errors 128 frames ago
+  unsigned int pdu_errors_conseq;   /// Total number of consecutive PDU errors
+  unsigned int pdu_fer;             /// FER (in percent) 
 } LTE_UE_PBCH;
 
 

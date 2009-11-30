@@ -43,6 +43,7 @@ extern LTE_DL_FRAME_PARMS *lte_frame_parms;
 extern LTE_UE_COMMON *lte_ue_common_vars;
 extern LTE_UE_DLSCH *lte_ue_dlsch_vars;
 extern LTE_UE_PBCH *lte_ue_pbch_vars;
+extern LTE_eNB_COMMON *lte_eNB_common_vars;
 #endif
 
 

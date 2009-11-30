@@ -160,7 +160,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   /* arg is not meaningful if no arg is passed in user space */
   //-----------------------------------------------------------------------------
    int ret=-1;
-   int i;
+   int i,aa;
 
 
   void *arg_ptr = (void *)arg;
@@ -233,6 +233,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
 	lte_ue_dlsch_vars = &PHY_vars->lte_ue_dlsch_vars;
 	lte_ue_pbch_vars = &PHY_vars->lte_ue_pbch_vars;
+	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 	  
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
 	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
@@ -242,7 +243,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms->rev              = rev;
 
 	openair_daq_vars.node_configured += phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars,lte_ue_dlsch_vars, lte_ue_pbch_vars);
-	msg("[openair][IOCTL] phy_init_lte done: %d\n",openair_daq_vars.node_configured);
+	msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
+
+	openair_daq_vars.node_configured += phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
+	msg("[openair][IOCTL] phy_init_lte_eNB done: %d\n",openair_daq_vars.node_configured);
+
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
 #endif
@@ -328,6 +333,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	 (openair_daq_vars.node_running == 0) && 
 	 (openair_daq_vars.mac_registered == 1)) {
 
+      for (aa=0;aa<lte_frame_parms->nb_antennas_tx; aa++)
+	Zero_Buffer(lte_eNB_common_vars->txdataF[aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
 
 
       mac_xface->is_cluster_head = 1;
@@ -352,16 +359,18 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 	
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
-      //ret = setup_regs();
+      ret = setup_regs();
 
-      /*
       if (ret == 0) {
+#ifdef OPENAIR_LTE
+	openair_daq_vars.mode = openair_SYNCHED;
+#else
 	openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
+#endif
 	openair_daq_vars.node_running = 1;
 	openair_daq_vars.sync_state = 0;
 	printk("[openair][IOCTL] Process initialization return code %d\n",ret);
       }
-      */
 
     }
     else {
@@ -505,6 +514,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if (openair_daq_vars.node_configured == 1) {
       openair_daq_vars.node_running = 0;
 #ifndef NOCARD_TEST
+
+      for (aa=0;aa<lte_frame_parms->nb_antennas_tx; aa++)
+	Zero_Buffer(lte_eNB_common_vars->txdataF[aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      udelay(1000);
+
 
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);

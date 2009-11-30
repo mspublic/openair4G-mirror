@@ -88,5 +88,14 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      unsigned char clear,
 		      short coef);
 
+//! \brief this function fills the PHY_vars->PHY_measurement structure
+int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
+			LTE_DL_FRAME_PARMS *frame_parms,
+			PHY_MEASUREMENTS *phy_measurements);
+
+//! Automatic gain control
+void phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind);
+
+
 /** @} */ 
 #endif

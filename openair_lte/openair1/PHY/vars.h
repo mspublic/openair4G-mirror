@@ -50,6 +50,7 @@ LTE_DL_FRAME_PARMS *lte_frame_parms;
 LTE_UE_COMMON *lte_ue_common_vars;
 LTE_UE_DLSCH *lte_ue_dlsch_vars;
 LTE_UE_PBCH *lte_ue_pbch_vars;
+LTE_eNB_COMMON *lte_eNB_common_vars;
 #endif
 
 #include "PHY/CODING/scrambler.h"

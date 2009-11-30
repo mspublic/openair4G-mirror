@@ -38,6 +38,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     break;
 #else
   case 3:
+
+    /*
     txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
 #ifdef IFFT_FPGA
     txdataF[0] = (mod_sym_t *) PHY_vars->tx_vars[0].TX_DMA_BUFFER;
@@ -46,13 +48,15 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     txdataF[0] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
     txdataF[1] = (mod_sym_t *)malloc16(sizeof(mod_sym_t)*FRAME_LENGTH_COMPLEX_SAMPLES);
 #endif
-    generate_pss(txdataF,
+    */
+
+    generate_pss(lte_eNB_common_vars->txdataF,
 		 256,
 		 lte_frame_parms,
 		 1);
     //LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
-    generate_pilots(txdataF,
+    generate_pilots(lte_eNB_common_vars->txdataF,
 		    256,
 		    lte_frame_parms,
 		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
@@ -60,21 +64,21 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     for (i=0;i<6;i++)
       pbch_pdu[i] = i;
     
-    generate_pbch(txdataF,
+    generate_pbch(lte_eNB_common_vars->txdataF,
 		  256,
 		  lte_frame_parms,
 		  pbch_pdu);
 
 
 #ifdef IFFT_FPGA
-    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->N_RB_DL*12,1,4);
+    write_output("pilotsF.m","rsF",lte_eNB_common_vars->txdataF[0],12*lte_frame_parms->N_RB_DL*12,1,4);
 #else
-    write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
+    write_output("pilotsF.m","rsF",lte_eNB_common_vars->txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #endif
 
 #ifndef IFFT_FPGA
-    PHY_ofdm_mod(txdataF[0],        // input
-		 PHY_vars->tx_vars[0].TX_DMA_BUFFER,         // output
+    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[0],        // input
+		 lte_eNB_common_vars->txdata[0],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
 		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
@@ -82,8 +86,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		 lte_frame_parms->rev,           // bit-reversal permutation
 		 NONE);
 
-    PHY_ofdm_mod(txdataF[1],        // input
-		 PHY_vars->tx_vars[1].TX_DMA_BUFFER,         // output
+    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[1],        // input
+		 lte_eNB_common_vars->txdata[1],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
 		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples

@@ -4,7 +4,7 @@ ifdef OPENAIR_LTE
 CFLAGS += -DOPENAIR_LTE
 endif
 
-XTRA_CFAGS = -msse -msse2 -mssse3 
+XTRA_CFLAGS = -msse -msse2 -mssse3 
 
 OPENAIROBJS = $(OPENAIR1_DIR)/PHY/CONFIG/openair_readconfigfile.o $(OPENAIR1_DIR)/PHY/CONFIG/openair_configure.o $(OPENAIR1_DIR)/PHY/TOOLS/8bit_txmux.o
 

@@ -229,6 +229,11 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
   lte_ue_pbch_vars->decoded_output = (unsigned char *)malloc16(64*sizeof(unsigned char));
 
+  lte_ue_pbch_vars->pdu_errors_conseq=0;
+  lte_ue_pbch_vars->pdu_errors=0;
+  lte_ue_pbch_vars->pdu_errors_last=0;
+  lte_ue_pbch_vars->pdu_fer=0;
+
   // Initialize Gold sequence table
   lte_gold(frame_parms);
 
@@ -238,4 +243,29 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   return(1);
+}
+
+int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
+		     LTE_eNB_COMMON *eNB_common) {
+
+  int i;
+
+  eNB_common->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+#ifdef IFFT_FPGA
+  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    eNB_common->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+  }
+  eNB_common->txdata = NULL;
+#else
+  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    eNB_common->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+    bzero(eNB_common->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+  }
+  eNB_common->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    eNB_common->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+  }
+#endif  
+
+  return (0);  
 }

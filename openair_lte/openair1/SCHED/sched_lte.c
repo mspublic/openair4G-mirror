@@ -220,9 +220,15 @@ static void * openair_thread(void *param) {
     pthread_mutex_unlock(&openair_mutex);	
     
     next_slot = (openair_daq_vars.slot_count + 1 ) % SLOTS_PER_FRAME;
-    last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
+    if (openair_daq_vars.slot_count==0) 
+      last_slot = SLOTS_PER_FRAME-1;
+    else
+      last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
 
     // msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
+
+    //if (mac_xface->frame % 100 == 0)
+    //  msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
 
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
@@ -232,7 +238,7 @@ static void * openair_thread(void *param) {
 #endif
 
 #ifdef OPENAIR_LTE
-      phy_procedures_lte(last_slot);
+      phy_procedures_lte(last_slot,next_slot);
 #else
 #ifdef EMOS
       phy_procedures_emos(last_slot);
@@ -243,8 +249,6 @@ static void * openair_thread(void *param) {
 
       if (last_slot==SLOTS_PER_FRAME-2)
       	mac_xface->frame++;
-
-      //msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count = %d\n", mac_xface->frame, openair_daq_vars.slot_count);
 
       time_out = openair_get_mbox();
 
@@ -448,15 +452,20 @@ void openair_sync(void) {
       }
     }
 
+    // Measurements
+    lte_ue_measurements(lte_ue_common_vars,
+			lte_frame_parms,
+			&PHY_vars->PHY_measurements);
+
     // Do AGC
-    /*
-      if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-        msg("[openair][SCHED][AGC] Running AGC on MRSCH %d\n", target_SCH_index);
-        phy_adjust_gain (clear, 16384, target_SCH_index);
-        if (clear == 1)
-        clear = 0;
-      }
-    */
+    if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
+      msg("[openair][SCHED][AGC] Running AGC, rx_avg_power_dB = %d, rx_total_gain_dB = %d \n",
+	  PHY_vars->PHY_measurements.rx_avg_power_dB[0],
+	  PHY_vars->rx_vars[0].rx_total_gain_dB);
+      phy_adjust_gain (clear, 16384, 0);
+      if (clear == 1)
+	clear = 0;
+    }
   }
   
   msg("[openair][SCHED][SYNCH] Returning\n");

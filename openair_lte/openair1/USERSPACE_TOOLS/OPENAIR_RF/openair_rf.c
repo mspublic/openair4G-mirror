@@ -224,8 +224,10 @@ int main (int argc, char **argv) {
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
+  lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
   
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
+  phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
 #endif
   printf("Initialized PHY variables\n");
 

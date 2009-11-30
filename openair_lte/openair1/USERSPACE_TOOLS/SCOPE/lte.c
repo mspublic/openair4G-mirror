@@ -116,14 +116,33 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
 
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
     time2[i] = (float) i;
   }
+  */
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,0,2e+09);
-  fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  cum_avg = 0;
+  ind = 0;
+  for (k=0;k<1;k++){
+    for (j=0;j<1;j++) {
+      
+      for (i=0;i<PHY_config->lte_frame_parms.ofdm_symbol_size;i++){
+	sig_time[ind] = (float)ind;
+	Re = (float)(channel[k+2*j][2*i]);
+	Im = (float)(channel[k+2*j][2*i+1]);
+	//mag_sig[ind] = (short) rand(); 
+	mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+	cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+	ind++;
+      }
+    }
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_t_re,30,90);
+  fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
 
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
@@ -239,6 +258,12 @@ int main(int argc, char *argv[]) {
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+
+    channel[i] = (short*)(mem_base + 
+			  (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates_time + 
+			  nb_ant_rx*nb_ant_tx*sizeof(int*) + 
+			  i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
+			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 
     rx_sig[i] = (short *)(mem_base + (unsigned int)PHY_vars->rx_vars[i].RX_DMA_BUFFER-(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 

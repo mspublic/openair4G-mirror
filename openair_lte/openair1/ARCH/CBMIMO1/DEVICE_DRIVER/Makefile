@@ -93,6 +93,7 @@ openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/cmult_mm.o
 openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/cadd_sv.o
 openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/cadd_vv.o
 openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/angle.o
+openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 
@@ -124,6 +125,8 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  

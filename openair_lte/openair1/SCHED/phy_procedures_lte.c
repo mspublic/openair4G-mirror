@@ -60,14 +60,14 @@ ________________________________________________________________*/
 
 
 
-void phy_procedures_lte(unsigned char last_slot) {
+int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
   int ret[2];
   int time_in,time_out;
   int diff;
   int timing_offset;		
   int i,k,l;
-  static pbch_errors = 0;
+  unsigned char pbch_pdu[6];
 #ifndef USER_MODE
   RTIME  now;            
 #endif
@@ -79,7 +79,13 @@ void phy_procedures_lte(unsigned char last_slot) {
 #endif
   */
 
-  //msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
+  if (last_slot<0 || last_slot>=20) {
+    msg("[PHY_PROCEDURES_LTE] Frame %d, Error: last_slot =%d!\n",mac_xface->frame, last_slot);
+    return(-1);
+  }
+
+  //if (mac_xface->frame%100 == 0)
+  //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
 
   if (mac_xface->is_cluster_head == 0) {
     
@@ -89,34 +95,47 @@ void phy_procedures_lte(unsigned char last_slot) {
 	       lte_ue_common_vars,
 	       l,
 	       last_slot,
-	       lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
+	       (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
 	       1);
+    }
+
+    if (last_slot==0) {
+      // Measurements
+      lte_ue_measurements(lte_ue_common_vars,
+			  lte_frame_parms,
+			  &PHY_vars->PHY_measurements);
+      
+      // AGC
+      if (mac_xface->frame % 100 == 0)
+	phy_adjust_gain (0,16384,0);
     }
     
     if (last_slot==1) {
 
-    /*
-    lte_adjust_synch(lte_frame_parms,
-		     lte_ue_common_vars,
-		     1,
-		     16384);
-    */
+      lte_adjust_synch(lte_frame_parms,
+		       lte_ue_common_vars,
+		       1,
+		       16384);
 
       if (rx_pbch(lte_ue_common_vars,
 		  lte_ue_pbch_vars,
 		  lte_frame_parms,
-		  SISO)) {
-      
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH decoded sucessfully!\n",mac_xface->frame, last_slot);
-	pbch_errors = 0;
-	
+		  SISO))
+	lte_ue_pbch_vars->pdu_errors_conseq = 0;
+      else {
+	lte_ue_pbch_vars->pdu_errors_conseq++;
+	lte_ue_pbch_vars->pdu_errors++;
       }
-      else
-	pbch_errors++;
 
-      /*      
-      if (pbch_errors>20) {
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH lost!\n",mac_xface->frame, last_slot);
+      if (mac_xface->frame % 100 == 0) {
+	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
+	    mac_xface->frame, last_slot, lte_ue_pbch_vars->pdu_errors, lte_ue_pbch_vars->pdu_errors_conseq);
+	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH received frame = %d!\n",
+	    mac_xface->frame, last_slot,*((unsigned int*) lte_ue_pbch_vars->decoded_output));
+      }
+
+      if (lte_ue_pbch_vars->pdu_errors_conseq>20) {
+	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
 	openair_daq_vars.mode = openair_NOT_SYNCHED;
 	openair_daq_vars.sync_state=0;
 #ifdef CBMIMO1
@@ -125,13 +144,42 @@ void phy_procedures_lte(unsigned char last_slot) {
 	mac_xface->frame = -1;
 	openair_daq_vars.synch_wait_cnt=0;
 	openair_daq_vars.sched_cnt=-1;
+
+	lte_ue_pbch_vars->pdu_errors_conseq=0;
+	lte_ue_pbch_vars->pdu_errors=0;
+
       }
-      */
     }
   }
   else {
-    msg("[PHY_PROCEDURES_LTE] not yet implemented for eNB\n");
+
+    generate_pilots_slot(lte_eNB_common_vars->txdataF,
+			 AMP,
+			 lte_frame_parms,
+			 next_slot);
+
+    if (next_slot == 0)
+      generate_pss(lte_eNB_common_vars->txdataF,
+		   1024,
+		   lte_frame_parms,
+		   1);
+
+    if (next_slot == 1) {
+
+      if (mac_xface->frame%100 == 0)
+	msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
+      
+      *((unsigned int*) pbch_pdu) = mac_xface->frame;
+      
+      generate_pbch(lte_eNB_common_vars->txdataF,
+		    AMP,
+		    lte_frame_parms,
+		    pbch_pdu);
+    }
+
   }
+
+  return(0);
   
 }
 

@@ -32,10 +32,10 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
   ncoef = 32767 - coef;
 
-  //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
   if (mac_xface->frame%100 == 0)
     msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,PHY_vars->rx_vars[0].offset);
-  //#endif //DEBUG_PHY
+#endif //DEBUG_PHY
 
   // do ifft of channel estimate
   for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
@@ -79,10 +79,10 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   if ( PHY_vars->rx_vars[0].offset < 0 )
     PHY_vars->rx_vars[0].offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
  if (mac_xface->frame%100 == 0)
     msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,PHY_vars->rx_vars[0].offset,max_pos,max_pos_fil);
- //#endif //DEBUG_PHY
+#endif //DEBUG_PHY
 
 #ifndef USER_MODE
 #ifndef PHY_EMUL

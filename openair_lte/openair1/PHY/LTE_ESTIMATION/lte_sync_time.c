@@ -185,8 +185,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 #ifdef RTAI_ENABLED
     if (n%frame_parms->samples_per_tti == 0) {
-      msg("[SYNC TIME] pausing for 100000ns, n=%d\n",n);
-      rt_sleep(nano2count(100000));
+      msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
+      rt_sleep(nano2count(1000));
     }
 #endif
 

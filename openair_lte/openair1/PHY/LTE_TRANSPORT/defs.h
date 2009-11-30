@@ -216,7 +216,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned char skip_dc,
 			LTE_DL_FRAME_PARMS *frame_parms);
 
-/** \fn void dlsch_modulation(mod_sym_t **txdataF,
+/** \fn int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
@@ -232,7 +232,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 @param harq_pid Identifier of harq process
 @param rb_alloc RB allocation vector
 */ 
-void dlsch_modulation(mod_sym_t **txdataF,
+int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned short sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
@@ -255,6 +255,19 @@ void generate_pilots(mod_sym_t **txdataF,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned short N);
+
+/**
+\brief This function generates the frequency-domain pilots (cell-specific downlink reference signals) for one slot only
+@param txdataF Table of pointers for frequency-domain TX signals
+@param amp Amplitude of signal
+@param frame_parms Pointer to frame descriptor
+@param slot index (0..19)
+*/
+int generate_pilots_slot(mod_sym_t **txdataF,
+			 short amp,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 unsigned short slot);
+
 
 void generate_pss(mod_sym_t **txdataF,
 		  short amp,

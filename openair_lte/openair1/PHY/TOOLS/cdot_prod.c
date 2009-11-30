@@ -5,9 +5,11 @@
 
 // returns the complex dot product of x and y 
 
+#ifdef MAIN
 void print_ints(char *s,__m128i *x);
 void print_shorts(char *s,__m128i *x);
 void print_bytes(char *s,__m128i *x);
+#endif
 
 int dot_product(short *x,
 		short *y,
@@ -79,11 +81,15 @@ int dot_product(short *x,
   // convert back to integer
   result = _mm_cvtsi64_si32(mmtmp7);
 
+  _mm_empty();
+  _m_empty();
+
+
   return(result);
 }
 
 
-
+#ifdef MAIN
 void print_bytes(char *s,__m128i *x) {
 
   char *tempb = (char *)x;
@@ -115,7 +121,6 @@ void print_ints(char *s,__m128i *x) {
 
 }
 
-#ifdef MAIN
 void main(void) {
 
   int result;

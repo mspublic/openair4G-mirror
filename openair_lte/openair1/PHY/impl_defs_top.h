@@ -168,6 +168,13 @@ ________________________________________________________________*/
 
 #define CHBCH_RSSI_MIN -75
 
+#ifdef BIT8_TX
+#define AMP 128 
+#else
+#define AMP 1024
+#endif
+
+
 #ifndef OPENAIR_LTE
 ///
 /// PHY-MAC Interface Defs 
@@ -244,45 +251,60 @@ typedef struct {
 
 /// Measurement Variables
 #ifndef OPENAIR_LTE
+
 typedef struct
 {
-
-
-  unsigned short rx_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  // estimated received signal power (dB)
-  short          rx_avg_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX];               // estimated avg received signal power (dB)
-  unsigned short n0_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  // estimated noise power (dB)
-  short		 rx_rssi_dBm[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  // estimated rssi (dBm)
-  int            rx_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];// estimated received signal power (linear)
-  int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];// estimated noise power (linear)
+  unsigned short rx_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  short          rx_avg_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX];              //! estimated avg received signal power (dB)
+  unsigned short n0_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
+  short		 rx_rssi_dBm[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated rssi (dBm)
+  int            rx_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
+  int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
   unsigned int   chbch_search_count;
   unsigned int   chbch_detection_count[4];
   unsigned int   mrbch_search_count; 
   unsigned int   mrbch_detection_count;
 #ifdef EMOS
-  //  unsigned char  Meas_flag;      	 // This is used as a signal to start recording in multiuser mode
-  unsigned int   frame_tx[2];              // This is used to set the file index of the measurement file at the terminal
-  int            crc_status[2]; 		// crc status of the CHBCH
+  //  unsigned char  Meas_flag;      	 //! This is used as a signal to start recording in multiuser mode
+  unsigned int   frame_tx[2];            //! This is used to set the file index of the measurement file at the terminal
+  int            crc_status[2]; 	 //! crc status of the CHBCH
 #endif //EMOS
 } PHY_MEASUREMENTS;
 
 /// Physical Resource Descriptor
 typedef struct {
-  unsigned char  Time_alloc;           /*!<\brief Time allocation vector of DL-SACH reservation*/
+  unsigned char  Time_alloc;      /*!<\brief Time allocation vector of DL-SACH reservation*/
   unsigned short Freq_alloc;      /*!< \brief Frequency allocation vector of DL-SACH reservation*/
-  unsigned short Ifreq_alloc;      /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
+  unsigned short Ifreq_alloc;     /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
   unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
-  unsigned char  Coding_fmt;          /*!< \brief Coding format for this PDU*/
+  unsigned char  Coding_fmt;      /*!< \brief Coding format for this PDU*/
 } __attribute__((__packed__)) PHY_RESOURCES;
 
 
 #else //OPENAIR_LTE
+
+#define NUMBER_OF_eNB_MAX 4
+
+typedef struct
+{
+  unsigned int   rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
+  unsigned int   n0_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
+  unsigned short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  unsigned short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
+  unsigned short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
+  unsigned short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+#ifdef EMOS
+  unsigned int   frame_tx;              // This is used to set the file index of the measurement file at the terminal
+#endif //EMOS
+} PHY_MEASUREMENTS;
+
 /// Physical Resource Descriptor
 typedef struct {
-  unsigned char  Time_alloc;           /*!<\brief Time allocation vector of DL-SACH reservation*/
-  unsigned int Freq_alloc[2];      /*!< \brief Frequency allocation vector of DL-SACH reservation*/
-  unsigned short Ifreq_alloc;      /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
+  unsigned char  Time_alloc;      /*!<\brief Time allocation vector of DL-SACH reservation*/
+  unsigned int   Freq_alloc[2];   /*!< \brief Frequency allocation vector of DL-SACH reservation*/
+  unsigned short Ifreq_alloc;     /*!< \brief Frequency allocation vector of interference (DL-SACH)*/
   unsigned char  Antenna_alloc;   /*!< \brief Antenna allocation vector of DL-SACH reservation*/ 
-  unsigned char  Coding_fmt;          /*!< \brief Coding format for this PDU*/
+  unsigned char  Coding_fmt;      /*!< \brief Coding format for this PDU*/
 } __attribute__((__packed__)) PHY_RESOURCES;
 
 #endif //OPENAIR_LTE
@@ -310,35 +332,35 @@ typedef struct {
 /// Top-level PHY Data Structure  
 typedef struct
 {
-/// TX variables indexed by antenna
+  /// TX variables indexed by antenna
   TX_VARS tx_vars[NB_ANTENNAS_TX];      
-/// RX variables indexed by antenna
+  /// RX variables indexed by antenna
   RX_VARS rx_vars[NB_ANTENNAS_RX];      
-/// ACQ Mailbox for harware synch
+  /// ACQ Mailbox for harware synch
   unsigned int *mbox;                
-/// TX/RX switch position in symbols (for TDD)
+  /// TX/RX switch position in symbols (for TDD)
   unsigned int tx_rx_switch_point;   
 #ifndef OPENAIR_LTE
-/// CHSCH variables (up to 8)
+  /// CHSCH variables (up to 8)
   CHSCH_data          chsch_data[8];   
-/// SCH variables (up to 8)
+  /// SCH variables (up to 8)
   SCH_data            sch_data[8];     
-/// CHBCH variables (up to 8)
+  /// CHBCH variables (up to 8)
   Transport_data      chbch_data[8];   
-/// MRBCH variables (up to 8)
+  /// MRBCH variables (up to 8)
   Transport_data      mrbch_data[8];   
-/// SACH variables (up to 8)
+  /// SACH variables (up to 8)
   Transport_data      sach_data[NUMBER_OF_SACH];  
-/// SACCH variables (up to 8)
+  /// SACCH variables (up to 8)
   Transport_data      sacch_data[NUMBER_OF_SACH];
-/// Measurement variables 
-  PHY_MEASUREMENTS    PHY_measurements;
   /// Diagnostics for SACH Metering
   SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
 #else
-  LTE_UE_COMMON lte_ue_common_vars;
-  LTE_UE_DLSCH lte_ue_dlsch_vars;
-  LTE_UE_PBCH lte_ue_pbch_vars;
+  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
+  LTE_UE_COMMON    lte_ue_common_vars;
+  LTE_UE_DLSCH     lte_ue_dlsch_vars;
+  LTE_UE_PBCH      lte_ue_pbch_vars;
+  LTE_eNB_COMMON   lte_eNB_common_vars;
 #endif
 
 } PHY_VARS;
