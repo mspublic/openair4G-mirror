@@ -5,18 +5,16 @@
 
 // returns the complex dot product of x and y 
 
-#ifdef MAIN
 void print_ints(char *s,__m128i *x);
 void print_shorts(char *s,__m128i *x);
 void print_bytes(char *s,__m128i *x);
-#endif
 
 int dot_product(short *x,
 		short *y,
 		unsigned int N, //must be a multiple of 8
 		unsigned char output_shift) {
 
-  __m128i *x128,*y128,mmtmp0,mmtmp1,mmtmp2,mmtmp3,mmtmp4,mmtmp5,mmtmp6,mmcumul;
+  __m128i *x128,*y128,mmtmp0,mmtmp1,mmtmp2,mmtmp3,mmtmp4,mmtmp5,mmtmp6,mmcumul,mmcumul_re,mmcumul_im;
   __m64 mmtmp7;
   __m128i minus_i = _mm_set_epi16(-1,1,-1,1,-1,1,-1,1);
   unsigned int n;
@@ -25,71 +23,59 @@ int dot_product(short *x,
   x128 = (__m128i*) x;
   y128 = (__m128i*) y;
 
-  mmcumul = _mm_setzero_si128();
+  mmcumul_re = _mm_setzero_si128();
+  mmcumul_im = _mm_setzero_si128();
 
-  for (n=0;n<(N>>3);n++) {
-    // unroll 0
+  for (n=0;n<(N>>2);n++) {
+
+    //printf("n=%d, x128=%p, y128=%p\n",n,x128,y128);
     //print_shorts("x",&x128[0]);
     //print_shorts("y",&y128[0]);
 
-    // this computes Re(z) = Re(x)*Re(y)-Im(x)*Im(y)
-    mmtmp0 = _mm_sign_epi16(y128[0],minus_i);
-    mmtmp1 = _mm_madd_epi16(x128[0],mmtmp0);
+    // this computes Re(z) = Re(x)*Re(y) + Im(x)*Im(y)
+    mmtmp1 = _mm_madd_epi16(x128[0],y128[0]);
     //print_ints("re",&mmtmp1);
     // mmtmp1 contains real part of 4 consecutive outputs (32-bit)
+
+    // shift and accumulate results
+    mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
+    mmcumul_re = _mm_add_epi32(mmcumul_re,mmtmp1);
+    //print_ints("re",&mmcumul_re);
+
     
-    // this computes Im(z) = Re(x)*Im(y) + Re(y)*Im(x)
+    // this computes Im(z) = Re(x)*Im(y) - Re(y)*Im(x)
     mmtmp2 = _mm_shufflelo_epi16(y128[0],_MM_SHUFFLE(2,3,0,1));
     mmtmp2 = _mm_shufflehi_epi16(mmtmp2,_MM_SHUFFLE(2,3,0,1));
+    mmtmp2 = _mm_sign_epi16(mmtmp2,minus_i);
+    //print_shorts("y",&mmtmp2);
+
     mmtmp3 = _mm_madd_epi16(x128[0],mmtmp2);
     //print_ints("im",&mmtmp3);
-    // mmtmp1 contains imag part of 4 consecutive outputs (32-bit)
-    
-    // this returns Re0+R1 Re2+Re3 Im0+Im1 Im2+Im3
-    mmtmp4 = _mm_hadd_epi32(mmtmp1,mmtmp3);
-    //print_ints("add1",&mmtmp4);
-    
-    
-    // unroll 1
-    // this computes Re(z) = Re(x)*Re(y)-Im(x)*Im(y)
-    mmtmp0 = _mm_sign_epi16(y128[1],minus_i);
-    mmtmp1 = _mm_madd_epi16(x128[1],mmtmp0);
-    //	print_ints("re",&mmtmp0);
-    // mmtmp1 contains real part of 4 consecutive outputs (32-bit)
-    
-    // this computes Im(z) = Re(x)*Im(y) + Re(y)*Im(x)
-    mmtmp2 = _mm_shufflelo_epi16(y128[1],_MM_SHUFFLE(2,3,0,1));
-    mmtmp2 = _mm_shufflehi_epi16(mmtmp2,_MM_SHUFFLE(2,3,0,1));
-    //	print_ints("im",&mmtmp1);
-    mmtmp3 = _mm_madd_epi16(x128[1],mmtmp2);
-    // mmtmp1 contains imag part of 4 consecutive outputs (32-bit)
-    
-    // this returns Re4+R5 Re6+Re7 Im4+Im5 Im6+Im7
-    mmtmp5 = _mm_hadd_epi32(mmtmp1,mmtmp3);
-    //print_ints("add1",&mmtmp5);
-    
+    // mmtmp3 contains imag part of 4 consecutive outputs (32-bit)
 
-    // this returns Re0+R1+Re2+Re3 Im0+Im1+Im2+Im3 Re4+R5+Re6+Re7 Im4+Im5+Im6+Im7
-    mmtmp6 = _mm_hadd_epi32(mmtmp4,mmtmp5);
-    
-    // accumulate results
-    mmcumul = _mm_add_epi32(mmcumul,mmtmp6);
-    //print_ints("mcumul",&mmcumul);
+    // shift and accumulate results
+    mmtmp3 = _mm_srai_epi32(mmtmp3,output_shift);
+    mmcumul_im = _mm_add_epi32(mmcumul_im,mmtmp3);
+    //print_ints("im",&mmcumul_im);
 
-    x128+=2;
-    y128+=2;
+    x128++;
+    y128++;
 }
 
+  // this gives Re Re Im Im
+  mmcumul = _mm_hadd_epi32(mmcumul_re,mmcumul_im);
+  //print_ints("cumul1",&mmcumul);
 
-  // do the last add
-  mmcumul = _mm_shuffle_epi32(mmcumul,_MM_SHUFFLE(3,1,2,0));
+  // this gives Re Im Re Im  
   mmcumul = _mm_hadd_epi32(mmcumul,mmcumul);  
+  //print_ints("cumul2",&mmcumul);
+
   // extract the lower half
   mmtmp7 = _mm_movepi64_pi64(mmcumul);
-  // shift back to 16 bits precission
-  mmtmp7 = _mm_srai_pi32(mmtmp7, output_shift);
+
   // pack the result
   mmtmp7 = _mm_packs_pi32(mmtmp7,mmtmp7);
+
   // convert back to integer
   result = _mm_cvtsi64_si32(mmtmp7);
 
@@ -98,7 +84,6 @@ int dot_product(short *x,
 
 
 
-#ifdef MAIN
 void print_bytes(char *s,__m128i *x) {
 
   char *tempb = (char *)x;
@@ -130,14 +115,16 @@ void print_ints(char *s,__m128i *x) {
 
 }
 
+#ifdef MAIN
 void main(void) {
 
   int result;
 
-  short x[16*2] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};  
-  short y[16*2] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+  short x[16*2] __attribute__((aligned(16))) = {1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13,1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13};  
+  short y[16*2] __attribute__((aligned(16))) = {1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13,1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13};  
+  //  short y[16*2] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
-  result = dot_product(x,y,8*2,0);
+  result = dot_product(x,y,8*2,15);
 
   printf("result = %d, %d\n", ((short*) &result)[0],  ((short*) &result)[1] );
 }

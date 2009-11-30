@@ -40,7 +40,7 @@ void PHY_ofdm_mod(int *input,
 \param no_prefix if 1 prefix is removed by HW 
 */
 
-void slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
+int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      LTE_UE_COMMON *ue_common_vars,
 	      unsigned char l,
 	      unsigned char Ns,

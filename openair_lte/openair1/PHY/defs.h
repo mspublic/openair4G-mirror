@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include <math.h>
 #define msg printf   
 //use msg in the real-time thread context
 #define msg_nrt printf   
@@ -35,6 +36,7 @@
 #include <rtai.h>
 #include <rtai_posix.h>
 #include <rtai_fifos.h>
+#include <rtai_math.h>
 
 #define msg rt_printk
 #define msg_nrt printk

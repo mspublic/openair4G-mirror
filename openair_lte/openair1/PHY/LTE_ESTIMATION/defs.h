@@ -68,12 +68,10 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 We estimate the frequency offset by calculating the phase difference between channel estimates for symbols carrying pilots (l==0 or l==3/4). We take a moving average of the phase difference.
 \param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
 \param frame_parms pointer to LTE frame parameters
-\param aa antenna port 
 \param l symbol within slot
 */
 int lte_est_freq_offset(int **dl_ch_estimates,
-			LTE_DL_FRAME_PARMS frame_parms,
-			int aa,
+			LTE_DL_FRAME_PARMS *frame_parms,
 			int l,
 			int* freq_offset);
 

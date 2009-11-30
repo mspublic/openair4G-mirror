@@ -1,8 +1,8 @@
-CC = gcc-4
+CC = gcc
 
 TOP_DIR = ../..
 
-CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -msse4  -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE -DIFFT_FPGA
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -msse2 -mssse3 -mmmx -msse -DFILE_OUTPUT -DOPENAIR_LTE -DIFFT_FPGA
 
 CFLAGS += -DDEBUG_PHY
 
@@ -23,6 +23,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
@@ -57,7 +58,7 @@ OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 all: dlsim dlsim2
 
 $(OBJ) : %.o : %.c
-	$(CC) -c $(CFLAGS) -Wall -I$(TOP_DIR) -o $@ $<
+	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
 	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ) -lm
