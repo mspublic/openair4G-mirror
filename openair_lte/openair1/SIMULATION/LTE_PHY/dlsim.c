@@ -332,7 +332,7 @@ void main() {
   for (s=0;s<dlsch_ue[0]->harq_processes[0]->C;s++) {
     printf("Decoded_output (Segment %d):\n",s);
     for (i=0;i<dlsch_ue[0]->harq_processes[0]->Kplus/8;i++)
-      printf("%d : %x (%x)\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i],dlsch_ue[0]->harq_processes[0]->c[s][i]-dlsch_eNb[0]->harq_processes[0]->c[s][i]);
+      printf("%d : %x (%x)\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i],dlsch_ue[0]->harq_processes[0]->c[s][i]^dlsch_eNb[0]->harq_processes[0]->c[s][i]);
   }
 #endif
 
