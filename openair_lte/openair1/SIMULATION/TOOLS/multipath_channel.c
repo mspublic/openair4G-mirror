@@ -28,7 +28,7 @@ void multipath_channel(struct complex **ch,
   double path_loss = pow(10,-(double)path_loss_dB/20);
 
 #ifdef DEBUG_PHY
-  printf("path_loss = %g\n",path_loss);
+  //  printf("path_loss = %g\n",path_loss);
 #endif
   
   for (i=0;i<nb_antennas_rx;i++)      // RX Antenna loop
