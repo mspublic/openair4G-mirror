@@ -9,7 +9,7 @@
 #define BW 10.0
 #define Td 1.0
 
-#define OUTPUT_DEBUG 1
+//#define OUTPUT_DEBUG 1
 void main() {
 
   int i,aa,s;
@@ -325,7 +325,7 @@ void main() {
 		       0,               //harq_pid
 		       25);             //NB allocated RBs
 
-  if (ret == 0)
+  if (ret <= MAX_TURBO_ITERATIONS)
     printf("No DLSCH errors found\n");
 
 #ifdef OUTPUT_DEBUG  
