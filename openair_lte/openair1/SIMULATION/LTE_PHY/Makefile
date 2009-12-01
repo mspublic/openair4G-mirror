@@ -1,4 +1,4 @@
-CC = gcc
+CC = gcc-4
 
 TOP_DIR = ../..
 
@@ -24,6 +24,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
@@ -52,6 +53,8 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 
