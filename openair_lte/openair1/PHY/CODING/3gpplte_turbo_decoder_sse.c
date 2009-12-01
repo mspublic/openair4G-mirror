@@ -651,7 +651,6 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   // do log_map from first parity bit
   log_map(systematic0,yparity1,ext,n,0,F);
 
-
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
@@ -707,9 +706,9 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
     case CRC24_A: 
       oldcrc&=0x00ffffff;
-      crc = crc24a(decoded_bytes,
-		   n-24)>>8;
-      //printf("CRC24_A = %x, oldcrc = %x\n",crc,oldcrc);
+      crc = crc24a(&decoded_bytes[F>>3],
+		   n-24-F)>>8;
+      //      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
       if (crc == oldcrc)
 	return(iteration_cnt);
 
@@ -718,7 +717,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24b(decoded_bytes,
 		  n-24)>>8;
-      //printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
+      //      printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
       if (crc == oldcrc)
 	return(iteration_cnt);
 

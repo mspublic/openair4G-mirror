@@ -1,6 +1,6 @@
 #include "PHY/defs.h"
 
-#define DEBUG_SEGMENTATION
+//#define DEBUG_SEGMENTATION
 void lte_segmentation(unsigned char *input_buffer,
 		      unsigned char **output_buffers,
 		      unsigned int B,

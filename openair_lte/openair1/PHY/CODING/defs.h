@@ -6,7 +6,7 @@
 #define CRC16 2
 #define CRC8 3
 
-#define MAX_TURBO_ITERATIONS 6
+#define MAX_TURBO_ITERATIONS 8
 
 #define LTE_NULL 2
 

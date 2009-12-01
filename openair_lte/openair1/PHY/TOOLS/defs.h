@@ -427,10 +427,10 @@ void mmxcopy(void *dest,void *src,int size);
 */
 int signal_energy(int *,unsigned int);
 
-/*!\fn double signal_energy_fp(double **, double **,unsigned int, unsigned int);
+/*!\fn double signal_energy_fp(double **, double **,unsigned int, unsigned int,unsigned int);
 \brief Computes the signal energy per subcarrier
 */
-double signal_energy_fp(double **s_re, double **s_im, unsigned int nb_antennas, unsigned int length);
+double signal_energy_fp(double **s_re, double **s_im, unsigned int nb_antennas, unsigned int length,unsigned int offset);
 
 
 int iSqrt(int value);

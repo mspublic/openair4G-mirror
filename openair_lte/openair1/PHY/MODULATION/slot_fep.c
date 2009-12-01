@@ -1,5 +1,6 @@
 #include "PHY/defs.h"
 #include "defs.h"
+//#define DEBUG_FEP
 
 int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      LTE_UE_COMMON *ue_common_vars,
@@ -12,6 +13,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
 
+#ifdef DEBUG_FEP
   if (l<0 || l>=7-frame_parms->Ncp) {
     msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);

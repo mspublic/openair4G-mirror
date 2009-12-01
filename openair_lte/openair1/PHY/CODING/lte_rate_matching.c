@@ -293,7 +293,7 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
 
   if (rvidx==0)
-    memset(w,0,E*sizeof(short));
+    memset(w,0,Ncb*sizeof(short));
  
   soft_input2 = soft_input + (r*E);
 
@@ -308,7 +308,10 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
       if (ind==Ncb)
 	ind=0;
     }
-
+    /*
+    if (w[ind] != 0)
+      printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
+    */
     // Maximum-ratio combining of repeated bits and retransmissions
     w[ind] += soft_input2[k];
 #ifdef RM_DEBUG
