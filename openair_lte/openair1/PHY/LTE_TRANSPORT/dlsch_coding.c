@@ -12,7 +12,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-#define DEBUG_DLSCH_CODING 1
+//#define DEBUG_DLSCH_CODING 1
 
 /*
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
@@ -53,7 +53,6 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
-
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_eNb_HARQ_t *)malloc16(sizeof(LTE_eNb_HARQ_t));
       if (dlsch->harq_processes[i]) {

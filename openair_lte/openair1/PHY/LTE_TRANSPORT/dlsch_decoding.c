@@ -3,7 +3,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-#define DEBUG_DLSCH_DECODING
+//#define DEBUG_DLSCH_DECODING
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
   int i,r;
@@ -48,7 +48,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8);	
 	  if (!dlsch->harq_processes[i]->c[r])
 	    exit_flag=1;
-	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16((3*8*6144)+12+96);
+	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
 	}
       
       }	else {
@@ -72,11 +72,11 @@ unsigned int  dlsch_decoding(unsigned short A,
   
   unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
   unsigned int coded_bits_per_codeword,i;
-  unsigned int ret;
+  unsigned int ret,offset;
   unsigned short iind;
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
   short coded_bits=0;
-  unsigned char dummy_w[8][3*6144];
+  short dummy_w[8][3*(6144+64)];
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
 
@@ -127,9 +127,10 @@ unsigned int  dlsch_decoding(unsigned short A,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-        printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
+    memset(dummy_w[r],0,3*(6144+64)*sizeof(short));
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
 							       dummy_w[r],
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
@@ -156,14 +157,17 @@ unsigned int  dlsch_decoding(unsigned short A,
 					   dlsch->harq_processes[harq_pid]->mod_order,
 					   dlsch->harq_processes[harq_pid]->Nl,
 					   r);
-
+    /*
     printf("Subblock deinterleaving, d %p w %p\n",
 	   dlsch->harq_processes[harq_pid]->d[r],
 	   dlsch->harq_processes[harq_pid]->w);
+    */
+
     sub_block_deinterleaving_turbo(4+Kr, 
 				   &dlsch->harq_processes[harq_pid]->d[r][96], 
 
 				   dlsch->harq_processes[harq_pid]->w[r]); 
+
     /*
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
@@ -178,16 +182,23 @@ unsigned int  dlsch_decoding(unsigned short A,
 #endif
     */
 
-    printf("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
-    memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
-    printf("done\n");
+    //    printf("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
+    //    memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
+    //    printf("done\n");
     if (dlsch->harq_processes[harq_pid]->C == 1) 
       crc_type = CRC24_A;
     else 
       crc_type = CRC24_B;
 
-       
-    printf("Turbo decoding\n");
+    /*
+    printf("decoder input(segment %d)\n",r);
+    for (i=0;i<(3*8*Kr_bytes)+12;i++)
+      if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
+	  (dlsch->harq_processes[harq_pid]->d[r][96+i] < -8))
+	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
+    printf("\n");
+    */
+
     ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
 					dlsch->harq_processes[harq_pid]->c[r],
 					Kr,
@@ -197,11 +208,38 @@ unsigned int  dlsch_decoding(unsigned short A,
 					crc_type,
 					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
-
-    if (ret==(1+MAX_TURBO_ITERATIONS)) // a Code segment is in error so break;
-      return(1);
+    
+    if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
+      //      printf("CRC failed\n");
+      return(ret);
+    }
   }
   // Reassembly of Transport block here
+  offset = 0;
+  //  printf("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
 
-  return(0);
+  for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
+    if (r<dlsch->harq_processes[harq_pid]->Cminus)
+      Kr = dlsch->harq_processes[harq_pid]->Kminus;
+    else
+      Kr = dlsch->harq_processes[harq_pid]->Kplus;
+
+    Kr_bytes = Kr>>3;
+    
+    if (r==0) {
+      memcpy(dlsch->harq_processes[harq_pid]->b,
+	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
+	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
+      //      printf("copied %d bytes to b sequence\n",
+      //	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+    }
+    else {
+      memcpy(dlsch->harq_processes[harq_pid]->b+offset,
+	     dlsch->harq_processes[harq_pid]->c[0],
+	     Kr_bytes);
+      offset += Kr_bytes;
+    }
+  }
+  return(ret);
 }

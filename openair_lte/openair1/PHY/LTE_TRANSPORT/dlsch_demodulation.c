@@ -872,7 +872,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   
-
+  //  printf("comp: symbol %d\n",symbol);
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
     if (mod_order[aatx] == 4)
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);
