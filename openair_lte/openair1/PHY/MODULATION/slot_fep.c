@@ -22,7 +22,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     msg("slot_fep: Ns must be between 0 and 19\n");
     return(-1);
   }
-
+#endif
 
 #ifdef DEBUG_PHY
     msg("slot_fep: offset %d, symbol %d, nb_prefix_samples %d\n",offset, symbol, nb_prefix_samples);

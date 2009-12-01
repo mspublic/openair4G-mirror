@@ -386,6 +386,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       *re_allocated = *re_allocated + 1;
     }
   }
+  return(0);
 }
 
 #else
@@ -694,17 +695,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       *re_allocated = *re_allocated + 1;
     }
   }
+  return(0);
 }
 #endif
 
 int dlsch_modulation(mod_sym_t **txdataF,
-		      short amp,
-		      unsigned short sub_frame_offset,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_eNb_DLSCH_t *dlsch,
-		      unsigned char harq_pid,
-		      unsigned int  *rb_alloc){
-  
+		     short amp,
+		     unsigned short sub_frame_offset,
+		     LTE_DL_FRAME_PARMS *frame_parms,
+		     LTE_eNb_DLSCH_t *dlsch,
+		     unsigned char harq_pid,
+		     unsigned int  *rb_alloc){
 
   unsigned char nsymb;
   unsigned int jj,re_allocated;

@@ -210,7 +210,7 @@ unsigned int  dlsch_decoding(unsigned short A,
 
     
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      //      printf("CRC failed\n");
+      printf("CRC failed\n");
       return(ret);
     }
   }
