@@ -51,11 +51,11 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   
   switch (k) {
   case 0 :
-    f=filt24_0;
-    f2=filt24_2;
-    fl=filt24_0l;
-    f2l2=filt24_2l2;
-    fr=filt24_2r;
+    f=filt24_0;  //for first pilot of RB, first half
+    f2=filt24_2; //for second pilot of RB, first half
+    fl=filt24_0l; //for first pilot of leftmost RB
+    f2l2=filt24_2l2; 
+    fr=filt24_2r; //for first pilot of rightmost RB
     f2r2=filt24_0r2;
     break;
   case 1 :

@@ -60,9 +60,9 @@ do
   f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
   plot(1:length(s_phase),s_phase,'r',1:length(s_phase2),s_phase2,'g');
   
-  if ((f_off+f_off2)/2 < f_off_min)
+  if (abs((f_off+f_off2)/2) < f_off_min)
     tcxo_freq_min = tcxo_freq; 
-    f_off_min = (f_off+f_off2)/2;
+    f_off_min = abs((f_off+f_off2)/2);
   end
 
   if ((f_off+f_off2)/2 > 0)

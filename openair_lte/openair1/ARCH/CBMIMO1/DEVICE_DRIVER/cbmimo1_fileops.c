@@ -333,9 +333,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	 (openair_daq_vars.node_running == 0) && 
 	 (openair_daq_vars.mac_registered == 1)) {
 
-      for (aa=0;aa<lte_frame_parms->nb_antennas_tx; aa++)
-	Zero_Buffer(lte_eNB_common_vars->txdataF[aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-
+      for (aa=0;aa<NB_ANTENNAS_TX; aa++)
+	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
+      udelay(1000);
 
       mac_xface->is_cluster_head = 1;
       mac_xface->is_primary_cluster_head = 1;
@@ -515,8 +515,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.node_running = 0;
 #ifndef NOCARD_TEST
 
-      for (aa=0;aa<lte_frame_parms->nb_antennas_tx; aa++)
-	Zero_Buffer(lte_eNB_common_vars->txdataF[aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      for (aa=0;aa<NB_ANTENNAS_TX; aa++)
+	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
       udelay(1000);
 
 

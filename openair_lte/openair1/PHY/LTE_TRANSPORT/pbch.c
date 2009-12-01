@@ -264,9 +264,7 @@ unsigned short pbch_extract(int **rxdataF,
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
       for (rb=0; rb<nb_rb; rb++) {
 	// skip DC carrier
-	if (rb==3) {
-	  dl_ch0++;
-	}
+	// if (rb==3) dl_ch0++;
 	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 	dl_ch0+=12;
 	dl_ch0_ext+=12;

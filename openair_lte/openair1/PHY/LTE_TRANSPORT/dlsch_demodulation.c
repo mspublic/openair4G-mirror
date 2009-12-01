@@ -554,7 +554,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	// For second half of RBs skip DC carrier
 	if (rb==(frame_parms->N_RB_DL>>1)) {
 	  rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-	  dl_ch0++;
+	  //dl_ch0++; 
 	}
 	
 	if (rb_alloc_ind==1) {
@@ -629,7 +629,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	}
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	for (;i<12;i++) {
-	  dl_ch0_ext[i]=dl_ch0[i+1];
+	  dl_ch0_ext[i]=dl_ch0[i];
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
 	nb_rb++;
@@ -637,7 +637,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
       else {
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
-      dl_ch0+=13;
+      dl_ch0+=12;
       dl_ch0_ext+=12;
       rxF+=14;
       rxF_ext+=12;
@@ -724,8 +724,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	// For second half of RBs skip DC carrier
 	if (rb==(frame_parms->N_RB_DL>>1)) {
 	  rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))*2];
-	  dl_ch0++;
-	  dl_ch1++;
+	  //dl_ch0++;
+	  //dl_ch1++;
 	}
 	
 	if (rb_alloc_ind==1) {
@@ -802,8 +802,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	}
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	for (;i<12;i++) {
-	  dl_ch0_ext[i]=dl_ch0[i+1];
-	  dl_ch1_ext[i]=dl_ch1[i+1];
+	  dl_ch0_ext[i]=dl_ch0[i];
+	  dl_ch1_ext[i]=dl_ch1[i];
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
 	nb_rb++;
@@ -812,9 +812,9 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       else {
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
-      dl_ch0+=13;
+      dl_ch0+=12;
       dl_ch0_ext+=12;
-      dl_ch1+=13;
+      dl_ch1+=12;
       dl_ch1_ext+=12;
       rxF+=14;
       rxF_ext+=12;

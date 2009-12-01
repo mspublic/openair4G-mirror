@@ -299,9 +299,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    break;
 	  }
 	  // fill in the rest of the ALAMOUTI precoding
-	  ((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0];
+	  ((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0]; //x1
 	  ((short *)&txdataF[0][tti_offset+1])[1] = ((short *)&txdataF[1][tti_offset])[1];
-	  ((short *)&txdataF[1][tti_offset+1])[0] = ((short *)&txdataF[0][tti_offset])[0];
+	  ((short *)&txdataF[1][tti_offset+1])[0] = ((short *)&txdataF[0][tti_offset])[0];  //x0*
 	  ((short *)&txdataF[1][tti_offset+1])[1] = -((short *)&txdataF[0][tti_offset])[1];
 
 	}
@@ -416,7 +416,6 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   short re_off=re_offset;
   
 
-
   if (nu>1) {
     msg("dlsch_modulation.c: allocate_REs_in_RB, error, unknown layer index %d\n",nu);
     return(-1);
@@ -425,7 +424,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   for (re=0;re<12;re++) {
 
 
-    // check that re is not a pilot (need shift for 2nd pilot symbol!!!!)
+     if ((skip_dc == 1) && (re==6))
+      re_off=re_off - frame_parms->N_RB_DL*12;
+   // check that re is not a pilot (need shift for 2nd pilot symbol!!!!)
     // Again this is not LTE, here for SISO only positions 3-5 and 8-11 are allowed for data REs
     // This allows for pilots from adjacent eNbs to be interference free
 
@@ -506,6 +507,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  switch (mod_order) {
 	  case 2:  //QPSK
+
 	    
 	    qpsk_table_offset = 1;  //x0
 	    qpsk_table_offset2 = 1;  //x0*
@@ -522,28 +524,27 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qpsk_table_offset2+=2;
 	    *jj=*jj+1;
 
-	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;
-	    txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;
+	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
+	    txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
 
-	    // second antenna position (n,n+1) -> -x1*,x0* 
 
 	    qpsk_table_offset = 1; //-x1*
-	    qpsk_table_offset2 = 1; //-x1
+	    qpsk_table_offset2 = 1; //x1
 
-	    if (output[*jj] == 1) {   // flipping bit for real part of symbol means taking -x1*
+	    if (output[*jj] == 1)    // flipping bit for real part of symbol means taking -x1*
 	      qpsk_table_offset2+=1;
+	    else
 	      qpsk_table_offset+=1;
+	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qpsk_table_offset+=2;
+	      qpsk_table_offset2+=2;
 	    }
 	    *jj=*jj+1;
 
-	    if (output[*jj] == 1)
-	      qpsk_table_offset+=2;
-	    else
-	      qpsk_table_offset2+=2;
-	    *jj=*jj+1;
-
-	    txdataF[1][tti_offset] = (mod_sym_t) qpsk_table_offset;
-	    txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;
+	    txdataF[1][tti_offset] = (mod_sym_t) qpsk_table_offset;     // -x1*
+	    txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;  // x1
 
 	    break;
 
@@ -551,48 +552,49 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    
 	    // Antenna 0 position n 
 
-	    qam16_table_offset = 5;
-	    qam16_table_offset2 = 5;
-	    if (output[*jj] == 1)
-	      qam16_table_offset+=2;
-	    else
-	      qam16_table_offset2+=2;
-
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset+=1;
-	    else
-	      qam16_table_offset2+=1;
-	    *jj=*jj+1;
-	    
-	    
+	    qam16_table_offset = 5; //x0
+	    qam16_table_offset2 = 5; //x0*
 	    if (output[*jj] == 1) {
-	      qam16_table_offset+=8;
-	      qam16_table_offset2+=8;
+	      qam16_table_offset+=2;
+	      qam16_table_offset2+=2;
 	    }
 	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qam16_table_offset+=1;
+	      qam16_table_offset2+=1;
+	    }
+	    *jj=*jj+1;
+	    
+	    
+	    if (output[*jj] == 1) 
+	      qam16_table_offset+=8;
+	    else
+	      qam16_table_offset2+=8;
+	    *jj=*jj+1;
+
 	    if (output[*jj] == 1){
 	      qam16_table_offset+=4;
 	      qam16_table_offset2+=4;
 	    }
 	    *jj=*jj+1;
 	    
-	    txdataF[0][tti_offset] = (mod_sym_t) qam16_table_offset;
-	    txdataF[0][tti_offset+1] = (mod_sym_t) qam16_table_offset2;
+	    txdataF[0][tti_offset] = (mod_sym_t) qam16_table_offset; //x0
+	    txdataF[1][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x0*
 
-	    // Antenna 1 position n Real part -> -x1*
 
-	    qam16_table_offset = 5;
-	    qam16_table_offset2 = 5;
+	    qam16_table_offset = 5; //-x1*
+	    qam16_table_offset2 = 5; //x1
 	    if (output[*jj] == 1)
 	      qam16_table_offset2+=2;
 	    else
 	      qam16_table_offset+=2;
 	    *jj=*jj+1;
-	    if (output[*jj] == 1)
+
+	    if (output[*jj] == 1) {
 	      qam16_table_offset2+=1;
-	    else
 	      qam16_table_offset+=1;
+	    }
 	    *jj=*jj+1;
 	    
 	    
@@ -601,86 +603,115 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qam16_table_offset2+=8;
 	    }
 	    *jj=*jj+1;
+
 	    if (output[*jj] == 1) {
 	      qam16_table_offset+=4;
 	      qam16_table_offset2+=4;
 	    }
 	    *jj=*jj+1;
 	    
-	    txdataF[1][tti_offset] = (mod_sym_t) qam16_table_offset;
-	    txdataF[1][tti_offset+1] = (mod_sym_t) qam16_table_offset2;
+	    txdataF[1][tti_offset] = (mod_sym_t) qam16_table_offset;  //x1*
+	    txdataF[0][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x1
 
 	    break;
 	  case 6:   // 64-QAM
 
 	    // Antenna 0
-	    qam64_table_offset = 21;
-	    if (output[*jj] == 1)
+	    qam64_table_offset = 21; //x0
+	    qam64_table_offset2 = 21; //x0*
+	    if (output[*jj] == 1) {
 	      qam64_table_offset+=4;
+	      qam64_table_offset2+=4;
+	    }
 	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    if (output[*jj] == 1)
-	      qam64_table_offset+=32;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset+=16;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset+=8;
-	    *jj=*jj+1;
-	    
-	    txdataF[0][tti_offset] = (mod_sym_t) qam64_table_offset;
 
-	    // Antenna 1 => -x1*
-	    qam64_table_offset = 21;
-	    if (output[*jj] == 0)
-	      qam64_table_offset+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 0)
+	    if (output[*jj] == 1) {
 	      qam64_table_offset+=2;
+	      qam64_table_offset2+=2;
+	    }
 	    *jj=*jj+1;
-	    if (output[*jj] == 0)
+
+	    if (output[*jj] == 1) {
 	      qam64_table_offset+=1;
+	      qam64_table_offset2+=1;
+	    }
 	    *jj=*jj+1;
 	    
 	    
 	    if (output[*jj] == 1)
 	      qam64_table_offset+=32;
+	    else
+	      qam64_table_offset2+=32;
 	    *jj=*jj+1;
-	    if (output[*jj] == 1)
+
+	    if (output[*jj] == 1) {
 	      qam64_table_offset+=16;
+	      qam64_table_offset2+=16;
+	    }
 	    *jj=*jj+1;
-	    if (output[*jj] == 1)
+
+	    if (output[*jj] == 1) {
 	      qam64_table_offset+=8;
+	      qam64_table_offset2+=8;
+	    }
 	    *jj=*jj+1;
 	    
-	    txdataF[1][tti_offset] = (mod_sym_t) qam64_table_offset;
+	    txdataF[0][tti_offset] = (mod_sym_t) qam64_table_offset; //x0
+	    txdataF[1][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x0*
+
+	    qam64_table_offset = 21; //-x1*
+	    qam64_table_offset2 = 21; //x1
+	    if (output[*jj] == 1)
+	      qam64_table_offset2+=4;
+	    else
+	      qam64_table_offset+=4;
+	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qam64_table_offset+=2;
+	      qam64_table_offset2+=2;
+	    }
+	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qam64_table_offset+=1;
+	      qam64_table_offset2+=1;
+	    }
+	    *jj=*jj+1;
+	    
+	    
+	    if (output[*jj] == 1) {
+	      qam64_table_offset+=32;
+	      qam64_table_offset2+=32;
+	    }
+	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qam64_table_offset+=16;
+	      qam64_table_offset2+=16;
+	    }
+	    *jj=*jj+1;
+
+	    if (output[*jj] == 1) {
+	      qam64_table_offset+=8;
+	      qam64_table_offset2+=8;
+	    }
+	    *jj=*jj+1;
+	    
+	    txdataF[1][tti_offset] = (mod_sym_t) qam64_table_offset; //-x1*
+	    txdataF[0][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x1
 		    
 	    break;
 	  }
-	  // fill in the rest of the ALAMOUTI precoding
-	  ((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0]; //-real(0)
-	  ((short *)&txdataF[0][tti_offset+1])[1] = ((short *)&txdataF[1][tti_offset])[1];  //imag(0)
-	  ((short *)&txdataF[1][tti_offset+1])[0] = ((short *)&txdataF[0][tti_offset])[0];  //real(1)
-	  ((short *)&txdataF[1][tti_offset+1])[1] = -((short *)&txdataF[0][tti_offset])[1]; //-imag(1)
-
 	}
 	/*
 	else if (mimo_mode == ANTCYCLING ) {
 
 	}
-	*/
 	else if (mimo_mode == DUALSTREAM0) {
 
-
 	}
+	*/
 	else {
 	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
 	  return(-1);
@@ -709,7 +740,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
   unsigned char nsymb;
   unsigned int jj,re_allocated;
-  unsigned short l,rb,re_offset;
+  unsigned short l,rb,re_offset,symbol_offset;
   unsigned int rb_alloc_ind;
   unsigned char pilots,first_pilot,second_pilot;
   unsigned char skip_dc;
@@ -746,7 +777,13 @@ int dlsch_modulation(mod_sym_t **txdataF,
       // LTE is eNb centric.  "Smart" Interference
       // cancellation isn't possible
 
+#ifdef IFFT_FPGA
+      re_offset = frame_parms->N_RB_DL*12/2;
+      symbol_offset = frame_parms->N_RB_DL*12*l;
+#else
       re_offset = frame_parms->first_carrier_offset;
+      symbol_offset = frame_parms->ofdm_symbol_size*(l+sub_frame_offset*nsymb);
+#endif
       
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 	
@@ -774,7 +811,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  allocate_REs_in_RB(txdataF,
 			     &jj,
 			     re_offset,
-			     frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb)),
+			     symbol_offset,
 			     dlsch->e,
 			     dlsch->harq_processes[harq_pid]->mimo_mode,
 			     dlsch->layer_index,
@@ -789,12 +826,22 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	re_offset+=12; // go to next RB
 	
 	// check if we crossed the symbol boundary and skip DC
+#ifdef IFFT_FPGA
+	if (re_offset >= frame_parms->N_RB_DL*12) {
+	  if (skip_dc == 0)  //even number of RBs (doesn't straddle DC)
+	    re_offset=0;
+	  else
+	    re_offset=6;  // odd number of RBs
+	}
+
+#else
 	if (re_offset >= frame_parms->ofdm_symbol_size) {
 	  if (skip_dc == 0)  //even number of RBs (doesn't straddle DC)
 	    re_offset=1;
 	  else
 	    re_offset=7;  // odd number of RBs
 	}
+#endif
       }
 	
     }

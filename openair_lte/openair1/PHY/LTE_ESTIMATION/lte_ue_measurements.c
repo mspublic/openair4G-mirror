@@ -22,8 +22,8 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     phy_measurements->rx_power[0][aarx] = 0;
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
-      phy_measurements->rx_power[0][aarx] += signal_energy(ue_common_vars->dl_ch_estimates[aatx*frame_parms->nb_antennas_tx + aarx],
-					 frame_parms->ofdm_symbol_size);
+            phy_measurements->rx_power[0][aarx] += signal_energy(&ue_common_vars->dl_ch_estimates[aatx*frame_parms->nb_antennas_tx + aarx][4],
+      					 frame_parms->N_RB_DL*12);
     }
     phy_measurements->rx_power[0][aarx]/=frame_parms->nb_antennas_tx;
     phy_measurements->rx_power_dB[0][aarx] = dB_fixed(phy_measurements->rx_power[0][aarx]);

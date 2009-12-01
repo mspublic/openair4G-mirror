@@ -141,7 +141,7 @@ void lte_scope_idle_callback(void) {
     }
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,30,90);
+  fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
 
   // channel_t_im = rx_sig

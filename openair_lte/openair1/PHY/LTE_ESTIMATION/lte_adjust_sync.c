@@ -39,7 +39,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
   // do ifft of channel estimate
   for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
-    fft((short*) lte_ue_common->dl_ch_estimates[aa],
+    fft((short*) &lte_ue_common->dl_ch_estimates[aa][LTE_CE_OFFSET],
 	(short*) lte_ue_common->dl_ch_estimates_time[aa],
 	frame_parms->twiddle_ifft,
 	frame_parms->rev,
