@@ -23,8 +23,8 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
 
-#define MAX_NUM_DLSCH_SEGMENTS 2
-#define MAX_DLSCH_PAYLOAD_BYTES 16384
+#define MAX_NUM_DLSCH_SEGMENTS 3
+#define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 
 typedef struct {
 /// Flag indicating that this DLSCH is active (i.e. not the first round)

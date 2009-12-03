@@ -45,7 +45,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	if (!dlsch->harq_processes[i]->b)
 	  exit_flag=1;
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16((r==0)?8:0) + 3 + (MAX_DLSCH_PAYLOAD_BYTES/8);	
+	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
 	  if (!dlsch->harq_processes[i]->c[r])
 	    exit_flag=1;
 	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
@@ -208,7 +208,6 @@ unsigned int  dlsch_decoding(unsigned short A,
 					crc_type,
 					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
-    
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //      printf("CRC failed\n");
       return(ret);
@@ -217,7 +216,7 @@ unsigned int  dlsch_decoding(unsigned short A,
   // Reassembly of Transport block here
   offset = 0;
   //  printf("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
-
+  
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
     if (r<dlsch->harq_processes[harq_pid]->Cminus)
       Kr = dlsch->harq_processes[harq_pid]->Kminus;
@@ -241,5 +240,6 @@ unsigned int  dlsch_decoding(unsigned short A,
       offset += Kr_bytes;
     }
   }
+  
   return(ret);
 }

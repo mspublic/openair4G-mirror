@@ -264,14 +264,14 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
       *uerrors = (*uerrors) + 1;
     
     for (i=0;i<block_length;i++) {
-      /*      
+    /*        
       if (test_input[i] != dlsch_ue->harq_processes[0]->b[i])
 	printf("i %d/%d : Input %x, Output %x\n",i,block_length,test_input[i],dlsch_ue->harq_processes[0]->b[i]);
-      */
+     */ 
       if (dlsch_ue->harq_processes[0]->b[i] != test_input[i]) {
 
 	*errors = (*errors) + 1;
-	printf("*%d\n",*errors);	
+//	printf("*%d\n",*errors);	
 
 
 	
@@ -282,7 +282,7 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
       }
     }
     if (*errors == 100) {
-      printf("\n");
+      //printf("\n");
       break;
     }
   }

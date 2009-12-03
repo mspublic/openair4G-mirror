@@ -62,8 +62,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 
 void main(int argc,void **argv) {
 
-  int i,aa,s,ind;
-  double sigma2, sigma2_dB=40,SNR,snr0,snr1;
+  int i,aa,s,ind,Kr,Kr_bytes;;
+  double sigma2, sigma2_dB=10,SNR,snr0,snr1;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -73,7 +73,7 @@ void main(int argc,void **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.05;
+  double aoa=.03,ricean_factor=0.00005;
   int channel_length;
   struct complex **ch;
 
@@ -92,6 +92,7 @@ void main(int argc,void **argv) {
   unsigned int coded_bits_per_codeword,nsymb;
 
   unsigned int tx_lev,tx_lev_dB,trials,errs=0;
+
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -151,19 +152,19 @@ void main(int argc,void **argv) {
     snr0=0;
     snr1=10;
   }
-  else if (SE < 3) {
+  else if (SE < 2.7) {
     mod_order[0]=4;
     mod_order[1]=4;
     target_code_rate = SE/4.0;
-    snr0=7;
-    snr1=20;
+    snr0=4;
+    snr1=16;
   }
   else if (SE < 6) {
     mod_order[0]=6;
     mod_order[1]=6;
     target_code_rate = SE/6.0;
-    snr0=20;
-    snr1=30;
+    snr0=10;
+    snr1=25;
   }
   printf("Target code rate %f, mod_order %d\n",target_code_rate,mod_order[0]);
 
@@ -230,9 +231,9 @@ void main(int argc,void **argv) {
 
 #ifdef OUTPUT_DEBUG
   for (i=0;i<32;i++)
-    printf("Segment 0 %d : %d\n",i,dlsch_eNb[0]->harq_processes[0]->c[0][i]);
+    printf("Segment 0 %d : %x\n",i,dlsch_eNb[0]->harq_processes[0]->c[0][i]);
   for (i=0;i<32;i++)
-    printf("Segment 1 %d : %d\n",i,dlsch_eNb[0]->harq_processes[0]->c[1][i]);
+    printf("Segment 1 %d : %x\n",i,dlsch_eNb[0]->harq_processes[0]->c[1][i]);
 #endif 
 
   dlsch_modulation(lte_eNB_common_vars->txdataF,
@@ -271,7 +272,7 @@ void main(int argc,void **argv) {
   // do talbe lookup and write results to txdataF2
   for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
     ind = 0;
-    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
+    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5;i++) 
       if (((i%512)>=1) && ((i%512)<=150))
 	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[aa][ind++]];
       else if ((i%512)>=362)
@@ -290,20 +291,20 @@ void main(int argc,void **argv) {
     PHY_ofdm_mod(txdataF2[aa],        // input
 		 txdata[aa],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+		 2*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
 		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
 		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 lte_frame_parms->rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
 
-    tx_lev += signal_energy(&txdata[aa][0],
-			    lte_frame_parms->samples_per_tti);
+    tx_lev += signal_energy(&txdata[aa][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
+			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
   }
     
 #else //IFFT_FPGA
 
 #ifdef OUTPUT_DEBUG  
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
 #endif
   
   tx_lev = 0;
@@ -311,14 +312,14 @@ void main(int argc,void **argv) {
     PHY_ofdm_mod(lte_eNB_common_vars->txdataF[aa],        // input
 		 txdata[aa],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+		 2*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
 		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
 		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 lte_frame_parms->rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
 
-    tx_lev += signal_energy(&txdata[aa][0],
-			    lte_frame_parms->samples_per_tti);
+    tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*2],
+			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 
   }  
 #endif //IFFT_FPGA
@@ -329,13 +330,13 @@ void main(int argc,void **argv) {
 
 
 #ifdef OUTPUT_DEBUG  
-  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES/5,1,1);
 #endif
 
   // multipath channel
   randominit();
 
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES/5;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
       s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
       s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
@@ -344,26 +345,28 @@ void main(int argc,void **argv) {
 
   printf("tx_lev_dB = %d\n",tx_lev_dB);
   for (SNR=snr0;SNR<snr1;SNR++) {
+    sigma2_dB = 10+tx_lev_dB - SNR;
     printf("**********************SNR = %f dB (tx_lev %d, sigma2_dB %f)**************************\n",
 	   SNR,
-	   tx_lev_dB,
+	   tx_lev_dB+10,
 	   sigma2_dB);
     errs=0;
+    printf("Channel attenuation %f\n",(double)tx_lev_dB - (SNR+sigma2_dB));
     for (trials = 0;trials<100;trials++) {
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
-			FRAME_LENGTH_COMPLEX_SAMPLES,
-			channel_length,
-			(double)tx_lev_dB - (SNR+sigma2_dB));
+			FRAME_LENGTH_COMPLEX_SAMPLES/5,
+			channel_length,-10);
+			//(double)tx_lev_dB - (SNR+sigma2_dB));
 #ifdef OUTPUT_DEBUG
-	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+			//	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #endif
     
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
-	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES/5; i++) {
 	  for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	    ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	    ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
@@ -372,7 +375,10 @@ void main(int argc,void **argv) {
 	//    lte_sync_time_init(lte_frame_parms,lte_ue_common_vars);
 	//    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 	//    lte_sync_time_free();
-    
+#ifdef OUTPUT_DEBUG
+	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
+	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
+#endif    
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {
@@ -466,10 +472,18 @@ void main(int argc,void **argv) {
 	  errs++;
 #ifdef OUTPUT_DEBUG  
 	for (s=0;s<dlsch_ue[0]->harq_processes[0]->C;s++) {
+	  if (s<dlsch_ue[0]->harq_processes[0]->Cminus)
+	    Kr = dlsch_ue[0]->harq_processes[0]->Kminus;
+	  else
+	    Kr = dlsch_ue[0]->harq_processes[0]->Kplus;
+	  
+	  Kr_bytes = Kr>>3;
+
 	  printf("Decoded_output (Segment %d):\n",s);
-	  for (i=0;i<dlsch_ue[0]->harq_processes[0]->Kplus/8;i++)
+	  for (i=0;i<Kr_bytes;i++)
 	    printf("%d : %x (%x)\n",i,dlsch_ue[0]->harq_processes[0]->c[s][i],dlsch_ue[0]->harq_processes[0]->c[s][i]^dlsch_eNb[0]->harq_processes[0]->c[s][i]);
 	}
+	exit(-1);
 #endif
       }   //trials
     printf("Errors %d\n",errs);

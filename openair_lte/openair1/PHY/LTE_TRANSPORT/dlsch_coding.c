@@ -62,7 +62,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	  exit_flag=1;
 	}
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES>>3));  // account for filler in first segment and CRCs for multiple segment case
+	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
 	  if (!dlsch->harq_processes[i]->c[r]) {
 	    printf("Can't get c\n");
 	    exit_flag=2;

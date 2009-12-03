@@ -113,6 +113,9 @@ void lte_segmentation(unsigned char *input_buffer,
       if (*C > 1) { // add CRC
 	crc = crc24b(output_buffers[r],Kr-24)>>8;
 	*(unsigned int*)(&output_buffers[r][(Kr-24)>>3]) = crc;
+#ifdef DEBUG_SEGMENTATION
+	printf("Segment %d : CRC %x\n",r,crc);
+#endif
       }
       k=0;
     }

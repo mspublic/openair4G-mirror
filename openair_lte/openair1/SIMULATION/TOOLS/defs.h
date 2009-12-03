@@ -122,7 +122,7 @@ void random_channel(double *amps,
 		       unsigned char nb_antennas_rx,
 		       unsigned int length,
 		       unsigned int channel_length,
-		       unsigned int path_loss_dB);
+		       double path_loss_dB);
 \brief This function generates and applys a random frequency selective random channel model.
 @param ch Pointer to spatio-temporal channel coefficients
 @param tx_sig_re input signal (real component) 
@@ -154,5 +154,5 @@ void multipath_channel(struct complex **ch,
 		       unsigned char nb_antennas_rx,
 		       unsigned int length,
 		       unsigned int channel_length,
-		       unsigned int path_loss_dB);
+		       double path_loss_dB);
 /* *@} */

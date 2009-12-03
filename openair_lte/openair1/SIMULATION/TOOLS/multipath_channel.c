@@ -20,12 +20,12 @@ void multipath_channel(struct complex **ch,
 		       unsigned char nb_antennas_rx,
 		       unsigned int length,
 		       unsigned int channel_length,
-		       unsigned int path_loss_dB) {
+		       double path_loss_dB) {
  
   int i,ii,j,l;
   struct complex rx_tmp,tx;
   struct complex phase;
-  double path_loss = pow(10,-(double)path_loss_dB/20);
+  double path_loss = pow(10,-path_loss_dB/20);
 
 #ifdef DEBUG_PHY
   //  printf("path_loss = %g\n",path_loss);
