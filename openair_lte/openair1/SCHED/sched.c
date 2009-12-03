@@ -683,7 +683,7 @@ void openair_sync(void) {
 	/*
 	if (!mac_xface->is_cluster_head) {
 	  openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
+	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 	  clear_mesh=1;
 	  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
 	    PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
@@ -766,7 +766,7 @@ void openair_sync(void) {
 	/*
 	if (mac_xface->is_cluster_head) {
 	  openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
+	  openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 	  clear_mesh=1;
 	  if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
 	    PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
@@ -862,7 +862,7 @@ void openair_sensing(void) {
       if (sensing_result==1) {
 
 	openair_daq_vars.freq = (openair_daq_vars.freq+1) % 4;
-	openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<3);
+	openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 	sensing_counter = 0;
 	clear_mesh=1;
 	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {

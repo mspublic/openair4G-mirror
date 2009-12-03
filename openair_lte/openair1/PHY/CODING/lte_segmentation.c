@@ -71,7 +71,7 @@ void lte_segmentation(unsigned char *input_buffer,
   }
   else {
     msg("lte_segmentation.c: Illegal codeword size !!!\n");
-    exit(-1);
+    return(-1);
   }  
 
   if (*C == 1) {

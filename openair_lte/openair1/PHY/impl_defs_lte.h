@@ -16,6 +16,8 @@ ________________________________________________________________*/
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_CE_FILTER_LENGTH 5
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
+#define TX_RX_SWITCH_SYMBOL 0 
+
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {
@@ -47,6 +49,8 @@ typedef enum {
 typedef struct{
   int **txdata;
   mod_sym_t **txdataF;
+  int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
+  int **rxdataF;          ///holds the received data in the frequency domain
 } LTE_eNB_COMMON;
 
 //typedef struct{

@@ -44,6 +44,8 @@ extern LTE_UE_COMMON *lte_ue_common_vars;
 extern LTE_UE_DLSCH *lte_ue_dlsch_vars;
 extern LTE_UE_PBCH *lte_ue_pbch_vars;
 extern LTE_eNB_COMMON *lte_eNB_common_vars;
+extern LTE_eNb_DLSCH_t **dlsch_eNb;
+extern LTE_UE_DLSCH_t **dlsch_ue;
 #endif
 
 

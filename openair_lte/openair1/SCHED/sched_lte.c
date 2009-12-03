@@ -453,10 +453,30 @@ void openair_sync(void) {
     }
 
     // Measurements
+    /*
     lte_ue_measurements(lte_ue_common_vars,
 			lte_frame_parms,
 			&PHY_vars->PHY_measurements);
+    */
 
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] = 0;
+    for (i=0;i<lte_frame_parms->nb_antennas_rx; i++) {
+      // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.rx_power[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.rx_power_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.rx_power[0][i]);
+      PHY_vars->PHY_measurements.rx_avg_power_dB[0] += PHY_vars->PHY_measurements.rx_power_dB[0][i];
+    }
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= lte_frame_parms->nb_antennas_rx;
+    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
+    
+    msg("[openair][SCHED] RX RSSI %d dB, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
+	PHY_vars->PHY_measurements.rx_power_dB[0][0],
+	PHY_vars->PHY_measurements.rx_power_dB[0][1],
+	PHY_vars->PHY_measurements.rx_power[0][0],
+	PHY_vars->PHY_measurements.rx_power[0][1],
+	PHY_vars->rx_vars[0].rx_total_gain_dB);
+    
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
       msg("[openair][SCHED][AGC] Running AGC, rx_avg_power_dB = %d, rx_total_gain_dB = %d \n",
@@ -466,9 +486,10 @@ void openair_sync(void) {
       if (clear == 1)
 	clear = 0;
     }
+    
   }
   
-  msg("[openair][SCHED][SYNCH] Returning\n");
+  //msg("[openair][SCHED][SYNCH] Returning\n");
 
 }
 

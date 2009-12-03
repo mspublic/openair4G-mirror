@@ -110,7 +110,6 @@ ________________________________________________________________*/
 
 #define NUMBER_OF_CARRIERS_PER_GROUP (NUMBER_OF_USEFUL_CARRIERS/NUMBER_OF_FREQUENCY_GROUPS)
 
- 
 #define RX_PRECISION (16)
 #define LOG2_RX_PRECISION (4)
 #define RX_OUTPUT_SHIFT (4)
@@ -289,10 +288,10 @@ typedef struct
 {
   unsigned int   rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
   unsigned int   n0_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
-  unsigned short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-  unsigned short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
-  unsigned short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
-  unsigned short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+  short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
+  short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
+  short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
 #ifdef EMOS
   unsigned int   frame_tx;              // This is used to set the file index of the measurement file at the terminal
 #endif //EMOS

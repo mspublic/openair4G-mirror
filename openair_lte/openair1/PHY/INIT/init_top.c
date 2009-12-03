@@ -143,9 +143,9 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
     PHY_vars->rx_vars[i].RX_DMA_BUFFER = tmp_ptr;
-#ifdef DEBUG_PHY
+    //#ifdef DEBUG_PHY
     msg("[PHY][INIT] PHY_vars->rx_vars[%d].RX_DMA_BUFFER = %p\n",i,PHY_vars->rx_vars[i].RX_DMA_BUFFER);
-#endif
+    //#endif
 
 #ifdef PLATON
 #ifndef USER_MODE

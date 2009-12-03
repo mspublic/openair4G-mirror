@@ -171,7 +171,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int temp_re, temp_im, result;
   int sync_out[3] = {0,0,0};
 
-  msg("[SYNC TIME] Calling sync_time.\n");
+  //msg("[SYNC TIME] Calling sync_time.\n");
   if (sync_corr == NULL) {
     msg("[SYNC TIME] sync_corr not yet allocated! Exiting.\n");
     return(-1);
@@ -184,8 +184,9 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   for (n=0; n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti); n+=4) {
 
 #ifdef RTAI_ENABLED
+    // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
     if (n%frame_parms->samples_per_tti == 0) {
-      msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
+      //msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
       rt_sleep(nano2count(1000));
     }
 #endif

@@ -1,4 +1,3 @@
-#include <string.h>
 #include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
@@ -12,19 +11,18 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
     for (i=0;i<dlsch->Mdlharq;i++) {
       if (dlsch->harq_processes[i]) {
 	if (dlsch->harq_processes[i]->b)
-	  free(dlsch->harq_processes[i]->b);
+	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 	if (dlsch->harq_processes[i]->c) {
 	  for (r=0;r<8;r++)
-	    free(dlsch->harq_processes[i]->c[r]);
-	  free(dlsch->harq_processes[i]->c);
+	    free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 768);
 	}
 	for (r=0;r<8;r++)
 	  if (dlsch->harq_processes[i]->d[r])
-	    free(dlsch->harq_processes[i]->d[r]);
-	free(dlsch->harq_processes[i]);
+	    free16(dlsch->harq_processes[i]->d[r],((3*8*6144)+12+96)*sizeof(short));
+	free16(dlsch->harq_processes[i],sizeof(LTE_UE_HARQ_t));
       }
     }
-    free(dlsch);
+  free16(dlsch,sizeof(LTE_UE_DLSCH_t));
   }
 }
 
@@ -43,11 +41,11 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b)
-	  exit_flag=1;
+	  exit_flag=3;
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
 	  if (!dlsch->harq_processes[i]->c[r])
-	    exit_flag=1;
+	    exit_flag=2;
 	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
 	}
       
@@ -55,9 +53,11 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	exit_flag=1;
       }
     }
+
     if (exit_flag==0)
       return(dlsch);
   }
+  msg("new_ue_dlsch: exit_flag = %d\n",exit_flag);
   free_ue_dlsch(dlsch);
 
   return(NULL);
@@ -123,7 +123,7 @@ unsigned int  dlsch_decoding(unsigned short A,
       iind = 123 + ((Kr_bytes-256)>>3);
     else {
       msg("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      exit(-1);
+      return(-1);
     }
   
 #ifdef DEBUG_DLSCH_DECODING     

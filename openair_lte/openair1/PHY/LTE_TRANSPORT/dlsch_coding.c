@@ -4,7 +4,6 @@
    date: 21.10.2009 
 */
 
-#include <string.h>
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
@@ -29,17 +28,16 @@ void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
     for (i=0;i<dlsch->Mdlharq;i++) {
       if (dlsch->harq_processes[i]) {
 	if (dlsch->harq_processes[i]->b)
-	  free(dlsch->harq_processes[i]->b);
+	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 	if (dlsch->harq_processes[i]->c) {
 	  for (r=0;r<8;r++)
 	    if (dlsch->harq_processes[i]->c[r]) 
-	      	  free(dlsch->harq_processes[i]->c[r]);
-	  free(dlsch->harq_processes[i]->c);
+	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));
 	}
-	free(dlsch->harq_processes[i]);
+	free16(dlsch->harq_processes[i],sizeof(LTE_eNb_HARQ_t));
       }
     }
-    free(dlsch);
+    free16(dlsch,sizeof(LTE_eNb_DLSCH_t));
   }
   
 }
@@ -58,18 +56,18 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b) {
-	  printf("Can't get b\n");
+	  msg("Can't get b\n");
 	  exit_flag=1;
 	}
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
 	  if (!dlsch->harq_processes[i]->c[r]) {
-	    printf("Can't get c\n");
+	    msg("Can't get c\n");
 	    exit_flag=2;
 	  }
 	}
       }	else {
-	printf("Can't get harq_p\n");
+	msg("Can't get harq_p\n");
 	exit_flag=3;
       }
     }
@@ -82,7 +80,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       return(dlsch);
     }
   }
-  printf("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
+  msg("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
   free_eNb_dlsch(dlsch);
   return(NULL);
   
@@ -140,8 +138,8 @@ void dlsch_encoding(unsigned char *a,
       else if (Kr_bytes <= 768)
 	iind = 123 + ((Kr_bytes-256)>>3);
       else {
-	printf("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-	exit(-1);
+	msg("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
+	return(-1);
       }
     
   

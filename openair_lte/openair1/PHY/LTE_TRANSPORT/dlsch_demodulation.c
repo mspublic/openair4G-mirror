@@ -1,4 +1,3 @@
-#include <string.h>
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #include <pmmintrin.h>
@@ -455,7 +454,7 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char rb,re;
   int jj=1+(symbol*frame_parms->N_RB_DL*12);
 
-  printf("Doing antcyc rx\n");
+  //printf("Doing antcyc rx\n");
   for (rb=0;rb<nb_rb;rb++) {
 
     for (re=0;re<12;re+=2) {
@@ -1210,7 +1209,7 @@ void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       dlsch_antcyc(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
     else {
       msg("dlsch_rx: Unknown MIMO mode\n");
-      exit (-1);
+      return (-1);
     }
     switch (Qm[0]) {
     case 2 : 
@@ -1224,7 +1223,7 @@ void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       break;
     default:
       msg("rx_dlsch.c : Unknown mod_order %d\n",Qm[0]);
-      exit(-1);
+      return(-1);
       break;
     }
   }

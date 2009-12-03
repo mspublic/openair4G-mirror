@@ -242,30 +242,77 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-  return(1);
+  return(0);
 }
 
 int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_eNB_COMMON *eNB_common) {
+		     LTE_eNB_COMMON *eNB_common_vars) {
 
   int i;
 
-  eNB_common->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+  eNB_common_vars->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 #ifdef IFFT_FPGA
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    eNB_common->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+    eNB_common_vars->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
   }
-  eNB_common->txdata = NULL;
+  eNB_common_vars->txdata = NULL;
 #else
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    eNB_common->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
-    bzero(eNB_common->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+    eNB_common_vars->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+    bzero(eNB_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
   }
-  eNB_common->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+  eNB_common_vars->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    eNB_common->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+    eNB_common_vars->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
   }
 #endif  
+
+  eNB_common_vars->rxdata = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+  if (eNB_common_vars->rxdata) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata allocated at %p\n",
+	   eNB_common_vars->rxdata);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata not allocated\n");
+    return(-1);
+  }
+
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    eNB_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
+    //#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] = %p\n",i,eNB_common_vars->rxdata[i]);
+    //#endif
+  }
+
+  eNB_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+  if (eNB_common_vars->rxdataF) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF allocated at %p\n",
+	   eNB_common_vars->rxdataF);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF not allocated\n");
+    return(-1);
+  }
+
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    //RK 2 times because of output format of FFT!  We should get rid of this
+    eNB_common_vars->rxdataF[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
+    if (eNB_common_vars->rxdataF[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF[%d] allocated at %p\n",i,
+	     eNB_common_vars->rxdataF[i]);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+
 
   return (0);  
 }

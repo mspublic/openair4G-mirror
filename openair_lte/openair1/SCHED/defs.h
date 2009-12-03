@@ -77,7 +77,7 @@ typedef struct {
   unsigned char first_sync_call;
   int  instance_cnt;
   unsigned char one_shot_get_frame;
-  unsigned char node_configured;
+  unsigned char node_configured;  // &1..basic config, &3..ue config &5..eNb config
   unsigned char node_running;
   unsigned char tx_test;
   unsigned char mac_registered;

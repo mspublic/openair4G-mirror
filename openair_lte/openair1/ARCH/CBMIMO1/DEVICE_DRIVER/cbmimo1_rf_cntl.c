@@ -131,7 +131,7 @@ void openair_set_lo_freq_openair(char freq0,char freq1) {
   //  openair_writel(freq0,bar[0]+0x4);
   //  openair_writel(freq1,bar[0]+0x8);
   //  openair_dma(SET_LO_FREQ);
-  openair_daq_vars.freq_info = 1 + (freq0<<1) + (freq1<<3);
+  openair_daq_vars.freq_info = 1 + (freq0<<1) + (freq1<<4);
   pci_interface->freq_info = openair_daq_vars.freq_info;
 #endif
 

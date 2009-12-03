@@ -289,7 +289,7 @@ int main (int argc, char **argv) {
   case 1 :
     printf("[openair][START][INFO] Starting clusterhead\n");
 #ifdef CBMIMO1
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) | ((atoi(argv[4])&0xFF) << 5);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) | ((atoi(argv[4])&0xFF) << 7);
     printf("[openair][START][INFO] fc = %d\n",fc);
 #endif //CBMIMO1
 #ifdef PLATON
@@ -361,7 +361,7 @@ int main (int argc, char **argv) {
     break;
   case 2 :
     printf("[openair][START][INFO] Starting secondary clusterhead\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) |  ((atoi(argv[4])&0xFF) << 5);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((atoi(argv[4])&0xFF) << 7);
     result=ioctl(openair_fd,openair_START_2ARY_CLUSTERHEAD,&fc);
     if (result == 0) {
       printf ("[openair][START][INFO] secondary clusterhead running\n");
@@ -375,7 +375,7 @@ int main (int argc, char **argv) {
 #ifdef CBMIMO1
   case 3 :
     printf("[openair][START][INFO] Starting NODE ...(%x)\n",openair_START_NODE);
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) |  ((atoi(argv[4])&0xFF) << 5);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((atoi(argv[4])&0xFF) << 7);
     result=ioctl(openair_fd,openair_START_NODE, &fc);
 
     if (result == 0) {
@@ -390,7 +390,7 @@ int main (int argc, char **argv) {
 #endif
   case 4 : 
     printf("[openair][START][INFO] Stoping ...\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);
 
     result=ioctl(openair_fd,openair_STOP,(void *)&fc);
     if (result == 0) {
@@ -426,7 +426,7 @@ int main (int argc, char **argv) {
 	exit(0);
       }
 
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);
     ioctl(openair_fd,openair_GET_BUFFER,(void *)&fc);
 
     sleep(2);
@@ -460,7 +460,7 @@ int main (int argc, char **argv) {
 
   case 8 :
     printf("[openair][START][INFO] TX Test FS/4\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);
     result=ioctl(openair_fd,openair_START_FS4_TEST,&fc);
     break;
 
@@ -475,9 +475,6 @@ int main (int argc, char **argv) {
     
     //openair_generate_ofdm(1,0xffff,chbch_pdu);
     openair_generate_ofdm(3,0,0);
-    /*
-    ((unsigned int *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0])[0] = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3) | (64<<8); 
-    */
 
     printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
     result=ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars);
@@ -493,19 +490,19 @@ int main (int argc, char **argv) {
 
   case 10 :
     printf("[openair][START][INFO] TX Test QAM16\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);;
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);;
     result=ioctl(openair_fd,openair_START_QAM16_TEST,&fc);
     break;
 
   case 11 :
     printf("[openair][START][INFO] TX Test QPSK\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);;
     result=ioctl(openair_fd,openair_START_QPSK_TEST,&fc);
     break;
 
   case 12 :
     printf("[openair][START][INFO] TX Test I/Q Impulses\n");
-    fc = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);;
     result=ioctl(openair_fd,openair_START_IQ_IMPULSES_TEST,&fc);
     break;
 
@@ -542,7 +539,7 @@ int main (int argc, char **argv) {
     
 
     
-    ((unsigned char *)&dma_buffer_local[0])[0] = (unsigned char)((atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3));
+    ((unsigned char *)&dma_buffer_local[0])[0] = (unsigned char)((atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4));
     ((unsigned char *)&dma_buffer_local[0])[1] = (unsigned char)(atoi(argv[4]));
     ioctl(openair_fd,openair_DO_SYNCH,(void *)dma_buffer_local);
 
@@ -571,7 +568,7 @@ int main (int argc, char **argv) {
 	exit(0);
       }
     
-    ((unsigned int *)&dma_buffer_local[0])[0] = (atoi(argv[3])&1) | ((frequency&3)<<1) | ((frequency&3)<<3);
+    ((unsigned int *)&dma_buffer_local[0])[0] = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);
     ((unsigned char *)&dma_buffer_local[0])[1] = (unsigned char)(atoi(argv[4]));
 
     if (temp[0] < 4)

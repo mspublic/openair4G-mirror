@@ -489,6 +489,12 @@ void main(int argc,void **argv) {
     printf("Errors %d\n",errs);
   } // SNR
 
+  for (i=0;i<2;i++) {
+    free_eNb_dlsch(dlsch_eNb[i]);
+    free_ue_dlsch(dlsch_ue[i]);
+  }
+
+
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);

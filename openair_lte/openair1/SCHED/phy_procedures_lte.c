@@ -58,19 +58,29 @@ ________________________________________________________________*/
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 #endif
 
-
+unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 
 int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
+  /*
   int ret[2];
   int time_in,time_out;
   int diff;
   int timing_offset;		
+  */
   int i,k,l;
   unsigned char pbch_pdu[6];
 #ifndef USER_MODE
   RTIME  now;            
 #endif
+
+  // DLSCH variables
+  unsigned char mod_order[2]={2,2};
+  unsigned int rb_alloc[4];
+  MIMO_mode_t mimo_mode = SISO; //ALAMOUTI;
+  unsigned short input_buffer_length;
+  unsigned int coded_bits_per_codeword,nsymb;
+  int inv_target_code_rate = 2;
 
   /*
 #ifndef OPENAIR2
@@ -79,13 +89,41 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif
   */
 
-  if (last_slot<0 || last_slot>=20) {
+  if (last_slot<0 || last_slot>=20 || next_slot<0 || next_slot>=20 ) {
     msg("[PHY_PROCEDURES_LTE] Frame %d, Error: last_slot =%d!\n",mac_xface->frame, last_slot);
     return(-1);
   }
 
   //if (mac_xface->frame%100 == 0)
   //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
+
+  if (last_slot==SLOTS_PER_FRAME/2) {
+    // to test the feasibility we measure the signal energy on RX
+    
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] = 0;
+    for (i=0;i<lte_frame_parms->nb_antennas_rx; i++) {
+      // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.rx_power[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.rx_power_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.rx_power[0][i]);
+      PHY_vars->PHY_measurements.rx_avg_power_dB[0] += PHY_vars->PHY_measurements.rx_power_dB[0][i];
+    }
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= lte_frame_parms->nb_antennas_rx;
+    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
+    
+    if (mac_xface->frame%100 == 0)
+      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dB, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+	  mac_xface->frame, next_slot,
+	  PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
+	  PHY_vars->PHY_measurements.rx_power_dB[0][0],
+	  PHY_vars->PHY_measurements.rx_power_dB[0][1],
+	  PHY_vars->PHY_measurements.rx_power[0][0],
+	  PHY_vars->PHY_measurements.rx_power[0][1],
+	  PHY_vars->rx_vars[0].rx_total_gain_dB);
+
+    if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) 
+      phy_adjust_gain (0,16384,0);
+    
+  }
 
   if (mac_xface->is_cluster_head == 0) {
     
@@ -158,13 +196,14 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 			 lte_frame_parms,
 			 next_slot);
 
+
     if (next_slot == 0)
       generate_pss(lte_eNB_common_vars->txdataF,
 		   1024,
 		   lte_frame_parms,
 		   1);
 
-    if (next_slot == 1) {
+    else if (next_slot == 1) {
 
       if (mac_xface->frame%100 == 0)
 	msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
@@ -176,9 +215,66 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		    lte_frame_parms,
 		    pbch_pdu);
     }
+ 
+    else { // fill all other frames with DLSCH
 
+      // Create transport channel structures for 2 transport blocks (MIMO)
+      /*
+      for (i=0;i<2;i++) {
+	
+	if (!dlsch_eNb[i]) {
+	  msg("Can't get eNb dlsch structures\n");
+	  return(-1);
+	}
+	
+	if (!dlsch_ue[i]) {
+	  msg("Can't get ue dlsch structures\n");
+	  return(-1);
+	}
+
+	dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
+	dlsch_eNb[i]->layer_index        = 0;
+	dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
+	dlsch_eNb[i]->harq_processes[0]->active             = 0;
+	dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
+	dlsch_eNb[i]->rvidx                                 = 0;
+	
+	dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
+	dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
+	dlsch_ue[i]->layer_index         = 0;
+	dlsch_ue[i]->harq_processes[0]->active              = 0;
+	dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
+	dlsch_ue[i]->rvidx                                  = 0;
+	
+      }
+
+      nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
+      coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
+      input_buffer_length = ((int)(coded_bits_per_codeword/inv_target_code_rate))>>3;
+
+      for (i=0;i<input_buffer_length;i++)
+	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+
+      
+      dlsch_encoding(dlsch_input_buffer,
+		     (input_buffer_length<<3),
+		     lte_frame_parms,
+		     dlsch_eNb[0],
+		     0,               // harq_pid
+		     25); // number of allocated RB
+
+      dlsch_modulation(lte_eNB_common_vars->txdataF,
+		       1024,
+		       0,
+		       lte_frame_parms,
+		       dlsch_eNb[0],
+		       0,               // harq_pid
+		       rb_alloc); // RB allocation vector
+      */
+    }
+    
   }
-
+  
   return(0);
   
 }

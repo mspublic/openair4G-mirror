@@ -339,7 +339,7 @@ static int __init openair_init_module( void )
 
 
   openair_daq_vars.mac_registered  = 0;
-  openair_daq_vars.node_configured = -1;
+  openair_daq_vars.node_configured = 0;
   openair_daq_vars.node_running    = 0;
 
   printk("[OPENAIR][INIT_MODULE][INIT] openair_daq_vars set\n");

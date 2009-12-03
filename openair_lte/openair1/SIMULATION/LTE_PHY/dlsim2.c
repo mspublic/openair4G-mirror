@@ -224,6 +224,7 @@ int main(int argc, char **argv) {
     }
   }
 
+  /*
   // optional: read rx_frame from file
   if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
     {
@@ -237,6 +238,7 @@ int main(int argc, char **argv) {
   printf("Read %d bytes\n",result);
 
   fclose(rx_frame_file);
+  */
 
   sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
   //sync_pos = 3348;
