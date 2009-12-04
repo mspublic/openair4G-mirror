@@ -81,6 +81,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   unsigned short input_buffer_length;
   unsigned int coded_bits_per_codeword,nsymb;
   int inv_target_code_rate = 2;
+  int subframe_offset;
 
   /*
 #ifndef OPENAIR2
@@ -97,6 +98,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   //if (mac_xface->frame%100 == 0)
   //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
 
+  /*
   if (last_slot==SLOTS_PER_FRAME/2) {
     // to test the feasibility we measure the signal energy on RX
     
@@ -124,6 +126,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       phy_adjust_gain (0,16384,0);
     
   }
+  */
 
   if (mac_xface->is_cluster_head == 0) {
     
@@ -148,7 +151,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	phy_adjust_gain (0,16384,0);
     }
     
-    if (last_slot==1) {
+    else if (last_slot==1) {
 
       lte_adjust_synch(lte_frame_parms,
 		       lte_ue_common_vars,
@@ -188,6 +191,25 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
       }
     }
+    else {
+
+      if (!dlsch_ue) {
+	msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structures\n");
+	return(-1);
+      }
+      for (i=0;i<2;i++) {
+	if (!dlsch_ue[i]) {
+	  msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structure %d\n",i);
+	  return(-1);
+	}
+	dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
+	dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
+	dlsch_ue[i]->layer_index                            = 0;
+	dlsch_ue[i]->harq_processes[0]->active              = 0;
+	dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
+	dlsch_ue[i]->rvidx                                  = 0;
+      }
+    }
   }
   else {
 
@@ -199,14 +221,16 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
     if (next_slot == 0)
       generate_pss(lte_eNB_common_vars->txdataF,
-		   1024,
+		   AMP,
 		   lte_frame_parms,
 		   1);
 
     else if (next_slot == 1) {
 
+      //#ifdef DEBUG_PHY
       if (mac_xface->frame%100 == 0)
 	msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
+      //#endif
       
       *((unsigned int*) pbch_pdu) = mac_xface->frame;
       
@@ -215,38 +239,31 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		    lte_frame_parms,
 		    pbch_pdu);
     }
- 
-    else { // fill all other frames with DLSCH
+    
+    else if ((next_slot > 1) && (next_slot%2 == 0)) {
+      // fill all other frames with DLSCH
 
-      // Create transport channel structures for 2 transport blocks (MIMO)
-      /*
+      if (!dlsch_eNb) {
+	msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structures\n");
+	return(-1);
+      }
       for (i=0;i<2;i++) {
-	
 	if (!dlsch_eNb[i]) {
-	  msg("Can't get eNb dlsch structures\n");
+	  msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structure %d\n",i);
 	  return(-1);
 	}
-	
-	if (!dlsch_ue[i]) {
-	  msg("Can't get ue dlsch structures\n");
-	  return(-1);
-	}
-
 	dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
-	dlsch_eNb[i]->layer_index        = 0;
+	dlsch_eNb[i]->layer_index                           = 0;
 	dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
 	dlsch_eNb[i]->harq_processes[0]->active             = 0;
 	dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
 	dlsch_eNb[i]->rvidx                                 = 0;
-	
-	dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
-	dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
-	dlsch_ue[i]->layer_index         = 0;
-	dlsch_ue[i]->harq_processes[0]->active              = 0;
-	dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
-	dlsch_ue[i]->rvidx                                  = 0;
-	
       }
+
+      rb_alloc[0] = 0x01ffffff;  // RBs 0-31
+      rb_alloc[1] = 0x00000000;  // RBs 32-63
+      rb_alloc[2] = 0x00000000;  // RBs 64-95
+      rb_alloc[3] = 0x00000000;  // RBs 96-109
 
       nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
       coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
@@ -255,7 +272,6 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
 
-      
       dlsch_encoding(dlsch_input_buffer,
 		     (input_buffer_length<<3),
 		     lte_frame_parms,
@@ -264,15 +280,20 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     25); // number of allocated RB
 
       dlsch_modulation(lte_eNB_common_vars->txdataF,
-		       1024,
-		       0,
+		       AMP,
+		       next_slot/2,
 		       lte_frame_parms,
 		       dlsch_eNb[0],
 		       0,               // harq_pid
 		       rb_alloc); // RB allocation vector
-      */
+
+      //#ifdef DEBUG_PHY
+      if (mac_xface->frame%1000 == 0)
+	msg("[PHY_PROCEDURES_LTE] Calling generate_dlsch for frame %d, slot %d\n",mac_xface->frame, next_slot);
+      //#endif
+
     }
-    
+
   }
   
   return(0);

@@ -37,7 +37,7 @@
 void openair_set_rx_rf_mode(unsigned int arg) {
 
 #ifndef NOCARD_TEST
-  printk("[openair][RF_CNTL] Setting RX_RF MODE to %x\n",arg);
+  printk("[openair][RF_CNTL] Setting RX_RF MODE to %d\n",arg);
 
   if (pci_interface)
     pci_interface->rx_rf_mode = arg;
@@ -56,7 +56,7 @@ void openair_set_rx_rf_mode(unsigned int arg) {
 void openair_set_tcxo_dac(unsigned int arg) {
 
 #ifndef NOCARD_TEST  
-  printk("[openair][RF_CNTL] Setting TCXO_DAC to %x\n",arg);
+  printk("[openair][RF_CNTL] Setting TCXO_DAC to %d\n",arg);
 
   openair_daq_vars.tcxo_dac = arg;
   //  openair_writel(arg,bar[0]+REG_BAR+0x4);

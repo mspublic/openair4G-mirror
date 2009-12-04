@@ -395,78 +395,76 @@ void openair_sync(void) {
 
 #endif
 
-    // Do initial timing acquisition
-    sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-    //    sync_pos = 0;
+    if (openair_daq_vars.node_configured&2) { // the node has been cofigured as a UE
 
-    // the sync is in the last symbol of either the 0th or 10th slot
-    // however, the pbch is only in the 0th slot
-    // so we assume that sync_pos points to the 0th slot
-    // so the position wrt to the start of the frame is 
-    sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
-
-    PHY_vars->rx_vars[0].offset = sync_pos - sync_pos_slot;
-    
-    msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
-    
-    if (sync_pos >= sync_pos_slot) {
+      // Do initial timing acquisition
+      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+      //    sync_pos = 0;
       
-      for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+      // the sync is in the last symbol of either the 0th or 10th slot
+      // however, the pbch is only in the 0th slot
+      // so we assume that sync_pos points to the 0th slot
+      // so the position wrt to the start of the frame is 
+      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
+      
+      PHY_vars->rx_vars[0].offset = sync_pos - sync_pos_slot;
+      
+      msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+      
+      if (sync_pos >= sync_pos_slot) {
 	
-	slot_fep(lte_frame_parms,
-	       lte_ue_common_vars,
-		 l,
-		 1,
-		 sync_pos-sync_pos_slot,
-		 0);
-      }
-      
-      if (rx_pbch(lte_ue_common_vars,
-		  lte_ue_pbch_vars,
-		  lte_frame_parms,
-		  SISO)) {
-
-	msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
-
-	if (openair_daq_vars.node_running == 1) {
+	for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+	  
+	  slot_fep(lte_frame_parms,
+		   lte_ue_common_vars,
+		   l,
+		   1,
+		   sync_pos-sync_pos_slot,
+		   0);
+	}
+	
+	if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars,
+		    lte_frame_parms,
+		    SISO)) {
+	  
+	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+	  
+	  if (openair_daq_vars.node_running == 1) {
       
 #ifndef NOCARD_TEST
-	  pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
+	    pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
 #endif //NOCARD_TEST
-
-	  openair_daq_vars.mode = openair_SYNCHED;
-	  mac_xface->frame = 0;
+	    
+	    openair_daq_vars.mode = openair_SYNCHED;
+	    mac_xface->frame = 0;
 #ifndef EMOS		
 #ifdef OPENAIR2
-	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-	  mac_resynch();
+	    msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+	    mac_resynch();
 #endif //OPENAIR2
 #endif //EMOS
-	  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
-	  openair_daq_vars.last_adac_cnt=-1;            
+	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
+	    openair_daq_vars.last_adac_cnt=-1;            
+	  }
+	  
 	}
-
-      }
-      else {
-	msg("[openair][SCHED][SYNCH] PBCH not decoded!\n");
+	else {
+	  msg("[openair][SCHED][SYNCH] PBCH not decoded!\n");
+	}
       }
     }
 
     // Measurements
-    /*
-    lte_ue_measurements(lte_ue_common_vars,
-			lte_frame_parms,
-			&PHY_vars->PHY_measurements);
-    */
 
     PHY_vars->PHY_measurements.rx_avg_power_dB[0] = 0;
-    for (i=0;i<lte_frame_parms->nb_antennas_rx; i++) {
+    for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
       PHY_vars->PHY_measurements.rx_power[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
       PHY_vars->PHY_measurements.rx_power_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.rx_power[0][i]);
       PHY_vars->PHY_measurements.rx_avg_power_dB[0] += PHY_vars->PHY_measurements.rx_power_dB[0][i];
     }
-    PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= lte_frame_parms->nb_antennas_rx;
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= NB_ANTENNAS_RX;
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
     
     msg("[openair][SCHED] RX RSSI %d dB, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",

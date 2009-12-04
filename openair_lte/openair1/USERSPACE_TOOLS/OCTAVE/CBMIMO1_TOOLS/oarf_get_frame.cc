@@ -33,15 +33,15 @@ static bool any_bad_argument(const octave_value_list &args)
   if (args.length()!=1)
   {
     error(FCNNAME);
-    error("syntax: oarf_get_frame(freqband)\n      freqband in 0-3.");
+    error("syntax: oarf_get_frame(freqband)\n      freqband in 0-5.");
     return true;
   }
 
   v=args(0);
-  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 3.0))
+  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 6.0))
   {
     error(FCNNAME);
-      error("freqband must be 0, 1, 2, or 3.");
+      error("freqband must be 0-5.");
     return true;
   }
 
@@ -117,7 +117,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   
   // Flush RX sig fifo
 
-  ((unsigned int *)&dma_buffer_local[0])[0] = 1 | ((freq&3)<<1) | ((freq&3)<<3);
+  ((unsigned int *)&dma_buffer_local[0])[0] = 1 | ((freq&7)<<1) | ((freq&7)<<4);
   ioctl(openair_fd,openair_GET_BUFFER,(void *)dma_buffer_local);
 
 

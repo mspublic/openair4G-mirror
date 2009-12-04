@@ -56,10 +56,11 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		 1);
     //LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
-    generate_pilots(lte_eNB_common_vars->txdataF,
-		    256,
-		    lte_frame_parms,
-		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+    for (i=0; i<20; i++)
+      generate_pilots_slot(lte_eNB_common_vars->txdataF,
+			   256,
+			   lte_frame_parms,
+			   i);
 
     for (i=0;i<6;i++)
       pbch_pdu[i] = i;

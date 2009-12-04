@@ -242,7 +242,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms->twiddle_ifft     = twiddle_ifft;
 	lte_frame_parms->rev              = rev;
 
+	lte_gold(lte_frame_parms);
 
+	/*
+	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars)) {
+	  msg("[openair][IOCTL] phy_init_lte_ue error\n");
+	  break;
+	}
+	*/
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
 #endif
@@ -647,6 +654,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_GET_BUFFER:
 
     printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
+#ifndef OPENAIR_LTE
+    openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
+    printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
+#else
+    openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
+    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
+#endif
+
+    openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
+
 #ifdef RTAI_ENABLED
     if (openair_daq_vars.node_configured > 0) {
 
@@ -723,6 +740,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
     printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #else
+    openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);

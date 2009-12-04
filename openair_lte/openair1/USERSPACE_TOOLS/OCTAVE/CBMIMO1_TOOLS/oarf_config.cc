@@ -43,10 +43,10 @@ static bool any_bad_argument(const octave_value_list &args)
   }
 
   v=args(0);
-  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 3.0))
+  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 6.0))
   {
     error(FCNNAME);
-      error("freqband must be 0, 1, 2, or 3.");
+      error("freqband must be 0-5");
     return true;
   }
 
@@ -68,7 +68,7 @@ static bool any_bad_argument(const octave_value_list &args)
   if (!w.is_real_scalar()) 
   {
     error(FCNNAME);
-    error("freqband must be real scalar");
+    error("dual_tx must be 0 or 1");
     return true;
   }
   return false;

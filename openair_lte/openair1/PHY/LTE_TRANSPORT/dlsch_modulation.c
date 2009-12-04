@@ -431,6 +431,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     // This allows for pilots from adjacent eNbs to be interference free
 
     tti_offset = symbol_offset + re_off + re;
+      
     if (is_not_pilot(pilots,first_pilot,re)) { 
 
       *re_allocated = *re_allocated + 1;
@@ -779,12 +780,12 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
 #ifdef IFFT_FPGA
       re_offset = frame_parms->N_RB_DL*12/2;
-      symbol_offset = frame_parms->N_RB_DL*12*l;
+      symbol_offset = frame_parms->N_RB_DL*12*(l+sub_frame_offset*nsymb);
 #else
       re_offset = frame_parms->first_carrier_offset;
       symbol_offset = frame_parms->ofdm_symbol_size*(l+sub_frame_offset*nsymb);
 #endif
-      
+
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 	
 	if (rb < 32)
