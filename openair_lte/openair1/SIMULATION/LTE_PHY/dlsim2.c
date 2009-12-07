@@ -1,6 +1,7 @@
 #include <string.h>
 #include <math.h>
 #include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
@@ -31,6 +32,11 @@ int main(int argc, char **argv) {
   FILE *rx_frame_file;
   int result;
   int freq_offset;
+
+  double nf[2] = {3.0,3.0}; //currently unused
+  double ip =0.0;
+  double N0W, path_loss, path_loss_dB;
+
 
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
@@ -214,13 +220,44 @@ int main(int argc, char **argv) {
 
   write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 
+    // scale by path_loss = NOW - P_noise
+  sigma2       = pow(10,sigma2_dB/10);
+  N0W          = -95.87;
+  path_loss_dB = N0W - sigma2;
+  path_loss    = pow(10,path_loss_dB/10);
+  
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+      r_re[aa][i]*=sqrt(path_loss); 
+      r_im[aa][i]*=sqrt(path_loss); 
+    }
+  }
+
+
+    // RF model
+    rf_rx(r_re,
+	  r_im,
+	  lte_frame_parms->nb_antennas_rx,
+	  FRAME_LENGTH_COMPLEX_SAMPLES,
+	  1.0/7.68e6 * 1e9,      // sampling time (ns)
+	  500,            // freq offset (Hz) (-20kHz..20kHz)
+	  0.0,            // drift (Hz) NOT YET IMPLEMENTED
+	  nf,             // noise_figure NOT YET IMPLEMENTED
+	  -path_loss_dB,            // rx_gain (dB)
+	  200,            // IP3_dBm (dBm)
+	  &ip,            // initial phase
+	  30.0e3,         // pn_cutoff (kHz)
+	  -500.0,          // pn_amp (dBc) default: 50
+	  0.0,           // IQ imbalance (dB),
+	  0.0);           // IQ phase imbalance (rad)
+
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
   //printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i]); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i]); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -253,7 +290,7 @@ int main(int argc, char **argv) {
   
   if (sync_pos >= sync_pos_slot) {
     
-    for (l=0;l<lte_frame_parms->symbols_per_tti;l++) {
+    for (l=0;l<lte_frame_parms->symbols_per_tti*2;l++) {
       
       slot_fep(lte_frame_parms,
 	       lte_ue_common_vars,
@@ -268,10 +305,10 @@ int main(int argc, char **argv) {
 			 1,
 			 16384);
 
-      if (l>0 && l%3==0)
+      if ((l>0) && ((l%3)==0))
 	lte_est_freq_offset(lte_ue_common_vars->dl_ch_estimates,
 			    lte_frame_parms,
-			    l,
+			    l%6,
 			    &freq_offset);
     }
     

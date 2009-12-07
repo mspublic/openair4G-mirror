@@ -24,31 +24,28 @@ int lte_est_freq_offset(int **dl_ch_estimates,
   ch_offset = (l*(frame_parms->ofdm_symbol_size));
  
   if ((l!=0) && (l!=(4-frame_parms->Ncp))) {
-    msg("lte_est_freq_offset: l must be 0 or %d\n",4-frame_parms->Ncp);
+    msg("lte_est_freq_offset: l (%d) must be 0 or %d\n",l,4-frame_parms->Ncp);
     return(-1);
   }
 
   phase_offset = 0.0;
-  msg("phase_offset = %f\n",phase_offset);
 
   //for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
   for (aa=0;aa<1;aa++) {
 
-    dl_ch = (short *)&dl_ch_estimates[aa][ch_offset];
+    dl_ch = (short *)&dl_ch_estimates[aa][12+ch_offset];
     if (ch_offset == 0)
-      dl_ch_prev = (short *)&dl_ch_estimates[aa][(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
+      dl_ch_prev = (short *)&dl_ch_estimates[aa][12+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
     else
-      dl_ch_prev = (short *)&dl_ch_estimates[aa][0];
+      dl_ch_prev = (short *)&dl_ch_estimates[aa][12];
 
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
-    omega = dot_product(dl_ch,dl_ch_prev,frame_parms->ofdm_symbol_size,15);
+    omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL-2)*12,15);
     omega_cpx = (struct complex16*) &omega;
-    
-    msg("phase_offset = %f\n",phase_offset);
     
     phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
   }
-  phase_offset /= frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;
+  //phase_offset /= frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;
 
   msg("phase_offset = %f (%d,%d)\n",phase_offset,omega_cpx->r,omega_cpx->i);
 

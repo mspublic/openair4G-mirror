@@ -9,6 +9,7 @@
 #include <rtai_fifos.h>
 #endif //RTAI_ENABLED
 
+/*
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
@@ -28,6 +29,7 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/errno.h>
+*/
 
 #endif //USER_MODE
 

@@ -68,14 +68,14 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int diff;
   int timing_offset;		
   */
-  int i,k,l;
+  int i,k,l,m;
   unsigned char pbch_pdu[6];
 #ifndef USER_MODE
   RTIME  now;            
 #endif
 
   // DLSCH variables
-  unsigned char mod_order[2]={2,2};
+  unsigned char mod_order[2]={4,4};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = SISO; //ALAMOUTI;
   unsigned short input_buffer_length;
@@ -94,7 +94,12 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     msg("[PHY_PROCEDURES_LTE] Frame %d, Error: last_slot =%d!\n",mac_xface->frame, last_slot);
     return(-1);
   }
-
+  
+  rb_alloc[0] = 0x01ffffff;  // RBs 0-31
+  rb_alloc[1] = 0x00000000;  // RBs 32-63
+  rb_alloc[2] = 0x00000000;  // RBs 64-95
+  rb_alloc[3] = 0x00000000;  // RBs 96-109
+  
   //if (mac_xface->frame%100 == 0)
   //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
 
@@ -147,8 +152,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 			  &PHY_vars->PHY_measurements);
       
       // AGC
-      if (mac_xface->frame % 100 == 0)
-	phy_adjust_gain (0,16384,0);
+      if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+	if (mac_xface->frame % 100 == 0)
+	  phy_adjust_gain (0,16384,0);
     }
     
     else if (last_slot==1) {
@@ -191,7 +197,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
       }
     }
-    else {
+    else if (last_slot > 1) {
 
       if (!dlsch_ue) {
 	msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structures\n");
@@ -209,6 +215,52 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
 	dlsch_ue[i]->rvidx                                  = 0;
       }
+
+      if (last_slot%2==0) {
+	
+	// process symbols 0,1,2
+	for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+	
+	// process symbols 4,5,6
+	for (m=4;m<6;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+
+      } else { //(last_slot%2==0)
+	    
+	// process symbols 6,7,8
+	for (m=7;m<9;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+	
+	// process symbols 10,11,12
+	for (m=10;m<12;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars,
+		   lte_frame_parms,
+		   m,
+		   rb_alloc,
+		   mod_order,
+		   mimo_mode);
+      }
+
     }
   }
   else {
@@ -227,10 +279,10 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
     else if (next_slot == 1) {
 
-      //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
       if (mac_xface->frame%100 == 0)
 	msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
-      //#endif
+#endif
       
       *((unsigned int*) pbch_pdu) = mac_xface->frame;
       
@@ -260,11 +312,6 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	dlsch_eNb[i]->rvidx                                 = 0;
       }
 
-      rb_alloc[0] = 0x01ffffff;  // RBs 0-31
-      rb_alloc[1] = 0x00000000;  // RBs 32-63
-      rb_alloc[2] = 0x00000000;  // RBs 64-95
-      rb_alloc[3] = 0x00000000;  // RBs 96-109
-
       nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
       coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
       input_buffer_length = ((int)(coded_bits_per_codeword/inv_target_code_rate))>>3;
@@ -287,10 +334,16 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		       0,               // harq_pid
 		       rb_alloc); // RB allocation vector
 
-      //#ifdef DEBUG_PHY
-      if (mac_xface->frame%1000 == 0)
+
+#ifdef DEBUG_PHY
+      if (mac_xface->frame%1000 == 0) {
 	msg("[PHY_PROCEDURES_LTE] Calling generate_dlsch for frame %d, slot %d\n",mac_xface->frame, next_slot);
-      //#endif
+	for (i=0;i<300;i++)
+	  msg("lte_eNB_common_vars->txdataF[0][%d] = %d\n",i+300*12,lte_eNB_common_vars->txdataF[0][i+300*14]);
+	for (i=0;i<100;i++)
+	  msg("dlsch_input_buffer[[%d] = %d\n",i,dlsch_input_buffer[i]);
+      }
+#endif
 
     }
 

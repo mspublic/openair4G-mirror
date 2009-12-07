@@ -244,6 +244,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	lte_gold(lte_frame_parms);
 
+	set_taus_seed();
+
 	/*
 	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars)) {
 	  msg("[openair][IOCTL] phy_init_lte_ue error\n");

@@ -42,9 +42,9 @@ FD_lte_scope *form;
 //char demod_data[2048];
 
 short *channel[4],*channel_f[4],*rx_sig[4];
-//*rx_sig_f2[4],*rx_sig_f3[4],*sach_data,*magh[4];
 int *sync_corr;
-short *demod_data,*rx_sig_comp;
+short *pbch_llr,*pbch_comp;
+short *dlsch_llr,*dlsch_comp;
 
 int length,offset;
 float avg=1;
@@ -62,8 +62,9 @@ void lte_scope_idle_callback(void) {
     sig_time[NB_ANTENNAS_RX*NB_ANTENNAS_TX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
     sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
     time2[FRAME_LENGTH_COMPLEX_SAMPLES],
-    I[6*12*4], Q[6*12*4],
-    demod_dat[384];
+    I[25*12*12], Q[25*12*12],
+    //llr[384];
+    llr[25*12*2*7];
 
   /*
     mag_h[NB_ANTENNAS_RX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*8],
@@ -115,7 +116,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
-
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -124,8 +125,8 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
-  /*
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -145,7 +146,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-  */
+
 
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
@@ -156,21 +157,35 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
 
- for(i=0;i<384;i++) {
-    demod_dat[i] = (float) demod_data[i];
+  for(i=0;i<384;i++) {
+    llr[i] = (float) pbch_llr[i];
     time2[i] = (float) i;
   }
 
-  fl_set_xyplot_data(form->decoder_input,time2,demod_dat,384,"","","");
+  fl_set_xyplot_data(form->decoder_input,time2,llr,384,"","","");
 
   for(i=0;i<6*12*4;i++) {
-    I[i] = rx_sig_comp[2*i];
-    Q[i] = rx_sig_comp[2*i+1];
+    I[i] = pbch_comp[2*i];
+    Q[i] = pbch_comp[2*i+1];
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,6*12*4,"","","");
 
-  usleep(10000);
+  for(i=0;i<25*12*2*7;i++) {
+    llr[i] = (float) dlsch_llr[i];
+    time2[i] = (float) i;
+  }
+
+  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*2*7,"","","");
+
+  for(i=0;i<25*12*12;i++) {
+    I[i] = dlsch_comp[2*i];
+    Q[i] = dlsch_comp[2*i+1];
+  }
+
+  fl_set_xyplot_data(form->scatter_plot2,I,Q,25*12*12,"","","");
+
+  usleep(100000);
 }
 //-----------------------------------------------------------------------------
 do_scope(){
@@ -274,15 +289,24 @@ int main(int argc, char *argv[]) {
 
   sync_corr = (short*)(mem_base + (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 
-  rx_sig_comp = (short*)(mem_base + 
-			 (unsigned int)PHY_vars->lte_ue_pbch_vars.rxdataF_comp + 
-			 nb_ant_rx*nb_ant_tx*sizeof(int*) - 
-			 (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-
-  demod_data = (short*) (mem_base + 
-			 (unsigned int)PHY_vars->lte_ue_pbch_vars.llr - 
-			 (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-
+  pbch_comp = (short*)(mem_base + 
+		       (unsigned int)PHY_vars->lte_ue_pbch_vars.rxdataF_comp + 
+		       nb_ant_rx*nb_ant_tx*sizeof(int*) - 
+		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  
+  pbch_llr = (short*) (mem_base + 
+		       (unsigned int)PHY_vars->lte_ue_pbch_vars.llr - 
+		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  
+  dlsch_comp = (short*)(mem_base + 
+			(unsigned int)PHY_vars->lte_ue_dlsch_vars.rxdataF_comp + 
+			nb_ant_rx*nb_ant_tx*sizeof(int*) - 
+			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  
+  dlsch_llr = (short*) (mem_base + 
+			(unsigned int)PHY_vars->lte_ue_dlsch_vars.llr[0] - 
+			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  
   sprintf(title, "LTE SCOPE"),
 
   fl_initialize(&argc, argv, title, 0, 0);    /* SIGSCOPE */
