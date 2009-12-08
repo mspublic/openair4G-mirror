@@ -43,7 +43,7 @@ typedef enum {
   SISO,
   ALAMOUTI,
   ANTCYCLING,
-  DUALSTREAM0
+  DUALSTREAM
 } MIMO_mode_t;
 
 typedef struct{

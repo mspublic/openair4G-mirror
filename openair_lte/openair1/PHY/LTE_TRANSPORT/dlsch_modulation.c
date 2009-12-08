@@ -44,19 +44,20 @@ void generate_16qam_table(void) {
 #ifndef IFFT_FPGA
  
 int allocate_REs_in_RB(mod_sym_t **txdataF,
-			unsigned int *jj,
-			unsigned short re_offset,
-			unsigned int symbol_offset,
-			unsigned char *output,
-			MIMO_mode_t mimo_mode,
-			unsigned char nu,
-			unsigned char pilots,
-			unsigned char first_pilot,
-			unsigned char mod_order,
-			short amp,
-			unsigned int *re_allocated,
-			unsigned char skip_dc,
-			LTE_DL_FRAME_PARMS *frame_parms) {
+		       unsigned int *jj,
+		       unsigned short re_offset,
+		       unsigned int symbol_offset,
+		       unsigned char *output,
+		       MIMO_mode_t mimo_mode,
+		       unsigned char nu,
+		       unsigned char cb_ind,
+		       unsigned char pilots,
+		       unsigned char first_pilot,
+		       unsigned char mod_order,
+		       short amp,
+		       unsigned int *re_allocated,
+		       unsigned char skip_dc,
+		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset;
   unsigned char re;
@@ -104,7 +105,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
       *re_allocated = *re_allocated + 1;
 
-	if ((mimo_mode == SISO) || (mimo_mode == DUALSTREAM0)) {  //SISO mapping
+	if ((mimo_mode == SISO) || ((mimo_mode == DUALSTREAM)&&(cb_ind==0)&&(nu<2))) {  //SISO mapping
+	  if ((mimo_mode == DUALSTREAM)&&(cb_ind==0))
+	    msg("dualstream layer %d\n",nu);
 	  switch (mod_order) {
 	  case 2:  //QPSK
 
@@ -133,8 +136,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qam16_table_offset_im+=1;
 	    *jj=*jj+1;
 	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    ((short *)&txdataF[nu][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[nu][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
 	    
 	    break;
 	   
@@ -164,8 +167,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qam64_table_offset_im+=1;
 	    *jj=*jj+1;
 	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    ((short *)&txdataF[nu][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[nu][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 	    break;
 
 	  }
@@ -371,7 +374,306 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	  }
 	}
+	// This is Layer 0 component on both antennas from Table 6.3.4.2.3-1 p. 53 of 36-211
+	else if ((mimo_mode == DUALSTREAM)&&(cb_ind==1)&&(nu==0)) {
+	  switch (mod_order) {
+	  case 2:  //QPSK
 
+	    ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    *jj = *jj + 1;
+	    ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    *jj = *jj + 1;
+
+	    ((short*)&txdataF[1][tti_offset])[0] = ((short*)&txdataF[0][tti_offset])[0];
+	    ((short*)&txdataF[1][tti_offset])[1] = ((short*)&txdataF[0][tti_offset])[1];
+
+	    break;
+	    
+	  case 4:  //16QAM
+
+	    qam16_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam16_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[0]=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[1]=((short *)&txdataF[0][tti_offset])[1];
+	    break;
+	   
+	  case 6:  //64QAM
+
+		    
+	    qam64_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[0]=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[1]=((short *)&txdataF[0][tti_offset])[1];
+	    break;
+
+	  }
+	}
+	// This is Layer 1 component on both antennas from Table 6.3.4.2.3-1 p. 53 of 36-211
+	else if ((mimo_mode == DUALSTREAM)&&(cb_ind==1)&&(nu==1)) {
+	  switch (mod_order) {
+	  case 2:  //QPSK
+
+	    ((short*)&txdataF[0][tti_offset])[0] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[0] -= (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    *jj = *jj + 1;
+	    ((short*)&txdataF[0][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[1] -= (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    *jj = *jj + 1;
+	    
+
+
+	    break;
+	    
+	  case 4:  //16QAM
+
+	    qam16_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam16_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[0]-=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]-=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);	    
+	    break;
+	   
+	  case 6:  //64QAM
+
+		    
+	    qam64_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[0]-=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]-=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    break;
+
+	  }
+	}
+
+	// This is Layer 0 component on both antennas from Table 6.3.4.2.3-1 p. 53 of 36-211
+	else if ((mimo_mode == DUALSTREAM)&&(cb_ind==2)&&(nu==0)) {
+	  switch (mod_order) {
+	  case 2:  //QPSK
+
+	    ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : (gain_lin_QPSK);
+	    *jj = *jj + 1;
+	    ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[0] = (output[*jj]==0) ? (gain_lin_QPSK) : (-gain_lin_QPSK);
+	    *jj = *jj + 1;
+	    
+
+
+	    break;
+	  case 4:  //16QAM
+
+	    qam16_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam16_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[0]=-((short *)&txdataF[0][tti_offset])[1];
+	    break;
+	   
+	  case 6:  //64QAM
+
+		    
+	    qam64_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[0]=-((short *)&txdataF[0][tti_offset])[1];
+	    break;
+
+	  }
+
+	}
+
+	else if ((mimo_mode == DUALSTREAM)&&(cb_ind==2)&&(nu==1)) {
+	  switch (mod_order) {
+	  case 2:  //QPSK
+
+	    ((short*)&txdataF[0][tti_offset])[0] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[1] -= (output[*jj]==0) ? (-gain_lin_QPSK) : (gain_lin_QPSK);
+	    *jj = *jj + 1;
+	    ((short*)&txdataF[0][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[1][tti_offset])[0] -= (output[*jj]==0) ? (gain_lin_QPSK) : (-gain_lin_QPSK);
+	    *jj = *jj + 1;
+	    
+
+
+	    break;
+	  case 4:  //16QAM
+
+	    qam16_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam16_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam16_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]-=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[0]+=((short *)&txdataF[0][tti_offset])[1];
+	    break;
+	   
+	  case 6:  //64QAM
+
+		    
+	    qam64_table_offset_re = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_re+=1;
+	    *jj=*jj+1;
+	    
+	    
+	    qam64_table_offset_im = 0;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=4;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=2;
+	    *jj=*jj+1;
+	    if (output[*jj] == 1)
+	      qam64_table_offset_im+=1;
+	    *jj=*jj+1;
+	    
+	    ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	    ((short *)&txdataF[1][tti_offset])[1]-=((short *)&txdataF[0][tti_offset])[0];
+	    ((short *)&txdataF[1][tti_offset])[0]+=((short *)&txdataF[0][tti_offset])[1];
+	    break;
+
+	  }
+
+	}
 	else {
 	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
 	  return(-1);
@@ -709,7 +1011,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	else if (mimo_mode == ANTCYCLING ) {
 
 	}
-	else if (mimo_mode == DUALSTREAM0) {
+	else if (mimo_mode == DUALSTREAM) {
 
 	}
 	*/
@@ -816,6 +1118,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     dlsch->e,
 			     dlsch->harq_processes[harq_pid]->mimo_mode,
 			     dlsch->layer_index,
+			     dlsch->codebook_index,
 			     pilots,
 			     first_pilot,
 			     mod_order,
@@ -848,7 +1151,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
     }
   }
 
-  return (0);
+  return (re_allocated);
 #ifdef DEBUG_DLSCH_MODULATION
   printf("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
 #endif

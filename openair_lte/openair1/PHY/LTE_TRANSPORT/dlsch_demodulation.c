@@ -14,6 +14,8 @@
 
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
+#define DEBUG_DLSCH_DEMOD
+
 #ifdef DEBUG_DLSCH_DEMOD
 
 void print_bytes(char *s,__m128i *x) {
@@ -257,9 +259,9 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (symbol == frame_parms->first_dlsch_symbol)
     llr128 = (__m128i*)dlsch_llr;
-
+ 
   
-  //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
+  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
   for (i=0;i<(nb_rb*3);i++) {
     *llr128 = *rxF;
@@ -498,7 +500,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
     }
     if (rho) {
       rho128_0 = (__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
-      rho128_1 = (__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
+      rho128_1 = (__m128i *) &rho[1][symbol*frame_parms->N_RB_DL*12];
       for (i=0;i<nb_rb*3;i++) {
 	rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
       }
@@ -570,11 +572,12 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
 	  }
 	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
+
       }
     else {  // Odd number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
@@ -602,11 +605,11 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  for (i=0;i<12;i++)
 	    rxF_ext[i]=rxF[i<<1];
 	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
       }
       // Do middle RB (around DC)
       if (rb < 32)
@@ -632,14 +635,16 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
 	nb_rb++;
+	dl_ch0_ext+=12;
+	rxF_ext+=12;
       }
       else {
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
       dl_ch0+=12;
-      dl_ch0_ext+=12;
+
+
       rxF+=14;
-      rxF_ext+=12;
       rb++;
       
       for (;rb<frame_parms->N_RB_DL;rb++) {
@@ -667,11 +672,11 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  for (i=0;i<12;i++)
 	    rxF_ext[i]=rxF[i<<1];
 	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
       }
     }
   }
@@ -742,13 +747,14 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
 	  }
 	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  dl_ch1_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	dl_ch1+=12;
-	dl_ch1_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
+
       }
     else {  // Odd number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
@@ -770,15 +776,14 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  for (i=0;i<12;i++)
 	    rxF_ext[i]=rxF[i<<1];
 	  nb_rb++;
-
-
+	  dl_ch0_ext+=12;
+	  dl_ch1_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	dl_ch1+=12;
-	dl_ch1_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
+
       }
       // Do middle RB (around DC)
       if (rb < 32)
@@ -806,17 +811,16 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
 	nb_rb++;
-
+	dl_ch0_ext+=12;
+	dl_ch1_ext+=12;
+	rxF_ext+=12;
       }
       else {
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
       dl_ch0+=12;
-      dl_ch0_ext+=12;
       dl_ch1+=12;
-      dl_ch1_ext+=12;
       rxF+=14;
-      rxF_ext+=12;
       rb++;
 
       for (;rb<frame_parms->N_RB_DL;rb++) {
@@ -838,13 +842,14 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  for (i=0;i<12;i++)
 	    rxF_ext[i]=rxF[i<<1];
 	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  dl_ch1_ext+=12;
+	  rxF_ext+=12;
 	}
 	dl_ch0+=12;
-	dl_ch0_ext+=12;
 	dl_ch1+=12;
-	dl_ch1_ext+=12;
 	rxF+=24;
-	rxF_ext+=12;
+
       }
     }
   }
@@ -889,7 +894,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 
       for (rb=0;rb<nb_rb;rb++) {
-	//	printf("rb %d\n",rb);
+	//	printf("comp: rb %d\n",rb);
 	if (mod_order[aatx]>2) {  
 	  // get channel amplitude if not QPSK
 
@@ -1004,6 +1009,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   }
 
   if (rho) {
+
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       rho128        = (__m128i *)&rho[aarx][symbol*frame_parms->N_RB_DL*12];
       dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
@@ -1030,9 +1036,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	//       	print_ints("c0",&mmtmp2);
 	//	print_ints("c1",&mmtmp3);
 	rho128[0] = _mm_packs_epi32(mmtmp2,mmtmp3);
-	//	print_shorts("rx:",dl_ch128_2);
-	//	print_shorts("ch:",dl_ch128);
-	//	print_shorts("pack:",rho128128);
+	print_shorts("rx:",dl_ch128_2);
+	print_shorts("ch:",dl_ch128);
+	print_shorts("pack:",rho128);
 	
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[1],dl_ch128_2[1]);
@@ -1046,11 +1052,12 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
 	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
+
 	
-	rho128[1] = _mm_packs_epi32(mmtmp2,mmtmp3);
-	//	print_shorts("rx:",dl_ch128_2+1);
-	//	print_shorts("ch:",dl_ch128+1);
-	//	print_shorts("pack:",rho128128+1);	
+	rho128[1] =_mm_packs_epi32(mmtmp2,mmtmp3);
+	print_shorts("rx:",dl_ch128_2+1);
+	print_shorts("ch:",dl_ch128+1);
+	print_shorts("pack:",rho128+1);	
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[2],dl_ch128_2[2]);
 	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
@@ -1065,9 +1072,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
 	
 	rho128[2] = _mm_packs_epi32(mmtmp2,mmtmp3);
-	//	print_shorts("rx:",dl_ch128_2+2);
-	//	print_shorts("ch:",dl_ch128+2);
-	//      	print_shorts("pack:",rho128+2);
+	print_shorts("rx:",dl_ch128_2+2);
+	print_shorts("ch:",dl_ch128+2);
+	print_shorts("pack:",rho128+2);
 	
 	dl_ch128+=3;
 	dl_ch128_2+=3;
@@ -1200,7 +1207,7 @@ void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			symbol,
 			nb_rb);
       
-  if (mimo_mode!=DUALSTREAM0) {
+  if (mimo_mode!=DUALSTREAM) {
     if (mimo_mode == SISO)
       dlsch_siso(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,symbol,nb_rb);
     else if (mimo_mode == ALAMOUTI)

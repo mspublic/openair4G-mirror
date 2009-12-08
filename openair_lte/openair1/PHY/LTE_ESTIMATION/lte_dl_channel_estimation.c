@@ -53,50 +53,52 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   case 0 :
     f=filt24_0;  //for first pilot of RB, first half
     f2=filt24_2; //for second pilot of RB, first half
-    fl=filt24_0l; //for first pilot of leftmost RB
-    f2l2=filt24_2l2; 
-    fr=filt24_2r; //for first pilot of rightmost RB
-    f2r2=filt24_0r2;
+    fl=filt24_0; //for first pilot of leftmost RB
+    f2l2=filt24_2; 
+    //    fr=filt24_2r; //for first pilot of rightmost RB
+    fr=filt24_0r2; //for first pilot of rightmost RB
+    //    f2r2=filt24_0r2;
+    f2r2=filt24_2r;
     break;
   case 1 :
     f=filt24_1;
     f2=filt24_3;
     fl=filt24_1l;
     f2l2=filt24_3l2;
-    fr=filt24_3r;
-    f2r2=filt24_1r2;
+    fr=filt24_1r2;
+    f2r2=filt24_3r;
     break;
   case 2 :
     f=filt24_2;
     f2=filt24_4;
     fl=filt24_2l;
     f2l2=filt24_4l2;
-    fr=filt24_4r;
-    f2r2=filt24_2r2;
+    fr=filt24_2r2;
+    f2r2=filt24_4r;
     break;
   case 3 :
     f=filt24_3;
     f2=filt24_5;
     fl=filt24_3l;
     f2l2=filt24_5l2;
-    fr=filt24_5r;
-    f2r2=filt24_3r2;
+    fr=filt24_3r2;
+    f2r2=filt24_5r;
     break;
   case 4 :
     f=filt24_4;
     f2=filt24_6;
     fl=filt24_4l;
     f2l2=filt24_6l2;
-    fr=filt24_6r;
-    f2r2=filt24_4r2;
+    fr=filt24_4r2;
+    f2r2=filt24_6r;
     break;
   case 5 :
     f=filt24_5;
     f2=filt24_7;
     fl=filt24_5l;
     f2l2=filt24_7l2;
-    fr=filt24_7r;
-    f2r2=filt24_5r2;
+    fr=filt24_5r2;
+    f2r2=filt24_7r;
     break;
   default:
     break;
@@ -439,7 +441,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 #endif
 
 
-      multadd_real_vector_complex_scalar(f2r2,
+      multadd_real_vector_complex_scalar(fr,
 					 ch,
 					 dl_ch,
 					 24);
@@ -458,7 +460,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       ch[1] = 0;
 #endif
 
-      multadd_real_vector_complex_scalar(fr,
+      multadd_real_vector_complex_scalar(f2r2,
 					 ch,
 					 dl_ch,
 					 24);

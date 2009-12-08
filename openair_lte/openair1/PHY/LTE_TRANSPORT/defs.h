@@ -70,6 +70,8 @@ typedef struct {
   unsigned char rvidx;
 /// Layer index for this dlsch (0,1)
   unsigned char layer_index;          
+/// Codebook index for this dlsch (0,1,2,3)
+  unsigned char codebook_index;          
 /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   unsigned char e[3*6144*MAX_NUM_DLSCH_SEGMENTS];
 /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
@@ -176,6 +178,7 @@ void dlsch_encoding(unsigned char *input_buffer,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
 			unsigned char nu,
+			unsigned char cb_ind,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
@@ -192,6 +195,7 @@ void dlsch_encoding(unsigned char *input_buffer,
 \param output output of the channel coder, one bit per byte
 \param mimo_mode MIMO mode
 \param nu Layer index
+\param cb_ind Codebook index
 \param pilots =1 if symbol_offset is an OFDM symbol that contains pilots, 0 otherwise
 \param first_pilot =1 if symbol offset it the first OFDM symbol in a slot, 0 otherwise
 \param mod_order 2=QPSK, 4=16QAM, 6=64QAM
@@ -208,6 +212,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
 			unsigned char nu,
+			unsigned char cb_ind,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
