@@ -693,19 +693,20 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 #else
 int allocate_REs_in_RB(mod_sym_t **txdataF,
-			unsigned int *jj,
-			unsigned short re_offset,
-			unsigned int symbol_offset,
-			unsigned char *output,
-			MIMO_mode_t mimo_mode,
-			unsigned char nu,
-			unsigned char pilots,
-			unsigned char first_pilot,
-			unsigned char mod_order,
-			short amp,
-			unsigned int *re_allocated,
-			unsigned char skip_dc,
-			LTE_DL_FRAME_PARMS *frame_parms) {
+		       unsigned int *jj,
+		       unsigned short re_offset,
+		       unsigned int symbol_offset,
+		       unsigned char *output,
+		       MIMO_mode_t mimo_mode,
+		       unsigned char nu,
+		       unsigned char cb_ind,
+		       unsigned char pilots,
+		       unsigned char first_pilot,
+		       unsigned char mod_order,
+		       short amp,
+		       unsigned int *re_allocated,
+		       unsigned char skip_dc,
+		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset;
   unsigned char re;

@@ -5,7 +5,7 @@
 #include "PHY/defs.h"
 #include "defs.h"
 
-#define max(a,b) ((a)>(b) ? (a) : (b))
+//#define max(a,b) ((a)>(b) ? (a) : (b))
 
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \
 ((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
@@ -14,7 +14,7 @@
 
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
-#define DEBUG_DLSCH_DEMOD
+//#define DEBUG_DLSCH_DEMOD
 
 #ifdef DEBUG_DLSCH_DEMOD
 
@@ -261,7 +261,7 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr128 = (__m128i*)dlsch_llr;
  
   
-  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
+  //printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
   for (i=0;i<(nb_rb*3);i++) {
     *llr128 = *rxF;
@@ -382,6 +382,7 @@ void dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   jj=0;
+  ii=0;
   if (pilots==1) {
     for (rb=0;rb<nb_rb;rb++) {
 
@@ -1036,9 +1037,10 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	//       	print_ints("c0",&mmtmp2);
 	//	print_ints("c1",&mmtmp3);
 	rho128[0] = _mm_packs_epi32(mmtmp2,mmtmp3);
-	print_shorts("rx:",dl_ch128_2);
-	print_shorts("ch:",dl_ch128);
-	print_shorts("pack:",rho128);
+
+	//print_shorts("rx:",dl_ch128_2);
+	//print_shorts("ch:",dl_ch128);
+	//print_shorts("pack:",rho128);
 	
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[1],dl_ch128_2[1]);
@@ -1055,9 +1057,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 	
 	rho128[1] =_mm_packs_epi32(mmtmp2,mmtmp3);
-	print_shorts("rx:",dl_ch128_2+1);
-	print_shorts("ch:",dl_ch128+1);
-	print_shorts("pack:",rho128+1);	
+	//print_shorts("rx:",dl_ch128_2+1);
+	//print_shorts("ch:",dl_ch128+1);
+	//print_shorts("pack:",rho128+1);	
 	// multiply by conjugated channel
 	mmtmp0 = _mm_madd_epi16(dl_ch128[2],dl_ch128_2[2]);
 	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
@@ -1072,9 +1074,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
 	
 	rho128[2] = _mm_packs_epi32(mmtmp2,mmtmp3);
-	print_shorts("rx:",dl_ch128_2+2);
-	print_shorts("ch:",dl_ch128+2);
-	print_shorts("pack:",rho128+2);
+	//print_shorts("rx:",dl_ch128_2+2);
+	//print_shorts("ch:",dl_ch128+2);
+	//print_shorts("pack:",rho128+2);
 	
 	dl_ch128+=3;
 	dl_ch128_2+=3;
@@ -1135,7 +1137,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
 int avg[4];
 
-void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
+int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char symbol,
@@ -1235,7 +1237,8 @@ void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     }
   }
   else {
-    
+      msg("rx_dlsch.c : Dualstream not yet implemented\n");
+      return(-1);
   }
-    
+  return(0);    
 }

@@ -215,7 +215,7 @@ int main (int argc, char **argv) {
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
-  lte_frame_parms->first_dlsch_symbol = 1;
+  lte_frame_parms->first_dlsch_symbol = 2;
   
   init_frame_parms(lte_frame_parms);
   

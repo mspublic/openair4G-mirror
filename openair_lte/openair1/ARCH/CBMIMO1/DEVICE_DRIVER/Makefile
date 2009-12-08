@@ -128,6 +128,7 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o  

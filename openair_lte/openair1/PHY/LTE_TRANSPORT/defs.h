@@ -626,7 +626,7 @@ unsigned int dlsch_decoding(unsigned short A,
 @param Qm Modulation orders on layers 0,1 for this DLSCH.  These must be set even for single-stream
 @param mimo_mode MIMO mode for this DLSCH
 */
-void rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
+int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char symbol,

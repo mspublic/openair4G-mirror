@@ -75,7 +75,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif
 
   // DLSCH variables
-  unsigned char mod_order[2]={4,4};
+  unsigned char mod_order[2]={2,2};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = SISO; //ALAMOUTI;
   unsigned short input_buffer_length;
@@ -134,6 +134,25 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   */
 
   if (mac_xface->is_cluster_head == 0) {
+
+    if (!dlsch_ue) {
+      msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structures\n");
+      return(-1);
+    }
+    for (i=0;i<2;i++) {
+      if (!dlsch_ue[i]) {
+	    msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structure %d\n",i);
+	    return(-1);
+      }
+      dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
+      dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
+      dlsch_ue[i]->layer_index                            = 0;
+      dlsch_ue[i]->harq_processes[0]->active              = 0;
+      dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
+      dlsch_ue[i]->rvidx                                  = 0;
+    }
+    
+
     
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
       
@@ -143,115 +162,107 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	       last_slot,
 	       (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
 	       1);
-    }
 
-    if (last_slot==0) {
-      // Measurements
-      lte_ue_measurements(lte_ue_common_vars,
-			  lte_frame_parms,
-			  &PHY_vars->PHY_measurements);
-      
-      // AGC
-      if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
-	if (mac_xface->frame % 100 == 0)
-	  phy_adjust_gain (0,16384,0);
-    }
+      if ((last_slot==0) && (l==4-lte_frame_parms->Ncp)) {
+	// Measurements
+	lte_ue_measurements(lte_ue_common_vars,
+			    lte_frame_parms,
+			    &PHY_vars->PHY_measurements);
+	
+	// AGC
+	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+	  if (mac_xface->frame % 100 == 0)
+	    phy_adjust_gain (0,16384,0);
+
+	if (mac_xface->frame%100 == 0)
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, freq_offset_filt = %d \n",mac_xface->frame, last_slot, lte_ue_common_vars->freq_offset);
+
+      }
     
-    else if (last_slot==1) {
+      if ((last_slot==1) && (l==4-lte_frame_parms->Ncp)) {
 
-      lte_adjust_synch(lte_frame_parms,
-		       lte_ue_common_vars,
-		       1,
-		       16384);
+	lte_adjust_synch(lte_frame_parms,
+			 lte_ue_common_vars,
+			 1,
+			 16384);
 
-      if (rx_pbch(lte_ue_common_vars,
-		  lte_ue_pbch_vars,
-		  lte_frame_parms,
-		  SISO))
-	lte_ue_pbch_vars->pdu_errors_conseq = 0;
-      else {
-	lte_ue_pbch_vars->pdu_errors_conseq++;
-	lte_ue_pbch_vars->pdu_errors++;
-      }
-
-      if (mac_xface->frame % 100 == 0) {
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
-	    mac_xface->frame, last_slot, lte_ue_pbch_vars->pdu_errors, lte_ue_pbch_vars->pdu_errors_conseq);
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH received frame = %d!\n",
-	    mac_xface->frame, last_slot,*((unsigned int*) lte_ue_pbch_vars->decoded_output));
-      }
-
-      if (lte_ue_pbch_vars->pdu_errors_conseq>20) {
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
-	openair_daq_vars.mode = openair_NOT_SYNCHED;
-	openair_daq_vars.sync_state=0;
-#ifdef CBMIMO1
-	openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-#endif //CBMIMO1
-	mac_xface->frame = -1;
-	openair_daq_vars.synch_wait_cnt=0;
-	openair_daq_vars.sched_cnt=-1;
-
-	lte_ue_pbch_vars->pdu_errors_conseq=0;
-	lte_ue_pbch_vars->pdu_errors=0;
-
-      }
-    }
-    else if (last_slot > 1) {
-
-      if (!dlsch_ue) {
-	msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structures\n");
-	return(-1);
-      }
-      for (i=0;i<2;i++) {
-	if (!dlsch_ue[i]) {
-	  msg("[PHY_PROCEDURES_LTE] Can't get ue dlsch structure %d\n",i);
-	  return(-1);
+	if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars,
+		    lte_frame_parms,
+		    SISO))
+	  lte_ue_pbch_vars->pdu_errors_conseq = 0;
+	else {
+	  lte_ue_pbch_vars->pdu_errors_conseq++;
+	  lte_ue_pbch_vars->pdu_errors++;
 	}
-	dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
-	dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
-	dlsch_ue[i]->layer_index                            = 0;
-	dlsch_ue[i]->harq_processes[0]->active              = 0;
-	dlsch_ue[i]->harq_processes[0]->Nl                  = 1;
-	dlsch_ue[i]->rvidx                                  = 0;
+	
+	if (mac_xface->frame % 100 == 0) {
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
+	      mac_xface->frame, last_slot, lte_ue_pbch_vars->pdu_errors, lte_ue_pbch_vars->pdu_errors_conseq);
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH received frame = %d!\n",
+	      mac_xface->frame, last_slot,*((unsigned int*) lte_ue_pbch_vars->decoded_output));
+	}
+
+	if (lte_ue_pbch_vars->pdu_errors_conseq>20) {
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
+	  openair_daq_vars.mode = openair_NOT_SYNCHED;
+	  openair_daq_vars.sync_state=0;
+#ifdef CBMIMO1
+	  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+#endif //CBMIMO1
+	  mac_xface->frame = -1;
+	  openair_daq_vars.synch_wait_cnt=0;
+	  openair_daq_vars.sched_cnt=-1;
+	  
+	  lte_ue_pbch_vars->pdu_errors_conseq=0;
+	  lte_ue_pbch_vars->pdu_errors=0;
+	  
+	}
       }
 
-      if (last_slot%2==0) {
+      if (last_slot > 1) {
+	if ((last_slot%2==0) && (l==4-lte_frame_parms->Ncp)) 
 	
-	// process symbols 0,1,2
-	for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
-	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
-		   lte_frame_parms,
-		   m,
-		   rb_alloc,
-		   mod_order,
-		   mimo_mode);
+	  // process symbols 0,1,2
+	  for (m=lte_frame_parms->first_dlsch_symbol;m<4-lte_frame_parms->Ncp;m++)
+	    rx_dlsch(lte_ue_common_vars,
+		     lte_ue_dlsch_vars,
+		     lte_frame_parms,
+		     m,
+		     rb_alloc,
+		     mod_order,
+		     mimo_mode);
 	
-	// process symbols 4,5,6
-	for (m=4;m<6;m++)
-	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
-		   lte_frame_parms,
-		   m,
-		   rb_alloc,
-		   mod_order,
-		   mimo_mode);
+	if ((last_slot%2==1) && (l==0)) 
 
-      } else { //(last_slot%2==0)
-	    
-	// process symbols 6,7,8
-	for (m=7;m<9;m++)
-	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
-		   lte_frame_parms,
-		   m,
-		   rb_alloc,
-		   mod_order,
-		   mimo_mode);
-	
+	  // process symbols 3,4,5
+	  for (m=4-lte_frame_parms->Ncp+1;m<lte_frame_parms->symbols_per_tti/2;m++)
+	    rx_dlsch(lte_ue_common_vars,
+		     lte_ue_dlsch_vars,
+		     lte_frame_parms,
+		     m,
+		     rb_alloc,
+		     mod_order,
+		     mimo_mode);
+
+	if ((last_slot%2==1) && (l==4-lte_frame_parms->Ncp))
+
+	  // process symbols 6,7,8
+	  for (m=lte_frame_parms->symbols_per_tti/2+1;m<11-lte_frame_parms->Ncp*2;m++)
+	    rx_dlsch(lte_ue_common_vars,
+		     lte_ue_dlsch_vars,
+		     lte_frame_parms,
+		     m,
+		     rb_alloc,
+		     mod_order,
+		     mimo_mode);
+      }
+
+      if ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
+	if ((last_slot%2==0) && (l==0))
+
 	// process symbols 10,11,12
-	for (m=10;m<12;m++)
+	for (m=11-lte_frame_parms->Ncp*2+1;m<lte_frame_parms->symbols_per_tti;m++)
 	  rx_dlsch(lte_ue_common_vars,
 		   lte_ue_dlsch_vars,
 		   lte_frame_parms,
@@ -260,9 +271,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		   mod_order,
 		   mimo_mode);
       }
-
     }
   }
+
   else {
 
     generate_pilots_slot(lte_eNB_common_vars->txdataF,
