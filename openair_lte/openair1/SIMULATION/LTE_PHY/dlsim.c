@@ -15,7 +15,7 @@
 //#define OUTPUT_DEBUG 1
 
 #define NB_RB 12
-#define RBmask0 0x001f00fe
+#define RBmask0 0x00fc00fc
 #define RBmask1 0x0
 #define RBmask2 0x0
 #define RBmask3 0x0
@@ -99,6 +99,8 @@ void main(int argc,void **argv) {
 
   unsigned int tx_lev,tx_lev_dB,trials,errs=0,num_layers;
   int re_allocated;
+  FILE *bler_fd;
+  char bler_fname[20];
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -167,21 +169,21 @@ void main(int argc,void **argv) {
     mod_order[0]=2;
     mod_order[1]=2;
     target_code_rate = SE/2.0;
-    snr0=0;
+    snr0=-4;
     snr1=10;
   }
   else if (SE < 2.7) {
     mod_order[0]=4;
     mod_order[1]=4;
     target_code_rate = SE/4.0;
-    snr0=4;
+    snr0=0;
     snr1=16;
   }
   else if (SE < 6) {
     mod_order[0]=6;
     mod_order[1]=6;
     target_code_rate = SE/6.0;
-    snr0=10;
+    snr0=6;
     snr1=35;
   }
 
@@ -194,7 +196,11 @@ void main(int argc,void **argv) {
   nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
 
   coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
-  
+
+  sprintf(bler_fname,"bler_%d.m",(int)(SE*100.0));
+  bler_fd = fopen(bler_fname,"w");
+  fprintf(bler_fd,"bler = [");
+
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -388,7 +394,7 @@ void main(int argc,void **argv) {
   }
 
   printf("tx_lev_dB = %d\n",tx_lev_dB);
-  for (SNR=snr0;SNR<snr1;SNR++) {
+  for (SNR=snr0;SNR<snr1;SNR+=.2) {
     sigma2_dB = tx_lev_dB +10*log10(25/NB_RB) - SNR;
     printf("**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
 	   SNR,
@@ -396,7 +402,7 @@ void main(int argc,void **argv) {
 	   sigma2_dB);
     errs=0;
     printf("Channel attenuation %f\n",(double)tx_lev_dB - (SNR+sigma2_dB));
-    for (trials = 0;trials<100;trials++) {
+    for (trials = 0;trials<100000;trials++) {
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
@@ -537,17 +543,28 @@ void main(int argc,void **argv) {
 	}
 	exit(-1);
 #endif
-      }   //trials
-    printf("Errors %d\n",errs);
+	if (errs==100)
+	  break;
+    }   //trials
+    printf("Errors %d/%d, Pe = %e\n",errs,1+trials,(double)errs/(trials+1));
+    fprintf(bler_fd,"%f,%e,\n",SNR,(double)errs/(trials+1));
+    if (((double)errs/(trials+1))<1e-2)
+      break;
   } // SNR
 
+  fclose(bler_fd);
+
+  printf("Freeing dlsch structures\n");
   for (i=0;i<2;i++) {
+    printf("eNb %d\n",i);
     free_eNb_dlsch(dlsch_eNb[i]);
+    printf("UE %d\n",i);
     free_ue_dlsch(dlsch_ue[i]);
   }
 
 
 #ifdef IFFT_FPGA
+  printf("Freeing transmit signals\n");
   free(txdataF2[0]);
   free(txdataF2[1]);
   free(txdataF2);
@@ -555,7 +572,8 @@ void main(int argc,void **argv) {
   free(txdata[1]);
   free(txdata);
 #endif
-  
+
+  printf("Freeing channel I/O\n");
   for (i=0;i<2;i++) {
     free(s_re[i]);
     free(s_im[i]);
