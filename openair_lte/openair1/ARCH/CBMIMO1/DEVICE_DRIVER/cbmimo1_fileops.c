@@ -381,6 +381,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
        mac_xface->macphy_init();
 
       openair_daq_vars.node_id = PRIMARY_CH;
+      openair_daq_vars.dual_tx = 1;
 
 #ifdef OPENAIR_LTE
       openair_daq_vars.tdd = 0; //FDD
@@ -509,6 +510,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       mac_xface->macphy_init(); ///////H.A
 
       openair_daq_vars.node_id = NODE;
+      openair_daq_vars.dual_tx = 0;
+
 #ifdef OPENAIR_LTE
       openair_daq_vars.tdd = 0; //FDD
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
@@ -1336,6 +1339,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //    msg("[openair][IOCTL] Set RX_MODE to %d\n",rx_mode);
 
     break;
+
+  case openair_SET_FREQ_OFFSET:
+
+    if (openair_set_freq_offset(((int *)arg)[0]) == 0)
+      msg("[openair][IOCTL] Set frequency offset to %d\n",((int *)arg)[0]);
+    else 
+      msg("[openair][IOCTL] Problem setting frequency offset\n");
 
 
   default:

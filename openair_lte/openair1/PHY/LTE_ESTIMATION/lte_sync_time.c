@@ -261,7 +261,9 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
   write_output("sync_corr.m","synccorr",sync_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti,1,2);
+#endif
 #endif
 
   return(peak_pos);

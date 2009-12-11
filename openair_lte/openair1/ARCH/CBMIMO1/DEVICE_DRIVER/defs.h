@@ -68,6 +68,7 @@ void openair_set_tx_gain_openair(unsigned char txgain00,unsigned char txgain10,u
 void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain10,unsigned char rxgain01,unsigned char rxgain11);
 void openair_set_lo_freq_openair(char freq0,char freq1);
 void openair_set_rx_gain_cal_openair(unsigned int gain_dB);
+int openair_set_freq_offset(int freq_offset);
 
 void openair_generate_ofdm(void);
 void openair_generate_fs4(unsigned char);
@@ -79,7 +80,6 @@ void openair_get_frame(void);
 int openair_dma(unsigned int cmd);
 
 int setup_regs(void );
-
 
 void dump_config(void);
 

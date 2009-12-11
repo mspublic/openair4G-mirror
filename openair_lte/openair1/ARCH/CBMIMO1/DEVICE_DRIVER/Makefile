@@ -99,10 +99,10 @@ openair_rf-objs += $(TOP_DIR)/SIMULATION/TOOLS/taus.o
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 
 ifndef OPENAIR_LTE
-ifdef EMOS
-openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation_emos.o
-openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/phase_comp.o
-endif
+#ifdef EMOS
+#openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation_emos.o
+#openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/phase_comp.o
+#endif
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/synch_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/adjust_sync.o
@@ -169,7 +169,8 @@ openair_rf-objs += $(TOP_DIR)/SCHED/sched_lte.o
 endif
 
 # PHY Procedures
-ifdef OPENAIR_LTE
+# note that ifdef OPENAIR_LTE and ifdef EMOS we use phy_procedures_lte.o
+ifdef OPENAIR_LTE 
 openair_rf-objs += $(TOP_DIR)/SCHED/phy_procedures_lte.o
 else
 ifdef EMOS

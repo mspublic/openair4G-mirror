@@ -19,7 +19,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #ifndef USER_MODE
 #define __NO_VERSION__
 
-
+/*
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -33,6 +33,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #include <asm/uaccess.h>
 #include <asm/segment.h>
 #include <asm/page.h>
+*/
 
 #ifdef RTAI_ISNT_POSIX
 #include "rt_compat.h"
@@ -62,7 +63,6 @@ This section deals with real-time process scheduling for PHY and synchronization
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "extern.h"
-//#include "dummy_driver.h"
 
 #ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
@@ -73,7 +73,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #endif
 
 #ifdef EMOS
-#include "phy_procedures_emos_lte.h"
+#include "phy_procedures_emos.h"
 #endif
 
 /// Mutex for instance count on MACPHY scheduling 

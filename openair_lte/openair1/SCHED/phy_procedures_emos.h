@@ -1,18 +1,49 @@
 #ifndef __PHY_PROCEDURES_EMOS_H__
 #define __PHY_PROCEDURES_EMOS_H__
 
-//#define EMOS_START_PILOT 16
-//#define EMOS_END_PILOT 31
+#include <rtai.h>
+#include "PHY/TOOLS/defs.h"
+#include "PHY/defs.h"
 
 #define CHANSOUNDER_FIFO_SIZE 20971520  // 20 Mbytes FIFO
 #define CHANSOUNDER_FIFO_MINOR 3               // minor of the FIFO device - this is /dev/rtf3
 
+#ifdef OPENAIR_LTE
+
+#define NUMBER_OF_OFDM_CARRIERS_EMOS 512 // the number of OFDM carriers used for channel sounding
+#define NUMBER_OF_USEFUL_CARRIERS_EMOS 300    // the number of OFDM carriers that contain data
+
+#define N_RB_DL_EMOS 25
+#define N_PILOTS_PER_RB 8
+#define N_SLOTS_EMOS 2
+
+// This structure hold all the data that is written to FIFO in one frame
+// Make sure that this is updated accordingly when new data is written to FIFO
+// MAKE SURE THE SIZE OF THIS STRUCTURE IS A MULTIPLE OF 4 (32 bit aligned) 
+struct fifo_dump_emos_struct {
+  RTIME	           timestamp;
+  PHY_MEASUREMENTS PHY_measurements;
+  char             pbch_pdu[NUMBER_OF_eNB_MAX][PBCH_PDU_SIZE];           /// Contents of the PBCH
+  unsigned int     pdu_errors[NUMBER_OF_eNB_MAX];                        /// Total number of PDU errors
+  unsigned int     pdu_errors_last[NUMBER_OF_eNB_MAX];                   /// Total number of PDU errors 128 frames ago
+  unsigned int     pdu_errors_conseq[NUMBER_OF_eNB_MAX];                 /// Total number of consecutive PDU errors
+  unsigned int     pdu_fer[NUMBER_OF_eNB_MAX];                           /// FER (in percent) 
+  int              timing_offset;                                        /// Timing offset
+  int              freq_offset;                                          /// Frequency offset
+  unsigned int     rx_total_gain_dB;                                     /// Total gain
+  MIMO_mode_t      mimo_mode;
+  int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+};
+ 
+typedef struct  fifo_dump_emos_struct fifo_dump_emos;
+
+#else //OPENAIR_LTE
+
+//#define EMOS_START_PILOT 16
+//#define EMOS_END_PILOT 31
+
 #define NUMBER_OF_OFDM_CARRIERS_EMOS 256 // the number of OFDM carriers used for channel sounding
 #define NUMBER_OF_USEFUL_CARRIERS_EMOS 160    // the number of OFDM carriers that contain data
-
-#include <rtai.h>
-#include "PHY/TOOLS/defs.h"
-#include "PHY/defs.h"
 
 // This structure hold all the data that is written to FIFO in one frame
 // Make sure that this is updated accordingly when new data is written to FIFO
@@ -43,5 +74,6 @@ struct fifo_read_emos_struct {
  
 typedef struct  fifo_read_emos_struct fifo_read_emos;
 
+#endif //OPENAIR_LTE
 #endif
 

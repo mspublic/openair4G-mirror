@@ -17,7 +17,7 @@ ________________________________________________________________*/
 #define LTE_CE_FILTER_LENGTH 5
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL 0 
-
+#define PBCH_PDU_SIZE 6 //bytes
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {

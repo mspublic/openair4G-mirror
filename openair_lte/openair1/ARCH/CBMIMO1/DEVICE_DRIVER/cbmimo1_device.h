@@ -85,9 +85,10 @@
 #define openair_START_1ARY_CLUSTERHEAD_COGNITIVE      _IOR(openair_IOC_MAGIC,46,int)
 //fkalten 22.4.09 
 #define openair_SET_RX_MODE                           _IOR(openair_IOC_MAGIC,47,int)
+// fkalten 9.12.09
+#define openair_SET_FREQ_OFFSET                       _IOR(openair_IOC_MAGIC,48,int) 
 
-
-#define openair_MAXNR         47
+#define openair_MAXNR         48
 
 
 

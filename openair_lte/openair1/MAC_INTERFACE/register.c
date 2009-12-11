@@ -17,10 +17,6 @@ pointer to the macphy_scheduler() routine*/
 #include "extern.h"
 
 
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
-
 #ifndef USER_MODE
 
 

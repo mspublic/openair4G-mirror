@@ -69,7 +69,8 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int timing_offset;		
   */
   int i,k,l,m;
-  unsigned char pbch_pdu[6];
+  unsigned char pbch_pdu[PBCH_PDU_SIZE];
+  int pbch_error;
 #ifndef USER_MODE
   RTIME  now;            
 #endif
@@ -82,6 +83,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   unsigned int coded_bits_per_codeword,nsymb;
   int inv_target_code_rate = 2;
   int subframe_offset;
+#ifdef EMOS
+  fifo_dump_emos emos_dump;
+#endif
 
   /*
 #ifndef OPENAIR2
@@ -103,9 +107,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   //if (mac_xface->frame%100 == 0)
   //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
 
-  /*
-  if (last_slot==SLOTS_PER_FRAME/2) {
-    // to test the feasibility we measure the signal energy on RX
+  if (last_slot==SLOTS_PER_FRAME-1) {
     
     PHY_vars->PHY_measurements.rx_avg_power_dB[0] = 0;
     for (i=0;i<lte_frame_parms->nb_antennas_rx; i++) {
@@ -131,7 +133,6 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       phy_adjust_gain (0,16384,0);
     
   }
-  */
 
   if (mac_xface->is_cluster_head == 0) {
 
@@ -163,6 +164,13 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	       (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
 	       1);
 
+#ifdef EMOS
+      if (((last_slot==0) || (last_slot==1)) && ((l==0) || l==4-lte_frame_parms->Ncp))) {
+      //copy channel estimates
+channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+
+      }
+#endif
       if ((last_slot==0) && (l==4-lte_frame_parms->Ncp)) {
 	// Measurements
 	lte_ue_measurements(lte_ue_common_vars,
@@ -186,15 +194,26 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 			 1,
 			 16384);
 
-	if (rx_pbch(lte_ue_common_vars,
-		    lte_ue_pbch_vars,
-		    lte_frame_parms,
-		    SISO))
+	pbch_error = rx_pbch(lte_ue_common_vars,
+			     lte_ue_pbch_vars,
+			     lte_frame_parms,
+			     SISO);
+	if (pbch_error) {
 	  lte_ue_pbch_vars->pdu_errors_conseq = 0;
+#ifdef EMOS
+	  PHY_vars->PHY_measurements.frame_tx = *((unsigned int*) lte_ue_pbch_vars->decoded_output);
+#endif
+	}
 	else {
 	  lte_ue_pbch_vars->pdu_errors_conseq++;
 	  lte_ue_pbch_vars->pdu_errors++;
 	}
+
+	if (mac_xface->frame % 100 == 0) {
+	  lte_ue_pbch_vars->pdu_fer = lte_ue_pbch_vars->pdu_errors - lte_ue_pbch_vars->pdu_errors_last;
+	  lte_ue_pbch_vars->pdu_errors_last = lte_ue_pbch_vars->pdu_errors;
+	}
+
 	
 	if (mac_xface->frame % 100 == 0) {
 	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
@@ -218,6 +237,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	  lte_ue_pbch_vars->pdu_errors=0;
 	  
 	}
+
       }
 
       if (last_slot > 1) {
@@ -272,6 +292,33 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		   mimo_mode);
       }
     }
+
+#ifdef EMOS
+    // collect all the data for EMOS in emos_dump and write to FIFO
+    if (last_slot == SLOTS_PER_FRAME-1) {
+
+      emos_dump.timestamp = rt_get_time_ns();
+      memcpy(&emos_dump.PHY_measurements,&PHY_vars->PHY_measurements,sizeof(PHY_MEASUREMENTS));
+      memcpy(emos_dump.pbch_pdu[0],pbch_pdu,PBCH_PDU_SIZE);
+      emos_dump.pdu_errors[0] = lte_ue_pbch_vars->pdu_errors;
+      emos_dump.pdu_errors_last[0] = lte_ue_pbch_vars->pdu_errors_last;
+      emos_dump.pdu_errors_conseq[0] = lte_ue_pbch_vars->pdu_errors_conseq;
+      emos_dump.pdu_fer[0] = lte_ue_pbch_vars->pdu_fer;
+      emos_dump.timing_offset = openair_daq_vars.timing_advance;
+      emos_dump.freq_offset = lte_ue_common_vars->freq_offset;
+      emos_dump.rx_total_gain_dB = PHY_vars->rx_vars[0].rx_total_gain_dB;
+      emos_dump.mimo_mode = mimo_mode;
+
+      if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump, sizeof(fifo_dump_emos))!=sizeof(fifo_dump_emos)) {
+	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, Problem writing EMOS data to FIFO\n",mac_xface->frame, last_slot);
+	return(-1);
+      }
+
+      if (mac_xface->frame % 100 == 0)
+	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, Writing EMOS data to FIFO\n",mac_xface->frame, last_slot);
+
+    }
+#endif //EMOS
   }
 
   else {

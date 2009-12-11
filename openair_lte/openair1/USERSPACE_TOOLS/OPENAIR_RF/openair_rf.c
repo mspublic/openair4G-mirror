@@ -113,6 +113,7 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 16 : SET CALIBRATED RX GAIN param (also turns off AGC)\n");
     printf("[openair][INFO] Action 22 : Update SoC firmware\n");
     printf("[openair][INFO] Action 25 : SET TIMING ADVANCE param\n");
+    printf("[openair][INFO] Action 26 : SET FREQ OFFSET param\n");
     printf("[openair][INFO] Action 27 : Start Primary Clusterhead in cognitive mode - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 39 : Send EMOS recording flag\n"); 
     exit (-1);
@@ -166,10 +167,12 @@ int main (int argc, char **argv) {
     printf("[openair][INFO][START] Action              is : SET_TOPOLOGY_INFORMATION\n");
   else if (action == 24) // Stop_EMULATION_TX_RX for node// disconnect from CH
     printf("[openair][INFO][START] Action              is : STOP_EMULATION_TX_RX\n");
-  else if (action == 39) // Send EMOS Rec flag
-    printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else if (action == 25) // Set timing advance
     printf("[openair][INFO][START] Action              is : SET_TIMING_ADVANCE\n");
+  else if (action == 26) // Set freq offset
+    printf("[openair][INFO][START] Action              is : SET_FREQ_OFFSET\n");
+  else if (action == 39) // Send EMOS Rec flag
+    printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else {
     printf("[openair][INFO][START] Action              is : unknown action\n");
   }
@@ -211,7 +214,7 @@ int main (int argc, char **argv) {
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
+  lte_frame_parms->Nid_cell           = 1;
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
@@ -654,6 +657,13 @@ case 24 :
     fc = atoi(argv[3]);
     printf("[openair][START][INFO] SET TIMING ADVANCE to %d\n",fc);
     result = ioctl(openair_fd,openair_SET_TIMING_ADVANCE, &fc);
+    break;
+
+  case 26:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET FREQ OFFSET to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_FREQ_OFFSET, &fc);
     break;
 
   case 27 :

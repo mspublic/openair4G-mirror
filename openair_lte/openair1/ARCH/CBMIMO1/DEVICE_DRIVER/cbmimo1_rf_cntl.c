@@ -137,10 +137,31 @@ void openair_set_lo_freq_openair(char freq0,char freq1) {
 
 }
 
+int openair_set_freq_offset(int freq_offset) {
+  unsigned int val;
 
+  if (pci_interface) {
+      if (abs(freq_offset) > 7680000) {
+	printk("[openair][RF_CNTL] Frequency offset must be smaller than 7.68e6!\n");
+	return(-1);
+      } else {
+	val = (((unsigned int) abs(freq_offset))<<8)/1875; //abs(freq_offset)*pow2(20)/7.68e6
+	if (freq_offset < 0)
+	  val ^= (1<<20); // sign bit to position 20
+	// bit21 = 0 negative freq offset at TX, positive freq offset at RX	    
+	// bit21 = 1 positive freq offset at TX, negative freq offset at RX
 
+	pci_interface->freq_offset = val;
+	printk("[openair][RF_CNTL] Setting frequency offset to %d Hz (%x)\n",freq_offset,val);
+	return(0);
+      }
+  } 
+  else {
+    printk("[openair][RF_CNTL] pci_interface not initialized\n");
+    return(-1);
+  }
 
-
+}
 
 
 

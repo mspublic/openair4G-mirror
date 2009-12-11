@@ -8,6 +8,17 @@ fclose(fd);
 rxs = temp(1:2:length(temp)) + sqrt(-1)*temp(2:2:length(temp));
 rxs = reshape(rxs,[],2);
 
+% estimate frequency offset (for a fs/4 signal)
+fs = 7680e3;
+s_phase = unwrap(angle(rxs(1:4:length(rxs),1).'));
+s_phase2 = unwrap(angle(rxs(1:4:length(rxs),2).'));
+s_phase = s_phase - s_phase(1,1);
+s_phase2 = s_phase2 - s_phase2(1,1);
+
+f_off = mean(s_phase(2:length(s_phase))*fs/4./(1:(length(s_phase)-1))/2/pi)
+f_off2 = mean(s_phase2(2:length(s_phase2))*fs/4./(1:(length(s_phase2)-1))/2/pi)
+
+
 figure(1)
 plot(real(rxs))
 

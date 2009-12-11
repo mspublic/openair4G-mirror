@@ -29,6 +29,7 @@ typedef struct
 	void	(*Func) (FILE*, int);
 } cfg_Section;
 
+void dump_config(void);
 
 
 /*! \fn int reconfigure_MACPHY(FILE* infile);
