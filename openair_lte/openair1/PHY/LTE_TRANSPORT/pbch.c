@@ -1,10 +1,19 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#ifdef __SSE3__
 #include <pmmintrin.h>
 #include <tmmintrin.h>
+#endif
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
+
+#ifndef __SSE3__
+extern __m128i zero;
+#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
+#endif
+
 
 #ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"

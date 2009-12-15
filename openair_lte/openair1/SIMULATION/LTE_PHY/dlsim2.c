@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   
   // multipath channel
-  randominit();
+  randominit(0);
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {

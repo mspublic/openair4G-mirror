@@ -12,7 +12,7 @@
 #define BW 10.0
 #define Td 1.0
 
-#define OUTPUT_DEBUG 1
+//#define OUTPUT_DEBUG 1
 
 #define NB_RB 12
 #define RBmask0 0x00fc00fc
@@ -29,8 +29,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  randominit();
-  set_taus_seed();
+  randominit(0);
+  set_taus_seed(0);
   
   crcTableInit();
 
@@ -384,7 +384,7 @@ void main(int argc,void **argv) {
 #endif
 
   // multipath channel
-  randominit();
+
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES/5;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -428,11 +428,11 @@ void main(int argc,void **argv) {
 #ifdef OUTPUT_DEBUG
 	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-#endif    
 	printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+#endif
 	SNRmeas = 10*log10((signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))/signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(1*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))) - 1);
-	printf("SNRmeas %f\n",SNRmeas);
+//	printf("SNRmeas %f\n",SNRmeas);
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {
@@ -446,7 +446,8 @@ void main(int argc,void **argv) {
 	
 	    lte_ue_measurements(lte_ue_common_vars,
 				lte_frame_parms,
-				&PHY_vars->PHY_measurements);
+				&PHY_vars->PHY_measurements,
+				0);
 	    //	printf("rx_avg_power_dB %d\n",PHY_vars->PHY_measurements.rx_avg_power_dB[0]);
 	    //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
 	
