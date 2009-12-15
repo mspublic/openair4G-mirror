@@ -243,6 +243,10 @@ void qpsk_qpsk(short *stream0_in,
       stream0_64_out[i+1] = _mm_unpackhi_pi16(y0r,y0i);
     
   }
+
+  _mm_empty();
+  _m_empty();
+
 }
 
 
@@ -279,6 +283,9 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     rxF++;
     llr128++;
   }
+
+  _mm_empty();
+  _m_empty();
 
 }
 
@@ -322,6 +329,9 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     //    print_bytes("rxF[i+1]",&rxF[i+1]);
   }
 
+  _mm_empty();
+  _m_empty();
+
 }
 
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -364,6 +374,9 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     }
 
   }
+
+  _mm_empty();
+  _m_empty();
 
 }
 
@@ -455,6 +468,9 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
     ch_mag0b+=3;
     ch_mag1b+=3;
   }
+
+  _mm_empty();
+  _m_empty();
   
 }
 
@@ -518,6 +534,9 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
   }
+  _mm_empty();
+  _m_empty();
+
 }
 
 
@@ -692,6 +711,10 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
       }
     }
   }
+
+  _mm_empty();
+  _m_empty();
+
   return(nb_rb/frame_parms->nb_antennas_rx);
 }
 
@@ -865,6 +888,10 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       }
     }
   }
+
+  _mm_empty();
+  _m_empty();
+
   return(nb_rb/frame_parms->nb_antennas_rx);
 }
 
@@ -1104,6 +1131,10 @@ void dlsch_channel_compensation(int **rxdataF_ext,
     
     }
   }
+
+  _mm_empty();
+  _m_empty();
+
 }     
 	     
 
@@ -1147,6 +1178,8 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
       //      printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
+  _mm_empty();
+  _m_empty();
 
 }
 

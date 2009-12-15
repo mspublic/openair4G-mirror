@@ -26,6 +26,9 @@ void multadd_complex_vector_real_scalar(short *x,
       y_128[n] = _mm_adds_epi16(y_128[n],_mm_slli_epi16(_mm_mulhi_epi16(x_128[n],alpha_128),1));
     }
 
+  _mm_empty();
+  _m_empty();
+
 }
 void multadd_real_vector_complex_scalar(short *x,
 					short *alpha,
@@ -61,6 +64,10 @@ void multadd_real_vector_complex_scalar(short *x,
     j++;
 
   }
+
+  _mm_empty();
+  _m_empty();
+
 }
 
 int rotate_cpx_vector(short *x, 

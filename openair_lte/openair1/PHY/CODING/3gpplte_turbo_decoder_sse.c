@@ -584,6 +584,8 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
     }
 
+  _mm_empty();
+  _m_empty();
 
 }
 
