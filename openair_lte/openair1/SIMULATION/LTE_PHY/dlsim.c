@@ -12,7 +12,7 @@
 #define BW 10.0
 #define Td 1.0
 
-//#define OUTPUT_DEBUG 1
+#define OUTPUT_DEBUG 1
 
 #define NB_RB 12
 #define RBmask0 0x00fc00fc
@@ -69,7 +69,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 void main(int argc,void **argv) {
 
   int i,aa,s,ind,Kr,Kr_bytes;;
-  double sigma2, sigma2_dB=10,SNR,snr0,snr1;
+  double sigma2, sigma2_dB=10,SNR,snr0,snr1,SNRmeas;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -426,9 +426,13 @@ void main(int argc,void **argv) {
 	//    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 	//    lte_sync_time_free();
 #ifdef OUTPUT_DEBUG
-	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
-	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
+	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
+	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 #endif    
+	printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+	SNRmeas = 10*log10((signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))/signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(1*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))) - 1);
+	printf("SNRmeas %f\n",SNRmeas);
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {

@@ -486,10 +486,6 @@ int dot_product(short *x,
 		unsigned int N, //must be a multiple of 8
 		unsigned char output_shift);
 
-extern inline unsigned int taus(void);
-
-void set_taus_seed(void);
-
 
 /** @} */ 
 

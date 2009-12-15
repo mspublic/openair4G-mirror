@@ -23,7 +23,7 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
 
-#define MAX_NUM_DLSCH_SEGMENTS 3
+#define MAX_NUM_DLSCH_SEGMENTS 2
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 
 typedef struct {
@@ -64,8 +64,12 @@ typedef struct {
 } LTE_eNb_HARQ_t;
 
 typedef struct {
+/// Current RB allocation
+  unsigned int rb_alloc[4];
 /// Pointers to 8 HARQ processes for the DLSCH
   LTE_eNb_HARQ_t *harq_processes[8];     
+/// Number of soft channel bits
+  unsigned short G;
 /// Redundancy-version of the current sub-frame
   unsigned char rvidx;
 /// Layer index for this dlsch (0,1)
@@ -118,12 +122,16 @@ typedef struct {
 } LTE_UE_HARQ_t;
 
 typedef struct {
+/// Current RB allocation
+  unsigned int rb_alloc[4];
 /// Pointers to up to 8 HARQ processes
   LTE_UE_HARQ_t *harq_processes[8];   
 /// Layer index for this DLSCH
   unsigned char layer_index;              
 /// redundancy version for this sub-frame
-  unsigned char rvidx;                
+  unsigned char rvidx;
+/// Number of soft channel bits
+  unsigned short G;
 /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
   unsigned char Mdlharq;              
 /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
@@ -223,7 +231,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 /** \fn int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
-		      unsigned short sub_frame_offset,
+		      unsigned int sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,
@@ -239,7 +247,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 */ 
 int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
-		      unsigned short sub_frame_offset,
+		      unsigned int sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,

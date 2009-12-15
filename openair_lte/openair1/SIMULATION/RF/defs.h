@@ -47,4 +47,6 @@ void dac(double **s_re,
 	 unsigned int nb_tx_antennas,
 	 unsigned int length,
 	 double amp_dBm,
-	 unsigned char B);
+	 unsigned char B,
+	 unsigned int meas_length,
+	 unsigned int meas_offset);

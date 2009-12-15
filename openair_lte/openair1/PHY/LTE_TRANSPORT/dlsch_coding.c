@@ -11,7 +11,8 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_CODING 1
+//#define DEBUG_DLSCH_CODING 
+//#define DEBUG_DLSCH_FREE 1
 
 /*
 #define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
@@ -20,19 +21,41 @@
 */
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
+
 void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
   int i;
   int r;
 
   if (dlsch) {
+#ifdef DEBUG_DLSCH_FREE
+    msg("Freeing dlsch %p\n",dlsch);
+#endif
     for (i=0;i<dlsch->Mdlharq;i++) {
+#ifdef DEBUG_DLSCH_FREE
+      msg("Freeing dlsch process %d\n",i);
+#endif
       if (dlsch->harq_processes[i]) {
-	if (dlsch->harq_processes[i]->b)
+#ifdef DEBUG_DLSCH_FREE
+	msg("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
+#endif
+	if (dlsch->harq_processes[i]->b) {
 	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
+#ifdef DEBUG_DLSCH_FREE
+	  msg("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
+#endif
+	}
 	if (dlsch->harq_processes[i]->c) {
-	  for (r=0;r<8;r++)
+#ifdef DEBUG_DLSCH_FREE
+	  msg("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
+#endif
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
+
+#ifdef DEBUG_DLSCH_FREE
+	    msg("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
+#endif
 	    if (dlsch->harq_processes[i]->c[r]) 
 	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));
+	  }
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_eNb_HARQ_t));
       }
@@ -53,6 +76,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     dlsch->Mdlharq = Mdlharq;
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_eNb_HARQ_t *)malloc16(sizeof(LTE_eNb_HARQ_t));
+      //      printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b) {
@@ -67,7 +91,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	  }
 	}
       }	else {
-	msg("Can't get harq_p\n");
+	msg("Can't get harq_p %d\n",i);
 	exit_flag=3;
       }
     }

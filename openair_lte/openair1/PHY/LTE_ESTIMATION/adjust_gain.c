@@ -1,8 +1,6 @@
-#ifdef PC_TARGET
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#endif 
 
 #ifndef USER_MODE
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
@@ -41,7 +39,9 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   else if ( (rx_power_fil > TARGET_RX_POWER + 5) && (PHY_vars->rx_vars[0].rx_total_gain_dB > MIN_RF_GAIN) )
     PHY_vars->rx_vars[0].rx_total_gain_dB-=5;
 
+#ifndef USER_MODE
   openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
+#endif
 
 #ifdef DEBUG_PHY	
   msg("[PHY][ADJUST_GAIN] clear = %d, rx_power_fil = %d, rx_total_gain_dB = %d\n",clear,rx_power_fil,PHY_vars->rx_vars[0].rx_total_gain_dB);

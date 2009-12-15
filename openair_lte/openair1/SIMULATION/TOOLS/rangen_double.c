@@ -15,14 +15,21 @@ static unsigned int seed, iy, ir[98];
 #define mod 4294967296.0                /* is 2**32 */
 
 
-void randominit()
+void randominit(unsigned seed_init)
 {
   int i;
 
+  printf("Initializing random number generator, seed %x\n",seed_init);
 
-  srand((unsigned)time(NULL));
+  if (seed_init == 0) {
+    srand((unsigned)time(NULL));
 
-  seed = (unsigned int) rand();
+    seed = (unsigned int) rand();
+  }
+  else {
+    seed = seed_init;
+  }
+    
   if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
   for (i=1; i<=97; i++)
   {

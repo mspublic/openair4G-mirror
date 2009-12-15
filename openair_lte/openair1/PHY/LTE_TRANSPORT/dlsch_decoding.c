@@ -13,10 +13,10 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 	if (dlsch->harq_processes[i]->b)
 	  free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
 	if (dlsch->harq_processes[i]->c) {
-	  for (r=0;r<8;r++)
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	    free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 768);
 	}
-	for (r=0;r<8;r++)
+	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	  if (dlsch->harq_processes[i]->d[r])
 	    free16(dlsch->harq_processes[i]->d[r],((3*8*6144)+12+96)*sizeof(short));
 	free16(dlsch->harq_processes[i],sizeof(LTE_UE_HARQ_t));
@@ -37,6 +37,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     dlsch->Mdlharq = Mdlharq;
 
     for (i=0;i<Mdlharq;i++) {
+      //      printf("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_UE_HARQ_t *)malloc16(sizeof(LTE_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
@@ -190,7 +191,7 @@ unsigned int  dlsch_decoding(unsigned short A,
     else 
       crc_type = CRC24_B;
 
-    /*
+    /*    
     printf("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
@@ -230,8 +231,8 @@ unsigned int  dlsch_decoding(unsigned short A,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
 	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
       offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
-      //      printf("copied %d bytes to b sequence\n",
-      //	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      //            printf("copied %d bytes to b sequence\n",
+      //      	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,

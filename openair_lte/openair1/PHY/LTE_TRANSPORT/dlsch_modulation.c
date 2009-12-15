@@ -1036,15 +1036,15 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
-		     unsigned short sub_frame_offset,
+		     unsigned int sub_frame_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNb_DLSCH_t *dlsch,
 		     unsigned char harq_pid,
 		     unsigned int  *rb_alloc){
 
   unsigned char nsymb;
-  unsigned int jj,re_allocated;
-  unsigned short l,rb,re_offset,symbol_offset;
+  unsigned int jj,re_allocated,symbol_offset;
+  unsigned short l,rb,re_offset;
   unsigned int rb_alloc_ind;
   unsigned char pilots,first_pilot,second_pilot;
   unsigned char skip_dc;
@@ -1083,12 +1083,13 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
 #ifdef IFFT_FPGA
       re_offset = frame_parms->N_RB_DL*12/2;
-      symbol_offset = frame_parms->N_RB_DL*12*(l+sub_frame_offset*nsymb);
+      symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(sub_frame_offset*nsymb));
 #else
       re_offset = frame_parms->first_carrier_offset;
-      symbol_offset = frame_parms->ofdm_symbol_size*(l+sub_frame_offset*nsymb);
+      symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb));
 #endif
 
+      //      printf("symbol_offset %d,subframe offset %d\n",symbol_offset,sub_frame_offset);
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 	
 	if (rb < 32)
@@ -1108,7 +1109,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  skip_dc = 0;
 
 	if (dlsch->layer_index>1) {
-	  msg("layer_index %d: re_offset %d, symbol %d\n",dlsch->layer_index,re_offset,l); 
+	  msg("layer_index %d: re_offset %d, symbol %d offset %d\n",dlsch->layer_index,re_offset,l,symbol_offset); 
 	  return(-1);
 	}
 	if (rb_alloc_ind > 0)

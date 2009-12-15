@@ -1,4 +1,4 @@
-CC = $(shell if [ "$(OSTYPE)" = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
+CC = $(shell if [ "$OSTYPE" = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
 
 TOP_DIR = ../..
 

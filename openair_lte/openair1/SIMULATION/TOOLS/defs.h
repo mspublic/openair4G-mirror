@@ -17,10 +17,11 @@ The present clause specifies several numerical functions for testing of digital 
 */
 inline unsigned int taus();
 
-/* \fn void set_taus_seed(void)
+/* \fn void set_taus_seed(unsigned int seed_init)
 \brief Sets the seed for the Tausworthe generator.
+@param seed_init 0 means generate based on CPU time, otherwise provide the seed
 *@} */
-void set_taus_seed(void);
+void set_taus_seed(unsigned int seed_init);
 /** @defgroup _gauss Generation of Quantized Gaussian Random Variables 
  * @ingroup numerical
  * @{
@@ -76,7 +77,7 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 /* *@} */
 
 double gaussdouble(double,double);
-void randominit(void);
+void randominit(unsigned int seed_init);
 
 
 

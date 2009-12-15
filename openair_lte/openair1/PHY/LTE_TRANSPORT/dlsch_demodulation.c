@@ -1,9 +1,20 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#ifdef __SSE3__
 #include <pmmintrin.h>
 #include <tmmintrin.h>
+#endif
 #include "PHY/defs.h"
 #include "defs.h"
+
+#ifndef __SSE3__
+__m128i zero;
+#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
+#endif
+
+#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negatives
+
 
 //#define max(a,b) ((a)>(b) ? (a) : (b))
 
@@ -14,7 +25,7 @@
 
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
-//#define DEBUG_DLSCH_DEMOD
+#define DEBUG_DLSCH_DEMOD
 
 #ifdef DEBUG_DLSCH_DEMOD
 
@@ -54,9 +65,6 @@ void print_ints(char *s,__m128i *x) {
 __m128i *llr128;
 short *llr;
 
-#ifndef SSSE3
-#define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negatives
-#endif
 
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
@@ -260,8 +268,11 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   if (symbol == frame_parms->first_dlsch_symbol)
     llr128 = (__m128i*)dlsch_llr;
  
-  
-  //printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
+  if (!llr128) {
+    msg("dlsch_qpsk_llr: llr is null, symbol %d\n",symbol);
+    exit(-1);
+  }
+  //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
   for (i=0;i<(nb_rb*3);i++) {
     *llr128 = *rxF;
@@ -876,7 +887,11 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  
+
+#ifndef __SSE3__
+  zero = _mm_xor_si128(zero,zero);
+#endif
+
   //  printf("comp: symbol %d\n",symbol);
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
     if (mod_order[aatx] == 4)
@@ -1151,6 +1166,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   int avgs;
   short i;
 
+  //  printf("rx_dlsch: symbol %d\n",symbol);
 
   if (frame_parms->nb_antennas_tx>1)
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,

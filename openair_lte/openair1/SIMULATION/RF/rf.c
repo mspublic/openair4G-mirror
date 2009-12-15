@@ -33,7 +33,7 @@ int rf_rx(double **r_re,
   double p_noise     = 0.0;
   double tmp_re,tmp_im;
   double N0W         = pow(10.0,.1*(-174.0 - 10*log10(s_time*1e-9)));
-  //  printf("s_time=%f, N0W=%g\n",s_time,N0W);
+  //  printf("s_time=%f, N0W=%g\n",s_time,10*log10(N0W));
 
   // phase-noise filter coefficients (2nd order digital Butterworth)
   double pn_cutoff_d = tan(M_PI*s_time*1e-9*pn_cutoff);
@@ -46,7 +46,6 @@ int rf_rx(double **r_re,
   double pn_amp      = pow(10.0,.1*pn_amp_dBc);
   int i,a;
 
-  randominit();
 
   if (pn_amp_dBc > -20.0){
     printf("rf.c: Illegal pn_amp_dBc %f\n",pn_amp_dBc);
@@ -102,8 +101,8 @@ int rf_rx(double **r_re,
     for (a=0;a<nb_rx_antennas;a++) {
 
       // Amplify by receiver gain and apply 3rd order non-linearity
-      r_re[a][i] = rx_gain_lin*(r_re[a][i] + IP3_lin*(pow(r_re[a][i],3.0) + 3.0*r_re[a][i]*r_im[a][i]*r_im[a][i])) + rx_gain_lin*(sqrt(N0W)*gaussdouble(0.0,1.0));
-      r_im[a][i] = rx_gain_lin*(r_im[a][i] + IP3_lin*(pow(r_im[a][i],3.0) + 3.0*r_im[a][i]*r_re[a][i]*r_re[a][i])) + rx_gain_lin*(sqrt(N0W)*gaussdouble(0.0,1.0));
+      r_re[a][i] = rx_gain_lin*(r_re[a][i] + IP3_lin*(pow(r_re[a][i],3.0) + 3.0*r_re[a][i]*r_im[a][i]*r_im[a][i])) + rx_gain_lin*(sqrt(.5*N0W)*gaussdouble(0.0,1.0));
+      r_im[a][i] = rx_gain_lin*(r_im[a][i] + IP3_lin*(pow(r_im[a][i],3.0) + 3.0*r_im[a][i]*r_re[a][i]*r_re[a][i])) + rx_gain_lin*(sqrt(.5*N0W)*gaussdouble(0.0,1.0));
 
       // Apply phase offsets
       tmp_re = r_re[a][i]*cos(phase2) - r_im[a][i]*sin(phase2);
@@ -159,6 +158,8 @@ int main(int argc, char* argv[]) {
   r_re = malloc(nb_antennas*sizeof (double *));
   r_im = malloc(nb_antennas*sizeof (double *));
   printf("Input amp = %f\n",input_amp);
+
+  randominit();
 
   for (i=0;i<nb_antennas;i++) {
 

@@ -104,7 +104,7 @@ double signal_energy_fp(double **s_re,double **s_im,unsigned int nb_antennas,uns
       V= V + (s_re[aa][i+offset]*s_re[aa][i+offset]) + (s_im[aa][i+offset]*s_im[aa][i+offset]); 
     }
   }
-  return(10*log10(V/length/aa));
+  return(V/length/aa);
 }
 #else
 

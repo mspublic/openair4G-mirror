@@ -126,10 +126,10 @@ ________________________________________________________________*/
 #define SLOT_TIME_NS         (SLOT_LENGTH_SAMPLES*(1e3)/7.68)            // slot time in ns
 
 
-#define TARGET_RX_POWER 45		// Target digital power for the AGC
-#define TARGET_RX_POWER_MAX 50		// Maximum digital power, such that signal does not saturate (value found by simulation)
-#define TARGET_RX_POWER_MIN 40		// Minimum digital power, anything below will be discarded (value found by simulation)
-#define MAX_RF_GAIN 150
+#define TARGET_RX_POWER 55		// Target digital power for the AGC
+#define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
+#define TARGET_RX_POWER_MIN 35		// Minimum digital power, anything below will be discarded (value found by simulation)
+#define MAX_RF_GAIN 160
 #define MIN_RF_GAIN 96
 
 #define PHY_SYNCH_OFFSET ((OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)-1)  // OFFSET of BEACON SYNCH

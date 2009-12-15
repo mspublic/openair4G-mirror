@@ -194,11 +194,6 @@ ________________________________________________________________*/
 //#define GAIN_16QAM 458             // Amplitude of 16QAM transmit modulation (GAIN_QPSK/sqrt(5))
 //#define GAIN_16QAM_2ANT 324        // Amplitude of 16QAM transmit modulation with 2 TX antennas (GAIN_16QAM/sqrt(2))    
 
-#define TARGET_RX_POWER 43		// Target digital power for the AGC
-#define TARGET_RX_POWER_MAX 48		// Maximum digital power, such that signal does not saturate (value found by simulation)
-#define TARGET_RX_POWER_MIN 36		// Minimum digital power, anything below will be discarded (value found by simulation)
-#define MAX_RF_GAIN 150
-#define MIN_RF_GAIN 96
 
 #define PHY_SYNCH_OFFSET ((OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)-1)  // OFFSET of BEACON SYNCH
 #define PHY_SYNCH_MIN_POWER 1000
