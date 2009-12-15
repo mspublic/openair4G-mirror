@@ -13,7 +13,7 @@
 
 #include "SIMULATION/TOOLS/defs.h"
 
-#include "decoder.h"
+//#include "decoder.h"
 
 #define INPUT_LENGTH 5
 #define F1 3
@@ -30,8 +30,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  randominit();
-  set_taus_seed();
+  randominit(0);
+  set_taus_seed(0);
   
   crcTableInit();
 
@@ -292,7 +292,7 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
   return(0);
 }
 
-
+/*
 int test_logmapexmimo(double rate,
 		      double sigma,
 		      unsigned char qbits,
@@ -532,6 +532,7 @@ void test_encoder(unsigned int block_length,
     }
 
 }
+*/
 
 #define NTRIALS 1000000
 
@@ -564,8 +565,8 @@ int main(int argc, char *argv[]) {
   mac_xface = malloc(sizeof(MAC_xface));
 
 
-  randominit();
-  set_taus_seed();
+  randominit(0);
+  set_taus_seed(0);
   
   crcTableInit();
   ccodedot11_init();
