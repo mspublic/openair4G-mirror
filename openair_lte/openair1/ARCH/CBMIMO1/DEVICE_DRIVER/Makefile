@@ -99,10 +99,10 @@ openair_rf-objs += $(TOP_DIR)/SIMULATION/TOOLS/taus.o
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 
 ifndef OPENAIR_LTE
-#ifdef EMOS
-#openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation_emos.o
-#openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/phase_comp.o
-#endif
+ifdef EMOS
+openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation_emos.o
+openair_rf-objs += $(TOP_DIR)/PHY/TOOLS/phase_comp.o
+endif
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/channel_estimation.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/synch_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/ESTIMATION/adjust_sync.o
@@ -121,6 +121,9 @@ openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/mrbch.o
 openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/sach.o
 openair_rf-objs += $(TOP_DIR)/PHY/TRANSPORT/tools.o
 else 
+ifdef EMOS
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
+endif
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o

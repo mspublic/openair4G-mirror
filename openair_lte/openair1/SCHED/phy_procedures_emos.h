@@ -14,7 +14,7 @@
 #define NUMBER_OF_USEFUL_CARRIERS_EMOS 300    // the number of OFDM carriers that contain data
 
 #define N_RB_DL_EMOS 25
-#define N_PILOTS_PER_RB 8
+#define N_PILOTS_PER_RB 4  //per tx antenna
 #define N_SLOTS_EMOS 2
 
 // This structure hold all the data that is written to FIFO in one frame

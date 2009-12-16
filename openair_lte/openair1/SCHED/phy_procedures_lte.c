@@ -58,6 +58,8 @@ ________________________________________________________________*/
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 #endif
 
+extern inline unsigned int taus(void);
+
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 
 int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
@@ -68,7 +70,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int diff;
   int timing_offset;		
   */
-  int i,k,l,m;
+  int i,k,l,m,aa, sector;
   unsigned char pbch_pdu[PBCH_PDU_SIZE];
   int pbch_error;
 #ifndef USER_MODE
@@ -165,17 +167,25 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	       1);
 
 #ifdef EMOS
-      if (((last_slot==0) || (last_slot==1)) && ((l==0) || l==4-lte_frame_parms->Ncp))) {
-      //copy channel estimates
-channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+      if (((last_slot==0) || (last_slot==1)) && ((l==0) || (l==4-lte_frame_parms->Ncp))) {
 
+	for (sector=0; sector<3; sector++) 
+	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
+	    lte_dl_channel_estimation_emos(emos_dump.channel[sector],
+					   lte_ue_common_vars->rxdataF,
+					   lte_frame_parms,
+					   last_slot,
+					   aa,
+					   l,
+					   sector);
       }
 #endif
       if ((last_slot==0) && (l==4-lte_frame_parms->Ncp)) {
 	// Measurements
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
-			    &PHY_vars->PHY_measurements);
+			    &PHY_vars->PHY_measurements,
+			    (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size);
 	
 	// AGC
 	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)

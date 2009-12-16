@@ -41,6 +41,8 @@
 #include "from_grlib_softregs.h"
 #include "cbmimo1_pci.h"
 
+void set_taus_seed(void);
+
 int dummy_cnt = 0;
 
 #ifdef BIGPHYSAREA

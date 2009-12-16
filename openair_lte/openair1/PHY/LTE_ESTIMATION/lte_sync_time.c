@@ -258,6 +258,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     }
   }
 
+  //frame_parms->Nid_cell = sync_source;
+  //frame_parms->nushift = sync_source;
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
 #ifdef USER_MODE

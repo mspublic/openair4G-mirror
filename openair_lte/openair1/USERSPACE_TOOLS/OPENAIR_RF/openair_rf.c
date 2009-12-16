@@ -36,8 +36,6 @@
 //#include <string.h>
 //#include <netdb.h>
 
-
-
 #define PAGE_SIZE 4096
 
 PHY_CONFIG PHY_config_mem;
@@ -214,8 +212,8 @@ int main (int argc, char **argv) {
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 1;
-  lte_frame_parms->nushift            = 1;
+  lte_frame_parms->Nid_cell           = 0;
+  lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 2;

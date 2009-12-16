@@ -348,7 +348,7 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 @param symbol OFDM symbol index in sub-frame
 @param nb_rb number of RBs for this allocation
 */
-void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
 		    short *dlsch_llr,
 		    unsigned char symbol,

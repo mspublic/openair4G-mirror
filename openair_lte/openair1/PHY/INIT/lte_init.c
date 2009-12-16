@@ -244,7 +244,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   lte_ue_pbch_vars->pdu_fer=0;
 
   // Initialize Gold sequence table
-  // lte_gold(frame_parms); --> moved to cbmimo1_fileops
+  //lte_gold(frame_parms); //--> moved to cbmimo1_fileops
 
   // Initialize Sync
   lte_sync_time_init(frame_parms,  lte_ue_common_vars);

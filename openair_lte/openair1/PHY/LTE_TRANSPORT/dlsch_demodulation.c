@@ -25,7 +25,7 @@ __m128i zero;
 
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
-#define DEBUG_DLSCH_DEMOD
+//#define DEBUG_DLSCH_DEMOD
 
 #ifdef DEBUG_DLSCH_DEMOD
 
@@ -259,7 +259,7 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
-void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
 		    short *dlsch_llr,
 		    unsigned char symbol,
@@ -274,7 +274,7 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
  
   if (!llr128) {
     msg("dlsch_qpsk_llr: llr is null, symbol %d\n",symbol);
-    exit(-1);
+    return(-1);
   }
   //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
@@ -286,6 +286,8 @@ void dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   _mm_empty();
   _m_empty();
+
+  return(0);
 
 }
 
