@@ -78,7 +78,7 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
-
+double uniformrandom();
 
 
 

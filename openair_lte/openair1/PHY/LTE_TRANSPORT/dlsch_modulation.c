@@ -309,7 +309,6 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 	}
 	else if (mimo_mode == ANTCYCLING ) {
-
 	  switch (mod_order) {
 	  case 2:  //QPSK
 
@@ -337,7 +336,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    if (output[*jj] == 1)
 	      qam16_table_offset_im+=1;
 	    *jj=*jj+1;
-	    
+
 	    ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
 	    ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
 	    

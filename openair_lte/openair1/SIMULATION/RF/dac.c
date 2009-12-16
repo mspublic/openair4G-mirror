@@ -1,4 +1,5 @@
 //#define DEBUG_DAC 1
+#include <math.h>
 
 void dac(double **s_re,
 	 double **s_im,
@@ -26,7 +27,7 @@ void dac(double **s_re,
       V= V + (s_re[aa][i]*s_re[aa][i]) + (s_im[aa][i]*s_im[aa][i]); 
     }
   }
-  V /= (aa*meas_length);
+  V /= (meas_length);
 #ifdef DEBUG_DAC
   printf("DAC: 10*log10(V)=%f (%f)\n",10*log10(V),V);
 #endif

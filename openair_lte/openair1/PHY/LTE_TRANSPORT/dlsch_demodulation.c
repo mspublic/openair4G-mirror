@@ -484,7 +484,7 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char rb,re;
   int jj=1+(symbol*frame_parms->N_RB_DL*12);
 
-  //printf("Doing antcyc rx\n");
+  //  printf("Doing antcyc rx\n");
   for (rb=0;rb<nb_rb;rb++) {
 
     for (re=0;re<12;re+=2) {

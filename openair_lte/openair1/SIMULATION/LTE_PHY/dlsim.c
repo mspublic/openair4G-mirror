@@ -104,7 +104,7 @@ void main(int argc,void **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(1,1);
+  lte_param_init(2,2);
 
   rb_alloc[0] = RBmask0; // RBs 0-31
   rb_alloc[1] = RBmask1;  // RBs 32-63
@@ -113,7 +113,7 @@ void main(int argc,void **argv) {
   
   num_layers = 1;
 
-  mimo_mode = SISO;
+  mimo_mode = ANTCYCLING;
 
   if (argc<2) {
     SE = .66;

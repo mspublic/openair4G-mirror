@@ -2,28 +2,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+ 
 extern void randominit(void);
 extern double gaussdouble(double,double);
+  //free(input_data);
 extern int write_output(const char *,const char *,void *,int,int,char);
 //double pn[1024];
 
-int rf_rx(double **r_re,
-	  double **r_im,
-	  unsigned int nb_rx_antennas,
-	  unsigned int length,
-	  double s_time,
-	  double f_off,
-	  double drift,
-	  double *noise_figure,
-	  double rx_gain_dB,
-	  int IP3_dBm,
-	  double *initial_phase,
-	  double pn_cutoff,
-	  double pn_amp_dBc,
-	  double IQ_imb_dB,
-	  double IQ_phase) {
 
+  //free(input_data);
+void rf_rx(double **r_re,
+	   double **r_im,
+	   unsigned int nb_rx_antennas,
+	   unsigned int length,
+	   double s_time,
+	   double f_off,
+	   double drift,
+	   double *noise_figure,
+	   double rx_gain_dB,
+	   int IP3_dBm,
+	   double *initial_phase,
+	   double pn_cutoff,
+	   double pn_amp_dBc,
+	   double IQ_imb_dB,
+	   double IQ_phase) {
+ 
   double phase       = *initial_phase;
   double phase2      = *initial_phase;
   double phase_inc   = 2*M_PI*f_off*s_time*1e-9;
@@ -41,7 +44,7 @@ int rf_rx(double **r_re,
   double pn_a0       = pn_cutoff_d*pn_cutoff_d/pn_c;
   double pn_b1       = 2*((pn_cutoff_d*pn_cutoff_d) - 1)/pn_c;
   double pn_b2       = (4*pn_a0) - pn_b1 - 1;
-  double x_n,x_n1=0.0,x_n2=0.0,y_n1=0.0,y_n2=0.0;
+  double x_n=0.0,x_n1=0.0,x_n2=0.0,y_n1=0.0,y_n2=0.0;
 
   double pn_amp      = pow(10.0,.1*pn_amp_dBc);
   int i,a;
@@ -100,9 +103,13 @@ int rf_rx(double **r_re,
     
     for (a=0;a<nb_rx_antennas;a++) {
 
+
+
       // Amplify by receiver gain and apply 3rd order non-linearity
       r_re[a][i] = rx_gain_lin*(r_re[a][i] + IP3_lin*(pow(r_re[a][i],3.0) + 3.0*r_re[a][i]*r_im[a][i]*r_im[a][i])) + rx_gain_lin*(sqrt(.5*N0W)*gaussdouble(0.0,1.0));
       r_im[a][i] = rx_gain_lin*(r_im[a][i] + IP3_lin*(pow(r_im[a][i],3.0) + 3.0*r_im[a][i]*r_re[a][i]*r_re[a][i])) + rx_gain_lin*(sqrt(.5*N0W)*gaussdouble(0.0,1.0));
+
+
 
       // Apply phase offsets
       tmp_re = r_re[a][i]*cos(phase2) - r_im[a][i]*sin(phase2);
@@ -110,6 +117,7 @@ int rf_rx(double **r_re,
 
       r_re[a][i] = tmp_re;
       r_im[a][i] = tmp_im;
+
     }
     // First apply frequency/phase offsets + phase noise
     //    U[i%pn_len]=uniformrandom()*pn_amp_lin;
