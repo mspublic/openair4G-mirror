@@ -311,6 +311,10 @@ void initialize_interface()
   // Labels
   fl_set_object_lcolor(main_frm->rx1_lbl, SCREEN_COLOR_ON);
   fl_set_object_lcolor(main_frm->rx2_lbl, SCREEN_COLOR_ON);
+
+  fl_set_object_lcolor(main_frm->sec0_lbl, SCREEN_COLOR_ON);
+  fl_set_object_lcolor(main_frm->sec1_lbl, SCREEN_COLOR_ON);
+  fl_set_object_lcolor(main_frm->sec2_lbl, SCREEN_COLOR_ON);
 	
   fl_set_object_color(main_frm->pwr1_xyp, SCREEN_COLOR_BG, SCREEN_COLOR_ON);
   fl_set_object_lcolor(main_frm->pwr1_xyp, SCREEN_COLOR_ON);
@@ -495,6 +499,10 @@ void stop_interface()
   // Labels
   fl_set_object_lcolor(main_frm->rx1_lbl, SCREEN_COLOR_BG);
   fl_set_object_lcolor(main_frm->rx2_lbl, SCREEN_COLOR_BG);
+
+  fl_set_object_lcolor(main_frm->sec0_lbl, SCREEN_COLOR_BG);
+  fl_set_object_lcolor(main_frm->sec1_lbl, SCREEN_COLOR_BG);
+  fl_set_object_lcolor(main_frm->sec2_lbl, SCREEN_COLOR_BG);
 	
   // Graphs
   fl_set_object_color(main_frm->pwr1_xyp, SCREEN_COLOR_BG, SCREEN_COLOR_BG);
@@ -682,29 +690,29 @@ void refresh_interface()
 		
       // Power meters
       fl_set_xyplot_data(main_frm->pwr1_xyp, time_memory, power1_memory[0], values_in_memory, "", "time (s)", "dBm");
-      fl_add_xyplot_overlay(main_frm->pwr1_xyp, 1, time_memory, power1_memory[1], values_in_memory, FL_BLUE);
+      //fl_add_xyplot_overlay(main_frm->pwr1_xyp, 1, time_memory, power1_memory[1], values_in_memory, FL_BLUE);
       fl_set_xyplot_ybounds(main_frm->pwr1_xyp,	-100, -40);
       fl_set_xyplot_data(main_frm->pwr2_xyp, time_memory, power2_memory[0], values_in_memory, "", "time (s)", "dBm");
-      fl_add_xyplot_overlay(main_frm->pwr2_xyp, 1, time_memory, power2_memory[1], values_in_memory, FL_BLUE);
+      //fl_add_xyplot_overlay(main_frm->pwr2_xyp, 1, time_memory, power2_memory[1], values_in_memory, FL_BLUE);
       fl_set_xyplot_ybounds(main_frm->pwr2_xyp,	-100, -40);
 		
       if (noise_selector == N0)
 	{
 	  fl_set_xyplot_data(main_frm->noise1_xyp, time_memory, noise1_memory[0], values_in_memory, "", "time (s)", "dB");
-	  fl_add_xyplot_overlay(main_frm->noise1_xyp, 1, time_memory, noise1_memory[1], values_in_memory, FL_BLUE);
+	  //fl_add_xyplot_overlay(main_frm->noise1_xyp, 1, time_memory, noise1_memory[1], values_in_memory, FL_BLUE);
 	  fl_set_xyplot_ybounds(main_frm->noise1_xyp,	0, 40);
 	  fl_set_xyplot_data(main_frm->noise2_xyp, time_memory, noise2_memory[0], values_in_memory, "", "time (s)", "dB");
-	  fl_add_xyplot_overlay(main_frm->noise2_xyp, 1, time_memory, noise2_memory[1], values_in_memory, FL_BLUE);
+	  //fl_add_xyplot_overlay(main_frm->noise2_xyp, 1, time_memory, noise2_memory[1], values_in_memory, FL_BLUE);
 	  fl_set_xyplot_ybounds(main_frm->noise2_xyp,	0, 40);
 	  //fl_set_xyplot_ybounds(main_frm->noise2_xyp,	0, 1);
 	}
       else
 	{
 	  fl_set_xyplot_data(main_frm->noise1_xyp, time_memory, snr1_memory[0], values_in_memory, "", "time (s)", "dB");
-	  fl_add_xyplot_overlay(main_frm->noise1_xyp, 1, time_memory, snr1_memory[1], values_in_memory, FL_BLUE);
+	  //fl_add_xyplot_overlay(main_frm->noise1_xyp, 1, time_memory, snr1_memory[1], values_in_memory, FL_BLUE);
 	  fl_set_xyplot_ybounds(main_frm->noise1_xyp,	0, 40);
 	  fl_set_xyplot_data(main_frm->noise2_xyp, time_memory, snr2_memory[0], values_in_memory, "", "time (s)", "dB");
-	  fl_add_xyplot_overlay(main_frm->noise2_xyp, 1, time_memory, snr2_memory[1], values_in_memory, FL_BLUE);
+	  //fl_add_xyplot_overlay(main_frm->noise2_xyp, 1, time_memory, snr2_memory[1], values_in_memory, FL_BLUE);
 	  fl_set_xyplot_ybounds(main_frm->noise2_xyp,	0, 40);
 	}
       // Channel response
@@ -745,6 +753,7 @@ void refresh_interface()
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec0_xyp,	disp_min_power, disp_max_power);
 
+	  /*
 	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
@@ -786,7 +795,7 @@ void refresh_interface()
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec2_xyp,	disp_min_power, disp_max_power);
-
+	  */
 
 	}
       /*

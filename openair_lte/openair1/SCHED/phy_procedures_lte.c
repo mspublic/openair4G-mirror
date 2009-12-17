@@ -78,7 +78,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif
 
   // DLSCH variables
-  unsigned char mod_order[2]={2,2};
+  unsigned char mod_order[2]={4,4};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = SISO; //ALAMOUTI;
   unsigned short input_buffer_length;
@@ -106,8 +106,8 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   rb_alloc[2] = 0x00000000;  // RBs 64-95
   rb_alloc[3] = 0x00000000;  // RBs 96-109
   
-  //if (mac_xface->frame%100 == 0)
-  //  msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
+  if (mac_xface->frame%1000 == 0)
+    msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
 
   if (last_slot==SLOTS_PER_FRAME-1) {
     
@@ -155,7 +155,6 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       dlsch_ue[i]->rvidx                                  = 0;
     }
     
-
     
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
       
@@ -182,15 +181,17 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif
       if ((last_slot==0) && (l==4-lte_frame_parms->Ncp)) {
 	// Measurements
+	/*
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
 			    (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size);
-	
+
 	// AGC
 	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
 	  if (mac_xface->frame % 100 == 0)
 	    phy_adjust_gain (0,16384,0);
+	*/
 
 	if (mac_xface->frame%100 == 0)
 	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, freq_offset_filt = %d \n",mac_xface->frame, last_slot, lte_ue_common_vars->freq_offset);
@@ -250,11 +251,11 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
       }
 
-      if (last_slot > 1) {
-	if ((last_slot%2==0) && (l==4-lte_frame_parms->Ncp)) 
+      if ((last_slot > 1) && (last_slot<19)) {
+	if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
 	
 	  // process symbols 0,1,2
-	  for (m=lte_frame_parms->first_dlsch_symbol;m<4-lte_frame_parms->Ncp;m++)
+	  for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
 	    rx_dlsch(lte_ue_common_vars,
 		     lte_ue_dlsch_vars,
 		     lte_frame_parms,
@@ -263,10 +264,10 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     mod_order,
 		     mimo_mode);
 	
-	if ((last_slot%2==1) && (l==0)) 
+	if (((last_slot%2)==1) && (l==0)) 
 
 	  // process symbols 3,4,5
-	  for (m=4-lte_frame_parms->Ncp+1;m<lte_frame_parms->symbols_per_tti/2;m++)
+	  for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
 	    rx_dlsch(lte_ue_common_vars,
 		     lte_ue_dlsch_vars,
 		     lte_frame_parms,
@@ -275,10 +276,10 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     mod_order,
 		     mimo_mode);
 
-	if ((last_slot%2==1) && (l==4-lte_frame_parms->Ncp))
+	if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp)))
 
 	  // process symbols 6,7,8
-	  for (m=lte_frame_parms->symbols_per_tti/2+1;m<11-lte_frame_parms->Ncp*2;m++)
+	  for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
 	    rx_dlsch(lte_ue_common_vars,
 		     lte_ue_dlsch_vars,
 		     lte_frame_parms,
@@ -289,17 +290,17 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       }
 
       if ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
-	if ((last_slot%2==0) && (l==0))
-
-	// process symbols 10,11,12
-	for (m=11-lte_frame_parms->Ncp*2+1;m<lte_frame_parms->symbols_per_tti;m++)
-	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
-		   lte_frame_parms,
-		   m,
-		   rb_alloc,
-		   mod_order,
-		   mimo_mode);
+	if (((last_slot%2)==0) && (l==0))
+	  
+	  // process symbols 10,11,12
+	  for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
+	    rx_dlsch(lte_ue_common_vars,
+		     lte_ue_dlsch_vars,
+		     lte_frame_parms,
+		     m,
+		     rb_alloc,
+		     mod_order,
+		     mimo_mode);
       }
     }
 
@@ -360,7 +361,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		    pbch_pdu);
     }
     
-    else if ((next_slot > 1) && (next_slot%2 == 0)) {
+    else if ((next_slot > 1) && (next_slot%2 == 0) && (next_slot<18)) {
       // fill all other frames with DLSCH
 
       if (!dlsch_eNb) {

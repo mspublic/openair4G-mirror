@@ -252,7 +252,7 @@ static void * openair_thread(void *param) {
 
       time_out = openair_get_mbox();
 
-      if ((time_out - time_in) % NUMBER_OF_SYMBOLS_PER_FRAME > 4) { // we scheduled 4 symbols too late
+      if ((time_out - time_in) % NUMBER_OF_SYMBOLS_PER_FRAME > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled 4 symbols too late
 	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d,time_out %d, scheduler_interval_ns %d\n", mac_xface->frame, last_slot,
 	    time_in,time_out,openair_daq_vars.scheduler_interval_ns);
 	openair1_restart();

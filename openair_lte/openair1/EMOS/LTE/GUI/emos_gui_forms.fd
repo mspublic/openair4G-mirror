@@ -1171,7 +1171,7 @@ label: Sector 0
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: 
+name: sec0_lbl
 callback: 
 argument: 
 
@@ -1189,7 +1189,7 @@ label: Sector 1
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: 
+name: sec1_lbl
 callback: 
 argument: 
 
@@ -1207,7 +1207,7 @@ label: Sector 2
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: 
+name: sec2_lbl
 callback: 
 argument: 
 

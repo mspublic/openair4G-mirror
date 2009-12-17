@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Thu Dec 10 14:58:01 2009.**/
+/** Header file generated with fdesign on Thu Dec 17 10:13:28 2009.**/
 
 #ifndef FD_main_frm_h_
 #define FD_main_frm_h_
@@ -74,6 +74,9 @@ typedef struct {
 	FL_OBJECT *ch12_sec2_xyp;
 	FL_OBJECT *ch21_sec2_xyp;
 	FL_OBJECT *ch22_sec2_xyp;
+	FL_OBJECT *sec0_lbl;
+	FL_OBJECT *sec1_lbl;
+	FL_OBJECT *sec2_lbl;
 	FL_OBJECT *terminal_btn1;
 	FL_OBJECT *terminal_btn3;
 } FD_main_frm;
