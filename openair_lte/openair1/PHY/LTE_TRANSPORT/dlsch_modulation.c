@@ -1152,9 +1152,11 @@ int dlsch_modulation(mod_sym_t **txdataF,
     }
   }
 
-  return (re_allocated);
+
 #ifdef DEBUG_DLSCH_MODULATION
   printf("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
 #endif
+
+  return (re_allocated);
 }
 
