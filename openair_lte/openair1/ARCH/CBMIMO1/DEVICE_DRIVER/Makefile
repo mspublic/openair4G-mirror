@@ -169,6 +169,7 @@ ifndef OPENAIR_LTE
 openair_rf-objs += $(TOP_DIR)/SCHED/sched.o
 else
 openair_rf-objs += $(TOP_DIR)/SCHED/sched_lte.o
+openair_rf-objs += $(TOP_DIR)/SCHED/sched_dlsch.o
 endif
 
 # PHY Procedures
