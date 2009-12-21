@@ -155,7 +155,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       dlsch_ue[i]->rvidx                                  = 0;
     }
     
-    
+    // process symbols in last_slot
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
       
       slot_fep(lte_frame_parms,
@@ -166,6 +166,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	       1);
 
 #ifdef EMOS
+      // first slot in frame is special
       if (((last_slot==0) || (last_slot==1)) && ((l==0) || (l==4-lte_frame_parms->Ncp))) {
 
 	for (sector=0; sector<3; sector++) 
@@ -251,6 +252,27 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
       }
 
+      // process DLSCH slots 
+      if ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
+	if (((last_slot%2)==0) && (l==0)) {
+	  
+	  // process symbols 10,11,12 and trigger DLSCH decoding
+	  for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
+	    rx_dlsch(lte_ue_common_vars,
+		     lte_ue_dlsch_vars,
+		     lte_frame_parms,
+		     m,
+		     rb_alloc,
+		     mod_order,
+		     mimo_mode);
+	  // schedule process id 0 if slot mod 4 = 0
+	  if (((last_slot>>1)&3) == 0) {
+	    if (dlsch_instance_cnt[0] == 0)
+	      if (pthread_cond_signal(&dlsch_cond[0]) != 0)
+		msg("[openair][SCHED] ERROR pthread_cond_signal for dlsch_cond[0]\n");
+	}
+      }
+
       if ((last_slot > 1) && (last_slot<19)) {
 	if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
 	
@@ -289,19 +311,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     mimo_mode);
       }
 
-      if ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
-	if (((last_slot%2)==0) && (l==0))
-	  
-	  // process symbols 10,11,12
-	  for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
-	    rx_dlsch(lte_ue_common_vars,
-		     lte_ue_dlsch_vars,
-		     lte_frame_parms,
-		     m,
-		     rb_alloc,
-		     mod_order,
-		     mimo_mode);
-      }
+
     }
 
 #ifdef EMOS

@@ -105,6 +105,11 @@ RF_CNTL_PACKET rf_cntl_packet;
 /// Global exit variable (exit on error or manual stop via IOCTL)
 int exit_openair = 0;
 
+extern int init_dlsch_threads();
+extern int dlsch_instance_cnt[4];
+extern dlsch_mutex[4];
+extern dlsch_cond[4];
+
 #define NO_SYNC_TEST 1
 
 #ifdef CBMIMO1
@@ -175,7 +180,7 @@ static void * openair_thread(void *param) {
   pthread_attr_setschedpolicy (&attr_threads[OPENAIR_THREAD_INDEX], SCHED_FIFO);
 #endif
   
-  msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu);
+  msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
   if (mac_xface->is_primary_cluster_head == 1)
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
@@ -503,7 +508,7 @@ static void * top_level_scheduler(void *param) {
   int i;
   int ret=0;  
   
-  msg("[openair][SCHED][top_level_scheduler] top_level_scheduler started with id %x, MODE %d\n",(unsigned int)pthread_self(),openair_daq_vars.mode);
+  msg("[openair][SCHED][top_level_scheduler] top_level_scheduler started with id %x, MODE %d, cpuid = %d\n",(unsigned int)pthread_self(),openair_daq_vars.mode,rtai_cpuid());
 
   openair_daq_vars.sched_cnt = 0;
 
@@ -864,7 +869,7 @@ int openair_sched_init(void) {
   			      (void *)0);
 
    
-
+  
   // rt_change_prio(threads[TOP_LEVEL_SCHEDULER_THREAD_INDEX],0);
   if (error_code!= 0) {
     printk("[openair][SCHED][INIT] Could not allocate top_level_scheduler, error %d\n",error_code);
@@ -888,7 +893,9 @@ int openair_sched_init(void) {
   error_code = rtf_create_handler(rx_sig_fifo, X_FIFO_HANDLER(rx_sig_fifo_handler));
   printk("[openair][SCHED][INIT] Created rx_sig_fifo handler, error_code %d\n",error_code);
 #endif //NOCARD_TEST
-  return(0);
+
+  error_code = init_dlsch_threads();
+  return(error_code);
 }
 
 void openair_sched_cleanup() {
@@ -915,7 +922,7 @@ void openair_sched_cleanup() {
   printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
-
+  dlsch_cleanup();
   printk("[openair][SCHED][CLEANUP] Done!\n");
 
 }
