@@ -276,6 +276,13 @@ unsigned short pbch_extract(int **rxdataF,
 	// skip DC carrier
 	// if (rb==3) dl_ch0++;
 	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+#ifdef KHZ66_NULL
+	if (rb==3) {
+	  dl_ch0_ext[2]=0;
+	  dl_ch0_ext[3]=0;
+	  dl_ch0_ext[4]=0;
+	}
+#endif
 	dl_ch0+=12;
 	dl_ch0_ext+=12;
       }

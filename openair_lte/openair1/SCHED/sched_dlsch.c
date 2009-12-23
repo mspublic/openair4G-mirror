@@ -60,33 +60,38 @@ int dlsch_instance_cnt[8];
 // process ids for cpu
 int dlsch_cpuid[8];
 
+extern int exit_openair;
 
 /** DLSCH Decoding Thread */
 static void * dlsch_thread(void *param) {
 #ifndef USER_MODE
-  struct sched_param p;
+
 
 #endif //  /* USER_MODE */
 
 
-  unsigned int coded_bits_per_codeword,nsymb;
-  int inv_target_code_rate = 2;
-  unsigned char mod_order[2]={4,4};
+  unsigned int coded_bits_per_codeword,nsymb,input_buffer_length;
+  int rate_num=1,rate_den=3;
+  unsigned char mod_order[2]={2,2};
   unsigned long cpuid = rtai_cpuid();
-  unsigned int harq_pid = *((unsigned *)param);
+  unsigned int harq_pid = *((int *)param);
+  unsigned int ret;
 
-  p.sched_priority = OPENAIR_THREAD_PRIORITY;
-  pthread_attr_setschedparam  (&attr_threads[OPENAIR_THREAD_INDEX], &p);
-#ifndef RTAI_ISNT_POSIX
-  pthread_attr_setschedpolicy (&attr_threads[OPENAIR_THREAD_INDEX], SCHED_FIFO);
-#endif
+  int time_in,time_out;
+  unsigned int dlsch_errs=0;
 
-  dlsch_cpuid[harq_pid] = cpuid;
-  msg("[openair][SCHED][openair_thread] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
+  msg("[openair][SCHED][dlsch_thread] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
       harq_pid,
       (unsigned int)pthread_self(),
       pthread_self()->uses_fpu,
       cpuid);
+
+  if ((harq_pid <0) || (harq_pid>7)) {
+    msg("[openair][SCHED][dlsch_thread] Illegal harq_pid %d!!!!\n",harq_pid);
+    return;
+  }
+
+  dlsch_cpuid[harq_pid] = cpuid;
 
   while (exit_openair == 0){
     
@@ -96,27 +101,50 @@ static void * dlsch_thread(void *param) {
       pthread_cond_wait(&dlsch_cond[harq_pid],&dlsch_mutex[harq_pid]);
     }
 
+
     dlsch_instance_cnt[harq_pid]--;
     pthread_mutex_unlock(&dlsch_mutex[harq_pid]);	
 
     nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
-    coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
-    input_buffer_length = ((int)(coded_bits_per_codeword/inv_target_code_rate))>>3;
+    coded_bits_per_codeword =( 12 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
+    input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
+    if ((mac_xface->frame % 100) == 0)
+      msg("Frame %d: Calling dlsch_decoding (%d,%d,%p) from cpu %d\n",mac_xface->frame,coded_bits_per_codeword,input_buffer_length,dlsch_ue[harq_pid],rtai_cpuid());
+
+    time_in = openair_get_mbox();
+
+    if (mac_xface->frame < dlsch_errs)
+      dlsch_errs=0;
+
+    if (dlsch_ue[harq_pid]) {
+      ret = dlsch_decoding(input_buffer_length<<3,
+			   lte_ue_dlsch_vars->llr[0],		 
+			   lte_frame_parms,
+			   dlsch_ue[harq_pid],
+			   harq_pid,               //harq_pid
+			   12);
+      
     
-    ret = dlsch_decoding(input_buffer_length<<3,
-			 lte_ue_dlsch_vars->llr[0],		 
-			 lte_frame_parms,
-			 dlsch_ue[harq_pid],
-			 harq_pid,               //harq_pid
-			 NB_RB);             //NB allocated RBs
+	//NB allocated RBs
+      time_out = openair_get_mbox();
+      if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	dlsch_errs++;
+      }
+    
+      if ((mac_xface->frame % 100) == 0)
+	msg("Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errs);
+    }
   }
+  msg("DLSCH thread %d exiting\n",harq_pid);
+  dlsch_instance_cnt[harq_pid] = 99;
 }
 
+static int harq_pid;
 
 int init_dlsch_threads() {
 
-  int harq_pid;
-
+  int error_code;
+  struct sched_param p;
 
   // later loop on all harq_pids, do 0 for now
   harq_pid=0;
@@ -130,14 +158,21 @@ int init_dlsch_threads() {
   
   attr_dlsch_threads.priority = 1;
 
+  p.sched_priority = OPENAIR_THREAD_PRIORITY;
+  pthread_attr_setschedparam  (&attr_dlsch_threads, &p);
+#ifndef RTAI_ISNT_POSIX
+  pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
+#endif
+
   dlsch_instance_cnt[harq_pid] = -1;
+  printk("[SCHED][DLSCH][INIT] Allocating DLSCH thread for harq_pid %d\n",harq_pid);
   error_code = pthread_create(&dlsch_threads[harq_pid],
-  			      &attr_dlsch_threads[harq_pid],
+  			      &attr_dlsch_threads,
   			      dlsch_thread,
   			      (void *)&harq_pid);
 
   if (error_code!= 0) {
-    printk("[SCHED][OPENAIR_THREAD][INIT] Could not allocate dlsch_thread %d, error %d\n",harq_pid,error_code);
+    printk("[SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",harq_pid,error_code);
     return(error_code);
   }
   else {
@@ -152,8 +187,17 @@ void cleanup_dlsch_threads() {
   int harq_pid = 0;
 
   // later loop on all harq_pid's
-  pthread_exit(dlsch_threads[harq_pid]);
-  
+
+  //  pthread_exit(&dlsch_threads[harq_pid]);
+  printk("[SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",harq_pid);
+
+  dlsch_instance_cnt[harq_pid] = 0;
+  if (pthread_cond_signal(&dlsch_cond[harq_pid]) != 0)
+    msg("[DLSCH][SCHED] ERROR pthread_cond_signal\n");
+  else
+    msg("[DLSCH][SCHED] Signalled dlsch_thread %d to exit\n",harq_pid);
+    
+  printk("[SCHEd][DLSCH] Exiting ...\n");
   pthread_cond_destroy(&dlsch_cond[harq_pid]);
-  pthrad_mutex_destroy(&dlsch_mutex[harq_pid]);
+  pthread_mutex_destroy(&dlsch_mutex[harq_pid]);
 }

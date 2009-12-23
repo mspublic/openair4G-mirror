@@ -199,7 +199,7 @@ unsigned int  dlsch_decoding(unsigned short A,
 	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     printf("\n");
     */
-
+    
     ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
 					dlsch->harq_processes[harq_pid]->c[r],
 					Kr,
@@ -208,6 +208,7 @@ unsigned int  dlsch_decoding(unsigned short A,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //      printf("CRC failed\n");

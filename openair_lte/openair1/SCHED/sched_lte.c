@@ -35,6 +35,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #include <asm/page.h>
 */
 
+
 #ifdef RTAI_ISNT_POSIX
 #include "rt_compat.h"
 #endif /* RTAI_ISNT_POSIX */
@@ -106,9 +107,11 @@ RF_CNTL_PACKET rf_cntl_packet;
 int exit_openair = 0;
 
 extern int init_dlsch_threads();
-extern int dlsch_instance_cnt[4];
-extern dlsch_mutex[4];
-extern dlsch_cond[4];
+extern void cleanup_dlsch_threads();
+
+extern int dlsch_instance_cnt[8];
+extern pthread_mutex_t dlsch_mutex[8];
+extern pthread_cond_t dlsch_cond[8];
 
 #define NO_SYNC_TEST 1
 
@@ -472,13 +475,15 @@ void openair_sync(void) {
     PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= NB_ANTENNAS_RX;
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
     
-    msg("[openair][SCHED] RX RSSI %d dB, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+    msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
 	PHY_vars->PHY_measurements.rx_power_dB[0][0],
 	PHY_vars->PHY_measurements.rx_power_dB[0][1],
 	PHY_vars->PHY_measurements.rx_power[0][0],
 	PHY_vars->PHY_measurements.rx_power[0][1],
-	PHY_vars->rx_vars[0].rx_total_gain_dB);
+	PHY_vars->rx_vars[0].rx_total_gain_dB,
+	pci_interface->tdd,
+	pci_interface->dual_tx);
     
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
@@ -894,7 +899,8 @@ int openair_sched_init(void) {
   printk("[openair][SCHED][INIT] Created rx_sig_fifo handler, error_code %d\n",error_code);
 #endif //NOCARD_TEST
 
-  error_code = init_dlsch_threads();
+  if (mac_xface->is_cluster_head == 0)
+    error_code = init_dlsch_threads();
   return(error_code);
 }
 
@@ -922,7 +928,7 @@ void openair_sched_cleanup() {
   printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
-  dlsch_cleanup();
+  cleanup_dlsch_threads();
   printk("[openair][SCHED][CLEANUP] Done!\n");
 
 }

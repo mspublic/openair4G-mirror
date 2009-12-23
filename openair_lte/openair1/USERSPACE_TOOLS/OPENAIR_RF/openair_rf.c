@@ -172,7 +172,7 @@ int main (int argc, char **argv) {
   else if (action == 39) // Send EMOS Rec flag
     printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else {
-    printf("[openair][INFO][START] Action              is : unknown action\n");
+    printf("[openair][INFO][START] Action              is : unknown action %d\n",action);
   }
 
 

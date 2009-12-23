@@ -55,7 +55,7 @@ unsigned char nb_ant_tx, nb_ant_rx;
 
 void lte_scope_idle_callback(void) {
 
-  int i,j,ind,k;
+  int i,j,ind,k,s;
 
   float Re,Im;
   float mag_sig[NB_ANTENNAS_RX*NB_ANTENNAS_TX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
@@ -157,38 +157,60 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
 
+  j=0;
   for(i=0;i<384;i++) {
-    llr[i] = (float) pbch_llr[i];
-    time2[i] = (float) i;
+    llr[j] = (float) pbch_llr[i];
+    time2[j] = (float) j;
+    if (i==63)
+      i=127;
+    else if (i==191)
+      i=319;
+    j++;
   }
 
-  fl_set_xyplot_data(form->decoder_input,time2,llr,384,"","","");
+  fl_set_xyplot_data(form->decoder_input,time2,llr,192,"","","");
   fl_set_xyplot_ybounds(form->decoder_input,-50,50);
 
+  j=0;
   for(i=0;i<6*12*4;i++) {
-    I[i] = pbch_comp[2*i];
-    Q[i] = pbch_comp[2*i+1];
+    I[j] = pbch_comp[2*i];
+    Q[j] = pbch_comp[2*i+1];
+    j++;
+    if (i==47)
+      i=96;
+    else if (i==191)
+      i=239;
   }
 
-  fl_set_xyplot_data(form->scatter_plot,I,Q,6*12*4,"","","");
+  fl_set_xyplot_data(form->scatter_plot,I,Q,3*12*4,"","","");
   fl_set_xyplot_xbounds(form->scatter_plot,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot,-50,50);
 
-  for(i=0;i<25*12*4*7;i++) {
+  for(i=0;i<12*12*2*7;i++) {
     llr[i] = (float) dlsch_llr[i];
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4*7,"","","");
-  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
+  fl_set_xyplot_data(form->demod_out,time2,llr,12*12*2*7,"","","");
+  //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
   fl_set_xyplot_ybounds(form->demod_out,-50,50);
 
-  for(i=0;i<25*12*12;i++) {
-    I[i] = dlsch_comp[2*i];
-    Q[i] = dlsch_comp[2*i+1];
+  j=0;
+  for (s=2;s<12;s++) {
+    for(i=0;i<12*12;i++) {
+      I[j] = dlsch_comp[(2*25*12*s)+2*i];
+      Q[j] = dlsch_comp[(2*25*12*s)+2*i+1];
+      j++;
+    }
+    if (s==2)
+      s=3;
+    else if (s==5)
+      s=6;
+    else if (s==8)
+      s=9;
   }
 
-  fl_set_xyplot_data(form->scatter_plot2,I,Q,25*12*12,"","","");
+  fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
   fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
 

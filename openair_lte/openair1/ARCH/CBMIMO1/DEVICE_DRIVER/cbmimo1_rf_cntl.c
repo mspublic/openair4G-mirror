@@ -151,9 +151,9 @@ int openair_set_freq_offset(int freq_offset) {
 	// bit21 = 0 negative freq offset at TX, positive freq offset at RX	    
 	// bit21 = 1 positive freq offset at TX, negative freq offset at RX
 
-	// pci_interface->freq_offset = val;
-	//printk("[openair][RF_CNTL] Setting frequency offset to %d Hz (%x)\n",freq_offset,val);
-	printk("[openair][RF_CNTL] WARNING:  Setting frequency disabled!!!\n",freq_offset,val);
+	pci_interface->freq_offset = val;
+	printk("[openair][RF_CNTL] Setting frequency offset to %d Hz (%x)\n",freq_offset,val);
+	//	printk("[openair][RF_CNTL] WARNING:  Setting frequency disabled!!!\n",freq_offset,val);
 	return(0);
       }
   } 

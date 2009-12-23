@@ -62,6 +62,17 @@ extern inline unsigned int taus(void);
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 
+extern int dlsch_instance_cnt[8];
+extern pthread_mutex_t dlsch_mutex[8];
+/// Condition variable for dlsch thread
+extern pthread_cond_t dlsch_cond[8];
+
+#define NB_RB 12
+#define RBmask0 0x00fc00fc
+#define RBmask1 0x0
+#define RBmask2 0x0
+#define RBmask3 0x0
+
 int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
   /*
@@ -78,12 +89,12 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif
 
   // DLSCH variables
-  unsigned char mod_order[2]={4,4};
+  unsigned char mod_order[2]={2,2};
   unsigned int rb_alloc[4];
-  MIMO_mode_t mimo_mode = SISO; //ALAMOUTI;
+  MIMO_mode_t mimo_mode = ALAMOUTI;
   unsigned short input_buffer_length;
   unsigned int coded_bits_per_codeword,nsymb;
-  int inv_target_code_rate = 2;
+  int rate_num=1,rate_den=3;
   int subframe_offset;
 #ifdef EMOS
   fifo_dump_emos emos_dump;
@@ -101,13 +112,13 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     return(-1);
   }
   
-  rb_alloc[0] = 0x01ffffff;  // RBs 0-31
-  rb_alloc[1] = 0x00000000;  // RBs 32-63
-  rb_alloc[2] = 0x00000000;  // RBs 64-95
-  rb_alloc[3] = 0x00000000;  // RBs 96-109
+  rb_alloc[0] = RBmask0; // RBs 0-31
+  rb_alloc[1] = RBmask1;  // RBs 32-63
+  rb_alloc[2] = RBmask2;  // RBs 64-95
+  rb_alloc[3] = RBmask3;  // RBs 96-109
   
   if (mac_xface->frame%1000 == 0)
-    msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d\n",mac_xface->frame, last_slot);
+    msg("[PHY_PROCEDURES_LTE] Calling phy_procedures for frame %d, slot %d, cpuid %d\n",mac_xface->frame, last_slot,rtai_cpuid());
 
   if (last_slot==SLOTS_PER_FRAME-1) {
     
@@ -122,7 +133,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
     
     if (mac_xface->frame%100 == 0)
-      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dB, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, next_slot,
 	  PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
 	  PHY_vars->PHY_measurements.rx_power_dB[0][0],
@@ -265,14 +276,27 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     rb_alloc,
 		     mod_order,
 		     mimo_mode);
-	  // schedule process id 0 if slot mod 4 = 0
-	  if (((last_slot>>1)&3) == 0) {
+
+	  if ((mac_xface->frame % 100) == 0)
+	    msg("Frame %d: Scheduling DLSCH decoding for subframe %d\n",mac_xface->frame,last_slot>>1);
+	  // schedule process id 0 if subframe mod 4 = 0
+	  if (((last_slot>>1)%10) == 4) {
+	    if (pthread_mutex_lock (&dlsch_mutex[0]) != 0)                // Signal MAC_PHY Scheduler
+	      msg("[openair][SCHED][SCHED] ERROR pthread_mutex_lock\n");// lock before accessing shared resource
+	    dlsch_instance_cnt[0]++;
+	    pthread_mutex_unlock (&dlsch_mutex[0]);
+
 	    if (dlsch_instance_cnt[0] == 0)
 	      if (pthread_cond_signal(&dlsch_cond[0]) != 0)
 		msg("[openair][SCHED] ERROR pthread_cond_signal for dlsch_cond[0]\n");
+	      else{}
+	    else {
+	      msg("[openair][SCHED] DLSCH thread busy!!!\n");
+	    }
+		
+	  }
 	}
       }
-
       if ((last_slot > 1) && (last_slot<19)) {
 	if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
 	
@@ -392,8 +416,8 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       }
 
       nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
-      coded_bits_per_codeword =( 25 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
-      input_buffer_length = ((int)(coded_bits_per_codeword/inv_target_code_rate))>>3;
+      coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
+      input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
 
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
@@ -403,7 +427,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		     lte_frame_parms,
 		     dlsch_eNb[0],
 		     0,               // harq_pid
-		     25); // number of allocated RB
+		     NB_RB); // number of allocated RB
 
       dlsch_modulation(lte_eNB_common_vars->txdataF,
 		       AMP,

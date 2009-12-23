@@ -667,6 +667,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  dl_ch0_ext[i]=dl_ch0[i];
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
+
+
 	nb_rb++;
 	dl_ch0_ext+=12;
 	rxF_ext+=12;
@@ -675,8 +677,12 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
       }
       dl_ch0+=12;
-
-
+#ifdef KHZ66_NULL
+	dl_ch0_ext[8] = 0;
+	dl_ch0_ext[9] = 0;
+	dl_ch0_ext[10] = 0;
+	dl_ch0_ext[11] = 0;
+#endif
       rxF+=14;
       rb++;
       
@@ -841,12 +847,23 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  dl_ch1_ext[i]=dl_ch1[i];
 	  rxF_ext[i]=rxF[i<<1];
 	}
+
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	for (;i<12;i++) {
 	  dl_ch0_ext[i]=dl_ch0[i];
 	  dl_ch1_ext[i]=dl_ch1[i];
 	  rxF_ext[i]=rxF[(1+i)<<1];
 	}
+#ifdef KHZ66_NULL
+	dl_ch0_ext[8] = 0;
+	dl_ch1_ext[8] = 0;
+	dl_ch0_ext[9] = 0;
+	dl_ch1_ext[9] = 0;
+	dl_ch0_ext[10] = 0;
+	dl_ch1_ext[10] = 0;
+	dl_ch0_ext[11] = 0;
+	dl_ch1_ext[11] = 0;
+#endif
 	nb_rb++;
 	dl_ch0_ext+=12;
 	dl_ch1_ext+=12;
