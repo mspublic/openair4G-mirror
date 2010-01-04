@@ -496,9 +496,10 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_PBCH *lte_ue_pbch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
-	     MIMO_mode_t mimo_mode) {
+	    LTE_UE_PBCH *lte_ue_pbch_vars,
+	    LTE_DL_FRAME_PARMS *frame_parms,
+	    unsigned char eNb_id,
+	    MIMO_mode_t mimo_mode) {
 
   unsigned char log2_maxh,aatx,aarx;
   int avgs, avg[frame_parms->nb_antennas_tx*frame_parms->nb_antennas_rx];
@@ -541,7 +542,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     if (pilots==0) { 
 
       pbch_extract(lte_ue_common_vars->rxdataF,
-		   lte_ue_common_vars->dl_ch_estimates,
+		   lte_ue_common_vars->dl_ch_estimates[eNb_id],
 		   lte_ue_pbch_vars->rxdataF_ext,
 		   lte_ue_pbch_vars->dl_ch_estimates_ext,
 		   symbol,

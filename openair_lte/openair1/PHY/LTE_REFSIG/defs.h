@@ -27,6 +27,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms);
 \fn void lte_dl_cell_spec(mod_sym_t *output,
 		      short amp,
 		      LTE_DL_FRAME_PARMS *frame_parms,
+		      unsigned char eNb_id,
 		      unsigned char Ns,
 		      unsigned char l,
 		      unsigned char p)
@@ -34,6 +35,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms);
 @param output Output vector for OFDM symbol (Frequency Domain)
 @param amp Q15 amplitude
 @param frame_parms LTE DL Frame Parameters
+@param eNb_id Nid2 (0,1,2)
 @param Ns Slot number (0..19)
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
@@ -41,6 +43,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms);
 int lte_dl_cell_spec(mod_sym_t *output,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char eNb_id,
 		     unsigned char Ns,
 		     unsigned char l,
 		     unsigned char p);

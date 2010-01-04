@@ -79,7 +79,7 @@ void main(int argc,void **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.00005;
+  double aoa=.03,ricean_factor=0.5;
   int channel_length;
   struct complex **ch;
 
@@ -113,7 +113,7 @@ void main(int argc,void **argv) {
   
   num_layers = 1;
 
-  mimo_mode = ANTCYCLING;
+  mimo_mode = ALAMOUTI;
 
   if (argc<2) {
     SE = .66;

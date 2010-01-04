@@ -6,13 +6,14 @@
 #include "filt96_32.h"
 //#define DEBUG_CH
 int lte_dl_channel_estimation(int **dl_ch_estimates,
-			  int **rxdataF,
-			  LTE_DL_FRAME_PARMS *frame_parms,
-			  unsigned char Ns,
-			  unsigned char p,
-			  unsigned char l,
-			  unsigned char symbol){
-
+			      int **rxdataF,
+			      unsigned char eNb_id,
+			      LTE_DL_FRAME_PARMS *frame_parms,
+			      unsigned char Ns,
+			      unsigned char p,
+			      unsigned char l,
+			      unsigned char symbol){
+  
 
 
   int pilot[2][200] __attribute__((aligned(16)));
@@ -41,7 +42,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   ch_offset     = (l*(frame_parms->ofdm_symbol_size));
   symbol_offset = frame_parms->ofdm_symbol_size*symbol;
 
-  k = (nu + frame_parms->nushift);
+  k = (nu + frame_parms->nushift+eNb_id);
   if (k > 6)
     k -=6;
   
@@ -119,6 +120,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     pil   = (short *)&pilot[p][0];
     rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+frame_parms->first_carrier_offset)<<1)]; 
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
+
     memset(dl_ch,0,4*(frame_parms->ofdm_symbol_size));
     
     if ((frame_parms->N_RB_DL==50) || (frame_parms->N_RB_DL==100)) {
@@ -187,7 +189,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       // printf("Second half\n");
       // Second half of RBs
       
-      k = (nu + frame_parms->nushift);
+      k = (nu + frame_parms->nushift+eNb_id);
       if (k > 6)
 	k -=6;
       
@@ -513,7 +515,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       //printf("Second half\n");
       //Second half of RBs
-      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+frame_parms->nushift + (3*p))<<1)]; 
+      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+frame_parms->nushift +eNb_id+ (3*p))<<1)]; 
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);

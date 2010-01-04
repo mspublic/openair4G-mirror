@@ -6,6 +6,7 @@
 #endif
 #include "PHY/defs.h"
 #include "defs.h"
+#include "PHY/extern.h"
 
 #ifndef __SSE3__
 __m128i zero;
@@ -1147,8 +1148,13 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	
 	
       }	
-    
+      
+      if (symbol == frame_parms->first_dlsch_symbol) {
+	PHY_vars->PHY_measurements.rx_correlation[0][aarx] = signal_energy(&rho[aarx][symbol*frame_parms->N_RB_DL*12],rb*12);
+      } 
+         
     }
+
   }
 
   _mm_empty();
@@ -1205,13 +1211,14 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 int avg[4];
 
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
-	      unsigned char symbol,
-	      unsigned int *rb_alloc,
-	      unsigned char *Qm,
-	      MIMO_mode_t mimo_mode) {
-
+	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     unsigned char eNb_id,
+	     unsigned char symbol,
+	     unsigned int *rb_alloc,
+	     unsigned char *Qm,
+	     MIMO_mode_t mimo_mode) {
+  
   unsigned short nb_rb;
 
   unsigned char log2_maxh,aatx,aarx;
@@ -1222,7 +1229,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 
   if (frame_parms->nb_antennas_tx>1)
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-				   lte_ue_common_vars->dl_ch_estimates,
+				   lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				   lte_ue_dlsch_vars->rxdataF_ext,
 				   lte_ue_dlsch_vars->dl_ch_estimates_ext,
 				   rb_alloc,
@@ -1230,7 +1237,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				   frame_parms);
   else
     nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-				     lte_ue_common_vars->dl_ch_estimates,
+				     lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				     lte_ue_dlsch_vars->rxdataF_ext,
 				     lte_ue_dlsch_vars->dl_ch_estimates_ext,
 				     rb_alloc,

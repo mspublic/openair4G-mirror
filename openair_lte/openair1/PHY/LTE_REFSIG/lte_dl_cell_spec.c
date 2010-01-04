@@ -11,6 +11,7 @@ extern unsigned int lte_gold_table[20][2][14];
 int lte_dl_cell_spec(mod_sym_t *output,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char eNb_id,
 		     unsigned char Ns,
 		     unsigned char l,
 		     unsigned char p) {
@@ -51,7 +52,7 @@ int lte_dl_cell_spec(mod_sym_t *output,
 
   mprime = 110 - frame_parms->N_RB_DL;
   
-  k = (nu + frame_parms->nushift);
+  k = (nu + frame_parms->nushift+eNb_id);
   if (k > 6)
     k -=6;
 

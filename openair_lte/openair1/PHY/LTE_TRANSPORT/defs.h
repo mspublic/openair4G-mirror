@@ -256,17 +256,20 @@ int dlsch_modulation(mod_sym_t **txdataF,
 /** \fn generate_pilots(mod_sym_t **txdataF,
                         short amp,
 		        LTE_DL_FRAME_PARMS *frame_parms,
-		        unsigned short N);
+		        unsigned char eNb_id,
+			unsigned short N);
 \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
 for N subframes.
 @param txdataF Table of pointers for frequency-domain TX signals
 @param amp Amplitude of signal
 @param frame_parms Pointer to frame descriptor
+@param eNb_id Nid2 (0,1,2)
 @param N Number of sub-frames to generate
 */
 void generate_pilots(mod_sym_t **txdataF,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char eNb_id,
 		     unsigned short N);
 
 /**
@@ -274,11 +277,13 @@ void generate_pilots(mod_sym_t **txdataF,
 @param txdataF Table of pointers for frequency-domain TX signals
 @param amp Amplitude of signal
 @param frame_parms Pointer to frame descriptor
+@param eNb_id Nid2 (0,1,2)
 @param slot index (0..19)
 */
 int generate_pilots_slot(mod_sym_t **txdataF,
 			 short amp,
 			 LTE_DL_FRAME_PARMS *frame_parms,
+			 unsigned char eNb_id,
 			 unsigned short slot);
 
 
@@ -616,6 +621,7 @@ unsigned int dlsch_decoding(unsigned short A,
 /** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned char eNb_id,
 	      unsigned char symbol,
 	      unsigned int *rb_alloc,
 	      unsigned char *Qm,
@@ -629,23 +635,26 @@ unsigned int dlsch_decoding(unsigned short A,
 @param lte_ue_common_vars Pointer to Common RX variable structure for UE
 @param lte_ue_dlsch_vars Pointer to DLSCH variable structure for UE
 @param frame_parms Pointer to frame descriptor
+@param eNb index (Nid1) 0,1,2
 @param symbol Symbol on which to act
 @param rb_alloc RB allocation vector
 @param Qm Modulation orders on layers 0,1 for this DLSCH.  These must be set even for single-stream
 @param mimo_mode MIMO mode for this DLSCH
 */
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
-	      unsigned char symbol,
-	      unsigned int *rb_alloc,
-	      unsigned char *Qm,
-	      MIMO_mode_t mimo_mode);
+	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     unsigned char symbol,
+	     unsigned char eNb_id,
+	     unsigned int *rb_alloc,
+	     unsigned char *Qm,
+	     MIMO_mode_t mimo_mode);
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_PBCH *lte_ue_pbch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
-	     MIMO_mode_t mimo_mode);
+	    LTE_UE_PBCH *lte_ue_pbch_vars,
+	    LTE_DL_FRAME_PARMS *frame_parms,
+	    unsigned char eNb_id,
+	    MIMO_mode_t mimo_mode);
 
 /*! \brief PBCH unscrambling
 This is similar to pbch_scrabling with the difference that inputs are signed shorts (llr values) and instead of flipping bits we change signs.

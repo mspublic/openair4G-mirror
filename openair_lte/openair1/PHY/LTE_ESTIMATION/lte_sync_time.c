@@ -68,6 +68,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
     return(-1);
   }
 
+
   // generate oversampled sync_time sequences
   k=frame_parms->ofdm_symbol_size-36;
   for (i=0; i<72; i++) {
@@ -87,7 +88,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
       frame_parms->log2_symbol_size,/// log2(FFT_SIZE)
       frame_parms->log2_symbol_size/2,
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
-    
+
+
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
     primary_synch0_time[i] = sync_tmp[2*i];
 
@@ -142,6 +144,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
 #endif
 #endif
+
 
   return (1);
 }

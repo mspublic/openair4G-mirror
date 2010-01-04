@@ -347,6 +347,8 @@ typedef struct
   unsigned short n0_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  // estimated noise power (dB)
   short		 rx_rssi_dBm[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  // estimated rssi (dBm)
   int            rx_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];// estimated received signal power (linear)
+  int            rx_spatial_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linear)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linear)
   int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];// estimated noise power (linear)
   unsigned int   chbch_search_count;
   unsigned int   chbch_detection_count[4];

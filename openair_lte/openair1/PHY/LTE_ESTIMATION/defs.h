@@ -57,6 +57,7 @@ int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms);
 */
 int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,
+			      unsigned char eNb_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char Ns,
 			      unsigned char p,

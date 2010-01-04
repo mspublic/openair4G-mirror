@@ -29,6 +29,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   int *output_ptr=(int*)0,*temp_ptr=(int*)0;
 
 
+
   for (i=0;i<nb_symbols;i++){
 
 
@@ -105,7 +106,14 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
     
   }
-  
+  /*
+  printf("input %p, output %p, log2fftsize %d, nsymb %d\n",input,output,log2fftsize,nb_symbols);
+  for (i=0;i<16;i++)
+    printf("%d %d\n",((short *)input)[i<<1],((short *)input)[1+(i<<1)]);
+  printf("------\n");
+  for (i=0;i<16;i++)
+    printf("%d %d\n",((short *)output)[i<<1],((short *)output)[1+(i<<1)]);  
+  */
 }
 
 

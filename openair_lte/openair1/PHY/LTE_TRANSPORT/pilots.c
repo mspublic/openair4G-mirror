@@ -4,6 +4,7 @@
 void generate_pilots(mod_sym_t **txdataF,
 		     short amp,
 		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned char eNb_id,
 		     unsigned short Ntti) {
 
   
@@ -36,6 +37,7 @@ void generate_pilots(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][tti_offset],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     slot_offset,
 		     0,
 		     0);
@@ -46,6 +48,7 @@ void generate_pilots(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][tti_offset+(second_pilot*samples_per_symbol)],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     slot_offset,
 		     1,
 		     0);
@@ -54,6 +57,7 @@ void generate_pilots(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][tti_offset+((Nsymb>>1)*samples_per_symbol)],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     1+slot_offset,
 		     0,
 		     0);
@@ -62,6 +66,7 @@ void generate_pilots(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     1+slot_offset,
 		     1,
 		     0);
@@ -73,6 +78,7 @@ void generate_pilots(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][tti_offset],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       slot_offset,
 		       0,
 		       1);
@@ -81,6 +87,7 @@ void generate_pilots(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][tti_offset+(second_pilot*samples_per_symbol)],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       slot_offset,
 		       1,
 		       1);
@@ -89,6 +96,7 @@ void generate_pilots(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][tti_offset+(Nsymb>>1)*samples_per_symbol],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       1+slot_offset,
 		       0,
 		       1);
@@ -97,6 +105,7 @@ void generate_pilots(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       1+slot_offset,
 		       1,
 		       1);
@@ -105,9 +114,10 @@ void generate_pilots(mod_sym_t **txdataF,
 }
 	    
 int generate_pilots_slot(mod_sym_t **txdataF,
-			  short amp,
-			  LTE_DL_FRAME_PARMS *frame_parms,
-			  unsigned short slot) {
+			 short amp,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 unsigned char eNb_id,
+			 unsigned short slot) {
 
   
   unsigned int tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
@@ -137,6 +147,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][slot_offset],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     slot,
 		     0,
 		     0);
@@ -147,6 +158,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
     lte_dl_cell_spec(&txdataF[0][slot_offset+(second_pilot*samples_per_symbol)],
 		     amp,
 		     frame_parms,
+		     eNb_id,
 		     slot,
 		     1,
 		     0);
@@ -158,6 +170,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][slot_offset],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       slot,
 		       0,
 		       1);
@@ -166,6 +179,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
       lte_dl_cell_spec(&txdataF[1][slot_offset+(second_pilot*samples_per_symbol)],
 		       amp,
 		       frame_parms,
+		       eNb_id,
 		       slot,
 		       1,
 		       1);

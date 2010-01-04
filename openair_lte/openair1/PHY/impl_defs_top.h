@@ -258,7 +258,8 @@ typedef struct
   unsigned short n0_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
   short		 rx_rssi_dBm[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];  //! estimated rssi (dBm)
   int            rx_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
-  int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
+  int            rx_spatial_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linear)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_CHSCH_SYMBOLS_MAX][2][2];// estimated received spatial signal power (linea  int            n0_power[NUMBER_OF_CHSCH_SYMBOLS_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
   unsigned int   chbch_search_count;
   unsigned int   chbch_detection_count[4];
   unsigned int   mrbch_search_count; 
@@ -289,9 +290,13 @@ typedef struct
   unsigned int   rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
   unsigned int   n0_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
   short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  int            rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];// estimated received spatial signal power (linear)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];// estimated received spatial signal power (dB) 
   short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
   short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
   short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+  int rx_correlation[NUMBER_OF_eNB_MAX][2];              //! estimated correlation (wideband linear) between spatial channels
+  int rx_correlation_dB[NUMBER_OF_eNB_MAX][2];              //! estimated correlation (wideband linear) between spatial channels
 #ifdef EMOS
   unsigned int   frame_tx;              // This is used to set the file index of the measurement file at the terminal
 #endif //EMOS
@@ -357,8 +362,8 @@ typedef struct
 #else
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_UE_COMMON    lte_ue_common_vars;
-  LTE_UE_DLSCH     lte_ue_dlsch_vars;
-  LTE_UE_PBCH      lte_ue_pbch_vars;
+  LTE_UE_DLSCH     *lte_ue_dlsch_vars[3];
+  LTE_UE_PBCH      *lte_ue_pbch_vars[3];
   LTE_eNB_COMMON   lte_eNB_common_vars;
 #endif
 

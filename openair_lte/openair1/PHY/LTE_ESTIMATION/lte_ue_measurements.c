@@ -7,7 +7,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 			PHY_MEASUREMENTS *phy_measurements,
 			unsigned int subframe_offset) {
 
-  int aarx,aatx;
+  int aarx,aatx,eNb_id=0;
 
   /*
   Elements of phy_measurements
@@ -20,14 +20,21 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   */
 
   phy_measurements->rx_avg_power_dB[0] = 0;
+  
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     phy_measurements->rx_power[0][aarx] = 0;
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       //            phy_measurements->rx_power[0][aarx] +=phy_measurements->rx_power[0][aarx] += signal_energy(&ue_common_vars->dl_ch_estimates[aatx*frame_parms->nb_antennas_tx + aarx][4],
       //				 frame_parms->N_RB_DL*12);
-      phy_measurements->rx_power[0][aarx] += signal_energy(&lte_ue_common_vars->rxdata[aarx][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES+(subframe_offset*lte_frame_parms->samples_per_tti)],
-		    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+      for (eNb_id=0;eNb_id<3;eNb_id++) {
+	phy_measurements->rx_spatial_power[eNb_id][aatx][aarx] = signal_energy(&ue_common_vars->dl_ch_estimates[eNb_id][(aatx*frame_parms->nb_antennas_tx) + aarx][4],frame_parms->N_RB_DL*12);
+	phy_measurements->rx_spatial_power_dB[eNb_id][aatx][aarx] = dB_fixed(phy_measurements->rx_spatial_power[eNb_id][aatx][aarx]);
+      }
+      phy_measurements->rx_power[0][aarx] += 
+	signal_energy(&lte_ue_common_vars->rxdata[aarx][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES+(subframe_offset*lte_frame_parms->samples_per_tti)],
+		      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     }
+    
     phy_measurements->rx_power[0][aarx]/=frame_parms->nb_antennas_tx;
     phy_measurements->rx_power_dB[0][aarx] = dB_fixed(phy_measurements->rx_power[0][aarx]);
     phy_measurements->rx_avg_power_dB[0] += phy_measurements->rx_power_dB[0][aarx];
