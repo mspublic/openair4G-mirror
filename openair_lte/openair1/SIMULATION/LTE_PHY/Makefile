@@ -13,6 +13,10 @@ CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing
 
 CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA 
 
+ifdef EMOS
+CFLAGS += -DEMOS
+endif
+
 ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
@@ -49,6 +53,9 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
+ifdef EMOS
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
+endif
 ifdef OPENAIR2
 PHY_OBJS += $(OPENAIR2_DIR)/PHY_INTERFACE/mac_phy_primitives.o
 endif

@@ -9,6 +9,9 @@
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
+#ifdef EMOS
+#include "SCHED/phy_procedures_emos.h"
+#endif
 
 #define BW 10.0
 #define Td 1.0
@@ -16,7 +19,7 @@
 
 int main(int argc, char **argv) {
 
-  int i,l,aa;
+  int i,l,aa,sector;
   double sigma2, sigma2_dB=0;
   //mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -33,11 +36,18 @@ int main(int argc, char **argv) {
   FILE *rx_frame_file;
   int result;
   int freq_offset;
+  int subframe_offset;
+  char fname[40], vname[40];
   int trial, n_errors;
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB;
+
+#ifdef EMOS
+  fifo_dump_emos emos_dump;
+#endif
+
 
 
   if (argc>1)
@@ -58,7 +68,7 @@ int main(int argc, char **argv) {
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 1;
+  lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
@@ -84,7 +94,7 @@ int main(int argc, char **argv) {
   */
 
   lte_gold(lte_frame_parms);
-  
+
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
 
   /*  
@@ -231,18 +241,19 @@ int main(int argc, char **argv) {
 
   /*
   // scale by path_loss = NOW - P_noise
-  sigma2       = pow(10,sigma2_dB/10);
-  N0W          = -95.87;
-  path_loss_dB = N0W - sigma2;
-  path_loss    = pow(10,path_loss_dB/10);
-  
+  //sigma2       = pow(10,sigma2_dB/10);
+  //N0W          = -95.87;
+  //path_loss_dB = N0W - sigma2;
+  //path_loss    = pow(10,path_loss_dB/10);
+  path_loss_dB = 0;
+  path_loss = 1;
+
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      r_re[aa][i]*=sqrt(path_loss); 
-      r_im[aa][i]*=sqrt(path_loss); 
+      r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
+      r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
     }
   }
-
 
   // RF model
   rf_rx(r_re,
@@ -261,14 +272,14 @@ int main(int argc, char **argv) {
 	0.0,           // IQ imbalance (dB),
 	0.0);           // IQ phase imbalance (rad)
   */
-
+    
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
-  //printf("sigma2 = %g\n",sigma2);
+  printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (s_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (s_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -290,6 +301,7 @@ int main(int argc, char **argv) {
 
   sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
   //sync_pos = 3328;
+
   
   // the sync is in the last symbol of either the 0th or 10th slot
   // however, the pbch is only in the 0th slot
@@ -301,14 +313,30 @@ int main(int argc, char **argv) {
   
   if (sync_pos >= sync_pos_slot) {
     
-    for (l=0;l<lte_frame_parms->symbols_per_tti*2;l++) {
+    for (l=0;l<lte_frame_parms->symbols_per_tti*10;l++) {
       
+      subframe_offset = (l/lte_frame_parms->symbols_per_tti)*lte_frame_parms->symbols_per_tti*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples);
+      //printf("subframe_offset = %d\n",subframe_offset);
+
       slot_fep(lte_frame_parms,
 	       lte_ue_common_vars,
 	       l%(lte_frame_parms->symbols_per_tti/2),
 	       l/(lte_frame_parms->symbols_per_tti/2),
-	       sync_pos-sync_pos_slot,
+	       sync_pos-sync_pos_slot+subframe_offset,
 	       0);
+
+#ifdef EMOS
+      if ((l%3==0) && (l<lte_frame_parms->symbols_per_tti)) 
+	for (sector=0; sector<3; sector++) 
+	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
+	    lte_dl_channel_estimation_emos(emos_dump.channel[sector],
+					   lte_ue_common_vars->rxdataF,
+					   lte_frame_parms,
+					   l/(lte_frame_parms->symbols_per_tti/2),
+					   aa,
+					   l%(lte_frame_parms->symbols_per_tti/2),
+					   sector);
+#endif
 
       if (l==0)
 	lte_adjust_synch(lte_frame_parms,
@@ -316,11 +344,16 @@ int main(int argc, char **argv) {
 			 1,
 			 16384);
 
-      if ((l>0) && ((l%3)==0))
+      if ((l>0) && ((l%3)==0)) {
+	//sprintf(fname,"dl_ch00_%d.m",l);
+	//sprintf(vname,"dl_ch00_%d",l);
+	//write_output(fname,vname,&(lte_ue_common_vars->dl_ch_estimates[0][lte_frame_parms->ofdm_symbol_size*(l%6)]),lte_frame_parms->ofdm_symbol_size,1,1);
+
 	lte_est_freq_offset(lte_ue_common_vars->dl_ch_estimates[0],
 			    lte_frame_parms,
 			    l%6,
 			    &freq_offset);
+      }
 
       if (l==9) {
 	if (rx_pbch(lte_ue_common_vars,
@@ -335,7 +368,6 @@ int main(int argc, char **argv) {
 	}
       }
     }
-    
   }
   } //trials
 
@@ -362,6 +394,14 @@ int main(int argc, char **argv) {
   write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
   write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars[0]->rxdataF_comp[1],12*4*6,1,1);
   write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars[0]->llr,12*2*6*2,1,0);
+
+
+#ifdef EMOS
+  write_output("EMOS_ch0.m","emos_ch0",&emos_dump.channel[0][0][0],N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS,1,1);
+  write_output("EMOS_ch1.m","emos_ch1",&emos_dump.channel[1][0][0],N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS,1,1);
+  write_output("EMOS_ch2.m","emos_ch2",&emos_dump.channel[2][0][0],N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS,1,1);
+#endif
+
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
