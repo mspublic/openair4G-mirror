@@ -12,6 +12,7 @@
 
 #define BW 10.0
 #define Td 1.0
+#define N_TRIALS 1
 
 int main(int argc, char **argv) {
 
@@ -32,6 +33,7 @@ int main(int argc, char **argv) {
   FILE *rx_frame_file;
   int result;
   int freq_offset;
+  int trial, n_errors;
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
@@ -50,13 +52,13 @@ int main(int argc, char **argv) {
 
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
+  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
+  lte_frame_parms->Nid_cell           = 1;
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
@@ -80,6 +82,8 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
+
+  lte_gold(lte_frame_parms);
   
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
 
@@ -150,6 +154,7 @@ int main(int argc, char **argv) {
   generate_pilots(lte_eNB_common_vars->txdataF,
 		  1024,
 		  lte_frame_parms,
+		  0,
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
   
@@ -210,6 +215,10 @@ int main(int argc, char **argv) {
     }
   }
 
+  n_errors = 0;
+  for (trial=0; trial<N_TRIALS; trial++) 
+  {
+
   multipath_channel(ch,s_re,s_im,r_re,r_im,
 		    amps,Td,BW,ricean_factor,aoa,
 		    lte_frame_parms->nb_antennas_tx,
@@ -218,9 +227,10 @@ int main(int argc, char **argv) {
 		    channel_length,
 		    0);
 
-  write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 
-    // scale by path_loss = NOW - P_noise
+  /*
+  // scale by path_loss = NOW - P_noise
   sigma2       = pow(10,sigma2_dB/10);
   N0W          = -95.87;
   path_loss_dB = N0W - sigma2;
@@ -234,30 +244,31 @@ int main(int argc, char **argv) {
   }
 
 
-    // RF model
-    rf_rx(r_re,
-	  r_im,
-	  lte_frame_parms->nb_antennas_rx,
-	  FRAME_LENGTH_COMPLEX_SAMPLES,
-	  1.0/7.68e6 * 1e9,      // sampling time (ns)
-	  500,            // freq offset (Hz) (-20kHz..20kHz)
-	  0.0,            // drift (Hz) NOT YET IMPLEMENTED
-	  nf,             // noise_figure NOT YET IMPLEMENTED
-	  -path_loss_dB,            // rx_gain (dB)
-	  200,            // IP3_dBm (dBm)
-	  &ip,            // initial phase
-	  30.0e3,         // pn_cutoff (kHz)
-	  -500.0,          // pn_amp (dBc) default: 50
-	  0.0,           // IQ imbalance (dB),
-	  0.0);           // IQ phase imbalance (rad)
+  // RF model
+  rf_rx(r_re,
+	r_im,
+	lte_frame_parms->nb_antennas_rx,
+	FRAME_LENGTH_COMPLEX_SAMPLES,
+	1.0/7.68e6 * 1e9,      // sampling time (ns)
+	500,            // freq offset (Hz) (-20kHz..20kHz)
+	0.0,            // drift (Hz) NOT YET IMPLEMENTED
+	nf,             // noise_figure NOT YET IMPLEMENTED
+	-path_loss_dB,            // rx_gain (dB)
+	200,            // IP3_dBm (dBm)
+	&ip,            // initial phase
+	30.0e3,         // pn_cutoff (kHz)
+	-500.0,          // pn_amp (dBc) default: 50
+	0.0,           // IQ imbalance (dB),
+	0.0);           // IQ phase imbalance (rad)
+  */
 
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
   //printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (r_re[aa][i]); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (r_im[aa][i]); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) (s_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) (s_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -278,7 +289,7 @@ int main(int argc, char **argv) {
   */
 
   sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-  //sync_pos = 3348;
+  //sync_pos = 3328;
   
   // the sync is in the last symbol of either the 0th or 10th slot
   // however, the pbch is only in the 0th slot
@@ -286,7 +297,7 @@ int main(int argc, char **argv) {
   // so the position wrt to the start of the frame is 
   sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH;
   
-  msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+  //msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
   
   if (sync_pos >= sync_pos_slot) {
     
@@ -306,40 +317,51 @@ int main(int argc, char **argv) {
 			 16384);
 
       if ((l>0) && ((l%3)==0))
-	lte_est_freq_offset(lte_ue_common_vars->dl_ch_estimates,
+	lte_est_freq_offset(lte_ue_common_vars->dl_ch_estimates[0],
 			    lte_frame_parms,
 			    l%6,
 			    &freq_offset);
+
+      if (l==9) {
+	if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars[0],
+		    lte_frame_parms,
+		    0,
+		    SISO)) {
+	  //msg("pbch decoded sucessfully!\n");
+	}
+	else {
+	  n_errors++;
+	}
+      }
     }
     
-    if (rx_pbch(lte_ue_common_vars,
-		lte_ue_pbch_vars,
-		lte_frame_parms,
-		SISO))
-      msg("pbch decoded sucessfully!\n");
   }
+  } //trials
+
+  printf("n_errors = %d\n", n_errors);
 
   write_output("rxsig0.m","rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*12,2,1);
-  write_output("H00.m","h00",&(lte_ue_common_vars->dl_ch_estimates[0][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
-  write_output("H01.m","h01",&(lte_ue_common_vars->dl_ch_estimates[1][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
-  write_output("H10.m","h10",&(lte_ue_common_vars->dl_ch_estimates[2][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
-  write_output("H11.m","h11",&(lte_ue_common_vars->dl_ch_estimates[3][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("H00.m","h00",&(lte_ue_common_vars->dl_ch_estimates[0][0][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("H01.m","h01",&(lte_ue_common_vars->dl_ch_estimates[0][1][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("H10.m","h10",&(lte_ue_common_vars->dl_ch_estimates[0][2][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
+  write_output("H11.m","h11",&(lte_ue_common_vars->dl_ch_estimates[0][3][0]),6*(lte_frame_parms->ofdm_symbol_size),1,1);
   write_output("H00_time.m","h00_time",&(lte_ue_common_vars->dl_ch_estimates_time[0][0]),(lte_frame_parms->ofdm_symbol_size)*2,2,1);
   write_output("H01_time.m","h01_time",&(lte_ue_common_vars->dl_ch_estimates_time[1][0]),(lte_frame_parms->ofdm_symbol_size)*2,2,1);
   write_output("H10_time.m","h10_time",&(lte_ue_common_vars->dl_ch_estimates_time[2][0]),(lte_frame_parms->ofdm_symbol_size)*2,2,1);
   write_output("H11_time.m","h11_time",&(lte_ue_common_vars->dl_ch_estimates_time[3][0]),(lte_frame_parms->ofdm_symbol_size)*2,2,1);
 
 
-  write_output("PBCH_H00_ext.m","pbch_h00",lte_ue_pbch_vars->dl_ch_estimates_ext[0],12*4*6,1,1);
-  write_output("PBCH_H01_ext.m","pbch_h01",lte_ue_pbch_vars->dl_ch_estimates_ext[1],12*4*6,1,1);
-  write_output("PBCH_H10_ext.m","pbch_h10",lte_ue_pbch_vars->dl_ch_estimates_ext[2],12*4*6,1,1);
-  write_output("PBCH_H11_ext.m","pbch_h11",lte_ue_pbch_vars->dl_ch_estimates_ext[3],12*4*6,1,1);
-  write_output("PBCH_rxF0_ext.m","pbch0_ext",lte_ue_pbch_vars->rxdataF_ext[0],12*4*6,1,1);
-  write_output("PBCH_rxF1_ext.m","pbch1_ext",lte_ue_pbch_vars->rxdataF_ext[1],12*4*6,1,1);
-  write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars->rxdataF_comp[0],12*4*6,1,1);
-  write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars->rxdataF_comp[1],12*4*6,1,1);
-  write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars->llr,12*2*6*2,1,0);
+  write_output("PBCH_H00_ext.m","pbch_h00",lte_ue_pbch_vars[0]->dl_ch_estimates_ext[0],12*4*6,1,1);
+  write_output("PBCH_H01_ext.m","pbch_h01",lte_ue_pbch_vars[0]->dl_ch_estimates_ext[1],12*4*6,1,1);
+  write_output("PBCH_H10_ext.m","pbch_h10",lte_ue_pbch_vars[0]->dl_ch_estimates_ext[2],12*4*6,1,1);
+  write_output("PBCH_H11_ext.m","pbch_h11",lte_ue_pbch_vars[0]->dl_ch_estimates_ext[3],12*4*6,1,1);
+  write_output("PBCH_rxF0_ext.m","pbch0_ext",lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
+  write_output("PBCH_rxF1_ext.m","pbch1_ext",lte_ue_pbch_vars[0]->rxdataF_ext[1],12*4*6,1,1);
+  write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
+  write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars[0]->rxdataF_comp[1],12*4*6,1,1);
+  write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars[0]->llr,12*2*6*2,1,0);
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
@@ -363,7 +385,7 @@ int main(int argc, char **argv) {
   
   lte_sync_time_free();
 
-  return(0);
+  return(n_errors);
 
 }
    

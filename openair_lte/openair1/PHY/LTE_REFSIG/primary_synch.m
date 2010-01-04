@@ -1,15 +1,15 @@
-primary_synch0 = [zeros(1,5) exp(-j*pi*25*(0:30).*(1:31)/63) exp(-j*pi*25*(32:62).*(33:63)/63) zeros(1,5)];
-primary_synch1 = [zeros(1,5) exp(-j*pi*29*(0:30).*(1:31)/63) exp(-j*pi*29*(32:62).*(33:63)/63) zeros(1,5)];
-primary_synch2 = [zeros(1,5) exp(-j*pi*34*(0:30).*(1:31)/63) exp(-j*pi*34*(32:62).*(33:63)/63) zeros(1,5)];
+primary_synch0 = [zeros(1,5) exp(-1j*pi*25*(0:30).*(1:31)/63) exp(-1j*pi*25*(32:62).*(33:63)/63) zeros(1,5)];
+primary_synch1 = [zeros(1,5) exp(-1j*pi*29*(0:30).*(1:31)/63) exp(-1j*pi*29*(32:62).*(33:63)/63) zeros(1,5)];
+primary_synch2 = [zeros(1,5) exp(-1j*pi*34*(0:30).*(1:31)/63) exp(-1j*pi*34*(32:62).*(33:63)/63) zeros(1,5)];
 
 %psync_table = [0 exp(-j*2*pi*(0:62)/63)];
 %psync_table_mod = zeros(1,63*2);
 %psync_table_mod(1:2:end) = floor(32767/sqrt(2)*real(psync_table));
 %psync_table_mod(2:2:end) = floor(32767/sqrt(2)*imag(psync_table));
 
-primary_synch0_tab = [zeros(1,5) mod(25*(0:30).*(1:31)/2,63)+1 mod(25*(32:62).*(33:63)/2,63)+1 zeros(1,5)];
-primary_synch1_tab = [zeros(1,5) mod(29*(0:30).*(1:31)/2,63)+1 mod(29*(32:62).*(33:63)/2,63)+1 zeros(1,5)];
-primary_synch2_tab = [zeros(1,5) mod(34*(0:30).*(1:31)/2,63)+1 mod(34*(32:62).*(33:63)/2,63)+1 zeros(1,5)];
+primary_synch0_tab = [zeros(1,5) mod(25*((0:30).*(1:31))/2,63)+85 mod(25*((32:62).*(33:63))/2,63)+85 zeros(1,5)];
+primary_synch1_tab = [zeros(1,5) mod(29*((0:30).*(1:31))/2,63)+85 mod(29*((32:62).*(33:63))/2,63)+85 zeros(1,5)];
+primary_synch2_tab = [zeros(1,5) mod(34*((0:30).*(1:31))/2,63)+85 mod(34*((32:62).*(33:63))/2,63)+85 zeros(1,5)];
 
 primary_synch0_mod = zeros(1,72*2);
 primary_synch0_mod(1:2:end) = floor(32767*real(primary_synch0));

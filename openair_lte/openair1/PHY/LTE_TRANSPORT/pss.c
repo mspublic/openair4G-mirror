@@ -27,7 +27,7 @@ typedef struct {
 } LTE_DL_FRAME_PARMS;
 */
 
-void generate_pss(mod_sym_t **txdataF,
+int generate_pss(mod_sym_t **txdataF,
 		  short amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned short Ntti) {
@@ -36,6 +36,41 @@ void generate_pss(mod_sym_t **txdataF,
 
   unsigned int tti,tti_offset,slot_offset,Nsymb;
   unsigned short k,m;
+#ifdef IFFT_FPGA
+  unsigned char *primary_sync_tab;
+#else
+  short *primary_sync;
+#endif
+
+  msg("[PSS] Using sequence %d\n",frame_parms->Nid_cell%3);
+
+
+  switch (frame_parms->Nid_cell%3) {
+  case 0:
+#ifdef IFFT_FPGA
+    primary_sync_tab = primary_synch0_tab;
+#else
+    primary_sync = primary_synch0;
+#endif
+    break;
+  case 1:
+#ifdef IFFT_FPGA
+    primary_sync_tab = primary_synch1_tab;
+#else
+    primary_sync = primary_synch1;
+#endif
+    break;
+  case 2:
+#ifdef IFFT_FPGA
+    primary_sync_tab = primary_synch2_tab;
+#else
+    primary_sync = primary_synch2;
+#endif
+    break;
+  default:
+    msg("[PSS] Nid_cell has to be 0,1,2\n");
+    return(-1);
+  }
 
   //a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   //printf("[PSS] amp=%d, a=%d\n",amp,a);
@@ -52,19 +87,19 @@ void generate_pss(mod_sym_t **txdataF,
 #ifdef IFFT_FPGA
       k = (frame_parms->N_RB_DL-3)*12+5;
 #else
-      k = frame_parms->ofdm_symbol_size-3*12;
+      k = frame_parms->ofdm_symbol_size-3*12+5;
 #endif
       //printf("[PSS] k = %d\n",k);
       for (m=5;m<67;m++) {
 #ifdef IFFT_FPGA
-	txdataF[0][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + (Nsymb/2-1)*frame_parms->N_RB_DL*12+k] = primary_synch0_tab[m]+MOD_TABLE_PSS_OFFSET;
+	txdataF[0][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + (Nsymb/2-1)*frame_parms->N_RB_DL*12+k] = primary_sync_tab[m];
 #else
 	((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 				(Nsymb/2-1)*frame_parms->ofdm_symbol_size+k)] = 
-	  (amp * primary_synch0[2*m]) >> 15;
+	  (amp * primary_sync[2*m]) >> 15;
 	((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 				(Nsymb/2-1)*frame_parms->ofdm_symbol_size+k)+1] = 
-	  (amp * primary_synch0[2*m+1]) >> 15;
+	  (amp * primary_sync[2*m+1]) >> 15;
 #endif	
 	k+=1;
 #ifdef IFFT_FPGA
@@ -79,4 +114,5 @@ void generate_pss(mod_sym_t **txdataF,
       }
     }
   }
+    return(0);
 }

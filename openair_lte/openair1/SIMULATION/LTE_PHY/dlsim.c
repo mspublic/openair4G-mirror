@@ -58,6 +58,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
+  lte_gold(lte_frame_parms);
   generate_64qam_table();
   generate_16qam_table();
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);//allocation
@@ -402,7 +403,7 @@ void main(int argc,void **argv) {
 	   sigma2_dB);
     errs=0;
     printf("Channel attenuation %f\n",(double)tx_lev_dB - (SNR+sigma2_dB));
-    for (trials = 0;trials<100000;trials++) {
+    for (trials = 0;trials<100;trials++) {
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,

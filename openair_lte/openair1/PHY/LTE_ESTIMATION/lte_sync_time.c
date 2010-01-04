@@ -203,8 +203,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	result = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
-	((short*)sync_corr)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_out)[0] += ((short*) &result)[0];
 	((short*)sync_out)[1] += ((short*) &result)[1];
       }
@@ -217,6 +215,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
+	((short*)sync_corr)[2*n] += ((short*) &result)[0];
+	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_out)[4] += ((short*) &result)[0];
 	((short*)sync_out)[5] += ((short*) &result)[1];
       }

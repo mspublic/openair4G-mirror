@@ -287,7 +287,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
 			 unsigned short slot);
 
 
-void generate_pss(mod_sym_t **txdataF,
+int generate_pss(mod_sym_t **txdataF,
 		  short amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  unsigned short N);
