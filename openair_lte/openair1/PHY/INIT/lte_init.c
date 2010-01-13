@@ -65,9 +65,9 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING 
   //phy_framing->fs_khz;
   msg("openair_lte: Copying to PHY Framing\n");
   phy_framing->Nsymb = frame_parms->symbols_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  printf("openair_lte: Nsymb %d\n",phy_framing->Nsymb);
+  msg("openair_lte: Nsymb %d\n",phy_framing->Nsymb);
   phy_framing->Nd = frame_parms->ofdm_symbol_size;     
-  printf("openair_lte: Nd %d\n",phy_framing->Nd);
+  msg("openair_lte: Nd %d\n",phy_framing->Nd);
 
   phy_framing->Nc = frame_parms->nb_prefix_samples;    
   phy_framing->Nz = frame_parms->ofdm_symbol_size - frame_parms->N_RB_DL*12;    

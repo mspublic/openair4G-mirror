@@ -1,4 +1,4 @@
-#define BIGPHYS_NUMPAGES 6144
+#define BIGPHYS_NUMPAGES 8192
 
 void *bigphys_malloc(int);
 

@@ -108,8 +108,11 @@ static void * dlsch_thread(void *param) {
     nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
     coded_bits_per_codeword =( 12 * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
     input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
+
+#ifdef DEBUG_PHY
     if ((mac_xface->frame % 100) == 0)
       msg("Frame %d: Calling dlsch_decoding (%d,%d,%p) from cpu %d\n",mac_xface->frame,coded_bits_per_codeword,input_buffer_length,dlsch_ue[harq_pid],rtai_cpuid());
+#endif
 
     time_in = openair_get_mbox();
 
@@ -118,7 +121,7 @@ static void * dlsch_thread(void *param) {
 
     if (dlsch_ue[harq_pid]) {
       ret = dlsch_decoding(input_buffer_length<<3,
-			   lte_ue_dlsch_vars->llr[0],		 
+			   lte_ue_dlsch_vars[0]->llr[0],		 
 			   lte_frame_parms,
 			   dlsch_ue[harq_pid],
 			   harq_pid,               //harq_pid

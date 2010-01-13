@@ -1260,7 +1260,9 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       avgs = max(avgs,avg[(aarx<<1)+aatx]);
 
   log2_maxh = 4+(log2_approx(avgs)/2);
-  //  printf("log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+#ifdef DEBUG_PHY
+  msg("[DLSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+#endif
 
   dlsch_channel_compensation(lte_ue_dlsch_vars->rxdataF_ext,
 			     lte_ue_dlsch_vars->dl_ch_estimates_ext,

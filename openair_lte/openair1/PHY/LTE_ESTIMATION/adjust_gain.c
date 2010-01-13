@@ -45,10 +45,10 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
 #endif
 
-  //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
   if (mac_xface->frame%100==0)
     msg("[PHY][ADJUST_GAIN] clear = %d, rx_power_fil = %d, rx_total_gain_dB = %d\n",clear,rx_power_fil,PHY_vars->rx_vars[0].rx_total_gain_dB);
-  //#endif //DEBUG_PHY
+#endif //DEBUG_PHY
 	
 }
 

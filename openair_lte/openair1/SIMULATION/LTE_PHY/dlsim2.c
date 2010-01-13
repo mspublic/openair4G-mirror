@@ -15,7 +15,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 1
+#define N_TRIALS 1000
 
 int main(int argc, char **argv) {
 
@@ -147,22 +147,22 @@ int main(int argc, char **argv) {
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
-
   generate_pss(lte_eNB_common_vars->txdataF,
-	       1024,
+	       1087,
 	       lte_frame_parms,
+	       0,
 	       1);
 
   for (i=0;i<6;i++)
     pbch_pdu[i] = i;
 
   generate_pbch(lte_eNB_common_vars->txdataF,
-		1024,
+		1087,
 		lte_frame_parms,
 		pbch_pdu);
 
   generate_pilots(lte_eNB_common_vars->txdataF,
-		  1024,
+		  1087,
 		  lte_frame_parms,
 		  0,
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
@@ -171,6 +171,7 @@ int main(int argc, char **argv) {
   //  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
   write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],300*120,1,4);
+  //write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],300*120,1,4);
 
   // do talbe lookup and write results to txdataF2
   for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -186,6 +187,7 @@ int main(int argc, char **argv) {
   }
 
   write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  //write_output("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
     PHY_ofdm_mod(txdataF2[aa],        // input
@@ -199,6 +201,7 @@ int main(int argc, char **argv) {
     
 #else
   write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  //write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
   
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
     PHY_ofdm_mod(lte_eNB_common_vars->txdataF[aa],        // input
@@ -214,6 +217,7 @@ int main(int argc, char **argv) {
 
 
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   
   // multipath channel
   randominit(0);
@@ -239,7 +243,6 @@ int main(int argc, char **argv) {
 
   //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 
-  /*
   // scale by path_loss = NOW - P_noise
   //sigma2       = pow(10,sigma2_dB/10);
   //N0W          = -95.87;
@@ -271,15 +274,14 @@ int main(int argc, char **argv) {
 	-500.0,          // pn_amp (dBc) default: 50
 	0.0,           // IQ imbalance (dB),
 	0.0);           // IQ phase imbalance (rad)
-  */
     
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
-  printf("sigma2 = %g\n",sigma2);
+  //printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((r_re[aa][i])); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((r_im[aa][i])); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -299,8 +301,8 @@ int main(int argc, char **argv) {
   fclose(rx_frame_file);
   */
 
-  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-  //sync_pos = 3328;
+  //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  sync_pos = 3328;
 
   
   // the sync is in the last symbol of either the 0th or 10th slot
@@ -338,11 +340,41 @@ int main(int argc, char **argv) {
 					   sector);
 #endif
 
-      if (l==0)
+      if (l==0) {
+
+	lte_ue_measurements(lte_ue_common_vars,
+			    lte_frame_parms,
+			    &PHY_vars->PHY_measurements,
+			    subframe_offset);
+
+	if (trial%100 == 0) {
+	  msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+	      trial,
+	      PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
+	      PHY_vars->PHY_measurements.rx_power_dB[0][0],
+	      PHY_vars->PHY_measurements.rx_power_dB[0][1],
+	      PHY_vars->PHY_measurements.rx_power[0][0],
+	      PHY_vars->PHY_measurements.rx_power[0][1],
+	      PHY_vars->rx_vars[0].rx_total_gain_dB);
+
+	  msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
+	      trial,
+	      PHY_vars->PHY_measurements.n0_power_dB[0],
+	      PHY_vars->PHY_measurements.n0_power_dB[1],
+	      PHY_vars->PHY_measurements.n0_power[0],
+	      PHY_vars->PHY_measurements.n0_power[1]);
+
+	  msg("[PHY_PROCEDURES_LTE] frame %d, freq_offset_filt = %d\n",
+	      trial, freq_offset);
+
+	}
+
+
 	lte_adjust_synch(lte_frame_parms,
 			 lte_ue_common_vars,
 			 1,
 			 16384);
+      }
 
       if ((l>0) && ((l%3)==0)) {
 	//sprintf(fname,"dl_ch00_%d.m",l);

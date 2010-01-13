@@ -8,8 +8,14 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=3;            % frequency band used by the openair card
+freqband=0;            % frequency band used by the openair card
 
+fc = 1902600e3;   % this has to be the same as in the config file
+fs = 7680e3;
+%fs = 6500e3;
+fref = fc+fs/4;
+
+dual_tx = 0;
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 
 
@@ -17,9 +23,10 @@ gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal
 gpib_send(gpib_card,gpib_device,'POW -90dBm');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.91860GHz');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.919225GHz');
-gpib_send(gpib_card,gpib_device,'FREQ 1.909225GHz');
+%gpib_send(gpib_card,gpib_device,'FREQ 1.909225GHz');
+gpib_send(gpib_card,gpib_device,sprintf("FREQ %dHz",fref));
 
-oarf_config(freqband,'config.cfg','scenario.scn')
+oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
 
 saturation_threshold =5;              % min number of samples (real+imaginary) equal to the max per frame to declare saturation
 

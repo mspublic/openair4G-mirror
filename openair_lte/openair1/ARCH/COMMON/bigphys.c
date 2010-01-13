@@ -9,6 +9,8 @@ char *bigphys_ptr,*bigphys_current;
 unsigned int bigphys_ptr,bigphys_current;
 #endif //ARCH_64
 
+extern int exit_openair;
+
 // return pointer to memory in big physical area aligned to 16 bytes
 
 void *bigphys_malloc(n) {
@@ -19,8 +21,10 @@ void *bigphys_malloc(n) {
 
   bigphys_current += n2;
 
-  if (bigphys_current > bigphys_ptr + (BIGPHYS_NUMPAGES*4096))
-    printk("[BIGPHYS][FATAL]  Memory overload!!!!!\n");
+  if (bigphys_current > bigphys_ptr + (BIGPHYS_NUMPAGES*4096)) {
+    printk("[BIGPHYS][FATAL] Memory overload!!!!! Exiting.\n");
+    exit_openair = 1;
+  }
 
 #ifdef ARCH_64 
   //printk("[BIGPHYSAREA] Allocated Memory %d\n",bigphys_current-bigphys_ptr);

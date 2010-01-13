@@ -116,6 +116,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -124,6 +125,7 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
   /*
   cum_avg = 0;
@@ -214,7 +216,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
 
-  usleep(100000);
+  usleep(1000);
 }
 //-----------------------------------------------------------------------------
 do_scope(){
@@ -237,6 +239,9 @@ int main(int argc, char *argv[]) {
   unsigned int mem_base;
   unsigned int first_symbol;
   char title[20];
+
+  LTE_UE_DLSCH     *lte_ue_dlsch;
+  LTE_UE_PBCH      *lte_ue_pbch;
 
   PHY_vars = malloc(sizeof(PHY_VARS));
 
@@ -276,9 +281,10 @@ int main(int argc, char *argv[]) {
 
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
-  printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates);
+  printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
   printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
-  printf("PHY_vars->lte_ue_pbch_vars.rxdataF_comp = %p\n",PHY_vars->lte_ue_pbch_vars.rxdataF_comp);
+  printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
+  printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -286,12 +292,12 @@ int main(int argc, char *argv[]) {
   nb_ant_rx = PHY_config->lte_frame_parms.nb_antennas_rx;
   printf("(TX, RX) ANTENNAS = %d, %d\n",nb_ant_tx,nb_ant_rx);
   
-  mem_base = mmap(0,
-		  2048*4096,
-		  PROT_READ,
-		  MAP_PRIVATE,
-		  openair_fd,
-		  0);
+  mem_base = (unsigned int) mmap(0,
+				 2048*4096,
+				 PROT_READ,
+				 MAP_PRIVATE,
+				 openair_fd,
+				 0);
 
   if (mem_base != -1)
     msg("MEM base= %x\n",mem_base);
@@ -301,7 +307,7 @@ int main(int argc, char *argv[]) {
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
     channel_f[i] = (short*)(mem_base + 
-			    (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates + 
+			    (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] + 
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
@@ -312,29 +318,52 @@ int main(int argc, char *argv[]) {
 			  i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 
-    rx_sig[i] = (short *)(mem_base + (unsigned int)PHY_vars->rx_vars[i].RX_DMA_BUFFER-(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+    rx_sig[i] = (short *)(mem_base + 
+			  (unsigned int)PHY_vars->rx_vars[i].RX_DMA_BUFFER-
+			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 
   }
 
-  sync_corr = (short*)(mem_base + (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  sync_corr = (int*)(mem_base + 
+		     (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - 
+		     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  printf("sync_corr = %p\n", sync_corr);
+
+  lte_ue_pbch = (LTE_UE_PBCH *) (mem_base + 
+				 (unsigned int)PHY_vars->lte_ue_pbch_vars[0] - 
+				 (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  printf("lte_ue_pbch = %p\n",lte_ue_pbch);
 
   pbch_comp = (short*)(mem_base + 
-		       (unsigned int)PHY_vars->lte_ue_pbch_vars.rxdataF_comp + 
+		       (unsigned int)lte_ue_pbch->rxdataF_comp + 
 		       nb_ant_rx*nb_ant_tx*sizeof(int*) - 
 		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   
   pbch_llr = (short*) (mem_base + 
-		       (unsigned int)PHY_vars->lte_ue_pbch_vars.llr - 
+		       (unsigned int)lte_ue_pbch->llr - 
 		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   
+  printf("pbch_comp = %p\n",pbch_comp);
+  printf("pbch_llr= %p\n",pbch_llr);
+
+
+  lte_ue_dlsch = (LTE_UE_DLSCH *) (mem_base + 
+				   (unsigned int)PHY_vars->lte_ue_dlsch_vars[0] - 
+				   (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  printf("lte_ue_dlsch = %p\n",lte_ue_dlsch);
+
   dlsch_comp = (short*)(mem_base + 
-			(unsigned int)PHY_vars->lte_ue_dlsch_vars.rxdataF_comp + 
+			(unsigned int)lte_ue_dlsch->rxdataF_comp + 
 			nb_ant_rx*nb_ant_tx*sizeof(int*) - 
 			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   
   dlsch_llr = (short*) (mem_base + 
-			(unsigned int)PHY_vars->lte_ue_dlsch_vars.llr[0] - 
+			(unsigned int)lte_ue_dlsch->llr[0] - 
 			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+
+  printf("dlsch_comp = %p\n",dlsch_comp);
+  printf("dlsch_llr = %p\n",dlsch_llr);
+
   
   sprintf(title, "LTE SCOPE"),
 

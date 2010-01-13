@@ -92,7 +92,7 @@ int main (int argc, char **argv) {
   if (argc < 3) {
     printf("[openair][INFO] Usage %s  frequency(0,1,2,3)  action (0-14) params . . .  \n" , argv[0]);
     printf("[openair][INFO] ACTION DESCRIPTIONS\n");
-    printf("[openair][INFO] Action 0  : Configure PHY/MAC (Kernel module and FPGA) - param dual_tx (0/1)\n");
+    printf("[openair][INFO] Action 0  : Configure PHY/MAC (Kernel module and FPGA) - param dual_tx (0/1) - param tdd (0/1)\n");
     printf("[openair][INFO] Action 1  : Start Primary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 2  : Start Secondary Clusterhead - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 3  : Start Node - param 0/1 = frequency offset on/off - param NODE_ID\n");
@@ -207,8 +207,9 @@ int main (int argc, char **argv) {
 #else
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
+  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
+  lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->Ncp                = 1;
@@ -225,8 +226,9 @@ int main (int argc, char **argv) {
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
-  lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
   
+  lte_gold(lte_frame_parms);
+
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
 #endif
@@ -259,11 +261,17 @@ int main (int argc, char **argv) {
 
   case 0 :
 
+
+    if (argc<5) {
+      printf("Please provide fdd parameter (0/1)\n");
+      exit(-1);
+    }
     if (argc<4) {
       printf("Please provide dual_tx parameter (0/1)\n");
       exit(-1);
     }
     PHY_config->dual_tx = atoi(argv[3]);
+    PHY_config->tdd = atoi(argv[4]);
 
 #ifdef PLATON
     if (loadFPGA2(openair_fd,argv[3]) < 0) {

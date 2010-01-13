@@ -40,9 +40,12 @@ void openair_generate_fs4(unsigned char IQ_imb) {
   int i,j;
 
   for (i=0;i<120;i++) {
-    for (j=0; j<300; j++)
+    for (j=0; j<300; j++) {
       ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+j] = 0; 
+      ((mod_sym_t*)TX_DMA_BUFFER[1])[300*i+j] = 0; 
+    }
     ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+127] = 148; // corresponds to 2^14 in mod_table
+    ((mod_sym_t*)TX_DMA_BUFFER[1])[300*i+127] = 148; // corresponds to 2^14 in mod_table
   }
 
 }

@@ -106,8 +106,8 @@ RF_CNTL_PACKET rf_cntl_packet;
 /// Global exit variable (exit on error or manual stop via IOCTL)
 int exit_openair = 0;
 
-extern int init_dlsch_threads();
-extern void cleanup_dlsch_threads();
+extern int init_dlsch_threads(void);
+extern void cleanup_dlsch_threads(void);
 
 extern int dlsch_instance_cnt[8];
 extern pthread_mutex_t dlsch_mutex[8];
@@ -341,6 +341,7 @@ void openair_sync(void) {
   int Nsymb, sync_pos, sync_pos_slot;
   int Ns;
   int l;
+  int rx_power;
 
   RTIME time;
 
@@ -432,8 +433,9 @@ void openair_sync(void) {
 	}
 	
 	if (rx_pbch(lte_ue_common_vars,
-		    lte_ue_pbch_vars,
+		    lte_ue_pbch_vars[0],
 		    lte_frame_parms,
+		    0,
 		    SISO)) {
 	  
 	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
@@ -465,14 +467,14 @@ void openair_sync(void) {
 
     // Measurements
 
-    PHY_vars->PHY_measurements.rx_avg_power_dB[0] = 0;
+    rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
       PHY_vars->PHY_measurements.rx_power[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
       PHY_vars->PHY_measurements.rx_power_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.rx_power[0][i]);
-      PHY_vars->PHY_measurements.rx_avg_power_dB[0] += PHY_vars->PHY_measurements.rx_power_dB[0][i];
+      rx_power += PHY_vars->PHY_measurements.rx_power[0][i];
     }
-    PHY_vars->PHY_measurements.rx_avg_power_dB[0] /= NB_ANTENNAS_RX;
+    PHY_vars->PHY_measurements.rx_avg_power_dB[0] = dB_fixed(rx_power);
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
     
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
@@ -595,7 +597,7 @@ static void * top_level_scheduler(void *param) {
       if (openair_daq_vars.sync_state == 0) { // This means we're a CH, so start RT acquisition!!
 	openair_daq_vars.rach_detection_count=0;
 	openair_daq_vars.sync_state = 1;
-	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
+	openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 
 	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
 	//openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);

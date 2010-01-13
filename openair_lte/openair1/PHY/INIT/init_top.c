@@ -36,6 +36,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
   int *tmp_ptr;
   mod_sym_t *tmp_ptr_tx;
+  unsigned int tx_dma_buffer_size_bytes;
 
 
   int i,j,n,tb;
@@ -66,8 +67,13 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
     // Allocate memory for TX DMA Buffer
 
+#ifdef IFFT_FPGA
+    tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
+#else
+    tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
+#endif
 
-    tmp_ptr_tx = (mod_sym_t *)bigmalloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
+    tmp_ptr_tx = (mod_sym_t *)bigmalloc16(tx_dma_buffer_size_bytes+2*PAGE_SIZE);
 					  
     if (tmp_ptr_tx==NULL) {
       msg("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
@@ -75,6 +81,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
       return(-1);
     }
     else {
+      bzero(tmp_ptr_tx,tx_dma_buffer_size_bytes+2*PAGE_SIZE);
 #ifndef USER_MODE
       pci_buffer[(2*i)] = (unsigned int)tmp_ptr_tx;
       tmp_ptr_tx = (mod_sym_t*)(((unsigned int)tmp_ptr_tx + PAGE_SIZE -1) & PAGE_MASK);
@@ -88,11 +95,6 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 #endif
     }
 
-#ifdef OPENAIR_LTE
-    PHY_vars->tx_rx_switch_point = 0;
-#else 
-    PHY_vars->tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
-#endif
 
     PHY_vars->tx_vars[i].TX_DMA_BUFFER = tmp_ptr_tx;
 #ifdef DEBUG_PHY
@@ -126,6 +128,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
       return(-1);
     }
     else {
+      bzero(tmp_ptr,FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE);
 #ifndef USER_MODE
       pci_buffer[1+(2*i)] = tmp_ptr;
 

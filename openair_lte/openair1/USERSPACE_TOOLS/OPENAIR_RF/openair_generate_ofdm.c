@@ -53,6 +53,7 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     generate_pss(lte_eNB_common_vars->txdataF,
 		 256,
 		 lte_frame_parms,
+		 0,
 		 1);
     //LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 
@@ -60,6 +61,7 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
       generate_pilots_slot(lte_eNB_common_vars->txdataF,
 			   256,
 			   lte_frame_parms,
+			   0,
 			   i);
 
     for (i=0;i<6;i++)
@@ -128,6 +130,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 	*/
       }     
     }
+
+    /*
     generate_pilots(txdataF,
 		    256,
 		    lte_frame_parms,
@@ -136,6 +140,7 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
 		 256,
 		 lte_frame_parms,
 		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+    */
 #endif
 
   default:

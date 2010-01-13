@@ -288,17 +288,18 @@ typedef struct {
 typedef struct
 {
   unsigned int   rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
-  unsigned int   n0_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
-  short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-  int            rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];// estimated received spatial signal power (linear)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];// estimated received spatial signal power (dB) 
-  short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
-  short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
-  short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
-  int rx_correlation[NUMBER_OF_eNB_MAX][2];              //! estimated correlation (wideband linear) between spatial channels
-  int rx_correlation_dB[NUMBER_OF_eNB_MAX][2];              //! estimated correlation (wideband linear) between spatial channels
+  unsigned int   n0_power[NB_ANTENNAS_RX];                        //! estimated noise power (linear)
+  short          rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  int            rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       //! estimated received spatial signal power (linear)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];    //! estimated received spatial signal power (dB) 
+  short          rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
+  short          rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+  short          n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
+  short          n0_avg_power_dB;                                 //! estimated avg noise power (dB)
+  int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels
+  int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels
 #ifdef EMOS
-  unsigned int   frame_tx;              // This is used to set the file index of the measurement file at the terminal
+  unsigned int   frame_tx;              //! This is used to set the file index of the measurement file at the terminal
 #endif //EMOS
 } PHY_MEASUREMENTS;
 
@@ -331,6 +332,7 @@ typedef struct {
   LTE_DL_FRAME_PARMS  lte_frame_parms;
 #endif //OPENAIR_LTE
   int                 dual_tx;           /// 1 for two tx antennas, 0 for 1 tx antenna
+  int                 tdd;		 /// 1 for TDD, 0 for FDD
 } PHY_CONFIG;
 
 /// Top-level PHY Data Structure  
@@ -343,7 +345,7 @@ typedef struct
   /// ACQ Mailbox for harware synch
   unsigned int *mbox;                
   /// TX/RX switch position in symbols (for TDD)
-  unsigned int tx_rx_switch_point;   
+  //unsigned int tx_rx_switch_point;   --> only in openair_daq_vars
 #ifndef OPENAIR_LTE
   /// CHSCH variables (up to 8)
   CHSCH_data          chsch_data[8];   

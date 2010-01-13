@@ -233,8 +233,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef OPENAIR_LTE
 	lte_frame_parms = &PHY_config->lte_frame_parms;
 	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
-	lte_ue_dlsch_vars = &PHY_vars->lte_ue_dlsch_vars;
-	lte_ue_pbch_vars = &PHY_vars->lte_ue_pbch_vars;
+	lte_ue_dlsch_vars = (LTE_UE_DLSCH **) &PHY_vars->lte_ue_dlsch_vars[0];
+	lte_ue_pbch_vars = (LTE_UE_PBCH **) &PHY_vars->lte_ue_pbch_vars[0];
 	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 	  
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
@@ -279,9 +279,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	// Initialize FPGA PCI registers
        
 	openair_daq_vars.dual_tx = PHY_config->dual_tx;
+	openair_daq_vars.tdd     = PHY_config->tdd;
+	openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;  //unused for FDD
+
 #ifdef OPENAIR_LTE
-	openair_daq_vars.tdd = 0; //FDD
-	openair_daq_vars.freq = 4; //TX: 1917600kHz RX: 1902600kHz
+	if (openair_daq_vars.tdd)
+		openair_daq_vars.freq = 0; //TX: 1902600kHz RX: 1902600kHz
+	else
+		openair_daq_vars.freq = 4; //UE TX: 1917600kHz UE RX: 1902600kHz
 	printk("[openair][IOCTL] Configuring for frequency TX 1917600kHz RX 1902600kHz (%d)\n",openair_daq_vars.freq);
 #else
 	openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -386,11 +391,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.dual_tx = 1;
 
 #ifdef OPENAIR_LTE
-      openair_daq_vars.tdd = 0; //FDD
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #else
-      openair_daq_vars.tdd = 1; //TDD
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #endif
@@ -515,16 +518,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.dual_tx = 0;
 
 #ifdef OPENAIR_LTE
-      openair_daq_vars.tdd = 0; //FDD
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #else
-      openair_daq_vars.tdd = 1; //TDD
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
-      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 #endif
       
+      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
       ret = setup_regs();
@@ -561,16 +562,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       openair_daq_vars.node_id = SECONDARY_CH;
 #ifdef OPENAIR_LTE
-      openair_daq_vars.tdd = 0; //FDD
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #else
-      openair_daq_vars.tdd = 1; //TDD
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
-      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 #endif
 
+      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
       ret = setup_regs();
@@ -609,16 +608,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       openair_daq_vars.node_id = NODE;
 #ifdef OPENAIR_LTE
-      openair_daq_vars.tdd = 0; //FDD
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #else
-      openair_daq_vars.tdd = 1; //TDD
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
-      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 #endif
 
+      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
       setup_regs();
@@ -669,6 +666,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
 
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
 #ifdef RTAI_ENABLED

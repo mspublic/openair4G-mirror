@@ -59,6 +59,8 @@ llr_t beta[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
 llr_t m11[(FRAME_LENGTH_MAX+3)] __attribute__ ((aligned(16)));
 llr_t m10[(FRAME_LENGTH_MAX+3)] __attribute__ ((aligned(16)));
 
+char decoder_in_use = 0;
+
 void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F) {
 
   compute_gamma(m11,m10,systematic,y_parity,frame_length,term_flag);
@@ -616,6 +618,29 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     return 255;
   }
 
+  if (decoder_in_use) {
+    msg("turbo decoder already in use\n");
+    return 255;
+  }
+  else {
+    decoder_in_use = 1;
+  }
+
+  // zero out all global variables
+  bzero(alpha,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(beta,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(m11,(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
+  bzero(m10,(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
+  bzero(systematic0,(6144+16)*sizeof(short));
+  bzero(systematic1,(6144+16)*sizeof(short));
+  bzero(systematic2,(6144+16)*sizeof(short));
+  bzero(yparity1,(6144+8)*sizeof(short));
+  bzero(yparity2,(6144+8)*sizeof(short));
+
+  bzero(mtop,6144*sizeof(__m128i));
+  bzero(mbot,6144*sizeof(__m128i));
+
+
   switch (crc_type) {
   case CRC24_A:
   case CRC24_B:
@@ -720,8 +745,6 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
       //      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
-      if (crc == oldcrc)
-	return(iteration_cnt);
 
       break;
     case CRC24_B:
@@ -729,35 +752,32 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       crc = crc24b(decoded_bytes,
 		  n-24)>>8;
       //      printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
-      if (crc == oldcrc)
-	return(iteration_cnt);
-
 
       break;
     case CRC16:
       oldcrc&=0x0000ffff;
       crc = crc16(decoded_bytes,
 		  n-16)>>16;
-      if (crc == oldcrc)
-	return(iteration_cnt);
 
       break;
     case CRC8:
       oldcrc&=0x000000ff;
       crc = crc8(decoded_bytes,
 		  n-8)>>24;
-      if (crc == oldcrc)
-	return(iteration_cnt);
-
       break;
     }
 
+    if (crc == oldcrc) {
+      decoder_in_use = 0;
+      return(iteration_cnt);
+    }
 
     // do log_map from first parity bit
     if (iteration_cnt < max_iterations)
       log_map(systematic1,yparity1,ext,n,0,F);
   }
 
+  decoder_in_use = 0;
   return(iteration_cnt);
 }
 

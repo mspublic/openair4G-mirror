@@ -8,7 +8,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 			unsigned int subframe_offset) {
 
   int aarx,aatx,eNb_id=0,rx_power_correction;
-  int rx_power[3];
+  int rx_power[3], n0_power;
 
   /*
   Elements of phy_measurements
@@ -49,7 +49,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
       //      phy_measurements->rx_power[eNb_id][aarx]/=frame_parms->nb_antennas_tx;
       phy_measurements->rx_power_dB[eNb_id][aarx] = dB_fixed(phy_measurements->rx_power[eNb_id][aarx]);
       rx_power[eNb_id] += phy_measurements->rx_power[eNb_id][aarx];
-      phy_measurements->rx_avg_power_dB[eNb_id] += phy_measurements->rx_power_dB[eNb_id][aarx];
+      //      phy_measurements->rx_avg_power_dB[eNb_id] += phy_measurements->rx_power_dB[eNb_id][aarx];
     }
   }
   for (eNb_id = 0; eNb_id < 3; eNb_id++){
@@ -58,4 +58,15 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     phy_measurements->rx_rssi_dBm[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id]-PHY_vars->rx_vars[0].rx_total_gain_dB;
 
   }
+
+  // noise measurements
+  // for the moment we measure the noise on the second OFDM symbol. This has to be changed later.
+  n0_power = 0;
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+    phy_measurements->n0_power_dB[aarx] = dB_fixed(phy_measurements->n0_power[aarx]);
+    n0_power +=  phy_measurements->n0_power[aarx];
+  }
+  phy_measurements->n0_avg_power_dB = dB_fixed(n0_power);
+
 }

@@ -288,9 +288,10 @@ int generate_pilots_slot(mod_sym_t **txdataF,
 
 
 int generate_pss(mod_sym_t **txdataF,
-		  short amp,
-		  LTE_DL_FRAME_PARMS *frame_parms,
-		  unsigned short N);
+		 short amp,
+		 LTE_DL_FRAME_PARMS *frame_parms,
+		 unsigned short eNb_id,
+		 unsigned short N);
 
 int generate_pbch(mod_sym_t **txdataF,
 		  int amp,

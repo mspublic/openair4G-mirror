@@ -28,9 +28,10 @@ typedef struct {
 */
 
 int generate_pss(mod_sym_t **txdataF,
-		  short amp,
-		  LTE_DL_FRAME_PARMS *frame_parms,
-		  unsigned short Ntti) {
+		 short amp,
+		 LTE_DL_FRAME_PARMS *frame_parms,
+		 unsigned short eNb_id,
+		 unsigned short Ntti) {
 
   // write primary_synch0 to txdataF
 
@@ -42,10 +43,10 @@ int generate_pss(mod_sym_t **txdataF,
   short *primary_sync;
 #endif
 
-  msg("[PSS] Using sequence %d\n",frame_parms->Nid_cell%3);
+  //msg("[PSS] Using sequence %d\n",eNb_id);
 
 
-  switch (frame_parms->Nid_cell%3) {
+  switch (eNb_id) {
   case 0:
 #ifdef IFFT_FPGA
     primary_sync_tab = primary_synch0_tab;
@@ -68,7 +69,7 @@ int generate_pss(mod_sym_t **txdataF,
 #endif
     break;
   default:
-    msg("[PSS] Nid_cell has to be 0,1,2\n");
+    msg("[PSS] eNb_id has to be 0,1,2\n");
     return(-1);
   }
 
