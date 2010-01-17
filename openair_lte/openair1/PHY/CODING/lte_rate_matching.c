@@ -12,6 +12,8 @@
 #define min(a,b) ((a)<(b) ? (a) : (b))
 static unsigned int bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
 
+static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
+
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
 
@@ -72,6 +74,63 @@ unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsig
 }
 
 
+unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned char *w) {
+
+  unsigned int RCC = (D>>5), ND, ND3;
+  unsigned int row,col,Kpi,Kpi3,index;
+  int index3,k;
+#ifdef RM_DEBUG
+  int nulled=0;
+#endif
+
+  if ((D&0x1f) > 0)
+    RCC++;
+  Kpi = (RCC<<5);
+  Kpi3 = Kpi*3;
+  ND = Kpi - D;
+#ifdef RM_DEBUG
+  printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
+  printf("RCC = %d, Kpi=%d, ND=%d\n",RCC,Kpi,ND);
+#endif
+  ND3 = ND*3;
+
+  // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
+  d[(3*D)+2] = d[2];
+  k=0;
+  for (col=0;col<32;col++) {
+#ifdef RM_DEBUG
+    printf("Col %d\n",col);
+#endif
+    index = bitrev_cc[col];
+    index3 = 3*index;
+    for (row=0;row<RCC;row++) {
+
+      w[k]   =  d[index3-ND3];
+      w[Kpi+(k<<1)] =  d[index3-ND3+1];
+      w[Kpi+1+(k<<1)] =  d[index3-ND3+5]; 
+#ifdef RM_DEBUG
+      printf("row %d, index %d k %d w(%d,%d,%d)\n",row,index,k,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
+      
+      if (w[k]== LTE_NULL)
+	nulled++;
+      if (w[Kpi+(k<<1)] ==LTE_NULL)
+	nulled++;
+      if (w[Kpi+1+(k<<1)] ==LTE_NULL)
+	nulled++;
+      
+#endif
+      index3+=96;
+      index+=32;
+      k++;
+    }      
+  }
+#ifdef RM_DEBUG
+  printf("RM_TX: Nulled %d\n",nulled);
+#endif
+  return(RCC);
+}
+
+
 void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
 
   unsigned int RTC = (D>>5), ND, ND3;
@@ -98,6 +157,45 @@ void sub_block_deinterleaving_turbo(unsigned int D,short *d,short *w) {
     index = bitrev[col];
     index3 = 3*index;
     for (row=0;row<RTC;row++) {
+
+      d[index3-ND3]   = w[k];
+      d[index3-ND3+1] = w[Kpi+(k<<1)];  
+      d[index3-ND3+5] = w[Kpi+1+(k<<1)];  
+      index3+=96;
+      index+=32;
+      k++;
+    }      
+  }
+  d[2] = d[(3*D)+2];
+
+}
+
+void sub_block_deinterleaving_cc(unsigned int D,short *d,short *w) {
+
+  unsigned int RCC = (D>>5), ND, ND3;
+  unsigned int row,col,Kpi,Kpi3,index;
+  int index3,k;
+
+  if ((D&0x1f) > 0)
+    RCC++;
+  Kpi = (RCC<<5);
+  Kpi3 = Kpi*3;
+  ND = Kpi - D;
+#ifdef RM_DEBUG2
+  printf("sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
+  printf("RCC = %d, Kpi=%d, ND=%d\n",RCC,Kpi,ND);
+#endif
+  ND3 = ND*3;
+
+  // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
+  k=0;
+  for (col=0;col<32;col++) {
+#ifdef RM_DEBUG2
+    printf("Col %d\n",col);
+#endif
+    index = bitrev[col];
+    index3 = 3*index;
+    for (row=0;row<RCC;row++) {
 
       d[index3-ND3]   = w[k];
       d[index3-ND3+1] = w[Kpi+(k<<1)];  
@@ -182,6 +280,77 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F) 
   return(RTC);
 }
 
+unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F) {
+
+  unsigned int RCC = (D>>5), ND, ND3;
+  unsigned int row,col,Kpi,Kpi3,index;
+  int index3,k;
+#ifdef RM_DEBUG
+  unsigned int nulled=0;
+#endif
+
+  if ((D&0x1f) > 0)
+    RCC++;
+  Kpi = (RCC<<5);
+  Kpi3 = Kpi*3;
+  ND = Kpi - D;
+#ifdef RM_DEBUG
+  printf("dummy sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
+  printf("RCC = %d, Kpi=%d, ND=%d, F=%d (Nulled %d)\n",RCC,Kpi,ND,F,(2*F + 3*ND));
+#endif
+  ND3 = ND*3;
+
+  // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
+  k=0;
+
+  for (col=0;col<32;col++) {
+#ifdef RM_DEBUG
+    printf("Col %d\n",col);
+#endif
+    index = bitrev[col];
+    
+    if (index<ND+F) {
+      w[k]   =  LTE_NULL;
+      w[Kpi+(k<<1)] = LTE_NULL;
+#ifdef RM_DEBUG
+      nulled+=2;
+#endif
+    }
+
+    //bits beyond 32 due to "filler" bits
+    if (index+32<ND+F) {
+      w[k+1]   =  LTE_NULL;
+      w[Kpi+2+(k<<1)] = LTE_NULL;
+#ifdef RM_DEBUG
+      nulled+=2;
+#endif
+    }
+    if (index+64<ND+F) {
+      w[k+2]   =  LTE_NULL;
+      w[Kpi+4+(k<<1)] = LTE_NULL;
+#ifdef RM_DEBUG
+      nulled+=2;
+#endif
+    }
+
+    if ((index+1)<ND) {
+      w[Kpi+1+(k<<1)] =  LTE_NULL;
+#ifdef RM_DEBUG
+      nulled+=1;
+#endif
+    }
+#ifdef RM_DEBUG
+    printf("k %d w (%d,%d,%d) w+1 (%d,%d,%d), index-ND-F %d index+32-ND-F %d\n",k,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)],w[k+1],w[2+Kpi+(k<<1)],w[2+Kpi+1+(k<<1)],index-ND-F,index+32-ND-F);
+#endif
+    k+=RCC;
+  }
+
+#ifdef RM_DEBUG
+  printf("Nulled = %d\n",nulled);
+#endif
+  return(RCC);
+}
+
 
 unsigned int lte_rate_matching_turbo(unsigned int RTC,
 				     unsigned int G, 
@@ -247,6 +416,47 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 #endif
     ind++;
     if (ind==Ncb)
+      ind=0;
+  }
+
+  return(E);
+}
+
+
+unsigned int lte_rate_matching_cc(unsigned int RCC,
+				  unsigned short E,
+				  unsigned char *w,
+				  unsigned char *e) {
+
+  
+  unsigned int ind,k;
+  unsigned int nulled=0;
+  unsigned short Kw = 3*(RCC<<5);
+
+#ifdef RM_DEBUG
+  printf("lte_rate_matching_cc: Kw %d, E %d\n",Kw, E);
+#endif
+
+  for (k=0;k<E;k++) {
+
+
+    while(w[ind] == LTE_NULL) {
+      nulled++;
+#ifdef RM_DEBUG
+      printf("RM_tx : ind %d, NULL\n",ind);
+#endif
+      ind++;
+      if (ind==Kw)
+	ind=0;
+    }
+
+    e[k] = w[ind];
+#ifdef RM_DEBUG
+    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
+    printf("RM_TX %d Ind: %d (%d)\n",k,ind,e2[k]);
+#endif
+    ind++;
+    if (ind==Kw)
       ind=0;
   }
 
@@ -326,9 +536,49 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 }
 
 
+void lte_rate_matching_turbo_rx_cc(unsigned int RCC,
+				   unsigned short E, 
+				   short *w,
+				   unsigned char *dummy_w,
+				   short *soft_input) {
+
+  
+  
+  unsigned int ind,k;
+  unsigned short Kw = 3*(RCC<<5);
+
+#ifdef RM_DEBUG
+  printf("lte_rate_matching_turbo_rx: Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",3*(RCC<<5));
+#endif
+
+  for (k=0;k<E;k++) {
+
+
+    while(dummy_w[ind] == LTE_NULL) {
+#ifdef RM_DEBUG
+      printf("RM_rx : ind %d, NULL\n",ind);
+#endif
+      ind++;
+      if (ind==Kw)
+	ind=0;
+    }
+    /*
+    if (w[ind] != 0)
+      printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
+    */
+    // Maximum-ratio combining of repeated bits and retransmissions
+    w[ind] += soft_input[k];
+#ifdef RM_DEBUG
+      printf("RM_RX k%d Ind: %d (%d)\n",k,ind,w[ind]);
+#endif
+    ind++;
+    if (ind==Kw)
+      ind=0;
+  }
+}
+
+
 #ifdef MAIN
-
-
 
 void main() {
   unsigned char d[96+3+(3*6144)];
