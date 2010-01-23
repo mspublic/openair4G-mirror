@@ -69,9 +69,11 @@ typedef struct {
   int **rxdataF_ext;
   int **rxdataF_comp;
   int **dl_ch_estimates_ext;
+  int **dl_ch_rho_ext;
   int **dl_ch_mag;
   int **dl_ch_magb;
   int **rho;
+  int **rho_i;
   short *llr[2];
 } LTE_UE_DLSCH;
 
