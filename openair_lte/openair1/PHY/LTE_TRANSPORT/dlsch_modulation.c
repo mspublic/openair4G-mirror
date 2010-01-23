@@ -1037,7 +1037,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
 		     unsigned int sub_frame_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_eNb_DLSCH_t *dlsch,
+		     LTE_DL_eNb_DLSCH_t *dlsch,
 		     unsigned char harq_pid,
 		     unsigned int  *rb_alloc){
 

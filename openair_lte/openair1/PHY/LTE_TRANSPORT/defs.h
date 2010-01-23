@@ -24,7 +24,9 @@
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits. 
 
 #define MAX_NUM_DLSCH_SEGMENTS 2
+#define MAX_NUM_ULSCH_SEGMENTS 2
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
+#define MAX_ULSCH_PAYLOAD_BYTES (MAX_NUM_ULSCH_SEGMENTS*768)
 
 typedef struct {
 /// Flag indicating that this DLSCH is active (i.e. not the first round)
@@ -61,13 +63,50 @@ typedef struct {
   unsigned int F;                         
 /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Nl;                       
-} LTE_eNb_HARQ_t;
+} LTE_DL_eNb_HARQ_t;
+
+typedef struct {
+/// Flag indicating that this DLSCH is active (i.e. not the first round)
+  unsigned char active;
+/// The payload + CRC size in bits, "B" from 36-212 
+  unsigned short B;  
+/// Pointer to the payload
+  unsigned char *b;             
+/// Pointers to transport block segments
+  unsigned char *c[MAX_NUM_ULSCH_SEGMENTS]; 
+/// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  unsigned int RTC[MAX_NUM_ULSCH_SEGMENTS];
+/// Index of current HARQ round for this ULSCH                
+  unsigned char round;                
+/// Modulation order of this ULSCH
+  unsigned char mod_order;            
+/// Turbo-code outputs (36-212 V8.6 2009-03, p.12 
+  unsigned char d[MAX_NUM_ULSCH_SEGMENTS][(96+3+(3*6144))];  
+/// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
+  unsigned char w[MAX_NUM_ULSCH_SEGMENTS][3*6144]; 
+/// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)            
+  unsigned int C;                         
+/// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cminus;                    
+/// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cplus;                     
+/// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kminus;                    
+/// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Kplus;                     
+/// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int F;                         
+/// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
+  unsigned char Nl;                       
+} LTE_UL_UE_HARQ_t;
 
 typedef struct {
 /// Current RB allocation
   unsigned int rb_alloc[4];
+  /// Current Number of RBs
+  unsigned short nb_rb;
 /// Pointers to 8 HARQ processes for the DLSCH
-  LTE_eNb_HARQ_t *harq_processes[8];     
+  LTE_DL_eNb_HARQ_t *harq_processes[8];     
 /// Number of soft channel bits
   unsigned short G;
 /// Redundancy-version of the current sub-frame
@@ -82,7 +121,26 @@ typedef struct {
   unsigned char Mdlharq;  
 /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Kmimo;    
-} LTE_eNb_DLSCH_t;
+} LTE_DL_eNb_DLSCH_t;
+
+typedef struct {
+/// Current RB allocation
+  unsigned int rb_alloc[4];
+/// Current Number of RBs
+  unsigned short nb_rb;
+/// Pointers to 8 HARQ processes for the ULSCH
+  LTE_UL_UE_HARQ_t *harq_processes[8];     
+/// Number of soft channel bits
+  unsigned short G;
+/// Redundancy-version of the current sub-frame
+  unsigned char rvidx;
+/// Codebook index for this dlsch (0,1,2,3)
+  unsigned char codebook_index;          
+/// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
+  unsigned char e[3*6144*MAX_NUM_ULSCH_SEGMENTS];
+/// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
+  unsigned char Mdlharq;  
+} LTE_UL_UE_ULSCH_t;
 
 typedef struct {
 /// Flag indicating that this DLSCH is active (i.e. not the first round)
@@ -119,13 +177,50 @@ typedef struct {
   unsigned int F;  
 /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Nl;  
-} LTE_UE_HARQ_t;
+} LTE_DL_UE_HARQ_t;
+
+typedef struct {
+/// Flag indicating that this DLSCH is active (i.e. not the first round)
+  unsigned char active;
+/// The payload + CRC size in bits  
+  unsigned short B; 
+/// Pointer to the payload
+  unsigned char *b;  
+/// Pointers to transport block segments
+  unsigned char *c[MAX_NUM_ULSCH_SEGMENTS];
+/// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
+  unsigned int RTC[8]; 
+/// Index of current HARQ round for this ULSCH
+  unsigned char round; 
+/// Modulation order for this ULSCH
+  unsigned char mod_order; 
+/// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  short w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+/// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
+  short *d[MAX_NUM_ULSCH_SEGMENTS];
+/// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
+  unsigned int C;  
+/// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cminus; 
+/// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Cplus;  
+/// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kminus; 
+/// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kplus;
+/// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
+  unsigned int F;  
+/// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
+  unsigned char Nl;  
+} LTE_UL_eNb_HARQ_t;
 
 typedef struct {
 /// Current RB allocation
   unsigned int rb_alloc[4];
+  /// Current Number of RBs
+  unsigned short nb_rb;
 /// Pointers to up to 8 HARQ processes
-  LTE_UE_HARQ_t *harq_processes[8];   
+  LTE_DL_UE_HARQ_t *harq_processes[8];   
 /// Layer index for this DLSCH
   unsigned char layer_index;              
 /// redundancy version for this sub-frame
@@ -136,23 +231,23 @@ typedef struct {
   unsigned char Mdlharq;              
 /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Kmimo;                
-} LTE_UE_DLSCH_t;
+} LTE_DL_UE_DLSCH_t;
 
 
-void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
+void free_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch);
 
-LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
-void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
+void free_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch);
 
-LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+LTE_DL_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
 
 
 /** \fn dlsch_encoding(unsigned char *input_buffer,
 		    unsigned short input_buffer_length,
 		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_eNb_DLSCH_t *dlsch,
+		    LTE_DL_eNb_DLSCH_t *dlsch,
 		    unsigned char harq_pid,
 		    unsigned short N_RB)
 \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
@@ -171,7 +266,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 void dlsch_encoding(unsigned char *input_buffer,
 		    unsigned short input_buffer_length,
 		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_eNb_DLSCH_t *dlsch,
+		    LTE_DL_eNb_DLSCH_t *dlsch,
 		    unsigned char harq_pid,
 		    unsigned short N_RB);
 
@@ -233,7 +328,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_eNb_DLSCH_t *dlsch,
+		      LTE_DL_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,
 		      unsigned int  *rb_alloc)
 \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for DLSCH.  
@@ -249,7 +344,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_eNb_DLSCH_t *dlsch,
+		      LTE_DL_eNb_DLSCH_t *dlsch,
 		      unsigned char harq_pid,
 		      unsigned int  *rb_alloc);
 
@@ -323,6 +418,8 @@ void qpsk_qpsk(short *stream0_in,
 
 /** \fn dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     int **rxdataF_comp,
+    int **rxdataF_comp_i,
+    int **rho_i,
     short *dlsch_llr,
     unsigned char symbol,
     unsigned short nb_rb)
@@ -330,6 +427,8 @@ void qpsk_qpsk(short *stream0_in,
 \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
 @param frame_parms Frame descriptor structure
 @param rxdataF_comp Compensated channel output
+@param rxdataF_comp Compensated channel output for interference
+@param rho_i Correlation between channel of signal and inteference
 @param dlsch_llr llr output
 @param symbol OFDM symbol index in sub-frame
 @param nb_rb number of RBs for this allocation
@@ -337,6 +436,8 @@ void qpsk_qpsk(short *stream0_in,
 
 void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rxdataF_comp,
+			 int **rxdataF_comp_i,
+			 int **rho_i,
 			 short *dlsch_llr,
 			 unsigned char symbol,
 			 unsigned short nb_rb);
@@ -408,17 +509,20 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 		int **rxdataF_comp,
+		int **rxdataF_comp_i,
 		unsigned char l,
 		unsigned short nb_rb)
 \brief This function does the first stage of llr computation for SISO, by just extracting the pilots, PBCH and primary/secondary synchronization sequences.
 @param frame_parms Frame descriptor structure
 @param rxdataF_comp Compensated channel output
+@param rxdataF_comp Compensated channel output for interference
 @param l symbol in sub-frame
 @param nb_rb Number of RBs in this allocation
 */
 
 void dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 		int **rxdataF_comp,
+		int **rxdataF_comp_i,
 		unsigned char l,
 		unsigned short nb_rb);
 
@@ -466,28 +570,37 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
 
 /** \fn dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rxdataF_comp,
+			 int **rxdataF_comp_i,
 			 int **rho,
+			 int **rho_i,
 			 int **dl_ch_mag,
 			 int **dl_ch_magb,
 			 unsigned char symbol,
-			 unsigned short nb_rb)
+			 unsigned short nb_rb,
+			 unsigned char dual_stream_UE)
 
 \brief This function does maximal-ratio combining for dual-antenna receivers.
 @param frame_parms Frame descriptor structure
 @param rxdataF_comp Compensated channel output
+@param rxdataF_comp_i Compensated channel output for interference
 @param rho Cross correlation between spatial channels
+@param rho Cross correlation between signal and inteference channels
 @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
 @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
 @param symbol Symbol in sub-frame
 @param nb_rb Number of RBs in this allocation
+@param dual_stream_UE Flag to indicate dual-stream detection
 */
 void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rxdataF_comp,
+			 int **rxdataF_comp_i,
 			 int **rho,
+			 int **rho_i,
 			 int **dl_ch_mag,
 			 int **dl_ch_magb,
 			 unsigned char symbol,
-			 unsigned short nb_rb);
+			 unsigned short nb_rb,
+			 unsigned char dual_stream_UE);
 
 /** \fn dlsch_extract_rbs_single(int **rxdataF,
                                  int **dl_ch_estimates,
@@ -615,14 +728,15 @@ overall CRC is ignored.  Finally transport block reassembly is performed.
 unsigned int dlsch_decoding(unsigned short A,
 			    short *dlsch_llr,
 			    LTE_DL_FRAME_PARMS *lte_frame_parms,
-			    LTE_UE_DLSCH_t *dlsch,
+			    LTE_DL_UE_DLSCH_t *dlsch,
 			    unsigned char harq_pid,
 			    unsigned char nb_rb);
 
 /** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	      LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	      LTE_UE_DLSCH **lte_ue_dlsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char eNb_id,
+	      unsigned char eNb_id_i,
 	      unsigned char symbol,
 	      unsigned int *rb_alloc,
 	      unsigned char *Qm,
@@ -637,19 +751,23 @@ unsigned int dlsch_decoding(unsigned short A,
 @param lte_ue_dlsch_vars Pointer to DLSCH variable structure for UE
 @param frame_parms Pointer to frame descriptor
 @param eNb index (Nid1) 0,1,2
+@param Interfering eNb index (Nid1) 0,1,2
 @param symbol Symbol on which to act
 @param rb_alloc RB allocation vector
 @param Qm Modulation orders on layers 0,1 for this DLSCH.  These must be set even for single-stream
 @param mimo_mode MIMO mode for this DLSCH
+@param dual_stream_UE Flag to indicate dual-stream interference cancellation
 */
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-	     LTE_UE_DLSCH *lte_ue_dlsch_vars,
+	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
-	     unsigned char symbol,
 	     unsigned char eNb_id,
+	     unsigned char eNb_id_i,
+	     unsigned char symbol,
 	     unsigned int *rb_alloc,
 	     unsigned char *Qm,
-	     MIMO_mode_t mimo_mode);
+	     MIMO_mode_t mimo_mode,
+	     unsigned char dual_stream_UE);
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    LTE_UE_PBCH *lte_ue_pbch_vars,

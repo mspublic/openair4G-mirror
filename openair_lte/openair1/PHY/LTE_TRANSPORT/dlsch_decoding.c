@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 
 //#define DEBUG_DLSCH_DECODING
-void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
+void free_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
 
   int i,r;
 
@@ -19,26 +19,26 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	  if (dlsch->harq_processes[i]->d[r])
 	    free16(dlsch->harq_processes[i]->d[r],((3*8*6144)+12+96)*sizeof(short));
-	free16(dlsch->harq_processes[i],sizeof(LTE_UE_HARQ_t));
+	free16(dlsch->harq_processes[i],sizeof(LTE_DL_UE_HARQ_t));
       }
     }
-  free16(dlsch,sizeof(LTE_UE_DLSCH_t));
+  free16(dlsch,sizeof(LTE_DL_UE_DLSCH_t));
   }
 }
 
-LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_DL_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
-  LTE_UE_DLSCH_t *dlsch;
+  LTE_DL_UE_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r;
 
-  dlsch = (LTE_UE_DLSCH_t *)malloc16(sizeof(LTE_UE_DLSCH_t));
+  dlsch = (LTE_DL_UE_DLSCH_t *)malloc16(sizeof(LTE_DL_UE_DLSCH_t));
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
 
     for (i=0;i<Mdlharq;i++) {
       //      printf("new_ue_dlsch: Harq process %d\n",i);
-      dlsch->harq_processes[i] = (LTE_UE_HARQ_t *)malloc16(sizeof(LTE_UE_HARQ_t));
+      dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b)
@@ -67,7 +67,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 unsigned int  dlsch_decoding(unsigned short A,
 			     short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *lte_frame_parms,
-			     LTE_UE_DLSCH_t *dlsch,
+			     LTE_DL_UE_DLSCH_t *dlsch,
 			     unsigned char harq_pid,
 			     unsigned char nb_rb) {
   
