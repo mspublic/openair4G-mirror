@@ -279,8 +279,8 @@ unsigned int generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F) 
 #endif
   return(RTC);
 }
-
-unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F) {
+ 
+unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F){
 
   unsigned int RCC = (D>>5), ND, ND3;
   unsigned int row,col,Kpi,Kpi3,index;

@@ -54,6 +54,17 @@ This function takes the d-sequence and generates the w-sequence.  The nu-sequenc
 */
 unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w);
 
+/** \fn unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned char *w)
+\brief This is the subblock interleaving algorithm for convolutionally coded blocks from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
+This function takes the d-sequence and generates the w-sequence.  The nu-sequence from 36-212 is implicit.
+\param D Number of input bits 
+\param d Pointer to input (d-sequence, convolutional code output)
+\param w Pointer to output (w-sequence, interleaver output)
+\returns Interleaving matrix cardinality (\f$K_{\pi}\f$  from 36-212)
+*/
+unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned char *w);
+
+
 /** \fn void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w)
 \brief This is the subblock deinterleaving algorithm from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
 This function takes the w-sequence and generates the d-sequence.  The nu-sequence from 36-212 is implicit.
@@ -62,6 +73,15 @@ This function takes the w-sequence and generates the d-sequence.  The nu-sequenc
 \param w Pointer to input (w-sequence, interleaver output)
 */
 void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
+
+/** \fn void sub_block_deinterleaving_cc(unsigned int D, short *d,short *w)
+\brief This is the subblock deinterleaving algorithm for convolutionally-coded data from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
+This function takes the w-sequence and generates the d-sequence.  The nu-sequence from 36-212 is implicit.
+\param D Number of input bits
+\param d Pointer to output (d-sequence, turbo code output)
+\param w Pointer to input (w-sequence, interleaver output)
+*/
+void sub_block_deinterleaving_cc(unsigned int D,short *d,short *w);
 
 /** \fn generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F)
 \brief This function generates a dummy interleaved sequence (first row) for receiver, in order to identify
@@ -74,6 +94,14 @@ the NULL positions used to make the matrix complete.
 
 unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F);
 
+/** \fn generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F)
+\brief This function generates a dummy interleaved sequence (first row) for receiver (convolutionally-coded data), in order to identify the NULL positions used to make the matrix complete.
+\param D Number of systematic bits plus 4 (plus 4 for termination)
+\param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
+\param F Number of filler bits due added during segmentation
+\returns Interleaving matrix cardinality (\f$K_{\pi}\f$ from 36-212)
+*/
+unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F);
 
 /** \fn unsigned int lte_rate_matching_turbo(unsigned int RTC,
 			     unsigned int G, 
@@ -116,6 +144,24 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 				     unsigned char Qm, 
 				     unsigned char Nl, 
 				     unsigned char r);
+
+/** \fn unsigned int lte_rate_matching_cc(unsigned int RCC,
+			     unsigned int E, 
+			     unsigned char *w,
+			     unsigned char *e)
+
+
+\brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
+\param RCC R^CC_subblock from subblock interleaver (number of rows in interleaving matrix) for up to 8 segments
+\param E Number of coded channel bits
+\param w This is a pointer to the w-sequence (second interleaver output)
+\param e This is a pointer to the e-sequence (rate matching output, channel input/output bits)
+\returns \f$E\f$, the number of coded bits per segment */
+
+unsigned int lte_rate_matching_cc(unsigned int RCC,
+				  unsigned short E,
+				  unsigned char *w,
+				  unsigned char *e);
 
 /** \fn unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
     unsigned int G, 
@@ -161,7 +207,26 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 					unsigned char Qm, 
 					unsigned char Nl, 
 					unsigned char r);
+/** \fn unsigned int lte_rate_matching_turbo_rx_cc(unsigned int RCC,
+    unsigned int E, 
+    short *w,
+    unsigned char *dummy_w,
+    short *soft_input)
 
+    
+\brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
+\param RCC R^CC_subblock from subblock interleaver (number of rows in interleaving matrix)
+\param E This the number of coded bits allocated for channel
+\param w This is a pointer to the soft w-sequence (second interleaver output) with soft-combined outputs from successive HARQ rounds 
+\param dummy_w This is the first row of the interleaver matrix for identifying/discarding the "LTE-NULL" positions
+\param soft_input This is a pointer to the soft channel output 
+\returns \f$E\f$, the number of coded bits per segment 
+*/
+void lte_rate_matching_turbo_rx_cc(unsigned int RCC,
+				   unsigned short E, 
+				   short *w,
+				   unsigned char *dummy_w,
+				   short *soft_input);
 
 /** \fn void ccodedot11_encode(unsigned int numbytes,unsigned char *inPtr,unsigned char *outPtr,unsigned char puncturing)
 \brief This function implements a rate 1/2 constraint length 7 convolutional code.
@@ -199,6 +264,30 @@ void threegpplte_turbo_encoder(unsigned char *input,
 			       unsigned short interleaver_f1,
 			       unsigned short interleaver_f2);
 
+
+/** \fn void ccodelte_encode(unsigned int numbits,unsigned char add_crc, unsigned char *inPtr,unsigned char *outPtr)
+\brief This function implements the LTE convolutional code of rate 1/3
+  with a constraint length of 7 bits. The inputs are bit packed in octets 
+(from MSB to LSB). Trellis tail-biting is included here.
+@param numbits Number of bits to encode
+@param add_crc crc to be appended (8 bits) if add_crc = 1
+@param inPtr Pointer to input buffer
+@param outPtr Pointer to output buffer
+@param puncturing Puncturing pattern (Not used at present, to be removed)
+*/
+void
+ccodelte_encode (unsigned int numbits, 
+		 unsigned char *crc,
+		 unsigned char *inPtr, 
+		 unsigned char *outPtr);
+
+/*!\fn void ccodelte_init(void)
+\brief This function initializes the generator polynomials for an LTE convolutional code.*/
+void ccodelte_init(void);
+
+/*!\fn void ccodelte_init_inv(void)
+\brief This function initializes the trellis structure for decoding an LTE convolutional code.*/
+void ccodelte_init_inv(void);
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/

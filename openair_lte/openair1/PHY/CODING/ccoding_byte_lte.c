@@ -14,25 +14,24 @@ unsigned char  ccodelte_table_rev[128];  // for receiver
 
 /*************************************************************************
 
-  Encodes for an arbitrary convolutional code of rate 1/2
+  Encodes for an arbitrary convolutional code of rate 1/3
   with a constraint length of 7 bits.
   The inputs are bit packed in octets (from MSB to LSB).
-  Trellis termination is included here
+  Trellis tail-biting is included here
 *************************************************************************/
 
 
 
 void
 ccodelte_encode (unsigned int numbits, 
-		 unsigned char *crc,
+		 unsigned char add_crc,
 		 unsigned char *inPtr, 
 		 unsigned char *outPtr) {
   unsigned int             state;
 
   unsigned char              c, out, shiftbit =0, first_bit;
   unsigned short next_last_byte;
-
-  //  printf("In ccodelte_encode (%d,%p,%p,%d)\n",numbytes,inPtr,outPtr,puncturing);
+  unsigned int crc;
 
 #ifdef DEBUG_CCODE
   unsigned int  dummy=0;
@@ -41,15 +40,21 @@ ccodelte_encode (unsigned int numbits,
   /* The input bit is shifted in position 8 of the state.
      Shiftbit will take values between 1 and 8 */
   state = 0;
-
-  // Perform Tail-biting
-  next_last_byte = numbits>>3;
-  first_bit      = (numbits-6)&7; 
-  c = inPtr[next_last_byte-1];
-
+  if (add_crc == 1) {
+    crc = crc8(inPtr,numbits);
+    first_bit      = 2;
+    c = (unsigned char)(crc>>24);
+  }
+  else {
+    next_last_byte = numbits>>3;
+    first_bit      = (numbits-6)&7; 
+    c = inPtr[next_last_byte-1];
+  }
 #ifdef DEBUG_CCODE
   printf("next_last_byte %x (numbits %d, %d)\n",c,numbits,next_last_byte);
 #endif
+
+  // Perform Tail-biting
 
   for (shiftbit = first_bit; shiftbit<8; shiftbit++) {
     state >>= 1;
@@ -61,7 +66,8 @@ ccodelte_encode (unsigned int numbits,
     dummy+=3;
 #endif
   }
-  if ((numbits&7)>0) {
+
+  if ((add_crc==0)&&((numbits&7)>0)) {
     c = inPtr[next_last_byte];
     printf("last_byte %x\n",c);
     for (shiftbit = 0 ; shiftbit < (numbits&7) ; shiftbit++) {
