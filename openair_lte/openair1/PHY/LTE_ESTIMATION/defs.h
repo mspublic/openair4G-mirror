@@ -106,7 +106,9 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			PHY_MEASUREMENTS *phy_measurements,
-			unsigned int subframe_offset);
+			unsigned int subframe_offset,
+			unsigned char N0_symbol,
+			unsigned char init_averaging);
 
 //! Automatic gain control
 void phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind);
