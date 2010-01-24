@@ -46,9 +46,9 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
     for (eNb_id=0;eNb_id<3;eNb_id++) {
       phy_measurements->rx_power[eNb_id][aarx] = 0;
-      if (N0_symbol == 0) {
-	phy_measurements->n0_power_dB[eNb_id][aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
-      }
+    }
+    if (N0_symbol == 0) {
+      phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
     }      
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       for (eNb_id=0;eNb_id<3;eNb_id++) {
@@ -80,7 +80,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     rx_power_avg[eNb_id] = ((k1*rx_power_avg[eNb_id]) + (k2*rx_power[eNb_id]))>>5;
     phy_measurements->rx_avg_power_dB[eNb_id]=dB_fixed(rx_power_avg[eNb_id]);
 
-    phy_measurements->wideband_sinr[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id] - phy_measurements->n0_power_dB[eNb_id][0];
+    phy_measurements->wideband_sinr[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id] - phy_measurements->n0_power_dB[0];
 
 
     phy_measurements->rx_rssi_dBm[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id]-PHY_vars->rx_vars[0].rx_total_gain_dB;
