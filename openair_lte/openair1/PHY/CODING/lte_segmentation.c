@@ -81,6 +81,8 @@ void lte_segmentation(unsigned char *input_buffer,
   }
   else {
 
+    printf("More than one segment (%d), exiting \n",*C);
+    exit(-1);
     *Cminus = ((*C)*(*Kplus) - (Bprime))/((*Kplus) - (*Kminus));
     *Cplus  = (*C) - (*Cminus);
   }
