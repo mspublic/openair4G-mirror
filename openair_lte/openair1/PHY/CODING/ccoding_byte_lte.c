@@ -5,6 +5,7 @@
 
 #include "defs.h"
 
+//#define DEBUG_CCODE 1
 
 unsigned short glte[] = { 0133, 0171, 0165 }; // {A,B}
 unsigned short glte_rev[] = { 0155, 0117, 0127 }; // {A,B}   
@@ -17,6 +18,7 @@ unsigned char  ccodelte_table_rev[128];  // for receiver
   Encodes for an arbitrary convolutional code of rate 1/3
   with a constraint length of 7 bits.
   The inputs are bit packed in octets (from MSB to LSB).
+  An optional 8-bit CRC (3GPP) can be added.
   Trellis tail-biting is included here
 *************************************************************************/
 
@@ -30,8 +32,9 @@ ccodelte_encode (unsigned int numbits,
   unsigned int             state;
 
   unsigned char              c, out, shiftbit =0, first_bit;
+  unsigned short c16;
   unsigned short next_last_byte;
-  unsigned int crc;
+  unsigned int crc=0;
 
 #ifdef DEBUG_CCODE
   unsigned int  dummy=0;
@@ -42,6 +45,11 @@ ccodelte_encode (unsigned int numbits,
   state = 0;
   if (add_crc == 1) {
     crc = crc8(inPtr,numbits);
+    first_bit      = 2;
+    c = (unsigned char)(crc>>24);
+  }
+  else if (add_crc == 2) {
+    crc = crc16(inPtr,numbits);
     first_bit      = 2;
     c = (unsigned char)(crc>>24);
   }
@@ -56,6 +64,7 @@ ccodelte_encode (unsigned int numbits,
 
   // Perform Tail-biting
 
+  // get bits from last byte of input (or crc)
   for (shiftbit = first_bit; shiftbit<8; shiftbit++) {
     state >>= 1;
     if ((c&(1<<shiftbit)) != 0)
@@ -66,10 +75,10 @@ ccodelte_encode (unsigned int numbits,
     dummy+=3;
 #endif
   }
-
+  // get bits from next to last byte of input (not when crc is added)
   if ((add_crc==0)&&((numbits&7)>0)) {
     c = inPtr[next_last_byte];
-    printf("last_byte %x\n",c);
+    //    printf("last_byte %x\n",c);
     for (shiftbit = 0 ; shiftbit < (numbits&7) ; shiftbit++) {
       state >>= 1;
       if ((c&(1<<shiftbit)) != 0)
@@ -88,8 +97,12 @@ ccodelte_encode (unsigned int numbits,
   dummy = 0;
 #endif //DEBUG_CCODE
   /* Do not increment inPtr until we read the next octet */
+
+
+
+
   while (numbits > 0) {
-    c = *inPtr++;
+
 #ifdef DEBUG_CCODE
     printf("** %x **\n",c);
 #endif //DEBUG_CCODE
@@ -116,7 +129,53 @@ ccodelte_encode (unsigned int numbits,
 
   }
 
+  // now code 8-bit CRC
+  if (add_crc == 1) {
 
+    c = (unsigned char)(crc>>24);
+    for (shiftbit = 0; (shiftbit<8);shiftbit++) {
+      state >>= 1;
+      if ((c&(1<<shiftbit)) != 0){
+	state |= 64;
+      }
+      
+      out = ccodelte_table[state];
+      
+      *outPtr++ = out  & 1;
+      *outPtr++ = (out>>1)&1;
+      *outPtr++ = (out>>2)&1;
+      
+#ifdef DEBUG_CCODE
+      printf("crc bit %d input %d, outbit %d: %d -> %d (%d)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      dummy+=3;
+#endif //DEBUG_CCODE      
+      
+    }
+  }
+
+  // now code 16-bit CRC
+  if (add_crc == 2) {
+
+    c16 = (unsigned short)(crc>>16);
+    for (shiftbit = 0; (shiftbit<16);shiftbit++) {
+      state >>= 1;
+      if ((c16&(1<<shiftbit)) != 0){
+	state |= 64;
+      }
+      
+      out = ccodelte_table[state];
+      
+      *outPtr++ = out  & 1;
+      *outPtr++ = (out>>1)&1;
+      *outPtr++ = (out>>2)&1;
+      
+#ifdef DEBUG_CCODE
+      printf("crc bit %d input %d, outbit %d: %d -> %d (%d)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      dummy+=3;
+#endif //DEBUG_CCODE      
+      
+    }
+  }
 }
 
 

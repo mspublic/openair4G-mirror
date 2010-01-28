@@ -795,6 +795,21 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		       short* llr,
 		       unsigned int length);
 
+/*! \brief DCI Encoding
+This routine codes an arbitrary DCI PDU after appending the 8-bit 3GPP CRC.  It then applied sub-block interleaving and rate matching.
+\param a Pointer to DCI PDU (coded in bytes)
+\param A Length of DCI PDU in bits
+\param E Length of DCI PDU in coded bits
+\param e Pointer to sequence
+*/ 
+void dci_encoding(unsigned char *a,
+		  unsigned char A,
+		  unsigned short E,
+		  unsigned char *e);
 
+void dci_decoding(unsigned char DCI_LENGTH,
+		  unsigned char DCI_FMT,
+		  char *e,
+		  unsigned char *decoded_output);
 /**@}*/
 #endif

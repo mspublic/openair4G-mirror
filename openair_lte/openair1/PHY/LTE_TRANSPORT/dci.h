@@ -20,8 +20,8 @@ typedef struct {
   unsigned char cqi_req:1;
   /// Padding to get to size of DCI1A
   unsigned char padding:2;
-} DCI0_5MHz_TDD_1_6_t;
-#define sizeof_DCI0_5MHz_TDD_0_t 27;
+} DCI0_5MHz_TDD0_t;
+#define sizeof_DCI_0_5MHz_TDD_0_t 27;
 
 ///  DCI Format Type 0 (5 MHz,TDD1-6, 28 bits)
 typedef struct {
@@ -109,7 +109,7 @@ typedef struct {
 #define sizeof_DCI1_5MHz_FDD_t 28;
 
 /// RA Procedure PDSCH (FDD/TDD), 13 bits
-type struct {
+typedef struct {
   /// Preamble Index
   unsigned char preamble_index:6;
   /// PRACH mask index
@@ -120,7 +120,7 @@ type struct {
 #define sizeof_RA_PDSCH_t 13;
 
 /// Normal PDSCH (FDD), 13 bits
-type struct {
+typedef struct {
   /// Modulation and Coding Scheme and Redundancy Version
   unsigned char mcs:5;
   /// HARQ Process
@@ -135,7 +135,7 @@ type struct {
 #define sizeof_PDSCH_FDD_t 13;
 
 /// Normal PDSCH (TDD), 16 bits
-type struct {
+typedef struct {
   /// Modulation and Coding Scheme and Redundancy Version
   unsigned char mcs:5;
   /// HARQ Process
@@ -181,7 +181,7 @@ typedef struct {
     PDSCH_TDD_t pdsch;
   } pdu;
   unsigned char padding:1;
-} DCI1A_5MHz_TDD_t;
+} DCI1A_5MHz_TDD_1_6_t;
 #define sizeof_DCI1B_5MHz_TDD_1_6_t 27;
 
 /// DCI Format Type 1A (5 MHz, TDD, frame 0, 27 bits)
@@ -196,7 +196,7 @@ typedef struct {
     RA_PDSCH_t ra_pdsch;
     PDSCH_TDD_t pdsch;
   } pdu;
-} DCI1A_5MHz_TDD_t;
+} DCI1A_5MHz_TDD_0_t;
 #define sizeof_DCI1B_5MHz_TDD_0_t 27;
 
 
@@ -214,7 +214,7 @@ typedef struct {
   /// Padding to remove size ambiguity (26 bits -> 27 bits)
   unsigned char padding:1;
 } DCI1B_5MHz_2A_FDD_t;
-#define sizeof_DCI1A_5MHz_FDD_t 27;
+#define sizeof_DCI1B_5MHz_FDD_t 27;
 
 /// DCI Format Type 1B (5 MHz, TDD, 2 Antenna Ports, 29 bits)
 typedef struct {
@@ -811,3 +811,5 @@ typedef struct {
   unsigned int TPC:26;
 } DCI3_5MHz_FDD_t;
 #define sizeof_DCI0_5MHz_FDD_t 25;
+
+#define MAX_DCI_SIZE_BITS 45

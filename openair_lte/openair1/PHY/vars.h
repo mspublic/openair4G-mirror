@@ -51,8 +51,11 @@ LTE_UE_COMMON *lte_ue_common_vars;
 LTE_UE_DLSCH **lte_ue_dlsch_vars;
 LTE_UE_PBCH **lte_ue_pbch_vars;
 LTE_eNB_COMMON *lte_eNB_common_vars;
-LTE_eNb_DLSCH_t **dlsch_eNb;
-LTE_UE_DLSCH_t **dlsch_ue;
+LTE_DL_eNb_DLSCH_t **dlsch_eNb;
+LTE_DL_UE_DLSCH_t **dlsch_ue;
+
+#include "PHY/LTE_TRANSPORT/vars.h"
+
 #endif
 
 #include "PHY/CODING/scrambler.h"

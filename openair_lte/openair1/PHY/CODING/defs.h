@@ -74,14 +74,14 @@ This function takes the w-sequence and generates the d-sequence.  The nu-sequenc
 */
 void sub_block_deinterleaving_turbo(unsigned int D, short *d,short *w);
 
-/** \fn void sub_block_deinterleaving_cc(unsigned int D, short *d,short *w)
+/** \fn void sub_block_deinterleaving_cc(unsigned int D, char *d,char *w)
 \brief This is the subblock deinterleaving algorithm for convolutionally-coded data from 36-212 (Release 8, 8.6 2009-03), pages 15-16. 
 This function takes the w-sequence and generates the d-sequence.  The nu-sequence from 36-212 is implicit.
 \param D Number of input bits
 \param d Pointer to output (d-sequence, turbo code output)
 \param w Pointer to input (w-sequence, interleaver output)
 */
-void sub_block_deinterleaving_cc(unsigned int D,short *d,short *w);
+void sub_block_deinterleaving_cc(unsigned int D,char *d,char *w);
 
 /** \fn generate_dummy_w(unsigned int D, unsigned char *w,unsigned char F)
 \brief This function generates a dummy interleaved sequence (first row) for receiver, in order to identify
@@ -94,14 +94,13 @@ the NULL positions used to make the matrix complete.
 
 unsigned int generate_dummy_w(unsigned int D, unsigned char *w, unsigned char F);
 
-/** \fn generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F)
+/** \fn generate_dummy_w_cc(unsigned int D, unsigned char *w)
 \brief This function generates a dummy interleaved sequence (first row) for receiver (convolutionally-coded data), in order to identify the NULL positions used to make the matrix complete.
 \param D Number of systematic bits plus 4 (plus 4 for termination)
 \param w This is the dummy sequence (first row), it will contain zeros and at most 31 "LTE_NULL" values
-\param F Number of filler bits due added during segmentation
 \returns Interleaving matrix cardinality (\f$K_{\pi}\f$ from 36-212)
 */
-unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w,unsigned char F);
+unsigned int generate_dummy_w_cc(unsigned int D, unsigned char *w);
 
 /** \fn unsigned int lte_rate_matching_turbo(unsigned int RTC,
 			     unsigned int G, 
@@ -207,11 +206,11 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 					unsigned char Qm, 
 					unsigned char Nl, 
 					unsigned char r);
-/** \fn unsigned int lte_rate_matching_turbo_rx_cc(unsigned int RCC,
+/** \fn unsigned int lte_rate_matching_cc_rx(unsigned int RCC,
     unsigned int E, 
-    short *w,
+    char *w,
     unsigned char *dummy_w,
-    short *soft_input)
+    char *soft_input)
 
     
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
@@ -222,11 +221,11 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 \param soft_input This is a pointer to the soft channel output 
 \returns \f$E\f$, the number of coded bits per segment 
 */
-void lte_rate_matching_turbo_rx_cc(unsigned int RCC,
-				   unsigned short E, 
-				   short *w,
-				   unsigned char *dummy_w,
-				   short *soft_input);
+void lte_rate_matching_cc_rx(unsigned int RCC,
+			     unsigned short E, 
+			     char *w,
+			     unsigned char *dummy_w,
+			     char *soft_input);
 
 /** \fn void ccodedot11_encode(unsigned int numbytes,unsigned char *inPtr,unsigned char *outPtr,unsigned char puncturing)
 \brief This function implements a rate 1/2 constraint length 7 convolutional code.
@@ -277,7 +276,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 */
 void
 ccodelte_encode (unsigned int numbits, 
-		 unsigned char *crc,
+		 unsigned char add_crc,
 		 unsigned char *inPtr, 
 		 unsigned char *outPtr);
 
@@ -334,10 +333,22 @@ unsigned int crc8  (unsigned char *inPtr, int bitlen);
 @param n Length of input/trellis depth in bits*/
 void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short n);
 
+/*!\fn void phy_viterbi_lte_sse2(char *y, unsigned char *decoded_bytes, unsigned short n)
+\brief This routine performs a SIMD optmized Viterbi decoder for the LTE 64-state tail-biting convolutional code.
+@param y Pointer to soft input (coded on 8-bits but should be limited to 4-bit precision to avoid overflow)
+@param decoded_bytes Pointer to decoded output
+@param n Length of input/trellis depth in bits*/
+void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n);
+
 /*!\fn void phy_generate_viterbi_tables(void)
 \brief This routine initializes metric tables for the optimized Viterbi decoder.
 */
 void phy_generate_viterbi_tables( void );
+
+/*!\fn void phy_generate_viterbi_tables_lte(void)
+\brief This routine initializes metric tables for the optimized LTE Viterbi decoder.
+*/
+void phy_generate_viterbi_tables_lte( void );
 
 
 /*!\fn int rate_matching(unsigned int N_coded, 

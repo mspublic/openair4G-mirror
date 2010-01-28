@@ -2,6 +2,9 @@
 \brief Apply RF impairments to received signal
 @param r_re Double two-dimensional array of Real part of received signal
 @param r_im Double two-dimensional array of Imag part of received signal
+@param r_re Double two-dimensional array of Real part of received interfering signal
+@param r_im Double two-dimensional array of Imag part of received interfering signal
+@param I0_dB Interference-level with respect to desired signal in dB
 @param nb_rx_antennas Number of receive antennas
 @param length of signal
 @param s_time sampling time in s
@@ -18,6 +21,9 @@
 */
 void rf_rx(double **r_re,
 	   double **r_im,
+	   double **r_re_i1,
+	   double **r_im_i1,
+	   double I0_dB,
 	   unsigned int nb_rx_antennas,
 	   unsigned int length,
 	   double s_time,

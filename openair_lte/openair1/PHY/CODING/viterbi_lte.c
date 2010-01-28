@@ -138,13 +138,13 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
     //    printf("Iteration %d\n",iter);
     for (position=0;position<n;position++) {
       
-      /*
-      printf("%d : (%d,%d,%d)\n",position,in[0],in[1],in[2]);
-      */
+      
+      //      printf("%d/%d : (%d,%d,%d)\n",position,n-1,in[0],in[1],in[2]);
+      
 
       // get branch metric offsets for the 64 states
       table_offset = (in[0]+8 + ((in[1]+8)<<4) + ((in[2]+8)<<8))<<6;
-      /*      
+      /*       
       printf("Table_offset = %u (in[0]=%d,in[1]=%d,in[2]=%d)\n",table_offset,in[0],in[1],in[2]);
       print_bytes("m0",&m0_table[table_offset]);
       print_bytes("m1",&m1_table[table_offset]);
@@ -187,7 +187,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
       //    print_bytes(odd33_63b,"odd33_63b");
       
       
-      
+
       
       // select maxima
       //    printf("\n");

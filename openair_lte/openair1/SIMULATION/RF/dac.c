@@ -19,6 +19,7 @@ void dac(double **s_re,
     for (aa=0;aa<nb_tx_antennas;aa++) {
       s_re[aa][i] = ((double)(((short *)input[aa]))[(i<<1)])/(1<<(B-1));
       s_im[aa][i] = ((double)(((short *)input[aa]))[(i<<1)+1])/(1<<(B-1));
+
     }
   }
 

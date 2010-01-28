@@ -298,6 +298,8 @@ typedef struct
   short          n0_avg_power_dB;                                 //! estimated avg noise power (dB)
   int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels
   int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels
+  char wideband_sinr[NUMBER_OF_eNB_MAX];
+  unsigned char wideband_cqi[NUMBER_OF_eNB_MAX];
 #ifdef EMOS
   unsigned int   frame_tx;              //! This is used to set the file index of the measurement file at the terminal
 #endif //EMOS

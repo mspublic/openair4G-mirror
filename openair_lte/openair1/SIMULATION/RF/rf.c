@@ -13,6 +13,9 @@ extern int write_output(const char *,const char *,void *,int,int,char);
   //free(input_data);
 void rf_rx(double **r_re,
 	   double **r_im,
+	   double **r_re_i1,
+	   double **r_im_i1,
+	   double I0_dB,
 	   unsigned int nb_rx_antennas,
 	   unsigned int length,
 	   double s_time,
@@ -47,7 +50,9 @@ void rf_rx(double **r_re,
   double x_n=0.0,x_n1=0.0,x_n2=0.0,y_n1=0.0,y_n2=0.0;
 
   double pn_amp      = pow(10.0,.1*pn_amp_dBc);
-  int i,a;
+  double I0 = pow(10.0,.05*I0_dB);
+
+  int i,a,have_interference=0;
 
 
   if (pn_amp_dBc > -20.0){
@@ -98,12 +103,20 @@ void rf_rx(double **r_re,
 #endif
   p_noise=0.0;
 
+
+
+  if ((r_re_i1) && (r_im_i1) )
+    have_interference=1;
+
   for (i=0;i<length;i++) {
 
     
     for (a=0;a<nb_rx_antennas;a++) {
 
-
+      if (have_interference==1) {
+	r_re[a][i] = r_re[a][i] + (I0 * r_re_i1[a][i]);
+	r_im[a][i] = r_im[a][i] + (I0 * r_im_i1[a][i]);
+      }
 
       // Amplify by receiver gain and apply 3rd order non-linearity
       r_re[a][i] = rx_gain_lin*(r_re[a][i] + IP3_lin*(pow(r_re[a][i],3.0) + 3.0*r_re[a][i]*r_im[a][i]*r_im[a][i])) + rx_gain_lin*(sqrt(.5*N0W)*gaussdouble(0.0,1.0));
