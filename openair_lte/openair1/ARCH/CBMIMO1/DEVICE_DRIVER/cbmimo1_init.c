@@ -88,13 +88,13 @@ int setup_regs() {
   //		 OFDM_SYMBOLS_PER_FRAME_REG);  // setup PCI size
 
   pci_interface->ofdm_symbols_per_frame = NUMBER_OF_SYMBOLS_PER_FRAME;
-  //printk("[openair][INIT] NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",pci_interface->ofdm_symbols_per_frame);
+  printk("[openair][INIT] NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",pci_interface->ofdm_symbols_per_frame);
 
   pci_interface->node_id = openair_daq_vars.node_id;
   //printk("[openair][INIT] DAQ_NODE_ID = %d\n",openair_daq_vars.node_id);
 
   pci_interface->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
-  //printk("[openair][INIT] TX_RX_SWITCH_POINT = %d\n",openair_daq_vars.tx_rx_switch_point);
+  printk("[openair][INIT] TX_RX_SWITCH_POINT = %d\n",openair_daq_vars.tx_rx_switch_point);
 
   pci_interface->timing_advance = openair_daq_vars.timing_advance;
 
@@ -117,11 +117,12 @@ int setup_regs() {
 
   pci_interface->rx_rf_mode = openair_daq_vars.rx_rf_mode;
 
+  //printk("[openair][INIT] rx_gain_val = %d\n",openair_daq_vars.rx_gain_val);
   pci_interface->rx_gain_val = openair_daq_vars.rx_gain_val;
 
   pci_interface->tcxo_dac = openair_daq_vars.tcxo_dac;
 
-  //printk("[openair][INIT] tdd = %d, dual_tx = %d\n",openair_daq_vars.tdd,openair_daq_vars.dual_tx);
+  printk("[openair][INIT] tdd = %d, dual_tx = %d\n",openair_daq_vars.tdd,openair_daq_vars.dual_tx);
   pci_interface->tdd = openair_daq_vars.tdd;
  
   pci_interface->dual_tx = openair_daq_vars.dual_tx;

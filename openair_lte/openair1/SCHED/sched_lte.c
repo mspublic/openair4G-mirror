@@ -148,7 +148,7 @@ void openair1_restart(void) {
 
 #ifndef EMOS		
 #ifdef OPENAIR2
-	  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
   mac_resynch();
 #endif //OPENAIR2
 #endif //EMOS
@@ -260,9 +260,12 @@ static void * openair_thread(void *param) {
 
       time_out = openair_get_mbox();
 
-      if ((time_out - time_in) % NUMBER_OF_SYMBOLS_PER_FRAME > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled 4 symbols too late
-	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d,time_out %d, scheduler_interval_ns %d\n", mac_xface->frame, last_slot,
-	    time_in,time_out,openair_daq_vars.scheduler_interval_ns);
+      if ((((int) time_out - (int) time_in) % NUMBER_OF_SYMBOLS_PER_FRAME) > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled too late
+	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, scheduler_interval_ns %d\n", 
+	    mac_xface->frame, last_slot,
+	    time_in,time_out,
+	    NUMBER_OF_SYMBOLS_PER_FRAME,
+	    openair_daq_vars.scheduler_interval_ns);
 	openair1_restart();
       }
 
@@ -406,9 +409,11 @@ void openair_sync(void) {
 
     if (openair_daq_vars.node_configured&2) { // the node has been cofigured as a UE
 
+      msg("[openair][SCHED][SYNCH] starting sync\n");
+
       // Do initial timing acquisition
       sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-      //    sync_pos = 0;
+      //sync_pos = 0;
       
       // the sync is in the last symbol of either the 0th or 10th slot
       // however, the pbch is only in the 0th slot
@@ -439,7 +444,7 @@ void openair_sync(void) {
 		    SISO)) {
 	  
 	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
-	  
+
 	  if (openair_daq_vars.node_running == 1) {
       
 #ifndef NOCARD_TEST
@@ -467,6 +472,7 @@ void openair_sync(void) {
 
     // Measurements
 
+    
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
@@ -498,8 +504,8 @@ void openair_sync(void) {
     }
     
   }
-  
-  //msg("[openair][SCHED][SYNCH] Returning\n");
+
+  msg("[openair][SCHED][SYNCH] Returning\n");
 
 }
 
@@ -515,7 +521,7 @@ static void * top_level_scheduler(void *param) {
   int i;
   int ret=0;  
   
-  msg("[openair][SCHED][top_level_scheduler] top_level_scheduler started with id %x, MODE %d, cpuid = %d\n",(unsigned int)pthread_self(),openair_daq_vars.mode,rtai_cpuid());
+  msg("[openair][SCHED][top_level_scheduler] top_level_scheduler started with id %x, MODE %d, cpuid = %d, fpu_flag = %d\n",(unsigned int)pthread_self(),openair_daq_vars.mode,rtai_cpuid(),pthread_self()->uses_fpu);
 
   openair_daq_vars.sched_cnt = 0;
 
@@ -597,7 +603,7 @@ static void * top_level_scheduler(void *param) {
       if (openair_daq_vars.sync_state == 0) { // This means we're a CH, so start RT acquisition!!
 	openair_daq_vars.rach_detection_count=0;
 	openair_daq_vars.sync_state = 1;
-	openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
+	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 
 	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
 	//openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
@@ -903,7 +909,9 @@ int openair_sched_init(void) {
 
   if (mac_xface->is_cluster_head == 0)
     error_code = init_dlsch_threads();
+
   return(error_code);
+
 }
 
 void openair_sched_cleanup() {
@@ -932,7 +940,6 @@ void openair_sched_cleanup() {
 
   cleanup_dlsch_threads();
   printk("[openair][SCHED][CLEANUP] Done!\n");
-
 }
 
 

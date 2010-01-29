@@ -67,10 +67,10 @@ extern pthread_mutex_t dlsch_mutex[8];
 /// Condition variable for dlsch thread
 extern pthread_cond_t dlsch_cond[8];
 
-//#define NB_RB 12
-#define NB_RB 6
-#define RBmask0 0x0001F800
-//#define RBmask0 0x00fc00fc
+//#define NB_RB 6
+//#define RBmask0 0x0001F800
+#define NB_RB 12
+#define RBmask0 0x00fc00fc
 #define RBmask1 0x0
 #define RBmask2 0x0
 #define RBmask3 0x0
@@ -151,20 +151,23 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
     input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
    
+
     // process symbols in last_slot
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
-      
-      slot_fep(lte_frame_parms,
-	       lte_ue_common_vars,
-	       l,
-	       last_slot,
-	       (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
-	       1);
-
+	
+      if ((openair_daq_vars.tdd==1) && (last_slot<10)) {
+	slot_fep(lte_frame_parms,
+		 lte_ue_common_vars,
+		 l,
+		 last_slot,
+		 (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
+		 1);
+      }
+	
 #ifdef EMOS
       // first slot in frame is special
       if (((last_slot==0) || (last_slot==1)) && ((l==0) || (l==4-lte_frame_parms->Ncp))) {
-
+	
 	for (eNb_id=0; eNb_id<3; eNb_id++) 
 	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
 	    lte_dl_channel_estimation_emos(emos_dump.channel[eNb_id],
@@ -265,119 +268,123 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
       }
 
       // process DLSCH slots 
-      // slots 4 6 8 10 12 14 18 0
-      if ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
-	if (((last_slot%2)==0) && (l==0)) {
-	  
-	  // process symbols 10,11,12 and trigger DLSCH decoding
-	  for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
-	    rx_dlsch(lte_ue_common_vars,
-		     lte_ue_dlsch_vars[eNb_id],
-		     lte_frame_parms,
-		     eNb_id,
-		     m,
-		     rb_alloc,
-		     mod_order,
-		     mimo_mode);
+      // slots 4 6 8 10 (and 12 14 18 0 if FDD)
+      if (((openair_daq_vars.tdd==1) && (last_slot <= 10) && (last_slot > 2)) || 
+	  (openair_daq_vars.tdd==0)) {
 
-	  // schedule process id 0 if subframe mod 4 = 0
-	  //if ((last_slot > 1) && (last_slot%2 == 0) && (last_slot<19)) {
-	  //if (((last_slot>>1)%10) == 0) {
+	if  ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
 
-	  /*
-	    if ((mac_xface->frame % 100) == 0)
-	      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Scheduling DLSCH decoding\n",mac_xface->frame,last_slot);
+	  if (((last_slot%2)==0) && (l==0)) {
 
-	    if (pthread_mutex_lock (&dlsch_mutex[0]) != 0) {               // Signal MAC_PHY Scheduler
-	      msg("[PHY_PROCEDURES_LTE] ERROR pthread_mutex_lock\n");     // lock before accessing shared resource
-	      return(-1);
-	    }
-	    dlsch_instance_cnt[0]++;
-	    pthread_mutex_unlock (&dlsch_mutex[0]);
+	    // process symbols 10,11,12 and trigger DLSCH decoding
+	    for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
+	      rx_dlsch(lte_ue_common_vars,
+		       lte_ue_dlsch_vars[eNb_id],
+		       lte_frame_parms,
+		       eNb_id,
+		       m,
+		       rb_alloc,
+		       mod_order,
+		       mimo_mode);
+	    
+	    // schedule process id 0 if subframe mod 4 = 0
+	    //if ((last_slot > 1) && (last_slot%2 == 0) && (last_slot<19)) {
+	    if (((last_slot>>1)%10) == 4) {
 
-	    if (dlsch_instance_cnt[0] == 0) {
-	      if (pthread_cond_signal(&dlsch_cond[0]) != 0) {
-		msg("[PHY_PROCEDURES_LTE] ERROR pthread_cond_signal for dlsch_cond[0]\n");
+	      if ((mac_xface->frame % 100) == 0)
+		msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Scheduling DLSCH decoding\n",mac_xface->frame,last_slot);
+	      
+	      if (pthread_mutex_lock (&dlsch_mutex[0]) != 0) {               // Signal MAC_PHY Scheduler
+		msg("[PHY_PROCEDURES_LTE] ERROR pthread_mutex_lock\n");     // lock before accessing shared resource
 		return(-1);
 	      }
-	    }
-	    else {
-	      msg("[PHY_PROCEDURES_LTE] DLSCH thread busy!!!\n");
-	      return(-1);
-	    }
-	  */
-
-	    time_in = openair_get_mbox();
-	    
-	    if (mac_xface->frame < dlsch_errors)
-	      dlsch_errors=0;
-	    
-	    if (dlsch_ue[0]) {
-	      ret = dlsch_decoding(input_buffer_length<<3,
-				   lte_ue_dlsch_vars[eNb_id]->llr[0],		 
-				   lte_frame_parms,
-				   dlsch_ue[0],
-				   0,               //harq_pid
-				   NB_RB);          //NB allocated RBs
-
-	      if (ret == (1+MAX_TURBO_ITERATIONS)) {
-		dlsch_errors++;
+	      dlsch_instance_cnt[0]++;
+	      pthread_mutex_unlock (&dlsch_mutex[0]);
+	      
+	      if (dlsch_instance_cnt[0] == 0) {
+		if (pthread_cond_signal(&dlsch_cond[0]) != 0) {
+		  msg("[PHY_PROCEDURES_LTE] ERROR pthread_cond_signal for dlsch_cond[0]\n");
+		  return(-1);
+		}
 	      }
-	    } 
-    
-	    time_out = openair_get_mbox();
-	    
-	    if ((mac_xface->frame % 100) == 0) {
-	      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",
-		  mac_xface->frame,last_slot,time_in,time_out,ret,dlsch_errors);
-	    }
-	    //}
+	      else {
+		msg("[PHY_PROCEDURES_LTE] DLSCH thread busy!!!\n");
+		return(-1);
+	      }
 
+	      /*
+	      time_in = openair_get_mbox();
+	      
+	      if (mac_xface->frame < dlsch_errors)
+		dlsch_errors=0;
+	      
+	      if (dlsch_ue[0]) {
+		ret = dlsch_decoding(input_buffer_length<<3,
+				     lte_ue_dlsch_vars[eNb_id]->llr[0],
+				     lte_frame_parms,
+				     dlsch_ue[0],
+				     0,               //harq_pid
+				     NB_RB);          //NB allocated RBs
+		
+		if (ret == (1+MAX_TURBO_ITERATIONS)) {
+		  dlsch_errors++;
+		}
+	      } 
+	      
+	      time_out = openair_get_mbox();
+	      
+	      if ((mac_xface->frame % 100) == 0) {
+		msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",
+		    mac_xface->frame,last_slot,time_in,time_out,ret,dlsch_errors);
+	      }
+	      */
+	    }
+	      
+	  }
+	}
+	if ((last_slot > 1)) { // && (last_slot<19)) {
+	  if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
+	    
+	    // process symbols 0,1,2
+	    for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
+	      rx_dlsch(lte_ue_common_vars,
+		       lte_ue_dlsch_vars[eNb_id],
+		       lte_frame_parms,
+		       eNb_id,
+		       m,
+		       rb_alloc,
+		       mod_order,
+		       mimo_mode);
+
+	  if (((last_slot%2)==1) && (l==0)) 
+	    
+	    // process symbols 3,4,5
+	    for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
+	      rx_dlsch(lte_ue_common_vars,
+		       lte_ue_dlsch_vars[eNb_id],
+		       lte_frame_parms,
+		       eNb_id,
+		       m,
+		       rb_alloc,
+		       mod_order,
+		       mimo_mode);
+	  
+	  if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp)))
+	    
+	    // process symbols 6,7,8
+	    for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
+	      rx_dlsch(lte_ue_common_vars,
+		       lte_ue_dlsch_vars[eNb_id],
+		       lte_frame_parms,
+		       eNb_id,
+		       m,
+		       rb_alloc,
+		       mod_order,
+		       mimo_mode);
 	}
       }
-      if ((last_slot > 1)) { // && (last_slot<19)) {
-	if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
-	
-	  // process symbols 0,1,2
-	  for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
-	    rx_dlsch(lte_ue_common_vars,
-		     lte_ue_dlsch_vars[eNb_id],
-		     lte_frame_parms,
-		     eNb_id,
-		     m,
-		     rb_alloc,
-		     mod_order,
-		     mimo_mode);
-	
-	if (((last_slot%2)==1) && (l==0)) 
-
-	  // process symbols 3,4,5
-	  for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
-	    rx_dlsch(lte_ue_common_vars,
-		     lte_ue_dlsch_vars[eNb_id],
-		     lte_frame_parms,
-		     eNb_id,
-		     m,
-		     rb_alloc,
-		     mod_order,
-		     mimo_mode);
-
-	if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp)))
-
-	  // process symbols 6,7,8
-	  for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
-	    rx_dlsch(lte_ue_common_vars,
-		     lte_ue_dlsch_vars[eNb_id],
-		     lte_frame_parms,
-		     eNb_id,
-		     m,
-		     rb_alloc,
-		     mod_order,
-		     mimo_mode);
-      }
-
-
     }
+
 
 #ifdef EMOS
     // collect all the data for EMOS in emos_dump and write to FIFO
@@ -407,90 +414,92 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 #endif //EMOS
   }
 
-  else {
+  else { // we are a CH
 
-    generate_pilots_slot(lte_eNB_common_vars->txdataF,
-			 AMP,
-			 lte_frame_parms,
-			 eNb_id,
-			 next_slot);
+    if (openair_daq_vars.tdd==1 && next_slot <= 10) {
+      generate_pilots_slot(lte_eNB_common_vars->txdataF,
+			   AMP,
+			   lte_frame_parms,
+			   eNb_id,
+			   next_slot);
+      
+      
+      if (next_slot == 0)
+	generate_pss(lte_eNB_common_vars->txdataF,
+		     AMP,
+		     lte_frame_parms,
+		     eNb_id,
+		     1);
 
-
-    if (next_slot == 0)
-      generate_pss(lte_eNB_common_vars->txdataF,
-		   AMP,
-		   lte_frame_parms,
-		   eNb_id,
-		   1);
-
-    else if (next_slot == 1) {
-
+      else if (next_slot == 1) {
+	
 #ifdef DEBUG_PHY
-      if (mac_xface->frame%100 == 0)
-	msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
+	if (mac_xface->frame%100 == 0)
+	  msg("[PHY_PROCEDURES_LTE] Calling generate_pbch for frame %d, slot %d\n",mac_xface->frame, next_slot);
 #endif
       
-      *((unsigned int*) pbch_pdu) = mac_xface->frame;
-      
-      generate_pbch(lte_eNB_common_vars->txdataF,
-		    AMP,
-		    lte_frame_parms,
-		    pbch_pdu);
-    }
-    
-    else if ((next_slot > 1) && (next_slot%2 == 0)) { // && (next_slot<18)) {
-      // fill all other frames with DLSCH
-
-      if (!dlsch_eNb) {
-	msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structures\n");
-	return(-1);
+	*((unsigned int*) pbch_pdu) = mac_xface->frame;
+	
+	generate_pbch(lte_eNB_common_vars->txdataF,
+		      AMP,
+		      lte_frame_parms,
+		      pbch_pdu);
       }
-      for (i=0;i<2;i++) {
-	if (!dlsch_eNb[i]) {
-	  msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structure %d\n",i);
+      
+      else if ((next_slot > 1) && (next_slot%2 == 0)) { // && (next_slot<18)) {
+	// fill all other frames with DLSCH
+
+	if (!dlsch_eNb) {
+	  msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structures\n");
 	  return(-1);
 	}
-	dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
-	dlsch_eNb[i]->layer_index                           = 0;
-	dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
-	dlsch_eNb[i]->harq_processes[0]->active             = 0;
-	dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
-	dlsch_eNb[i]->rvidx                                 = 0;
-      }
+	for (i=0;i<2;i++) {
+	  if (!dlsch_eNb[i]) {
+	    msg("[PHY_PROCEDURES_LTE] Can't get eNb dlsch structure %d\n",i);
+	    return(-1);
+	  }
+	  dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
+	  dlsch_eNb[i]->layer_index                           = 0;
+	  dlsch_eNb[i]->harq_processes[0]->mod_order          = mod_order[i];
+	  dlsch_eNb[i]->harq_processes[0]->active             = 0;
+	  dlsch_eNb[i]->harq_processes[0]->Nl                 = 1;
+	  dlsch_eNb[i]->rvidx                                 = 0;
+	}
 
-      nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
-      coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
-      input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
-
-      for (i=0;i<input_buffer_length;i++)
-	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
-
-      dlsch_encoding(dlsch_input_buffer,
-		     (input_buffer_length<<3),
-		     lte_frame_parms,
-		     dlsch_eNb[0],
-		     0,               // harq_pid
-		     NB_RB); // number of allocated RB
-
-      dlsch_modulation(lte_eNB_common_vars->txdataF,
-		       AMP,
-		       next_slot/2,
+	nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
+	coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
+	input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
+	
+	for (i=0;i<input_buffer_length;i++)
+	  dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+	
+	dlsch_encoding(dlsch_input_buffer,
+		       (input_buffer_length<<3),
 		       lte_frame_parms,
 		       dlsch_eNb[0],
 		       0,               // harq_pid
-		       rb_alloc); // RB allocation vector
+		       NB_RB); // number of allocated RB
+	
+	dlsch_modulation(lte_eNB_common_vars->txdataF,
+			 AMP,
+			 next_slot/2,
+			 lte_frame_parms,
+			 dlsch_eNb[0],
+			 0,               // harq_pid
+			 rb_alloc); // RB allocation vector
 
 
 #ifdef DEBUG_PHY
-      if (mac_xface->frame%1000 == 0) {
-	msg("[PHY_PROCEDURES_LTE] Calling generate_dlsch for frame %d, slot %d\n",mac_xface->frame, next_slot);
-	for (i=0;i<300;i++)
-	  msg("lte_eNB_common_vars->txdataF[0][%d] = %d\n",i+300*12,lte_eNB_common_vars->txdataF[0][i+300*14]);
-	for (i=0;i<100;i++)
-	  msg("dlsch_input_buffer[[%d] = %d\n",i,dlsch_input_buffer[i]);
-      }
+	if (mac_xface->frame%1000 == 0) {
+	  msg("[PHY_PROCEDURES_LTE] Calling generate_dlsch for frame %d, slot %d\n",mac_xface->frame, next_slot);
+	  for (i=0;i<300;i++)
+	    msg("lte_eNB_common_vars->txdataF[0][%d] = %d\n",i+300*12,lte_eNB_common_vars->txdataF[0][i+300*14]);
+	  for (i=0;i<100;i++)
+	    msg("dlsch_input_buffer[[%d] = %d\n",i,dlsch_input_buffer[i]);
+	}
 #endif
-
+	
+      }
     }
   }
   

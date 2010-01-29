@@ -94,7 +94,7 @@ void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain01,u
   // Concatenate the 4 gain values into one 32-bit register (flip byte endian)
 
   rxgain = rxgain00 | (rxgain01 << 8) | (rxgain10 << 16) | (rxgain11 << 24);
-  //  printk("[openair][RF_CNTL**] Setting RX gains to %d,%d,%d,%d -> %x\n",rxgain00,rxgain01,rxgain10,rxgain11,rxgain);
+  printk("[openair][RF_CNTL] Setting RX gains to %d,%d,%d,%d -> %x\n",rxgain00,rxgain01,rxgain10,rxgain11,rxgain);
 
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
   openair_daq_vars.rx_gain_val  = rxgain;
@@ -104,27 +104,21 @@ void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain01,u
 #endif
 }
 
-/*
 void openair_set_rx_gain_cal_openair(unsigned int gain_dB) {
 
 #ifndef NOCARD_TEST
 
   printk("[openair][RF_CNTL] Setting RX gains to %d dB \n",gain_dB);
-
-
-
   
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
-  if (pci_interface) {
-		pci_interface->rx_gain_cval  = gain_dB;
-  }
+  if (pci_interface) 
+    pci_interface->rx_gain_cval  = gain_dB;
   else
     printk("[openair][RF_CNTL] rxgainreg not configured\n");
 
-
 #endif
 }
-*/
+
 void openair_set_lo_freq_openair(char freq0,char freq1) {
 #ifndef NOCARD_TEST
   printk("[openair][RF_CNTL] Setting LO frequencies to %d,%d\n",freq0,freq1);

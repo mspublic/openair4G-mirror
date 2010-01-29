@@ -8,7 +8,7 @@ XTRA_CFLAGS = -msse -msse2 -mssse3
 
 OPENAIROBJS = $(OPENAIR1_DIR)/PHY/CONFIG/openair_readconfigfile.o $(OPENAIR1_DIR)/PHY/CONFIG/openair_configure.o $(OPENAIR1_DIR)/PHY/TOOLS/8bit_txmux.o
 
-OCTAVEOBJS = oarf_send_frame.oct oarf_set_tcxo_dac.oct oarf_config.oct oarf_set_calibrated_rx_gain.oct oarf_set_tx_gain.oct oarf_get_frame.oct oarf_set_rx_gain.oct  oarf_set_rx_rfmode.oct
+OCTAVEOBJS = oarf_send_frame.oct oarf_set_tcxo_dac.oct oarf_config.oct oarf_set_calibrated_rx_gain.oct oarf_set_tx_gain.oct oarf_get_frame.oct oarf_set_rx_gain.oct  oarf_set_rx_rfmode.oct oarf_stop.oct
 # oarf_get_rtframe.oct
 
 all: $(OCTAVEOBJS) gpib_send.oct 

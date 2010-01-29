@@ -23,10 +23,10 @@ primary_synch2_mod = zeros(1,72*2);
 primary_synch2_mod(1:2:end) = floor(32767*real(primary_synch2));
 primary_synch2_mod(2:2:end) = floor(32767*imag(primary_synch2));
 
-%primary_synch0_mod2 = zeros(1,128);
-%primary_synch0_mod2((128-30):128)=primary_synch0(1:31);
-%primary_synch0_mod2(1:32)=primary_synch0(32:end);
-%primary_synch0_time = ifft(primary_synch0_mod2)*sqrt(128);
+primary_synch0_mod2 = zeros(1,128);
+primary_synch0_mod2((128-35):128)=primary_synch0(1:36);
+primary_synch0_mod2(2:37)=primary_synch0(37:end);
+primary_synch0_time = ifft(primary_synch0_mod2)*sqrt(128);
 %primary_synch0_time2 = zeros(1,128*2);
 %primary_synch0_time2(1:2:end) = floor(32767*real(primary_synch0_time));
 %primary_synch0_time2(2:2:end) = floor(32767*imag(primary_synch0_time));

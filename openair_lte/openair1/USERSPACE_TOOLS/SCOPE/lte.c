@@ -24,6 +24,7 @@
 #ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/COMMON/defs.h"
 #endif
 #ifdef PLATON
 #include "daq.h"
@@ -63,8 +64,10 @@ void lte_scope_idle_callback(void) {
     sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
     time2[FRAME_LENGTH_COMPLEX_SAMPLES],
     I[25*12*12], Q[25*12*12],
-    //llr[384];
-    llr[25*12*4*7];
+    //llr[8*(3*8*6144+12)],
+    //llr_time[8*(3*8*6144+12)];
+    llr[25*12*4*7],
+    llr_time[25*12*4*7];
 
   /*
     mag_h[NB_ANTENNAS_RX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*8],
@@ -95,10 +98,10 @@ void lte_scope_idle_callback(void) {
 
   cum_avg = 0;
   ind = 0;
-  for (k=0;k<1;k++){
-    for (j=0;j<1;j++) {
+  for (k=0;k<2;k++){
+    for (j=0;j<2;j++) {
       
-      for (i=0;i<PHY_config->lte_frame_parms.symbols_per_tti*PHY_config->lte_frame_parms.ofdm_symbol_size;i++){
+      for (i=0;i<PHY_config->lte_frame_parms.ofdm_symbol_size;i++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_f[k+2*j][2*i]);
 	Im = (float)(channel_f[k+2*j][2*i+1]);
@@ -127,7 +130,6 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
   */
 
-  /*
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -147,22 +149,20 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-  */
-
 
   // channel_t_im = rx_sig
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
     sig2[i] = (float) (rx_sig[0][2*i]);
     time2[i] = (float) i;
   }
 
   //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
-  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
 
   j=0;
   for(i=0;i<384;i++) {
     llr[j] = (float) pbch_llr[i];
-    time2[j] = (float) j;
+    llr_time[j] = (float) j;
     if (i==63)
       i=127;
     else if (i==191)
@@ -170,30 +170,32 @@ void lte_scope_idle_callback(void) {
     j++;
   }
 
-  fl_set_xyplot_data(form->decoder_input,time2,llr,192,"","","");
+  fl_set_xyplot_data(form->decoder_input,llr_time,llr,192,"","","");
   fl_set_xyplot_ybounds(form->decoder_input,-50,50);
 
   j=0;
-  for(i=0;i<6*12*4;i++) {
+  for(i=0;i<12*12;i++) {
     I[j] = pbch_comp[2*i];
     Q[j] = pbch_comp[2*i+1];
     j++;
+    /*
     if (i==47)
       i=96;
     else if (i==191)
       i=239;
+    */
   }
 
-  fl_set_xyplot_data(form->scatter_plot,I,Q,3*12*4,"","","");
+  fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
   fl_set_xyplot_xbounds(form->scatter_plot,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot,-50,50);
 
-  for(i=0;i<12*12*2*7;i++) {
+  for(i=0;i<12*12*7*2;i++) {
     llr[i] = (float) dlsch_llr[i];
-    time2[i] = (float) i;
+    llr_time[i] = (float) i;
   }
 
-  fl_set_xyplot_data(form->demod_out,time2,llr,12*12*2*7,"","","");
+  fl_set_xyplot_data(form->demod_out,llr_time,llr,12*12*7*2,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
   fl_set_xyplot_ybounds(form->demod_out,-50,50);
 
@@ -216,7 +218,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
 
-  usleep(1000);
+  usleep(100000);
 }
 //-----------------------------------------------------------------------------
 do_scope(){
@@ -293,7 +295,7 @@ int main(int argc, char *argv[]) {
   printf("(TX, RX) ANTENNAS = %d, %d\n",nb_ant_tx,nb_ant_rx);
   
   mem_base = (unsigned int) mmap(0,
-				 2048*4096,
+				 BIGPHYS_NUMPAGES*4096,
 				 PROT_READ,
 				 MAP_PRIVATE,
 				 openair_fd,

@@ -8,9 +8,9 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=0;            % frequency band used by the openair card
+freqband=3;            % frequency band used by the openair card
 
-fc = 1902600e3;   % this has to be the same as in the config file
+fc = 1917600e3;   % this has to be the same as in the config file
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;
@@ -65,10 +65,14 @@ for power_dBm=ALL_power_dBm
     idx_gain2391 = 1; 
     for gain2391= [0 0 0 ALL_gain2391] %the first 3 runs give strange results, so we run the loop 3 times more
  
-       gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); %  activate output 
-
        oarf_set_rx_gain(gain2391,gain2391,gain9862,gain9862);
-       sleep(2);
+       oarf_stop(freqband); %this actually writes the gain to the registers
+       sleep(1);
+
+       if 1
+       % signal measurement
+       gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); %  activate output 
+       sleep(.1);
 
        nacq=0;   % count the number of tries to get data
        do 
@@ -81,13 +85,15 @@ for power_dBm=ALL_power_dBm
        SpN0(idx_power,idx_gain2391) = mean(abs(s2(:,1)).^2) - abs(mean(s2(:,1))).^2;
        SpN1(idx_power,idx_gain2391) = mean(abs(s2(:,2)).^2) - abs(mean(s2(:,2))).^2;
 
-       %keyboard;
-       gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  deactivate output 
-
        figure(1);
        hold off
-       plot(20*log10(abs(fft(s2(:,2)))))
+       plot(20*log10(abs(fft(s2(:,1)))),'r',20*log10(abs(fft(s2(:,2)))),'b')
+       title("Signal");
  
+       % noise measurement
+       gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF'); %  deactivate output 
+       sleep(.1);
+
        nacq=0;   % count the number of tries to get data
        do 
           s=oarf_get_frame(freqband);   %oarf_get_frame
@@ -99,6 +105,17 @@ for power_dBm=ALL_power_dBm
        N0(idx_power,idx_gain2391) = mean(abs(s2(:,1)).^2) - abs(mean(s2(:,1))).^2;
        N1(idx_power,idx_gain2391) = mean(abs(s2(:,2)).^2) - abs(mean(s2(:,2))).^2;
 
+       figure(2);
+       hold off
+       plot(20*log10(abs(fft(s2(:,1)))),'r',20*log10(abs(fft(s2(:,2)))),'b')
+       title("Noise");
+
+       % do some plausibility checks
+       % if ((N0(idx_power,idx_gain2391) > SpN0(idx_power,idx_gain2391)) ||
+       %   (N1(idx_power,idx_gain2391) > SpN1(idx_power,idx_gain2391)))
+       %  error("something is wrong");
+       % end
+
        S0(idx_power,idx_gain2391) = 10*log10(SpN0(idx_power,idx_gain2391)-N0(idx_power,idx_gain2391));
        S1(idx_power,idx_gain2391) = 10*log10(SpN1(idx_power,idx_gain2391)-N1(idx_power,idx_gain2391));
        G0(idx_power,idx_gain2391) = S0(idx_power,idx_gain2391) - power_dBm;
@@ -107,6 +124,7 @@ for power_dBm=ALL_power_dBm
        NF1(idx_power,idx_gain2391) = 10*log10(N1(idx_power,idx_gain2391)) - G1(idx_power,idx_gain2391) + 108;
        SNR0(idx_power,idx_gain2391) = S0(idx_power,idx_gain2391)-10*log10(N0(idx_power,idx_gain2391));
        SNR1(idx_power,idx_gain2391) = S1(idx_power,idx_gain2391)-10*log10(N1(idx_power,idx_gain2391));
+
        printf(' %d %d : Signal strength (%f,%f), Gain (%f %f), N (%f %f) SNR (%f %f) NF (%f %f)\n',
 	      gain2391,gain9862, S0(idx_power,idx_gain2391),S1(idx_power,idx_gain2391),
 	      G0(idx_power,idx_gain2391),G1(idx_power,idx_gain2391),
@@ -117,9 +135,6 @@ for power_dBm=ALL_power_dBm
        %fprintf(fid,'%d, %d, %d, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',
 	%      power_dBm,gain2391,gain9862, S0,S1,G0,G1,10*log10(N0),10*log10(N1),SNR0,SNR1,NF0,NF1); 
  
-       figure(2);
-       hold off
-       plot(20*log10(abs(fft(s2(:,2)))))
 
        if (gain2391 > 0)
 	 idx_gain2391 = idx_gain2391 + 1;
@@ -140,6 +155,7 @@ for power_dBm=ALL_power_dBm
        plot(ALL_gain2391,NF1,'b')
        legend('Rx0','Rx1');
        title('Noise Figure')
+       end
 
      end
    end

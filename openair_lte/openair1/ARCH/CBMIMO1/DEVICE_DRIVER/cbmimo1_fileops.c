@@ -92,9 +92,9 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 
   /* if userspace tries to mmap beyond end of our buffer, fail */ 
 
-  if (size>4096*PAGE_SIZE) {
+  if (size>BIGPHYS_NUMPAGES*PAGE_SIZE) {
     printk("[openair][MMAP][ERROR] Trying to map more than %d bytes (%d)\n",
-	   (unsigned int)(4096*PAGE_SIZE),
+	   (unsigned int)(BIGPHYS_NUMPAGES*PAGE_SIZE),
 	   (unsigned int)size);
     return -EINVAL;
   }
@@ -388,7 +388,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
        mac_xface->macphy_init();
 
       openair_daq_vars.node_id = PRIMARY_CH;
-      openair_daq_vars.dual_tx = 1;
+      //openair_daq_vars.dual_tx = 1;
 
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
@@ -515,7 +515,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       mac_xface->macphy_init(); ///////H.A
 
       openair_daq_vars.node_id = NODE;
-      openair_daq_vars.dual_tx = 0;
+      //openair_daq_vars.dual_tx = 0;
 
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
@@ -750,7 +750,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
-    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME;
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
 
     openair_daq_vars.tx_test=1;
     ret = setup_regs();
@@ -758,8 +758,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
     openair_generate_fs4(0);//*((unsigned char *)arg));
 
-    //    for (i=0;i<256;i++)
-    //      printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
+    for (i=0;i<256;i++)
+      printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
     
     openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
     break;

@@ -171,7 +171,7 @@ endif
 
 openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/bigphys.o
 openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/reserve_mem.o
-openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/amp.o
+#openair_rf-objs += $(TOP_DIR)/ARCH/COMMON/amp.o
 
 ifndef OPENAIR_LTE
 openair_rf-objs += $(TOP_DIR)/SCHED/sched.o
