@@ -1,3 +1,8 @@
+/* file: dci.h
+   purpose: typedefs for LTE DCI structures from 36-212, V8.6 2009-03.  Limited to 5 MHz formats for the moment.
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
+*/
 ///  DCI Format Type 0 (5 MHz,TDD0, 25 bits)
 typedef struct {
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 

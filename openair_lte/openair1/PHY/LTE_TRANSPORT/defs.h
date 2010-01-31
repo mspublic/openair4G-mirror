@@ -801,11 +801,15 @@ This routine codes an arbitrary DCI PDU after appending the 8-bit 3GPP CRC.  It 
 \param A Length of DCI PDU in bits
 \param E Length of DCI PDU in coded bits
 \param e Pointer to sequence
+\param rnti RNTI for CRC scrambling
 */ 
 void dci_encoding(unsigned char *a,
 		  unsigned char A,
 		  unsigned short E,
-		  unsigned char *e);
+		  unsigned char *e,
+		  unsigned short rnti);
+
+unsigned short extract_crc(unsigned char *dci,unsigned char DCI_LENGTH);
 
 void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char DCI_FMT,
