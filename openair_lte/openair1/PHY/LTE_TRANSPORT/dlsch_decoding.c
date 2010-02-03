@@ -2,7 +2,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-#define DEBUG_DLSCH_DECODING
+//#define DEBUG_DLSCH_DECODING
 void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
 
   int i,r;
@@ -191,14 +191,14 @@ unsigned int  dlsch_decoding(unsigned short A,
     else 
       crc_type = CRC24_B;
 
-        
+    /*        
     printf("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
 	  (dlsch->harq_processes[harq_pid]->d[r][96+i] < -8))
 	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     printf("\n");
-    
+    */
     
     ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
 					dlsch->harq_processes[harq_pid]->c[r],

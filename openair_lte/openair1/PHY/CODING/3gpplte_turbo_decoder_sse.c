@@ -745,7 +745,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
-      //      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:
