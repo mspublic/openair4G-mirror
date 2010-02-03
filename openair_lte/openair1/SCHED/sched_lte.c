@@ -1,4 +1,4 @@
-
+ 
 /*
  // \author R. Knopp
  // \date 02.06.2004   (initial WIDENS version)
@@ -765,7 +765,7 @@ static void * top_level_scheduler(void *param) {
   msg("[openair][SCHED][top_level_thread] Exiting top_level_scheduler ... \n");
 
   return(0);
-    }
+}
 
 #ifdef NOCARD_TEST
 int rx_sig_fifo_handler(unsigned int fifo, int rw) {
@@ -907,7 +907,8 @@ int openair_sched_init(void) {
   printk("[openair][SCHED][INIT] Created rx_sig_fifo handler, error_code %d\n",error_code);
 #endif //NOCARD_TEST
 
-  if (mac_xface->is_cluster_head == 0)
+  //if (mac_xface->is_cluster_head == 0) 
+  //FK mac_xface->is_cluster_head not initialized at this stage
     error_code = init_dlsch_threads();
 
   return(error_code);
@@ -938,7 +939,10 @@ void openair_sched_cleanup() {
   printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
-  cleanup_dlsch_threads();
+  //if (mac_xface->is_cluster_head == 0)
+  //FK: mac_xface->is_cluster_head not initialized at this stage
+    cleanup_dlsch_threads();
+
   printk("[openair][SCHED][CLEANUP] Done!\n");
 }
 

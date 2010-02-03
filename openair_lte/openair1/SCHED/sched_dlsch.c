@@ -80,14 +80,14 @@ static void * dlsch_thread(void *param) {
   int time_in,time_out;
   unsigned int dlsch_errs=0;
 
-  msg("[openair][SCHED][dlsch_thread] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
+  msg("[openair][SCHED][DLSCH] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
       harq_pid,
       (unsigned int)pthread_self(),
       pthread_self()->uses_fpu,
       cpuid);
 
   if ((harq_pid <0) || (harq_pid>7)) {
-    msg("[openair][SCHED][dlsch_thread] Illegal harq_pid %d!!!!\n",harq_pid);
+    msg("[openair][SCHED][DLSCH] Illegal harq_pid %d!!!!\n",harq_pid);
     return;
   }
 
@@ -111,7 +111,7 @@ static void * dlsch_thread(void *param) {
 
 #ifdef DEBUG_PHY
     if ((mac_xface->frame % 100) == 0)
-      msg("Frame %d: Calling dlsch_decoding (%d,%d,%p) from cpu %d\n",mac_xface->frame,coded_bits_per_codeword,input_buffer_length,dlsch_ue[harq_pid],rtai_cpuid());
+      msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding (%d,%d,%p) from cpu %d\n",mac_xface->frame,coded_bits_per_codeword,input_buffer_length,dlsch_ue[harq_pid],rtai_cpuid());
 #endif
 
     time_in = openair_get_mbox();
@@ -119,26 +119,27 @@ static void * dlsch_thread(void *param) {
     if (mac_xface->frame < dlsch_errs)
       dlsch_errs=0;
 
-    if (dlsch_ue[harq_pid]) {
-      ret = dlsch_decoding(input_buffer_length<<3,
-			   lte_ue_dlsch_vars[0]->llr[0],		 
-			   lte_frame_parms,
-			   dlsch_ue[harq_pid],
-			   harq_pid,               //harq_pid
-			   12);
+    if (dlsch_ue) 
+      if (dlsch_ue[harq_pid]) {
+	ret = dlsch_decoding(input_buffer_length<<3,
+			     lte_ue_dlsch_vars[0]->llr[0],		 
+			     lte_frame_parms,
+			     dlsch_ue[harq_pid],
+			     harq_pid,               //harq_pid
+			     12);
       
     
 	//NB allocated RBs
-      time_out = openair_get_mbox();
-      if (ret == (1+MAX_TURBO_ITERATIONS)) {
-	dlsch_errs++;
+	time_out = openair_get_mbox();
+	if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	  dlsch_errs++;
+	}
+	
+	if ((mac_xface->frame % 100) == 0)
+	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errs);
       }
-    
-      if ((mac_xface->frame % 100) == 0)
-	msg("Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errs);
-    }
   }
-  msg("DLSCH thread %d exiting\n",harq_pid);
+  msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);
   dlsch_instance_cnt[harq_pid] = 99;
 }
 
@@ -168,18 +169,18 @@ int init_dlsch_threads() {
 #endif
 
   dlsch_instance_cnt[harq_pid] = -1;
-  printk("[SCHED][DLSCH][INIT] Allocating DLSCH thread for harq_pid %d\n",harq_pid);
+  printk("[openair][SCHED][DLSCH][INIT] Allocating DLSCH thread for harq_pid %d\n",harq_pid);
   error_code = pthread_create(&dlsch_threads[harq_pid],
   			      &attr_dlsch_threads,
   			      dlsch_thread,
   			      (void *)&harq_pid);
 
   if (error_code!= 0) {
-    printk("[SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",harq_pid,error_code);
+    printk("[openair][SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",harq_pid,error_code);
     return(error_code);
   }
   else {
-    printk("[SCHED][OPENAIR_THREAD][INIT] Allocate dlsch_thread %d successful\n",harq_pid);
+    printk("[openair][SCHED][DLSCH][INIT] Allocate dlsch_thread %d successful\n",harq_pid);
     return(0);
   }
    
@@ -192,15 +193,15 @@ void cleanup_dlsch_threads() {
   // later loop on all harq_pid's
 
   //  pthread_exit(&dlsch_threads[harq_pid]);
-  printk("[SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",harq_pid);
+  printk("[openair][SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",harq_pid);
 
   dlsch_instance_cnt[harq_pid] = 0;
   if (pthread_cond_signal(&dlsch_cond[harq_pid]) != 0)
-    msg("[DLSCH][SCHED] ERROR pthread_cond_signal\n");
+    msg("[openair][SCHED][DLSCH] ERROR pthread_cond_signal\n");
   else
-    msg("[DLSCH][SCHED] Signalled dlsch_thread %d to exit\n",harq_pid);
+    msg("[openair][SCHED][DLSCH] Signalled dlsch_thread %d to exit\n",harq_pid);
     
-  printk("[SCHEd][DLSCH] Exiting ...\n");
+  printk("[openair][SCHED][DLSCH] Exiting ...\n");
   pthread_cond_destroy(&dlsch_cond[harq_pid]);
   pthread_mutex_destroy(&dlsch_mutex[harq_pid]);
 }

@@ -155,7 +155,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     // process symbols in last_slot
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	
-      if ((openair_daq_vars.tdd==1) && (last_slot<10)) {
+      if (((openair_daq_vars.tdd==1) && (last_slot<10)) || (openair_daq_vars.tdd == 0)) {
 	slot_fep(lte_frame_parms,
 		 lte_ue_common_vars,
 		 l,
@@ -416,7 +416,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
   else { // we are a CH
 
-    if (openair_daq_vars.tdd==1 && next_slot <= 10) {
+    if (((openair_daq_vars.tdd==1) && (next_slot <= 10)) || (openair_daq_vars.tdd==0)) {
       generate_pilots_slot(lte_eNB_common_vars->txdataF,
 			   AMP,
 			   lte_frame_parms,
