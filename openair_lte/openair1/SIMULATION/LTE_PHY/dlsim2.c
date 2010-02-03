@@ -15,7 +15,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 1000
+#define N_TRIALS 100
 
 int main(int argc, char **argv) {
 
@@ -301,8 +301,8 @@ int main(int argc, char **argv) {
   fclose(rx_frame_file);
   */
 
-  //sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
-  sync_pos = 3328;
+  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  //sync_pos = 3328;
 
   
   // the sync is in the last symbol of either the 0th or 10th slot
