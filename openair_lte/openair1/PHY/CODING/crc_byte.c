@@ -1,9 +1,9 @@
 /* file: crc_byte.c
-   purpose: generate 3GPP LTE CRC. Byte-oriented implementation of CRC's
+   purpose: generate 3GPP LTE CRCs. Byte-oriented implementation of CRC's
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009 
 
-   Original version by
+   Original UMTS version by
    P. Humblet
    May 10, 2001
    Modified in June, 2001, to include  the length non multiple of 8

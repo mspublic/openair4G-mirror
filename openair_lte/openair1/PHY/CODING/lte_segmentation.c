@@ -1,3 +1,8 @@
+/* file: lte_segmentation.c
+   purpose: Procedures for transport block segmentation for LTE (turbo-coded transport channels) 
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
+*/
 #include "PHY/defs.h"
 
 //#define DEBUG_SEGMENTATION

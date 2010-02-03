@@ -1,8 +1,8 @@
-/*
-* @ingroup _PHY_CODING_BLOCKS_
-* @{
+/* file: ccoding_byte.c
+   purpose: Encoding routines for implementing 802.11 convolutionally-coded waveforms 
+   author: raymond.knopp@eurecom.fr, based on similar code for 3GPP convolutional code (UMTS) by P. Humblet (2000)
+   date: 10.2004 
 */
-
 #include "defs.h"
 
 

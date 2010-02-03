@@ -1,5 +1,5 @@
 /* file: 3gpplte_turbo_decoder_sse.c
-   purpose: Routines for implementing decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
+   purpose: Routines for implementing max-logmap decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009 
 
@@ -45,6 +45,7 @@ typedef short channel_t;
 
 #define FRAME_LENGTH_MAX 6144
 #define STATES 8
+
 
 void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F);
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);

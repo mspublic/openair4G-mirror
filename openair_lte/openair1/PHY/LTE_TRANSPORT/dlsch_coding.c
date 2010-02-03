@@ -22,7 +22,7 @@
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
 
-void free_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch) {
+void free_DL_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch) {
   int i;
   int r;
 
@@ -65,7 +65,7 @@ void free_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch) {
   
 }
 
-LTE_DL_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
   LTE_DL_eNb_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
@@ -105,7 +105,7 @@ LTE_DL_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     }
   }
   msg("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_DL_eNb_DLSCH_t));
-  free_eNb_dlsch(dlsch);
+  free_DL_eNb_dlsch(dlsch);
   return(NULL);
   
   

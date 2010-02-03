@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 
 //#define DEBUG_DLSCH_DECODING
-void free_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
+void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
 
   int i,r;
 
@@ -26,7 +26,7 @@ void free_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
   }
 }
 
-LTE_DL_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
   LTE_DL_UE_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r;
@@ -59,7 +59,7 @@ LTE_DL_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       return(dlsch);
   }
   msg("new_ue_dlsch: exit_flag = %d\n",exit_flag);
-  free_ue_dlsch(dlsch);
+  free_DL_ue_dlsch(dlsch);
 
   return(NULL);
 }

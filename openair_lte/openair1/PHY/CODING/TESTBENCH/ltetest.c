@@ -62,7 +62,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);//allocation
   printf("Done lte_param_init\n");
 }
-
+/*
 void print_shorts(char *s,__m128i *x) {
 
   short *tempb = (short *)x;
@@ -72,6 +72,7 @@ void print_shorts(char *s,__m128i *x) {
          );
 
 }
+*/
 
 // 4-bit quantizer
 char quantize4bit(double D,double x) {
@@ -165,8 +166,8 @@ int test_viterbi(double sigma,
 
 }
 
-int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
-		 LTE_UE_DLSCH_t *dlsch_ue,
+int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
+		 LTE_DL_UE_DLSCH_t *dlsch_ue,
 		 unsigned int coded_bits,
 		 unsigned char NB_RB,
 		 double sigma,
@@ -548,8 +549,8 @@ int main(int argc, char *argv[]) {
   char done2=0;
 
   unsigned short iind;
-  LTE_eNb_DLSCH_t *dlsch_eNb = new_eNb_dlsch(1,4);
-  LTE_UE_DLSCH_t *dlsch_ue = new_ue_dlsch(1,4);
+  LTE_DL_eNb_DLSCH_t *dlsch_eNb = new_eNb_dlsch(1,4);
+  LTE_DL_UE_DLSCH_t *dlsch_ue = new_ue_dlsch(1,4);
   unsigned int coded_bits;
   unsigned char NB_RB=25;
   unsigned char mod_order[2];

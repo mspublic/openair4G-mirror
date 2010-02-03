@@ -7,6 +7,7 @@
 #ifndef __LTE_TRANSPORT_DEFS__H__
 #define __LTE_TRANSPORT_DEFS__H__
 #include "PHY/defs.h"
+#include "dci.h"
 
 #define MOD_TABLE_QPSK_OFFSET 1
 #define MOD_TABLE_16QAM_OFFSET 5
@@ -234,13 +235,25 @@ typedef struct {
 } LTE_DL_UE_DLSCH_t;
 
 
-void free_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch);
+typedef struct {
+  /// Length of DCI in bits
+  unsigned char dci_length;
+  /// Aggregation level 
+  unsigned char L;
+  /// rnti
+  unsigned short rnti;
+  /// DCI pdu
+  unsigned char dci_pdu[1+(MAX_DCI_SIZE_BITS/8)];
+} DCI_ALLOC_t;
+
+
+void free_DL_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch);
 
 LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
-void free_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch);
+void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch);
 
-LTE_DL_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
 
 

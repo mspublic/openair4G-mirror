@@ -1,6 +1,9 @@
-/*!\brief Optimized Viterbi Decoding*/
-///
-///
+/* file: viterbi.c
+   purpose: SIMD Optimized 802.11/802.16 Viterbi Decoder
+   author: raymond.knopp@eurecom.fr
+   date: 10.2004 
+*/
+
 
 #ifndef EXPRESSMIMO_TARGET
 #include "emmintrin.h"

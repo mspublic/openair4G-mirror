@@ -69,12 +69,12 @@ void dci_encoding(unsigned char *a,
 }
 
 
-unsigned char *generate_dci(unsigned char *dci,
-			    unsigned char *e,
-			    unsigned char DCI_LENGTH,
-			    unsigned char aggregation_level,
-			    unsigned short rnti) {
-
+unsigned char *generate_dci0(unsigned char *dci,
+			     unsigned char *e,
+			     unsigned char DCI_LENGTH,
+			     unsigned char aggregation_level,
+			     unsigned short rnti) {
+  
   unsigned short coded_bits;
 
   if (aggregation_level>3) {
@@ -87,6 +87,152 @@ unsigned char *generate_dci(unsigned char *dci,
   dci_encoding(dci,DCI_LENGTH,coded_bits,e,rnti);
 
   return(e+coded_bits);
+}
+
+unsigned int Y;
+
+#define DCI_BITS (2*576)
+void generate_dci_top(unsigned char num_ue_spec_dci,
+		      unsigned char num_common_dci,
+		      DCI_ALLOC_t *dci_alloc, 
+		      unsigned int subframe, 
+		      unsigned int n_rnti,
+		      short amp,
+		      LTE_DL_FRAME_PARMS *frame_parms) {
+
+  unsigned char e[DCI_BITS], *e_ptr, i;
+
+#ifndef IFFT_FPGA 
+  short d[2][DCI_BITS];
+#else
+  modsym_t d[2][DCI_BITS>>1];
+  unsigned char qpsk_table_offset = 0; 
+  unsigned char qpsk_table_offset2 = 0;
+#endif
+  e_ptr = e;
+
+  // generate common DCIs first
+  i=0;
+  for (i=0;i<num_common_dci;i++) {
+
+    e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
+			  e_ptr,
+			  dci_alloc[i].dci_length,
+			  dci_alloc[i].L,
+			  dci_alloc[i].rnti);    
+  }
+
+  for (;i<num_ue_spec_dci + num_common_dci;i++) {
+
+    e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
+			  e_ptr,
+			  dci_alloc[i].dci_length,
+			  dci_alloc[i].L,
+			  dci_alloc[i].rnti);        
+  }
+
+  // Scrambling
+  // not yet
+
+  // Now do modulation
+  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  e_ptr = e;
+  switch (frame_parms->nb_antennas_tx) {
+
+  case 1:
+#ifndef IFFT_FPGA
+    for (i=0;i<DCI_BITS;i++) {
+      d[0][i] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      e_ptr++;
+    }
+#else
+    for (i=0;i<DCI_BITS>>1;i++) {
+      qpsk_table_offset = 1;
+      if (*e_ptr == 1)
+	qpsk_table_offset+=1;
+      *e_ptr++;
+      if (*e_ptr == 1) 
+	qpsk_table_offset+=2;
+      *e_ptr++;
+      
+      d[0][i] = (mod_sym_t) qpsk_table_offset;
+    }
+
+#endif
+    
+    break;
+
+  case 2:
+#ifndef IFFT_FPGA
+      for (i=0;i<DCI_BITS;i+=4) {
+
+	// first antenna position n -> x0
+	d[0][i] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+	e_ptr++;
+	d[0][i+1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+	e_ptr++;
+
+	// second antenna position n -> -x1*
+	d[1][i] = (*e_ptr == 0) ? gain_lin_QPSK : -gain_lin_QPSK;
+	e_ptr++;
+	d[1][i+1] = (*e_ptr == 0) ? -gain_lin_QPSK : -gain_lin_QPSK;
+	e_ptr++;
+
+	// fill in the rest of the ALAMOUTI precoding
+	d[0][i+2] = -d[1][i];
+	d[0][i+3] = d[1][i+1];
+	d[1][i+2] = d[0][i];
+	d[1][i+3] = -d[0][i+1];
+
+      }
+#else  
+      for (i=0;i<DCI_BITS>>1;i+=2) {
+	qpsk_table_offset = 1;  //x0
+	qpsk_table_offset2 = 1;  //x0*
+	
+	if (*e_ptr == 1) { //real
+	  qpsk_table_offset+=1;
+	  qpsk_table_offset2+=1;
+	}
+	*e_ptr++;
+	
+	if (*e_ptr == 1) //imag
+	  qpsk_table_offset+=2;
+	else
+	  qpsk_table_offset2+=2;
+	*e_ptr++;
+	
+	d[0][i]   = (mod_sym_t) qpsk_table_offset;      // x0
+	d[1][i+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
+	
+	
+	qpsk_table_offset = 1; //-x1*
+	qpsk_table_offset2 = 1; //x1
+	
+	if (*e_ptr == 1)    // flipping bit for real part of symbol means taking -x1*
+	  qpsk_table_offset2+=1;
+	else
+	  qpsk_table_offset+=1;
+	*e_ptr++;
+	
+	if (*e_ptr == 1) {
+	  qpsk_table_offset+=2;
+	  qpsk_table_offset2+=2;
+	}
+	*e_ptr++;
+	
+	d[1][i] = (mod_sym_t) qpsk_table_offset;     // -x1*
+	d[0][i+1] = (mod_sym_t) qpsk_table_offset2;  // x1
+      }
+#endif    
+      break;
+  default:
+    msg("dci.c: generate_dci_top(), unsupported number of antennas %d\n",frame_parms->nb_antennas_tx);
+    exit(-1);
+    break;
+
+  }
+  
 }
  
 void dci_decoding(unsigned char DCI_LENGTH,

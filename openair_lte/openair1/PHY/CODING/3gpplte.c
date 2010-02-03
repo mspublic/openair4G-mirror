@@ -1,3 +1,8 @@
+/* file: 3gpplte.c
+   purpose: Encoding routines for implementing Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
+   author: raymond.knopp@eurecom.fr
+   date: 10.2009 
+*/
 #include "defs.h"
 #include "lte_interleaver_inline.h"
 

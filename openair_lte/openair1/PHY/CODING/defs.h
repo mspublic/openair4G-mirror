@@ -1,3 +1,8 @@
+/* file: PHY/CODING/defs.h
+   purpose: Top-level definitions, data types and function prototypes for openairinterface coding blocks
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
+*/
 #ifndef __CODING_DEFS__H__
 #define __CODING_DEFS__H__
 
@@ -264,7 +269,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 			       unsigned short interleaver_f2);
 
 
-/** \fn void ccodelte_encode(unsigned int numbits,unsigned char add_crc, unsigned char *inPtr,unsigned char *outPtr)
+/** \fn void ccodelte_encode(unsigned int numbits,unsigned char add_crc, unsigned char *inPtr,unsigned char *outPtr,unsigned short rnti)
 \brief This function implements the LTE convolutional code of rate 1/3
   with a constraint length of 7 bits. The inputs are bit packed in octets 
 (from MSB to LSB). Trellis tail-biting is included here.
@@ -272,13 +277,14 @@ void threegpplte_turbo_encoder(unsigned char *input,
 @param add_crc crc to be appended (8 bits) if add_crc = 1
 @param inPtr Pointer to input buffer
 @param outPtr Pointer to output buffer
-@param puncturing Puncturing pattern (Not used at present, to be removed)
+@param rnti RNTI for CRC scrambling
 */
 void
 ccodelte_encode (unsigned int numbits, 
 		 unsigned char add_crc,
 		 unsigned char *inPtr, 
-		 unsigned char *outPtr);
+		 unsigned char *outPtr,
+		 unsigned short rnti);
 
 /*!\fn void ccodelte_init(void)
 \brief This function initializes the generator polynomials for an LTE convolutional code.*/

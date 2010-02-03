@@ -1,8 +1,8 @@
-/*
-* @ingroup _PHY_CODING_BLOCKS_
-* @{
+/* file: ccoding_byte_lte.c
+   purpose: Tail-biting convolutional code from 36-212, V8.6 2009-03.  Includes CRC (8-UCI,16-DCI)and RNTI scrambling (DCI)
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
 */
-
 #include "defs.h"
 
 //#define DEBUG_CCODE 1
@@ -28,7 +28,8 @@ void
 ccodelte_encode (unsigned int numbits, 
 		 unsigned char add_crc,
 		 unsigned char *inPtr, 
-		 unsigned char *outPtr) {
+		 unsigned char *outPtr,
+		 unsigned short rnti) {
   unsigned int             state;
 
   unsigned char              c, out, shiftbit =0, first_bit;
@@ -50,6 +51,10 @@ ccodelte_encode (unsigned int numbits,
   }
   else if (add_crc == 2) {
     crc = crc16(inPtr,numbits);
+    // scramble with RNTI
+    crc ^= (((unsigned int)rnti)<<16);
+
+    //    printf("crc %x\n",crc);
     first_bit      = 2;
     c = (unsigned char)(crc>>24);
   }
@@ -103,6 +108,7 @@ ccodelte_encode (unsigned int numbits,
 
   while (numbits > 0) {
 
+    c = *inPtr++;
 #ifdef DEBUG_CCODE
     printf("** %x **\n",c);
 #endif //DEBUG_CCODE
@@ -129,8 +135,8 @@ ccodelte_encode (unsigned int numbits,
 
   }
 
-  // now code 8-bit CRC
-  if (add_crc == 1) {
+  // now code 8-bit CRC for UCI
+  if (add_crc == 1) { 
 
     c = (unsigned char)(crc>>24);
     for (shiftbit = 0; (shiftbit<8);shiftbit++) {
@@ -153,7 +159,7 @@ ccodelte_encode (unsigned int numbits,
     }
   }
 
-  // now code 16-bit CRC
+  // now code 16-bit CRC for DCI
   if (add_crc == 2) {
 
     c16 = (unsigned short)(crc>>16);

@@ -3,6 +3,7 @@
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009 
 */
+
 ///  DCI Format Type 0 (5 MHz,TDD0, 25 bits)
 typedef struct {
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
@@ -202,7 +203,7 @@ typedef struct {
     PDSCH_TDD_t pdsch;
   } pdu;
 } DCI1A_5MHz_TDD_0_t;
-#define sizeof_DCI1B_5MHz_TDD_0_t 27;
+#define sizeof_DCI1A_5MHz_TDD_0_t 27;
 
 
 /// DCI Format Type 1B (5 MHz, FDD, 2 Antenna Ports, 27 bits)

@@ -1,6 +1,11 @@
-/*!\brief Optimized LogMax Decoding*/
-///
-///
+/* file: 3gpplte_turbo_decoder.c
+   purpose: Fixed-point routines for implementing max-logmap decoding of Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
+   author: raymond.knopp@eurecom.fr
+   date: 21.10.2009 
+
+   Note: This is a reference design for the sse version (3gpplte_turbo_decoder_sse.c)
+
+*/
 
 #include "emmintrin.h"
 #include "PHY/defs.h"
