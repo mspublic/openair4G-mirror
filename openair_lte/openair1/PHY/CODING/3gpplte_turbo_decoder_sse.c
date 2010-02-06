@@ -626,7 +626,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   else {
     decoder_in_use = 1;
   }
-
+  /*
   // zero out all global variables
   bzero(alpha,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
   bzero(beta,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
@@ -640,7 +640,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
   bzero(mtop,6144*sizeof(__m128i));
   bzero(mbot,6144*sizeof(__m128i));
-
+  */
 
   switch (crc_type) {
   case CRC24_A:
@@ -745,7 +745,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
-      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      //      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:

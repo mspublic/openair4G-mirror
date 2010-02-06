@@ -1369,7 +1369,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 			     ((int*)&avg128)[2] + 
 			     ((int*)&avg128)[3])/(nb_rb*12);
 
-            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
   _mm_empty();
   _m_empty();
@@ -1450,9 +1450,9 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       avgs = max(avgs,avg[(aarx<<1)+aatx]);
 
   log2_maxh = 4+(log2_approx(avgs)/2);
-  //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
   msg("[DLSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
-  //#endif
+#endif
 
   dlsch_channel_compensation(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 			     lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
