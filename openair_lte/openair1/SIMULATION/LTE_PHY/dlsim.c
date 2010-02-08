@@ -87,15 +87,16 @@ int main(int argc, char **argv) {
 
   double SE,target_code_rate;
 
-  int eNb_id = 0;
+  int eNb_id = 0, eNb_id_i = 1;
+  unsigned char dual_stream_UE = 0;
 
   unsigned char Ns,l,m,mod_order[2]={2,2};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode;
   unsigned char *input_data,*decoded_output;
 
-  LTE_eNb_DLSCH_t *dlsch_eNb[2];
-  LTE_UE_DLSCH_t *dlsch_ue[2];
+  LTE_DL_eNb_DLSCH_t *dlsch_eNb[2];
+  LTE_DL_UE_DLSCH_t *dlsch_ue[2];
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
@@ -215,8 +216,8 @@ int main(int argc, char **argv) {
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
-    dlsch_eNb[i] = new_eNb_dlsch(1,8);
-    dlsch_ue[i]  = new_ue_dlsch(1,8);
+    dlsch_eNb[i] = new_DL_eNb_dlsch(1,8);
+    dlsch_ue[i]  = new_DL_ue_dlsch(1,8);
   
     if (!dlsch_eNb[i]) {
       printf("Can't get eNb dlsch structures\n");
@@ -462,6 +463,8 @@ int main(int argc, char **argv) {
 	    lte_ue_measurements(lte_ue_common_vars,
 				lte_frame_parms,
 				&PHY_vars->PHY_measurements,
+				0,
+				1,
 				0);
 	    //	printf("rx_avg_power_dB %d\n",PHY_vars->PHY_measurements.rx_avg_power_dB[0]);
 	    //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
@@ -469,47 +472,53 @@ int main(int argc, char **argv) {
 	    if ((Ns==0) && (l==3)) // process symbols 0,1,2
 	      for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
 		rx_dlsch(lte_ue_common_vars,
-			 lte_ue_dlsch_vars[eNb_id],
+			 lte_ue_dlsch_vars,
 			 lte_frame_parms,
 			 eNb_id,
+			 eNb_id_i,
 			 m,
 			 rb_alloc,
 			 mod_order,
-			 mimo_mode);
+			 mimo_mode,
+			 dual_stream_UE);
 	
 	    if ((Ns==1) && (l==0)) // process symbols 3,4,5
 	      for (m=4;m<6;m++)
 		rx_dlsch(lte_ue_common_vars,
-			 lte_ue_dlsch_vars[eNb_id],
+			 lte_ue_dlsch_vars,
 			 lte_frame_parms,
 			 eNb_id,
+			 eNb_id_i,
 			 m,
 			 rb_alloc,
 			 mod_order,
-			 mimo_mode);
+			 mimo_mode,
+			 dual_stream_UE);
 	    if ((Ns==1) && (l==3)) // process symbols 6,7,8
 	      for (m=7;m<9;m++)
 		rx_dlsch(lte_ue_common_vars,
-			 lte_ue_dlsch_vars[eNb_id],
+			 lte_ue_dlsch_vars,
 			 lte_frame_parms,
 			 eNb_id,
+			 eNb_id_i,
 			 m,
 			 rb_alloc,
 			 mod_order,
-			 mimo_mode);
+			 mimo_mode,
+			 dual_stream_UE);
 	
 	    if ((Ns==2) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
 	      for (m=10;m<12;m++)
 		rx_dlsch(lte_ue_common_vars,
-			 lte_ue_dlsch_vars[eNb_id],
+			 lte_ue_dlsch_vars,
 			 lte_frame_parms,
 			 eNb_id,
+			 eNb_id_i,
 			 m,
 			 rb_alloc,
 			 mod_order,
-			 mimo_mode);
-	
-	
+			 mimo_mode,
+			 dual_stream_UE);
 	  }
 	}
 
@@ -589,9 +598,9 @@ int main(int argc, char **argv) {
   printf("Freeing dlsch structures\n");
   for (i=0;i<2;i++) {
     printf("eNb %d\n",i);
-    free_eNb_dlsch(dlsch_eNb[i]);
+    free_DL_eNb_dlsch(dlsch_eNb[i]);
     printf("UE %d\n",i);
-    free_ue_dlsch(dlsch_ue[i]);
+    free_DL_ue_dlsch(dlsch_ue[i]);
   }
 
 

@@ -425,7 +425,8 @@ void openair_sync(void) {
       
       msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
       
-      if (sync_pos >= sync_pos_slot) {
+      if (((sync_pos - sync_pos_slot) >=0 ) && 
+	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - lte_frame_parms->samples_per_tti)) ) {
 	
 	for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	  
@@ -436,6 +437,13 @@ void openair_sync(void) {
 		   sync_pos-sync_pos_slot,
 		   0);
 	}
+
+	lte_ue_measurements(lte_ue_common_vars,
+			    lte_frame_parms,
+			    &PHY_vars->PHY_measurements,
+			    sync_pos-sync_pos_slot,
+			    0,
+			    0);
 	
 	if (rx_pbch(lte_ue_common_vars,
 		    lte_ue_pbch_vars[0],

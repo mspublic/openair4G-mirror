@@ -261,6 +261,9 @@ int main(int argc, char **argv) {
   // RF model
   rf_rx(r_re,
 	r_im,
+	NULL,
+	NULL,
+	0,
 	lte_frame_parms->nb_antennas_rx,
 	FRAME_LENGTH_COMPLEX_SAMPLES,
 	1.0/7.68e6 * 1e9,      // sampling time (ns)
@@ -313,11 +316,12 @@ int main(int argc, char **argv) {
   
   //msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
   
-  if (sync_pos >= sync_pos_slot) {
+  if (((sync_pos - sync_pos_slot) >=0 ) && 
+      ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - lte_frame_parms->samples_per_tti)) ) {
     
-    for (l=0;l<lte_frame_parms->symbols_per_tti*10;l++) {
+    for (l=0;l<lte_frame_parms->symbols_per_tti;l++) {
       
-      subframe_offset = (l/lte_frame_parms->symbols_per_tti)*lte_frame_parms->symbols_per_tti*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples);
+      subframe_offset = (l/lte_frame_parms->symbols_per_tti)*lte_frame_parms->samples_per_tti;
       //printf("subframe_offset = %d\n",subframe_offset);
 
       slot_fep(lte_frame_parms,
@@ -345,7 +349,9 @@ int main(int argc, char **argv) {
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
-			    subframe_offset);
+			    subframe_offset,
+			    1,
+			    0);
 
 	if (trial%100 == 0) {
 	  msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",

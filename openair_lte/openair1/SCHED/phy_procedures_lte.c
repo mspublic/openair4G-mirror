@@ -85,23 +85,30 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int diff;
   int timing_offset;		
   */
-  int i,k,l,m,aa, eNb_id = 0;
-  unsigned char pbch_pdu[PBCH_PDU_SIZE];
-  int pbch_error;
+  int i,k,l,m,aa, 
+
 #ifndef USER_MODE
   RTIME  now;            
 #endif
   int time_in,time_out;
+
+  // PBCH variables
+  unsigned char pbch_pdu[PBCH_PDU_SIZE];
+  int pbch_error;
   int ret;
 
   // DLSCH variables
   unsigned char mod_order[2]={2,2};
   unsigned int rb_alloc[4];
   MIMO_mode_t mimo_mode = ALAMOUTI;
+  int eNb_id = 0, eNb_id_i = 1;
+  unsigned char dual_stream_UE = 0;
+
   unsigned short input_buffer_length;
   unsigned int coded_bits_per_codeword,nsymb;
   int rate_num=1,rate_den=3;
   int subframe_offset;
+
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
@@ -185,7 +192,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
-			    (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size);
+			    (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
+			    0,
+			    1);
 
 	// AGC
 	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
@@ -279,13 +288,15 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	    // process symbols 10,11,12 and trigger DLSCH decoding
 	    for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
 	      rx_dlsch(lte_ue_common_vars,
-		       lte_ue_dlsch_vars[eNb_id],
+		       lte_ue_dlsch_vars,
 		       lte_frame_parms,
 		       eNb_id,
+		       eNb_id_i,
 		       m,
 		       rb_alloc,
 		       mod_order,
-		       mimo_mode);
+		       mimo_mode,
+		       dual_stream_UE);
 	    
 	    // schedule process id 0 if subframe mod 4 = 0
 	    //if ((last_slot > 1) && (last_slot%2 == 0) && (last_slot<19)) {
@@ -348,39 +359,45 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	    // process symbols 0,1,2
 	    for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
 	      rx_dlsch(lte_ue_common_vars,
-		       lte_ue_dlsch_vars[eNb_id],
+		       lte_ue_dlsch_vars,
 		       lte_frame_parms,
 		       eNb_id,
+		       eNb_id_i,
 		       m,
 		       rb_alloc,
 		       mod_order,
-		       mimo_mode);
+		       mimo_mode,
+		       dual_stream_UE);
 
 	  if (((last_slot%2)==1) && (l==0)) 
 	    
 	    // process symbols 3,4,5
 	    for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
 	      rx_dlsch(lte_ue_common_vars,
-		       lte_ue_dlsch_vars[eNb_id],
+		       lte_ue_dlsch_vars,
 		       lte_frame_parms,
 		       eNb_id,
+		       eNb_id_i,
 		       m,
 		       rb_alloc,
 		       mod_order,
-		       mimo_mode);
+		       mimo_mode,
+		       dual_stream_UE);
 	  
 	  if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp)))
 	    
 	    // process symbols 6,7,8
 	    for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
 	      rx_dlsch(lte_ue_common_vars,
-		       lte_ue_dlsch_vars[eNb_id],
+		       lte_ue_dlsch_vars,
 		       lte_frame_parms,
 		       eNb_id,
+		       eNb_id_i,
 		       m,
 		       rb_alloc,
 		       mod_order,
-		       mimo_mode);
+		       mimo_mode,
+		       dual_stream_UE);
 	}
       }
     }
