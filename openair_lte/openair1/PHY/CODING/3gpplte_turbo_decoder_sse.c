@@ -106,13 +106,14 @@ short yparity2[6144+8] __attribute__ ((aligned(16)));
 __m128i mtop[6144] __attribute__ ((aligned(16)));
 __m128i mbot[6144] __attribute__ ((aligned(16)));
 
+__m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
+__m128i TOP,BOT,THRES128;
+
+
 void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F)
 {
   int k;
-  __m128i *alpha128=(__m128i *)alpha,mtmp,mtmp2,lsw,msw,new,mb,newcmp;
-
-  __m128i TOP,BOT,THRES128;
-  
+  __m128i *alpha128=(__m128i *)alpha;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -241,12 +242,15 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
   }
 
 }
+
+__m128i new,mb,oldh,oldl,THRES128,newcmp;
+
 void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F)
 {
   int k;
 
 
-  __m128i *beta128,*beta128_i,new,mb,oldh,oldl,THRES128,newcmp;
+  __m128i *beta128,*beta128_i;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -298,16 +302,20 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
     }
 }
 
+__m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
+__m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
+__m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
+__m128i m00_max,m01_max,m10_max,m11_max;
+
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
 {
   int k;
 
-  __m128i *alpha128=(__m128i *)alpha,alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
+  __m128i *alpha128=(__m128i *)alpha;
   __m128i *alpha128_ptr,*beta128_ptr;
-  __m128i *beta128=(__m128i *)beta,alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
-  __m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
-  __m128i m00_max,m01_max,m10_max,m11_max;
+  __m128i *beta128=(__m128i *)beta;
   __m128i *m11_128,*m10_128,*ext_128,*systematic_128;
+
   //
   // LLR computation, 8 consequtive bits per loop
   //

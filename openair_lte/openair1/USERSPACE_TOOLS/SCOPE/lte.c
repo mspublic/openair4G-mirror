@@ -119,6 +119,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -127,8 +128,8 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
-  /*
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -148,7 +149,6 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-  */
 
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {

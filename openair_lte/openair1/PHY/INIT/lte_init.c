@@ -261,7 +261,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
       lte_ue_pbch_vars[eNb_id]->dl_ch_estimates_ext[i] = (int *)malloc16(sizeof(int)*6*12*4);
     
-    lte_ue_pbch_vars[eNb_id]->llr = (short *)malloc16(384*sizeof(short));
+    lte_ue_pbch_vars[eNb_id]->llr = (short *)malloc16(36*12*2*sizeof(short));
     
     lte_ue_pbch_vars[eNb_id]->channel_output = (short *)malloc16((3*64+12)*sizeof(short));
     

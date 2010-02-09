@@ -7,6 +7,8 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
+#include "defs.h"
+#include "extern.h"
 
 #ifndef __SSE3__
 extern __m128i zero;
@@ -24,8 +26,8 @@ extern __m128i zero;
 /* This implements the LTE PBCH channel with the following differences form the spec 3GPP 36.212-860
  *  * we do not use the OFDM symbols 0 and 3/4 (normal/extended CP respectively)
  *      (in a later version, when we use 4 Tx antennas, we should also skip over the pilots in symbol 1)
- *  * that gives us pbch_coded_bits = 36*6*2=384 (RE/RB * #RB * bits/RB) for normal CP and
- *                  pbch_coded_bits = 24*6*2=240 for extended CP
+ *  * that gives us pbch_coded_bits = 36*6*2=432 (RE/RB * #RB * bits/RB) for normal CP and
+ *                  pbch_coded_bits = 24*6*2=288 for extended CP
  *  * the input length (information bits) is 64 input bits (including CRC)
  *  * we use turbo code with rate 1/3, rate matching to the corresponding size
  */
@@ -41,13 +43,21 @@ int generate_pbch(mod_sym_t **txdataF,
   unsigned short crc;
 
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes;
+  unsigned char pbch_data[8];
+  unsigned char pbch_coded_data[36*6*2], pbch_coded_data2[36*6*2], pbch_scrambled[36*6*2];  //one bit per byte
+
+  unsigned int nsymb = (frame_parms->Ncp==0) ? 14:12;
+  unsigned int pilots, first_pilot;
+  unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
+  unsigned int jj=0;
+  unsigned int re_allocated=0;
+  unsigned int rb, re_offset, symbol_offset;
+
+
   pbch_crc_bits    = 64;
   pbch_crc_bytes   = pbch_crc_bits>>3;
   pbch_coded_bits  = (frame_parms->Ncp==0) ? 36*6*2 : 24*6*2; //RE/RB * #RB * bits/RB (QPSK)
   pbch_coded_bytes = pbch_coded_bits>>3;
-
-  unsigned char pbch_data[pbch_crc_bytes];
-  unsigned char pbch_coded_data[pbch_coded_bits], pbch_coded_data2[pbch_coded_bits], pbch_scrambled[pbch_coded_bits];  //one bit per byte
 
   bzero(pbch_data,pbch_crc_bytes);
   bzero(pbch_coded_data,pbch_coded_bits);
@@ -155,12 +165,6 @@ int generate_pbch(mod_sym_t **txdataF,
 #endif //DEBUG_PHY
 
   // modulation and mapping 
-  unsigned int nsymb = (frame_parms->Ncp==0) ? 14:12;
-  unsigned int pilots, first_pilot;
-  unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
-  unsigned int jj=0;
-  unsigned int re_allocated=0;
-  unsigned int rb, re_offset, symbol_offset;
   for (l=(nsymb>>1);l<(nsymb>>1)+4;l++) {
     
     pilots=0;
@@ -234,7 +238,7 @@ unsigned short pbch_extract(int **rxdataF,
 			    int **dl_ch_estimates,
 			    int **rxdataF_ext,
 			    int **dl_ch_estimates_ext,
-			    unsigned char symbol,
+			    unsigned int symbol,
 			    LTE_DL_FRAME_PARMS *frame_parms) {
 
 
@@ -242,8 +246,8 @@ unsigned short pbch_extract(int **rxdataF,
   unsigned char i,aarx,aatx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  unsigned char nsymb = (frame_parms->Ncp==0) ? 7:6;
-  unsigned char symbol_mod = symbol % nsymb;
+  unsigned int nsymb = (frame_parms->Ncp==0) ? 7:6;
+  unsigned int symbol_mod = symbol % nsymb;
 
   int rx_offset = frame_parms->ofdm_symbol_size-3*12;
   int ch_offset = frame_parms->N_RB_DL*6-3*12;
@@ -292,19 +296,20 @@ unsigned short pbch_extract(int **rxdataF,
   return(0);
 }
 
+__m128i avg128;
+
 //compute average channel_level on each (TX,RX) antenna pair
-void pbch_channel_level(int **dl_ch_estimates_ext,
-			LTE_DL_FRAME_PARMS *frame_parms,
-			int symbol,
-			int *avg) {
+int pbch_channel_level(int **dl_ch_estimates_ext,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       unsigned int symbol) {
 
   short rb, nb_rb=6;
   unsigned char aatx,aarx;
-  __m128i avg128, *dl_ch128;
-  
+  __m128i *dl_ch128;
+  int avg1=0,avg2=0;
 
-  unsigned char nsymb = (frame_parms->Ncp==0) ? 7:6;
-  unsigned char symbol_mod = symbol % nsymb;
+  unsigned int nsymb = (frame_parms->Ncp==0) ? 7:6;
+  unsigned int symbol_mod = symbol % nsymb;
 
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
@@ -328,15 +333,22 @@ void pbch_channel_level(int **dl_ch_estimates_ext,
 	*/
       }
 
-      avg[(aatx<<1)+aarx] = (((int*)&avg128)[0] + 
-			     ((int*)&avg128)[1] + 
-			     ((int*)&avg128)[2] + 
-			     ((int*)&avg128)[3])/(nb_rb*12);
+      avg1 = (((int*)&avg128)[0] + 
+	      ((int*)&avg128)[1] + 
+	      ((int*)&avg128)[2] + 
+	      ((int*)&avg128)[3])/(nb_rb*12);
 
-      //      printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      if (avg1>avg2) 
+	avg2 = avg1;
+
+      //msg("Channel level : %d, %d\n",avg1, avg2);
     }
 
+  return(avg2);
+
 }
+
+__m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
 
 void pbch_channel_compensation(int **rxdataF_ext,
 				int **dl_ch_estimates_ext,
@@ -347,9 +359,7 @@ void pbch_channel_compensation(int **rxdataF_ext,
 
   unsigned short rb,nb_rb=6;
   unsigned char aatx,aarx,symbol_mod;
-  __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128,mmtmp0,mmtmp1,mmtmp2,mmtmp3;
-  __m128i conjugate = _mm_set_epi16(1,-1,1,-1,1,-1,1,-1);
-
+  __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   
@@ -365,58 +375,58 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	//printf("rb %d\n",rb);
 	
 	// multiply by conjugated channel
-	mmtmp0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
-	//	print_ints("re",&mmtmp0);
-	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
-	mmtmp1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_shufflehi_epi16(mmtmp1,_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_sign_epi16(mmtmp1,conjugate);
-	//	print_ints("im",&mmtmp1);
-	mmtmp1 = _mm_madd_epi16(mmtmp1,rxdataF128[0]);
-	// mmtmp1 contains imag part of 4 consecutive outputs (32-bit)
-	mmtmp0 = _mm_srai_epi32(mmtmp0,output_shift);
-	//	print_ints("re(shift)",&mmtmp0);
-	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
-	//	print_ints("im(shift)",&mmtmp1);
-	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
-	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	//      print_ints("c0",&mmtmp2);
-	//	print_ints("c1",&mmtmp3);
-	rxdataF_comp128[0] = _mm_packs_epi32(mmtmp2,mmtmp3);
+	mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
+	//	print_ints("re",&mmtmpP0);
+	// mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+	//	print_ints("im",&mmtmpP1);
+	mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
+	// mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+	//	print_ints("re(shift)",&mmtmpP0);
+	mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+	//	print_ints("im(shift)",&mmtmpP1);
+	mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+	mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+	//      print_ints("c0",&mmtmpP2);
+	//	print_ints("c1",&mmtmpP3);
+	rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
 	//	print_shorts("rx:",rxdataF128);
 	//	print_shorts("ch:",dl_ch128);
 	//	print_shorts("pack:",rxdataF_comp128);
 
 	// multiply by conjugated channel
-	mmtmp0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
-	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
-	mmtmp1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_shufflehi_epi16(mmtmp1,_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_sign_epi16(mmtmp1,conjugate);
-	mmtmp1 = _mm_madd_epi16(mmtmp1,rxdataF128[1]);
-	// mmtmp1 contains imag part of 4 consecutive outputs (32-bit)
-	mmtmp0 = _mm_srai_epi32(mmtmp0,output_shift);
-	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
-	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
-	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	rxdataF_comp128[1] = _mm_packs_epi32(mmtmp2,mmtmp3);
+	mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
+	// mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+	mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
+	// mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+	mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+	mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+	mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+	rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
 	//	print_shorts("rx:",rxdataF128+1);
 	//	print_shorts("ch:",dl_ch128+1);
 	//	print_shorts("pack:",rxdataF_comp128+1);	
 
 	// multiply by conjugated channel
-	mmtmp0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
-	// mmtmp0 contains real part of 4 consecutive outputs (32-bit)
-	mmtmp1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_shufflehi_epi16(mmtmp1,_MM_SHUFFLE(2,3,0,1));
-	mmtmp1 = _mm_sign_epi16(mmtmp1,conjugate);
-	mmtmp1 = _mm_madd_epi16(mmtmp1,rxdataF128[2]);
-	// mmtmp1 contains imag part of 4 consecutive outputs (32-bit)
-	mmtmp0 = _mm_srai_epi32(mmtmp0,output_shift);
-	mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
-	mmtmp2 = _mm_unpacklo_epi32(mmtmp0,mmtmp1);
-	mmtmp3 = _mm_unpackhi_epi32(mmtmp0,mmtmp1);
-	rxdataF_comp128[2] = _mm_packs_epi32(mmtmp2,mmtmp3);
+	mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
+	// mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+	mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
+	// mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+	mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+	mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+	mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+	rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
 	//	print_shorts("rx:",rxdataF128+2);
 	//	print_shorts("ch:",dl_ch128+2);
 	//      print_shorts("pack:",rxdataF_comp128+2);
@@ -456,7 +466,7 @@ void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned int length) {
   int i;
   unsigned char reset;
-  unsigned int x1, x2, s;
+  unsigned int x1, x2, s=0;
 
   reset = 1;
   // x1 is set in lte_gold_generic
@@ -477,7 +487,7 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		       unsigned int length) {
   int i;
   unsigned char reset;
-  unsigned int x1, x2, s;
+  unsigned int x1, x2, s=0;
 
   reset = 1;
   // x1 is set in first call to lte_gold_generic
@@ -494,7 +504,6 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    LTE_UE_PBCH *lte_ue_pbch_vars,
 	    LTE_DL_FRAME_PARMS *frame_parms,
@@ -502,28 +511,30 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    MIMO_mode_t mimo_mode) {
 
   unsigned char log2_maxh,aatx,aarx;
-  int avgs, avg[frame_parms->nb_antennas_tx*frame_parms->nb_antennas_rx];
+  int max_h=0;
 
   int symbol,i,ret;
   //int nb_rb = 6;
   //int mod_order = 2;
-  int nsymb = (frame_parms->Ncp==0) ? 14:12;
+  unsigned int nsymb = (frame_parms->Ncp==0) ? 14:12;
   unsigned int pilots, first_pilot;
   unsigned int second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
-  short* pbch_llr = lte_ue_pbch_vars->llr;
   unsigned int  pbch_crc_bits,pbch_crc_bytes,pbch_coded_bits,pbch_coded_bytes,coded_bits;
   unsigned char max_iterations = 6;
+
+  short* pbch_llr = lte_ue_pbch_vars->llr;
+  unsigned char *decoded_output = lte_ue_pbch_vars->decoded_output;
+  short *channel_output = lte_ue_pbch_vars->channel_output;
+  unsigned char dummy_channel_output[36*6*2]; //corresponds to max coded bits
 
   pbch_crc_bits    = 64;
   pbch_crc_bytes   = pbch_crc_bits>>3;
   pbch_coded_bits  = (frame_parms->Ncp==0) ? 36*6*2 : 24*6*2; //RE/RB * #RB * bits/RB (QPSK)
   pbch_coded_bytes = pbch_coded_bits>>3;
 
-  //unsigned char decoded_output[pbch_crc_bits];
-  //short channel_output[(3*pbch_crc_bits)+12] __attribute__ ((aligned(16)));
-  unsigned char *decoded_output = lte_ue_pbch_vars->decoded_output;
-  short *channel_output = lte_ue_pbch_vars->channel_output;
-  unsigned char dummy_channel_output[pbch_coded_bits];
+#ifdef DEBUG_PHY
+  msg("[PBCH] starting symbol loop\n");
+#endif
 
   for (symbol=(nsymb>>1);symbol<(nsymb>>1)+4;symbol++) {
 
@@ -541,6 +552,9 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
     if (pilots==0) { 
 
+#ifdef DEBUG_PHY
+      msg("[PBCH] starting extract\n");
+#endif
       pbch_extract(lte_ue_common_vars->rxdataF,
 		   lte_ue_common_vars->dl_ch_estimates[eNb_id],
 		   lte_ue_pbch_vars->rxdataF_ext,
@@ -548,20 +562,17 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 		   symbol,
 		   frame_parms);
 
-      pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
-			 frame_parms,
-			 symbol,
-			 avg);
-
-
-      avgs = 0;
-      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
-	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
-      
-      log2_maxh = 4+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
-      msg("[PBCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+      msg("[PBCH] starting channel_level\n");
+#endif
+
+      max_h = pbch_channel_level(lte_ue_pbch_vars->dl_ch_estimates_ext,
+				 frame_parms,
+				 symbol);
+      log2_maxh = 4+(log2_approx(max_h)/2);
+
+#ifdef DEBUG_PHY
+      msg("[PBCH] log2_maxh = %d (%d)\n",log2_maxh,max_h);
 #endif
       
       pbch_channel_compensation(lte_ue_pbch_vars->rxdataF_ext,
@@ -593,11 +604,18 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   }
 
   //un-scrambling
+#ifdef DEBUG_PHY
+  msg("[PBCH] doing unscrambling\n");
+#endif
   pbch_unscrambling(frame_parms,
 		    lte_ue_pbch_vars->llr,
 		    pbch_coded_bits);
 
   //un-rate matching
+#ifdef DEBUG_PHY
+  msg("[PBCH] doing un-rate-matching\n");
+#endif
+
   bzero(dummy_channel_output,pbch_coded_bits);
   if (rate_matching_lte(pbch_coded_bits, 
 			pbch_crc_bits*3+12, 
@@ -643,6 +661,10 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif //DEBUG_PHY
 
   //turbo decoding
+#ifdef DEBUG_PHY
+  msg("[PBCH] doing turbo-decoding\n");
+#endif
+
   bzero(decoded_output,pbch_crc_bits);//block_length);
   ret = phy_threegpplte_turbo_decoder(channel_output,
                                       decoded_output,
@@ -652,7 +674,6 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
                                       max_iterations,
                                       CRC16,
 				      0);
-
 #ifdef DEBUG_PHY
   msg("[PBCH] ret=%d\n",ret);
   for (i=0;i<8;i++) 

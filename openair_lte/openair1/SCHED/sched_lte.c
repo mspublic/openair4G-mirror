@@ -438,13 +438,17 @@ void openair_sync(void) {
 		   0);
 	}
 
+	/*
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
 			    sync_pos-sync_pos_slot,
 			    0,
 			    0);
-	
+	*/
+
+	  msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
+
 	if (rx_pbch(lte_ue_common_vars,
 		    lte_ue_pbch_vars[0],
 		    lte_frame_parms,

@@ -30,3 +30,5 @@ char lte_cqi_snr_dB[15] = { 0,
 			    31,
 			    33};
 
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
+
