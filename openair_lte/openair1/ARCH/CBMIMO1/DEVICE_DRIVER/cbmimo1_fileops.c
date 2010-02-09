@@ -233,8 +233,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef OPENAIR_LTE
 	lte_frame_parms = &PHY_config->lte_frame_parms;
 	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
-	lte_ue_dlsch_vars = (LTE_DL_UE_DLSCH **) &PHY_vars->lte_ue_dlsch_vars[0];
-	lte_ue_pbch_vars = (LTE_DL_UE_PBCH **) &PHY_vars->lte_ue_pbch_vars[0];
+	lte_ue_dlsch_vars = (LTE_UE_DLSCH **) &PHY_vars->lte_ue_dlsch_vars[0];
+	lte_ue_pbch_vars = (LTE_UE_PBCH **) &PHY_vars->lte_ue_pbch_vars[0];
 	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 	  
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
@@ -353,7 +353,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  break;
 	}
 
-	dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
+	dlsch_eNb = (LTE_DL_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_DL_eNb_DLSCH_t*));
 	for (i=0;i<2;i++) {
 	  dlsch_eNb[i] = new_DL_eNb_dlsch(1,8);
 	  if (dlsch_eNb[i]) 

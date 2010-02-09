@@ -822,6 +822,9 @@ void dci_encoding(unsigned char *a,
 		  unsigned char *e,
 		  unsigned short rnti);
 
+void generate_64qam_table(void);
+void generate_16qam_table(void);
+
 unsigned short extract_crc(unsigned char *dci,unsigned char DCI_LENGTH);
 
 void dci_decoding(unsigned char DCI_LENGTH,

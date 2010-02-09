@@ -6,7 +6,7 @@
 #include "PHY/defs.h"
 
 //#define DEBUG_SEGMENTATION
-void lte_segmentation(unsigned char *input_buffer,
+int lte_segmentation(unsigned char *input_buffer,
 		      unsigned char **output_buffers,
 		      unsigned int B,
 		      unsigned int *C,
@@ -86,8 +86,9 @@ void lte_segmentation(unsigned char *input_buffer,
   }
   else {
 
-    printf("More than one segment (%d), exiting \n",*C);
-    exit(-1);
+    msg("More than one segment (%d), exiting \n",*C);
+    return(-1);
+
     *Cminus = ((*C)*(*Kplus) - (Bprime))/((*Kplus) - (*Kminus));
     *Cplus  = (*C) - (*Cminus);
   }

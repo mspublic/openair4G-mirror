@@ -85,7 +85,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int diff;
   int timing_offset;		
   */
-  int i,k,l,m,aa, 
+  int i,k,l,m,aa; 
 
 #ifndef USER_MODE
   RTIME  now;            

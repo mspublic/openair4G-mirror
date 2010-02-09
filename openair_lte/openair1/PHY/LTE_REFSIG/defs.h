@@ -67,4 +67,21 @@ int lte_dl_cell_spec_rx(int *output,
 			 unsigned char l,
 			 unsigned char p);
 
+/*!
+\brief This function generate the sounding reference symbol (SRS) for the uplink. This function is not LTE Rel.8 compliant. The SRS in OpenAir is a pseudo-random QPSK sequence constrcted from a Gold code.
+@param txdataF pointer to the frequency domain TX signal
+@param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
+@param frame_parms LTE DL Frame Parameters
+@sub_frame_offset  Offset of this subframe in units of subframes
+*/
+
+int lte_generate_srs(mod_sym_t **txdataF,
+		     short amp,
+		     LTE_DL_FRAME_PARMS *frame_parms,
+		     unsigned int sub_frame_offset,
+		     unsigned int c_init,
+		     unsigned int* rb_alloc, 
+		     unsigned char nb_antennas_tx);
+
+
 #endif

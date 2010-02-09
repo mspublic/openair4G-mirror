@@ -3,10 +3,10 @@
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009 
 */
-//#ifdef MAIN
+#ifdef MAIN
 #include <stdio.h>
 #include <stdlib.h>
-//#endif
+#endif
 #include "PHY/LTE_TRANSPORT/defs.h" 
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
