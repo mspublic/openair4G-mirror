@@ -15,6 +15,8 @@
         P.BURLOT 2009-01-20 
             + separation de la file de message CMM/RRM a envoyer en 2 files 
               distinctes ( file_send_cmm_msg, file_send_rrc_msg)
+        L.IACOBELLI 2009-10-19
+            + include
 
 *******************************************************************************
 */
@@ -40,11 +42,15 @@
 #include "pusu_msg.h"
 #include "rb_db.h"
 #include "neighbor_db.h"
+#include "sens_db.h"
+#include "channels_db.h"
 #include "rrm_util.h"
 #include "transact.h"
 #include "rrm_constant.h"
 #include "rrm.h"
 #include "ch_init.h"
+
+
 
 //! Met un message dans la file des messages a envoyer
 #define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 

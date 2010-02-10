@@ -176,6 +176,23 @@ void cmm_init_ch_req(
     L3_INFO_T   L3_info_t,
     void       *L3_info
     );
+    
+/*!
+  \brief 
+*/
+void cmm_init_sensing( 
+    Instance_t inst,            //!< identification de l'instance
+    float interv                //!< sensing freq.
+    );
+    
+/*!
+  \brief 
+*/
+void cmm_stop_sensing( 
+    Instance_t inst            //!< identification de l'instance
+    );
+
+
 
 
 

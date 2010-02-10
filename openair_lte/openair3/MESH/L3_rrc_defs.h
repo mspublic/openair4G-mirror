@@ -13,6 +13,12 @@
 
 #include "COMMON/mac_rrc_primitives.h"
 
+/*! \brief SENDORA scenario active
+*/
+#define SCEN_1         1
+#define SCEN_2_CENTR   0
+#define SCEN_2_DISTR   0
+
 /*! \brief Transaction ID descriptor
 */
 typedef unsigned int Transaction_t;
@@ -34,6 +40,10 @@ typedef unsigned short QOS_CLASS_T;
 #define LCHAN_DTCH_B    3
 #define LCHAN_DTCH      4
 #define LCHAN_MRBCH     5
+
+
+#define NB_SENS_MAX 10
+
 
 /*!\brief Layer 2 Identifier
  */
@@ -65,6 +75,49 @@ typedef struct {
   unsigned char Rssi;    /*!< RSSI (minus in dBm) for neighbour*/
   L2_ID L2_id;           /*!< Layer 2 ID for neighbour*/
 } SENSING_MEAS_T;
+
+/*!
+*******************************************************************************
+\brief Structure of sensing information database        
+*/
+typedef struct  Sens_ch_s { 
+    float               Start_f    ; ///< frequence initial du canal
+    float               Final_f    ; ///< frequence final du canal
+    unsigned int        Ch_id      ; ///< ID du canal
+    float               meas       ; ///< Sensing results 
+    unsigned int        is_free    ; ///< Decision about the channel
+    struct  Sens_ch_s   *next      ; ///< pointeur sur le prochain canal 
+} Sens_ch_t ;
+
+/*!
+*******************************************************************************
+\brief Structure that describes the channels        
+*/
+typedef struct { 
+    float               Start_f    ; ///< frequence initial du canal
+    float               Final_f    ; ///< frequence final du canal
+    int                 Ch_id      ; ///< ID du canal
+    QOS_CLASS_T         QoS        ; ///< Max QoS possible on the channel
+} CHANNEL_T ;
+
+/*!\brief cooperation type between CHs
+ */
+typedef enum {
+  NO_COOP     = 0, //!< No cooperation
+  AMPL_FORW   = 1, //!< amplify and forward collaboration
+  DECO_FORW   = 2, //!< decode and forward collaboration
+}COOPERATION_T;
+/*!
+*******************************************************************************
+\brief Structure that describes the channels        
+*/
+typedef struct { 
+    //float               Start_f    ; ///< frequence initial du canal
+    //float               Final_f    ; ///< frequence final du canal
+    int                 Ch_id      ; ///< ID du canal
+    //QOS_CLASS_T         QoS        ; ///< Max QoS possible on the channel
+} MAC_INFO_T ;
+
 
 /*!\brief Layer 3 Info types for RRC messages
  */

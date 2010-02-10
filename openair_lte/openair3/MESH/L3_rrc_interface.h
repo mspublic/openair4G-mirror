@@ -228,5 +228,190 @@ void rrci_init_mr_req(
 	L2_ID             *L2_id              //!< Layer 2 (MAC) ID
     ); 
 
+/*!
+\brief RRC sensing measurement indication 
+ */
+void rrc_update_sens(
+	Instance_t         inst             , //!< Identification de l'instance
+	L2_ID              L2_id            , //!< Layer 2 ID (MAC) of sensing node
+    unsigned int       NB_info          , //!< Number of channels info
+	Sens_ch_t          *Sense_meas      , //!< Sensing Information
+	double info_time                      //!< Info time
+    );
+    
+/*!
+\brief RRC starting sensing request 
+ */
+
+
+void rrc_init_scan_req(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           , //!< FC address
+    float             interv          , //! interval between 2 scanning periods
+    Transaction_t     Trans_id          //!< Transaction ID
+    );
+    
+    
+/*!
+\brief RRC ending sensing confirmation 
+ */
+void rrc_end_scan_conf(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           ,
+    Transaction_t     Trans_id          //!< Transaction ID
+    
+    );
+
+/*!
+\brief RRC ending sensing request (sensors side) 
+ */
+void rrc_end_scan_req(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           ,
+    Transaction_t     Trans_id          //!< Transaction ID
+    
+    );
+
+/*!
+\brief RRC starting monitoring request 
+ */    
+void rrc_init_mon_req( 
+    Instance_t inst           , //!< identification de l'instance
+    L2_ID     L2_id           , //!< FC address
+    unsigned int  *ch_to_scan ,
+    unsigned int  NB_chan     , 
+    float     interv          , //!< sensing freq.
+    Transaction_t  Trans_id     //!< Transaction ID
+    );
+ 
+ 
+ //elll: I'll keep only for semplicity
+ /*!
+\brief RRC open frequencies  
+ */    
+void rrc_open_freq( 
+    Instance_t inst, 
+    L2_ID L2_id,                //!< L2_id of the FC/CH
+    unsigned int NB_chan,
+    CHANNEL_T *fr_channels, 
+    Transaction_t Trans_id
+    );
+
+/*!
+\brief RRC ask for frequencies   
+ */     
+void rrc_ask_for_freq( 
+    Instance_t    inst, 
+    L2_ID         L2_id           ,
+    QOS_CLASS_T   QoS             ,
+    Transaction_t Trans_id 
+    );
+
+/*!
+\brief RRC update secondary network frequencies in use  
+ */ 
+void rrc_update_SN_freq(
+    Instance_t inst             , //!< instance ID 
+    L2_ID L2_id                 , //!< Layer 2 (MAC) ID of BTS
+    unsigned int NB_chan        ,
+    unsigned int *occ_channels  , 
+    Transaction_t Trans_id        //!< Transaction ID
+    );
+     
+/*!
+\brief RRC cluster scan request from CH1 reported to RRM of CH2  
+ */
+void rrc_clust_scan_req( 
+    Instance_t inst             , //!< instance ID 
+    L2_ID L2_id                 , //!< Layer 2 (MAC) ID of CH2
+    float interv                ,
+    COOPERATION_T coop          ,
+    Transaction_t Trans_id
+    );
+    
+/*!
+\brief RRC starting monitoring request ordered from another CH
+ */    
+void rrc_clust_mon_req( 
+    Instance_t inst           , //!< identification de l'instance
+    L2_ID     L2_id           , //!< CH1 address
+    unsigned int  *ch_to_scan ,
+    unsigned int  NB_chan     , 
+    float     interv          , //!< sensing freq.
+    Transaction_t  Trans_id     //!< Transaction ID
+    );
+    
+/*!
+\brief RRC reported confirmation about the connection 
+ */ 
+void rrc_init_conn_conf(
+    Instance_t    inst      , //!< identification de l'instance 
+    L2_ID L2_id             , 
+    unsigned int Session_id ,
+    Transaction_t Trans_id  
+    );
+ 
+/*!
+\brief RRC reported confirmation from SU2 on the proposed channels 
+ */    
+void rrc_freq_all_prop_conf( 
+    Instance_t    inst              , 
+    L2_ID         L2_id             ,
+    unsigned int Session_id         ,
+    unsigned int NB_free_ch         ,
+    CHANNEL_T   *fr_channels        ,
+    Transaction_t Trans_id 
+    );
+
+/*!
+\brief RRC reported assignement from CH of a channel (SENDORA scenario 2 distr) 
+ */
+void rrc_rep_freq_ack( 
+    Instance_t    inst              , 
+    L2_ID         L2_id_ch          ,
+    L2_ID         L2_id_source      ,
+    L2_ID         L2_id_dest        ,
+    unsigned int  Session_id        ,
+    CHANNEL_T     all_channel       ,
+    Transaction_t Trans_id 
+    );
+    
+/*!
+\brief RRC init connection request from another SU (SENDORA scenario 2 distr) 
+ */
+void rrc_init_conn_req( 
+    Instance_t    inst            , 
+    L2_ID         L2_id           ,
+    unsigned int Session_id       ,
+    QOS_CLASS_T QoS_class         ,
+    Transaction_t Trans_id 
+    );
+    
+/*!
+\brief RRC reported proposed channels from SU1 in SU2
+ */    
+void rrc_freq_all_prop( 
+    Instance_t    inst              , 
+    L2_ID         L2_id             ,
+    unsigned int Session_id         ,
+    unsigned int NB_free_ch         ,
+    CHANNEL_T   *fr_channels        ,
+    Transaction_t Trans_id 
+    );
+    
+/*!
+\brief RRC reported proposed channels from SU1 in CH
+ */    
+void rrc_rep_freq_all( 
+    Instance_t    inst              ,
+    L2_ID         L2_id_source      , 
+    L2_ID         L2_id_dest        ,
+    unsigned int  Session_id        ,
+    unsigned int  NB_prop_ch        ,
+    CHANNEL_T     *pr_channels      ,
+    Transaction_t Trans_id 
+    );
+    
+
 /*! @} */
 

@@ -15,6 +15,8 @@
         P.BURLOT 2009-01-20 
             + separation de la file de message CMM/RRM a envoyer en 2 files 
               distinctes ( file_send_cmm_msg, file_send_rrc_msg)
+        L.IACOBELLI 2009-10-19
+            + inclusions
 
 *******************************************************************************
 */
@@ -40,11 +42,14 @@
 #include "msg_mngt.h"
 #include "rb_db.h"
 #include "neighbor_db.h"
+#include "sens_db.h"
+#include "channels_db.h"
 #include "rrm_util.h"
 #include "transact.h"
 #include "rrm_constant.h"
 #include "rrm.h"
 #include "mr_attach.h"
+
 
 //! Met un message dans la file des messages a envoyer
 #define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
@@ -134,7 +139,7 @@ void rrc_cx_establish_ind(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( rrm->state == CLUSTERHEAD )
+    if ( (rrm->state == CLUSTERHEAD) )
     {
         PUT_CMM_MSG( msg_rrm_attach_ind(inst,L2_id,L3_info_t,L3_info, 0 )) ;
     }
@@ -252,7 +257,7 @@ void cmm_attach_cnf(
 void rrc_sensing_meas_ind(
 	Instance_t      inst         , //!< Identification de l'instance
 	L2_ID           L2_id        , //!< Layer 2 ID (MAC) of sensing node
-	unsigned int    NB_meas      , //!< Layer 2 ID (MAC) of sensing node
+	unsigned int    NB_meas      , //!< Number of measurements
 	SENSING_MEAS_T *Sensing_meas , //!< Sensing Information
 	Transaction_t   Trans_id       //!< Transaction ID
     )
@@ -261,7 +266,7 @@ void rrc_sensing_meas_ind(
     
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( rrm->state == CLUSTERHEAD )
+    if ( (rrm->state == CLUSTERHEAD) )
     {
         pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
         

@@ -15,6 +15,8 @@
         P.BURLOT 2009-01-20 
             + separation de la file de message CMM/RRM a envoyer en 2 files 
               distinctes ( file_send_cmm_msg, file_send_rrc_msg)
+        L. IACOBELLI 2010-01-05
+            + inclusions 
 
 *******************************************************************************
 */
@@ -40,6 +42,8 @@
 #include "msg_mngt.h"
 #include "rb_db.h"
 #include "neighbor_db.h"
+#include "sens_db.h"
+#include "channels_db.h"
 #include "rrm_util.h"
 #include "transact.h"
 #include "rrm_constant.h"
@@ -59,10 +63,10 @@
 
 /*!
 *******************************************************************************
- \brief CMM connection setup request.  Only in CH.
+ \brief CMM connection setup request.  Only in CH. It asks to create a 
+ * connection p2p between CH and MR
 */
-
-int cmm_cx_setup_req(
+int cmm_cx_setup_req(         
 	Instance_t    inst      , //!< Identification de l'instance
 	L2_ID         Src       , //!< L2 source MAC address
 	L2_ID         Dst       , //!< L2 destination MAC address
@@ -106,7 +110,7 @@ int cmm_cx_setup_req(
           add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB2, &src_dst[0] ) ;
           pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
           
-          printf("CONFIG SRB2\n");
+          
           PUT_RRC_MSG(   
                 msg_rrm_rb_establish_req(inst,               
                              &Lchan_desc[QOS_SRB2], 
@@ -120,11 +124,7 @@ int cmm_cx_setup_req(
     }
     else
     {
-
-      //      if ( (rrm->state == CLUSTERHEAD_INIT))    
-
         if ( rrm->state == CLUSTERHEAD_INIT0 )    
-
         {
             L2_ID src_dst[2] ;
             
@@ -153,7 +153,7 @@ int cmm_cx_setup_req(
             add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_DTCH_B, &src_dst[0] ) ;
 
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-
+            
             rrm->state = CLUSTERHEAD_INIT1 ;
             fprintf(stderr,"[RRM] CLUSTERHEAD_INIT1\n" );
             ret = 0 ;

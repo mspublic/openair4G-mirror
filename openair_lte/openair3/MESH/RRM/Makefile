@@ -1,20 +1,20 @@
 OSTYPE		= $(shell uname -o )
 
 EMUL_RRC        = 0
-#RRC_KERNEL_MODE = 1
+RRC_KERNEL_MODE = 0
 
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
 CHEMIN		= $(shell pwd)
-#OPENAIR2_DIR= $(CHEMIN)/../../../openair2
+OPENAIR2_DIR= $(CHEMIN)/../../../openair2
 OPENAIR2_RRC= $(OPENAIR2_DIR)/RRC/MESH/
 OPENAIR3_RRM= $(CHEMIN)
 INTERFACE   = $(CHEMIN)/..
 EMUL        = $(CHEMIN)/EMUL
 VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
-INCLUDE     = -I .  -I $(OPENAIR2_RRC) -I $(OPENAIR3_RRM) -I $(INTERFACE) -I$(OPENAIR2_DIR)
-CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
+INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR)
+CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNTRACE -DOPENAIR2_IN
 LDFLAGS		= -lm
 
 ifeq ($(OSTYPE),Cygwin)
@@ -29,7 +29,8 @@ CFLAGS		+= -DLINUX
 
 endif
 
-ifdef RRC_KERNEL_MODE
+# ifdef RRC_KERNEL_MODE
+ifeq ($(RRC_KERNEL_MODE),1)
 CFLAGS		+= -DRRC_KERNEL_MODE
 endif
 
@@ -48,7 +49,11 @@ SRC	   += mr_attach.c
 SRC	   += rb_mngt.c
 SRC	   += neighbor_db.c
 SRC	   += rb_db.c
+SRC	   += sens_db.c
+SRC	   += channels_db.c
 SRC	   += msg_mngt.c
+SRC	   += sens_op.c
+#SRC	   += freq_ass_op.c
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

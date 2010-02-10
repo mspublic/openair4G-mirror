@@ -15,6 +15,9 @@
         P.BURLOT 2009-01-20 
             + separation de la file de message CMM/RRM a envoyer en 2 files 
               distinctes ( file_send_cmm_msg, file_send_rrc_msg)
+        L.IACOBELLI 2009-10-19
+            + sensing database
+            + Fusion centre and BTS role
 
 *******************************************************************************
 */
@@ -46,10 +49,17 @@ typedef struct {
         CLUSTERHEAD_INIT0, ///< Node is in a Cluster Head initialization State  
         CLUSTERHEAD_INIT1, ///< Node is in a Cluster Head initialization State 
         CLUSTERHEAD      , ///< Node is in a Cluster Head State 
-        MESHROUTER        ///< Node is in a Mesh Router State
+        MESHROUTER       , ///< Node is in a Mesh Router State
         } state                             ; ///< etat de l'instance
+    enum { 
+        NOROLE=0         , ///< Node has not a specific role
+        FUSIONCENTER     , ///< Node acts as Fusion Center
+        BTS              , ///< Node acts as BTS
+        CH_COLL            ///< Node acts as Cluster Head collaborating with the CH at the address L2_id_FC
+        } role                              ; ///< role of the node
     
-    L2_ID               L2_id               ; ///< identification de niveau L2            
+    L2_ID               L2_id               ; ///< identification de niveau L2 
+    L2_ID               L2_id_FC            ; ///< Fusion Centre or Cluster Head address. In CH1 of sendora scenario 2 centralized it is the address of the other CH           
     L3_INFO_T           L3_info_t           ; ///< type de l'identification de niveau L3       
 
     unsigned char       L3_info[MAX_L3_INFO]; ///< identification de niveau L3   
@@ -80,12 +90,14 @@ typedef struct {
 
 		neighbor_desc_t *pNeighborEntry 	; ///< Descripteur sur le voisinage
 		RB_desc_t 		*pRbEntry 			; ///< Descripteur sur les RB (radio bearer) ouverts
+		Sens_node_t     *pSensEntry         ; ///< Desrcipteur sur les info du sensing
+		CHANNELS_DB_T   *pChannelsEntry     ; ///< Desrcipteur sur les info des canaux
 	} rrc 									; ///<  info relatif a l'interface rrc
 	
 	struct {
         sock_rrm_t      *s                  ; ///< Socket associé a l'interface PUSU
         unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface PUSU
-        transact_t     *transaction        ; ///< liste des transactions non terminees
+        transact_t      *transaction        ; ///< liste des transactions non terminees
         pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
 	} pusu 									; ///<  info relatif a l'interface pusu
 	

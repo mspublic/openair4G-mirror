@@ -26,6 +26,10 @@
             + reception des donnees de la fifo:
                 - copie du message dans la file d'attente des messages
                 - traitement du cas du message n'ayant pas de data (ex: response )
+        L.IACOBELLI 2009-10-19
+            + sensing database
+            + channels database
+            + new cases 
 
 *******************************************************************************
 */
@@ -52,9 +56,10 @@
 #include "msg_mngt.h"
 #include "neighbor_db.h"
 #include "rb_db.h"
+#include "sens_db.h"
+#include "channels_db.h"
 #include "transact.h"
 #include "rrm_constant.h"
-
 #include "rrm_util.h"
 #include "rrm.h"
 
@@ -408,7 +413,6 @@ static void * thread_recv_msg_fifo (void * p_data )
             memcpy( msg_cpy, Data , taille ) ;
             put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg_cpy) ;
         }
-	
     }
     return NULL;
 }
@@ -485,6 +489,20 @@ static void processing_msg_cmm(
                 cmm_init_ch_req_t *p = (cmm_init_ch_req_t *) msg ;
                 cmm_init_ch_req(header->inst,p->L3_info_t,&(p->L3_info[0]));
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ\n",header->inst);
+            }
+            break ;
+        case CMM_INIT_SENSING :
+            {
+                cmm_init_sensing_t *p = (cmm_init_sensing_t *) msg ;                
+                msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",header->inst);
+                cmm_init_sensing(header->inst,p->interv);
+            }
+            break ;
+        case CMM_STOP_SENSING :
+            {
+                msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",header->inst);
+                print_sens_db(rrm->rrc.pSensEntry);
+                cmm_stop_sensing(header->inst);
             }
             break ;
         default :
@@ -603,7 +621,53 @@ static void processing_msg_rrc(
                 rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas, header->Trans_id );
             }
             break ;
-
+        case RRC_UPDATE_SENS :
+            {
+                rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS (Noeud ",header->inst);
+                for ( int i=0;i<8;i++)
+                    msg_fct("%02X", p->L2_id.L2_id[i]);
+                msg_fct( ")\n");
+                rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
+            }
+            break ;
+        case RRC_INIT_SCAN_REQ :
+            {
+                rrc_init_scan_req_t *p  = (rrc_init_scan_req_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_SCAN_REQ (Noeud ",header->inst);
+                for ( int i=0;i<8;i++)
+                    msg_fct("%02X", p->L2_id.L2_id[i]);
+                msg_fct( ")\n");
+                rrc_init_scan_req( header->inst, p->L2_id, p->interv, header->Trans_id );  
+            }
+            break ;
+        case RRC_END_SCAN_CONF :
+            {
+                rrc_end_scan_conf_t *p  = (rrc_end_scan_conf_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_CONF (Noeud ",header->inst);
+                for ( int i=0;i<8;i++)
+                    msg_fct("%02X", p->L2_id.L2_id[i]);
+                msg_fct( ")\n");
+                rrc_end_scan_conf( header->inst, p->L2_id, header->Trans_id );  
+            }
+            break ;
+        case RRC_END_SCAN_REQ :
+            {
+                rrc_end_scan_req_t *p  = (rrc_end_scan_req_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_REQ\n",header->inst);
+                rrc_end_scan_req( header->inst, p->L2_id, header->Trans_id );  
+            }
+            break ;
+        case RRC_INIT_MON_REQ :
+            {
+                rrc_init_mon_req_t *p  = (rrc_init_mon_req_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_MON_REQ (Noeud ",header->inst);
+                for ( int i=0;i<8;i++)
+                    msg_fct("%02X", p->L2_id.L2_id[i]);
+                msg_fct( ")\n");
+                rrc_init_mon_req( header->inst, p->L2_id, p->ch_to_scan, p->NB_chan, p->interval, header->Trans_id );  
+            }
+            break ;
         default :
             fprintf(stderr,"RRC:\n") ;
             printHex(msg,len_msg,1) ;
@@ -694,9 +758,9 @@ static void rrm_scheduler ( )
     fflush(stderr);
     file_msg_t *pItem ;
     while ( flag_not_exit)
-      {
+    {
         for ( ii = 0 ; ii<nb_inst ; ii++ )
-      {
+        {
             rrm_t      *rrm = &rrm_inst[ii] ;
             pItem=NULL;
 
@@ -864,7 +928,6 @@ int main( int argc , char **argv )
         usleep(100);
     }
     printf("[RRM][INIT] open fifo  /dev/rtf15 returned %d\n", Rrm_fifos.rrm_2_rrc_fifo);
-    
 #endif /* RRC_KERNEL_MODE */
 
     /* ***** MUTEX ***** */
@@ -922,6 +985,7 @@ int main( int argc , char **argv )
     init_file_msg( &(rrm_inst[ii].file_send_rrc_msg), 3 ) ;
 
     rrm_inst[ii].state              = ISOLATEDNODE ;
+    rrm_inst[ii].role               = NOROLE ;
     rrm_inst[ii].cmm.trans_cnt      =  1024;
     rrm_inst[ii].rrc.trans_cnt      =  2048;
     rrm_inst[ii].pusu.trans_cnt     =  3072;
@@ -934,6 +998,9 @@ int main( int argc , char **argv )
     rrm_inst[ii].cmm.transaction    = NULL ;
     rrm_inst[ii].pusu.transaction   = NULL ;
     rrm_inst[ii].rrc.pNeighborEntry = NULL ;
+    rrm_inst[ii].rrc.pRbEntry       = NULL ;
+    rrm_inst[ii].rrc.pSensEntry     = NULL ;
+    rrm_inst[ii].rrc.pChannelsEntry = NULL ;
       }
 
     //open_socket( &DataRrc.s,  DataRrc.sock_path_local, DataRrc.sock_path_dest ,0 );

@@ -15,6 +15,8 @@
         P.BURLOT 2009-01-20 
             Correction de bug (debordement memoire) remplacement de la macro 
             RRM_CALLOC() par RRM_CALLOC2() dans la fonction msg_rrc_sensing_meas_ind()
+        L. IACOBELLI 2010-01-05
+            + new messages for sensing
 
 *******************************************************************************
 */
@@ -61,7 +63,45 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(RRC_RB_MEAS_IND          ),
     STRINGIZER(RRM_RB_MEAS_RESP         ),
     STRINGIZER(RRM_INIT_CH_REQ          ), 
-    STRINGIZER(RRCI_INIT_MR_REQ         )   
+    STRINGIZER(RRCI_INIT_MR_REQ         ),
+    STRINGIZER(RRC_UPDATE_SENS          ),
+    STRINGIZER(RRM_INIT_MON_REQ         ),
+    STRINGIZER(RRM_INIT_SCAN_REQ        ),
+    STRINGIZER(RRC_INIT_SCAN_REQ        ),
+    STRINGIZER(RRM_SCAN_ORD             ),
+    //STRINGIZER(RRM_UPDATE_SENS          ),
+    STRINGIZER(RRM_END_SCAN_REQ         ),
+    STRINGIZER(RRC_END_SCAN_REQ         ),
+    STRINGIZER(RRC_END_SCAN_CONF        ),
+    STRINGIZER(RRM_END_SCAN_ORD         )/*,
+    STRINGIZER(RRC_INIT_MON_REQ         ),
+    STRINGIZER(RRM_ASK_FOR_FREQ         ),
+    STRINGIZER(RRC_ASK_FOR_FREQ         ),
+    STRINGIZER(RRC_OPEN_FREQ            ),
+    STRINGIZER(RRM_OPEN_FREQ            ),
+    STRINGIZER(RRM_UPDATE_SN_FREQ       ),
+    STRINGIZER(RRC_UPDATE_SN_FREQ       ),
+    STRINGIZER(RRM_UP_FREQ_ASS          ),
+    STRINGIZER(RRM_CLUST_SCAN_REQ       ),
+    STRINGIZER(RRC_CLUST_SCAN_REQ       ),
+    STRINGIZER(RRM_CLUST_SCAN_CONF      ),
+    STRINGIZER(RRM_CLUST_MON_REQ        ),
+    STRINGIZER(RRC_CLUST_MON_REQ        ),
+    STRINGIZER(RRM_CLUST_MON_CONF       ),
+    STRINGIZER(RRM_END_SCAN_CONF        ),
+    STRINGIZER(RRM_INIT_CONN_REQ        ),
+    STRINGIZER(RRC_INIT_CONN_CONF       ),
+    STRINGIZER(RRM_FREQ_ALL_PROP        ),
+    STRINGIZER(RRC_FREQ_ALL_PROP_CONF   ),
+    STRINGIZER(RRM_REP_FREQ_ALL         ),
+    STRINGIZER(RRC_REP_FREQ_ACK         ),
+    STRINGIZER(RRC_INIT_CONN_REQ        ),
+    STRINGIZER(RRM_CONN_SET             ),
+    STRINGIZER(RRC_FREQ_ALL_PROP        ),
+    STRINGIZER(RRM_FREQ_ALL_PROP_CONF   ),
+    STRINGIZER(RRC_REP_FREQ_ALL         ),
+    STRINGIZER(RRM_REP_FREQ_ACK         ) */ 
+    
 } ;
 #endif
 
@@ -448,4 +488,198 @@ msg_t * msg_rrc_rb_meas_ind(
 
 }
 
- 
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        rrc_update_sens().
+\return message formate
+*/
+
+msg_t *msg_rrc_update_sens( 
+    Instance_t inst, 
+    //double info_time            , //!< Date of the message
+    L2_ID L2_id,
+    unsigned int NB_info,
+    Sens_ch_t *Sens_meas, 
+    Transaction_t Trans_id
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
+        
+    if ( msg != NULL )
+    {
+        unsigned int size = sizeof( rrc_update_sens_t ) + (NB_info-1) * sizeof(Sens_ch_t) ;
+        
+        rrc_update_sens_t *p = RRM_CALLOC2(rrc_update_sens_t , size ) ;
+
+        if ( p != NULL )
+        {
+            //fprintf(stdout,"msg_rrc_update_sens() time : %d\n", NB_info); //dbg
+            init_rrc_msg_head(&(msg->head),inst, RRC_UPDATE_SENS, size ,Trans_id);
+            //fprintf(stdout,"msg_rrc_update_sens() time : %f\n", info_time); //dbg
+
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+
+            p->NB_info       = NB_info    ;
+            if ( NB_info > 0 )
+            {
+                memcpy( p->Sens_meas , Sens_meas, NB_info * sizeof(Sens_ch_t) )  ;
+            }
+            
+        }
+        
+        msg->data = (char *) p ;
+    }
+    
+    return msg ;
+
+}
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction
+        rrc_init_scan_req().
+\return message formate
+*/
+
+msg_t *msg_rrc_init_scan_req(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           ,
+    float             interv          , //! interval between 2 scanning periods
+    Transaction_t     Trans_id          //!< Transaction ID
+    
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+
+    if ( msg != NULL )
+    {
+        rrc_init_scan_req_t *p = RRM_CALLOC(rrc_init_scan_req_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_rrc_msg_head(&(msg->head),inst,RRC_INIT_SCAN_REQ, sizeof( rrc_init_scan_req_t ) ,Trans_id);
+            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            p->interv = interv;
+       
+        }
+        
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction
+        rrc_end_scan_conf().
+\return message formate
+*/
+
+msg_t *msg_rrc_end_scan_conf(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           ,
+    Transaction_t     Trans_id          //!< Transaction ID
+    
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+
+    if ( msg != NULL )
+    {
+        rrc_end_scan_conf_t *p = RRM_CALLOC(rrc_end_scan_conf_t , 1 ) ;
+        if ( p != NULL )
+        {
+            init_rrc_msg_head(&(msg->head),inst,RRC_END_SCAN_CONF, sizeof( rrc_end_scan_conf_t ) ,Trans_id);
+            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+       
+        }
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction
+        rrc_end_scan_req().
+\return message formate
+*/
+msg_t *msg_rrc_end_scan_req( 
+    Instance_t    inst, 
+    L2_ID         L2_id           ,
+    Transaction_t Trans_id 
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+    fprintf(stdout,"msg_rrc_end_scan_req\n"); //dbg
+    if ( msg != NULL )
+    {
+        rrc_end_scan_req_t *p = RRM_CALLOC(rrc_end_scan_req_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_rrc_msg_head(&(msg->head),inst,RRC_END_SCAN_REQ, sizeof( rrc_end_scan_req_t ) ,Trans_id);
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+        }
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction
+        rrc_init_mon_req().
+\return message formate
+*/
+
+msg_t *msg_rrc_init_mon_req(
+    Instance_t        inst            , //!< instance ID
+    L2_ID             L2_id           ,
+    unsigned int      *ch_to_scan     ,
+    unsigned int      NB_chan         , 
+    float             interval        ,
+    Transaction_t     Trans_id          //!< Transaction ID
+    
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+
+    if ( msg != NULL )
+    {
+        unsigned int size = sizeof( rrc_init_mon_req_t ) + (NB_chan-1) * sizeof(unsigned int) ;
+
+        rrc_init_mon_req_t *p = RRM_CALLOC2(rrc_init_mon_req_t , size ) ;
+
+        if ( p != NULL )
+        {
+            //for (int i=0; i<NB_chan; i++)
+              //  fprintf(stdout,"msg_rrm_init_mon_req(), chan: %d\n", ch_to_scan[i]); //dbg
+            init_rrc_msg_head(&(msg->head),inst,RRC_INIT_MON_REQ, size ,Trans_id);
+            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            p->NB_chan = NB_chan;
+            p->interval = interval;
+            
+            if ( NB_chan != 0 )
+                memcpy( p->ch_to_scan, ch_to_scan, NB_chan*sizeof(unsigned int) );
+                
+           // for (int i=0; i<NB_chan; i++)
+             //   fprintf(stdout,"msg_rrm_init_mon_req(), after memcpy: %d\n", ch_to_scan[i]); //dbg
+                
+            //fprintf(stderr,"pointer ch_to_scan  @%p \n", p->ch_to_scan);//dbg
+            //for (int i=0; i<NB_chan;i++)//dbg
+            //    fprintf(stderr,"channel %d to scan \n", p->ch_to_scan[i]);//dbg
+            
+           
+        }
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+

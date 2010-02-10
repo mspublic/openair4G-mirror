@@ -5,7 +5,7 @@
 
 \brief      Fichier d'entete contenant les declarations des types, des defines ,
             et des fonctions relatives aux fonctions de communication RRM 
-            (Radio Resource Management ) vec les autres entites RRC/CMM/PUSU.
+            (Radio Resource Management ) avec les autres entites RRC/CMM/PUSU.
 
 \author     BURLOT Pascal
 

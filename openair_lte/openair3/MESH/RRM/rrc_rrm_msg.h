@@ -15,20 +15,18 @@
 
 \date       17/07/08
 
-   
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+        L.IACOBELLI 2009-10-19
+            + sensing messages 
 
 *******************************************************************************
 */
 #ifndef __RRC_RRM_MSG_H
 #define __RRC_RRM_MSG_H
 
-
 #include "L3_rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
+
 #ifdef OPENAIR2_IN
 #include "rrm_sock.h"
 #else
@@ -64,9 +62,46 @@ typedef enum {
     RRM_SENSING_MEAS_RESP       , ///< Message RRM->RRC : reponse a l'indication de nouvel mesure de sensing
     RRC_RB_MEAS_IND             , ///< Message RRC->RRM : indication de nouvel mesure sur un RB 
     RRM_RB_MEAS_RESP            , ///< Message RRM->RRC : reponse a l'indication de nouvel mesure sur un RB
-    RRM_INIT_CH_REQ             , ///<Message RRM->RRC : init d'un CH
-    RRCI_INIT_MR_REQ            , ///<Message RRM->RRC : init d'un MR
-    NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
+    RRM_INIT_CH_REQ             , ///< Message RRM->RRC : init d'un CH
+    RRCI_INIT_MR_REQ            , ///< Message RRM->RRC : init d'un MR
+    RRC_UPDATE_SENS             , ///< Message RRC->RRM : update of the sensing information measured by the nodes
+    RRM_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
+    RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
+    RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
+    RRM_SCAN_ORD                , ///< Message RRM->RRC : order to scann indicated channels
+    //RRM_UPDATE_SENS             , ///< Message RRM->RRC : update to send to CH/FC
+    RRM_END_SCAN_REQ            , ///< Message RRM->RRC : end of a scanning process
+    RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
+    RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
+    RRM_END_SCAN_ORD            , ///< Message RRM->RRC : end of a scanning process in sensors
+    RRC_INIT_MON_REQ            , ///< Message RRC->RRM : initiation of a scanning monitoring
+    /*RRM_ASK_FOR_FREQ            , ///< Message RRM->RRC : in BTS to ask free frequencies to FC / in SU to ask fr. to BTS
+    RRC_OPEN_FREQ               , ///< Message RRC->RRM : list of frequencies usable by the secondary network
+    RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
+    RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
+    RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
+    RRC_UPDATE_SN_FREQ          , ///< Message RRC->RRM : FC receives used freq. from BTS
+    RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
+    RRM_CLUST_SCAN_REQ          , ///< Message RRM->RRC : CH1 contacts CH2 to collaborate for the sensing process 
+    RRC_CLUST_SCAN_REQ          , ///< Message RRC->RRM : CH2 receive request to collaborate for the sensing process from CH1
+    RRM_CLUST_SCAN_CONF         , ///< Message RRM->RRC : CH2 confirmrs the beginning of a collaboration process
+    RRM_CLUST_MON_REQ           , ///< Message RRM->RRC : CH1 contacts CH2 to collaborate for the monitoring process 
+    RRC_CLUST_MON_REQ           , ///< Message RRC->RRM : CH2 receive request to collaborate for the monitoring process from CH1
+    RRM_CLUST_MON_CONF          , ///< Message RRM->RRC : CH2 confirmrs the beginning of a monitoring process
+    RRM_END_SCAN_CONF           , ///< Message RRM->RRC : CH2 confirmrs the end of the collaborative sensing process at CH1
+    RRM_INIT_CONN_REQ           , ///< Message RRM->RRC : SU 1 requests a connection to SU 2
+    RRC_INIT_CONN_CONF          , ///< Message RRM->RRC : Confirm from SU2 about the requested connection
+    RRM_FREQ_ALL_PROP           , ///< Message RRM->RRC : SU1 sends a proposition of teh frequencies to use
+    RRC_FREQ_ALL_PROP_CONF      , ///< Message RRC->RRM : SU1 receives a confirm on the usable channels
+    RRM_REP_FREQ_ALL            , ///< Message RRM->RRC : SU1 reports to CH the possible channels
+    RRC_REP_FREQ_ACK            , ///< Message RRC->RRM : CH informs all SUs about a channel allocated to 2 SUs
+    RRC_INIT_CONN_REQ           , ///< Message RRC->RRM : Request from SU1 to establish a connection
+    RRM_CONN_SET                , ///< Message RRC->RRM : Response to SU1 and connection settings communicated to rcc
+    RRC_FREQ_ALL_PROP           , ///< Message RRC->RRM : SU1 proposition of frequencies to use
+    RRM_FREQ_ALL_PROP_CONF      , ///< Message RRC->RRM : SU2 choise of frequencies to use
+    RRC_REP_FREQ_ALL            , ///< Message RRM->RRC : SU1 reports to CH the possible channels
+    RRM_REP_FREQ_ACK            , ///< Message RRC->RRM : CH informs all SUs about a channel allocated to 2 SUs
+    */NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
 
 } MSG_RRC_RRM_T ;
 
@@ -227,6 +262,99 @@ typedef struct {
     MAC_RLC_MEAS_T     Mac_rlc_meas          ; //!< MAC/RLC measurements
 } rrc_rb_meas_ind_t;
 
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions rrc_update_sens() 
+        rdans une structure permettant le passage 
+        des parametres via un socket
+*/
+typedef struct {
+    double              info_time              ; //!< Date of the message
+    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
+    unsigned int        NB_info                ; //!< number of sensed channels
+    Sens_ch_t           Sens_meas[NB_SENS_MAX]           ; //!< sensing information
+} rrc_update_sens_t; 
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions  
+        rrm_update_sens()dans une structure permettant le passage 
+        des parametres via un socket
+*/
+/*typedef struct {
+    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
+    unsigned int        NB_info                ; //!< number of sensed channels
+    Sens_ch_t           Sens_meas[1]           ; //!< sensing information
+} rrm_update_sens_t ;  */ 
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres des fonctions rrm_init_mon_req(), 
+        rrc_init_mon_req(), rrm_clust_mon_req(), rrc_clust_mon_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of destination
+    unsigned int        NB_chan              ; //!< Number of channels to scan
+    float               interval             ; //!< Time between two sensing sessions
+    unsigned int        ch_to_scan[NB_SENS_MAX]        ; //!< Vector of channels to scan
+} rrm_init_mon_req_t,
+ rrc_init_mon_req_t/*,
+ rrm_clust_mon_req_t,
+ rrc_clust_mon_req_t*/;  
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_init_scan_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    unsigned int      interv             ; //!< Time between two sensing sessions
+} rrm_init_scan_req_t;
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrc_init_scan_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
+    float      interv             ; //!< Time between two sensing sessions
+} rrc_init_scan_req_t;  
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_init_mon_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    unsigned int        NB_chan              ; //!< Number of channels to scan if 0 means all channels
+    unsigned int        ch_to_scan[1]        ; //!< Vector of channels to scan
+} rrm_scan_ord_t ;
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_end_scan_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of destination sensor/FC
+} rrm_end_scan_req_t,
+rrc_end_scan_req_t, 
+rrc_end_scan_conf_t;
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_end_scan_ord() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC
+    unsigned int        NB_chan              ; //!< Number of channels 
+    unsigned int        channels[NB_SENS_MAX]          ; //!< Vector of channels
+} rrm_end_scan_ord_t ;
+
+
 #ifdef TRACE
 extern const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] ; 
 #endif
@@ -266,7 +394,16 @@ msg_t *msg_rrm_init_ch_req( Instance_t inst, Transaction_t Trans_id,
 msg_t *msg_rrci_init_mr_req( Instance_t inst, 
             Transaction_t Trans_id, const LCHAN_DESC *Lchan_desc_srb0, 
             const LCHAN_DESC  *Lchan_desc_srb1, unsigned char CH_index); 
+            
+msg_t *msg_rrm_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, 
+            float interval, unsigned int *ch_to_scan, Transaction_t Trans_id );
+msg_t *msg_rrm_init_scan_req(Instance_t inst, float interv, Transaction_t Trans_id );
 
+msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int *ch_to_scan, Transaction_t Trans_id ); 
+//msg_t *msg_rrm_update_sens( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
+msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
+msg_t *msg_rrm_end_scan_ord(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *channels,
+             Transaction_t Trans_id );
 
 #ifdef __cplusplus
 }

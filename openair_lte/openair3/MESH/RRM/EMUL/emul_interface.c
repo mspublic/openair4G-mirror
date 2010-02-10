@@ -15,9 +15,8 @@
 
 
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+            L.IACOBELLI 2009-10-19
+                + new messages
 
 *******************************************************************************
 */
@@ -49,7 +48,7 @@
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
-#define NUM_SCENARIO  5
+#define NUM_SCENARIO  8
 #define PUSU_EMUL
 
 #ifdef RRC_EMUL
@@ -67,6 +66,8 @@ extern msg_t *msg_rrc_rb_modify_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_rb_modify_cfm(Instance_t inst, RB_ID Rb_id, Transaction_t Trans_id  );
 extern msg_t *msg_rrc_rb_release_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_MR_attach_ind( Instance_t inst, L2_ID L2_id );
+extern msg_t *msg_rrc_update_sens( Instance_t inst,  /*double info_time,*/ L2_ID L2_id, unsigned int NB_info, Sens_ch_t *Sens_meas, Transaction_t Trans_id);
+
 
 #endif
 
@@ -337,6 +338,46 @@ static void * fn_rrc (
                         msg_fct( "[RRM]>[RRC]:%d:RRM_INIT_MR_REQ\n",header->inst);
                     }
                     break ;
+                case RRM_INIT_MON_REQ:
+                    {
+                        rrm_init_mon_req_t *p = (rrm_init_mon_req_t *) msg ;
+                        msg_fct( "[RRM]>[RRC]:%d:RRM_INIT_MON_REQ on channels: ",header->inst);
+                        fprintf(stdout,"chan nb: %d\n", p->NB_chan); //dbg
+                        for ( int i=0;i<p->NB_chan;i++)
+                            msg_fct("%d ", p->ch_to_scan[i]);
+                        msg_fct( "\n");
+                    
+                    }
+                    break ;
+                case RRM_INIT_SCAN_REQ:
+                    {
+                        msg_fct( "[RRM]>[RRC]:%d:RRM_INIT_SCAN_REQ\n",header->inst);
+                        
+                    }
+                    break ;
+                case RRM_SCAN_ORD:
+                    {
+                        msg_fct( "[RRM]>[RRC]:%d:RRM_SCAN_ORD\n",header->inst);
+                        
+                    }
+                    break ;
+                case RRM_END_SCAN_REQ:
+                    {
+                        rrm_end_scan_req_t *p = (rrm_end_scan_req_t *) msg ;
+                        msg_fct( "[RRM]>[RRC]:%d:RRM_END_SCAN_REQ on sensor",header->inst);
+                        for ( int i=0;i<8;i++)
+                            msg_fct("%02X", p->L2_id.L2_id[i]);
+                        msg_fct( "\n");
+                        
+                        
+                    }
+                    break ;
+                case RRM_END_SCAN_ORD:
+                    {
+                        msg_fct( "[RRM]>[RRC]:%d:RRM_END_SCAN_ORD\n",header->inst);
+                        
+                    }
+                    break ;
                 default :
                     fprintf(stderr, "RRC: msg unknown %d\n", header->msg_type) ;
                     //printHex(msg,n,1);
@@ -450,6 +491,11 @@ static void * fn_cmm (
                 case RRM_ATTACH_IND :
                     {
                         msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
+                        float delai = 0.05 ;
+                        pthread_mutex_lock( &actdiff_exclu  ) ;
+			add_actdiff(&list_actdiff,delai, cnt_actdiff++, s,
+				    msg_cmm_init_sensing(0,1 ) ) ;
+                        pthread_mutex_unlock( &actdiff_exclu ) ;
                     }
                     break ;
                 case RRM_MR_ATTACH_IND :

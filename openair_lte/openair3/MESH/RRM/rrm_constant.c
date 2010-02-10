@@ -26,8 +26,9 @@
 #ifdef OPENAIR2
 #include "platform_constants.h"
 #else
-#define BCCH_PAYLOAD_SIZE_MAX 30
-#define CCCH_PAYLOAD_SIZE_MAX 18
+//Always synchronize with value in openair2/LAYER2/MAC/defs.h 
+#define BCCH_PAYLOAD_SIZE_MAX 20  
+#define CCCH_PAYLOAD_SIZE_MAX 28
 #endif
 
 /*! \todo a definir les valeurs par defaut */
@@ -43,8 +44,8 @@ const  LCHAN_DESC        Lchan_desc[MAX_QOS_CLASS] =
     {      30,       20,        64,    128,    1,    0,   LCHAN_DCCH   }, // SRB2
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH_B }, // DTCH_B
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
-    {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
-    {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
+    {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   }, 
+    {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   }, 
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
     {      52,       20,        64,    128,    1,    0,   LCHAN_DTCH   },
@@ -93,7 +94,7 @@ const MAC_RLC_MEAS_DESC Mac_rlc_meas_desc[MAX_QOS_CLASS] =
                 .Spec_eff_forgetting_factor=0} ,      
       .bo_forgetting_factor=0, .sdu_loss_trigger=0, .Rep_amount=0, .Rep_interval=0
     },
-    /* 5 : QOS_CLASS  */
+    /* 5 : QOS_CLASS  = CSCH */
     { .Meas_trigger={.Rssi=0,.Sinr={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
                      .Harq_delay=0,.Bler=0,.Spec_eff=0, .Qdepth = 0} ,   
       .Mac_avg={.Rssi_forgetting_factor=0,.Sinr_forgetting_factor=0,
@@ -101,7 +102,7 @@ const MAC_RLC_MEAS_DESC Mac_rlc_meas_desc[MAX_QOS_CLASS] =
                 .Spec_eff_forgetting_factor=0} ,      
       .bo_forgetting_factor=0, .sdu_loss_trigger=0, .Rep_amount=0, .Rep_interval=0
     },
-    /* 6 : QOS_CLASS  */
+    /* 6 : QOS_CLASS  = CPCH */
     { .Meas_trigger={.Rssi=0,.Sinr={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
                      .Harq_delay=0,.Bler=0,.Spec_eff=0, .Qdepth = 0} ,   
       .Mac_avg={.Rssi_forgetting_factor=0,.Sinr_forgetting_factor=0,
