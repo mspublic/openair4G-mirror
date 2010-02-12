@@ -831,5 +831,33 @@ void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char DCI_FMT,
 		  char *e,
 		  unsigned char *decoded_output);
+
+/*!
+\brief This function generate the sounding reference symbol (SRS) for the uplink. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
+@param frame_parms LTE DL Frame Parameters
+@param txdataF pointer to the frequency domain TX signal
+@param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
+@sub_frame_offset  Offset of this subframe in units of subframes
+*/
+
+
+int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
+		    mod_sym_t *txdataF,
+		    short amp,
+		    unsigned int sub_frame_offset);
+
+/*!
+\brief This function is similar to generate_srs_tx but generates a conjugate sequence for channel estimation. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
+@param frame_parms LTE DL Frame Parameters
+@param txdataF pointer to the frequency domain TX signal
+@param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
+@sub_frame_offset  Offset of this subframe in units of subframes
+*/
+
+int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
+		    int *txdataF,
+		    unsigned int sub_frame_offset);
+
+
 /**@}*/
 #endif

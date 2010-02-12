@@ -22,6 +22,7 @@ ________________________________________________________________*/
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {
   unsigned char N_RB_DL;                ///Number of resource blocks (RB) in DL
+  unsigned char N_RB_UL;                ///Number of resource blocks (RB) in UL
   unsigned char Nid_cell;               ///Cell ID 
   unsigned char Ncp;                    ///Cyclic Prefix (0=Normal CP, 1=Extended CP)
   unsigned char nushift;                ///shift of pilot position in one RB
@@ -35,8 +36,12 @@ typedef struct {
   unsigned char nb_antennas_rx;
   unsigned char first_dlsch_symbol;   
   short *twiddle_fft;                  ///pointer to twiddle factors for FFT
-  short *twiddle_ifft;                  ///pointer to twiddle factors for IFFT
+  short *twiddle_ifft;                 ///pointer to twiddle factors for IFFT
   unsigned short *rev;                 ///pointer to FFT permutation
+  unsigned char Csrs;                  ///SRS BandwidthConfiguration \in {0,1,...,7}
+  unsigned char Bsrs;                  ///SRS Bandwidth \in {0,1,2,3}
+  unsigned char kTC;                   ///SRS kTC  Transmission Comb \in {0,1}
+  unsigned char n_RRC;                 ///SRS n_RRC Frequency Domain Position \in {0,1,...,23}
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -47,16 +52,20 @@ typedef enum {
 } MIMO_mode_t;
 
 typedef struct{
-  int **txdata;
-  mod_sym_t **txdataF;
+  int **txdata;           ///holds the transmit data in time domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
+  mod_sym_t **txdataF;    ///holds the transmit data in the frequency domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF;          ///holds the received data in the frequency domain
+  int **ul_ch_estimates[3];  /// hold the channel estimates in frequency domain
+  int* srs;               /// holds the SRS for channel estimation at the RX
 } LTE_eNB_COMMON;
 
 //typedef struct{
 //} LTE_eNB_DLSCH;
 
 typedef struct {
+  int **txdata;           ///holds the transmit data in time domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
+  mod_sym_t **txdataF;    ///holds the transmit data in the frequency domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF;          ///holds the received data in the frequency domain
   int **dl_ch_estimates[3];  /// hold the channel estimates in frequency domain
