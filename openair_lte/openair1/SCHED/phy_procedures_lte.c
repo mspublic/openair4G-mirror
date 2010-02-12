@@ -159,7 +159,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     input_buffer_length = ((int)(coded_bits_per_codeword*rate_num/rate_den))>>3;
    
 
-    // process symbols in last_slot
+    // RX processing of symbols in last_slot
     for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	
       if (((openair_daq_vars.tdd==1) && (last_slot<10)) || (openair_daq_vars.tdd == 0)) {
@@ -278,12 +278,15 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
       // process DLSCH slots 
       // slots 4 6 8 10 (and 12 14 18 0 if FDD)
-      if (((openair_daq_vars.tdd==1) && (last_slot <= 10) && (last_slot > 2)) || 
+      if (((openair_daq_vars.tdd==1) && (last_slot <= 10) && (last_slot >= 2)) || 
 	  (openair_daq_vars.tdd==0)) {
 
 	if  ((last_slot > 2) || ((last_slot==0) && (mac_xface->frame>0))) {
 
 	  if (((last_slot%2)==0) && (l==0)) {
+
+	    //if ((mac_xface->frame % 100) == 0)
+	    //  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 10,11,12\n",mac_xface->frame,last_slot);
 
 	    // process symbols 10,11,12 and trigger DLSCH decoding
 	    for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
@@ -356,6 +359,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	if ((last_slot > 1)) { // && (last_slot<19)) {
 	  if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp))) 
 	    
+	    //if ((mac_xface->frame % 100) == 0)
+	    //  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 0,1,2\n",mac_xface->frame,last_slot);
+
 	    // process symbols 0,1,2
 	    for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
 	      rx_dlsch(lte_ue_common_vars,
@@ -371,6 +377,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
 	  if (((last_slot%2)==1) && (l==0)) 
 	    
+	    //if ((mac_xface->frame % 100) == 0)
+	    //  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 3,4,5\n",mac_xface->frame,last_slot);
+
 	    // process symbols 3,4,5
 	    for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
 	      rx_dlsch(lte_ue_common_vars,
@@ -386,6 +395,9 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	  
 	  if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp)))
 	    
+	    //if ((mac_xface->frame % 100) == 0)
+	    //  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 6,7,8\n",mac_xface->frame,last_slot);
+
 	    // process symbols 6,7,8
 	    for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
 	      rx_dlsch(lte_ue_common_vars,
@@ -400,6 +412,17 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		       dual_stream_UE);
 	}
       }
+    }
+
+    // TX processing
+    if (((openair_daq_vars.tdd==1) && (next_slot>=10)) || (openair_daq_vars.tdd == 0)) {
+      
+      if ((mac_xface->frame % 100) == 0)
+	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
+
+      subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->N_RB_UL*12;
+      generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],ONE_OVER_SQRT2_Q15,subframe_offset);
+
     }
 
 
@@ -433,6 +456,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
   else { // we are a CH
 
+    // TX processing
     if (((openair_daq_vars.tdd==1) && (next_slot <= 10)) || (openair_daq_vars.tdd==0)) {
       generate_pilots_slot(lte_eNB_common_vars->txdataF,
 			   AMP,
@@ -518,6 +542,28 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	
       }
     }
+
+    //RX processing
+    if (((openair_daq_vars.tdd==1) && (last_slot>=10)) || (openair_daq_vars.tdd == 0)) {
+      
+      subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size;
+
+      for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+	
+	slot_fep_ul(lte_frame_parms,
+		    lte_eNB_common_vars,
+		    l,
+		    last_slot,
+		    subframe_offset,
+		    1);
+      }
+      
+      if ((mac_xface->frame % 100) == 0)
+	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation\n",mac_xface->frame,last_slot);
+
+    }
+
+
   }
   
   return(0);

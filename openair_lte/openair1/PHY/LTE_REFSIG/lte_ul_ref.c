@@ -85,7 +85,7 @@ void free_ul_ref_sigs(void){
     for (u=0;u<30;u++) {
       for (v=0;v<2;v++) {
 	if (ul_ref_sigs[u][v][Msc_RS])
-	  free(ul_ref_sigs[u][v][Msc_RS]);
+	  free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(short)*dftsizes[Msc_RS]);
       }
     }
   }

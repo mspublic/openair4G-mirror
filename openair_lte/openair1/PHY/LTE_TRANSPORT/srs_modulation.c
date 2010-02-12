@@ -132,7 +132,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 
 #ifndef IFFT_FPGA
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-  msg("carrier_pos = %d\n",carrier_pos);
+  //msg("carrier_pos = %d\n",carrier_pos);
 
   symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
 
@@ -145,7 +145,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 #else
   carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
-  msg("carrier_pos = %d\n",carrier_pos);
+  //msg("carrier_pos = %d\n",carrier_pos);
 
   symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
 

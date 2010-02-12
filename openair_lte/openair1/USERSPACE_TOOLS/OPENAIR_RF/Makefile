@@ -74,8 +74,10 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 endif
 
 # PHY Coding routines

@@ -246,6 +246,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	lte_gold(lte_frame_parms);
 
+	generate_ul_ref_sigs();
+
 	set_taus_seed();
 
 	/*

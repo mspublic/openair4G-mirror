@@ -765,7 +765,7 @@ unsigned int dlsch_decoding(unsigned short A,
 @param frame_parms Pointer to frame descriptor
 @param eNb index (Nid1) 0,1,2
 @param Interfering eNb index (Nid1) 0,1,2
-@param symbol Symbol on which to act
+@param symbol Symbol on which to act (within sub-frame)
 @param rb_alloc RB allocation vector
 @param Qm Modulation orders on layers 0,1 for this DLSCH.  These must be set even for single-stream
 @param mimo_mode MIMO mode for this DLSCH

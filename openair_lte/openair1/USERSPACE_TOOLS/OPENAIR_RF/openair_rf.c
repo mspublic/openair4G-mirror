@@ -212,12 +212,17 @@ int main (int argc, char **argv) {
   lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 
   lte_frame_parms->N_RB_DL            = 25;
+  lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->Csrs = 2;
+  lte_frame_parms->Bsrs = 0;
+  lte_frame_parms->kTC = 0;
+  lte_frame_parms->n_RRC = 0;
   
   init_frame_parms(lte_frame_parms);
   
@@ -228,6 +233,8 @@ int main (int argc, char **argv) {
   lte_frame_parms->rev              = rev;
   
   lte_gold(lte_frame_parms);
+
+  generate_ul_ref_sigs();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);

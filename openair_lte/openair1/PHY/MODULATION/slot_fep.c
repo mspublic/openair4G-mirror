@@ -10,7 +10,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      int no_prefix) {
  
   unsigned char aa;
-  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within frame
+  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned char eNb_id;
 

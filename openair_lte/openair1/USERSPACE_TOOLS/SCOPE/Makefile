@@ -15,6 +15,11 @@ ifdef EMOS
 CFLAGS += -DEMOS
 endif
 
+ifdef SCOPE_UL
+CFLAGS += -DSCOPE_UL
+EXT = _ul
+endif
+
 all: chbch_scope
 
 chbch: $(CHBCH_OBJS) $(COMMON_OBJS) 
@@ -27,7 +32,7 @@ sach: $(SACH_OBJS) $(COMMON_OBJS)
 	$(CC)  -o sach_scope $(CFLAGS) $(SACH_OBJS) $(COMMON_OBJS) -lm -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lpthread  -fno-stack-check 
 
 lte: $(LTE_OBJS) 
-	$(CC)  -o lte_scope $(CFLAGS) $(LTE_OBJS)  -lm -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lpthread  -fno-stack-check -DOPENAIR_LTE
+	$(CC)  -o lte_scope$(EXT) $(CFLAGS) $(LTE_OBJS)  -lm -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lpthread  -fno-stack-check -DOPENAIR_LTE
 
 $(CHBCH_OBJS) $(CHBCH2_OBJS) $(SACH_OBJS) $(COMMON_OBJS) : %.o: %.c 
 	$(CC) -c $(DEBUG_FLAGS) $(CFLAGS) $(INCLUDE) -o $@ $<

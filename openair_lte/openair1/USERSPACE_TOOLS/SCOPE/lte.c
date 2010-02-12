@@ -119,6 +119,8 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
+
+#ifndef SCOPE_UL
   /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
@@ -149,6 +151,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
+#endif
 
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
@@ -159,6 +162,7 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
 
+#ifndef SCOPE_UL
   j=0;
   for(i=0;i<384;i++) {
     llr[j] = (float) pbch_llr[i];
@@ -217,6 +221,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
   fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
+#endif
 
   usleep(100000);
 }
@@ -249,24 +254,6 @@ int main(int argc, char *argv[]) {
 
   PHY_config = malloc(sizeof(PHY_CONFIG));
 
-  /*
-   if((config = fopen("./widens_config.cfg","r")) == NULL) // this can be configured
-	{
-	  printf("[Main USER] The widens configuration file <widens_config.cfg> could not be found!");
-	  exit(0);
-	}		
-  
-  if ((scenario= fopen("./widens_scenario.scn","r")) ==NULL)
-    {
-      printf("[Main USER] The widens scenario file <widens_scenario.scn> could not be found!");
-      exit(0);
-    }
-  
-  printf("Opened configuration files\n");
-
-  reconfigure_MACPHY(scenario);
-  */
-
   printf("Opening /dev/openair0\n");
   if ((openair_fd = open("/dev/openair0", O_RDONLY)) <0) {
     fprintf(stderr,"Error %d opening /dev/openair0\n",openair_fd);
@@ -287,6 +274,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
   printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
   printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
+  printf("PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -308,11 +296,19 @@ int main(int argc, char *argv[]) {
 
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
+#ifndef SCOPE_UL
     channel_f[i] = (short*)(mem_base + 
 			    (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] + 
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+#else
+    channel_f[i] = (short*)(mem_base + 
+			    (unsigned int)PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0] + 
+			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
+			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
+			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+#endif
 
     channel[i] = (short*)(mem_base + 
 			  (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates_time + 
@@ -331,6 +327,9 @@ int main(int argc, char *argv[]) {
 		     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   printf("sync_corr = %p\n", sync_corr);
 
+
+#ifndef SCOPE_UL
+  // only if UE
   lte_ue_pbch = (LTE_UE_PBCH *) (mem_base + 
 				 (unsigned int)PHY_vars->lte_ue_pbch_vars[0] - 
 				 (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
@@ -365,7 +364,7 @@ int main(int argc, char *argv[]) {
 
   printf("dlsch_comp = %p\n",dlsch_comp);
   printf("dlsch_llr = %p\n",dlsch_llr);
-
+#endif
   
   sprintf(title, "LTE SCOPE"),
 

@@ -133,6 +133,7 @@ ifdef EMOS
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
 endif
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
@@ -145,11 +146,13 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o  
 
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
+openair_rf-objs += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
 openair_rf-objs += $(TOP_DIR)/PHY/CODING/rate_matching.o

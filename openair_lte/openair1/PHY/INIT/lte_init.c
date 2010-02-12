@@ -259,7 +259,6 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
     ue_dlsch_vars[eNb_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
     ue_dlsch_vars[eNb_id]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-
     
     
     // PBCH
@@ -325,10 +324,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   //RX vars
   eNB_common_vars->rxdata = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
   if (eNB_common_vars->rxdata) {
-    //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata allocated at %p\n",
 	   eNB_common_vars->rxdata);
-    //#endif
+#endif
   }
   else {
     msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata not allocated\n");
@@ -337,17 +336,17 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     eNB_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
-    //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d] = %p\n",i,eNB_common_vars->rxdata[i]);
-    //#endif
+#endif
   }
 
   eNB_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
   if (eNB_common_vars->rxdataF) {
-    //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF allocated at %p\n",
 	   eNB_common_vars->rxdataF);
-    //#endif
+#endif
   }
   else {
     msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF not allocated\n");
@@ -358,10 +357,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     //RK 2 times because of output format of FFT!  We should get rid of this
     eNB_common_vars->rxdataF[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
     if (eNB_common_vars->rxdataF[i]) {
-      //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF[%d] allocated at %p\n",i,
 	     eNB_common_vars->rxdataF[i]);
-      //#endif
+#endif
     }
     else {
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF[%d] not allocated\n",i);
