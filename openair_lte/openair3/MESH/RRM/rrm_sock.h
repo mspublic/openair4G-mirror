@@ -29,6 +29,8 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>   //mod_lor_10_01_25
+#include <netdb.h>   //mod_lor_10_01_25
 
 
 #ifdef __cplusplus
@@ -96,10 +98,24 @@ typedef struct {
     struct  sockaddr_un un_dest_addr        ; ///< Adresse destinataire si unix socket
 } sock_rrm_t ;
 
+//mod_lor_10_01_25++
+typedef struct {
+    int s                                   ; ///< identification du socket 
+    struct  sockaddr_in in_local_addr       ; ///< Adresse local si internet socket
+    struct  sockaddr_in in_dest_addr        ; ///< Adresse destinataire si internet socket
+} sock_rrm_int_t ;
+//mod_lor_10_01_25--
+
+
 int   open_socket( sock_rrm_t *s  ,char *path_local, char *path_dest , int rrm_inst ) ;
 void  close_socket(sock_rrm_t *sock ) ;
 int   send_msg(sock_rrm_t *s  ,msg_t *msg ) ;
 char *recv_msg( sock_rrm_t *s ) ;   
+
+int   open_socket_int( sock_rrm_int_t *s  , unsigned char *path_local, int local_port, unsigned char *path_dest , int dest_port, int rrm_inst ) ;   //mod_lor_10_01_25
+int   send_msg_int(sock_rrm_int_t *s  ,msg_t *msg  ) ; //mod_lor_10_01_25
+char *recv_msg_int( sock_rrm_int_t *s ) ;  //mod_lor_10_01_25
+void  close_socket_int(sock_rrm_int_t *sock ) ;  //mod_lor_10_01_25
         
 #ifdef __cplusplus
 }

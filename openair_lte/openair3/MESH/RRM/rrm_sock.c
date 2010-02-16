@@ -42,6 +42,8 @@
 
 
 #include <sys/socket.h>
+#include <netinet/in.h>   //mod_lor_10_01_25
+#include <arpa/inet.h>   //mod_lor_10_01_25
 #include <sys/un.h>
 
 
@@ -145,7 +147,7 @@ int send_msg(
         if ( sendmsg(s->s, &msghd, 0) < 0 )
         {
             ret = -1; 
-            perror("sendmsg:unix socket");
+            perror("sendmsg:unix socket unix");
         }
     }
     
@@ -215,3 +217,214 @@ char *recv_msg(
     
     return msg ;
 }
+
+//mod_lor_10_01_25++
+/*!
+*******************************************************************************
+\brief  This function opens a internet socket for the rrm communication
+        ( no-connected mode / UDP DATAGRAM )
+\return  The return value is a socket handle
+*/
+int open_socket_int( 
+    sock_rrm_int_t *s,  ///< socket descriptor
+    unsigned char *path_local ,  ///< local socket path if internet socket
+    int local_port,     ///< local socket port if internet socket
+    unsigned char *path_dest ,   ///< dest socket path if internet socket
+    int dest_port,      ///< dest socket port if internet socket
+    int rrm_inst        ///< instance of the rrm entity
+    ) 
+{ /* Internet socket */
+    int     socket_fd ;
+    int     len ;
+    unsigned long int tmp; 
+    unsigned char local_test [4];
+    if (path_local == NULL)
+        fprintf(stderr,"path_local = NULL\n  ");//dbg
+    
+   
+    if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
+    {
+        perror("internet socket");
+        return -1 ;
+    }
+    
+   //fprintf(stderr,"tmp1 %X \n", path_local);//dbg
+    
+    
+    memset(&(s->in_local_addr), 0, sizeof(struct    sockaddr_in));
+    
+    s->in_local_addr.sin_family = AF_INET;
+    s->in_local_addr.sin_port = htons(local_port);
+    //fprintf(stderr,"rrm_inst %d\n  ", rrm_inst);//dbg 
+    
+#ifdef PHY_EMUL
+    if (rrm_inst == 1){
+        local_test[0]=0x0A;
+        local_test[1]=0x00;
+        local_test[2]=0x02;
+        local_test[3]=0x02;
+        memcpy(&tmp,local_test,4);
+        //fprintf(stderr,"tmp1 %lu \n", tmp);//dbg
+        
+    }else if (rrm_inst == 2){
+        local_test[0]=0x0A;
+        local_test[1]=0x00;
+        local_test[2]=0x03;
+        local_test[3]=0x03;
+        memcpy(&tmp,local_test,4);
+        //fprintf(stderr,"tmp2 %lu \n", tmp);//dbg
+        
+    }else if (rrm_inst == 0){
+        local_test[0]=0x0A;
+        local_test[1]=0x00;
+        local_test[2]=0x01;
+        local_test[3]=0x01;
+        memcpy(&tmp,local_test,4);
+        //fprintf(stderr,"tmp0 %lu \n", tmp);//dbg
+        
+    }
+#else
+    memcpy(&tmp,path_local,4);
+#endif
+    s->in_local_addr.sin_addr.s_addr = tmp;
+
+    
+   len = sizeof(s->in_local_addr);
+ 
+    if (bind(socket_fd, (struct sockaddr *)&(s->in_local_addr), len) == -1) 
+    {
+        perror("bind internet");
+        return -1 ;
+    }
+
+    
+    //fprintf(stderr,"OSI 4 \n  ");//dbg    
+    memset(&(s->in_dest_addr), 0, sizeof(struct    sockaddr_in));
+    
+    s->in_dest_addr.sin_family = AF_INET;
+    s->in_dest_addr.sin_port = htons(7000);
+#ifdef PHY_EMUL
+    tmp = inet_addr ("10.0.1.1");
+#else
+    memcpy(&tmp,path_dest,4);
+#endif
+    s->in_dest_addr.sin_addr.s_addr = tmp;
+    
+    s->s = socket_fd ;
+    //fprintf(stderr,"OSI 5 \n  ");//dbg
+    fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
+    return socket_fd ; 
+}
+
+
+
+/*!
+*******************************************************************************
+\brief  This function read a buffer from a internet socket 
+\return the function returns a message pointer. If the pointeur is NULL, a error
+         is happened. 
+*/
+char *recv_msg_int( 
+    sock_rrm_int_t *s   ///< socket descriptor
+    ) 
+{ /* Internet socket */
+    char                *buf = NULL;
+    char                *msg = NULL;
+    int                 size_msg ;
+    msg_head_t          *head  ;
+    int                 ret ;
+    //struct sockaddr      newS;
+    
+    int taille =  SIZE_MAX_PAYLOAD ;
+    //fprintf(stderr,"RF dentro recv_from \n  ");//dbg
+
+    buf                 = RRM_CALLOC( char,taille);
+    if ( buf == NULL ) {
+        return NULL ;
+    }
+        
+    //fprintf(stderr,"RF s: %d\n  ", s->s);//dbg
+    socklen_t len_addr = sizeof(struct sockaddr_in);
+    ret = recvfrom(s->s, buf, taille, 0,(struct sockaddr *)&(s->in_dest_addr), &len_addr) ;
+    //fprintf(stderr,"RF dopo recv s = %d\n  ",s->s);//dbg 
+    if ( ret <= 0  )
+    {
+        fprintf(stderr,"RF ret %d\n  ",ret );//dbg
+        perror("PB recvfrom_in");
+        RRM_FREE(buf);
+        return NULL ;
+    }
+    
+    
+    head        = (msg_head_t *) buf  ;
+    size_msg    = sizeof(msg_head_t) + head->size ;
+    
+    msg         = RRM_CALLOC(char , size_msg ) ;
+    if ( msg != NULL )
+        memcpy( msg , buf , size_msg ) ;
+        
+    RRM_FREE( buf ) ;
+    //fprintf(stderr,"dim_msg %d\n  ",sizeof(msg) );//dbg
+    //fprintf(stderr,"RF s at the end: %d\n  ", s->s);//dbg
+    return msg ;
+}
+
+
+/*!
+*******************************************************************************
+\brief  This function send a buffer message to the internet socket  
+\return if OK then "0" is returned else "-1"
+*/
+int send_msg_int( 
+    sock_rrm_int_t *s                       ,///< socket descriptor
+    msg_t *msg                           ///< the message to send  
+    
+    ) 
+{ /* Internet socket */
+    int                 ret     = 0 ;
+    char                *buf    = NULL; 
+    int                 taille  = sizeof(msg_head_t)  ;
+    //fprintf(stderr,"Send IP msg socket -> %d\n  ",s->s );//dbg
+    
+    if ( msg == NULL )
+        return -1 ;
+    if ( msg->data != NULL ) 
+        taille += msg->head.size ;
+        
+    buf = RRM_MALLOC(char, taille);
+    if (buf ==NULL)
+        ret =  -1 ; 
+        
+    else
+    {
+        memcpy( buf , &(msg->head) , sizeof(msg_head_t) ) ;
+        memcpy( buf+sizeof(msg_head_t), msg->data, msg->head.size ) ;
+                
+        if ( sendto(s->s, buf, taille, 0, (struct  sockaddr *)&(s->in_dest_addr), sizeof(struct  sockaddr_in)) < 0 )
+        {
+            ret = -1; 
+            perror("sendmsg:socket ip");
+        }
+    }
+    
+    RRM_FREE(buf) ; 
+    RRM_FREE(msg->data) ;
+    RRM_FREE(msg) ;
+    
+    return ret ;
+}
+
+/*!
+*******************************************************************************
+\brief  This function closes a RRM socket 
+\return none
+*/
+void close_socket_int( 
+    sock_rrm_int_t *sock  ///< the socket handle 
+    ) 
+{
+    shutdown(sock->s, SHUT_RDWR);
+    close(sock->s);
+}
+
+//mod_lor_10_01_25--

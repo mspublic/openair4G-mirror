@@ -52,9 +52,9 @@
 
 
 //! Met un message dans la file des messages a envoyer
-#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
-#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg),rrm->pusu.s,m) 
-#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg),rrm->rrc.s,m ) 
+#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->cmm.s,m )  //mod_lor_10_01_25
+#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->pusu.s,m)  //mod_lor_10_01_25
+#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg), 0, rrm->rrc.s,m )  //mod_lor_10_01_25
 
 /*!
 *******************************************************************************
@@ -138,13 +138,16 @@ void rrc_cx_establish_ind(
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
+    fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=%d\n",Trans_id,rrm->state);
     
     if ( (rrm->state == CLUSTERHEAD) )
     {
+        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=CH %d\n",Trans_id,rrm->state);
         PUT_CMM_MSG( msg_rrm_attach_ind(inst,L2_id,L3_info_t,L3_info, 0 )) ;
     }
     else if ( rrm->state == MESHROUTER )
     {
+        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=MR %d\n",Trans_id,rrm->state);
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         add_item_transact( &(rrm->rrc.transaction), Trans_id,INT_RRC,RRC_CX_ESTABLISH_IND,0,NO_PARENT);
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
@@ -236,6 +239,8 @@ void cmm_attach_cnf(
                 pTransactParent =get_item_transact(rrm->rrc.transaction,parent_id ) ;
                 if ( pTransactParent != NULL )
                 {
+                    rrm->L3_info_t = L3_info_t; //mod_lor_10_01_25
+                    memcpy (&(rrm->L3_info), L3_info, L3_info_t); //mod_lor_10_01_25
                     PUT_RRC_MSG( msg_rrci_cx_establish_resp(inst,pTransactParent->id,L2_id,L3_info,L3_info_t ));
                     del_item_transact( &(rrm->rrc.transaction),pTransactParent->id ) ;
                 }

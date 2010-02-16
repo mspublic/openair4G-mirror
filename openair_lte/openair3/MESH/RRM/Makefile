@@ -14,7 +14,8 @@ EMUL        = $(CHEMIN)/EMUL
 VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR)
-CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNTRACE -DOPENAIR2_IN
+CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
+
 LDFLAGS		= -lm
 
 ifeq ($(OSTYPE),Cygwin)
@@ -53,7 +54,7 @@ SRC	   += sens_db.c
 SRC	   += channels_db.c
 SRC	   += msg_mngt.c
 SRC	   += sens_op.c
-#SRC	   += freq_ass_op.c
+SRC	   += freq_ass_op.c
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

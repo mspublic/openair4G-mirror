@@ -26,9 +26,11 @@
 #ifdef OPENAIR2
 #include "platform_constants.h"
 #else
+
 //Always synchronize with value in openair2/LAYER2/MAC/defs.h 
 #define BCCH_PAYLOAD_SIZE_MAX 20  
 #define CCCH_PAYLOAD_SIZE_MAX 28
+
 #endif
 
 /*! \todo a definir les valeurs par defaut */

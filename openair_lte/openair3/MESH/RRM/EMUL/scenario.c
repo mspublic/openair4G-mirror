@@ -64,7 +64,7 @@ extern msg_t *msg_rrc_rb_modify_cfm(Instance_t inst, RB_ID Rb_id, Transaction_t 
 extern msg_t *msg_rrc_rb_release_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_MR_attach_ind( Instance_t inst, L2_ID L2_id );
 extern msg_t *msg_rrc_update_sens( Instance_t inst, L2_ID L2_id, unsigned int NB_info, Sens_ch_t *Sens_meas, Transaction_t Trans_id);
-extern msg_t *msg_rrc_init_scan_req(Instance_t inst, L2_ID L2_id, float interv, Transaction_t Trans_id );
+extern msg_t *msg_rrc_init_scan_req(Instance_t inst, L2_ID L2_id, unsigned int interv, Transaction_t Trans_id );
 extern msg_t *msg_rrc_end_scan_conf(Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 extern msg_t *msg_rrc_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 extern msg_t *msg_rrc_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int *ch_to_scan, unsigned int NB_chan, float interval, Transaction_t Trans_id );
@@ -80,6 +80,7 @@ extern msg_t *msg_rrc_init_conn_req( Instance_t inst, L2_ID L2_id , unsigned int
 extern msg_t *msg_rrc_freq_all_prop( Instance_t inst, L2_ID L2_id, unsigned int Session_id, unsigned int NB_free_ch, CHANNEL_T *fr_channels, Transaction_t Trans_id);
 extern msg_t *msg_rrc_rep_freq_all( Instance_t inst, L2_ID L2_id_source,L2_ID L2_id_dest, unsigned int Session_id, unsigned int NB_prop_ch, CHANNEL_T *pr_channels, Transaction_t Trans_id);
 
+
 L2_ID L2_id_ch  ={{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}};
 L2_ID L2_id_fc  ={{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}};
 L2_ID L2_id_mr  ={{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}};
@@ -88,10 +89,10 @@ L2_ID L2_id_mr3 ={{0xAA,0xCC,0x33,0x55,0x00,0x00,0x44,0x00}};
 L2_ID L2_id_bts ={{0xAA,0xCC,0x33,0x55,0x00,0x00,0x00,0x11}};
 L2_ID L2_id_ch2 ={{0xAA,0xCC,0x33,0x55,0x00,0x22,0x00,0x00}};
 
-unsigned char L3_info_mr3[MAX_L3_INFO] = { 0xBB, 0xDD, 0, 1, 0, 0, 0, 0, 0xFF, 3, 3, 3, 0, 0, 0, 1 } ; 
-unsigned char L3_info_mr2[MAX_L3_INFO] = { 0xBB, 0xDD, 0, 1, 0, 0, 0, 0, 0xFF, 2, 2, 2, 0, 0, 0, 1 } ; 
-unsigned char L3_info_mr[MAX_L3_INFO]  = { 0xBB, 0xDD, 0, 1, 0, 0, 0, 0, 0xFF, 1, 1, 1, 0, 0, 0, 1 } ; 
-unsigned char L3_info_ch[MAX_L3_INFO]  = { 0xAA, 0xCC, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0XFF, 0, 2 } ; 
+unsigned char L3_info_mr3[MAX_L3_INFO] = { 0xBB, 0xDD, 1, 3 } ; 
+unsigned char L3_info_mr2[MAX_L3_INFO] = { 0xBB, 0xDD, 1, 2 } ; 
+unsigned char L3_info_mr[MAX_L3_INFO]  = { 0xBB, 0xDD, 1, 1 } ; 
+unsigned char L3_info_ch[MAX_L3_INFO]  = { 0xAA, 0xCC, 2, 0 } ; 
 
 
 static void prg_opening_RB( sock_rrm_t *s_cmm, double date, L2_ID *src, L2_ID *dst, QOS_CLASS_T qos )
@@ -206,7 +207,7 @@ static void prg_rrc_rb_meas_ind( sock_rrm_t *s_rrc, double date, RB_ID Rb_id, L2
     pthread_mutex_unlock( &rrc_transact_exclu ) ;
 }   
 
-static void prg_cmm_init_sensing( sock_rrm_t *s_cmm, double date, float interv )
+static void prg_cmm_init_sensing( sock_rrm_t *s_cmm, double date, unsigned int interv )
 {
     cmm_transaction++;
     pthread_mutex_lock( &actdiff_exclu  ) ;
@@ -218,7 +219,6 @@ static void prg_cmm_init_sensing( sock_rrm_t *s_cmm, double date, float interv )
     pthread_mutex_unlock( &cmm_transact_exclu ) ;
                 
 }
-
 static void prg_rrc_update_sens( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_mr,
                                     unsigned int NB_info, Sens_ch_t *Sens_meas )
 {
@@ -233,7 +233,7 @@ static void prg_rrc_update_sens( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_mr
                 
 }
 static void prg_rrc_init_scan_req( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_fc,
-                                    float interv )
+                                    unsigned int interv )
 {
     rrc_transaction++;
     pthread_mutex_lock( &actdiff_exclu  ) ;
@@ -491,6 +491,7 @@ static void prg_rrc_rep_freq_ack ( sock_rrm_t *s_rrc, double date,  L2_ID *L2_id
 }*/
 
 
+
 /* =========================================================================== *
  *                              SCENARII                                       *
  * =========================================================================== */
@@ -540,9 +541,11 @@ static void scenario2(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 
 // ========================= Attachement d'un MR
     prg_rrc_MR_attach_ind( s_rrc, 2.0, &L2_id_mr );
+     //prg_rrc_MR_attach_ind( s_rrc, 3.0, &L2_id_mr2 );
 
 // ========================= Indicateur d'une connexion établie
-    prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr,IPv6_ADDR,0,0);
+    prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr,IPv4_ADDR,0,0);
+    //prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr2,IPv4_ADDR,0,0);
 }
 
 /**
@@ -565,7 +568,7 @@ static void scenario3(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     pthread_mutex_unlock( &rrc_transact_exclu ) ;
 
 // ========================= Connexion etablit du MR au CH
-    prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv6_ADDR, 10, 20 ) ;
+    prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv4_ADDR, 10, 20 ) ;
 }
 
 /**
@@ -589,7 +592,7 @@ static void scenario4(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr  ) ;
 
 // ========================= Indicateur d'une connexion établie
-    prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr, IPv6_ADDR, 0, 0 ) ;
+    prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr, IPv4_ADDR, 0, 0 ) ;
 
 // ========================= Remontée de mesure par le RRC
 
@@ -721,6 +724,8 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     
     unsigned int occ_channels [2]= {1, 3};
     printf("\nSCENARIO 7: ...\n\n" ) ;
+    
+    printf("\n sono in scenario.c: ...\n\n" ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD :
     prg_phy_synch_to_MR( s_rrc, 0.1 );
 
@@ -785,6 +790,20 @@ static void scenario8(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     };*/
     
     printf("\nSCENARIO 8: ...\n\n" ) ;
+
+// ========================= Attachement d'un senseur
+
+    rrc_transaction++;
+    pthread_mutex_lock( &actdiff_exclu  ) ;
+    add_actdiff(&list_actdiff,0.2, cnt_actdiff++, s_rrc,msg_rrc_phy_synch_to_CH_ind(0, 1, L2_id_ch ) ) ;
+    pthread_mutex_unlock( &actdiff_exclu ) ;
+                
+    pthread_mutex_lock( &rrc_transact_exclu ) ;
+    add_item_transact( &rrc_transact_list, rrc_transaction, INT_RRC,RRC_PHY_SYNCH_TO_CH_IND,0,NO_PARENT);
+    pthread_mutex_unlock( &rrc_transact_exclu ) ;
+
+// ========================= Connexion etablit du MR au CH
+    prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv4_ADDR, 10, 20 ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD :
     //prg_phy_synch_to_MR( s_rrc, 0.1 );
 
@@ -794,7 +813,7 @@ static void scenario8(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr3  ) ;
 
 // ========================= Starting sensing operation
-    float interv= 1.0;
+    unsigned int interv= 1;
     float date = 1.5;
     prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
     //prg_cmm_init_sensing( s_cmm, 5.0, 1 );
@@ -949,7 +968,7 @@ static void scenario11(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     printf("\nSCENARIO 11: ...\n\n" ) ;
 
 // ========================= Starting sensing operation
-    float interv= 1.0;
+    unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
     prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
@@ -998,7 +1017,7 @@ static void scenario12(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     printf("\nSCENARIO 12: ...\n\n" ) ;
 
 // ========================= Starting sensing operation
-    float interv= 1.0;
+    unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
     prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
@@ -1055,7 +1074,7 @@ static void scenario13(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr2  ) ;
     //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr3  ) ;
 // ========================= Starting sensing operation
-    float interv= 1.0;
+    unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
     prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
@@ -1076,6 +1095,7 @@ static void scenario13(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     
   
 }
+
 
 
 void scenario(int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )

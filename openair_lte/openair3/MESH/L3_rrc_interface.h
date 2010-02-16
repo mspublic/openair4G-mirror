@@ -231,7 +231,7 @@ void rrci_init_mr_req(
 /*!
 \brief RRC sensing measurement indication 
  */
-void rrc_update_sens(
+void rrc_update_sens( //mod_lor_10_01_25: RRC function, but also IP function
 	Instance_t         inst             , //!< Identification de l'instance
 	L2_ID              L2_id            , //!< Layer 2 ID (MAC) of sensing node
     unsigned int       NB_info          , //!< Number of channels info
@@ -242,12 +242,10 @@ void rrc_update_sens(
 /*!
 \brief RRC starting sensing request 
  */
-
-
 void rrc_init_scan_req(
     Instance_t        inst            , //!< instance ID
     L2_ID             L2_id           , //!< FC address
-    float             interv          , //! interval between 2 scanning periods
+    unsigned int      interv          , //! interval between 2 scanning periods
     Transaction_t     Trans_id          //!< Transaction ID
     );
     
@@ -280,16 +278,15 @@ void rrc_init_mon_req(
     L2_ID     L2_id           , //!< FC address
     unsigned int  *ch_to_scan ,
     unsigned int  NB_chan     , 
-    float     interv          , //!< sensing freq.
+    unsigned int  interv          , //!< sensing freq.
     Transaction_t  Trans_id     //!< Transaction ID
     );
  
  
- //elll: I'll keep only for semplicity
  /*!
 \brief RRC open frequencies  
  */    
-void rrc_open_freq( 
+void update_open_freq( //mod_lor_10_01_25: IP function
     Instance_t inst, 
     L2_ID L2_id,                //!< L2_id of the FC/CH
     unsigned int NB_chan,
@@ -300,7 +297,7 @@ void rrc_open_freq(
 /*!
 \brief RRC ask for frequencies   
  */     
-void rrc_ask_for_freq( 
+void open_freq_query( //mod_lor_10_01_25: IP function
     Instance_t    inst, 
     L2_ID         L2_id           ,
     QOS_CLASS_T   QoS             ,
@@ -310,7 +307,7 @@ void rrc_ask_for_freq(
 /*!
 \brief RRC update secondary network frequencies in use  
  */ 
-void rrc_update_SN_freq(
+void update_SN_occ_freq( //mod_lor_10_01_25: IP function
     Instance_t inst             , //!< instance ID 
     L2_ID L2_id                 , //!< Layer 2 (MAC) ID of BTS
     unsigned int NB_chan        ,
@@ -412,6 +409,7 @@ void rrc_rep_freq_all(
     Transaction_t Trans_id 
     );
     
+
 
 /*! @} */
 

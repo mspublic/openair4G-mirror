@@ -182,13 +182,20 @@ void cmm_init_ch_req(
 */
 void cmm_init_sensing( 
     Instance_t inst,            //!< identification de l'instance
-    float interv                //!< sensing freq.
+    unsigned int interv         //!< sensing freq.
     );
     
 /*!
   \brief 
 */
 void cmm_stop_sensing( 
+    Instance_t inst            //!< identification de l'instance
+    );
+    
+/*!
+  \brief 
+*/
+void cmm_ask_freq( 
     Instance_t inst            //!< identification de l'instance
     );
 

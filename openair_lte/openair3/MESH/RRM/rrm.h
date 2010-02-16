@@ -63,9 +63,12 @@ typedef struct {
     L3_INFO_T           L3_info_t           ; ///< type de l'identification de niveau L3       
 
     unsigned char       L3_info[MAX_L3_INFO]; ///< identification de niveau L3   
+    //mod_lor_10_01_25
+    unsigned char       L3_info_corr[MAX_L3_INFO]; ///< identification de niveau L3 du correspondant: FC si le noeud est un senseur ou la BS, BS si le noeud est le FC
     
     file_head_t         file_send_cmm_msg   ; ///< File des messages en emission
     file_head_t         file_send_rrc_msg   ; ///< File des messages en emission
+    file_head_t         file_send_ip_msg    ; ///< File des messages en emission //mod_lor_10_01_25
     file_head_t         file_recv_msg       ; ///< File des messages en reception
     
     struct {
@@ -99,8 +102,17 @@ typedef struct {
         unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface PUSU
         transact_t      *transaction        ; ///< liste des transactions non terminees
         pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-	} pusu 									; ///<  info relatif a l'interface pusu
+	} pusu 	                                ; ///<  info relatif a l'interface pusu
+
 	
+	//mod_lor_10_01_25++
+	struct {
+        sock_rrm_int_t      *s              ; ///< Socket associé a l'IP
+        unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface IP
+        transact_t      *transaction        ; ///< liste des transactions non terminees
+        pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
+	} ip     								; ///<  info relatif a l'interface IP
+	//mod_lor_10_01_25--
 
 } rrm_t ;
 

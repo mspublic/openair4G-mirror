@@ -31,7 +31,11 @@ extern "C" {
 \brief File des messages reçus ou a envoyer	
 */	
 typedef struct msg_file_s {
-	sock_rrm_t 			*s		; ///< socket origine ou destinataire
+    //mod_lor_10_01_25
+    int s_type                  ; /// socket type: 0 -> unix; 1 -> internet
+	sock_rrm_t 			*s		; ///< socket origine ou destinataire si unix
+	sock_rrm_int_t      *s_int  ; ///< socket origine ou destinataire si internet
+	
 	msg_t    			*msg	; ///< data of message 
 	struct msg_file_s 	*next	; ///< next message of file
 } file_msg_t ;
@@ -50,7 +54,7 @@ typedef struct {
 *******************************************************************************
 */
 void init_file_msg( file_head_t *file_hd , int id ) ;
-file_msg_t *put_msg( file_head_t *file_hd , sock_rrm_t *s, msg_t *msg) ;
+file_msg_t *put_msg( file_head_t *file_hd , int s_type, void *s, msg_t *msg) ; //mod_lor_10_01_25
 file_msg_t *get_msg( file_head_t *file_hd  ) ;
 
 #ifdef __cplusplus

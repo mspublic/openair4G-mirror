@@ -51,9 +51,9 @@
 #include "rb_mngt.h"
 
 //! Met un message dans la file des messages a envoyer
-#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
-#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg),rrm->pusu.s,m) 
-#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg),rrm->rrc.s,m ) 
+#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->cmm.s,m )  //mod_lor_10_01_25
+#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->pusu.s,m)  //mod_lor_10_01_25
+#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg), 0, rrm->rrc.s,m )  //mod_lor_10_01_25
 
 /*
  *  =========================================================================

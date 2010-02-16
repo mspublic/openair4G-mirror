@@ -58,8 +58,8 @@ const char *Str_msg_cmm_rrm[NB_MSG_CMM_RRM] =  {
     STRINGIZER(RRM_NO_SYNCH_IND       ),
     STRINGIZER(CMM_INIT_CH_REQ        ),
     STRINGIZER(CMM_INIT_SENSING       ),
-    STRINGIZER(CMM_STOP_SENSING       )//, 
-    //STRINGIZER(CMM_ASK_FREQ           ), elll
+    STRINGIZER(CMM_STOP_SENSING       ), 
+    STRINGIZER(CMM_ASK_FREQ           )//, 
     //STRINGIZER(CMM_NEED_TO_TX         ),
     //STRINGIZER(CMM_INIT_TRANS_REQ     ),
     //STRINGIZER(RRM_INIT_TRANS_CONF    )
@@ -571,7 +571,7 @@ msg_t * msg_cmm_init_ch_req(
 */
 msg_t *msg_cmm_init_sensing( 
     Instance_t inst,        //!< identification de l'instance
-    float interv            //!< sensing freq.
+    unsigned int interv            //!< sensing freq.
     )
 {
     msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
@@ -608,6 +608,26 @@ msg_t *msg_cmm_stop_sensing(
     if ( msg != NULL )
     {
         init_cmm_msg_head(&(msg->head),inst,CMM_STOP_SENSING, 0 ,0);            
+        msg->data = NULL ;
+    }
+    return msg  ;
+}
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_ask_freq.
+\return message formate
+*/
+msg_t *msg_cmm_ask_freq( 
+    Instance_t inst        //!< identification de l'instance
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        init_cmm_msg_head(&(msg->head),inst,CMM_ASK_FREQ, 0 ,0);            
         msg->data = NULL ;
     }
     return msg  ;

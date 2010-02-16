@@ -89,7 +89,11 @@ void init_file_msg(
 */
 file_msg_t *put_msg( 
     file_head_t *file_hd ,  ///< descripteur de la file des messages
-    sock_rrm_t *s,          ///< socket associe au message
+    //mod_lor_10_01_25
+    int s_type            , ///< socket type: 0 -> unix; 1 -> internet
+    //sock_rrm_t *s,          ///< socket associe au message
+    void *s ,               ///< socket associe au message
+    
     msg_t *msg              ///< le message a ajouter dans la liste
     ) 
 {
@@ -99,18 +103,33 @@ file_msg_t *put_msg(
         
     if ( pNewItem == NULL ) 
         return NULL ;
-
+        
+    //fprintf(stderr,"put_msg 1 \n");//dbg
     CALL(pthread_mutex_lock( &(file_hd->mutex) ));
         
     file_hd->file       = pNewItem          ;
     pNewItem->next      = pOldEntry         ;
-    pNewItem->s         = s                 ;
+//mod_lor_10_01_25++
+    pNewItem->s_type    = s_type            ;
+    //fprintf(stderr,"put_msg 2 \n");//dbg
+    if (s_type){
+        pNewItem->s     = NULL              ;
+        pNewItem->s_int = s                 ;
+    }else{
+        pNewItem->s     = s                 ;
+        pNewItem->s_int = NULL              ;
+    }
+    
+//mod_lor_10_01_25--
     pNewItem->msg       = msg               ;
     
+    //fprintf(stderr,"put_msg 3 \n");//dbg
     PRINT_MSG_MNGT( file_hd->file , file_hd->id );
     
+    //fprintf(stderr,"put_msg 4 \n");//dbg
     CALL(pthread_mutex_unlock( &(file_hd->mutex) ));
-
+    
+    //fprintf(stderr,"put_msg end \n");//dbg
     return pNewItem ;
 }
 
@@ -127,7 +146,7 @@ file_msg_t *get_msg(
     file_msg_t *pCurrentItem = file_hd->file ;
     file_msg_t *pNextItem   ;
     file_msg_t **ppPrevItem  = &(file_hd->file) ;
-        
+    
     if ( (pCurrentItem == NULL)  ) 
         return NULL ;
 
@@ -135,6 +154,7 @@ file_msg_t *get_msg(
 
     while ( pCurrentItem != NULL )
     { 
+        
         pNextItem = pCurrentItem->next ;
         if ( pNextItem == NULL )
         { /* Dernier element */
@@ -149,7 +169,6 @@ file_msg_t *get_msg(
     PRINT_MSG_MNGT( pCurrentItem , file_hd->id *-1 );
     
     CALL(pthread_mutex_unlock( &(file_hd->mutex) ));
-
     return pCurrentItem ; 
 }
 

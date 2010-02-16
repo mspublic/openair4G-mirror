@@ -69,19 +69,20 @@ typedef enum {
     RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
     RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
     RRM_SCAN_ORD                , ///< Message RRM->RRC : order to scann indicated channels
-    //RRM_UPDATE_SENS             , ///< Message RRM->RRC : update to send to CH/FC
+    UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
     RRM_END_SCAN_REQ            , ///< Message RRM->RRC : end of a scanning process
     RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
     RRM_END_SCAN_ORD            , ///< Message RRM->RRC : end of a scanning process in sensors
-    RRC_INIT_MON_REQ            , ///< Message RRC->RRM : initiation of a scanning monitoring
-    /*RRM_ASK_FOR_FREQ            , ///< Message RRM->RRC : in BTS to ask free frequencies to FC / in SU to ask fr. to BTS
-    RRC_OPEN_FREQ               , ///< Message RRC->RRM : list of frequencies usable by the secondary network
-    RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
+    RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
+    OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
+    UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
+    UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
+    RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
+    /*RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
     RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
     RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
     RRC_UPDATE_SN_FREQ          , ///< Message RRC->RRM : FC receives used freq. from BTS
-    RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_CLUST_SCAN_REQ          , ///< Message RRM->RRC : CH1 contacts CH2 to collaborate for the sensing process 
     RRC_CLUST_SCAN_REQ          , ///< Message RRC->RRM : CH2 receive request to collaborate for the sensing process from CH1
     RRM_CLUST_SCAN_CONF         , ///< Message RRM->RRC : CH2 confirmrs the beginning of a collaboration process
@@ -247,7 +248,7 @@ typedef struct {
 typedef struct {
     L2_ID               L2_id                 ; //!< Layer 2 ID (MAC) of sensing node
     unsigned int        NB_meas               ; //!< Layer 2 ID (MAC) of sensing node
-    SENSING_MEAS_T      Sensing_meas[1]       ; //!< first Sensing Information
+    SENSING_MEAS_T      Sensing_meas[NB_SENS_MAX]; //!< first Sensing Information
 } rrc_sensing_meas_ind_t ;  
 
 /*! 
@@ -272,7 +273,7 @@ typedef struct {
     double              info_time              ; //!< Date of the message
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
     unsigned int        NB_info                ; //!< number of sensed channels
-    Sens_ch_t           Sens_meas[NB_SENS_MAX]           ; //!< sensing information
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information
 } rrc_update_sens_t; 
 
 /*! 
@@ -284,7 +285,7 @@ typedef struct {
 /*typedef struct {
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
     unsigned int        NB_info                ; //!< number of sensed channels
-    Sens_ch_t           Sens_meas[1]           ; //!< sensing information
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information
 } rrm_update_sens_t ;  */ 
 
 /*! 
@@ -296,8 +297,8 @@ typedef struct {
 typedef struct {
     L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of destination
     unsigned int        NB_chan              ; //!< Number of channels to scan
-    float               interval             ; //!< Time between two sensing sessions
-    unsigned int        ch_to_scan[NB_SENS_MAX]        ; //!< Vector of channels to scan
+    unsigned int        interval             ; //!< Time between two sensing sessions
+    unsigned int        ch_to_scan[NB_SENS_MAX]; //!< Vector of channels to scan
 } rrm_init_mon_req_t,
  rrc_init_mon_req_t/*,
  rrm_clust_mon_req_t,
@@ -319,17 +320,17 @@ typedef struct {
 */
 typedef struct {
     L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
-    float      interv             ; //!< Time between two sensing sessions
+    unsigned int  interv          ; //!< Time between two sensing sessions
 } rrc_init_scan_req_t;  
 
 /*! 
 *******************************************************************************
-\brief  Definition des parametres de la fonction rrm_init_mon_req() dans 
+\brief  Definition des parametres de la fonction rrm_scan_ord() dans 
         une structure permettant le passage des parametres via un socket
 */
 typedef struct {
     unsigned int        NB_chan              ; //!< Number of channels to scan if 0 means all channels
-    unsigned int        ch_to_scan[1]        ; //!< Vector of channels to scan
+    unsigned int        ch_to_scan[NB_SENS_MAX]; //!< Vector of channels to scan
 } rrm_scan_ord_t ;
 
 /*! 
@@ -351,9 +352,69 @@ rrc_end_scan_conf_t;
 typedef struct {
     L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC
     unsigned int        NB_chan              ; //!< Number of channels 
-    unsigned int        channels[NB_SENS_MAX]          ; //!< Vector of channels
+    unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
 } rrm_end_scan_ord_t ;
 
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_up_freq_ass() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of SU
+    unsigned int        NB_chan              ; //!< Number of channels
+    CHANNEL_T           ass_channels[NB_SENS_MAX]; //!< description of assigned channelS
+} rrm_up_freq_ass_t ;
+
+///< TYPEDEF VIA IP
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions  
+        rrm_update_sens()dans une structure permettant le passage 
+        des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
+    unsigned int        NB_info                ; //!< number of sensed channels
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information
+    double              info_time              ;
+} rrm_update_sens_t ; 
+
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions rrm_ask_for_freq() et rrc_ask_for_freq()dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
+    QOS_CLASS_T      QoS          ; //!< QoS required; if 0 all QoS at disposition
+} open_freq_query_t;
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions  
+        rrc_open_freq() et rrm_open_freq() dans une structure permettant le passage 
+        des parametres via un socket
+*/
+typedef struct {
+    double              date;
+    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of FC/CH
+    unsigned int        NB_chan                ; //!< number of free channels
+    CHANNEL_T           fr_channels[NB_SENS_MAX]; //!< description of free channelS
+} update_open_freq_t;
+
+/*! 
+*******************************************************************************
+\brief  Definition des parametres des fonctions rrm_update_SN_freq() et 
+        rrm_update_SN_freq()dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC/BTS
+    unsigned int        NB_chan              ; //!< Number of channels 
+    unsigned int        occ_channels[NB_SENS_MAX]; //!< Vector of channels
+} update_SN_occ_freq_t;
 
 #ifdef TRACE
 extern const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] ; 
@@ -396,14 +457,20 @@ msg_t *msg_rrci_init_mr_req( Instance_t inst,
             const LCHAN_DESC  *Lchan_desc_srb1, unsigned char CH_index); 
             
 msg_t *msg_rrm_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, 
-            float interval, unsigned int *ch_to_scan, Transaction_t Trans_id );
-msg_t *msg_rrm_init_scan_req(Instance_t inst, float interv, Transaction_t Trans_id );
-
+            unsigned int interval, unsigned int *ch_to_scan, Transaction_t Trans_id );
+msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int interv, Transaction_t Trans_id );
 msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int *ch_to_scan, Transaction_t Trans_id ); 
-//msg_t *msg_rrm_update_sens( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_end_scan_ord(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *channels,
              Transaction_t Trans_id );
+msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
+             
+///MESSAGES VIA IP
+msg_t *msg_update_sens_results_3( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
+msg_t *msg_open_freq_query_4( Instance_t inst, L2_ID L2_id, QOS_CLASS_T QoS, Transaction_t Trans_id );
+msg_t *msg_update_open_freq_7( Instance_t inst, L2_ID L2_id, unsigned int NB_free_ch, CHANNEL_T *fr_channels, Transaction_t Trans_id);
+msg_t *msg_update_SN_occ_freq_5( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *occ_channels, Transaction_t Trans_id);
+
 
 #ifdef __cplusplus
 }

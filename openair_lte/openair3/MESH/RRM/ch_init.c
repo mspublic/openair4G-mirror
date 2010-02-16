@@ -53,9 +53,9 @@
 
 
 //! Met un message dans la file des messages a envoyer
-#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg),rrm->cmm.s,m ) 
-#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg),rrm->pusu.s,m) 
-#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg),rrm->rrc.s,m ) 
+#define PUT_CMM_MSG(m)  put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->cmm.s,m )  //mod_lor_10_01_25
+#define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->pusu.s,m)  //mod_lor_10_01_25
+#define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg), 0, rrm->rrc.s,m )  //mod_lor_10_01_25
 
 /*!
 *******************************************************************************
@@ -81,6 +81,9 @@ void cmm_init_ch_req(
             if ( L3_info_t != NONE_L3 ) 
                 memcpy( rrm->L3_info, L3_info, L3_info_t );
         }
+        //fprintf(stderr,"L3_ch_init    ");//dbg
+        //print_L3_id( IPv4_ADDR, rrm->L3_info   );
+        //fprintf(stderr,"\n");//dbg
 
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;

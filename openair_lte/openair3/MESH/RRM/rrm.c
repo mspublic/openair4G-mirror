@@ -68,7 +68,7 @@
 ** DEFINE LOCAL
 ** ----------------------------------------------------------------------------
 */
-
+ 
 /*
 ** ----------------------------------------------------------------------------
 ** DECLARATION DE NOUVEAU TYPE
@@ -86,10 +86,24 @@ struct data_thread {
     sock_rrm_t  s           ; ///< Descripteur du socket
 }  ;
 
+//mod_lor_10_01_25++
+struct data_thread_int {
+    char *name              ; ///< Nom du thread
+    unsigned char *sock_path_local   ; ///< local IP address for internet socket
+    int local_port          ; ///< local IP port for internet socket
+    unsigned char *sock_path_dest    ; ///< dest IP address for internet socket
+    int dest_port           ; ///< dest IP port for internet socket
+    sock_rrm_int_t  s       ; ///< Descripteur du socket
+    int instance            ; ///<instance rrm 
+}  ;
+//mod_lor_10_01_25--
+
 #ifdef RRC_KERNEL_MODE
 
 #define RRC2RRM_FIFO 14
 #define RRM2RRC_FIFO 15
+
+#define RX_MSG_STARTED 0; //mod_lor_10_01_25
 /*!
 *******************************************************************************
 \brief Structure regroupant les handles des fifos pour la communication en
@@ -127,6 +141,9 @@ static pthread_t pthread_recv_rrc_msg_hnd,
                  pthread_send_cmm_msg_hnd ,
 
                  pthread_recv_pusu_msg_hnd ,
+                 
+                 pthread_recv_int_msg_hnd ,
+                 pthread_send_ip_msg_hnd ,
 
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
@@ -135,6 +152,7 @@ static unsigned int cnt_timer = 0;
 static FILE *cmm2rrm_fd  = NULL ;
 static FILE *rrc2rrm_fd  = NULL ;
 static FILE *pusu2rrm_fd = NULL ;
+static FILE *ip2rrm_fd = NULL ;
 #endif
 /*
 ** ----------------------------------------------------------------------------
@@ -177,6 +195,15 @@ static void * thread_processing_ttl (
             // idem :commentaire ci-dessus
             del_all_obseleted_transact( &(rrm->pusu.transaction));
             pthread_mutex_unlock( &( rrm->pusu.exclu )  ) ;
+            
+            //mod_lor_10_01_25++
+            pthread_mutex_lock(   &( rrm->ip.exclu )  ) ;
+            dec_all_ttl_transact( rrm->ip.transaction ) ;
+            // idem :commentaire ci-dessus
+            del_all_obseleted_transact( &(rrm->ip.transaction));
+            pthread_mutex_unlock( &( rrm->ip.exclu )  ) ;
+            //mod_lor_10_01_25--*/
+            
         }
         cnt_timer++;
         usleep( 200*1000 ) ;
@@ -210,6 +237,7 @@ static void * thread_send_msg_cmm (
             rrm_t      *rrm = &rrm_inst[ii] ;
 
             pItem = get_msg( &(rrm->file_send_cmm_msg) ) ;
+            
 
             if ( pItem == NULL )
                 no_msg++;
@@ -238,7 +266,7 @@ static void * thread_send_msg_rrc (
     void * p_data /**< parametre du pthread */
     )
 {
-    int ii , status;
+    int ii ;
 
     int no_msg ;
     fprintf(stderr,"Thread Send Message To RRC: starting ... \n");
@@ -252,11 +280,13 @@ static void * thread_send_msg_rrc (
             rrm_t      *rrm = &rrm_inst[ii] ;
 
             pItem = get_msg( &(rrm->file_send_rrc_msg) ) ;
+            
 
             if ( pItem == NULL )
                 no_msg++;
             else
             {
+            
 #ifdef RRC_KERNEL_MODE
                 // envoi du header
                 status = write (Rrm_fifos.rrm_2_rrc_fifo,(char*) pItem->msg, sizeof(msg_head_t) );
@@ -278,6 +308,58 @@ static void * thread_send_msg_rrc (
     fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
     return NULL;
 }
+
+//mod_lor_10_01_25++
+/*!
+*******************************************************************************
+\brief  thread de traitement des messages sortants sur les sockets (rrc ou cmm).
+
+\return NULL
+*/
+static void * thread_send_msg_ip (
+    void * p_data /**< parametre du pthread */
+    )
+{
+    int ii ;
+    int no_msg ;
+    fprintf(stderr,"Thread Send Message IP: starting ... \n");
+    fflush(stderr);
+    file_msg_t *pItem ;
+
+    while ( flag_not_exit)
+    {
+        no_msg = 0  ;
+        for ( ii = 0 ; ii<nb_inst ; ii++ )
+        {
+            rrm_t      *rrm = &rrm_inst[ii] ;
+
+            pItem = get_msg( &(rrm->file_send_ip_msg) ) ;
+
+
+            if ( pItem == NULL )
+                no_msg++;
+            else
+            {
+                 //fprintf(stderr,"Thread Send Message inst %d socket %d\n", ii, rrm->ip.s->s); //dbg
+               // if (pItem->msg->head.msg_type == 26)
+                 //   msg_fct( "IP -> UPDATE_SENSING_RESULTS_3 inst: %d sockid %d\n", ii, rrm->ip.s->s);//dbg
+    
+                int r =  send_msg_int( rrm->ip.s, pItem->msg );
+           
+                WARNING(r!=0);
+            }
+            RRM_FREE( pItem ) ;
+        }
+
+        if ( no_msg==nb_inst ) // Pas de message
+            usleep(1000);
+    }
+    fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
+    return NULL;
+}
+
+//mod_lor_10_01_25--*/
+
 
 /*!
 *******************************************************************************
@@ -318,7 +400,7 @@ static void * thread_recv_msg (
                 int inst = msg->head.inst ;
                 rrm_t      *rrm = &rrm_inst[inst];
 
-                put_msg( &(rrm->file_recv_msg), &data->s, msg) ;
+                put_msg( &(rrm->file_recv_msg), 0, &data->s, msg) ;//mod_lor_10_01_25
             }
         }
         close_socket(&data->s) ;
@@ -327,6 +409,63 @@ static void * thread_recv_msg (
     fprintf(stderr,"... stopped %s interfaces\n",data->name);
     return NULL;
 }
+
+//mod_lor_10_01_25++
+/*!
+*******************************************************************************
+\brief  thread de traitement des messages entrant via ip.
+
+\return NULL
+*/
+
+static void * thread_recv_msg_int (
+    void * p_data /**< parametre du pthread */
+    )
+{
+    msg_t *msg ;
+    struct data_thread_int *data = (struct data_thread_int *) p_data; // mod_lor AAA: memory problem?
+    rrm_t      *rrm = &rrm_inst[data->instance]; 
+    int sock ;
+
+    fprintf(stderr,"%s interfaces :starting on inst. %d ... ",data->name, data->instance  );
+    fprintf(stderr,"\n");//dbg
+               
+    fflush(stderr);
+
+    /* ouverture des liens de communications */
+    sock = open_socket_int( &data->s,  data->sock_path_local, data->local_port, data->sock_path_dest, data->dest_port,0 );
+    data->s.s = sock;
+    memcpy(rrm->ip.s, &(data->s), sizeof(sock_rrm_int_t));
+ 
+    if ( sock != -1 )
+    {
+        fprintf(stderr,"   %s -> socket =  %d\n",data->name , sock );
+        fflush(stderr);
+
+        while (flag_not_exit)
+        {
+            
+            msg = (msg_t *) recv_msg_int(rrm->ip.s) ;
+
+            if (msg == NULL )
+            {
+                fprintf(stderr,"Server closed connection\n");
+                flag_not_exit = 0;
+            }
+            else
+            {
+                fprintf(stderr,"msg received from %X \n", rrm->ip.s->in_dest_addr.sin_addr.s_addr);
+                put_msg( &(rrm->file_recv_msg), 1, &data->s, msg) ;
+                
+            }
+        }
+        close_socket_int(&data->s) ;
+    }
+
+    fprintf(stderr,"... stopped %s interfaces\n",data->name);
+    return NULL;
+}
+//mod_lor_10_01_25--
 
 /*******************************************************************************/
 #ifdef RRC_KERNEL_MODE
@@ -397,7 +536,7 @@ static void * thread_recv_msg_fifo (void * p_data )
  
             memcpy( msg_cpy, Data , taille ) ;
             msg_fifo("[RRM]: RX MSG ON FIFOS %d: data read completed, Proccess on inst .... %d\n",RRC2RRM_FIFO,inst);
-            put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg_cpy) ;
+            put_msg( &(rrm->file_recv_msg), 0, rrm->rrc.s, msg_cpy) ; //mod_lor_10_01_25
             msg_fifo("[RRM]: RX MSG ON FIFOS %d: data read completed, Proccess on inst done %d\n",RRC2RRM_FIFO,inst);
         }
         else
@@ -411,7 +550,7 @@ static void * thread_recv_msg_fifo (void * p_data )
             rrm            = &rrm_inst[inst];
 
             memcpy( msg_cpy, Data , taille ) ;
-            put_msg( &(rrm->file_recv_msg), rrm->rrc.s, msg_cpy) ;
+            put_msg( &(rrm->file_recv_msg), 0, rrm->rrc.s, msg_cpy) ;//mod_lor_10_01_25
         }
     }
     return NULL;
@@ -446,8 +585,8 @@ static void processing_msg_cmm(
                 msg_fct( "[CMM]>[RRM]:%d:CMM_CX_SETUP_REQ\n",header->inst);
                 if ( cmm_cx_setup_req(header->inst,p->Src,p->Dst,p->QoS_class,header->Trans_id ) )
                 { /* RB_ID = 0xFFFF => RB error */
-                    put_msg( &(rrm->file_send_cmm_msg),
-                                rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , header->Trans_id )) ;
+                    put_msg( &(rrm->file_send_cmm_msg), 0,
+                                rrm->cmm.s, msg_rrm_cx_setup_cnf(header->inst,0xFFFF , header->Trans_id )) ;//mod_lor_10_01_25
                 }
             }
             break ;
@@ -471,11 +610,27 @@ static void processing_msg_cmm(
                 msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_ALL_REQ\n",header->inst);
             }
             break ;
-        case CMM_ATTACH_CNF :
+        case CMM_ATTACH_CNF : ///< The thread that allows 
             {
                 cmm_attach_cnf_t *p = (cmm_attach_cnf_t *) msg ;
                 msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
 
+              
+              
+               //mod_lor_10_01_25++
+                
+                fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
+                int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, rrm->L3_info, 0, header->inst);
+                if ( sock != -1 )
+                {
+                    
+                    fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
+                    fflush(stderr);
+                }else
+                    fprintf(stderr," Error in IP socket opening \n");
+             
+                //mod_lor_10_01_25--*/
+                
                 cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
             }
             break ;
@@ -487,15 +642,40 @@ static void processing_msg_cmm(
         case CMM_INIT_CH_REQ :
             {
                 cmm_init_ch_req_t *p = (cmm_init_ch_req_t *) msg ;
+                
+                struct data_thread_int DataIp;
+                DataIp.name = "IP"             ; ///< Nom du thread
+                //ataIp.sock_path_local =   ; ///< local IP address for internet socket
+                DataIp.local_port = 7000          ; ///< local IP port for internet socket
+                //DataIp.sock_path_dest =   ; ///< dest IP address for internet socket
+                DataIp.dest_port = 0          ; ///< dest IP port for internet socket
+                DataIp.s.s = -1      ; 
+                DataIp.instance = rrm->id;
+                //fprintf(stderr,"L3_local ");//dbg
+                //print_L3_id( IPv4_ADDR,  rrm->L3_info );
+                //fprintf(stderr,"\n");//dbg
+                
+                int ret = pthread_create ( &pthread_recv_int_msg_hnd, NULL, thread_recv_msg_int , &DataIp );
+                if (ret)
+                {
+                    fprintf (stderr, "%s", strerror (ret));
+                    exit(-1) ;
+                }
+                    
+                sleep(5);
+                
                 cmm_init_ch_req(header->inst,p->L3_info_t,&(p->L3_info[0]));
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ\n",header->inst);
+                
             }
             break ;
+
         case CMM_INIT_SENSING :
             {
                 cmm_init_sensing_t *p = (cmm_init_sensing_t *) msg ;                
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",header->inst);
                 cmm_init_sensing(header->inst,p->interv);
+                //fprintf(stderr," End of CMM_INIT_CH_REQ\n");*/
             }
             break ;
         case CMM_STOP_SENSING :
@@ -505,6 +685,13 @@ static void processing_msg_cmm(
                 cmm_stop_sensing(header->inst);
             }
             break ;
+        case CMM_ASK_FREQ :
+            {
+                msg_fct( "[CMM]>[RRM]:%d:CMM_ASK_FREQ\n",header->inst);
+                cmm_ask_freq(header->inst);
+            }
+            break ;
+
         default :
             fprintf(stderr,"CMM:\n") ;
             printHex(msg,len_msg,1) ;
@@ -542,7 +729,7 @@ static void processing_msg_rrc(
         case RRC_RB_ESTABLISH_CFM:
             {
                 rrc_rb_establish_cfm_t *p = (rrc_rb_establish_cfm_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM (%d)\n",header->inst,p->Rb_id);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM (%d) \n",header->inst,p->Rb_id);
                 rrc_rb_establish_cfm(header->inst,p->Rb_id,p->RB_type,header->Trans_id) ;
             }
             break ;
@@ -588,6 +775,11 @@ static void processing_msg_rrc(
                 rrc_cx_establish_ind(header->inst,p->L2_id,header->Trans_id,
                                     p->L3_info,p->L3_info_t,
                                     p->DTCH_B_id,p->DTCH_id) ;
+                //mod_lor_10_01_25++
+                if (rrm->state == MESHROUTER)
+                    memcpy(rrm->L3_info_corr,p->L3_info, IPv4_ADDR);
+               
+                    //mod_lor_10_01_25--*/
             }
             break ;
         case RRC_PHY_SYNCH_TO_MR_IND :
@@ -621,6 +813,7 @@ static void processing_msg_rrc(
                 rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas, header->Trans_id );
             }
             break ;
+
         case RRC_UPDATE_SENS :
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
@@ -629,6 +822,7 @@ static void processing_msg_rrc(
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");
                 rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
+                //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
             }
             break ;
         case RRC_INIT_SCAN_REQ :
@@ -668,6 +862,7 @@ static void processing_msg_rrc(
                 rrc_init_mon_req( header->inst, p->L2_id, p->ch_to_scan, p->NB_chan, p->interval, header->Trans_id );  
             }
             break ;
+
         default :
             fprintf(stderr,"RRC:\n") ;
             printHex(msg,len_msg,1) ;
@@ -744,6 +939,70 @@ static void processing_msg_pusu(
 
 }
 
+//mod_lor_10_01_25++
+/*!
+*******************************************************************************
+\brief  traitement des messages entrant via IP
+
+\return Auncune valeur
+*/
+static void processing_msg_ip(
+    rrm_t       *rrm        , ///< Donnee relative a une instance du RRM
+    msg_head_t  *header     , ///< Entete du message
+    char        *msg        , ///< Message recu
+    int         len_msg       ///< Longueur du message
+    )
+{
+#ifdef TRACE
+    if ( header->msg_type < NB_MSG_RRC_RRM )
+    fprintf(ip2rrm_fd,"%lf IP->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_rrc_rrm[header->msg_type], header->msg_type,header->Trans_id);
+    else
+    fprintf(ip2rrm_fd,"%lf CMM->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);
+    fflush(ip2rrm_fd);
+#endif
+
+    switch ( header->msg_type )
+    {
+        case UPDATE_SENS_RESULTS_3 :
+            {
+                //rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d\n",rrm->id, header->inst);
+                //rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                
+            }
+            break ;
+        case OPEN_FREQ_QUERY_4 :
+            {
+                open_freq_query_t *p = (open_freq_query_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:OPEN_FREQ_QUERY_4 \n",header->inst);
+                open_freq_query( header->inst, p->L2_id, p->QoS, header->Trans_id ); 
+                
+            }
+            break ;
+        case UPDATE_OPEN_FREQ_7 :
+            {
+                update_open_freq_t *p = (update_open_freq_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 \n",header->inst);
+                update_open_freq( header->inst, p->L2_id, p->NB_chan, p->fr_channels, header->Trans_id ); 
+                
+            }
+            break ;
+        case UPDATE_SN_OCC_FREQ_5 :
+            {
+                update_SN_occ_freq_t *p = (update_SN_occ_freq_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 \n",header->inst);
+                update_SN_occ_freq( header->inst, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id );  
+                
+            }
+            break ;
+       
+        default :
+            fprintf(stderr,"IP:\n") ;
+            printHex(msg,len_msg,1) ;
+    }
+}
+//mod_lor_10_01_25--
+
 /*!
 *******************************************************************************
 \brief  thread de traitement des messages sortants sur les sockets
@@ -779,15 +1038,22 @@ static void rrm_scheduler ( )
                     {
                         msg = (char *) (header +1) ;
                     }
-
-                    if ( pItem->s->s == rrm->cmm.s->s )
-                        processing_msg_cmm( rrm , header , msg , header->size ) ;
-                    else if ( pItem->s->s == rrm->rrc.s->s )
-                    {
-                        processing_msg_rrc( rrm , header , msg , header->size ) ;
+                     //mod_lor_10_01_25
+                    if (pItem->s_type==0){
+                        if ( pItem->s->s == rrm->cmm.s->s )
+                            processing_msg_cmm( rrm , header , msg , header->size ) ;
+                        else if ( pItem->s->s == rrm->rrc.s->s )
+                        {
+                            processing_msg_rrc( rrm , header , msg , header->size ) ;
+                        }
+                        else
+                            processing_msg_pusu( rrm , header , msg , header->size ) ;
                     }
-                    else
-                        processing_msg_pusu( rrm , header , msg , header->size ) ;
+                    else{
+                        //fprintf(stderr,"RRM Scheduler: ip message ... \n"); //dbg
+                        processing_msg_ip( rrm , header , msg , header->size ) ;
+                        
+                    }
 
                 RRM_FREE( pItem->msg) ;
             }
@@ -880,6 +1146,7 @@ int main( int argc , char **argv )
     struct data_thread DataRrc;
     struct data_thread DataCmm;
     struct data_thread DataPusu;
+    sock_rrm_int_t  DataIpS[MAX_RRM]; //mod_lor_10_01_25
     pthread_attr_t attr ;
 
     /* Vérification des arguments */
@@ -949,6 +1216,8 @@ int main( int argc , char **argv )
     DataPusu.sock_path_local= RRM_PUSU_SOCK_PATH ;
     DataPusu.sock_path_dest = PUSU_RRM_SOCK_PATH ;
     DataPusu.s.s            = -1 ;
+    
+    
 
 #ifdef TRACE
     cmm2rrm_fd  = fopen( "VCD/cmm2rrm.txt" , "w") ;
@@ -959,12 +1228,15 @@ int main( int argc , char **argv )
 
     pusu2rrm_fd = fopen( "VCD/pusu2rrm.txt", "w") ;
     PNULL(pusu2rrm_fd) ;
+    
+    ip2rrm_fd = fopen( "VCD/ip2rrm.txt", "w") ;
+    PNULL(ip2rrm_fd) ;
 #endif
 
-    for ( ii = 0 ; ii < nb_inst ; ii++ )
-      {
+    for ( ii = 0 ; ii < nb_inst ; ii++ ){
+        DataIpS[ii].s               = -1 ;    //mod_lor_10_01_25
         if ( !flag_cfg )
-      {
+        {
             rrm_inst[ii].id                 = ii ;
             rrm_inst[ii].L2_id.L2_id[0]     = ii;
             rrm_inst[ii].L2_id.L2_id[1]     = 0x00;
@@ -974,35 +1246,42 @@ int main( int argc , char **argv )
             rrm_inst[ii].L2_id.L2_id[5]     = 0xBE;
             rrm_inst[ii].L2_id.L2_id[6]     = 0xAF;
             rrm_inst[ii].L2_id.L2_id[7]     = 0x00;
-      }
+        }
 
-    pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
-    pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
-    pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].ip.exclu ), NULL ) ; //mod_lor_10_01_25
 
-    init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
-    init_file_msg( &(rrm_inst[ii].file_send_cmm_msg), 2 ) ;
-    init_file_msg( &(rrm_inst[ii].file_send_rrc_msg), 3 ) ;
+        init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
+        init_file_msg( &(rrm_inst[ii].file_send_cmm_msg), 2 ) ;
+        init_file_msg( &(rrm_inst[ii].file_send_rrc_msg), 3 ) ;
+        init_file_msg( &(rrm_inst[ii].file_send_ip_msg), 4 ) ; //mod_lor_10_01_25
 
-    rrm_inst[ii].state              = ISOLATEDNODE ;
-    rrm_inst[ii].role               = NOROLE ;
-    rrm_inst[ii].cmm.trans_cnt      =  1024;
-    rrm_inst[ii].rrc.trans_cnt      =  2048;
-    rrm_inst[ii].pusu.trans_cnt     =  3072;
+        rrm_inst[ii].state              = ISOLATEDNODE ;
+        rrm_inst[ii].role               = NOROLE ;
+        rrm_inst[ii].cmm.trans_cnt      =  1024;
+        rrm_inst[ii].rrc.trans_cnt      =  2048;
+        rrm_inst[ii].pusu.trans_cnt     =  3072;
+        rrm_inst[ii].ip.trans_cnt       =  4096; //mod_lor_10_01_25
 
-    rrm_inst[ii].rrc.s              = &DataRrc.s;
-    rrm_inst[ii].cmm.s              = &DataCmm.s;
-    rrm_inst[ii].pusu.s             = &DataPusu.s;
+        rrm_inst[ii].rrc.s              = &DataRrc.s;
+        rrm_inst[ii].cmm.s              = &DataCmm.s;
+        rrm_inst[ii].pusu.s             = &DataPusu.s;
+        rrm_inst[ii].ip.s               = &DataIpS[ii]; //mod_lor_10_01_25
 
-    rrm_inst[ii].rrc.transaction    = NULL ;
-    rrm_inst[ii].cmm.transaction    = NULL ;
-    rrm_inst[ii].pusu.transaction   = NULL ;
-    rrm_inst[ii].rrc.pNeighborEntry = NULL ;
-    rrm_inst[ii].rrc.pRbEntry       = NULL ;
-    rrm_inst[ii].rrc.pSensEntry     = NULL ;
-    rrm_inst[ii].rrc.pChannelsEntry = NULL ;
-      }
-
+        rrm_inst[ii].rrc.transaction    = NULL ;
+        rrm_inst[ii].cmm.transaction    = NULL ;
+        rrm_inst[ii].pusu.transaction   = NULL ;
+        rrm_inst[ii].rrc.pNeighborEntry = NULL ;
+        rrm_inst[ii].rrc.pRbEntry       = NULL ;
+        rrm_inst[ii].rrc.pSensEntry     = NULL ;
+        rrm_inst[ii].rrc.pChannelsEntry = NULL ;
+        
+    }
+    
+    
+    
     //open_socket( &DataRrc.s,  DataRrc.sock_path_local, DataRrc.sock_path_dest ,0 );
 
     /* Creation du thread de reception des messages RRC*/
@@ -1053,6 +1332,17 @@ int main( int argc , char **argv )
         fprintf (stderr, "%s", strerror (ret));
         exit(-1) ;
     }
+    
+    //mod_lor_10_01_25++
+    
+    /* Creation du thread RRC d'envoi des messages */
+    ret = pthread_create (&pthread_send_ip_msg_hnd, NULL, thread_send_msg_ip, NULL );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
+    //mod_lor_10_01_25--*/
 
     /* Creation du thread TTL */
     ret = pthread_create (&pthread_ttl_hnd , NULL, thread_processing_ttl, NULL);
@@ -1063,7 +1353,6 @@ int main( int argc , char **argv )
     }
 
     /* main loop */
-
     rrm_scheduler( ) ;
 
     /* Attente de la fin des threads. */
@@ -1072,8 +1361,10 @@ int main( int argc , char **argv )
     pthread_join (pthread_recv_pusu_msg_hnd, NULL);
     pthread_join (pthread_send_cmm_msg_hnd, NULL);
     pthread_join (pthread_send_rrc_msg_hnd, NULL);
+    pthread_join (pthread_send_ip_msg_hnd, NULL);
     pthread_join (pthread_ttl_hnd, NULL);
-
+    
+ 
 #ifdef TRACE
     fclose(cmm2rrm_fd ) ;
     fclose(rrc2rrm_fd ) ;
@@ -1083,3 +1374,9 @@ int main( int argc , char **argv )
     return 0 ;
 }
 
+
+                
+               
+                //fprintf(stderr,"L3_local in CMM ");//dbg
+                //print_L3_id( IPv4_ADDR,  rrm->L3_info_corr );
+                //fprintf(stderr,"\n");//dbg

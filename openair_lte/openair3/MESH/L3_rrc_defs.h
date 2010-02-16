@@ -41,9 +41,7 @@ typedef unsigned short QOS_CLASS_T;
 #define LCHAN_DTCH      4
 #define LCHAN_MRBCH     5
 
-
-#define NB_SENS_MAX 10
-
+#define NB_SENS_MAX    10
 
 /*!\brief Layer 2 Identifier
  */

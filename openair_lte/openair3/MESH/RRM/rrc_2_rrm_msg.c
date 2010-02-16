@@ -69,19 +69,19 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(RRM_INIT_SCAN_REQ        ),
     STRINGIZER(RRC_INIT_SCAN_REQ        ),
     STRINGIZER(RRM_SCAN_ORD             ),
-    //STRINGIZER(RRM_UPDATE_SENS          ),
+    STRINGIZER(UPDATE_SENS_RESULTS_3    ), //mod_lor_10_01_25
     STRINGIZER(RRM_END_SCAN_REQ         ),
     STRINGIZER(RRC_END_SCAN_REQ         ),
     STRINGIZER(RRC_END_SCAN_CONF        ),
-    STRINGIZER(RRM_END_SCAN_ORD         )/*,
-    STRINGIZER(RRC_INIT_MON_REQ         ),
-    STRINGIZER(RRM_ASK_FOR_FREQ         ),
-    STRINGIZER(RRC_ASK_FOR_FREQ         ),
+    STRINGIZER(RRM_END_SCAN_ORD         ),
+    STRINGIZER(OPEN_FREQ_QUERY_4        ),
+    STRINGIZER(UPDATE_OPEN_FREQ_7       ),
+    STRINGIZER(UPDATE_SN_OCC_FREQ_5     ),
+    STRINGIZER(RRM_UP_FREQ_ASS          )/*,
     STRINGIZER(RRC_OPEN_FREQ            ),
     STRINGIZER(RRM_OPEN_FREQ            ),
     STRINGIZER(RRM_UPDATE_SN_FREQ       ),
     STRINGIZER(RRC_UPDATE_SN_FREQ       ),
-    STRINGIZER(RRM_UP_FREQ_ASS          ),
     STRINGIZER(RRM_CLUST_SCAN_REQ       ),
     STRINGIZER(RRC_CLUST_SCAN_REQ       ),
     STRINGIZER(RRM_CLUST_SCAN_CONF      ),
@@ -101,7 +101,7 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(RRM_FREQ_ALL_PROP_CONF   ),
     STRINGIZER(RRC_REP_FREQ_ALL         ),
     STRINGIZER(RRM_REP_FREQ_ACK         ) */ 
-    
+ 
 } ;
 #endif
 
@@ -488,6 +488,7 @@ msg_t * msg_rrc_rb_meas_ind(
 
 }
 
+
 /*!
 *******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
@@ -545,7 +546,7 @@ msg_t *msg_rrc_update_sens(
 msg_t *msg_rrc_init_scan_req(
     Instance_t        inst            , //!< instance ID
     L2_ID             L2_id           ,
-    float             interv          , //! interval between 2 scanning periods
+    unsigned int      interv          , //! interval between 2 scanning periods
     Transaction_t     Trans_id          //!< Transaction ID
     
     )
@@ -615,7 +616,7 @@ msg_t *msg_rrc_end_scan_req(
     )
 {
     msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
-    fprintf(stdout,"msg_rrc_end_scan_req\n"); //dbg
+    //fprintf(stdout,"msg_rrc_end_scan_req\n"); //dbg
     if ( msg != NULL )
     {
         rrc_end_scan_req_t *p = RRM_CALLOC(rrc_end_scan_req_t , 1 ) ;
@@ -643,7 +644,7 @@ msg_t *msg_rrc_init_mon_req(
     L2_ID             L2_id           ,
     unsigned int      *ch_to_scan     ,
     unsigned int      NB_chan         , 
-    float             interval        ,
+    unsigned int      interval        ,
     Transaction_t     Trans_id          //!< Transaction ID
     
     )
@@ -682,4 +683,3 @@ msg_t *msg_rrc_init_mon_req(
     }
     return msg ;
 }
-

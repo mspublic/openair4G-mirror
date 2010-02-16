@@ -56,7 +56,7 @@ typedef enum {
     CMM_INIT_CH_REQ         , ///< Message CMM->RRM : requete d'initialisation d'un CH
     CMM_INIT_SENSING        , ///< Message CMM->RRM : requete d'initialisation du sensing
     CMM_STOP_SENSING        , ///< Message CMM->RRM : requete de stop du sensing
-    //CMM_ASK_FREQ            , ///< Message CMM->RRM : in BTS, message to start an open freq. query
+    CMM_ASK_FREQ            , ///< Message CMM->RRM : in BTS, message to start an open freq. query
     //CMM_NEED_TO_TX          , ///< Message CMM->RRM : in SU, second scenario centr, message to start an open freq. query
     //CMM_INIT_TRANS_REQ      , ///< Message CMM->RRM : in SU, second scenario distr, message to start a connection with another SU
     //RRM_INIT_TRANS_CONF     , ///< Message RRM->CMM : confirmation de l'ouverture de la transition
@@ -229,12 +229,13 @@ msg_t *msg_cmm_init_mr_req( Instance_t inst);
 msg_t *msg_rrm_MR_synch_ind(Instance_t inst);
 msg_t *msg_rrm_no_synch_ind( Instance_t inst);
 msg_t *msg_cmm_init_ch_req( Instance_t inst, L3_INFO_T L3_info_t, void *L3_info  );
-msg_t *msg_cmm_init_sensing( Instance_t inst, float interv  );
+msg_t *msg_cmm_init_sensing( Instance_t inst, unsigned int interv  );
 msg_t *msg_cmm_stop_sensing( Instance_t inst);
 msg_t *msg_cmm_ask_freq( Instance_t inst);
 msg_t *msg_cmm_need_to_tx( Instance_t inst, QOS_CLASS_T QoS_class);
 msg_t *msg_cmm_init_trans_req( Instance_t inst, L2_ID L2_id , unsigned int Session_id, QOS_CLASS_T QoS_class, Transaction_t Trans_id );
 msg_t *msg_rrm_init_trans_conf( Instance_t inst, unsigned int Session_id, CHANNEL_T all_channel, Transaction_t Trans_id );
+msg_t *msg_cmm_ask_freq( Instance_t inst);
 
 #ifdef __cplusplus
 }
