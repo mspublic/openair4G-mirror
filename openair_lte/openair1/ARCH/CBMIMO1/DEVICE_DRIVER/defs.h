@@ -3,12 +3,6 @@
 
 //#include "rt_compat.h"
 
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-//#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif //RTAI_ENABLED
-
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
@@ -40,7 +34,12 @@
 #include <linux/wrapper.h>
 #endif
 
-
+#ifdef RTAI_ENABLED
+#include <asm/rtai.h>
+#include <rtai.h>
+//#include <rtai_posix.h>
+#include <rtai_fifos.h>
+#endif //RTAI_ENABLED
 
 #ifdef BIGPHYSAREA
 #include <linux/bigphysarea.h>

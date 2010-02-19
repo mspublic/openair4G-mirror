@@ -2,6 +2,8 @@
 #ifndef RTAI_ENABLED
 #include <time.h>
 #else
+#include <asm/io.h>
+#include <asm/rtai.h>
 #include <rtai.h>
 #include <rtai_sched.h>
 #define time(x) (unsigned int)(rt_get_time_ns())

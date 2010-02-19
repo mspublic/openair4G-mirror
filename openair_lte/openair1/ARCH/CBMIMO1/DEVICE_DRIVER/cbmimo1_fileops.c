@@ -3,25 +3,7 @@
 
 //#include "rt_compat.h"
 
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-//#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif // RTAI_ENABLED
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-#include <asm/uaccess.h>
-#include <asm/segment.h>
-#include <asm/page.h>
-#include <asm/delay.h>
-#include <asm/param.h>
-
-#include <linux/init.h>
-#include <linux/module.h>
-#include <asm/ioctl.h>
-//#include <linux/malloc.h>
-#endif //
+#endif
 
 #include "cbmimo1_device.h"
 #include "defs.h"
@@ -386,8 +368,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       // Initialize MAC layer
 
-      printk("[OPENAIR][IOCTL] MAC Init, is_cluster_head = %d (%p).slots_per_frame = %d (mac_xface %p)\n",mac_xface->is_cluster_head,&mac_xface->is_cluster_head,mac_xface->slots_per_frame,mac_xface);
-       mac_xface->macphy_init();
+      mac_xface->macphy_init();
 
       openair_daq_vars.node_id = PRIMARY_CH;
       //openair_daq_vars.dual_tx = 1;
@@ -529,6 +510,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
+
+      // turn on AGC
+      openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
       ret = setup_regs();
       if (ret == 0) {

@@ -407,6 +407,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     msg("[openair][LTE_PHY][INIT] Error generating SRS\n");
     return(-1);
   }
+  else 
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] SRS generated at %p\n",eNB_common_vars->srs);
+#endif
 
   return (0);  
 }

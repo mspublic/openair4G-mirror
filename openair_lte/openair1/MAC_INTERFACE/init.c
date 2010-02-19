@@ -11,6 +11,8 @@ ________________________________________________________________*/
 
 
 #ifdef RTAI_ENABLED
+#include <asm/io.h>
+#include <asm/rtai.h>
 #include <rtai.h>
 #include <rtai_posix.h>
 #include <rtai_fifos.h>

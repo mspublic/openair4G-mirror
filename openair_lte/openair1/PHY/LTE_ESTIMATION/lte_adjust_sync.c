@@ -79,6 +79,11 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   if ( PHY_vars->rx_vars[0].offset < 0 )
     PHY_vars->rx_vars[0].offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
+  if ( PHY_vars->rx_vars[0].offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+    PHY_vars->rx_vars[0].offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+
+
+
 #ifdef DEBUG_PHY
  if (mac_xface->frame%100 == 0)
     msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,PHY_vars->rx_vars[0].offset,max_pos,max_pos_fil);

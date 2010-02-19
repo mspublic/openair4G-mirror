@@ -44,6 +44,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
       msg("Channel estimation eNb %d, aarx %d\n",eNb_id,aa);
 #endif
+
       mult_cpx_vector((short*) &eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 		      (short*) eNb_common_vars->srs,
 		      (short*) eNb_common_vars->ul_ch_estimates[eNb_id][aa],
@@ -54,7 +55,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_FEP
-  printf("slot_fep: done\n");
+  msg("slot_fep: done\n");
 #endif
   return(0);
 }

@@ -3,23 +3,6 @@
 
 //#include "rt_compat.h"
 
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-//#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif //RTAI_ENABLED
-
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-#include <asm/uaccess.h>
-#include <asm/segment.h>
-#include <asm/page.h>
-#include <asm/delay.h>
-
-#include <linux/init.h>
-#include <linux/module.h>
-//#include <linux/malloc.h>
 #endif
 
 #include "cbmimo1_device.h"
@@ -97,6 +80,7 @@ int setup_regs() {
   printk("[openair][INIT] TX_RX_SWITCH_POINT = %d\n",openair_daq_vars.tx_rx_switch_point);
 
   pci_interface->timing_advance = openair_daq_vars.timing_advance;
+  printk("[openair][INIT] TIMING_ADVANCE = %d\n",openair_daq_vars.timing_advance);
 
   pci_interface->cyclic_prefix_length  = CYCLIC_PREFIX_LENGTH;
   //printk("[openair][INIT] CYCLIC_PREFIX_LENGTH = %d\n",pci_interface->cyclic_prefix_length);

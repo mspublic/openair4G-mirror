@@ -3,23 +3,6 @@
 
 //#include "rt_compat.h"
 
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-//#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif
-
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-#include <asm/uaccess.h>
-#include <asm/segment.h>
-#include <asm/page.h>
-#include <asm/delay.h>
-
-#include <linux/init.h>
-#include <linux/module.h>
-//#include <linux/malloc.h>
 #endif
 
 #include "cbmimo1_device.h"

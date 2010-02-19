@@ -5,6 +5,7 @@
 
 #ifndef EXPRESSMIMO_TARGET
 static  __m128i shift     __attribute__ ((aligned(16)));
+static  __m128i m0,m1     __attribute__ ((aligned(16)));
 
 int mult_cpx_vector(short *x1, 
 		    short *x2, 
@@ -28,7 +29,6 @@ int mult_cpx_vector(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1;
   /*
 #ifdef USER_MODE
   short *temps;
@@ -52,6 +52,7 @@ int mult_cpx_vector(short *x1,
   for(i=0;i<(N>>3);i++)
   {
     
+    //msg("mult_cpx_vector: iteration %d, x1=%p, x2=%p, y=%p\n",i,x1_128,x2_128,y_128);
     /*
 #ifdef USER_MODE
     printf("i=%d\n",i);

@@ -84,7 +84,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 		    short amp,
 		    unsigned int sub_frame_offset) {
 
-  unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
+  unsigned short msrsb,Nb,nb,b,msrs0,k,l,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   int k0;
 
   if (frame_parms->N_RB_UL < 41) {
@@ -134,7 +134,8 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
   //msg("carrier_pos = %d\n",carrier_pos);
 
-  symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+  //symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+  symbol_offset = sub_frame_offset+l*frame_parms->ofdm_symbol_size;
 
   for (k=0;k<Msc_RS;k++) {
     ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
@@ -218,7 +219,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-  msg("carrier_pos = %d, sub_frame_offset = %d, k0=%d\n",carrier_pos,sub_frame_offset,k0);
+  //msg("carrier_pos = %d, sub_frame_offset = %d, k0=%d\n",carrier_pos,sub_frame_offset,k0);
 
   symbol_offset = sub_frame_offset;
 

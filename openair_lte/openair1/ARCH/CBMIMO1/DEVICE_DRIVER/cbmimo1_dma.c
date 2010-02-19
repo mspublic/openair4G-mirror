@@ -3,23 +3,6 @@
 
 //#include "rt_compat.h"
 
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-//#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif
-
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-#include <asm/uaccess.h>
-#include <asm/segment.h>
-#include <asm/page.h>
-#include <asm/delay.h>
-
-#include <linux/init.h>
-#include <linux/module.h>
-//#include <linux/malloc.h>
 #endif
 
 
@@ -57,7 +40,7 @@ int openair_dma(unsigned int cmd) {
     printk("[openair][DMA] Error: cmd %d, Leon IRQ active\n", cmd);
     return -1;
   }
-  //  printk("[openair][DMA] cmd %d\n",cmd);
+  printk("[openair][DMA] cmd %d\n",cmd);
 
   //openair_writel(cmd,bar[0]+REG_BAR+DMA_CMD);  // arms DMA
   openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, ((cmd & FROM_GRLIB_IRQ_FROM_PCI_MASK) | FROM_GRLIB_IRQ_FROM_PCI));
