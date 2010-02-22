@@ -326,7 +326,7 @@ int mult_cpx_vector_norep2(short *x1,
 
   register __m128i m0,m1,m2,m3;
 
-  /*      
+  /*
 #ifdef USER_MODE
   __m128i temp;
   int *tempd;
@@ -351,8 +351,8 @@ int mult_cpx_vector_norep2(short *x1,
   // we compute 2 cpx multiply for each loop
   for(i=0;i<(N>>1);i++)
   {
-    
-    /*        
+
+    /*    
 #ifdef USER_MODE
     printf("i=%d\n",i);
     temps = (short *)x1_128;
@@ -380,17 +380,16 @@ int mult_cpx_vector_norep2(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-
     tmp32 = _mm_packs_epi32(m0,m0);        // Re0 Im0 Re1 Im1 Re0 Im0 Re1 Im1
 
-
-
-    //    printf("tmp : %d,%d,%d,%d\n",((short *)&tmp32)[0],((short *)&tmp32)[1],((short *)&tmp32)[2],((short *)&tmp32)[3]);
+    /*
+#ifdef USER_MODE
+    printf("tmp : %d,%d,%d,%d\n",((short *)&tmp32)[0],((short *)&tmp32)[1],((short *)&tmp32)[2],((short *)&tmp32)[3]);
+#endif
+    */
 
     y_32[0] = ((int *)&tmp32)[0];        // 1- pack in a 128 bit register [re im re im]
     y_32[1] = ((int *)&tmp32)[1];        // 1- pack in a 128 bit register [re im re im]
-
-
 
     x1_128+=1;
     x2_128+=1;

@@ -13,7 +13,7 @@
 #define Td 1.0
 
 //#define OUTPUT_DEBUG 1
-#define N_TRIALS 100
+#define N_TRIALS 1
 
 #define NB_RB 12
 #define RBmask0 0x00fc00fc
@@ -43,12 +43,18 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
  
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
+  lte_frame_parms->N_RB_UL            = 25;   
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->Csrs = 2;
+  lte_frame_parms->Bsrs = 0;
+  lte_frame_parms->kTC = 0;
+  lte_frame_parms->n_RRC = 0;
+
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -60,8 +66,11 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->rev              = rev;
   
   lte_gold(lte_frame_parms);
+  generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
   generate_64qam_table();
   generate_16qam_table();
+
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);//allocation
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars);
   printf("Done lte_param_init\n");
@@ -322,7 +331,7 @@ int main(int argc, char **argv) {
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
   
-  ch = (struct complex**) malloc(1 * 2 * sizeof(struct complex*));
+  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
@@ -376,7 +385,7 @@ int main(int argc, char **argv) {
     PHY_ofdm_mod(lte_eNB_common_vars->txdataF[aa],        // input
 		 txdata[aa],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 NUMBER_OF_OFDM_SYMBOLS_PER_FRAME,                 // number of symbols
+		 NUMBER_OF_SYMBOLS_PER_FRAME,                 // number of symbols
 		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
 		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		 lte_frame_parms->rev,           // bit-reversal permutation
@@ -390,7 +399,7 @@ int main(int argc, char **argv) {
 
 
   printf("tx_lev = %d\n",tx_lev);
-  tx_lev_dB = dB_fixed(tx_lev);
+  tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
 
 #ifdef OUTPUT_DEBUG  

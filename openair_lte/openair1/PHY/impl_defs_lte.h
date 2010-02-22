@@ -56,6 +56,7 @@ typedef struct{
   mod_sym_t **txdataF;    ///holds the transmit data in the frequency domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdata;           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF;          ///holds the received data in the frequency domain
+  int **rxdataF_ext;          ///holds the received data in the frequency domain for the allocated RBs
   int **ul_ch_estimates[3];  /// hold the channel estimates in frequency domain
   int* srs;               /// holds the SRS for channel estimation at the RX
 } LTE_eNB_COMMON;

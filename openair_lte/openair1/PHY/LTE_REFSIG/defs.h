@@ -68,6 +68,7 @@ int lte_dl_cell_spec_rx(int *output,
 			 unsigned char p);
 
 void generate_ul_ref_sigs(void);
+void generate_ul_ref_sigs_rx(void);
 
 void free_ul_ref_sigs(void);
 

@@ -464,7 +464,7 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 #endif // EXPRESSMIMO_TARGET
 
-char dB_fixed(unsigned int );
+char dB_fixed(unsigned int x);
 
 
 int phy_phase_compensation_top (unsigned int pilot_type, unsigned int initial_pilot,

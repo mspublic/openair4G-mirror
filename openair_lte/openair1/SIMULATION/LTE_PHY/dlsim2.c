@@ -15,7 +15,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 100
+#define N_TRIALS 1
 
 int main(int argc, char **argv) {
 
@@ -67,12 +67,17 @@ int main(int argc, char **argv) {
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
 
   lte_frame_parms->N_RB_DL            = 25;
+  lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 1;
+  lte_frame_parms->Csrs = 2;
+  lte_frame_parms->Bsrs = 0;
+  lte_frame_parms->kTC = 0;
+  lte_frame_parms->n_RRC = 0;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -94,6 +99,9 @@ int main(int argc, char **argv) {
   */
 
   lte_gold(lte_frame_parms);
+
+  generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
 
@@ -143,7 +151,7 @@ int main(int argc, char **argv) {
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  ch = (struct complex**) malloc(1 * 2 * sizeof(struct complex*));
+  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 

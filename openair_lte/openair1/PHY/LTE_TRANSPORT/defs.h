@@ -833,7 +833,7 @@ void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char *decoded_output);
 
 /*!
-\brief This function generate the sounding reference symbol (SRS) for the uplink. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
+\brief This function generate the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
 @param frame_parms LTE DL Frame Parameters
 @param txdataF pointer to the frequency domain TX signal
 @param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
@@ -855,9 +855,26 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 */
 
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-		    int *txdataF,
-		    unsigned int sub_frame_offset);
+		    int *txdataF);
 
+/*!
+\brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
+*/
+
+int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
+		       mod_sym_t *txdataF,
+		       short amp,
+		       unsigned int sub_frame_offset,
+		       unsigned int *rb_alloc);
+
+int compareints (const void * a, const void * b);
+
+unsigned short ulsch_extract_rbs_single(int **rxdataF,
+					int **rxdataF_ext,
+					unsigned int *rb_alloc,
+					unsigned char l,
+					unsigned char Ns,
+					LTE_DL_FRAME_PARMS *frame_parms);
 
 /**@}*/
 #endif

@@ -224,7 +224,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     msg("[OPENAIR][LTE PHY][INIT] ue_dlsch_vars[%d] = %p\n",eNb_id,ue_dlsch_vars[eNb_id]);
 #endif
 
-    ue_dlsch_vars[eNb_id]->rxdataF_ext    = (int **)malloc16(2*sizeof(int*));
+    ue_dlsch_vars[eNb_id]->rxdataF_ext    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       for (j=0; j<frame_parms->nb_antennas_tx; j++)
 	ue_dlsch_vars[eNb_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
@@ -368,6 +368,33 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
 
+  eNB_common_vars->rxdataF_ext = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+  if (eNB_common_vars->rxdataF_ext) {
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF_ext allocated at %p\n",
+	   eNB_common_vars->rxdataF_ext);
+#endif
+  }
+  else {
+    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF_ext not allocated\n");
+    return(-1);
+  }
+
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    //RK 2 times because of output format of FFT!  We should get rid of this
+    eNB_common_vars->rxdataF_ext[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti));
+    if (eNB_common_vars->rxdataF_ext[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF_ext[%d] allocated at %p\n",i,
+	     eNB_common_vars->rxdataF_ext[i]);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdataF_ext[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+
   // Channel estimates
   for (eNb_id=0;eNb_id<3;eNb_id++) {
     eNB_common_vars->ul_ch_estimates[eNb_id] = (int **)malloc16(4*sizeof(int*));
@@ -403,7 +430,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   // SRS
   eNB_common_vars->srs = (int *)malloc16(2*frame_parms->ofdm_symbol_size*sizeof(int*));
   if (!eNB_common_vars->srs || 
-      (generate_srs_rx(frame_parms, eNB_common_vars->srs, 0))==-1) {
+      (generate_srs_rx(frame_parms, eNB_common_vars->srs))==-1) {
     msg("[openair][LTE_PHY][INIT] Error generating SRS\n");
     return(-1);
   }

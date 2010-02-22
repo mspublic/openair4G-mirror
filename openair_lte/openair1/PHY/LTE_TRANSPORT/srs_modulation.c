@@ -75,7 +75,7 @@ unsigned short Nb_81_110[8][4] = {{96,48,24,4},
 
 int compareints (const void * a, const void * b)
 {
-  return ( *(int*)a - *(int*)b );
+  return ( *(unsigned short*)a - *(unsigned short*)b );
 }
 
 
@@ -85,6 +85,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 		    unsigned int sub_frame_offset) {
 
   unsigned short msrsb,Nb,nb,b,msrs0,k,l,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
+  unsigned short *Msc_idx_ptr;
   int k0;
 
   if (frame_parms->N_RB_UL < 41) {
@@ -121,21 +122,20 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-  if (Msc_RS==216)
-    Msc_RS_idx = 12;
-  else if (Msc_RS==144)
-    Msc_RS_idx = 9;
+  Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
+  if (Msc_idx_ptr)
+    Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+  msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 
 #ifndef IFFT_FPGA
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
   //msg("carrier_pos = %d\n",carrier_pos);
 
-  //symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
-  symbol_offset = sub_frame_offset+l*frame_parms->ofdm_symbol_size;
+  symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
 
   for (k=0;k<Msc_RS;k++) {
     ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
@@ -169,10 +169,10 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-		    int *txdataF,
-		    unsigned int sub_frame_offset) {
+		    int *txdataF) {
 
-  unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
+  unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos;
+  unsigned short *Msc_idx_ptr;
   int k0;
 
   if (frame_parms->N_RB_UL < 41) {
@@ -209,31 +209,28 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-  if (Msc_RS==216)
-    Msc_RS_idx = 12;
-  else if (Msc_RS==144)
-    Msc_RS_idx = 9;
+  Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
+  if (Msc_idx_ptr)
+    Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+  msg("generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-  //msg("carrier_pos = %d, sub_frame_offset = %d, k0=%d\n",carrier_pos,sub_frame_offset,k0);
+  msg("generate_srs_rx: carrier_pos = %d, k0=%d\n",carrier_pos,k0);
 
-  symbol_offset = sub_frame_offset;
-
-#ifndef IFFT_FPGA
   for (k=0;k<Msc_RS;k++) {
-    ((short*) txdataF)[4*(symbol_offset + carrier_pos)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
-    ((short*) txdataF)[4*(symbol_offset + carrier_pos)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
-    ((short*) txdataF)[4*(symbol_offset + carrier_pos)+2] = (short) -(((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1]+1)>>15);
-    ((short*) txdataF)[4*(symbol_offset + carrier_pos)+3] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
+    ((short*) txdataF)[carrier_pos<<2]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<2];
+    ((short*) txdataF)[(carrier_pos<<2)+1] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+1];
+    ((short*) txdataF)[(carrier_pos<<2)+2] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+2];
+    ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
     carrier_pos+=2;
-    if (carrier_pos >= frame_parms->ofdm_symbol_size)
+    if (carrier_pos >= frame_parms->ofdm_symbol_size) 
       carrier_pos=1;
   }
-#else
+  /*
   for (k=0;k<Msc_RS;k++) {
     if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) {
       ((short*) txdataF)[4*(symbol_offset + carrier_pos)] = ONE_OVER_SQRT2_Q15;
@@ -262,9 +259,9 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=1;
+      carrier_pos=0;
   }
-#endif
+  */
   return(0);
 }
 

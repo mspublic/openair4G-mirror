@@ -17,6 +17,13 @@
 #define Td 1.0
 #define N_TRIALS 1
 
+//#define NB_RB 12
+//#define RBmask0 0x00fc00fc
+#define RBmask0 0x01FFFFFF
+#define RBmask1 0x0
+#define RBmask2 0x0
+#define RBmask3 0x0
+
 int main(int argc, char **argv) {
 
   int i,l,aa,sector;
@@ -39,6 +46,9 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
+  unsigned int rb_alloc[4];
+  unsigned int N_rb_alloc;
+  unsigned int eNb_id = 0;
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
@@ -102,6 +112,7 @@ int main(int argc, char **argv) {
   lte_gold(lte_frame_parms);
 
   generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
 
@@ -151,11 +162,17 @@ int main(int argc, char **argv) {
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  ch = (struct complex**) malloc(1 * 2 * sizeof(struct complex*));
+  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
-  generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],ONE_OVER_SQRT2_Q15,0);
+  rb_alloc[0] = RBmask0; // RBs 0-31
+  rb_alloc[1] = RBmask1;  // RBs 32-63
+  rb_alloc[2] = RBmask2;  // RBs 64-95
+  rb_alloc[3] = RBmask3;  // RBs 96-109
+
+  generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0);
+  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,rb_alloc);
 
 #ifdef IFFT_FPGA
   write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
@@ -310,15 +327,33 @@ int main(int argc, char **argv) {
 		  subframe_offset,
 		  0);
 
+      N_rb_alloc = ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF,
+					    lte_eNB_common_vars->rxdataF_ext,
+					    rb_alloc,
+					    l%(lte_frame_parms->symbols_per_tti/2),
+					    l/(lte_frame_parms->symbols_per_tti/2),
+					    lte_frame_parms);
+
+      if(l==0)
+	printf("N_rb_alloc = %d\n",N_rb_alloc);
+
+      lte_ul_channel_estimation(lte_eNB_common_vars->ul_ch_estimates[eNb_id],
+				lte_eNB_common_vars->rxdataF_ext,
+				lte_frame_parms,
+				l%(lte_frame_parms->symbols_per_tti/2),
+				l/(lte_frame_parms->symbols_per_tti/2),
+				N_rb_alloc);
     }
 
   }
 
   write_output("rxsigF0.m","rxsF0", &lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
   write_output("rxsigF1.m","rxsF1", &lte_eNB_common_vars->rxdataF[1][0],512*12*2,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", &lte_eNB_common_vars->rxdataF_ext[0][0],300*12*2,2,1);
+  write_output("rxsigF1_ext.m","rxsF1_ext", &lte_eNB_common_vars->rxdataF_ext[1][0],300*12*2,2,1);
   write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->ul_ch_estimates[0][0],2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->ul_ch_estimates[0][1],2*lte_frame_parms->ofdm_symbol_size,2,1);
+  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->ul_ch_estimates[0][0],300*12,1,1);
+  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->ul_ch_estimates[0][1],300*12,1,1);
 
 
 #ifdef IFFT_FPGA

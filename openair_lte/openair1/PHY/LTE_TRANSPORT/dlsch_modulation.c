@@ -1098,7 +1098,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	else if (rb < 96)
 	  rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
 	else if (rb < 100)
-	  rb_alloc_ind = (rb_alloc[0]>>(rb-96)) & 1;
+	  rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
 	else
 	  rb_alloc_ind = 0;
 

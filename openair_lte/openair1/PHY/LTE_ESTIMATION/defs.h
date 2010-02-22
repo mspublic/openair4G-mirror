@@ -103,7 +103,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      short coef);
 
 //! \brief this function fills the PHY_vars->PHY_measurement structure
-int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
+void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			PHY_MEASUREMENTS *phy_measurements,
 			unsigned int subframe_offset,
@@ -112,6 +112,13 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
 //! Automatic gain control
 void phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind);
+
+int lte_ul_channel_estimation(int **ul_ch_estimates,
+			      int **rxdataF_ext,
+			      LTE_DL_FRAME_PARMS *frame_parms,
+			      unsigned char l,
+			      unsigned char Ns,
+			      unsigned int N_rb_alloc);
 
 
 /** @} */ 

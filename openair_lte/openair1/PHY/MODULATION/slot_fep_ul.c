@@ -38,6 +38,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	0);
   }
 
+  /*
   if ((l==(6-frame_parms->Ncp)) && (Ns%2==1)) {
     eNb_id = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
@@ -45,14 +46,15 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
       msg("Channel estimation eNb %d, aarx %d\n",eNb_id,aa);
 #endif
 
-      mult_cpx_vector((short*) &eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
-		      (short*) eNb_common_vars->srs,
-		      (short*) eNb_common_vars->ul_ch_estimates[eNb_id][aa],
-		      frame_parms->ofdm_symbol_size,
-		      15);
+      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+			    (short*) eNb_common_vars->srs,
+			    (short*) eNb_common_vars->ul_ch_estimates[eNb_id][aa],
+			    frame_parms->ofdm_symbol_size,
+			    15);
 
     }
   }
+  */
 
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");

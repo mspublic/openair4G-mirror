@@ -44,9 +44,6 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   bzero((void *)PHY_vars,sizeof(PHY_VARS));
 
 
-
-  if (mac_xface->is_cluster_head == 1)
-    msg("[openair][PHY][INIT]TERMINODE is preconfigured as a Cluster Head\n");
   msg("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
   msg("[openair][PHY][INIT]FRAME_LENGTH_SAMPLES  : %d\n",FRAME_LENGTH_SAMPLES);
   msg("[openair][PHY][INIT]NUMBER_OF_SYMBOLS_PER_FRAME  : %d\n",NUMBER_OF_SYMBOLS_PER_FRAME);

@@ -8,7 +8,7 @@
 
 int rx_power_avg[3];
 
-int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
+void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			PHY_MEASUREMENTS *phy_measurements,
 			unsigned int subframe_offset,
@@ -57,7 +57,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	  
 	  
 	  
-	phy_measurements->rx_spatial_power_dB[eNb_id][aatx][aarx] = dB_fixed(phy_measurements->rx_spatial_power[eNb_id][aatx][aarx]);
+	phy_measurements->rx_spatial_power_dB[eNb_id][aatx][aarx] = (unsigned short) dB_fixed(phy_measurements->rx_spatial_power[eNb_id][aatx][aarx]);
 	/*	
 	  printf("lte_ue_measurements: aarx %d aatx %d eNb %d: %d (%d dB)\n",
 	  aarx,aatx,eNb_id,phy_measurements->rx_spatial_power[eNb_id][aatx][aarx],
@@ -69,7 +69,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
     for (eNb_id = 0; eNb_id < 3; eNb_id++){
       //      phy_measurements->rx_power[eNb_id][aarx]/=frame_parms->nb_antennas_tx;
-      phy_measurements->rx_power_dB[eNb_id][aarx] = dB_fixed(phy_measurements->rx_power[eNb_id][aarx]);
+      phy_measurements->rx_power_dB[eNb_id][aarx] = (unsigned short) dB_fixed(phy_measurements->rx_power[eNb_id][aarx]);
       rx_power[eNb_id] += phy_measurements->rx_power[eNb_id][aarx];
       //      phy_measurements->rx_avg_power_dB[eNb_id] += phy_measurements->rx_power_dB[eNb_id][aarx];
     }
@@ -78,7 +78,7 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   for (eNb_id = 0; eNb_id < 3; eNb_id++){
     //    phy_measurements->rx_avg_power_dB[eNb_id]/=frame_parms->nb_antennas_rx;
     rx_power_avg[eNb_id] = ((k1*rx_power_avg[eNb_id]) + (k2*rx_power[eNb_id]))>>5;
-    phy_measurements->rx_avg_power_dB[eNb_id]=dB_fixed(rx_power_avg[eNb_id]);
+    phy_measurements->rx_avg_power_dB[eNb_id] = (unsigned short) dB_fixed(rx_power_avg[eNb_id]);
 
     phy_measurements->wideband_sinr[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id] - phy_measurements->n0_power_dB[0];
 
@@ -115,9 +115,9 @@ int lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   n0_power = 0;
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
-    phy_measurements->n0_power_dB[aarx] = dB_fixed(phy_measurements->n0_power[aarx]);
+    phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
     n0_power +=  phy_measurements->n0_power[aarx];
   }
-  phy_measurements->n0_avg_power_dB = dB_fixed(n0_power);
+  phy_measurements->n0_avg_power_dB = (unsigned short) dB_fixed(n0_power);
 
 }

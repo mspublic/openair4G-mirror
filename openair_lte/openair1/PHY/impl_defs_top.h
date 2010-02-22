@@ -289,17 +289,17 @@ typedef struct
 {
   unsigned int   rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];                        //! estimated noise power (linear)
-  short          rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-  int            rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       //! estimated received spatial signal power (linear)
+  unsigned short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
+  unsigned int   rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       //! estimated received spatial signal power (linear)
   unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];    //! estimated received spatial signal power (dB) 
-  short          rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
-  short          rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
-  short          n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
-  short          n0_avg_power_dB;                                 //! estimated avg noise power (dB)
+  unsigned short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
+  unsigned short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+  unsigned short n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
+  unsigned short n0_avg_power_dB;                                 //! estimated avg noise power (dB)
   int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels
   int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels
-  char wideband_sinr[NUMBER_OF_eNB_MAX];
-  unsigned char wideband_cqi[NUMBER_OF_eNB_MAX];
+  char           wideband_sinr[NUMBER_OF_eNB_MAX];
+  unsigned char  wideband_cqi[NUMBER_OF_eNB_MAX];
 #ifdef EMOS
   unsigned int   frame_tx;              //! This is used to set the file index of the measurement file at the terminal
 #endif //EMOS
