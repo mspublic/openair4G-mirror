@@ -78,6 +78,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
   lte_frame_parms->n_RRC = 0;
+
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));

@@ -11,7 +11,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char Ns,
 			      unsigned int N_rb_alloc) {
 
-  unsigned short aa,k,Msc_RS,Msc_RS_idx,symbol_offset;
+  unsigned short aa,b,k,Msc_RS,Msc_RS_idx,symbol_offset;
   unsigned short * Msc_idx_ptr;
   unsigned short pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
   short alpha, beta;
@@ -19,6 +19,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
   Msc_RS = N_rb_alloc*12;
 
+#ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
@@ -26,6 +27,12 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
     msg("lte_ul_channel_estimation: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+#else
+  for (b=0;b<33;b++) 
+    if (Msc_RS==dftsizes[b])
+      Msc_RS_idx = b;
+#endif
+
 #ifdef DEBUG_CH
   msg("lte_ul_channel_estimation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #ifdef USER_MODE
@@ -35,7 +42,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
   if (l == (3 - frame_parms->Ncp)) {
 
-    symbol_offset = frame_parms->N_RB_UL*12*(l+Ns*frame_parms->symbols_per_tti/2);
+    symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       mult_cpx_vector_norep2((short*) &rxdataF_ext[aa][symbol_offset<<1],
@@ -65,7 +72,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  // interpolate between estimates
 	  if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    multadd_complex_vector_real_scalar((short*) ul_ch1,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((short*) ul_ch1,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
 	    multadd_complex_vector_real_scalar((short*) ul_ch2,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	  }
 	} //for(k=...

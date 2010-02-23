@@ -121,7 +121,6 @@ void lte_scope_idle_callback(void) {
 
 
 #ifndef SCOPE_UL
-  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -130,8 +129,8 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  */
 
+  /*
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -151,6 +150,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
+  */
 #endif
 
   // channel_t_im = rx_sig
@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
   printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
   printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
-  printf("PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0]);
+  printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -304,10 +304,17 @@ int main(int argc, char *argv[]) {
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 #else
     channel_f[i] = (short*)(mem_base + 
-			    (unsigned int)PHY_vars->lte_eNB_common_vars.ul_ch_estimates[0] + 
+			    (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] + 
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
-			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
+			    i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+    /*
+    channel_f[i] = (short*)(mem_base + 
+			    (unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF_ext + 
+			    nb_ant_rx*sizeof(int*) + 
+			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
+			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+    */
 #endif
 
     channel[i] = (short*)(mem_base + 

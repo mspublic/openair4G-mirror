@@ -6,7 +6,7 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=0;            % frequency band used by the openair card (depricated)
+freqband=1;            % frequency band used by the openair card (depricated)
 
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 dual_tx = 0;

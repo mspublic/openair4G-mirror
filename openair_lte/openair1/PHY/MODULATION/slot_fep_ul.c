@@ -10,7 +10,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		int no_prefix) {
  
   unsigned char aa;
-  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within frame
+  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned char eNb_id;
   int i;
@@ -38,7 +38,6 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	0);
   }
 
-  /*
   if ((l==(6-frame_parms->Ncp)) && (Ns%2==1)) {
     eNb_id = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
@@ -48,13 +47,11 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
       mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 			    (short*) eNb_common_vars->srs,
-			    (short*) eNb_common_vars->ul_ch_estimates[eNb_id][aa],
+			    (short*) eNb_common_vars->srs_ch_estimates[eNb_id][aa],
 			    frame_parms->ofdm_symbol_size,
 			    15);
-
     }
   }
-  */
 
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");

@@ -201,8 +201,8 @@ static void * openair_thread(void *param) {
 #ifdef CBMIMO1  
   openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
 	
-  // turn on AGC by default
-  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+  // turn off AGC by default
+  openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
 #endif
 
   openair_daq_vars.synch_source = 1; //by default we sync to CH1
@@ -345,6 +345,7 @@ void openair_sync(void) {
   int Ns;
   int l;
   int rx_power;
+  unsigned int adac_cnt;
 
   RTIME time;
 
@@ -360,10 +361,10 @@ void openair_sync(void) {
 
   time = rt_get_cpu_time_ns();
 
-  for (i=0;i<2*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
-#ifdef RTAI_ENABLED
+  for (i=0;i<3*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
     rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
-#endif //
+    //adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
+    //msg("[openair][SCHED][SYNC] adac_cnt for i=%d adac_cnt= %d\n", i,adac_cnt);
   }
   
   time = rt_get_cpu_time_ns();
@@ -426,7 +427,7 @@ void openair_sync(void) {
       msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
       
       if (((sync_pos - sync_pos_slot) >=0 ) && 
-	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - lte_frame_parms->samples_per_tti)) ) {
+	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES/2 - lte_frame_parms->samples_per_tti)) ) {
 	
 	for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	  
@@ -517,7 +518,7 @@ void openair_sync(void) {
     
   }
 
-  msg("[openair][SCHED][SYNCH] Returning\n");
+  msg("[openair][SCHED] leaving openair_sync()\n");
 
 }
 
@@ -577,15 +578,24 @@ static void * top_level_scheduler(void *param) {
 	if ( (openair_daq_vars.mode != openair_NOT_SYNCHED) &&
 	     (openair_daq_vars.node_running == 1) ){
 
+	  msg("[openair][SCHED] staring RT acquisition, adac_cnt = %d\n",adac_cnt);
 #ifdef CBMIMO1
 	  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 #endif //CBMIMO1
 	  openair_daq_vars.sync_state = 1;
-
+	  openair_daq_vars.sched_cnt = 0;
+	  /*
 	  for (i=0;i<NB_ANTENNAS_RX;i++){
 	    bzero((void *)PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
 	  }
-	  rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
+	  */
+
+	  for (i=0;i<NUMBER_OF_CHUNKS_PER_FRAME;i++) {
+	    rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
+	    //adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
+	    //msg("[openair][SCHED][SYNC] adac_cnt for i=%d adac_cnt= %d\n", i,adac_cnt);
+	  }
+	  //rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
 	  //rt_sleep(NS_PER_SLOT*SLOTS_PER_FRAME);
 	}
 #ifdef DEBUG_PHY
@@ -615,6 +625,7 @@ static void * top_level_scheduler(void *param) {
       if (openair_daq_vars.sync_state == 0) { // This means we're a CH, so start RT acquisition!!
 	openair_daq_vars.rach_detection_count=0;
 	openair_daq_vars.sync_state = 1;
+	openair_daq_vars.sched_cnt = 0;
 	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 
 	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
@@ -653,8 +664,16 @@ static void * top_level_scheduler(void *param) {
 	  else
 	    {
 	      //msg("[openair][SCHED][top_level_scheduler] sync startup, current time=%llu, waitig for adac_cnt=0 (current adac_cnt=%d)\n",rt_get_time_ns(),adac_cnt); 
+	      //msg("[openair][SCHED][top_level_scheduler] waiting for adac_cnt=0 (current adac_cnt=%d)\n",adac_cnt); 
 	      rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT/2));  /* sleep for half a SYMBOL */
 	      //rt_sleep(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT/2);  /* sleep for half a SYMBOL */
+
+	      if (openair_daq_vars.sched_cnt > 3*NUMBER_OF_SYMBOLS_PER_FRAME) {
+		msg("[openair][SCHED][top_level_scheduler] got sched_cnt =%d, stopping\n",openair_daq_vars.sched_cnt);
+		openair_daq_vars.mode = openair_NOT_SYNCHED;
+		openair_daq_vars.sync_state=0; 
+		openair_sched_exit("exit");
+	      }
 	      
 	    }
 	  
@@ -961,8 +980,8 @@ void openair_sched_cleanup() {
 
 void openair_sched_exit(char *str) {
 
-  //  msg("%s\n",str);
-  //  msg("[OPENAIR][SCHED] TTI %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
+  msg("%s\n",str);
+  msg("[OPENAIR][SCHED] TTI %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
   
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;

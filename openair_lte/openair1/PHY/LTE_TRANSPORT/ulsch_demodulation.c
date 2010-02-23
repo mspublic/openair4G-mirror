@@ -1,5 +1,7 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
 //#define DEBUG_ULSCH
@@ -17,7 +19,8 @@ unsigned short ulsch_extract_rbs_single(int **rxdataF,
   unsigned char aarx;
   int *rxF,*rxF_ext;
 
-  unsigned char symbol = l+Ns*frame_parms->symbols_per_tti/2;
+  //unsigned char symbol = l+Ns*frame_parms->symbols_per_tti/2;
+  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
@@ -69,7 +72,8 @@ unsigned short ulsch_extract_rbs_single(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 #ifdef DEBUG_ULSCH
-	  msg("ulsch_extract_rbs_single: extracting RB %d from %p to %p\n",rb,rxF,rxF_ext);
+	  if (mac_xface->frame%1000 == 0)
+	    msg("ulsch_extract_rbs_single: extracting RB %d from %p to %p\n",rb,rxF,rxF_ext);
 #endif
 	  memcpy(rxF_ext,rxF,24*sizeof(int));
 	  nb_rb++;
@@ -92,7 +96,8 @@ unsigned short ulsch_extract_rbs_single(int **rxdataF,
 
       if (rb_alloc_ind==1) {
 #ifdef DEBUG_ULSCH
-	msg("ulsch_extract_rbs_single: extracting RB %d (middle) from %p to %p\n",rb,rxF,rxF_ext);
+	if (mac_xface->frame%1000 == 0)
+	  msg("ulsch_extract_rbs_single: extracting RB %d (middle) from %p to %p\n",rb,rxF,rxF_ext);
 #endif
 	memcpy(rxF_ext,rxF,12*sizeof(int));
 	rxF_ext+=12;
@@ -121,7 +126,8 @@ unsigned short ulsch_extract_rbs_single(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 #ifdef DEBUG_ULSCH
-	  msg("ulsch_extract_rbs_single: extracting RB %d from %p to %p\n",rb,rxF,rxF_ext);
+	  if (mac_xface->frame%1000 == 0)
+	    msg("ulsch_extract_rbs_single: extracting RB %d from %p to %p\n",rb,rxF,rxF_ext);
 #endif
 	  memcpy(rxF_ext,rxF,24*sizeof(int));
 	  nb_rb++;

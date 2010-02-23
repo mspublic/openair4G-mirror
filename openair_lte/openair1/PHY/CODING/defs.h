@@ -392,6 +392,7 @@ int rate_matching_lte(unsigned int N_coded,
 @param interleaver_f2 F2 generator
 @param crc_type Length of 3GPPLTE crc (CRC24a,CRC24b,CRC16,CRC8)
 @param F Number of filler bits at start of packet 
+@param inst instance number of turbo decoder (for parallel execution)
 @returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
 */
 unsigned char phy_threegpplte_turbo_decoder(short *y,
@@ -401,7 +402,8 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 					    unsigned short interleaver_f2,
 					    unsigned char max_iterations,
 					    unsigned char crc_type,
-					    unsigned char F);
+					    unsigned char F,
+					    unsigned char inst);
 
 
 /** @} */

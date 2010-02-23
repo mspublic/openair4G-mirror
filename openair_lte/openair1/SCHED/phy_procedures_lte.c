@@ -58,6 +58,8 @@ ________________________________________________________________*/
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 #endif
 
+#define NS_PER_SLOT 500000
+
 extern inline unsigned int taus(void);
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
@@ -85,7 +87,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   int diff;
   int timing_offset;		
   */
-  int i,k,l,m,aa; 
+  int i,k,l,m,aa,aarx; 
 
 #ifndef USER_MODE
   RTIME  now;            
@@ -100,6 +102,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   // DLSCH variables
   unsigned char mod_order[2]={2,2};
   unsigned int rb_alloc[4];
+  unsigned int N_rb_alloc;
   MIMO_mode_t mimo_mode = ALAMOUTI;
   int eNb_id = 0, eNb_id_i = 1;
   unsigned char dual_stream_UE = 0;
@@ -108,6 +111,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
   unsigned int coded_bits_per_codeword,nsymb;
   int rate_num=1,rate_den=3;
   int subframe_offset;
+  int rx_power;
 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
@@ -264,6 +268,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 	  openair_daq_vars.sync_state=0;
 #ifdef CBMIMO1
 	  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	  rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
 #endif //CBMIMO1
 	  mac_xface->frame = -1;
 	  openair_daq_vars.synch_wait_cnt=0;
@@ -325,7 +330,6 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		msg("[PHY_PROCEDURES_LTE] DLSCH thread busy!!!\n");
 		return(-1);
 	      }
-
 	      /*
 	      time_in = openair_get_mbox();
 	      
@@ -416,13 +420,18 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
     // TX processing
     if (((openair_daq_vars.tdd==1) && (next_slot>=10)) || (openair_daq_vars.tdd == 0)) {
-      
-      if ((mac_xface->frame % 100) == 0)
-	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 
-      subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->N_RB_UL*12;
-      generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],ONE_OVER_SQRT2_Q15,subframe_offset);
+      if (next_slot%2==0) {      
+#ifdef DEBUG_PHY
+	if ((mac_xface->frame % 100) == 0)
+	  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
+#endif
 
+	subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->N_RB_UL*12;
+	generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset);
+	generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset,rb_alloc);
+
+      }
     }
 
 
@@ -546,7 +555,7 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     //RX processing
     if (((openair_daq_vars.tdd==1) && (last_slot>=10)) || (openair_daq_vars.tdd == 0)) {
       
-      subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size;
+      subframe_offset = (last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size;
 
       for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	
@@ -556,13 +565,52 @@ int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 		    last_slot,
 		    subframe_offset,
 		    1);
+
+	N_rb_alloc = ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF,
+					      lte_eNB_common_vars->rxdataF_ext,
+					      rb_alloc,
+					      l,
+					      last_slot,
+					      lte_frame_parms);
+	
+	lte_ul_channel_estimation(lte_eNB_common_vars->drs_ch_estimates[eNb_id],
+				  lte_eNB_common_vars->rxdataF_ext,
+				  lte_frame_parms,
+				  l,
+				  last_slot,
+				  N_rb_alloc);
+
+
       }
-      
+
       if ((mac_xface->frame % 100) == 0)
-	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation\n",mac_xface->frame,last_slot);
+	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DRS channel estimation: N_rb_alloc = %d\n",mac_xface->frame,last_slot,N_rb_alloc );
 
+      if (last_slot == 11) {
+
+	rx_power = 0;
+	for (aarx=0; aarx<lte_frame_parms->nb_antennas_rx; aarx++) {
+	  PHY_vars->PHY_measurements.rx_power[eNb_id][aarx] = 
+	    signal_energy(&lte_eNB_common_vars->rxdata[aarx][subframe_offset +
+							     (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*
+							     (lte_frame_parms->symbols_per_tti-1)],
+			  lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples);
+	  PHY_vars->PHY_measurements.rx_power_dB[eNb_id][aarx] = dB_fixed(PHY_vars->PHY_measurements.rx_power[eNb_id][aarx]);
+	  rx_power +=  PHY_vars->PHY_measurements.rx_power[eNb_id][aarx];
+	}
+	PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
+
+	// AGC
+	if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+	  if (mac_xface->frame % 100 == 0)
+	    phy_adjust_gain (0,16384,0);
+	
+      //#ifdef DEBUG_PHY      
+	if ((mac_xface->frame % 100) == 0)
+	  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] );
+	//#endif
+      }
     }
-
 
   }
   

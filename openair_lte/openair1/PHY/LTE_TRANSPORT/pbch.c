@@ -673,6 +673,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 				      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1],  // f2 (see 36121-820, page 14)
                                       max_iterations,
                                       CRC16,
+				      0,
 				      0);
 #ifdef DEBUG_PHY
   msg("[PBCH] ret=%d\n",ret);

@@ -32,10 +32,6 @@ static short zero[8]={0,0,0,0,0,0,0,0};
 #include "PHY/CODING/lte_interleaver_inline.h"
 
 
-
-
-
-
 typedef short llr_t; // internal decoder data is 16-bit fixed
 typedef short channel_t;
 
@@ -46,31 +42,52 @@ typedef short channel_t;
 #define FRAME_LENGTH_MAX 6144
 #define STATES 8
 
+#define MAX_DECODING_THREADS 5 //4 for DLSCH, 1 for PBCH
 
-void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F);
+
+void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst);
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);
-void compute_alpha(llr_t*alpha,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F);
-void compute_beta(llr_t* beta,llr_t* m11,llr_t* m10,llr_t* alpha, unsigned short frame_length,unsigned char F);
+void compute_alpha(llr_t*alpha,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst);
+void compute_beta(llr_t* beta,llr_t* m11,llr_t* m10,llr_t* alpha, unsigned short frame_length,unsigned char F,unsigned char inst);
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m11,llr_t* m10,llr_t* extrinsic, llr_t* ap, unsigned short frame_length);
 
 // global variables
 //
-llr_t alpha[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
-llr_t beta[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
-llr_t m11[(FRAME_LENGTH_MAX+3)] __attribute__ ((aligned(16)));
-llr_t m10[(FRAME_LENGTH_MAX+3)] __attribute__ ((aligned(16)));
+llr_t alpha_0[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_0[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_0[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_0[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_1[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_1[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_1[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_1[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_2[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_2[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_2[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_2[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_3[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_3[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_3[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_3[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t alpha_4[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t beta_4[(FRAME_LENGTH_MAX+3+1)*8] __attribute__ ((aligned(16)));
+llr_t m11_4[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t m10_4[(FRAME_LENGTH_MAX+3+1)] __attribute__ ((aligned(16)));
+llr_t *alpha_g[MAX_DECODING_THREADS] = {alpha_0, alpha_1, alpha_2, alpha_3, alpha_4};
+llr_t *beta_g[MAX_DECODING_THREADS] = {beta_0, beta_1, beta_2, beta_3, beta_4};
+llr_t *m11_g[MAX_DECODING_THREADS] = {m11_0, m11_1, m11_2, m11_3, m11_4};
+llr_t *m10_g[MAX_DECODING_THREADS] = {m10_0, m10_1, m10_2, m10_3, m10_4};
 
-char decoder_in_use = 0;
 
-void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F) {
+void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst) {
 
-  compute_gamma(m11,m10,systematic,y_parity,frame_length,term_flag);
+  compute_gamma(m11_g[inst],m10_g[inst],systematic,y_parity,frame_length,term_flag);
 
-  compute_alpha(alpha,m11,m10,frame_length,F);
+  compute_alpha(alpha_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst);
 
-  compute_beta(beta,m11,m10,alpha,frame_length,F);
+  compute_beta(beta_g[inst],m11_g[inst],m10_g[inst],alpha_g[inst],frame_length,F,inst);
 
-  compute_ext(alpha,beta,m11,m10,ext,systematic,frame_length);
+  compute_ext(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],ext,systematic,frame_length);
 
 }
 
@@ -97,23 +114,27 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   
 }
 
-short systematic0[6144+16] __attribute__ ((aligned(16)));
-short systematic1[6144+16] __attribute__ ((aligned(16)));
-short systematic2[6144+16]__attribute__ ((aligned(16)));
-short yparity1[6144+8] __attribute__ ((aligned(16)));
-short yparity2[6144+8] __attribute__ ((aligned(16)));
 
-__m128i mtop[6144] __attribute__ ((aligned(16)));
-__m128i mbot[6144] __attribute__ ((aligned(16)));
+__m128i mtop_0[6144] __attribute__ ((aligned(16)));
+__m128i mbot_0[6144] __attribute__ ((aligned(16)));
+__m128i mtop_1[6144] __attribute__ ((aligned(16)));
+__m128i mbot_1[6144] __attribute__ ((aligned(16)));
+__m128i mtop_2[6144] __attribute__ ((aligned(16)));
+__m128i mbot_2[6144] __attribute__ ((aligned(16)));
+__m128i mtop_3[6144] __attribute__ ((aligned(16)));
+__m128i mbot_3[6144] __attribute__ ((aligned(16)));
+__m128i mtop_4[6144] __attribute__ ((aligned(16)));
+__m128i mbot_4[6144] __attribute__ ((aligned(16)));
+__m128i *mtop_g[MAX_DECODING_THREADS] = {mtop_0, mtop_1, mtop_2, mtop_3, mtop_4};
+__m128i *mbot_g[MAX_DECODING_THREADS] = {mbot_0, mbot_1, mbot_2, mbot_3, mbot_4};
 
-__m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
-__m128i TOP,BOT,THRES128;
-
-
-void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F)
+void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
   int k;
   __m128i *alpha128=(__m128i *)alpha;
+  __m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
+  __m128i TOP,BOT,THRES128;
+
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -165,8 +186,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       // mtmp = [m11(0) m11(0) m10(0) m10(0) m10(0) m10(0) m11(0) m11(0)]
       //      print_shorts("shuffle) mtmp",&mtmp);
 
-      mtop[k] = _mm_sign_epi16(mtmp,TOP);
-      mbot[k] = _mm_sign_epi16(mtmp,BOT);
+      mtop_g[inst][k] = _mm_sign_epi16(mtmp,TOP);
+      mbot_g[inst][k] = _mm_sign_epi16(mtmp,BOT);
 
       //      print_shorts("mtop=",&mtop);
       //      printf("M0T %d, M1T %d, M2T %d, M3T %d, M4T %d, M5T %d, M6T %d, M7T %d\n",M0T,M1T,M2T,M3T,M4T,M5T,M6T,M7T);
@@ -176,8 +197,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
       // Now compute max-logmap
 
-      lsw  = _mm_adds_epi16(*alpha128,mtop[k]);
-      msw  = _mm_adds_epi16(*alpha128,mbot[k]);
+      lsw  = _mm_adds_epi16(*alpha128,mtop_g[inst][k]);
+      msw  = _mm_adds_epi16(*alpha128,mbot_g[inst][k]);
 
       //      print_shorts("lsw=",&lsw);
       //      print_shorts("msw=",&msw);
@@ -236,21 +257,20 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 	//	printf("alpha overflow %d",k);
 	//	print_shorts(" ",alpha128);
       }
-      //
-	  //      print_shorts("alpha",alpha128);
+      
+      //      print_shorts("alpha",alpha128);
 	  
   }
 
 }
 
-__m128i new,mb,oldh,oldl,THRES128,newcmp;
 
-void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F)
+void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
   int k;
 
-
   __m128i *beta128,*beta128_i;
+  __m128i new,mb,oldh,oldl,THRES128,newcmp;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -276,8 +296,8 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
       oldh = _mm_unpackhi_epi16(*beta128,*beta128);
       oldl = _mm_unpacklo_epi16(*beta128,*beta128);
 
-      mb   = _mm_adds_epi16(oldh,mbot[k]);
-      new  = _mm_adds_epi16(oldl,mtop[k]);
+      mb   = _mm_adds_epi16(oldh,mbot_g[inst][k]);
+      new  = _mm_adds_epi16(oldl,mtop_g[inst][k]);
 
       beta128--;
       //      *beta128= _mm_max_epi16(new,mb);
@@ -302,15 +322,15 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
     }
 }
 
-__m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
-__m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
-__m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
-__m128i m00_max,m01_max,m10_max,m11_max;
 
 void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
 {
   int k;
 
+  __m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
+  __m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
+  __m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
+  __m128i m00_max,m01_max,m10_max,m11_max;
   __m128i *alpha128=(__m128i *)alpha;
   __m128i *alpha128_ptr,*beta128_ptr;
   __m128i *beta128=(__m128i *)beta;
@@ -324,15 +344,15 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
       alpha128_ptr = &alpha128[k];
       beta128_ptr  = &beta128[k+1];
-
-	alpha128_ptr[0] = _mm_shufflelo_epi16(alpha128_ptr[0],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[0] = _mm_shufflehi_epi16(alpha128_ptr[0],_MM_SHUFFLE(1,3,0,2));
-	alpha128_ptr[4]   = _mm_shufflelo_epi16(alpha128_ptr[4],_MM_SHUFFLE(3,1,2,0));
-	alpha128_ptr[4]   = _mm_shufflehi_epi16(alpha128_ptr[4],_MM_SHUFFLE(1,3,0,2));
-	// these are [0 2 1 3 6 4 7 5] 
-	//      print_shorts("a_km1",&alpha128_ptr[0]);
-	
-	alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
+      
+      alpha128_ptr[0] = _mm_shufflelo_epi16(alpha128_ptr[0],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[0] = _mm_shufflehi_epi16(alpha128_ptr[0],_MM_SHUFFLE(1,3,0,2));
+      alpha128_ptr[4]   = _mm_shufflelo_epi16(alpha128_ptr[4],_MM_SHUFFLE(3,1,2,0));
+      alpha128_ptr[4]   = _mm_shufflehi_epi16(alpha128_ptr[4],_MM_SHUFFLE(1,3,0,2));
+      // these are [0 2 1 3 6 4 7 5] 
+      //      print_shorts("a_km1",&alpha128_ptr[0]);
+      
+      alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
       alpha_km1_bot = _mm_unpackhi_epi32(alpha128_ptr[0],alpha128_ptr[0]);
       alpha_k_top = _mm_unpacklo_epi32(alpha128_ptr[4],alpha128_ptr[4]);
       alpha_k_bot = _mm_unpackhi_epi32(alpha128_ptr[4],alpha128_ptr[4]);
@@ -372,15 +392,14 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
 
       /*
-
-      print_shorts("alpha_beta_1",&alpha_beta_1);
-      print_shorts("alpha_beta_2",&alpha_beta_2);
-      print_shorts("alpha_beta_3",&alpha_beta_3);
-      print_shorts("alpha_beta_4",&alpha_beta_4);
-      printf("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
-      printf("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
-      printf("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
-      printf("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
+	print_shorts("alpha_beta_1",&alpha_beta_1);
+	print_shorts("alpha_beta_2",&alpha_beta_2);
+	print_shorts("alpha_beta_3",&alpha_beta_3);
+	print_shorts("alpha_beta_4",&alpha_beta_4);
+	printf("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
+	printf("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
+	printf("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
+	printf("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
       */
       alpha_beta_max04 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
       alpha_beta_max04 = _mm_max_epi16(alpha_beta_max04,alpha_beta_3);
@@ -389,8 +408,8 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       
 
       /*
-      print_shorts("alpha_beta_max04",&alpha_beta_max04);
-      printf("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
+	print_shorts("alpha_beta_max04",&alpha_beta_max04);
+	printf("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
       */
       
 
@@ -472,10 +491,10 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       alpha_beta_3   = _mm_adds_epi16(alpha_beta_3,alpha_3);      
       alpha_beta_4   = _mm_adds_epi16(alpha_beta_4,alpha_4);
       /*
-      print_shorts("alpha_beta_1",&alpha_beta_1);
-      print_shorts("alpha_beta_2",&alpha_beta_2);
-      print_shorts("alpha_beta_3",&alpha_beta_3);
-      print_shorts("alpha_beta_4",&alpha_beta_4);
+	print_shorts("alpha_beta_1",&alpha_beta_1);
+	print_shorts("alpha_beta_2",&alpha_beta_2);
+	print_shorts("alpha_beta_3",&alpha_beta_3);
+	print_shorts("alpha_beta_4",&alpha_beta_4);
       */
       alpha_beta_max26 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
       alpha_beta_max26 = _mm_max_epi16(alpha_beta_max26,alpha_beta_3);
@@ -483,8 +502,6 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
       
       //      print_shorts("alpha_beta_max26",&alpha_beta_max26);
-
-      
 
       // bits 3 + 7
 
@@ -529,10 +546,10 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
       // transpose alpha_beta matrix
       /*
-      print_shorts("alpha_beta_max04",&alpha_beta_max04);
-      print_shorts("alpha_beta_max15",&alpha_beta_max15);
-      print_shorts("alpha_beta_max26",&alpha_beta_max26);
-      print_shorts("alpha_beta_max37",&alpha_beta_max37);
+	print_shorts("alpha_beta_max04",&alpha_beta_max04);
+	print_shorts("alpha_beta_max15",&alpha_beta_max15);
+	print_shorts("alpha_beta_max26",&alpha_beta_max26);
+	print_shorts("alpha_beta_max37",&alpha_beta_max37);
       */
       tmp0 = _mm_unpacklo_epi16(alpha_beta_max04,alpha_beta_max15);
       tmp1 = _mm_unpackhi_epi16(alpha_beta_max04,alpha_beta_max15);
@@ -551,11 +568,12 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       m11_max = _mm_unpacklo_epi64(tmp10,tmp30);
       m01_max = _mm_unpackhi_epi64(tmp10,tmp30);
 
-/*            print_shorts("m00_max",&m00_max);
-            print_shorts("m01_max",&m01_max);
-            print_shorts("m11_max",&m11_max);
-            print_shorts("m10_max",&m10_max);
-*/
+      /*
+	print_shorts("m00_max",&m00_max);
+	print_shorts("m01_max",&m01_max);
+	print_shorts("m11_max",&m11_max);
+	print_shorts("m10_max",&m10_max);
+      */
 
 
       // compute extrinsics for 8 consecutive bits
@@ -600,7 +618,38 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 
 }
 
+short systematic0_0[6144+16] __attribute__ ((aligned(16)));
+short systematic1_0[6144+16] __attribute__ ((aligned(16)));
+short systematic2_0[6144+16]__attribute__ ((aligned(16)));
+short yparity1_0[6144+8] __attribute__ ((aligned(16)));
+short yparity2_0[6144+8] __attribute__ ((aligned(16)));
+short systematic0_1[6144+16] __attribute__ ((aligned(16)));
+short systematic1_1[6144+16] __attribute__ ((aligned(16)));
+short systematic2_1[6144+16]__attribute__ ((aligned(16)));
+short yparity1_1[6144+8] __attribute__ ((aligned(16)));
+short yparity2_1[6144+8] __attribute__ ((aligned(16)));
+short systematic0_2[6144+16] __attribute__ ((aligned(16)));
+short systematic1_2[6144+16] __attribute__ ((aligned(16)));
+short systematic2_2[6144+16]__attribute__ ((aligned(16)));
+short yparity1_2[6144+8] __attribute__ ((aligned(16)));
+short yparity2_2[6144+8] __attribute__ ((aligned(16)));
+short systematic0_3[6144+16] __attribute__ ((aligned(16)));
+short systematic1_3[6144+16] __attribute__ ((aligned(16)));
+short systematic2_3[6144+16]__attribute__ ((aligned(16)));
+short yparity1_3[6144+8] __attribute__ ((aligned(16)));
+short yparity2_3[6144+8] __attribute__ ((aligned(16)));
+short systematic0_4[6144+16] __attribute__ ((aligned(16)));
+short systematic1_4[6144+16] __attribute__ ((aligned(16)));
+short systematic2_4[6144+16]__attribute__ ((aligned(16)));
+short yparity1_4[6144+8] __attribute__ ((aligned(16)));
+short yparity2_4[6144+8] __attribute__ ((aligned(16)));
+short *systematic0_g[MAX_DECODING_THREADS] = { systematic0_0, systematic0_1, systematic0_2, systematic0_3, systematic0_4};
+short *systematic1_g[MAX_DECODING_THREADS] = { systematic1_0, systematic1_1, systematic1_2, systematic1_3, systematic1_4};
+short *systematic2_g[MAX_DECODING_THREADS] = { systematic2_0, systematic2_1, systematic2_2, systematic2_3, systematic2_4};
+short *yparity1_g[MAX_DECODING_THREADS] = {yparity1_0, yparity1_1, yparity1_2, yparity1_3, yparity1_4};
+short *yparity2_g[MAX_DECODING_THREADS] = {yparity2_0, yparity2_1, yparity2_2, yparity2_3, yparity2_4};
 
+unsigned char decoder_in_use[MAX_DECODING_THREADS] = {0,0,0,0,0};
 
 unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 					    unsigned char *decoded_bytes,
@@ -609,11 +658,12 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 					    unsigned short f2,
 					    unsigned char max_iterations,
 					    unsigned char crc_type,
-					    unsigned char F) {
+					    unsigned char F,
+					    unsigned char inst) {
   
   /*  y is a pointer to the input
-    decoded_bytes is a pointer to the decoded output
-    n is the size in bits of the coded block, with the tail */
+      decoded_bytes is a pointer to the decoded output
+      n is the size in bits of the coded block, with the tail */
   short ext[n],ext2[n];
 
   //  short systematic0[n],systematic1[n],systematic2[n],yparity1[n],yparity2[n];
@@ -627,12 +677,12 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     return 255;
   }
 
-  if (decoder_in_use) {
+  if (decoder_in_use[inst]) {
     msg("turbo decoder already in use\n");
     return 255;
   }
   else {
-    decoder_in_use = 1;
+    decoder_in_use[inst] = 1;
   }
   /*
   // zero out all global variables
@@ -665,26 +715,26 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     crc_len=3;
   }
   for (i=0;i<n;i++) {
-    systematic0[i] = *yp; yp++;
-    yparity1[i] = *yp; yp++;
-    yparity2[i] = *yp; yp++;
+    systematic0_g[inst][i] = *yp; yp++;
+    yparity1_g[inst][i] = *yp; yp++;
+    yparity2_g[inst][i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Position %d: (%d,%d,%d)\n",i,systematic0[i],yparity1[i],yparity2[i]);
+    msg("Position %d: (%d,%d,%d)\n",i,systematic0_g[inst][i],yparity1_g[inst][i],yparity2_g[inst][i]);
 #endif //DEBUG_LOGMAP
 
   }
   for (i=n;i<n+3;i++) {
-    systematic0[i]= *yp ;yp++;
-    yparity1[i] = *yp;yp++;
+    systematic0_g[inst][i]= *yp; yp++;
+    yparity1_g[inst][i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 1 (%d): %d %d\n",i,systematic0[i],yparity1[i]);
+    printf("Term 1 (%d): %d %d\n",i,systematic0_g[inst][i],yparity1_g[inst][i]);
 #endif //DEBUG_LOGMAP
   }
   for (i=n+8;i<n+11;i++) {
-    systematic0[i]= *yp ;yp++;
-    yparity2[i-8] = *yp;yp++;
+    systematic0_g[inst][i]= *yp; yp++;
+    yparity2_g[inst][i-8] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 2 (%d): %d %d\n",i-3,systematic0[i],yparity2[i-3]);
+    printf("Term 2 (%d): %d %d\n",i-3,systematic0_g[inst][i],yparity2_g[inst][i-3]);
 #endif //DEBUG_LOGMAP
   }
 #ifdef DEBUG_LOGMAP
@@ -694,7 +744,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
 
   // do log_map from first parity bit
-  log_map(systematic0,yparity1,ext,n,0,F);
+  log_map(systematic0_g[inst],yparity1_g[inst],ext,n,0,F,inst);
 
   while (iteration_cnt++ < max_iterations) {
 
@@ -707,14 +757,14 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 
     // compute input to second encoder by interleaving extrinsic info
     for (i=0;i<n;i++) { // steady-state portion
-      systematic2[i] = (ext[pi] + systematic0[pi]);
+      systematic2_g[inst][i] = (ext[pi] + systematic0_g[inst][pi]);
       pi              = threegpplte_interleaver(f1,f2,n);
     }
     for (i=n;i<n+3;i++) { // termination
-      systematic2[i] = (systematic0[i+8]);
+      systematic2_g[inst][i] = (systematic0_g[inst][i+8]);
     }
     // do log_map from second parity bit    
-    log_map(systematic2,yparity2,ext2,n,1,0);
+    log_map(systematic2_g[inst],yparity2_g[inst],ext2,n,1,0,inst);
 
 
     threegpplte_interleaver_reset();
@@ -723,23 +773,23 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       decoded_bytes[i]=0;
     // compute input to first encoder and output
     for (i=0;i<n;i++) {
-      systematic1[pi] = (ext2[i] + systematic0[pi]);
+      systematic1_g[inst][pi] = (ext2[i] + systematic0_g[inst][pi]);
 #ifdef DEBUG_LOGMAP
-      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[pi],
-	     ext2[i]+systematic2[i]);
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0_g[inst][pi],
+	     ext2[i]+systematic2_g[inst][i]);
 #endif //DEBUG_LOGMAP
 
-      if ((systematic2[i] + ext2[i]) > 0)
+      if ((systematic2_g[inst][i] + ext2[i]) > 0)
 	decoded_bytes[pi>>3] += (1 << (pi&7));
 
       pi              = threegpplte_interleaver(f1,f2,n);
     }
     
     for (i=n;i<n+3;i++) {
-      systematic1[i] = (systematic0[i]);
+      systematic1_g[inst][i] = (systematic0_g[inst][i]);
 #ifdef DEBUG_LOGMAP
-      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0[i],
-	     ext2[i]+systematic2[i]);
+      msg("Second half %d: ext2[i] %d, systematic0[i] %d (e+s %d)\n",i,ext2[i],systematic0_g[inst][i],
+	     ext2[i]+systematic2_g[inst][i]);
 #endif //DEBUG_LOGMAP
     }
     
@@ -777,16 +827,16 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     }
 
     if (crc == oldcrc) {
-      decoder_in_use = 0;
+      decoder_in_use[inst] = 0;
       return(iteration_cnt);
     }
 
     // do log_map from first parity bit
     if (iteration_cnt < max_iterations)
-      log_map(systematic1,yparity1,ext,n,0,F);
+      log_map(systematic1_g[inst],yparity1_g[inst],ext,n,0,F,inst);
   }
 
-  decoder_in_use = 0;
+  decoder_in_use[inst] = 0;
   return(iteration_cnt);
 }
 

@@ -10,7 +10,7 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      unsigned int sub_frame_offset,
 		      unsigned int *rb_alloc) {
 
-  unsigned short j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset,rb_alloc_ind;
+  unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset,rb_alloc_ind;
   unsigned short * Msc_idx_ptr;
 
   Msc_RS = 0;    
@@ -18,6 +18,7 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
     Msc_RS += (((rb_alloc[0]>>j)&1) + ((rb_alloc[1]>>j)&1) + ((rb_alloc[2]>>j)&1) + ((rb_alloc[3]>>j)&1));
   Msc_RS *= 12;
 
+#ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
@@ -25,6 +26,11 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_drs_puch: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+#else
+  for (b=0;b<33;b++) 
+    if (Msc_RS==dftsizes[b])
+      Msc_RS_idx = b;
+#endif
   //msg("Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 
   for (l = (3 - frame_parms->Ncp); l<frame_parms->symbols_per_tti; l += (7 - frame_parms->Ncp)) {
@@ -33,10 +39,10 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 
 #ifdef IFFT_FPGA
     re_offset = frame_parms->N_RB_DL*12/2;
-    symbol_offset = (unsigned int)frame_parms->N_RB_UL*12*(l+(sub_frame_offset*frame_parms->symbols_per_tti));
+    symbol_offset = sub_frame_offset + frame_parms->N_RB_UL*12*l;
 #else
     re_offset = frame_parms->first_carrier_offset;
-    symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*frame_parms->symbols_per_tti));
+    symbol_offset = sub_frame_offset + frame_parms->ofdm_symbol_size*l;
 #endif
     
 #ifdef DEBUG_DRS

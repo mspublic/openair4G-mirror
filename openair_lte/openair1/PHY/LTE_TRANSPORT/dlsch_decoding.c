@@ -207,7 +207,8 @@ unsigned int  dlsch_decoding(unsigned short A,
 					f1f2mat[(iind*2)+1], 
 					MAX_TURBO_ITERATIONS,
 					crc_type,
-					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+					harq_pid+1);
     
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;

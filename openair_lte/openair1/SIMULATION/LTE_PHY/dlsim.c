@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
       mimo_mode = DUALSTREAM;
   }
 
-
+  printf("dlsim default parameters SE=0.66 num_layers=2 SNR=-1\n");
 
   /*
   txdataF    = (int **)malloc16(2*sizeof(int*));

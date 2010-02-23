@@ -118,10 +118,11 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   if (k0<0) {
-    msg("Invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
+    msg("generate_srs: invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
     return(-1);
   }
 
+#ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
@@ -129,7 +130,20 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+#else //stdlib not availiable in RTAI
+  if (Msc_RS==216)
+    Msc_RS_idx = 12;
+  else if (Msc_RS==144)
+    Msc_RS_idx = 9;
+  else {
+    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    return(-1);
+  }
+#endif
+
+#ifdef DEBUG_SRS
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+#endif
 
 #ifndef IFFT_FPGA
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
@@ -209,6 +223,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
+#ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch((unsigned short*) &Msc_RS, (unsigned short*) dftsizes, 33, sizeof(unsigned short), compareints);
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
@@ -216,10 +231,22 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
-  msg("generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
+#else //stdlib not availiable in RTAI
+  if (Msc_RS==216)
+    Msc_RS_idx = 12;
+  else if (Msc_RS==144)
+    Msc_RS_idx = 9;
+  else {
+    msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
+    return(-1);
+  }
+#endif
+
+#ifdef DEBUG_SRS
+  msg("generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
+#endif
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-  msg("generate_srs_rx: carrier_pos = %d, k0=%d\n",carrier_pos,k0);
 
   for (k=0;k<Msc_RS;k++) {
     ((short*) txdataF)[carrier_pos<<2]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<2];

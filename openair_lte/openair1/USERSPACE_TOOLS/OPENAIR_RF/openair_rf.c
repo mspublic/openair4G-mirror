@@ -234,7 +234,10 @@ int main (int argc, char **argv) {
   
   lte_gold(lte_frame_parms);
 
+  /*
   generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
+  */
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);

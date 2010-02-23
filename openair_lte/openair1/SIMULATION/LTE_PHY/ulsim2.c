@@ -337,7 +337,7 @@ int main(int argc, char **argv) {
       if(l==0)
 	printf("N_rb_alloc = %d\n",N_rb_alloc);
 
-      lte_ul_channel_estimation(lte_eNB_common_vars->ul_ch_estimates[eNb_id],
+      lte_ul_channel_estimation(lte_eNB_common_vars->drs_ch_estimates[eNb_id],
 				lte_eNB_common_vars->rxdataF_ext,
 				lte_frame_parms,
 				l%(lte_frame_parms->symbols_per_tti/2),
@@ -352,8 +352,10 @@ int main(int argc, char **argv) {
   write_output("rxsigF0_ext.m","rxsF0_ext", &lte_eNB_common_vars->rxdataF_ext[0][0],300*12*2,2,1);
   write_output("rxsigF1_ext.m","rxsF1_ext", &lte_eNB_common_vars->rxdataF_ext[1][0],300*12*2,2,1);
   write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->ul_ch_estimates[0][0],300*12,1,1);
-  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->ul_ch_estimates[0][1],300*12,1,1);
+  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
+  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+  write_output("drs_est0.m","drsest0",lte_eNB_common_vars->drs_ch_estimates[0][0],300*12,1,1);
+  write_output("drs_est1.m","drsest1",lte_eNB_common_vars->drs_ch_estimates[0][1],300*12,1,1);
 
 
 #ifdef IFFT_FPGA
