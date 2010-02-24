@@ -296,13 +296,17 @@ typedef struct
   unsigned short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
   unsigned short n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
   unsigned short n0_avg_power_dB;                                 //! estimated avg noise power (dB)
-  int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels
-  int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels
-  char           wideband_sinr[NUMBER_OF_eNB_MAX];
-  unsigned char  wideband_cqi[NUMBER_OF_eNB_MAX];
-#ifdef EMOS
-  unsigned int   frame_tx;              //! This is used to set the file index of the measurement file at the terminal
-#endif //EMOS
+  int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+
+  // UE measurements
+  char           wideband_sinr[NUMBER_OF_eNB_MAX];                    /// Wideband SINR 
+  char           subband_sinr[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS]; /// Subband SINR
+  unsigned char  wideband_cqi[NUMBER_OF_eNB_MAX];                     /// Wideband CQI (quantized SINR)
+  unsigned char  subband_cqi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];  /// Subband CQI  (quantized SINR)
+  short          wideband_pmi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
+  short          subband_pmi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
+  char           selected_rx_antennas;                                /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
 } PHY_MEASUREMENTS;
 
 /// Physical Resource Descriptor
