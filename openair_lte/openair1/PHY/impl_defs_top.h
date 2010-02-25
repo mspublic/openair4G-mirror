@@ -284,6 +284,7 @@ typedef struct {
 #else //OPENAIR_LTE
 
 #define NUMBER_OF_eNB_MAX 4
+#define NUMBER_OF_SUBBANDS 7
 
 typedef struct
 {

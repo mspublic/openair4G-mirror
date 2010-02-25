@@ -8,15 +8,13 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      mod_sym_t *txdataF,
 		      short amp,
 		      unsigned int sub_frame_offset,
-		      unsigned int *rb_alloc) {
+		      unsigned int first_rb,
+		      unsigned int nb_rb) {
 
-  unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset,rb_alloc_ind;
+  unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
   unsigned short * Msc_idx_ptr;
 
-  Msc_RS = 0;    
-  for (j=0;j<32;j++)
-    Msc_RS += (((rb_alloc[0]>>j)&1) + ((rb_alloc[1]>>j)&1) + ((rb_alloc[2]>>j)&1) + ((rb_alloc[3]>>j)&1));
-  Msc_RS *= 12;
+  Msc_RS = nb_rb*12;
 
 #ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
@@ -49,20 +47,7 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_drs_puch: symbol_offset %d, subframe offset %d\n",symbol_offset,sub_frame_offset);
 #endif
 
-    for (rb=0;rb<frame_parms->N_RB_UL;rb++) {
-
-      if (rb < 32)
-	rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-      else if (rb < 64)
-	rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-      else if (rb < 96)
-	rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-      else if (rb < 100)
-	rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
-      else
-	rb_alloc_ind = 0;
-      
-      if (rb_alloc_ind > 0) { // the current RB is occupied
+    for (rb=first_rb;rb<first_rb+nb_rb;rb++) {
 
 #ifdef DEBUG_DRS	
 	msg("generate_drs_puch: doing RB %d, re_offset=%d, drs_offset=%d\n",rb,re_offset,drs_offset);
@@ -94,27 +79,6 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 	    re_offset=0;
 	}
 #endif
-      } 
-      else {
-	re_offset+=12; // go to next RB
-	
-	// check if we crossed the symbol boundary and skip DC
-#ifdef IFFT_FPGA
-	if (re_offset >= frame_parms->N_RB_DL*12) {
-	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
-	    re_offset=6;
-	  else                         // even number of RBs (doesn't straddle DC)
-	    re_offset=0;  
-	}
-#else
-	if (re_offset >= frame_parms->ofdm_symbol_size) {
-	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
-	    re_offset=7;
-	  else                         // even number of RBs (doesn't straddle DC)
-	    re_offset=1;  
-	}
-#endif
-      }
     }
   }
   

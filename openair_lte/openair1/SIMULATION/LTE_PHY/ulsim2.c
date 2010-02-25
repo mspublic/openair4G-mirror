@@ -17,13 +17,6 @@
 #define Td 1.0
 #define N_TRIALS 1
 
-//#define NB_RB 12
-//#define RBmask0 0x00fc00fc
-#define RBmask0 0x01FFFFFF
-#define RBmask1 0x0
-#define RBmask2 0x0
-#define RBmask3 0x0
-
 int main(int argc, char **argv) {
 
   int i,l,aa,sector;
@@ -46,8 +39,8 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
-  unsigned int rb_alloc[4];
-  unsigned int N_rb_alloc;
+  unsigned int nb_rb = 12;
+  unsigned int first_rb = 20;
   unsigned int eNb_id = 0;
 
   double nf[2] = {3.0,3.0}; //currently unused
@@ -166,13 +159,8 @@ int main(int argc, char **argv) {
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
-  rb_alloc[0] = RBmask0; // RBs 0-31
-  rb_alloc[1] = RBmask1;  // RBs 32-63
-  rb_alloc[2] = RBmask2;  // RBs 64-95
-  rb_alloc[3] = RBmask3;  // RBs 96-109
-
   generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0);
-  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,rb_alloc);
+  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,first_rb,nb_rb);
 
 #ifdef IFFT_FPGA
   write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
@@ -327,22 +315,20 @@ int main(int argc, char **argv) {
 		  subframe_offset,
 		  0);
 
-      N_rb_alloc = ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF,
-					    lte_eNB_common_vars->rxdataF_ext,
-					    rb_alloc,
-					    l%(lte_frame_parms->symbols_per_tti/2),
-					    l/(lte_frame_parms->symbols_per_tti/2),
-					    lte_frame_parms);
-
-      if(l==0)
-	printf("N_rb_alloc = %d\n",N_rb_alloc);
+      ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF,
+			       lte_eNB_common_vars->rxdataF_ext,
+			       first_rb,
+			       nb_rb,
+			       l%(lte_frame_parms->symbols_per_tti/2),
+			       l/(lte_frame_parms->symbols_per_tti/2),
+			       lte_frame_parms);
 
       lte_ul_channel_estimation(lte_eNB_common_vars->drs_ch_estimates[eNb_id],
 				lte_eNB_common_vars->rxdataF_ext,
 				lte_frame_parms,
 				l%(lte_frame_parms->symbols_per_tti/2),
 				l/(lte_frame_parms->symbols_per_tti/2),
-				N_rb_alloc);
+				nb_rb);
     }
 
   }

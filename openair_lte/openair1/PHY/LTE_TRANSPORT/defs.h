@@ -862,19 +862,21 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 */
 
 int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
-		       mod_sym_t *txdataF,
-		       short amp,
-		       unsigned int sub_frame_offset,
-		       unsigned int *rb_alloc);
+		      mod_sym_t *txdataF,
+		      short amp,
+		      unsigned int sub_frame_offset,
+		      unsigned int first_rb,
+		      unsigned int nb_rb);
 
 int compareints (const void * a, const void * b);
 
-unsigned short ulsch_extract_rbs_single(int **rxdataF,
-					int **rxdataF_ext,
-					unsigned int *rb_alloc,
-					unsigned char l,
-					unsigned char Ns,
-					LTE_DL_FRAME_PARMS *frame_parms);
+void ulsch_extract_rbs_single(int **rxdataF,
+			      int **rxdataF_ext,
+			      unsigned int first_rb,
+			      unsigned int nb_rb,
+			      unsigned char l,
+			      unsigned char Ns,
+			      LTE_DL_FRAME_PARMS *frame_parms);
 
 /**@}*/
 #endif
