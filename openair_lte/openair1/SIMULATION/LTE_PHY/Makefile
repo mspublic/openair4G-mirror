@@ -1,4 +1,4 @@
-C = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
+CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
 #CC = gcc
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
@@ -32,10 +32,15 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_demodulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
@@ -50,12 +55,14 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/crc_byte.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
