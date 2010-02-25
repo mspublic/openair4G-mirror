@@ -11,7 +11,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_CODING 
+#define DEBUG_DLSCH_CODING 
 //#define DEBUG_DLSCH_FREE 1
 
 /*
@@ -112,21 +112,21 @@ LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) 
 }
 
 
-void dlsch_encoding(unsigned char *a,
-		    unsigned short A,
-		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_DL_eNb_DLSCH_t *dlsch,
-		    unsigned char harq_pid,
-		    unsigned short N_RB) {
+int dlsch_encoding(unsigned char *a,
+		   LTE_DL_FRAME_PARMS *frame_parms,
+		   LTE_DL_eNb_DLSCH_t *dlsch) {
   
   unsigned short offset;
   unsigned int coded_bits_per_codeword;
   unsigned int crc=1;
   unsigned short iind;
-  unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
+  unsigned short nb_rb = dlsch->nb_rb;
+  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned int A = dlsch->harq_processes[harq_pid]->TBS;
+  unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
   unsigned int Kr,Kr_bytes,r,r_offset=0;
 
-  if (dlsch->harq_processes[harq_pid]->active == 0) {  // this is a new packet
+  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
     
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
@@ -171,8 +171,8 @@ void dlsch_encoding(unsigned char *a,
   printf("Generating Code Segment %d (%d bits)\n",r,Kr);
   // generate codewords
   
-  printf("bits_per_codeword (Kr)= %d\n",Kr);
-  printf("N_RB = %d\n",N_RB);
+  printf("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
+  printf("N_RB = %d\n",nb_rb);
   printf("first_dlsch_symbol %d\n",frame_parms->first_dlsch_symbol);
   printf("Ncp %d\n",frame_parms->Ncp);
   printf("mod_order %d\n",mod_order);
@@ -187,9 +187,8 @@ void dlsch_encoding(unsigned char *a,
     ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order)) :
     ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order));
   */
-  coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
-    ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol-3)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol-3)) ;  //number of bits per subframe = Number_of_resource_blocks*number_of_subcarriers per subblock(12)*bits_per_symbol*number_of_OFDM_Symbols_per_subframe
+  coded_bits_per_codeword = ( nb_rb * (12 * mod_order) * (frame_parms->num_dlsch_symbols));
+
 
 #ifdef DEBUG_DLSCH_CODING    
     printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
@@ -225,7 +224,7 @@ void dlsch_encoding(unsigned char *a,
 	   r,
 	   coded_bits_per_codeword,
 	   Kr*3,
-	   mod_order,N_RB);
+	   mod_order,nb_rb);
 #endif
 
 
@@ -237,8 +236,8 @@ void dlsch_encoding(unsigned char *a,
 					NSOFT,                    // Nsoft,
 					dlsch->Mdlharq,
 					dlsch->Kmimo,
-					dlsch->rvidx,
-					dlsch->harq_processes[harq_pid]->mod_order,
+					dlsch->harq_processes[harq_pid]->rvidx,
+					get_Qm(dlsch->harq_processes[harq_pid]->mcs),
 					dlsch->harq_processes[harq_pid]->Nl,
 					r);                       // r
 #ifdef DEBUG_DLSCH_CODING

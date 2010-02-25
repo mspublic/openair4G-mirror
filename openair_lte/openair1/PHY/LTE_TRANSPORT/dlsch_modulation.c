@@ -1,4 +1,5 @@
 #include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -15,7 +16,6 @@
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
 
-static int qam64_table[8],qam16_table[4];
 
 void generate_64qam_table(void) {
 
@@ -1037,17 +1037,17 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
 		     unsigned int sub_frame_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_DL_eNb_DLSCH_t *dlsch,
-		     unsigned char harq_pid,
-		     unsigned int  *rb_alloc){
+		     LTE_DL_eNb_DLSCH_t *dlsch){
 
   unsigned char nsymb;
+  unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned int jj,re_allocated,symbol_offset;
   unsigned short l,rb,re_offset;
   unsigned int rb_alloc_ind;
+  unsigned int *rb_alloc = dlsch->rb_alloc;
   unsigned char pilots,first_pilot,second_pilot;
   unsigned char skip_dc;
-  unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
+  unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
   second_pilot = (frame_parms->Ncp==0) ? 4 : 3;

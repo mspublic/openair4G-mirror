@@ -3,8 +3,8 @@
 
 // this function fills the PHY_vars->PHY_measurement structure
 
-#define k1 31
-#define k2 (32-k1)
+#define k1 1000
+#define k2 (1024-k1)
 
 int rx_power_avg[3];
 
@@ -77,9 +77,13 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
   for (eNb_id = 0; eNb_id < 3; eNb_id++){
     //    phy_measurements->rx_avg_power_dB[eNb_id]/=frame_parms->nb_antennas_rx;
-    rx_power_avg[eNb_id] = ((k1*rx_power_avg[eNb_id]) + (k2*rx_power[eNb_id]))>>5;
+    if (init_averaging == 0)
+      rx_power_avg[eNb_id] = ((k1*rx_power_avg[eNb_id]) + (k2*rx_power[eNb_id]))>>10;
+    else
+      rx_power_avg[eNb_id] = rx_power[eNb_id];
     phy_measurements->rx_avg_power_dB[eNb_id] = (unsigned short) dB_fixed(rx_power_avg[eNb_id]);
-
+    //    if (eNb_id == 0)
+    //      printf("rx_power_avg[0] %d (%d)\n",rx_power_avg[0],phy_measurements->rx_avg_power_dB[0]);
     phy_measurements->wideband_sinr[eNb_id] = phy_measurements->rx_avg_power_dB[eNb_id] - phy_measurements->n0_power_dB[0];
 
 
@@ -88,7 +92,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     for (i=0;i<15;i++)
       //      printf("lte_cqi_snr_dB[%d]=%d\n",i,lte_cqi_snr_dB[i]);
       if (lte_cqi_snr_dB[i] > (char)phy_measurements->wideband_sinr[eNb_id]) {
-	phy_measurements->wideband_cqi[eNb_id] = i-2;
+	phy_measurements->wideband_cqi[eNb_id] = i-3;
 	break;
       }
  

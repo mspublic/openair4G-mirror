@@ -22,7 +22,7 @@
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
 
-void free_ue_ulsch(LTE_UL_UE_ULSCH_t *ulsch) {
+void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
   int i;
   int r;
 
@@ -60,17 +60,17 @@ void free_ue_ulsch(LTE_UL_UE_ULSCH_t *ulsch) {
 	free16(ulsch->harq_processes[i],sizeof(LTE_UL_UE_HARQ_t));
       }
     }
-    free16(ulsch,sizeof(LTE_UL_UE_ULSCH_t));
+    free16(ulsch,sizeof(LTE_UE_ULSCH_t));
   }
   
 }
 
-LTE_UL_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
 
-  LTE_UL_UE_ULSCH_t *ulsch;
+  LTE_UE_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,j,r;
   
-  ulsch = (LTE_UL_UE_ULSCH_t *)malloc16(sizeof(LTE_ue_ULSCH_t));
+  ulsch = (LTE_UE_ULSCH_t *)malloc16(sizeof(LTE_UE_ULSCH_t));
   if (ulsch) {
 
     ulsch->Mdlharq = Mdlharq;
@@ -104,35 +104,46 @@ LTE_UL_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
       return(ulsch);
     }
   }
-  msg("new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_ue_ULSCH_t));
+  msg("new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
   return(NULL);
   
   
 }
 
+unsigned char cs_ri_normal[4]    = {1,4,7,10};
+unsigned char cs_ri_extended[4]  = {0,3,5,8};
+unsigned char cs_ack_normal[4]   = {2,3,8,9};
+unsigned char cs_ack_extended[4] = {1,2,6,7};
 
-void ulsch_encoding(unsigned char *a,
-		    unsigned short A,
-		    LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_ue_ULSCH_t *ulsch,
-		    unsigned char harq_pid,
-		    unsigned short N_RB,
-		    unsigned char *o,
-		    unsigned char O,
-		    unsigned char *o_RI,
-		    unsigned char O_RI,
-		    unsigned char *o_ACK,
-		    unsigned char O_ACK) {
+int ulsch_encoding(unsigned char *a,
+		   unsigned short A,
+		   LTE_DL_FRAME_PARMS *frame_parms,
+		   LTE_UE_ULSCH_t *ulsch,
+		   unsigned char harq_pid,
+		   unsigned short N_RB,
+		   unsigned char *o,
+		   unsigned char O,
+		   unsigned char *o_RI,
+		   unsigned char O_RI,
+		   unsigned char *o_ACK,
+		   unsigned char O_ACK) {
   
   unsigned short offset;
-  unsigned int coded_bits_per_codeword;
   unsigned int crc=1;
   unsigned short iind;
-  unsigned char mod_order = ulsch->harq_processes[harq_pid]->mod_order;
+  unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   unsigned int Kr,Kr_bytes,r,r_offset=0;
+  unsigned char y[6*14*1200];
+  unsigned char *columnset;
+  unsigned int sumKr=0;
+  unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime;
+  unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI;
+  unsigned int E;
+  unsigned char ack_parity;
+  unsigned int i,q,j;
 
-  if (ulsch->harq_processes[harq_pid]->active == 0) {  // this is a new packet
+  if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
     
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
@@ -181,24 +192,12 @@ void ulsch_encoding(unsigned char *a,
   printf("N_RB = %d\n",N_RB);
   printf("first_ulsch_symbol %d\n",frame_parms->first_ulsch_symbol);
   printf("Ncp %d\n",frame_parms->Ncp);
-  printf("mod_order %d\n",mod_order);
+  printf("Qm %d\n",Q_m);
 #endif
 
   offset=0;
   
-  // This has to be updated for presence of PBCH/PSCH
-  // This assumes no data in pilot symbols (i.e. for multi-cell orthogonality, to be updated for strict LTE compliance
-  /*
-  coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
-    ( N_RB * (12 * mod_order) * (14-frame_parms->first_ulsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_ulsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order));
-  */
 
-  // Compute Q_cqi, Q_ri, Q_ack
-
-  coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
-    ( N_RB * (12 * mod_order) * (14-frame_parms->first_ulsch_symbol-3)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_ulsch_symbol-3)) ;  //number of bits per subframe = Number_of_resource_blocks*number_of_subcarriers per subblock(12)*bits_per_symbol*number_of_OFDM_Symbols_per_subframe
 
 
 
@@ -227,6 +226,58 @@ void ulsch_encoding(unsigned char *a,
     
   }
 
+  sumKr = 0;
+  for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
+    if (r<ulsch->harq_processes[harq_pid]->Cminus)
+      Kr = ulsch->harq_processes[harq_pid]->Kminus;
+    else
+      Kr = ulsch->harq_processes[harq_pid]->Kplus;
+    sumKr += Kr;
+  }
+  // Compute Q_ri
+  Qprime = O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  if ((Qprime % (8*sumKr)) > 0)
+    Qprime = 1+(Qprime/(8*sumKr));
+  else
+    Qprime = Qprime/(8*sumKr);
+
+  if (Qprime > 4*ulsch->nb_rb * 12)
+    Qprime = 4*ulsch->nb_rb * 12;
+
+  Q_RI = Q_m*Qprime;
+
+  // Compute Q_ack
+
+  Qprime = O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  if ((Qprime % (8*sumKr)) > 0)
+    Qprime = 1+(Qprime/(8*sumKr));
+  else
+    Qprime = Qprime/(8*sumKr);
+
+  if (Qprime > 4*ulsch->nb_rb * 12)
+    Qprime = 4*ulsch->nb_rb * 12;
+
+  Q_ACK = Qprime * Q_m;
+
+  // Compute Q_cqi
+  L=8;
+  Qprime = (O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  if ((Qprime % (8*sumKr)) > 0)
+    Qprime = 1+(Qprime/(8*sumKr));
+  else
+    Qprime = Qprime/(8*sumKr);
+
+  G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+
+  if (Qprime > (G - O_RI))
+    Qprime = G - O_RI;
+
+  Q_CQI = Q_m * Qprime;
+
+  G = G - Q_RI - Q_CQI;
+  H = G + Q_CQI;
+  Hprime = H/Q_m;
+
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
   // outputs for each code segment, see Section 5.1.5 p.20
 
@@ -234,22 +285,22 @@ void ulsch_encoding(unsigned char *a,
 #ifdef DEBUG_ULSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
-	   coded_bits_per_codeword,
+	   G,
 	   Kr*3,
-	   mod_order,N_RB);
+	   Q_m,N_RB);
 #endif
 
 
     r_offset += lte_rate_matching_turbo(ulsch->harq_processes[harq_pid]->RTC[r],
-					coded_bits_per_codeword,  //G
+					G,
 					ulsch->harq_processes[harq_pid]->w[r],
 					&ulsch->e[0],
 					ulsch->harq_processes[harq_pid]->C, // C
 					NSOFT,                    // Nsoft,
 					ulsch->Mdlharq,
 					1,
-					ulsch->rvidx,
-					ulsch->harq_processes[harq_pid]->mod_order,
+					ulsch->harq_processes[harq_pid]->rvidx,
+					get_Qm(ulsch->harq_processes[harq_pid]->mcs),
 					ulsch->harq_processes[harq_pid]->Nl,
 					r);                       // r
 #ifdef DEBUG_ULSCH_CODING
@@ -259,32 +310,214 @@ void ulsch_encoding(unsigned char *a,
   }
 
   //  Do CQI coding
-  if (O_CQI < 12) {
+  if (O < 12) {
     msg("ulsch_coding: FATAL, short CQI sizes not supported yet\n");
     exit(-1);
   }
   else {
+
+    // add 8-bit CRC
+    crc = crc8(o,
+	       O)>>24;
     
-    crc = crc8a(ulsch->o,
-		O_CQI)>>24;
-    
-    ccodelte_encode(O_CQI+8,
-		    ulsch->o,
-		    (unsigned char *)&crc,
-		    ulsch->q);
+    ccodelte_encode(O,
+		    1,
+		    o,
+		    &ulsch->o_d[96],
+		    0);
  
-    ulsch->o_RCC = sub_block_interleaving_cc(8+O_CQI, 
+    ulsch->o_RCC = sub_block_interleaving_cc(8+O, 
 					     &ulsch->o_d[96], 
 					     ulsch->o_w);
 
     E = lte_rate_matching_cc(ulsch->o_RCC,
 			     ulsch->Q_cqi,
 			     ulsch->o_w,
-			     ulsch->o_e)
+			     ulsch->q);
     
   }
 
   //  Do RI coding
-
+  if (O_RI == 1) {
+    switch (Q_m) {
+    case 2:
+      ulsch->q_RI[0] = o_RI[0];
+      ulsch->q_RI[1] = o_RI[0];
+      break;
+    case 4:
+      ulsch->q_RI[0] = o_RI[0];
+      ulsch->q_RI[1] = 1;
+      ulsch->q_RI[2] = o_RI[0];
+      ulsch->q_RI[3] = 1;
+      break;
+    case 6:
+      ulsch->q_RI[0] = o_RI[0];
+      ulsch->q_RI[1] = 1;
+      ulsch->q_RI[2] = 1;
+      ulsch->q_RI[3] = o_RI[0];
+      ulsch->q_RI[4] = 1;
+      ulsch->q_RI[5] = 1;
+      break;
+    }
+  }
+  else {
+    msg("ulsch_coding: FATAL, RI cannot be more than 1 bit yet\n");
+    return(-1);
+  }
   //  Do ACK coding
+  if (O_ACK == 1) {
+    switch (Q_m) {
+    case 2:
+      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[1] = o_ACK[0];
+      break;
+    case 4:
+      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[1] = 1;
+      ulsch->q_ACK[2] = o_ACK[0];
+      ulsch->q_ACK[3] = 1;
+      break;
+    case 6:
+      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[1] = 1;
+      ulsch->q_ACK[2] = 1;
+      ulsch->q_ACK[3] = o_ACK[0];
+      ulsch->q_ACK[4] = 1;
+      ulsch->q_ACK[6] = 1;
+      break;
+    }
+  }
+  if (O_ACK == 2) {
+    ack_parity = (o_ACK[0]+o_ACK[1])&1;
+    switch (Q_m) {
+    case 2:
+      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[1] = o_ACK[1];
+      ulsch->q_ACK[2] = ack_parity;
+      ulsch->q_ACK[3] = o_ACK[0];
+      ulsch->q_ACK[4] = o_ACK[1];
+      ulsch->q_ACK[5] = ack_parity;
+      break;
+    case 4:
+      ulsch->q_ACK[0]  = o_ACK[0];
+      ulsch->q_ACK[1]  = 1;
+      ulsch->q_ACK[2]  = o_ACK[1];
+      ulsch->q_ACK[3]  = 1;
+      ulsch->q_ACK[4]  = ack_parity;
+      ulsch->q_ACK[5]  = 1;
+      ulsch->q_ACK[6]  = o_ACK[0];
+      ulsch->q_ACK[7]  = 1;
+      ulsch->q_ACK[8]  = o_ACK[1];
+      ulsch->q_ACK[9]  = 1;
+      ulsch->q_ACK[10] = ack_parity;
+      ulsch->q_ACK[11] = 1;
+      break;
+    case 6:
+      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[1] = 1;
+      ulsch->q_ACK[2] = 1;
+      ulsch->q_ACK[3] = o_ACK[1];
+      ulsch->q_ACK[4] = 1;
+      ulsch->q_ACK[5] = 1;
+
+      ulsch->q_ACK[6] = ack_parity;
+      ulsch->q_ACK[7] = 1;
+      ulsch->q_ACK[8] = 1;
+      ulsch->q_ACK[9] = o_ACK[1];
+      ulsch->q_ACK[10] = 1;
+      ulsch->q_ACK[11] = 1;
+
+      ulsch->q_ACK[12] = o_ACK[1];
+      ulsch->q_ACK[13] = 1;
+      ulsch->q_ACK[14] = 1;
+      ulsch->q_ACK[15] = ack_parity;
+      ulsch->q_ACK[16] = 1;
+      ulsch->q_ACK[17] = 1;
+
+
+      break;
+    }
+  }
+  else{
+    msg("ulsch_coding: FATAL, ACK cannot be more than 2 bits yet\n");
+    return(-1);
+  }
+
+
+  // channel multiplexing/interleaving
+
+
+  Hpp = Hprime + Q_RI;
+ 
+  Cmux       = ulsch->Nsymb_pusch;
+  Rmux       = Hpp*Q_m/Cmux;
+  Rmux_prime = Rmux/Q_m;
+
+  Qprime_RI  = Q_RI / Q_m;
+  Qprime_ACK = Q_ACK / Q_m;
+  Qprime_CQI = Q_CQI / Q_m;
+
+
+  // RI BITS 
+  r = Rmux_prime-1;
+  memset(y,0,Q_m*Hpp);
+
+  if (frame_parms->Ncp == 0)
+    columnset = cs_ri_normal;
+  else
+    columnset = cs_ri_extended;
+  j=0;   
+  for (i=0;i<Qprime_RI;i++) {
+    for (q=0;q<Q_m;q++) 
+      y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_RI[q+(Q_m*i)];
+    j=(j+3)&3;
+    r = Rmux_prime - (i>>2);
+  }
+
+
+  // CQI and Data bits
+  j=0;
+  for (i=0;i<Hprime;i++) {
+    if (y[Q_m*j] == 0) {
+      if (i<Qprime_CQI) {
+	for (q=0;q<Q_m;q++) {
+	  y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
+	}
+      }
+      else {
+	for (q=0;q<Q_m;q++) {
+	  y[q+(Q_m*j)] = ulsch->e[q+(Q_m*i)];
+	}
+      }
+    }
+    j++;
+  }
+
+  // HARQ-ACK Bits (Note these overwrite some bits)
+  r = Rmux_prime-1;
+
+  if (frame_parms->Ncp == 0)
+    columnset = cs_ack_normal;
+  else
+    columnset = cs_ack_extended;
+
+  j=0;
+  for (i=0;i<Qprime_ACK;i++) {
+    for (q=0;q<Q_m;q++) 
+      y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_RI[q+(Q_m*i)];
+    j=(j+3)&3;
+    r = Rmux_prime - (i>>2);
+  }
+
+  // write out buffer
+  j=0;
+  for (i=0;i<Cmux;i++)
+    for (r=0;r<Rmux_prime;r++)
+      for (q=0;q<Q_m;q++) 
+	ulsch->h[j++] = y[q+(Q_m*((r*Cmux)+i))];
+
+  if (j!=(H+Q_RI))
+    msg("ulsch_coding.c: Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
+
+  return(0);
 }

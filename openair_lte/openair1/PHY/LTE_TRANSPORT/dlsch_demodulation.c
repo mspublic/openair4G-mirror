@@ -1382,10 +1382,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
 	     unsigned char eNb_id_i,
+	     LTE_DL_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
-	     unsigned int *rb_alloc,
-	     unsigned char *Qm,
-	     MIMO_mode_t mimo_mode,
 	     unsigned char dual_stream_UE) {
   
   unsigned short nb_rb;
@@ -1393,15 +1391,16 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   unsigned char log2_maxh,aatx,aarx;
   int avgs;
   short i;
+  unsigned char harq_pid0 = dlsch_ue[0]->current_harq_pid;
 
-  //  printf("rx_dlsch: symbol %d\n",symbol);
+  printf("rx_dlsch: symbol %d\n",symbol);
 
   if (frame_parms->nb_antennas_tx>1) {
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				   lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				   lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 				   lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
-				   rb_alloc,
+				   dlsch_ue[0]->rb_alloc,
 				   symbol,
 				   frame_parms);
     if (dual_stream_UE == 1)
@@ -1409,7 +1408,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				     lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
 				     lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
 				     lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
-				     rb_alloc,
+				     dlsch_ue[0]->rb_alloc,
 				     symbol,
 				     frame_parms);
   }
@@ -1419,7 +1418,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				       lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 				       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
-				       rb_alloc,
+				       dlsch_ue[0]->rb_alloc,
 				       symbol,
 				       frame_parms);
       if (dual_stream_UE == 1)
@@ -1427,13 +1426,13 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 					 lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
 					 lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
 					 lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
-					 rb_alloc,
+					 dlsch_ue[0]->rb_alloc,
 					 symbol,
 					 frame_parms);
 
   }
 
-  //  printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
+  //    printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
 
   if (symbol==frame_parms->first_dlsch_symbol) {
     dlsch_channel_level(lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
@@ -1461,7 +1460,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			     (aatx>1) ? lte_ue_dlsch_vars[eNb_id]->rho : NULL,
 			     frame_parms,
 			     symbol,
-			     Qm,
+			     lte_ue_dlsch_vars[eNb_id]->Qm,
 			     nb_rb,
 			     log2_maxh); // log2_maxh+I0_shift
 
@@ -1475,7 +1474,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       (aatx>1) ? lte_ue_dlsch_vars[eNb_id_i]->rho : NULL,
 			       frame_parms,
 			       symbol,
-			       Qm,
+			       lte_ue_dlsch_vars[eNb_id]->Qm,
 			       nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
     
@@ -1503,18 +1502,18 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			nb_rb,
 			dual_stream_UE);
       
-  if (mimo_mode!=DUALSTREAM) {
-    if (mimo_mode == SISO)
+  if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode!=DUALSTREAM) {
+    if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO)
       dlsch_siso(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp,symbol,nb_rb);
-    else if (mimo_mode == ALAMOUTI)
+    else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ALAMOUTI)
       dlsch_alamouti(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,symbol,nb_rb);
-    else if (mimo_mode == ANTCYCLING)
+    else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == ANTCYCLING)
       dlsch_antcyc(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,symbol,nb_rb);
     else {
       msg("dlsch_rx: Unknown MIMO mode\n");
       return (-1);
     }
-    switch (Qm[0]) {
+    switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
       if (dual_stream_UE == 0)
 	dlsch_qpsk_llr(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->llr[0],symbol,nb_rb);
@@ -1532,7 +1531,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       dlsch_64qam_llr(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->llr[0],lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,symbol,nb_rb);
       break;
     default:
-      msg("rx_dlsch.c : Unknown mod_order %d\n",Qm[0]);
+      msg("rx_dlsch.c : Unknown mod_order!!!!\n");
       return(-1);
       break;
     }

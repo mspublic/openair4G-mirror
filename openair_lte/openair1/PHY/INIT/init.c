@@ -78,6 +78,9 @@ int phy_init(unsigned char nb_antennas_tx) {
   ccodedot11_init();
   ccodedot11_init_inv();
 
+  ccodelte_init();
+  ccodelte_init_inv();
+  
 #ifndef EXPRESSMIMO_TARGET
   phy_generate_viterbi_tables();
 #endif //EXPRESSMIMO_TARGET

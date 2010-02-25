@@ -2,7 +2,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-//#define DEBUG_DLSCH_DECODING
+#define DEBUG_DLSCH_DECODING
 void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
 
   int i,r;
@@ -64,14 +64,16 @@ LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
   return(NULL);
 }
 
-unsigned int  dlsch_decoding(unsigned short A,
-			     short *dlsch_llr,
+unsigned int  dlsch_decoding(short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *lte_frame_parms,
-			     LTE_DL_UE_DLSCH_t *dlsch,
-			     unsigned char harq_pid,
-			     unsigned char nb_rb) {
+			     LTE_DL_UE_DLSCH_t *dlsch ){
+
   
-  unsigned char mod_order = dlsch->harq_processes[harq_pid]->mod_order;
+
+  unsigned short nb_rb = dlsch->nb_rb;
+  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned int A = dlsch->harq_processes[harq_pid]->TBS;
+  unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret,offset;
   unsigned short iind;
@@ -83,12 +85,11 @@ unsigned int  dlsch_decoding(unsigned short A,
 
 
   // This has to be updated for presence of PDCCH and PBCH
-  coded_bits_per_codeword = (lte_frame_parms->Ncp == 0) ?
-    ( nb_rb * (12 * mod_order) * (14-lte_frame_parms->first_dlsch_symbol-3)) :
-    ( nb_rb * (12 * mod_order) * (12-lte_frame_parms->first_dlsch_symbol-3)) ;
+  coded_bits_per_codeword =( nb_rb * (12 * mod_order) * (lte_frame_parms->num_dlsch_symbols));
 
 
-  if (dlsch->harq_processes[harq_pid]->active == 0) {
+
+  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation
     dlsch->harq_processes[harq_pid]->B = A+24;
     lte_segmentation(NULL,
@@ -154,8 +155,8 @@ unsigned int  dlsch_decoding(unsigned short A,
 					   NSOFT,
 					   dlsch->Mdlharq,
 					   dlsch->Kmimo,
-					   dlsch->rvidx,
-					   dlsch->harq_processes[harq_pid]->mod_order,
+					   dlsch->harq_processes[harq_pid]->rvidx,
+					   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
 					   dlsch->harq_processes[harq_pid]->Nl,
 					   r);
     /*

@@ -593,7 +593,7 @@ void lte_rate_matching_cc_rx(unsigned int RCC,
     // Maximum-ratio combining of repeated bits and retransmissions
     w16[ind] += soft_input[k];
 #ifdef RM_DEBUG
-      printf("RM_RX k %d (%d) ind: %d (%d)\n",k,soft_input[k],ind,w[ind]);
+      printf("RM_RX_CC k %d (%d) ind: %d (%d)\n",k,soft_input[k],ind,w16[ind]);
 #endif
     ind++;
     if (ind==Kw) {

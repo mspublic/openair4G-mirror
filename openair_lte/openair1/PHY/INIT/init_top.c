@@ -55,8 +55,12 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   ccodedot11_init();
   ccodedot11_init_inv();
 
+  ccodelte_init();
+  ccodelte_init_inv();
+
 #ifndef EXPRESSMIMO_TARGET
   phy_generate_viterbi_tables();
+  phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
   for (i=0;i<NB_ANTENNAS_RX;i++) {

@@ -1,3 +1,5 @@
+#include "dlsch_tbs.h"
+
 unsigned short lte_cqi_eff1024[16] = {156,          //-6, .15234
 				      240,          //-4  .234
 				      386,          //-2  .3769
@@ -14,21 +16,24 @@ unsigned short lte_cqi_eff1024[16] = {156,          //-6, .15234
 				      5238,         //31  5.1152
 				      5688};        //33  5.5547
  
-char lte_cqi_snr_dB[15] = { 0,
+char lte_cqi_snr_dB[15] = { -2,
+			    0,
+			    1,
 			    2,
 			    4,
 			    6,
-			    8,
 			    10,
-			    12,
 			    14,
-			    16,
 			    18,
-			    20,
-			    23,
-			    27,
-			    31,
-			    33};
+			    22,
+			    26,
+			    30,
+			    34,
+			    38,
+			    40};
 
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
+
+
+int qam64_table[8],qam16_table[4];
 

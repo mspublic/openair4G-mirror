@@ -684,8 +684,9 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   else {
     decoder_in_use[inst] = 1;
   }
-  /*
+  
   // zero out all global variables
+  /*
   bzero(alpha,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
   bzero(beta,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
   bzero(m11,(FRAME_LENGTH_MAX+3)*sizeof(llr_t));

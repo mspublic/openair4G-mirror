@@ -373,6 +373,7 @@ typedef struct
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_DLSCH     *lte_ue_dlsch_vars[3];
   LTE_UE_PBCH      *lte_ue_pbch_vars[3];
+  LTE_UE_PDCCH      *lte_ue_pdcch_vars[3];
   LTE_eNB_COMMON   lte_eNB_common_vars;
 #endif
 
