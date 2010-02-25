@@ -12,7 +12,7 @@
 #define BW 10.0
 #define Td 1.0
 
-//#define OUTPUT_DEBUG 1
+#define OUTPUT_DEBUG 1
 #define N_TRIALS 1
 
 #define NB_RB 12
@@ -39,6 +39,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
  
@@ -49,7 +50,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = 6;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -76,6 +78,19 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   printf("Done lte_param_init\n");
 }
 
+DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
+#define SI_RNTI 0xffff 
+#define RA_RNTI 0xfffe
+#define P_RNTI  0xfffd
+#define C_RNTI  0x1111
+
+#define UL_RB_ALLOC 0x1ff;
+#define CCCH_RB_ALLOC 0x1ff;
+#define DLSCH_RB_ALLOC 0x1fff;
 
 int main(int argc, char **argv) {
 
@@ -90,7 +105,7 @@ int main(int argc, char **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.5;
+  double aoa=.03,ricean_factor=0.000005;
   int channel_length;
   struct complex **ch;
 
@@ -100,16 +115,16 @@ int main(int argc, char **argv) {
   unsigned char dual_stream_UE = 0;
 
   unsigned char Ns,l,m,mod_order[2]={2,2};
-  unsigned int rb_alloc[4];
+
   MIMO_mode_t mimo_mode;
   unsigned char *input_data,*decoded_output;
 
   LTE_DL_eNb_DLSCH_t *dlsch_eNb[2];
-  LTE_DL_UE_DLSCH_t *dlsch_ue[2];
+  LTE_DL_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl,*dlsch_eNb_cntl;
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
-  unsigned int coded_bits_per_codeword,nsymb;
+  unsigned int coded_bits_per_codeword,nsymb,dci_cnt;
 
   unsigned int tx_lev,tx_lev_dB,trials,errs=0,num_layers;
   int re_allocated;
@@ -117,18 +132,18 @@ int main(int argc, char **argv) {
   char bler_fname[20];
 
   unsigned char pbch_pdu[6];
+
+  DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
+
+  dci_alloc[0].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(2,2);
+  lte_param_init(1,1);
 
-  rb_alloc[0] = RBmask0; // RBs 0-31
-  rb_alloc[1] = RBmask1;  // RBs 32-63
-  rb_alloc[2] = RBmask2;  // RBs 64-95
-  rb_alloc[3] = RBmask3;  // RBs 96-109
-  
   num_layers = 1;
 
-  mimo_mode = ALAMOUTI;
+  mimo_mode = SISO;//ALAMOUTI;
 
   if (argc<2) {
     SE = .66;
@@ -208,9 +223,11 @@ int main(int argc, char **argv) {
   }
   printf("Target code rate %f, mod_order %d, num_layers %d\n",target_code_rate,mod_order[0],num_layers);
 
+  printf("Sizeof UL_alloc_pdu %d bytes (%d bits)\n",sizeof(DCI0_5MHz_TDD0_t),sizeof_DCI_0_5MHz_TDD_0_t);
+
   nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
 
-  coded_bits_per_codeword =( NB_RB * (12 * mod_order[0]) * (nsymb-lte_frame_parms->first_dlsch_symbol-3));
+  coded_bits_per_codeword = NB_RB * (12 * mod_order[0]) * (lte_frame_parms->num_dlsch_symbols);
 
   sprintf(bler_fname,"bler_%d.m",(int)(SE*100.0));
   bler_fd = fopen(bler_fname,"w");
@@ -222,6 +239,37 @@ int main(int argc, char **argv) {
     r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
+
+  // Fill in UL_alloc
+  UL_alloc_pdu.type    = 0;
+  UL_alloc_pdu.hopping = 0;
+  UL_alloc_pdu.rballoc = UL_RB_ALLOC;
+  UL_alloc_pdu.mcs     = 1;
+  UL_alloc_pdu.ndi     = 1;
+  UL_alloc_pdu.TPC     = 0;
+  UL_alloc_pdu.cqi_req = 1;
+
+  CCCH_alloc_pdu.type               = 0;
+  CCCH_alloc_pdu.vrb_type           = 0;
+  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
+  CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
+  CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+
+  DLSCH_alloc_pdu2.rah              = 0;
+  DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
+  DLSCH_alloc_pdu2.TPC              = 0;
+  DLSCH_alloc_pdu2.dai              = 0;
+  DLSCH_alloc_pdu2.harq_pid         = 0;
+  DLSCH_alloc_pdu2.tb_swap          = 0;
+  DLSCH_alloc_pdu2.mcs1             = 0;
+  DLSCH_alloc_pdu2.ndi1             = 1;
+  DLSCH_alloc_pdu2.rv1              = 0;
+  // Forget second codeword
+  DLSCH_alloc_pdu2.tpmi             = 0;
+
+  // Create transport channel structures for SI pdus
+  dlsch_eNb_cntl = new_DL_eNb_dlsch(1,1);
+  dlsch_ue_cntl  = new_DL_ue_dlsch(1,1);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
@@ -237,7 +285,9 @@ int main(int argc, char **argv) {
       printf("Can't get ue dlsch structures\n");
       exit(-1);
     }
+  }
 
+    /*
     dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
     dlsch_eNb[i]->layer_index        = i;
     dlsch_eNb[i]->codebook_index     = 0;
@@ -245,7 +295,17 @@ int main(int argc, char **argv) {
     dlsch_eNb[i]->harq_processes[0]->active             = 0;
     dlsch_eNb[i]->harq_processes[0]->Nl                 = num_layers;
     dlsch_eNb[i]->rvidx                                 = 0;
-    
+    */
+  generate_eNb_dlsch_params_from_dci(&DLSCH_alloc_pdu2,
+				     C_RNTI,
+				     format2_2A_M10PRB,
+				     dlsch_eNb,
+				     lte_frame_parms,
+				     SI_RNTI,
+				     RA_RNTI,
+				     P_RNTI);
+
+    /*
     dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
     dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
     dlsch_eNb[i]->codebook_index     = 0;
@@ -253,13 +313,31 @@ int main(int argc, char **argv) {
     dlsch_ue[i]->harq_processes[0]->active              = 0;
     dlsch_ue[i]->harq_processes[0]->Nl                  = num_layers;
     dlsch_ue[i]->rvidx                                  = 0;
-    
-  }
+    */
+
+
+
+  
   
   //  input_data     = (unsigned char*) malloc(block_length/8);
   //  decoded_output = (unsigned char*) malloc(block_length/8);
 
-  input_buffer_length = ((int)(coded_bits_per_codeword*target_code_rate))>>3;
+  // DCI
+
+  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+  dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+  dci_alloc[0].L          = 3;
+  dci_alloc[0].rnti       = C_RNTI;
+  memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
+  dci_alloc[1].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+  dci_alloc[1].L          = 3;
+  dci_alloc[1].rnti       = C_RNTI;
+
+
+
+
+  // DLSCH
+  input_buffer_length = dlsch_eNb[0]->harq_processes[0]->TBS/8;
   printf("Input buffer size %d bytes\n",input_buffer_length);
 
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
@@ -269,46 +347,48 @@ int main(int argc, char **argv) {
 
 
   dlsch_encoding(input_buffer,
-		 (input_buffer_length<<3),
 		 lte_frame_parms,
-		 dlsch_eNb[0],
-		 0,               // harq_pid
-		 NB_RB); // number of allocated RB
+		 dlsch_eNb[0]);
 
   if (mimo_mode == DUALSTREAM)
     dlsch_encoding(input_buffer,
-		   (input_buffer_length<<3),
 		   lte_frame_parms,
-		   dlsch_eNb[1],
-		   0,               // harq_pid
-		   NB_RB); // number of allocated RB
+		   dlsch_eNb[1]);
 
 #ifdef OUTPUT_DEBUG
-  for (i=0;i<32;i++)
-    printf("Segment 0 %d : %x\n",i,dlsch_eNb[0]->harq_processes[0]->c[0][i]);
-  for (i=0;i<32;i++)
-    printf("Segment 1 %d : %x\n",i,dlsch_eNb[0]->harq_processes[0]->c[1][i]);
+  for (s=0;s<dlsch_eNb[0]->harq_processes[0]->C;s++) {
+    if (s<dlsch_eNb[0]->harq_processes[0]->Cminus)
+      Kr = dlsch_eNb[0]->harq_processes[0]->Kminus;
+    else
+      Kr = dlsch_eNb[0]->harq_processes[0]->Kplus;
+    
+    Kr_bytes = Kr>>3;
+    
+    for (i=0;i<Kr_bytes;i++)
+      printf("%d : (%x)\n",i,dlsch_eNb[0]->harq_processes[0]->c[s][i]);
+  }
+  
 #endif 
 
   re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF,
 				  1024,
 				  0,
 				  lte_frame_parms,
-				  dlsch_eNb[0],
-				  0,               // harq_pid
-				  rb_alloc); // RB allocation vector
+				  dlsch_eNb[0]);
+
+
+  printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
   
-  if ((re_allocated/(7*12)) != NB_RB)
-    printf("Bad RB count %d (%d)\n",re_allocated,re_allocated/7/12);
+  if ((re_allocated/(lte_frame_parms->num_dlsch_symbols*12)) != NB_RB)
+    printf("Bad RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
   
   if (num_layers>1)
     re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF,
 				    1024,
 				    i,
 				    lte_frame_parms,
-				    dlsch_eNb[1],
-				    0,               // harq_pid
-				    rb_alloc); // RB allocation vector
+				    dlsch_eNb[1]);
+
 
   generate_pss(lte_eNB_common_vars->txdataF,
 	       1024,
@@ -323,6 +403,15 @@ int main(int argc, char **argv) {
 		1024,
 		lte_frame_parms,
 		pbch_pdu);
+
+  generate_dci_top(2,
+		   0,
+		   dci_alloc,
+		   0,
+		   1024,
+		   lte_frame_parms,
+		   lte_eNB_common_vars->txdataF,
+		   0);
 
   generate_pilots(lte_eNB_common_vars->txdataF,
 		  1024,
@@ -370,7 +459,7 @@ int main(int argc, char **argv) {
 		 lte_frame_parms->rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
 
-    tx_lev += signal_energy(&txdata[aa][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
+    tx_lev += signal_energy(&txdata[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
 			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
   }
     
@@ -468,7 +557,7 @@ int main(int argc, char **argv) {
 		     Ns%20,
 		     (Ns>>1)*lte_frame_parms->samples_per_tti,
 		     0);
-	
+	    
 	    lte_ue_measurements(lte_ue_common_vars,
 				lte_frame_parms,
 				&PHY_vars->PHY_measurements,
@@ -478,7 +567,38 @@ int main(int argc, char **argv) {
 	    //	printf("rx_avg_power_dB %d\n",PHY_vars->PHY_measurements.rx_avg_power_dB[0]);
 	    //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
 	
-	    if ((Ns==0) && (l==3)) // process symbols 0,1,2
+	    if ((Ns==0) && (l==3)) {// process symbols 0,1,2
+
+	      rx_pdcch(lte_ue_common_vars,
+		       lte_ue_pdcch_vars,
+		       lte_frame_parms,
+		       eNb_id,
+		       2,
+		       (lte_frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI);
+
+	      dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,lte_frame_parms,SI_RNTI,RA_RNTI,C_RNTI);
+	      for (i=0;i<dci_cnt;i++)
+		if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB))
+	          generate_ue_dlsch_params_from_dci((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
+						    C_RNTI,
+						    format2_2A_M10PRB,
+						    dlsch_ue,
+						    lte_frame_parms,
+						    SI_RNTI,
+						    RA_RNTI,
+						    P_RNTI);
+		else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A))
+	          generate_ue_dlsch_params_from_dci((DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+						    SI_RNTI,
+						    format1A,
+						    dlsch_ue_cntl,
+						    lte_frame_parms,
+						    SI_RNTI,
+						    RA_RNTI,
+						    P_RNTI);
+
+	    }
+/*
 	      for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
 		rx_dlsch(lte_ue_common_vars,
 			 lte_ue_dlsch_vars,
@@ -490,7 +610,8 @@ int main(int argc, char **argv) {
 			 mod_order,
 			 mimo_mode,
 			 dual_stream_UE);
-	
+				*/
+
 	    if ((Ns==1) && (l==0)) // process symbols 3,4,5
 	      for (m=4;m<6;m++)
 		rx_dlsch(lte_ue_common_vars,
@@ -498,10 +619,8 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
+			 dlsch_ue,
 			 m,
-			 rb_alloc,
-			 mod_order,
-			 mimo_mode,
 			 dual_stream_UE);
 	    if ((Ns==1) && (l==3)) // process symbols 6,7,8
 	      for (m=7;m<9;m++)
@@ -510,10 +629,8 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
+			 dlsch_ue,
 			 m,
-			 rb_alloc,
-			 mod_order,
-			 mimo_mode,
 			 dual_stream_UE);
 	
 	    if ((Ns==2) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
@@ -523,11 +640,10 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
+			 dlsch_ue,
 			 m,
-			 rb_alloc,
-			 mod_order,
-			 mimo_mode,
 			 dual_stream_UE);
+
 	  }
 	}
 
@@ -541,8 +657,10 @@ int main(int argc, char **argv) {
 	  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
 	}
 	write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],2*12*lte_frame_parms->ofdm_symbol_size,2,1);
-	write_output("rxsigF0_ext.m","rxsF0_ext", lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*lte_frame_parms->ofdm_symbol_size,2,1);
+	write_output("rxsigF0_ext.m","rxsF0_ext", lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*lte_frame_parms->ofdm_symbol_size,1,1);
 	write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*12,1,1);
+	write_output("pdcchF0_ext.m","pdcchF_ext", lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*lte_frame_parms->ofdm_symbol_size,1,1);
+	write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);
 	if (num_layers>1) {
 	  write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[1],300*12,1,1);
 	  write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
@@ -550,7 +668,9 @@ int main(int argc, char **argv) {
 	  write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[eNb_id]->rho[0],300*12,1,1);
 	}
 	write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0],300*12,1,1);
+	write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
 	write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars[eNb_id]->llr[0],coded_bits_per_codeword,1,0);
+	write_output("pdcch_rxF_llr.m","pdcch_llr",lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
 
 	write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,300*12,1,1);
 	write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*12,1,1);
@@ -558,12 +678,9 @@ int main(int argc, char **argv) {
   
 	//  printf("Calling decoding, dlsch_ue %p, active %d\n",dlsch_ue,dlsch_ue[0]->harq_processes[0]->active);
 
-	ret = dlsch_decoding(input_buffer_length<<3,
-			     lte_ue_dlsch_vars[eNb_id]->llr[0],		 
+	ret = dlsch_decoding(lte_ue_dlsch_vars[eNb_id]->llr[0],		 
 			     lte_frame_parms,
-			     dlsch_ue[0],
-			     0,               //harq_pid
-			     NB_RB);             //NB allocated RBs
+			     dlsch_ue[0]);
 
 	if (ret <= MAX_TURBO_ITERATIONS) {
 #ifdef OUTPUT_DEBUG  
