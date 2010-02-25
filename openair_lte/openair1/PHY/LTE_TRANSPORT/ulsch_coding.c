@@ -301,7 +301,7 @@ int ulsch_encoding(unsigned char *a,
 					1,
 					ulsch->harq_processes[harq_pid]->rvidx,
 					get_Qm(ulsch->harq_processes[harq_pid]->mcs),
-					ulsch->harq_processes[harq_pid]->Nl,
+					1,                        //number of layers = 1 for UL?
 					r);                       // r
 #ifdef DEBUG_ULSCH_CODING
     if (r==ulsch->harq_processes[harq_pid]->C-1)

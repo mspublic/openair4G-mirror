@@ -1,3 +1,9 @@
+#include <emmintrin.h>
+#include <xmmintrin.h>
+#ifdef __SSE3__
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/defs.h"
@@ -520,14 +526,14 @@ int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
     case 4 :
       dlsch_16qam_llr(frame_parms,
 		      lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-		      lte_eNB_ulsch_vars[UE_id]->llr[0],
+		      lte_eNB_ulsch_vars[UE_id]->llr,
 		      lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
 		      l,ulsch->nb_rb);
       break;
     case 6 :
       dlsch_64qam_llr(frame_parms,
 		      lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-		      lte_eNB_ulsch_vars[UE_id]->llr[0],
+		      lte_eNB_ulsch_vars[UE_id]->llr,
 		      lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
 		      lte_eNB_ulsch_vars[UE_id]->ul_ch_magb[eNb_id],
 		      l,ulsch->nb_rb);

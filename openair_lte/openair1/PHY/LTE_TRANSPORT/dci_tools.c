@@ -435,6 +435,45 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
   }
 }
 
+unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe) {
+
+  switch (tdd_config) {
+
+  case 2:
+    if ((subframe!=2) && (subframe!=7)) {
+      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      return(255);
+    }
+    return(subframe/7);
+    break;
+  case 3:
+    if ((subframe<2) || (subframe>4)) {
+      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      return(255);
+    }
+    return(subframe-3);
+    break;
+  case 4:
+    if ((subframe<2) || (subframe>3)) {
+      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      return(255);
+    }
+    return(subframe-3);
+    break;
+  case 5:
+    if (subframe!=2) {
+      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      return(255);
+    }
+    return(subframe-3);
+    break;
+  default:
+    msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode\n");
+    return(255);
+    
+  }
+}
+
 void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       unsigned char subframe,
@@ -522,44 +561,5 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
    rballoc = 0xfffe;
    printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
  }
-
-unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe) {
-
-  switch (tdd_config) {
-
-  case 2:
-    if ((subframe!=2) && (subframe!=7)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-      return(255);
-    }
-    return(subframe/7);
-    break;
-  case 3:
-    if ((subframe<2) || (subframe>4)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-      return(255);
-    }
-    return(subframe-3);
-    break;
-  case 4:
-    if ((subframe<2) || (subframe>3)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-      return(255);
-    }
-    return(subframe-3);
-    break;
-  case 5:
-    if (subframe!=2) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
-      return(255);
-    }
-    return(subframe-3);
-    break;
-  default:
-    msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode\n");
-    return(255);
-    
-  }
-}
 
 #endif

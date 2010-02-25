@@ -42,6 +42,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
+  lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars);
  
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
@@ -73,8 +74,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   generate_64qam_table();
   generate_16qam_table();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);//allocation
-  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
   printf("Done lte_param_init\n");
 }
 
@@ -119,8 +120,8 @@ int main(int argc, char **argv) {
   MIMO_mode_t mimo_mode;
   unsigned char *input_data,*decoded_output;
 
-  LTE_DL_eNb_DLSCH_t *dlsch_eNb[2];
-  LTE_DL_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl,*dlsch_eNb_cntl;
+  LTE_DL_eNb_DLSCH_t *dlsch_eNb[2],*dlsch_eNb_cntl;
+  LTE_DL_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl;
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
@@ -370,7 +371,7 @@ int main(int argc, char **argv) {
   
 #endif 
 
-  re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF,
+  re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
 				  1024,
 				  0,
 				  lte_frame_parms,
@@ -383,14 +384,14 @@ int main(int argc, char **argv) {
     printf("Bad RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
   
   if (num_layers>1)
-    re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF,
+    re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
 				    1024,
 				    i,
 				    lte_frame_parms,
 				    dlsch_eNb[1]);
 
 
-  generate_pss(lte_eNB_common_vars->txdataF,
+  generate_pss(lte_eNB_common_vars->txdataF[eNb_id],
 	       1024,
 	       lte_frame_parms,
 	       eNb_id,
@@ -399,7 +400,7 @@ int main(int argc, char **argv) {
   for (i=0;i<6;i++)
     pbch_pdu[i] = i;
   
-  generate_pbch(lte_eNB_common_vars->txdataF,
+  generate_pbch(lte_eNB_common_vars->txdataF[eNb_id],
 		1024,
 		lte_frame_parms,
 		pbch_pdu);
@@ -410,10 +411,10 @@ int main(int argc, char **argv) {
 		   0,
 		   1024,
 		   lte_frame_parms,
-		   lte_eNB_common_vars->txdataF,
+		   lte_eNB_common_vars->txdataF[eNb_id],
 		   0);
 
-  generate_pilots(lte_eNB_common_vars->txdataF,
+  generate_pilots(lte_eNB_common_vars->txdataF[eNb_id],
 		  1024,
 		  lte_frame_parms,
 		  eNb_id,
@@ -436,9 +437,9 @@ int main(int argc, char **argv) {
     ind = 0;
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
       if (((i%512)>=1) && ((i%512)<=150))
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[aa][ind++]];
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][ind++]];
       else if ((i%512)>=362)
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[aa][ind++]];
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][ind++]];
       else 
 	txdataF2[aa][i] = 0;
     printf("ind=%d\n",ind);
@@ -591,7 +592,7 @@ int main(int argc, char **argv) {
 	          generate_ue_dlsch_params_from_dci((DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 						    SI_RNTI,
 						    format1A,
-						    dlsch_ue_cntl,
+						    dlsch_ue_cntl, 
 						    lte_frame_parms,
 						    SI_RNTI,
 						    RA_RNTI,

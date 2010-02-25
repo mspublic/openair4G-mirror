@@ -26,7 +26,7 @@ typedef struct {
   unsigned char Nid_cell;               /// Cell ID 
   unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
   unsigned char nushift;                /// shift of pilot position in one RB
-  unsigned char tdd_config;             /// TDD Configuration Number (0-9)
+  unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
   unsigned short ofdm_symbol_size;
   unsigned char log2_symbol_size;
   unsigned short nb_prefix_samples;
@@ -64,6 +64,8 @@ typedef struct{
   mod_sym_t **txdataF[3];    ///holds the transmit data in the frequency domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdata[3];           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF[3];          ///holds the received data in the frequency domain
+  /// hold the channel estimates in frequency domain based on SRS
+  int **srs_ch_estimates[3];  
   int* srs;               /// holds the SRS for channel estimation at the RX
 } LTE_eNB_COMMON;
 
@@ -72,8 +74,6 @@ typedef struct{
   int **rxdataF_ext[3];       
   /// hold the channel estimates in frequency domain based on DRS   
   int **drs_ch_estimates[3];  
-  /// hold the channel estimates in frequency domain based on SRS
-  int **srs_ch_estimates[3];  
   int **rxdataF_comp[3];
   int **ul_ch_mag[3];
   int **ul_ch_magb[3];

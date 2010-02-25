@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
-  unsigned int nb_rb = 12;
-  unsigned int first_rb = 20;
+  unsigned int nb_rb = 25;
+  unsigned int first_rb = 0;
   unsigned int eNb_id = 0;
 
   double nf[2] = {3.0,3.0}; //currently unused

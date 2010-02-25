@@ -13,7 +13,7 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
 #ifdef __SSE3__
-#include <pmmintrin.h>rx
+#include <pmmintrin.h>
 #include <tmmintrin.h>
 #endif
 

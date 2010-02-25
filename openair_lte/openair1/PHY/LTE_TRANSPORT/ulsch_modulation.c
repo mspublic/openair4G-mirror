@@ -13,11 +13,17 @@ int ulsch_modulation(mod_sym_t **txdataF,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_UE_ULSCH_t *ulsch) {
 
+#ifdef IFFT_FPGA
+  unsigned char qam64_table_offset = 0;
+  unsigned char qam16_table_offset = 0;
+  unsigned char qpsk_table_offset = 0; 
+#else
   unsigned char qam64_table_offset_re = 0;
   unsigned char qam64_table_offset_im = 0;
   unsigned char qam16_table_offset_re = 0;
   unsigned char qam16_table_offset_im = 0;
   short gain_lin_QPSK;
+#endif
   short re_offset,i,Msymb,j,nsymb,Msc_PUSCH,l;
   unsigned char harq_pid = subframe2_harq_pid_tdd(frame_parms->tdd_config,(sub_frame_offset/frame_parms->samples_per_tti)%10);
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
@@ -48,16 +54,13 @@ int ulsch_modulation(mod_sym_t **txdataF,
       ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
       ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
 #else
-	    qpsk_table_offset = 1;
-	    if (ulsch->b_tilde[j] == 1)
-	      qpsk_table_offset+=1;
-	    *jj=*jj+1;
-	    if (ulsch->b_tilde[j+1] == 1) 
-	      qpsk_table_offset+=2;
-	    *jj=*jj+1;
-
-	    ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
-
+      qpsk_table_offset = 1;
+      if (ulsch->b_tilde[j] == 1)
+	qpsk_table_offset+=1;
+      if (ulsch->b_tilde[j+1] == 1) 
+	qpsk_table_offset+=2;
+      
+      ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
 #endif    
 
       break;
@@ -157,7 +160,7 @@ int ulsch_modulation(mod_sym_t **txdataF,
 	    
 	    ulsch->d[i] = (mod_sym_t) qam64_table_offset;
 
-#endif IFFT_FPGA
+#endif //IFFT_FPGA
       break;
 
     }
@@ -178,9 +181,9 @@ int ulsch_modulation(mod_sym_t **txdataF,
 
 #ifdef IFFT_FPGA
   re_offset = frame_parms->N_RB_DL*12/2;
-  symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(sub_frame_offset*nsymb));
 
   for (j=0,l=0;l<Msymb/Msc_PUSCH;l++) {
+    symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(sub_frame_offset*nsymb));
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8))))
