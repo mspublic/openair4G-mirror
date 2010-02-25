@@ -2,7 +2,7 @@
 #include "extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
-//#define DEBUG_DRS
+#define DEBUG_DRS
 
 int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      mod_sym_t *txdataF,
@@ -14,7 +14,7 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
   unsigned short * Msc_idx_ptr;
 
-  Msc_RS = nb_rb*12;
+  Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
@@ -47,7 +47,9 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_drs_puch: symbol_offset %d, subframe offset %d\n",symbol_offset,sub_frame_offset);
 #endif
 
-    for (rb=first_rb;rb<first_rb+nb_rb;rb++) {
+    for (rb=0;rb<frame_parms->N_RB_UL;rb++) {
+
+      if ((rb >= first_rb) && (rb<(first_rb+nb_rb))) {
 
 #ifdef DEBUG_DRS	
 	msg("generate_drs_puch: doing RB %d, re_offset=%d, drs_offset=%d\n",rb,re_offset,drs_offset);
@@ -79,6 +81,27 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 	    re_offset=0;
 	}
 #endif
+      } 
+      else {
+	re_offset+=12; // go to next RB
+	
+	// check if we crossed the symbol boundary and skip DC
+#ifdef IFFT_FPGA
+	if (re_offset >= frame_parms->N_RB_DL*12) {
+	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
+	    re_offset=6;
+	  else                         // even number of RBs (doesn't straddle DC)
+	    re_offset=0;  
+	}
+#else
+	if (re_offset >= frame_parms->ofdm_symbol_size) {
+	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
+	    re_offset=7;
+	  else                         // even number of RBs (doesn't straddle DC)
+	    re_offset=1;  
+	}
+#endif
+      }
     }
   }
   
