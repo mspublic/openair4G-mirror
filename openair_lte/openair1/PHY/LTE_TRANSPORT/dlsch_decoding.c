@@ -156,6 +156,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 					   dlsch->Mdlharq,
 					   dlsch->Kmimo,
 					   dlsch->harq_processes[harq_pid]->rvidx,
+					   dlsch->harq_processes[harq_pid]->Ndi,
 					   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
 					   dlsch->harq_processes[harq_pid]->Nl,
 					   r);

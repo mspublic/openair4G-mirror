@@ -25,15 +25,17 @@ int ulsch_modulation(mod_sym_t **txdataF,
   short gain_lin_QPSK;
 #endif
   short re_offset,i,Msymb,j,nsymb,Msc_PUSCH,l;
-  unsigned char harq_pid = subframe2_harq_pid_tdd(frame_parms->tdd_config,(sub_frame_offset/frame_parms->samples_per_tti)%10);
+  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,(sub_frame_offset/frame_parms->samples_per_tti)%10);
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   mod_sym_t *txptr;
   unsigned int symbol_offset;
   unsigned short first_rb = ulsch->first_rb;
-  unsigned short nb_rb = ulsch->nb_rb;
+  unsigned short nb_rb = ulsch->nb_rb,G;
+  
+  G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
-  for (i=0;i<ulsch->G;i++) {
+  for (i=0;i<G;i++) {
     ulsch->b_tilde[i] = ulsch->h[i];  // put Gold scrambling here later
   }
 
@@ -43,7 +45,7 @@ int ulsch_modulation(mod_sym_t **txdataF,
 
   // Modulation
 
-  Msymb = ulsch->G/Q_m;
+  Msymb = G/Q_m;
   for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
 
     switch (Q_m) {

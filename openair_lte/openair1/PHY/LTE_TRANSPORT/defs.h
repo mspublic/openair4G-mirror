@@ -163,8 +163,18 @@ typedef struct {
   unsigned char TPC;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];     
-  /// Number of soft channel bits
-  unsigned short G;
+  /// Pointer to CQI data
+  unsigned char o[MAX_CQI_BITS];
+  /// Length of CQI data (bits)
+  unsigned char O;
+  /// Rank information 
+  unsigned char o_RI[2];
+  /// Length of rank information (bits)
+  unsigned char O_RI;
+  /// Pointer to ACK
+  unsigned char o_ACK[4];
+  /// Length of ACK information (bits)
+  unsigned char O_ACK;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   unsigned char e[MAX_NUM_CHANNEL_BITS];
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
@@ -177,12 +187,8 @@ typedef struct {
   mod_sym_t z[MAX_NUM_RE];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   unsigned char Mdlharq; 
-  /// Length of CQI/PMI in modulated symbols (see 36-212 V8.6 2009-03, p. 26)
-  unsigned char Q_cqi;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   unsigned char q[MAX_CQI_PAYLOAD];
-  /// number of coded CQI bits after interleaving
-  unsigned char o_RCC;
   /// coded and interleaved CQI bits
   unsigned char o_w[(MAX_CQI_BITS+8)*3];
   /// coded CQI bits
@@ -200,6 +206,49 @@ typedef struct {
 } LTE_UE_ULSCH_t;
 
 typedef struct {
+  /// Flag indicating that this ULSCH has new data
+  unsigned char Ndi;
+  /// Transport block size
+  unsigned int TBS;
+  /// The payload + CRC size in bits  
+  unsigned short B; 
+  /// Pointer to the payload
+  unsigned char *b;  
+  /// Pointers to transport block segments
+  unsigned char *c[MAX_NUM_ULSCH_SEGMENTS];
+  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
+  unsigned int RTC[8]; 
+  /// Index of current HARQ round for this ULSCH
+  unsigned char round; 
+  /// MCS format for this DLSCH
+  unsigned char mcs; 
+  /// Redundancy-version of the current sub-frame
+  unsigned char rvidx;
+  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
+  short w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
+  short *d[MAX_NUM_ULSCH_SEGMENTS];
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
+  unsigned int C;  
+  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  unsigned int Cminus; 
+  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Cplus;  
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kminus; 
+  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
+  unsigned int Kplus;
+  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
+  unsigned int F;  
+  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
+  unsigned char Nl;  
+  /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
+  unsigned short Msc_initial;
+  /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
+  unsigned char Nsymb_initial;
+} LTE_UL_eNb_HARQ_t;
+
+typedef struct {
   /// First Allocated RB 
   unsigned short first_rb;
   /// Current Number of RBs
@@ -209,9 +258,7 @@ typedef struct {
   /// Last TPC command
   unsigned char TPC;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_UE_HARQ_t *harq_processes[8];     
-  /// Number of soft channel bits
-  unsigned short G;
+  LTE_UL_eNb_HARQ_t *harq_processes[8];     
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   unsigned char e[MAX_NUM_CHANNEL_BITS];
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
@@ -224,18 +271,28 @@ typedef struct {
   mod_sym_t z[MAX_NUM_RE];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   unsigned char Mdlharq; 
-  /// Length of CQI/PMI in modulated symbols (see 36-212 V8.6 2009-03, p. 26)
-  unsigned char Q_cqi;
+  /// Pointer to CQI data
+  unsigned char o[MAX_CQI_BITS+8];
+  /// Length of CQI data (bits)
+  unsigned char O;
+  /// Rank information 
+  unsigned char o_RI[2];
+  /// Length of rank information (bits)
+  unsigned char O_RI;
+  /// Pointer to ACK
+  unsigned char o_ACK[4];
+  /// Length of ACK information (bits)
+  unsigned char O_ACK;
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-  unsigned char q[MAX_CQI_PAYLOAD];
+  char q[MAX_CQI_PAYLOAD];
   /// number of coded CQI bits after interleaving
   unsigned char o_RCC;
   /// coded and interleaved CQI bits
-  unsigned char o_w[(MAX_CQI_BITS+8)*3];
+  char o_w[(MAX_CQI_BITS+8)*3];
   /// coded CQI bits
-  unsigned char o_d[96+((MAX_CQI_BITS+8)*3)];
+  char o_d[96+((MAX_CQI_BITS+8)*3)];
   /// coded ACK bits
-  unsigned char q_ACK[MAX_ACK_PAYLOAD];
+  char q_ACK[MAX_ACK_PAYLOAD];
   /// coded RI bits
   unsigned char q_RI[MAX_RI_PAYLOAD];
   /// beta_offset_cqi times 8
@@ -287,44 +344,6 @@ typedef struct {
   unsigned char Nl;  
 } LTE_DL_UE_HARQ_t;
 
-typedef struct {
-  /// Flag indicating that this ULSCH has new data
-  unsigned char Ndi;
-  /// Transport block size
-  unsigned int TBS;
-  /// The payload + CRC size in bits  
-  unsigned short B; 
-  /// Pointer to the payload
-  unsigned char *b;  
-  /// Pointers to transport block segments
-  unsigned char *c[MAX_NUM_ULSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)  
-  unsigned int RTC[8]; 
-  /// Index of current HARQ round for this ULSCH
-  unsigned char round; 
-  /// MCS format for this DLSCH
-  unsigned char mcs; 
-  /// Redundancy-version of the current sub-frame
-  unsigned char rvidx;
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15) 
-  short w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
-  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)    
-  short *d[MAX_NUM_ULSCH_SEGMENTS];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)   
-  unsigned int C;  
-  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  unsigned int Cminus; 
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10) 
-  unsigned int Cplus;  
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  unsigned int Kminus; 
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10) 
-  unsigned int Kplus;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)  
-  unsigned int F;  
-  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
-  unsigned char Nl;  
-} LTE_UL_eNb_HARQ_t;
 
 typedef struct {
   /// Flag indicating that this DLSCH is active (i.e. not the first round)
@@ -1043,7 +1062,7 @@ void ulsch_extract_rbs_single(int **rxdataF,
 			      unsigned char Ns,
 			      LTE_DL_FRAME_PARMS *frame_parms);
 
-unsigned char subframe2_harq_pid_tdd(unsigned char tdd_config,unsigned char subframe);
+unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe);
 
 void generate_ue_dlsch_params_from_dci(void *dci_pdu,

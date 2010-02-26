@@ -8,3 +8,8 @@ extern unsigned short dftsizes[33];
 extern unsigned short ref_primes[33];
 
 extern int qam64_table[8],qam16_table[4];
+
+extern unsigned char cs_ri_normal[4];
+extern unsigned char cs_ri_extended[4];
+extern unsigned char cs_ack_normal[4];
+extern unsigned char cs_ack_extended[4];

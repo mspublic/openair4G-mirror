@@ -37,3 +37,8 @@ short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
 int qam64_table[8],qam16_table[4];
 
+unsigned char cs_ri_normal[4]    = {1,4,7,10};
+unsigned char cs_ri_extended[4]  = {0,3,5,8};
+unsigned char cs_ack_normal[4]   = {2,3,8,9};
+unsigned char cs_ack_extended[4] = {1,2,6,7};
+

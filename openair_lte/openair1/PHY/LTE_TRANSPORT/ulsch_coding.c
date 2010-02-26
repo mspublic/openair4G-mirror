@@ -10,6 +10,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
+#include "extern.h"
 
 //#define DEBUG_ULSCH_CODING 
 //#define DEBUG_ULSCH_FREE 1
@@ -111,23 +112,12 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
   
 }
 
-unsigned char cs_ri_normal[4]    = {1,4,7,10};
-unsigned char cs_ri_extended[4]  = {0,3,5,8};
-unsigned char cs_ack_normal[4]   = {2,3,8,9};
-unsigned char cs_ack_extended[4] = {1,2,6,7};
 
 int ulsch_encoding(unsigned char *a,
 		   unsigned short A,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
-		   unsigned char harq_pid,
-		   unsigned short N_RB,
-		   unsigned char *o,
-		   unsigned char O,
-		   unsigned char *o_RI,
-		   unsigned char O_RI,
-		   unsigned char *o_ACK,
-		   unsigned char O_ACK) {
+		   unsigned char harq_pid) {
   
   unsigned short offset;
   unsigned int crc=1;
@@ -142,6 +132,7 @@ int ulsch_encoding(unsigned char *a,
   unsigned int E;
   unsigned char ack_parity;
   unsigned int i,q,j;
+  unsigned short o_RCC;
 
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
     
@@ -235,7 +226,7 @@ int ulsch_encoding(unsigned char *a,
     sumKr += Kr;
   }
   // Compute Q_ri
-  Qprime = O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
   else
@@ -248,7 +239,7 @@ int ulsch_encoding(unsigned char *a,
 
   // Compute Q_ack
 
-  Qprime = O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  Qprime = ulsch->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
   else
@@ -261,7 +252,7 @@ int ulsch_encoding(unsigned char *a,
 
   // Compute Q_cqi
   L=8;
-  Qprime = (O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  Qprime = (ulsch->O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
   else
@@ -269,8 +260,8 @@ int ulsch_encoding(unsigned char *a,
 
   G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
-  if (Qprime > (G - O_RI))
-    Qprime = G - O_RI;
+  if (Qprime > (G - ulsch->O_RI))
+    Qprime = G - ulsch->O_RI;
 
   Q_CQI = Q_m * Qprime;
 
@@ -301,7 +292,7 @@ int ulsch_encoding(unsigned char *a,
 					1,
 					ulsch->harq_processes[harq_pid]->rvidx,
 					get_Qm(ulsch->harq_processes[harq_pid]->mcs),
-					1,                        //number of layers = 1 for UL?
+					1,
 					r);                       // r
 #ifdef DEBUG_ULSCH_CODING
     if (r==ulsch->harq_processes[harq_pid]->C-1)
@@ -310,51 +301,51 @@ int ulsch_encoding(unsigned char *a,
   }
 
   //  Do CQI coding
-  if (O < 12) {
+  if (ulsch->O < 12) {
     msg("ulsch_coding: FATAL, short CQI sizes not supported yet\n");
     exit(-1);
   }
   else {
 
     // add 8-bit CRC
-    crc = crc8(o,
-	       O)>>24;
+    crc = crc8(ulsch->o,
+	       ulsch->O)>>24;
     
-    ccodelte_encode(O,
+    ccodelte_encode(ulsch->O,
 		    1,
-		    o,
+		    ulsch->o,
 		    &ulsch->o_d[96],
 		    0);
  
-    ulsch->o_RCC = sub_block_interleaving_cc(8+O, 
-					     &ulsch->o_d[96], 
-					     ulsch->o_w);
+    o_RCC = sub_block_interleaving_cc(8+ulsch->O, 
+				      &ulsch->o_d[96], 
+				      ulsch->o_w);
 
-    E = lte_rate_matching_cc(ulsch->o_RCC,
-			     ulsch->Q_cqi,
+    E = lte_rate_matching_cc(o_RCC,
+			     Q_CQI,
 			     ulsch->o_w,
 			     ulsch->q);
     
   }
 
   //  Do RI coding
-  if (O_RI == 1) {
+  if (ulsch->O_RI == 1) {
     switch (Q_m) {
     case 2:
-      ulsch->q_RI[0] = o_RI[0];
-      ulsch->q_RI[1] = o_RI[0];
+      ulsch->q_RI[0] = ulsch->o_RI[0];
+      ulsch->q_RI[1] = ulsch->o_RI[0];
       break;
     case 4:
-      ulsch->q_RI[0] = o_RI[0];
+      ulsch->q_RI[0] = ulsch->o_RI[0];
       ulsch->q_RI[1] = 1;
-      ulsch->q_RI[2] = o_RI[0];
+      ulsch->q_RI[2] = ulsch->o_RI[0];
       ulsch->q_RI[3] = 1;
       break;
     case 6:
-      ulsch->q_RI[0] = o_RI[0];
+      ulsch->q_RI[0] = ulsch->o_RI[0];
       ulsch->q_RI[1] = 1;
       ulsch->q_RI[2] = 1;
-      ulsch->q_RI[3] = o_RI[0];
+      ulsch->q_RI[3] = ulsch->o_RI[0];
       ulsch->q_RI[4] = 1;
       ulsch->q_RI[5] = 1;
       break;
@@ -365,69 +356,69 @@ int ulsch_encoding(unsigned char *a,
     return(-1);
   }
   //  Do ACK coding
-  if (O_ACK == 1) {
+  if (ulsch->O_ACK == 1) {
     switch (Q_m) {
     case 2:
-      ulsch->q_ACK[0] = o_ACK[0];
-      ulsch->q_ACK[1] = o_ACK[0];
+      ulsch->q_ACK[0] = ulsch->o_ACK[0];
+      ulsch->q_ACK[1] = ulsch->o_ACK[0];
       break;
     case 4:
-      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[0] = ulsch->o_ACK[0];
       ulsch->q_ACK[1] = 1;
-      ulsch->q_ACK[2] = o_ACK[0];
+      ulsch->q_ACK[2] = ulsch->o_ACK[0];
       ulsch->q_ACK[3] = 1;
       break;
     case 6:
-      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[0] = ulsch->o_ACK[0];
       ulsch->q_ACK[1] = 1;
       ulsch->q_ACK[2] = 1;
-      ulsch->q_ACK[3] = o_ACK[0];
+      ulsch->q_ACK[3] = ulsch->o_ACK[0];
       ulsch->q_ACK[4] = 1;
       ulsch->q_ACK[6] = 1;
       break;
     }
   }
-  if (O_ACK == 2) {
-    ack_parity = (o_ACK[0]+o_ACK[1])&1;
+  if (ulsch->O_ACK == 2) {
+    ack_parity = (ulsch->o_ACK[0]+ulsch->o_ACK[1])&1;
     switch (Q_m) {
     case 2:
-      ulsch->q_ACK[0] = o_ACK[0];
-      ulsch->q_ACK[1] = o_ACK[1];
+      ulsch->q_ACK[0] = ulsch->o_ACK[0];
+      ulsch->q_ACK[1] = ulsch->o_ACK[1];
       ulsch->q_ACK[2] = ack_parity;
-      ulsch->q_ACK[3] = o_ACK[0];
-      ulsch->q_ACK[4] = o_ACK[1];
+      ulsch->q_ACK[3] = ulsch->o_ACK[0];
+      ulsch->q_ACK[4] = ulsch->o_ACK[1];
       ulsch->q_ACK[5] = ack_parity;
       break;
     case 4:
-      ulsch->q_ACK[0]  = o_ACK[0];
+      ulsch->q_ACK[0]  = ulsch->o_ACK[0];
       ulsch->q_ACK[1]  = 1;
-      ulsch->q_ACK[2]  = o_ACK[1];
+      ulsch->q_ACK[2]  = ulsch->o_ACK[1];
       ulsch->q_ACK[3]  = 1;
       ulsch->q_ACK[4]  = ack_parity;
       ulsch->q_ACK[5]  = 1;
-      ulsch->q_ACK[6]  = o_ACK[0];
+      ulsch->q_ACK[6]  = ulsch->o_ACK[0];
       ulsch->q_ACK[7]  = 1;
-      ulsch->q_ACK[8]  = o_ACK[1];
+      ulsch->q_ACK[8]  = ulsch->o_ACK[1];
       ulsch->q_ACK[9]  = 1;
       ulsch->q_ACK[10] = ack_parity;
       ulsch->q_ACK[11] = 1;
       break;
     case 6:
-      ulsch->q_ACK[0] = o_ACK[0];
+      ulsch->q_ACK[0] = ulsch->o_ACK[0];
       ulsch->q_ACK[1] = 1;
       ulsch->q_ACK[2] = 1;
-      ulsch->q_ACK[3] = o_ACK[1];
+      ulsch->q_ACK[3] = ulsch->o_ACK[1];
       ulsch->q_ACK[4] = 1;
       ulsch->q_ACK[5] = 1;
 
       ulsch->q_ACK[6] = ack_parity;
       ulsch->q_ACK[7] = 1;
       ulsch->q_ACK[8] = 1;
-      ulsch->q_ACK[9] = o_ACK[1];
+      ulsch->q_ACK[9] = ulsch->o_ACK[0];
       ulsch->q_ACK[10] = 1;
       ulsch->q_ACK[11] = 1;
 
-      ulsch->q_ACK[12] = o_ACK[1];
+      ulsch->q_ACK[12] = ulsch->o_ACK[1];
       ulsch->q_ACK[13] = 1;
       ulsch->q_ACK[14] = 1;
       ulsch->q_ACK[15] = ack_parity;
@@ -504,7 +495,7 @@ int ulsch_encoding(unsigned char *a,
   j=0;
   for (i=0;i<Qprime_ACK;i++) {
     for (q=0;q<Q_m;q++) 
-      y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_RI[q+(Q_m*i)];
+      y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[q+(Q_m*i)];
     j=(j+3)&3;
     r = Rmux_prime - (i>>2);
   }
