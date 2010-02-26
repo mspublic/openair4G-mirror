@@ -6,13 +6,13 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
 		unsigned char l,
 		unsigned char Ns,
+		unsigned char eNb_id,
 		int offset,
 		int no_prefix) {
  
   unsigned char aa;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
-  unsigned char eNb_id;
   int i;
 
   if (l<0 || l>=7-frame_parms->Ncp) {
@@ -29,8 +29,8 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-    fft((short *)&eNb_common_vars->rxdata[aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
-	(short*)&eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+    fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
+	(short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	frame_parms->twiddle_fft,
 	frame_parms->rev,
 	frame_parms->log2_symbol_size,
@@ -39,13 +39,12 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   if ((l==(6-frame_parms->Ncp)) && (Ns%2==1)) {
-    eNb_id = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 #ifdef DEBUG_FEP
       msg("Channel estimation eNb %d, aarx %d\n",eNb_id,aa);
 #endif
 
-      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 			    (short*) eNb_common_vars->srs,
 			    (short*) eNb_common_vars->srs_ch_estimates[eNb_id][aa],
 			    frame_parms->ofdm_symbol_size,
