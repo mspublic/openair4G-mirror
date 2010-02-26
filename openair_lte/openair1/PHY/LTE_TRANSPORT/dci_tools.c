@@ -448,35 +448,37 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe) {
 
+  msg("dci_tools.c: subframe2_harq_pid_tdd, subframe %d for TDD mode %d\n",subframe,tdd_config);
+
   switch (tdd_config) {
 
   case 2:
     if ((subframe!=2) && (subframe!=7)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
       return(255);
     }
     return(subframe/7);
     break;
   case 3:
     if ((subframe<2) || (subframe>4)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
       return(255);
     }
-    return(subframe-3);
+    return(subframe-2);
     break;
   case 4:
     if ((subframe<2) || (subframe>3)) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
       return(255);
     }
-    return(subframe-3);
+    return(subframe-2);
     break;
   case 5:
     if (subframe!=2) {
-      msg("dci_tools.c: subframe2_harq_pid_tdd_eNBrx, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+      msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
       return(255);
     }
-    return(subframe-3);
+    return(subframe-2);
     break;
   default:
     msg("dci_tools.c: subframe2_harq_pid, Unsupported TDD mode\n");
@@ -637,7 +639,7 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = 0;
     else
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
-    
+    printf("harq_pid = %d\n",harq_pid);
     ulsch->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
