@@ -82,11 +82,12 @@ int compareints (const void * a, const void * b)
 int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 		    mod_sym_t *txdataF,
 		    short amp,
-		    unsigned int sub_frame_offset) {
+		    unsigned int sub_frame_number) {
 
   unsigned short msrsb,Nb,nb,b,msrs0,k,l,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   unsigned short *Msc_idx_ptr;
   int k0;
+  int sub_frame_offset;
 
   if (frame_parms->N_RB_UL < 41) {
     msrs0 = msrsb_6_40[frame_parms->Csrs][0];
@@ -148,7 +149,8 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 #ifndef IFFT_FPGA
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
   //msg("carrier_pos = %d\n",carrier_pos);
-
+  
+  sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
   symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
 
   for (k=0;k<Msc_RS;k++) {
@@ -162,6 +164,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
   //msg("carrier_pos = %d\n",carrier_pos);
 
+  sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
   symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
 
   for (k=0;k<Msc_RS;k++) {

@@ -7,12 +7,13 @@
 int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      mod_sym_t *txdataF,
 		      short amp,
-		      unsigned int sub_frame_offset,
+		      unsigned int sub_frame_number,
 		      unsigned int first_rb,
 		      unsigned int nb_rb) {
 
   unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
   unsigned short * Msc_idx_ptr;
+  int sub_frame_offset;
 
   Msc_RS = 12*nb_rb;    
 
@@ -37,9 +38,11 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 
 #ifdef IFFT_FPGA
     re_offset = frame_parms->N_RB_DL*12/2;
+    sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
     symbol_offset = sub_frame_offset + frame_parms->N_RB_UL*12*l;
 #else
     re_offset = frame_parms->first_carrier_offset;
+    sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
     symbol_offset = sub_frame_offset + frame_parms->ofdm_symbol_size*l;
 #endif
     
