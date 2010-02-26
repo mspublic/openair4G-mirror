@@ -7,11 +7,11 @@
 
 
 
-int ulsch_modulation(mod_sym_t **txdataF,
-		     short amp,
-		     unsigned int sub_frame_offset,
-		     LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_UE_ULSCH_t *ulsch) {
+void ulsch_modulation(mod_sym_t **txdataF,
+		      short amp,
+		      unsigned int subframe,
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      LTE_UE_ULSCH_t *ulsch) {
 
 #ifdef IFFT_FPGA
   unsigned char qam64_table_offset = 0;
@@ -25,7 +25,7 @@ int ulsch_modulation(mod_sym_t **txdataF,
   short gain_lin_QPSK;
 #endif
   short re_offset,i,Msymb,j,nsymb,Msc_PUSCH,l;
-  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,(sub_frame_offset/frame_parms->samples_per_tti)%10);
+  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   mod_sym_t *txptr;
   unsigned int symbol_offset;
@@ -185,7 +185,7 @@ int ulsch_modulation(mod_sym_t **txdataF,
   re_offset = frame_parms->N_RB_DL*12/2;
 
   for (j=0,l=0;l<Msymb/Msc_PUSCH;l++) {
-    symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(sub_frame_offset*nsymb));
+    symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(subframe*nsymb));
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8))))
@@ -199,7 +199,7 @@ int ulsch_modulation(mod_sym_t **txdataF,
  
 #else
   re_offset = frame_parms->first_carrier_offset;
-  symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb));
+  symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 
   for (j=0,l=0;l<Msymb/Msc_PUSCH;l++) {
     txptr = &txdataF[0][symbol_offset];

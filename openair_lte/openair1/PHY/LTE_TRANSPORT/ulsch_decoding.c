@@ -72,7 +72,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   
 
   unsigned short nb_rb = ulsch->nb_rb;
-  unsigned char harq_pid = harq_pid = subframe2harq_pid_tdd_eNBrx(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned int A = ulsch->harq_processes[harq_pid]->TBS;
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   unsigned int i,q,j;
@@ -172,7 +172,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 
   // Compute Q_cqi
   L=8;
-  Qprime = (ulsch->O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+  Qprime = (ulsch->Or1 + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
   else
@@ -325,8 +325,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   }
 
   // CQI
-  memset(dummy_w,0,3*(ulsch->O+8));
-  O_RCC = generate_dummy_w_cc(ulsch->O+8,
+  memset(dummy_w,0,3*(ulsch->Or1+8));
+  O_RCC = generate_dummy_w_cc(ulsch->Or1+8,
 			      dummy_w_cc);
   
   lte_rate_matching_cc_rx(O_RCC,
@@ -335,12 +335,12 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 			  dummy_w_cc,
 			  ulsch->q);
 
-  sub_block_deinterleaving_cc((unsigned int)(ulsch->O+8), 
+  sub_block_deinterleaving_cc((unsigned int)(ulsch->Or1+8), 
 			      &ulsch->o_d[96], 
 			      &ulsch->o_w[0]); 
  
-  memset(ulsch->o,0,1+(ulsch->O/8));
-  phy_viterbi_lte_sse2(ulsch->o_d+96,ulsch->o,8+ulsch->O);
+  memset(ulsch->o,0,1+(ulsch->Or1/8));
+  phy_viterbi_lte_sse2(ulsch->o_d+96,ulsch->o,8+ulsch->Or1);
 
   // Do PUSCH Decoding
 

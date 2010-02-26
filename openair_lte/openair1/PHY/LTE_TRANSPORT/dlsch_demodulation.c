@@ -1382,7 +1382,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
 	     unsigned char eNb_id_i,
-	     LTE_DL_UE_DLSCH_t **dlsch_ue,
+	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
 	     unsigned char dual_stream_UE) {
   

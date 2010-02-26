@@ -435,9 +435,10 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
 }
 int avgU[2];
 
-int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
+int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+	     LTE_eNB_ULSCH *eNB_ulsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
-	     unsigned int subframe_offset,
+	     unsigned int subframe,
 	     unsigned char eNb_id,  // this is the effective sector id
 	     unsigned char UE_id,   // this is the UE instance to act upon
 	     LTE_eNb_ULSCH_t *ulsch) {
@@ -446,31 +447,23 @@ int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
   int avgs;
   unsigned char log2_maxh,aarx;
 
-  unsigned int subframe = (unsigned char)(subframe_offset/frame_parms->samples_per_tti);
-  unsigned char harq_pid = subframe2harq_pid_tdd_eNBrx(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Qm = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
   for (l=0;l<lte_frame_parms->symbols_per_tti;l++) {
       
     //printf("subframe_offset = %d\n",subframe_offset);
     
-    slot_fep_ul(lte_frame_parms,
-		lte_eNB_common_vars,
-		l%(lte_frame_parms->symbols_per_tti/2),
-		l/(lte_frame_parms->symbols_per_tti/2),
-		subframe_offset,
-		0);
-    
-    ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF[eNb_id],
-			     lte_eNB_ulsch_vars[UE_id]->rxdataF_ext[eNb_id],
+    ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
+			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
 			     ulsch->first_rb,
 			     ulsch->nb_rb,
 			     l%(lte_frame_parms->symbols_per_tti/2),
 			     l/(lte_frame_parms->symbols_per_tti/2),
 			     lte_frame_parms);
     
-    lte_ul_channel_estimation(lte_eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id],
-			      lte_eNB_ulsch_vars[UE_id]->rxdataF_ext[eNb_id],
+    lte_ul_channel_estimation(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
+			      eNB_ulsch_vars->rxdataF_ext[eNb_id],
 			      lte_frame_parms,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
@@ -479,9 +472,9 @@ int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
   
 
     if (l==0) {
-      ulsch_channel_level(lte_eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id],
+      ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
 			  frame_parms,
-			  avgU,
+			  &avgU,
 			  ulsch->nb_rb);
     
   //  msg("[ULSCH] avg[0] %d\n",avg[0]);
@@ -497,11 +490,11 @@ int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
 #endif
     }
 
-    ulsch_channel_compensation(lte_eNB_ulsch_vars[UE_id]->rxdataF_ext[eNb_id],
-			       lte_eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id],
-			       lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
-			       lte_eNB_ulsch_vars[UE_id]->ul_ch_magb[eNb_id],
-			       lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
+    ulsch_channel_compensation(eNB_ulsch_vars->rxdataF_ext[eNb_id],
+			       eNB_ulsch_vars->drs_ch_estimates[eNb_id],
+			       eNB_ulsch_vars->ul_ch_mag[eNb_id],
+			       eNB_ulsch_vars->ul_ch_magb[eNb_id],
+			       eNB_ulsch_vars->rxdataF_comp[eNb_id],
 			       frame_parms,
 			       l,
 			       Qm,
@@ -510,33 +503,33 @@ int rx_ulsch(LTE_eNB_ULSCH **lte_eNB_ulsch_vars,
 
     if (frame_parms->nb_antennas_rx > 1)
       ulsch_detection_mrc(frame_parms,
-			  lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-			  lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
-			  lte_eNB_ulsch_vars[UE_id]->ul_ch_magb[eNb_id],
+			  eNB_ulsch_vars->rxdataF_comp[eNb_id],
+			  eNB_ulsch_vars->ul_ch_mag[eNb_id],
+			  eNB_ulsch_vars->ul_ch_magb[eNb_id],
 			  l,
 			  ulsch->nb_rb);
     
     switch (Qm) {
     case 2 : 
       ulsch_qpsk_llr(frame_parms,
-		     lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-		     lte_eNB_ulsch_vars[UE_id]->llr,
+		     eNB_ulsch_vars->rxdataF_comp[eNb_id],
+		     eNB_ulsch_vars->llr,
 		     l,
 		     ulsch->nb_rb);
       break;
     case 4 :
       dlsch_16qam_llr(frame_parms,
-		      lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-		      lte_eNB_ulsch_vars[UE_id]->llr,
-		      lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
+		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
+		      eNB_ulsch_vars->llr,
+		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
 		      l,ulsch->nb_rb);
       break;
     case 6 :
       dlsch_64qam_llr(frame_parms,
-		      lte_eNB_ulsch_vars[UE_id]->rxdataF_comp[eNb_id],
-		      lte_eNB_ulsch_vars[UE_id]->llr,
-		      lte_eNB_ulsch_vars[UE_id]->ul_ch_mag[eNb_id],
-		      lte_eNB_ulsch_vars[UE_id]->ul_ch_magb[eNb_id],
+		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
+		      eNB_ulsch_vars->llr,
+		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
+		      eNB_ulsch_vars->ul_ch_magb[eNb_id],
 		      l,ulsch->nb_rb);
       break;
     default:

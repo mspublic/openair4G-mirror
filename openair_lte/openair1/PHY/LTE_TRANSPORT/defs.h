@@ -33,6 +33,11 @@
 #define MAX_NUM_CHANNEL_BITS (14*1200*12)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
+#define PMI_2A_11 0
+#define PMI_2A_1m1 1
+#define PMI_2A_1j 2
+#define PMI_2A_1mj 3
+
 typedef struct {
   /// Flag indicating that this DLSCH is active (i.e. not the first round)
   unsigned char Ndi;
@@ -150,7 +155,7 @@ typedef struct {
   unsigned char Mdlharq;  
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Kmimo;
-} LTE_DL_eNb_DLSCH_t;
+} LTE_eNb_DLSCH_t;
 
 typedef struct {
   /// First Allocated RB 
@@ -273,8 +278,10 @@ typedef struct {
   unsigned char Mdlharq; 
   /// Pointer to CQI data
   unsigned char o[MAX_CQI_BITS+8];
-  /// Length of CQI data (bits)
-  unsigned char O;
+  /// Length of CQI data under RI=1 assumption(bits)
+  unsigned char Or1;
+  /// Length of CQI data under RI=2 assumption(bits)
+  unsigned char Or2;
   /// Rank information 
   unsigned char o_RI[2];
   /// Length of rank information (bits)
@@ -374,7 +381,7 @@ typedef struct {
   unsigned char Mdlharq;              
 /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   unsigned char Kmimo;                
-} LTE_DL_UE_DLSCH_t;
+} LTE_UE_DLSCH_t;
 
 typedef enum {format0,
 	   format1,
@@ -407,19 +414,27 @@ typedef struct {
 } DCI_ALLOC_t;
 
 
-void free_DL_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch);
+void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
 
-LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 
-void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch);
+void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
-LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
+
+void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
+
+LTE_eNb_ULSCH_t *new_eNb_ulsch(unsigned char Mdlharq);
+
+void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
+
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq);
 
 
 
 /** \fn dlsch_encoding(unsigned char *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
-		    LTE_DL_eNb_DLSCH_t *dlsch)
+		    LTE_eNb_DLSCH_t *dlsch)
 \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
 - CRC computation and addition
 - Code block segmentation and sub-block CRC addition
@@ -433,7 +448,7 @@ LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq);
 */
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_DL_eNb_DLSCH_t *dlsch);
+		   LTE_eNb_DLSCH_t *dlsch);
 
 
 
@@ -494,7 +509,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int sub_frame_offset,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_DL_eNb_DLSCH_t *dlsch);
+		      LTE_eNb_DLSCH_t *dlsch);
 
 \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for DLSCH.  
 @param txdataF Table of pointers for frequency-domain TX signals
@@ -508,7 +523,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
 		     unsigned int sub_frame_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
-		     LTE_DL_eNb_DLSCH_t *dlsch);
+		     LTE_eNb_DLSCH_t *dlsch);
 
 
 /** \fn generate_pilots(mod_sym_t **txdataF,
@@ -887,7 +902,7 @@ overall CRC is ignored.  Finally transport block reassembly is performed.
 */
 unsigned int dlsch_decoding(short *dlsch_llr,
 			    LTE_DL_FRAME_PARMS *lte_frame_parms,
-			    LTE_DL_UE_DLSCH_t *dlsch);
+			    LTE_UE_DLSCH_t *dlsch);
 
 
 /** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
@@ -895,7 +910,7 @@ unsigned int dlsch_decoding(short *dlsch_llr,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned char eNb_id,
 	      unsigned char eNb_id_i,
-	      LTE_DL_UE_DLSCH_t **dlsch_ue,
+	      LTE_UE_DLSCH_t **dlsch_ue,
 	      unsigned char symbol,
 	      unsigned char dual_stream_UE)
 \brief This function is the top-level entry point to dlsch demodulation, after frequency-domain transformation and channel estimation.  It performs
@@ -918,7 +933,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
 	     unsigned char eNb_id_i,
-	     LTE_DL_UE_DLSCH_t **dlsch_ue,
+	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
 	     unsigned char dual_stream_UE);
 
@@ -1054,6 +1069,14 @@ int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 
 int compareints (const void * a, const void * b);
 
+
+void ulsch_modulation(mod_sym_t **txdataF,
+		      short amp,
+		      unsigned int subframe,
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      LTE_UE_ULSCH_t *ulsch);
+
+
 void ulsch_extract_rbs_single(int **rxdataF,
 			      int **rxdataF_ext,
 			      unsigned int first_rb,
@@ -1068,7 +1091,7 @@ unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char
 void generate_ue_dlsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       DCI_format_t dci_format,
-				       LTE_DL_UE_DLSCH_t **dlsch_ue,
+				       LTE_UE_DLSCH_t **dlsch_ue,
 				       LTE_DL_FRAME_PARMS *frame_parms,
 				       unsigned short si_rnti,
 				       unsigned short ra_rnti,
@@ -1077,13 +1100,22 @@ void generate_ue_dlsch_params_from_dci(void *dci_pdu,
 void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
 					unsigned short rnti,
 					DCI_format_t dci_format,
-					LTE_DL_eNb_DLSCH_t **dlsch_eNb,
+					LTE_eNb_DLSCH_t **dlsch_eNb,
 					LTE_DL_FRAME_PARMS *frame_parms,
 					unsigned short si_rnti,
 					unsigned short ra_rnti,
 					unsigned short p_rnti);
 
 void generate_RIV_tables();
+
+
+int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+	     LTE_eNB_ULSCH *eNB_ulsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     unsigned int subframe,
+	     unsigned char eNb_id,  // this is the effective sector id
+	     unsigned char UE_id,   // this is the UE instance to act upon
+	     LTE_eNb_ULSCH_t *ulsch);
 
 /**@}*/
 #endif

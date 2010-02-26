@@ -177,6 +177,7 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
     unsigned char Mdlharq,
     unsigned char Kmimo,
     unsigned char rvidx,
+    unsigned char clear,
     unsigned char Qm, 
     unsigned char Nl, 
     unsigned char r)
@@ -192,6 +193,7 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 \param Mdlharq Number of HARQ rounds 
 \param Kmimo MIMO capability for this DLSCH (0 = no MIMO)
 \param rvidx round index (0-3)
+\param clear 1 means clear soft buffer (start of HARQ round)
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
@@ -208,6 +210,7 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 					unsigned char Mdlharq,
 					unsigned char Kmimo,
 					unsigned char rvidx,
+					unsigned char clear,
 					unsigned char Qm, 
 					unsigned char Nl, 
 					unsigned char r);

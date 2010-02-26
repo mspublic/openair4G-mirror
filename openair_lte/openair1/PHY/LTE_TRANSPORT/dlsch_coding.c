@@ -22,7 +22,7 @@
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
 
-void free_DL_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch) {
+void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
   int i;
   int r;
 
@@ -60,17 +60,17 @@ void free_DL_eNb_dlsch(LTE_DL_eNb_DLSCH_t *dlsch) {
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNb_HARQ_t));
       }
     }
-    free16(dlsch,sizeof(LTE_DL_eNb_DLSCH_t));
+    free16(dlsch,sizeof(LTE_eNb_DLSCH_t));
   }
   
 }
 
-LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
-  LTE_DL_eNb_DLSCH_t *dlsch;
+  LTE_eNb_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
   
-  dlsch = (LTE_DL_eNb_DLSCH_t *)malloc16(sizeof(LTE_DL_eNb_DLSCH_t));
+  dlsch = (LTE_eNb_DLSCH_t *)malloc16(sizeof(LTE_eNb_DLSCH_t));
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
@@ -104,8 +104,8 @@ LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) 
       return(dlsch);
     }
   }
-  msg("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_DL_eNb_DLSCH_t));
-  free_DL_eNb_dlsch(dlsch);
+  msg("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
+  free_eNb_dlsch(dlsch);
   return(NULL);
   
   
@@ -114,7 +114,7 @@ LTE_DL_eNb_DLSCH_t *new_DL_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) 
 
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
-		   LTE_DL_eNb_DLSCH_t *dlsch) {
+		   LTE_eNb_DLSCH_t *dlsch) {
   
   unsigned short offset;
   unsigned int coded_bits_per_codeword;

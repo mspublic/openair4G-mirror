@@ -306,9 +306,10 @@ typedef struct
   char           subband_sinr[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS]; /// Subband SINR
   unsigned char  wideband_cqi[NUMBER_OF_eNB_MAX];                     /// Wideband CQI (quantized SINR)
   unsigned char  subband_cqi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];  /// Subband CQI  (quantized SINR)
-  short          wideband_pmi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
-  short          subband_pmi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
-  char           selected_rx_antennas;                                /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
+  int            wideband_pmi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
+  int            subband_pmi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
+  char           selected_rx_antennas[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];        /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
+  unsigned char  rank[NUMBER_OF_eNB_MAX];                                                /// Wideband Rank indication
 } PHY_MEASUREMENTS;
 
 /// Physical Resource Descriptor

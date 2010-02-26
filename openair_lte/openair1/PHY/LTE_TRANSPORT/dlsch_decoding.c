@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 
 #define DEBUG_DLSCH_DECODING
-void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
+void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
   int i,r;
 
@@ -22,16 +22,16 @@ void free_DL_ue_dlsch(LTE_DL_UE_DLSCH_t *dlsch) {
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_UE_HARQ_t));
       }
     }
-  free16(dlsch,sizeof(LTE_DL_UE_DLSCH_t));
+  free16(dlsch,sizeof(LTE_UE_DLSCH_t));
   }
 }
 
-LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
-  LTE_DL_UE_DLSCH_t *dlsch;
+  LTE_UE_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r;
 
-  dlsch = (LTE_DL_UE_DLSCH_t *)malloc16(sizeof(LTE_DL_UE_DLSCH_t));
+  dlsch = (LTE_UE_DLSCH_t *)malloc16(sizeof(LTE_UE_DLSCH_t));
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
@@ -59,14 +59,14 @@ LTE_DL_UE_DLSCH_t *new_DL_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       return(dlsch);
   }
   msg("new_ue_dlsch: exit_flag = %d\n",exit_flag);
-  free_DL_ue_dlsch(dlsch);
+  free_ue_dlsch(dlsch);
 
   return(NULL);
 }
 
 unsigned int  dlsch_decoding(short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *lte_frame_parms,
-			     LTE_DL_UE_DLSCH_t *dlsch ){
+			     LTE_UE_DLSCH_t *dlsch ){
 
   
 
