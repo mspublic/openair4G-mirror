@@ -226,6 +226,24 @@ void ulsch_extract_rbs_single(int **rxdataF,
 
 }
 
+void ulsch_correct_ext(int **rxdataF_ext,
+		       int **rxdataF_ext2,
+		       unsigned short symbol,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       unsigned short nb_rb) {
+
+  int i,j,aarx;
+  int *rxF_ext2,*rxF_ext;
+
+  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+    rxF_ext2 = &rxdataF_ext2[aarx][symbol*12*frame_parms->N_RB_DL];
+    rxF_ext  = &rxdataF_ext[aarx][2*symbol*12*frame_parms->N_RB_DL];
+
+    for (i=0,j=0;i<12*nb_rb;i++,j+=2)
+      rxF_ext2[i] = rxF_ext[j]; 
+  }
+}
+
 __m128i QAM_amp128U,QAM_amp128bU;
 
 void ulsch_channel_compensation(int **rxdataF_ext,
@@ -241,16 +259,16 @@ void ulsch_channel_compensation(int **rxdataF_ext,
   
   unsigned short rb;
   __m128i *ul_ch128,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128;
-  unsigned char aarx,symbol_mod;
+  unsigned char aarx;//,symbol_mod;
 
 
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+  //  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
 #ifndef __SSE3__
   zeroU = _mm_xor_si128(zeroU,zeroU);
 #endif
 
-  //  printf("comp: symbol %d\n",symbol);
+  //    printf("comp: symbol %d\n",symbol);
 
   
   if (Qm == 4)
@@ -261,7 +279,7 @@ void ulsch_channel_compensation(int **rxdataF_ext,
   }
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aarx][symbol_mod*frame_parms->N_RB_DL*12];
+    ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128      = (__m128i *)&ul_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
@@ -269,7 +287,7 @@ void ulsch_channel_compensation(int **rxdataF_ext,
 
 
     for (rb=0;rb<nb_rb;rb++) {
-      //	printf("comp: rb %d\n",rb);
+      //      printf("comp: symbol %d rb %d\n",symbol,rb);
       if (Qm>2) {  
 	  // get channel amplitude if not QPSK
 
@@ -334,9 +352,9 @@ void ulsch_channel_compensation(int **rxdataF_ext,
       //       	print_ints("c0",&mmtmpU2);
       //	print_ints("c1",&mmtmpU3);
       rxdataF_comp128[0] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
-      //	print_shorts("rx:",rxdataF128);
-      //	print_shorts("ch:",ul_ch128);
-      //	print_shorts("pack:",rxdataF_comp128);
+      //      	print_shorts("rx:",rxdataF128[0]);
+      //      	print_shorts("ch:",ul_ch128[0]);
+      //      	print_shorts("pack:",rxdataF_comp128[0]);
       
       // multiply by conjugated channel
       mmtmpU0 = _mm_madd_epi16(ul_ch128[1],rxdataF128[1]);
@@ -352,10 +370,10 @@ void ulsch_channel_compensation(int **rxdataF_ext,
       mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
       
       rxdataF_comp128[1] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
-      //	print_shorts("rx:",rxdataF128+1);
-      //	print_shorts("ch:",ul_ch128+1);
-      //	print_shorts("pack:",rxdataF_comp128+1);	
-      // multiply by conjugated channel
+      //      	print_shorts("rx:",rxdataF128[1]);
+      //      	print_shorts("ch:",ul_ch128[1]);
+      //      	print_shorts("pack:",rxdataF_comp128[1]);	
+	//       multiply by conjugated channel
       mmtmpU0 = _mm_madd_epi16(ul_ch128[2],rxdataF128[2]);
       // mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
       mmtmpU1 = _mm_shufflelo_epi16(ul_ch128[2],_MM_SHUFFLE(2,3,0,1));
@@ -369,9 +387,9 @@ void ulsch_channel_compensation(int **rxdataF_ext,
       mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
       
       rxdataF_comp128[2] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
-      //	print_shorts("rx:",rxdataF128+2);
-      //	print_shorts("ch:",ul_ch128+2);
-      //      	print_shorts("pack:",rxdataF_comp128+2);
+      //      	print_shorts("rx:",rxdataF128[2]);
+      //      	print_shorts("ch:",ul_ch128[2]);
+      //        print_shorts("pack:",rxdataF_comp128[2]);
       
       ul_ch128+=3;
       ul_ch_mag128+=3;
@@ -404,30 +422,30 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     //clear average level
     avg128U = _mm_xor_si128(avg128U,avg128U);
-    ul_ch128=(__m128i *)&drs_ch_estimates_ext[aarx][0];
+    ul_ch128=(__m128i *)drs_ch_estimates_ext[aarx];
 
-      for (rb=0;rb<nb_rb;rb++) {
-    
-	avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[0],ul_ch128[0]));
-	avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[1],ul_ch128[1]));
-	avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[2],ul_ch128[2]));
-
-	ul_ch128+=3;	
-	/*
-	  if (rb==0) {
-	  print_shorts("dl_ch128",&dl_ch128[0]);
-	  print_shorts("dl_ch128",&dl_ch128[1]);
-	  print_shorts("dl_ch128",&dl_ch128[2]);
-	  }
-	*/
+    for (rb=0;rb<nb_rb;rb++) {
+      
+      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[0],ul_ch128[0]));
+      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[1],ul_ch128[1]));
+      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[2],ul_ch128[2]));
+      
+      ul_ch128+=3;	
+      /*      
+      if (rb==0) {
+	print_shorts("ul_ch128",&ul_ch128[0]);
+	print_shorts("ul_ch128",&ul_ch128[1]);
+	print_shorts("ul_ch128",&ul_ch128[2]);
       }
-
-      avg[aarx] = (((int*)&avg128U)[0] + 
-		   ((int*)&avg128U)[1] + 
-		   ((int*)&avg128U)[2] + 
-		   ((int*)&avg128U)[3])/(nb_rb*12);
-
-      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      */
+    }
+    
+    avg[aarx] = (((int*)&avg128U)[0] + 
+		 ((int*)&avg128U)[1] + 
+		 ((int*)&avg128U)[2] + 
+		 ((int*)&avg128U)[3])/(nb_rb*12);
+    
+    //    printf("Channel level : %d\n",avg[aarx]);
   }
   _mm_empty();
   _m_empty();
@@ -450,10 +468,10 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Qm = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
-  for (l=0;l<lte_frame_parms->symbols_per_tti;l++) {
+  for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
       
-    //printf("subframe_offset = %d\n",subframe_offset);
-    
+    //    printf("nb_rb %d symbol %d\n",ulsch->nb_rb,l);
+     
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
 			     ulsch->first_rb,
@@ -468,29 +486,39 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
 			      ulsch->nb_rb);
-  
-  
 
-    if (l==0) {
-      ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
-			  frame_parms,
-			  &avgU,
-			  ulsch->nb_rb);
+    ulsch_correct_ext(eNB_ulsch_vars->rxdataF_ext[eNb_id],
+		      eNB_ulsch_vars->rxdataF_ext2[eNb_id],
+		      l,
+		      lte_frame_parms,
+		      ulsch->nb_rb);  
+  }  
+
+
+  ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
+		      frame_parms,
+		      avgU,
+		      ulsch->nb_rb);
     
-  //  msg("[ULSCH] avg[0] %d\n",avg[0]);
+  //      msg("[ULSCH] avg[0] %d\n",avgU[0]);
   
 
-      avgs = 0;
-      for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	avgs = max(avgs,avgU[(aarx<<1)]);
-      
-      log2_maxh = 4+(log2_approx(avgs)/2);
+  avgs = 0;
+  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
+    avgs = max(avgs,avgU[(aarx<<1)]);
+  
+  log2_maxh = 4+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
-      msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
+  msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif
-    }
 
-    ulsch_channel_compensation(eNB_ulsch_vars->rxdataF_ext[eNb_id],
+  for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
+
+    if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||   // skip pilots
+	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
+      l++;
+    }    
+    ulsch_channel_compensation(eNB_ulsch_vars->rxdataF_ext2[eNb_id],
 			       eNB_ulsch_vars->drs_ch_estimates[eNb_id],
 			       eNB_ulsch_vars->ul_ch_mag[eNb_id],
 			       eNB_ulsch_vars->ul_ch_magb[eNb_id],
@@ -500,7 +528,7 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			       Qm,
 			       ulsch->nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
-
+    
     if (frame_parms->nb_antennas_rx > 1)
       ulsch_detection_mrc(frame_parms,
 			  eNB_ulsch_vars->rxdataF_comp[eNb_id],

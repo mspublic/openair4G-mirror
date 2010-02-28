@@ -661,7 +661,8 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->beta_offset_cqi_times8                  = 9;
     ulsch->beta_offset_ri_times8                   = 10;
     ulsch->beta_offset_harqack_times8              = 16;
-
+    
+    ulsch->Nsymb_pusch                             = 9;
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
@@ -720,6 +721,9 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
     ulsch->beta_offset_cqi_times8                = 9;
     ulsch->beta_offset_ri_times8                 = 10;
     ulsch->beta_offset_harqack_times8            = 16;
+
+    ulsch->Nsymb_pusch                             = 9;
+
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
@@ -739,6 +743,7 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
   printf("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
   printf("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   printf("ulsch (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+  printf("ulsch (eNb): Or1      %d\n",ulsch->Or1);
 #endif
   }
   else {

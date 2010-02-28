@@ -491,6 +491,33 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  return(-1);
 	}
       }
+
+      eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+      if (eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id]) {
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->rxdataF_ext2[%d] allocated at %p\n",UE_id,eNb_id,
+	    eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id]);
+#endif
+      }
+      else {
+	msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->rxdataF_ext[%d] not allocated\n",UE_id,eNb_id);
+	return(-1);
+      }
+
+      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id][i] = 
+	  (int *)malloc16(sizeof(int)*(frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti));
+	if (eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id][i]) {
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->rxdataF_ext2[%d][%d] allocated at %p\n",UE_id,eNb_id,i,
+	      eNB_ulsch_vars[UE_id]->rxdataF_ext2[eNb_id][i]);
+#endif
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->rxdataF_ext[%d][%d] not allocated\n",UE_id,eNb_id,i);
+	  return(-1);
+	}
+      }
       
       // Channel estimates for DRS
       eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id] = (int **)malloc16(4*sizeof(int*));

@@ -72,6 +72,7 @@ typedef struct{
 typedef struct{
   ///holds the received data in the frequency domain for the allocated RBs
   int **rxdataF_ext[3];       
+  int **rxdataF_ext2[3];       
   /// hold the channel estimates in frequency domain based on DRS   
   int **drs_ch_estimates[3];  
   int **rxdataF_comp[3];

@@ -265,15 +265,7 @@ typedef struct {
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNb_HARQ_t *harq_processes[8];     
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
-  unsigned char e[MAX_NUM_CHANNEL_BITS];
-  /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
-  unsigned char h[MAX_NUM_CHANNEL_BITS];
-  /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14) 
-  unsigned char b_tilde[MAX_NUM_CHANNEL_BITS];
-  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14) 
-  mod_sym_t d[MAX_NUM_RE];
-  /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15) 
-  mod_sym_t z[MAX_NUM_RE];
+  short e[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   unsigned char Mdlharq; 
   /// Pointer to CQI data
@@ -299,9 +291,9 @@ typedef struct {
   /// coded CQI bits
   char o_d[96+((MAX_CQI_BITS+8)*3)];
   /// coded ACK bits
-  char q_ACK[MAX_ACK_PAYLOAD];
+  short q_ACK[MAX_ACK_PAYLOAD];
   /// coded RI bits
-  unsigned char q_RI[MAX_RI_PAYLOAD];
+  short q_RI[MAX_RI_PAYLOAD];
   /// beta_offset_cqi times 8
   unsigned char beta_offset_cqi_times8;
   /// beta_offset_ri times 8
