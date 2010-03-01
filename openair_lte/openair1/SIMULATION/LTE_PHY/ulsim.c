@@ -383,15 +383,11 @@ int main(int argc, char **argv) {
 
       for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++) {
     
-	subframe_offset = (l/lte_frame_parms->symbols_per_tti)*lte_frame_parms->samples_per_tti;
-	//printf("subframe_offset = %d\n",subframe_offset);
-    
 	slot_fep_ul(lte_frame_parms,
 		    lte_eNB_common_vars,
 		    l%(lte_frame_parms->symbols_per_tti/2),
 		    l/(lte_frame_parms->symbols_per_tti/2),
 		    0,
-		    subframe_offset,
 		    0);
       }
   

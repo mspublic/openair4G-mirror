@@ -6,13 +6,13 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      LTE_UE_COMMON *ue_common_vars,
 	      unsigned char l,
 	      unsigned char Ns,
-	      int offset,
 	      int no_prefix) {
  
   unsigned char aa;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned char eNb_id;
+  unsigned int offset = (frame_parms->ofdm_symbol_size + nb_prefix_samples) * frame_parms->symbols_per_tti * (Ns>>1);
 
 #ifdef DEBUG_FEP
   if (l<0 || l>=7-frame_parms->Ncp) {

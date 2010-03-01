@@ -44,7 +44,6 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	      LTE_UE_COMMON *ue_common_vars,
 	      unsigned char l,
 	      unsigned char Ns,
-	      int offset,
 	      int no_prefix);
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
@@ -52,7 +51,6 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		unsigned char l,
 		unsigned char Ns,
 		unsigned char eNb_id,
-		int offset,
 		int no_prefix);
 
 #endif

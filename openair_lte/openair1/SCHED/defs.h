@@ -118,6 +118,10 @@ void phy_procedures(unsigned char last_slot);
 unsigned int find_chbch(void);
 unsigned int find_mrbch(void);
 #endif
+
+#ifdef OPENAIR_LTE
+typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
+#endif
  
 #endif
 

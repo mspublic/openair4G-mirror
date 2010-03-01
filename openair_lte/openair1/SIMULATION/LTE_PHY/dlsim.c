@@ -33,8 +33,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   randominit(0);
   set_taus_seed(0);
   
-  crcTableInit();
-
 
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
@@ -42,7 +40,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
-  lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars);
+  lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
  
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
@@ -84,14 +82,10 @@ DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
-#define SI_RNTI 0xffff 
-#define RA_RNTI 0xfffe
-#define P_RNTI  0xfffd
-#define C_RNTI  0x1111
-
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC 0x1ff;
 #define DLSCH_RB_ALLOC 0x1fff;
+
 
 int main(int argc, char **argv) {
 
@@ -120,8 +114,8 @@ int main(int argc, char **argv) {
   MIMO_mode_t mimo_mode;
   unsigned char *input_data,*decoded_output;
 
-  LTE_DL_eNb_DLSCH_t *dlsch_eNb[2],*dlsch_eNb_cntl;
-  LTE_DL_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl;
+  LTE_eNb_DLSCH_t *dlsch_eNb[2],*dlsch_eNb_cntl;
+  LTE_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl;
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
@@ -140,7 +134,7 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(1,1);
+  lte_param_init(2,2);
 
   num_layers = 1;
 
@@ -187,7 +181,7 @@ int main(int argc, char **argv) {
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
 #else
-  txdata = lte_eNB_common_vars->txdata;
+  txdata = lte_eNB_common_vars->txdata[eNb_id];
 #endif
 
   
@@ -269,13 +263,13 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.tpmi             = 0;
 
   // Create transport channel structures for SI pdus
-  dlsch_eNb_cntl = new_DL_eNb_dlsch(1,1);
-  dlsch_ue_cntl  = new_DL_ue_dlsch(1,1);
+  dlsch_eNb_cntl = new_eNb_dlsch(1,1);
+  dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
-    dlsch_eNb[i] = new_DL_eNb_dlsch(1,8);
-    dlsch_ue[i]  = new_DL_ue_dlsch(1,8);
+    dlsch_eNb[i] = new_eNb_dlsch(1,8);
+    dlsch_ue[i]  = new_ue_dlsch(1,8);
   
     if (!dlsch_eNb[i]) {
       printf("Can't get eNb dlsch structures\n");
@@ -472,7 +466,7 @@ int main(int argc, char **argv) {
   
   tx_lev = 0;
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[aa],        // input
+    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[eNb_id][aa],        // input
 		 txdata[aa],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 NUMBER_OF_SYMBOLS_PER_FRAME,                 // number of symbols
@@ -556,7 +550,6 @@ int main(int argc, char **argv) {
 		     lte_ue_common_vars,
 		     l,
 		     Ns%20,
-		     (Ns>>1)*lte_frame_parms->samples_per_tti,
 		     0);
 	    
 	    lte_ue_measurements(lte_ue_common_vars,
@@ -592,11 +585,13 @@ int main(int argc, char **argv) {
 	          generate_ue_dlsch_params_from_dci((DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 						    SI_RNTI,
 						    format1A,
-						    dlsch_ue_cntl, 
+						    &dlsch_ue_cntl, 
 						    lte_frame_parms,
 						    SI_RNTI,
 						    RA_RNTI,
 						    P_RNTI);
+
+	      msg("dci_cnt = %d\n",dci_cnt);
 
 	    }
 /*
@@ -623,7 +618,18 @@ int main(int argc, char **argv) {
 			 dlsch_ue,
 			 m,
 			 dual_stream_UE);
-	    if ((Ns==1) && (l==3)) // process symbols 6,7,8
+	    if ((Ns==1) && (l==3)) {// process symbols 6,7,8
+	      if (rx_pbch(lte_ue_common_vars,
+			  lte_ue_pbch_vars[0],
+			  lte_frame_parms,
+			  0,
+			  SISO)) {
+		msg("pbch decoded sucessfully!\n");
+	      }
+	      else {
+		msg("pbch not decoded!\n");
+	      }
+
 	      for (m=7;m<9;m++)
 		rx_dlsch(lte_ue_common_vars,
 			 lte_ue_dlsch_vars,
@@ -633,7 +639,8 @@ int main(int argc, char **argv) {
 			 dlsch_ue,
 			 m,
 			 dual_stream_UE);
-	
+	    }
+
 	    if ((Ns==2) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
 	      for (m=10;m<12;m++)
 		rx_dlsch(lte_ue_common_vars,
@@ -725,9 +732,9 @@ int main(int argc, char **argv) {
   printf("Freeing dlsch structures\n");
   for (i=0;i<2;i++) {
     printf("eNb %d\n",i);
-    free_DL_eNb_dlsch(dlsch_eNb[i]);
+    free_eNb_dlsch(dlsch_eNb[i]);
     printf("UE %d\n",i);
-    free_DL_ue_dlsch(dlsch_ue[i]);
+    free_ue_dlsch(dlsch_ue[i]);
   }
 
 

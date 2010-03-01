@@ -9,13 +9,22 @@
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
+#include "SCHED/defs.h"
+#include "SCHED/vars.h"
 
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 1
+
+DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
+#define UL_RB_ALLOC 0x1ff;
+#define CCCH_RB_ALLOC 0x1ff;
+#define DLSCH_RB_ALLOC 0x1fff;
+
 
 int main(int argc, char **argv) {
 
@@ -38,10 +47,12 @@ int main(int argc, char **argv) {
   int freq_offset;
   int subframe_offset;
   char fname[40], vname[40];
-  int trial, n_errors;
+  int trial, n_errors=0;
   unsigned int nb_rb = 25;
   unsigned int first_rb = 0;
   unsigned int eNb_id = 0;
+  unsigned int last_slot, next_slot;
+  int slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
@@ -51,11 +62,8 @@ int main(int argc, char **argv) {
   fifo_dump_emos emos_dump;
 #endif
 
-
-
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
-
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -75,10 +83,11 @@ int main(int argc, char **argv) {
   lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
+  lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 1;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = 6;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -94,33 +103,58 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
-  /*
-    rxdataF    = (int **)malloc16(2*sizeof(int*));
-    rxdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    
-    rxdata    = (int **)malloc16(2*sizeof(int*));
-    rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
-
   lte_gold(lte_frame_parms);
 
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);
-
-  /*  
-  txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
-  txdataF[0] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-  txdataF[1] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-
-  bzero(txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-  bzero(txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
-  */
-
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
+
+  dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
+  dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
+  for (i=0;i<2;i++) {
+    dlsch_eNb[i] = new_eNb_dlsch(1,8);
+    if (!dlsch_eNb[i]) {
+      msg("Can't get eNb dlsch structures\n");
+      exit(-1);
+    }
+    dlsch_ue[i]  = new_ue_dlsch(1,8);
+    if (!dlsch_ue) {
+      msg("Can't get ue dlsch structures\n");
+      exit(-1);
+    }
+  }
+  dlsch_eNb_cntl = new_eNb_dlsch(1,1);
+  dlsch_ue_cntl  = new_ue_dlsch(1,1);
+
+  // init DCI structures for testing
+  UL_alloc_pdu.type    = 0;
+  UL_alloc_pdu.hopping = 0;
+  UL_alloc_pdu.rballoc = UL_RB_ALLOC;
+  UL_alloc_pdu.mcs     = 1;
+  UL_alloc_pdu.ndi     = 1;
+  UL_alloc_pdu.TPC     = 0;
+  UL_alloc_pdu.cqi_req = 1;
+
+  CCCH_alloc_pdu.type               = 0;
+  CCCH_alloc_pdu.vrb_type           = 0;
+  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
+  CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
+  CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+
+  DLSCH_alloc_pdu2.rah              = 0;
+  DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
+  DLSCH_alloc_pdu2.TPC              = 0;
+  DLSCH_alloc_pdu2.dai              = 0;
+  DLSCH_alloc_pdu2.harq_pid         = 0;
+  DLSCH_alloc_pdu2.tb_swap          = 0;
+  DLSCH_alloc_pdu2.mcs1             = 0;
+  DLSCH_alloc_pdu2.ndi1             = 1;
+  DLSCH_alloc_pdu2.rv1              = 0;
+  // Forget second codeword
+  DLSCH_alloc_pdu2.tpmi             = 0;
+
 
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));
@@ -136,8 +170,6 @@ int main(int argc, char **argv) {
 
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
-#else
-  txdata = lte_eNB_common_vars->txdata;
 #endif
   
   s_re = malloc(2*sizeof(double*));
@@ -161,12 +193,176 @@ int main(int argc, char **argv) {
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
-  generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0);
-  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,first_rb,nb_rb);
+  randominit(0);
+  set_taus_seed(0);
+
+  openair_daq_vars.tdd = 1;
+
+  /*
+  for (slot=19; slot<=40; slot++) {
+    mac_xface->is_cluster_head = 1;
+    phy_procedures_lte_new((slot-1)%20,(slot+1)%20);
+    mac_xface->is_cluster_head = 0;
+    phy_procedures_lte_new((slot-1)%20,(slot+1)%20);
+  }
+  exit(0);
+  */
+
+  for (mac_xface->frame=0; mac_xface->frame<1; mac_xface->frame++) {
+
+  // eNb simulation
+  mac_xface->is_cluster_head = 1;
+  for (last_slot=0, next_slot = 0; next_slot<20; last_slot++, next_slot++) {
+    phy_procedures_lte(last_slot,next_slot);
+  }
 
 #ifdef IFFT_FPGA
-  write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
-  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
+  write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+  write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+
+  // do talbe lookup and write results to txdataF2
+  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+    l = 0;
+    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
+      if ((i%512>=1) && (i%512<=150))
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
+      else if (i%512>=362)
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
+      else 
+	txdataF2[aa][i] = 0;
+    printf("l=%d\n",l);
+  }
+
+  write_output("eNb_txsigF20.m","eNb_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("eNb_txsigF21.m","eNb_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+
+  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
+    PHY_ofdm_mod(txdataF2[aa],        // input
+		 txdata[aa],         // output
+		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		 lte_frame_parms->rev,           // bit-reversal permutation
+		 CYCLIC_PREFIX);
+    
+#else
+  write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  
+  txdata = lte_eNB_common_vars->txdata[eNb_id];
+  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[eNb_id][aa],        // input
+		 txdata[aa],         // output
+		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		 lte_frame_parms->rev,           // bit-reversal permutation
+		 CYCLIC_PREFIX);
+  }  
+#endif
+
+
+  write_output("eNb_txsig0.m","eNb_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("eNb_txsig1.m","eNb_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  
+  // DL channel simulation
+
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+    }
+  }
+
+  multipath_channel(ch,s_re,s_im,r_re,r_im,
+		    amps,Td,BW,ricean_factor,aoa,
+		    lte_frame_parms->nb_antennas_tx,
+		    lte_frame_parms->nb_antennas_rx,
+		    FRAME_LENGTH_COMPLEX_SAMPLES,
+		    channel_length,
+		    0);
+
+  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+
+  // scale by path_loss = NOW - P_noise
+  //sigma2       = pow(10,sigma2_dB/10);
+  //N0W          = -95.87;
+  //path_loss_dB = N0W - sigma2;
+  //path_loss    = pow(10,path_loss_dB/10);
+  path_loss_dB = 0;
+  path_loss = 1;
+
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+      r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
+      r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
+    }
+  }
+
+  /*
+  // RF model
+  rf_rx(r_re,
+	r_im,
+	NULL,
+	NULL,
+	0,
+	lte_frame_parms->nb_antennas_rx,
+	FRAME_LENGTH_COMPLEX_SAMPLES,
+	1.0/7.68e6 * 1e9,      // sampling time (ns)
+	500,            // freq offset (Hz) (-20kHz..20kHz)
+	0.0,            // drift (Hz) NOT YET IMPLEMENTED
+	nf,             // noise_figure NOT YET IMPLEMENTED
+	-path_loss_dB,            // rx_gain (dB)
+	200,            // IP3_dBm (dBm)
+	&ip,            // initial phase
+	30.0e3,         // pn_cutoff (kHz)
+	-500.0,          // pn_amp (dBc) default: 50
+	0.0,           // IQ imbalance (dB),
+	0.0);           // IQ phase imbalance (rad)
+    
+  */
+
+  //AWGN
+  sigma2 = pow(10,sigma2_dB/10);
+  //printf("sigma2 = %g\n",sigma2);
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((s_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((s_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+    }
+  }
+
+  write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+
+  /*
+  // optional: read rx_frame from file
+  if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
+    {
+      printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
+      exit(0);
+    }
+  
+  result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+  printf("Read %d bytes\n",result);
+  result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+  printf("Read %d bytes\n",result);
+
+  fclose(rx_frame_file);
+  */
+
+
+  // UE simulation 
+  mac_xface->is_cluster_head = 0;
+  for (last_slot=0, next_slot = 0; next_slot<20; last_slot++, next_slot++) {
+    phy_procedures_lte(last_slot,next_slot);
+  }
+
+#ifdef IFFT_FPGA
+  write_output("UE_txsigF0.m","UE_txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
+  write_output("UE_txsigF1.m","UE_txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 
   // do talbe lookup and write results to txdataF2
   for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -181,8 +377,8 @@ int main(int argc, char **argv) {
     printf("l=%d\n",l);
   }
 
-  write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  //write_output("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("UE_txsigF20.m","UE_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("UE_txsigF21.m","UE_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
     PHY_ofdm_mod(txdataF2[aa],        // input
@@ -195,9 +391,10 @@ int main(int argc, char **argv) {
 		 CYCLIC_PREFIX);
     
 #else
-  write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("UE_txsigF0.m","UE_txsF0", lte_ue_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("UE_txsigF1.m","UE_txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
   
+  txdata = lte_ue_common_vars->txdata;
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
     PHY_ofdm_mod(lte_ue_common_vars->txdataF[aa],        // input
 		 txdata[aa],         // output
@@ -211,11 +408,10 @@ int main(int argc, char **argv) {
 #endif
 
 
-  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("UE_txsig0.m","UE_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("UE_txsig1.m","UE_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   
-  // multipath channel
-  randominit(0);
+  // UL channel simulation
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -223,10 +419,6 @@ int main(int argc, char **argv) {
       s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
   }
-
-  n_errors = 0;
-  for (trial=0; trial<N_TRIALS; trial++) 
-  {
 
   multipath_channel(ch,s_re,s_im,r_re,r_im,
 		    amps,Td,BW,ricean_factor,aoa,
@@ -286,53 +478,13 @@ int main(int argc, char **argv) {
     }
   }
 
-  write_output("rxsig0.m","rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("rxsig1.m","rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-  /*
-  // optional: read rx_frame from file
-  if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
-    {
-      printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
-      exit(0);
-    }
-  
-  result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
-  printf("Read %d bytes\n",result);
-  result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
-  printf("Read %d bytes\n",result);
 
-  fclose(rx_frame_file);
-  */
+}
 
-    for (l=0;l<lte_frame_parms->symbols_per_tti;l++) {
-      
-      slot_fep_ul(lte_frame_parms,
-		  lte_eNB_common_vars,
-		  l%(lte_frame_parms->symbols_per_tti/2),
-		  l/(lte_frame_parms->symbols_per_tti/2),
-		  eNb_id,
-		  0);
-      /*
-      ulsch_extract_rbs_single(lte_eNB_common_vars->rxdataF,
-			       lte_eNB_common_vars->rxdataF_ext,
-			       first_rb,
-			       nb_rb,
-			       l%(lte_frame_parms->symbols_per_tti/2),
-			       l/(lte_frame_parms->symbols_per_tti/2),
-			       lte_frame_parms);
-
-      lte_ul_channel_estimation(lte_eNB_common_vars->drs_ch_estimates[eNb_id],
-				lte_eNB_common_vars->rxdataF_ext,
-				lte_frame_parms,
-				l%(lte_frame_parms->symbols_per_tti/2),
-				l/(lte_frame_parms->symbols_per_tti/2),
-				nb_rb);
-      */
-    }
-
-  }
-
+/*
   write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
   write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
   write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
@@ -342,7 +494,7 @@ int main(int argc, char **argv) {
   write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
   write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
   write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-
+*/
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);

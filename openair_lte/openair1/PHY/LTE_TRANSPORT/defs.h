@@ -33,6 +33,11 @@
 #define MAX_NUM_CHANNEL_BITS (14*1200*12)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
+#define SI_RNTI 0xffff 
+#define RA_RNTI 0xfffe
+#define P_RNTI  0xfffd
+#define C_RNTI  0x1111
+
 #define PMI_2A_11 0
 #define PMI_2A_1m1 1
 #define PMI_2A_1j 2
@@ -1035,7 +1040,7 @@ unsigned char get_I_TBS(unsigned char I_MCS);
 int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 		    mod_sym_t *txdataF,
 		    short amp,
-		    unsigned int sub_frame_offset);
+		    unsigned int sub_frame_number);
 
 /*!
 \brief This function is similar to generate_srs_tx but generates a conjugate sequence for channel estimation. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
@@ -1055,7 +1060,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      mod_sym_t *txdataF,
 		      short amp,
-		      unsigned int sub_frame_offset,
+		      unsigned int sub_frame_number,
 		      unsigned int first_rb,
 		      unsigned int nb_rb);
 

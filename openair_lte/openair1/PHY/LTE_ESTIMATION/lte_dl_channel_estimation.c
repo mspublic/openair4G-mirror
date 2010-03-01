@@ -102,6 +102,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2r2=filt24_7r;
     break;
   default:
+    msg("lte_dl_channel_estimation: k=%d -> ERROR\n",k);
+    return(-1);
     break;
   }
   

@@ -7,6 +7,10 @@
    date: 21.10.2009 
 */
 
+#ifdef USER_MODE
+#include <stdio.h>
+#endif
+
 #ifndef EXPRESSMIMO_TARGET
 #include "emmintrin.h"
 #endif //EXPRESSMIMO_TARGET

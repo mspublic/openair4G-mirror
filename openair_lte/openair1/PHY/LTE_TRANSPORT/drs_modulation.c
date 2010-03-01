@@ -2,7 +2,7 @@
 #include "extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
-#define DEBUG_DRS
+//#define DEBUG_DRS
 
 int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
 		      mod_sym_t *txdataF,

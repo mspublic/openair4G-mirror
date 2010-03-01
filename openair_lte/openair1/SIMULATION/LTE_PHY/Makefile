@@ -9,9 +9,9 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
-CFLAGS = -O2 -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA 
+CFLAGS += -DOPENAIR_LTE #-DIFFT_FPGA 
 
 ifdef EMOS
 CFLAGS += -DEMOS
@@ -41,6 +41,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_coding.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_decoding.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
@@ -50,6 +51,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
@@ -89,14 +91,14 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
-all: dlsim dlsim2 ulsim2
+all: dlsim dlsim2 ulsim ulsim2 physim
 
 test:
 	echo $(CFLAGS)
 
-$(OBJ) : %.o : %.c
+$(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o: %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
@@ -105,8 +107,14 @@ dlsim : $(OBJ) dlsim.c
 dlsim2 : $(OBJ) dlsim2.c
 	$(CC) dlsim2.c -I$(TOP_DIR) -o dlsim2 $(CFLAGS) $(OBJ) -lm
 
+ulsim : $(OBJ) ulsim.c
+	$(CC) ulsim.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ) -lm
+
 ulsim2 : $(OBJ) ulsim2.c
 	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ) -lm
+
+physim : $(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o phy_procedures_sim.c 
+	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o -lm
 
 clean:
 	rm -f dlsim dlsim2
