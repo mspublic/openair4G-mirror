@@ -110,7 +110,8 @@ void generate_RIV_tables() {
   }
 }
 
-void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
+void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
+					void *dci_pdu,
 					unsigned short rnti,
 					DCI_format_t dci_format,
 					LTE_eNb_DLSCH_t **dlsch,
@@ -178,6 +179,9 @@ void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
 
     dlsch0->current_harq_pid = harq_pid;
     dlsch1->current_harq_pid = harq_pid;
+    dlsch0->harq_ids[subframe] = harq_pid;
+    dlsch1->harq_ids[subframe] = harq_pid;
+
     dlsch0->rb_alloc[0]                         = conv_rballoc(((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
 							       ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc);
 
@@ -196,10 +200,10 @@ void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
    
 
     if ((dlsch0->harq_processes[harq_pid]->rvidx == 1) && (dlsch0->harq_processes[harq_pid]->mcs == 0))
-	dlsch0->disabled = 1;
+	dlsch0->harq_processes[harq_pid]->status = DISABLED;
 
     if ((dlsch1->harq_processes[harq_pid]->rvidx == 1) && (dlsch1->harq_processes[harq_pid]->mcs == 0))
-	dlsch1->disabled = 1;
+	dlsch1->harq_processes[harq_pid]->status = DISABLED;
       
     dlsch0->harq_processes[harq_pid]->Nl        = 1;
 
@@ -237,6 +241,8 @@ void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
     }
 
     dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
+    if (dlsch0->harq_processes[harq_pid]->Ndi == 1)
+      dlsch0->harq_processes[harq_pid]->status = ACTIVE;
     dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
     if (dlsch0->nb_rb > 0)
       dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1];
@@ -248,7 +254,8 @@ void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
 }
 
 
-void generate_ue_dlsch_params_from_dci(void *dci_pdu,
+void generate_ue_dlsch_params_from_dci(unsigned char subframe,
+				       void *dci_pdu,
 				       unsigned short rnti,
 				       DCI_format_t dci_format,
 				       LTE_UE_DLSCH_t **dlsch,
@@ -307,6 +314,7 @@ void generate_ue_dlsch_params_from_dci(void *dci_pdu,
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     dlsch[0]->current_harq_pid = harq_pid;
+    dlsch[0]->harq_ack[subframe].harq_id = harq_pid;
 
     tbswap = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->tb_swap;
     if (tbswap == 0) {
@@ -334,13 +342,12 @@ void generate_ue_dlsch_params_from_dci(void *dci_pdu,
 
     // check if either TB is disabled (see 36-213 V8.6 p. 26)
    
-
-    if ((dlsch0->harq_processes[harq_pid]->rvidx == 1) && (dlsch0->harq_processes[harq_pid]->mcs == 0))
-	dlsch0->disabled = 1;
-
-    if ((dlsch1->harq_processes[harq_pid]->rvidx == 1) && (dlsch1->harq_processes[harq_pid]->mcs == 0))
-	dlsch1->disabled = 1;
-      
+    if ((dlsch0->harq_processes[harq_pid]->rvidx == 1) && (dlsch0->harq_processes[harq_pid]->mcs == 0)) {
+	dlsch0->harq_processes[harq_pid]->status = DISABLED;
+    }
+    if ((dlsch1->harq_processes[harq_pid]->rvidx == 1) && (dlsch1->harq_processes[harq_pid]->mcs == 0)) {
+	dlsch1->harq_processes[harq_pid]->status = DISABLED;
+    }
     dlsch0->harq_processes[harq_pid]->Nl        = 1;
 
     dlsch0->layer_index                         = tbswap;
@@ -378,19 +385,24 @@ void generate_ue_dlsch_params_from_dci(void *dci_pdu,
 
 
       dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
-      dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
-    if (dlsch0->nb_rb>1) 
-      dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch0->harq_processes[harq_pid]->mcs][dlsch0->nb_rb-1];
-    else
-      dlsch0->harq_processes[harq_pid]->TBS         =0;
+      if (dlsch0->harq_processes[harq_pid]->Ndi == 1)
+	dlsch0->harq_processes[harq_pid]->status = ACTIVE;
 
-    dlsch1->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi2;
-    dlsch1->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs2;
-    if (dlsch1->nb_rb>1) 
-      dlsch1->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch1->harq_processes[harq_pid]->mcs][dlsch1->nb_rb-1];
-    else
-      dlsch1->harq_processes[harq_pid]->TBS         = 0;
-    break;
+      dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
+      if (dlsch0->nb_rb>1) 
+	dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch0->harq_processes[harq_pid]->mcs][dlsch0->nb_rb-1];
+      else
+	dlsch0->harq_processes[harq_pid]->TBS         =0;
+      
+      dlsch1->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi2;
+      if (dlsch1->harq_processes[harq_pid]->Ndi == 1)
+	dlsch1->harq_processes[harq_pid]->status = ACTIVE;
+      dlsch1->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs2;
+      if (dlsch1->nb_rb>1) 
+	dlsch1->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch1->harq_processes[harq_pid]->mcs][dlsch1->nb_rb-1];
+      else
+	dlsch1->harq_processes[harq_pid]->TBS         = 0;
+      break;
   default:
     break;
   }
@@ -644,6 +656,9 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    if (ulsch->harq_processes[harq_pid]->Ndi == 1)
+      ulsch->harq_processes[harq_pid]->status = ACTIVE;
+
     ulsch->O_RI                                  = 1;
     if (meas->rank[eNb_id] == 2) {
       ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
@@ -658,12 +673,13 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     ulsch->O_ACK                                  = 2;
 
-    ulsch->beta_offset_cqi_times8                  = 9;
+    ulsch->beta_offset_cqi_times8                  = 18;
     ulsch->beta_offset_ri_times8                   = 10;
     ulsch->beta_offset_harqack_times8              = 16;
     
     ulsch->Nsymb_pusch                             = 9;
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+      ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->nb_rb];
@@ -718,13 +734,14 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
     ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
     ulsch->O_RI                                   = 1;
     ulsch->O_ACK                                  = 2;
-    ulsch->beta_offset_cqi_times8                = 9;
+    ulsch->beta_offset_cqi_times8                = 18;
     ulsch->beta_offset_ri_times8                 = 10;
     ulsch->beta_offset_harqack_times8            = 16;
 
     ulsch->Nsymb_pusch                             = 9;
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
+      ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->nb_rb];

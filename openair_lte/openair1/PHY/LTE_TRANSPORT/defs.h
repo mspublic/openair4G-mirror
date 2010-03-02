@@ -43,11 +43,18 @@
 #define PMI_2A_1j 2
 #define PMI_2A_1mj 3
 
+typedef enum {
+  IDLE,
+  ACTIVE,
+  DISABLED
+} SCH_status_t;
+
+
 typedef struct {
   /// Flag indicating that this DLSCH is active (i.e. not the first round)
   unsigned char Ndi;
-  /// Flag indicating that this DLSCH is active (i.e. not the first round)
-  unsigned char disabled;
+  /// Status Flag indicating for this DLSCH (idle,active,disabled)
+  SCH_status_t status;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
@@ -87,8 +94,10 @@ typedef struct {
 } LTE_DL_eNb_HARQ_t;
 
 typedef struct {
-/// Flag indicating that this DLSCH is active (i.e. not the first round)
+  /// Flag indicating that this ULSCH has a new packet (start of new round) 
   unsigned char Ndi;
+  /// Status Flag indicating for this ULSCH (idle,active,disabled)
+  SCH_status_t status;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
@@ -130,10 +139,10 @@ typedef struct {
 typedef struct {
   /// Transmission mode
   unsigned char mode;
-  /// Disabled flag (1 means disabled)
-  unsigned char disabled;
   /// Current HARQ process id
   unsigned char current_harq_pid;
+  /// Process ID's per subframe
+  unsigned char harq_ids[10];
   /// Current RB allocation
   unsigned int rb_alloc[4];
   /// Current subband PMI allocation
@@ -218,6 +227,8 @@ typedef struct {
 typedef struct {
   /// Flag indicating that this ULSCH has new data
   unsigned char Ndi;
+  /// Status Flag indicating for this ULSCH (idle,active,disabled)
+  SCH_status_t status;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits  
@@ -308,8 +319,10 @@ typedef struct {
 } LTE_eNb_ULSCH_t;
 
 typedef struct {
-  /// Flag indicating that this DLSCH is active (i.e. not the first round)
+  /// Flag indicating that this DLSCH has a new transport block
   unsigned char Ndi;
+  /// DLSCH status flag indicating 
+  SCH_status_t status;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits  
@@ -348,10 +361,14 @@ typedef struct {
   unsigned char Nl;  
 } LTE_DL_UE_HARQ_t;
 
+typedef struct {
+  /// HARQ process id
+  unsigned char harq_id;
+  /// ACK bits (after decoding)
+  unsigned char ack;
+} harq_status_t;
 
 typedef struct {
-  /// Flag indicating that this DLSCH is active (i.e. not the first round)
-  unsigned char disabled;
   /// Transmission mode
   unsigned char mode;
   /// Current HARQ process id
@@ -368,6 +385,8 @@ typedef struct {
   unsigned int cqi_alloc2;
   /// Current Number of RBs
   unsigned short nb_rb;
+  /// HARQ-ACKs
+  harq_status_t harq_ack[10];
 /// Pointers to up to 8 HARQ processes
   LTE_DL_UE_HARQ_t *harq_processes[8];   
 /// Layer index for this DLSCH
@@ -1085,7 +1104,8 @@ void ulsch_extract_rbs_single(int **rxdataF,
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe);
 
-void generate_ue_dlsch_params_from_dci(void *dci_pdu,
+void generate_ue_dlsch_params_from_dci(unsigned char subframe,
+				       void *dci_pdu,
 				       unsigned short rnti,
 				       DCI_format_t dci_format,
 				       LTE_UE_DLSCH_t **dlsch_ue,
@@ -1094,7 +1114,8 @@ void generate_ue_dlsch_params_from_dci(void *dci_pdu,
 				       unsigned short ra_rnti,
 				       unsigned short p_rnti);
 
-void generate_eNb_dlsch_params_from_dci(void *dci_pdu,
+void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
+					void *dci_pdu,
 					unsigned short rnti,
 					DCI_format_t dci_format,
 					LTE_eNb_DLSCH_t **dlsch_eNb,

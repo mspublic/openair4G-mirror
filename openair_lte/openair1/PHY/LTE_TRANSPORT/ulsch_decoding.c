@@ -563,6 +563,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
       printf("CRC failed\n");
       return(ret);
     }
+    else
+      printf("CRC OK : %d iterations\n",ret);
   }
   // Reassembly of Transport block here
   offset = 0;
