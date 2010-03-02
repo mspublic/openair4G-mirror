@@ -15,7 +15,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 1
+#define N_TRIALS 100
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 //DCI_ALLOC_t dci_alloc;
@@ -300,8 +300,7 @@ int main(int argc, char **argv) {
   }
 
   n_errors = 0;
-  for (trial=0; trial<N_TRIALS; trial++) 
-    {
+  for (trial=0; trial<N_TRIALS; trial++) {
 
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
@@ -361,8 +360,8 @@ int main(int argc, char **argv) {
 	}
       }
 
-      write_output("rxsig0.m","rxs0", lte_eNB_common_vars->rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("rxsig1.m","rxs1", lte_eNB_common_vars->rxdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      //      write_output("rxsig0.m","rxs0", lte_eNB_common_vars->rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      //      write_output("rxsig1.m","rxs1", lte_eNB_common_vars->rxdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
       /*
       // optional: read rx_frame from file
@@ -399,14 +398,14 @@ int main(int argc, char **argv) {
 	       0,   // this is the UE instance to act upon
 	       ulsch_eNb);
 
-      printf("ulsch->Or1 %d\n",ulsch_eNb->Or1);
+
       ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
 		     lte_frame_parms,
 		     ulsch_eNb,
 		     subframe);
     
-    }
-  
+  }
+  /*  
   write_output("rxsigF0.m","rxsF0", &lte_eNB_common_vars->rxdataF[0][0][0],512*12*2,2,1);
   write_output("rxsigF1.m","rxsF1", &lte_eNB_common_vars->rxdataF[0][1][0],512*12*2,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", &lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
@@ -418,7 +417,7 @@ int main(int argc, char **argv) {
   write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
   write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
   write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue->nb_rb*12*2*9,1,0);	
-
+  */
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);

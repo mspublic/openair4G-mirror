@@ -30,11 +30,11 @@ int main(int argc, char **argv) {
 
   int i,l,aa,sector;
   double sigma2, sigma2_dB=0;
-  //mod_sym_t **txdataF;
+  mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
   int **txdataF2;
 #endif
-  int **txdata;
+  int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=1; //0.0000005;
@@ -51,8 +51,9 @@ int main(int argc, char **argv) {
   unsigned int nb_rb = 25;
   unsigned int first_rb = 0;
   unsigned int eNb_id = 0;
-  unsigned int last_slot, next_slot;
-  int slot;
+  unsigned int slot_offset;
+
+  int slot,last_slot, next_slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
@@ -198,139 +199,154 @@ int main(int argc, char **argv) {
 
   openair_daq_vars.tdd = 1;
 
-  /*
-  for (slot=19; slot<=40; slot++) {
-    mac_xface->is_cluster_head = 1;
-    phy_procedures_lte_new((slot-1)%20,(slot+1)%20);
-    mac_xface->is_cluster_head = 0;
-    phy_procedures_lte_new((slot-1)%20,(slot+1)%20);
-  }
-  exit(0);
-  */
-
-  for (mac_xface->frame=0; mac_xface->frame<1; mac_xface->frame++) {
-
-  // eNb simulation
-  mac_xface->is_cluster_head = 1;
-  for (last_slot=0, next_slot = 0; next_slot<20; last_slot++, next_slot++) {
-    phy_procedures_lte(last_slot,next_slot);
-  }
-
-#ifdef IFFT_FPGA
-  write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-  write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
-
-  // do talbe lookup and write results to txdataF2
-  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+  for (mac_xface->frame=0; mac_xface->frame<2; mac_xface->frame++) {
     l = 0;
-    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
-      if ((i%512>=1) && (i%512<=150))
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
-      else if (i%512>=362)
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
-      else 
-	txdataF2[aa][i] = 0;
-    printf("l=%d\n",l);
-  }
+    for (slot=0 ; slot<20 ; slot++) {
+      last_slot = (slot - 1)%20;
+      if (last_slot <0)
+	last_slot+=20;
+      next_slot = (slot + 1)%20;
+      
+      mac_xface->is_cluster_head = 1;
+      phy_procedures_lte(last_slot,next_slot);
+      mac_xface->is_cluster_head = 0;
+      phy_procedures_lte(last_slot,next_slot);
+      
+      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
+	txdata = lte_eNB_common_vars->txdata[eNb_id];
+      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+	txdata = lte_ue_common_vars->txdata;
+      else //it must be a special subframe, so skip it for now
+	continue;
 
-  write_output("eNb_txsigF20.m","eNb_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  write_output("eNb_txsigF21.m","eNb_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      
+#ifdef IFFT_FPGA
+      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
-    PHY_ofdm_mod(txdataF2[aa],        // input
-		 txdata[aa],         // output
-		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 lte_frame_parms->rev,           // bit-reversal permutation
-		 CYCLIC_PREFIX);
-    
+      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
+	txdataF = lte_eNB_common_vars->txdataF[eNb_id];
+      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+	txdataF = lte_ue_common_vars->txdataF;
+      
+      // do talbe lookup and write results to txdataF2
+      for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	
+	for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((lte_frame_parms->Ncp==1) ? 6 : 7);i++) 
+	  if ((i%512>=1) && (i%512<=150))
+	    txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	  else if (i%512>=362)
+	    txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	  else 
+	    txdataF2[aa][i] = 0;
+	printf("l=%d\n",l);
+      }
+      
+      //  write_output("eNb_txsigF20.m","eNb_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      //  write_output("eNb_txsigF21.m","eNb_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      
+      for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
+	PHY_ofdm_mod(txdataF2[aa],        // input
+		     txdata[aa],         // output
+		     lte_frame_parms->log2_symbol_size,                // log2_fft_size
+		     (lte_frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		     lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		     lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		     lte_frame_parms->rev,           // bit-reversal permutation
+		     CYCLIC_PREFIX);
+      
 #else
-  write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  
-  txdata = lte_eNB_common_vars->txdata[eNb_id];
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[eNb_id][aa],        // input
-		 txdata[aa],         // output
-		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 lte_frame_parms->rev,           // bit-reversal permutation
-		 CYCLIC_PREFIX);
-  }  
+      //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+
+
+      slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
+
+      for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	PHY_ofdm_mod(&lte_eNB_common_vars->txdataF[eNb_id][aa][slot_offset],        // input
+		     txdata[aa],         // output
+		     lte_frame_parms->log2_symbol_size,                // log2_fft_size
+		     (lte_frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		     lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+		     lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		     lte_frame_parms->rev,           // bit-reversal permutation
+		     CYCLIC_PREFIX);
+      }  
 #endif
+      
+      
+      //  write_output("eNb_txsig0.m","eNb_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      //  write_output("eNb_txsig1.m","eNb_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-
-  write_output("eNb_txsig0.m","eNb_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("eNb_txsig1.m","eNb_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  
-  // DL channel simulation
-
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
-    }
-  }
-
-  multipath_channel(ch,s_re,s_im,r_re,r_im,
-		    amps,Td,BW,ricean_factor,aoa,
-		    lte_frame_parms->nb_antennas_tx,
-		    lte_frame_parms->nb_antennas_rx,
-		    FRAME_LENGTH_COMPLEX_SAMPLES,
-		    channel_length,
-		    0);
-
-  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
-
-  // scale by path_loss = NOW - P_noise
-  //sigma2       = pow(10,sigma2_dB/10);
-  //N0W          = -95.87;
-  //path_loss_dB = N0W - sigma2;
-  //path_loss    = pow(10,path_loss_dB/10);
-  path_loss_dB = 0;
-  path_loss = 1;
-
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
-      r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
-    }
-  }
-
-  /*
-  // RF model
-  rf_rx(r_re,
-	r_im,
-	NULL,
-	NULL,
-	0,
-	lte_frame_parms->nb_antennas_rx,
-	FRAME_LENGTH_COMPLEX_SAMPLES,
-	1.0/7.68e6 * 1e9,      // sampling time (ns)
-	500,            // freq offset (Hz) (-20kHz..20kHz)
-	0.0,            // drift (Hz) NOT YET IMPLEMENTED
-	nf,             // noise_figure NOT YET IMPLEMENTED
-	-path_loss_dB,            // rx_gain (dB)
-	200,            // IP3_dBm (dBm)
-	&ip,            // initial phase
-	30.0e3,         // pn_cutoff (kHz)
-	-500.0,          // pn_amp (dBc) default: 50
-	0.0,           // IQ imbalance (dB),
-	0.0);           // IQ phase imbalance (rad)
+      slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1);
+      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
+	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	  s_re[aa][i] = ((double)(((short *)txdata[aa]))[slot_offset + (i<<1)]);
+	  s_im[aa][i] = ((double)(((short *)txdata[aa]))[slot_offset + (i<<1)+1]);
+	}
+      }
+      
+      multipath_channel(ch,s_re,s_im,r_re,r_im,
+			amps,Td,BW,ricean_factor,aoa,
+			lte_frame_parms->nb_antennas_tx,
+			lte_frame_parms->nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0);
+      
+      //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+      
+      // scale by path_loss = NOW - P_noise
+      //sigma2       = pow(10,sigma2_dB/10);
+      //N0W          = -95.87;
+      //path_loss_dB = N0W - sigma2;
+      //path_loss    = pow(10,path_loss_dB/10);
+      path_loss_dB = 0;
+      path_loss = 1;
+      
+      for (i=0;i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp);i++) {
+	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
+	  r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
+	}
+      }
+      
+      /*
+      // RF model
+      rf_rx(r_re,
+      r_im,
+      NULL,
+      NULL,
+      0,
+      lte_frame_parms->nb_antennas_rx,
+      FRAME_LENGTH_COMPLEX_SAMPLES,
+      1.0/7.68e6 * 1e9,      // sampling time (ns)
+      500,            // freq offset (Hz) (-20kHz..20kHz)
+      0.0,            // drift (Hz) NOT YET IMPLEMENTED
+      nf,             // noise_figure NOT YET IMPLEMENTED
+      -path_loss_dB,            // rx_gain (dB)
+      200,            // IP3_dBm (dBm)
+      &ip,            // initial phase
+      30.0e3,         // pn_cutoff (kHz)
+      -500.0,          // pn_amp (dBc) default: 50
+      0.0,           // IQ imbalance (dB),
+      0.0);           // IQ phase imbalance (rad)
     
   */
 
   //AWGN
   sigma2 = pow(10,sigma2_dB/10);
   //printf("sigma2 = %g\n",sigma2);
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+
+  if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
+    rxdata = lte_ue_common_vars->rxdata;
+  else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+	 rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+
+  for (i=0; i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp); i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((s_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((s_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) rxdata[aa])[slot_offset + (2*i)]   = (short) ((s_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((s_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -354,136 +370,9 @@ int main(int argc, char **argv) {
   */
 
 
-  // UE simulation 
-  mac_xface->is_cluster_head = 0;
-  for (last_slot=0, next_slot = 0; next_slot<20; last_slot++, next_slot++) {
-    phy_procedures_lte(last_slot,next_slot);
-  }
 
-#ifdef IFFT_FPGA
-  write_output("UE_txsigF0.m","UE_txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
-  write_output("UE_txsigF1.m","UE_txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
-
-  // do talbe lookup and write results to txdataF2
-  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-    l = 0;
-    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
-      if ((i%512>=1) && (i%512<=150))
-	txdataF2[aa][i] = ((int*)mod_table)[lte_ue_common_vars->txdataF[aa][l++]];
-      else if (i%512>=362)
-	txdataF2[aa][i] = ((int*)mod_table)[lte_ue_common_vars->txdataF[aa][l++]];
-      else 
-	txdataF2[aa][i] = 0;
-    printf("l=%d\n",l);
-  }
-
-  write_output("UE_txsigF20.m","UE_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  write_output("UE_txsigF21.m","UE_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
-    PHY_ofdm_mod(txdataF2[aa],        // input
-		 txdata[aa],         // output
-		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 lte_frame_parms->rev,           // bit-reversal permutation
-		 CYCLIC_PREFIX);
-    
-#else
-  write_output("UE_txsigF0.m","UE_txsF0", lte_ue_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  write_output("UE_txsigF1.m","UE_txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  
-  txdata = lte_ue_common_vars->txdata;
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-    PHY_ofdm_mod(lte_ue_common_vars->txdataF[aa],        // input
-		 txdata[aa],         // output
-		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 lte_frame_parms->rev,           // bit-reversal permutation
-		 CYCLIC_PREFIX);
-  }  
-#endif
-
-
-  write_output("UE_txsig0.m","UE_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("UE_txsig1.m","UE_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  
-  // UL channel simulation
-
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
   }
-
-  multipath_channel(ch,s_re,s_im,r_re,r_im,
-		    amps,Td,BW,ricean_factor,aoa,
-		    lte_frame_parms->nb_antennas_tx,
-		    lte_frame_parms->nb_antennas_rx,
-		    FRAME_LENGTH_COMPLEX_SAMPLES,
-		    channel_length,
-		    0);
-
-  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
-
-  // scale by path_loss = NOW - P_noise
-  //sigma2       = pow(10,sigma2_dB/10);
-  //N0W          = -95.87;
-  //path_loss_dB = N0W - sigma2;
-  //path_loss    = pow(10,path_loss_dB/10);
-  path_loss_dB = 0;
-  path_loss = 1;
-
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
-      r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
-    }
-  }
-
-  /*
-  // RF model
-  rf_rx(r_re,
-	r_im,
-	NULL,
-	NULL,
-	0,
-	lte_frame_parms->nb_antennas_rx,
-	FRAME_LENGTH_COMPLEX_SAMPLES,
-	1.0/7.68e6 * 1e9,      // sampling time (ns)
-	500,            // freq offset (Hz) (-20kHz..20kHz)
-	0.0,            // drift (Hz) NOT YET IMPLEMENTED
-	nf,             // noise_figure NOT YET IMPLEMENTED
-	-path_loss_dB,            // rx_gain (dB)
-	200,            // IP3_dBm (dBm)
-	&ip,            // initial phase
-	30.0e3,         // pn_cutoff (kHz)
-	-500.0,          // pn_amp (dBc) default: 50
-	0.0,           // IQ imbalance (dB),
-	0.0);           // IQ phase imbalance (rad)
-    
-  */
-
-  //AWGN
-  sigma2 = pow(10,sigma2_dB/10);
-  //printf("sigma2 = %g\n",sigma2);
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_eNB_common_vars->rxdata[eNb_id][aa])[2*i] = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_eNB_common_vars->rxdata[eNb_id][aa])[2*i+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-    }
-  }
-
-  write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-
-
-}
-
 /*
   write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
   write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
@@ -519,7 +408,6 @@ int main(int argc, char **argv) {
   lte_sync_time_free();
 
   return(n_errors);
-
 }
    
 
