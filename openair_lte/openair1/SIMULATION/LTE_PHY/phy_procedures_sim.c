@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.dai              = 0;
   DLSCH_alloc_pdu2.harq_pid         = 0;
   DLSCH_alloc_pdu2.tb_swap          = 0;
-  DLSCH_alloc_pdu2.mcs1             = 0;
+  DLSCH_alloc_pdu2.mcs1             = 1;
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
 
   openair_daq_vars.tdd = 1;
 
-  for (mac_xface->frame=0; mac_xface->frame<2; mac_xface->frame++) {
+  for (mac_xface->frame=0; mac_xface->frame<4; mac_xface->frame++) {
     l = 0;
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
@@ -212,12 +212,6 @@ int main(int argc, char **argv) {
       mac_xface->is_cluster_head = 0;
       phy_procedures_lte(last_slot,next_slot);
       
-      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-	txdata = lte_eNB_common_vars->txdata[eNb_id];
-      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-	txdata = lte_ue_common_vars->txdata;
-      else //it must be a special subframe, so skip it for now
-	continue;
 
       
 #ifdef IFFT_FPGA
@@ -259,8 +253,15 @@ int main(int argc, char **argv) {
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
+      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
+	txdata = lte_eNB_common_vars->txdata[eNb_id];
+      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+	txdata = lte_ue_common_vars->txdata;
+      else //it must be a special subframe, so skip it for now
+	continue;
 
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
+      //      printf("Copying TX buffer for slot %d (%d)\n",next_slot,slot_offset);
 
       for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
 	PHY_ofdm_mod(&lte_eNB_common_vars->txdataF[eNb_id][aa][slot_offset],        // input
@@ -278,14 +279,14 @@ int main(int argc, char **argv) {
       //  write_output("eNb_txsig0.m","eNb_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       //  write_output("eNb_txsig1.m","eNb_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-      slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1);
+
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	  s_re[aa][i] = ((double)(((short *)txdata[aa]))[slot_offset + (i<<1)]);
-	  s_im[aa][i] = ((double)(((short *)txdata[aa]))[slot_offset + (i<<1)+1]);
+	  s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+	  s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	}
       }
-      
+      /*      
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
@@ -293,7 +294,7 @@ int main(int argc, char **argv) {
 			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
 			channel_length,
 			0);
-      
+      */
       //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
       
       // scale by path_loss = NOW - P_noise
@@ -302,12 +303,12 @@ int main(int argc, char **argv) {
       //path_loss_dB = N0W - sigma2;
       //path_loss    = pow(10,path_loss_dB/10);
       path_loss_dB = 0;
-      path_loss = 1;
+      path_loss = .1;
       
-      for (i=0;i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp);i++) {
+      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
-	  r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
+	  r_re[aa][i]=s_re[aa][i]*sqrt(path_loss); 
+	  r_im[aa][i]=s_im[aa][i]*sqrt(path_loss); 
 	}
       }
       
@@ -341,17 +342,18 @@ int main(int argc, char **argv) {
   if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
     rxdata = lte_ue_common_vars->rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-	 rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+    rxdata = lte_eNB_common_vars->rxdata[eNb_id];
 
-  for (i=0; i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp); i++) {
+  slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
+  for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) rxdata[aa])[slot_offset + (2*i)]   = (short) ((s_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((s_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) rxdata[aa])[slot_offset + (2*i)]   = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
-  write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  //  write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  //  write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   /*
   // optional: read rx_frame from file

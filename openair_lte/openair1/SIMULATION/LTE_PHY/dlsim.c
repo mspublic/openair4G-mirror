@@ -291,10 +291,24 @@ int main(int argc, char **argv) {
     dlsch_eNb[i]->harq_processes[0]->Nl                 = num_layers;
     dlsch_eNb[i]->rvidx                                 = 0;
     */
-  generate_eNb_dlsch_params_from_dci(&DLSCH_alloc_pdu2,
+
+  /*
+  generate_eNb_dlsch_params_from_dci(0,
+                                     &DLSCH_alloc_pdu2,
 				     C_RNTI,
 				     format2_2A_M10PRB,
 				     dlsch_eNb,
+				     lte_frame_parms,
+				     SI_RNTI,
+				     RA_RNTI,
+				     P_RNTI);
+  */
+
+  generate_eNb_dlsch_params_from_dci(0,
+                                     &CCCH_alloc_pdu,
+				     SI_RNTI,
+				     format1A,
+				     &dlsch_eNb_cntl,
 				     lte_frame_parms,
 				     SI_RNTI,
 				     RA_RNTI,
@@ -318,11 +332,17 @@ int main(int argc, char **argv) {
   //  decoded_output = (unsigned char*) malloc(block_length/8);
 
   // DCI
-
+  /*
   memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
   dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
   dci_alloc[0].L          = 3;
   dci_alloc[0].rnti       = C_RNTI;
+  */
+  memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+  dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+  dci_alloc[0].L          = 3;
+  dci_alloc[0].rnti       = SI_RNTI;
+
   memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
   dci_alloc[1].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
   dci_alloc[1].L          = 3;
@@ -399,8 +419,8 @@ int main(int argc, char **argv) {
 		lte_frame_parms,
 		pbch_pdu);
 
-  generate_dci_top(2,
-		   0,
+  generate_dci_top(1,
+		   1,
 		   dci_alloc,
 		   0,
 		   1024,
@@ -573,7 +593,8 @@ int main(int argc, char **argv) {
 	      dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,lte_frame_parms,SI_RNTI,RA_RNTI,C_RNTI);
 	      for (i=0;i<dci_cnt;i++)
 		if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB))
-	          generate_ue_dlsch_params_from_dci((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
+	          generate_ue_dlsch_params_from_dci(0,
+                                                    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
 						    C_RNTI,
 						    format2_2A_M10PRB,
 						    dlsch_ue,
@@ -582,7 +603,8 @@ int main(int argc, char **argv) {
 						    RA_RNTI,
 						    P_RNTI);
 		else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A))
-	          generate_ue_dlsch_params_from_dci((DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+	          generate_ue_dlsch_params_from_dci(0,
+                                                    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 						    SI_RNTI,
 						    format1A,
 						    &dlsch_ue_cntl, 
