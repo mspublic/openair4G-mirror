@@ -17,7 +17,7 @@
 #include <tmmintrin.h>
 #endif
 
-#define DEBUG_DCI_ENCODING 1
+//#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
 
 #ifndef __SSE3__
@@ -522,7 +522,7 @@ void pdcch_extract_rbs_dual(int **rxdataF,
     dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
     dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
 
-    printf("pdcch extract_rbs: rxF_ext pos %d\n",symbol*(frame_parms->N_RB_DL*12));
+    //    printf("pdcch extract_rbs: rxF_ext pos %d\n",symbol*(frame_parms->N_RB_DL*12));
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     
     rxF       = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
@@ -1120,7 +1120,7 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 	txdataF[0][tti_offset] = wbar[0][mprime];
 	if (frame_parms->nb_antennas_tx > 1)
 	  txdataF[1][tti_offset] = wbar[1][mprime];
-	//	printf("mapping %d (symbol %d re %d) -> %d\n",tti_offset,symbol_offset,re_offset+i,wbar[0][mprime]);
+	//	printf("PDCCH mapping %d (symbol %d re %d) -> %d\n",tti_offset,symbol_offset,re_offset+i,wbar[0][mprime]);
 	mprime++;
       }
     }

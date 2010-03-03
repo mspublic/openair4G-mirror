@@ -323,8 +323,8 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   if (!llr128) {
     msg("dlsch_qpsk_llr: llr is null, symbol %d, llr128=%p\n",symbol, llr128);
     return(-1);
-  }
-  //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
+  } 
+  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
   for (i=0;i<(nb_rb*3);i++) {
     *llr128 = *rxF;

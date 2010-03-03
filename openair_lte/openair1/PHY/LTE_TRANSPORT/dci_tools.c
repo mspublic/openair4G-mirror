@@ -20,7 +20,7 @@ unsigned int conv_rballoc(unsigned char ra_header,unsigned int short rb_alloc) {
     for (i=0;i<12;i++) {
       if ((rb_alloc&(1<<i)) != 0)
 	rb_alloc2 |= (3<<((2*i)));
-      printf("rb_alloc2 (type 0) %x\n",rb_alloc2);
+      //      printf("rb_alloc2 (type 0) %x\n",rb_alloc2);
     }
     if ((rb_alloc&(1<<12)) != 0)
       rb_alloc2 |= (1<<24);
@@ -31,7 +31,7 @@ unsigned int conv_rballoc(unsigned char ra_header,unsigned int short rb_alloc) {
     for (i=0;i<11;i++) {
       if ((rb_alloc&(1<<(i+2))) != 0)
 	rb_alloc2 |= (1<<(2*i));
-      printf("rb_alloc2 (type 1) %x\n",rb_alloc2);
+      //      printf("rb_alloc2 (type 1) %x\n",rb_alloc2);
     }
     if ((shift == 0) && (subset == 1))
       rb_alloc2<<=1;
@@ -122,7 +122,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
   unsigned char harq_pid;
   unsigned char NPRB,tbswap,tpmi;
-  LTE_eNb_DLSCH_t *dlsch0,*dlsch1;
+  LTE_eNb_DLSCH_t *dlsch0=NULL,*dlsch1;
 
 
   switch (dci_format) {
@@ -250,6 +250,14 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     break;
   default:
     break;
+  }
+  if (dlsch0) {
+    printf("dlsch0: NBRB     %d\n",dlsch0->nb_rb);
+    printf("dlsch0: rballoc  %x\n",dlsch0->rb_alloc[0]);
+    printf("dlsch0: harq_pid %d\n",harq_pid);
+    printf("dlsch0: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
+    printf("dlsch0: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
+    printf("dlsch0: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
   }
 }
 

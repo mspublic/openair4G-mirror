@@ -138,8 +138,8 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
-    printf("Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
-	   r, coded_bits_per_codeword,
+    printf("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
+	   harq_pid,r, coded_bits_per_codeword,
 	   Kr*3,
 	   mod_order,
 	   nb_rb,
