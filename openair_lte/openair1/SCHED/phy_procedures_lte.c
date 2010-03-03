@@ -143,7 +143,7 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
       if (mac_xface->frame % 100 == 0)
 	phy_adjust_gain (0,16384,0);
     
-    if (mac_xface->frame%100 == 0) {
+    if (mac_xface->frame%100 < 10) {
       msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, freq_offset_filt = %d \n",mac_xface->frame, last_slot, lte_ue_common_vars->freq_offset);
       
       msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
@@ -297,7 +297,7 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
 
   // RX processing of symbols in last_slot
   for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
-    
+
     slot_fep(lte_frame_parms,
 	     lte_ue_common_vars,
 	     l,
@@ -311,7 +311,9 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
    
     lte_ue_measurement_procedures(last_slot,l);
 
-      
+    
+    printf("Frame %d, last_slot %d (symbol %d)-> dlsch_ue_active %d\n",mac_xface->frame,last_slot,l,dlsch_ue_active);
+
     if ((last_slot==1) && (l==4-lte_frame_parms->Ncp)) {
 	
       lte_ue_pbch_procedures(eNb_id,last_slot);
@@ -319,11 +321,11 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
 
 	
     // process last DLSCH symbols + invoke decoding
-    if (((last_slot%2)==1) && (l==0) && (dlsch_ue_active == 1)) {
+    if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp)) && (dlsch_ue_active == 1)) {
 
       
 #ifdef DEBUG_PHY
-      if ((mac_xface->frame % 100) == 0)
+      if ((mac_xface->frame % 100) < 10)
 	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 10,11,12\n",mac_xface->frame,last_slot);
 #endif
       
@@ -380,7 +382,7 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
       }   
       //time_out = openair_get_mbox();
 	
-      if ((mac_xface->frame % 100) == 0) {
+      if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) {
 	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",
 	    mac_xface->frame,last_slot,time_in,time_out,ret,dlsch_errors);
       }
@@ -537,7 +539,7 @@ void phy_procedures_eNB_TX(next_slot) {
       dci_alloc[0].rnti       = C_RNTI;
       nb_dci_common  = 0;
       nb_dci_ue_spec = 1;
-      msg("Frame %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame);
+      msg("[PHY PROCEDURES] eNB Frame %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame);
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &DLSCH_alloc_pdu2,
 					 C_RNTI,
@@ -582,7 +584,7 @@ void phy_procedures_eNB_TX(next_slot) {
     }
 #ifdef DEBUG_PHY
     if (mac_xface->frame%100 == 0)
-      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Calling generate_dci_top\n",mac_xface->frame, next_slot);
+      msg("[PHY_PROCEDURES_LTE] eNB frame %d, slot %d: Calling generate_dci_top\n",mac_xface->frame, next_slot);
 #endif
     
     if ((nb_dci_common+nb_dci_ue_spec)>0) {
@@ -593,7 +595,8 @@ void phy_procedures_eNB_TX(next_slot) {
 		       AMP,
 		       lte_frame_parms,
 		       lte_eNB_common_vars->txdataF[eNb_id],
-		       next_slot/2);
+		       next_slot>>1);
+
     }
   }
   if ((next_slot%2 == 0) && (dlsch_eNb_active == 1)) {
@@ -603,7 +606,7 @@ void phy_procedures_eNB_TX(next_slot) {
     
 #ifdef DEBUG_PHY
     if (mac_xface->frame%100 == 0)
-      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Calling generate_dlsch with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+      msg("[PHY_PROCEDURES_LTE] eNB frame %d, slot %d: Calling generate_dlsch with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
 #endif
     
     dlsch_encoding(dlsch_input_buffer,
@@ -617,10 +620,8 @@ void phy_procedures_eNB_TX(next_slot) {
 		     dlsch_eNb_cntl);
     
     
-    /*
-      for (i=0;i<300;i++)
-      msg("lte_eNB_common_vars->txdataF[0][%d] = %d\n",i+300*12,lte_eNB_common_vars->txdataF[0][i+300*14]);
-      for (i=0;i<100;i++)
+    
+      /*      for (i=0;i<100;i++)
       msg("dlsch_input_buffer[[%d] = %d\n",i,dlsch_input_buffer[i]);
     */
   }
