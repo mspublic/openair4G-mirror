@@ -21,9 +21,9 @@ DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
-#define UL_RB_ALLOC 0x1ff;
-#define CCCH_RB_ALLOC 0x1ff;
-#define DLSCH_RB_ALLOC 0x1fff;
+#define UL_RB_ALLOC 0x1ff
+#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
+#define DLSCH_RB_ALLOC 0x1fff
 
 
 int main(int argc, char **argv) {
@@ -105,9 +105,11 @@ int main(int argc, char **argv) {
   lte_frame_parms->rev              = rev;
   
   lte_gold(lte_frame_parms);
-
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
+  generate_64qam_table();
+  generate_16qam_table();
+  generate_RIV_tables();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
@@ -222,6 +224,11 @@ int main(int argc, char **argv) {
 	txdataF = lte_eNB_common_vars->txdataF[eNb_id];
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
 	txdataF = lte_ue_common_vars->txdataF;
+      else //it must be a special subframe
+	if (next_slot%2==0) //DL part
+	  txdata = lte_eNB_common_vars->txdataF[eNb_id];
+	else // UL part
+	  txdata = lte_ue_common_vars->txdataF;
       
       // do talbe lookup and write results to txdataF2
       for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -250,18 +257,27 @@ int main(int argc, char **argv) {
 		     CYCLIC_PREFIX);
       
 #else
-      //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-      //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
 	txdata = lte_eNB_common_vars->txdata[eNb_id];
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
 	txdata = lte_ue_common_vars->txdata;
-      else //it must be a special subframe, so skip it for now
-	continue;
+      else //it must be a special subframe
+	if (next_slot%2==0) //DL part
+	  txdata = lte_eNB_common_vars->txdata[eNb_id];
+	else // UL part
+	  txdata = lte_ue_common_vars->txdata;
+
 
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
       //      printf("Copying TX buffer for slot %d (%d)\n",next_slot,slot_offset);
+
+      if (next_slot == 11) {
+	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
+	write_output(fname,"eNb_txsF0",&lte_eNB_common_vars->txdataF[eNb_id][0][slot_offset],512*12,1,1);
+	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);
+	write_output(fname,"eNb_txsF1",&lte_eNB_common_vars->txdataF[eNb_id][1][slot_offset],512*12,1,1);
+      }
 
       for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
 	PHY_ofdm_mod(&lte_eNB_common_vars->txdataF[eNb_id][aa][slot_offset],        // input
@@ -275,10 +291,12 @@ int main(int argc, char **argv) {
       }  
 #endif
       
-      
-      //  write_output("eNb_txsig0.m","eNb_txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      //  write_output("eNb_txsig1.m","eNb_txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-
+      if ( next_slot==11) {
+	sprintf(fname,"eNb_frame%d_txsig0.m",mac_xface->frame);
+        write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
+	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
+        write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
+      }
 
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -303,7 +321,7 @@ int main(int argc, char **argv) {
       //path_loss_dB = N0W - sigma2;
       //path_loss    = pow(10,path_loss_dB/10);
       path_loss_dB = 0;
-      path_loss = .1;
+      path_loss = 1;
       
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
@@ -343,6 +361,11 @@ int main(int argc, char **argv) {
     rxdata = lte_ue_common_vars->rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
     rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+  else //it must be a special subframe
+    if (next_slot%2==0) //DL part
+      rxdata = lte_ue_common_vars->rxdata;
+    else // UL part
+      rxdata = lte_eNB_common_vars->rxdata[eNb_id];
 
   slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
   for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
@@ -352,8 +375,12 @@ int main(int argc, char **argv) {
     }
   }
 
-  //  write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  //  write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  if (last_slot == 19) {
+    write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  }
 
   /*
   // optional: read rx_frame from file

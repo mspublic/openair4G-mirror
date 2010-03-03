@@ -71,6 +71,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   generate_ul_ref_sigs_rx();
   generate_64qam_table();
   generate_16qam_table();
+  generate_RIV_tables();
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
@@ -83,7 +84,7 @@ DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 #define UL_RB_ALLOC 0x1ff;
-#define CCCH_RB_ALLOC 0x1ff;
+#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fff;
 
 
@@ -114,8 +115,6 @@ int main(int argc, char **argv) {
   MIMO_mode_t mimo_mode;
   unsigned char *input_data,*decoded_output;
 
-  LTE_eNb_DLSCH_t *dlsch_eNb[2],*dlsch_eNb_cntl;
-  LTE_UE_DLSCH_t *dlsch_ue[2],*dlsch_ue_cntl;
   unsigned char *input_buffer;
   unsigned short input_buffer_length;
   unsigned int ret;
@@ -153,7 +152,7 @@ int main(int argc, char **argv) {
       mimo_mode = DUALSTREAM;
   }
 
-  printf("dlsim default parameters SE=0.66 num_layers=2 SNR=-1\n");
+  printf("dlsim default parameters SE=0.66 num_layers=1 SNR=-1dB\n");
 
   /*
   txdataF    = (int **)malloc16(2*sizeof(int*));
@@ -266,7 +265,10 @@ int main(int argc, char **argv) {
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
+  /*
   // Create transport channel structures for 2 transport blocks (MIMO)
+  dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
+  dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
   for (i=0;i<2;i++) {
     dlsch_eNb[i] = new_eNb_dlsch(1,8);
     dlsch_ue[i]  = new_ue_dlsch(1,8);
@@ -281,6 +283,7 @@ int main(int argc, char **argv) {
       exit(-1);
     }
   }
+  */
 
     /*
     dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
@@ -352,6 +355,7 @@ int main(int argc, char **argv) {
 
 
   // DLSCH
+  if (0) {
   input_buffer_length = dlsch_eNb[0]->harq_processes[0]->TBS/8;
   printf("Input buffer size %d bytes\n",input_buffer_length);
 
@@ -359,7 +363,6 @@ int main(int argc, char **argv) {
   
   for (i=0;i<input_buffer_length;i++)
     input_buffer[i]= (unsigned char)(taus()&0xff);
-
 
   dlsch_encoding(input_buffer,
 		 lte_frame_parms,
@@ -403,6 +406,47 @@ int main(int argc, char **argv) {
 				    i,
 				    lte_frame_parms,
 				    dlsch_eNb[1]);
+  }
+  else {
+  input_buffer_length = dlsch_eNb_cntl->harq_processes[0]->TBS/8;
+  printf("Input buffer size %d bytes\n",input_buffer_length);
+
+  input_buffer = (unsigned char *)malloc(input_buffer_length+4);
+  
+  for (i=0;i<input_buffer_length;i++)
+    input_buffer[i]= (unsigned char)(taus()&0xff);
+
+  dlsch_encoding(input_buffer,
+		 lte_frame_parms,
+		 dlsch_eNb_cntl);
+
+#ifdef OUTPUT_DEBUG
+  for (s=0;s<dlsch_eNb_cntl->harq_processes[0]->C;s++) {
+    if (s<dlsch_eNb_cntl->harq_processes[0]->Cminus)
+      Kr = dlsch_eNb_cntl->harq_processes[0]->Kminus;
+    else
+      Kr = dlsch_eNb_cntl->harq_processes[0]->Kplus;
+    
+    Kr_bytes = Kr>>3;
+    
+    for (i=0;i<Kr_bytes;i++)
+      printf("%d : (%x)\n",i,dlsch_eNb_cntl->harq_processes[0]->c[s][i]);
+  }
+  
+#endif 
+
+  re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+				  1024,
+				  0,
+				  lte_frame_parms,
+				  dlsch_eNb_cntl);
+
+
+  printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
+  
+  if ((re_allocated/(lte_frame_parms->num_dlsch_symbols*12)) != NB_RB)
+    printf("Bad RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
+  }
 
 
   generate_pss(lte_eNB_common_vars->txdataF[eNb_id],
@@ -481,7 +525,7 @@ int main(int argc, char **argv) {
 #else //IFFT_FPGA
 
 #ifdef OUTPUT_DEBUG  
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
+  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
 #endif
   
   tx_lev = 0;
@@ -637,7 +681,7 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 dlsch_ue,
+			 &dlsch_ue_cntl,
 			 m,
 			 dual_stream_UE);
 	    if ((Ns==1) && (l==3)) {// process symbols 6,7,8
@@ -658,7 +702,7 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 dlsch_ue,
+			 &dlsch_ue_cntl,
 			 m,
 			 dual_stream_UE);
 	    }
@@ -670,7 +714,7 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 dlsch_ue,
+			 &dlsch_ue_cntl,
 			 m,
 			 dual_stream_UE);
 
