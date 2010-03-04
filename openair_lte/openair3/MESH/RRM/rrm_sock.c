@@ -222,7 +222,7 @@ char *recv_msg(
 /*!
 *******************************************************************************
 \brief  This function opens a internet socket for the rrm communication
-        ( no-connected mode / UDP DATAGRAM )
+        ( no-connected mode / UDP DATAGRAM ) -> considered address: IPv4
 \return  The return value is a socket handle
 */
 int open_socket_int( 
@@ -248,70 +248,33 @@ int open_socket_int(
         return -1 ;
     }
     
-   //fprintf(stderr,"tmp1 %X \n", path_local);//dbg
-    
-    
+  
+    //!Setting local address
     memset(&(s->in_local_addr), 0, sizeof(struct    sockaddr_in));
-    
     s->in_local_addr.sin_family = AF_INET;
     s->in_local_addr.sin_port = htons(local_port);
-    //fprintf(stderr,"rrm_inst %d\n  ", rrm_inst);//dbg 
-    
-#ifdef PHY_EMUL
-    if (rrm_inst == 1){
-        local_test[0]=0x0A;
-        local_test[1]=0x00;
-        local_test[2]=0x02;
-        local_test[3]=0x02;
-        memcpy(&tmp,local_test,4);
-        //fprintf(stderr,"tmp1 %lu \n", tmp);//dbg
-        
-    }else if (rrm_inst == 2){
-        local_test[0]=0x0A;
-        local_test[1]=0x00;
-        local_test[2]=0x03;
-        local_test[3]=0x03;
-        memcpy(&tmp,local_test,4);
-        //fprintf(stderr,"tmp2 %lu \n", tmp);//dbg
-        
-    }else if (rrm_inst == 0){
-        local_test[0]=0x0A;
-        local_test[1]=0x00;
-        local_test[2]=0x01;
-        local_test[3]=0x01;
-        memcpy(&tmp,local_test,4);
-        //fprintf(stderr,"tmp0 %lu \n", tmp);//dbg
-        
-    }
-#else
     memcpy(&tmp,path_local,4);
-#endif
+    //fprintf(stderr,"\nOpen sock: path_local %X \n", tmp);//dbg
     s->in_local_addr.sin_addr.s_addr = tmp;
 
     
-   len = sizeof(s->in_local_addr);
+    len = sizeof(s->in_local_addr);
  
     if (bind(socket_fd, (struct sockaddr *)&(s->in_local_addr), len) == -1) 
     {
         perror("bind internet");
         return -1 ;
     }
-
-    
-    //fprintf(stderr,"OSI 4 \n  ");//dbg    
+  
+    //!Setting destination address
     memset(&(s->in_dest_addr), 0, sizeof(struct    sockaddr_in));
-    
     s->in_dest_addr.sin_family = AF_INET;
     s->in_dest_addr.sin_port = htons(7000);
-#ifdef PHY_EMUL
-    tmp = inet_addr ("10.0.1.1");
-#else
     memcpy(&tmp,path_dest,4);
-#endif
+    //fprintf(stderr,"Open sock: path_dest %X \n", tmp);//dbg
     s->in_dest_addr.sin_addr.s_addr = tmp;
     
     s->s = socket_fd ;
-    //fprintf(stderr,"OSI 5 \n  ");//dbg
     fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
     return socket_fd ; 
 }

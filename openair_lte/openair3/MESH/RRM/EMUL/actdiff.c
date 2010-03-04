@@ -37,9 +37,9 @@
 #include "rrm_sock.h"
 #include "actdiff.h"
 
-#define DBG_ACTDIFF 1
+#define DBG_ACTDIFF 0
 
-#if DBG_ACTDIFF==1
+#if DBG_ACTDIFF==0
 #define PRINT_ACTDIFF(...) 
 #else
 #define PRINT_ACTDIFF(...) print_actdiff( __VA_ARGS__ )

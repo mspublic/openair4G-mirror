@@ -84,12 +84,14 @@ int cmm_cx_setup_req(
         memcpy(&src_dst[1], &Dst, sizeof(L2_ID)) ;
         
         pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
+        //fprintf(stderr,"item_trans in CMM_CX_SETUP_REQ=%d node %d\n",rrm->cmm.trans_cnt,rrm->id);//dbg
         add_item_transact( &(rrm->cmm.transaction), Trans_id,INT_CMM,CMM_CX_SETUP_REQ, 0,NO_PARENT);
         pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
         
         /** \todo Evaluer si le RB peut etre cree avant d'envoyer la commande au RRC */
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;
+//fprintf(stderr,"item_trans in RRM_RB_ESTABLISH_REQ=%d node %d\n",rrm->rrc.trans_cnt,rrm->id);//dbg
         add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,Trans_id,PARENT);
         add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QoS_class, &src_dst[0] ) ;
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
@@ -106,6 +108,7 @@ int cmm_cx_setup_req(
         if(QoS_class == QOS_DTCH_D){//faire le srb2 seulement a l'attachement (ouverture du DTCH IP par Defaut)
           pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
           rrm->rrc.trans_cnt++ ;
+          //fprintf(stderr,"item_trans in RRM_RB_ESTABLISH_REQ 2=%d node %d\n",rrm->rrc.trans_cnt,rrm->id);//dbg
           add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,0,NO_PARENT);
           add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_SRB2, &src_dst[0] ) ;
           pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
@@ -129,6 +132,7 @@ int cmm_cx_setup_req(
             L2_ID src_dst[2] ;
             
             pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
+            //fprintf(stderr,"item_trans in CMM_CX_SETUP_REQ 2=%d node %d\n",rrm->cmm.trans_cnt,rrm->id);//dbg
             add_item_transact( &(rrm->cmm.transaction), Trans_id, INT_CMM, CMM_CX_SETUP_REQ,0,NO_PARENT);
             pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
             
@@ -147,7 +151,7 @@ int cmm_cx_setup_req(
                             rrm->rrc.trans_cnt,
                             rrm->L3_info,rrm->L3_info_t)
                         ) ;
-                
+            //fprintf(stderr,"item_trans in RRM_RB_ESTABLISH_REQ 3=%d node %d\n",rrm->rrc.trans_cnt,rrm->id);//dbg    
             add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_RB_ESTABLISH_REQ,Trans_id,PARENT);
 
             add_rb( &(rrm->rrc.pRbEntry), rrm->rrc.trans_cnt, QOS_DTCH_B, &src_dst[0] ) ;

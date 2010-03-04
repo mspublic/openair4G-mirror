@@ -135,6 +135,16 @@ void rrc_phy_synch_to_MR_ind(
             del_all_neighbor( &(rrm->rrc.pNeighborEntry) );
             
         pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
+        //mod_lor_10_03_01++
+        //if (WSN){
+        if (WSN && rrm->id == 0){ //inst_to_change: to modify with regard to the implementation (i.e. delete rrm->id == 0 if implemented on two different machines 
+            rrm->role = FUSIONCENTER; 
+            fprintf(stderr,"[RRM] FUSIONCENTER\n");
+        }else if (SCEN_1){
+            rrm->role = BTS; 
+            fprintf(stderr,"[RRM] BTS\n");
+        }
+        //mod_lor_10_03_01--
 
         PUT_CMM_MSG( msg_router_is_CH_ind( inst,rrm->L2_id)) ;
 

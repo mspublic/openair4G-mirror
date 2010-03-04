@@ -48,7 +48,8 @@
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
-#define NUM_SCENARIO  7
+#define NUM_SCENARIO  2
+#define SENSORS_NB 2 //mod_lor_10_03_03
 #define PUSU_EMUL
 
 #ifdef RRC_EMUL
@@ -91,11 +92,11 @@ typedef struct {
 } ;*/
 //mod_lor_10_01_25++
 node_info_t node_info[10] = {
- { .L2_id={{0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x00,0x00,0xAA,0xCC} },
- { .L2_id={{0x01,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x01,0x00,0xAA,0xCC} },
- { .L2_id={{0x02,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x02,0x00,0xAA,0xCC} },
- { .L2_id={{0x03,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x03,0x00,0xAA,0xCC} },
- { .L2_id={{0x04,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x04,0x00,0xAA,0xCC} },
+ { .L2_id={{0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x01,0x01} },
+ { .L2_id={{0x01,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x02,0x02} },
+ { .L2_id={{0x02,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x03,0x03} },
+ { .L2_id={{0x03,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x04,0x04} },
+ { .L2_id={{0x04,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x05,0x05} },
  { .L2_id={{0x05,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x05,0x00,0xAA,0xCC} },
  { .L2_id={{0x06,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x06,0x00,0xAA,0xCC} },
  { .L2_id={{0x07,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x07,0x00,0xAA,0xCC} },
@@ -107,6 +108,7 @@ node_info_t node_info[10] = {
 //void print_pusu_msg( neighbor_entry_RRM_to_CMM_t *pEntry );
 
 static int flag_not_exit = 1 ;
+int attached_sensors = 0;//mod_lor_10_01_25
 
 static pthread_t        pthread_rrc_hnd,
                         pthread_cmm_hnd ,
@@ -499,7 +501,7 @@ static void * fn_cmm (
                         float delai = 0.00 ;
 #endif
                         rrci_attach_req_t *p = (rrci_attach_req_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRCI_ATTACH_REQ\n",header->inst);
+                        msg_fct( "[RRM]>[CMM]:%d:RRCI_ATTACH_REQ \n",header->inst);
                         //MSG_L2ID(p->L2_id);
                         pthread_mutex_lock( &actdiff_exclu  ) ;
 
@@ -511,18 +513,30 @@ static void * fn_cmm (
                     break ;
                 case RRM_ATTACH_IND :
                     { //mod_lor: 10_02_09++
+                        if (WSN && header->inst == 0) //inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
+                            attached_sensors ++;//mod_lor: 10_01_25
+                        //msg_fct( "attached_sensors %d \n\n",attached_sensors); //dbg
 #ifndef PHY_EMUL
                         float delai = 0.05 ;
 #else
                         float delai = 0.00 ;
 #endif
                         msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
+                        
+                        if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
 
-                        pthread_mutex_lock( &actdiff_exclu  ) ; 
-                        add_actdiff(&list_actdiff,delai, cnt_actdiff++, s,
-                                msg_cmm_init_sensing(0,1 ) );
+                            pthread_mutex_lock( &actdiff_exclu  ) ; 
+                            add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
+                                    msg_cmm_init_sensing(header->inst,1 ) );
 
-                        pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
+                            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
+                            //msg_fct( "\npassato CH %d \n\n",header->inst); //dbg
+                            pthread_mutex_lock( &actdiff_exclu  ) ; 
+                            add_actdiff(&list_actdiff,20, cnt_actdiff++, s,
+                                    msg_cmm_stop_sensing(0) );
+
+                            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
+                        } 
 
                     }
                     break ;
@@ -581,6 +595,12 @@ static void * fn_cmm (
                         pthread_mutex_lock( &cmm_transact_exclu ) ;
                         add_item_transact( &cmm_transact_list, cmm_transaction, INT_CMM, CMM_CX_SETUP_REQ,0,NO_PARENT);
                         pthread_mutex_unlock( &cmm_transact_exclu ) ;
+                        
+                        if (header->inst==1){
+                            pthread_mutex_lock( &actdiff_exclu  ) ; 
+                            add_actdiff(&list_actdiff,15, cnt_actdiff++, s, msg_cmm_ask_freq(header->inst) );
+                            pthread_mutex_unlock( &actdiff_exclu ) ;
+                        }
                     }
                     break ;
                 case RRCI_CH_SYNCH_IND :

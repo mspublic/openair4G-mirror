@@ -409,6 +409,17 @@ void rrc_rep_freq_all(
     Transaction_t Trans_id 
     );
     
+/*!
+\brief  Updating of the sensing measures 
+*/
+void update_sens_results( 
+	Instance_t inst         , //!< Identification de l'instance
+	L2_ID L2_id             , //!< Adresse L2 of the source of information 
+	unsigned int NB_info    , //!< Number of channel info
+	Sens_ch_t *Sens_meas    , //!< Pointer to the sensing information
+	double info_time
+	);
+    
 
 
 /*! @} */

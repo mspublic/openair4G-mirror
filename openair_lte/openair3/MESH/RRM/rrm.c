@@ -89,9 +89,9 @@ struct data_thread {
 //mod_lor_10_01_25++
 struct data_thread_int {
     char *name              ; ///< Nom du thread
-    unsigned char *sock_path_local   ; ///< local IP address for internet socket
+    unsigned char *sock_path_local  ; ///< local IP address for internet socket
     int local_port          ; ///< local IP port for internet socket
-    unsigned char *sock_path_dest    ; ///< dest IP address for internet socket
+    unsigned char *sock_path_dest   ; ///< dest IP address for internet socket
     int dest_port           ; ///< dest IP port for internet socket
     sock_rrm_int_t  s       ; ///< Descripteur du socket
     int instance            ; ///<instance rrm 
@@ -181,12 +181,16 @@ static void * thread_processing_ttl (
             pthread_mutex_lock(   &( rrm->cmm.exclu )  ) ;
             dec_all_ttl_transact( rrm->cmm.transaction ) ;
             // Trop simpliste et pas fonctionnel , il faut faire une gestion des erreurs de transaction
+            //if (rrm->cmm.transaction!=NULL)
+              //  fprintf(stderr,"delete on cmm of %d\n", ii); //dbg
             del_all_obseleted_transact( &(rrm->cmm.transaction));
             pthread_mutex_unlock( &( rrm->cmm.exclu )  ) ;
 
             pthread_mutex_lock(   &( rrm->rrc.exclu )  ) ;
             dec_all_ttl_transact( rrm->rrc.transaction ) ;
             // idem :commentaire ci-dessus
+            //if (rrm->rrc.transaction!=NULL)
+              //  fprintf(stderr,"delete on rrc of %d\n", ii); //dbg
             del_all_obseleted_transact( &(rrm->rrc.transaction));
             pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
 
@@ -206,7 +210,7 @@ static void * thread_processing_ttl (
             
         }
         cnt_timer++;
-        usleep( 200*1000 ) ;
+        usleep( 2000*1000 ) ;//mod_lor_10_03_01: incrementing timeout
     }
     fprintf(stderr,"... stopped TTL\n"); fflush(stdout);
     return NULL;
@@ -454,7 +458,7 @@ static void * thread_recv_msg_int (
             }
             else
             {
-                fprintf(stderr,"msg received from %X \n", rrm->ip.s->in_dest_addr.sin_addr.s_addr);
+                //fprintf(stderr,"msg received from %X \n", rrm->ip.s->in_dest_addr.sin_addr.s_addr);
                 put_msg( &(rrm->file_recv_msg), 1, &data->s, msg) ;
                 
             }
@@ -614,21 +618,20 @@ static void processing_msg_cmm(
             {
                 cmm_attach_cnf_t *p = (cmm_attach_cnf_t *) msg ;
                 msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
-
-              
               
                //mod_lor_10_01_25++
-                
-                fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
-                int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, rrm->L3_info, 0, header->inst);
-                if ( sock != -1 )
-                {
-                    
-                    fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
-                    fflush(stderr);
+                if (rrm->ip.s->s == -1){ 
+                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
+                    int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
+                    if ( sock != -1 )
+                    {
+                        fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
+                        fflush(stderr);
+                    }else
+                        fprintf(stderr," Error in IP socket opening \n");
                 }else
-                    fprintf(stderr," Error in IP socket opening \n");
-             
+                        fprintf(stderr," Socket IP for inst %d already opened %d \n",rrm->id,rrm->ip.s->s);
                 //mod_lor_10_01_25--*/
                 
                 cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
@@ -642,12 +645,23 @@ static void processing_msg_cmm(
         case CMM_INIT_CH_REQ :
             {
                 cmm_init_ch_req_t *p = (cmm_init_ch_req_t *) msg ;
-                
+                //mod_lor_10_03_01++
+            
                 struct data_thread_int DataIp;
+                
                 DataIp.name = "IP"             ; ///< Nom du thread
-                //ataIp.sock_path_local =   ; ///< local IP address for internet socket
+                DataIp.sock_path_local=p->L3_info;///< local IP address for internet socket
                 DataIp.local_port = 7000          ; ///< local IP port for internet socket
-                //DataIp.sock_path_dest =   ; ///< dest IP address for internet socket
+                //mod_lor_10_03_02++: setting for topology with FC and BTS on instances 0 and 1
+                if (rrm->role == FUSIONCENTER){
+                    unsigned char tmp [4]={0x0A,0x00,0x02,0x02};
+                    DataIp.sock_path_dest = tmp ; ///< dest IP address for internet socket
+                }else if (rrm->role == BTS){
+                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    DataIp.sock_path_dest = tmp  ; ///< dest IP address for internet socket
+                }else 
+                    fprintf (stderr, "wrong node role %d \n", rrm->role);
+                //mod_lor_10_03_02--
                 DataIp.dest_port = 0          ; ///< dest IP port for internet socket
                 DataIp.s.s = -1      ; 
                 DataIp.instance = rrm->id;
@@ -663,7 +677,7 @@ static void processing_msg_cmm(
                 }
                     
                 sleep(5);
-                
+                //mod_lor_10_03_01--
                 cmm_init_ch_req(header->inst,p->L3_info_t,&(p->L3_info[0]));
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ\n",header->inst);
                 
@@ -680,8 +694,8 @@ static void processing_msg_cmm(
             break ;
         case CMM_STOP_SENSING :
             {
-                msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",header->inst);
-                print_sens_db(rrm->rrc.pSensEntry);
+                msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",rrm->id);
+                //print_sens_db(rrm->rrc.pSensEntry);//dbg
                 cmm_stop_sensing(header->inst);
             }
             break ;
@@ -722,55 +736,55 @@ static void processing_msg_rrc(
     {
         case RRC_RB_ESTABLISH_RESP:
             {
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_RESP\n",header->inst );
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_RESP %d \n",header->inst, header->Trans_id );
                 rrc_rb_establish_resp(header->inst,header->Trans_id) ;
             }
             break ;
         case RRC_RB_ESTABLISH_CFM:
             {
                 rrc_rb_establish_cfm_t *p = (rrc_rb_establish_cfm_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM (%d) \n",header->inst,p->Rb_id);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM (%d)  %d \n",header->inst,p->Rb_id, header->Trans_id);
                 rrc_rb_establish_cfm(header->inst,p->Rb_id,p->RB_type,header->Trans_id) ;
             }
             break ;
 
         case RRC_RB_MODIFY_RESP:
             {
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP \n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP  %d \n",header->inst, header->Trans_id);
                 rrc_rb_modify_resp(header->inst,header->Trans_id) ;
             }
             break ;
         case RRC_RB_MODIFY_CFM:
             {
                 rrc_rb_modify_cfm_t *p = (rrc_rb_modify_cfm_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM (%d)\n",header->inst,p->Rb_id);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM (%d) %d \n",header->inst,p->Rb_id, header->Trans_id);
                 rrc_rb_modify_cfm(header->inst,p->Rb_id,header->Trans_id) ;
             }
             break ;
 
         case RRC_RB_RELEASE_RESP:
             {
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_RELEASE_RESP\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_RELEASE_RESP %d \n",header->inst, header->Trans_id);
                 rrc_rb_release_resp(header->inst,header->Trans_id) ;
             }
             break ;
         case RRC_MR_ATTACH_IND :
             {
                 rrc_MR_attach_ind_t *p = (rrc_MR_attach_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND (Node %02d) %d \n",header->inst, p->L2_id.L2_id[0], header->Trans_id);
                 rrc_MR_attach_ind(header->inst,p->L2_id) ;
             }
             break ;
         case RRC_SENSING_MEAS_RESP:
             {
-                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_RESP\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_RESP %d \n",header->inst, header->Trans_id);
                 rrc_sensing_meas_resp(header->inst,header->Trans_id) ;
             }
             break ;
         case RRC_CX_ESTABLISH_IND:
             {
                 rrc_cx_establish_ind_t *p = (rrc_cx_establish_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND (Node %02d) %d \n",header->inst, p->L2_id.L2_id[0], header->Trans_id);
 
                 rrc_cx_establish_ind(header->inst,p->L2_id,header->Trans_id,
                                     p->L3_info,p->L3_info_t,
@@ -785,7 +799,7 @@ static void processing_msg_rrc(
         case RRC_PHY_SYNCH_TO_MR_IND :
             {
                 rrc_phy_synch_to_MR_ind_t *p = (rrc_phy_synch_to_MR_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... (Node %02d) %d \n",header->inst, p->L2_id.L2_id[0], header->Trans_id);
                 rrc_phy_synch_to_MR_ind(header->inst,p->L2_id) ;
                 //msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND Done\n",header->inst);
             }
@@ -793,7 +807,7 @@ static void processing_msg_rrc(
         case RRC_PHY_SYNCH_TO_CH_IND :
             {
                 rrc_phy_synch_to_CH_ind_t *p = (rrc_phy_synch_to_CH_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... %d (Noeud %02d)\n",header->inst, p->Ch_index, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... %d (Node %02d) %d \n",header->inst, p->Ch_index, p->L2_id.L2_id[0], header->Trans_id);
                 rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
                 //msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND Done\n",header->inst);
 
@@ -802,14 +816,14 @@ static void processing_msg_rrc(
         case RRC_SENSING_MEAS_IND :
             {
                 rrc_sensing_meas_ind_t *p  = (rrc_sensing_meas_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND (Node %02d) %d \n",header->inst, p->L2_id.L2_id[0], header->Trans_id);
                 rrc_sensing_meas_ind( header->inst,p->L2_id, p->NB_meas, p->Sensing_meas, header->Trans_id );
             }
             break ;
         case RRC_RB_MEAS_IND :
             {
                 rrc_rb_meas_ind_t *p  = (rrc_rb_meas_ind_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND (Noeud %02d)\n",header->inst, p->L2_id.L2_id[0]);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND (Noede %02d) %d \n",header->inst, p->L2_id.L2_id[0], header->Trans_id);
                 rrc_rb_meas_ind( header->inst, p->Rb_id, p->L2_id, p->Meas_mode, p->Mac_rlc_meas, header->Trans_id );
             }
             break ;
@@ -817,10 +831,10 @@ static void processing_msg_rrc(
         case RRC_UPDATE_SENS :
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS (Noeud ",header->inst);
-                for ( int i=0;i<8;i++)
+                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS %d\n ",header->inst, header->Trans_id);
+                /*for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
-                msg_fct( ")\n");
+                msg_fct( ")\n");*/
                 rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
                 //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
             }
@@ -828,17 +842,19 @@ static void processing_msg_rrc(
         case RRC_INIT_SCAN_REQ :
             {
                 rrc_init_scan_req_t *p  = (rrc_init_scan_req_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_SCAN_REQ (Noeud ",header->inst);
-                for ( int i=0;i<8;i++)
+                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_SCAN_REQ  %d \n",header->inst, header->Trans_id);
+                /*for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
-                msg_fct( ")\n");
-                rrc_init_scan_req( header->inst, p->L2_id, p->interv, header->Trans_id );  
+                msg_fct( ")\n");*/
+                
+                rrc_init_scan_req( header->inst, p->L2_id, p->interv, header->Trans_id ); 
+                
             }
             break ;
         case RRC_END_SCAN_CONF :
             {
                 rrc_end_scan_conf_t *p  = (rrc_end_scan_conf_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_CONF (Noeud ",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_CONF  %d (Node ",header->inst, header->Trans_id);
                 for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");
@@ -848,14 +864,14 @@ static void processing_msg_rrc(
         case RRC_END_SCAN_REQ :
             {
                 rrc_end_scan_req_t *p  = (rrc_end_scan_req_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_REQ\n",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_END_SCAN_REQ %d \n",header->inst, header->Trans_id);
                 rrc_end_scan_req( header->inst, p->L2_id, header->Trans_id );  
             }
             break ;
         case RRC_INIT_MON_REQ :
             {
                 rrc_init_mon_req_t *p  = (rrc_init_mon_req_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_MON_REQ (Noeud ",header->inst);
+                msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_MON_REQ %d (Node ",header->inst, header->Trans_id);
                 for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");
@@ -965,33 +981,35 @@ static void processing_msg_ip(
     {
         case UPDATE_SENS_RESULTS_3 :
             {
-                //rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
-                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d\n",rrm->id, header->inst);
-                //rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                //fprintf(stderr,"1node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
+                rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d \n",rrm->id, header->inst);
+                update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                //fprintf(stderr,"2node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
                 
             }
             break ;
         case OPEN_FREQ_QUERY_4 :
             {
                 open_freq_query_t *p = (open_freq_query_t *) msg ;
-                msg_fct( "[IP]>[RRM]:%d:OPEN_FREQ_QUERY_4 \n",header->inst);
-                open_freq_query( header->inst, p->L2_id, p->QoS, header->Trans_id ); 
+                msg_fct( "[IP]>[RRM]:%d:OPEN_FREQ_QUERY_4 from %d\n",rrm->id, header->inst);
+                open_freq_query( rrm->id, p->L2_id, p->QoS, header->Trans_id ); 
                 
             }
             break ;
         case UPDATE_OPEN_FREQ_7 :
             {
                 update_open_freq_t *p = (update_open_freq_t *) msg ;
-                msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 \n",header->inst);
-                update_open_freq( header->inst, p->L2_id, p->NB_chan, p->fr_channels, header->Trans_id ); 
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 from %d\n",rrm->id, header->inst);
+                update_open_freq( rrm->id, p->L2_id, p->NB_chan, p->fr_channels, header->Trans_id ); 
                 
             }
             break ;
         case UPDATE_SN_OCC_FREQ_5 :
             {
                 update_SN_occ_freq_t *p = (update_SN_occ_freq_t *) msg ;
-                msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 \n",header->inst);
-                update_SN_occ_freq( header->inst, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id );  
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 from %d\n",rrm->id, header->inst);
+                update_SN_occ_freq( rrm->id, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id );  
                 
             }
             break ;
@@ -1018,6 +1036,7 @@ static void rrm_scheduler ( )
     file_msg_t *pItem ;
     while ( flag_not_exit)
     {
+        no_msg = 0  ;
         for ( ii = 0 ; ii<nb_inst ; ii++ )
         {
             rrm_t      *rrm = &rrm_inst[ii] ;

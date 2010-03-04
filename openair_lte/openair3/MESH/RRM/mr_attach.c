@@ -73,6 +73,7 @@ void rrc_MR_attach_ind(
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         add_neighbor( &(rrm->rrc.pNeighborEntry), &L2_id ) ;
         rrm->rrc.trans_cnt++ ;
+        //fprintf(stderr,"item_trans in RRM_SENSING_MEAS_REQ=%d node %d\n",rrm->rrc.trans_cnt,rrm->id);//dbg
         add_item_transact( &(rrm->rrc.transaction), rrm->rrc.trans_cnt ,INT_RRC,RRM_SENSING_MEAS_REQ,0,NO_PARENT );
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 
@@ -138,29 +139,31 @@ void rrc_cx_establish_ind(
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
-    fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=%d\n",Trans_id,rrm->state);
+    //fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :status=%d\n",Trans_id,rrm->state);
     
     if ( (rrm->state == CLUSTERHEAD) )
     {
-        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=CH %d\n",Trans_id,rrm->state);
+        //fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :status=CH %d\n",Trans_id,rrm->state);
         PUT_CMM_MSG( msg_rrm_attach_ind(inst,L2_id,L3_info_t,L3_info, 0 )) ;
     }
     else if ( rrm->state == MESHROUTER )
     {
-        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :etat=MR %d\n",Trans_id,rrm->state);
+        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) :status=MR %d\n",Trans_id,rrm->state);
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+        //fprintf(stderr,"item_trans in RRC_CX_ESTABLISH_IND=%d node %d\n",rrm->rrc.trans_cnt,rrm->id);//dbg
         add_item_transact( &(rrm->rrc.transaction), Trans_id,INT_RRC,RRC_CX_ESTABLISH_IND,0,NO_PARENT);
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 
         pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
         rrm->cmm.trans_cnt++ ;
+        //fprintf(stderr,"item_trans in RRCI_ATTACH_REQ=%d node %d\n",rrm->cmm.trans_cnt,rrm->id);//dbg
         add_item_transact( &(rrm->cmm.transaction), rrm->cmm.trans_cnt,INT_CMM,RRCI_ATTACH_REQ,Trans_id,PARENT);
         pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;       
 
         PUT_CMM_MSG( msg_rrci_attach_req(inst,L2_id,L3_info_t,L3_info, DTCH_B_id, DTCH_id ,rrm->cmm.trans_cnt)) ;
     }
     else
-        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) is not allowed (Only CH):etat=%d\n",Trans_id,rrm->state);   
+        fprintf(stderr,"[RRM] RRC_CX_ESTABLISH_IND (%d) is not allowed (Only CH):status=%d\n",Trans_id,rrm->state);   
     
 }
 /*!

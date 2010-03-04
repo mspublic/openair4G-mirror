@@ -731,8 +731,8 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 
 // ========================= Attachement d'un MR
     prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr  ) ;
-    //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr2  ) ;
-    //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr3  ) ;
+    prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr2  ) ;
+    prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr3  ) ;
 
 // ========================= Starting sensing operation
 
@@ -742,7 +742,7 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     prg_rrc_update_sens( s_rrc, 5.10, &L2_id_mr,3, Sensing_meas );
     prg_rrc_update_sens( s_rrc, 5.20, &L2_id_mr2,3, Sensing_meas );
     prg_rrc_update_sens( s_rrc, 5.30, &L2_id_mr3,3, Sensing_meas );
-    prg_rrc_update_sens( s_rrc, 5.50, &L2_id_mr,2, Sensing_meas2 ); // answer to mon request
+    //prg_rrc_update_sens( s_rrc, 5.50, &L2_id_mr,2, Sensing_meas2 ); // answer to mon request
     
 // ========================= Frequency query
     //prg_rrc_ask_for_freq( s_rrc, 5.80, &L2_id_bts, 0);

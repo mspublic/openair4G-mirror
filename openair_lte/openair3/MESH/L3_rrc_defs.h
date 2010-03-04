@@ -13,8 +13,9 @@
 
 #include "COMMON/mac_rrc_primitives.h"
 
-/*! \brief SENDORA scenario active
+/*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
 */
+#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
 #define SCEN_1         1
 #define SCEN_2_CENTR   0
 #define SCEN_2_DISTR   0
