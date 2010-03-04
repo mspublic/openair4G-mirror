@@ -105,7 +105,7 @@ void openair1_restart(void);
 #endif //USER_MODE
 
 #ifdef OPENAIR_LTE
-int phy_procedures_lte(unsigned char last_slot, unsigned char next_slot);
+void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot);
 #else
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);

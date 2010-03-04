@@ -91,7 +91,7 @@ void generate_RIV_tables() {
     alloc = 0;
     alloc_dist = 0;
     for (Lcrbs=1;Lcrbs<=(25-RBstart);Lcrbs++) {
-      printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
+      //printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
       alloc |= (1<<(RBstart+Lcrbs-1));
       // This is the RB<->VRB relationship for N_RB_DL=25
       distpos = ((RBstart+Lcrbs-1)*6)%23;
@@ -101,7 +101,7 @@ void generate_RIV_tables() {
       
       RIV=computeRIV(25,RBstart,Lcrbs);
 
-      printf("RIV %d (%d)\n",RIV,localRIV2alloc_LUT25[RIV]);
+      //printf("RIV %d (%d)\n",RIV,localRIV2alloc_LUT25[RIV]);
       localRIV2alloc_LUT25[RIV] = alloc;
       distRIV2alloc_LUT25[RIV]  = alloc_dist;
       RIV2nb_rb_LUT25[RIV]      = Lcrbs;
@@ -157,6 +157,8 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+
+    dlsch0 = dlsch[0];
     break;
   case format2_2A_L10PRB:
 
@@ -251,6 +253,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   default:
     break;
   }
+#ifdef DEBUG_DCI
   if (dlsch0) {
     printf("dlsch0: NBRB     %d\n",dlsch0->nb_rb);
     printf("dlsch0: rballoc  %x\n",dlsch0->rb_alloc[0]);
@@ -259,6 +262,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     printf("dlsch0: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
     printf("dlsch0: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
   }
+#endif
 }
 
 
@@ -313,6 +317,7 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+    dlsch0 = dlsch[0];
     break;
   case format2_2A_L10PRB:
 

@@ -57,8 +57,6 @@ int main(int argc, char **argv) {
   double N0W, path_loss, path_loss_dB;
 
 
-  LTE_eNb_ULSCH_t *ulsch_eNb;
-  LTE_UE_ULSCH_t *ulsch_ue;
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
 

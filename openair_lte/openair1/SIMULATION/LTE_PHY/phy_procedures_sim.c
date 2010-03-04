@@ -131,6 +131,10 @@ int main(int argc, char **argv) {
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
+  ulsch_eNb = new_eNb_ulsch(3);
+  ulsch_ue  = new_ue_ulsch(3);
+
+
   // init DCI structures for testing
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
@@ -143,6 +147,7 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.type               = 0;
   CCCH_alloc_pdu.vrb_type           = 0;
   CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
+  CCCH_alloc_pdu.pdu.pdsch.ndi      = 1;
   CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
   CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
 
@@ -150,7 +155,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2.TPC              = 0;
   DLSCH_alloc_pdu2.dai              = 0;
-  DLSCH_alloc_pdu2.harq_pid         = 0;
+  DLSCH_alloc_pdu2.harq_pid         = 1;
   DLSCH_alloc_pdu2.tb_swap          = 0;
   DLSCH_alloc_pdu2.mcs1             = 1;
   DLSCH_alloc_pdu2.ndi1             = 1;
@@ -272,7 +277,7 @@ int main(int argc, char **argv) {
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
       //      printf("Copying TX buffer for slot %d (%d)\n",next_slot,slot_offset);
 
-      if (next_slot == 11) {
+      if (next_slot == 0) {
 	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"eNb_txsF0",&lte_eNB_common_vars->txdataF[eNb_id][0][slot_offset],512*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);

@@ -2,7 +2,8 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-#define DEBUG_DLSCH_DECODING
+//#define DEBUG_DLSCH_DECODING
+
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
   int i,r;
@@ -84,11 +85,10 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
 
+  ret = MAX_TURBO_ITERATIONS;
 
   // This has to be updated for presence of PDCCH and PBCH
   coded_bits_per_codeword =( nb_rb * (12 * mod_order) * (lte_frame_parms->num_dlsch_symbols));
-
-
 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation

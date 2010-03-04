@@ -324,7 +324,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     msg("dlsch_qpsk_llr: llr is null, symbol %d, llr128=%p\n",symbol, llr128);
     return(-1);
   } 
-  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
+  //printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128-(__m128i*)dlsch_llr);
 
   for (i=0;i<(nb_rb*3);i++) {
     *llr128 = *rxF;
@@ -1393,7 +1393,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   short i;
   unsigned char harq_pid0 = dlsch_ue[0]->current_harq_pid;
 
-  printf("rx_dlsch: symbol %d\n",symbol);
+  //printf("rx_dlsch: symbol %d\n",symbol);
 
   if (frame_parms->nb_antennas_tx>1) {
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
