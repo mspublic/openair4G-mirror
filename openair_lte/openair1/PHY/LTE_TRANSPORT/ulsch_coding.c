@@ -192,7 +192,7 @@ int ulsch_encoding(unsigned char *a,
   // generate codewords
   
   printf("bits_per_codeword (Kr)= %d\n",Kr);
-  printf("N_RB = %d\n",ulsch->nb_rb);
+  printf("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
   printf("Ncp %d\n",frame_parms->Ncp);
   printf("Qm %d\n",Q_m);
 #endif
@@ -243,8 +243,8 @@ int ulsch_encoding(unsigned char *a,
   else
     Qprime = Qprime/(8*sumKr);
 
-  if (Qprime > 4*ulsch->nb_rb * 12)
-    Qprime = 4*ulsch->nb_rb * 12;
+  if (Qprime > 4*ulsch->harq_processes[harq_pid]->nb_rb * 12)
+    Qprime = 4*ulsch->harq_processes[harq_pid]->nb_rb * 12;
 
   Q_RI = Q_m*Qprime;
   Qprime_RI = Qprime;
@@ -257,8 +257,8 @@ int ulsch_encoding(unsigned char *a,
   else
     Qprime = Qprime/(8*sumKr);
 
-  if (Qprime > 4*ulsch->nb_rb * 12)
-    Qprime = 4*ulsch->nb_rb * 12;
+  if (Qprime > 4*ulsch->harq_processes[harq_pid]->nb_rb * 12)
+    Qprime = 4*ulsch->harq_processes[harq_pid]->nb_rb * 12;
 
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
@@ -271,7 +271,7 @@ int ulsch_encoding(unsigned char *a,
   else
     Qprime = Qprime/(8*sumKr);
 
-  G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+  G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
   if (Qprime > (G - ulsch->O_RI))
     Qprime = G - ulsch->O_RI;
@@ -292,7 +292,7 @@ int ulsch_encoding(unsigned char *a,
 	   r,
 	   G,
 	   Kr*3,
-	   Q_m,ulsch->nb_rb);
+	   Q_m,ulsch->harq_processes[harq_pid]->nb_rb);
 #endif
 
 

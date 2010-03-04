@@ -31,14 +31,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   mod_sym_t *txptr;
   unsigned int symbol_offset;
-  unsigned short first_rb = ulsch->first_rb;
-  unsigned short nb_rb = ulsch->nb_rb,G;
+  unsigned short first_rb = ulsch->harq_processes[harq_pid]->first_rb;
+  unsigned short nb_rb = ulsch->harq_processes[harq_pid]->nb_rb,G;
 
 
-  G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+  G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 #ifdef DEBUG_ULSCH_MODULATION
   msg("ulsch_modulation.c: Doing modulation for G=%d bits, nb_rb %d, Q_m %d, Nsymb_pusch %d\n",
-      G,ulsch->nb_rb,Q_m, ulsch->Nsymb_pusch);
+      G,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch);
 #endif
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
   for (i=0;i<G;i++) {
@@ -188,12 +188,12 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   // Mapping
   nsymb = (frame_parms->Ncp==0) ? 14:12;
-  Msc_PUSCH = ulsch->nb_rb*12;
+  Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
 
 #ifdef IFFT_FPGA
 
   for (j=0,l=0;l<(nsymb-1);l++) {
-    re_offset = ulsch->first_rb*12 + frame_parms->N_RB_DL*12/2;
+    re_offset = ulsch->harq_processes[harq_pid]->first_rb*12 + frame_parms->N_RB_DL*12/2;
     if (re_offset > (frame_parms->N_RB_DL*12))
       re_offset -= (frame_parms->N_RB_DL*12);
 

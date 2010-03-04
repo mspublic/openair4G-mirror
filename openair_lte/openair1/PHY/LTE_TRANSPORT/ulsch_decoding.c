@@ -89,8 +89,9 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 
   
 
-  unsigned short nb_rb = ulsch->nb_rb;
+
   unsigned char harq_pid = harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned short nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A = ulsch->harq_processes[harq_pid]->TBS;
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   unsigned int i,q,j;
@@ -151,8 +152,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   else
     Qprime = Qprime/(8*sumKr);
 
-  if (Qprime > 4*ulsch->nb_rb * 12)
-    Qprime = 4*ulsch->nb_rb * 12;
+  if (Qprime > 4*nb_rb * 12)
+    Qprime = 4*nb_rb * 12;
 
   Q_RI = Q_m*Qprime;
   Qprime_RI = Qprime;
@@ -166,8 +167,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   else
     Qprime = Qprime/(8*sumKr);
 
-  if (Qprime > (4*ulsch->nb_rb * 12))
-    Qprime = 4*ulsch->nb_rb * 12;
+  if (Qprime > (4*nb_rb * 12))
+    Qprime = 4*nb_rb * 12;
 
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
@@ -180,7 +181,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   else
     Qprime = Qprime/(8*sumKr);
 
-  G = ulsch->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+  G = nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
   if (Qprime > (G - ulsch->O_RI))
     Qprime = G - ulsch->O_RI;

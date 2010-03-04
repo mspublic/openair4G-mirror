@@ -659,10 +659,10 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = 0;
     else
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
-    printf("harq_pid = %d\n",harq_pid);
-    ulsch->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
-    ulsch->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    ulsch->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    //    printf("harq_pid = %d\n",harq_pid);
+    ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
+    ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     if (ulsch->harq_processes[harq_pid]->Ndi == 1)
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
@@ -690,8 +690,8 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
-      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->nb_rb];
-      ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->nb_rb;
+      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb];
+      ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
       ulsch->harq_processes[harq_pid]->round = 0;
     }
@@ -700,8 +700,8 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-  printf("ulsch (ue): NBRB     %d\n",ulsch->nb_rb);
-  printf("ulsch (ue): first_rb %x\n",ulsch->first_rb);
+  printf("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  printf("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
   printf("ulsch (ue): harq_pid %d\n",harq_pid);
   printf("ulsch (ue): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
   printf("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
@@ -734,9 +734,9 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
     else
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
     
-    ulsch->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
-    ulsch->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    ulsch->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
+    ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
     ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
@@ -752,8 +752,8 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
-      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->nb_rb];
-      ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->nb_rb;
+      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb];
+      ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
       ulsch->harq_processes[harq_pid]->round = 0;
     }
@@ -762,8 +762,8 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-  printf("ulsch (eNb): NBRB     %d\n",ulsch->nb_rb);
-  printf("ulsch (eNb): rballoc  %x\n",ulsch->first_rb);
+  printf("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  printf("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
   printf("ulsch (eNb): harq_pid %d\n",harq_pid);
   printf("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
   printf("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);

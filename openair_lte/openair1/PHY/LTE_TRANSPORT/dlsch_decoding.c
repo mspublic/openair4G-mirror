@@ -66,7 +66,8 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
 unsigned int  dlsch_decoding(short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *lte_frame_parms,
-			     LTE_UE_DLSCH_t *dlsch ){
+			     LTE_UE_DLSCH_t *dlsch,
+			     unsigned char subframe){
 
   
 
@@ -215,7 +216,21 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //      printf("CRC failed\n");
+
+      dlsch->harq_ack[subframe].ack = 0;
+      dlsch->harq_ack[subframe].harq_id = harq_pid;
+      printf("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
+      if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
+	dlsch->harq_processes[harq_pid]->status = IDLE;
+      }
       return(ret);
+    }
+    else {
+      dlsch->harq_processes[harq_pid]->status = IDLE;
+      dlsch->harq_processes[harq_pid]->round  = 0;
+      dlsch->harq_ack[subframe].ack = 1;
+      dlsch->harq_ack[subframe].harq_id = harq_pid;
+      printf("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
     }
   }
   // Reassembly of Transport block here

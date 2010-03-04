@@ -64,6 +64,27 @@ int dlsch_errors = 0;
 
 DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
+unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe) {
+
+  switch (tdd_config) {
+  case 3:
+    if (subframe == 2)
+      return(harq_ack[5].ack+(harq_ack[6].ack<<1));
+    else if (subframe == 3)
+      return(harq_ack[7].ack+(harq_ack[8].ack<<1));
+    else if (subframe == 4)
+      return(harq_ack[8].ack+(harq_ack[0].ack<<1));
+    else {
+      msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
+	  subframe,tdd_config);
+      return(0);
+    }
+    break;
+    
+  }
+  return(0);
+}
+
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe) {
 
   switch (tdd_config) {
@@ -93,7 +114,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 
   if (next_slot%2==0) {      
 #ifdef DEBUG_PHY
-    if ((mac_xface->frame % 100) == 0)
+    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 #endif
     
@@ -103,8 +124,19 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
     subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size;
 #endif
     generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset);
+    ulsch_ue[0]->o_ACK = get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1));
+
+    printf("[UE] UL: subframe %d -> ACK %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK);
     generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset,0,lte_frame_parms->N_RB_UL);
-    
+    harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
+    input_buffer_length = ulsch_ue->harq_processes[harq_pid]->TBS/8;
+
+    for (i=0;i<input_buffer_length;i++) {
+      input_buffer[i]= (unsigned char)(taus()&0xff);
+    }
+
+    ulsch_encoding(input_buffer,lte_frame_parms,ulsch_ue,harq_pid);
+    ulsch_modulation(lte_ue_common_vars->txdataF,AMP,subframe,lte_frame_parms,ulsch_ue);
   }
 
 
@@ -380,7 +412,8 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
 	if (dlsch_ue[0]) {
 	  ret = dlsch_decoding(lte_ue_dlsch_vars[eNb_id]->llr[0],
 			       lte_frame_parms,
-			       dlsch_ue[0]);
+			       dlsch_ue[0],
+			       ((last_slot>>1)-1)%10);
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    dlsch_errors++;

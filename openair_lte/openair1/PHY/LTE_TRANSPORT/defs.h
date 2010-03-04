@@ -98,6 +98,12 @@ typedef struct {
   unsigned char Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
+  /// First Allocated RB 
+  unsigned short first_rb;
+  /// Current Number of RBs
+  unsigned short nb_rb;
+  /// Last TPC command
+  unsigned char TPC;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits, "B" from 36-212 
@@ -172,14 +178,8 @@ typedef struct {
 } LTE_eNb_DLSCH_t;
 
 typedef struct {
-  /// First Allocated RB 
-  unsigned short first_rb;
-  /// Current Number of RBs
-  unsigned short nb_rb;
   /// Current Number of Symbols
   unsigned char Nsymb_pusch;
-  /// Last TPC command
-  unsigned char TPC;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];     
   /// Pointer to CQI data
@@ -229,6 +229,12 @@ typedef struct {
   unsigned char Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
+  /// Last TPC command
+  unsigned char TPC;
+  /// First Allocated RB 
+  unsigned short first_rb;
+  /// Current Number of RBs
+  unsigned short nb_rb;
   /// Transport block size
   unsigned int TBS;
   /// The payload + CRC size in bits  
@@ -270,14 +276,8 @@ typedef struct {
 } LTE_UL_eNb_HARQ_t;
 
 typedef struct {
-  /// First Allocated RB 
-  unsigned short first_rb;
-  /// Current Number of RBs
-  unsigned short nb_rb;
   /// Current Number of Symbols
   unsigned char Nsymb_pusch;
-  /// Last TPC command
-  unsigned char TPC;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNb_HARQ_t *harq_processes[8];     
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
@@ -901,8 +901,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 		     short *dlsch_llr,
 		     LTE_DL_FRAME_PARMS *lte_frame_parms,
 		     LTE_UE_DLSCH_t *dlsch,
-		     unsigned char harq_pid,
-		     unsigned char nb_rb)
+		     unsigned char subframe)
 
 \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
 threads (on multi-core machines) corresponding to different HARQ processes. The routine first 
@@ -914,11 +913,13 @@ overall CRC is ignored.  Finally transport block reassembly is performed.
 @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
 @param lte_frame_parms Pointer to frame descriptor
 @param dlsch Pointer to DLSCH descriptor
+@param subframe Subframe number
 @returns 0 on success, 1 on unsuccessful decoding
 */
 unsigned int dlsch_decoding(short *dlsch_llr,
 			    LTE_DL_FRAME_PARMS *lte_frame_parms,
-			    LTE_UE_DLSCH_t *dlsch);
+			    LTE_UE_DLSCH_t *dlsch,
+			    unsigned char subframe);
 
 
 /** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,

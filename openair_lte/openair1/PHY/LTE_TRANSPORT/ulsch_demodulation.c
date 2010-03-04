@@ -474,8 +474,8 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
      
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
-			     ulsch->first_rb,
-			     ulsch->nb_rb,
+			     ulsch->harq_processes[harq_pid]->first_rb,
+			     ulsch->harq_processes[harq_pid]->nb_rb,
 			     l%(lte_frame_parms->symbols_per_tti/2),
 			     l/(lte_frame_parms->symbols_per_tti/2),
 			     lte_frame_parms);
@@ -485,20 +485,20 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			      lte_frame_parms,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      ulsch->nb_rb);
+			      ulsch->harq_processes[harq_pid]->nb_rb);
 
     ulsch_correct_ext(eNB_ulsch_vars->rxdataF_ext[eNb_id],
 		      eNB_ulsch_vars->rxdataF_ext2[eNb_id],
 		      l,
 		      lte_frame_parms,
-		      ulsch->nb_rb);  
+		      ulsch->harq_processes[harq_pid]->nb_rb);  
   }  
 
 
   ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
 		      frame_parms,
 		      avgU,
-		      ulsch->nb_rb);
+		      ulsch->harq_processes[harq_pid]->nb_rb);
     
   //      msg("[ULSCH] avg[0] %d\n",avgU[0]);
   
@@ -526,7 +526,7 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			       frame_parms,
 			       l,
 			       Qm,
-			       ulsch->nb_rb,
+			       ulsch->harq_processes[harq_pid]->nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
     
     if (frame_parms->nb_antennas_rx > 1)
@@ -535,7 +535,7 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			  eNB_ulsch_vars->ul_ch_mag[eNb_id],
 			  eNB_ulsch_vars->ul_ch_magb[eNb_id],
 			  l,
-			  ulsch->nb_rb);
+			  ulsch->harq_processes[harq_pid]->nb_rb);
     
     switch (Qm) {
     case 2 : 
@@ -543,14 +543,14 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		     eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		     eNB_ulsch_vars->llr,
 		     l,
-		     ulsch->nb_rb);
+		     ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     case 4 :
       dlsch_16qam_llr(frame_parms,
 		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
-		      l,ulsch->nb_rb);
+		      l,ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     case 6 :
       dlsch_64qam_llr(frame_parms,
@@ -558,7 +558,7 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
 		      eNB_ulsch_vars->ul_ch_magb[eNb_id],
-		      l,ulsch->nb_rb);
+		      l,ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     default:
       msg("ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
