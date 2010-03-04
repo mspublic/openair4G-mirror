@@ -1,0 +1,28 @@
+killall mac_sim
+#export OPENAIR2_DIR=/homes/anouar/openair2
+cd $OPENAIR2_DIR
+source $OPENAIR2_DIR/EXAMPLES/ETH_EMUL_2CHS_1NODE/params.sh
+sudo rmmod nasmesh
+sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko nas_IMEI=0x12345678,0x03000000
+
+echo Classifcation rule for DTCH-Broadcast -reception of Router ADV
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -x ff02::1 -y ff02::1 -r 3
+
+
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z0 -x $MR_IN6_ADDR1 -y $CH1_IN6_ADDR -r 4
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -x $MR_IN6_ADDR2 -y $CH2_IN6_ADDR -r 12
+
+sudo ifconfig nasmesh0 up
+sudo ifconfig nasmesh0 $MR_IN_ADDR
+sudo ip -6 addr add $MR_IN6_ADDR1/64 dev nasmesh0
+sudo ip -6 addr add $MR_IN6_ADDR2/64 dev nasmesh0
+
+
+
+cd SIMULATION/USER_TOOLS/LAYER2_SIM
+./mac_sim -m2 -t ../../TOPOLOGIES/eth_2ch_1node.top
+
+
+
+
+
