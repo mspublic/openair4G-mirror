@@ -21,7 +21,7 @@ DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
-#define UL_RB_ALLOC 0x1ff
+#define UL_RB_ALLOC 291
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fff
 
@@ -116,6 +116,10 @@ int main(int argc, char **argv) {
 
   dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
   dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
+
+  ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(2*sizeof(LTE_eNb_ULSCH_t*));
+  ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(2*sizeof(LTE_UE_ULSCH_t*));
+
   for (i=0;i<2;i++) {
     dlsch_eNb[i] = new_eNb_dlsch(1,8);
     if (!dlsch_eNb[i]) {
@@ -127,12 +131,19 @@ int main(int argc, char **argv) {
       msg("Can't get ue dlsch structures\n");
       exit(-1);
     }
+    ulsch_eNb[i] = new_eNb_ulsch(3);
+    if (!ulsch_eNb[i]) {
+      msg("Can't get eNb ulsch structures\n");
+      exit(-1);
+    }
+    ulsch_ue[i]  = new_ue_ulsch(3);
+    if (!ulsch_ue[i]) {
+      msg("Can't get ue ulsch structures\n");
+      exit(-1);
+    }
   }
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
-
-  ulsch_eNb = new_eNb_ulsch(3);
-  ulsch_ue  = new_ue_ulsch(3);
 
 
   // init DCI structures for testing

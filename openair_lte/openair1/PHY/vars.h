@@ -55,8 +55,8 @@ LTE_eNB_COMMON *lte_eNB_common_vars;
 LTE_eNB_ULSCH **lte_eNB_ulsch_vars;
 LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_cntl;
 LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl;
-LTE_eNb_ULSCH_t *ulsch_eNb;
-LTE_UE_ULSCH_t *ulsch_ue;
+LTE_eNb_ULSCH_t **ulsch_eNb;
+LTE_UE_ULSCH_t **ulsch_ue;
 
 #include "PHY/LTE_TRANSPORT/vars.h"
 

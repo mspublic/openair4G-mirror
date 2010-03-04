@@ -60,21 +60,29 @@ static char dlsch_ue_cntl_active = 0;
 static char dlsch_eNb_active = 0;
 static char dlsch_eNb_cntl_active = 0;
 
+static char ulsch_ue_active = 0;
+static char ulsch_eNb_active = 0;
 
 int dlsch_errors = 0;
 
 DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
-unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe) {
+unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
 
   switch (tdd_config) {
   case 3:
-    if (subframe == 2)
-      return(harq_ack[5].ack+(harq_ack[6].ack<<1));
-    else if (subframe == 3)
-      return(harq_ack[7].ack+(harq_ack[8].ack<<1));
-    else if (subframe == 4)
-      return(harq_ack[8].ack+(harq_ack[0].ack<<1));
+    if (subframe == 2) {
+      o_ACK[0] = harq_ack[5].ack;
+      o_ACK[1] = harq_ack[6].ack;
+    }
+    else if (subframe == 3) {
+      o_ACK[0] = harq_ack[7].ack;
+      o_ACK[1] = harq_ack[8].ack;
+    }
+    else if (subframe == 4) {
+      o_ACK[0] = harq_ack[9].ack;
+      o_ACK[1] = harq_ack[0].ack;
+    }
     else {
       msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
 	  subframe,tdd_config);
@@ -111,9 +119,12 @@ lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subfra
 
 void phy_procedures_UE_TX(unsigned char next_slot) {
   
-  int subframe_offset, input_buffer_length, i;
-  unsigned short first_rb, nb_rb, harq_pid;
+  int subframe_offset;
+  unsigned short first_rb, nb_rb;
   unsigned short subframe = next_slot>>1;
+  unsigned char harq_pid;
+  unsigned int input_buffer_length;
+  unsigned int i;
 
   if (next_slot%2==0) {      
 #ifdef DEBUG_PHY
@@ -128,27 +139,31 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 #endif
     generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset);
 
-    ulsch_ue->o_ACK[0] = get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1));
-    printf("[PHY_PROCEDURES_LTE][UE] UL: subframe %d -> ACK %d\n",(next_slot>>1),ulsch_ue->o_ACK[0]);
 
-    harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
-    first_rb = ulsch_ue->harq_processes[harq_pid]->first_rb;
-    nb_rb = ulsch_ue->harq_processes[harq_pid]->nb_rb;
+    if (ulsch_ue_active == 1) {
+      get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1),ulsch_ue[0]->o_ACK);
 
-    generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset,first_rb,nb_rb);
-
-    /*
-    input_buffer_length = ulsch_ue->harq_processes[harq_pid]->TBS/8;
-    for (i=0;i<input_buffer_length;i++) {
-      ulsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+      printf("[PHY_PROCEDURES_LTE][UE] UL: subframe %d -> ACK %d, %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
+      
+      harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
+      first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
+      nb_rb = ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
+      
+      generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset,first_rb,nb_rb);
+      
+      input_buffer_length = ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
+      
+      for (i=0;i<input_buffer_length;i++) {
+	ulsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+      }
+      
+      printf("ulsch_ue %p : O %d, O_ACK %d, O_RI %d, TBS %d\n",ulsch_ue[0],ulsch_ue[0]->O,ulsch_ue[0]->O_ACK,ulsch_ue[0]->O_RI,ulsch_ue[0]->harq_processes[harq_pid]->TBS);
+      //      exit(-1);
+      //      ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
+      //      ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue);
+      ulsch_ue_active = 0;
     }
-
-    ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue,harq_pid);
-    ulsch_modulation(lte_ue_common_vars->txdataF,AMP,subframe,lte_frame_parms,ulsch_ue);
-    */
   }
-
-
 }
 
 
@@ -280,7 +295,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
   
 #ifdef DEBUG_PHY
   if ((mac_xface->frame % 100) < 10)
-    msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DCI decoding\n",mac_xface->frame,last_slot);
+    msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
 #endif
   
   //  write_output("UE_rxsigF0.m","UE_rxsF0", lte_ue_common_vars->rxdataF[0],512*12*2,2,1);
@@ -321,6 +336,19 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					P_RNTI);
       dlsch_ue_cntl_active = 1;
       printf("[PHY_PROCEDURES_LTE] Generate UE DLSCH SI_RNTI format 1A\n");
+    }
+    else if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format0)) {
+      printf("Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
+      generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					C_RNTI,
+					last_slot>>1,
+					format0,
+					ulsch_ue[eNb_id], 
+					lte_frame_parms,
+					SI_RNTI,
+					RA_RNTI,
+					P_RNTI);
+      ulsch_ue_active = 1;
     }
 }
 
@@ -671,6 +699,7 @@ void phy_procedures_eNB_TX(next_slot) {
       dci_alloc[1].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
       nb_dci_common  = 1;
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
 
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated CCCH DCI, format 1A\n",mac_xface->frame, next_slot);
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
@@ -731,7 +760,7 @@ void phy_procedures_eNB_TX(next_slot) {
       nb_dci_ue_spec = 1;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
-      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot);
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
       break;
     case 9:
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
@@ -741,7 +770,7 @@ void phy_procedures_eNB_TX(next_slot) {
       nb_dci_ue_spec = 1;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
-      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot);
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
       break;
     }
     
