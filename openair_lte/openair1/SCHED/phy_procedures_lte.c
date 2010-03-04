@@ -119,9 +119,7 @@ lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subfra
 
 void phy_procedures_UE_TX(unsigned char next_slot) {
   
-  int subframe_offset;
   unsigned short first_rb, nb_rb;
-  unsigned short subframe = next_slot>>1;
   unsigned char harq_pid;
   unsigned int input_buffer_length;
   unsigned int i;
@@ -132,24 +130,18 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 #endif
     
-#ifdef IFFT_FPGA
-    subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->N_RB_UL*12;
-#else
-    subframe_offset = (next_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size;
-#endif
-    generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset);
-
+    generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
 
     if (ulsch_ue_active == 1) {
       get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1),ulsch_ue[0]->o_ACK);
 
-      printf("[PHY_PROCEDURES_LTE][UE] UL: subframe %d -> ACK %d, %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
+      printf("[PHY_PROCEDURES_LTE][UE_UL] subframe %d -> ACK %d, %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
       
       harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
       first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
       
-      generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe_offset,first_rb,nb_rb);
+      generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
       
       input_buffer_length = ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       
@@ -157,10 +149,10 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 	ulsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       }
       
-      printf("ulsch_ue %p : O %d, O_ACK %d, O_RI %d, TBS %d\n",ulsch_ue[0],ulsch_ue[0]->O,ulsch_ue[0]->O_ACK,ulsch_ue[0]->O_RI,ulsch_ue[0]->harq_processes[harq_pid]->TBS);
-      //      exit(-1);
-      //      ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
-      //      ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue);
+      printf("[PHY_PROCEDURES_LTE][UE_UL] ulsch_ue %p : O %d, O_ACK %d, O_RI %d, TBS %d\n",ulsch_ue[0],ulsch_ue[0]->O,ulsch_ue[0]->O_ACK,ulsch_ue[0]->O_RI,ulsch_ue[0]->harq_processes[harq_pid]->TBS);
+
+      ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
+      ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0]);
       ulsch_ue_active = 0;
     }
   }
@@ -338,7 +330,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       printf("[PHY_PROCEDURES_LTE] Generate UE DLSCH SI_RNTI format 1A\n");
     }
     else if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format0)) {
-      printf("Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
       generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					C_RNTI,
 					last_slot>>1,
@@ -349,6 +340,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					RA_RNTI,
 					P_RNTI);
       ulsch_ue_active = 1;
+      printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
     }
 }
 

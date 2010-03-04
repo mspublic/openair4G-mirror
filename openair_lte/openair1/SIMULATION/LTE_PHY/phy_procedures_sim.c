@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
   openair_daq_vars.tdd = 1;
 
   for (mac_xface->frame=0; mac_xface->frame<4; mac_xface->frame++) {
-    l = 0;
+
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -232,23 +232,45 @@ int main(int argc, char **argv) {
       
 
       
-#ifdef IFFT_FPGA
-      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
-
-      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
+      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
 	txdataF = lte_eNB_common_vars->txdataF[eNb_id];
-      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+#ifndef IFFT_FPGA
+	txdata = lte_eNB_common_vars->txdata[eNb_id];
+#endif
+      }
+      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
 	txdataF = lte_ue_common_vars->txdataF;
+#ifndef IFFT_FPGA
+	txdata = lte_ue_common_vars->txdata;
+#endif
+      }
       else //it must be a special subframe
-	if (next_slot%2==0) //DL part
-	  txdata = lte_eNB_common_vars->txdataF[eNb_id];
-	else // UL part
-	  txdata = lte_ue_common_vars->txdataF;
+	if (next_slot%2==0) {//DL part
+	  txdataF = lte_eNB_common_vars->txdataF[eNb_id];
+#ifndef IFFT_FPGA
+	  txdata = lte_eNB_common_vars->txdata[eNb_id];
+#endif
+	}
+	else {// UL part
+	  txdataF = lte_ue_common_vars->txdataF;
+#ifndef IFFT_FPGA
+	  txdata = lte_ue_common_vars->txdata;
+#endif
+	}
+
+
+#ifdef IFFT_FPGA
+
+      slot_offset = (next_slot)*(lte_frame_parms->N_RB_DL*12)*((lte_frame_parms->Ncp==1) ? 6 : 7);
+
+      //write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+      //write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+
       
       // do talbe lookup and write results to txdataF2
       for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	
+
+	l = slot_offset;	
 	for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((lte_frame_parms->Ncp==1) ? 6 : 7);i++) 
 	  if ((i%512>=1) && (i%512<=150))
 	    txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
@@ -274,29 +296,25 @@ int main(int argc, char **argv) {
       
 #else
 
-      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-	txdata = lte_eNB_common_vars->txdata[eNb_id];
-      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-	txdata = lte_ue_common_vars->txdata;
-      else //it must be a special subframe
-	if (next_slot%2==0) //DL part
-	  txdata = lte_eNB_common_vars->txdata[eNb_id];
-	else // UL part
-	  txdata = lte_ue_common_vars->txdata;
-
-
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
       //      printf("Copying TX buffer for slot %d (%d)\n",next_slot,slot_offset);
 
       if (next_slot == 0) {
 	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
-	write_output(fname,"eNb_txsF0",&lte_eNB_common_vars->txdataF[eNb_id][0][slot_offset],512*12,1,1);
+	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);
-	write_output(fname,"eNb_txsF1",&lte_eNB_common_vars->txdataF[eNb_id][1][slot_offset],512*12,1,1);
+	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
+      }
+
+      if (next_slot == 4) {
+	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
+	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
+	sprintf(fname,"UE_frame%d_txsigF1.m",mac_xface->frame);
+	write_output(fname,"UE_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
 
       for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-	PHY_ofdm_mod(&lte_eNB_common_vars->txdataF[eNb_id][aa][slot_offset],        // input
+	PHY_ofdm_mod(&txdataF[aa][slot_offset],        // input
 		     txdata[aa],         // output
 		     lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		     (lte_frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
@@ -307,11 +325,18 @@ int main(int argc, char **argv) {
       }  
 #endif
       
-      if ( next_slot==11) {
+      if (next_slot == 1) {
 	sprintf(fname,"eNb_frame%d_txsig0.m",mac_xface->frame);
         write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
+      }
+
+      if (next_slot == 5) {
+	sprintf(fname,"UE_frame%d_txsig0.m",mac_xface->frame);
+	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
+	sprintf(fname,"UE_frame%d_txsig1.m",mac_xface->frame);
+	write_output(fname,"UE_txs1",txdata[1],640*12,1,1);
       }
 
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
