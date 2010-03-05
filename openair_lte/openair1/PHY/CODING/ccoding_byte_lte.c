@@ -54,7 +54,7 @@ ccodelte_encode (unsigned int numbits,
     // scramble with RNTI
     crc ^= (((unsigned int)rnti)<<16);
 
-    //    printf("crc %x\n",crc);
+    //        printf("ccode_lte : crc %x\n",crc);
     first_bit      = 2;
     c = (unsigned char)(crc>>24);
   }

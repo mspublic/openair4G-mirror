@@ -118,10 +118,13 @@ crc16 (unsigned char * inptr, int bitlen)
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
   while (octetlen-- > 0) {
+
     crc = (crc << 8) ^ (crc16Table[(*inptr++) ^ (crc >> 24)] << 16);
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc16Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+
   return crc;
 }
 
