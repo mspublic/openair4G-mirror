@@ -301,8 +301,10 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	   (lte_frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI); //this needs to be changed
   
   dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,lte_frame_parms,SI_RNTI,RA_RNTI,C_RNTI);
-  
-  for (i=0;i<dci_cnt;i++)
+  printf("[PHY PROCEDURES UE] subframe %d: dci_cnt %d\n",last_slot>>1,dci_cnt);
+  for (i=0;i<dci_cnt;i++){
+    printf("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
+	   dci_alloc_rx[i].format);
     if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
       generate_ue_dlsch_params_from_dci(last_slot>>1,
 					(DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
@@ -342,6 +344,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       ulsch_ue_active = 1;
       printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
     }
+  }
 }
 
 
@@ -686,7 +689,7 @@ void phy_procedures_eNB_TX(next_slot) {
       dci_alloc[0].rnti       = SI_RNTI;
 
       memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-      dci_alloc[1].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+      dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[1].L          = 3;
       dci_alloc[1].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
@@ -746,7 +749,7 @@ void phy_procedures_eNB_TX(next_slot) {
       break;
     case 8:
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-      dci_alloc[0].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+      dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
       dci_alloc[0].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
@@ -756,7 +759,7 @@ void phy_procedures_eNB_TX(next_slot) {
       break;
     case 9:
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-      dci_alloc[0].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+      dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
       dci_alloc[0].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
