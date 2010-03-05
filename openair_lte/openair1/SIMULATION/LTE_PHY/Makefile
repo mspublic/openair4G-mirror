@@ -9,11 +9,11 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
-#CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+#CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE #-DIFFT_FPGA 
+CFLAGS += -DOPENAIR_LTE #-DIFFT_FPGA  -O2
 
 ifdef EMOS
 CFLAGS += -DEMOS
@@ -93,14 +93,16 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte.o
+
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS)
 
 all: dlsim dlsim2 ulsim ulsim2 physim
 
 test:
 	echo $(CFLAGS)
 
-$(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o: %.o : %.c
+$(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
@@ -116,7 +118,7 @@ ulsim2 : $(OBJ) ulsim2.c
 	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ) -lm
 
 physim : $(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o phy_procedures_sim.c 
-	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o -lm
+	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) -lm
 
 clean:
 	rm -f dlsim dlsim2
