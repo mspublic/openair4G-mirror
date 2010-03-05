@@ -731,7 +731,7 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
   
   unsigned char harq_pid;
 
-  
+  printf("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x\n",subframe,rnti);
   if (dci_format == format0) {
 
     if (rnti == ra_rnti)

@@ -229,6 +229,8 @@ typedef struct {
   unsigned char Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
+  /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
+  unsigned char subframe_scheduling_flag;
   /// Last TPC command
   unsigned char TPC;
   /// First Allocated RB 
@@ -1135,7 +1137,12 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     unsigned int subframe,
 	     unsigned char eNb_id,  // this is the effective sector id
 	     unsigned char UE_id,   // this is the UE instance to act upon
-	     LTE_eNb_ULSCH_t *ulsch);
+	     LTE_eNb_ULSCH_t **ulsch);
+
+unsigned int  ulsch_decoding(short *ulsch_llr,
+			     LTE_DL_FRAME_PARMS *frame_parms,
+			     LTE_eNb_ULSCH_t *ulsch,
+			     unsigned char subframe);
 
 /**@}*/
 #endif

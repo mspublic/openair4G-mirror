@@ -208,10 +208,10 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   // read in buffer
   j=0;
   for (i=0;i<Cmux;i++)
-    for (r=0;r<Rmux_prime;r++)
+   for (r=0;r<Rmux_prime;r++)
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*((r*Cmux)+i))] = ulsch_llr[j++];
-	//	printf("y[%d] = %d\n",q+(Q_m*((r*Cmux)+i)),y[q+(Q_m*((r*Cmux)+i))]);
+		printf("y[%d] = %d\n",q+(Q_m*((r*Cmux)+i)),y[q+(Q_m*((r*Cmux)+i))]);
       }
   if (j!=(H+Q_RI))
     msg("ulsch_coding.c: Error in input buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
@@ -265,7 +265,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     for (q=0;q<Q_m;q++) {
       if (y[q+(Q_m*((r*Cmux) + columnset[j]))]!=0)
 	ulsch->q_ACK[(q+(Q_m*i))%len_ACK] += y[q+(Q_m*((r*Cmux) + columnset[j]))];
-      //      printf("ACK %d => %d (%d,%d,%d)\n",(q+(Q_m*i))%len_ACK,ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
+            printf("ACK %d => %d (%d,%d,%d)\n",(q+(Q_m*i))%len_ACK,ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
       y[q+(Q_m*((r*Cmux) + columnset[j]))]=0;  // NULL LLRs in ACK positions
     }
     j=(j+3)&3;
@@ -326,13 +326,13 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 	else 
 	  ulsch->q[q+(Q_m*i)] = y[q+(Q_m*j)];
 	
-	//	printf("CQI %d, y[%d] %d\n",q+(Q_m*i),q+(Q_m*j),y[q+(Q_m*j)]);
+		printf("CQI %d, y[%d] %d\n",q+(Q_m*i),q+(Q_m*j),y[q+(Q_m*j)]);
       }
     } 
     else {
       for (q=0;q<Q_m;q++) {
 	ulsch->e[q+(Q_m*iprime)] = y[q+(Q_m*j)];
-	//	printf("e %d, y[%d] %d\n",q+(Q_m*iprime),q+(Q_m*j),ulsch->e[q+(Q_m*iprime)]);
+		printf("e %d, y[%d] %d\n",q+(Q_m*iprime),q+(Q_m*j),ulsch->e[q+(Q_m*iprime)]);
       }
     }
     

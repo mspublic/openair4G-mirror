@@ -26,7 +26,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   unsigned char qam16_table_offset_im = 0;
   short gain_lin_QPSK;
 #endif
-  short re_offset,i,Msymb,j,nsymb,Msc_PUSCH,l;
+  short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   mod_sym_t *txptr;
@@ -179,8 +179,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
   for (i=0;i<Msymb;i++) {
     ulsch->z[i] = ulsch->d[i]; 
 
-    //    if (i<16)
-    //      printf("z[%d]  -> %d\n",i,ulsch->z[i]);
+        if (i<16)
+          printf("z[%d]  -> %d\n",i,ulsch->z[i]);
   }
 #else
 
@@ -214,10 +214,15 @@ void ulsch_modulation(mod_sym_t **txdataF,
   }
  
 #else
-  re_offset = frame_parms->first_carrier_offset;
-  for (j=0,l=0;l<Msymb/Msc_PUSCH;l++) {
+  re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
+  if (re_offset0>frame_parms->ofdm_symbol_size) {
+    re_offset0 -= frame_parms->ofdm_symbol_size;
+    re_offset0++;
+  }
+  for (j=0,l=0;l<(nsymb-1);l++) {
+    re_offset = re_offset0;
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-    printf("symbol %d: symbol_offset %d\n",l,symbol_offset);
+    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -228,7 +233,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       for (i=0;i<Msc_PUSCH;i++,j++) {
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)
-	  re_offset = 0;                                 // Skip DC
+	  re_offset = 1;                                 // Skip DC
       }
     }
   }
