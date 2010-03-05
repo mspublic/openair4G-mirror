@@ -28,21 +28,34 @@ __m128i zero2;
 
 
 
-unsigned short extract_crc(unsigned char *dci,unsigned char DCI_LENGTH) {
+unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
 
-  unsigned short crc;
-
-  crc = ((short *)dci)[DCI_LENGTH>>4];
-  //  printf("crc1: %x, shift %d\n",crc,DCI_LENGTH&0xf);
+  unsigned short crc16,i,*dci16=(short*)dci;
+  
+  /*
+  unsigned char crc;
+  crc = ((unsigned short *)dci)[DCI_LENGTH>>4];
+  printf("crc1: %x, shift %d (DCI_LENGTH %d)\n",crc,DCI_LENGTH&0xf,DCI_LENGTH);
   crc = (crc>>(DCI_LENGTH&0xf));
   // clear crc bits
-  ((short *)dci)[DCI_LENGTH>>4] &= 0xffff>>(16-(DCI_LENGTH&0xf));
-  //  printf("crc2: %x, dci0 %x\n",crc,((short *)dci)[DCI_LENGTH>>4]);
-  crc |= (((short *)dci)[1+(DCI_LENGTH>>4)])<<(16-(DCI_LENGTH&0xf));
+  ((unsigned short *)dci)[DCI_LENGTH>>4] &= (0xffff>>(16-(DCI_LENGTH&0xf)));
+  printf("crc2: %x, dci0 %x\n",crc,((short *)dci)[DCI_LENGTH>>4]);
+  crc |= (((unsigned short *)dci)[1+(DCI_LENGTH>>4)])<<(16-(DCI_LENGTH&0xf));
   // clear crc bits
-  (((short *)dci)[1+(DCI_LENGTH>>4)]) = 0;
-
-  return(crc);
+  (((unsigned short *)dci)[1+(DCI_LENGTH>>4)]) = 0;
+  printf("extract_crc: crc %x\n",crc);
+  */
+  /*
+  for (i=dci_len+16-1 ; i>dci_len-1 ; i--)
+    printf("bit %d : %d\n",i,(dci[i>>3]>>(i&7))&1);
+  */
+  crc16 = dci16[(dci_len>>4)]>>(dci_len&0xf);
+  //  printf("crc1: %x => %x, shift %d\n",dci16[(dci_len>>4)],crc16,dci_len&0xf);
+  crc16 |= (dci16[(dci_len>>4)+1]<<(16-(dci_len&0xf)));
+  //  printf("crc2: %x => %x\n",dci16[(dci_len>>4)+1],crc16);
+  dci16[(dci_len>>4)]&=(0xffff>>(16-(dci_len&0xf)));
+  dci16[(dci_len>>4)+1] = 0;
+  return((unsigned short)crc16);
 
 }
 void dci_encoding(unsigned char *a,
@@ -93,7 +106,7 @@ unsigned char *generate_dci0(unsigned char *dci,
 			     unsigned char aggregation_level,
 			     unsigned short rnti) {
   
-  unsigned short coded_bits;
+  unsigned short coded_bits,i;
 
   if (aggregation_level>3) {
     msg("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
@@ -102,6 +115,8 @@ unsigned char *generate_dci0(unsigned char *dci,
 
   coded_bits = 72 * (1<<aggregation_level);
 
+  for (i=0;i<1+((DCI_LENGTH+16)/8);i++)
+    printf("i %d : %x\n",i,dci[i]);
   dci_encoding(dci,DCI_LENGTH,coded_bits,e,rnti);
 
   return(e+coded_bits);
@@ -1180,7 +1195,7 @@ void dci_decoding(unsigned char DCI_LENGTH,
 			      &d[96], 
 			      &w[0]); 
  
-  memset(decoded_output,0,1+(DCI_LENGTH/8));
+  memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
   
 #ifdef DEBUG_DCI_DECODING
   printf("Doing DCI Viterbi %d\n");
@@ -1191,7 +1206,7 @@ void dci_decoding(unsigned char DCI_LENGTH,
   phy_viterbi_lte_sse2(d+96,decoded_output,16+DCI_LENGTH);
 }
 
-static unsigned char dci_decoded_output[MAX_DCI_SIZE_BITS+16];
+
 
 unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      DCI_ALLOC_t *dci_alloc,
@@ -1202,7 +1217,8 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      unsigned short c_rnti) {
   
   unsigned short crc,dci_cnt,first_found,second_found,dci_len;
-
+  int i;
+  unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+32)/8];
 
   // Aggregation level 8
   dci_cnt = 0;
@@ -1214,8 +1230,16 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	       3,
 	       lte_ue_pdcch_vars[eNb_id]->e_rx,
 	       dci_decoded_output);
+
   crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-  printf("CRC : %x\n",crc);
+
+  /*  
+  for (i=0;i<3+(dci_len/8);i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+
+
+  printf("CRC 0/1A: %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  */  
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1254,7 +1278,12 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	       &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
 	       dci_decoded_output);
   crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
-  printf("CRC : %x\n",crc);
+  /*    
+  for (i=0;i<dci_len/8;i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+
+    printf("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  */
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1297,7 +1326,15 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 lte_ue_pdcch_vars[eNb_id]->e_rx,
 		 dci_decoded_output);
     crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
-    printf("CRC : %x\n",crc);
+
+    /*    
+  for (i=0;i<1+(dci_len/8);i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+
+
+    printf("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+    */
+
     if (crc == c_rnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = c_rnti;
@@ -1319,8 +1356,17 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 3,
 		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
 		 dci_decoded_output);
-    crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
-    printf("CRC : %x\n",crc);
+    crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
+    /*
+  for (i=0;i<dci_len/8;i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+    
+
+   
+    
+    printf("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+    */
+
     if (crc == c_rnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = c_rnti;
@@ -1343,8 +1389,16 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 3,
 		 lte_ue_pdcch_vars[eNb_id]->e_rx,
 		 dci_decoded_output);
-    crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
-    printf("CRC : %x\n",crc);
+
+    crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
+    /*    
+  for (i=0;i<3+(dci_len/8);i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+
+    printf("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+    
+    */
+
     if (crc == c_rnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = c_rnti;
@@ -1353,7 +1407,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
       dci_cnt++;
       first_found=1;
-      msg("DCI Aggregation 8: Found DCI 2_M10PRB (C_RNTI) in first position\n");
+      msg("DCI Aggregation 8: Found DCI 2_M10PRB (C_RNTI) in first position (cnt %d)\n",dci_cnt);
     }
   }
 
@@ -1362,12 +1416,20 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   if (second_found == 0) {
     dci_len = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+
     dci_decoding(dci_len,
 		 3,
 		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
 		 dci_decoded_output);
-    crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
+
+    crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
+    /*
+  for (i=0;i<3+(dci_len/8);i++)
+    printf("i %d : %x\n",i,dci_decoded_output[i]);
+
     printf("CRC : %x\n",crc);
+    printf("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+    */
     if (crc == c_rnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = c_rnti;

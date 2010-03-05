@@ -314,9 +314,9 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   
   // Initialize Sync
   lte_sync_time_init(frame_parms,  ue_common_vars);
-  
+#ifndef NO_UL_REF 
   generate_ul_ref_sigs();
-  
+#endif`  
   return(0);
 }
 
@@ -442,9 +442,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	}
       }
   } //eNb_id 
-  
+#ifndef NO_UL_REF 
   generate_ul_ref_sigs_rx();
-
   // SRS
   eNB_common_vars->srs = (int *)malloc16(2*frame_parms->ofdm_symbol_size*sizeof(int*));
   if (!eNB_common_vars->srs || 
@@ -457,6 +456,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     msg("[openair][LTE_PHY][INIT] SRS generated at %p\n",eNB_common_vars->srs);
 #endif
 
+#endif
 
   // ULSCH VARS
 

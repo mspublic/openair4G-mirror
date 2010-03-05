@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
-  dci_alloc[0].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+  dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
   }
   printf("Target code rate %f, mod_order %d, num_layers %d\n",target_code_rate,mod_order[0],num_layers);
 
-  printf("Sizeof UL_alloc_pdu %d bytes (%d bits)\n",sizeof(DCI0_5MHz_TDD0_t),sizeof_DCI_0_5MHz_TDD_0_t);
+  printf("Sizeof UL_alloc_pdu %d bytes (%d bits)\n",sizeof(DCI0_5MHz_TDD0_t),sizeof_DCI0_5MHz_TDD_0_t);
 
   nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.dai              = 0;
   DLSCH_alloc_pdu2.harq_pid         = 0;
   DLSCH_alloc_pdu2.tb_swap          = 0;
-  DLSCH_alloc_pdu2.mcs1             = 0;
+  DLSCH_alloc_pdu2.mcs1             = 2;
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
-  /*
+  
   // Create transport channel structures for 2 transport blocks (MIMO)
   dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
   dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
       exit(-1);
     }
   }
-  */
+  
 
     /*
     dlsch_eNb[i]->harq_processes[0]->mimo_mode          = mimo_mode;
@@ -295,7 +295,7 @@ int main(int argc, char **argv) {
     dlsch_eNb[i]->rvidx                                 = 0;
     */
 
-  /*
+  
   generate_eNb_dlsch_params_from_dci(0,
                                      &DLSCH_alloc_pdu2,
 				     C_RNTI,
@@ -305,8 +305,9 @@ int main(int argc, char **argv) {
 				     SI_RNTI,
 				     RA_RNTI,
 				     P_RNTI);
-  */
 
+				     
+  /*
   generate_eNb_dlsch_params_from_dci(0,
                                      &CCCH_alloc_pdu,
 				     SI_RNTI,
@@ -316,7 +317,7 @@ int main(int argc, char **argv) {
 				     SI_RNTI,
 				     RA_RNTI,
 				     P_RNTI);
-
+  */
     /*
     dlsch_ue[i]->harq_processes[0]->mimo_mode           = mimo_mode;
     dlsch_ue[i]->harq_processes[0]->mod_order           = mod_order[i];
@@ -335,19 +336,20 @@ int main(int argc, char **argv) {
   //  decoded_output = (unsigned char*) malloc(block_length/8);
 
   // DCI
-  /*
+  
   memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
   dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
   dci_alloc[0].L          = 3;
   dci_alloc[0].rnti       = C_RNTI;
-  */
+  /*
   memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
   dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
   dci_alloc[0].L          = 3;
   dci_alloc[0].rnti       = SI_RNTI;
+  */
 
   memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-  dci_alloc[1].dci_length = sizeof_DCI_0_5MHz_TDD_0_t;
+  dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
   dci_alloc[1].L          = 3;
   dci_alloc[1].rnti       = C_RNTI;
 
@@ -355,9 +357,13 @@ int main(int argc, char **argv) {
 
 
   // DLSCH
-  if (0) {
+  if (1) {
   input_buffer_length = dlsch_eNb[0]->harq_processes[0]->TBS/8;
+
+  printf("dlsch0: TBS      %d\n",dlsch_eNb[0]->harq_processes[0]->TBS);
+
   printf("Input buffer size %d bytes\n",input_buffer_length);
+
 
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
   
@@ -681,11 +687,12 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 &dlsch_ue_cntl,
+			 dlsch_ue,
 			 m,
 			 dual_stream_UE);
+	    
 	    if ((Ns==1) && (l==3)) {// process symbols 6,7,8
-	      if (rx_pbch(lte_ue_common_vars,
+	      /*	      if (rx_pbch(lte_ue_common_vars,
 			  lte_ue_pbch_vars[0],
 			  lte_frame_parms,
 			  0,
@@ -695,14 +702,14 @@ int main(int argc, char **argv) {
 	      else {
 		msg("pbch not decoded!\n");
 	      }
-
+	      */
 	      for (m=7;m<9;m++)
 		rx_dlsch(lte_ue_common_vars,
 			 lte_ue_dlsch_vars,
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 &dlsch_ue_cntl,
+			 dlsch_ue,
 			 m,
 			 dual_stream_UE);
 	    }
@@ -714,7 +721,7 @@ int main(int argc, char **argv) {
 			 lte_frame_parms,
 			 eNb_id,
 			 eNb_id_i,
-			 &dlsch_ue_cntl,
+			 dlsch_ue,
 			 m,
 			 dual_stream_UE);
 
@@ -750,11 +757,12 @@ int main(int argc, char **argv) {
 	write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*12,1,1);
 #endif //OUTPUT_DEBUG
   
-	//  printf("Calling decoding, dlsch_ue %p, active %d\n",dlsch_ue,dlsch_ue[0]->harq_processes[0]->active);
+	printf("Calling decoding\n");
 
 	ret = dlsch_decoding(lte_ue_dlsch_vars[eNb_id]->llr[0],		 
 			     lte_frame_parms,
-			     dlsch_ue[0]);
+			     dlsch_ue[0],
+		             0);
 
 	if (ret <= MAX_TURBO_ITERATIONS) {
 #ifdef OUTPUT_DEBUG  

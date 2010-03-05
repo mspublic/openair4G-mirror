@@ -655,7 +655,7 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
   unsigned char harq_pid;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d,subframe %d\n",rnti,dci_format,subframe);
+  msg("dci_tools.c: Filling ue ulsch params -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",ulsch,rnti,dci_format,subframe);
 #endif
 
   if (dci_format == format0) {

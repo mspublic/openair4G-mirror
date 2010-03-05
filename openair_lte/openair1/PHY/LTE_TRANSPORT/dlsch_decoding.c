@@ -219,7 +219,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
       dlsch->harq_ack[subframe].ack = 0;
       dlsch->harq_ack[subframe].harq_id = harq_pid;
-      printf("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
+      printf("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
       if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
 	dlsch->harq_processes[harq_pid]->status = IDLE;
       }

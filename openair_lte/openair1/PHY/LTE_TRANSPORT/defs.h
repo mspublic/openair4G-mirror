@@ -36,7 +36,7 @@
 #define SI_RNTI 0xffff 
 #define RA_RNTI 0xfffe
 #define P_RNTI  0xfffd
-#define C_RNTI  0x1111
+#define C_RNTI  0x1234
 
 #define PMI_2A_11 0
 #define PMI_2A_1m1 1

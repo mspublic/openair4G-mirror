@@ -27,7 +27,7 @@ typedef struct __attribute__ ((__packed__)) {
   /// Padding to get to size of DCI1A
   unsigned char padding:2;
 } DCI0_5MHz_TDD0_t;
-#define sizeof_DCI_0_5MHz_TDD_0_t 27
+#define sizeof_DCI0_5MHz_TDD_0_t 27
 
 ///  DCI Format Type 0 (5 MHz,TDD1-6, 27 bits)
 typedef struct __attribute__ ((__packed__)){
