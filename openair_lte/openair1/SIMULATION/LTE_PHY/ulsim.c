@@ -131,8 +131,12 @@ int main(int argc, char **argv) {
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
 
   // Create transport channel structures for SI pdus
-  ulsch_eNb = new_eNb_ulsch(3);
-  ulsch_ue  = new_ue_ulsch(3);
+
+  ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(2*sizeof(LTE_eNb_ULSCH_t*));
+  ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(2*sizeof(LTE_UE_ULSCH_t*));
+
+  ulsch_eNb[0] = new_eNb_ulsch(3);
+  ulsch_ue[0]  = new_ue_ulsch(3);
 
 
   /*  
@@ -160,7 +164,7 @@ int main(int argc, char **argv) {
 				    C_RNTI,
 				    8,
 				    format0,
-				    ulsch_ue,
+				    ulsch_ue[0],
 				    lte_frame_parms,
 				    SI_RNTI,
 				    RA_RNTI,
@@ -170,7 +174,7 @@ int main(int argc, char **argv) {
 				     SI_RNTI,
 				     8,
 				     format0,
-				     ulsch_eNb,
+				     ulsch_eNb[0],
 				     lte_frame_parms,
 				     SI_RNTI,
 				     RA_RNTI,
@@ -219,10 +223,10 @@ int main(int argc, char **argv) {
   subframe=2;
 
   generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe);
-  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe,ulsch_ue->first_rb,ulsch_ue->nb_rb);
+  generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,subframe,ulsch_ue[0]->harq_processes[0]->first_rb,ulsch_ue[0]->harq_processes[0]->nb_rb);
 
   harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,subframe);
-  input_buffer_length = ulsch_ue->harq_processes[harq_pid]->TBS/8;
+  input_buffer_length = ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
   printf("Input buffer size %d bytes\n",input_buffer_length);
 
   input_buffer = (unsigned char *)malloc(input_buffer_length+4);
@@ -233,9 +237,9 @@ int main(int argc, char **argv) {
       printf("input %d : %x\n",i,input_buffer[i]);
   }
 
-  ulsch_encoding(input_buffer,lte_frame_parms,ulsch_ue,harq_pid);
+  ulsch_encoding(input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
 
-  ulsch_modulation(lte_ue_common_vars->txdataF,AMP,subframe,lte_frame_parms,ulsch_ue);
+  ulsch_modulation(lte_ue_common_vars->txdataF,AMP,subframe,lte_frame_parms,ulsch_ue[0]);
 
 #ifdef IFFT_FPGA
   write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
@@ -399,9 +403,9 @@ int main(int argc, char **argv) {
 
       ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
 		     lte_frame_parms,
-		     ulsch_eNb,
+		     ulsch_eNb[0],
 		     subframe);
-    
+      exit(-1);
   }
   /*  
   write_output("rxsigF0.m","rxsF0", &lte_eNB_common_vars->rxdataF[0][0][0],512*12*2,2,1);

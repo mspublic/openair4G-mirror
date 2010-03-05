@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
 	    txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
 	  else 
 	    txdataF2[aa][i] = 0;
-	printf("l=%d\n",l);
+
       }
       
       //  write_output("eNb_txsigF20.m","eNb_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
@@ -300,16 +300,17 @@ int main(int argc, char **argv) {
 #else
 
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
+      /*
       printf("Copying TX buffer for slot %d (%d) (%p,%p)\n",next_slot,slot_offset,
 	     txdataF,txdata);
-      /*
+
       if (next_slot == 0) {
 	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
-      */
+
       
       if (next_slot == 2) {
 	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
@@ -317,7 +318,7 @@ int main(int argc, char **argv) {
 	sprintf(fname,"UE_frame%d_txsigF1.m",mac_xface->frame);
 	write_output(fname,"UE_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
-      
+      */      
       for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
 	PHY_ofdm_mod(&txdataF[aa][slot_offset],        // input
 		     txdata[aa],         // output
@@ -367,14 +368,13 @@ int main(int argc, char **argv) {
       //path_loss_dB = N0W - sigma2;
       //path_loss    = pow(10,path_loss_dB/10);
       path_loss_dB = 0;
-      path_loss = .1;
+      path_loss = 1;
       
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	  r_re[aa][i]=s_re[aa][i]*sqrt(path_loss); 
 	  r_im[aa][i]=s_im[aa][i]*sqrt(path_loss); 
-	  if ((next_slot==4) && ((i%16)==0))
-	    printf("r : %d:%d => %f,%f\n",aa,i,r_re[aa][i],r_im[aa][i]);
+
 	}
       }
       
@@ -420,13 +420,24 @@ int main(int argc, char **argv) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
       ((short*) rxdata[aa])[slot_offset + (2*i)]   = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
       ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      /*
       if ((next_slot==4) && ((i%16)==0))
 	printf("rxdata (slot_offset %d): %d:%d => %d,%d\n",slot_offset,aa,i,
 	       ((short *)rxdata[aa])[slot_offset + (2*i)],
 	       ((short *)rxdata[aa])[slot_offset + 1+(2*i)]);
+      */
     }
   }
 
+  if ((last_slot == 5) && (mac_xface->frame == 1)) {
+
+  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
+  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);      write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+
+    
+  }
+  /*
   if (next_slot == 5) {
     sprintf(fname,"eNB_frame%d_rxsig0_subframe2.m",mac_xface->frame);
     write_output(fname,"eNB_rxs0",&rxdata[0][2*lte_frame_parms->samples_per_tti],640*12,1,1);
@@ -441,7 +452,7 @@ int main(int argc, char **argv) {
     write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   }
-  
+  */
   /*
   // optional: read rx_frame from file
   if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
