@@ -10,7 +10,7 @@
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
-#define DEBUG_ULSCH
+//#define DEBUG_ULSCH
 
 #ifndef __SSE3__
 __m128i zeroU;
@@ -198,7 +198,7 @@ void ulsch_extract_rbs_single(int **rxdataF,
     nb_rb1 = min(max((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),0),2*nb_rb);    // 2 times no. RBs before the DC
     nb_rb2 = 2*nb_rb - nb_rb1;                                   // 2 times no. RBs after the DC
 #ifdef DEBUG_ULSCH
-    msg("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
+        msg("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
 #endif
 
     rxF_ext   = &rxdataF_ext[aarx][(symbol*frame_parms->N_RB_UL*12)*2];
@@ -473,7 +473,8 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
       
 
-     
+    printf("rx_ulsch: symbol %d\n",l);
+
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
 			     ulsch[UE_id]->harq_processes[harq_pid]->first_rb,

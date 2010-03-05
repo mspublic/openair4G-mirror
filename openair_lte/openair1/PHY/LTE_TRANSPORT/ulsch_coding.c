@@ -499,7 +499,7 @@ int ulsch_encoding(unsigned char *a,
     if (i<Qprime_CQI) {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
-	//printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
+	//	printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
       }
     }
     else {

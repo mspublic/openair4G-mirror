@@ -54,7 +54,6 @@ static char dlsch_ue_cntl_active = 0;
 static char dlsch_eNb_active = 0;
 static char dlsch_eNb_cntl_active = 0;
 
-static char ulsch_ue_active = 0;
 static char ulsch_eNb_active = 0;
 
 int dlsch_errors = 0;
@@ -126,12 +125,19 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
     
     generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
 
-    if (ulsch_ue_active == 1) {
+    // get harq_pid from subframe relationship
+    harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
+
+    if (ulsch_ue[0]->harq_processes[harq_pid]->subframe_scheduling_flag == 1) {
+
+      // deactivate service request
+      ulsch_ue[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+
       get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1),ulsch_ue[0]->o_ACK);
 
       printf("[PHY_PROCEDURES_LTE][UE_UL] subframe %d -> ACK %d, %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
       
-      harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
+
       first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
       
@@ -148,7 +154,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 
       ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
       ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0]);
-      ulsch_ue_active = 0;
+
     }
   }
 }
@@ -380,7 +386,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					SI_RNTI,
 					RA_RNTI,
 					P_RNTI);
-      ulsch_ue_active = 1;
       printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
     }
     else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format0)) {
@@ -394,7 +399,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	SI_RNTI,
 	RA_RNTI,
 	P_RNTI);
-	ulsch_ue_active = 1;
+
 	printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
       */
     }
@@ -988,54 +993,56 @@ void phy_procedures_eNB_RX(last_slot) {
 
   // Check for active processes in current subframe
 
-  
-  harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
-  if (ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) {
-    printf("[PHY PROCEDURES] subframe %d: Scheduling ULSCH Reception for harq_pid %d\n",last_slot>>1,harq_pid);
-    rx_ulsch(lte_eNB_common_vars,
-	     lte_eNB_ulsch_vars[0],
-	     lte_frame_parms,
-	     last_slot>>1,
-	     eNb_id,  // this is the effective sector id
-	     UE_id,   // this is the UE instance to act upon
-	     ulsch_eNb);
-    
-    
-    ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
-		   lte_frame_parms,
-		   ulsch_eNb[UE_id],
-		   last_slot>>1);    
 
-  }
-  // Noise power measurement from S subframe
-  // TBD
-
-  // Power measurement from 
-  if (last_slot == 11) {
-    //if (last_slot%2 == 1) {
-    
-    rx_power = 0;
-    for (aarx=0; aarx<lte_frame_parms->nb_antennas_rx; aarx++) {
-      PHY_vars->PHY_measurements.rx_power[eNb_id][aarx] = 
-	signal_energy(lte_eNB_common_vars->rxdataF[eNb_id][aarx],
-		      lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti);
-      PHY_vars->PHY_measurements.rx_power_dB[eNb_id][aarx] = dB_fixed(PHY_vars->PHY_measurements.rx_power[eNb_id][aarx]);
-      rx_power +=  PHY_vars->PHY_measurements.rx_power[eNb_id][aarx];
+    harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
+    if ((ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
+      printf("[PHY PROCEDURES] subframe %d (last slot %d): Scheduling ULSCH Reception for harq_pid %d\n",last_slot>>1,last_slot,harq_pid);
+      rx_ulsch(lte_eNB_common_vars,
+	       lte_eNB_ulsch_vars[0],
+	       lte_frame_parms,
+	       last_slot>>1,
+	       eNb_id,  // this is the effective sector id
+	       UE_id,   // this is the UE instance to act upon
+	       ulsch_eNb);
+      
+      //    if ((last_slot % 2) == 1) {      
+      ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
+		     lte_frame_parms,
+		     ulsch_eNb[UE_id],
+		     last_slot>>1);    
+      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
     }
-    PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
+
+
+    // Noise power measurement from S subframe
+    // TBD
     
-    /*
-    // AGC
-    if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
-    if (mac_xface->frame % 100 == 0)
-    phy_adjust_gain (0,16384,0);
-    */
-    
+    // Power measurement from 
+    if (last_slot == 11) {
+      //if (last_slot%2 == 1) {
+      
+      rx_power = 0;
+      for (aarx=0; aarx<lte_frame_parms->nb_antennas_rx; aarx++) {
+	PHY_vars->PHY_measurements.rx_power[eNb_id][aarx] = 
+	  signal_energy(lte_eNB_common_vars->rxdataF[eNb_id][aarx],
+			lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti);
+	PHY_vars->PHY_measurements.rx_power_dB[eNb_id][aarx] = dB_fixed(PHY_vars->PHY_measurements.rx_power[eNb_id][aarx]);
+	rx_power +=  PHY_vars->PHY_measurements.rx_power[eNb_id][aarx];
+      }
+      PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
+      
+      /*
+      // AGC
+      if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
+      if (mac_xface->frame % 100 == 0)
+      phy_adjust_gain (0,16384,0);
+      */
+      
 #ifdef DEBUG_PHY      
-    if ((mac_xface->frame % 100) == 0) 
-      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] );
+      if ((mac_xface->frame % 100) == 0) 
+	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] );
 #endif
-  }
+    }
 }
 
   

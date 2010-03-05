@@ -98,6 +98,8 @@ typedef struct {
   unsigned char Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   SCH_status_t status;
+  /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
+  unsigned char subframe_scheduling_flag;
   /// First Allocated RB 
   unsigned short first_rb;
   /// Current Number of RBs

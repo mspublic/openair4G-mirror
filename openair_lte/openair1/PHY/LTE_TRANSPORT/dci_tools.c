@@ -660,11 +660,16 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   if (dci_format == format0) {
 
+
     if (rnti == ra_rnti)
       harq_pid = 0;
     else
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
     //    printf("harq_pid = %d\n",harq_pid);
+
+    // indicate that this process is to be serviced in subframe n+4
+    ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
