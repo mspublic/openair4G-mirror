@@ -232,6 +232,9 @@ int main(int argc, char **argv) {
       
 
       
+      //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+      //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
 	txdataF = lte_eNB_common_vars->txdataF[eNb_id];
 #ifndef IFFT_FPGA
@@ -298,13 +301,14 @@ int main(int argc, char **argv) {
 
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
       //      printf("Copying TX buffer for slot %d (%d)\n",next_slot,slot_offset);
-
+      /*
       if (next_slot == 0) {
 	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
+      */
 
       if (next_slot == 4) {
 	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
@@ -324,14 +328,14 @@ int main(int argc, char **argv) {
 		     CYCLIC_PREFIX);
       }  
 #endif
-      
+      /*
       if (next_slot == 1) {
 	sprintf(fname,"eNb_frame%d_txsig0.m",mac_xface->frame);
         write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
       }
-
+      */
       if (next_slot == 5) {
 	sprintf(fname,"UE_frame%d_txsig0.m",mac_xface->frame);
 	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
@@ -362,7 +366,7 @@ int main(int argc, char **argv) {
       //path_loss_dB = N0W - sigma2;
       //path_loss    = pow(10,path_loss_dB/10);
       path_loss_dB = 0;
-      path_loss = 1;
+      path_loss = .1;
       
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
@@ -415,14 +419,14 @@ int main(int argc, char **argv) {
       ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
-
+  /*
   if (last_slot == 19) {
     write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   }
-
+  */
   /*
   // optional: read rx_frame from file
   if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
