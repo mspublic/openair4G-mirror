@@ -9,6 +9,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
+//#define DEBUG_PHY
+
 int* sync_corr = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
 short syncF_tmp[2048*2] __attribute__((aligned(16)));
@@ -166,7 +168,8 @@ inline int abs32(int x) {
 }
 
 int lte_sync_time(int **rxdata, ///rx data in time domain
-		    LTE_DL_FRAME_PARMS *frame_parms) {
+		  LTE_DL_FRAME_PARMS *frame_parms,
+		  int length) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -184,7 +187,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   peak_pos = 0;
   sync_source = 0;
 
-  for (n=0; n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti); n+=4) {
+  for (n=0; n<length; n+=4) {
 
 #ifdef RTAI_ENABLED
     // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
@@ -198,7 +201,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     for (s=0;s<3;s++)
       sync_out[s]=0;
 
-    if (n<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*(frame_parms->samples_per_tti)-frame_parms->ofdm_symbol_size) {
+    if (n<length-frame_parms->ofdm_symbol_size) {
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
@@ -263,11 +266,11 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   //frame_parms->Nid_cell = sync_source;
   //frame_parms->nushift = sync_source;
+#ifdef DEBUG_PHY
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
 #ifdef USER_MODE
-#ifdef DEBUG_PHY
-  write_output("sync_corr.m","synccorr",sync_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti,1,2);
+  write_output("sync_corr.m","synccorr",sync_corr,length,1,2);
 #endif
 #endif
 

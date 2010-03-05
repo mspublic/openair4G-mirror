@@ -40,6 +40,8 @@ int main(int argc, char **argv) {
   char fname[40], vname[40];
   int trial, n_errors;
 
+  unsigned char eNb_id = 0;
+
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB;
@@ -64,13 +66,15 @@ int main(int argc, char **argv) {
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
+  lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
+  lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
+  lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 1;
@@ -104,7 +108,7 @@ int main(int argc, char **argv) {
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);
 
   /*  
   txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
@@ -115,7 +119,7 @@ int main(int argc, char **argv) {
   bzero(txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
   */
 
-  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars);
+  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
 
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));
@@ -132,7 +136,7 @@ int main(int argc, char **argv) {
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
 #else
-  txdata = lte_eNB_common_vars->txdata;
+  txdata = lte_eNB_common_vars->txdata[eNb_id];
 #endif
   
   s_re = malloc(2*sizeof(double*));
@@ -156,21 +160,22 @@ int main(int argc, char **argv) {
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
-  generate_pss(lte_eNB_common_vars->txdataF,
+  generate_pss(lte_eNB_common_vars->txdataF[eNb_id],
 	       1087,
 	       lte_frame_parms,
-	       0,
-	       1);
+	       eNb_id,
+	       5,
+	       0);
 
   for (i=0;i<6;i++)
     pbch_pdu[i] = i;
 
-  generate_pbch(lte_eNB_common_vars->txdataF,
+  generate_pbch(lte_eNB_common_vars->txdataF[eNb_id],
 		1087,
 		lte_frame_parms,
 		pbch_pdu);
 
-  generate_pilots(lte_eNB_common_vars->txdataF,
+  generate_pilots(lte_eNB_common_vars->txdataF[eNb_id],
 		  1087,
 		  lte_frame_parms,
 		  0,
@@ -179,7 +184,7 @@ int main(int argc, char **argv) {
   
   //  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],300*120,1,4);
+  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
   //write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],300*120,1,4);
 
   // do talbe lookup and write results to txdataF2
@@ -187,9 +192,9 @@ int main(int argc, char **argv) {
     l = 0;
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
       if ((i%512>=1) && (i%512<=150))
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[aa][l++]];
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
       else if (i%512>=362)
-	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[aa][l++]];
+	txdataF2[aa][i] = ((int*)mod_table)[lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
       else 
 	txdataF2[aa][i] = 0;
     printf("l=%d\n",l);
@@ -209,11 +214,11 @@ int main(int argc, char **argv) {
 		 CYCLIC_PREFIX);
     
 #else
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
   //write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
   
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[aa],        // input
+    PHY_ofdm_mod(lte_eNB_common_vars->txdataF[eNb_id][aa],        // input
 		 txdata[aa],         // output
 		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
 		 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
@@ -313,7 +318,7 @@ int main(int argc, char **argv) {
   fclose(rx_frame_file);
   */
 
-  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms, LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti);
   //sync_pos = 3328;
 
   
@@ -323,7 +328,7 @@ int main(int argc, char **argv) {
   // so the position wrt to the start of the frame is 
   sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH;
   
-  //msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+  msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
   
   if (((sync_pos - sync_pos_slot) >=0 ) && 
       ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - lte_frame_parms->samples_per_tti)) ) {
@@ -337,7 +342,7 @@ int main(int argc, char **argv) {
 	       lte_ue_common_vars,
 	       l%(lte_frame_parms->symbols_per_tti/2),
 	       l/(lte_frame_parms->symbols_per_tti/2),
-	       sync_pos-sync_pos_slot+subframe_offset,
+	       sync_pos-sync_pos_slot,
 	       0);
 
 #ifdef EMOS
@@ -408,7 +413,7 @@ int main(int argc, char **argv) {
 		    lte_frame_parms,
 		    0,
 		    SISO)) {
-	  //msg("pbch decoded sucessfully!\n");
+	  msg("pbch decoded sucessfully!\n");
 	}
 	else {
 	  n_errors++;

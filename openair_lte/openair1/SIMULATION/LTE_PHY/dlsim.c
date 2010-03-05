@@ -459,7 +459,8 @@ int main(int argc, char **argv) {
 	       1024,
 	       lte_frame_parms,
 	       eNb_id,
-	       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+	       6-lte_frame_parms->Ncp,
+	       0);
 
   for (i=0;i<6;i++)
     pbch_pdu[i] = i;
@@ -620,6 +621,7 @@ int main(int argc, char **argv) {
 		     lte_ue_common_vars,
 		     l,
 		     Ns%20,
+		     0,
 		     0);
 	    
 	    lte_ue_measurements(lte_ue_common_vars,

@@ -32,21 +32,15 @@ extern inline unsigned int taus(void);
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
 unsigned char ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
+int eNb_sync_buffer0[640*6] __attribute__ ((aligned(16)));
+int eNb_sync_buffer1[640*6] __attribute__ ((aligned(16)));
+int *eNb_sync_buffer[2] = {eNb_sync_buffer0, eNb_sync_buffer1};
 
 extern int dlsch_instance_cnt[8];
 extern pthread_mutex_t dlsch_mutex[8];
 /// Condition variable for dlsch thread
 extern pthread_cond_t dlsch_cond[8];
 
-/*
-//#define NB_RB 6
-//#define RBmask0 0x0001F800
-#define NB_RB 12
-#define RBmask0 0x00fc00fc
-#define RBmask1 0x0
-#define RBmask2 0x0
-#define RBmask3 0x0
-*/
 
 // maybe these definitions should go somewhere else?
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
@@ -158,6 +152,49 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
   }
 }
 
+void phy_procedures_UE_S_TX(unsigned char next_slot) {
+
+  if (next_slot%2==1) {
+#ifdef DEBUG_PHY
+    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL\n",mac_xface->frame,next_slot);
+#endif
+    generate_pss(lte_ue_common_vars->txdataF,
+		 AMP,
+		 lte_frame_parms,
+		 0,
+		 4,
+		 next_slot);
+  }
+
+}
+
+void phy_procedures_eNB_S_RX(unsigned char last_slot) {
+
+  int aa,l,sync_pos,sync_pos_slot;
+  unsigned char eNb_id = 0;
+
+  if (last_slot%2==1) {
+    // look for PSS in the whole last slot
+    // but before we need to zero pad the gaps that the HW removed
+    bzero(eNb_sync_buffer[0],640*6*sizeof(int));
+    bzero(eNb_sync_buffer[1],640*6*sizeof(int));
+    for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) 
+      for (l=0; l<lte_frame_parms->symbols_per_tti/2; l++) 
+	memcpy(&eNb_sync_buffer[aa][l*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)], 
+	       &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*
+#ifdef USER_MODE
+							(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)],
+#else
+							lte_frame_parms->ofdm_symbol_size],
+#endif
+	       lte_frame_parms->ofdm_symbol_size*sizeof(int));
+
+    sync_pos_slot = (lte_frame_parms->ofdm_symbol_size + lte_frame_parms->nb_prefix_samples) * 4 + lte_frame_parms->nb_prefix_samples;
+    sync_pos = lte_sync_time(eNb_sync_buffer, lte_frame_parms, lte_frame_parms->samples_per_tti/2);
+    msg("[PHY_PROCEDURES_LTE][eNb_UL] Peak found at pos %d, offset %d\n",sync_pos, sync_pos_slot - sync_pos);
+  }
+}
 
 void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
 
@@ -344,6 +381,21 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       ulsch_ue_active = 1;
       printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
     }
+    else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format0)) {
+      /*
+      generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					RA_RNTI,
+					last_slot>>1,
+					format0,
+					ulsch_ue[eNb_id], 
+					lte_frame_parms,
+					SI_RNTI,
+					RA_RNTI,
+					P_RNTI);
+      ulsch_ue_active = 1;
+      printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
+      */
+    }
   }
 }
 
@@ -371,11 +423,11 @@ void phy_procedures_UE_RX(unsigned char last_slot) {
 	     l,
 	     last_slot,
 #ifdef USER_MODE
-	     0
+	     0,
 #else
-             1
+             1,
 #endif
-	     );
+	     0);
    
     lte_ue_measurement_procedures(last_slot,l);
 
@@ -657,7 +709,8 @@ void phy_procedures_eNB_TX(next_slot) {
 		 AMP,
 		 lte_frame_parms,
 		 eNb_id,
-		 1);
+		 6-lte_frame_parms->Ncp,
+		 next_slot);
   }
 
   if (next_slot == 1) {
@@ -883,7 +936,7 @@ void phy_procedures_eNB_RX(last_slot) {
     }
   }  
   
-  if (last_slot == 11) {
+  if (last_slot%2 == 1) {
     
     rx_power = 0;
     for (aarx=0; aarx<lte_frame_parms->nb_antennas_rx; aarx++) {
@@ -924,7 +977,7 @@ void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_S) {
       msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_S_TX(%d)\n",next_slot);
-      //phy_procedures_UE_S_TX(next_slot);
+      phy_procedures_UE_S_TX(next_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
       msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_RX(%d)\n",last_slot);
@@ -946,7 +999,7 @@ void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
       msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_S_RX(%d)\n",last_slot);
-      //phy_procedures_eNB_S_RX(last_slot);
+      phy_procedures_eNB_S_RX(last_slot);
     }
   }
 }

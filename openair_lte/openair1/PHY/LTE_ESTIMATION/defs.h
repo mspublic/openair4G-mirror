@@ -37,7 +37,7 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
 
-int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms);
+int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length);
 
 /*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,

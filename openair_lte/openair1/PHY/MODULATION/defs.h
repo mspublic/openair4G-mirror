@@ -41,10 +41,11 @@ void PHY_ofdm_mod(int *input,
 */
 
 int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
-	      LTE_UE_COMMON *ue_common_vars,
-	      unsigned char l,
-	      unsigned char Ns,
-	      int no_prefix);
+	     LTE_UE_COMMON *ue_common_vars,
+	     unsigned char l,
+	     unsigned char Ns,
+	     int sample_offset,
+	     int no_prefix);
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,

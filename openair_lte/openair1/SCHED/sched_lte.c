@@ -413,7 +413,7 @@ void openair_sync(void) {
       msg("[openair][SCHED][SYNCH] starting sync\n");
 
       // Do initial timing acquisition
-      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
+      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms, LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti);
       //sync_pos = 0;
       
       // the sync is in the last symbol of either the 0th or 10th slot

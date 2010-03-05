@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
       }
       */
 
-      if (next_slot == 4) {
+      if (next_slot == 2) {
 	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"UE_frame%d_txsigF1.m",mac_xface->frame);

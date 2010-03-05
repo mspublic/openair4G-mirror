@@ -3,16 +3,17 @@
 //#define DEBUG_FEP
 
 int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
-	      LTE_UE_COMMON *ue_common_vars,
-	      unsigned char l,
-	      unsigned char Ns,
-	      int no_prefix) {
+	     LTE_UE_COMMON *ue_common_vars,
+	     unsigned char l,
+	     unsigned char Ns,
+	     int sample_offset,
+	     int no_prefix) {
  
   unsigned char aa;
+  unsigned char eNb_id;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
-  unsigned char eNb_id;
-  unsigned int offset = (frame_parms->ofdm_symbol_size + nb_prefix_samples) * frame_parms->symbols_per_tti * (Ns>>1);
+  unsigned int subframe_offset = (frame_parms->ofdm_symbol_size + nb_prefix_samples) * frame_parms->symbols_per_tti * (Ns>>1);
 
 #ifdef DEBUG_FEP
   if (l<0 || l>=7-frame_parms->Ncp) {
@@ -30,7 +31,10 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-    fft((short *)&ue_common_vars->rxdata[aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
+    fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
+					     nb_prefix_samples + 
+					     (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol +
+					     subframe_offset],
 	(short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
 	frame_parms->twiddle_fft,
 	frame_parms->rev,
