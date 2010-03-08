@@ -48,7 +48,7 @@
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
-#define NUM_SCENARIO  2
+#define NUM_SCENARIO  7
 #define SENSORS_NB 2 //mod_lor_10_03_03
 #define PUSU_EMUL
 

@@ -89,10 +89,10 @@ L2_ID L2_id_mr3 ={{0xAA,0xCC,0x33,0x55,0x00,0x00,0x44,0x00}};
 L2_ID L2_id_bts ={{0xAA,0xCC,0x33,0x55,0x00,0x00,0x00,0x11}};
 L2_ID L2_id_ch2 ={{0xAA,0xCC,0x33,0x55,0x00,0x22,0x00,0x00}};
 
-unsigned char L3_info_mr3[MAX_L3_INFO] = { 0xBB, 0xDD, 1, 3 } ; 
-unsigned char L3_info_mr2[MAX_L3_INFO] = { 0xBB, 0xDD, 1, 2 } ; 
-unsigned char L3_info_mr[MAX_L3_INFO]  = { 0xBB, 0xDD, 1, 1 } ; 
-unsigned char L3_info_ch[MAX_L3_INFO]  = { 0xAA, 0xCC, 2, 0 } ; 
+unsigned char L3_info_mr3[MAX_L3_INFO] = { 0x0A, 0x00, 3, 3 } ; 
+unsigned char L3_info_mr2[MAX_L3_INFO] = { 0x0A, 0x00, 2, 2 } ; 
+unsigned char L3_info_mr[MAX_L3_INFO]  = { 0x0A, 0x00, 1, 1 } ; 
+unsigned char L3_info_ch[MAX_L3_INFO]  = { 0x0A, 0x00, 0, 0 } ; 
 
 
 static void prg_opening_RB( sock_rrm_t *s_cmm, double date, L2_ID *src, L2_ID *dst, QOS_CLASS_T qos )
@@ -297,6 +297,8 @@ static void prg_rrc_init_mon_req( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_f
     pthread_mutex_unlock( &rrc_transact_exclu ) ;
                 
 }
+
+
 /*
 static void prg_cmm_ask_freq( sock_rrm_t *s_cmm, double date)
 {
@@ -541,11 +543,13 @@ static void scenario2(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 
 // ========================= Attachement d'un MR
     prg_rrc_MR_attach_ind( s_rrc, 2.0, &L2_id_mr );
-     //prg_rrc_MR_attach_ind( s_rrc, 3.0, &L2_id_mr2 );
+    prg_rrc_MR_attach_ind( s_rrc, 3.0, &L2_id_mr2 );
+    prg_rrc_MR_attach_ind( s_rrc, 4.0, &L2_id_mr3 );
 
 // ========================= Indicateur d'une connexion établie
     prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr,IPv4_ADDR,0,0);
-    //prg_rrc_cx_establish_ind( s_rrc, 5.0, &L2_id_mr, L3_info_mr2,IPv4_ADDR,0,0);
+    prg_rrc_cx_establish_ind( s_rrc, 6.0, &L2_id_mr2, L3_info_mr2,IPv4_ADDR,0,0);
+    prg_rrc_cx_establish_ind( s_rrc, 7.0, &L2_id_mr3, L3_info_mr3,IPv4_ADDR,0,0);
 }
 
 /**
