@@ -58,16 +58,20 @@ unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
   return((unsigned short)crc16);
 
 }
+
+static unsigned char d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
+static unsigned char w[3*3*(MAX_DCI_SIZE_BITS+16)];
+
 void dci_encoding(unsigned char *a,
 		  unsigned char A,
 		  unsigned short E,
 		  unsigned char *e,
 		  unsigned short rnti) {
 
-  unsigned char d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
+
   unsigned char D = (A + 16);
   unsigned int RCC;
-  unsigned char w[3*3*(MAX_DCI_SIZE_BITS+16)];
+
 #ifdef DEBUG_DCI_ENCODING
   int i;
 #endif
@@ -133,10 +137,11 @@ unsigned int Y;
 #define Mquad (Msymb/4)
 
 static unsigned int bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
+static mod_sym_t wtemp[2][Msymb];
 
 void pdcch_interleaving(mod_sym_t **z, mod_sym_t **wbar,unsigned short Nid_cell,unsigned char nb_antennas_tx) {
 
-  mod_sym_t wtemp[2][Msymb],*wptr,*wptr2,*zptr;
+  mod_sym_t *wptr,*wptr2,*zptr;
 
 
 
@@ -229,10 +234,11 @@ void pdcch_demapping(unsigned short *llr,unsigned short *wbar,LTE_DL_FRAME_PARMS
   }
 }
 
+static unsigned short wtemp_rx[Msymb];
 void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short Nid_cell) {
 
 
-  unsigned short wtemp[Msymb];
+
   unsigned short *wptr,*zptr,*wptr2;
 
 
@@ -246,7 +252,7 @@ void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short
   }
   // undo permutation
   for (i=0;i<Mquad;i++) {
-    wptr = &wtemp[i<<2];
+    wptr = &wtemp_rx[i<<2];
     wptr2 = &wbar[((i+Nid_cell)%Mquad)<<2];
 
     wptr[0] = wptr2[0];
@@ -281,7 +287,7 @@ void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short
       if (index>=ND) {
 
 
-	wptr = &wtemp[k<<2];
+	wptr = &wtemp_rx[k<<2];
 	zptr = &z[(index-ND)<<2];
 	
 	zptr[0] = wptr[0];
@@ -925,7 +931,9 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 }
 	     
 
-	     
+static unsigned char e[DCI_BITS];	
+static mod_sym_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
+     
 void generate_dci_top(unsigned char num_ue_spec_dci,
 		      unsigned char num_common_dci,
 		      DCI_ALLOC_t *dci_alloc, 
@@ -935,18 +943,18 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 		      mod_sym_t **txdataF,
 		      unsigned int sub_frame_offset) {
 
-  unsigned char e[DCI_BITS], *e_ptr;
+  unsigned char *e_ptr;
   unsigned int i, lprime;
   unsigned short gain_lin_QPSK,kprime,mprime,nsymb,symbol_offset,tti_offset;
   short re_offset;
 
-  mod_sym_t y0[Msymb],y1[Msymb],*y[2];
-  mod_sym_t wbar0[Msymb],wbar1[Msymb],*wbar[2];
+  mod_sym_t *y[2];
+  mod_sym_t *wbar[2];
   
   wbar[0] = &wbar0[0];
   wbar[1] = &wbar1[0];
-  y[0] = &y0[0];
-  y[1] = &y1[0];
+  y[0] = &yseq0[0];
+  y[1] = &yseq1[0];
 #ifdef IFFT_FPGA
   unsigned char qpsk_table_offset = 0; 
   unsigned char qpsk_table_offset2 = 0;
@@ -1154,15 +1162,18 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
       break;
   }
 }
+
+static unsigned char dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
+static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*MAX_DCI_SIZE_BITS+16)];
  
 void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char aggregation_level,
 		  char *e,
 		  unsigned char *decoded_output) {
 
-  unsigned char dummy_w[3*(MAX_DCI_SIZE_BITS+16+64)];
+
   unsigned short RCC;
-  char w[3*(DCI_LENGTH+16+32)],d[96+(3*DCI_LENGTH+16)];
+
   unsigned short D=(DCI_LENGTH+16+64);
   unsigned short coded_bits;
 #ifdef DEBUG_DCI_DECODING
@@ -1180,9 +1191,9 @@ void dci_decoding(unsigned char DCI_LENGTH,
 #endif
   
   // now do decoding
-  memset(dummy_w,0,3*D);
+  memset(dummy_w_rx,0,3*D);
   RCC = generate_dummy_w_cc(DCI_LENGTH+16,
-			    dummy_w);
+			    dummy_w_rx);
 
 
    
@@ -1190,11 +1201,11 @@ void dci_decoding(unsigned char DCI_LENGTH,
   printf("Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
 #endif
 
-  lte_rate_matching_cc_rx(RCC,coded_bits,w,dummy_w,e);
+  lte_rate_matching_cc_rx(RCC,coded_bits,w_rx,dummy_w_rx,e);
  
   sub_block_deinterleaving_cc((unsigned int)(DCI_LENGTH+16), 
-			      &d[96], 
-			      &w[0]); 
+			      &d_rx[96], 
+			      &w_rx[0]); 
  
   memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
   
@@ -1202,12 +1213,13 @@ void dci_decoding(unsigned char DCI_LENGTH,
   printf("Doing DCI Viterbi %d\n");
 
   for (i=0;i<16+DCI_LENGTH;i++)
-    printf("%d : (%d,%d,%d)\n",i,*(d+96+(3*i)),*(d+97+(3*i)),*(d+98+(3*i)));
+    printf("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 #endif  
-  phy_viterbi_lte_sse2(d+96,decoded_output,16+DCI_LENGTH);
+  phy_viterbi_lte_sse2(d_rx+96,decoded_output,16+DCI_LENGTH);
 }
 
 
+static unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+32)/8];
 
 unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      DCI_ALLOC_t *dci_alloc,
@@ -1219,7 +1231,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   
   unsigned short crc,dci_cnt,first_found,second_found,dci_len;
   int i;
-  unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+32)/8];
+
 
   // Aggregation level 8
   dci_cnt = 0;
