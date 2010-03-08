@@ -56,3 +56,11 @@ void dac(double **s_re,
 	 unsigned char B,
 	 unsigned int meas_length,
 	 unsigned int meas_offset);
+
+double dac_fixed_gain(double **s_re,
+		      double **s_im,
+		      int **input,
+		      unsigned int nb_tx_antennas,
+		      unsigned int length,
+		      unsigned char B,
+		      double gain);

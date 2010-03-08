@@ -86,27 +86,37 @@ double uniformrandom();
 
 /** \fn void random_channel(double *amps,
                             double t_max, 
-		    int channel_length,
-		    double bw,
-		    struct complex *ch,
-		    double ricean_factor,
-		    struct complex *phase);
+			    struct complex *a,
+			    int channel_length,
+			    double bw,
+			    struct complex *ch,
+			    double ricean_factor,
+			    struct complex *phase,
+			    double forgetting_factor,
+			    unsigned char clear);
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model. 
 \param amps Linear amplitudes of the taps (length(amps)=channel_length). The taps are assumed to be spaced equidistantly between 0 and t_max. The values should sum up to 1.
 \param t_max Maximum path delay in mus.
+\param a Complex channel state vector of length channel_length
 \param channel_length Number of taps.
 \param bw Channel bandwidth in MHz.
 \param ch Returned channel (length(ch)=(int)11+2*bw*t_max).
 \param ricean_factor Ricean factor applied to all taps.
 \param phase Phase of the first tap.
+\param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
+\param clear Set to 1 to initialize first random channel
+
 */
 void random_channel(double *amps,
 		    double t_max, 
+		    struct complex *a,
 		    int channel_length,
 		    double bw,
 		    struct complex *ch,
 		    double ricean_factor,
-		    struct complex *phase);
+		    struct complex *phase,
+		    double forgetting_factor,
+		    unsigned char clear);
 
 
 /*\fn void multipath_channel(struct complex **ch,
@@ -123,7 +133,9 @@ void random_channel(double *amps,
 		       unsigned char nb_antennas_rx,
 		       unsigned int length,
 		       unsigned int channel_length,
-		       double path_loss_dB);
+		       double path_loss_dB,
+		       double forgetting factor,
+		       unsigned char clear);
 \brief This function generates and applys a random frequency selective random channel model.
 @param ch Pointer to spatio-temporal channel coefficients
 @param tx_sig_re input signal (real component) 
@@ -140,6 +152,8 @@ void random_channel(double *amps,
 @param length Length of input signal
 @param channel_length Length of channel (time samples)
 @param path_loss_dB Path loss in dB
+@param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
+@param clear Set to 1 to initialize first random channel
 */
 void multipath_channel(struct complex **ch,
 		       double **tx_sig_re, 
@@ -155,5 +169,7 @@ void multipath_channel(struct complex **ch,
 		       unsigned char nb_antennas_rx,
 		       unsigned int length,
 		       unsigned int channel_length,
-		       double path_loss_dB);
+		       double path_loss_dB,
+		       double forgetting_factor,
+		       unsigned char clear);
 /* *@} */

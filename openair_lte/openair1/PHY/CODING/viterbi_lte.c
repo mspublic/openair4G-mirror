@@ -87,7 +87,7 @@ static  __m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,eve
 
 static  __m128i rescale,min_state,min_state2 __attribute__((aligned(16)));
 
-#ifdef USER_MODE
+#ifdef DEBUG_VITERBI
 void print_bytes(char *s,__m128i *x) {
 
   unsigned char *tempb = (unsigned char *)x;

@@ -94,6 +94,65 @@ int signal_energy(int *input,unsigned int length) {
   return((temp>0)?temp:1);
 }
 
+int signal_energy_nodc(int *input,unsigned int length) {
+
+  int i;
+  int temp,temp2;
+  register __m64 mm0,mm1,mm2,mm3;
+  __m64 *in = (__m64 *)input;
+
+#ifdef MAIN
+  short *printb;
+#endif
+
+  mm0 = _m_pxor(mm0,mm0);
+  mm3 = _m_pxor(mm3,mm3);
+
+  for (i=0;i<length>>1;i++) {
+    
+    mm1 = in[i]; 
+    mm2 = mm1;
+    mm1 = _m_pmaddwd(mm1,mm1);
+    mm1 = _m_psradi(mm1,shift);
+    mm0 = _m_paddd(mm0,mm1);
+    //    temp2 = mm0;
+    //    printf("%d %d\n",((int *)&temp2)[0],((int *)&temp2)[1]);
+
+
+    //    printb = (short *)&mm2;
+    //    printf("mm2 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
+
+
+  }
+
+  /*
+#ifdef MAIN
+  printb = (short *)&mm3;
+  printf("%d %d %d %d\n",printb[0],printb[1],printb[2],printb[3]);
+#endif
+  */
+  mm1 = mm0;
+
+  mm0 = _m_psrlqi(mm0,32);
+
+  mm0 = _m_paddd(mm0,mm1);
+
+  temp = _m_to_int(mm0);
+
+  temp/=length;
+  temp<<=shift;   // this is the average of x^2
+
+#ifdef MAIN
+  printf("E x^2 = %d\n",temp);  
+#endif
+  _mm_empty();
+  _m_empty();
+
+
+
+  return((temp>0)?temp:1);
+}
+
 double signal_energy_fp(double **s_re,double **s_im,unsigned int nb_antennas,unsigned int length,unsigned int offset) {
 
   int aa,i;

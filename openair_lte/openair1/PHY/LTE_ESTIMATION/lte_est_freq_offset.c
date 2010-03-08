@@ -5,7 +5,7 @@
 */
 
 #include "PHY/defs.h"
-
+//#define DEBUG_PHY
 int lte_est_freq_offset(int **dl_ch_estimates,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			int l,
@@ -46,14 +46,14 @@ int lte_est_freq_offset(int **dl_ch_estimates,
     //omega = dot_product(dl_ch,dl_ch_prev,frame_parms->ofdm_symbol_size,15);
     omega_cpx = (struct complex16*) &omega;
     
-    dl_ch = (short *)&dl_ch_estimates[aa][(frame_parms->N_RB_DL/2 + 1)*12 + ch_offset];
+    dl_ch = (short *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12) + ch_offset];
     if (ch_offset == 0)
-      dl_ch_prev = (short *)&dl_ch_estimates[aa][(frame_parms->N_RB_DL/2 + 1)*12+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
+      dl_ch_prev = (short *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12)+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
     else
-      dl_ch_prev = (short *)&dl_ch_estimates[aa][(frame_parms->N_RB_DL/2 + 1)*12];
+      dl_ch_prev = (short *)&dl_ch_estimates[aa][((frame_parms->N_RB_DL/2) + 1)*12];
 
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
-    omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL/2 - 1)*12,15);
+    omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,15);
     omega_cpx->r += ((struct complex16*) &omega)->r;
     omega_cpx->i += ((struct complex16*) &omega)->i;
 
@@ -73,6 +73,8 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 
 #ifdef DEBUG_PHY
     msg("l=%d, phase_offset = %f (%d,%d), freq_offset_est = %d Hz, freq_offset_filt = %d \n",l,phase_offset,omega_cpx->r,omega_cpx->i,freq_offset_est,*freq_offset);
+    for (i=0;i<150;i++)
+      msg("i %d : %d,%d <=> %d,%d\n",i,dl_ch[2*i],dl_ch[(2*i)+1],dl_ch_prev[2*i],dl_ch_prev[(2*i)+1]);
 #endif
 
   return(0);

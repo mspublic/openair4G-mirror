@@ -9,6 +9,7 @@ extern double gaussdouble(double,double);
 extern int write_output(const char *,const char *,void *,int,int,char);
 //double pn[1024];
 
+//#define DEBUG_RF 1
 
   //free(input_data);
 void rf_rx(double **r_re,
@@ -86,7 +87,7 @@ void rf_rx(double **r_re,
     exit(-1);
   }
 
-#ifdef DEBUG_PHY
+#ifdef DEBUG_RF
   printf("pn_a0 = %f, pn_b1=%f,pn_b2=%f\n",pn_a0,pn_b1,pn_b2);
 #endif
 
@@ -97,7 +98,7 @@ void rf_rx(double **r_re,
     }
 
   //Loop over input
-#ifdef DEBUG_PHY
+#ifdef DEBUG_RF
   printf("N0W = %f dBm\n",10*log10(N0W));
   printf("rx_gain = %f dB(%f)\n",rx_gain_dB,rx_gain_lin);
   printf("IQ_imb = %f dB(%f)\n",IQ_imb_dB,IQ_imb_lin);

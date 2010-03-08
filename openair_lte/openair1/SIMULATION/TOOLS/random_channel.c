@@ -12,36 +12,57 @@
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model. 
 \param amps Linear amplitudes of the taps (length(amps)=channel_length). The taps are assumed to be spaced equidistantly between 0 and t_max. The values should sum up to 1.
 \param t_max Maximum path delay in mus.
+\param a state vector of length channel_length
 \param channel_length Number of taps.
 \param bw Channel bandwidth in MHz.
 \param ch Returned channel (length(ch)=(int)11+2*bw*t_max).
 \param ricean_factor Ricean factor applied to all taps.
 \param phase Phase of the first tap.
+\param forgetting_factor (0..1) controls temporal variation of the channel (block stationary)
+\param clear Intialize channel memory to 0 
 */
 
 void random_channel(double *amps,
 		    double t_max, 
+		    struct complex *a,
 		    int channel_length,
 		    double bw,
 		    struct complex *ch,
 		    double ricean_factor,
-		    struct complex *phase) {
+		    struct complex *phase,
+		    double forgetting_factor,
+		    unsigned char clear) {
 
   //amps = amps/sum(amps);
-  struct complex a[channel_length];
+
   double delta_tau,delay,s;
   int i,k,l;
-  
+  struct complex anew;
+
   //a = sqrt(amps/2) .* (randn(1,length(amps)) + j*randn(1,length(amps)));
   for (i=0;i<channel_length;i++) {
 
-    a[i].r = sqrt(ricean_factor*amps[i]/2) * gaussdouble(0.0,1.0);
-    a[i].i = sqrt(ricean_factor*amps[i]/2) * gaussdouble(0.0,1.0);
-  }
-  
-  a[0].r += phase->r * sqrt(1-ricean_factor);
-  a[0].i += phase->i * sqrt(1-ricean_factor);
+    anew.r = sqrt(ricean_factor*amps[i]/2) * gaussdouble(0.0,1.0);
+    anew.i = sqrt(ricean_factor*amps[i]/2) * gaussdouble(0.0,1.0);
 
+    if (i==0) {
+      anew.r += phase->r * sqrt(1-ricean_factor);
+      anew.i += phase->i * sqrt(1-ricean_factor);
+    }
+
+    if (clear==1){
+      a[i].r = anew.r;
+      a[i].i = anew.i;
+    }
+    else {
+      a[i].r = (sqrt(forgetting_factor)*a[i].r) + sqrt(1-forgetting_factor)*anew.r;
+      a[i].i = (sqrt(forgetting_factor)*a[i].i) + sqrt(1-forgetting_factor)*anew.i;
+    }
+  }
+
+
+
+  
   //delta_tau=t_max/(channel_length-1);
   
   delta_tau = t_max/channel_length;
@@ -71,7 +92,7 @@ void random_channel(double *amps,
       ch[k].i += s*a[l].i;
       //            printf("delay %f (%f,%f) : %f [%f=%f,%f,%f]\n",delay,a[l].r,a[l].i,s,(double)k - (delay*bw)-(bw*t_max),(double)k,delay*bw,bw*t_max);
     }
-    //        printf("tap  %d : (%f,%f)\n",k,ch[k].r,ch[k].i);
+    //            printf("tap  %d : (%f,%f)\n",k,ch[k].r,ch[k].i);
   }
 }
 

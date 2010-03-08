@@ -288,6 +288,8 @@ typedef struct {
   short e[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
   unsigned char Mdlharq; 
+  /// CQI CRC status
+  unsigned char cqi_crc_status;
   /// Pointer to CQI data
   unsigned char o[MAX_CQI_BITS+8];
   /// Length of CQI data under RI=1 assumption(bits)
@@ -1145,6 +1147,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_eNb_ULSCH_t *ulsch,
 			     unsigned char subframe);
+
+void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 
 /**@}*/
 #endif

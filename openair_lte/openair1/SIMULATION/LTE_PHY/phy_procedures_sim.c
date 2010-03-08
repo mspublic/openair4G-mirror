@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
   int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=1; //0.0000005;
+  double aoa=.03,ricean_factor=0.0000005;
   int channel_length;
   struct complex **ch;
   unsigned char pbch_pdu[6];
@@ -57,8 +57,10 @@ int main(int argc, char **argv) {
 
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
-  double N0W, path_loss, path_loss_dB;
+  double N0W, path_loss, path_loss_dB, tx_pwr, rx_pwr;
+  int rx_pwr2;
 
+  unsigned char first_call = 1;
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
@@ -93,6 +95,8 @@ int main(int argc, char **argv) {
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
   lte_frame_parms->n_RRC = 0;
+
+
 
   init_frame_parms(lte_frame_parms);
   
@@ -216,6 +220,7 @@ int main(int argc, char **argv) {
   set_taus_seed(0);
 
   openair_daq_vars.tdd = 1;
+  PHY_vars->rx_vars[0].rx_total_gain_dB=140;
 
   for (mac_xface->frame=0; mac_xface->frame<4; mac_xface->frame++) {
 
@@ -337,73 +342,91 @@ int main(int argc, char **argv) {
 	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
       }
-      */
+      
       if (next_slot == 5) {
 	sprintf(fname,"UE_frame%d_txsig0.m",mac_xface->frame);
 	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"UE_frame%d_txsig1.m",mac_xface->frame);
 	write_output(fname,"UE_txs1",txdata[1],640*12,1,1);
       }
-      
+      */
+      /*
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
 	  s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
 	  s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	}
       }
-      /*      
+      */
+
+      tx_pwr = dac_fixed_gain(s_re,
+			      s_im,
+			      txdata,
+			      2,
+			      lte_frame_parms->samples_per_tti>>1,
+			      14,
+			      0);
+      printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
 			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
 			channel_length,
-			0);
-      */
+			0,
+			1,
+			(first_call == 1) ? 1 : 0);
+      
+      if (first_call == 1)
+	first_call = 0;
+
       //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
       
       // scale by path_loss = NOW - P_noise
-      //sigma2       = pow(10,sigma2_dB/10);
-      //N0W          = -95.87;
-      //path_loss_dB = N0W - sigma2;
-      //path_loss    = pow(10,path_loss_dB/10);
-      path_loss_dB = 0;
-      path_loss = 1;
+      
+      //      sigma2       = pow(10,sigma2_dB/10);
+      //      N0W          = -105;
+      path_loss_dB = -70;
+      path_loss    = pow(10,path_loss_dB/10);
+      
+      //      path_loss_dB = 0;
+      //      path_loss = 1;
+      
+
       
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-	  r_re[aa][i]=s_re[aa][i]*sqrt(path_loss); 
-	  r_im[aa][i]=s_im[aa][i]*sqrt(path_loss); 
-
+	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
+	  r_im[aa][i]=r_im[aa][i]*sqrt(path_loss); 
+	  
 	}
       }
       
-      /*
+      
       // RF model
       rf_rx(r_re,
-      r_im,
-      NULL,
-      NULL,
-      0,
-      lte_frame_parms->nb_antennas_rx,
-      FRAME_LENGTH_COMPLEX_SAMPLES,
-      1.0/7.68e6 * 1e9,      // sampling time (ns)
-      500,            // freq offset (Hz) (-20kHz..20kHz)
-      0.0,            // drift (Hz) NOT YET IMPLEMENTED
-      nf,             // noise_figure NOT YET IMPLEMENTED
-      -path_loss_dB,            // rx_gain (dB)
-      200,            // IP3_dBm (dBm)
-      &ip,            // initial phase
-      30.0e3,         // pn_cutoff (kHz)
-      -500.0,          // pn_amp (dBc) default: 50
-      0.0,           // IQ imbalance (dB),
-      0.0);           // IQ phase imbalance (rad)
-    
-  */
-
+	    r_im,
+	    NULL,
+	    NULL,
+	    0,
+	    lte_frame_parms->nb_antennas_rx,
+	    lte_frame_parms->samples_per_tti>>1,
+	    1.0/7.68e6 * 1e9,      // sampling time (ns)
+	    0.0,            // freq offset (Hz) (-20kHz..20kHz)
+	    0.0,            // drift (Hz) NOT YET IMPLEMENTED
+	    nf,             // noise_figure NOT YET IMPLEMENTED
+	    (double)PHY_vars->rx_vars[0].rx_total_gain_dB-72.247,            // rx_gain (dB)
+	    200,            // IP3_dBm (dBm)
+	    &ip,            // initial phase
+	    30.0e3,         // pn_cutoff (kHz)
+	    -500.0,          // pn_amp (dBc) default: 50
+	    0.0,           // IQ imbalance (dB),
+	    0.0);           // IQ phase imbalance (rad)
+      rx_pwr = signal_energy_fp(r_re,r_im,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
+ 
+      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
   //AWGN
-  sigma2 = pow(10,sigma2_dB/10);
-  //printf("sigma2 = %g\n",sigma2);
 
   if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
     rxdata = lte_ue_common_vars->rxdata;
@@ -415,20 +438,35 @@ int main(int argc, char **argv) {
     else // UL part
       rxdata = lte_eNB_common_vars->rxdata[eNb_id];
 
-  slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
-  for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
+  slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1);
+
+  adc(r_re,
+      r_im,
+      0,
+      slot_offset,
+      rxdata,
+      2,
+      lte_frame_parms->samples_per_tti>>1,
+      12);
+  
+  rx_pwr2 = signal_energy(rxdata[0]+slot_offset,lte_frame_parms->samples_per_tti>>1);
+  
+  printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+  /*
+    for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
       ((short*) rxdata[aa])[slot_offset + (2*i)]   = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
       ((short*) rxdata[aa])[slot_offset + (2*i)+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      /*
+      
       if ((next_slot==4) && ((i%16)==0))
-	printf("rxdata (slot_offset %d): %d:%d => %d,%d\n",slot_offset,aa,i,
-	       ((short *)rxdata[aa])[slot_offset + (2*i)],
-	       ((short *)rxdata[aa])[slot_offset + 1+(2*i)]);
-      */
+      printf("rxdata (slot_offset %d): %d:%d => %d,%d\n",slot_offset,aa,i,
+      ((short *)rxdata[aa])[slot_offset + (2*i)],
+      ((short *)rxdata[aa])[slot_offset + 1+(2*i)]);
+      
     }
   }
-
+*/
+  /*
   if ((last_slot == 5) && (mac_xface->frame == 1)) {
 
   write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
@@ -437,6 +475,7 @@ int main(int argc, char **argv) {
 
     
   }
+  */
   /*
   if (next_slot == 5) {
     sprintf(fname,"eNB_frame%d_rxsig0_subframe2.m",mac_xface->frame);

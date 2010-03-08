@@ -89,7 +89,6 @@ int mult_cpx_vector_h(short *x1,
     //    tempd = (int *)&temp;
     //  printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
 
-
     m0 = _mm_packs_epi32(m0,m0);        // 1- pack in a 128 bit register [re im re im]
     m0 = _mm_unpacklo_epi32(m0,m0);        // 1- pack in a 128 bit register [re im re im]
 

@@ -12,7 +12,7 @@
 #include "defs.h"
 #include "extern.h"
 
-#define DEBUG_ULSCH_CODING 
+//#define DEBUG_ULSCH_CODING 
 //#define DEBUG_ULSCH_FREE 1
 
 /*

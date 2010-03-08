@@ -468,12 +468,12 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
 
-  printf("rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+  //  printf("rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
       
 
-    printf("rx_ulsch: symbol %d\n",l);
+    //    printf("rx_ulsch: symbol %d\n",l);
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],

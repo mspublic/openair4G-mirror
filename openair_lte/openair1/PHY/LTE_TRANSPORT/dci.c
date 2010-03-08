@@ -114,9 +114,10 @@ unsigned char *generate_dci0(unsigned char *dci,
   }
 
   coded_bits = 72 * (1<<aggregation_level);
-
+  /*
   for (i=0;i<1+((DCI_LENGTH+16)/8);i++)
     printf("i %d : %x\n",i,dci[i]);
+  */
   dci_encoding(dci,DCI_LENGTH,coded_bits,e,rnti);
 
   return(e+coded_bits);

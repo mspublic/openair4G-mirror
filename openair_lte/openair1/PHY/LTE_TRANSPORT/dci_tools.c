@@ -473,7 +473,7 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe) {
 
-  msg("dci_tools.c: subframe2_harq_pid_tdd, subframe %d for TDD mode %d\n",subframe,tdd_config);
+  //  msg("dci_tools.c: subframe2_harq_pid_tdd, subframe %d for TDD mode %d\n",subframe,tdd_config);
 
   switch (tdd_config) {
 
@@ -520,14 +520,13 @@ unsigned char quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) 
   unsigned short pmivect = 0;
   unsigned char rank = meas->rank[eNb_id];
   int pmi;
-  short pmi_re,pmi_im;
+  int pmi_re,pmi_im;
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
     if (rank == 1) {
-      pmi = meas->subband_pmi[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
-      pmi_re = ((short*)&pmi)[0];
-      pmi_im = ((short*)&pmi)[1];
+      pmi_re = meas->subband_pmi_re[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
+      pmi_im = meas->subband_pmi_im[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;
       else if ((pmi_re < pmi_im) && (pmi_re > -pmi_im))
@@ -555,12 +554,12 @@ unsigned char quantize_wideband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id)
   unsigned short pmivect = 0;
   unsigned char rank = meas->rank[eNb_id];
   int pmi;
-  short pmi_re,pmi_im;
+  int pmi_re,pmi_im;
 
   if (rank == 1) {
-    pmi = meas->wideband_pmi[eNb_id][meas->selected_rx_antennas[eNb_id][0]];
-    pmi_re = ((short*)&pmi)[0];
-    pmi_im = ((short*)&pmi)[1];
+    pmi = 
+    pmi_re = meas->wideband_pmi_re[eNb_id][meas->selected_rx_antennas[eNb_id][0]];
+    pmi_im = meas->wideband_pmi_im[eNb_id][meas->selected_rx_antennas[eNb_id][0]];
     if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
       pmiq = PMI_2A_11;
     else if ((pmi_re < pmi_im) && (pmi_re > -pmi_im))
@@ -579,6 +578,17 @@ unsigned char quantize_wideband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id)
   return(pmivect);
 }
 
+unsigned char sinr2cqi(int sinr) {
+
+  int i;
+
+  for (i=0;i<15;i++) {
+    if (sinr < lte_cqi_snr_dB[i])
+      return((i==0) ? 0 : (i-1));
+  }
+  return(i-1);
+}
+
 unsigned char fill_subband_cqi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   unsigned char i;
@@ -588,7 +598,7 @@ unsigned char fill_subband_cqi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
-    diff_cqi = meas->wideband_cqi[eNb_id] - meas->subband_cqi[eNb_id][i];
+    diff_cqi = sinr2cqi(meas->wideband_cqi_dB[eNb_id]) - sinr2cqi(meas->subband_cqi_dB[eNb_id][i]);
     if (diff_cqi<=-1)
       diff_cqi = 3;
     else if (diff_cqi>2)
@@ -610,27 +620,27 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
 
   case wideband_cqi:
     if (rank == 0) {
-      ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = meas->wideband_cqi[eNb_id];
+      ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNb_id]);
       ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNb_id);
     }
     else { 
-      ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = meas->wideband_cqi[eNb_id];
-      ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = meas->wideband_cqi[eNb_id];
+      ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_dB[eNb_id][0]);
+      ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2 = sinr2cqi(meas->wideband_cqi_dB[eNb_id][1]);
       ((wideband_cqi_rank2_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNb_id);
     }
     break;
   case hlc_cqi:
     if (rank == 0) {
-      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1  = meas->wideband_cqi[eNb_id];
+      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNb_id]);
       ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNb_id);
-      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi   = quantize_wideband_pmi(meas,eNb_id);
+      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNb_id);
     }
     else {
 
       // This has to be improved!!!
-      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = meas->wideband_cqi[eNb_id];
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNb_id][0]);
       ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNb_id);
-      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = meas->wideband_cqi[eNb_id];
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNb_id][0]);
       ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNb_id);
       ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNb_id);
     }
@@ -640,6 +650,67 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
     break;
   }
 }
+
+unsigned int pmi2hex_2Ar1(unsigned short pmi) {
+
+ return ((pmi&3) + (((pmi>>2)&3)<<4) + (((pmi>>4)&3)<<8) + (((pmi>>6)&3)<<12) + 
+          (((pmi>>8)&3)<<16) + (((pmi>>10)&3)<<20) + (((pmi>>12)&3)<<24));
+}
+
+unsigned int pmi2hex_2Ar2(unsigned char pmi) {
+
+ return ((pmi&1) + (((pmi>>1)&1)<<4) + (((pmi>>2)&1)<<8) + (((pmi>>3)&3)<<12) + 
+          (((pmi>>4)&3)<<16) + (((pmi>>5)&3)<<20) + (((pmi>>6)&3)<<24));
+}
+
+unsigned int cqi2hex(unsigned short cqi) {
+
+ return ((cqi&3) + (((cqi>>2)&3)<<4) + (((cqi>>4)&3)<<8) + (((cqi>>6)&3)<<12) + 
+          (((cqi>>8)&3)<<16) + (((cqi>>10)&3)<<20) + (((cqi>>12)&3)<<24));
+}
+
+
+void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id) {
+
+
+  unsigned char rank;
+
+  rank = o_RI[0];
+
+  switch (fmt) {
+
+  case wideband_cqi:
+    if (rank == 0) {
+      msg("[PRINT CQI] wideband_cqi rank 1: eNB %d, cqi %d\n",eNB_id,((wideband_cqi_rank1_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] wideband_cqi rank 1: eNB %d, pmi %8x\n",eNB_id,pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)o)->pmi));
+    }
+    else { 
+      msg("[PRINT CQI] wideband_cqi rank 2: eNB %d, cqi1 %d\n",eNB_id,((wideband_cqi_rank2_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] wideband_cqi rank 2: eNB %d, cqi2 %d\n",eNB_id,((wideband_cqi_rank2_2A_5MHz *)o)->cqi2);
+      msg("[PRINT CQI] wideband_cqi rank 2: eNB %d, pmi %8x\n",eNB_id,pmi2hex_2Ar2(((wideband_cqi_rank2_2A_5MHz *)o)->pmi));
+    }
+    break;
+  case hlc_cqi:
+    if (rank == 0) {
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi);
+    }
+    else {
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi2 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2);
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi2 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi);
+    }
+    break;
+  case ue_selected:
+    msg("dci_tools.c: print_CQI ue_selected CQI not supported yet!!!\n");
+    break;
+  }
+}
+
+
 void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       unsigned char subframe,
@@ -678,7 +749,7 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
     ulsch->O_RI                                  = 1;
-    if (meas->rank[eNb_id] == 2) {
+    if (meas->rank[eNb_id] == 1) {
       ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
       ulsch->o_RI[0]                             = 1;
     }
@@ -687,7 +758,9 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->o_RI[0]                             = 0;
     }
 
+
     fill_CQI(ulsch->o,wideband_cqi,meas,eNb_id);
+    print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNb_id);
 
     ulsch->O_ACK                                  = 2;
 

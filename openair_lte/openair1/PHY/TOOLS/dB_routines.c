@@ -317,3 +317,14 @@ char dB_fixed(unsigned int x) {
 
   return dB_power;
 }
+
+char dB_fixed2(unsigned int x, unsigned int y) {
+
+  if ((x>0) && (y>0) )
+    if (x>y)
+      return(dB_fixed(x/y));
+    else
+      return(-dB_fixed(y/x));
+  else
+    return(-128);
+}

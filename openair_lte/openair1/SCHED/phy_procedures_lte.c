@@ -135,7 +135,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 
       get_ack(lte_frame_parms->tdd_config,dlsch_ue[0]->harq_ack,(next_slot>>1),ulsch_ue[0]->o_ACK);
 
-      printf("[PHY_PROCEDURES_LTE][UE_UL] subframe %d -> ACK %d, %d\n",(next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
+      printf("[PHY_PROCEDURES_LTE][UE_UL] harq_pid %d subframe %d -> ACK %d, %d\n",harq_pid, (next_slot>>1),ulsch_ue[0]->o_ACK[0],ulsch_ue[0]->o_ACK[1]);
       
 
       first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
@@ -173,6 +173,26 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
 		 4,
 		 next_slot);
   }
+
+}
+
+void phy_procedures_eNB_S_TX(unsigned char next_slot) {
+
+  int eNb_id = 0;
+
+#ifdef DEBUG_PHY
+  if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
+    msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating pilots for DL-S\n",mac_xface->frame,next_slot);
+#endif
+
+  //  printf("Clearing TX buffer\n");
+  memset(&lte_eNB_common_vars->txdataF[eNb_id][next_slot*(lte_frame_parms->samples_per_tti>>1)],
+	 0,(lte_frame_parms->samples_per_tti>>1)<<2);
+  generate_pilots_slot(lte_eNB_common_vars->txdataF[eNb_id],
+		       AMP,
+		       lte_frame_parms,
+		       eNb_id,
+		       next_slot);
 
 }
 
@@ -224,13 +244,13 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   }    
 #endif
   if (l==0) {
-    // Measurements from first DL reference symbol
+    // UE measurements 
     
     lte_ue_measurements(lte_ue_common_vars,
 			lte_frame_parms,
 			&PHY_vars->PHY_measurements,
 			(last_slot>>1)*lte_frame_parms->symbols_per_tti*lte_frame_parms->ofdm_symbol_size,
-			0,
+			(last_slot == 2) ? 1 : 2,
 			1);
     
     // AGC
@@ -243,15 +263,16 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
       
       msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, last_slot,
-	  PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
-	  PHY_vars->PHY_measurements.rx_power_dB[0][0],
-	  PHY_vars->PHY_measurements.rx_power_dB[0][1],
-	  PHY_vars->PHY_measurements.rx_power[0][0],
-	  PHY_vars->PHY_measurements.rx_power[0][1],
+	  PHY_vars->PHY_measurements.rx_rssi_dBm[0] - ((lte_frame_parms->nb_antennas_rx==2) ? 3 : 0), 
+	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
+	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
+	  PHY_vars->PHY_measurements.wideband_cqi[0][0],
+	  PHY_vars->PHY_measurements.wideband_cqi[0][1],
 	  PHY_vars->rx_vars[0].rx_total_gain_dB);
       
-      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
+      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
 	  mac_xface->frame, last_slot,
+	  dB_fixed(PHY_vars->PHY_measurements.n0_power_tot/lte_frame_parms->nb_antennas_rx) - (int)PHY_vars->rx_vars[0].rx_total_gain_dB,
 	  PHY_vars->PHY_measurements.n0_power_dB[0],
 	  PHY_vars->PHY_measurements.n0_power_dB[1],
 	  PHY_vars->PHY_measurements.n0_power[0],
@@ -381,11 +402,13 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					C_RNTI,
 					last_slot>>1,
 					format0,
-					ulsch_ue[eNb_id], 
+					ulsch_ue[eNb_id],
+					&PHY_vars->PHY_measurements,
 					lte_frame_parms,
 					SI_RNTI,
 					RA_RNTI,
-					P_RNTI);
+					P_RNTI,
+					eNb_id);
       printf("[PHY_PROCEDURES_LTE] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",last_slot>>1);
     }
     else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format0)) {
@@ -748,14 +771,17 @@ void phy_procedures_eNB_TX(next_slot) {
       dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
       dci_alloc[0].L          = 3;
       dci_alloc[0].rnti       = SI_RNTI;
-
+      /*
       memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[1].L          = 3;
       dci_alloc[1].rnti       = C_RNTI;
-      nb_dci_ue_spec = 1;
-      nb_dci_common  = 1;
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
+
+      */
+
+      nb_dci_ue_spec = 0;
+      nb_dci_common  = 1;
 
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated CCCH DCI, format 1A\n",mac_xface->frame, next_slot);
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
@@ -769,6 +795,8 @@ void phy_procedures_eNB_TX(next_slot) {
 					 P_RNTI);
       dlsch_eNb_cntl_active = 1;
 
+      // Schedule UL subframe
+      /*
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
 					 C_RNTI,
 					 (next_slot>>1),
@@ -783,6 +811,7 @@ void phy_procedures_eNB_TX(next_slot) {
       msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
 	  mac_xface->frame,next_slot>>1,harq_pid);
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+      */
 
       break;
     case 1:
@@ -825,6 +854,10 @@ void phy_procedures_eNB_TX(next_slot) {
       dlsch_eNb_active = 0;
       break;
     case 8:
+
+      // Schedule UL subframe
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
+
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
@@ -832,7 +865,9 @@ void phy_procedures_eNB_TX(next_slot) {
       nb_dci_ue_spec = 1;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
-      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
+
+
+
 
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
 					 C_RNTI,
@@ -851,6 +886,9 @@ void phy_procedures_eNB_TX(next_slot) {
 
       break;
     case 9:
+
+      // Schedule UL subframe
+      /*      
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
@@ -858,6 +896,9 @@ void phy_procedures_eNB_TX(next_slot) {
       nb_dci_ue_spec = 1;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
+
+
+      
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
 					 C_RNTI,
@@ -874,10 +915,12 @@ void phy_procedures_eNB_TX(next_slot) {
       msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
 	  mac_xface->frame,next_slot>>1,harq_pid);
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+      */
 
       break;
     }
     
+    // if we have DCI to generate do it now
     if ((nb_dci_common+nb_dci_ue_spec)>0) {
 #ifdef DEBUG_PHY
       if (mac_xface->frame%100 == 0)
@@ -894,6 +937,8 @@ void phy_procedures_eNB_TX(next_slot) {
 
     }
   }
+
+  // For even next slots generate dlsch
   if (next_slot%2 == 0) {
 
     if (dlsch_eNb_active == 1) {
@@ -1011,6 +1056,9 @@ void phy_procedures_eNB_RX(last_slot) {
 		     ulsch_eNb[UE_id],
 		     last_slot>>1);    
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
+      msg("[PHY PROCEDURES] frame %d, subframe %d eNB %d: received ULSCH for UE %d, CQI CRC Status %d\n",mac_xface->frame, last_slot>>1, eNb_id, UE_id, ulsch_eNb[UE_id]->cqi_crc_status);
+      if (ulsch_eNb[UE_id]->cqi_crc_status == 1)
+	print_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,eNb_id);
     }
 
 
@@ -1051,37 +1099,37 @@ void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
   if (mac_xface->is_cluster_head == 0) {
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_UL) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_TX(%d)\n",next_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_TX(%d)\n",next_slot);
       phy_procedures_UE_TX(next_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_DL) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_RX(%d)\n",last_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_RX(%d)\n",last_slot);
       phy_procedures_UE_RX(last_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_S) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_S_TX(%d)\n",next_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_S_TX(%d)\n",next_slot);
       phy_procedures_UE_S_TX(next_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_RX(%d)\n",last_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_UE_RX(%d)\n",last_slot);
       phy_procedures_UE_RX(last_slot);
     }
   }
   else { //eNB
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_DL) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_TX(%d)\n",next_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_TX(%d)\n",next_slot);
       phy_procedures_eNB_TX(next_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_UL) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_RX(%d)\n",last_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_RX(%d)\n",last_slot);
       phy_procedures_eNB_RX(last_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_S) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_S_TX(%d)\n",next_slot);
-      //phy_procedures_eNB_S_TX(next_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_S_TX(%d)\n",next_slot);
+      phy_procedures_eNB_S_TX(next_slot);
     }
     if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
-      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_S_RX(%d)\n",last_slot);
+      //      msg("[PHY_PROCEDURES_LTE] Calling phy_procedures_eNB_S_RX(%d)\n",last_slot);
       phy_procedures_eNB_S_RX(last_slot);
     }
   }

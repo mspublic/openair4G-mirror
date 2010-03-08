@@ -427,6 +427,11 @@ void mmxcopy(void *dest,void *src,int size);
 */
 int signal_energy(int *,unsigned int);
 
+/*!\fn int signal_energy_nodc(int *,unsigned int);
+\brief Computes the signal energy per subcarrier, without DC removal
+*/
+int signal_energy_nodc(int *,unsigned int);
+
 /*!\fn double signal_energy_fp(double **, double **,unsigned int, unsigned int,unsigned int);
 \brief Computes the signal energy per subcarrier
 */
@@ -466,6 +471,7 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 char dB_fixed(unsigned int x);
 
+char dB_fixed2(unsigned int x,unsigned int y);
 
 int phy_phase_compensation_top (unsigned int pilot_type, unsigned int initial_pilot,
 				unsigned int last_pilot, int ignore_prefix);

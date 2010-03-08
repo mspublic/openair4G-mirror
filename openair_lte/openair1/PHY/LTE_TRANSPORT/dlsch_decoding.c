@@ -38,7 +38,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     dlsch->Mdlharq = Mdlharq;
 
     for (i=0;i<Mdlharq;i++) {
-      //      printf("new_ue_dlsch: Harq process %d\n",i);
+      //      msg("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
@@ -130,7 +130,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     }
   
 #ifdef DEBUG_DLSCH_DECODING     
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
+    msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
     memset(dummy_w[r],0,3*(6144+64)*sizeof(short));
@@ -139,7 +139,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
-    printf("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
+    msg("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
 	   harq_pid,r, coded_bits_per_codeword,
 	   Kr*3,
 	   mod_order,
@@ -162,7 +162,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 					   dlsch->harq_processes[harq_pid]->Nl,
 					   r);
     /*
-    printf("Subblock deinterleaving, d %p w %p\n",
+    msg("Subblock deinterleaving, d %p w %p\n",
 	   dlsch->harq_processes[harq_pid]->d[r],
 	   dlsch->harq_processes[harq_pid]->w);
     */
@@ -179,28 +179,28 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
       write_output("decoder_in.m","dec",&dlsch->harq_processes[harq_pid]->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 
-    printf("decoder input(segment %d) :",r);
+    msg("decoder input(segment %d) :",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
-    printf("\n");
+      msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
+    msg("\n");
 #endif
     */
 
-    //    printf("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
+    //    msg("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
     //    memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
-    //    printf("done\n");
+    //    msg("done\n");
     if (dlsch->harq_processes[harq_pid]->C == 1) 
       crc_type = CRC24_A;
     else 
       crc_type = CRC24_B;
 
     /*        
-    printf("decoder input(segment %d)\n",r);
+    msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
 	  (dlsch->harq_processes[harq_pid]->d[r][96+i] < -8))
-	printf("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
-    printf("\n");
+	msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
+    msg("\n");
     */
     
     ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
@@ -215,11 +215,11 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      //      printf("CRC failed\n");
+      //      msg("CRC failed\n");
 
       dlsch->harq_ack[subframe].ack = 0;
       dlsch->harq_ack[subframe].harq_id = harq_pid;
-      printf("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
+      //      msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
       if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
 	dlsch->harq_processes[harq_pid]->status = IDLE;
       }
@@ -230,12 +230,12 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
       dlsch->harq_processes[harq_pid]->round  = 0;
       dlsch->harq_ack[subframe].ack = 1;
       dlsch->harq_ack[subframe].harq_id = harq_pid;
-      printf("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
+      //      msg("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
     }
   }
   // Reassembly of Transport block here
   offset = 0;
-  //  printf("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
+  //  msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
   
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
     if (r<dlsch->harq_processes[harq_pid]->Cminus)
@@ -250,7 +250,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
 	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
       offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
-      //            printf("copied %d bytes to b sequence\n",
+      //            msg("copied %d bytes to b sequence\n",
       //      	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
     }
     else {

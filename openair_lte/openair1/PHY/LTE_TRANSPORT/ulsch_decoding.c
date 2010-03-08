@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 #include "extern.h"
 
-#define DEBUG_ULSCH_DECODING
+//#define DEBUG_ULSCH_DECODING
 void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
 
   int i,r;
@@ -443,13 +443,19 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   memset(ulsch->o,0,1+(ulsch->Or1/8));
   phy_viterbi_lte_sse2(ulsch->o_d+96,ulsch->o,8+ulsch->Or1);
 
+  if (extract_cqi_crc(ulsch->o,ulsch->Or1) == (crc8(ulsch->o,ulsch->Or1)>>24))
+    ulsch->cqi_crc_status = 1;
+  else
+    ulsch->cqi_crc_status = 0;
 #ifdef DEBUG_ULSCH_DECODING
   printf("ulsch_coding: Or1=%d\n",ulsch->Or1);
   for (i=0;i<1+((8+ulsch->Or1)/8);i++)
     printf("ulsch_decoding: O[%d] %d\n",i,ulsch->o[i]);
+  if (ulsch->cqi_crc_status == 1)
+    printf("RX CQI CRC OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
+  else
+    printf("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
 #endif
-  printf("RX CRC %x, CRC computed %x\n",extract_cqi_crc(ulsch->o,ulsch->Or1),crc8(ulsch->o,ulsch->Or1)>>24);
-
   // Do PUSCH Decoding
 
 
@@ -557,15 +563,15 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 					MAX_TURBO_ITERATIONS,
 					crc_type,
 					(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-					harq_pid+1);
+					harq_pid);
     
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      printf("CRC failed\n");
+      printf("ULSCH harq_pid %d CRC failed\n",harq_pid);
       return(ret);
     }
     else
-      printf("CRC OK : %d iterations\n",ret);
+      printf("ULSCH harq_pid %d CRC OK : %d iterations\n",harq_pid, ret);
   }
   // Reassembly of Transport block here
   offset = 0;

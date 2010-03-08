@@ -7,7 +7,7 @@
 
 #define OFDMA_ULSCH
 
-#define DEBUG_ULSCH_MODULATION
+//#define DEBUG_ULSCH_MODULATION
 
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
@@ -178,9 +178,6 @@ void ulsch_modulation(mod_sym_t **txdataF,
 #ifdef OFDMA_ULSCH
   for (i=0;i<Msymb;i++) {
     ulsch->z[i] = ulsch->d[i]; 
-
-        if (i<16)
-          printf("z[%d]  -> %d\n",i,ulsch->z[i]);
   }
 #else
 
@@ -199,12 +196,12 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
     symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(subframe*nsymb));
     txptr = &txdataF[0][symbol_offset];
-    printf("symbol %d: symbol_offset %d\n",l,symbol_offset);
+    //    printf("symbol %d: symbol_offset %d\n",l,symbol_offset);
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     else {
-      printf("copying %d REs\n",Msc_PUSCH);
+      //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==(frame_parms->N_RB_DL*12))
@@ -222,14 +219,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
   for (j=0,l=0;l<(nsymb-1);l++) {
     re_offset = re_offset0;
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    //    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     // Skip reference symbols
     else {
-      printf("copying %d REs\n",Msc_PUSCH);
+      //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)

@@ -295,19 +295,25 @@ typedef struct
   unsigned int   rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       //! estimated received spatial signal power (linear)
   unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];    //! estimated received spatial signal power (dB) 
   unsigned short rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
-  unsigned short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
+  short rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
   unsigned short n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
+  unsigned int n0_power_tot;                                    //! total estimated noise power (linear)
   unsigned short n0_avg_power_dB;                                 //! estimated avg noise power (dB)
   int            rx_correlation[NUMBER_OF_eNB_MAX][2];            //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_eNB_MAX][2];         //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
 
   // UE measurements
-  char           wideband_sinr[NUMBER_OF_eNB_MAX];                    /// Wideband SINR 
-  char           subband_sinr[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS]; /// Subband SINR
-  unsigned char  wideband_cqi[NUMBER_OF_eNB_MAX];                     /// Wideband CQI (quantized SINR)
-  unsigned char  subband_cqi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];  /// Subband CQI  (quantized SINR)
-  int            wideband_pmi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
-  int            subband_pmi[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
+  int  wideband_cqi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];                     /// Wideband CQI (quantized SINR)
+  int  wideband_cqi_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];                     /// Wideband CQI (quantized SINR)
+  char  wideband_cqi_tot[NUMBER_OF_eNB_MAX];                     /// Wideband CQI (quantized SINR)
+  int            subband_cqi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI per RX antenna (signal energy)
+  int            subband_cqi_tot[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];  /// Total Subband CQI  (signal enerigy)
+  int            subband_cqi_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI  (quantized SINR)
+  int            subband_cqi_tot_dB[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];  /// Total Subband CQI  (quantized SINR)
+  int            wideband_pmi_re[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
+  int            wideband_pmi_im[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     /// Wideband PMI for each RX antenna
+  int            subband_pmi_re[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
+  int            subband_pmi_im[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
   char           selected_rx_antennas[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];        /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
   unsigned char  rank[NUMBER_OF_eNB_MAX];                                                /// Wideband Rank indication
 } PHY_MEASUREMENTS;
