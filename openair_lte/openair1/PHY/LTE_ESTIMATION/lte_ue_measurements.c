@@ -1,19 +1,24 @@
-#include "defs.h"
+// this function fills the PHY_vars->PHY_measurement structure
+
+#include "PHY/defs.h"
 #include "PHY/extern.h"
 
-// this function fills the PHY_vars->PHY_measurement structure
+#include "emmintrin.h"
+
+#ifdef __SSE3__
+#include "pmmintrin.h"
+#include "tmmintrin.h"
+#else
+__m128i zeroPMI;
+#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmx)))
+#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmy)))
+#endif
 
 //#define k1 1000
 #define k1 1
 #define k2 (1024-k1)
 
 int rx_power_avg[3];
-
-#ifndef __SSE3__
-__m128i zeroPMI;
-#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmx)))
-#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmy)))
-#endif
 
 void print_shorts(char *s,__m128i *x) {
 
