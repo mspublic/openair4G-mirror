@@ -186,8 +186,13 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot) {
 #endif
 
   //  printf("Clearing TX buffer\n");
-  memset(&lte_eNB_common_vars->txdataF[eNb_id][next_slot*(lte_frame_parms->samples_per_tti>>1)],
-	 0,(lte_frame_parms->samples_per_tti>>1)<<2);
+#ifdef IFFT_FPGA
+  memset(&lte_eNB_common_vars->txdataF[eNb_id][next_slot*(lte_frame_parms->N_RB_DL*12)*(lte_frame_parms->symbols_per_tti>>1)],
+	 0,(lte_frame_parms->N_RB_DL*12)*(lte_frame_parms->symbols_per_tti>>1)*sizeof(mod_sym_t));
+#else
+  memset(&lte_eNB_common_vars->txdataF[eNb_id][next_slot*lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)],
+	 0,lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)*sizeof(mod_sym_t));
+#endif
   generate_pilots_slot(lte_eNB_common_vars->txdataF[eNb_id],
 		       AMP,
 		       lte_frame_parms,
@@ -226,9 +231,9 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
 void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   
-#ifdef EMOS
   unsigned char eNb_id,aa;
-  
+
+#ifdef EMOS
   // first slot in frame is special
   if (((last_slot==0) || (last_slot==1)) && ((l==0) || (l==4-lte_frame_parms->Ncp))) {
     
@@ -284,8 +289,10 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   
   if ((last_slot==1) && (l==(4-lte_frame_parms->Ncp))) {
     
+    eNb_id = 0;
     lte_adjust_synch(lte_frame_parms,
 		     lte_ue_common_vars,
+		     eNb_id,
 		     1,
 		     16384);
   }

@@ -49,6 +49,7 @@ LTE_eNb_ULSCH_t *new_eNb_ulsch(unsigned char Mdlharq) {
 	    exit_flag=2;
 	  ulsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
 	}
+	ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
       
       }	else {
 	exit_flag=1;

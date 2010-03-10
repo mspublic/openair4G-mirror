@@ -861,7 +861,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 				int **rho,
 				LTE_DL_FRAME_PARMS *frame_parms,
 				unsigned char symbol,
-				unsigned char *mod_order,
+				unsigned char mod_order,
 				unsigned short nb_rb,
 				unsigned char output_shift)
 \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
@@ -885,7 +885,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 				int **rho,
 				LTE_DL_FRAME_PARMS *frame_parms,
 				unsigned char symbol,
-				unsigned char *mod_order,
+				unsigned char mod_order,
 				unsigned short nb_rb,
 				unsigned char output_shift);
 

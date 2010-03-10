@@ -91,6 +91,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
 	    exit_flag=2;
 	  }
 	}
+	ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
       }	else {
 	msg("Can't get harq_p %d\n",i);
 	exit_flag=3;

@@ -1090,7 +1090,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 				int **rho,
 				LTE_DL_FRAME_PARMS *frame_parms,
 				unsigned char symbol,
-				unsigned char *mod_order,
+				unsigned char mod_order,
 				unsigned short nb_rb,
 				unsigned char output_shift) {
 
@@ -1107,9 +1107,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
   //  printf("comp: symbol %d\n",symbol);
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
-    if (mod_order[aatx] == 4)
+    if (mod_order == 4)
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);
-    else if (mod_order[aatx] == 6) {
+    else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1);
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
     }
@@ -1124,7 +1124,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
       for (rb=0;rb<nb_rb;rb++) {
 	//	printf("comp: rb %d\n",rb);
-	if (mod_order[aatx]>2) {  
+	if (mod_order>2) {  
 	  // get channel amplitude if not QPSK
 
 	  mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
@@ -1460,7 +1460,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			     (aatx>1) ? lte_ue_dlsch_vars[eNb_id]->rho : NULL,
 			     frame_parms,
 			     symbol,
-			     lte_ue_dlsch_vars[eNb_id]->Qm,
+			     get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 			     nb_rb,
 			     log2_maxh); // log2_maxh+I0_shift
 
@@ -1474,7 +1474,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       (aatx>1) ? lte_ue_dlsch_vars[eNb_id_i]->rho : NULL,
 			       frame_parms,
 			       symbol,
-			       lte_ue_dlsch_vars[eNb_id]->Qm,
+			       get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs),
 			       nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
     

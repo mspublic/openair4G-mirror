@@ -99,6 +99,7 @@ This function computes the time domain channel response, finds the peak and adju
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_COMMON *ue_common,
+		      unsigned char eNb_id,
 		      unsigned char clear,
 		      short coef);
 

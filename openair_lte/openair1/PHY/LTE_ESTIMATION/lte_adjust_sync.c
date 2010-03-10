@@ -21,6 +21,7 @@ static int      max_pos_fil = 0;
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_COMMON *lte_ue_common,
+		      unsigned char eNb_id,
 		      unsigned char clear,
 		      short coef)
 {
@@ -39,7 +40,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
   // do ifft of channel estimate
   for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
-    fft((short*) &lte_ue_common->dl_ch_estimates[aa][LTE_CE_OFFSET],
+    fft((short*) &lte_ue_common->dl_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
 	(short*) lte_ue_common->dl_ch_estimates_time[aa],
 	frame_parms->twiddle_ifft,
 	frame_parms->rev,

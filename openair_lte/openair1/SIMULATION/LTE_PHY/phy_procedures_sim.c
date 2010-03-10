@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2.TPC              = 0;
   DLSCH_alloc_pdu2.dai              = 0;
-  DLSCH_alloc_pdu2.harq_pid         = 1;
+  DLSCH_alloc_pdu2.harq_pid         = 0;
   DLSCH_alloc_pdu2.tb_swap          = 0;
   DLSCH_alloc_pdu2.mcs1             = 1;
   DLSCH_alloc_pdu2.ndi1             = 1;
@@ -316,7 +316,6 @@ int main(int argc, char **argv) {
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
 
-      
       if (next_slot == 2) {
 	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
@@ -469,13 +468,13 @@ int main(int argc, char **argv) {
   /*
   if ((last_slot == 5) && (mac_xface->frame == 1)) {
 
-  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);      write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-
-    
+    write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
+    write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);      
+    write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+    write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
   }
   */
+
   /*
   if (next_slot == 5) {
     sprintf(fname,"eNB_frame%d_rxsig0_subframe2.m",mac_xface->frame);
@@ -483,7 +482,7 @@ int main(int argc, char **argv) {
     sprintf(fname,"eNB_frame%d_rxsig1_subframe2.m",mac_xface->frame);
     write_output(fname,"eNB_rxs1",&rxdata[1][2*lte_frame_parms->samples_per_tti],640*12,1,1);
   }
-
+  */
 
   if ((next_slot == 19) && (mac_xface->frame == 1)) {
     write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -491,7 +490,7 @@ int main(int argc, char **argv) {
     write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   }
-  */
+
   /*
   // optional: read rx_frame from file
   if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)

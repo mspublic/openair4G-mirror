@@ -157,6 +157,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+    dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch0 = dlsch[0];
     break;

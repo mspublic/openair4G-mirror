@@ -102,9 +102,9 @@ typedef struct {
   int **rho;
   int **rho_i;
   short *llr[2];
-  unsigned int *rb_alloc;
-  unsigned char Qm[2];
-  MIMO_mode_t mimo_mode;
+  //unsigned int *rb_alloc;
+  //unsigned char Qm[2];
+  //MIMO_mode_t mimo_mode;
 } LTE_UE_DLSCH;
 
 typedef struct {

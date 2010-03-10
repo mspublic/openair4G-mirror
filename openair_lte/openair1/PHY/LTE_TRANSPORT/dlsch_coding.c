@@ -122,16 +122,28 @@ int dlsch_encoding(unsigned char *a,
   unsigned short iind;
   unsigned short nb_rb = dlsch->nb_rb;
   unsigned char harq_pid = dlsch->current_harq_pid;
-  unsigned int A = dlsch->harq_processes[harq_pid]->TBS;
-  unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  unsigned int A; 
+  unsigned char mod_order;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
+
+  A = dlsch->harq_processes[harq_pid]->TBS;
+  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+
+  // This has to be updated for presence of PBCH/PSCH
+  // This assumes no data in pilot symbols (i.e. for multi-cell orthogonality, to be updated for strict LTE compliance
+  /*
+    coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
+    ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order)) :
+    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order));
+  */
+  coded_bits_per_codeword = ( nb_rb * (12 * mod_order) * (frame_parms->num_dlsch_symbols));
 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
     
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
 		 A)>>8;
-
+    
     *(unsigned int*)(&a[A>>3]) = crc;
     dlsch->harq_processes[harq_pid]->B = A+24;
     dlsch->harq_processes[harq_pid]->b = a;
@@ -144,14 +156,14 @@ int dlsch_encoding(unsigned char *a,
 		     &dlsch->harq_processes[harq_pid]->Kplus,
 		     &dlsch->harq_processes[harq_pid]->Kminus,		     
 		     &dlsch->harq_processes[harq_pid]->F);
-
+    
     for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
       if (r<dlsch->harq_processes[harq_pid]->Cminus)
 	Kr = dlsch->harq_processes[harq_pid]->Kminus;
       else
 	Kr = dlsch->harq_processes[harq_pid]->Kplus;
       Kr_bytes = Kr>>3;
-
+      
       // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
       if (Kr_bytes<=64)
 	iind = (Kr_bytes-5);
@@ -165,52 +177,42 @@ int dlsch_encoding(unsigned char *a,
 	msg("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
 	return(-1);
       }
-    
-  
+      
+      
 #ifdef DEBUG_DLSCH_CODING
-  printf("Generating Code Segment %d (%d bits)\n",r,Kr);
-  // generate codewords
-  
-  printf("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
-  printf("N_RB = %d\n",nb_rb);
-  printf("first_dlsch_symbol %d\n",frame_parms->first_dlsch_symbol);
-  printf("Ncp %d\n",frame_parms->Ncp);
-  printf("mod_order %d\n",mod_order);
+      printf("Generating Code Segment %d (%d bits)\n",r,Kr);
+      // generate codewords
+      
+      printf("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
+      printf("N_RB = %d\n",nb_rb);
+      printf("first_dlsch_symbol %d\n",frame_parms->first_dlsch_symbol);
+      printf("Ncp %d\n",frame_parms->Ncp);
+      printf("mod_order %d\n",mod_order);
 #endif
-
-  offset=0;
-  
-  // This has to be updated for presence of PBCH/PSCH
-  // This assumes no data in pilot symbols (i.e. for multi-cell orthogonality, to be updated for strict LTE compliance
-  /*
-  coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
-    ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order));
-  */
-  coded_bits_per_codeword = ( nb_rb * (12 * mod_order) * (frame_parms->num_dlsch_symbols));
-
-
+      
+      offset=0;
+      
 #ifdef DEBUG_DLSCH_CODING    
-    printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+      printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
-
-    threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-			      Kr>>3, 
-			      &dlsch->harq_processes[harq_pid]->d[r][96],
-			      (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-			      f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
-			      f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
-			      );
+      
+      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
+				Kr>>3, 
+				&dlsch->harq_processes[harq_pid]->d[r][96],
+				(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+				f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
+				f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				);
 #ifdef DEBUG_DLSCH_CODING
-    if (r==0)
-      write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+      if (r==0)
+	write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
-
+      
       dlsch->harq_processes[harq_pid]->RTC[r] = 
 	sub_block_interleaving_turbo(4+(Kr_bytes*8), 
 				     &dlsch->harq_processes[harq_pid]->d[r][96], 
 				     dlsch->harq_processes[harq_pid]->w[r]);
-  
+      
     }
     
   }
