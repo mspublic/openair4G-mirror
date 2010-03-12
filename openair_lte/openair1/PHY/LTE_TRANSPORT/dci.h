@@ -114,7 +114,7 @@ typedef struct __attribute__ ((__packed__)){
 } DCI1_5MHz_FDD_t;
 #define sizeof_DCI1_5MHz_FDD_t 28
 
-/// RA Procedure PDSCH (FDD/TDD), 13 bits
+/// RA Procedure PDSCH (FDD), 13 bits
 typedef struct __attribute__ ((__packed__)){
   /// Preamble Index
   unsigned char preamble_index:6;
@@ -122,8 +122,19 @@ typedef struct __attribute__ ((__packed__)){
   unsigned char prach_mask_index:4;
   /// Padding
   unsigned char padding:3;
-} RA_PDSCH_t;
-#define sizeof_RA_PDSCH_t 13
+} RA_PDSCH_FDD_t;
+#define sizeof_RA_PDSCH_FDD_t 13
+
+/// RA Procedure PDSCH (TDD), 16 bits
+typedef struct __attribute__ ((__packed__)){
+  /// Preamble Index
+  unsigned char preamble_index:6;
+  /// PRACH mask index
+  unsigned char prach_mask_index:4;
+  /// Padding
+  unsigned char padding:6;
+} RA_PDSCH_TDD_t;
+#define sizeof_RA_PDSCH_TDD_t 16
 
 /// Normal PDSCH (FDD), 13 bits
 typedef struct __attribute__ ((__packed__)){
@@ -166,7 +177,7 @@ typedef struct __attribute__ ((__packed__)){
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   unsigned short rballoc:9;
   union {
-    RA_PDSCH_t ra_pdsch;
+    RA_PDSCH_FDD_t ra_pdsch;
     PDSCH_FDD_t pdsch;
   } pdu;
   /// Padding to remove size ambiguity (24 bits -> 25 bits)
@@ -182,13 +193,38 @@ typedef struct __attribute__ ((__packed__)){
   unsigned char vrb_type:1;
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   unsigned short rballoc:9;
-  union {
-    RA_PDSCH_t ra_pdsch;
-    PDSCH_TDD_t pdsch;
-  } pdu;
-  unsigned char padding:1;
+  /// Modulation and Coding Scheme and Redundancy Version
+  unsigned char mcs:5;
+  /// HARQ Process
+  unsigned char harq_pid:4;
+  /// New Data Indicator
+  unsigned char ndi:1;
+  /// Redundancy version
+  unsigned char rv:2;
+  /// Power Control
+  unsigned char TPC:2;
+  /// Downlink Assignment Index
+  unsigned char dai:2;
+  //  unsigned char padding:1;
 } DCI1A_5MHz_TDD_1_6_t;
 #define sizeof_DCI1A_5MHz_TDD_1_6_t 27
+
+/// DCI Format Type 1A (5 MHz, TDD, frame 1-6, 27 bits)
+typedef struct __attribute__ ((__packed__)){
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  unsigned char type:1;
+  /// Localized/Distributed VRB
+  unsigned char vrb_type:1;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  unsigned short rballoc:9;
+  /// Preamble Index
+  unsigned char preamble_index:6;
+  /// PRACH mask index
+  unsigned char prach_mask_index:4;
+  /// Padding
+  unsigned char padding:6;
+} DCI1A_RA_5MHz_TDD_1_6_t;
+#define sizeof_DCI1A_RA_5MHz_TDD_1_6_t 27
 
 /// DCI Format Type 1A (5 MHz, TDD, frame 0, 27 bits)
 typedef struct __attribute__ ((__packed__)){
@@ -199,7 +235,7 @@ typedef struct __attribute__ ((__packed__)){
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   unsigned short rballoc:9;
   union {
-    RA_PDSCH_t ra_pdsch;
+    RA_PDSCH_TDD_t ra_pdsch;
     PDSCH_TDD_t pdsch;
   } pdu;
 } DCI1A_5MHz_TDD_0_t;

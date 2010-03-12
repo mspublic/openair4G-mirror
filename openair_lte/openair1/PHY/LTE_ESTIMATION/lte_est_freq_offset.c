@@ -6,12 +6,50 @@
 
 #include "PHY/defs.h"
 //#define DEBUG_PHY
+
+__m128i avg128F;
+
+//compute average channel_level on each (TX,RX) antenna pair
+int dl_channel_level(int *dl_ch,
+		     LTE_DL_FRAME_PARMS *frame_parms) {
+
+  short rb;
+  __m128i *dl_ch128;
+  int avg;
+
+      //clear average level
+  avg128F = _mm_xor_si128(avg128F,avg128F);
+  dl_ch128=(__m128i *)dl_ch;
+
+  for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
+    
+    avg128F = _mm_add_epi32(avg128F,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+    avg128F = _mm_add_epi32(avg128F,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
+    avg128F = _mm_add_epi32(avg128F,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
+    
+    dl_ch128+=3;	
+    
+  }
+
+  avg = (((int*)&avg128F)[0] + 
+	 ((int*)&avg128F)[1] + 
+	 ((int*)&avg128F)[2] + 
+	 ((int*)&avg128F)[3])/(frame_parms->N_RB_DL*12);
+  
+
+
+  _mm_empty();
+  _m_empty();
+  
+  return(avg);
+}
+
 int lte_est_freq_offset(int **dl_ch_estimates,
 			LTE_DL_FRAME_PARMS *frame_parms,
 			int l,
 			int* freq_offset) {
 
-  int ch_offset, omega; 
+  int ch_offset, omega, dl_ch_shift; 
   struct complex16 *omega_cpx; 
   double phase_offset;
   int freq_offset_est;
@@ -36,16 +74,21 @@ int lte_est_freq_offset(int **dl_ch_estimates,
   for (aa=0;aa<1;aa++) {
 
     dl_ch = (short *)&dl_ch_estimates[aa][12+ch_offset];
+
+    dl_ch_shift = 4+(log2_approx(dl_channel_level(dl_ch,frame_parms))/2);
+    //    printf("dl_ch_shift: %d\n",dl_ch_shift);
+
     if (ch_offset == 0)
       dl_ch_prev = (short *)&dl_ch_estimates[aa][12+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
     else
       dl_ch_prev = (short *)&dl_ch_estimates[aa][12+0];
 
+
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
-    omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL/2 - 1)*12,15);
+    omega = dot_product(dl_ch,dl_ch_prev,(frame_parms->N_RB_DL/2 - 1)*12,dl_ch_shift);
     //omega = dot_product(dl_ch,dl_ch_prev,frame_parms->ofdm_symbol_size,15);
     omega_cpx = (struct complex16*) &omega;
-    
+    //    printf("omega (%d,%d)\n",omega_cpx->r,omega_cpx->i);
     dl_ch = (short *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12) + ch_offset];
     if (ch_offset == 0)
       dl_ch_prev = (short *)&dl_ch_estimates[aa][(((frame_parms->N_RB_DL/2) + 1)*12)+(4-frame_parms->Ncp)*(frame_parms->ofdm_symbol_size)];
@@ -53,10 +96,10 @@ int lte_est_freq_offset(int **dl_ch_estimates,
       dl_ch_prev = (short *)&dl_ch_estimates[aa][((frame_parms->N_RB_DL/2) + 1)*12];
 
     // calculate omega = angle(conj(dl_ch)*dl_ch_prev))
-    omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,15);
+    omega = dot_product(dl_ch,dl_ch_prev,((frame_parms->N_RB_DL/2) - 1)*12,dl_ch_shift);
     omega_cpx->r += ((struct complex16*) &omega)->r;
     omega_cpx->i += ((struct complex16*) &omega)->i;
-
+    //    printf("omega (%d,%d)\n",omega_cpx->r,omega_cpx->i);
     phase_offset = atan2((double)omega_cpx->i,(double)omega_cpx->r);
   }
   //phase_offset /= (frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx);

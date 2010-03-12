@@ -222,11 +222,11 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	      dl_ch0_128++;
 	      dl_ch1_128++;
 	    }
-	    phy_measurements->subband_pmi_re[eNB_id][aarx][subband] = (((int *)&pmi128_re)[0] + ((short *)&pmi128_re)[1] + ((short *)&pmi128_re)[2] + ((short *)&pmi128_re)[3])>>2;
-	    phy_measurements->subband_pmi_im[eNB_id][aarx][subband] = (((int *)&pmi128_im)[0] + ((short *)&pmi128_im)[1] + ((short *)&pmi128_im)[2] + ((short *)&pmi128_im)[3])>>2;
-	    phy_measurements->wideband_pmi_re[eNB_id][aarx] += phy_measurements->subband_pmi_re[aarx][subband];
-	    phy_measurements->wideband_pmi_im[eNB_id][aarx] += phy_measurements->subband_pmi_im[aarx][subband];
-	    //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,aarx,subband,phy_measurements->subband_pmi_re[eNB_id][aarx][subband],phy_measurements->subband_pmi_im[eNB_id][aarx][subband]);
+	    phy_measurements->subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((short *)&pmi128_re)[1] + ((short *)&pmi128_re)[2] + ((short *)&pmi128_re)[3])>>2;
+	    phy_measurements->subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((short *)&pmi128_im)[1] + ((short *)&pmi128_im)[2] + ((short *)&pmi128_im)[3])>>2;
+	    phy_measurements->wideband_pmi_re[eNB_id][aarx] += phy_measurements->subband_pmi_re[subband][aarx];
+	    phy_measurements->wideband_pmi_im[eNB_id][aarx] += phy_measurements->subband_pmi_im[subband][aarx];
+	    //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_measurements->subband_pmi_re[eNB_id][subband][aarx],phy_measurements->subband_pmi_im[eNB_id][subband][aarx]);
 	    
 	  } // subband loop
 	} // rx antenna loop

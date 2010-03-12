@@ -154,7 +154,7 @@ typedef struct {
   /// Current RB allocation
   unsigned int rb_alloc[4];
   /// Current subband PMI allocation
-  unsigned int pmi_alloc;
+  unsigned short pmi_alloc;
   /// Current subband RI allocation
   unsigned int ri_alloc;
   /// Current subband CQI1 allocation
@@ -382,7 +382,9 @@ typedef struct {
   /// Current RB allocation
   unsigned int rb_alloc[4];
   /// Current subband PMI allocation
-  unsigned int pmi_alloc;
+  unsigned short pmi_alloc;
+  /// Current subband antenna selection
+  unsigned int antenna_alloc;
   /// Current subband RI allocation
   unsigned int ri_alloc;
   /// Current subband CQI1 allocation
@@ -484,10 +486,10 @@ int dlsch_encoding(unsigned char *a,
 			unsigned char *output,
 			MIMO_mode_t mimo_mode,
 			unsigned char nu,
-			unsigned char cb_ind,
 			unsigned char pilots,
 			unsigned char first_pilot,
 			unsigned char mod_order,
+			unsigned char precoder_index,
 			short amp,
 			unsigned int *re_allocated,
 			unsigned char skip_dc,
@@ -501,10 +503,10 @@ int dlsch_encoding(unsigned char *a,
 \param output output of the channel coder, one bit per byte
 \param mimo_mode MIMO mode
 \param nu Layer index
-\param cb_ind Codebook index
 \param pilots =1 if symbol_offset is an OFDM symbol that contains pilots, 0 otherwise
 \param first_pilot =1 if symbol offset it the first OFDM symbol in a slot, 0 otherwise
 \param mod_order 2=QPSK, 4=16QAM, 6=64QAM
+\param precoder_index 36-211 W precoder column (1 layer) or matrix (2 layer) selection index
 \param amp Amplitude for symbols
 \param re_allocated pointer to allocation counter
 \param skip_dc offset for positive RBs
@@ -512,20 +514,20 @@ int dlsch_encoding(unsigned char *a,
 */
 
 int allocate_REs_in_RB(mod_sym_t **txdataF,
-			unsigned int *jj,
-			unsigned short re_offset,
-			unsigned int symbol_offset,
-			unsigned char *output,
-			MIMO_mode_t mimo_mode,
-			unsigned char nu,
-			unsigned char cb_ind,
-			unsigned char pilots,
-			unsigned char first_pilot,
-			unsigned char mod_order,
-			short amp,
-			unsigned int *re_allocated,
-			unsigned char skip_dc,
-			LTE_DL_FRAME_PARMS *frame_parms);
+		       unsigned int *jj,
+		       unsigned short re_offset,
+		       unsigned int symbol_offset,
+		       unsigned char *output,
+		       MIMO_mode_t mimo_mode,
+		       unsigned char nu,
+		       unsigned char pilots,
+		       unsigned char first_pilot,
+		       unsigned char mod_order,
+		       unsigned char precoder_index,
+		       short amp,
+		       unsigned int *re_allocated,
+		       unsigned char skip_dc,
+		       LTE_DL_FRAME_PARMS *frame_parms);
 
 /** \fn int dlsch_modulation(mod_sym_t **txdataF,
 		      short amp,
@@ -807,6 +809,8 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
                                  int **dl_ch_estimates,
 				 int **rxdataF_ext,
 				 int **dl_ch_estimates_ext,
+				 unsigned short pmi,
+				 unsigned char *pmi_ext,
 				 unsigned int *rb_alloc,
 				 unsigned char symbol,
 				 LTE_DL_FRAME_PARMS *frame_parms)
@@ -816,6 +820,8 @@ for the current allocation and for single antenna eNb transmission.
 @param dl_ch_estimates Channel estimates of current slot
 @param rxdataF_ext FFT output for RBs in this allocation
 @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
+@param pmi subband Precoding matrix indicator
+@param pmi_ext Extracted PMI for chosen RBs
 @param rb_alloc RB allocation vector
 @param symbol Symbol to extract
 @param frame_parms Pointer to frame descriptor
@@ -824,6 +830,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 					int **dl_ch_estimates,
 					int **rxdataF_ext,
 					int **dl_ch_estimates_ext,
+					unsigned short pmi,
+					unsigned char *pmi_ext,
 					unsigned int *rb_alloc,
 					unsigned char symbol,
 					LTE_DL_FRAME_PARMS *frame_parms);
@@ -832,6 +840,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
                                int **dl_ch_estimates,
 			       int **rxdataF_ext,
 			       int **dl_ch_estimates_ext,
+			       unsigned short pmi,
+			       unsigned char *pmi_ext,
 			       unsigned int *rb_alloc,
 			       unsigned char symbol,
 			       LTE_DL_FRAME_PARMS *frame_parms)
@@ -841,6 +851,8 @@ for the current allocation and for dual antenna eNb transmission.
 @param dl_ch_estimates Channel estimates of current slot
 @param rxdataF_ext FFT output for RBs in this allocation
 @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
+@param pmi subband Precoding matrix indicator
+@param pmi_ext Extracted PMI for chosen RBs
 @param rb_alloc RB allocation vector
 @param symbol Symbol to extract
 @param frame_parms Pointer to frame descriptor
@@ -849,6 +861,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 				      int **dl_ch_estimates,
 				      int **rxdataF_ext,
 				      int **dl_ch_estimates_ext,
+				      unsigned short pmi,
+				      unsigned char *pmi_ext,
 				      unsigned int *rb_alloc,
 				      unsigned char symbol,
 				      LTE_DL_FRAME_PARMS *frame_parms);

@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.0000005;
+  double aoa=.03,ricean_factor=0.5;
   int channel_length;
   struct complex **ch;
   unsigned char pbch_pdu[6];
@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_dlsch_vars_cntl = &(PHY_vars->lte_ue_dlsch_vars_cntl[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
@@ -105,6 +106,8 @@ int main(int argc, char **argv) {
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
   phy_init_top(NB_ANTENNAS_TX);
+
+  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
   
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
@@ -117,7 +120,7 @@ int main(int argc, char **argv) {
   generate_16qam_table();
   generate_RIV_tables();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
 
   dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
@@ -164,9 +167,10 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.type               = 0;
   CCCH_alloc_pdu.vrb_type           = 0;
   CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.pdu.pdsch.ndi      = 1;
-  CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
-  CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+  CCCH_alloc_pdu.ndi      = 1;
+  CCCH_alloc_pdu.rv       = 1;
+  CCCH_alloc_pdu.mcs      = 1;
+  CCCH_alloc_pdu.harq_pid = 0;
 
   printf("CCCH_RB_ALLOC = %d\n",CCCH_RB_ALLOC);
 
@@ -224,18 +228,20 @@ int main(int argc, char **argv) {
   set_taus_seed(0);
 
   openair_daq_vars.tdd = 1;
-  PHY_vars->rx_vars[0].rx_total_gain_dB=140;
+  PHY_vars->rx_vars[0].rx_total_gain_dB=130;
 
-  for (mac_xface->frame=0; mac_xface->frame<4; mac_xface->frame++) {
+  for (mac_xface->frame=0; mac_xface->frame<100; mac_xface->frame++) {
 
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-      
+
+      printf("Frame %d, slot %d : eNB procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 1;
       phy_procedures_lte(last_slot,next_slot);
+      printf("Frame %d, slot %d : UE procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 0;
       phy_procedures_lte(last_slot,next_slot);
       

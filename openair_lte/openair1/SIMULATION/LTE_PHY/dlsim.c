@@ -148,8 +148,10 @@ int main(int argc, char **argv) {
   else if (argc<5){
     SE = atof(argv[1]);
     num_layers = atoi(argv[2]);
+    /*
     if (num_layers == 2)
       mimo_mode = DUALSTREAM;
+    */
   }
 
   printf("dlsim default parameters SE=0.66 num_layers=1 SNR=-1dB\n");
@@ -255,7 +257,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.dai              = 0;
   DLSCH_alloc_pdu2.harq_pid         = 0;
   DLSCH_alloc_pdu2.tb_swap          = 0;
-  DLSCH_alloc_pdu2.mcs1             = 2;
+  DLSCH_alloc_pdu2.mcs1             = 2;  
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
@@ -374,10 +376,12 @@ int main(int argc, char **argv) {
 		 lte_frame_parms,
 		 dlsch_eNb[0]);
 
+  /*
   if (mimo_mode == DUALSTREAM)
     dlsch_encoding(input_buffer,
 		   lte_frame_parms,
 		   dlsch_eNb[1]);
+  */
 
 #ifdef OUTPUT_DEBUG
   for (s=0;s<dlsch_eNb[0]->harq_processes[0]->C;s++) {
@@ -588,7 +592,8 @@ int main(int argc, char **argv) {
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
 			FRAME_LENGTH_COMPLEX_SAMPLES,
-			channel_length,0);
+			channel_length,0,
+			1,1);
 			//(double)tx_lev_dB - (SNR+sigma2_dB));
 #ifdef OUTPUT_DEBUG
       write_output("channel0.m","chan0",ch[0],channel_length,1,8);

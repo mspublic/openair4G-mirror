@@ -137,10 +137,10 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  // 
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
-      NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.TPC&1) + 2;
+      NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
     }
     else {
-      harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.harq_pid;
+      harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
       NPRB      = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     }
 
@@ -150,13 +150,13 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
 
     dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.rv;
+    dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv;
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI;
-    dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.ndi;
-    dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.mcs;
+    dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
     dlsch[0]->current_harq_pid = harq_pid;
@@ -258,12 +258,13 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   }
 #ifdef DEBUG_DCI
   if (dlsch0) {
-    printf("dlsch0: NBRB     %d\n",dlsch0->nb_rb);
-    printf("dlsch0: rballoc  %x\n",dlsch0->rb_alloc[0]);
-    printf("dlsch0: harq_pid %d\n",harq_pid);
-    printf("dlsch0: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
-    printf("dlsch0: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
-    printf("dlsch0: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
+    printf("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
+    printf("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
+    printf("dlsch0 eNB: harq_pid %d\n",harq_pid);
+    printf("dlsch0 eNB: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
+    printf("dlsch0 eNB: rvidx    %d\n",dlsch0->harq_processes[harq_pid]->rvidx);  
+    printf("dlsch0 eNB: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
+    printf("dlsch0 eNB: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
   }
 #endif
 }
@@ -296,10 +297,10 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  // 
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
-      NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.TPC&1) + 2;
+      NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
     }
     else {
-      harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.harq_pid;
+      harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
       NPRB      = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     }
 
@@ -311,13 +312,13 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
 
     dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.rv;
+    dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv;
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
     dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI;
-    dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.ndi;
-    dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->pdu.pdsch.mcs;
+    dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
     dlsch0 = dlsch[0];
@@ -424,13 +425,14 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
   }
 
 #ifdef DEBUG_DCI
-  if (dlsch0) {
-    printf("dlsch0: NBRB     %d\n",dlsch0->nb_rb);
-    printf("dlsch0: rballoc  %x\n",dlsch0->rb_alloc[0]);
-    printf("dlsch0: harq_pid %d\n",harq_pid);
-    printf("dlsch0: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
-    printf("dlsch0: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
-    printf("dlsch0: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
+  if (dlsch[0]) {
+    printf("dlsch0 UE: NBRB     %d\n",dlsch[0]->nb_rb);
+    printf("dlsch0 UE: rballoc  %x\n",dlsch[0]->rb_alloc[0]);
+    printf("dlsch0 UE: harq_pid %d\n",harq_pid);
+    printf("dlsch0 UE: Ndi      %d\n",dlsch[0]->harq_processes[harq_pid]->Ndi);  
+    printf("dlsch0 UE: rvidx    %d\n",dlsch[0]->harq_processes[harq_pid]->rvidx);  
+    printf("dlsch0 UE: TBS      %d\n",dlsch[0]->harq_processes[harq_pid]->TBS);
+    printf("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
   }
 #endif
 }
@@ -518,10 +520,10 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 }
 
 
-unsigned char quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
+unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   unsigned char i;
-  unsigned char pmiq;
+  unsigned short pmiq;
   unsigned short pmivect = 0;
   unsigned char rank = meas->rank[eNb_id];
   int pmi;
@@ -529,9 +531,10 @@ unsigned char quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) 
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
-    if (rank == 1) {
+    if (rank == 0) {
       pmi_re = meas->subband_pmi_re[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
       pmi_im = meas->subband_pmi_im[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
+
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;
       else if ((pmi_re < pmi_im) && (pmi_re > -pmi_im))
@@ -540,7 +543,6 @@ unsigned char quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) 
 	pmiq = PMI_2A_1m1;
       else if ((pmi_re > pmi_im) && (pmi_re < -pmi_im))
 	pmiq = PMI_2A_1mj;
-      
       pmivect |= (pmiq<<(2*i));
     }
     else {
@@ -552,10 +554,10 @@ unsigned char quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) 
   return(pmivect);
 }
 
-unsigned char quantize_wideband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
+unsigned short quantize_wideband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   unsigned char i;
-  unsigned char pmiq;
+  unsigned short pmiq;
   unsigned short pmivect = 0;
   unsigned char rank = meas->rank[eNb_id];
   int pmi;
@@ -573,6 +575,7 @@ unsigned char quantize_wideband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id)
       pmiq = PMI_2A_1m1;
     else if ((pmi_re > pmi_im) && (pmi_re < -pmi_im))
       pmiq = PMI_2A_1mj;
+
   }
   else {
     // This needs to be done properly!
@@ -624,6 +627,7 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
   switch (fmt) {
 
   case wideband_cqi:
+
     if (rank == 0) {
       ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNb_id]);
       ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNb_id);
@@ -687,7 +691,7 @@ void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id) 
   case wideband_cqi:
     if (rank == 0) {
       msg("[PRINT CQI] wideband_cqi rank 1: eNB %d, cqi %d\n",eNB_id,((wideband_cqi_rank1_2A_5MHz *)o)->cqi1);
-      msg("[PRINT CQI] wideband_cqi rank 1: eNB %d, pmi %8x\n",eNB_id,pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)o)->pmi));
+      msg("[PRINT CQI] wideband_cqi rank 1: eNB %d, pmi (%x) %8x\n",eNB_id,((wideband_cqi_rank1_2A_5MHz *)o)->pmi,pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)o)->pmi));
     }
     else { 
       msg("[PRINT CQI] wideband_cqi rank 2: eNB %d, cqi1 %d\n",eNB_id,((wideband_cqi_rank2_2A_5MHz *)o)->cqi1);

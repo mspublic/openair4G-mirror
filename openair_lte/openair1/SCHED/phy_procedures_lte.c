@@ -306,7 +306,7 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
     
     // AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
-      if (mac_xface->frame % 10 == 0)
+      //      if (mac_xface->frame % 10 == 0)
 	//phy_adjust_gain (0,16384,0);
 	phy_adjust_gain (0,1024,0);
     
@@ -626,7 +626,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	// process symbols 10,11,12 and trigger DLSCH decoding
 	for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
 	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
+		   lte_ue_dlsch_vars_cntl,
 		   lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
@@ -642,7 +642,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  dlsch_cntl_errors=0;
 
 	if (dlsch_ue_cntl) {
-	  ret = dlsch_decoding(lte_ue_dlsch_vars[eNb_id]->llr[0],
+	  ret = dlsch_decoding(lte_ue_dlsch_vars_cntl[eNb_id]->llr[0],
 			       lte_frame_parms,
 			       dlsch_ue_cntl,
 			       ((last_slot>>1)-1)%10);
@@ -690,7 +690,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	// process symbols 0,1,2
 	for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
 	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
+		   lte_ue_dlsch_vars_cntl,
 		   lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
@@ -718,6 +718,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   dlsch_ue,
 		   m,
 		   dual_stream_UE);
+	msg("symbols 3,4,5\n");
       }
       if (dlsch_ue_cntl_active == 1)  {
 #ifdef DEBUG_PHY
@@ -728,7 +729,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	// process symbols 3,4,5
 	for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
 	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
+		   lte_ue_dlsch_vars_cntl,
 		   lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
@@ -766,7 +767,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	// process symbols 6,7,8
 	for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
 	  rx_dlsch(lte_ue_common_vars,
-		   lte_ue_dlsch_vars,
+		   lte_ue_dlsch_vars_cntl,
 		   lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
@@ -811,7 +812,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     
 #ifdef DEBUG_PHY
     if (mac_xface->frame%100 == 0)
-      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Calling generate_pbch\n",mac_xface->frame, next_slot);
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_pbch\n",mac_xface->frame, next_slot);
 #endif
     
     *((unsigned int*) pbch_pdu) = mac_xface->frame;
@@ -846,7 +847,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
 #endif
       */
-
+ 
       nb_dci_ue_spec = 0;
       nb_dci_common  = 1;
 

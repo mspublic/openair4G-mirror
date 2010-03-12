@@ -56,7 +56,9 @@ typedef enum {
   UNIFORM_PRECODING1mj,
   PUSCH_PRECODING0,
   PUSCH_PRECODING1,
-  DUALSTREAM
+  DUALSTREAM_UNIFORM_PRECODING1,
+  DUALSTREAM_UNIFORM_PRECODINGj,
+  DUALSTREAM_PUSCH_PRECODING
 } MIMO_mode_t;
 
 typedef struct{
@@ -97,6 +99,7 @@ typedef struct {
   int **rxdataF_comp;
   int **dl_ch_estimates_ext;
   int **dl_ch_rho_ext;
+  unsigned char *pmi_ext;
   int **dl_ch_mag;
   int **dl_ch_magb;
   int **rho;

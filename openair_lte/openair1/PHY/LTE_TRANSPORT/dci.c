@@ -120,7 +120,7 @@ unsigned char *generate_dci0(unsigned char *dci,
   }
 
   coded_bits = 72 * (1<<aggregation_level);
-  /*
+  /*  
 
 #ifdef DEBUG_DCI_ENCODING
   for (i=0;i<1+((DCI_LENGTH+16)/8);i++)
@@ -1252,13 +1252,14 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
 
-  /*  
+  /*    
   for (i=0;i<3+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
 
   msg("CRC 0/1A: %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-  */  
+  */
+
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1303,12 +1304,14 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	       &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
 	       dci_decoded_output);
   crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
-  /*    
+
+  /*      
   for (i=0;i<dci_len/8;i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
   */
+
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;

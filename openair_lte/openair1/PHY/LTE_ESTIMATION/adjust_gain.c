@@ -49,8 +49,8 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
 #endif
 
   //#ifdef DEBUG_PHY
-  if (mac_xface->frame%100==0)
-    msg("[PHY][ADJUST_GAIN] clear = %d, rx_power_fil_dB = %d, rx_total_gain_dB = %d\n",clear,rx_power_fil_dB,PHY_vars->rx_vars[0].rx_total_gain_dB);
+  //  if (mac_xface->frame%100==0)
+    msg("[PHY][ADJUST_GAIN] Frame %d, ncoef %d: wideband_cqi (%d dB, %d) clear = %d, rx_power_fil_dB = %d, rx_total_gain_dB = %d\n",mac_xface->frame,ncoef,dB_fixed(rx_power),rx_power,clear,rx_power_fil_dB,PHY_vars->rx_vars[0].rx_total_gain_dB);
   //#endif //DEBUG_PHY
 	
 }
