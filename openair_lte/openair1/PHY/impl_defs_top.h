@@ -308,7 +308,7 @@ typedef struct
 
   int            wideband_cqi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];                     /// Wideband CQI (= SINR)
   int            wideband_cqi_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];                  /// Wideband CQI in dB (= SINR dB)
-  char           wideband_cqi_tot[NUMBER_OF_eNB_MAX];                                 /// Wideband CQI (sum of all RX antennas, in dB)
+  int            wideband_cqi_tot[NUMBER_OF_eNB_MAX];                                 /// Wideband CQI (sum of all RX antennas, in dB)
   int            subband_cqi[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI per RX antenna (= SINR)
   int            subband_cqi_tot[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];              /// Total Subband CQI  (= SINR)
   int            subband_cqi_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI in dB (= SINR dB)

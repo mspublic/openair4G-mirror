@@ -201,10 +201,10 @@ static void * openair_thread(void *param) {
 
 #ifdef CBMIMO1  
   openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
+#endif
 	
   // turn off AGC by default
-  openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF;
-#endif
+  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
   openair_daq_vars.synch_source = 1; //by default we sync to CH1
 
@@ -447,14 +447,16 @@ void openair_sync(void) {
 		   0);
 	}
 
+	/*
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
 			    sync_pos-sync_pos_slot,
 			    0,
 			    0);
+	*/
 
-	  msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
+	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
 	if (rx_pbch(lte_ue_common_vars,
 		    lte_ue_pbch_vars[0],
@@ -490,17 +492,15 @@ void openair_sync(void) {
     }
 
     // Measurements
-    /*
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
-      PHY_vars->PHY_measurements.rx_power[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
-      PHY_vars->PHY_measurements.rx_power_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.rx_power[0][i]);
-      rx_power += PHY_vars->PHY_measurements.rx_power[0][i];
+      PHY_vars->PHY_measurements.wideband_cqi[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.wideband_cqi_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.wideband_cqi[0][i]);
+      rx_power += PHY_vars->PHY_measurements.wideband_cqi[0][i];
     }
-    PHY_vars->PHY_measurements.rx_avg_power_dB[0] = dB_fixed(rx_power);
-    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
-    */
+    PHY_vars->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
+    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
     
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
@@ -514,7 +514,7 @@ void openair_sync(void) {
 
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      phy_adjust_gain (clear, 16384, 0);
+      phy_adjust_gain (clear, 512, 0);
       if (clear == 1)
 	clear = 0;
     }

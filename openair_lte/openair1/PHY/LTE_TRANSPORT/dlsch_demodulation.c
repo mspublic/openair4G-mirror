@@ -1574,7 +1574,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 }
 
 int avg[4];
-#define DEBUG_PHY
+
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,

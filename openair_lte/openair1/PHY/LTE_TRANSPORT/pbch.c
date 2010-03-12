@@ -16,6 +16,7 @@ extern __m128i zero;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
 
+//#define DEBUG_PHY
 
 #ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"
@@ -206,10 +207,10 @@ int generate_pbch(mod_sym_t **txdataF,
 			   pbch_coded_data2,
 			   SISO,
 			   0,
-			   0,
 			   pilots,
 			   first_pilot,
 			   2,
+			   0,
 			   amp,
 			   &re_allocated,
 			   0,

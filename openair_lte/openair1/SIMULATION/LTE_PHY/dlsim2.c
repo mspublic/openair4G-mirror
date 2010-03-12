@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
   lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
+  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);
 
   /*  
   txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
@@ -254,7 +255,7 @@ int main(int argc, char **argv) {
 		    lte_frame_parms->nb_antennas_rx,
 		    FRAME_LENGTH_COMPLEX_SAMPLES,
 		    channel_length,
-		    0);
+		    0,1,1);
 
   //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 
@@ -372,10 +373,10 @@ int main(int argc, char **argv) {
 	  msg("[PHY_PROCEDURES_LTE] frame %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	      trial,
 	      PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
-	      PHY_vars->PHY_measurements.rx_power_dB[0][0],
-	      PHY_vars->PHY_measurements.rx_power_dB[0][1],
-	      PHY_vars->PHY_measurements.rx_power[0][0],
-	      PHY_vars->PHY_measurements.rx_power[0][1],
+	      PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
+	      PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
+	      PHY_vars->PHY_measurements.wideband_cqi[0][0],
+	      PHY_vars->PHY_measurements.wideband_cqi[0][1],
 	      PHY_vars->rx_vars[0].rx_total_gain_dB);
 
 	  msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
@@ -393,6 +394,7 @@ int main(int argc, char **argv) {
 
 	lte_adjust_synch(lte_frame_parms,
 			 lte_ue_common_vars,
+			 0,
 			 1,
 			 16384);
       }

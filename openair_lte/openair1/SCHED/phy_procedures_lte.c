@@ -307,8 +307,7 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
     // AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
       //      if (mac_xface->frame % 10 == 0)
-	//phy_adjust_gain (0,16384,0);
-	phy_adjust_gain (0,1024,0);
+	phy_adjust_gain (0,512,0);
     
     eNb_id = 0;
     lte_adjust_synch(lte_frame_parms,
@@ -718,7 +717,6 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   dlsch_ue,
 		   m,
 		   dual_stream_UE);
-	msg("symbols 3,4,5\n");
       }
       if (dlsch_ue_cntl_active == 1)  {
 #ifdef DEBUG_PHY

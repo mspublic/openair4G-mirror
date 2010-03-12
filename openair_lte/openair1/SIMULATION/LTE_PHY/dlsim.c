@@ -41,7 +41,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
   lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
- 
+  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
+
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
   lte_frame_parms->Ncp                = 1;
@@ -73,7 +74,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   generate_16qam_table();
   generate_RIV_tables();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
   printf("Done lte_param_init\n");
 }
@@ -248,8 +249,9 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.type               = 0;
   CCCH_alloc_pdu.vrb_type           = 0;
   CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
-  CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+  CCCH_alloc_pdu.ndi      = 1;
+  CCCH_alloc_pdu.mcs      = 1;
+  CCCH_alloc_pdu.harq_pid = 0;
 
   DLSCH_alloc_pdu2.rah              = 0;
   DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
@@ -565,8 +567,6 @@ int main(int argc, char **argv) {
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif
 
-  exit(0);
-
   // multipath channel
 
 
@@ -699,7 +699,7 @@ int main(int argc, char **argv) {
 			 dual_stream_UE);
 	    
 	    if ((Ns==1) && (l==3)) {// process symbols 6,7,8
-	      /*	      if (rx_pbch(lte_ue_common_vars,
+	      if (rx_pbch(lte_ue_common_vars,
 			  lte_ue_pbch_vars[0],
 			  lte_frame_parms,
 			  0,
@@ -709,7 +709,7 @@ int main(int argc, char **argv) {
 	      else {
 		msg("pbch not decoded!\n");
 	      }
-	      */
+
 	      for (m=7;m<9;m++)
 		rx_dlsch(lte_ue_common_vars,
 			 lte_ue_dlsch_vars,

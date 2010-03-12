@@ -219,6 +219,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_ue_dlsch_vars  = &PHY_vars->lte_ue_dlsch_vars[0];
 	lte_ue_pbch_vars   = &PHY_vars->lte_ue_pbch_vars[0];
 	lte_ue_pdcch_vars  = &PHY_vars->lte_ue_pdcch_vars[0];
+	lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
 
 	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 	lte_eNB_ulsch_vars  = &PHY_vars->lte_eNB_ulsch_vars[0];
@@ -373,9 +374,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	CCCH_alloc_pdu.type               = 0;
 	CCCH_alloc_pdu.vrb_type           = 0;
 	CCCH_alloc_pdu.rballoc            = 25;
-	CCCH_alloc_pdu.pdu.pdsch.ndi      = 1;
-	CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
-	CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+	CCCH_alloc_pdu.ndi      = 1;
+	CCCH_alloc_pdu.mcs      = 1;
+	CCCH_alloc_pdu.harq_pid = 0;
 	
 	DLSCH_alloc_pdu2.rah              = 0;
 	DLSCH_alloc_pdu2.rballoc          = 0x1fff;
@@ -512,7 +513,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR_LTE
       if ( (openair_daq_vars.node_configured&2) == 0) {
-	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars,lte_ue_pdcch_vars)) {
+	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_dlsch_vars_cntl, lte_ue_pbch_vars, lte_ue_pdcch_vars)) {
 	    msg("[openair][IOCTL] phy_init_lte_ue error\n");
 	    break;
 	  }
@@ -566,6 +567,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       // turn on AGC
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+
+      msg("[openair][START_NODE] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
+	  PHY_vars->rx_vars[0].RX_DMA_BUFFER,
+	  lte_ue_common_vars->rxdata[0],
+	  PHY_vars->rx_vars[1].RX_DMA_BUFFER,
+	  lte_ue_common_vars->rxdata[1]);
 
       udelay(10000);
 

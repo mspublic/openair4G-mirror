@@ -13,12 +13,12 @@ void
 phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
 {
   int i;
-  short ncoef;
-  unsigned int rx_power;
-  static unsigned int rx_power_fil = 0;
+  int ncoef;
+  int rx_power;
+  static int rx_power_fil = 0;
   unsigned short rx_power_fil_dB;
 
-  ncoef = 32767 - coef;
+  ncoef = 1024 - coef;
   
   // Find average received power across RX antennas (in dB) 
   rx_power = PHY_vars->PHY_measurements.wideband_cqi[chsch_ind][0];
@@ -32,7 +32,7 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   if (clear == 1)
     rx_power_fil = rx_power;
   else
-    rx_power_fil = ((rx_power_fil * coef) + (rx_power * ncoef)) >> 15;
+    rx_power_fil = ((rx_power_fil * coef) + (rx_power * ncoef)) >> 10;
 
   rx_power_fil_dB = dB_fixed(rx_power_fil);
 
@@ -48,10 +48,12 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
 #endif
 
-  //#ifdef DEBUG_PHY
-  //  if (mac_xface->frame%100==0)
-    msg("[PHY][ADJUST_GAIN] Frame %d, ncoef %d: wideband_cqi (%d dB, %d) clear = %d, rx_power_fil_dB = %d, rx_total_gain_dB = %d\n",mac_xface->frame,ncoef,dB_fixed(rx_power),rx_power,clear,rx_power_fil_dB,PHY_vars->rx_vars[0].rx_total_gain_dB);
-  //#endif //DEBUG_PHY
+#ifdef DEBUG_PHY
+  if ((mac_xface->frame%100==0) || (mac_xface->frame < 10))
+    msg("[PHY][ADJUST_GAIN] frame %d, clear = %d, rx_power = %d, rx_power_fil = %d, rx_power_fil_dB = %d, coef=%d, ncoef=%d, rx_total_gain_dB = %d (%d,%d,%d)\n",
+	mac_xface->frame,clear,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,PHY_vars->rx_vars[0].rx_total_gain_dB,
+	TARGET_RX_POWER,MAX_RF_GAIN,MIN_RF_GAIN);
+#endif //DEBUG_PHY
 	
 }
 
