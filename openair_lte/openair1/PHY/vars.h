@@ -58,6 +58,11 @@ LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl;
 LTE_eNb_ULSCH_t **ulsch_eNb;
 LTE_UE_ULSCH_t **ulsch_ue;
 
+DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
 #include "PHY/LTE_TRANSPORT/vars.h"
 
 #endif

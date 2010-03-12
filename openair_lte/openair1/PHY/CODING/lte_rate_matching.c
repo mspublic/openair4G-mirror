@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #endif
-#include "PHY/LTE_TRANSPORT/defs.h" 
+#include "PHY/defs.h" 
 
-#define min(a,b) ((a)<(b) ? (a) : (b))
+//#define min(a,b) ((a)<(b) ? (a) : (b))
+
 static unsigned int bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
-
 static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
 
 //#define RM_DEBUG 1

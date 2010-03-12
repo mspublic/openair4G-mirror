@@ -98,9 +98,9 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
 
     PHY_vars->tx_vars[i].TX_DMA_BUFFER = tmp_ptr_tx;
-#ifdef DEBUG_PHY
-    msg("[PHY][INIT] PHY_vars->tx_vars[%d].TX_DMA_BUFFER = %p\n",i,(void *)PHY_vars->tx_vars[i].TX_DMA_BUFFER);
-#endif
+    //#ifdef DEBUG_PHY
+    msg("[PHY][INIT] PHY_vars->tx_vars[%d].TX_DMA_BUFFER = %p\n",i,PHY_vars->tx_vars[i].TX_DMA_BUFFER);
+    //#endif
 
 
 #ifndef USER_MODE

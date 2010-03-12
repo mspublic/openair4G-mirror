@@ -1,10 +1,12 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
 #ifdef DEBUG_DLSCH_TOOLS
 #include "PHY/vars.h"
 #endif
 
-#define DEBUG_DCI
+//#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -474,7 +476,9 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe) {
 
-  //  msg("dci_tools.c: subframe2_harq_pid_tdd, subframe %d for TDD mode %d\n",subframe,tdd_config);
+#ifdef DEBUG_DCI
+  msg("dci_tools.c: subframe2_harq_pid_tdd, subframe %d for TDD mode %d\n",subframe,tdd_config);
+#endif
 
   switch (tdd_config) {
 
@@ -735,9 +739,15 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if (rnti == ra_rnti)
       harq_pid = 0;
-    else
+    else 
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
     //    printf("harq_pid = %d\n",harq_pid);
+
+    if (harq_pid == 255) {
+      msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
+	  mac_xface->frame, subframe);
+      return(-1);
+    }
 
     // indicate that this process is to be serviced in subframe n+4
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
@@ -761,7 +771,8 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     fill_CQI(ulsch->o,wideband_cqi,meas,eNb_id);
-    print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNb_id);
+    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
+      print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNb_id);
 
     ulsch->O_ACK                                  = 2;
 
@@ -791,9 +802,12 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
   printf("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
   printf("ulsch (ue): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
 #endif
+  return(0);
   }
   else {
-    msg("dci_tools.c: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",dci_format);
+    msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",
+	mac_xface->frame, subframe,dci_format);
+    return(-1);
   }
 
 }
@@ -810,7 +824,7 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
   
   unsigned char harq_pid;
 
-  printf("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x\n",subframe,rnti);
+  //printf("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x\n",subframe,rnti);
   if (dci_format == format0) {
 
     if (rnti == ra_rnti)

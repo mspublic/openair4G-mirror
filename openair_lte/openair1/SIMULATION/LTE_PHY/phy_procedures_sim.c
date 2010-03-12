@@ -16,10 +16,12 @@
 #define Td 1.0
 #define N_TRIALS 1
 
+/*
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+*/
 
 #define UL_RB_ALLOC 291
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
@@ -166,6 +168,8 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
   CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
 
+  printf("CCCH_RB_ALLOC = %d\n",CCCH_RB_ALLOC);
+
   DLSCH_alloc_pdu2.rah              = 0;
   DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2.TPC              = 0;
@@ -289,8 +293,12 @@ int main(int argc, char **argv) {
 
       }
       
-      //  write_output("eNb_txsigF20.m","eNb_txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-      //  write_output("eNb_txsigF21.m","eNb_txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      if (next_slot <= 1) {
+	sprintf(fname,"eNb_frame%d_slot%d_txsigF20.m",mac_xface->frame,next_slot);
+	write_output(fname,"eNb_txsF0",txdataF2[0],512*6,1,1);
+	sprintf(fname,"eNb_frame%d_slot%d_txsigF21.m",mac_xface->frame,next_slot);
+	write_output(fname,"eNb_txsF1",txdataF2[1],512*6,1,1);
+      }
       
       for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) 
 	PHY_ofdm_mod(txdataF2[aa],        // input
@@ -305,9 +313,8 @@ int main(int argc, char **argv) {
 #else
 
       slot_offset = (next_slot)*(lte_frame_parms->ofdm_symbol_size)*((lte_frame_parms->Ncp==1) ? 6 : 7);
-      /*
-      printf("Copying TX buffer for slot %d (%d) (%p,%p)\n",next_slot,slot_offset,
-	     txdataF,txdata);
+
+      //printf("Copying TX buffer for slot %d (%d) (%p,%p)\n",next_slot,slot_offset,txdataF,txdata);
 
       if (next_slot == 0) {
 	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
@@ -316,6 +323,7 @@ int main(int argc, char **argv) {
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
 
+      /*
       if (next_slot == 2) {
 	sprintf(fname,"UE_frame%d_txsigF0.m",mac_xface->frame);
 	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
@@ -334,21 +342,21 @@ int main(int argc, char **argv) {
 		     CYCLIC_PREFIX);
       }  
 #endif
-      /*
-      if (next_slot == 1) {
+
+      if (next_slot == 10) {
 	sprintf(fname,"eNb_frame%d_txsig0.m",mac_xface->frame);
         write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
       }
       
-      if (next_slot == 5) {
+      if (next_slot == 4) {
 	sprintf(fname,"UE_frame%d_txsig0.m",mac_xface->frame);
 	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"UE_frame%d_txsig1.m",mac_xface->frame);
 	write_output(fname,"UE_txs1",txdata[1],640*12,1,1);
       }
-      */
+
       /*
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -464,7 +472,8 @@ int main(int argc, char **argv) {
       
     }
   }
-*/
+  */
+
   /*
   if ((last_slot == 5) && (mac_xface->frame == 1)) {
 

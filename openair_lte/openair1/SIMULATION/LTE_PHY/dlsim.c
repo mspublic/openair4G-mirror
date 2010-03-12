@@ -494,7 +494,7 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
 
 #ifdef OUTPUT_DEBUG  
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0],300*120,1,4);
+  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0][0],300*120,1,4);
 #endif
 
   // do talbe lookup and write results to txdataF2
@@ -561,7 +561,7 @@ int main(int argc, char **argv) {
   write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif
 
-  //exit(0);
+  exit(0);
 
   // multipath channel
 

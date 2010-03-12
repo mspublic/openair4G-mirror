@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
   */
 
   lte_gold(lte_frame_parms);
+  lte_sync_time_init(lte_frame_parms);
 
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();

@@ -1,9 +1,10 @@
-#include "defs.h"
+//#include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 #include "extern.h"
 
 //#define DEBUG_ULSCH_DECODING
+
 void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
 
   int i,r;
@@ -457,6 +458,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   else
     printf("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
 #endif
+
   // Do PUSCH Decoding
 
 
@@ -568,11 +570,16 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      printf("ULSCH harq_pid %d CRC failed\n",harq_pid);
+#ifdef DEBUG_ULSCH_DECODING    
+      msg("ULSCH harq_pid %d CRC failed\n",harq_pid);
+#endif
       return(ret);
     }
+#ifdef DEBUG_ULSCH_DECODING    
     else
-      printf("ULSCH harq_pid %d CRC OK : %d iterations\n",harq_pid, ret);
+      msg("ULSCH harq_pid %d CRC OK : %d iterations\n",harq_pid, ret);
+#endif
+
   }
   // Reassembly of Transport block here
   offset = 0;

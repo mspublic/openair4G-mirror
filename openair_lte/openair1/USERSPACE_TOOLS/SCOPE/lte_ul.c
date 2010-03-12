@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
   unsigned int mem_base;
   char title[20];
 
+  LTE_eNB_ULSCH *lte_eNb_ulsch;
 
   PHY_vars = malloc(sizeof(PHY_VARS));
 
@@ -170,12 +171,12 @@ int main(int argc, char *argv[]) {
 
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
-  printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
-  printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
-  printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
-  printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
+  //printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
+  //printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
+  //printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
+  //printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
+  printf("PHY_vars->lte_eNB_ulsch_vars[0] = %p\n",PHY_vars->lte_eNB_ulsch_vars[0]);
   printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0]);
-  printf("PHY_vars->lte_eNB_common_vars.drs_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.drs_ch_estimates[0]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -195,6 +196,13 @@ int main(int argc, char *argv[]) {
   else
     msg("Could not map physical memory\n");
 
+  // only if UE
+  lte_eNb_ulsch = (LTE_eNB_ULSCH *) (mem_base + 
+				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[0] - 
+				     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+  printf("lte_eNb_ulsch = %p\n",lte_eNb_ulsch);
+
+
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
     channel_srs[i] = (short*)(mem_base + 
@@ -204,7 +212,7 @@ int main(int argc, char *argv[]) {
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
 
     channel_drs[i] = (short*)(mem_base + 
-			      (unsigned int)PHY_vars->lte_eNB_common_vars.drs_ch_estimates[0] + 
+			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[0] + 
 			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			      i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
 			      (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
@@ -216,7 +224,7 @@ int main(int argc, char *argv[]) {
 			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
     
     rx_sig_ext[i] = (short*)(mem_base + 
-			     (unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF_ext + 
+			     (unsigned int)lte_eNb_ulsch->rxdataF_ext + 
 			     nb_ant_rx*sizeof(int*) + 
 			     i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
 			     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);

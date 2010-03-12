@@ -152,7 +152,7 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   __m128i *rxdataF_comp128_0,*dl_ch_mag128_0,*dl_ch_mag128_0b;
-  __m128i *rxdataF_comp128_1,*dl_ch_mag128_1,*dl_ch_mag128_1b;;
+  __m128i *rxdataF_comp128_1,*dl_ch_mag128_1,*dl_ch_mag128_1b;
 
   int i;
 
@@ -195,7 +195,7 @@ void ulsch_extract_rbs_single(int **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    nb_rb1 = min(max((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),0),2*nb_rb);    // 2 times no. RBs before the DC
+    nb_rb1 = min(max((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),(int)0),(int)(2*nb_rb));    // 2 times no. RBs before the DC
     nb_rb2 = 2*nb_rb - nb_rb1;                                   // 2 times no. RBs after the DC
 #ifdef DEBUG_ULSCH
         msg("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);

@@ -61,7 +61,7 @@ int emos_ready = EMOS_READY;
 int openair_dev_fd;
 double screen_refresh_period = 1; // in seconds
 //int screen_refresh_in_frames = 0; // in frames
-int fifo_fd;
+int fifo_fd = -1;
 int frame_counter = 0;
 int rec_frame_counter = 0;
 FILE *dumpfile_id = NULL; 
@@ -94,7 +94,7 @@ unsigned char tx_gain_table_c[36] = {
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 
 
-fifo_dump_emos *fifo_output = NULL;
+fifo_dump_emos_UE *fifo_output = NULL;
 char *fifo_buffer = NULL;
 char *fifo_ptr = NULL;
 char  date_string[1024] = "date: ";
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   long temp = 0; 
   int ioctl_result;
 
-  printf("sizeof(fifo_dump_emos) = %x\n",sizeof(fifo_dump_emos));
+  printf("sizeof(fifo_dump_emos_UE) = %x\n",sizeof(fifo_dump_emos_UE));
   printf("sizeof(gps_fix_t) = %x\n",sizeof(struct gps_fix_t));
 	
   while ((c = getopt (argc, argv, "hn:c:g:")) != -1)
@@ -657,22 +657,22 @@ void refresh_interface()
 	    if (!is_cluster_head) {
 	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
 	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[chsch_index][0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[chsch_index][1];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[1];
 	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][0] -
-								       fifo_output->PHY_measurements.n0_power_dB[chsch_index][0]);
+								       fifo_output->PHY_measurements.n0_power_dB[0]);
 	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][1] -
-								       fifo_output->PHY_measurements.n0_power_dB[chsch_index][1]);
+								       fifo_output->PHY_measurements.n0_power_dB[1]);
 	    }
 	    else {
 	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
 	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[chsch_index][0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[chsch_index][1];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[1];
 	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][0] -
-								       fifo_output->PHY_measurements.n0_power_dB[chsch_index][0]);
+								       fifo_output->PHY_measurements.n0_power_dB[0]);
 	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][1] -
-								       fifo_output->PHY_measurements.n0_power_dB[chsch_index][1]);
+								       fifo_output->PHY_measurements.n0_power_dB[1]);
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -1022,7 +1022,7 @@ void exit_callback(FL_OBJECT *ob, long user_data)
       */
 	
       // remove all io handlers
-      fl_remove_io_callback(fifo_fd, FL_READ, &new_data_callback);
+      if (fifo_fd>=0) fl_remove_io_callback(fifo_fd, FL_READ, &new_data_callback);
       if (gps_data) fl_remove_io_callback(gps_data->gps_fd, FL_READ , &gps_data_callback);
 
       // close the GPS 
@@ -1040,6 +1040,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
   unsigned int fc; 
   unsigned int frequency = 1;
   //unsigned char gains[4];
+
 	
   if (emos_ready)
     {
@@ -1055,35 +1056,52 @@ void power_callback(FL_OBJECT *ob, long user_data)
 	      //gains[2] = 30;
 	      //gains[3] = 17;
 			
-	      ioctl_result=ioctl(openair_dev_fd,openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
 	      //ioctl_result=ioctl(openair_dev_fd,openair_SET_RX_MODE,&rxmode);
+	      ioctl_result = 0;
  
 	      if (terminal_idx==1) {
 		is_cluster_head = 1;
-		frequency = 5;
 		node_id = 0; 
+		PHY_config->tdd = 1;
+		PHY_config->dual_tx = 1;
+		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
-		ioctl_result+=ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
+		// Load the configuration to the device driver
+		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==2) {
 		is_cluster_head = 2;
-		frequency = 5;
 		node_id = 1; 
+		PHY_config->tdd = 1;
+		PHY_config->dual_tx = 1;
+		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
-		ioctl_result+=ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
+		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
 		is_cluster_head = 0;
-		frequency = 4;
 		node_id = 8; 
+		PHY_config->tdd = 1;
+		PHY_config->dual_tx = 0;
+		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
-		ioctl_result+=ioctl(openair_dev_fd, openair_START_NODE, &fc);
+		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_START_NODE, &fc);
 	      }
 	      else if (terminal_idx==4) {
 		is_cluster_head = 0;
-		frequency = 4;
 		node_id = 9; 
+		PHY_config->tdd = 1;
+		PHY_config->dual_tx = 0;
+		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
+		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
 		ioctl_result+=ioctl(openair_dev_fd, openair_START_NODE, &fc);
 	      }
 	      else 
@@ -1309,21 +1327,21 @@ void new_data_callback(int fifo_fd, void* data)
       fl_set_object_lcolor(main_frm->msg_text, SCREEN_COLOR_ON);
     }
 	
-  fifo_output = (fifo_dump_emos*) data_buffer;
+  fifo_output = (fifo_dump_emos_UE*) data_buffer;
 	
   if (terminal_mode == TERM_MODE_MULTI)
     {
-      if (fifo_output->PHY_measurements.frame_tx % REC_FRAMES_MAX < REC_FRAMES_PER_FILE)  
+      if (fifo_output->frame_tx % REC_FRAMES_MAX < REC_FRAMES_PER_FILE)  
 	record_multi = REC_ON;
       else 
 	record_multi = REC_OFF;
 		
-      file_index = fifo_output->PHY_measurements.frame_tx/REC_FRAMES_MAX % REC_FILE_IDX_MAX;
+      file_index = fifo_output->frame_tx/REC_FRAMES_MAX % REC_FILE_IDX_MAX;
     }
 		
   if((frame_counter % 1000) == 0)
     {
-      printf("record = %d. record_multi = %d, terminal_mode = %d, frame_tx=%d, file_index = %d\n", record, record_multi, terminal_mode, fifo_output->PHY_measurements.frame_tx, file_index);
+      printf("record = %d. record_multi = %d, terminal_mode = %d, frame_tx=%d, file_index = %d\n", record, record_multi, terminal_mode, fifo_output->frame_tx, file_index);
     }
 		
   frame_counter++;
@@ -1574,14 +1592,20 @@ int mac_phy_init()
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
+  lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
 
   lte_frame_parms->N_RB_DL            = 25;
+  lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->Csrs = 2;
+  lte_frame_parms->Bsrs = 0;
+  lte_frame_parms->kTC = 0;
+  lte_frame_parms->n_RRC = 0;
   
   init_frame_parms(lte_frame_parms);
   
@@ -1590,23 +1614,11 @@ int mac_phy_init()
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
-  lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
   
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
-  phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
+  //phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
+  //phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
 #endif
-  printf("Initialized PHY variables\n");
-
 	
-  // Load the configuration to the device driver
-  ioctl_result = ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-  if (ioctl_result != 0)
-    {
-      error("Loading openair configuration in kernel space failed!");		
-      emos_ready = EMOS_NOT_READY;
-      return -1;
-    }
-  
   // Openair configuration
   fclose(config);
   
@@ -1614,48 +1626,11 @@ int mac_phy_init()
   // fclose(scenario_fd);		--> already closed in reconfigure_MACPHY
   
   dump_config();
+
+  emos_ready = EMOS_READY;
+
   return 0;
 }
 
 
-/*
-  void get_gps_time_position(int socknum, char *buffer, int buffersize)
-  {
-  dprintf(socknum, "dp\n");
-  memset(buffer, 0, buffersize); 
-  read(socknum, buffer, buffersize);
-  }
-
-  int open_gpsd_socket()
-  {
-  struct sockaddr_in skin;
-  struct servent *sp;
-  int socknum = -1;
-	
-  if ((sp=getservbyname("gpsd","tcp"))==NULL) //get port number for gpsd daemon service
-  error("get gpsd port number failed");
-  if ((socknum=socket(AF_INET,SOCK_STREAM,0))<0)
-  error("failed to create gpsd socket");
-	
-  memset(&skin,0,sizeof(struct sockaddr_in));
-	
-  skin.sin_family = AF_INET;
-  skin.sin_port = sp->s_port;
-  inet_aton("127.0.0.1",&(skin.sin_addr.s_addr));
-	
-  if (connect(socknum,&skin,sizeof(struct sockaddr_in))< 0) {
-  error("Failed to connect to GPSD socket");
-  return -1;
-  }	else
-  return socknum;
-
-  }
-
-  void update_gps_data(struct gps_data_t *gps_data, char *buf)
-  {
-  printf("%s\n",buf);	
-  printf("GPS online = %f, mode = %d, lat = %f, lon = %f\n",gps_data->online,gps_data->fix.mode,gps_data->fix.latitude,gps_data->fix.longitude);
-  }	
-
-*/
 

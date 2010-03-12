@@ -20,6 +20,7 @@ __m128i zeroPMI;
 
 int rx_power_avg[3];
 
+#ifdef USER_MODE
 void print_shorts(char *s,__m128i *x) {
 
   short *tempb = (short *)x;
@@ -38,6 +39,7 @@ void print_ints(char *s,__m128i *x) {
          );
 
 }
+#endif
 
 __m128i pmi128_re,pmi128_im;
 __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
@@ -61,18 +63,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   zeroPMI = _mm_xor_si128(zeroPMI,zeroPMI);
 #endif
 
-  /*
-    Elements of phy_measurements
-    int            rx_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated received signal power (linear)
-    int            n0_power[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];     //! estimated noise power (linear)
-    unsigned short rx_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated received signal power (dB)
-    unsigned short n0_power_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];  //! estimated noise power (dB)
-    short          rx_avg_power_dB[NUMBER_OF_eNB_MAX];              //! estimated avg received signal power (dB)
-    short		 rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  //! estimated rssi (dBm)
-  */
-
   for (eNB_id=0;eNB_id<3;eNB_id++) {
-    phy_measurements->rx_avg_power_dB[eNB_id] = 0;
     if (init_averaging == 1)
       rx_power_avg[eNB_id] = 0;
     rx_power[eNB_id] = 0;
@@ -95,23 +86,19 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
       phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
     } 
     else if (N0_symbol == 1) {
-      phy_measurements->n0_power[aarx] = signal_energy_nodc(&ue_common_vars->rxdata[aarx][subframe_offset + (2*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples))],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset + (2*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples))],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
       phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
       phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
     }
   }
 
   if (N0_symbol == 1) {
-    phy_measurements->n0_avg_power_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
+    phy_measurements->n0_power_tot_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
     //    printf("n0_power %d\n",phy_measurements->n0_avg_power_dB);
   }
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-    for (eNB_id=0;eNB_id<3;eNB_id++) {
-      phy_measurements->rx_power[eNB_id][aarx] = 0;
-    }
-     
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       for (eNB_id=0;eNB_id<3;eNB_id++) {
 	  
@@ -147,7 +134,6 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
     phy_measurements->wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_measurements->n0_power_tot);
 
-
     phy_measurements->rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])-PHY_vars->rx_vars[0].rx_total_gain_dB;
  
     //    if (eNB_id == 0)
@@ -155,21 +141,6 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
  
     //    printf("lte_ue_measurements: rx_power_dB[%d] %d (%f), sinr %d,cqi %d\n",eNB_id,phy_measurements->rx_avg_power_dB[eNB_id],10*log10(rx_power[eNB_id]),phy_measurements->wideband_sinr[eNB_id],phy_measurements->wideband_cqi[eNB_id]);
   
-
-  /*
-    write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-
-    write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][1][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-    write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][2][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-    write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[0][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-
-    write_output("dlsch00_ch1.m","dl00_ch1",&(lte_ue_common_vars->dl_ch_estimates[1][0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-
-    write_output("dlsch01_ch1.m","dl01_ch1",&(lte_ue_common_vars->dl_ch_estimates[1][1][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-    write_output("dlsch10_ch1.m","dl10_ch1",&(lte_ue_common_vars->dl_ch_estimates[1][2][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-    write_output("dlsch11_ch1.m","dl11_ch1",&(lte_ue_common_vars->dl_ch_estimates[1][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-  */
-  //    exit(-1);
 
 
   // cqi/pmi information
@@ -188,7 +159,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	  if (subband<6) {
 	    //	    for (i=0;i<48;i++)
 	    //	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-	    phy_measurements->subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction - phy_measurements->n0_power[aarx];
+	    phy_measurements->subband_cqi[eNB_id][aarx][subband] = 
+	      (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction - phy_measurements->n0_power[aarx];
 	      
 	    phy_measurements->subband_cqi_tot[eNB_id][subband] += phy_measurements->subband_cqi[eNB_id][aarx][subband];
 	    phy_measurements->subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][subband],

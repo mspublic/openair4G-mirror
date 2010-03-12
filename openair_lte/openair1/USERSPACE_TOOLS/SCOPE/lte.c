@@ -121,6 +121,7 @@ void lte_scope_idle_callback(void) {
 
 
 #ifndef SCOPE_UL
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -129,8 +130,8 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
-  /*
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -150,7 +151,6 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-  */
 #endif
 
   // channel_t_im = rx_sig
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
   printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
-  printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
+  //  printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
   printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
   printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
   printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0]);
@@ -329,11 +329,12 @@ int main(int argc, char *argv[]) {
 
   }
 
+  /*
   sync_corr = (int*)(mem_base + 
 		     (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - 
 		     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
   printf("sync_corr = %p\n", sync_corr);
-
+  */
 
 #ifndef SCOPE_UL
   // only if UE

@@ -90,7 +90,7 @@ void openair_set_rx_gain_cal_openair(unsigned int gain_dB) {
 
 #ifndef NOCARD_TEST
 
-  printk("[openair][RF_CNTL] Setting RX gains to %d dB \n",gain_dB);
+  //printk("[openair][RF_CNTL] Setting RX gains to %d dB \n",gain_dB);
   
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
   if (pci_interface) 

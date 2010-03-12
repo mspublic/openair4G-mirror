@@ -78,10 +78,14 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
 endif
 
 # PHY Coding routines
 PHY_OBJS+=$(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/rate_matching.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
+PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
 
 # PHY Synch routines
 ifndef OPENAIR_LTE

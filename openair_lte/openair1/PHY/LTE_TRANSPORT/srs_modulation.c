@@ -1,4 +1,4 @@
-#include "defs.h"
+#include "PHY/defs.h"
 #include "extern.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},

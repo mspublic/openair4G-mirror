@@ -214,11 +214,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR_LTE
 	lte_frame_parms = &PHY_config->lte_frame_parms;
+
 	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
-	lte_ue_dlsch_vars = (LTE_UE_DLSCH **) &PHY_vars->lte_ue_dlsch_vars[0];
-	lte_ue_pbch_vars = (LTE_UE_PBCH **) &PHY_vars->lte_ue_pbch_vars[0];
+	lte_ue_dlsch_vars  = &PHY_vars->lte_ue_dlsch_vars[0];
+	lte_ue_pbch_vars   = &PHY_vars->lte_ue_pbch_vars[0];
+	lte_ue_pdcch_vars  = &PHY_vars->lte_ue_pdcch_vars[0];
+
 	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
-	  
+	lte_eNB_ulsch_vars  = &PHY_vars->lte_eNB_ulsch_vars[0];
+
 	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
 	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
 
@@ -227,15 +231,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms->rev              = rev;
 
 	lte_gold(lte_frame_parms);
+	lte_sync_time_init(lte_frame_parms);
+
+	generate_64qam_table();
+	generate_16qam_table();
+	generate_RIV_tables();
 
 	set_taus_seed();
 
-	/*
-	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars)) {
-	  msg("[openair][IOCTL] phy_init_lte_ue error\n");
-	  break;
-	}
-	*/
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
 #endif
@@ -330,21 +333,62 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR_LTE
       if ((openair_daq_vars.node_configured&4)==0) { 
-	if (phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars)) {
+	if (phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars,lte_eNB_ulsch_vars)) {
 	  printk("[openair][IOCTL] phy_init_lte_eNB error\n");
 	  break;
 	}
 
-	dlsch_eNb = (LTE_DL_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_DL_eNb_DLSCH_t*));
+	dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
+	ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(2*sizeof(LTE_eNb_ULSCH_t*));
+
 	for (i=0;i<2;i++) {
-	  dlsch_eNb[i] = new_DL_eNb_dlsch(1,8);
+	  dlsch_eNb[i] = new_eNb_dlsch(1,8);
 	  if (dlsch_eNb[i]) 
 	    msg("[openair][IOCTL] eNb dlsch structure %d created \n",i);
 	  else {
 	    printk("[openair][IOCTL] Can't get eNb dlsch structures\n");
 	    break;
 	  }
+	  ulsch_eNb[i] = new_eNb_ulsch(3);
+	  if (ulsch_eNb[i]) 
+	    msg("[openair][IOCTL] eNb ulsch structures %d created \n", i);
+	  else {
+	    msg("[openair][IOCTL] Can't get eNb ulsch structures\n");
+	    break;
+	  }
+	  dlsch_eNb_cntl = new_eNb_dlsch(1,1);
+
 	}
+
+#ifndef OPENAIR2
+	// init DCI structures for testing
+	UL_alloc_pdu.type    = 0;
+	UL_alloc_pdu.hopping = 0;
+	UL_alloc_pdu.rballoc = 291;
+	UL_alloc_pdu.mcs     = 1;
+	UL_alloc_pdu.ndi     = 1;
+	UL_alloc_pdu.TPC     = 0;
+	UL_alloc_pdu.cqi_req = 1;
+	
+	CCCH_alloc_pdu.type               = 0;
+	CCCH_alloc_pdu.vrb_type           = 0;
+	CCCH_alloc_pdu.rballoc            = 25;
+	CCCH_alloc_pdu.pdu.pdsch.ndi      = 1;
+	CCCH_alloc_pdu.pdu.pdsch.mcs      = 1;
+	CCCH_alloc_pdu.pdu.pdsch.harq_pid = 0;
+	
+	DLSCH_alloc_pdu2.rah              = 0;
+	DLSCH_alloc_pdu2.rballoc          = 0x1fff;
+	DLSCH_alloc_pdu2.TPC              = 0;
+	DLSCH_alloc_pdu2.dai              = 0;
+	DLSCH_alloc_pdu2.harq_pid         = 0;
+	DLSCH_alloc_pdu2.tb_swap          = 0;
+	DLSCH_alloc_pdu2.mcs1             = 1;
+	DLSCH_alloc_pdu2.ndi1             = 1;
+	DLSCH_alloc_pdu2.rv1              = 0;
+	// Forget second codeword
+	DLSCH_alloc_pdu2.tpmi             = 0;
+#endif
 
 	openair_daq_vars.node_configured += 4;
 	msg("[openair][IOCTL] phy_init_lte_eNB done: %d\n",openair_daq_vars.node_configured);
@@ -353,8 +397,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif
 
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
-      udelay(1000);
+	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      udelay(10000);
 
       mac_xface->is_cluster_head = 1;
       mac_xface->is_primary_cluster_head = 1;
@@ -468,21 +512,32 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR_LTE
       if ( (openair_daq_vars.node_configured&2) == 0) {
-	  if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars)) {
+	if (phy_init_lte_ue(lte_frame_parms, lte_ue_common_vars, lte_ue_dlsch_vars, lte_ue_pbch_vars,lte_ue_pdcch_vars)) {
 	    msg("[openair][IOCTL] phy_init_lte_ue error\n");
 	    break;
 	  }
 	  
-	  dlsch_ue = (LTE_DL_UE_DLSCH_t**) malloc16(2*sizeof(LTE_DL_UE_DLSCH_t*));
+	  dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
+	  ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(2*sizeof(LTE_UE_ULSCH_t*));
+
 	  for (i=0;i<2;i++) {
-	    dlsch_ue[i]  = new_DL_ue_dlsch(1,8);
+	    dlsch_ue[i]  = new_ue_dlsch(1,8);
 	    if (dlsch_ue) 
 	      msg("[openair][IOCTL] UE dlsch structure %d created\n",i);
 	    else {
 	      msg("[openair][IOCTL] Can't get ue dlsch structures\n");
 	      break;
 	    }
+	    ulsch_ue[i]  = new_ue_ulsch(3);
+	    if (ulsch_ue[i]) 
+	      msg("[openair][IOCTL] ue ulsch structure %d created\n",i);
+	    else {
+	      msg("[openair][IOCTL] Can't get ue ulsch structures\n");
+	      break;
+	    }
 	  }
+	  dlsch_ue_cntl  = new_ue_dlsch(1,1);
+
 	  openair_daq_vars.node_configured += 2;
 	  msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
 	}
@@ -511,6 +566,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       // turn on AGC
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+
+      udelay(10000);
 
       ret = setup_regs();
       if (ret == 0) {
@@ -586,7 +643,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifndef NOCARD_TEST
 
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t)+2*PAGE_SIZE);
+	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
 
 

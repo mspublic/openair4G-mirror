@@ -13,7 +13,6 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int offset = (frame_parms->ofdm_symbol_size + nb_prefix_samples) * frame_parms->symbols_per_tti * (Ns>>1);
-  int i;
 
   if (l<0 || l>=7-frame_parms->Ncp) {
     msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);

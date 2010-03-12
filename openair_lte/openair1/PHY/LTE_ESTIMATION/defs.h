@@ -20,7 +20,7 @@
 \param common_vars LTE DL common RX variables structure
 */
 
-int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars);
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms); //LTE_UE_COMMON *common_vars
 
 /*! \fn void lte_sync_time_free()
 \brief This function frees the memory allocated by lte_sync_time_init.
@@ -39,6 +39,12 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 
 int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length);
 
+int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      int eNb_id,
+		      int length);
+
+
 /*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,
 			      LTE_DL_FRAME_PARMS *frame_parms,
@@ -55,6 +61,7 @@ int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length);
 \param l symbol within slot
 \param symbol symbol within frame
 */
+
 int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,
 			      unsigned char eNb_id,

@@ -8,6 +8,7 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/extern.h"
 
 //#define DEBUG_PHY
 
@@ -17,7 +18,7 @@ short syncF_tmp[2048*2] __attribute__((aligned(16)));
 //short sync1F_tmp[256*2] __attribute__((aligned(16)));
 //short sync2F_tmp[256*2] __attribute__((aligned(16)));
 
-int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_vars ) {
+int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *common_vars
 
   int i,k;
   //unsigned short ds = frame_parms->log2_symbol_size - 7;
@@ -27,7 +28,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms, LTE_UE_COMMON *common_va
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n", sync_corr);
 #endif
-    common_vars->sync_corr = sync_corr;
+    //common_vars->sync_corr = sync_corr;
   }
   else {
     msg("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
@@ -191,8 +192,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 #ifdef RTAI_ENABLED
     // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
-    if (n%frame_parms->samples_per_tti == 0) {
-      //msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
+    if ((n%frame_parms->samples_per_tti == 0) && (n>0) && (openair_daq_vars.sync_state==0)) {
+#ifdef DEBUG_PHY
+      msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
+#endif
       rt_sleep(nano2count(1000));
     }
 #endif
@@ -278,3 +281,75 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 }
 
+int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
+		      LTE_DL_FRAME_PARMS *frame_parms,
+		      int eNb_id,
+		      int length) {
+
+  // perform a time domain correlation using the oversampled sync sequence
+
+  unsigned int n, ar, peak_pos, peak_val;
+  int result;
+  short *primary_synch_time;
+
+  //msg("[SYNC TIME] Calling sync_time.\n");
+  if (sync_corr == NULL) {
+    msg("[SYNC TIME] sync_corr not yet allocated! Exiting.\n");
+    return(-1);
+  }
+
+  switch (eNb_id) {
+  case 0:
+    primary_synch_time = (short*)primary_synch0_time;
+    break;
+  case 1:
+    primary_synch_time = (short*)primary_synch1_time;
+    break;
+  case 2:
+    primary_synch_time = (short*)primary_synch2_time;
+    break;
+  default:
+    msg("[SYNC TIME] Illegal eNb_id!\n");
+    return (-1);
+  }
+
+  peak_val = 0;
+  peak_pos = 0;
+
+  for (n=0; n<length; n+=4) {
+
+    sync_corr[n] = 0;
+
+    if (n<length-frame_parms->ofdm_symbol_size) {
+
+      //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
+      //for (ar=0;ar<frame_parms->nb_antennas_rx;ar++)  {
+      ar = 0; {
+	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
+	((short*)sync_corr)[2*n] += ((short*) &result)[0];
+	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
+      }
+
+    }
+    // calculate the absolute value of sync_corr[n]
+    //    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
+    //      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
+    sync_corr[n] = abs32(sync_corr[n]);
+
+    if (sync_corr[n]>peak_val) {
+      peak_val = sync_corr[n];
+      peak_pos = n;
+    }
+  }
+
+#ifdef DEBUG_PHY
+  msg("[SYNC TIME] Peak found at pos %d, val = %d\n",peak_pos,peak_val);
+
+#ifdef USER_MODE
+  write_output("sync_corr.m","synccorr",sync_corr,length,1,2);
+#endif
+#endif
+
+  return(peak_pos);
+
+}

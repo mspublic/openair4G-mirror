@@ -318,7 +318,7 @@ int ulsch_encoding(unsigned char *a,
   //  Do CQI coding
   if (ulsch->O < 12) {
     msg("ulsch_coding: FATAL, short CQI sizes not supported yet\n");
-    exit(-1);
+    return(-1);
   }
   else {
 

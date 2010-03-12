@@ -169,6 +169,7 @@ static void * openair_thread(void *param) {
 
   u8           next_slot, last_slot;
   unsigned int time_in,time_out;
+  int diff;
 
 
 #ifdef SERIAL_IO
@@ -259,15 +260,22 @@ static void * openair_thread(void *param) {
       	mac_xface->frame++;
 
       time_out = openair_get_mbox();
+      diff = ((int) time_out - (int) time_in) % ((int) (NUMBER_OF_SYMBOLS_PER_FRAME));
 
-      if ((((int) time_out - (int) time_in) % NUMBER_OF_SYMBOLS_PER_FRAME) > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled too late
+      if (diff > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled too late
 	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, scheduler_interval_ns %d\n", 
 	    mac_xface->frame, last_slot,
 	    time_in,time_out,
-	    NUMBER_OF_SYMBOLS_PER_FRAME,
+	    diff,
 	    openair_daq_vars.scheduler_interval_ns);
-	openair1_restart();
+	//openair1_restart();
+	exit_openair = 1;
       }
+
+      /*
+      if (mac_xface->frame >= 10)
+      	exit_openair = 1;
+      */
 
       /*
 #ifdef CBMIMO1
@@ -439,14 +447,12 @@ void openair_sync(void) {
 		   0);
 	}
 
-	/*
 	lte_ue_measurements(lte_ue_common_vars,
 			    lte_frame_parms,
 			    &PHY_vars->PHY_measurements,
 			    sync_pos-sync_pos_slot,
 			    0,
 			    0);
-	*/
 
 	  msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
@@ -484,8 +490,7 @@ void openair_sync(void) {
     }
 
     // Measurements
-
-    
+    /*
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
@@ -495,27 +500,24 @@ void openair_sync(void) {
     }
     PHY_vars->PHY_measurements.rx_avg_power_dB[0] = dB_fixed(rx_power);
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.rx_avg_power_dB[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
+    */
     
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
-	PHY_vars->PHY_measurements.rx_power_dB[0][0],
-	PHY_vars->PHY_measurements.rx_power_dB[0][1],
-	PHY_vars->PHY_measurements.rx_power[0][0],
-	PHY_vars->PHY_measurements.rx_power[0][1],
+	PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
+	PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
+	PHY_vars->PHY_measurements.wideband_cqi[0][0],
+	PHY_vars->PHY_measurements.wideband_cqi[0][1],
 	PHY_vars->rx_vars[0].rx_total_gain_dB,
 	pci_interface->tdd,
 	pci_interface->dual_tx);
-    
+
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      msg("[openair][SCHED][AGC] Running AGC, rx_avg_power_dB = %d, rx_total_gain_dB = %d \n",
-	  PHY_vars->PHY_measurements.rx_avg_power_dB[0],
-	  PHY_vars->rx_vars[0].rx_total_gain_dB);
       phy_adjust_gain (clear, 16384, 0);
       if (clear == 1)
 	clear = 0;
     }
-    
   }
 
   msg("[openair][SCHED] leaving openair_sync()\n");

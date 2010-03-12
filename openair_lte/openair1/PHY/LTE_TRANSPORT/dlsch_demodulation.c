@@ -1393,7 +1393,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   short i;
   unsigned char harq_pid0 = dlsch_ue[0]->current_harq_pid;
 
-  //  printf("rx_dlsch: symbol %d\n",symbol);
+  //printf("rx_dlsch: symbol %d\n",symbol);
 
   if (frame_parms->nb_antennas_tx>1) {
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,

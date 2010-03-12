@@ -1132,7 +1132,30 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					unsigned short ra_rnti,
 					unsigned short p_rnti);
 
-void generate_RIV_tables();
+void generate_ue_ulsch_params_from_dci(void *dci_pdu,
+				       unsigned short rnti,
+				       unsigned char subframe,
+				       DCI_format_t dci_format,
+				       LTE_UE_ULSCH_t *ulsch,
+				       PHY_MEASUREMENTS *meas,
+				       LTE_DL_FRAME_PARMS *frame_parms,
+				       unsigned short si_rnti,
+				       unsigned short ra_rnti,
+				       unsigned short p_rnti,
+				       unsigned char eNb_id); 
+
+void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
+					unsigned short rnti,
+					unsigned char subframe,
+					DCI_format_t dci_format,
+					LTE_eNb_ULSCH_t *ulsch,
+					LTE_DL_FRAME_PARMS *frame_parms,
+					unsigned short si_rnti,
+					unsigned short ra_rnti,
+					unsigned short p_rnti);
+
+
+void generate_RIV_tables(void);
 
 
 int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
@@ -1142,6 +1165,11 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     unsigned char eNb_id,  // this is the effective sector id
 	     unsigned char UE_id,   // this is the UE instance to act upon
 	     LTE_eNb_ULSCH_t **ulsch);
+
+int ulsch_encoding(unsigned char *a,
+		   LTE_DL_FRAME_PARMS *frame_parms,
+		   LTE_UE_ULSCH_t *ulsch,
+		   unsigned char harq_pid);
 
 unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,

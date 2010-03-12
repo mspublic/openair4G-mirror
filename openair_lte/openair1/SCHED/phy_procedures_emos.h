@@ -31,19 +31,19 @@ struct fifo_dump_emos_struct_UE {
   RTIME	           timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   unsigned int     frame_rx;               //! Framenumber of the RX 
-  PHY_MEASUREMENTS PHY_measurements;       //! Structure holding all PHY measurements
+  PHY_MEASUREMENTS PHY_measurements[20];       //! Structure holding all PHY measurements (onefor every slot)
   char             pbch_pdu[NUMBER_OF_eNB_MAX][PBCH_PDU_SIZE];           /// Contents of the PBCH
   unsigned int     pdu_errors[NUMBER_OF_eNB_MAX];                        /// Total number of PDU errors
   unsigned int     pdu_errors_last[NUMBER_OF_eNB_MAX];                   /// Total number of PDU errors 128 frames ago
   unsigned int     pdu_errors_conseq[NUMBER_OF_eNB_MAX];                 /// Total number of consecutive PDU errors
   unsigned int     pdu_fer[NUMBER_OF_eNB_MAX];                           /// FER (in percent) 
-  DCI_type_t       DCI_format[MAX_DCI_PER_FRAME];                        /// chosen DL format (DCI)
-  char             DCI_pdu[MAX_DCI_PER_FRAME][6];                        /// content of DCI
-  UCI_type_t       UCI_format[MAX_UCI_PER_FRAME];                        /// chosen feedback format (UCI)
-  char             UCI_pdu[MAX_UCI_PER_FRAME][5];                        /// content of the feedback information
+  DCI_ALLOC_t      DCI_alloc[2][10];                                /// DCI for every subframe (received)
+  //UCI_ALLOC_t       UCI_alloc[MAX_UCI_PER_FRAME];                      /// UCI for every subframe (sent)
   int              timing_offset;                                        /// Timing offset
+  int              timing_advance;                                       /// Timing advance
   int              freq_offset;                                          /// Frequency offset
   unsigned int     rx_total_gain_dB;                                     /// Total gain
+  MIMO_mode_t      mimo_mode;              /// Transmission mode
   int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 };
 
@@ -52,13 +52,16 @@ struct fifo_dump_emos_struct_eNb {
   RTIME	           timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   PHY_MEASUREMENTS PHY_measurements;
+  DCI_ALLOC_t      DCI_alloc[2][10];                                     /// DCI for every subframe (sent)
+  //UCI_ALLOC_t       UCI_alloc[MAX_UCI_PER_FRAME];                      /// UCI for every subframe (received)
   unsigned int     rx_total_gain_dB;       /// Total gain
   MIMO_mode_t      mimo_mode;              /// Transmission mode
   int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL*N_SRS_SYMBOLS];
 };
 
  
-typedef struct  fifo_dump_emos_struct fifo_dump_emos;
+typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;
+typedef struct  fifo_dump_emos_struct_eNb fifo_dump_emos_eNb;
 
 #else //OPENAIR_LTE
 

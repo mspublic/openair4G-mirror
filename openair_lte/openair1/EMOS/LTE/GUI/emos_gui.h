@@ -24,28 +24,19 @@
 #define N0				0
 #define SNR				1
 
-#define REC_FRAMES_MAX 22500
-#define REC_FRAMES_PER_FILE 18750
+#define REC_FRAMES_MAX 100*60*10 //10min
+#define REC_FRAMES_PER_FILE 100*60*10
 #define REC_FILE_IDX_MAX 100
 
 #define CHANSOUNDER_FIFO_DEV "/dev/rtf3"
 
 #define NO_ESTIMATES_DISK 100 //No. of estimates that are aquired before dumped to disk
 
-/*
-#define TIMESTAMP_SIZE 8 
-#define PDU_ERRORS_SIZE 4 
-#define RX_RSSI_SIZE 2 
-#define COMPLEX16_SIZE 4 
-#define NO_OF_OFDM_CARRIERS 256
-#define CHANNEL_BUFFER_SIZE (NB_ANTENNAS*COMPLEX16_SIZE*NO_OF_OFDM_CARRIERS+TIMESTAMP_SIZE+PDU_ERRORS_SIZE+RX_RSSI_SIZE) //in bytes
-*/
-
-#define CHANNEL_BUFFER_SIZE sizeof(fifo_dump_emos) //in bytes
+#define CHANNEL_BUFFER_SIZE sizeof(fifo_dump_emos_UE) //in bytes
 
 #define SCREEN_MEMORY_SIZE 32
 
 #define DISP_MAX_POWER 4194304 //maximum value for the display of the frequency response
 
-#define GPSD_BUFFER_SIZE 64
+//#define GPSD_BUFFER_SIZE 64
 

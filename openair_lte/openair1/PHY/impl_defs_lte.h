@@ -88,7 +88,7 @@ typedef struct {
   int **rxdataF;          ///holds the received data in the frequency domain
   int **dl_ch_estimates[3];  /// hold the channel estimates in frequency domain
   int **dl_ch_estimates_time;  /// hold the channel estimates in time domain (used for tracking)
-  int *sync_corr;         /// holds output of the sync correlator
+  //int *sync_corr;         /// holds output of the sync correlator
   int freq_offset;       /// estimated frequency offset (in radians) for all subcarriers
 } LTE_UE_COMMON;
 

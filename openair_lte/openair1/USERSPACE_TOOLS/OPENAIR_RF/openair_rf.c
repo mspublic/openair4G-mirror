@@ -1,4 +1,3 @@
-
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
@@ -206,10 +205,6 @@ int main (int argc, char **argv) {
   phy_init(NB_ANTENNAS_TX);
 #else
   lte_frame_parms = &(PHY_config->lte_frame_parms);
-  lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
-  lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
@@ -218,7 +213,8 @@ int main (int argc, char **argv) {
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
-  lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = 6;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -226,21 +222,12 @@ int main (int argc, char **argv) {
   
   init_frame_parms(lte_frame_parms);
   
-  phy_init_top(NB_ANTENNAS_TX);
-	  
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
-  
-  lte_gold(lte_frame_parms);
-
   /*
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
-  */
 
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
-  phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);
+  */
 #endif
   printf("Initialized PHY variables\n");
 
