@@ -462,13 +462,20 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     LTE_eNb_ULSCH_t **ulsch) {
 
   unsigned int l;
-  int avgs;
+  int avgs,ulsch_power;
   unsigned char log2_maxh,aarx;
 
   unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
+  unsigned short rx_power_correction;
 
   //  printf("rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+
+  if ( (frame_parms->ofdm_symbol_size == 128) ||
+       (frame_parms->ofdm_symbol_size == 512) )
+    rx_power_correction = 2;
+  else
+    rx_power_correction = 1;
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
       
@@ -490,11 +497,17 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			      l/(lte_frame_parms->symbols_per_tti/2),
 			      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
 
+
+
     ulsch_correct_ext(eNB_ulsch_vars->rxdataF_ext[eNb_id],
 		      eNB_ulsch_vars->rxdataF_ext2[eNb_id],
 		      l,
 		      lte_frame_parms,
 		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);  
+    
+    ulsch_power = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
+				     ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
+
   }  
 
 
@@ -569,4 +582,5 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       break;
     }
   }
+  return(ulsch_power);
 }

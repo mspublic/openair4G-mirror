@@ -49,138 +49,119 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 #endif
 {
 
-  int len = 0,i,fg,eNb;
+  int len = 0,i,fg,eNB;
   /*
    * Get the current time and format it.
    */
+
   if (mac_xface->is_cluster_head == 0) {
-    
-#ifndef OPENAIR_LTE
-    len += sprintf(&buffer[len], "Frame count: %d\nCHSCH0 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH1 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH2 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nCHSCH3 RSSI (%d dBm/ %d dB,%d dBm/ %d dB)\nN0 (%d dBm/ %d dB,%d dBm/ %d dB)\n",
+    len += sprintf(&buffer[len], "Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		   mac_xface->frame,
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[0][0],
-		   PHY_vars->PHY_measurements.rx_power_dB[0][0],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[0][1],
-		   PHY_vars->PHY_measurements.rx_power_dB[0][1],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[1][0],
-		   PHY_vars->PHY_measurements.rx_power_dB[1][0],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[1][1],
-		   PHY_vars->PHY_measurements.rx_power_dB[1][1],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[2][0],
-		   PHY_vars->PHY_measurements.rx_power_dB[2][0],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[2][1],
-		   PHY_vars->PHY_measurements.rx_power_dB[2][1],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[3][0],
-		   PHY_vars->PHY_measurements.rx_power_dB[3][0],
-		   PHY_vars->PHY_measurements.rx_rssi_dBm[3][1],
-		   PHY_vars->PHY_measurements.rx_power_dB[3][1],
-		   PHY_vars->PHY_measurements.n0_power_dB[1][0]-PHY_vars->rx_vars[0].rx_total_gain_dB,
-		   PHY_vars->PHY_measurements.n0_power_dB[1][0],
-		   PHY_vars->PHY_measurements.n0_power_dB[1][1]-PHY_vars->rx_vars[0].rx_total_gain_dB,
-		   PHY_vars->PHY_measurements.n0_power_dB[1][1]);
+		   PHY_vars->PHY_measurements.rx_rssi_dBm[0],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
+		   PHY_vars->PHY_measurements.rx_rssi_dBm[1],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[1][0],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[1][1],
+		   PHY_vars->PHY_measurements.rx_rssi_dBm[2],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[2][0],
+		   PHY_vars->PHY_measurements.wideband_cqi_dB[2][1],
+		   PHY_vars->PHY_measurements.n0_power_tot_dB-PHY_vars->rx_vars[0].rx_total_gain_dB,
+		   PHY_vars->PHY_measurements.n0_power_dB[0],
+		   PHY_vars->PHY_measurements.n0_power_dB[1]);
     len += sprintf(&buffer[len], "RX Gain %d dB\n",PHY_vars->rx_vars[0].rx_total_gain_dB);
-#ifndef USER_MODE
-    len += sprintf(&buffer[len], "Frequency band = %d\n",openair_daq_vars.freq);
-#endif //USER_MODE
-    for (i=1;i<4;i++) {
-      len += sprintf(&buffer[len], "CHSCH %d Aggregate SINR per subband (dB) :",i);
-      for (fg=0;fg<NUMBER_OF_FREQUENCY_GROUPS;fg++) {
-	len += sprintf(&buffer[len],"%3d",PHY_vars->chsch_data[i].subband_aggregate_sinr[fg]);
-      }
-      len += sprintf(&buffer[len],"\n");
-    } 
-#ifndef USER_MODE
-       if (openair_daq_vars.node_running == 1) {
-	 if (dual_stream_flag==1)
-	   len += sprintf(&buffer[len], "RX Mode: Dual stream receiver\n");
-	 else
-	   len += sprintf(&buffer[len], "RX Mode: Single stream receiver\n");
-	 
-	 len += sprintf(&buffer[len], "CHBCH1 errors: %d (%d %%)\nCHBCH2 errors: %d (%d %%)\nCHBCH3 errors: %d (%d %%)\n",
-			PHY_vars->chbch_data[1].pdu_errors,
-			PHY_vars->chbch_data[1].pdu_fer,
-			PHY_vars->chbch_data[2].pdu_errors,
-			PHY_vars->chbch_data[2].pdu_fer,
-			PHY_vars->chbch_data[3].pdu_errors,
-			PHY_vars->chbch_data[3].pdu_fer);
-       }
-       else {
-	 len += sprintf(&buffer[len], "CHBCH1 detection count: (%d/%d)\nCHBCH2 detection count: (%d/%d)\nCHBCH3 detection count: (%d/%d)\n",
-			PHY_vars->PHY_measurements.chbch_detection_count[1],
-			PHY_vars->PHY_measurements.chbch_search_count,
-			PHY_vars->PHY_measurements.chbch_detection_count[2],
-			PHY_vars->PHY_measurements.chbch_search_count,
-			PHY_vars->PHY_measurements.chbch_detection_count[3],
-			PHY_vars->PHY_measurements.chbch_search_count);
-
-	 len += sprintf(&buffer[len], "TTI: %d\nMRSCH RSSI (%d dBm,%d dBm)\n",
-			mac_xface->frame,
-			PHY_vars->PHY_measurements.rx_rssi_dBm[MRSCH_INDEX][0],
-			PHY_vars->PHY_measurements.rx_rssi_dBm[MRSCH_INDEX][1]);
-	 
-	 len += sprintf(&buffer[len], "MRBCH detection count: (%d/%d)\n",
-			PHY_vars->PHY_measurements.mrbch_detection_count,
-			PHY_vars->PHY_measurements.mrbch_search_count);
-       }
-#endif //USER_MODE
-
-#else //OPENAIR_LTE
-       len += sprintf(&buffer[len], "Frame count: %d\neNb0 RSSI %d dBm (%d dB, %d dB)\neNb1 RSSI %d dBm (%d dB, %d dB)\neNb2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
-		      mac_xface->frame,
-		      PHY_vars->PHY_measurements.rx_rssi_dBm[0],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
-		      PHY_vars->PHY_measurements.rx_rssi_dBm[1],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[1][0],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[1][1],
-		      PHY_vars->PHY_measurements.rx_rssi_dBm[2],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[2][0],
-		      PHY_vars->PHY_measurements.wideband_cqi_dB[2][1],
-		      PHY_vars->PHY_measurements.n0_power_tot_dB-PHY_vars->rx_vars[0].rx_total_gain_dB,
-		      PHY_vars->PHY_measurements.n0_power_dB[0],
-		      PHY_vars->PHY_measurements.n0_power_dB[1]);
-       len += sprintf(&buffer[len], "RX Gain %d dB\n",PHY_vars->rx_vars[0].rx_total_gain_dB);
-
-       for (eNb=0;eNb<NUMBER_OF_eNB_MAX;eNb++) {
-	 len += sprintf(&buffer[len], "RX spatial power eNb%d: [%d %d; %d %d] dB\n",
-			eNb,
-			PHY_vars->PHY_measurements.rx_spatial_power_dB[eNb][0][0],
-			PHY_vars->PHY_measurements.rx_spatial_power_dB[eNb][0][1],
-			PHY_vars->PHY_measurements.rx_spatial_power_dB[eNb][1][0],
-			PHY_vars->PHY_measurements.rx_spatial_power_dB[eNb][1][1]);
-	 
-	 len += sprintf(&buffer[len], "RX correlation eNb%d: [%d %d] dB\n",
-			eNb,
-			PHY_vars->PHY_measurements.rx_correlation_dB[eNb][0],
-			PHY_vars->PHY_measurements.rx_correlation_dB[eNb][1]);
-       }
-       /*
-       
-#ifndef USER_MODE
-       len += sprintf(&buffer[len], "Frequency band = %d\n",openair_daq_vars.freq);
-#endif //USER_MODE
-       
-       */
-
-#endif //OPENAIR_LTE	 
+    
+    for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
+      len += sprintf(&buffer[len], "RX spatial power eNB%d: [%d %d; %d %d] dB\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.rx_spatial_power_dB[eNB][0][0],
+		     PHY_vars->PHY_measurements.rx_spatial_power_dB[eNB][0][1],
+		     PHY_vars->PHY_measurements.rx_spatial_power_dB[eNB][1][0],
+		     PHY_vars->PHY_measurements.rx_spatial_power_dB[eNB][1][1]);
       
-    } // is_clusterhead
-#ifndef USER_MODE
-    else {
+      len += sprintf(&buffer[len], "Subband CQI eNB%d (Ant 0): [%d %d %d %d %d %d %d] dB\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][0],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][1],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][2],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][3],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][4],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][5],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][0][6]);
+      
+      len += sprintf(&buffer[len], "Subband CQI eNB%d (Ant 1): [%d %d %d %d %d %d %d] dB\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][0],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][1],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][2],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][3],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][4],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][5],
+		     PHY_vars->PHY_measurements.subband_cqi_dB[eNB][1][6]);
 
-#ifndef OPENAIR_LTE
-      if (openair_daq_vars.node_running == 1)
-         len += sprintf(&buffer[len], "\n\nCH TTI: %d  MRSCH RSSI (%d dBm,%d dBm), RX Gain %d dB\n",
-                        mac_xface->frame,
-                        PHY_vars->PHY_measurements.rx_rssi_dBm[MRSCH_INDEX][0],
-                        PHY_vars->PHY_measurements.rx_rssi_dBm[MRSCH_INDEX][1],
-			PHY_vars->rx_vars[0].rx_total_gain_dB);
-	 len += sprintf(&buffer[len], "MRBCH errors: %d (%d %%)\n",
-			PHY_vars->mrbch_data[0].pdu_errors,
-			PHY_vars->mrbch_data[0].pdu_fer);
-#endif //OPENAIR_LTE      
+      
+      len += sprintf(&buffer[len], "Subband PMI eNB%d (Ant 0): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)] dB\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][0][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][0][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][1][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][1][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][2][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][2][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][3][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][3][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][4][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][4][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][5][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][5][0],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][6][0],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][6][0]);
+      
+      len += sprintf(&buffer[len], "Subband PMI eNB%d (Ant 1): [(%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d) (%d %d)] dB\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][0][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][0][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][1][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][1][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][2][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][2][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][3][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][3][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][4][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][4][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][5][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][5][1],
+		     PHY_vars->PHY_measurements.subband_pmi_re[eNB][6][1],
+		     PHY_vars->PHY_measurements.subband_pmi_im[eNB][6][1]);
+      
+      len += sprintf(&buffer[len], "PMI Antenna selection eNB%d : [%d %d %d %d %d %d %d]\n",
+		     eNB,
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][0],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][1],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][2],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][3],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][4],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][5],
+		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][6]);
+      
+      len += sprintf(&buffer[len], "Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.wideband_cqi_tot[eNB]);
+      len += sprintf(&buffer[len], "Quantized PMI eNB %d : %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
+      
+      
     }
-#endif //USER_MODE
+  } // is_clusterhead
+
+  else {
+    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : UE 0 rssi %d dBm\n",
+		   mac_xface->frame,
+		   eNB_UE_stats[0].UL_rssi[0]);
+    len += sprintf(&buffer[len],"eNB 0 UE 0 DL_cqi %d, DL_pmi_single %x\n",
+		   eNB_UE_stats[0].DL_cqi[0][0],
+		   pmi2hex_2Ar1(eNB_UE_stats[0].DL_pmi_single[0]));
+    
+
+  }
+
 
 
     return len;

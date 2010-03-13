@@ -1096,9 +1096,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   //RX processing
   unsigned int l;
   unsigned int eNb_id=0,UE_id=0;
-  int rx_power,aarx;
+  int rx_power,aarx,ulsch_power;
   unsigned char harq_pid;
-
+  
   for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
     
     slot_fep_ul(lte_frame_parms,
@@ -1119,31 +1119,39 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   if ((ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
     //#ifdef DEBUG_PHY
     if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
-    msg("[PHY PROCEDURES] subframe %d (last slot %d): Scheduling ULSCH Reception for harq_pid %d\n",last_slot>>1,last_slot,harq_pid);
+      msg("[PHY PROCEDURES] subframe %d (last slot %d): Scheduling ULSCH Reception for harq_pid %d\n",last_slot>>1,last_slot,harq_pid);
     //#endif
 
-    rx_ulsch(lte_eNB_common_vars,
-	     lte_eNB_ulsch_vars[0],
-	     lte_frame_parms,
-	     last_slot>>1,
-	     eNb_id,  // this is the effective sector id
-	     UE_id,   // this is the UE instance to act upon
-	     ulsch_eNb);
+    ulsch_power = rx_ulsch(lte_eNB_common_vars,
+			   lte_eNB_ulsch_vars[0],
+			   lte_frame_parms,
+			   last_slot>>1,
+			   eNb_id,  // this is the effective sector id
+			   UE_id,   // this is the UE instance to act upon
+			   ulsch_eNb);
+    eNB_UE_stats[eNb_id].UL_rssi[UE_id] = dB_fixed(ulsch_power) - PHY_vars->rx_vars[0].rx_total_gain_dB;
+
+    if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
+      msg("[PHY PROCEDURES] subframe %d (last slot %d): ULSCH RX power %d dB\n",last_slot>>1,last_slot,dB_fixed(ulsch_power));
+
     
-    /*
+    
     ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
 		   lte_frame_parms,
 		   ulsch_eNb[UE_id],
 		   last_slot>>1);    
-    */
+    
 
     ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
 
     if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) {
       msg("[PHY PROCEDURES] frame %d, subframe %d eNB %d: received ULSCH for UE %d, CQI CRC Status %d\n",mac_xface->frame, last_slot>>1, eNb_id, UE_id, ulsch_eNb[UE_id]->cqi_crc_status);  
 
-      //      if (ulsch_eNb[UE_id]->cqi_crc_status == 1)
+      if (ulsch_eNb[UE_id]->cqi_crc_status == 1) {
       //	print_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,eNb_id);
+	extract_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,UE_id,&eNB_UE_stats[eNb_id]);
+	eNB_UE_stats[eNb_id].rank[UE_id] = ulsch_eNb[UE_id]->o_RI;
+      }
     }
     
   }

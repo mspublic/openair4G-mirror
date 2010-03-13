@@ -64,6 +64,10 @@ int main(int argc, char **argv) {
   int rx_pwr2;
 
   unsigned char first_call = 1;
+
+  char stats_buffer[4096];
+  int len;
+
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
@@ -184,7 +188,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.dai              = 0;
   DLSCH_alloc_pdu2.harq_pid         = 0;
   DLSCH_alloc_pdu2.tb_swap          = 0;
-  DLSCH_alloc_pdu2.mcs1             = 1;
+  DLSCH_alloc_pdu2.mcs1             = 4;
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
@@ -246,12 +250,15 @@ int main(int argc, char **argv) {
       printf("Frame %d, slot %d : eNB procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 1;
       phy_procedures_lte(last_slot,next_slot);
+      len = chbch_stats_read(stats_buffer,NULL,0,4096);
+      printf("%s\n\n",stats_buffer);
+
       printf("Frame %d, slot %d : UE procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 0;
       phy_procedures_lte(last_slot,next_slot);
-      
+      len = chbch_stats_read(stats_buffer,NULL,0,4096);
+      printf("%s\n",stats_buffer);
 
-      
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 

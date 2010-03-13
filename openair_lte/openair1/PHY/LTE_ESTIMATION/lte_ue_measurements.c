@@ -236,7 +236,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     if (eNB_id == 0) {
       phy_measurements->rank[eNB_id] = 0;
       for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
-	if (phy_measurements->subband_cqi[eNB_id][0] > phy_measurements->subband_cqi[eNB_id][1])
+	if (phy_measurements->subband_cqi_dB[eNB_id][0][i] >= phy_measurements->subband_cqi_dB[eNB_id][1][i])
 	  phy_measurements->selected_rx_antennas[eNB_id][i] = 0;
 	else
 	  phy_measurements->selected_rx_antennas[eNB_id][i] = 1;

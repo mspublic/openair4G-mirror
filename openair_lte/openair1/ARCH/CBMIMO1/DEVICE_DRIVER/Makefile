@@ -154,6 +154,7 @@ openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o 
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o  
+openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o  

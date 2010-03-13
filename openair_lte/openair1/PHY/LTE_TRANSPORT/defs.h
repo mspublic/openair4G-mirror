@@ -368,6 +368,15 @@ typedef struct {
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
+  int UL_rssi[NUMBER_OF_UE_MAX];
+  unsigned char DL_cqi[NUMBER_OF_UE_MAX][2];
+  unsigned char DL_diffcqi[NUMBER_OF_UE_MAX][2];
+  unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
+  unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
+  unsigned char rank[NUMBER_OF_UE_MAX];
+} LTE_eNB_UE_stats;
+
+typedef struct {
   /// HARQ process id
   unsigned char harq_id;
   /// ACK bits (after decoding)

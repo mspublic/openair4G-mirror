@@ -369,7 +369,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_COMMON *eNB_common_vars,
-		     LTE_eNB_ULSCH **eNB_ulsch_vars) {
+		     LTE_eNB_ULSCH **eNB_ulsch_vars){
 
   int i, j, eNb_id, UE_id;
 
@@ -749,10 +749,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       return(-1);
     }
     
-  } //UE_id
-
-  
-
+  } //UE_id 
 
   return (0);  
 }
+    
