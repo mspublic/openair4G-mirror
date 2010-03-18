@@ -677,13 +677,13 @@ alignment: FL_ALIGN_CENTER
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
 lcol: FL_BLACK
-label: ALAMOUTI
+label: 2: ALAMOUTI
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: alamouti_btn
 callback: rx_mode_button_callback
-argument: 1
+argument: 2
 
 --------------------
 class: FL_BUTTON
@@ -695,13 +695,13 @@ alignment: FL_ALIGN_CENTER
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
 lcol: FL_BLACK
-label: DUAL STREAM
+label: 6: PRECODING
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: dualstream_btn
+name: precoding_btn
 callback: rx_mode_button_callback
-argument: 3
+argument: 6
 
 --------------------
 class: FL_TEXT
@@ -1059,13 +1059,13 @@ alignment: FL_ALIGN_CENTER
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
 lcol: FL_BLACK
-label: SISO
+label: 1: SISO
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: siso_btn
 callback: rx_mode_button_callback
-argument: 0
+argument: 1
 
 --------------------
 class: FL_TEXT
@@ -1073,11 +1073,11 @@ type: NORMAL_TEXT
 box: 480 615 100 20
 boxtype: FL_NO_BOX
 colors: FL_COL1 FL_MCOL
-alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+alignment: FL_ALIGN_CENTER|FL_ALIGN_INSIDE
 style: FL_NORMAL_STYLE
 size: FL_DEFAULT_SIZE
 lcol: FL_BLACK
-label: receiver mode
+label: TX mode
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity

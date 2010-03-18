@@ -120,7 +120,6 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
 
-#ifndef SCOPE_UL
   /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
@@ -130,7 +129,6 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  */
 
   cum_avg = 0;
   ind = 0;
@@ -151,18 +149,26 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-#endif
+  */
 
-  // channel_t_im = rx_sig
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+  // channel_t_re = rx_sig[0]
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (rx_sig[0][2*i]);
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
-  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+ 
+  // channel_t_im = rx_sig[1]
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    sig2[i] = (float) (rx_sig[1][2*i]);
+    time2[i] = (float) i;
+  }
 
-#ifndef SCOPE_UL
+  //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+
   j=0;
   for(i=0;i<384;i++) {
     llr[j] = (float) pbch_llr[i];
@@ -221,7 +227,6 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
   fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
   fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
-#endif
 
   usleep(100000);
 }
@@ -296,26 +301,11 @@ int main(int argc, char *argv[]) {
 
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
-#ifndef SCOPE_UL
     channel_f[i] = (short*)(mem_base + 
 			    (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] + 
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-#else
-    channel_f[i] = (short*)(mem_base + 
-			    (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] + 
-			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
-			    i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
-			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-    /*
-    channel_f[i] = (short*)(mem_base + 
-			    (unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF_ext + 
-			    nb_ant_rx*sizeof(int*) + 
-			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
-			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-    */
-#endif
 
     channel[i] = (short*)(mem_base + 
 			  (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates_time + 
@@ -336,7 +326,6 @@ int main(int argc, char *argv[]) {
   printf("sync_corr = %p\n", sync_corr);
   */
 
-#ifndef SCOPE_UL
   // only if UE
   lte_ue_pbch = (LTE_UE_PBCH *) (mem_base + 
 				 (unsigned int)PHY_vars->lte_ue_pbch_vars[0] - 
@@ -372,7 +361,6 @@ int main(int argc, char *argv[]) {
 
   printf("dlsch_comp = %p\n",dlsch_comp);
   printf("dlsch_llr = %p\n",dlsch_llr);
-#endif
   
   sprintf(title, "LTE SCOPE"),
 

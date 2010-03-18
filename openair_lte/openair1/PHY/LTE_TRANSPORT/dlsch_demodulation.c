@@ -1374,7 +1374,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   
   unsigned short rb;
   __m128i *dl_ch128_0,*dl_ch128_1,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
-  unsigned char aatx,aarx,symbol_mod,*pmi;
+  unsigned char aatx=0,aarx=0,symbol_mod,*pmi;
 
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;

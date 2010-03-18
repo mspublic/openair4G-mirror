@@ -362,10 +362,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	}
 
 #ifndef OPENAIR2
+
+#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,24)
+#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
+#define DLSCH_RB_ALLOC 0x1fff
+
 	// init DCI structures for testing
 	UL_alloc_pdu.type    = 0;
 	UL_alloc_pdu.hopping = 0;
-	UL_alloc_pdu.rballoc = 291;
+	UL_alloc_pdu.rballoc = UL_RB_ALLOC;
 	UL_alloc_pdu.mcs     = 1;
 	UL_alloc_pdu.ndi     = 1;
 	UL_alloc_pdu.TPC     = 0;
@@ -373,13 +378,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 	CCCH_alloc_pdu.type               = 0;
 	CCCH_alloc_pdu.vrb_type           = 0;
-	CCCH_alloc_pdu.rballoc            = 25;
+	CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
 	CCCH_alloc_pdu.ndi      = 1;
 	CCCH_alloc_pdu.mcs      = 1;
 	CCCH_alloc_pdu.harq_pid = 0;
 	
 	DLSCH_alloc_pdu2.rah              = 0;
-	DLSCH_alloc_pdu2.rballoc          = 0x1fff;
+	DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
 	DLSCH_alloc_pdu2.TPC              = 0;
 	DLSCH_alloc_pdu2.dai              = 0;
 	DLSCH_alloc_pdu2.harq_pid         = 0;

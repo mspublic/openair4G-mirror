@@ -43,7 +43,7 @@ struct fifo_dump_emos_struct_UE {
   int              timing_advance;                                       /// Timing advance
   int              freq_offset;                                          /// Frequency offset
   unsigned int     rx_total_gain_dB;                                     /// Total gain
-  MIMO_mode_t      mimo_mode;              /// Transmission mode
+  unsigned char    mimo_mode;              /// Transmission mode
   int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 };
 
@@ -55,13 +55,14 @@ struct fifo_dump_emos_struct_eNb {
   DCI_ALLOC_t      DCI_alloc[2][10];                                     /// DCI for every subframe (sent)
   //UCI_ALLOC_t       UCI_alloc[MAX_UCI_PER_FRAME];                      /// UCI for every subframe (received)
   unsigned int     rx_total_gain_dB;       /// Total gain
-  MIMO_mode_t      mimo_mode;              /// Transmission mode
+  unsigned char    mimo_mode;              /// Transmission mode
   int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL*N_SRS_SYMBOLS];
 };
 
  
 typedef struct  fifo_dump_emos_struct_UE fifo_dump_emos_UE;
 typedef struct  fifo_dump_emos_struct_eNb fifo_dump_emos_eNb;
+
 
 #else //OPENAIR_LTE
 

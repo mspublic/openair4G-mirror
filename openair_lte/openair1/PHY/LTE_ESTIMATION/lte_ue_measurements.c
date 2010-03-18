@@ -86,7 +86,11 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
       phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
     } 
     else if (N0_symbol == 1) {
-      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset + (2*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples))],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+#ifdef USER_MODE
+      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+#else
+      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);
+#endif
       phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
       phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
     }
@@ -224,8 +228,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	    }
 	    phy_measurements->subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((short *)&pmi128_re)[1] + ((short *)&pmi128_re)[2] + ((short *)&pmi128_re)[3])>>2;
 	    phy_measurements->subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((short *)&pmi128_im)[1] + ((short *)&pmi128_im)[2] + ((short *)&pmi128_im)[3])>>2;
-	    phy_measurements->wideband_pmi_re[eNB_id][aarx] += phy_measurements->subband_pmi_re[subband][aarx];
-	    phy_measurements->wideband_pmi_im[eNB_id][aarx] += phy_measurements->subband_pmi_im[subband][aarx];
+	    phy_measurements->wideband_pmi_re[eNB_id][aarx] += phy_measurements->subband_pmi_re[eNB_id][subband][aarx];
+	    phy_measurements->wideband_pmi_im[eNB_id][aarx] += phy_measurements->subband_pmi_im[eNB_id][subband][aarx];
 	    //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_measurements->subband_pmi_re[eNB_id][subband][aarx],phy_measurements->subband_pmi_im[eNB_id][subband][aarx]);
 	    
 	  } // subband loop

@@ -428,7 +428,7 @@ void openair_sync(void) {
       // however, the pbch is only in the 0th slot
       // so we assume that sync_pos points to the 0th slot
       // so the position wrt to the start of the frame is 
-      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH + 10;
+      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + CYCLIC_PREFIX_LENGTH + 10;
       
       PHY_vars->rx_vars[0].offset = sync_pos - sync_pos_slot;
       
@@ -674,7 +674,8 @@ static void * top_level_scheduler(void *param) {
 		msg("[openair][SCHED][top_level_scheduler] got sched_cnt =%d, stopping\n",openair_daq_vars.sched_cnt);
 		openair_daq_vars.mode = openair_NOT_SYNCHED;
 		openair_daq_vars.sync_state=0; 
-		openair_sched_exit("exit");
+		openair1_restart();
+		//openair_sched_exit("exit");
 	      }
 	      
 	    }

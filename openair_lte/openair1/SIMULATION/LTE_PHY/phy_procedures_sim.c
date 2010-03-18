@@ -12,6 +12,8 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
+#define DEBUG_PHY
+
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 1
@@ -23,7 +25,7 @@ DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 */
 
-#define UL_RB_ALLOC 291
+#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,24)
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fff
 
@@ -71,7 +73,7 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
-
+  
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
 
@@ -337,10 +339,10 @@ int main(int argc, char **argv) {
       //printf("Copying TX buffer for slot %d (%d) (%p,%p)\n",next_slot,slot_offset,txdataF,txdata);
 
 #ifdef DEBUG_PHY
-      if (next_slot == 0) {
-	sprintf(fname,"eNb_frame%d_txsigF0.m",mac_xface->frame);
+      if (next_slot <= 1) {
+	sprintf(fname,"eNb_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
-	sprintf(fname,"eNb_frame%d_txsigF1.m",mac_xface->frame);
+	sprintf(fname,"eNb_frame%d_slot%d_txsigF1.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
       }
 
@@ -367,17 +369,17 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef DEBUG_PHY
-      if (next_slot == 10) {
-	sprintf(fname,"eNb_frame%d_txsig0.m",mac_xface->frame);
+      if (next_slot <= 1) {
+	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
-	sprintf(fname,"eNb_frame%d_txsig1.m",mac_xface->frame);
+	sprintf(fname,"eNb_frame%d_slot%d_txsig1.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
       }
       
       if (next_slot == 4) {
-	sprintf(fname,"UE_frame%d_txsig0.m",mac_xface->frame);
+	sprintf(fname,"UE_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
-	sprintf(fname,"UE_frame%d_txsig1.m",mac_xface->frame);
+	sprintf(fname,"UE_frame%d_slot%d_txsig1.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txs1",txdata[1],640*12,1,1);
       }
 #endif
@@ -547,9 +549,11 @@ int main(int argc, char **argv) {
 
     }
   }
+  /*
   write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
   write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
-/*
+  */
+
   write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
   write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
   write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
@@ -557,7 +561,6 @@ int main(int argc, char **argv) {
   write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
   write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
   write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-*/
 
   write_output("PBCH_rxF0_ext.m","pbch0_ext",lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
   write_output("PBCH_rxF1_ext.m","pbch1_ext",lte_ue_pbch_vars[0]->rxdataF_ext[1],12*4*6,1,1);

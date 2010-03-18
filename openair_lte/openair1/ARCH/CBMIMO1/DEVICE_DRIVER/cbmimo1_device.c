@@ -359,9 +359,10 @@ static int __init openair_init_module( void )
 
   //  for (i=0;i<10;i++)
   //printk("[openair][MODULE][INFO] IOCTL %d : %x\n",i,_IOR('o',i,long));
+
  		
   printk("[openair][MODULE][INFO] Done init\n");
-
+  fifo_printf_init();
   return 0;
 }
 
@@ -376,7 +377,7 @@ static void __exit openair_cleanup_module(void)
 
   openair_cleanup();
 
- 
+  fifo_printf_clean_up();
   
 }
 static void  openair_cleanup(void) {

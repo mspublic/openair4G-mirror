@@ -1135,7 +1135,7 @@ void ulsch_extract_rbs_single(int **rxdataF,
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe);
 
-void generate_ue_dlsch_params_from_dci(unsigned char subframe,
+int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 				       void *dci_pdu,
 				       unsigned short rnti,
 				       DCI_format_t dci_format,
@@ -1145,7 +1145,7 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
 				       unsigned short ra_rnti,
 				       unsigned short p_rnti);
 
-void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
+int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					void *dci_pdu,
 					unsigned short rnti,
 					DCI_format_t dci_format,
@@ -1155,7 +1155,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					unsigned short ra_rnti,
 					unsigned short p_rnti);
 
-void generate_ue_ulsch_params_from_dci(void *dci_pdu,
+int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       unsigned char subframe,
 				       DCI_format_t dci_format,
@@ -1167,7 +1167,7 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short p_rnti,
 				       unsigned char eNb_id); 
 
-void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short rnti,
 					unsigned char subframe,
 					DCI_format_t dci_format,
@@ -1200,6 +1200,18 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 			     unsigned char subframe);
 
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
+
+void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,LTE_eNB_UE_stats *stats);
+
+unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id);
+
+unsigned int pmi2hex_2Ar1(unsigned short pmi);
+
+unsigned int pmi2hex_2Ar2(unsigned char pmi);
+
+unsigned int cqi2hex(unsigned short cqi);
+
+unsigned short computeRIV(unsigned short N_RB_DL,unsigned short RBstart,unsigned short Lcrbs);
 
 /**@}*/
 #endif

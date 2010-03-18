@@ -84,43 +84,45 @@ unsigned char extract_cqi_crc(unsigned char *cqi,unsigned char CQI_LENGTH) {
 
 }
 
+short dummy_w[8][3*(6144+64)];
+unsigned char dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
+short y[6*14*1200];
+char ytag[14*1200];
+
 unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_eNb_ULSCH_t *ulsch,
 			     unsigned char subframe){
 
-  
-
-
-  unsigned char harq_pid = harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  unsigned short nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
-  unsigned int A = ulsch->harq_processes[harq_pid]->TBS;
-  unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  unsigned char harq_pid;
+  unsigned short nb_rb;
+  unsigned int A;
+  unsigned char Q_m;
   unsigned int i,q,j;
   int iprime;
   unsigned int ret,offset;
   unsigned short iind;
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
   short coded_bits=0;
-  short dummy_w[8][3*(6144+64)];
-  unsigned char dummy_w_cc[3*(MAX_CQI_BITS+8+32)];
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
-  short y[6*14*1200];
-  char ytag[14*1200];
   unsigned char *columnset;
   unsigned int sumKr=0;
   unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime,O_RCC;
   unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK,len_RI;
   int metric,metric_new;
 
-
-
+  harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  if (harq_pid==255) {
+    msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
+    return(-1);
+  }
+  
+  nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
+  A = ulsch->harq_processes[harq_pid]->TBS;
+  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
-
-
-
-
+  
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation
     ulsch->harq_processes[harq_pid]->B = A+24;
@@ -459,9 +461,11 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     printf("RX CQI CRC NOT OK (%x)\n",crc8(ulsch->o,ulsch->Or1)>>24);
 #endif
 
+
+  return(0);
   // Do PUSCH Decoding
 
-
+  
   r_offset = 0;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     

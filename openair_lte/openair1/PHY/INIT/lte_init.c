@@ -436,7 +436,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       }
 
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdataF[eNb_id][i]);
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p, length = %d\n",
+	  eNb_id,i,eNB_common_vars->txdataF[eNb_id][i],
+	  NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
 #endif
     }
 #else //IFFT_FPGA

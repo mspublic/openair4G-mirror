@@ -79,7 +79,7 @@ int chsch_index;
 int is_cluster_head = 0;
 int node_id = 8;
 int tx_gain = 0;
-MIMO_mode_t mimo_mode = SISO;
+unsigned char mimo_mode = 1;
 
 unsigned char tx_gain_table_c[36] = {
   113, 111, 0, 0, //-20dBm
@@ -471,17 +471,20 @@ void initialize_interface()
 
   switch(mimo_mode)
     {
-    case SISO:
+    case 1:
       fl_set_button(main_frm->siso_btn,1);
       break;
-    case ALAMOUTI:
+    case 2:
       fl_set_button(main_frm->alamouti_btn,1);
       break;
-    case ANTCYCLING:
+      //case ANTCYCLING:
       //fl_set_button(main_frm->antcycling_btn,1);
+      //break;
+    case 6:
+      fl_set_button(main_frm->precoding_btn,1);
       break;
-    case DUALSTREAM:
-      fl_set_button(main_frm->dualstream_btn,1);
+    default:
+      fl_set_button(main_frm->siso_btn,1);
       break;
 
     }	
@@ -655,24 +658,20 @@ void refresh_interface()
 	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(fifo_output->timestamp - start_time) / (float)1e9;
 	  for (chsch_index=0;chsch_index<2;chsch_index++){
 	    if (!is_cluster_head) {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][0] -
-								       fifo_output->PHY_measurements.n0_power_dB[0]);
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][1] -
-								       fifo_output->PHY_measurements.n0_power_dB[1]);
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
 	    }
 	    else {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements.n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][0] -
-								       fifo_output->PHY_measurements.n0_power_dB[0]);
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)(fifo_output->PHY_measurements.rx_power_dB[chsch_index][1] -
-								       fifo_output->PHY_measurements.n0_power_dB[1]);
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -847,17 +846,17 @@ void refresh_interface()
       // RX mode
       if (!is_cluster_head) {
 	switch (fifo_output->mimo_mode) {
-	case SISO:
+	case 1:
 	  sprintf(temp_label, "RX mode: SISO");
 	  break;
-	case ALAMOUTI:
+	case 2:
 	  sprintf(temp_label, "RX mode: ALAMOUTI");
 	  break;
-	case ANTCYCLING:
-	  sprintf(temp_label, "RX mode: ANTCYCLING");
-	  break;
-	case DUALSTREAM:
-	  sprintf(temp_label, "RX mode: DUALSTREAM");
+	  //case ANTCYCLING:
+	  //sprintf(temp_label, "RX mode: ANTCYCLING");
+	  //break;
+	case 6:
+	  sprintf(temp_label, "RX mode: LAYER1 PRECODING");
 	  break;
 	default:
 	  sprintf(temp_label, "RX mode: %d",fifo_output->mimo_mode);
@@ -1461,24 +1460,9 @@ void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
 {
   fl_set_button(main_frm->siso_btn,0);
   fl_set_button(main_frm->alamouti_btn,0);
-  fl_set_button(main_frm->dualstream_btn,0);
+  fl_set_button(main_frm->precoding_btn,0);
   fl_set_button(ob,1);
-  switch (user_data) {
-  case 0:
-    mimo_mode = SISO;
-    break;
-  case 1:
-    mimo_mode = ALAMOUTI;
-    break;
-  case 2:
-    mimo_mode = ANTCYCLING;
-    break;
-  case 3:
-    mimo_mode = DUALSTREAM;
-    break;
-  default:
-    mimo_mode = SISO;
-  }
+  mimo_mode = user_data;
 }
 
 
@@ -1589,10 +1573,12 @@ int mac_phy_init()
   phy_init(NB_ANTENNAS_TX);
 #else
   lte_frame_parms = &(PHY_config->lte_frame_parms);
+  /*
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
+  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
+  */
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
@@ -1601,7 +1587,8 @@ int mac_phy_init()
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
-  lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = 6;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;

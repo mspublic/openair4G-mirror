@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Thu Dec 17 10:13:28 2009.**/
+/** Header file generated with fdesign on Wed Mar 17 15:36:54 2010.**/
 
 #ifndef FD_main_frm_h_
 #define FD_main_frm_h_
@@ -56,7 +56,7 @@ typedef struct {
 	FL_OBJECT *msg_text;
 	FL_OBJECT *rx1_lbl;
 	FL_OBJECT *alamouti_btn;
-	FL_OBJECT *dualstream_btn;
+	FL_OBJECT *precoding_btn;
 	FL_OBJECT *cbmimo_lbl;
 	FL_OBJECT *file_index_dial;
 	FL_OBJECT *fix_lbl;

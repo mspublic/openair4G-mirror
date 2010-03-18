@@ -211,7 +211,7 @@ endif
 openair_rf-objs += $(TOP_DIR)/MAC_INTERFACE/init.o
 openair_rf-objs += $(TOP_DIR)/MAC_INTERFACE/register.o
 
-openair_rf-objs += cbmimo1_device.o cbmimo1_fileops.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_generate_fs4.o cbmimo1_generate_ofdm.o cbmimo1_proc.o
+openair_rf-objs += cbmimo1_device.o cbmimo1_fileops.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_generate_fs4.o cbmimo1_generate_ofdm.o cbmimo1_proc.o fifo_printf.o
 
 #openair_rf-objs += openair_device.o openair_fileops.o openair_rf_cntl.o openair_init.o openair_dma.o openair_get_frame.o  openair_generate_fs4.o openair_generate_ofdm.o
 

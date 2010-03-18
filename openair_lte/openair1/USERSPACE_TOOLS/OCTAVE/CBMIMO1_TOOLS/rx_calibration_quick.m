@@ -8,9 +8,9 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=3;            % frequency band used by the openair card
+freqband=1;            % frequency band used by the openair card
 
-fc = 1917600e3;   % this has to be the same as in the config file
+fc = 1902600e3+5e6*freqband;   % this has to be the same as in the config file
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;

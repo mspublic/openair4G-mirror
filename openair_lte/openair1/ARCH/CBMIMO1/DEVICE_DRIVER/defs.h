@@ -86,4 +86,7 @@ int add_chbch_stats(void);
 void remove_chbch_stats(void);
 void remove_openair_stats(void);
 int add_openair1_stats(void);
+int fifo_printf(const char *fmt,...);
+void fifo_printf_clean_up(void);
+void fifo_printf_init(void); 
 #endif

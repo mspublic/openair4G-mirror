@@ -106,7 +106,7 @@ static void * dlsch_thread(void *param) {
 
 #ifdef DEBUG_PHY
     if ((mac_xface->frame % 100) == 0)
-      msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding (%d,%d,%p) from cpu %d\n",mac_xface->frame,coded_bits_per_codeword,input_buffer_length,dlsch_ue[harq_pid],rtai_cpuid());
+      msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with harq_pid = %d from cpu %d\n",mac_xface->frame,harq_pid,rtai_cpuid());
 #endif
 
     time_in = openair_get_mbox();
@@ -114,6 +114,7 @@ static void * dlsch_thread(void *param) {
     if (mac_xface->frame < dlsch_errors)
       dlsch_errors=0;
 
+    /*
     if (dlsch_ue) 
       if (dlsch_ue[harq_pid]) {
 	ret = dlsch_decoding(lte_ue_dlsch_vars[0]->llr[0],		 
@@ -131,6 +132,7 @@ static void * dlsch_thread(void *param) {
 	if ((mac_xface->frame % 100) == 0)
 	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors);
       }
+    */
   }
   msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);
   dlsch_instance_cnt[harq_pid] = 99;

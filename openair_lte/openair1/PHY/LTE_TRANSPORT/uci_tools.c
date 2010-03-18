@@ -29,7 +29,7 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,
   unsigned char rank;
 
   rank = o_RI[0];
-  printf("extract_CQI: rank = %d\n",rank);
+  //printf("extract_CQI: rank = %d\n",rank);
 
   switch (fmt) {
 

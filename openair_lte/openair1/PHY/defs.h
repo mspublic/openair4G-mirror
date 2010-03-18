@@ -41,7 +41,9 @@
 #include <rtai_fifos.h>
 #include <rtai_math.h>
 
-#define msg rt_printk
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+
+#define msg fifo_printf//rt_printk
 #define msg_nrt printk
 
 #ifdef BIGPHYSAREA

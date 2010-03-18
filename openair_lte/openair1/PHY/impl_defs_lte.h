@@ -19,6 +19,8 @@ ________________________________________________________________*/
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
 #define PBCH_PDU_SIZE 6 //bytes
 
+#define PSS_UL_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
+
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {
   unsigned char N_RB_DL;                /// Number of resource blocks (RB) in DL

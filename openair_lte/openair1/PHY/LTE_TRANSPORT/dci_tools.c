@@ -12,6 +12,7 @@ unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
 unsigned short RIV2nb_rb_LUT25[512];
 unsigned short RIV2first_rb_LUT25[512];
+unsigned short RIV_max=0;
 
 unsigned int conv_rballoc(unsigned char ra_header,unsigned int short rb_alloc) {
 
@@ -102,6 +103,8 @@ void generate_RIV_tables() {
       alloc_dist |= (1<<distpos);
       
       RIV=computeRIV(25,RBstart,Lcrbs);
+      if (RIV>RIV_max)
+	RIV_max = RIV;
 
       //printf("RIV %d (%d)\n",RIV,localRIV2alloc_LUT25[RIV]);
       localRIV2alloc_LUT25[RIV] = alloc;
@@ -112,7 +115,7 @@ void generate_RIV_tables() {
   }
 }
 
-void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
+int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					void *dci_pdu,
 					unsigned short rnti,
 					DCI_format_t dci_format,
@@ -123,6 +126,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					unsigned short p_rnti) {
 
   unsigned char harq_pid;
+  unsigned short rballoc;
   unsigned char NPRB,tbswap,tpmi;
   LTE_eNb_DLSCH_t *dlsch0=NULL,*dlsch1;
 
@@ -130,6 +134,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
+    return(-1);
     break;
   case format1A:  // This is DLSCH SACH allocation for control traffic
 
@@ -141,7 +146,16 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-      NPRB      = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+      if (harq_pid>8) {
+	msg("dci_tools.c: ERROR: harq_pid > 8\n");
+	return(-1);
+      }
+      rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
+      if (rballoc>RIV_max) {
+	msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+	return(-1);
+      }
+      NPRB      = RIV2nb_rb_LUT25[rballoc];
     }
 
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
@@ -165,11 +179,15 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     break;
   case format2_2A_L10PRB:
 
- 
+    return(-1);
     break;
   case format2_2A_M10PRB:
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
+    if (harq_pid>8) {
+      msg("dci_tools.c: ERROR: harq_pid > 8\n");
+      return(-1);
+    }
 
 
     tbswap = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->tb_swap;
@@ -227,21 +245,27 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;
+      return(-1);
       break;
     case 2:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1m1;
+      return(-1);
       break;
     case 3:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1j;
+      return(-1);
       break;
     case 4:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1mj;
+      return(-1);
       break;
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
+      return(-1);
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
+      return(-1);
       break;
     }
 
@@ -254,6 +278,7 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
  
     break;
   default:
+    return(-1);
     break;
   }
 #ifdef DEBUG_DCI
@@ -267,20 +292,22 @@ void generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     printf("dlsch0 eNB: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
   }
 #endif
+  return(0);
 }
 
 
-void generate_ue_dlsch_params_from_dci(unsigned char subframe,
-				       void *dci_pdu,
-				       unsigned short rnti,
-				       DCI_format_t dci_format,
-				       LTE_UE_DLSCH_t **dlsch,
-				       LTE_DL_FRAME_PARMS *frame_parms,
-				       unsigned short si_rnti,
-				       unsigned short ra_rnti,
-				       unsigned short p_rnti) {
+int generate_ue_dlsch_params_from_dci(unsigned char subframe,
+				      void *dci_pdu,
+				      unsigned short rnti,
+				      DCI_format_t dci_format,
+				      LTE_UE_DLSCH_t **dlsch,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned short si_rnti,
+				      unsigned short ra_rnti,
+				      unsigned short p_rnti) {
   
   unsigned char harq_pid=0;
+  unsigned short rballoc;
   unsigned char NPRB,tbswap,tpmi;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
@@ -290,6 +317,7 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
+    return(-1);
     break;
   case format1A:  // This is DLSCH SACH allocation for control traffic
 
@@ -301,7 +329,16 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-      NPRB      = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+      if (harq_pid>8) {
+	msg("dci_tools.c: ERROR: harq_pid > 8\n");
+	return(-1);
+      }
+      rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
+      if (rballoc>RIV_max) {
+	msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+	return(-1);
+      }
+      NPRB      = RIV2nb_rb_LUT25[rballoc];
     }
 
     dlsch[0]->current_harq_pid = harq_pid;
@@ -325,11 +362,15 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
     break;
   case format2_2A_L10PRB:
 
- 
+    return(-1);
     break;
   case format2_2A_M10PRB:
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
+    if (harq_pid>8) {
+      msg("dci_tools.c: ERROR: harq_pid > 8\n");
+      return(-1);
+    }
     dlsch[0]->current_harq_pid = harq_pid;
     dlsch[0]->harq_ack[subframe].harq_id = harq_pid;
 
@@ -382,21 +423,27 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
       break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;
+      return(-1);
       break;
     case 2:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1m1;
+      return(-1);
       break;
     case 3:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1j;
+      return(-1);
       break;
     case 4:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1mj;
+      return(-1);
       break;
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
+      return(-1);
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
+      return(-1);
       break;
     }
 
@@ -421,6 +468,8 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
 	dlsch1->harq_processes[harq_pid]->TBS         = 0;
       break;
   default:
+
+    return(-1);
     break;
   }
 
@@ -435,6 +484,7 @@ void generate_ue_dlsch_params_from_dci(unsigned char subframe,
     printf("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
   }
 #endif
+  return(0);
 }
 
 /*
@@ -606,7 +656,7 @@ unsigned char fill_subband_cqi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
-    diff_cqi = sinr2cqi(meas->wideband_cqi_dB[eNb_id]) - sinr2cqi(meas->subband_cqi_dB[eNb_id][i]);
+    diff_cqi = sinr2cqi(meas->wideband_cqi_dB[eNb_id][0]) - sinr2cqi(meas->subband_cqi_dB[eNb_id][i][0]);
     if (diff_cqi<=-1)
       diff_cqi = 3;
     else if (diff_cqi>2)
@@ -664,7 +714,7 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
 
 
 
-void generate_ue_ulsch_params_from_dci(void *dci_pdu,
+int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       unsigned char subframe,
 				       DCI_format_t dci_format,
@@ -743,14 +793,14 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-  printf("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  printf("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  printf("ulsch (ue): harq_pid %d\n",harq_pid);
-  printf("ulsch (ue): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-  printf("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-  printf("ulsch (ue): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    printf("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    printf("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+    printf("ulsch (ue): harq_pid %d\n",harq_pid);
+    printf("ulsch (ue): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    printf("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    printf("ulsch (ue): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
 #endif
-  return(0);
+    return(0);
   }
   else {
     msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR, generate_ue_ulsch_params_from_dci, Illegal dci_format %d\n",
@@ -760,7 +810,7 @@ void generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 }
 
-void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short rnti,
 					unsigned char subframe,
 					DCI_format_t dci_format,
@@ -808,17 +858,19 @@ void generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-  printf("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  printf("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  printf("ulsch (eNb): harq_pid %d\n",harq_pid);
-  printf("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-  printf("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-  printf("ulsch (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-  printf("ulsch (eNb): Or1      %d\n",ulsch->Or1);
+    printf("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    printf("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+    printf("ulsch (eNb): harq_pid %d\n",harq_pid);
+    printf("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    printf("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    printf("ulsch (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    printf("ulsch (eNb): Or1      %d\n",ulsch->Or1);
 #endif
+    return(0);
   }
   else {
     msg("dci_tools.c: FATAL ERROR, generate_eNb_ulsch_params_from_dci, Illegal dci_format %d\n",dci_format);
+    return(-1);
   }
 
 }

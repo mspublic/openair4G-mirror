@@ -862,6 +862,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
     printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    
     pilots=0;
+    first_pilot=0;
     if ((l==(nsymb>>1))){
       pilots=1;
       first_pilot=1;
