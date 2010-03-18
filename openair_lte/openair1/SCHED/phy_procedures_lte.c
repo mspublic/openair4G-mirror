@@ -26,7 +26,7 @@ ________________________________________________________________*/
 #define DEBUG_PHY
 #endif
 
-//#define DIAG_PHY
+#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
@@ -281,7 +281,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
     for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) {
       for (l=PSS_UL_SYMBOL; l<lte_frame_parms->symbols_per_tti/2; l++) {
-	memcpy(&eNb_sync_buffer[aa][(l-PSS_UL_SYMBOL)*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)], 
+	memcpy(&eNb_sync_buffer[aa][(l-PSS_UL_SYMBOL)*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)+lte_frame_parms->nb_prefix_samples], 
 	       &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*
 #ifdef USER_MODE
 							(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)
@@ -304,7 +304,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #endif
 
     //#ifdef DEBUG_PHY
-    debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Peak found at pos %d, offset %d (time_in %d, time_out %d)\n",mac_xface->frame, last_slot, sync_pos, sync_pos_slot - sync_pos, time_in, time_out);
+    debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Peak found at pos %d, offset %d (time_in %d, time_out %d)\n",mac_xface->frame, last_slot, sync_pos, sync_pos - sync_pos_slot, time_in, time_out);
     //#endif
   }
 }
@@ -500,7 +500,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #endif
   for (i=0;i<dci_cnt;i++){
     //#ifdef DEBUG_PHY
-      debug_msg("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
+      msg("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
 	  dci_alloc_rx[i].format);
     //#endif
     if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
@@ -508,8 +508,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 5) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
-	exit_openair=1;
-	return;
+	//exit_openair=1;
+	//return;
       }
 #endif
 
@@ -532,8 +532,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 0) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received SI_RNTI!\n",mac_xface->frame,last_slot>>1);
-	exit_openair=1;
-	return;
+	//exit_openair=1;
+	//return;
       }
 #endif
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
@@ -555,8 +555,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 8) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
-	exit_openair=1;
-	return;
+	//exit_openair=1;
+	//return;
       }
 #endif
       generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
@@ -577,8 +577,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
     else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format0)) {
 #ifdef DIAG_PHY
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
-	exit_openair=1;
-	return;
+	//exit_openair=1;
+	//return;
 #endif
       /*
 	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
