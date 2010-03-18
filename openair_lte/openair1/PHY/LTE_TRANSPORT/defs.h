@@ -374,6 +374,7 @@ typedef struct {
   unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
   unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
   unsigned char rank[NUMBER_OF_UE_MAX];
+  unsigned char eNb_id[NUMBER_OF_UE_MAX]; ///eNb_id the user is in
 } LTE_eNB_UE_stats;
 
 typedef struct {

@@ -415,6 +415,31 @@ void phy_procedures_emos_UE_RX(unsigned char last_slot) {
     }
   }
 }
+
+void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
+
+  unsigned char eNb_id,i;
+  for (eNb_id = 0; eNb_id<3; eNb_id++)  
+    memcpy(&emos_dump_eNb.eNB_UE_stats[eNb_id][last_slot],&eNB_UE_stats,sizeof(LTE_eNB_UE_stats));
+
+  if (last_slot==4) {
+      emos_dump_UE.timestamp = rt_get_time_ns();
+      emos_dump_UE.frame_tx = mac_xface->frame;
+      emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_vars[0].rx_total_gain_dB;
+  }
+  if (last_slot%2==0) {
+    for (i=0; i<2; i++) 
+      memcpy(&emos_dump_eNb.DCI_alloc[i][last_slot>>1], &dci_alloc[i], sizeof(DCI_ALLOC_t));
+    }
+  if (last_slot==9) {
+      debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, Writing EMOS data to FIFO\n",mac_xface->frame, last_slot);
+    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_eNb, sizeof(fifo_dump_emos_eNb))!=sizeof(fifo_dump_emos_eNb)) {
+      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, Problem writing EMOS data to FIFO\n",mac_xface->frame, last_slot);
+      return;
+    }
+  }
+}
+
 #endif
 
 void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
@@ -1234,6 +1259,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 		);
   }
 
+#ifdef EMOS
+  if (last_slot%2==1) {
+    memcpy(&emos_dump_eNb.channel[(last_slot>>1)-2][0][0][0],
+	   lte_eNB_common_vars->srs_ch_estimates[0][0],
+	   NUMBER_OF_eNB_MAX*NB_ANTENNAS_RX*N_RB_UL_EMOS*N_PILOTS_PER_RB_UL);
+  }
+#endif //EMOS
+
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
   if ((ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
@@ -1272,14 +1305,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     }
   }
     
-  // Noise power measurement from S subframe
-  // TBD
-
-  // Power measurement from 
-  //if (last_slot == 11) {
+  /*
   if (last_slot%2 == 1) {
     
-    /*
     rx_power = 0;
     for (aarx=0; aarx<lte_frame_parms->nb_antennas_rx; aarx++) {
       PHY_vars->PHY_measurements.rx_power[eNb_id][aarx] = 
@@ -1290,19 +1318,22 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
     }
     PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
-    */
 
     // AGC
     //if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
     //if (mac_xface->frame % 100 == 0)
     //phy_adjust_gain (0,16384,0);
 
-    /*    
-    //#ifdef DEBUG_PHY      
+#ifdef DEBUG_PHY      
     debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] );
-    //#endif
-    */
+#endif
   }
+  */
+
+#ifdef EMOS
+  phy_procedures_emos_eNB_RX(last_slot);
+#endif
+
 }
 
   

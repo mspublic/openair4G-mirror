@@ -2,7 +2,7 @@
 #define __PHY_PROCEDURES_EMOS_H__
 
 #include <rtai.h>
-#include "PHY/TOOLS/defs.h"
+//#include "PHY/TOOLS/defs.h"
 #include "PHY/defs.h"
 
 #define CHANSOUNDER_FIFO_SIZE 20971520  // 20 Mbytes FIFO
@@ -37,8 +37,7 @@ struct fifo_dump_emos_struct_UE {
   unsigned int     pdu_errors_last[NUMBER_OF_eNB_MAX];                   /// Total number of PDU errors 128 frames ago
   unsigned int     pdu_errors_conseq[NUMBER_OF_eNB_MAX];                 /// Total number of consecutive PDU errors
   unsigned int     pdu_fer[NUMBER_OF_eNB_MAX];                           /// FER (in percent) 
-  DCI_ALLOC_t      DCI_alloc[2][10];                                /// DCI for every subframe (received)
-  //UCI_ALLOC_t       UCI_alloc[MAX_UCI_PER_FRAME];                      /// UCI for every subframe (sent)
+  DCI_ALLOC_t      DCI_alloc[2][10];                                     /// DCI for every subframe (received)
   int              timing_offset;                                        /// Timing offset
   int              timing_advance;                                       /// Timing advance
   int              freq_offset;                                          /// Frequency offset
@@ -50,13 +49,13 @@ struct fifo_dump_emos_struct_UE {
 
 struct fifo_dump_emos_struct_eNb {
   RTIME	           timestamp;              //! Timestamp of the receiver
-  unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
-  PHY_MEASUREMENTS PHY_measurements;
-  DCI_ALLOC_t      DCI_alloc[2][10];                                     /// DCI for every subframe (sent)
-  //UCI_ALLOC_t       UCI_alloc[MAX_UCI_PER_FRAME];                      /// UCI for every subframe (received)
+  unsigned int     frame_tx;               //! Framenumber of the TX
+  //PHY_MEASUREMENTS PHY_measurements;
+  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][20]; 
+  DCI_ALLOC_t      DCI_alloc[2][10];       /// DCI for every subframe (sent)
   unsigned int     rx_total_gain_dB;       /// Total gain
   unsigned char    mimo_mode;              /// Transmission mode
-  int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL*N_SRS_SYMBOLS];
+  int              channel[N_SRS_SYMBOLS][NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL]; //UL channel estimate
 };
 
  

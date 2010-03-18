@@ -65,7 +65,8 @@ int fifo_fd = -1;
 int frame_counter = 0;
 int rec_frame_counter = 0;
 FILE *dumpfile_id = NULL; 
-char data_buffer[CHANNEL_BUFFER_SIZE];
+char *data_buffer;
+int CHANNEL_BUFFER_SIZE;
 int values_in_memory=0;
 long long start_time;
 int num_tx_ant = 2;
@@ -94,7 +95,8 @@ unsigned char tx_gain_table_c[36] = {
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 
 
-fifo_dump_emos_UE *fifo_output = NULL;
+fifo_dump_emos_UE fifo_output_UE;
+fifo_dump_emos_eNb fifo_output_eNB;
 char *fifo_buffer = NULL;
 char *fifo_ptr = NULL;
 char  date_string[1024] = "date: ";
@@ -167,6 +169,7 @@ int main(int argc, char *argv[])
   int ioctl_result;
 
   printf("sizeof(fifo_dump_emos_UE) = %x\n",sizeof(fifo_dump_emos_UE));
+  printf("sizeof(fifo_dump_emos_eNB) = %x\n",sizeof(fifo_dump_emos_eNb));
   printf("sizeof(gps_fix_t) = %x\n",sizeof(struct gps_fix_t));
 	
   while ((c = getopt (argc, argv, "hn:c:g:")) != -1)
@@ -632,11 +635,11 @@ void refresh_interface()
   static RTIME last_timestamp = (RTIME) 0; 
   int disp_min_power = 30;
 	
-  if (fifo_output)
+  if ((data_buffer) && (is_cluster_head==0))
     {
 
       // Prepare data for Power meters
-      if (last_timestamp != fifo_output->timestamp)
+      if (last_timestamp != fifo_output_UE.timestamp)
 	{
 	  //printf("rx_power=%d, noise_power=%d, snr=%d\n",fifo_output->rx_power_db[0],fifo_output->n0_power_db[0],fifo_output->rx_power_db[0]-fifo_output->n0_power_db[0]);
 
@@ -655,23 +658,23 @@ void refresh_interface()
 	  }
 		  
 		    
-	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(fifo_output->timestamp - start_time) / (float)1e9;
+	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(fifo_output_UE.timestamp - start_time) / (float)1e9;
 	  for (chsch_index=0;chsch_index<2;chsch_index++){
 	    if (!is_cluster_head) {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
 	    }
 	    else {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output->PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -679,7 +682,7 @@ void refresh_interface()
 	  values_in_memory = SCREEN_MEMORY_SIZE;
 	}
 
-      last_timestamp = fifo_output->timestamp;
+      last_timestamp = fifo_output_UE.timestamp;
 		
       // Pannel widgets
       /////////////////////////////
@@ -724,8 +727,8 @@ void refresh_interface()
 	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
 	    for (aa=0; aa<NB_ANTENNAS_RX*NB_ANTENNAS_TX; aa++)
 	      for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
-		channel[as][aa][ac] = log10(1.0 + (float) (((short*)fifo_output->channel[as][aa])[2*ac]*((short*)fifo_output->channel[as][aa])[2*ac]+
-							   ((short*)fifo_output->channel[as][aa])[2*ac+1]*((short*)fifo_output->channel[as][aa])[2*ac+1]));
+		channel[as][aa][ac] = log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*((short*)fifo_output_UE.channel[as][aa])[2*ac]+
+							   ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
 	  for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
 	    subcarrier_ind[ac]=ac;
 	      
@@ -752,7 +755,6 @@ void refresh_interface()
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec0_xyp,	disp_min_power, disp_max_power);
 
-	  /*
 	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
@@ -794,7 +796,6 @@ void refresh_interface()
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec2_xyp,	disp_min_power, disp_max_power);
-	  */
 
 	}
       /*
@@ -839,13 +840,13 @@ void refresh_interface()
 	}
       */		
       // BLER
-	sprintf(temp_label, "BLER: %d%%", fifo_output->pdu_fer[0]);
+	sprintf(temp_label, "BLER: %d%%", fifo_output_UE.pdu_fer[0]);
 	fl_set_object_label(main_frm->bler_lbl, temp_label);
 	fl_set_object_lcolor(main_frm->bler_lbl, SCREEN_COLOR_ON);
 
       // RX mode
       if (!is_cluster_head) {
-	switch (fifo_output->mimo_mode) {
+	switch (fifo_output_UE.mimo_mode) {
 	case 1:
 	  sprintf(temp_label, "RX mode: SISO");
 	  break;
@@ -859,7 +860,7 @@ void refresh_interface()
 	  sprintf(temp_label, "RX mode: LAYER1 PRECODING");
 	  break;
 	default:
-	  sprintf(temp_label, "RX mode: %d",fifo_output->mimo_mode);
+	  sprintf(temp_label, "RX mode: %d",fifo_output_UE.mimo_mode);
 	}
 	fl_set_object_label(main_frm->rx_mode_lbl, temp_label);
 	fl_set_object_lcolor(main_frm->rx_mode_lbl, SCREEN_COLOR_ON);
@@ -1249,7 +1250,7 @@ void record_callback(FL_OBJECT *ob, long user_data)
 	  // release the buffer
 	  free(fifo_buffer);
 	  fifo_buffer = NULL;
-	  fifo_output = NULL;
+	  data_buffer = NULL;
 	  fifo_ptr = NULL;
 			
 	  // close the dumpfile
@@ -1275,7 +1276,8 @@ int open_dumpfile()
   char temp_label[1024];
 			
   // create the dumpfile buffer
-  // allocate memory for NO_FRAMES_DISK channes estimations 
+  // allocate memory for NO_FRAMES_DISK channes estimations
+ 
   fifo_buffer = malloc(NO_ESTIMATES_DISK*CHANNEL_BUFFER_SIZE);
   fifo_ptr = fifo_buffer;
 	
@@ -1315,32 +1317,45 @@ int open_dumpfile()
 void new_data_callback(int fifo_fd, void* data)
 {
   int n_bytes = 0;
+  int frame_tx;
   char temp_text[1024];
 	
   // Read data from FIFO
-  n_bytes = rtf_read_all_at_once(fifo_fd, &data_buffer, CHANNEL_BUFFER_SIZE);
+  if (is_cluster_head) {
+    data_buffer = (char*) &fifo_output_eNB;
+    CHANNEL_BUFFER_SIZE = sizeof(fifo_dump_emos_eNb);
+  }
+  else {
+    data_buffer = (char*) &fifo_output_UE;
+    CHANNEL_BUFFER_SIZE = sizeof(fifo_dump_emos_UE);
+  }
+
+  n_bytes = rtf_read_all_at_once(fifo_fd, data_buffer, CHANNEL_BUFFER_SIZE);
   if (n_bytes != CHANNEL_BUFFER_SIZE)
     {
       sprintf(temp_text, "Error reading FIFO.");
       fl_set_object_label(main_frm->msg_text, temp_text);
       fl_set_object_lcolor(main_frm->msg_text, SCREEN_COLOR_ON);
     }
-	
-  fifo_output = (fifo_dump_emos_UE*) data_buffer;
-	
+  
+  if (is_cluster_head) 
+    frame_tx = fifo_output_eNB.frame_tx;
+  else
+    frame_tx = fifo_output_UE.frame_tx;
+
   if (terminal_mode == TERM_MODE_MULTI)
     {
-      if (fifo_output->frame_tx % REC_FRAMES_MAX < REC_FRAMES_PER_FILE)  
+      if (frame_tx % REC_FRAMES_MAX < REC_FRAMES_PER_FILE)  
 	record_multi = REC_ON;
       else 
 	record_multi = REC_OFF;
 		
-      file_index = fifo_output->frame_tx/REC_FRAMES_MAX % REC_FILE_IDX_MAX;
+      file_index = frame_tx/REC_FRAMES_MAX % REC_FILE_IDX_MAX;
     }
-		
+  
   if((frame_counter % 1000) == 0)
     {
-      printf("record = %d. record_multi = %d, terminal_mode = %d, frame_tx=%d, file_index = %d\n", record, record_multi, terminal_mode, fifo_output->frame_tx, file_index);
+      printf("record = %d. record_multi = %d, terminal_mode = %d, frame_tx=%d, file_index = %d\n", record, record_multi, terminal_mode, frame_tx, file_index);
     }
 		
   frame_counter++;
@@ -1419,7 +1434,7 @@ void new_data_callback(int fifo_fd, void* data)
 	  // release the buffer
 	  free(fifo_buffer);
 	  fifo_buffer = NULL;
-	  fifo_output = NULL;
+	  data_buffer = NULL;
 	  fifo_ptr = NULL;
 				
 	  // close the dumpfile
