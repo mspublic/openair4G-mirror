@@ -181,8 +181,14 @@ void cmm_init_ch_req(
   \brief 
 */
 void cmm_init_sensing( 
-    Instance_t inst,            //!< identification de l'instance
-    unsigned int interv         //!< sensing freq.
+    Instance_t       inst,            //!< identification de l'instance
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq
     );
     
 /*!

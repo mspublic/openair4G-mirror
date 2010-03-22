@@ -466,9 +466,15 @@ msg_t *msg_rrm_init_mon_req(
 */
 
 msg_t *msg_rrm_init_scan_req(
-    Instance_t        inst            , //!< instance ID
-    unsigned int      interv          , //! interval between 2 scanning periods
-    Transaction_t     Trans_id          //!< Transaction ID
+    Instance_t       inst            , //!< instance ID
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq,
+    Transaction_t    Trans_id          //!< Transaction ID
     
     )
 {
@@ -482,7 +488,15 @@ msg_t *msg_rrm_init_scan_req(
         {
             init_rrc_msg_head(&(msg->head),inst,RRM_INIT_SCAN_REQ, sizeof( rrm_init_scan_req_t ) ,Trans_id);
 
-            p->interv = interv;
+            //mod_lor_10_03_12++
+            p->Start_fr     = Start_fr;
+            p->Stop_fr      = Stop_fr;
+            p->Meas_band    = Meas_band;
+            p->Meas_tpf     = Meas_tpf;
+            p->Nb_channels  = Nb_channels;
+            p->Overlap      = Overlap;
+            p->Sampl_freq   = Sampl_freq;
+            //mod_lor_10_03_12--
        
         }
         msg->data = (char *) p ;
@@ -500,7 +514,10 @@ msg_t *msg_rrm_init_scan_req(
 msg_t *msg_rrm_scan_ord( 
         Instance_t inst             , //!< instance ID 
         unsigned int NB_chan        , 
-        unsigned int *ch_to_scan    , 
+        unsigned int Meas_tpf       , ///< time on each carrier           //mod_lor_10_02_19
+	    unsigned int Overlap        , ///< overlap factor (percentage)    //mod_lor_10_02_19
+	    unsigned int Sampl_freq     , ///< sampling frequency (Ms/s)      //mod_lor_10_02_19
+        Sens_ch_t    *ch_to_scan    , ///< Vector of channels to scan     //mod_lor_10_02_19 
         Transaction_t Trans_id        //!< Transaction ID
         
         )
@@ -521,11 +538,15 @@ msg_t *msg_rrm_scan_ord(
         {
             init_rrc_msg_head(&(msg->head),inst,RRM_SCAN_ORD, size ,Trans_id);
 
+            p->Meas_tpf = Meas_tpf;     //mod_lor_10_02_19
+            p->Overlap = Overlap;       //mod_lor_10_02_19
+            p->Sampl_freq = Sampl_freq; //mod_lor_10_02_19
             p->NB_chan = NB_chan;
+            
           
             if ( NB_chan != 0 ){
                 
-                memcpy( p->ch_to_scan, ch_to_scan, NB_chan*sizeof(unsigned int) );
+                memcpy( p->ch_to_scan, ch_to_scan, NB_chan*sizeof(Sens_ch_t) );
                 
             }
        

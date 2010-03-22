@@ -63,6 +63,7 @@
 #include "rrm_util.h"
 #include "rrm.h"
 
+
 /*
 ** ----------------------------------------------------------------------------
 ** DEFINE LOCAL
@@ -427,7 +428,7 @@ static void * thread_recv_msg_int (
     )
 {
     msg_t *msg ;
-    struct data_thread_int *data = (struct data_thread_int *) p_data; // mod_lor AAA: memory problem?
+    struct data_thread_int *data = (struct data_thread_int *) p_data; 
     rrm_t      *rrm = &rrm_inst[data->instance]; 
     int sock ;
 
@@ -620,6 +621,8 @@ static void processing_msg_cmm(
                 msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",header->inst);
               
                //mod_lor_10_01_25++
+#ifndef    RRC_EMUL          
+                
                 if (rrm->ip.s->s == -1){ 
                     unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
                     fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
@@ -632,7 +635,7 @@ static void processing_msg_cmm(
                         fprintf(stderr," Error in IP socket opening \n");
                 }else
                         fprintf(stderr," Socket IP for inst %d already opened %d \n",rrm->id,rrm->ip.s->s);
-                //mod_lor_10_01_25--*/
+#endif            //mod_lor_10_01_25--*/
                 
                 cmm_attach_cnf( header->inst, p->L2_id, p->L3_info_t, p->L3_info, header->Trans_id ) ;
             }
@@ -688,7 +691,8 @@ static void processing_msg_cmm(
             {
                 cmm_init_sensing_t *p = (cmm_init_sensing_t *) msg ;                
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",header->inst);
-                cmm_init_sensing(header->inst,p->interv);
+                cmm_init_sensing(header->inst,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
+                        p->Nb_channels, p->Overlap,p->Sampl_freq);
                 //fprintf(stderr," End of CMM_INIT_CH_REQ\n");*/
             }
             break ;
@@ -843,12 +847,14 @@ static void processing_msg_rrc(
         case RRC_INIT_SCAN_REQ :
             {
                 rrc_init_scan_req_t *p  = (rrc_init_scan_req_t *) msg ;
+              //  fprintf(stdout,"sens_database before:\n");//dbg
+              //  print_sens_db( rrm->rrc.pSensEntry );//dbg
                 msg_fct( "[RRC]>[RRM]:%d:RRC_INIT_SCAN_REQ  %d \n",header->inst, header->Trans_id);
-                /*for ( int i=0;i<8;i++)
-                    msg_fct("%02X", p->L2_id.L2_id[i]);
-                msg_fct( ")\n");*/
-                
-                rrc_init_scan_req( header->inst, p->L2_id, p->interv, header->Trans_id ); 
+
+                rrc_init_scan_req( header->inst, p->L2_id, p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
+                        p->Nb_channels, p->Overlap,p->Sampl_freq, header->Trans_id ); 
+            //    fprintf(stdout,"sens_database:\n");//dbg
+            //    print_sens_db( rrm->rrc.pSensEntry );//dbg
                 
             }
             break ;

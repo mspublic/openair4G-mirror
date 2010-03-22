@@ -569,9 +569,15 @@ msg_t * msg_cmm_init_ch_req(
         cmm_init_sensing.
 \return message formate
 */
-msg_t *msg_cmm_init_sensing( 
-    Instance_t inst,        //!< identification de l'instance
-    unsigned int interv            //!< sensing freq.
+msg_t *msg_cmm_init_sensing( //mod_lor_10_03_12: change of parameters
+    Instance_t       inst,        //!< identification de l'instance
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq
     )
 {
     msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
@@ -583,9 +589,15 @@ msg_t *msg_cmm_init_sensing(
         if ( p != NULL )
         {
             init_cmm_msg_head(&(msg->head),inst, CMM_INIT_SENSING, sizeof( cmm_init_sensing_t) ,0);
-
-            p->interv    = interv ;
-            
+//mod_lor_10_03_12++
+            p->Start_fr     = Start_fr;
+            p->Stop_fr      = Stop_fr;
+            p->Meas_band    = Meas_band;
+            p->Meas_tpf     = Meas_tpf;
+            p->Nb_channels  = Nb_channels;
+            p->Overlap      = Overlap;
+            p->Sampl_freq   = Sampl_freq;
+//mod_lor_10_03_12--
         }       
         msg->data = (char *) p ;
     }

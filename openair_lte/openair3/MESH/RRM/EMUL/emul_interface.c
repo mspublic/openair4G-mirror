@@ -48,7 +48,7 @@
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
-#define NUM_SCENARIO  7
+#define NUM_SCENARIO  8
 #define SENSORS_NB 2 //mod_lor_10_03_03
 #define PUSU_EMUL
 
@@ -68,8 +68,6 @@ extern msg_t *msg_rrc_rb_modify_cfm(Instance_t inst, RB_ID Rb_id, Transaction_t 
 extern msg_t *msg_rrc_rb_release_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_MR_attach_ind( Instance_t inst, L2_ID L2_id );
 extern msg_t *msg_rrc_update_sens( Instance_t inst,  /*double info_time,*/ L2_ID L2_id, unsigned int NB_info, Sens_ch_t *Sens_meas, Transaction_t Trans_id);
-
-
 #endif
 
 typedef struct {
@@ -374,7 +372,14 @@ static void * fn_rrc (
                     break ;
                 case RRM_SCAN_ORD:
                     {
+                        rrm_scan_ord_t *p  = (rrm_scan_ord_t *) msg ;
                         msg_fct( "[RRM]>[RRC]:%d:RRM_SCAN_ORD\n",header->inst);
+                        
+                        /*fprintf(stderr,"NB_chan = %d;\nMeas_tpf: %d;\nOverlap: %d;\nSampl_freq: %d;\n",p->NB_chan, p->Meas_tpf, p->Overlap,p->Sampl_freq);//dbg
+                        fprintf(stderr,"Channels ids:   ");//dbg
+                        for ( int i=0; i<p->NB_chan; i++)//dbg
+                            fprintf(stderr," %d     ",p->ch_to_scan[i].Ch_id);//dbg
+                        fprintf(stderr," \n\n");//dbg*/
                         
                     }
                     break ;
@@ -524,10 +529,19 @@ static void * fn_cmm (
                         msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
                         
                         if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
-
+                            //mod_lor_10_03_12++
+                            unsigned int     Start_fr   = 1000;
+                            unsigned int     Stop_fr    = 2000;
+                            unsigned int     Meas_band  = 200;
+                            unsigned int     Meas_tpf   = 2;
+                            unsigned int     Nb_channels= (Stop_fr-Start_fr)/Meas_band; 
+                            unsigned int     Overlap    = 5;
+                            unsigned int     Sampl_freq = 10;
+                            
                             pthread_mutex_lock( &actdiff_exclu  ) ; 
                             add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
-                                    msg_cmm_init_sensing(header->inst,1 ) );
+                                    msg_cmm_init_sensing(header->inst,Start_fr,Stop_fr,Meas_band,Meas_tpf,
+                                    Nb_channels,Overlap, Sampl_freq) );
 
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
                             //msg_fct( "\npassato CH %d \n\n",header->inst); //dbg
@@ -536,7 +550,7 @@ static void * fn_cmm (
                                     msg_cmm_stop_sensing(0) );
 
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
-                        } 
+                        } //mod_lor_10_03_12++
 
                     }
                     break ;

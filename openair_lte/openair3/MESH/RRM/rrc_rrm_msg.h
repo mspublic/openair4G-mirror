@@ -273,7 +273,7 @@ typedef struct {
     double              info_time              ; //!< Date of the message
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
     unsigned int        NB_info                ; //!< number of sensed channels
-    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information 
 } rrc_update_sens_t; 
 
 /*! 
@@ -309,8 +309,15 @@ typedef struct {
 \brief  Definition des parametres de la fonction rrm_init_scan_req() dans 
         une structure permettant le passage des parametres via un socket
 */
+//mod_lor_10_03_12++
 typedef struct {
-    unsigned int      interv             ; //!< Time between two sensing sessions
+    unsigned int     Start_fr;
+    unsigned int     Stop_fr;
+    unsigned int     Meas_band;
+    unsigned int     Meas_tpf;
+    unsigned int     Nb_channels;
+    unsigned int     Overlap;
+    unsigned int     Sampl_freq;
 } rrm_init_scan_req_t;
 
 /*! 
@@ -320,8 +327,15 @@ typedef struct {
 */
 typedef struct {
     L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
-    unsigned int  interv          ; //!< Time between two sensing sessions
+    unsigned int     Start_fr;
+    unsigned int     Stop_fr;
+    unsigned int     Meas_band;
+    unsigned int     Meas_tpf;
+    unsigned int     Nb_channels;
+    unsigned int     Overlap;
+    unsigned int     Sampl_freq;
 } rrc_init_scan_req_t;  
+//mod_lor_10_03_12--
 
 /*! 
 *******************************************************************************
@@ -329,8 +343,12 @@ typedef struct {
         une structure permettant le passage des parametres via un socket
 */
 typedef struct {
-    unsigned int        NB_chan              ; //!< Number of channels to scan if 0 means all channels
-    unsigned int        ch_to_scan[NB_SENS_MAX]; //!< Vector of channels to scan
+    
+    unsigned int        NB_chan                 ; ///< Number of channels to scan if 0 means all channels
+    unsigned int        Meas_tpf                ; ///< time on each carrier           //mod_lor_10_02_19
+	unsigned int        Overlap                 ; ///< overlap factor (percentage)    //mod_lor_10_02_19
+	unsigned int        Sampl_freq              ; ///< sampling frequency (Ms/s)      //mod_lor_10_02_19
+    Sens_ch_t           ch_to_scan[NB_SENS_MAX] ; ///< Vector of channels to scan     //mod_lor_10_02_19
 } rrm_scan_ord_t ;
 
 /*! 
@@ -458,11 +476,13 @@ msg_t *msg_rrci_init_mr_req( Instance_t inst,
             
 msg_t *msg_rrm_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, 
             unsigned int interval, unsigned int *ch_to_scan, Transaction_t Trans_id );
-msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int interv, Transaction_t Trans_id );
-msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int *ch_to_scan, Transaction_t Trans_id ); 
+msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
+        unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id ); //mod_lor_10_03_12
+msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int Meas_tpf, unsigned int Overlap, 
+        unsigned int Sampl_freq, Sens_ch_t *ch_to_scan, Transaction_t Trans_id );  //mod_lor_10_02_19
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_end_scan_ord(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *channels,
-             Transaction_t Trans_id );
+             Transaction_t Trans_id ); 
 msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
              
 ///MESSAGES VIA IP

@@ -80,8 +80,8 @@ typedef struct {
 \brief Structure of sensing information database        
 */
 typedef struct  Sens_ch_s { 
-    float               Start_f    ; ///< frequence initial du canal
-    float               Final_f    ; ///< frequence final du canal
+    unsigned int        Start_f    ; ///< frequence initial du canal //mod_lor_10_03_17: intxflot
+    unsigned int        Final_f    ; ///< frequence final du canal   //mod_lor_10_03_17: intxflot
     unsigned int        Ch_id      ; ///< ID du canal
     float               meas       ; ///< Sensing results 
     unsigned int        is_free    ; ///< Decision about the channel
@@ -93,9 +93,9 @@ typedef struct  Sens_ch_s {
 \brief Structure that describes the channels        
 */
 typedef struct { 
-    float               Start_f    ; ///< frequence initial du canal
-    float               Final_f    ; ///< frequence final du canal
-    int                 Ch_id      ; ///< ID du canal
+    unsigned int        Start_f    ; ///< frequence initial du canal //mod_lor_10_03_17: intxflot
+    unsigned int        Final_f    ; ///< frequence final du canal   //mod_lor_10_03_17: intxflot
+    unsigned int        Ch_id      ; ///< ID du canal               //mod_lor_10_03_17: intxflot
     QOS_CLASS_T         QoS        ; ///< Max QoS possible on the channel
 } CHANNEL_T ;
 

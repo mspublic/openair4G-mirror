@@ -22,7 +22,7 @@
 */
 #ifdef RRC_EMUL
 
-#include <stdio.h>
+#include <stdio.h> 
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -501,7 +501,7 @@ msg_t *msg_rrc_update_sens(
     //double info_time            , //!< Date of the message
     L2_ID L2_id,
     unsigned int NB_info,
-    Sens_ch_t *Sens_meas, 
+    Sens_ch_t *Sens_meas,
     Transaction_t Trans_id
     )
 {
@@ -522,10 +522,12 @@ msg_t *msg_rrc_update_sens(
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
 
             p->NB_info       = NB_info    ;
+
             if ( NB_info > 0 )
             {
                 memcpy( p->Sens_meas , Sens_meas, NB_info * sizeof(Sens_ch_t) )  ;
             }
+            
             
         }
         
@@ -546,7 +548,13 @@ msg_t *msg_rrc_update_sens(
 msg_t *msg_rrc_init_scan_req(
     Instance_t        inst            , //!< instance ID
     L2_ID             L2_id           ,
-    unsigned int      interv          , //! interval between 2 scanning periods
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq,
     Transaction_t     Trans_id          //!< Transaction ID
     
     )
@@ -562,7 +570,15 @@ msg_t *msg_rrc_init_scan_req(
             init_rrc_msg_head(&(msg->head),inst,RRC_INIT_SCAN_REQ, sizeof( rrc_init_scan_req_t ) ,Trans_id);
             
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
-            p->interv = interv;
+            //mod_lor_10_03_12++
+            p->Start_fr     = Start_fr;
+            p->Stop_fr      = Stop_fr;
+            p->Meas_band    = Meas_band;
+            p->Meas_tpf     = Meas_tpf;
+            p->Nb_channels  = Nb_channels;
+            p->Overlap      = Overlap;
+            p->Sampl_freq   = Sampl_freq;
+            //mod_lor_10_03_12--
        
         }
         

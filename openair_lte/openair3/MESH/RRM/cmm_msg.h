@@ -165,9 +165,17 @@ typedef struct {
 \brief  Definition des parametres de la fonction cmm_attach_cnf() 
         dans une structure permettant le passage des parametres via un socket
 */
+//mod_lor_10_03_12++
 typedef struct {
-    float           interv;
+    unsigned int     Start_fr;
+    unsigned int     Stop_fr;
+    unsigned int     Meas_band;
+    unsigned int     Meas_tpf;
+    unsigned int     Nb_channels;
+    unsigned int     Overlap;
+    unsigned int     Sampl_freq;
 } cmm_init_sensing_t ;
+//mod_lor_10_03_12++
 
 /*!
 *******************************************************************************
@@ -229,7 +237,8 @@ msg_t *msg_cmm_init_mr_req( Instance_t inst);
 msg_t *msg_rrm_MR_synch_ind(Instance_t inst);
 msg_t *msg_rrm_no_synch_ind( Instance_t inst);
 msg_t *msg_cmm_init_ch_req( Instance_t inst, L3_INFO_T L3_info_t, void *L3_info  );
-msg_t *msg_cmm_init_sensing( Instance_t inst, unsigned int interv  );
+msg_t *msg_cmm_init_sensing( Instance_t inst, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
+        unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq ); //mod_lor_10_03_12
 msg_t *msg_cmm_stop_sensing( Instance_t inst);
 msg_t *msg_cmm_ask_freq( Instance_t inst);
 msg_t *msg_cmm_need_to_tx( Instance_t inst, QOS_CLASS_T QoS_class);

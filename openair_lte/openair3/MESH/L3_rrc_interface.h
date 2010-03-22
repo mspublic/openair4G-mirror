@@ -245,7 +245,13 @@ void rrc_update_sens( //mod_lor_10_01_25: RRC function, but also IP function
 void rrc_init_scan_req(
     Instance_t        inst            , //!< instance ID
     L2_ID             L2_id           , //!< FC address
-    unsigned int      interv          , //! interval between 2 scanning periods
+     unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq,
     Transaction_t     Trans_id          //!< Transaction ID
     );
     

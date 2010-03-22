@@ -1,7 +1,8 @@
 OSTYPE		= $(shell uname -o )
 
-EMUL_RRC        = 0
+EMUL_RRC        = 1 
 RRC_KERNEL_MODE = 0
+
 
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
@@ -14,8 +15,7 @@ EMUL        = $(CHEMIN)/EMUL
 VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR)
-CFLAGS		= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
-
+CFLAGS		+= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
 LDFLAGS		= -lm
 
 ifeq ($(OSTYPE),Cygwin)
@@ -28,7 +28,7 @@ else
 LDFLAGS		+= -lpthread -lrt
 CFLAGS		+= -DLINUX
 
-endif
+endif 
 
 # ifdef RRC_KERNEL_MODE
 ifeq ($(RRC_KERNEL_MODE),1)
@@ -71,6 +71,7 @@ CFLAGS	   += -DRRC_EMUL
 SRC_EMUL   += rrc_2_rrm_msg.c
 SRC_EMUL   += scenario.c
 endif
+
 
 
 OBJ		= $(SRC:%.c=./obj/%.o)

@@ -64,7 +64,8 @@ extern msg_t *msg_rrc_rb_modify_cfm(Instance_t inst, RB_ID Rb_id, Transaction_t 
 extern msg_t *msg_rrc_rb_release_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_MR_attach_ind( Instance_t inst, L2_ID L2_id );
 extern msg_t *msg_rrc_update_sens( Instance_t inst, L2_ID L2_id, unsigned int NB_info, Sens_ch_t *Sens_meas, Transaction_t Trans_id);
-extern msg_t *msg_rrc_init_scan_req(Instance_t inst, L2_ID L2_id, unsigned int interv, Transaction_t Trans_id );
+extern msg_t *msg_rrc_init_scan_req(Instance_t inst, L2_ID L2_id, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
+        unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id );
 extern msg_t *msg_rrc_end_scan_conf(Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 extern msg_t *msg_rrc_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 extern msg_t *msg_rrc_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int *ch_to_scan, unsigned int NB_chan, float interval, Transaction_t Trans_id );
@@ -94,6 +95,15 @@ unsigned char L3_info_mr2[MAX_L3_INFO] = { 0x0A, 0x00, 2, 2 } ;
 unsigned char L3_info_mr[MAX_L3_INFO]  = { 0x0A, 0x00, 1, 1 } ; 
 unsigned char L3_info_ch[MAX_L3_INFO]  = { 0x0A, 0x00, 0, 0 } ; 
 
+//mod_lor_10_03_12++ : init sensing global parameters
+unsigned int     Start_fr   = 1000;
+unsigned int     Stop_fr    = 2000;
+unsigned int     Meas_band  = 200;
+unsigned int     Meas_tpf   = 2;
+unsigned int     Nb_channels= 5; 
+unsigned int     Overlap    = 5;
+unsigned int     Sampl_freq = 10;
+//mod_lor_10_03_12--
 
 static void prg_opening_RB( sock_rrm_t *s_cmm, double date, L2_ID *src, L2_ID *dst, QOS_CLASS_T qos )
 {
@@ -206,12 +216,13 @@ static void prg_rrc_rb_meas_ind( sock_rrm_t *s_rrc, double date, RB_ID Rb_id, L2
     add_item_transact( &rrc_transact_list, rrc_transaction, INT_RRC,RRC_RB_MEAS_IND,0,NO_PARENT);
     pthread_mutex_unlock( &rrc_transact_exclu ) ;
 }   
-
-static void prg_cmm_init_sensing( sock_rrm_t *s_cmm, double date, unsigned int interv )
+ 
+static void prg_cmm_init_sensing( sock_rrm_t *s_cmm, double date, unsigned int Start_fr,unsigned int Stop_fr,unsigned int Meas_band,unsigned int Meas_tpf,
+                                    unsigned int Nb_channels,unsigned int Overlap,unsigned int Sampl_freq )
 {
     cmm_transaction++;
     pthread_mutex_lock( &actdiff_exclu  ) ;
-    add_actdiff(&list_actdiff,date, cnt_actdiff++, s_cmm, msg_cmm_init_sensing ( 0, interv));
+    add_actdiff(&list_actdiff,date, cnt_actdiff++, s_cmm, msg_cmm_init_sensing ( 0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq));
     pthread_mutex_unlock( &actdiff_exclu ) ;
     
     pthread_mutex_lock( &cmm_transact_exclu ) ;
@@ -233,11 +244,12 @@ static void prg_rrc_update_sens( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_mr
                 
 }
 static void prg_rrc_init_scan_req( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_fc,
-                                    unsigned int interv )
+                                    unsigned int Start_fr,unsigned int Stop_fr,unsigned int Meas_band,unsigned int Meas_tpf,
+                                    unsigned int Nb_channels,unsigned int Overlap,unsigned int Sampl_freq )
 {
     rrc_transaction++;
     pthread_mutex_lock( &actdiff_exclu  ) ;
-    add_actdiff(&list_actdiff,date, cnt_actdiff++, s_rrc, msg_rrc_init_scan_req ( 0, *L2_id_fc, interv, rrc_transaction));
+    add_actdiff(&list_actdiff,date, cnt_actdiff++, s_rrc, msg_rrc_init_scan_req ( 0, *L2_id_fc, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq, rrc_transaction));
     pthread_mutex_unlock( &actdiff_exclu ) ;
     
     pthread_mutex_lock( &rrc_transact_exclu ) ;
@@ -740,7 +752,7 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 
 // ========================= Starting sensing operation
 
-    prg_cmm_init_sensing( s_cmm, 5.0, 1 );
+    prg_cmm_init_sensing( s_cmm,  1, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
 // ========================= Remontée de mesure par le RRC
 
     prg_rrc_update_sens( s_rrc, 5.10, &L2_id_mr,3, Sensing_meas );
@@ -771,17 +783,18 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 static void scenario8(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 {
     static Sens_ch_t Sensing_meas[3]={
-        { 100.1, 200, 1, 13.5, 0, NULL },
-        { 200.1, 300, 2,  7.4, 0, NULL },
-        { 300.1, 400, 3,  8.5, 0, NULL }
+        { 100, 200, 1, 13.5, 0, NULL },
+        { 200, 300, 2,  7.4, 0, NULL },
+        { 300, 400, 3,  8.5, 0, NULL }
         
     };
     static Sens_ch_t Sensing_meas2[3]={
-        { 100.1, 200, 1, 23.5, 0, NULL },
-        { 200.1, 300, 2, 27.4, 0, NULL },
-        { 300.1, 400, 3, 28.5, 0, NULL }
+        { 100, 200, 1, 23.5, 0, NULL },
+        { 200, 300, 2, 27.4, 0, NULL },
+        { 300, 400, 3, 28.5, 0, NULL }
         
     };
+    
     /*static SENSING_MEAS_T Sensing_meas2[3]={
         { 16, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
         { 25, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}} },
@@ -808,31 +821,24 @@ static void scenario8(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
 
 // ========================= Connexion etablit du MR au CH
     prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv4_ADDR, 10, 20 ) ;
-// ========================= ISOLATED NODE to CLUSTERHEAD :
-    //prg_phy_synch_to_MR( s_rrc, 0.1 );
-
-// ========================= Attachement d'un MR
-    //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr  ) ;
-    //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr2  ) ;
-    //prg_rrc_MR_attach_ind( s_rrc, 2.0 , &L2_id_mr3  ) ;
 
 // ========================= Starting sensing operation
     unsigned int interv= 1;
     float date = 1.5;
-    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
-    //prg_cmm_init_sensing( s_cmm, 5.0, 1 );
+    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
+    //prg_cmm_init_sensing( s_cmm, 5.0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq );
 // ========================= Remontée de mesure par le RRC
-    for (int i=0; i<3;i++){
+    /*for (int i=0; i<3;i++){
         date+=interv;
         prg_rrc_update_sens( s_rrc, date, &L2_id_mr,3, Sensing_meas );
-    }
+    }*/
 // ========================= Monitoring
-    unsigned int ch_to_scan[3]={1,2};
+    /*unsigned int ch_to_scan[3]={1,2};
     unsigned int NB_chan= 2;
     date+=interv;
     prg_rrc_init_mon_req( s_rrc, date, &L2_id_ch, ch_to_scan, NB_chan, interv );
     date+=interv;
-    prg_rrc_update_sens( s_rrc, date, &L2_id_mr,NB_chan, Sensing_meas2 );
+    prg_rrc_update_sens( s_rrc, date, &L2_id_mr,NB_chan, Sensing_meas2 );*/
     
 // ========================= End of sensing
     date+=interv;
@@ -855,12 +861,12 @@ static void scenario9(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
         
     };
     
-    static CHANNEL_T Free_frequencies[3]={
-        { 100.1, 200, 1, 1 },
-        { 200.1, 300, 2, 2 },
-        { 300.1, 400, 3, 3 }
+    /*static CHANNEL_T Free_frequencies[3]={
+        { 100, 200, 1, 1 },
+        { 200, 300, 2, 2 },
+        { 300, 400, 3, 3 }
         
-    };
+    };*/
     
     
     printf("\nSCENARIO 9: ...\n\n" ) ;
@@ -962,12 +968,12 @@ static void scenario11(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
         { 300.1, 400, 3, 28.5, 0, NULL }
         
     };
-    static CHANNEL_T Free_frequencies[3]={
+    /*static CHANNEL_T Free_frequencies[3]={
         { 100.1, 200, 1, 0 },
         { 200.1, 300, 2, 0 },
         { 400.1, 500, 4, 0 }
         
-    };
+    };*/
     
     printf("\nSCENARIO 11: ...\n\n" ) ;
 
@@ -975,8 +981,8 @@ static void scenario11(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
-    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
-    //prg_cmm_init_sensing( s_cmm, 5.0, 1 );
+    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
+    //prg_cmm_init_sensing( s_cmm, 5.0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq );
 // ========================= Remontée de mesure par le RRC
     for (int i=0; i<3;i++){
         date+=interv;
@@ -1011,12 +1017,12 @@ static void scenario12(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
         
     };
     
-    static CHANNEL_T Free_frequencies[3]={
+   /*static CHANNEL_T Free_frequencies[3]={
         { 100.1, 200, 1, 0 },
         { 200.1, 300, 2, 0 },
         { 400.1, 500, 4, 0 }
         
-    };
+    };*/
     
     printf("\nSCENARIO 12: ...\n\n" ) ;
 
@@ -1024,8 +1030,8 @@ static void scenario12(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
-    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
-    //prg_cmm_init_sensing( s_cmm, 5.0, 1 );
+    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
+    //prg_cmm_init_sensing( s_cmm, 5.0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq );
 // ========================= Remontée de mesure par le RRC
     for (int i=0; i<3;i++){
         date+=interv;
@@ -1061,12 +1067,12 @@ static void scenario13(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
         
     };
     
-    static CHANNEL_T Free_frequencies[3]={
+    /*static CHANNEL_T Free_frequencies[3]={
         { 100.1, 200, 1, 0 },
         { 200.1, 300, 2, 0 },
         { 400.1, 500, 4, 0 }
         
-    };
+    };*/
     
     printf("\nSCENARIO 13: ...\n\n" ) ;
 
@@ -1081,8 +1087,8 @@ static void scenario13(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     unsigned int interv= 1;
     float date = 1.5;
     unsigned int Session_id = 7;
-    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,interv);
-    //prg_cmm_init_sensing( s_cmm, 5.0, 1 );
+    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
+    //prg_cmm_init_sensing( s_cmm, 5.0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq );
 // ========================= Remontée de mesure par le RRC
     for (int i=0; i<3;i++){
         date+=interv;
