@@ -138,6 +138,7 @@ typedef struct {
   unsigned int pdu_fer;             /// FER (in percent) 
 } LTE_UE_PBCH;
 
+/*
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
@@ -162,10 +163,7 @@ typedef struct
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
 
 } PHY_VARS_UE;
-
-
-
-
+*/
 
 #endif
 

@@ -170,8 +170,8 @@ void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
   unsigned char eNb_id,i;
 
   if (next_slot==1) {
-      emos_dump_UE.timestamp = rt_get_time_ns();
-      emos_dump_UE.frame_tx = mac_xface->frame;
+      emos_dump_eNb.timestamp = rt_get_time_ns();
+      emos_dump_eNb.frame_tx = mac_xface->frame;
   }
   if (next_slot%2==0) {
     for (i=0; i<2; i++) 
