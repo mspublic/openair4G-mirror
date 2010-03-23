@@ -64,6 +64,8 @@ int dlsch_subframe[8];
 
 extern int exit_openair;
 extern int dlsch_errors;
+extern int dlsch_received;
+
 
 /** DLSCH Decoding Thread */
 static void * dlsch_thread(void *param) {
@@ -111,10 +113,11 @@ static void * dlsch_thread(void *param) {
 
     time_in = openair_get_mbox();
 
-    if (mac_xface->frame < dlsch_errors)
+    if (mac_xface->frame < dlsch_errors) {
       dlsch_errors=0;
+      dlsch_received = 0;
+    }
 
-    /*
     if (dlsch_ue) 
       if (dlsch_ue[harq_pid]) {
 	ret = dlsch_decoding(lte_ue_dlsch_vars[0]->llr[0],		 
@@ -125,14 +128,15 @@ static void * dlsch_thread(void *param) {
     
 	//NB allocated RBs
 	time_out = openair_get_mbox();
-	if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	if (ret == (1+MAX_TURBO_ITERATIONS))
 	  dlsch_errors++;
-	}
+	else
+	  dlsch_received++;
+
 	
 	if ((mac_xface->frame % 100) == 0)
-	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors);
+	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors, %d received)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors,dlsch_received);
       }
-    */
   }
   msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);
   dlsch_instance_cnt[harq_pid] = 99;

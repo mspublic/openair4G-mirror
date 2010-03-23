@@ -38,6 +38,7 @@ extern unsigned char primary_synch2_tab[72];
 extern int *primary_synch0_time;
 extern int *primary_synch1_time;
 extern int *primary_synch2_time;
+extern int *sync_corr;
 
 extern LTE_DL_FRAME_PARMS *lte_frame_parms;
 extern LTE_UE_COMMON *lte_ue_common_vars;

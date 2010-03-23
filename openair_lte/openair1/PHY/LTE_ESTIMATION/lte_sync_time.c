@@ -9,6 +9,9 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
+#include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
+
 
 //#define DEBUG_PHY
 
@@ -170,7 +173,8 @@ inline int abs32(int x) {
 
 int lte_sync_time(int **rxdata, ///rx data in time domain
 		  LTE_DL_FRAME_PARMS *frame_parms,
-		  int length) {
+		  int length,
+		  int *eNb_id) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -267,8 +271,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     }
   }
 
-  //frame_parms->Nid_cell = sync_source;
-  //frame_parms->nushift = sync_source;
+  *eNb_id = sync_source;
+
 #ifdef DEBUG_PHY
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
@@ -288,7 +292,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
   // perform a time domain correlation using the oversampled sync sequence
 
-  unsigned int n, ar, peak_pos, peak_val;
+  unsigned int n, ar, peak_pos, peak_val, mean_val;
   int result;
   short *primary_synch_time;
 
@@ -315,6 +319,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
   peak_val = 0;
   peak_pos = 0;
+  mean_val = 0;
 
   for (n=0; n<length; n+=4) {
 
@@ -335,6 +340,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     //    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
     //      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
     sync_corr[n] = abs32(sync_corr[n]);
+    mean_val += sync_corr[n]>>10;
 
     if (sync_corr[n]>peak_val) {
       peak_val = sync_corr[n];
@@ -343,13 +349,24 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
   }
 
 #ifdef DEBUG_PHY
-  msg("[SYNC TIME] Peak found at pos %d, val = %d\n",peak_pos,peak_val);
-
 #ifdef USER_MODE
   write_output("sync_corr.m","synccorr",sync_corr,length,1,2);
 #endif
 #endif
 
-  return(peak_pos);
+  if ((peak_val>>10 * length) < 10*mean_val) {
+#ifdef DEBUG_PHY
+    if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
+      msg("[SYNC TIME] No peak found\n");
+#endif
+    return(-1);
+  }
+  else {
+#ifdef DEBUG_PHY
+    if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
+      msg("[SYNC TIME] Peak found at pos %d, val = %d, mean_val = %d\n",peak_pos,peak_val,mean_val);
+#endif
+    return(peak_pos);
+  }
 
 }

@@ -421,12 +421,16 @@ void openair_sync(void) {
       msg("[openair][SCHED][SYNCH] starting sync\n");
 
       // Do initial timing acquisition
-      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms, LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti);
+      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, 
+			       lte_frame_parms, 
+			       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti,
+			       &lte_ue_common_vars->eNb_id);
       //sync_pos = 0;
+
+      // this is only for visualization in the scope
+      lte_eNB_common_vars->sync_corr = sync_corr;
       
-      // the sync is in the last symbol of either the 0th or 10th slot
-      // however, the pbch is only in the 0th slot
-      // so we assume that sync_pos points to the 0th slot
+      // the sync is in the 3rd (last_ symbol of the special subframe
       // so the position wrt to the start of the frame is 
       sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + CYCLIC_PREFIX_LENGTH + 10;
       

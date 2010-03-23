@@ -686,20 +686,18 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   }
   
   // zero out all global variables
-  /*
-  bzero(alpha,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
-  bzero(beta,(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
-  bzero(m11,(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
-  bzero(m10,(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
-  bzero(systematic0,(6144+16)*sizeof(short));
-  bzero(systematic1,(6144+16)*sizeof(short));
-  bzero(systematic2,(6144+16)*sizeof(short));
-  bzero(yparity1,(6144+8)*sizeof(short));
-  bzero(yparity2,(6144+8)*sizeof(short));
+  bzero(alpha_g[inst],(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(beta_g[inst],(FRAME_LENGTH_MAX+3+1)*8*sizeof(llr_t));
+  bzero(m11_g[inst],(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
+  bzero(m10_g[inst],(FRAME_LENGTH_MAX+3)*sizeof(llr_t));
+  bzero(systematic0_g[inst],(6144+16)*sizeof(short));
+  bzero(systematic1_g[inst],(6144+16)*sizeof(short));
+  bzero(systematic2_g[inst],(6144+16)*sizeof(short));
+  bzero(yparity1_g[inst],(6144+8)*sizeof(short));
+  bzero(yparity2_g[inst],(6144+8)*sizeof(short));
 
-  bzero(mtop,6144*sizeof(__m128i));
-  bzero(mbot,6144*sizeof(__m128i));
-  */
+  bzero(mtop_g[inst],6144*sizeof(__m128i));
+  bzero(mbot_g[inst],6144*sizeof(__m128i));
 
   switch (crc_type) {
   case CRC24_A:

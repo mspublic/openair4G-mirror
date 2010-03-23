@@ -27,7 +27,19 @@
 // This structure hold all the data that is written to FIFO in one frame
 // Make sure that this is updated accordingly when new data is written to FIFO
 // MAKE SURE THE SIZE OF THIS STRUCTURE IS A MULTIPLE OF 4 (32 bit aligned) 
+
+
+typedef struct {
+  unsigned char o[MAX_CQI_BITS];/// Pointer to CQI data
+  unsigned char O;  /// Length of CQI data (bits)
+  unsigned char o_RI[2];  /// Rank information 
+  unsigned char O_RI;  /// Length of rank information (bits)
+  unsigned char o_ACK[4];  /// Pointer to ACK
+  unsigned char O_ACK;  /// Length of ACK information (bits)
+} UCI_DATA_t;
+
 struct fifo_dump_emos_struct_UE {
+  // RX
   RTIME	           timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   unsigned int     frame_rx;               //! Framenumber of the RX 
@@ -37,24 +49,34 @@ struct fifo_dump_emos_struct_UE {
   unsigned int     pdu_errors_last[NUMBER_OF_eNB_MAX];                   /// Total number of PDU errors 128 frames ago
   unsigned int     pdu_errors_conseq[NUMBER_OF_eNB_MAX];                 /// Total number of consecutive PDU errors
   unsigned int     pdu_fer[NUMBER_OF_eNB_MAX];                           /// FER (in percent) 
+  unsigned int     dci_cnt[10];
+  unsigned int     dci_errors;                                           /// Total number of PDU errors
+  unsigned int     dci_received;                                         /// Total number of PDU received
   DCI_ALLOC_t      DCI_alloc[2][10];                                     /// DCI for every subframe (received)
   int              timing_offset;                                        /// Timing offset
   int              timing_advance;                                       /// Timing advance
   int              freq_offset;                                          /// Frequency offset
   unsigned int     rx_total_gain_dB;                                     /// Total gain
+  unsigned char    eNb_id;                                               /// eNb_id UE is synched to
   unsigned char    mimo_mode;              /// Transmission mode
   int              channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+  // TX
+  unsigned int     uci_cnt[10];
+  UCI_DATA_t       UCI_data[2][10];                                      /// UCI informations for every subframe (transmitted)
 };
 
 
 struct fifo_dump_emos_struct_eNb {
+  // TX
   RTIME	           timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX
-  //PHY_MEASUREMENTS PHY_measurements;
-  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][20]; 
+  unsigned int     dci_cnt[10];
   DCI_ALLOC_t      DCI_alloc[2][10];       /// DCI for every subframe (sent)
-  unsigned int     rx_total_gain_dB;       /// Total gain
   unsigned char    mimo_mode;              /// Transmission mode
+  // RX
+  //PHY_MEASUREMENTS PHY_measurements;
+  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][10]; /// Contains received feedback
+  unsigned int     rx_total_gain_dB;       /// Total gain
   int              channel[N_SRS_SYMBOLS][NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL]; //UL channel estimate
 };
 

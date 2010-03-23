@@ -71,6 +71,7 @@ typedef struct{
   /// hold the channel estimates in frequency domain based on SRS
   int **srs_ch_estimates[3];  
   int* srs;               /// holds the SRS for channel estimation at the RX
+  int *sync_corr;         /// holds output of the sync correlator
 } LTE_eNB_COMMON;
 
 typedef struct{
@@ -92,7 +93,7 @@ typedef struct {
   int **rxdataF;          ///holds the received data in the frequency domain
   int **dl_ch_estimates[3];  /// hold the channel estimates in frequency domain
   int **dl_ch_estimates_time;  /// hold the channel estimates in time domain (used for tracking)
-  //int *sync_corr;         /// holds output of the sync correlator
+  int *sync_corr;         /// holds output of the sync correlator
   int freq_offset;          /// estimated frequency offset (in radians) for all subcarriers
   unsigned char eNb_id;     /// eNb_id user is synched to
 } LTE_UE_COMMON;
@@ -120,6 +121,8 @@ typedef struct {
   unsigned short *llr;
   unsigned short *wbar;
   char *e_rx;
+  unsigned int dci_errors;          /// Total number of PDU errors
+  unsigned int dci_received;        /// Total number of PDU received
 } LTE_UE_PDCCH;
 
 typedef struct {
