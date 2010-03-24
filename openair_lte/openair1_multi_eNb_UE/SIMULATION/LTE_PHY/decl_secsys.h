@@ -15,7 +15,7 @@ LTE_eNB_COMMON *lte_eNB_common_vars_secsys;
 LTE_eNb_DLSCH_t **dlsch_eNb_secsys,*dlsch_eNb_cntl_secsys;
 LTE_eNB_ULSCH **lte_eNB_ulsch_vars_secsys;
 
-//extern LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl_secsys;
-//extern LTE_eNb_ULSCH_t **ulsch_eNb_secsys;
-//extern LTE_UE_ULSCH_t **ulsch_ue_secsys;
+LTE_UE_DLSCH_t **dlsch_ue_secsys,*dlsch_ue_cntl_secsys;
+LTE_eNb_ULSCH_t **ulsch_eNb_secsys;
+LTE_UE_ULSCH_t **ulsch_ue_secsys;
 

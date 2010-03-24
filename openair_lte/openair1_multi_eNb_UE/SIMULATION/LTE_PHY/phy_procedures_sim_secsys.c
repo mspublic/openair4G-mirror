@@ -170,11 +170,10 @@ int main(int argc, char **argv) {
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars_secsys,lte_ue_dlsch_vars_secsys,lte_ue_dlsch_vars_cntl_secsys,lte_ue_pbch_vars_secsys,lte_ue_pdcch_vars_secsys);
 #endif
 
-  dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
-  dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
-
-  ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(2*sizeof(LTE_eNb_ULSCH_t*));
-  ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(2*sizeof(LTE_UE_ULSCH_t*));
+ dlsch_eNb = &(PHY_vars_eNb->dlsch_eNb[0]);
+ dlsch_ue = &(PHY_vars_UE->dlsch_ue[0]);
+ ulsch_eNb = &(PHY_vars_eNb->dlsch_eNb[0]);
+ ulsch_ue = &(PHY_vars_UE->dlsch_ue[0]);
 
   for (i=0;i<2;i++) {
     dlsch_eNb[i] = new_eNb_dlsch(1,8);
@@ -198,6 +197,36 @@ int main(int argc, char **argv) {
       exit(-1);
     }
   }
+#ifdef SECONDARY_SYSTEM
+ dlsch_eNb_secsys = &(PHY_vars_eNb_secsys->dlsch_eNb[0]);
+ dlsch_ue_secsys = &(PHY_vars_UE_secsys->dlsch_ue[0]);
+ ulsch_eNb_secsys = &(PHY_vars_eNb_secsys->dlsch_eNb[0]);
+ ulsch_ue_secsys = &(PHY_vars_UE_secsys->dlsch_ue[0]);
+
+  for (i=0;i<2;i++) {
+    dlsch_eNb_secsys[i] = new_eNb_dlsch(1,8);
+    if (!dlsch_eNb_secsys[i]) {
+      msg("Can't get eNb dlsch structures\n");
+      exit(-1);
+    }
+    dlsch_ue_secsys[i]  = new_ue_dlsch(1,8);
+    if (!dlsch_ue_secsys) {
+      msg("Can't get ue dlsch structures\n");
+      exit(-1);
+    }
+    ulsch_eNb_secsys[i] = new_eNb_ulsch(3);
+    if (!ulsch_eNb_secsys[i]) {
+      msg("Can't get eNb ulsch structures\n");
+      exit(-1);
+    }
+    ulsch_ue_secsys[i]  = new_ue_ulsch(3);
+    if (!ulsch_ue_secsys[i]) {
+      msg("Can't get ue ulsch structures\n");
+      exit(-1);
+    }
+  }
+#endif
+
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
