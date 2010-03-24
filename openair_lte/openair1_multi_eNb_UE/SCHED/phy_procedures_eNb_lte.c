@@ -1,4 +1,4 @@
-/*________________________phy_procedures_lte.c________________________
+/*________________________phy_procedures_eNb_lte.c_______________________
 
 Authors : Hicham Anouar, Raymond Knopp, Florian Kaltenberger,Torbjorn Sorby
 Company : EURECOM
