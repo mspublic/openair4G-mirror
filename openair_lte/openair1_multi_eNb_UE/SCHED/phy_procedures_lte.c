@@ -1,8 +1,8 @@
 /*________________________phy_procedures_lte.c________________________
 
-Authors : Hicham Anouar, Raymond Knopp, Florian Kaltenberger
+Authors : Hicham Anouar, Raymond Knopp, Florian Kaltenberger,Torbjorn Sorby
 Company : EURECOM
-Emails  : anouar@eurecom.fr,  knopp@eurecom.fr, kaltenbe@eurecom.fr
+Emails  : anouar@eurecom.fr,  knopp@eurecom.fr, kaltenbe@eurecom.fr, sorby@eurecom.fr
 ________________________________________________________________*/
 
 
@@ -26,7 +26,7 @@ ________________________________________________________________*/
 #define DEBUG_PHY
 #endif
 
-#define DIAG_PHY
+//#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
