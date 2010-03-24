@@ -13,7 +13,7 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DN
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA  -O2
+CFLAGS += -DOPENAIR_LTE -O2 #-DIFFT_FPGA
 
 ifdef EMOS
 CFLAGS += -DEMOS
@@ -116,7 +116,7 @@ OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 all: dlsim dlsim2 ulsim ulsim2 physim dlsim_secsys physim_secsys
 
 test:
-	echo $(SCHED_OBJS)
+	echo $(CFLAGS)
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
