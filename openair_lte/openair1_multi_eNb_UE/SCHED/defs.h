@@ -108,8 +108,8 @@ void openair1_restart(void);
 #ifndef MeNBMUE
 void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot);
 #else //MeNBMUE
-void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB);
-void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE);
+void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
+void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue);
 #endif //MeNBMUE
 #else
 #ifdef EMOS
