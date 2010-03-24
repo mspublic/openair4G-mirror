@@ -55,7 +55,7 @@ Window config_wnd;
 int power = TERM_OFF;
 int record = REC_OFF;
 int record_multi = REC_OFF;
-int terminal_mode = TERM_MODE_SINGL;
+int terminal_mode = TERM_MODE_MULTI;
 int file_index = 0;
 int emos_ready = EMOS_READY;
 int openair_dev_fd;
@@ -1338,10 +1338,12 @@ void new_data_callback(int fifo_fd, void* data)
       fl_set_object_lcolor(main_frm->msg_text, SCREEN_COLOR_ON);
     }
   
-  if (is_cluster_head) 
+  if (is_cluster_head) {
     frame_tx = fifo_output_eNB.frame_tx;
-  else
+  }
+  else {
     frame_tx = fifo_output_UE.frame_tx;
+  }
 
   if (terminal_mode == TERM_MODE_MULTI)
     {
@@ -1372,7 +1374,7 @@ void new_data_callback(int fifo_fd, void* data)
 	{
 	  error("Dumpfile not open");
 	}
-      else
+      else 
 	{
 	  // copy the data to the fifo buffer
 	  memcpy(fifo_ptr, data_buffer, CHANNEL_BUFFER_SIZE);

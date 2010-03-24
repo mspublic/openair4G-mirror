@@ -27,7 +27,4 @@ emos_gui : $(emos_gui_OBJS)
 	$(CC) -o emos_gui $(CFLAGS) $(emos_gui_OBJS) $(emos_gui_LDADD)
 
 clean:
-	rm -f emos_gui
 	rm -f $(emos_gui_OBJS)
-	rm -f *.o
-	rm -f *.exe*

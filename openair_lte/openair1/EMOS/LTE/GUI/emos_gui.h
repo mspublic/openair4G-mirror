@@ -24,8 +24,8 @@
 #define N0			0
 #define SNR			1
 
-#define REC_FRAMES_MAX          100*60*10 //10min
-#define REC_FRAMES_PER_FILE     100*60*10
+#define REC_FRAMES_MAX          (100*60*10) 
+#define REC_FRAMES_PER_FILE     (100*(60*10-5)) //9min55sec
 #define REC_FILE_IDX_MAX        100
 
 #define CHANSOUNDER_FIFO_DEV "/dev/rtf3"

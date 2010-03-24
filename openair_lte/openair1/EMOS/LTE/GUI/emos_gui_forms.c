@@ -222,7 +222,7 @@ FD_main_frm *create_form_main_frm(void)
   obj = fl_add_box(FL_ROUNDED_BOX,800,610,200,90,"");
     fl_set_object_color(obj,FL_INDIANRED,FL_COL1);
     fl_set_object_lalign(obj,FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
-  fdui->rec_btn = obj = fl_add_button(FL_PUSH_BUTTON,820,620,160,70,"Record");
+  fdui->rec_btn = obj = fl_add_button(FL_NORMAL_BUTTON,820,620,160,70,"Record");
     fl_set_object_boxtype(obj,FL_ROUNDED3D_UPBOX);
     fl_set_object_color(obj,FL_LIGHTER_COL1,FL_COL1);
     fl_set_object_lsize(obj,FL_TINY_SIZE);

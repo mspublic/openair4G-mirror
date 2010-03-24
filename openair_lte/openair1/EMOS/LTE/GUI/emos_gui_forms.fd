@@ -817,7 +817,7 @@ argument:
 
 --------------------
 class: FL_BUTTON
-type: PUSH_BUTTON
+type: NORMAL_BUTTON
 box: 820 620 160 70
 boxtype: FL_ROUNDED3D_UPBOX
 colors: FL_LIGHTER_COL1 FL_COL1
