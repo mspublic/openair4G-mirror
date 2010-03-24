@@ -1,32 +1,3 @@
-#include "PHY/LTE_TRANSPORT/mcs_tbs_tools.h"
-#include "PHY/LTE_TRANSPORT/dlsch_tbs.h"
-
-unsigned char get_Qm(unsigned char I_MCS) {
-
-  if (I_MCS < 10)
-    return(2);
-  else if (I_MCS < 17)
-    return(4);
-  else
-    return(6);
-    
-}
-
-unsigned char get_I_TBS(unsigned char I_MCS) {
-
-  if (I_MCS < 10)
-    return(I_MCS);
-  else if (I_MCS == 10)
-    return(9);
-  else if (I_MCS < 17)
-    return(I_MCS-1);
-  else if (I_MCS == 17)
-    return(15);
-  else return(I_MCS-2);
-
-}
-
-
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 
 /** \fn unsigned char I_TBS2I_MCS(unsigned char I_TBS);
