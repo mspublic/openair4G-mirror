@@ -364,8 +364,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 C_RNTI,
 					 (next_slot>>1),
 					 format0,
-					 ulsch_eNb[0],
-					 lte_frame_parms,
+					 phy_vars_eNb->ulsch_eNb[0],
+					 &phy_vars_eNb->lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
 					 P_RNTI);
@@ -375,7 +375,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
 	  mac_xface->frame,next_slot>>1,harq_pid);
 #endif
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+      phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       */
 
       break;
@@ -427,7 +427,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       // Schedule UL subframe
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+      phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
       nb_dci_ue_spec = 0;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
@@ -449,7 +449,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 C_RNTI,
 					 (next_slot>>1),
 					 format0,
-					 ulsch_eNb[0],
+					 phy_vars_eNb->ulsch_eNb[0],
 					 &phy_vars_eNb->lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
@@ -459,7 +459,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
 	  mac_xface->frame,next_slot>>1,harq_pid);
       //#endif
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+      phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       //}
       break;
     case 9:
@@ -467,7 +467,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       // Schedule UL subframe
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
+      phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
       nb_dci_ue_spec = 0;
       nb_dci_common  = 0;
       dlsch_eNb_active = 0;
@@ -489,7 +489,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 C_RNTI,
 					 (next_slot>>1),
 					 format0,
-					 ulsch_eNb[0],
+					 phy_vars_eNb->ulsch_eNb[0],
 					 lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
@@ -499,7 +499,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
 	  mac_xface->frame,next_slot>>1,harq_pid);
       //#endif
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+      phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       }
       */
       break;
@@ -524,8 +524,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
   if (next_slot%2 == 0) {
 
     if (dlsch_eNb_active == 1) {
-      harq_pid = dlsch_eNb[0]->current_harq_pid;
-      input_buffer_length = dlsch_eNb[0]->harq_processes[harq_pid]->TBS/8;
+      harq_pid = phy_vars_eNb->dlsch_eNb[0]->current_harq_pid;
+      input_buffer_length = phy_vars_eNb->dlsch_eNb[0]->harq_processes[harq_pid]->TBS/8;
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
@@ -534,14 +534,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       //#endif
       
       dlsch_encoding(dlsch_input_buffer,
-		     lte_frame_parms,
-		     dlsch_eNb[0]);
+		     &phy_vars_eNb->lte_frame_parms,
+		     phy_vars_eNb->dlsch_eNb[0]);
       
       re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 				      AMP,
 				      next_slot/2,
 				      &phy_vars_eNb->lte_frame_parms,
-				      dlsch_eNb[0]);
+				      phy_vars_eNb->dlsch_eNb[0]);
       /*
 	if (mimo_mode == DUALSTREAM) {
 	dlsch_encoding(input_buffer,
@@ -626,7 +626,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
-  if ((ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
+  if ((phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
     //#ifdef DEBUG_PHY
     debug_msg("[PHY PROCEDURES_LTE] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,harq_pid);
     //#endif
@@ -646,19 +646,19 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
     
     ret = ulsch_decoding(phy_vars_eNb->lte_eNB_ulsch_vars[0]->llr,
 		   &phy_vars_eNb->lte_frame_parms,
-		   ulsch_eNb[UE_id],
+		   phy_vars_eNb->ulsch_eNb[UE_id],
 		   last_slot>>1);    
     
 
-    ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
+    phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
 
-    debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[UE_id]->cqi_crc_status);  
+    debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, phy_vars_eNb->ulsch_eNb[UE_id]->cqi_crc_status);  
       
-    if (ulsch_eNb[UE_id]->cqi_crc_status == 1) {
+    if (phy_vars_eNb->ulsch_eNb[UE_id]->cqi_crc_status == 1) {
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) 
-      	print_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,eNb_id);
-      extract_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,UE_id,&eNB_UE_stats[eNb_id]);
-      eNB_UE_stats[eNb_id].rank[UE_id] = ulsch_eNb[UE_id]->o_RI[0];
+      	print_CQI(phy_vars_eNb->ulsch_eNb[UE_id]->o,phy_vars_eNb->ulsch_eNb[UE_id]->o_RI,wideband_cqi,eNb_id);
+      extract_CQI(phy_vars_eNb->ulsch_eNb[UE_id]->o,phy_vars_eNb->ulsch_eNb[UE_id]->o_RI,wideband_cqi,UE_id,&eNB_UE_stats[eNb_id]);
+      eNB_UE_stats[eNb_id].rank[UE_id] = phy_vars_eNb->ulsch_eNb[UE_id]->o_RI[0];
     }
   }
     
