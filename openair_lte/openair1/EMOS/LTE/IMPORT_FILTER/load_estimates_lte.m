@@ -50,6 +50,13 @@ if exist('a.out','file')
     gps_fix_t_size = 108;
 else
     warning('File dump_size.c has to be compiled to enable error checking of sizes');
+    %PHY_measurements_size = 1120;
+    %UCI_data_t_size = 49;
+    %DCI_alloc_t_size = 16;
+    %eNb_UE_stats_size = 20;
+    fifo_dump_emos_UE_size = 33492;
+    fifo_dump_emos_eNb_size = 36980;
+    gps_fix_t_size = 108;
 end
 
 struct_template;
