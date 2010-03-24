@@ -171,6 +171,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  break;
 	  
 	}
+      }
       
 	else if (mimo_mode == ALAMOUTI){
 	  
@@ -384,12 +385,11 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;
       }
-    }
   }
   return(0);
 }
 
-#else
+#else // ifndef IFFT_FPGA
 
 static mod_sym_t qpsk_precoder[4][4]   = {0,1,2,3,3,2,1,0,1,3,0,2,2,0,3,1};
 static mod_sym_t qam16_precoder[4][16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
