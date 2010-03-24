@@ -23,6 +23,10 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
+ifdef MeNBMUE
+CFLAGS += -DMeNBMUE
+endif
+
 ifdef OPENAIR2
 CFLAGS += -DOPENAIR2 -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/UTIL/TIMER
 endif
@@ -96,17 +100,23 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 
+
+ifndef MeNBMUE
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte.o
+else
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_eNb_lte.o
+#SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_ue_lte.o
+endif
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS)
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 
-all: dlsim dlsim2 ulsim ulsim2 physim
+all: dlsim dlsim2 ulsim ulsim2 physim dlsim_secsys physim_secsys
 
 test:
-	echo $(CFLAGS)
+	echo $(SCHED_OBJS)
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
@@ -116,6 +126,8 @@ dlsim : $(OBJ2) dlsim.c
 
 dlsim2 : $(OBJ2) dlsim2.c
 	$(CC) dlsim2.c -I$(TOP_DIR) -o dlsim2 $(CFLAGS) $(OBJ2) -lm
+dlsim_secsys : $(OBJ2) dlsim_secsys.c
+	$(CC) dlsim_secsys.c -I$(TOP_DIR) -o dlsim_secsys $(CFLAGS) $(OBJ2) -lm
 
 ulsim : $(OBJ2) ulsim.c
 	$(CC) ulsim.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ2) -lm
@@ -123,11 +135,13 @@ ulsim : $(OBJ2) ulsim.c
 ulsim2 : $(OBJ2) ulsim2.c
 	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ2) -lm
 
-physim : $(OBJ) $(TOP_DIR)/SCHED/phy_procedures_lte.o phy_procedures_sim.c 
+physim : $(OBJ) phy_procedures_sim.c 
 	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) -lm
+physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
+	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
 clean:
-	rm -f dlsim dlsim2
+	rm -f dlsim dlsim2 dlsim_secsys
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
