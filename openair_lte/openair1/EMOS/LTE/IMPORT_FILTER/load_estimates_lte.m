@@ -1,4 +1,4 @@
-function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, NFrames_max, version)
+function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, NFrames_max, is_eNb)
 % 
 % EMOS Single User Import Filter
 %
@@ -9,6 +9,7 @@ function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, 
 % filename          - filename(s) of the EMOS data file
 % NFrames_max       - Maximum number of estimates. Leave it blank to get up to the
 %                     maximum file contents
+% is_eNb            - if ~= 0 we load data from an eNb
 % version           - for backward compatibility (see details below)
 %
 % Returns:
@@ -24,30 +25,38 @@ function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, 
 %   20100317  0.1       Created based on load_estimates
 
 if nargin < 3
-    version = Inf;  % We assume the latest version
+    is_eNb = 0;
 end
 if nargin < 2
     NFrames_max = Inf;
 end
 
-NTx = 2;
-NRx = 2;
-NFreq = 512;
-NZFreq = 300;
+% NTx = 2;
+% NRx = 2;
+% NFreq = 512;
+% NZFreq = 300;
 
 % Logfile structure: 
 %  - 100 entries of type fifo_dump_emos (defined in phy_procedures_emos.h)
 %  - 1 entry of type gps_fix_t defined in gps.h
 
-[~,result] = system('./a.out');
-eval(result);
-gps_fix_t_size = 108;
+if exist('a.out','file')
+    [~,result] = system('./a.out');
+    eval(result);
+    gps_fix_t_size = 108;
+else
+    warning('File dump_size.c has to be compiled to enable error checking of sizes');
+end
 
-TIMESTAMP_SIZE = 8;
+struct_template;
 
 NO_ESTIMATES_DISK = 100;
-CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_UE_size + gps_fix_t_size;
-    
+if (is_eNb)
+    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_eNb_size + gps_fix_t_size;
+else
+    CHANNEL_BUFFER_SIZE = NO_ESTIMATES_DISK * fifo_dump_emos_UE_size + gps_fix_t_size;
+end    
+
 % Estimate the size of the file for a pre-allocation of memory
 if ~iscell(filename)
     filename = {filename};
@@ -60,138 +69,36 @@ for n=1:NFiles
     end
     info_file = dir(filename{n});
     NFrames_file(n) = floor(info_file.bytes/CHANNEL_BUFFER_SIZE)*NO_ESTIMATES_DISK;
+    if (mod(info_file.bytes,CHANNEL_BUFFER_SIZE) ~= 0)
+        warning('File size not a multiple of buffer size. File might be corrupt');
+    end
 end
 NFrames = min(sum(NFrames_file), NFrames_max);
 
-% Preallocate data vectors
-%chan0 = zeros(NB_OF_OFDM_CARRIERS,NFrames);
-%chan1 = zeros(NB_OF_OFDM_CARRIERS,NFrames);
-% estimates.sch_symbol0 = zeros(NB_OF_OFDM_CARRIERS,NFrames);
-% estimates.sch_symbol1 = zeros(NB_OF_OFDM_CARRIERS,NFrames);
-estimates.timestamp = zeros(1,NFrames);
-estimates.framestamp_tx = zeros(1,NFrames);
-estimates.framestamp_rx = zeros(1,NFrames);
-% estimates.pdu_errors = zeros(1,NFrames);
-% estimates.err_ind = false(1,NFrames);
-% estimates.rx_power = zeros(NB_ANTENNAS,NFrames);
-% estimates.n0_power = zeros(NB_ANTENNAS,NFrames);
-% estimates.rx_rssi_dBm = zeros(NB_ANTENNAS,NFrames);
-% estimates.mac_pdu = char(zeros(MAC_PDU_SIZE,NFrames));
-% estimates.flag = char(zeros(1,NFrames));
-% estimates.Hnorm = zeros(1,NFrames);
-
-gps_data.timestamp = zeros(1,NFrames/100);
-gps_data.mode = zeros(1,NFrames/100);
-gps_data.ept = zeros(1,NFrames/100);
-gps_data.latitude = zeros(1,NFrames/100);
-gps_data.longitude = zeros(1,NFrames/100);
-gps_data.rest = zeros(9,NFrames/100);
-
+if (is_eNb)
+    estimates = repmat(fifo_dump_emos_struct_eNb,1,NFrames);
+else
+    estimates = repmat(fifo_dump_emos_struct_UE,1,NFrames);
+end
+gps_data = repmat(gps_data_struct,1,NFrames/100);
 
 k = 1;
 l = 1;
-
 for n=1:NFiles
     fid = fopen(filename{n},'r');
 
     while ~feof(fid) && k <= min(sum(NFrames_file(1:n)),NFrames_max)
 
-        temp = fread(fid,fifo_dump_emos_UE_size,'uchar'); 
-        
-        % Read Timestamp Data
-        time = temp(1:TIMESTAMP_SIZE);
-        tt=0;
-        time=time/256;
-        for k2=1:TIMESTAMP_SIZE
-            tt=(tt+time(9-k2))*256;
+        if (is_eNb)
+            estimates(k) = binread(fid,fifo_dump_emos_struct_eNb); 
+        else
+            estimates(k) = binread(fid,fifo_dump_emos_struct_UE); 
         end
-        estimates.timestamp(k)=tt/1e9; % to get the timestamp in sec
         
-        estimates.framestamp_tx(k) = typecast(uint8(temp(9:12)),'uint32');
-        estimates.framestamp_rx(k) = typecast(uint8(temp(13:16)),'uint32');
- 
-%         % Read tx frame no
-%             estimates.framestamp_tx(k) = fread(fid,1,'uint');
-%         end
-% 
-%         % Read PDU Errors
-%         estimates.pdu_errors(k) = fread(fid,1,'uint');
-% 
-%         % Read RX Power
-%         estimates.rx_power(:,k) = fread(fid,NB_ANTENNAS,'short');
-% 
-%         % Read Noise Power
-%         estimates.n0_power(:,k) = fread(fid,NB_ANTENNAS,'short');
-% 
-%         % Read Noise Power
-%         estimates.rx_rssi_dBm(:,k) = fread(fid,NB_ANTENNAS,'short');
-% 
-%         % Read channel estimates
-%         [data,count]    = fread(fid,NB_OF_OFDM_CARRIERS*NB_ANTENNAS*2,'short'); % read
-%         if (count ~= NB_OF_OFDM_CARRIERS*NB_ANTENNAS*2)
-%             warning('not all data read')
-%             break
-%         end
-% 
-%         % Create the receive signal
-%         chan0(:,k) = data(1:2:(NB_OF_OFDM_CARRIERS*2)) + j * data(2:2:(NB_OF_OFDM_CARRIERS*2));
-%         chan1(:,k) = data(((NB_OF_OFDM_CARRIERS*2)+1):2:(4*NB_OF_OFDM_CARRIERS)) + j * data(((NB_OF_OFDM_CARRIERS*2)+2):2:(4*NB_OF_OFDM_CARRIERS)) ;
-%         
-%         % calculate the mean squared Frobenius norm of H
-%         estimates.Hnorm(k) = (sum(abs(chan0(:,k)).^2) + sum(abs(chan1(:,k)).^2))/(NZFreq/NTx);
-% 
-%         % Read extra OFDM symbol
-%         [data,count]    = fread(fid,NB_OF_OFDM_CARRIERS*NB_ANTENNAS*2,'short'); % read
-%         if (count ~= NB_OF_OFDM_CARRIERS*NB_ANTENNAS*2)
-%             warning('not all data read')
-%             break
-%         end
-% 
-%         % Create the receive signal
-%         %estimates.sch_symbol0(:,k) = data(1:2:(NB_OF_OFDM_CARRIERS*2)) + j * data(2:2:(NB_OF_OFDM_CARRIERS*2));
-%         %estimates.sch_symbol1(:,k) = data(((NB_OF_OFDM_CARRIERS*2)+1):2:(4*NB_OF_OFDM_CARRIERS)) + j * data(((NB_OF_OFDM_CARRIERS*2)+2):2:(4*NB_OF_OFDM_CARRIERS)) ;
-% 
-%         % Read MAC PDU
-%         estimates.mac_pdu(:,k) = fread(fid,MAC_PDU_SIZE,'uchar');
-%         tt=0;
-%         temp=estimates.mac_pdu(1:8,k)/256;
-%         for k2=1:TIMESTAMP_SIZE
-%             tt=(tt+temp(9-k2))*256;
-%         end
-%         estimates.timestamp_tx(k)=tt/1e9; % to get the timestamp in sec
-% 
-%        
-%         if version>=0.3
-%             estimates.err_ind(k) = (fread(fid,1,'int') == -1);
-%         else
-%             if version>=0.2
-%                 dummy = fread(fid,1,'int');
-%             end
-%             if k > 1
-%                 estimates.err_ind(k) = (((estimates.pdu_errors(k) - estimates.pdu_errors(k-1)) > 0));
-%             end
-%         end
-%         
-%         if version<0.2
-%             estimates.framestamp_tx(k)=round(tt*3e-6/8); 
-%         elseif version<0.4 && estimates.err_ind(k) && k>1
-%             estimates.framestamp_tx(k) = estimates.framestamp_tx(k-1)+1;
-%         end        
-%         
-% 
-%         estimates.flag(k) = estimates.mac_pdu(17,k);
-
         %read GPS data
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
-            gps_data.timestamp(l) = fread(fid,1,'double');
-            gps_data.mode(l) = fread(fid,1,'int');
-            gps_data.ept(l) = fread(fid,1,'double');
-            gps_data.latitude(l) = fread(fid,1,'double');
-            gps_data.longitude(l) = fread(fid,1,'double');
-            gps_data.rest(:,l) = fread(fid,9,'double');
-
+            gps_data(k) = binread(fid,gps_data_struct);
             l=l+1;
-            %estimates.gps_data(k) = gps_data;
         end
 
         k=k+1;
