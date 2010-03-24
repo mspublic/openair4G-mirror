@@ -104,8 +104,9 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 ifndef MeNBMUE
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte.o
 else
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_eNb_lte.o
+#SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_eNb_lte.o
 #SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_ue_lte.o
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_MeNbMue.o
 endif
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o

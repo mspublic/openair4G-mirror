@@ -314,13 +314,11 @@ int main(int argc, char **argv) {
 #ifdef SECONDARY_SYSTEM
       phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_secsys);
 #endif
-      mac_xface->is_cluster_head = 0;
-      /*      
-phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE);
+      mac_xface->is_cluster_head = 0;      
+      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE);
 #ifdef SECONDARY_SYSTEM
       phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_secsys);
 #endif
-      */
 
       
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
