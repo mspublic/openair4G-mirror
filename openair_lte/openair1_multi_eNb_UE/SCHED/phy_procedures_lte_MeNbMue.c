@@ -203,7 +203,7 @@ void phy_procedures_UE_TX(unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {
       // deactivate service request
       phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
 
-      get_ack(phy_vars_ue->lte_frame_parms.tdd_config,phy_vars_ue->dlsch_ue[0]->harq_ack,(next_slot>>1),phy_vars_ue->ulsch_ue[0]->o_ACK);
+      get_ack(phy_vars_ue->lte_frame_parms.tdd_config,phy_vars_ue->dlsch_ue[0][0]->harq_ack,(next_slot>>1),phy_vars_ue->ulsch_ue[0]->o_ACK);
 
       first_rb = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
@@ -517,7 +517,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 					    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
 					    C_RNTI,
 					    format2_2A_M10PRB,
-					    phy_vars_ue->dlsch_ue,
+					    phy_vars_ue->dlsch_ue[0],
 					    &phy_vars_ue->lte_frame_parms,
 					    SI_RNTI,
 					    RA_RNTI,
@@ -667,7 +667,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   phy_vars_ue->dlsch_ue,
+		   phy_vars_ue->dlsch_ue[0],
 		   m,
 		   dual_stream_UE);
 	
@@ -676,7 +676,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 #ifndef USER_MODE
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Scheduling DLSCH decoding\n",mac_xface->frame,last_slot);
 
-	harq_pid = phy_vars_ue->dlsch_ue[0]->current_harq_pid;
+	harq_pid = phy_vars_ue->dlsch_ue[0][0]->current_harq_pid;
 	if (harq_pid != 0) {
 	  msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: No DLSCH decoding thread for harq_pid = %d\n",mac_xface->frame,last_slot,harq_pid);
 	  return(-1);
@@ -705,10 +705,10 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	if (mac_xface->frame < dlsch_errors)
 	  dlsch_errors=0;
 	
-	if (phy_vars_ue->dlsch_ue[0]) {
+	if (phy_vars_ue->dlsch_ue[0][0]) {
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNb_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
-			       phy_vars_ue->dlsch_ue[0],
+			       phy_vars_ue->dlsch_ue[0][0],
 			       ((last_slot>>1)-1)%10);
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
@@ -778,7 +778,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   phy_vars_ue->dlsch_ue,
+		   phy_vars_ue->dlsch_ue[0][0],
 		   m,
 		   dual_stream_UE);
       }
@@ -814,7 +814,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   phy_vars_ue->dlsch_ue,
+		   phy_vars_ue->dlsch_ue[0],
 		   m,
 		   dual_stream_UE);
       }
@@ -850,7 +850,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   phy_vars_ue->dlsch_ue,
+		   phy_vars_ue->dlsch_ue[0],
 		   m,
 		   dual_stream_UE);
       }
@@ -1148,7 +1148,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 &DLSCH_alloc_pdu2,
 					 C_RNTI,
 					 format2_2A_M10PRB,
-					 phy_vars_eNb->dlsch_eNb,
+					 phy_vars_eNb->dlsch_eNb[0],
 					 &phy_vars_eNb->lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
@@ -1268,8 +1268,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
   if (next_slot%2 == 0) {
 
     if (dlsch_eNb_active == 1) {
-      harq_pid = phy_vars_eNb->dlsch_eNb[0]->current_harq_pid;
-      input_buffer_length = phy_vars_eNb->dlsch_eNb[0]->harq_processes[harq_pid]->TBS/8;
+      harq_pid = phy_vars_eNb->dlsch_eNb[0][0]->current_harq_pid;
+      input_buffer_length = phy_vars_eNb->dlsch_eNb[0][0]->harq_processes[harq_pid]->TBS/8;
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
@@ -1279,13 +1279,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       
       dlsch_encoding(dlsch_input_buffer,
 		     &phy_vars_eNb->lte_frame_parms,
-		     phy_vars_eNb->dlsch_eNb[0]);
+		     phy_vars_eNb->dlsch_eNb[0][0]);
       
       re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 				      AMP,
 				      next_slot/2,
 				      &phy_vars_eNb->lte_frame_parms,
-				      phy_vars_eNb->dlsch_eNb[0]);
+				      phy_vars_eNb->dlsch_eNb[0][0]);
       /*
 	if (mimo_mode == DUALSTREAM) {
 	dlsch_encoding(input_buffer,
