@@ -117,7 +117,7 @@ typedef struct
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX];
+  LTE_eNb_DLSCH_t  *(dlsch_eNb[NUMBER_OF_UE_MAX][2]);
   LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX];
 
 } PHY_VARS_eNB;
@@ -132,7 +132,7 @@ typedef struct
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
 
 } PHY_VARS_UE;
