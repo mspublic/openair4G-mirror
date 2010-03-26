@@ -34,7 +34,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 int main(int argc, char **argv) {
 
-  int i,l,aa,sector;
+  int i,l,aa,sector,i_max,l_max,aa_max;
   double sigma2, sigma2_dB=0;
   mod_sym_t **txdataF;
 #ifdef SECONDARY_SYSTEM
@@ -98,40 +98,26 @@ int main(int argc, char **argv) {
   PHY_vars = malloc(sizeof(PHY_VARS));
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
+
+#ifndef SECONDARY_SYSTEM
   PHY_VARS_eNB *PHY_vars_eNb;
   PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
   PHY_VARS_UE *PHY_vars_UE;
   PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-#ifdef SECONDARY_SYSTEM
-  PHY_vars_secsys = malloc(sizeof(PHY_VARS));
-  PHY_VARS_eNB *PHY_vars_eNb_secsys;
-  PHY_vars_eNb_secsys = malloc(sizeof(PHY_VARS_eNB));
-  PHY_VARS_UE *PHY_vars_UE_secsys;
-  PHY_vars_UE_secsys = malloc(sizeof(PHY_VARS_UE));
+#else //SECONDARY_SYSTEM
+  PHY_VARS_eNB *PHY_vars_eNb[2]; // 2 eNBs
+  PHY_vars_eNb[0] = malloc(sizeof(PHY_VARS_eNB));
+  PHY_vars_eNb[1] = malloc(sizeof(PHY_VARS_eNB));
+  PHY_VARS_UE *PHY_vars_UE[2]; // 2 UEs
+  PHY_vars_UE[0] = malloc(sizeof(PHY_VARS_UE));
+  PHY_vars_UE[1] = malloc(sizeof(PHY_VARS_UE));
   //  PHY_config_secsys = malloc(sizeof(PHY_CONFIG));
   //  mac_xfaec_secsys = malloc(sizeof(MAC_xface));
 #endif
 
   //lte_frame_parms = &(PHY_config->lte_frame_parms);
-  lte_frame_parms = &(PHY_vars_eNb->lte_frame_parms);
-  //lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_common_vars = &(PHY_vars_UE->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars_UE->lte_ue_dlsch_vars[0]);
-  lte_ue_dlsch_vars_cntl = &(PHY_vars_UE->lte_ue_dlsch_vars_cntl[0]);
-  lte_ue_pbch_vars = &(PHY_vars_UE->lte_ue_pbch_vars[0]);
-  lte_ue_pdcch_vars = &(PHY_vars_UE->lte_ue_pdcch_vars[0]);
-  lte_eNB_common_vars = &(PHY_vars_eNb->lte_eNB_common_vars);
-  lte_eNB_ulsch_vars = &(PHY_vars_eNb->lte_eNB_ulsch_vars[0]);
-#ifdef SECONDARY_SYSTEM
-  lte_eNB_common_vars_secsys = &(PHY_vars_eNb_secsys->lte_eNB_common_vars);
-  lte_eNB_ulsch_vars_secsys = &(PHY_vars_eNb_secsys->lte_eNB_ulsch_vars[0]);
-  lte_ue_common_vars_secsys = &(PHY_vars_UE_secsys->lte_ue_common_vars);
-  lte_ue_dlsch_vars_secsys = &(PHY_vars_UE_secsys->lte_ue_dlsch_vars[0]);
-  lte_ue_dlsch_vars_cntl_secsys = &(PHY_vars_UE_secsys->lte_ue_dlsch_vars_cntl[0]);
-  lte_ue_pbch_vars_secsys = &(PHY_vars_UE_secsys->lte_ue_pbch_vars[0]);
-  lte_ue_pdcch_vars_secsys = &(PHY_vars_UE_secsys->lte_ue_pdcch_vars[0]);
-#endif
-
+  lte_frame_parms = &(PHY_vars_eNb[0]->lte_frame_parms);
+  
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
   lte_frame_parms->Ncp                = 1;
@@ -163,72 +149,94 @@ int main(int argc, char **argv) {
   generate_16qam_table();
   generate_RIV_tables();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);
-  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
+  msg("[PHY_vars_UE] = %p",PHY_vars_UE);
+
+  //use same frame parameters for UE as for eNb
+  PHY_vars_UE[0]->lte_frame_parms = *lte_frame_parms;
 #ifdef SECONDARY_SYSTEM
-  phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars_secsys,lte_eNB_ulsch_vars_secsys);
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars_secsys,lte_ue_dlsch_vars_secsys,lte_ue_dlsch_vars_cntl_secsys,lte_ue_pbch_vars_secsys,lte_ue_pdcch_vars_secsys);
+  //use same frame parameters for secondary system
+  PHY_vars_eNb[1]->lte_frame_parms = *lte_frame_parms;
+  //use same frame parameters for UE as for eNb
+  PHY_vars_UE[1]->lte_frame_parms = *lte_frame_parms;
+#endif
+ 
+  phy_init_lte_ue(lte_frame_parms,
+		  &PHY_vars_UE[0]->lte_ue_common_vars,
+		  PHY_vars_UE[0]->lte_ue_dlsch_vars,
+		  PHY_vars_UE[0]->lte_ue_dlsch_vars_cntl,
+		  PHY_vars_UE[0]->lte_ue_pbch_vars,
+		  PHY_vars_UE[0]->lte_ue_pdcch_vars);
+  phy_init_lte_eNB(lte_frame_parms,
+		   &PHY_vars_eNb[0]->lte_eNB_common_vars,
+		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars);
+#ifdef SECONDARY_SYSTEM
+  phy_init_lte_ue(lte_frame_parms,
+		  &PHY_vars_UE[1]->lte_ue_common_vars,
+		  PHY_vars_UE[1]->lte_ue_dlsch_vars,
+		  PHY_vars_UE[1]->lte_ue_dlsch_vars_cntl,
+		  PHY_vars_UE[1]->lte_ue_pbch_vars,
+		  PHY_vars_UE[1]->lte_ue_pdcch_vars);
+  phy_init_lte_eNB(lte_frame_parms,
+		   &PHY_vars_eNb[1]->lte_eNB_common_vars,
+		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars);
 #endif
 
- dlsch_eNb = &(PHY_vars_eNb->dlsch_eNb[0]);
- dlsch_ue = &(PHY_vars_UE->dlsch_ue[0]);
- ulsch_eNb = &(PHY_vars_eNb->dlsch_eNb[0]);
- ulsch_ue = &(PHY_vars_UE->dlsch_ue[0]);
-
-  for (i=0;i<2;i++) {
-    dlsch_eNb[i] = new_eNb_dlsch(1,8);
-    if (!dlsch_eNb[i]) {
-      msg("Can't get eNb dlsch structures\n");
-      exit(-1);
-    }
-    dlsch_ue[i]  = new_ue_dlsch(1,8);
-    if (!dlsch_ue) {
-      msg("Can't get ue dlsch structures\n");
-      exit(-1);
-    }
-    ulsch_eNb[i] = new_eNb_ulsch(3);
-    if (!ulsch_eNb[i]) {
-      msg("Can't get eNb ulsch structures\n");
-      exit(-1);
-    }
-    ulsch_ue[i]  = new_ue_ulsch(3);
-    if (!ulsch_ue[i]) {
-      msg("Can't get ue ulsch structures\n");
-      exit(-1);
-    }
-  }
-#ifdef SECONDARY_SYSTEM
- dlsch_eNb_secsys = &(PHY_vars_eNb_secsys->dlsch_eNb[0]);
- dlsch_ue_secsys = &(PHY_vars_UE_secsys->dlsch_ue[0]);
- ulsch_eNb_secsys = &(PHY_vars_eNb_secsys->dlsch_eNb[0]);
- ulsch_ue_secsys = &(PHY_vars_UE_secsys->dlsch_ue[0]);
-
-  for (i=0;i<2;i++) {
-    dlsch_eNb_secsys[i] = new_eNb_dlsch(1,8);
-    if (!dlsch_eNb_secsys[i]) {
-      msg("Can't get eNb dlsch structures\n");
-      exit(-1);
-    }
-    dlsch_ue_secsys[i]  = new_ue_dlsch(1,8);
-    if (!dlsch_ue_secsys) {
-      msg("Can't get ue dlsch structures\n");
-      exit(-1);
-    }
-    ulsch_eNb_secsys[i] = new_eNb_ulsch(3);
-    if (!ulsch_eNb_secsys[i]) {
-      msg("Can't get eNb ulsch structures\n");
-      exit(-1);
-    }
-    ulsch_ue_secsys[i]  = new_ue_ulsch(3);
-    if (!ulsch_ue_secsys[i]) {
-      msg("Can't get ue ulsch structures\n");
-      exit(-1);
-    }
-  }
+#ifndef SECONDARY_SYSTEM
+  aa_max = 1; //number of eNBs
+  l_max = 1; //number of UEs
+#else //SECONDARY_SYSTEM
+  aa_max = 2; //number of eNBs
+  l_max = 2; //number of UEs
 #endif
+
+//loop over eNBs
+for (aa=0;aa<aa_max;aa++) {
+  //loop over UEs
+  for (l=0;l<l_max;l++) {
+    // loop over transport channels per dlsch
+    for (i=0;i<2;i++) {
+      PHY_vars_eNb[aa]->dlsch_eNb[l][i] = new_eNb_dlsch(1,8);
+      if (!PHY_vars_eNb[aa]->dlsch_eNb[l][i]) {
+	msg("Can't get eNb dlsch structures\n");
+	exit(-1);
+      } else {
+	msg("PHY_vars_eNb[%d]->dlsch_eNb[%d][%d] = %p\n",aa,l,i,PHY_vars_eNb[aa]->dlsch_eNb[l][i]);
+      }
+      PHY_vars_UE[l]->dlsch_ue[aa][i] = new_ue_dlsch(1,8);
+      if (!PHY_vars_UE[l]->dlsch_ue[aa][i]) {
+	msg("Can't get ue dlsch structures\n");
+	exit(-1);
+      } else {
+	msg("PHY_vars_UE[%d]->dlsch_ue[%d][%d] = %p\n",l,aa,i,PHY_vars_UE[l]->dlsch_ue[aa][i]);
+      }
+    }
+  }
+}
+
+//loop over eNBs
+for (aa=0;aa<aa_max;aa++) {
+  //loop over UEs
+  for (l=0;l<l_max;l++) {
+    PHY_vars_eNb[aa]->ulsch_eNb[l] = new_eNb_ulsch(3);
+    if (!PHY_vars_eNb[aa]->ulsch_eNb[l]) {
+      msg("Can't get eNb ulsch structures\n");
+      exit(-1);
+    } else {
+      msg("PHY_vars_eNb[%d]->ulsch_eNb[%d] = %p\n",aa,l,PHY_vars_eNb[aa]->ulsch_eNb[l]);
+    }
+    PHY_vars_UE[l]->ulsch_ue[aa] = new_ue_ulsch(3);
+    if (!PHY_vars_UE[l]->ulsch_ue[aa]) {
+      msg("Can't get ue ulsch structures\n");
+      exit(-1);
+    } else {
+      msg("PHY_vars_UE[%d]->ulsch_ue[%d] = %p\n",l,aa,PHY_vars_UE[l]->ulsch_ue[aa]);
+    }
+  }
+}
 
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   dlsch_ue_cntl  = new_ue_dlsch(1,1);
+ 
 
   unsigned char m_mcs,m_I_tbs;
               //SE = 1
@@ -339,60 +347,60 @@ int main(int argc, char **argv) {
       
       // where signal encoding and decoding is actually performed
       mac_xface->is_cluster_head = 1;
-      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb);
+      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb[0]);
 #ifdef SECONDARY_SYSTEM
-      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_secsys);
+      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb[1]);
 #endif
       mac_xface->is_cluster_head = 0;      
-      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE);
+      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE[0]);
 #ifdef SECONDARY_SYSTEM
-      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_secsys);
+      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE[1]);
 #endif
 
       
-      //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-      //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+      //      write_output("eNb_txsigF0.m","eNb_txsF0", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+      //      write_output("eNb_txsigF1.m","eNb_txsF1", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
-	txdataF = lte_eNB_common_vars->txdataF[eNb_id];
+	txdataF = PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id];
 #ifdef SECONDARY_SYSTEM
-	txdataF_secsys = lte_eNB_common_vars_secsys->txdataF[eNb_id_secsys];
+	txdataF_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id_secsys];
 #endif
 #ifndef IFFT_FPGA
-	txdata = lte_eNB_common_vars->txdata[eNb_id];
+	txdata = PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id];
 #ifdef SECONDARY_SYSTEM
-	txdata_secsys = lte_eNB_common_vars_secsys->txdata[eNb_id_secsys];
+	txdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id_secsys];
 #endif
 #endif
       }
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	txdataF = lte_ue_common_vars->txdataF;
+	txdataF = PHY_vars_UE[0]->lte_ue_common_vars.txdataF;
 #ifdef SECONDARY_SYSTEM
-	txdataF_secsys = lte_ue_common_vars_secsys->txdataF;
+	txdataF_secsys = PHY_vars_UE[1]->lte_ue_common_vars.txdataF;
 #endif
 #ifndef IFFT_FPGA
-	txdata = lte_ue_common_vars->txdata;
+	txdata = PHY_vars_UE[0]->lte_ue_common_vars.txdata;
 #ifdef SECONDARY_SYSTEM
-	txdata_secsys = lte_ue_common_vars_secsys->txdata;
+	txdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.txdata;
 #endif
 #endif
       }
       else //it must be a special subframe
 	//which also means that SECONDARY system must listen, and synchronize as UE. Only PSS located in the 3rd symbol in this slot.
 	if (next_slot%2==0) {//DL part
-	  txdataF = lte_eNB_common_vars->txdataF[eNb_id];
+	  txdataF = PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id];
 #ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
 #endif
 #ifndef IFFT_FPGA
-	  txdata = lte_eNB_common_vars->txdata[eNb_id];
+	  txdata = PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id];
 #ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
 #endif
 #endif
 	}
 	else {// UL part
-	  txdataF = lte_ue_common_vars->txdataF;
+	  txdataF = PHY_vars_UE[0]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
-	  txdata = lte_ue_common_vars->txdata;
+	  txdata = PHY_vars_UE[0]->lte_ue_common_vars.txdata;
 #endif
 	}
 
@@ -401,8 +409,8 @@ int main(int argc, char **argv) {
 
       slot_offset = (next_slot)*(lte_frame_parms->N_RB_DL*12)*((lte_frame_parms->Ncp==1) ? 6 : 7);
 
-      //write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-      //write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+      //write_output("eNb_txsigF0.m","eNb_txsF0", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+      //write_output("eNb_txsigF1.m","eNb_txsF1", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 
       
       // do table lookup and write results to txdataF2
@@ -574,14 +582,14 @@ int main(int argc, char **argv) {
   //printf("sigma2 = %g\n",sigma2);
 
   if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-    rxdata = lte_ue_common_vars->rxdata;
+    rxdata = PHY_vars_UE[0]->lte_ue_common_vars.rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-    rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+    rxdata = PHY_vars_eNb[0]->lte_eNB_common_vars.rxdata[eNb_id];
   else //it must be a special subframe
     if (next_slot%2==0) //DL part
-      rxdata = lte_ue_common_vars->rxdata;
+      rxdata = PHY_vars_UE[0]->lte_ue_common_vars.rxdata;
     else // UL part
-      rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+      rxdata = PHY_vars_eNb[0]->lte_eNB_common_vars.rxdata[eNb_id];
 
   slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
   for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
@@ -593,12 +601,12 @@ int main(int argc, char **argv) {
 
 #ifdef SECONDARY_SYSTEM
   if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-    rxdata_secsys = lte_ue_common_vars_secsys->rxdata;
+    rxdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-    rxdata_secsys = lte_eNB_common_vars_secsys->rxdata[eNb_id_secsys];
+    rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
   else //it must be a special subframe 
     //--> for SEC_SYS always listen! (independent of UL/DL)
-    rxdata_secsys = lte_eNB_common_vars_secsys->rxdata[eNb_id_secsys];
+    rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
 
   slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
   for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
@@ -611,10 +619,10 @@ int main(int argc, char **argv) {
 
   /*
   if (last_slot == 19) {
-    write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE->lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE->lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb->lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig1.m","eNb_rxs1", PHY_vars_eNb->lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   }
   */
   /*
@@ -638,15 +646,15 @@ int main(int argc, char **argv) {
     }
   }
 /*
-  write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
-  write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
-  write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
-  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
-  write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+  write_output("rxsigF0.m","rxsF0", PHY_vars_eNb->lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
+  write_output("rxsigF1.m","rxsF1", PHY_vars_eNb->lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
+  write_output("srs_seq.m","srs",PHY_vars_eNb->lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
+  write_output("srs_est0.m","srsest0",PHY_vars_eNb->lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
+  write_output("srs_est1.m","srsest1",PHY_vars_eNb->lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
+  write_output("rxsigF1_ext.m","rxsF1_ext", PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
+  write_output("drs_est0.m","drsest0",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+  write_output("drs_est1.m","drsest1",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
 */
 
 #ifdef IFFT_FPGA
