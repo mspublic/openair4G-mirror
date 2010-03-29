@@ -82,7 +82,8 @@ int main (int argc, char **argv) {
   char *chbch_pdu;
   int chbch_size;
 
- 
+  TX_VARS *TX_vars;
+
 #ifdef PLATON
   freq_t          freq;
 #endif 
@@ -197,6 +198,7 @@ int main (int argc, char **argv) {
   PHY_config = (PHY_CONFIG *)&PHY_config_mem;
   PHY_vars = malloc(sizeof(PHY_VARS));
   mac_xface = malloc(sizeof(MAC_xface));
+  TX_vars = malloc(sizeof(TX_VARS));
 
   reconfigure_MACPHY(scenario);
   printf("reconfigure_MACPHY() done.\n");
@@ -471,8 +473,8 @@ int main (int argc, char **argv) {
     break;
 
   case 9 :
-    printf("[openair][START][INFO] TX Test OFDM\n");
-
+    printf("[openair][START][INFO] TX Test OFDM, first_rb %d, nb_rb %d\n",atoi(argv[4]),atoi(argv[5]) );
+    /*
     if ((tx_frame_file = fopen("tx_frame.dat","w")) == NULL)
       {
 	printf("[openair][INFO] Cannot open tx_frame.dat data file\n");
@@ -480,18 +482,21 @@ int main (int argc, char **argv) {
       }
     
     //openair_generate_ofdm(1,0xffff,chbch_pdu);
-    openair_generate_ofdm(3,0,0);
+    openair_generate_ofdm(TX_vars,4,0,0);
 
-    printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
-    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars);
+    printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",TX_vars->TX_DMA_BUFFER[0]);
+    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)TX_vars);
 #ifdef IFFT_FPGA
-    fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,1,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME,tx_frame_file);
+    fwrite(TX_vars->TX_DMA_BUFFER[0],1,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME,tx_frame_file);
 #else
-    fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,tx_frame_file);
+    fwrite(TX_vars->TX_DMA_BUFFER[0],4,FRAME_LENGTH_COMPLEX_SAMPLES,tx_frame_file);
 #endif
     fclose(tx_frame_file);
+    */
 
-
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) | (atoi(argv[4])<<7) | (atoi(argv[5])<<12);
+    result=ioctl(openair_fd,openair_START_OFDM_TEST,&fc);
+   
     break;
 
   case 10 :

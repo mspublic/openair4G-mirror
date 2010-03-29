@@ -83,7 +83,7 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   /* start off at the PCI BAR0 */
 
 
-  pos = (unsigned long) PHY_vars->tx_vars[0].TX_DMA_BUFFER;
+  pos = (unsigned long) bigphys_ptr;
   phys = virt_to_phys((void *)pos);
   
   //  printk("[openair][MMAP]  WILL START MAPPING AT %p (%p) \n", (void*)pos,virt_to_phys(pos));
@@ -102,7 +102,7 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   }
 
   //  for (i=0;i<16;i++)
-  //    printk("[openair][MMAP] rxsig %d = %x\n",i,PHY_vars->rx_vars[0].RX_DMA_BUFFER[i]);
+  //    printk("[openair][MMAP] rxsig %d = %x\n",i,RX_DMA_BUFFER[0][i]);
 
 
   /*
@@ -175,7 +175,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   static unsigned int bendian_fmw_off;
   unsigned int ioctl_ack_cnt = 0;
 
-  TX_VARS dummy_tx_vars[NB_ANTENNAS_TX];
+  TX_VARS dummy_tx_vars;
 
   scale = &scale_mem;
 
@@ -293,11 +293,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	mac_xface->is_cluster_head = 0;
 
-	ret = setup_regs();
+	for (i=0;i<number_of_cards;i++) { 
+	  ret = setup_regs(i);
 
 	// Start LED dance with proper period
-	openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-	
+	  openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	}
+
 	//	usleep(10);
 	ret = openair_sched_init();
 	//ret = -1;
@@ -363,7 +365,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifndef OPENAIR2
 
-#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,24)
+#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,3,6)
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fff
 
@@ -403,7 +405,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif
 
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+	Zero_Buffer(TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(10000);
 
       mac_xface->is_cluster_head = 1;
@@ -431,7 +433,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
-      ret = setup_regs();
+
+      for (i=0;i<number_of_cards;i++) 
+	ret = setup_regs(i);
+
+      PHY_vars->rx_total_gain_dB = 138;
 
       if (ret == 0) {
 #ifdef OPENAIR_LTE
@@ -534,14 +540,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	      msg("[openair][IOCTL] Can't get ue dlsch structures\n");
 	      break;
 	    }
-	    ulsch_ue[i]  = new_ue_ulsch(3);
-	    if (ulsch_ue[i]) 
-	      msg("[openair][IOCTL] ue ulsch structure %d created\n",i);
-	    else {
-	      msg("[openair][IOCTL] Can't get ue ulsch structures\n");
-	      break;
-	    }
 	  }
+	  ulsch_ue[0]  = new_ue_ulsch(3);
+	  if (ulsch_ue[0]) 
+	    msg("[openair][IOCTL] ue ulsch structure %d created\n",i);
+	  else {
+	    msg("[openair][IOCTL] Can't get ue ulsch structures\n");
+	    break;
+	  }
+	  
 	  dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
 	  openair_daq_vars.node_configured += 2;
@@ -574,14 +581,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
       msg("[openair][START_NODE] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
-	  PHY_vars->rx_vars[0].RX_DMA_BUFFER,
+	  RX_DMA_BUFFER[0],
 	  lte_ue_common_vars->rxdata[0],
-	  PHY_vars->rx_vars[1].RX_DMA_BUFFER,
+	  RX_DMA_BUFFER[1],
 	  lte_ue_common_vars->rxdata[1]);
 
       udelay(10000);
 
-      ret = setup_regs();
+      ret = setup_regs(0);
       if (ret == 0) {
 	openair_daq_vars.node_running = 1;
 	printk("[openair][START_NODE] Process initialization return code %d\n",ret);
@@ -625,7 +632,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
-      ret = setup_regs();
+      ret = setup_regs(0);
       if (ret == 0) {
 	openair_daq_vars.node_running = 1;
 	printk("[openair][START_2ARYCLUSTERHEAD] Process initialization return code %d\n",ret);
@@ -655,7 +662,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifndef NOCARD_TEST
 
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	Zero_Buffer(PHY_vars->tx_vars[aa].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+	Zero_Buffer(TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
 
 
@@ -671,9 +678,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL; 
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
-      setup_regs();
+      for (i=0;i<number_of_cards;i++) {
+	setup_regs(i);
+	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+      }
 
-      openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       openair_daq_vars.tx_test=0;
       openair_daq_vars.mode = openair_NOT_SYNCHED;
       openair_daq_vars.sync_state = 0;
@@ -726,8 +735,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if (openair_daq_vars.node_configured > 0) {
 
       openair_daq_vars.node_id = NODE;      
-
-      ret = setup_regs();
+      
+      for (i=0;i<number_of_cards;i++)
+	ret = setup_regs(i);
 
       openair_daq_vars.one_shot_get_frame=1;
 
@@ -754,6 +764,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     break;
 
+  case openair_GET_BIGPHYSTOP:
+
+#ifdef RTAI_ENABLED
+    printk("[openair][IOCTL]     openair_GET_BIGPHYSTOP ...(%p)\n",(void *)arg);
+    copy_to_user((char *)arg,&bigphys_ptr,sizeof(char *));
+#endif // RTAI_ENABLED
+    break;
+
   case openair_GET_VARS:
 
 #ifdef PC_TARGET
@@ -767,7 +785,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_TX_GAIN:
 
     printk("[openair][IOCTL]     openair_SET_TX_GAIN ...(%p)\n",(void *)arg);
-    openair_set_tx_gain_openair(((unsigned char *)arg)[0],((unsigned char *)arg)[1],((unsigned char *)arg)[2],((unsigned char *)arg)[3]
+    openair_set_tx_gain_openair(0,((unsigned char *)arg)[0],((unsigned char *)arg)[1],((unsigned char *)arg)[2],((unsigned char *)arg)[3]
 );
 
     break;
@@ -776,7 +794,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     printk("[openair][IOCTL]     openair_SET_RX_GAIN ...(%p)\n",(void *)arg);
 
-    openair_set_rx_gain_openair(((unsigned char *)arg)[0],((unsigned char *)arg)[1],((unsigned char *)arg)[2],((unsigned char *)arg)[3]);
+    openair_set_rx_gain_openair(0,((unsigned char *)arg)[0],((unsigned char *)arg)[1],((unsigned char *)arg)[2],((unsigned char *)arg)[3]);
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF; // ((unsigned int *)arg)[0] & 0x1; 
     break;
 
@@ -784,15 +802,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     printk("[openair][IOCTL]     openair_SET_CALIBRATED_RX_GAIN ...(%p)\n",(void *)arg);
 
-    openair_set_rx_gain_cal_openair(((unsigned int *)arg)[0]);
-    PHY_vars->rx_vars[0].rx_total_gain_dB = ((unsigned int *)arg)[0];
+    openair_set_rx_gain_cal_openair(0,((unsigned int *)arg)[0]);
+    PHY_vars->rx_total_gain_dB = ((unsigned int *)arg)[0];
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF; // ((unsigned int *)arg)[0] & 0x1; 
     break;
 
   case openair_START_FS4_TEST:
-
+    
     printk("[openair][IOCTL]     openair_START_FS4_TEST ...(%p)\n",(void *)arg);
-    openair_daq_vars.node_id = PRIMARY_CH;
+    openair_daq_vars.node_id = NODE;
 
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -804,17 +822,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
-
-    openair_daq_vars.tx_test=1;
-    ret = setup_regs();
-
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-    openair_generate_fs4(0);//*((unsigned char *)arg));
-
-    for (i=0;i<256;i++)
-      printk("TX_DMA_BUFFER[0][%d] = %x (%p)\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i],&((unsigned int *)TX_DMA_BUFFER[0])[i] );
     
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    openair_daq_vars.tx_test=1;
+    for (i=0;i<number_of_cards;i++) {
+      ret = setup_regs(i);
+      openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_FS4);
+    }
+
     break;
 
   case openair_START_REAL_FS4_WITH_DC_TEST:
@@ -826,15 +840,35 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_START_OFDM_TEST:
     printk("[openair][IOCTL]     openair_START_OFDM_TEST ...(%p)\n",(void *)arg);
-    openair_daq_vars.node_id = PRIMARY_CH;
+
+    openair_daq_vars.node_id = NODE;
+
+#ifndef OPENAIR_LTE
+    openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
+    printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
+#else
+    openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
+    printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
+#endif
+    openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
+
+    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
+    
     openair_daq_vars.tx_test=1;
-    ret = setup_regs();
-    rt_set_oneshot_mode();
+    printk("[openair][IOCTL] OFDM: first rb %d, nb_rb %d\n",
+	   ((*((unsigned *)arg_ptr))>>7)&0x1f,
+	   ((*((unsigned *)arg_ptr))>>12)&0x1f);
 
-    start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+    for (i=0;i<number_of_cards;i++) {
+      ret = setup_regs(i);
+      pci_interface[0]->first_rb = ((*((unsigned *)arg_ptr))>>7)&0x1f;
+      pci_interface[0]->nb_rb = ((*((unsigned *)arg_ptr))>>12)&0x1f;
+    //    start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
+    //    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    //    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+      openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_OFDM);
+    }
     break;
 
   case openair_START_QAM16_TEST:
@@ -856,42 +890,22 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
 
   case openair_RX_RF_MODE:
-    printk("[openair][IOCTL]     openair_RX_RF_MODE ...(%p)\n",(void *)arg);
+    printk("[openair][IOCTL]     openair_RX_RF_MODE ...(%p), setting to %d\n",(void *)arg,((unsigned int *)arg)[0]);
 
-    openair_set_rx_rf_mode(((unsigned int *)arg)[0]);
+    openair_set_rx_rf_mode(0,((unsigned int *)arg)[0]);
     break;
 
   case openair_SET_TCXO_DAC:
     printk("[openair][IOCTL]     openair_set_tcxo_dac ...(%p)\n",(void *)arg);
 
-    openair_set_tcxo_dac(((unsigned int *)arg)[0]);
+    openair_set_tcxo_dac(0,((unsigned int *)arg)[0]);
     break;
 
 
   case openair_START_TX_SIG:
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-    openair_daq_vars.tx_test=1;
 
-    copy_from_user((unsigned char*)dummy_tx_vars,
-		   (unsigned char*)arg,
-		   NB_ANTENNAS_TX*sizeof(TX_VARS));
-    
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[0],
-		   (unsigned char*)dummy_tx_vars[0].TX_DMA_BUFFER,
-		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[1],
-		   (unsigned char*)dummy_tx_vars[1].TX_DMA_BUFFER,
-		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
 
-    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
-    /*
-    for (i=0;i<256;i++) {
-      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
-      printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[1])[i]);
-    }
-    */
-
-    openair_daq_vars.node_id = PRIMARY_CH;
+    openair_daq_vars.node_id = NODE;
 
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -902,18 +916,44 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
-    ret = setup_regs();
 
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    openair_daq_vars.tx_test=1;
+    ret = setup_regs(0);
+
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+
+    Zero_Buffer((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    Zero_Buffer((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    copy_from_user((unsigned char*)&dummy_tx_vars,
+		   (unsigned char*)arg,
+		   sizeof(TX_VARS));
+    
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
+		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
+		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
+		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+
+    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
+    /*
+    for (i=0;i<256;i++) {
+      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
+      printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[1])[i]);
+    }
+    */
+
+
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 		
 
 
     break;
 
   case openair_START_TX_SIG_NO_OFFSET:
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
     openair_daq_vars.tx_test=1;    
-    copy_from_user((unsigned char*)TX_DMA_BUFFER[0],
+    copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
 		   (unsigned char*)arg,
 		   FRAME_LENGTH_BYTES);
     printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
@@ -931,9 +971,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 0 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
-    ret = setup_regs();
+    ret = setup_regs(0);
 
-    openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 		
     break;
 
@@ -1005,7 +1045,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_NEWRF_ADF4108_WRITE_REG_POSTED:
     printk("[openair][IOCTL]     openair_NEWRF_ADF4108_WRITE_REG_POSTED\n");
-    if (!pci_interface) {
+    if (!pci_interface[0]) {
       printk("[openair][IOCTL]       Impossible to post ADF4108 config to card: pci_interface NOT yet allocated\n");
       return -1;
     }
@@ -1018,10 +1058,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_NEWRF_RFctrl.ADF4108_Ref_Cnt = *(((unsigned int*)arg)+1);
     openair_NEWRF_RFctrl.ADF4108_N_Cnt   = *(((unsigned int*)arg)+2);
     /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface->ADF4108_Func0   = openair_NEWRF_RFctrl.ADF4108_Func0;
-    pci_interface->ADF4108_Ref_Cnt = openair_NEWRF_RFctrl.ADF4108_Ref_Cnt;
-    pci_interface->ADF4108_N_Cnt   = openair_NEWRF_RFctrl.ADF4108_N_Cnt;
-    pci_interface->nb_posted_rfctl_ADF4108 += 1;
+    pci_interface[0]->ADF4108_Func0   = openair_NEWRF_RFctrl.ADF4108_Func0;
+    pci_interface[0]->ADF4108_Ref_Cnt = openair_NEWRF_RFctrl.ADF4108_Ref_Cnt;
+    pci_interface[0]->ADF4108_N_Cnt   = openair_NEWRF_RFctrl.ADF4108_N_Cnt;
+    pci_interface[0]->nb_posted_rfctl_ADF4108 += 1;
     break;
 
   case openair_NEWRF_LFSW190410_WRITE_KHZ:
@@ -1055,7 +1095,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_NEWRF_LFSW190410_WRITE_KHZ_POSTED:
     printk("[openair][IOCTL]     openair_NEWRF_LFSW190410_WRITE_KHZ_POSTED\n");
-    if (!pci_interface) {
+    if (!pci_interface[0]) {
       printk("[openair][IOCTL]       Impossible to post LFSW109410 config to card: pci_interface NOT yet allocated\n");
       return -1;
     }
@@ -1070,11 +1110,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     /* Transmit the ASCII value in the CTRL0 & CTRL1 registers */
     invert4(*((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ));     /* because Sparc is big endian */
     invert4(*((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4))); /* because Sparc is big endian */
-    /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface->LFSW190410_CharCmd = 'K';
-    pci_interface->LFSW190410_KHZ_0   = *((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ);
-    pci_interface->LFSW190410_KHZ_1   = *((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4));
-    pci_interface->nb_posted_rfctl_LFSW += 1;
+    /* Only write those values in the pci_interface[0]_t shared memory. */
+    pci_interface[0]->LFSW190410_CharCmd = 'K';
+    pci_interface[0]->LFSW190410_KHZ_0   = *((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ);
+    pci_interface[0]->LFSW190410_KHZ_1   = *((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4));
+    pci_interface[0]->nb_posted_rfctl_LFSW += 1;
     break;
 
   case openair_NEWRF_RF_SWITCH_CTRL:
@@ -1107,7 +1147,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_NEWRF_RF_SWITCH_CTRL_POSTED:
     printk("[openair][IOCTL]     openair_NEWRF_RF_SWITCH_CTRL_POSTED\n");
-    if (!pci_interface) {
+    if (!pci_interface[0]) {
       printk("[openair][IOCTL]     Impossible to post RF switches config to card: pci_interface NOT yet allocated\n");
       return -1;
     }
@@ -1119,9 +1159,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_NEWRF_RFctrl.RFswitches_onoff = *((unsigned int*)arg);
     openair_NEWRF_RFctrl.RFswitches_mask = *(((unsigned int*)arg)+1);
     /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface->RFswitches_onoff   = openair_NEWRF_RFctrl.RFswitches_onoff;
-    pci_interface->RFswitches_mask    = openair_NEWRF_RFctrl.RFswitches_mask;
-    pci_interface->nb_posted_rfctl_RFSW += 1;
+    pci_interface[0]->RFswitches_onoff   = openair_NEWRF_RFctrl.RFswitches_onoff;
+    pci_interface[0]->RFswitches_mask    = openair_NEWRF_RFctrl.RFswitches_mask;
+    pci_interface[0]->nb_posted_rfctl_RFSW += 1;
     break;
 
   case openair_NEWRF_SETTX_SWITCH_GAIN:
@@ -1151,7 +1191,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_NEWRF_SETTX_SWITCH_GAIN_POSTED:
     printk("[openair][IOCTL]     openair_NEWRF_SETTX_SWITCH_GAIN_POSTED\n");
-    if (!pci_interface) {
+    if (!pci_interface[0]) {
       printk("[openair][IOCTL]     Impossible to post SETTX config to card: pci_interface NOT yet allocated\n");
       return -1;
     }
@@ -1161,8 +1201,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     /* Get the 32bit raw word containing info of both TX gains & TX switches */
     openair_NEWRF_RFctrl.settx_raw_word = *((unsigned int*)arg);
     /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface->settx_raw_word = openair_NEWRF_RFctrl.settx_raw_word;
-    pci_interface->nb_posted_rfctl_SETTX += 1; // |= PENDING_POSTED_RFCTL_SETTX;
+    pci_interface[0]->settx_raw_word = openair_NEWRF_RFctrl.settx_raw_word;
+    pci_interface[0]->nb_posted_rfctl_SETTX += 1; // |= PENDING_POSTED_RFCTL_SETTX;
     break;
 
   case openair_NEWRF_SETRX_SWITCH_GAIN:
@@ -1192,7 +1232,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_NEWRF_SETRX_SWITCH_GAIN_POSTED:
     printk("[openair][IOCTL]     openair_NEWRF_SETRX_SWITCH_GAIN_POSTED\n");
-    if (!pci_interface) {
+    if (!pci_interface[0]) {
       printk("[openair][IOCTL]     Impossible to post SETRX config to card: pci_interface NOT yet allocated\n");
       return -1;
     }
@@ -1202,13 +1242,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     /* Get the 32bit raw word containing info of both RX gains & RX switches */
     openair_NEWRF_RFctrl.setrx_raw_word = *((unsigned int*)arg);
     /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface->setrx_raw_word = openair_NEWRF_RFctrl.setrx_raw_word;
+    pci_interface[0]->setrx_raw_word = openair_NEWRF_RFctrl.setrx_raw_word;
          // /* Test if flag is CLEAR */
          // ltmp = pci_interface->pending_posted_rfctl;
          // if (ltmp & PENDING_POSTED_RFCTL_SETRX)
          //   printk("[openair][IOCTL]       NO GOOD: RF ctl FLAG of SETRX is NOT RESET! (flags=0x%08x)\n", ltmp);
     /* ... and raise a flag so that firmware knows that we have posted some RF ctl for RX switches & gains*/
-    pci_interface->nb_posted_rfctl_SETRX += 1; // |= PENDING_POSTED_RFCTL_SETRX;
+    pci_interface[0]->nb_posted_rfctl_SETRX += 1; // |= PENDING_POSTED_RFCTL_SETRX;
     break;
 
 
@@ -1379,7 +1419,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     msg("[openair][IOCTL] openair_daq_vars.timing_advance = %d\n",openair_daq_vars.timing_advance);
 
-    ret = setup_regs();
+    ret = setup_regs(0);
 
     if (ret != 0)
       msg("[openair][IOCTL] Failed to set timing advance\n");
@@ -1395,7 +1435,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_SET_FREQ_OFFSET:
 
-    if (openair_set_freq_offset(((int *)arg)[0]) == 0)
+    if (openair_set_freq_offset(0,((int *)arg)[0]) == 0)
       msg("[openair][IOCTL] Set frequency offset to %d\n",((int *)arg)[0]);
     else 
       msg("[openair][IOCTL] Problem setting frequency offset\n");

@@ -80,12 +80,15 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
   int dummy=0;
   short txsig[NB_ANTENNAS_TX][FRAME_LENGTH_SAMPLES];
+
+ TX_VARS *TX_vars;
+ TX_vars = (TX_VARS*)malloc(sizeof(TX_VARS));
+
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
   printf("FRAME_LENGTH_SAMPLES = %d\n",FRAME_LENGTH_SAMPLES);
 
 
   PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
-
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
   {
     error(FCNNAME);
@@ -95,29 +98,18 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 
   ioctl(openair_fd,openair_STOP,(void*)&dummy);
 
+  for (aa=0;aa<NB_ANTENNAS_TX;aa++) 
+    TX_vars->TX_DMA_BUFFER[aa] = (mod_sym_t *)&txsig[aa][0];
+
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<NB_ANTENNAS_TX;aa++) {
-      txsig[aa][2*i]     = short(real(dx(i,aa))); 
-      txsig[aa][1+(2*i)] = short(imag(dx(i,aa))); 
-      if (i<16)
-	printf("i=%d,aa=%d,(%d,%d)\n",i,aa,txsig[aa][2*i],txsig[aa][1+(2*i)]);
+      TX_vars->TX_DMA_BUFFER[aa][2*i]     = (mod_sym_t)short(real(dx(i,aa))); 
+      TX_vars->TX_DMA_BUFFER[aa][1+(2*i)] = (mod_sym_t)short(imag(dx(i,aa))); 
 
     }
   }
 
-  for (aa=0;aa<NB_ANTENNAS_TX;aa++)
-    PHY_vars->tx_vars[aa].TX_DMA_BUFFER=(int *)&txsig[aa][0];
-
-
-  bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);
-
-
- 
-  for (i=0;i<16;i++) {
-    printf("i=%d,(%x,%x)\n",i,txsig[0][2*i],txsig[0][1+(2*i)]);
-  }
-
-  ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars[0].TX_DMA_BUFFER);
+  ioctl(openair_fd,openair_START_TX_SIG,(void *)TX_vars);
 
 
 

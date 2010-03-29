@@ -66,10 +66,10 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   PHY_vars->PHY_measurements.rx_rssi_dBm[2],
 		   PHY_vars->PHY_measurements.wideband_cqi_dB[2][0],
 		   PHY_vars->PHY_measurements.wideband_cqi_dB[2][1],
-		   PHY_vars->PHY_measurements.n0_power_tot_dB-PHY_vars->rx_vars[0].rx_total_gain_dB,
+		   PHY_vars->PHY_measurements.n0_power_tot_dB-PHY_vars->rx_total_gain_dB,
 		   PHY_vars->PHY_measurements.n0_power_dB[0],
 		   PHY_vars->PHY_measurements.n0_power_dB[1]);
-    len += sprintf(&buffer[len], "RX Gain %d dB\n",PHY_vars->rx_vars[0].rx_total_gain_dB);
+    len += sprintf(&buffer[len], "RX Gain %d dB\n",PHY_vars->rx_total_gain_dB);
     
     for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
       len += sprintf(&buffer[len], "RX spatial power eNB%d: [%d %d; %d %d] dB\n",
@@ -152,13 +152,20 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   } // is_clusterhead
 
   else {
-    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : UE 0 rssi %d dBm\n",
+    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : RX Gain %d dB\n",mac_xface->frame,PHY_vars->rx_total_gain_dB);
+    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : UE 0 (%x) rssi (%d,%d) dBm\n",
 		   mac_xface->frame,
-		   eNB_UE_stats[0].UL_rssi[0]);
-    len += sprintf(&buffer[len],"eNB 0 UE 0 DL_cqi %d, DL_pmi_single %x\n",
+		   eNB_UE_stats[0].UE_id[0],
+		   eNB_UE_stats[0].UL_rssi[0][0],
+		   eNB_UE_stats[0].UL_rssi[0][1]);
+    len += sprintf(&buffer[len],"eNB 0 UE 0 (%x) DL_cqi %d, DL_pmi_single %x\n",
+		   eNB_UE_stats[0].UE_id[0],
 		   eNB_UE_stats[0].DL_cqi[0][0],
 		   pmi2hex_2Ar1(eNB_UE_stats[0].DL_pmi_single[0]));
-    
+    len += sprintf(&buffer[len],"eNB 0 UE 0 (%x) Timing advance %d samples (%d 16Ts)\n",
+		   eNB_UE_stats[0].UE_id[0],
+		   eNB_UE_stats[0].UE_timing_offset[0],
+		   eNB_UE_stats[0].UE_timing_offset[0]>>2);
 
   }
 

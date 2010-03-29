@@ -83,7 +83,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     if (N0_symbol == 0) {
-      phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
+      phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_total_gain_dB;
     } 
     else if (N0_symbol == 1) {
 #ifdef USER_MODE
@@ -138,7 +138,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
     phy_measurements->wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_measurements->n0_power_tot);
 
-    phy_measurements->rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])-PHY_vars->rx_vars[0].rx_total_gain_dB;
+    phy_measurements->rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])-PHY_vars->rx_total_gain_dB;
  
     //    if (eNB_id == 0)
     //      printf("rx_power_avg[0] %d (%d,%d)\n",rx_power_avg[0],phy_measurements->rx_avg_power_dB[0],phy_measurements->rx_rssi_dBm[eNB_id]);

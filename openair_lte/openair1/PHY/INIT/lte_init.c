@@ -1,6 +1,15 @@
 //#include <string.h>
 #include "defs.h"
 #include "PHY/extern.h"
+#ifdef CBMIMO1
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
+//#include "pci_commands.h"
+#endif //CBMIMO1
+
 #define DEBUG_PHY
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
@@ -94,7 +103,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   ue_common_vars->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 #ifdef IFFT_FPGA
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+    ue_common_vars->txdataF[i] = TX_DMA_BUFFER[0][i];
   }
   ue_common_vars->txdata = NULL;
 #else
@@ -104,7 +113,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   }
   ue_common_vars->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
+    ue_common_vars->txdata[i] = TX_DMA_BUFFER[0][i];
   }
 #endif  
 
@@ -121,7 +130,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    ue_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
+    ue_common_vars->rxdata[i] = RX_DMA_BUFFER[0][i];
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] = %p\n",i,ue_common_vars->rxdata[i]);
 #endif
@@ -392,15 +401,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-#ifndef USER_MODE
-      if (eNb_id == 0) 
-	eNB_common_vars->txdata[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-      else 
-#endif
-      {
-	eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-	bzero(eNB_common_vars->txdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-      }
+	eNB_common_vars->txdata[eNb_id][i] = TX_DMA_BUFFER[eNb_id][i];
+	//	bzero(eNB_common_vars->txdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdata[eNb_id][i]);
 #endif
@@ -423,17 +426,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
 #ifdef IFFT_FPGA
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-#ifndef USER_MODE
-      if (eNb_id == 0) 
-	eNB_common_vars->txdataF[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-      else 
-#endif
-      {
-	eNB_common_vars->txdataF[eNb_id][i] = (mod_sym_t *)malloc16(NUMBER_OF_USEFUL_CARRIERS*
-								    NUMBER_OF_SYMBOLS_PER_FRAME*
-								    sizeof(mod_sym_t));
-	bzero(eNB_common_vars->txdataF[eNb_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
-      }
+	eNB_common_vars->txdataF[eNb_id][i] = TX_DMA_BUFFER[eNb_id][i];
+	//	bzero(eNB_common_vars->txdataF[eNb_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
+      
 
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p, length = %d\n",
@@ -465,15 +460,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-#ifndef USER_MODE
-      if (eNb_id == 0)
-	eNB_common_vars->rxdata[eNb_id][i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
-      else
-#endif
-      {
-	eNB_common_vars->rxdata[eNb_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
-	bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
-      }
+	eNB_common_vars->rxdata[eNb_id][i] = RX_DMA_BUFFER[eNb_id][i];
+	//	bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->rxdata[eNb_id][i]);
 #endif

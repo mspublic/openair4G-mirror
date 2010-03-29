@@ -53,7 +53,7 @@ endif
 # PHY TOOLS routines
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/PHY/TOOLS/cmult_vv.o $(TOP_DIR)/PHY/TOOLS/cmult_sv.o $(TOP_DIR)/PHY/TOOLS/cmult_mm.o $(TOP_DIR)/PHY/TOOLS/cmult_vvh.o $(TOP_DIR)/PHY/TOOLS/cadd_vv.o 
 #ifdef CBMIMO1
-PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
+#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
 #endif
 
 # PHY ESTIMATION routines 

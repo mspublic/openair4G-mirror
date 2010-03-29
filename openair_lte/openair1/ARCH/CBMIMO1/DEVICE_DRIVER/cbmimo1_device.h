@@ -88,7 +88,8 @@
 // fkalten 9.12.09
 #define openair_SET_FREQ_OFFSET                       _IOR(openair_IOC_MAGIC,48,int) 
 
-#define openair_MAXNR         48
+#define openair_GET_BIGPHYSTOP                        _IOR(openair_IOC_MAGIC,49,int)
+#define openair_MAXNR         49
 
 
 

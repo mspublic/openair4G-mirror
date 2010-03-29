@@ -27,14 +27,14 @@ extern unsigned short eedata[];
 extern unsigned int openair_irq;
 
 
-extern dma_addr_t dummy_dma_ptr;
+//extern dma_addr_t dummy_dma_ptr;
 
-extern unsigned int pci_buffer[2*NB_ANTENNAS_RX];
-extern unsigned int RX_DMA_BUFFER[NB_ANTENNAS_RX];
-extern unsigned int TX_DMA_BUFFER[NB_ANTENNAS_TX];
+extern unsigned int pci_buffer[4][2*NB_ANTENNAS_RX];
+extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
+extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern unsigned int mbox;
 
-extern PCI_interface_t *pci_interface;
+extern PCI_interface_t *pci_interface[4];
 
 extern unsigned int NODE_ID[1];
 #endif

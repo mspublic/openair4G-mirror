@@ -6,7 +6,7 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=1;            % frequency band used by the openair card (depricated)
+freqband=0;            % frequency band used by the openair card (depricated)
 
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 dual_tx = 0;
@@ -28,9 +28,9 @@ power_dBm=-70;
 
 oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
 
-oarf_set_rx_rfmode(0);
+oarf_set_rx_rfmode(1);
     
-oarf_set_rx_gain(120,120,0,0);
+oarf_set_rx_gain(100,100,0,0);
 
 sleep(2)
 

@@ -106,8 +106,8 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 
   ioctl(openair_fd,openair_GET_VARS,PHY_vars);
 
-  printf("Getting PHY_vars->tx_vars[0].TX_DMA_BUFFER=%p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
-  printf("Getting PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
+  //printf("Getting PHY_vars->tx_vars[0].TX_DMA_BUFFER=%p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
+  //printf("Getting PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
 
   printf("Getting PHY_config ...\n");
 

@@ -39,19 +39,19 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   // Gain control with hysterisis
   // Adjust gain in PHY_vars->rx_vars[0].rx_total_gain_dB
 
-  if ( (rx_power_fil_dB < TARGET_RX_POWER - 5) && (PHY_vars->rx_vars[0].rx_total_gain_dB < MAX_RF_GAIN) )
-    PHY_vars->rx_vars[0].rx_total_gain_dB+=5;
-  else if ( (rx_power_fil_dB > TARGET_RX_POWER + 5) && (PHY_vars->rx_vars[0].rx_total_gain_dB > MIN_RF_GAIN) )
-    PHY_vars->rx_vars[0].rx_total_gain_dB-=5;
+  if ( (rx_power_fil_dB < TARGET_RX_POWER - 5) && (PHY_vars->rx_total_gain_dB < MAX_RF_GAIN) )
+    PHY_vars->rx_total_gain_dB+=5;
+  else if ( (rx_power_fil_dB > TARGET_RX_POWER + 5) && (PHY_vars->rx_total_gain_dB > MIN_RF_GAIN) )
+    PHY_vars->rx_total_gain_dB-=5;
 
 #ifndef USER_MODE
-  openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
+  openair_set_rx_gain_cal_openair(0,PHY_vars->rx_total_gain_dB);
 #endif
 
 #ifdef DEBUG_PHY
   if ((mac_xface->frame%100==0) || (mac_xface->frame < 10))
     msg("[PHY][ADJUST_GAIN] frame %d, clear = %d, rx_power = %d, rx_power_fil = %d, rx_power_fil_dB = %d, coef=%d, ncoef=%d, rx_total_gain_dB = %d (%d,%d,%d)\n",
-	mac_xface->frame,clear,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,PHY_vars->rx_vars[0].rx_total_gain_dB,
+	mac_xface->frame,clear,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,PHY_vars->rx_total_gain_dB,
 	TARGET_RX_POWER,MAX_RF_GAIN,MIN_RF_GAIN);
 #endif //DEBUG_PHY
 	

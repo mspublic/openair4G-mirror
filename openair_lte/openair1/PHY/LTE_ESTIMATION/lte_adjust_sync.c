@@ -73,15 +73,15 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
 
   if ( diff > SYNCH_HYST )
-    PHY_vars->rx_vars[0].offset++;
+    PHY_vars->rx_offset++;
   else if (diff < -SYNCH_HYST)
-    PHY_vars->rx_vars[0].offset--;
+    PHY_vars->rx_offset--;
     
-  if ( PHY_vars->rx_vars[0].offset < 0 )
-    PHY_vars->rx_vars[0].offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( PHY_vars->rx_offset < 0 )
+    PHY_vars->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  if ( PHY_vars->rx_vars[0].offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
-    PHY_vars->rx_vars[0].offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( PHY_vars->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+    PHY_vars->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
 
 
@@ -94,7 +94,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 #ifndef PHY_EMUL
 #ifndef NOCARD_TEST
 #ifndef PLATON
-    pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
+    pci_interface[0]->frame_offset = PHY_vars->rx_offset;
   //  openair_dma(ADJUST_SYNCH);
 #endif //PLATON
 #endif //PHY_EMUL

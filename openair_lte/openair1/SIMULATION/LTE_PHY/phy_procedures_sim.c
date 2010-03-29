@@ -239,7 +239,7 @@ int main(int argc, char **argv) {
 
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-  PHY_vars->rx_vars[0].rx_total_gain_dB=140;
+  PHY_vars->rx_total_gain_dB=140;
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
@@ -450,7 +450,7 @@ int main(int argc, char **argv) {
 	    0.0,            // freq offset (Hz) (-20kHz..20kHz)
 	    0.0,            // drift (Hz) NOT YET IMPLEMENTED
 	    nf,             // noise_figure NOT YET IMPLEMENTED
-	    (double)PHY_vars->rx_vars[0].rx_total_gain_dB-72.247,            // rx_gain (dB)
+	    (double)PHY_vars->rx_total_gain_dB-72.247,            // rx_gain (dB)
 	    200,            // IP3_dBm (dBm)
 	    &ip,            // initial phase
 	    30.0e3,         // pn_cutoff (kHz)

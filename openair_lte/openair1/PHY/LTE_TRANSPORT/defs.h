@@ -368,7 +368,7 @@ typedef struct {
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
-  int UL_rssi[NUMBER_OF_UE_MAX];
+  int UL_rssi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX];
   unsigned char DL_cqi[NUMBER_OF_UE_MAX][2];
   unsigned char DL_diffcqi[NUMBER_OF_UE_MAX][2];
   unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
@@ -1183,13 +1183,13 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 void generate_RIV_tables(void);
 
 
-int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
-	     LTE_eNB_ULSCH *eNB_ulsch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
-	     unsigned int subframe,
-	     unsigned char eNb_id,  // this is the effective sector id
-	     unsigned char UE_id,   // this is the UE instance to act upon
-	     LTE_eNb_ULSCH_t **ulsch);
+int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+	      LTE_eNB_ULSCH *eNB_ulsch_vars,
+	      LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned int subframe,
+	      unsigned char eNb_id,  // this is the effective sector id
+	      unsigned char UE_id,   // this is the UE instance to act upon
+	      LTE_eNb_ULSCH_t **ulsch);
 
 int ulsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,

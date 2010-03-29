@@ -26,14 +26,12 @@ char number_of_cards,card,master_id;
 int major;
 
 
-dma_addr_t dummy_dma_ptr;
+//dma_addr_t dummy_dma_ptr;
 
-unsigned int pci_buffer[2*NB_ANTENNAS_RX];
-unsigned int RX_DMA_BUFFER[NB_ANTENNAS_RX];
-unsigned int TX_DMA_BUFFER[NB_ANTENNAS_TX];
+unsigned int pci_buffer[4][2*NB_ANTENNAS_RX];
 unsigned int mbox;
 
-PCI_interface_t *pci_interface;
+PCI_interface_t *pci_interface[4];
 
 unsigned int NODE_ID[1];
 EXPORT_SYMBOL(NODE_ID);

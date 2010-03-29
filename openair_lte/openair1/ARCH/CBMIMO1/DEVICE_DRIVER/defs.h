@@ -62,23 +62,23 @@ int openair_device_ioctl   (struct inode *inode,struct file *filp, unsigned int 
 
 
 
-void openair_set_rx_rf_mode(unsigned int arg);
-void openair_set_tx_gain_openair(unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11);
-void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain10,unsigned char rxgain01,unsigned char rxgain11);
-void openair_set_lo_freq_openair(char freq0,char freq1);
-void openair_set_rx_gain_cal_openair(unsigned int gain_dB);
-int openair_set_freq_offset(int freq_offset);
+void openair_set_rx_rf_mode(unsigned char card_id,unsigned int arg);
+void openair_set_tx_gain_openair(unsigned char card_id,unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11);
+void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,unsigned char rxgain10,unsigned char rxgain01,unsigned char rxgain11);
+void openair_set_lo_freq_openair(unsigned char card_id,char freq0,char freq1);
+void openair_set_rx_gain_cal_openair(unsigned char card_id,unsigned int gain_dB);
+int openair_set_freq_offset(unsigned char card_id,int freq_offset);
 
 void openair_generate_ofdm(void);
 void openair_generate_fs4(unsigned char);
 
-void openair_set_tcxo_dac(unsigned int);
+void openair_set_tcxo_dac(unsigned char card_id,unsigned int);
 
-void openair_get_frame(void);
+void openair_get_frame(unsigned char card_id);
 
-int openair_dma(unsigned int cmd);
+int openair_dma(unsigned char card_id,unsigned int cmd);
 
-int setup_regs(void );
+int setup_regs(unsigned char card_id);
 
 void dump_config(void);
 

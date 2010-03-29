@@ -235,7 +235,7 @@ enum MODE {
 /// Data structure for transmission.
 typedef struct {
   /* RAW TX sample buffer */
-  mod_sym_t *TX_DMA_BUFFER;
+  mod_sym_t *TX_DMA_BUFFER[2];
   /* Total transmit gain */           
   unsigned int tx_total_gain_dB;
 } TX_VARS ;  
@@ -244,8 +244,6 @@ typedef struct {
 /// Data structure for reception.
 typedef struct {
   int *RX_DMA_BUFFER;
-  int offset;
-  unsigned int rx_total_gain_dB;
 } RX_VARS;
 
 /// Measurement Variables
@@ -388,15 +386,19 @@ typedef struct {
 /// Top-level PHY Data Structure  
 typedef struct
 {
+  /// ACQ Mailbox for harware synch
+  unsigned int *mbox;                
+  /// Total RX gain
+  unsigned int rx_total_gain_dB;
+  /// Timing offset (UE)
+  int rx_offset;
+  /// TX/RX switch position in symbols (for TDD)
+  //unsigned int tx_rx_switch_point;   --> only in openair_daq_vars
+#ifndef OPENAIR_LTE
   /// TX variables indexed by antenna
   TX_VARS tx_vars[NB_ANTENNAS_TX];      
   /// RX variables indexed by antenna
   RX_VARS rx_vars[NB_ANTENNAS_RX];      
-  /// ACQ Mailbox for harware synch
-  unsigned int *mbox;                
-  /// TX/RX switch position in symbols (for TDD)
-  //unsigned int tx_rx_switch_point;   --> only in openair_daq_vars
-#ifndef OPENAIR_LTE
   /// CHSCH variables (up to 8)
   CHSCH_data          chsch_data[8];   
   /// SCH variables (up to 8)

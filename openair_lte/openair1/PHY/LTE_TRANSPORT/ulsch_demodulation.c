@@ -453,16 +453,18 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
 }
 int avgU[2];
 
-int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
-	     LTE_eNB_ULSCH *eNB_ulsch_vars,
-	     LTE_DL_FRAME_PARMS *frame_parms,
-	     unsigned int subframe,
-	     unsigned char eNb_id,  // this is the effective sector id
-	     unsigned char UE_id,   // this is the UE instance to act upon
-	     LTE_eNb_ULSCH_t **ulsch) {
+int ulsch_power[2];
 
-  unsigned int l;
-  int avgs,ulsch_power;
+int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+	      LTE_eNB_ULSCH *eNB_ulsch_vars,
+	      LTE_DL_FRAME_PARMS *frame_parms,
+	      unsigned int subframe,
+	      unsigned char eNb_id,  // this is the effective sector id
+	      unsigned char UE_id,   // this is the UE instance to act upon
+	      LTE_eNb_ULSCH_t **ulsch) {
+
+  unsigned int l,i;
+  int avgs;//,ulsch_power;
   unsigned char log2_maxh,aarx;
 
   unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
@@ -505,8 +507,9 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      lte_frame_parms,
 		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);  
     
-    ulsch_power = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNb_id][0],
-				     ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
+    for (i=0;i<NB_ANTENNAS_RX;i++)
+      ulsch_power[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNb_id][i],
+					  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
 
   }  
 
@@ -582,5 +585,5 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       break;
     }
   }
-  return(ulsch_power);
+  return(&ulsch_power[0]);
 }

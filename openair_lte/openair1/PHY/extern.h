@@ -6,6 +6,9 @@
 #include "PHY/TOOLS/twiddle_extern.h"
 #include "MAC_INTERFACE/defs.h"
 
+extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
+extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
+
 extern PHY_CONFIG *PHY_config;
 
 #ifndef OPENAIR_LTE

@@ -12,6 +12,9 @@ int node_configured=-1,node_running = 0;
 unsigned int chbch_error_cnt[2],chbch_running_error_cnt[2];
 unsigned int mchrach_error_cnt[2][8],sach_error_cnt=0;
 
+unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
+unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
+
 //unsigned char synch_source=0;
 
 #include "PHY/TOOLS/twiddle64.h"
