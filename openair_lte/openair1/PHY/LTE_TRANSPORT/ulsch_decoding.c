@@ -462,7 +462,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 #endif
 
 
-  return(0);
+  //  return(0);
   // Do PUSCH Decoding
 
   

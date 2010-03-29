@@ -73,7 +73,7 @@ static char dlsch_eNb_active = 0;
 static char dlsch_eNb_cntl_active = 0;
 
 
-int dlsch_errors = 0;
+int dlsch_errors = 0,ulsch_errors=0;
 int dlsch_received = 0;
 int dlsch_cntl_errors = 0;
 
@@ -1421,13 +1421,17 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
     ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
 
-    debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[UE_id]->cqi_crc_status);  
+    debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[UE_id]->cqi_crc_status,ulsch_errors,mac_xface->frame % 1000);  
       
     if (ulsch_eNb[UE_id]->cqi_crc_status == 1) {
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) 
       	print_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,eNb_id);
       extract_CQI(ulsch_eNb[UE_id]->o,ulsch_eNb[UE_id]->o_RI,wideband_cqi,UE_id,&eNB_UE_stats[eNb_id]);
       eNB_UE_stats[eNb_id].rank[UE_id] = ulsch_eNb[UE_id]->o_RI[0];
+    }
+
+    if (ret == (1+MAX_TURBO_ITERATIONS)) {
+      ulsch_errors++;
     }
   }
     
@@ -1493,6 +1497,10 @@ void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
     }
   }
   else { //eNB
+
+    if ((mac_xface->frame % 1000) == 0)
+      ulsch_errors = 0;
+
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_TX(%d)\n",mac_xface->frame, next_slot);
