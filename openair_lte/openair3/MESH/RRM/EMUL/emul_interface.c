@@ -752,7 +752,6 @@ int main( int argc , char **argv )
 
 #ifdef RRC_EMUL
     usleep(100000);
-    printf("Sono nell'emulazione!\n\n" );
     scenario( NUM_SCENARIO, &s_rrc, &s_cmm );
 #endif /* RRC_EMUL */
 

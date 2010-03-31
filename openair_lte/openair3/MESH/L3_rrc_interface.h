@@ -245,7 +245,7 @@ void rrc_update_sens( //mod_lor_10_01_25: RRC function, but also IP function
 void rrc_init_scan_req(
     Instance_t        inst            , //!< instance ID
     L2_ID             L2_id           , //!< FC address
-     unsigned int     Start_fr,
+    unsigned int     Start_fr,
     unsigned int     Stop_fr,
     unsigned int     Meas_band,
     unsigned int     Meas_tpf,
@@ -290,10 +290,10 @@ void rrc_init_mon_req(
  
  
  /*!
-\brief RRC open frequencies  
+\brief update open frequencies -> correspondent message via IP
  */    
 void update_open_freq( //mod_lor_10_01_25: IP function
-    Instance_t inst, 
+    Instance_t inst,            //!< instance ID
     L2_ID L2_id,                //!< L2_id of the FC/CH
     unsigned int NB_chan,
     CHANNEL_T *fr_channels, 
@@ -301,7 +301,7 @@ void update_open_freq( //mod_lor_10_01_25: IP function
     );
 
 /*!
-\brief RRC ask for frequencies   
+\brief ask for frequencies   -> correspondent message via IP
  */     
 void open_freq_query( //mod_lor_10_01_25: IP function
     Instance_t    inst, 
@@ -311,7 +311,7 @@ void open_freq_query( //mod_lor_10_01_25: IP function
     );
 
 /*!
-\brief RRC update secondary network frequencies in use  
+\brief update secondary network frequencies in use  -> correspondent message via IP
  */ 
 void update_SN_occ_freq( //mod_lor_10_01_25: IP function
     Instance_t inst             , //!< instance ID 
@@ -416,7 +416,7 @@ void rrc_rep_freq_all(
     );
     
 /*!
-\brief  Updating of the sensing measures 
+\brief  Updating of the sensing measures -> correspondent message via IP
 */
 void update_sens_results( 
 	Instance_t inst         , //!< Identification de l'instance

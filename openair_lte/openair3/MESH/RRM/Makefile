@@ -1,6 +1,7 @@
 OSTYPE		= $(shell uname -o )
 
-EMUL_RRC        = 1 
+#AAA: if rrc emulated remove comment from next line
+#EMUL_RRC        = 1  
 RRC_KERNEL_MODE = 0
 
 
@@ -64,7 +65,8 @@ SRC_EMUL   += pusu_msg.c
 SRC_EMUL   += transact.c
 SRC_EMUL   += actdiff.c
 
-ifeq ($(EMUL_RRC),0)
+#ifeq ($(EMUL_RRC),0)
+ifndef EMUL_RRC
 CFLAGS     += -DPHY_EMUL
 else
 CFLAGS	   += -DRRC_EMUL

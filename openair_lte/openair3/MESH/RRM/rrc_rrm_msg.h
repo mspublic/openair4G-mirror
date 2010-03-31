@@ -311,13 +311,13 @@ typedef struct {
 */
 //mod_lor_10_03_12++
 typedef struct {
-    unsigned int     Start_fr;
-    unsigned int     Stop_fr;
-    unsigned int     Meas_band;
-    unsigned int     Meas_tpf;
-    unsigned int     Nb_channels;
-    unsigned int     Overlap;
-    unsigned int     Sampl_freq;
+    unsigned int     Start_fr;      //!< Lowest frequency considered (MHz)
+    unsigned int     Stop_fr;       //!< Highest frequency considered (MHz)
+    unsigned int     Meas_band;     //!< Measurement bandwidth (KHz)
+    unsigned int     Meas_tpf;      //!< Measurement time per sub-band
+    unsigned int     Nb_channels;   //!< Number of sub-bands
+    unsigned int     Overlap;       //!< Overlap factor (%)
+    unsigned int     Sampl_freq;    //!< Sampling frequency (Ms/s)
 } rrm_init_scan_req_t;
 
 /*! 
@@ -327,13 +327,13 @@ typedef struct {
 */
 typedef struct {
     L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
-    unsigned int     Start_fr;
-    unsigned int     Stop_fr;
-    unsigned int     Meas_band;
-    unsigned int     Meas_tpf;
-    unsigned int     Nb_channels;
-    unsigned int     Overlap;
-    unsigned int     Sampl_freq;
+    unsigned int     Start_fr;      //!< Lowest frequency considered (MHz)
+    unsigned int     Stop_fr;       //!< Highest frequency considered (MHz)
+    unsigned int     Meas_band;     //!< Measurement bandwidth (KHz)
+    unsigned int     Meas_tpf;      //!< Measurement time per sub-band
+    unsigned int     Nb_channels;   //!< Number of sub-bands
+    unsigned int     Overlap;       //!< Overlap factor (%)
+    unsigned int     Sampl_freq;    //!< Sampling frequency (Ms/s)
 } rrc_init_scan_req_t;  
 //mod_lor_10_03_12--
 
@@ -347,7 +347,7 @@ typedef struct {
     unsigned int        NB_chan                 ; ///< Number of channels to scan if 0 means all channels
     unsigned int        Meas_tpf                ; ///< time on each carrier           //mod_lor_10_02_19
 	unsigned int        Overlap                 ; ///< overlap factor (percentage)    //mod_lor_10_02_19
-	unsigned int        Sampl_freq              ; ///< sampling frequency (Ms/s)      //mod_lor_10_02_19
+	unsigned int        Sampl_nb                ; ///< number of samples per sub-band //mod_lor_10_04_01
     Sens_ch_t           ch_to_scan[NB_SENS_MAX] ; ///< Vector of channels to scan     //mod_lor_10_02_19
 } rrm_scan_ord_t ;
 
@@ -393,9 +393,9 @@ typedef struct {
 */
 typedef struct {
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
-    unsigned int        NB_info                ; //!< number of sensed channels
-    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information
-    double              info_time              ;
+    unsigned int        NB_info                ; //!< Number of sensed channels
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< Sensing information
+    double              info_time              ; //!< Data of the information
 } rrm_update_sens_t ; 
 
 
@@ -479,7 +479,7 @@ msg_t *msg_rrm_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int NB_chan,
 msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
         unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id ); //mod_lor_10_03_12
 msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int Meas_tpf, unsigned int Overlap, 
-        unsigned int Sampl_freq, Sens_ch_t *ch_to_scan, Transaction_t Trans_id );  //mod_lor_10_02_19
+        unsigned int Sampl_nb, Sens_ch_t *ch_to_scan, Transaction_t Trans_id );  //mod_lor_10_02_19
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_end_scan_ord(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *channels,
              Transaction_t Trans_id ); 

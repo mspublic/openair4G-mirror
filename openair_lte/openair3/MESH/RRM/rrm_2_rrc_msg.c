@@ -512,13 +512,13 @@ msg_t *msg_rrm_init_scan_req(
 */
 
 msg_t *msg_rrm_scan_ord( 
-        Instance_t inst             , //!< instance ID 
-        unsigned int NB_chan        , 
+        Instance_t inst             , ///< instance ID 
+        unsigned int NB_chan        , ///< Number of channels to sens
         unsigned int Meas_tpf       , ///< time on each carrier           //mod_lor_10_02_19
 	    unsigned int Overlap        , ///< overlap factor (percentage)    //mod_lor_10_02_19
-	    unsigned int Sampl_freq     , ///< sampling frequency (Ms/s)      //mod_lor_10_02_19
+	    unsigned int Sampl_nb       , ///< number of samples per sub-band //mod_lor_10_04_01
         Sens_ch_t    *ch_to_scan    , ///< Vector of channels to scan     //mod_lor_10_02_19 
-        Transaction_t Trans_id        //!< Transaction ID
+        Transaction_t Trans_id        ///< Transaction ID
         
         )
 {
@@ -540,7 +540,7 @@ msg_t *msg_rrm_scan_ord(
 
             p->Meas_tpf = Meas_tpf;     //mod_lor_10_02_19
             p->Overlap = Overlap;       //mod_lor_10_02_19
-            p->Sampl_freq = Sampl_freq; //mod_lor_10_02_19
+            p->Sampl_nb = Sampl_nb; //mod_lor_10_02_19
             p->NB_chan = NB_chan;
             
           

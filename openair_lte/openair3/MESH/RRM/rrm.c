@@ -839,6 +839,7 @@ static void processing_msg_rrc(
                 /*for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");*/
+                fprintf(stderr,"NB_info = %d\n",p->NB_info);//dbg
                 //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
                 rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
                 //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg

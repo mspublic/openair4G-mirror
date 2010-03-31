@@ -741,7 +741,6 @@ static void scenario7(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
     unsigned int occ_channels [2]= {1, 3};
     printf("\nSCENARIO 7: ...\n\n" ) ;
     
-    printf("\n sono in scenario.c: ...\n\n" ) ;
 // ========================= ISOLATED NODE to CLUSTERHEAD :
     prg_phy_synch_to_MR( s_rrc, 0.1 );
 
