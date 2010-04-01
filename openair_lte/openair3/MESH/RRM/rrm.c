@@ -51,6 +51,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "pusu_msg.h"
 #include "msg_mngt.h"
@@ -139,9 +140,12 @@ static pthread_t pthread_recv_rrc_msg_hnd,
                  pthread_recv_cmm_msg_hnd ,
 
                  pthread_send_rrc_msg_hnd ,
+
                  pthread_send_cmm_msg_hnd ,
 
                  pthread_recv_pusu_msg_hnd ,
+                 pthread_recv_sensing_msg_hnd ,
+                 pthread_send_sensing_msg_hnd ,
                  
                  pthread_recv_int_msg_hnd ,
                  pthread_send_ip_msg_hnd ,
@@ -153,6 +157,7 @@ static unsigned int cnt_timer = 0;
 static FILE *cmm2rrm_fd  = NULL ;
 static FILE *rrc2rrm_fd  = NULL ;
 static FILE *pusu2rrm_fd = NULL ;
+static FILE *sensing2rrm_fd = NULL ;
 static FILE *ip2rrm_fd = NULL ;
 #endif
 /*
@@ -200,6 +205,12 @@ static void * thread_processing_ttl (
             // idem :commentaire ci-dessus
             del_all_obseleted_transact( &(rrm->pusu.transaction));
             pthread_mutex_unlock( &( rrm->pusu.exclu )  ) ;
+
+            pthread_mutex_lock(   &( rrm->sensing.exclu )  ) ;
+            dec_all_ttl_transact( rrm->sensing.transaction ) ;
+            // idem :commentaire ci-dessus
+            del_all_obseleted_transact( &(rrm->sensing.transaction));
+            pthread_mutex_unlock( &( rrm->sensing.exclu )  ) ;
             
             //mod_lor_10_01_25++
             pthread_mutex_lock(   &( rrm->ip.exclu )  ) ;
@@ -363,12 +374,55 @@ static void * thread_send_msg_ip (
     return NULL;
 }
 
+/*!
+*******************************************************************************
+\brief  thread de traitement des messages sortants sur les sockets (rrc ou cmm).
+
+\return NULL
+*/
+static void * thread_send_msg_sensing (
+				       void * p_data /**< parametre du pthread */
+				       )
+{
+  int ii ;
+  
+  int no_msg ;
+  fprintf(stderr,"Thread Send Message To RRC: starting ... \n");
+  fflush(stderr);
+  file_msg_t *pItem ;
+  while ( flag_not_exit)
+    {
+      no_msg = 0  ;
+      for ( ii = 0 ; ii<nb_inst ; ii++ )
+        {
+	  rrm_t      *rrm = &rrm_inst[ii] ;
+	  
+	  pItem = get_msg( &(rrm->file_send_sensing_msg) ) ;
+	  
+	  
+	  if ( pItem == NULL )
+	    no_msg++;
+	  else
+            {
+	      
+            }
+	  RRM_FREE( pItem ) ;
+        }
+      
+      if ( no_msg==nb_inst ) // Pas de message
+	usleep(1000);
+    }
+  fprintf(stderr,"... stopped Thread Send Message\n"); fflush(stderr);
+  return NULL;
+}
+
 //mod_lor_10_01_25--*/
+
 
 
 /*!
 *******************************************************************************
-\brief  thread de traitement des messages entrant sur une interface (rrc ou cmm).
+\brief  thread de traitement des messages entrant sur une interface (rrc, cmm ou sensing).
 
 \return NULL
 */
@@ -832,19 +886,7 @@ static void processing_msg_rrc(
             }
             break ;
 
-        case RRC_UPDATE_SENS :
-            {
-                rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS %d\n ",header->inst, header->Trans_id);
-                /*for ( int i=0;i<8;i++)
-                    msg_fct("%02X", p->L2_id.L2_id[i]);
-                msg_fct( ")\n");*/
-                fprintf(stderr,"NB_info = %d\n",p->NB_info);//dbg
-                //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
-                rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
-                //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
-            }
-            break ;
+
         case RRC_INIT_SCAN_REQ :
             {
                 rrc_init_scan_req_t *p  = (rrc_init_scan_req_t *) msg ;
@@ -893,6 +935,42 @@ static void processing_msg_rrc(
     }
 
 }
+
+static void processing_msg_sensing(
+    rrm_t       *rrm        , ///< Donnee relative a une instance du RRM
+    msg_head_t  *header     , ///< Entete du message
+    char        *msg        , ///< Message recu
+    int         len_msg       ///< Longueur du message
+    )
+{
+
+#ifdef TRACE
+  if ( header->msg_type < NB_MSG_SENSING_RRM )
+    fprintf(sensing2rrm_fd,"%lf SENSING->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_sensing_rrm[header->msg_type],header->msg_type,header->Trans_id);
+  else
+    fprintf(sensing2rrm_fd,"%lf SENSING->RRM %-30s %d %d\n",get_currentclock(),"inconnu",header->msg_type,header->Trans_id);
+  fflush(sensing2rrm_fd);
+#endif
+  
+  switch ( (MSG_SENSING_RRM_T)header->msg_type )
+    {
+
+        case RRC_UPDATE_SENS :
+            {
+                rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS %d\n ",header->inst, header->Trans_id);
+                /*for ( int i=0;i<8;i++)
+                    msg_fct("%02X", p->L2_id.L2_id[i]);
+                msg_fct( ")\n");*/
+                fprintf(stderr,"NB_info = %d\n",p->NB_info);//dbg
+                //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
+                rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
+                //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
+            }
+            break ;
+    }
+}
+
 
 /*!
 *******************************************************************************
@@ -1073,6 +1151,9 @@ static void rrm_scheduler ( )
                         {
                             processing_msg_rrc( rrm , header , msg , header->size ) ;
                         }
+			else if ( pItem->s->s == rrm->sensing.s->s) {
+			  processing_msg_sensing( rrm , header , msg , header->size ) ;
+			}
                         else
                             processing_msg_pusu( rrm , header , msg , header->size ) ;
                     }
@@ -1173,6 +1254,8 @@ int main( int argc , char **argv )
     struct data_thread DataRrc;
     struct data_thread DataCmm;
     struct data_thread DataPusu;
+    struct data_thread DataSensing;
+
     sock_rrm_int_t  DataIpS[MAX_RRM]; //mod_lor_10_01_25
     pthread_attr_t attr ;
 
@@ -1244,7 +1327,10 @@ int main( int argc , char **argv )
     DataPusu.sock_path_dest = PUSU_RRM_SOCK_PATH ;
     DataPusu.s.s            = -1 ;
     
-    
+    DataSensing.name           = "SENSING" ;
+    DataSensing.sock_path_local= RRM_SENSING_SOCK_PATH ;
+    DataSensing.sock_path_dest = SENSING_RRM_SOCK_PATH ;
+    DataSensing.s.s            = -1 ;    
 
 #ifdef TRACE
     cmm2rrm_fd  = fopen( "VCD/cmm2rrm.txt" , "w") ;
@@ -1258,6 +1344,9 @@ int main( int argc , char **argv )
     
     ip2rrm_fd = fopen( "VCD/ip2rrm.txt", "w") ;
     PNULL(ip2rrm_fd) ;
+
+    sensing2rrm_fd = fopen( "VCD/sensing2rrm.txt", "w") ;
+    PNULL(sensing2rrm_fd) ;
 #endif
 
     for ( ii = 0 ; ii < nb_inst ; ii++ ){
@@ -1278,12 +1367,15 @@ int main( int argc , char **argv )
         pthread_mutex_init( &( rrm_inst[ii].rrc.exclu ), NULL ) ;
         pthread_mutex_init( &( rrm_inst[ii].cmm.exclu ), NULL ) ;
         pthread_mutex_init( &( rrm_inst[ii].pusu.exclu ), NULL ) ;
+        pthread_mutex_init( &( rrm_inst[ii].sensing.exclu ), NULL ) ;
         pthread_mutex_init( &( rrm_inst[ii].ip.exclu ), NULL ) ; //mod_lor_10_01_25
 
         init_file_msg( &(rrm_inst[ii].file_recv_msg), 1 ) ;
         init_file_msg( &(rrm_inst[ii].file_send_cmm_msg), 2 ) ;
         init_file_msg( &(rrm_inst[ii].file_send_rrc_msg), 3 ) ;
         init_file_msg( &(rrm_inst[ii].file_send_ip_msg), 4 ) ; //mod_lor_10_01_25
+        init_file_msg( &(rrm_inst[ii].file_send_sensing_msg), 5 ) ;
+
 
         rrm_inst[ii].state              = ISOLATEDNODE ;
         rrm_inst[ii].role               = NOROLE ;
@@ -1291,15 +1383,18 @@ int main( int argc , char **argv )
         rrm_inst[ii].rrc.trans_cnt      =  2048;
         rrm_inst[ii].pusu.trans_cnt     =  3072;
         rrm_inst[ii].ip.trans_cnt       =  4096; //mod_lor_10_01_25
+        rrm_inst[ii].sensing.trans_cnt  =  5120; //mod_lor_10_01_25
 
         rrm_inst[ii].rrc.s              = &DataRrc.s;
         rrm_inst[ii].cmm.s              = &DataCmm.s;
         rrm_inst[ii].pusu.s             = &DataPusu.s;
+        rrm_inst[ii].sensing.s          = &DataSensing.s;
         rrm_inst[ii].ip.s               = &DataIpS[ii]; //mod_lor_10_01_25
 
         rrm_inst[ii].rrc.transaction    = NULL ;
         rrm_inst[ii].cmm.transaction    = NULL ;
         rrm_inst[ii].pusu.transaction   = NULL ;
+        rrm_inst[ii].sensing.transaction   = NULL ;
         rrm_inst[ii].rrc.pNeighborEntry = NULL ;
         rrm_inst[ii].rrc.pRbEntry       = NULL ;
         rrm_inst[ii].rrc.pSensEntry     = NULL ;
@@ -1352,6 +1447,21 @@ int main( int argc , char **argv )
         exit(-1) ;
       }
 
+    /* Creation du thread de reception des messages SENSING */
+    ret = pthread_create (&pthread_recv_sensing_msg_hnd , NULL, thread_recv_msg, &DataSensing );
+    if (ret)
+      {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+      }
+    /* Creation du thread SENSING d'envoi des messages */
+    ret = pthread_create (&pthread_send_sensing_msg_hnd, NULL, thread_send_msg_sensing, NULL );
+    if (ret)
+    {
+        fprintf (stderr, "%s", strerror (ret));
+        exit(-1) ;
+    }
+ 
     /* Creation du thread RRC d'envoi des messages */
     ret = pthread_create (&pthread_send_rrc_msg_hnd, NULL, thread_send_msg_rrc, NULL );
     if (ret)
@@ -1386,8 +1496,10 @@ int main( int argc , char **argv )
     pthread_join (pthread_recv_cmm_msg_hnd, NULL);
     pthread_join (pthread_recv_rrc_msg_hnd, NULL);
     pthread_join (pthread_recv_pusu_msg_hnd, NULL);
+    pthread_join (pthread_recv_sensing_msg_hnd, NULL);
     pthread_join (pthread_send_cmm_msg_hnd, NULL);
     pthread_join (pthread_send_rrc_msg_hnd, NULL);
+    pthread_join (pthread_send_sensing_msg_hnd, NULL);
     pthread_join (pthread_send_ip_msg_hnd, NULL);
     pthread_join (pthread_ttl_hnd, NULL);
     
@@ -1396,6 +1508,7 @@ int main( int argc , char **argv )
     fclose(cmm2rrm_fd ) ;
     fclose(rrc2rrm_fd ) ;
     fclose(pusu2rrm_fd ) ;
+    fclose(sensing2rrm_fd ) ;
 #endif
 
     return 0 ;

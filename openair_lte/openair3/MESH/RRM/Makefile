@@ -8,20 +8,22 @@ RRC_KERNEL_MODE = 0
 # VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
 CHEMIN		= $(shell pwd)
+OPENAIR1_DIR= $(CHEMIN)/../../../openair1
 OPENAIR2_DIR= $(CHEMIN)/../../../openair2
 OPENAIR2_RRC= $(OPENAIR2_DIR)/RRC/MESH/
+OPENAIR1_SENSING= $(OPENAIR1_DIR)/USERSPACE_TOOLS/SENDORA
 OPENAIR3_RRM= $(CHEMIN)
 INTERFACE   = $(CHEMIN)/..
 EMUL        = $(CHEMIN)/EMUL
 VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
-INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR)
+INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR) -I$(OPENAIR1_SENSING)
 CFLAGS		+= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
 LDFLAGS		= -lm
 
 ifeq ($(OSTYPE),Cygwin)
 
-LDFLAGS		+= -lpthread -lrt
+LDFLAGS		+= -lpthread 
 CFLAGS		+= -DCYGWIN
 
 else
@@ -56,6 +58,7 @@ SRC	   += channels_db.c
 SRC	   += msg_mngt.c
 SRC	   += sens_op.c
 SRC	   += freq_ass_op.c
+SRC        += rrm_2_sensing_msg.c
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

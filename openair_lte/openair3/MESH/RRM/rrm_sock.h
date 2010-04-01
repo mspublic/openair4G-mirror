@@ -52,6 +52,11 @@ extern "C" {
 //! \brief Socket path associated to PUSU-RRM interface     
 #define PUSU_RRM_SOCK_PATH "/tmp/pusu_rrm_socket"
 
+//! \brief Socket path associated to RRM-SENSING interface     
+#define RRM_SENSING_SOCK_PATH "/tmp/rrm_sensing_socket"
+//! \brief Socket path associated to SENSING-RRM interface     
+#define SENSING_RRM_SOCK_PATH "/tmp/sensing_rrm_socket"
+
 
 //! \brief Identification of the RRM/CMM/RRC message begin      
 #define START_MSG      0xA533

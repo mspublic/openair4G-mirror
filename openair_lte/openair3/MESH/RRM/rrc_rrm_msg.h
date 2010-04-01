@@ -64,16 +64,13 @@ typedef enum {
     RRM_RB_MEAS_RESP            , ///< Message RRM->RRC : reponse a l'indication de nouvel mesure sur un RB
     RRM_INIT_CH_REQ             , ///< Message RRM->RRC : init d'un CH
     RRCI_INIT_MR_REQ            , ///< Message RRM->RRC : init d'un MR
-    RRC_UPDATE_SENS             , ///< Message RRC->RRM : update of the sensing information measured by the nodes
     RRM_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
     RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
     RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
-    RRM_SCAN_ORD                , ///< Message RRM->RRC : order to scann indicated channels
     UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
     RRM_END_SCAN_REQ            , ///< Message RRM->RRC : end of a scanning process
     RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
-    RRM_END_SCAN_ORD            , ///< Message RRM->RRC : end of a scanning process in sensors
     RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
     OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
     UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
@@ -339,20 +336,6 @@ typedef struct {
 
 /*! 
 *******************************************************************************
-\brief  Definition des parametres de la fonction rrm_scan_ord() dans 
-        une structure permettant le passage des parametres via un socket
-*/
-typedef struct {
-    
-    unsigned int        NB_chan                 ; ///< Number of channels to scan if 0 means all channels
-    unsigned int        Meas_tpf                ; ///< time on each carrier           //mod_lor_10_02_19
-	unsigned int        Overlap                 ; ///< overlap factor (percentage)    //mod_lor_10_02_19
-	unsigned int        Sampl_nb                ; ///< number of samples per sub-band //mod_lor_10_04_01
-    Sens_ch_t           ch_to_scan[NB_SENS_MAX] ; ///< Vector of channels to scan     //mod_lor_10_02_19
-} rrm_scan_ord_t ;
-
-/*! 
-*******************************************************************************
 \brief  Definition des parametres de la fonction rrm_end_scan_req() dans 
         une structure permettant le passage des parametres via un socket
 */
@@ -361,17 +344,6 @@ typedef struct {
 } rrm_end_scan_req_t,
 rrc_end_scan_req_t, 
 rrc_end_scan_conf_t;
-
-/*! 
-*******************************************************************************
-\brief  Definition des parametres de la fonction rrm_end_scan_ord() dans 
-        une structure permettant le passage des parametres via un socket
-*/
-typedef struct {
-    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC
-    unsigned int        NB_chan              ; //!< Number of channels 
-    unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
-} rrm_end_scan_ord_t ;
 
 /*! 
 *******************************************************************************
@@ -478,11 +450,7 @@ msg_t *msg_rrm_init_mon_req(Instance_t inst, L2_ID L2_id, unsigned int NB_chan,
             unsigned int interval, unsigned int *ch_to_scan, Transaction_t Trans_id );
 msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
         unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id ); //mod_lor_10_03_12
-msg_t *msg_rrm_scan_ord( Instance_t inst, unsigned int NB_chan, unsigned int Meas_tpf, unsigned int Overlap, 
-        unsigned int Sampl_nb, Sens_ch_t *ch_to_scan, Transaction_t Trans_id );  //mod_lor_10_02_19
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
-msg_t *msg_rrm_end_scan_ord(Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *channels,
-             Transaction_t Trans_id ); 
 msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
              
 ///MESSAGES VIA IP

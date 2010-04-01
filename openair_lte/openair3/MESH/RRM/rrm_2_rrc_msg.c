@@ -63,16 +63,13 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(RRM_RB_MEAS_RESP         ),
     STRINGIZER(RRM_INIT_CH_REQ          ),
     STRINGIZER(RRM_INIT_MR_REQ          ),
-    STRINGIZER(RRC_UPDATE_SENS          ),
     STRINGIZER(RRM_INIT_MON_REQ         ),
     STRINGIZER(RRM_INIT_SCAN_REQ        ),
     STRINGIZER(RRC_INIT_SCAN_REQ        ),
-    STRINGIZER(RRM_SCAN_ORD             ),
     STRINGIZER(UPDATE_SENS_RESULTS_3    ), //mod_lor_10_01_25
     STRINGIZER(RRM_END_SCAN_REQ         ),
     STRINGIZER(RRC_END_SCAN_REQ         ),
     STRINGIZER(RRC_END_SCAN_CONF        ),
-    STRINGIZER(RRM_END_SCAN_ORD         ),
     STRINGIZER(RRC_INIT_MON_REQ         ),
     STRINGIZER(OPEN_FREQ_QUERY_4        ),
     STRINGIZER(UPDATE_OPEN_FREQ_7       ),
@@ -506,60 +503,6 @@ msg_t *msg_rrm_init_scan_req(
 
 /*!
 *******************************************************************************
-\brief  La fonction formate en un message les parametres de la fonction
-        rrm_scan_ord().
-\return message formate
-*/
-
-msg_t *msg_rrm_scan_ord( 
-        Instance_t inst             , ///< instance ID 
-        unsigned int NB_chan        , ///< Number of channels to sens
-        unsigned int Meas_tpf       , ///< time on each carrier           //mod_lor_10_02_19
-	    unsigned int Overlap        , ///< overlap factor (percentage)    //mod_lor_10_02_19
-	    unsigned int Sampl_nb       , ///< number of samples per sub-band //mod_lor_10_04_01
-        Sens_ch_t    *ch_to_scan    , ///< Vector of channels to scan     //mod_lor_10_02_19 
-        Transaction_t Trans_id        ///< Transaction ID
-        
-        )
-{
-    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
-
-    if ( msg != NULL )
-    {
-        unsigned int size;
-        if ( NB_chan != 0 ){
-            size = sizeof( rrm_scan_ord_t ) + (NB_chan-1) * sizeof(unsigned int) ;
-            
-        }else
-            size =  sizeof( rrm_scan_ord_t );
-        rrm_scan_ord_t *p = RRM_CALLOC2(rrm_scan_ord_t , size ) ;
-
-        if ( p != NULL )
-        {
-            init_rrc_msg_head(&(msg->head),inst,RRM_SCAN_ORD, size ,Trans_id);
-
-            p->Meas_tpf = Meas_tpf;     //mod_lor_10_02_19
-            p->Overlap = Overlap;       //mod_lor_10_02_19
-            p->Sampl_nb = Sampl_nb; //mod_lor_10_02_19
-            p->NB_chan = NB_chan;
-            
-          
-            if ( NB_chan != 0 ){
-                
-                memcpy( p->ch_to_scan, ch_to_scan, NB_chan*sizeof(Sens_ch_t) );
-                
-            }
-       
-        }
-        msg->data = (char *) p ;
-    }
-    return msg ;
-}
-
-
-
-/*!
-*******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
         rrm_end_scan_req().
 \return message formate
@@ -583,54 +526,6 @@ msg_t *msg_rrm_end_scan_req(
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
         }
         msg->data = (char *) p ;
-    }
-    return msg ;
-}
-
-/*!
-*******************************************************************************
-\brief  La fonction formate en un message les parametres de la fonction 
-        rrm_end_scan_ord().
-\return message formate
-*/
-
-msg_t *msg_rrm_end_scan_ord(
-        Instance_t inst             , //!< instance ID 
-        L2_ID L2_id                 , //!< Layer 2 (MAC) ID of FC
-        unsigned int NB_chan        ,
-        unsigned int *channels      , 
-        Transaction_t Trans_id        //!< Transaction ID
-        )
-            
-{
-    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
-    //fprintf(stdout,"rrc_end_scan_ord() cp1\n"); //dbg
-
-    if ( msg != NULL )
-    {
-        unsigned int size = sizeof( rrm_end_scan_ord_t ) + (NB_chan-1) * sizeof(unsigned int) ;
-        rrm_end_scan_ord_t *p = RRM_CALLOC2(rrm_end_scan_ord_t , size ) ;
-
-        if ( p != NULL )
-        {
-        
-            
-            init_rrc_msg_head(&(msg->head),inst,RRM_END_SCAN_ORD, size,Trans_id);
-            
-            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
-            
-        
-            p->NB_chan = NB_chan;
-            if ( NB_chan != 0 ){
-                
-                memcpy( p->channels, channels, NB_chan*sizeof(unsigned int) );
-                
-            }
-  
-       
-        }
-        msg->data = (char *) p ;
-        
     }
     return msg ;
 }
