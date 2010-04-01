@@ -34,6 +34,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "msg_mngt.h"
 #include "pusu_msg.h"
@@ -53,6 +54,7 @@
 #define PUT_PUSU_MSG(m) put_msg(  &(rrm->file_send_cmm_msg), 0, rrm->pusu.s,m)  //mod_lor_10_01_25
 #define PUT_RRC_MSG(m)  put_msg(  &(rrm->file_send_rrc_msg), 0, rrm->rrc.s,m )  //mod_lor_10_01_25
 #define PUT_IP_MSG(m)   put_msg(  &(rrm->file_send_ip_msg) , 1, rrm->ip.s,m  )  //mod_lor_10_01_25
+#define PUT_SENS_MSG(m) put_msg(  &(rrm->file_send_sensing_msg), 0, rrm->sensing.s,m )  //mod_lor_10_04_01
 
 /*!
 *******************************************************************************
@@ -285,11 +287,11 @@ void rrc_init_scan_req(
     
 
     memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
+    pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
+    rrm->sensing.trans_cnt++ ;
     //fprintf(stderr,"rrc counter %d in msg_rrm_scan_ord  \n",rrm->rrc.trans_cnt);//dbg
-    PUT_RRC_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    PUT_SENS_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
+    pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
     
 /*//mod_lor -> AAA: to remove when rrc_update_sens message is active.
     unsigned int length_info = 3;
@@ -448,11 +450,11 @@ void rrc_end_scan_req(
             
             if ((L2_ID_cmp(&(rrm->L2_id_FC),  &L2_id))==0) {
                 
-                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-                rrm->rrc.trans_cnt++ ;
-                //fprintf(stderr,"rrc counter %d msg_rrm_end_scan_ord  \n",rrm->rrc.trans_cnt);//dbg
-                PUT_RRC_MSG(msg_rrm_end_scan_ord(inst, rrm->L2_id_FC, Nb_chan, channels, Trans_id ));
-                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
+                rrm->sensing.trans_cnt++ ;
+                //fprintf(stderr,"sensing counter %d msg_rrm_end_scan_ord  \n",rrm->sensing.trans_cnt);//dbg
+                PUT_SENS_MSG(msg_rrm_end_scan_ord(inst, Nb_chan, channels, Trans_id ));
+                pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
 
             }
             else {

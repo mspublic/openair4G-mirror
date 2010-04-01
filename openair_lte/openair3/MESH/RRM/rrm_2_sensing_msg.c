@@ -32,8 +32,8 @@
 #include <sys/un.h>
 
 #include "L3_rrc_defs.h"
-#include "rrm_sock.h"
-#include "L3_rrc_interface.h"
+//#include "rrm_sock.h"
+//#include "L3_rrc_interface.h"
 #include "sensing_rrm_msg.h"
 #include "rrm_util.h"
 

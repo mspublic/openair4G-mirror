@@ -260,18 +260,7 @@ typedef struct {
     MAC_RLC_MEAS_T     Mac_rlc_meas          ; //!< MAC/RLC measurements
 } rrc_rb_meas_ind_t;
 
-/*! 
-*******************************************************************************
-\brief  Definition des parametres de les fonctions rrc_update_sens() 
-        rdans une structure permettant le passage 
-        des parametres via un socket
-*/
-typedef struct {
-    double              info_time              ; //!< Date of the message
-    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
-    unsigned int        NB_info                ; //!< number of sensed channels
-    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< sensing information 
-} rrc_update_sens_t; 
+
 
 /*! 
 *******************************************************************************

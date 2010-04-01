@@ -1151,9 +1151,9 @@ static void rrm_scheduler ( )
                         {
                             processing_msg_rrc( rrm , header , msg , header->size ) ;
                         }
-			else if ( pItem->s->s == rrm->sensing.s->s) {
-			  processing_msg_sensing( rrm , header , msg , header->size ) ;
-			}
+                        else if ( pItem->s->s == rrm->sensing.s->s) {
+                          processing_msg_sensing( rrm , header , msg , header->size ) ;
+                        }
                         else
                             processing_msg_pusu( rrm , header , msg , header->size ) ;
                     }

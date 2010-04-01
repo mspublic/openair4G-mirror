@@ -79,38 +79,36 @@ extern "C" {
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
 
 
-    } cmm 									; ///<  info relatif a l'interface CMM
+    } cmm 								; ///<  info relatif a l'interface CMM
 	
     struct {
 #ifdef TRACE    
       FILE *fd 							; ///< Fichier pour trace de debug : action RRM->RRC
 #endif
-
-
       sock_rrm_t  	*s 					; ///< Socket associé a l'interface RRC
       unsigned int 	trans_cnt 			; ///< Compteur de transaction avec l'interface RRC
-      transact_t 	    *transaction		; ///< liste des transactions non terminees
+      transact_t 	*transaction		; ///< liste des transactions non terminees
       pthread_mutex_t exclu				; ///< mutex pour le partage de structure
 
       neighbor_desc_t *pNeighborEntry 	; ///< Descripteur sur le voisinage
-      RB_desc_t 		*pRbEntry 			; ///< Descripteur sur les RB (radio bearer) ouverts
-      Sens_node_t     *pSensEntry         ; ///< Desrcipteur sur les info du sensing
-      CHANNELS_DB_T   *pChannelsEntry     ; ///< Desrcipteur sur les info des canaux
-    } rrc 									; ///<  info relatif a l'interface rrc
+      RB_desc_t 		*pRbEntry 	    ; ///< Descripteur sur les RB (radio bearer) ouverts
+      Sens_node_t     *pSensEntry       ; ///< Desrcipteur sur les info du sensing
+      CHANNELS_DB_T   *pChannelsEntry   ; ///< Desrcipteur sur les info des canaux
+    } rrc 								; ///<  info relatif a l'interface rrc
 	
     struct {
       sock_rrm_t      *s                  ; ///< Socket associé a l'interface PUSU
       unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface PUSU
       transact_t      *transaction        ; ///< liste des transactions non terminees
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-    } pusu 	                                ; ///<  info relatif a l'interface pusu
+    } pusu 	                              ; ///<  info relatif a l'interface pusu
 
     struct {
       sock_rrm_t      *s                  ; ///< Socket associé a l'interface SENSING
       unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface SENSING
       transact_t      *transaction        ; ///< liste des transactions non terminees
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-    } sensing	                                ; ///<  info relatif a l'interface SENSING
+    } sensing	                          ; ///<  info relatif a l'interface SENSING
 	
     //mod_lor_10_01_25++
     struct {
@@ -118,7 +116,7 @@ extern "C" {
       unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface IP
       transact_t      *transaction        ; ///< liste des transactions non terminees
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-    } ip     								; ///<  info relatif a l'interface IP
+    } ip     							  ; ///<  info relatif a l'interface IP
     //mod_lor_10_01_25--
 
   } rrm_t ;
