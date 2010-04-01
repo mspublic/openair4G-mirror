@@ -28,7 +28,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-//#include <linux/netlink.h>
 #include <sys/un.h>
 
 #include "debug.h"

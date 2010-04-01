@@ -387,7 +387,7 @@ static void * thread_send_msg_sensing (
   int ii ;
   
   int no_msg ;
-  fprintf(stderr,"Thread Send Message To RRC: starting ... \n");
+  fprintf(stderr,"Thread Send Message To Sensing Unit: starting ... \n");
   fflush(stderr);
   file_msg_t *pItem ;
   while ( flag_not_exit)

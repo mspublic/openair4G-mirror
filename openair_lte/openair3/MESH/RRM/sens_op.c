@@ -289,7 +289,7 @@ void rrc_init_scan_req(
     memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
     pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
     rrm->sensing.trans_cnt++ ;
-    //fprintf(stderr,"rrc counter %d in msg_rrm_scan_ord  \n",rrm->rrc.trans_cnt);//dbg
+   // fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord  \n",rrm->sensing.trans_cnt);//dbg
     PUT_SENS_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
     pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
     

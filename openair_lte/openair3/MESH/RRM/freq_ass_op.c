@@ -35,6 +35,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "msg_mngt.h"
 #include "pusu_msg.h"
