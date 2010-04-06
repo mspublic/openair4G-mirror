@@ -383,7 +383,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
 void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   
-  unsigned char eNb_id;
+  unsigned char eNb_id, aa;
 
 #ifdef EMOS
   // first slot in frame is special
@@ -500,7 +500,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
   }
 
   if (last_slot==4) {
-      emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_vars[0].rx_total_gain_dB;
+      emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
   }
 
   if (last_slot%2==1) {
@@ -625,7 +625,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
   if (((last_slot>>1)==8) && (dci_cnt!=1) && (openair_daq_vars.one_shot_get_frame == 1)) {
     rtf_reset(rx_sig_fifo);
     for (i=0;i<NB_ANTENNAS_RX;i++) {
-      length=rtf_put(rx_sig_fifo,RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
+      length=rtf_put(rx_sig_fifo,(unsigned int*) RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
       if (length < FRAME_LENGTH_BYTES)
 	msg("[PHY_PROCEDURES_LTE][DIAG] Didn't put %d bytes for antenna %d (put %d)\n",FRAME_LENGTH_BYTES,i,length);
       else
