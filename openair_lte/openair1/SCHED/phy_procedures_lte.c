@@ -463,7 +463,8 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
 
 #ifdef EMOS
   // first slot in frame is special
-  if (((last_slot==0) || (last_slot==1)) && ((l==0) || (l==4-lte_frame_parms->Ncp))) {
+  if (((last_slot==0) || (last_slot==1) || (last_slot==12) || (last_slot==13)) && 
+      ((l==0) || (l==4-lte_frame_parms->Ncp))) {
     for (eNb_id=0; eNb_id<3; eNb_id++) 
       for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
 	lte_dl_channel_estimation_emos(emos_dump_UE.channel[eNb_id],

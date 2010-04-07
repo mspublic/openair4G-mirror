@@ -14,8 +14,8 @@
 #define NUMBER_OF_USEFUL_CARRIERS_EMOS 300    // the number of OFDM carriers that contain data
 
 #define N_RB_DL_EMOS 25
-#define N_PILOTS_PER_RB 4  //per tx antenna
-#define N_SLOTS_EMOS 2
+#define N_PILOTS_PER_RB 4  // per tx antenna
+#define N_SLOTS_EMOS 4     // we take slots 0,1,12,13
 
 #define N_RB_UL_EMOS 25
 #define N_PILOTS_PER_RB_UL 12

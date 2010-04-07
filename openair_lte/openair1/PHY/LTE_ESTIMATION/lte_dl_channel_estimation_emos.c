@@ -25,7 +25,7 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
   unsigned int n;
   int i;
   
-  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within frame
+  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
 
   if ((p==0) && (l==0) )
     nu = 0;
@@ -36,17 +36,34 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    msg("lte_dl_channel_estimation: p %d, l %d -> ERROR\n",p,l);
+    msg("lte_dl_channel_estimation_emos: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
   if (sector > 2) { 
-    msg("lte_dl_channel_estimation: sector must be 0,1, or 2\n");
+    msg("lte_dl_channel_estimation_emos: sector must be 0,1, or 2\n");
     return(-1);
   }
 
-  //ch_offset = l*frame_parms->ofdm_symbol_size;      // offset within dl_ch_estimates
-  ch_offset = (((l==0)?0:1)+Ns*2)*2*frame_parms->N_RB_DL;
+  switch (Ns) {
+  case 0:
+    ch_offset = ((l==0)?0:1)*2*frame_parms->N_RB_DL;
+    break;
+  case 1:
+    ch_offset = ((l==0)?2:3)*2*frame_parms->N_RB_DL;
+    break;
+  case 12:
+    ch_offset = ((l==0)?4:5)*2*frame_parms->N_RB_DL;
+    break;
+  case 13:
+    ch_offset = ((l==0)?6:7)*2*frame_parms->N_RB_DL;
+    break;
+  default:
+    msg("lte_dl_channel_estimation_emos: Ns must be  0, 1, 12, or 13\n");
+    break;
+
+  }
+
   symbol_offset = symbol*frame_parms->ofdm_symbol_size; // offset within rxdataF
 
   k = nu + sector;
