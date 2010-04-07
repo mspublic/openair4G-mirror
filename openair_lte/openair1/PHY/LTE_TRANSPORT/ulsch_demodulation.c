@@ -453,21 +453,24 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
 }
 int avgU[2];
 
-int ulsch_power[2];
 
 int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
-	      LTE_eNB_ULSCH *eNB_ulsch_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
-	      unsigned int subframe,
-	      unsigned char eNb_id,  // this is the effective sector id
-	      unsigned char UE_id,   // this is the UE instance to act upon
-	      LTE_eNb_ULSCH_t **ulsch) {
+	     LTE_eNB_ULSCH *eNB_ulsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     unsigned int subframe,
+	     unsigned char eNb_id,  // this is the effective sector id
+	     unsigned char UE_id,   // this is the UE instance to act upon
+	     LTE_eNb_ULSCH_t **ulsch,
+	     unsigned char rag_flag) {
+
+  int ulsch_power[2];
+
 
   unsigned int l,i;
-  int avgs;//,ulsch_power;
+  int avgs;
   unsigned char log2_maxh,aarx;
 
-  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = (rag_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
   unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
   unsigned short rx_power_correction;
 
@@ -480,9 +483,13 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     rx_power_correction = 1;
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
-      
+    /*      
 
-    //    printf("rx_ulsch: symbol %d\n",l);
+    printf("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d)\n",rag_flag,l,
+	   ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
+	   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+
+    */
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
@@ -519,7 +526,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      avgU,
 		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
     
-  //      msg("[ULSCH] avg[0] %d\n",avgU[0]);
+  //  msg("[ULSCH] avg[0] %d\n",avgU[0]);
   
 
   avgs = 0;

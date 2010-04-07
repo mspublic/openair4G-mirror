@@ -187,14 +187,14 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     */
 
     //    msg("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
-    //    memset(dlsch->harq_processes[harq_pid]->c[r],0,16);//block_length);
+    memset(dlsch->harq_processes[harq_pid]->c[r],0,Kr_bytes);
     //    msg("done\n");
     if (dlsch->harq_processes[harq_pid]->C == 1) 
       crc_type = CRC24_A;
     else 
       crc_type = CRC24_B;
 
-    /*        
+    /*            
     msg("decoder input(segment %d)\n",r);
     for (i=0;i<(3*8*Kr_bytes)+12;i++)
       if ((dlsch->harq_processes[harq_pid]->d[r][96+i]>7) || 
@@ -215,18 +215,18 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      //      msg("CRC failed\n");
+      //    msg("CRC failed\n");
 
       dlsch->harq_ack[subframe].ack = 0;
       dlsch->harq_ack[subframe].harq_id = harq_pid;
       //      msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
       if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
-	dlsch->harq_processes[harq_pid]->status = IDLE;
+	dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
       }
       return(ret);
     }
     else {
-      dlsch->harq_processes[harq_pid]->status = IDLE;
+      dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
       dlsch->harq_processes[harq_pid]->round  = 0;
       dlsch->harq_ack[subframe].ack = 1;
       dlsch->harq_ack[subframe].harq_id = harq_pid;
@@ -244,14 +244,19 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
       Kr = dlsch->harq_processes[harq_pid]->Kplus;
 
     Kr_bytes = Kr>>3;
-    
+
     if (r==0) {
       memcpy(dlsch->harq_processes[harq_pid]->b,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
 	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
       offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
-      //            msg("copied %d bytes to b sequence\n",
-      //      	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      //      msg("copied %d bytes to b sequence\n",
+      //	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+    //      msg("b[0] = %x,c[%d] = %x\n",
+      //	  dlsch->harq_processes[harq_pid]->b[0],
+      //	  dlsch->harq_processes[harq_pid]->F>>3,
+      //	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
+
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,

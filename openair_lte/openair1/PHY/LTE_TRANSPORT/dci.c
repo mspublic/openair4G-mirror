@@ -1288,7 +1288,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = ra_rnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
+    dci_alloc[dci_cnt].format     = format1A;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
     dci_cnt++;
     first_found=1;
@@ -1340,7 +1340,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = ra_rnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
+    dci_alloc[dci_cnt].format     = format1A;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
     dci_cnt++;
     second_found = 1;

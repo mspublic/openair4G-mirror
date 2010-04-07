@@ -127,6 +127,7 @@ int dlsch_encoding(unsigned char *a,
   unsigned int Kr,Kr_bytes,r,r_offset=0;
 
   A = dlsch->harq_processes[harq_pid]->TBS;
+
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   // This has to be updated for presence of PBCH/PSCH

@@ -454,7 +454,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
       dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
       if (dlsch0->nb_rb>1) 
-	dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch0->harq_processes[harq_pid]->mcs][dlsch0->nb_rb-1];
+	dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1];
       else
 	dlsch0->harq_processes[harq_pid]->TBS         =0;
       
@@ -811,24 +811,21 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 }
 
 int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
-					unsigned short rnti,
-					unsigned char subframe,
-					DCI_format_t dci_format,
-					LTE_eNb_ULSCH_t *ulsch,
-					LTE_DL_FRAME_PARMS *frame_parms,
-					unsigned short si_rnti,
-					unsigned short ra_rnti,
-					unsigned short p_rnti) {
+				       unsigned short rnti,
+				       unsigned char subframe,
+				       DCI_format_t dci_format,
+				       LTE_eNb_ULSCH_t *ulsch,
+				       LTE_DL_FRAME_PARMS *frame_parms,
+				       unsigned short si_rnti,
+				       unsigned short ra_rnti,
+				       unsigned short p_rnti) {
   
   unsigned char harq_pid;
 
   //printf("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x\n",subframe,rnti);
   if (dci_format == format0) {
 
-    if (rnti == ra_rnti)
-      harq_pid = 0;
-    else
-      harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
+    harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
     
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];

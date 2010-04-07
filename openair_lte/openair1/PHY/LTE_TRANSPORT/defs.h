@@ -44,7 +44,7 @@
 #define PMI_2A_1mj 3
 
 typedef enum {
-  IDLE,
+  SCH_IDLE,
   ACTIVE,
   DISABLED
 } SCH_status_t;
@@ -224,6 +224,8 @@ typedef struct {
   unsigned char beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   unsigned char beta_offset_harqack_times8;
+  /// power_offset
+  unsigned char power_offset;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -322,6 +324,12 @@ typedef struct {
   unsigned char beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   unsigned char beta_offset_harqack_times8;
+  /// Flag to indicate that eNB awaits UE RAG 
+  unsigned char RAG_active;
+  /// Subframe for RAG
+  unsigned char RAG_subframe;
+  /// Frame for RAG
+  unsigned short RAG_frame;
 } LTE_eNb_ULSCH_t;
 
 typedef struct {
@@ -1123,7 +1131,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch);
+		      LTE_UE_ULSCH_t *ulsch,
+		      unsigned char rag_flag);
 
 
 void ulsch_extract_rbs_single(int **rxdataF,
@@ -1184,12 +1193,13 @@ void generate_RIV_tables(void);
 
 
 int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
-	      LTE_eNB_ULSCH *eNB_ulsch_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
-	      unsigned int subframe,
-	      unsigned char eNb_id,  // this is the effective sector id
-	      unsigned char UE_id,   // this is the UE instance to act upon
-	      LTE_eNb_ULSCH_t **ulsch);
+	     LTE_eNB_ULSCH *eNB_ulsch_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     unsigned int subframe,
+	     unsigned char eNb_id,  // this is the effective sector id
+	     unsigned char UE_id,   // this is the UE instance to act upon
+	     LTE_eNb_ULSCH_t **ulsch,
+	     unsigned char rag_flag);
 
 int ulsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
@@ -1199,7 +1209,8 @@ int ulsch_encoding(unsigned char *a,
 unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_eNb_ULSCH_t *ulsch,
-			     unsigned char subframe);
+			     unsigned char subframe,
+			     unsigned char rag_flag);
 
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 

@@ -474,7 +474,7 @@ int ulsch_encoding(unsigned char *a,
   Qprime_ACK = Q_ACK / Q_m;
   Qprime_CQI = Q_CQI / Q_m;
 
-
+  //  printf("Qprime_CQI = %d\n",Qprime_CQI);
   // RI BITS 
   r = Rmux_prime-1;
   memset(y,LTE_NULL,Q_m*Hpp);
@@ -500,13 +500,13 @@ int ulsch_encoding(unsigned char *a,
     if (i<Qprime_CQI) {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
-	//	printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
+	//		printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
       }
     }
     else {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->e[q+(Q_m*iprime)];
-	//	printf("e[%d] %d => y[%d]\n",q+(Q_m*iprime),ulsch->e[q+(Q_m*iprime)],q+(Q_m*j));
+	//		printf("e[%d] %d => y[%d]\n",q+(Q_m*iprime),ulsch->e[q+(Q_m*iprime)],q+(Q_m*j));
       }
     }
     j++;
@@ -524,7 +524,7 @@ int ulsch_encoding(unsigned char *a,
   for (i=0;i<Qprime_ACK;i++) {
     for (q=0;q<Q_m;q++) {
       y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[(q+(Q_m*i))%len_ACK];
-      //      printf("ACK %d => %d (%d,%d,%d)\n",q+(Q_m*i),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
+      //            printf("ACK %d => %d (%d,%d,%d)\n",q+(Q_m*i),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
     }
     j=(j+3)&3;
     r = Rmux_prime - 1 - (i>>2);

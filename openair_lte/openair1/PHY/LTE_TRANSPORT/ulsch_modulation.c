@@ -9,11 +9,53 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
+__m128i dft_in[300],dft_out[300];
+
+void dft_lte(mod_sym_t z,mod_sym_t d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
+
+  switch Msc_PUSCH {
+  case 12:
+    break;
+  case 24:
+    break;
+  case 36:
+    break;
+  case 48:
+    break;
+  case 60:
+    break;
+  case 72:
+    break;
+  case 96:
+    break;
+  case 108:
+    break;
+  case 120:
+    break;
+  case 144:
+    break;
+  case 168:
+    break;
+  case 180:
+    break;
+  case 192:
+    break;
+  case 240:
+    break;
+  case 288:
+    break;
+  case 300:
+    break;
+    
+  }
+}
+
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch) {
+		      LTE_UE_ULSCH_t *ulsch,
+		      unsigned char rag_flag) {
 
 #ifdef IFFT_FPGA
   unsigned char qam64_table_offset = 0;
@@ -27,7 +69,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   short gain_lin_QPSK;
 #endif
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
-  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   mod_sym_t *txptr;
   unsigned int symbol_offset;
@@ -173,20 +215,22 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
     }
   }
-    // Transform Precoding
+
+  // Mapping
+  nsymb = (frame_parms->Ncp==0) ? 14:12;
+  Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
+
+  // Transform Precoding
 
 #ifdef OFDMA_ULSCH
   for (i=0;i<Msymb;i++) {
     ulsch->z[i] = ulsch->d[i]; 
   }
 #else
-
+  dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch-3);
 #endif
 
-  // Mapping
-  nsymb = (frame_parms->Ncp==0) ? 14:12;
-  Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
-
+#ifdef OFDMA_ULSCH
 #ifdef IFFT_FPGA
 
   for (j=0,l=0;l<(nsymb-1);l++) {
@@ -209,8 +253,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
- 
-#else
+#endif 
+#endif
+
+#ifndef OFDMA_ULSCH
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
