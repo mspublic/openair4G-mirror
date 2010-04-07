@@ -419,7 +419,7 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 
     e2[k] = w[ind];
 #ifdef RM_DEBUG
-    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
+    //    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
     printf("RM_TX %d Ind: %d (%d)\n",k,ind,e2[k]);
 #endif
     ind++;
@@ -507,9 +507,7 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
-#ifdef RM_DEBUG
-  printf("lte_rate_matching_turbo_rx: Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",3*(RTC<<5),rvidx, G, Qm,Nl,r);
-#endif
+
 
   if (r < (C-(GpmodC)))
     E = Nl*Qm * (Gp/C);
@@ -520,11 +518,15 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
 
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
 
+#ifdef RM_DEBUG
+  printf("lte_rate_matching_turbo_rx: Clear %d, Ncb %d, Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,Ncb,3*(RTC<<5),rvidx, G, Qm,Nl,r);
+#endif
+
   if (clear==1)
     memset(w,0,Ncb*sizeof(short));
  
   soft_input2 = soft_input + (r*E);
-
+ 
   for (k=0;k<E;k++) {
 
 

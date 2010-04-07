@@ -45,21 +45,24 @@ extern int *sync_corr;
 
 extern LTE_DL_FRAME_PARMS *lte_frame_parms;
 extern LTE_UE_COMMON *lte_ue_common_vars;
-extern LTE_UE_DLSCH **lte_ue_dlsch_vars,**lte_ue_dlsch_vars_cntl;
+extern LTE_UE_DLSCH **lte_ue_dlsch_vars,**lte_ue_dlsch_vars_cntl,**lte_ue_dlsch_vars_ra;
 extern LTE_UE_PDCCH **lte_ue_pdcch_vars;
 extern LTE_UE_PBCH **lte_ue_pbch_vars;
 extern LTE_eNB_COMMON *lte_eNB_common_vars;
-extern LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_cntl;
+extern LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_cntl,*dlsch_eNb_ra;
 extern LTE_eNB_ULSCH **lte_eNB_ulsch_vars;
-extern LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl;
+extern LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra;
 extern LTE_eNb_ULSCH_t **ulsch_eNb;
 extern LTE_UE_ULSCH_t **ulsch_ue;
 extern LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
 
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+extern DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
 extern DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
+extern UE_MODE_t UE_mode;
 
 #include "PHY/LTE_TRANSPORT/extern.h"
 

@@ -38,8 +38,11 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
-  
+  lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
+  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
+  lte_ue_dlsch_vars_ra   = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+ 
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
@@ -47,6 +50,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->first_dlsch_symbol = 2;
+  lte_frame_parms->num_dlsch_symbols  = 6;
+
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -59,7 +64,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   
   generate_64qam_table();
   generate_16qam_table();
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);//allocation
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   printf("Done lte_param_init\n");
 }
 /*
@@ -166,8 +171,8 @@ int test_viterbi(double sigma,
 
 }
 
-int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
-		 LTE_DL_UE_DLSCH_t *dlsch_ue,
+int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
+		 LTE_UE_DLSCH_t *dlsch_ue,
 		 unsigned int coded_bits,
 		 unsigned char NB_RB,
 		 double sigma,
@@ -204,20 +209,19 @@ int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
 
 
 
+  printf("dlsch_eNb->TBS= %d\n",dlsch_eNb->harq_processes[0]->TBS);
 
   while (trial++ < ntrials) {
 
+    //    printf("encoding\n");
     for (i=0;i<block_length;i++) {
       
       test_input[i] = (unsigned char)(taus()&0xff);
     }
 
     dlsch_encoding(test_input,
-		   (block_length<<3),
 		   lte_frame_parms,
-		   dlsch_eNb,    //encoded subframe taking just even subframes corresponding to one spatial stream
-		   0,                // harq_pid
-		   NB_RB);           // number of allocated RB
+		   dlsch_eNb);    //encoded subframe taking just even subframes corresponding to one spatial stream
 
     uerr=0;
 
@@ -229,16 +233,13 @@ int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
 
   
     
-    memset(decoded_output,0,16);
-
-    ret = dlsch_decoding(block_length<<3,
-			 channel_output,
+    //    memset(decoded_output,0,16);
+    //    printf("decoding\n");
+    ret = dlsch_decoding(channel_output,
 			 lte_frame_parms,
-			 dlsch_ue,
-			 0,               //harq_pid
-			 NB_RB);
-    /*        
-    int diffs = 0,puncts=0;
+			 dlsch_ue,0);
+            
+    /*    int diffs = 0,puncts=0;
     for (i=0;i<dlsch_ue->harq_processes[0]->Kplus*3;i++) {
       if (dlsch_ue->harq_processes[0]->d[0][96+i] == 0) {
 	printf("%d punct (%d,%d)\n",i,dlsch_ue->harq_processes[0]->d[0][96+i],dlsch_eNb->harq_processes[0]->d[0][96+i]);
@@ -252,10 +253,14 @@ int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
 	printf("%d same (%d,%d)\n",i,dlsch_ue->harq_processes[0]->d[0][96+i],dlsch_eNb->harq_processes[0]->d[0][96+i]);
     }
     printf("diffs %d puncts %d(%d,%d,%d,%d,%d)\n",diffs,puncts,dlsch_ue->harq_processes[0]->F,coded_bits,3*(block_length<<3),3*dlsch_ue->harq_processes[0]->Kplus,3*dlsch_ue->harq_processes[0]->F+3*(block_length<<3)-coded_bits);
-    
-    
     */
-
+    
+    //    printf("ret %d\n",ret);
+    //    printf("trial %d : i %d/%d : Input %x, Output %x (%x, F %d)\n",trial,0,block_length,test_input[0],
+    //	   dlsch_ue->harq_processes[0]->b[0],
+    //	   dlsch_ue->harq_processes[0]->c[0][0],
+    //	   (dlsch_ue->harq_processes[0]->F>>3));
+    
     if (ret < MAX_TURBO_ITERATIONS+1)
       *iterations = (*iterations) + ret;
     else
@@ -265,11 +270,12 @@ int test_logmap8(LTE_DL_eNb_DLSCH_t *dlsch_eNb,
       *uerrors = (*uerrors) + 1;
     
     for (i=0;i<block_length;i++) {
-    /*        
-      if (test_input[i] != dlsch_ue->harq_processes[0]->b[i])
-	printf("i %d/%d : Input %x, Output %x\n",i,block_length,test_input[i],dlsch_ue->harq_processes[0]->b[i]);
-     */ 
+            
       if (dlsch_ue->harq_processes[0]->b[i] != test_input[i]) {
+	//	printf("i %d/%d : Input %x, Output %x (%x, F %d)\n",i,block_length,test_input[i],
+	//	       dlsch_ue->harq_processes[0]->b[i],
+	//	       dlsch_ue->harq_processes[0]->c[0][i],
+	//	       (dlsch_ue->harq_processes[0]->F>>3));
 
 	*errors = (*errors) + 1;
 //	printf("*%d\n",*errors);	
@@ -541,16 +547,16 @@ int main(int argc, char *argv[]) {
 
   int ret,ret2;
   unsigned int errors,uerrors,errors2,crc_misses,iterations,trials,trials2,block_length,errors3,trials3;
-  double SNR,sigma,rate;
-  unsigned char qbits;
+  double SNR,sigma,rate=.5;
+  unsigned char qbits,mcs;
   
   char done0=0;
   char done1=1;
-  char done2=0;
+  char done2=1;
 
   unsigned short iind;
-  LTE_DL_eNb_DLSCH_t *dlsch_eNb = new_eNb_dlsch(1,4);
-  LTE_DL_UE_DLSCH_t *dlsch_ue = new_ue_dlsch(1,4);
+  LTE_eNb_DLSCH_t *dlsch_eNb = new_eNb_dlsch(1,4);
+  LTE_UE_DLSCH_t *dlsch_ue = new_ue_dlsch(1,4);
   unsigned int coded_bits;
   unsigned char NB_RB=25;
   unsigned char mod_order[2];
@@ -590,19 +596,18 @@ int main(int argc, char *argv[]) {
   phy_init_top(2); //allocation
 
   if (argc>1)
-    rate = atof(argv[1]);
+    mcs = atoi(argv[1]);
   else
-    rate = .33333;
-  printf("Rate %f\n",rate);
+    mcs = 0;
 
   if (argc>2)
     NB_RB = atoi(argv[2]);
   else
     NB_RB = 25;
 
-  printf("NB_RB %d bytes\n",NB_RB);
+  printf("NB_RB %d\n",NB_RB);
 
-  if (argc>3)
+  if (argc>2)
     qbits = atoi(argv[3]);
   else
     qbits = 4;
@@ -613,8 +618,10 @@ int main(int argc, char *argv[]) {
     ( NB_RB * (12 * mod_order[0]) * (12-lte_frame_parms->first_dlsch_symbol-3)) ;     
   printf("Coded_bits (G) = %d\n",coded_bits);
 
-  block_length = ((int)(coded_bits * rate))>>3;
-  printf("Block_length = %d\n",block_length);
+  block_length =  dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]>>3;
+  printf("Block_length = %d bytes (%d bits, rate %f), mcs %d, I_TBS %d, NB_RB %d\n",block_length,
+	 dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1],(double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/coded_bits,
+	 mcs,get_I_TBS(mcs),NB_RB);
 
   // Test Openair0 3GPP encoder
 /*
@@ -635,20 +642,24 @@ int main(int argc, char *argv[]) {
   }
   dlsch_eNb->harq_processes[0]->mimo_mode          = mimo_mode;
   dlsch_eNb->layer_index        = 0;
-  dlsch_eNb->harq_processes[0]->mod_order          = mod_order[0];
-  dlsch_eNb->harq_processes[0]->active             = 0;
   dlsch_eNb->harq_processes[0]->Nl                 = 1;
-  dlsch_eNb->rvidx                                 = 0;
-  
+  dlsch_eNb->harq_processes[0]->mcs                = mcs;
+  dlsch_eNb->harq_processes[0]->TBS                = dlsch_tbs25[get_I_TBS(dlsch_eNb->harq_processes[0]->mcs)][NB_RB-1]; 
+  dlsch_eNb->nb_rb  = 25;
+  dlsch_eNb->harq_processes[0]->rvidx = 0;
+  dlsch_eNb->harq_processes[0]->Ndi = 1;
+  dlsch_eNb->current_harq_pid = 0;
+
   dlsch_ue->harq_processes[0]->mimo_mode           = mimo_mode;
   dlsch_ue->layer_index        = 0;
-  dlsch_ue->harq_processes[0]->mod_order           = mod_order[0];
-  dlsch_ue->harq_processes[0]->active              = 0;
   dlsch_ue->harq_processes[0]->Nl                  = 1;
-  dlsch_ue->rvidx                                  = 0;
-  
+  dlsch_ue->harq_processes[0]->mcs                 = mcs;
+  dlsch_ue->harq_processes[0]->TBS                 = dlsch_tbs25[get_I_TBS(dlsch_ue->harq_processes[0]->mcs)][NB_RB-1]; 
+  dlsch_ue->harq_processes[0]->Ndi = 1;
+  dlsch_ue->nb_rb = 25; 
+  dlsch_ue->current_harq_pid = 0;
 
-  for (SNR=-1;SNR<8;SNR+=.2) {
+  for (SNR=-2;SNR<16;SNR+=.2) {
 
 
     printf("\n\nSNR %f dB\n",SNR);
@@ -665,8 +676,6 @@ int main(int argc, char *argv[]) {
     if (done0 == 0) {    
     
 
-    printf("Turbo %d (%d bits)\n",block_length,8*block_length);
-    
     
     ret = test_logmap8(dlsch_eNb,
 		       dlsch_ue,
@@ -685,7 +694,7 @@ int main(int argc, char *argv[]) {
     if (ret>=0)
       printf("ref: Errors %d (%f), Uerrors %d (%f), CRC Misses %d (%f), Avg iterations %f\n",errors,(double)errors/trials,uerrors,(double)uerrors/trials,crc_misses,(double)crc_misses/trials,(double)iterations/trials);
     
-    if (((double)errors/trials) < 1e-3)
+    if (((double)errors/trials) < 1e-2)
       done0=1;
     } 
     /*    
@@ -708,7 +717,7 @@ int main(int argc, char *argv[]) {
       if (((double)errors3/trials3) < 1e-3)
 	done1=1;
     }
-    */
+    
 
     if (done2 == 0) {  
     
@@ -725,7 +734,7 @@ int main(int argc, char *argv[]) {
       if (((double)errors2/trials2) < 1e-3)
 	done2=1;
     } 
-
+    */
     if ((done0==1) && (done1==1) && (done2==1)) {
       printf("done\n");
       break;

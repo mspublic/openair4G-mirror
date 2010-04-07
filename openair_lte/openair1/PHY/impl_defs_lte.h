@@ -140,6 +140,11 @@ typedef struct {
   unsigned int pdu_fer;             /// FER (in percent) 
 } LTE_UE_PBCH;
 
+typedef enum {
+  PRACH=0,
+  RA_RESPONSE,
+  ULSCH
+} UE_MODE_t;
 /*
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -150,7 +155,6 @@ typedef struct
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-
 } PHY_VARS_eNB;
 
 /// Top-level PHY Data Structure for UE 
