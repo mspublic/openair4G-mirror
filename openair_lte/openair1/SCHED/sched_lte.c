@@ -498,6 +498,8 @@ void openair_sync(void) {
 #endif //EMOS
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
+
+	    UE_mode = PRACH;
 	  }
 	  
 	}

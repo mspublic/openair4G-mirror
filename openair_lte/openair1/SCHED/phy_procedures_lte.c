@@ -26,15 +26,20 @@ ________________________________________________________________*/
 #define DEBUG_PHY
 #endif
 
-#define DIAG_PHY
+#ifdef OPENAIR2
+#include "LAYER2/MAC/extern.h"
+#endif
+//#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
 //use msg for something that should be always printed in any case
 
+#ifndef USER_MODE
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) msg
-//#define debug_msg msg
-
+#else
+#define debug_msg msg
+#endif
 
 
 /*
@@ -60,6 +65,9 @@ int eNb_sync_buffer0[640*6] __attribute__ ((aligned(16)));
 int eNb_sync_buffer1[640*6] __attribute__ ((aligned(16)));
 int *eNb_sync_buffer[2] = {eNb_sync_buffer0, eNb_sync_buffer1};
 
+
+
+
 extern int dlsch_instance_cnt[8];
 extern int dlsch_subframe[8];
 extern pthread_mutex_t dlsch_mutex[8];
@@ -69,13 +77,20 @@ extern pthread_cond_t dlsch_cond[8];
 
 static char dlsch_ue_active = 0;
 static char dlsch_ue_cntl_active = 0;
+static char dlsch_ue_ra_active = 0;
 static char dlsch_eNb_active = 0;
 static char dlsch_eNb_cntl_active = 0;
-
+static char dlsch_eNb_ra_active = 0;
+static char eNb_generate_rar = 0;
 
 int dlsch_errors = 0,ulsch_errors=0;
 int dlsch_received = 0;
 int dlsch_cntl_errors = 0;
+int dlsch_ra_errors = 0;
+
+unsigned char  ulsch_ue_rag_active;
+unsigned short ulsch_ue_rag_frame;
+unsigned char ulsch_ue_rag_subframe;
 
 DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
@@ -87,6 +102,40 @@ DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
 #endif
+
+unsigned short ue_rag_frame;
+unsigned char ue_rag_subframe;
+
+void get_rag_alloc(unsigned char tdd_config,
+		   unsigned char current_subframe, 
+		   unsigned char current_frame,
+		   unsigned short *frame,
+		   unsigned char *subframe) {
+
+  if (tdd_config == 3) {
+    switch (current_subframe) {
+      
+    case 0:
+    case 5:
+    case 6:
+      *subframe = 2;
+      *frame = current_frame+1;
+      break;
+    case 7:
+      *subframe = 3;
+      *frame = current_frame+1;
+      break;
+    case 8:
+      *subframe = 4;
+      *frame = current_frame+1;
+      break;
+    case 9:
+      *subframe = 2;
+      *frame = current_frame+2;
+      break;
+    }
+  }
+}
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
 
@@ -193,7 +242,8 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
   unsigned char harq_pid;
   unsigned int input_buffer_length;
   unsigned int i, aa;
-
+  unsigned char eNb_id = 0,rag_flag=0;
+  
 #ifdef EMOS
   phy_procedures_emos_UE_TX(next_slot);
 #endif
@@ -216,13 +266,27 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
     
     generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
 
-    // get harq_pid from subframe relationship
-    harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
-    if (harq_pid==255) {
-      msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
-      return;
+    if ((ulsch_ue_rag_active == 1) && (ulsch_ue_rag_frame == mac_xface->frame) && (ulsch_ue_rag_subframe == (next_slot>>1))) {
+      harq_pid = 0;
+      ulsch_ue[0]->harq_processes[0]->subframe_scheduling_flag = 1;
+      generate_ue_ulsch_params_from_rar(dlsch_ue_ra->harq_processes[0]->b,
+					ulsch_ue_rag_subframe,
+					ulsch_ue[eNb_id],
+					&PHY_vars->PHY_measurements,
+					lte_frame_parms,
+					eNb_id);
+      ulsch_ue[0]->power_offset = 14;
+      rag_flag = 1;
     }
-
+    else {
+      // get harq_pid from subframe relationship
+      harq_pid = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,(next_slot>>1));
+      if (harq_pid==255) {
+	msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
+	return;
+      }
+      rag_flag=0;
+    }
     if (ulsch_ue[0]->harq_processes[harq_pid]->subframe_scheduling_flag == 1) {
 
       // deactivate service request
@@ -245,7 +309,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 #endif
 
       ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
-      ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0]);
+      ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0],rag_flag);
 
     }
   }
@@ -268,6 +332,11 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
     }
 
 #ifdef DEBUG_PHY
+    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
+	  mac_xface->frame,next_slot,
+	  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
+	  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
     debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL in symbol %d\n",mac_xface->frame,next_slot,PSS_UL_SYMBOL);
 #endif
     generate_pss(lte_ue_common_vars->txdataF,
@@ -356,9 +425,11 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
     //    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
     //      msg("[PHY_PROCEDURES_LTE][eNb_UL] Entering lte_sync_time\n");
 
-    sync_pos = lte_sync_time_eNb(eNb_sync_buffer, lte_frame_parms, eNb_id, 
+    sync_pos = lte_sync_time_eNb(eNb_sync_buffer, 
+				 lte_frame_parms, 
+				 eNb_id, 
 				 (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples));
-
+    
 #ifndef USER_MODE
     time_out = openair_get_mbox();
 #endif
@@ -376,7 +447,12 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 		sync_pos, 
 		eNB_UE_stats[eNb_id].UE_timing_offset[UE_id],
 		time_in, time_out);
+      eNb_generate_rar = 1;
       //#endif
+    }
+    else {
+      debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: No user found\n",mac_xface->frame,last_slot);
+      eNb_generate_rar = 0;
     }
   }
 }
@@ -516,7 +592,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
 void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
 
   int pbch_error;
-
+  
   pbch_error = rx_pbch(lte_ue_common_vars,
 		       lte_ue_pbch_vars[eNb_id],
 		       lte_frame_parms,
@@ -540,36 +616,38 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_last = lte_ue_pbch_vars[eNb_id]->pdu_errors;
   }
   
-
+  
+  if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 100)) {
     debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
-	mac_xface->frame, last_slot, lte_ue_pbch_vars[eNb_id]->pdu_errors, lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq);
+	      mac_xface->frame, last_slot, lte_ue_pbch_vars[eNb_id]->pdu_errors, lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq);
     debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH received frame = %d!\n",
-	mac_xface->frame, last_slot,*((unsigned int*) lte_ue_pbch_vars[eNb_id]->decoded_output));
-
-
-  if (lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq>20) {
-    msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
-    openair_daq_vars.mode = openair_NOT_SYNCHED;
-    openair_daq_vars.sync_state=0;
-#ifdef CBMIMO1
-    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-    //rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
-#endif //CBMIMO1
-    mac_xface->frame = -1;
-    openair_daq_vars.synch_wait_cnt=0;
-    openair_daq_vars.sched_cnt=-1;
+	      mac_xface->frame, last_slot,*((unsigned int*) lte_ue_pbch_vars[eNb_id]->decoded_output));
     
-    lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
-    lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
+    
+    if (lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq>20) {
+      msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
+      openair_daq_vars.mode = openair_NOT_SYNCHED;
+      openair_daq_vars.sync_state=0;
+#ifdef CBMIMO1
 
-    lte_ue_pdcch_vars[eNb_id]->dci_errors = 0;
-    lte_ue_pdcch_vars[eNb_id]->dci_missed = 0;
-    lte_ue_pdcch_vars[eNb_id]->dci_false  = 0;    
-    lte_ue_pdcch_vars[eNb_id]->dci_received = 0;    
+      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+#endif //CBMIMO1
+      mac_xface->frame = -1;
+      openair_daq_vars.synch_wait_cnt=0;
+      openair_daq_vars.sched_cnt=-1;
+      
+      
+      lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
+      lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
+      
+      lte_ue_pdcch_vars[eNb_id]->dci_errors = 0;
+      lte_ue_pdcch_vars[eNb_id]->dci_missed = 0;
+      lte_ue_pdcch_vars[eNb_id]->dci_false  = 0;    
+      lte_ue_pdcch_vars[eNb_id]->dci_received = 0;    
+      
+    }
   }
 }
-
-
 void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {	
 
   unsigned int dci_cnt, i, length;
@@ -601,6 +679,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
   case 0:
   case 6:
   case 8:
+  case 7:
     if (dci_cnt != 1) {
       lte_ue_pdcch_vars[eNb_id]->dci_errors ++;
       lte_ue_pdcch_vars[eNb_id]->dci_missed++;
@@ -644,31 +723,28 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
   if (dci_cnt > 2) {
     msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: received %d>2 DCI!\n",mac_xface->frame,last_slot>>1,dci_cnt);
     //exit_openair=1;
-#endif
-    return;
   }
-
+#endif
 
 #ifdef DEBUG_PHY
   debug_msg("[PHY PROCEDURES UE] subframe %d: dci_cnt %d\n",last_slot>>1,dci_cnt);
 #endif
   for (i=0;i<dci_cnt;i++){
 #ifdef DEBUG_PHY
-      debug_msg("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
-	  dci_alloc_rx[i].format);
+    debug_msg("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
+	      dci_alloc_rx[i].format);
 #endif
     if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
-
+      
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 6) {
 	debug_msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	//exit_openair=1;
-#endif
-	return;
-      }
 
+      }
+#endif
 
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
@@ -692,7 +768,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	//exit_openair=1;
-	return;
       }
 #endif
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
@@ -710,6 +785,30 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #endif
       }
     }
+    else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format1A)) {
+#ifdef DIAG_PHY
+      if ((last_slot>>1) != 7) {
+	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
+	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
+	//exit_openair=1;
+      }
+#endif
+
+      if (generate_ue_dlsch_params_from_dci(last_slot>>1,
+					    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					    RA_RNTI,
+					    format1A,
+					    &dlsch_ue_ra, 
+					    lte_frame_parms,
+					    SI_RNTI,
+					    RA_RNTI,
+					    P_RNTI)==0) {
+	dlsch_ue_ra_active = 1;
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH RA_RNTI format 1A\n");
+#endif
+      }
+    }
     else if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format0)) {
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 8) {
@@ -717,7 +816,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	//exit_openair=1;
-	return;
       }
 #endif
       generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
@@ -741,7 +839,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	//exit_openair=1;
-	return;
 #endif
       /*
 	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
@@ -762,7 +859,6 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #ifdef DIAG_PHY
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
-	return;
 #endif
     }
 
@@ -904,7 +1000,6 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	if (mac_xface->frame < dlsch_cntl_errors)
 	  dlsch_cntl_errors=0;
 
-	
 	if (dlsch_ue_cntl) {
 	  ret = dlsch_decoding(lte_ue_dlsch_vars_cntl[eNb_id]->llr[0],
 			       lte_frame_parms,
@@ -916,13 +1011,68 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  }
 	}   
 	
-	  debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (cntl) ret %d (%d errors)\n",
-	      mac_xface->frame,last_slot,ret,dlsch_cntl_errors);
-	
-      }
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (cntl) ret %d (%d errors)\n",
+		  mac_xface->frame,last_slot,ret,dlsch_cntl_errors);
 
-    }
+      }
+    
+
+      if (dlsch_ue_ra_active == 1) {
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (RA) demod symbols 10,11,12\n",mac_xface->frame,last_slot);
+#endif
       
+	// process symbols 10,11,12 and trigger DLSCH decoding
+	for (m=(11-lte_frame_parms->Ncp*2+1);m<lte_frame_parms->symbols_per_tti;m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars_ra,
+		   lte_frame_parms,
+		   eNb_id,
+		   eNb_id_i,
+		   &dlsch_ue_ra,
+		   m,
+		   dual_stream_UE);
+	
+	//write_output("dlsch_cntl_llr.m","llr",lte_ue_dlsch_vars[eNb_id]->llr[0],40,1,0);
+
+	dlsch_ue_ra_active = 0;
+      
+	if (mac_xface->frame < dlsch_ra_errors)
+	  dlsch_ra_errors=0;
+
+	if (dlsch_ue_ra) {
+	  ret = dlsch_decoding(lte_ue_dlsch_vars_ra[eNb_id]->llr[0],
+			       lte_frame_parms,
+			       dlsch_ue_ra,
+			       ((last_slot>>1)-1)%10);
+	  
+	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	    dlsch_ra_errors++;
+	  }
+	  else {
+	    debug_msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
+	    if (process_rar(dlsch_ue_ra->harq_processes[0]->b) == 0) {
+	      ulsch_ue_rag_active=1;
+	      get_rag_alloc(lte_frame_parms->tdd_config,
+			    ((last_slot>>1)-1)%10,
+			    mac_xface->frame,
+			    &ulsch_ue_rag_frame,
+			    &ulsch_ue_rag_subframe);
+	      UE_mode = RA_RESPONSE;
+	      ulsch_ue[0]->power_offset = 14;
+	      
+	    }
+	  }
+	   
+	
+	  if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 100)) {
+	    msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (RA) ret %d (%d errors)\n",
+		mac_xface->frame,last_slot,ret,dlsch_ra_errors);
+	  }
+	}
+      }
+    }
+
     if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp)))  {
 
       debug_msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Calling pdcch procedures\n",mac_xface->frame,last_slot);
@@ -960,8 +1110,25 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
-    }
     
+
+      if (dlsch_ue_ra_active == 1) {
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (RA) demod symbols 0,1,2\n",mac_xface->frame,last_slot);
+#endif
+	
+	// process symbols 0,1,2
+	for (m=lte_frame_parms->first_dlsch_symbol;m<(4-lte_frame_parms->Ncp);m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars_ra,
+		   lte_frame_parms,
+		   eNb_id,
+		   eNb_id_i,
+		   &dlsch_ue_ra,
+		   m,
+		   dual_stream_UE);
+      }
+    }
     if (((last_slot%2)==1) && (l==0)) {
 	
       if (dlsch_ue_active == 1)  {
@@ -980,6 +1147,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
+    
       if (dlsch_ue_cntl_active == 1)  {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (cntl) demod symbols 3,4,5\n",mac_xface->frame,last_slot);
@@ -996,8 +1164,25 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
+      if (dlsch_ue_ra_active == 1)  {
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (RA) demod symbols 3,4,5\n",mac_xface->frame,last_slot);
+#endif
+	
+	// process symbols 3,4,5
+	for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars_ra,
+		   lte_frame_parms,
+		   eNb_id,
+		   eNb_id_i,
+		   &dlsch_ue_ra,
+		   m,
+		   dual_stream_UE);
+      }
+    
     }
-      
+   
     if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp))) {
 	
       if(dlsch_ue_active == 1) {
@@ -1029,6 +1214,23 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   eNb_id,
 		   eNb_id_i,
 		   &dlsch_ue_cntl,
+		   m,
+		   dual_stream_UE);
+      }
+    
+      if(dlsch_ue_ra_active == 1) {
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (RA) demod symbols 6,7,8\n",mac_xface->frame,last_slot);
+#endif
+	
+	// process symbols 6,7,8
+	for (m=(lte_frame_parms->symbols_per_tti/2)+1;m<(11-lte_frame_parms->Ncp*2);m++)
+	  rx_dlsch(lte_ue_common_vars,
+		   lte_ue_dlsch_vars_ra,
+		   lte_frame_parms,
+		   eNb_id,
+		   eNb_id_i,
+		   &dlsch_ue_ra,
 		   m,
 		   dual_stream_UE);
       }
@@ -1104,13 +1306,95 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
   // DCI generation
   if ((next_slot%2 == 0)) { 
     
-    
+    for(i=0;i<NB_REQ_MAX;i++) {
+      if(Macphy_req_table[0].Macphy_req_table_entry[i].Active){
+	if (Macphy_req_table[0].Macphy_req_table_entry[i].Macphy_data_req.Pdu_type == DCI) {
+	  Macphy_req_table[0].Macphy_req_table_entry[i].Active=0;
+	  //	Macphy_req_table.Macphy_req_table_entry[i].Macphy_data_req.Phy_Resources_Entry->Active=0;
+	  Macphy_req_table[0].Macphy_req_cnt--;
+	  msg("[PHY][eNB PROCEDURES] Got DCI_PDU for %d/%d from MAC\n",mac_xface->frame,next_slot>>1);
     nb_dci_ue_spec = 0;
     nb_dci_common  = 0;
     dlsch_eNb_active = 0;
     dlsch_eNb_cntl_active = 0;
 
     // Get DCI parameters from MAC
+	}
+      }
+    }
+  }
+#ifdef OPENAIR2
+  if ((next_slot%2) == 0) {
+    printf("Checking for DCI in subframe %d, generate_RAR = %d\n",next_slot>>1,eNb_generate_rar);
+
+    if (CH_mac_inst[0].DCI_pdu.Num_common_dci == 1) {
+      
+      generate_eNb_dlsch_params_from_dci(next_slot>>1,
+					 &CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],
+					 CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti,
+					 format1A,
+					 &dlsch_eNb_cntl,
+					 lte_frame_parms,
+					 SI_RNTI,
+					 RA_RNTI,
+					 P_RNTI);
+      dlsch_eNb_cntl_active = 1;
+      nb_dci_common  = 1;
+    }
+    else {
+      dlsch_eNb_cntl_active = 0;
+      nb_dci_common = 0;
+      
+    }
+
+    // RA  
+    if (((next_slot>>1) == 7) && (eNb_generate_rar == 1)) {
+      debug_msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
+
+      // Schedule Random-Access Response 
+      memcpy(&dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+      dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      dci_alloc[0].L          = 3;
+      dci_alloc[0].rnti       = RA_RNTI;
+
+
+      generate_eNb_dlsch_params_from_dci(next_slot>>1,
+					 &RA_alloc_pdu,
+					 RA_RNTI,
+					 format1A,
+					 &dlsch_eNb_ra,
+					 lte_frame_parms,
+					 SI_RNTI,
+					 RA_RNTI,
+					 P_RNTI);
+      dlsch_eNb_ra_active = 1;
+      nb_dci_common++;
+      eNb_generate_rar=0;
+    }
+
+    if (CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci == 1) {
+      
+      generate_eNb_dlsch_params_from_dci(next_slot>>1,
+					 &DLSCH_alloc_pdu2,
+					 C_RNTI,
+					 format2_2A_M10PRB,
+					 dlsch_eNb,
+					 lte_frame_parms,
+					 SI_RNTI,
+					 RA_RNTI,
+					 P_RNTI);
+      dlsch_eNb_active = 1;
+      nb_dci_ue_spec = 1;
+    }
+    else {
+      dlsch_eNb_active = 0;
+      nb_dci_ue_spec=0;
+    }
+  }
+
+#else  // OPENAIR2
+
+  if ((next_slot % 2)==0) {
     switch (next_slot>>1) {
     case 0:
       // Schedule DL control 
@@ -1122,7 +1406,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated CCCH DCI, format 1A\n",mac_xface->frame, next_slot);
 #endif
       nb_dci_common  = 1;
-
+      
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &CCCH_alloc_pdu,
 					 SI_RNTI,
@@ -1133,39 +1417,39 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					 RA_RNTI,
 					 P_RNTI);
       dlsch_eNb_cntl_active = 1;
-
+      
       /*
       // Schedule UL subframe
       memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[1].L          = 3;
       dci_alloc[1].rnti       = C_RNTI;
-#ifdef DEBUG_PHY
+      #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
-#endif
+      #endif
       nb_dci_ue_spec = 1;
-
+      
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
-					 C_RNTI,
-					 (next_slot>>1),
-					 format0,
-					 ulsch_eNb[0],
-					 lte_frame_parms,
-					 SI_RNTI,
-					 RA_RNTI,
-					 P_RNTI);
+      C_RNTI,
+      (next_slot>>1),
+      format0,
+      ulsch_eNb[0],
+      lte_frame_parms,
+      SI_RNTI,
+      RA_RNTI,
+      P_RNTI);
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
-#ifdef DEBUG_pHY
+      #ifdef DEBUG_pHY
       debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
-	  mac_xface->frame,next_slot>>1,harq_pid);
-#endif
+      mac_xface->frame,next_slot>>1,harq_pid);
+      #endif
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       */
-
-      break;
+      
+    break;
     case 1:
-       break;
+      break;
     case 2:
       break;
     case 3:
@@ -1179,9 +1463,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       dci_alloc[0].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
       //#ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame, next_slot);
+      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame, next_slot);
       //#endif
-
+      
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &DLSCH_alloc_pdu2,
 					 C_RNTI,
@@ -1193,31 +1477,31 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					 P_RNTI);
       dlsch_eNb_active = 1;
       break;
- 
+      
     case 5:
       break;
-
+      
     case 7:
       break;
-
+      
     case 8:
-
+      
       // Schedule UL subframe
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-
+      
       //if ((mac_xface->frame&1)==0) {
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
       dci_alloc[0].rnti       = C_RNTI;
       nb_dci_ue_spec = 1;
-
+      
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
 #endif
-
+      
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
 					 C_RNTI,
 					 (next_slot>>1),
@@ -1227,62 +1511,65 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					 SI_RNTI,
 					 RA_RNTI,
 					 P_RNTI);
-
+      
       //#ifdef DEBUG_PHY
       debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
-	  mac_xface->frame,next_slot>>1,harq_pid);
+		mac_xface->frame,next_slot>>1,harq_pid);
       //#endif
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
       //}
       break;
     case 9:
-
+      
       // Schedule UL subframe
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-
+      
       /*
-      if ((mac_xface->frame&1)==1) {
-      memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-      dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
-      dci_alloc[0].L          = 3;
-      dci_alloc[0].rnti       = C_RNTI;
-      nb_dci_ue_spec = 1;
-
-#ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
-#endif
-      generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
-					 C_RNTI,
-					 (next_slot>>1),
-					 format0,
-					 ulsch_eNb[0],
-					 lte_frame_parms,
-					 SI_RNTI,
-					 RA_RNTI,
-					 P_RNTI);
-
-      //#ifdef DEBUG_PHY
-      debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
-	  mac_xface->frame,next_slot>>1,harq_pid);
-      //#endif
-      ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-      }
+	if ((mac_xface->frame&1)==1) {
+	memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
+	dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
+	dci_alloc[0].L          = 3;
+	dci_alloc[0].rnti       = C_RNTI;
+	nb_dci_ue_spec = 1;
+	
+	#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): Generated ULSCH DCI, format 0\n",mac_xface->frame,next_slot,next_slot>>1);
+	#endif
+	generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
+	C_RNTI,
+	(next_slot>>1),
+	format0,
+	ulsch_eNb[0],
+	lte_frame_parms,
+	SI_RNTI,
+	RA_RNTI,
+	P_RNTI);
+	
+	//#ifdef DEBUG_PHY
+	debug_msg("[PHY PROCEDURES eNB] frame %d, subframe %d Setting scheduling flag for ULSCH harq_pid %d\n",
+	mac_xface->frame,next_slot>>1,harq_pid);
+	//#endif
+	ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
+	}
       */
       break;
     }
+  }
+#endif OPENAIR2
+
 
 #ifdef EMOS
-    emos_dump_eNb.dci_cnt[next_slot>>1] = nb_dci_common+nb_dci_ue_spec;
+  emos_dump_eNb.dci_cnt[next_slot>>1] = nb_dci_common+nb_dci_ue_spec;
 #endif
-
-    // if we have DCI to generate do it now
-    if ((nb_dci_common+nb_dci_ue_spec)>0) {
-      //#ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dci_top\n",mac_xface->frame, next_slot);
-      //#endif
-      generate_dci_top(nb_dci_ue_spec,
+  
+  // if we have DCI to generate do it now
+  if (((next_slot%2)==0) && ((nb_dci_common+nb_dci_ue_spec)>0)) {
+    //#ifdef DEBUG_PHY
+    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dci_top\n",mac_xface->frame, next_slot);
+    //#endif
+    generate_dci_top(nb_dci_ue_spec,
 		       nb_dci_common,
 		       dci_alloc,
 		       0,
@@ -1290,11 +1577,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		       lte_frame_parms,
 		       lte_eNB_common_vars->txdataF[eNb_id],
 		       next_slot>>1);
-    }
   }
 
+
   // For even next slots generate dlsch
-  if (next_slot%2 == 0) {
+  if ((next_slot%2) == 0) {
 
     if (dlsch_eNb_active == 1) {
       harq_pid = dlsch_eNb[0]->current_harq_pid;
@@ -1362,7 +1649,52 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     }
 
+    if (dlsch_eNb_ra_active == 1) {
+      input_buffer_length = dlsch_eNb_ra->harq_processes[0]->TBS/8;
+      fill_rar(dlsch_input_buffer,
+	       lte_frame_parms->N_RB_UL,
+	       input_buffer_length,
+	       eNB_UE_stats[eNb_id].UE_timing_offset[0]>>2); 
+
+      generate_eNb_ulsch_params_from_rar(dlsch_input_buffer,
+					 (next_slot>>1),
+					 ulsch_eNb[0],
+					 lte_frame_parms);
+      ulsch_eNb[0]->RAG_active = 1;
+      get_rag_alloc(lte_frame_parms->tdd_config,
+		    next_slot>>1,
+		    mac_xface->frame,
+		    &ulsch_eNb[0]->RAG_frame,
+		    &ulsch_eNb[0]->RAG_subframe);
+
+      //      for (i=0;i<input_buffer_length;i++)
+      //	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
+      
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch (RA) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+#endif
+      
+      dlsch_encoding(dlsch_input_buffer,
+		     lte_frame_parms,
+		     dlsch_eNb_ra);
+      
+      re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+				      AMP,
+				      next_slot/2,
+				      lte_frame_parms,
+				      dlsch_eNb_ra);
+      dlsch_eNb_ra_active = 0;
+
+#ifdef DEBUG_PHY    
+      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d, DLSCH (RA) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
+#endif
+
+    }
+
   }
+
+
+
 #ifdef EMOS
   phy_procedures_emos_eNB_TX(next_slot);
 #endif
@@ -1375,7 +1707,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   unsigned int l, ret,i;
   unsigned int eNb_id=0,UE_id=0;
   int *ulsch_power;
-  unsigned char harq_pid;
+  unsigned char harq_pid,rag_flag;
   
   for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
     
@@ -1394,6 +1726,18 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
+  rag_flag = 0;
+  if ((ulsch_eNb[0]->RAG_active == 1) && 
+      ((last_slot%2)==1) && 
+      (ulsch_eNb[0]->RAG_subframe == (last_slot>>1)) &&
+      (ulsch_eNb[0]->RAG_frame == (mac_xface->frame)))   {
+    harq_pid = 0;
+    ulsch_eNb[0]->RAG_active = 0;
+    ulsch_eNb[0]->harq_processes[0]->subframe_scheduling_flag=1;
+    debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, subframe %d: Doing RAG for UE 0\n",mac_xface->frame,last_slot,last_slot>>1);
+    rag_flag = 1;
+  }
+
   if ((ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && ((last_slot%2)==1)) {
     //#ifdef DEBUG_PHY
     debug_msg("[PHY PROCEDURES_LTE] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,harq_pid);
@@ -1405,7 +1749,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			   last_slot>>1,
 			   eNb_id,  // this is the effective sector id
 			   UE_id,   // this is the UE instance to act upon
-			   ulsch_eNb);
+			   ulsch_eNb,
+			   rag_flag);
+
+
     for (i=0;i<NB_ANTENNAS_RX;i++)
       eNB_UE_stats[eNb_id].UL_rssi[UE_id][i] = dB_fixed(ulsch_power[i]) - PHY_vars->rx_total_gain_dB;
 
@@ -1414,9 +1761,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     
     
     ret = ulsch_decoding(lte_eNB_ulsch_vars[0]->llr,
-		   lte_frame_parms,
-		   ulsch_eNb[UE_id],
-		   last_slot>>1);    
+			 lte_frame_parms,
+			 ulsch_eNb[UE_id],
+			 last_slot>>1,
+			 rag_flag);    
     
 
     ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
