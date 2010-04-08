@@ -15,19 +15,32 @@ ________________________________________________________________*/
 
 
 /********************************************************************************************************************/
-void nodeb_mac_scheduler_tx(u8 Mod_id) {
+void nodeb_mac_scheduler_tx(unsigned char Mod_id,unsigned char subframe) {
 /********************************************************************************************************************/
-  nodeb_scheduler(Mod_id); 
+//  nodeb_scheduler(Mod_id); 
+#ifdef DEBUG_NODEB_SCHEDULER
+  msg("[MAC enB] : Calling eNB scheduler TX (SF %d)\n",subframe);
+#endif
 
-  nodeb_generate_chbch(Mod_id);
+  CH_mac_inst[Mod_id].DCI_pdu.Num_common_dci = 0;
+  CH_mac_inst[Mod_id].DCI_pdu.Num_ue_spec_dci = 0;
 
-  nodeb_generate_sach(Mod_id);
+  if ((subframe == 0))
+    nodeb_generate_bcch(Mod_id);
+
+  if (subframe>4)
+    nodeb_generate_ccch(Mod_id);
+
+  if ((subframe==0)||(subframe > 4))
+    nodeb_generate_dci(Mod_id);
+
+  //  nodeb_generate_dlsch(Mod_id);
   
 }
 /********************************************************************************************************************/
 void nodeb_mac_scheduler_rx(u8 Mod_id) {
 /********************************************************************************************************************/
-  nodeb_get_rach(Mod_id,NB_RACH);
-  nodeb_get_sach(Mod_id);
+//  nodeb_get_rach(Mod_id,NB_RACH);
+//  nodeb_get_ulsch(Mod_id);
 }
 

@@ -37,7 +37,11 @@ extern unsigned short Data_to_read;
 
 
 #ifndef PHY_EMUL
+#ifndef PHYSIM
 #define NB_INST 1
+#else
+extern unsigned char NB_INST;
+#endif
 extern unsigned char NB_CH_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];

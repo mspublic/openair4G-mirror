@@ -13,6 +13,8 @@
 #include "SIMULATION/simulation_defs.h"
 #endif
 
+#define DEBUG_LCHAN_INTERFACE
+
 int clear_lchan_stats(LCHAN_INFO_TABLE_ENTRY *Lchan_entry) {
 
   int kk;
@@ -38,7 +40,7 @@ int clear_lchan_stats(LCHAN_INFO_TABLE_ENTRY *Lchan_entry) {
   Lchan_entry->Lchan_info.NB_RX_SACH_ERRORS=0;
   Lchan_entry->Lchan_info.NB_RX_SACCH_ERRORS=0;
   Lchan_entry->Lchan_info.NB_RX_SACH_MISSING=0;
-  Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
+  //  Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
   Lchan_entry->Lchan_info.Lchan_status_tx=IDLE;
   Lchan_entry->Lchan_info.Lchan_status_rx=IDLE;
 
@@ -94,7 +96,7 @@ int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim) {
       Table[i].Lchan_info.NB_RX_SACH_ERRORS=0;
       Table[i].Lchan_info.NB_RX_SACCH_ERRORS=0;
       Table[i].Lchan_info.NB_RX_SACH_MISSING=0;
-      Table[i].Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
+      //      Table[i].Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
 
 
       Table[i].Lchan_info.Lchan_status_tx=IDLE;
@@ -143,6 +145,10 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
   LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry_dil;
   unsigned short i,In_idx,Idx1,Idx2;
+
+#ifdef DEBUG_LCHAN_INTERFACE
+  msg("[MAC][LCHAN INTERFACE] Received config request from RRC for lchan %d\n",Req->Lchan_id.Index);
+#endif
   switch(Req->Lchan_type){
   case BCCH: 
     Lchan_entry=&CH_mac_inst[Mod_id].Bcch_lchan;
@@ -153,8 +159,8 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
   case DCCH: 
     Lchan_entry=&CH_mac_inst[Mod_id].Dcch_lchan[Req->UE_CH_index];
     Lchan_entry->Next_sched_limit=Mac_rlc_xface->frame + DCCH_SCHED_PERIOD;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
-    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
     msg("\n[LCHAN XFACE][CH %d]TTI %d: DCCH %d config,UE_index %d\n", 
 	NODE_ID[Mod_id],
 	Mac_rlc_xface->frame,
@@ -166,8 +172,8 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
     i=(Req->Lchan_id.Index & RAB_OFFSET) - DTCH_BD;
     Lchan_entry=&CH_mac_inst[Mod_id].Dtch_lchan[i][Req->UE_CH_index];
     Lchan_entry->Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
-    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
     msg("\n[LCHAN XFACE][CH %d] TTI %d: DTCH %d, UE_INDEX=%d,\n",
 	NODE_ID[Mod_id],
 	Mac_rlc_xface->frame,
@@ -242,8 +248,8 @@ u16 ue_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
       return 0;
     }		
     Lchan_entry=&UE_mac_inst[Mod_id].Dcch_lchan[Req->UE_CH_index];
-    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=UL_TIME_ALLOC;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=DL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=UL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=DL_TIME_ALLOC;
     break;
 
   case DTCH_BD:
@@ -257,8 +263,8 @@ u16 ue_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
       return 0;
     }
     Lchan_entry=&UE_mac_inst[Mod_id].Dtch_lchan[i][Req->UE_CH_index];
-    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=UL_TIME_ALLOC;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=DL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=UL_TIME_ALLOC;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=DL_TIME_ALLOC;
     break;
     
   case DTCH_DIL:
@@ -443,10 +449,9 @@ MAC_MEAS_REQ_ENTRY*  ue_mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req){
     }
   }
 }
-/********************************************************************************************************************/
+/*****************************************************************************************************************
 void mac_update_meas(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas){
 
-/********************************************************************************************************************/
   MAC_MEAS_IND Meas_ind;
   unsigned char Status,i;
   if(Meas_entry->Status==IDLE ){
@@ -462,24 +467,25 @@ void mac_update_meas(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEA
     Meas_entry->Mac_meas_req.Mac_meas.Sinr[i]=
       (Meas_entry->Mac_meas_req.Mac_meas.Sinr[i]*Meas_entry->Mac_meas_req.Mac_avg.Sinr_forgetting_factor)
       +(UL_meas->Sub_band_sinr[i]*(1-Meas_entry->Mac_meas_req.Mac_avg.Sinr_forgetting_factor));         
-  /*
-    Status=mac_check_meas_ind(Meas_entry);
-    if(Status== MEAS_REPORT){
-    Meas_ind.Lchan_id.Index=Meas_entry->Mac_meas_req.Lchan_id.Index;
-    Meas_ind.Process_id=Meas_entry->Mac_meas_req.Process_id;
-    Meas_ind.Meas_status=Status;
-    memcpy(&Meas_ind.Meas,(MAC_MEAS_T*)&Meas_entry->Mac_meas_req.Mac_meas,MAC_MEAS_T_SIZE);
-    if (Is_rrc_registered==1){
-    msg("[MAC][INST %d] MEAS IND TO RRC on Lchan_id %d \n",Mod_id,Meas_ind.Lchan_id.Index);
-    Rrc_xface->mac_rrc_meas_ind(Mod_id,Meas_ind);
-    //exit(0);
+  
+  //  Status=mac_check_meas_ind(Meas_entry);
+  //  if(Status== MEAS_REPORT){
+  //  Meas_ind.Lchan_id.Index=Meas_entry->Mac_meas_req.Lchan_id.Index;
+  //  Meas_ind.Process_id=Meas_entry->Mac_meas_req.Process_id;
+  //  Meas_ind.Meas_status=Status;
+  //  memcpy(&Meas_ind.Meas,(MAC_MEAS_T*)&Meas_entry->Mac_meas_req.Mac_meas,MAC_MEAS_T_SIZE);
+  // if (Is_rrc_registered==1){
+  //  msg("[MAC][INST %d] MEAS IND TO RRC on Lchan_id %d \n",Mod_id,Meas_ind.Lchan_id.Index);
+  //  Rrc_xface->mac_rrc_meas_ind(Mod_id,Meas_ind);
+  //  //exit(0);
 
-    }
-    }
-  */
+  //  }
+  //  }
+
 }
-//------------------------------------------------------------------------------------------------------------------//
-//------------------------------------------------------------------------------------------------------------------//
+  */
+
+
 u8 mac_check_meas_trigger(MAC_MEAS_REQ *Meas_req){
   //------------------------------------------------------------------------------------------------------------------//
   /*if(Meas_req->Mac_meas.Rssi < Meas_req->Meas_trigger.Rssi)

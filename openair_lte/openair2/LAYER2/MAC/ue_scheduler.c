@@ -23,8 +23,8 @@ void ue_mac_scheduler_tx(u8 Mod_id) {
   u8 i=0;
 
 
- for(i=0;i<NB_SIG_CNX_UE;i++) 
-    ue_scheduler(Mod_id,i);
+  // for(i=0;i<NB_SIG_CNX_UE;i++) 
+  //    ue_scheduler(Mod_id,i);
 
  for(i=0;i<NB_SIG_CNX_UE;i++) 
     ue_generate_rach(Mod_id,i);  

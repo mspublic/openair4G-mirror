@@ -46,7 +46,7 @@ ________________________________________________________________*/
 #define RRC_WAIT_MEAS_CNT 150
 
 
-#define NB_UE_BRDCAST 5
+#define NB_UE_BRDCAST 2
 
 
 #define CH_READY 0
@@ -169,24 +169,24 @@ u32 Next_check_frame;
 
 
 typedef struct{
-  unsigned char Rv_tb_idx;//4 MSB bits for Nb Tb; 4 LSB bits for Tb index
-  unsigned char Tb_data_size;
+  //  unsigned char Rv_tb_idx;//4 MSB bits for Nb Tb; 4 LSB bits for Tb index
+  //  unsigned char Tb_data_size;
   unsigned char CH_id;
   unsigned short UE_list[NB_UE_BRDCAST];
-  unsigned char Nb_rach_res;
-  unsigned char Rach_time_alloc;
-  unsigned short Rach_freq_alloc;
+  //  unsigned char Nb_rach_res;
+  //  unsigned char Rach_time_alloc;
+  //  unsigned short Rach_freq_alloc;
 }__attribute__ ((__packed__)) CH_BCCH_HEADER; 
 #define CH_BCCH_HEADER_SIZE sizeof(CH_BCCH_HEADER)
 
 typedef struct{
   unsigned char CH_id;
-unsigned short Rv_tb_idx;//4 MSB bits for Nb Tb; 4 LSB bits for Tb index
-unsigned short Tb_data_size;
-unsigned char Nb_cfg_req;
-unsigned char Nb_def_req;
-unsigned char Nb_meas_req;
- unsigned char Nb_sens_req;
+  unsigned short Rv_tb_idx;//4 MSB bits for Nb Tb; 4 LSB bits for Tb index
+  unsigned short Tb_data_size;
+  unsigned char Nb_cfg_req;
+  unsigned char Nb_def_req;
+  unsigned char Nb_meas_req;
+  unsigned char Nb_sens_req;
 }__attribute__ ((__packed__)) CH_CCCH_HEADER;
 #define CH_CCCH_HEADER_SIZE sizeof(CH_CCCH_HEADER)
 

@@ -19,12 +19,12 @@ ________________________________________________________________*/
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
-//#define DEBUG_SCHEDULER 1
+#define DEBUG_SCHEDULER 1
 
 void macphy_scheduler(unsigned char last_slot) {
   u8 i,j;
  
-  if(last_slot == 3)
+  if(last_slot == 19)
     Mac_rlc_xface->frame++;
 
 
@@ -41,10 +41,10 @@ void macphy_scheduler(unsigned char last_slot) {
     }
 
     else{
-      if (last_slot == (mac_xface->slots_per_frame-3)) {
+      if ((last_slot%2) == 1) {
 	if (Is_rrc_registered==1) {
 #ifdef DEBUG_SCHEDULER
-	  msg("/******************************MACPHY_SCHEDULER:Frame %d, CALLING PDCP INST %d***********************/\n",Mac_rlc_xface->frame,i);
+	  msg("/******************************MACPHY_SCHEDULER:Frame %d (subframe %d), CALLING PDCP INST %d***********************/\n",Mac_rlc_xface->frame,last_slot>>1,i);
 #endif
 	  if(i==0){
 	      Rrc_xface->Frame_index=Mac_rlc_xface->frame;
@@ -55,13 +55,13 @@ void macphy_scheduler(unsigned char last_slot) {
 	  }
 	  
 #ifdef DEBUG_SCHEDULER
-	    msg("[OPENAIR2]/******************************MACPHY_SCHEDULER:Frame %d, CALLING RRC INST %d***********************/\n",Mac_rlc_xface->frame,i);
+	    msg("[OPENAIR2]/******************************MACPHY_SCHEDULER:Frame %d (%d), CALLING RRC INST %d***********************/\n",Mac_rlc_xface->frame,last_slot/2,i);
 #endif
 	    
 	    Rrc_xface->rrc_rx_tx(i);
 	}
-	// call MAC procedures during last slot of mini-frame n
-	// CH : get data for frame n+1, schedule n+1 (TX), schedule n+2 (RX)
+	// call MAC TX procedures 
+	// CH : get data for subframe n+1, schedule n+1 (TX), schedule n+2 (RX)
 	// CH : generate chbch,sach : data_ind (n+1)
 	if (Mac_rlc_xface->Is_cluster_head[i] == 1) {
 	  // If we are in the last slot of the mini-frame now, then generate the CHSCH/CHBCH in the next slot
@@ -71,11 +71,11 @@ void macphy_scheduler(unsigned char last_slot) {
 #ifdef DEBUG_SCHEDULER
 	  msg("[OPENAIR2]/******************************MACPHY_SCHEDULER:Frame %d,  CALLING Nodeb_TX INST %d last_slot %d***********************/\n",Mac_rlc_xface->frame,i,last_slot);
 #endif
-	  nodeb_mac_scheduler_tx(i);      
+	  nodeb_mac_scheduler_tx(i,((last_slot+2)%20)>>1);      
 	}
 	else{ //This is an UE
 #ifdef DEBUG_SCHEDULER
-	  msg("[MAC][UE] Frame %d, last_slot %d: CALLING SCHEDULER\n", Mac_rlc_xface->frame,last_slot);
+	  msg("[MAC][UE] Frame %d, last_slot %d: CALLING SCHEDULER\n", Mac_rlc_xface->frame,last_slot+2);
 	  msg("/******************************MACPHY_SCHEDULER: CALLING UE TX/RX INST %d***********************/\n",i);
 #endif
 	  ue_mac_scheduler_tx(i-NB_CH_INST); // ue_mac_scheduler_tx
@@ -83,7 +83,7 @@ void macphy_scheduler(unsigned char last_slot) {
 	}
       }
       
-      else if (last_slot == 3) {  // call MAC RX procedures before DL/UL switch
+      else if ((last_slot %2)==0) {  // call MAC RX procedures before DL/UL switch
 	// CH : get_rach,get_sach : data_req (n+1)
 	// UE : get_chbch,get_sach : data_req (n+1)
 	// UE : generate sach : data_ind(n+1)

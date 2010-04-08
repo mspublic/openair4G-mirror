@@ -23,6 +23,7 @@ ________________________________________________________________*/
 #include "COMMON/platform_constants.h"
 
 #include "COMMON/mac_rrc_primitives.h"
+#include "PHY/defs.h"
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
@@ -146,7 +147,7 @@ ________________________________________________________________*/
 #define NB_UL_SCHED_MAX NUMBER_UL_SACH_MAX 
 
 
-#define SACH_PAYLOAD_SIZE_MAX (TB_SIZE_MAX * NB_TB_BUFF_MAX) //1600
+#define SCH_PAYLOAD_SIZE_MAX (TB_SIZE_MAX * NB_TB_BUFF_MAX) //1600
 #define RACH_PAYLOAD_SIZE_MAX 20//until solving pb of fifos (24)
 #define MRBCH_PAYLOAD_SIZE_MAX 20//until solving pb of fifos (24)
 #define NB_RACH_MAX 2
@@ -156,11 +157,6 @@ ________________________________________________________________*/
 #define DUMMY_RACH_SIZE_BYTES 16
 
 
-#define NB_TIME_ALLOC 4 //NB_TX_PHASES : CHBCH, DL, UL, RACH
-//CHBCH, DL, UL,Rach 
-#define CHBCH_TIME_ALLOC 0
-#define DL_TIME_ALLOC 0x35
-#define UL_TIME_ALLOC 0x25
 
 #define SCHED_LONG_MAW 32 
 #define SCHED_SHORT_MAW 8 
@@ -202,7 +198,7 @@ ________________________________________________________________*/
 #define NUMBER_HARQ_PROCESS_MAX 32
 #define MAX_NUMBER_TB_PER_LCHAN 32//NUMBER_HARQ_PROCESS_MAX
 #define NUMBER_OF_MEASUREMENT_SUBBANDS 16//NUMBER_OF_FREQUENCY_GROUPS 
-#define MAX_NB_SCHED NUMBER_OF_FREQUENCY_GROUPS 
+#define MAX_NB_SCHED 25//NUMBER_OF_FREQUENCY_GROUPS 
 
 
 
@@ -231,149 +227,132 @@ ________________________________________________________________*/
 #define SINR_THRES2 (3)
 
 
-/*! \brief Downlink SACCH Feedback Information
- */
+/*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
+#define NUM_DCI_MAX 32
+
 typedef struct {
-  unsigned char  Pc:2;          /*!< \brief Power control bits (0,1,-1)*/
-  unsigned short  Ack:14;           /*!< \brief HARQ acknowlegde receipt, bit-mapped for 8 HARQ processes*/
-} __attribute__ ((__packed__)) DL_SACCH_FB;
+  unsigned char E:1;
+  unsigned char T:1;
+  unsigned char RAPID:6;
+} __attribute__((__packed__))RA_HEADER_RAPID;
 
-
-/*! \brief Dowlink Allocation information for frame
- */
 typedef struct {
-  //  unsigned char  Time_alloc;       //need this info
-  unsigned char Nb_tb:5;           /*!< \brief Number of TBs for this PDU*/
-  unsigned char Coding_fmt:3;      /*!< \brief Coding Format for this PDU*/
-  unsigned short Freq_alloc;       /*!< \brief Frequency Allocation for this PDU*/
-  LCHAN_ID  Lchan_id;              /*!< \brief MAC PDU Logical Channel ID.  */
-  DL_SACCH_FB  DL_sacch_fb;        /*!< \brief Feedback information (ACK,CSI,PC)*/
-} __attribute__ ((__packed__)) DL_SACCH_PDU;
+  unsigned char E:1;
+  unsigned char T:1;
+  unsigned char R:2;
+  unsigned char BI:4;
+} __attribute__((__packed__))RA_HEADER_BI;
 
-
-/*! \brief Uplink Allocation information for user
- */
 typedef struct {
-  //  unsigned char  Time_alloc;          /*!< \brief Time allocation vector of UL-SACH reservation*/
-  LCHAN_ID Lchan_id;         /*!< \brief Logical Channel ID for allocation*/
-  unsigned short Freq_alloc;   /*!< \brief Frequency allocation (max 16 group)*/
-  unsigned char  Nb_tb:5;      /*!< \brief Number of TBs for this allocation*/
-  unsigned char  Coding_fmt:3; /*!< \brief Coding Format for this allocation*/
-} __attribute__ ((__packed__)) UL_ALLOC_PDU;
+  unsigned char R:1;
+  unsigned short Timing_Advance_Command:11;
+  unsigned char hopping_flag:1;
+  unsigned short rb_alloc:10;
+  unsigned char mcs:4;
+  unsigned char TPC:3;
+  unsigned char UL_delay:1;
+  unsigned char cqi_req:1;
+  unsigned short t_crnti;
+} __attribute__((__packed__))RAR_PDU;
 
+typedef struct {
+  unsigned char R:2;
+  unsigned char E:1;
+  unsigned char LCID:5;
+  unsigned char F:1;
+  unsigned char L:7;
+} __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
-/*! \brief  CHBCH PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
+typedef struct {
+  unsigned char R:2;
+  unsigned char E:1;
+  unsigned char LCID:5;
+  unsigned char F:1;
+  unsigned short L:15;
+} __attribute__((__packed__))SCH_SUBHEADER_LONG;
+
+typedef struct {
+  unsigned char R:2;
+  unsigned char E:1;
+  unsigned char LCID:5;
+} __attribute__((__packed__))SCH_SUBHEADER_FIXED;
+
+typedef struct {
+  unsigned char LCGID:2;
+  unsigned char Buffer_size:6;
+} __attribute__((__packed__))BSR_SHORT;
+
+typedef struct {
+  unsigned char Buffer_size0:6;
+  unsigned char Buffer_size1:6;
+  unsigned char Buffer_size2:6;
+  unsigned char Buffer_size3:6;
+} __attribute__((__packed__))BSR_LONG;
+
+typedef struct {
+  unsigned char R:2;
+  unsigned char TA:6;
+} __attribute__((__packed__))TIMING_ADVANCE_CMD;
+
+typedef struct {
+  unsigned char R:2;
+  unsigned char PH:6;
+} __attribute__((__packed__))POWER_HEADROOM_CMD;
+
+typedef struct {
+
+  unsigned char Num_ue_spec_dci ; /*!< \brief Number of SACH in the current DL_SACCH payload */ 
+  unsigned char Num_common_dci  ; /*!< \brief Number of SACH available in the UL_SACH period */
+  DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;/*!< \brief Collection of DL_SACCH PDUs */
+} __attribute__((__packed__))DCI_PDU;
+
+typedef struct {
+  char Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+} __attribute__((__packed__))CCCH_PDU;
+
 typedef struct {
 
   unsigned char Num_bytes_bcch ; /*!< \brief Number of bytes contained in the current BCCH payload */
-  unsigned char Num_bytes_ccch ; /*!< \brief Number of bytes contained in the current CCCH payload */
-  unsigned char ccch_fragment_index ;
-  unsigned char Num_dl_sach ; /*!< \brief Number of SACH in the current DL_SACCH payload */ 
-  unsigned char Num_ul_sach ; /*!< \brief Number of SACH available in the UL_SACH period */
-  DL_SACCH_PDU DL_sacch_pdu[NUMBER_DL_SACH_MAX] ;/*!< \brief Collection of DL_SACCH PDUs */
-  UL_ALLOC_PDU UL_alloc_pdu[NUMBER_UL_SACH_MAX] ;/*!< \brief Collection of UL Alloc PDUs */
-  char Bcch_payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief BCCH payload */
-  char Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
-} __attribute__((__packed__))CHBCH_PDU;
+  char Bcch_payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+} __attribute__((__packed__))BCCH_PDU;
 
+// DLSCH LCHAN IDs
+#define CCCH_LCHANID 0
+#define UE_CONT_RES 28
+#define TIMING_ADVANCE 29
+#define DRX 30
+#define PADDING 31
 
+// ULSCH LCHAN IDs
+#define POWER_HEADROOM 26
+#define CRNTI 27
+#define TRUNCATED_BSR 28
+#define SHORT_BSR 29
+#define LONG_BSR 30
 
-/*! \brief  MRBCH PDU Primitive.  This data structure reflects the MRBCH payload*/
-typedef struct {
-  char Mrbch_payload[MRBCH_PAYLOAD_SIZE_MAX];
-} MRBCH_PDU;
-
-
-/*! \brief  RACH PDU Primitive.  This data structure reflects the UL RACH payload*/
-typedef struct {
-  #ifdef PHY_EMUL
-  unsigned short Pdu_size;
-  //unsigned char CH_id;//I need this for RAB Identification
-#else
-  unsigned char Rach_msg_type;
-#endif //PHY_EMUL
-  char *Rach_payload; /*! \brief RACH payload */
-} __attribute__ ((__packed__)) RACH_PDU;
-
-/*! \brief Uplink SACCH Feedback Information
- */
-typedef struct {
-  unsigned char  Pc:2;          /*!< Power control bits (0,1,-1)*/
-  unsigned char  Qdepth;      ///*!< Backlog of corresponding UL Logical Channel RLC Queue;  1 bits for DTCH LCHAN index (NB DTCH MAX 8)*/
-  unsigned short  Ack ;           /*!<  HARQ acknowlegde receipt, bit-mapped for 8 HARQ processes*/
-  //Sinr[MAX_UL_SCHED_USER_PER_FRAME][NUMBER_OF_FREQUENCY_GROUPS/MAX_UL_SCHED_USER_PER_FRAME]? 
-  unsigned int cqi;
-  unsigned char Wideband_sinr;
-
-} __attribute__ ((__packed__)) UL_SACCH_FB;
-
-/*! \brief Uplink RACH Feedback Information
- */
-typedef struct {
-  unsigned char Link_index;   /*!<2 MSB for CH_index and 6 LSB for UE_index*/
-  unsigned char  Qdepth;      /*!< Backlog of corresponding UL Logical Channel RLC Queue;  1 bits for DTCH LCHAN index (NB DTCH MAX 8)*/
-  //Sinr[MAX_UL_SCHED_USER_PER_FRAME][NUMBER_OF_FREQUENCY_GROUPS/MAX_UL_SCHED_USER_PER_FRAME]? 
-  unsigned int cqi_low;
-  unsigned int cqi_high;
-  unsigned char Wideband_sinr; 
-} __attribute__ ((__packed__)) UL_RACH_FB;
-
-
-/*! \brief Uplink SACCH PDU Structure
- */
-typedef struct {
-
-#ifdef PHY_EMUL
-  LCHAN_ID Lchan_id;          /*!< \brief MAC PDU Logical Channel ID */
-  unsigned short Pdu_size;
-  // unsigned CH_id  __attribute__ ((packed));  //I need this for RAB Identification
-#endif //PHY_EMUL
-  //  unsigned int  Seq_index;     /*!< MAC PDU sequence index (HARQ), 8 times 4 bits*/
-  UL_SACCH_FB   UL_sacch_fb ;  /*!< Feedback information (ACK,CSI,PC)*/
-} __attribute__ ((__packed__)) UL_SACCH_PDU;
-
-/*! \brief Downlink SACH PDU Structure
+/*! \brief Downlink SCH PDU Structure
  */
 typedef struct {
 #ifdef PHY_EMUL
   // unsigned char CH_id;
   //LCHAN_ID Lchan_id;   //H.A
-  unsigned short Pdu_size;
+  unsigned short Pdu_size[2];
 #endif //PHY_EMUL
-  char Sach_payload[SACH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
-} __attribute__ ((__packed__)) DL_SACH_PDU;
+  char payload[2][SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  unsigned short Pdu_size;
+} __attribute__ ((__packed__)) DLSCH_PDU;
 
-/*! \brief Uplink SACH PDU Structure
+/*! \brief Uplink SCH PDU Structure
  */
 typedef struct {
-  UL_SACCH_PDU UL_sacch_pdu;
-  char Sach_payload[SACH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
-} __attribute__ ((__packed__)) UL_SACH_PDU;
-
-/*! \brief Downlink PHY measurement structure
- */
-typedef struct {
-  char Wideband_rssi_dBm;                          /*!< This is a wideband rssi (signal plus interference) measurement of Node-B signal strength summed over receive antennas.  This is derived from the downlink CHSCH pilot symbol */
-  char Wideband_interference_level_dBm;            /*!< This is a wideband interference level measurement (common to all Node-B measurements!)*/
-  //  char Subband_spatial_sinr[NUMBER_OF_MEASUREMENT_SUBBANDS]; /*!< This measures the downlink SINR on a sub-carrier basis for each transmit/receive antenna pair*/
-  char Sub_band_sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];          /*!< This measures the downlink aggregate SINR per frequency group*/ 
-  char Wideband_sinr_dB;
-} __attribute__ ((__packed__))DL_MEAS;
-
-/*! \brief Uplink PHY measurement structure
- */
-typedef struct {
-  char Wideband_rssi_dBm;                          /*!< This is a wideband rssi (signal plus interference) measurement of UE signal strength summed over receive antennas.This is derived from the UPLINK SCH pilot symbol*/
-  char Wideband_interference_level_dBm;           /*!< This is a wideband interference level measurement (common to all UE measurements!)*/
-  char Sub_band_sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];          /*!< This measures the uplink aggregate SINR per frequency group*/
-} __attribute__ ((__packed__))UL_MEAS; 
-
-
+  char payload[SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  unsigned short Pdu_size;
+} __attribute__ ((__packed__)) ULSCH_PDU;
 
 #ifdef PHY_EMUL
 #include "SIMULATION/PHY_EMULATION/impl_defs.h"
 #else 
-#include "PHY/impl_defs.h"
+#include "PHY/impl_defs_top.h"
 #endif
 
 
@@ -502,14 +481,18 @@ typedef struct {
 
 typedef struct{
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
-  UL_ALLOC_PDU UL_alloc_pdu;
+  //  UL_ALLOC_PDU UL_alloc_pdu;
   //  char Activation_tti;
 } TX_OPS;
 
 
 typedef struct{
   unsigned short Node_id;
-  CHBCH_PDU TX_chbch_pdu;
+  unsigned char Num_dlsch;
+  unsigned char Num_ulsch;
+  DCI_PDU DCI_pdu;
+  BCCH_PDU BCCH_pdu;
+  CCCH_PDU CCCH_pdu;
   LCHAN_INFO_TABLE_ENTRY Bcch_lchan;
   LCHAN_INFO_TABLE_ENTRY Ccch_lchan;
   LCHAN_INFO_TABLE_ENTRY Dcch_lchan[NB_CNX_CH+1];
@@ -517,10 +500,7 @@ typedef struct{
   LCHAN_INFO_DIL_TABLE_ENTRY Dtch_dil_lchan[NB_RAB_MAX][NB_CNX_CH+1][NB_CNX_CH-1];
   //MEAS_REQ_TABLE Meas_table;
   DEFAULT_CH_MEAS Def_meas[NB_CNX_CH+1];
-  RACH_PDU RX_rach_pdu;
-  UL_SACH_PDU RX_UL_sach_pdu;
-  UL_SACCH_PDU RX_UL_sacch_pdu;
-  UL_MEAS UL_meas;
+  ULSCH_PDU RX_UL_sach_pdu;
   //DL_MEAS DL_meas;
   RX_SCHED Rx_sched[3][NUMBER_UL_SACH_MAX]; 
   unsigned char Nb_rx_sched[3];
@@ -533,6 +513,8 @@ typedef struct{
 }CH_MAC_INST;
 
 
+
+
 typedef struct{
   unsigned short Node_id;
   LCHAN_INFO_TABLE_ENTRY Bcch_lchan[NB_SIG_CNX_UE];
@@ -542,10 +524,10 @@ typedef struct{
   LCHAN_INFO_TABLE_ENTRY Dtch_dil_lchan[NB_RAB_MAX][NB_SIG_CNX_UE][NB_CNX_CH-1];
   //MEAS_REQ_TABLE Meas_table;
   DEFAULT_UE_MEAS Def_meas[NB_SIG_CNX_UE];
-  CHBCH_PDU RX_chbch_pdu[NB_CNX_UE];
-  DL_SACH_PDU RX_DL_sach_pdu[NB_CNX_UE];
+  //  DCI_PDU RXDCI_pdu[NB_CNX_UE];
+  DLSCH_PDU RX_DLSCH_pdu[NB_CNX_UE];
   //  UL_MEAS UL_meas[];
-  DL_MEAS DL_meas[NB_CNX_UE];
+  //  DL_MEAS DL_meas[NB_CNX_UE];
   RX_SCHED Rx_sched[NB_CNX_UE][3][NUMBER_UL_SACH_MAX]; 
   unsigned char Nb_rx_sched[NB_CNX_UE][3];
   TX_OPS Tx_ops[NB_CNX_UE][3][NUMBER_UL_SACH_MAX];
@@ -577,7 +559,7 @@ void mac_top_cleanup(unsigned char Mod_id);
 void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index);
 
 //nodeb_scheduler.c
-void nodeb_mac_scheduler_tx(unsigned char Mod_id) ;
+void nodeb_mac_scheduler_tx(unsigned char Mod_id,unsigned char subframe) ;
 void nodeb_mac_scheduler_rx(unsigned char Mod_id) ;
 
 //ue_scheduler.c
@@ -586,31 +568,31 @@ void ue_mac_scheduler_rx(unsigned char Mod_id) ;
 
 //nodeb_control_plane_procedures.c
 
-/*!\fn void nodeb_generate_chbch(unsigned char Mod_id)
+/*!\fn void nodeb_generate_dci(unsigned char Mod_id)
 \brief This routine first retrieves the BCCH and CCCH logical channels from RRC.  It then fills the UL and DL allocation
-maps as well as feedback channels in a CHBCH_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the 
+maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the 
 PHY CHBCH transmitter.
 @param Mod_id The MAC instance on which to act.
 */
-void nodeb_generate_chbch(unsigned char);
+void nodeb_generate_dci(unsigned char);
 
 /*!\fn void ch_fill_dil_map(unsigned char Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the CHBCH_PDU entries corresponding to a particular direct link logical channel
+\brief This routine fills the DCI_PDU entries corresponding to a particular direct link logical channel
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
 */
 void ch_fill_dil_map(unsigned char Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry);
 
 /*!\fn void ch_fill_dl_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the CHBCH_PDU entries corresponding to a particular downlink logical channel
+\brief This routine fills the DCI_PDU entries corresponding to a particular downlink logical channel
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
 */
 void ch_fill_dl_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
 
 /*!\fn void ch_fill_ul_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the CHBCH_PDU entries corresponding to a particular uplink logical channel.  It operates in TTI \f$N-1\f$
-and prepares a CHBCH_PDU which will be on-air in TTI \f$N\f$.  Furthermore, the UL_MAP is used to schedule the RX resources (UL-SACH)
+\brief This routine fills the DCI_PDU entries corresponding to a particular uplink logical channel.  It operates in TTI \f$N-1\f$
+and prepares a DCI_PDU which will be on-air in TTI \f$N\f$.  Furthermore, the UL_MAP is used to schedule the RX resources (UL-SACH)
 for TTI \f$N+1\f$.
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
@@ -624,61 +606,19 @@ scheduling for the next TTI based on measurement feedback (RF and traffic) from 
 */
 void nodeb_scheduler(unsigned char Mod_id);
 
-/*!\fn void nodeb_get_sach(unsigned char Mod_id)
-\brief This routine generates a MACPHY_DATA_REQs in order to program NodeB PHY to receive a SACH and corresponding SCH.  This is
-invoked in TTI \f$N-1\f$ for action in TTI \f$N\f$.  The result is seen by NodeB MAC in TTI \f$N+1\f$ 
-@param Mod_id       The MAC instance on which to act
-*/
-void nodeb_get_sach(unsigned char Mod_id);
-
-/*!\fn void nodeb_decode_sch(unsigned char Mod_id,UL_MEAS *UL_meas,unsigned short Index)
-\brief This routine extracts the PHY measurements received from an SCH channel.
-@param Mod_id       The MAC instance on which to act
-@param UL_meas     Pointer to an UL_MEAS structure containing PHY RF UL measurements
-@param Index        SCH index
-*/
-void nodeb_decode_sch(unsigned char Mod_id, UL_MEAS *UL_meas,unsigned short Index);
-
-/*!\fn void nodeb_process_sacch(unsigned char Mod_id,LCHAN_TABLE_ENTRY *Lchan_entry,unsigned char Lchan_index,unsigned char User_index,UL_SACCH_PDU* Sacch_pdu)
-\brief This routine extracts the UL_SACCH information and updates queuing/measurement/HARQ information derived from it.
-@param Mod_id       The MAC instance on which to act
-@param Lchan_entry Pointer to the LCHAN table entry corresponding to this SACCH
-@param Lchan_index Index of the DCCH/DTCH modulo user index
-@param User_index  Index of User corresponding to this SACCH
-@param Sacch_pdu   Pointer to the raw Sacch_pdu
-*/
-void nodeb_process_sacch(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry,unsigned char Lchan_index,unsigned char User_index,UL_SACCH_PDU* Sacch_pdu);
-
-/*!\fn void nodeb_decode_sach(unsigned char Mod_id,UL_SACH_PDU* Sach_pdu,UL_MEAS* UL_meas, unsigned short Lchan_id_index,int *crc_status)
-\brief This routine extracts the UL_SACCH information.  It does nothing for the moment.
+/*!\fn void nodeb_decode_ulsch(unsigned char Mod_id,ULSCH_PDU* ulsch_pdu,int *crc_status)
+\brief This routine extracts the UL_SCH information.  
 @param Mod_id         The MAC instance on which to act
-@param *Sach_pdu      Pointer to an UL_SACH_PDU structure containing PHY transport blocks
-@param *UL_meas       Pointer to an UL_MEAS* structure(to be removed?)
-@param Lchan_id_index Logical channel id
+@param *Sch_pdu      Pointer to an ULSCH_PDU structure containing PHY transport blocks
 @param *crc_status    Vector containing crc status of each transport block
 */
-void nodeb_decode_sach(unsigned char Mod_id,UL_SACH_PDU* Sach_pdu,UL_MEAS* UL_meas,unsigned short Lchan_id_index,int *crc_status);
+void nodeb_decode_ulsch(unsigned char Mod_id,ULSCH_PDU* ulsch_pdu,unsigned short rnti);
 
-/*!\fn void nodeb_get_rach(unsigned char Mod_id,unsigned char nb_rach)
-\brief This routine generates a MACPHY_DATA_REQ in order to program NodeB PHY to receive a set of RACH.  This is
-invoked in TTI \f$N-1\f$ for action in TTI \f$N\f$.  The result is seen by NodeB MAC in TTI \f$N+1\f$ 
-@param Mod_id    The MAC instance on which to act
-@param nb_rach   Number of rach (for the moment always 1!)
-*/
-void nodeb_get_rach(unsigned char Mod_id,unsigned char nb_rach);
-
-/*!\fn void nodeb_decode_rach(unsigned char Mod_id,RACH_PDU* Rach_pdu);
-\brief This routine extracts the UL_SACCH information.  It does nothing for the moment.
-@param Mod_id      The MAC instance on which to act
-@param *Rach_pdu   Pointer to an RACH_PDU structure containing PHY transport blocks
-*/
-void nodeb_decode_rach(unsigned char Mod_id,RACH_PDU* Rach_pdu);
-
-/*!\fn void nodeb_generate_sach(unsigned char Mod_id)
-\brief This routine first retrieves the maps as well as feedback channels in a CHBCH_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the PHY DL_SACH transmitter.
+/*!\fn void nodeb_generate_sch(unsigned char Mod_id)
+\brief This routine first retrieves the maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the PHY DLSCH transmitter.
 @param Mod_id The MAC instance on which to act.
 */
-void nodeb_generate_sach(unsigned char Mod_id);
+void nodeb_generate_dlsch(unsigned char Mod_id);
 
 /*!\fn void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_alloc_map,unsigned char *User_alloc_map,unsigned short rb_map)
 \brief This routine is used by the NodeB scheduler to allocate resources for dcch channels.
@@ -695,39 +635,15 @@ void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_
 //ue_control_plane_procedures
 
 
-/*!\fn void ue_process_DL_meas(unsigned char Mod_id,unsigned char CH_index)
-\brief This routine processes the DL measurements received in the last TTI
-@param Mod_id    The MAC instance on which to act
-@param CH_index   The CH index
-@returns the CQI indicator for subband quality 
-*/
-void ue_process_DL_meas(unsigned char Mod_id, unsigned short CH_index);
 
-/*!\fn void ue_get_chbch(unsigned char Mod_id,unsigned char CH_index)
-\brief This routine generates a MACPHY_DATA_REQ in order to program UE PHY to receive a CHBCH.  This is
-invoked in TTI \f$N-1\f$ for action in TTI \f$N\f$.  The result is seen by UE MAC in TTI \f$N+1\f$ 
-@param Mod_id    The MAC instance on which to act
-@param CH_index   The CH index 
-*/
-void ue_get_chbch(unsigned char Mod_id,unsigned char CH_index);
-
-/*!\fn void ue_decode_chbch(unsigned char Mod_id,CHBCH_PDU *Chbch_pdu, UL_MEAS *UL_meas,unsigned short Index,int crc_status)
-\brief This routine extracts received CHBCH information and generates MACPHY_DATA_REQs for DL_SACH and UL_SACH in current and next TTI.
-@param Mod_id       The MAC instance on which to act
-@param *Chbch_pdu   Pointer to an CHPDU_PDU structure containing PHY transport block
-@param *DL_meas     Pointer to received DL Measurements derived from CHSCH
-@param Index        Clusterhead index
-@param crc_status   CRC status indication from PHY
-*/
-void ue_decode_chbch(unsigned char Mod_id,CHBCH_PDU *Chbch_pdu, DL_MEAS *DL_meas,unsigned short Index,int crc_status);
 void ue_complete_dl_data_req(unsigned char Mod_id);
 void ue_get_dil_sach(u8 Mod_id);
-void mac_check_rlc_queues_status(unsigned char, unsigned char, UL_SACCH_FB *);
+void mac_check_rlc_queues_status(unsigned char, unsigned char,unsigned short *);//, UL_SACCH_FB *);
 void ue_fill_macphy_data_req(unsigned char ,LCHAN_INFO_TABLE_ENTRY *,unsigned char);
-void ue_decode_sch(unsigned char Mod_id, UL_MEAS *UL_meas,unsigned short Index);
-void ue_decode_sach(unsigned char,DL_SACH_PDU *, UL_MEAS *UL_meas, unsigned short,int *crc_status);
+//void ue_decode_sch(unsigned char Mod_id, UL_MEAS *UL_meas,unsigned short Index);
+void ue_decode_dlsch(unsigned char,DLSCH_PDU *,unsigned short);
 void ue_generate_rach(unsigned char,unsigned char);
-void ue_generate_sach(unsigned char);
+void ue_generate_sch(unsigned char);
 void ue_scheduler(unsigned char, unsigned char);
 int is_lchan_ul_scheduled(unsigned char Mod_id, unsigned char CH_index, unsigned short Lchan_index);
 
@@ -739,7 +655,7 @@ unsigned short ue_mac_config_req(unsigned char Mod_id,unsigned char Action,MAC_C
 MAC_MEAS_REQ_ENTRY* mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
 MAC_MEAS_REQ_ENTRY* ch_mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
 MAC_MEAS_REQ_ENTRY* ue_mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
-void mac_update_meas(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas);
+//void mac_update_meas(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas);
 unsigned char mac_check_meas_trigger(MAC_MEAS_REQ *Meas_req);
 unsigned char mac_check_meas_ind(MAC_MEAS_REQ_ENTRY *Meas_entry);
 

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define msg printf
-#define malloc16(x) malloc(x)
+#define malloc16(x) memalign(16,x) //malloc(x)
 #define free16(y,x) free(y)
 #define bigmalloc malloc
 #define bigmalloc16 malloc16

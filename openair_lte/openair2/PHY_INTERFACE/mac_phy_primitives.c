@@ -36,7 +36,7 @@ void clear_macphy_data_req(unsigned char Mod_id) {
     Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Active = 0;
 }
 
-
+/*
 unsigned char phy_resources_compare(PHY_RESOURCES *Phy1,PHY_RESOURCES* Phy2 ){
 
   if(Phy1->Time_alloc==Phy2->Time_alloc && Phy1->Freq_alloc==Phy2->Freq_alloc)// && Phy1->Coding_fmt==Phy2->Coding_fmt && Phy1->Seq_index==Phy2->Seq_index)
@@ -45,6 +45,7 @@ unsigned char phy_resources_compare(PHY_RESOURCES *Phy1,PHY_RESOURCES* Phy2 ){
     return 0;
   
 }
+*/
 
 MACPHY_DATA_REQ_TABLE_ENTRY* find_data_req_entry(unsigned char Mod_id,MACPHY_REQ_ENTRY_KEY *Search_key){
 
@@ -66,6 +67,7 @@ MACPHY_DATA_REQ_TABLE_ENTRY* find_data_req_entry(unsigned char Mod_id,MACPHY_REQ
 	}
       }
       break;
+      /*
     case LCHAN_KEY:
       for(i=0;i<NB_REQ_MAX;i++){
 	if ((Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Lchan_id.Index==Search_key->Key.Lchan_id->Index) &&
@@ -73,7 +75,7 @@ MACPHY_DATA_REQ_TABLE_ENTRY* find_data_req_entry(unsigned char Mod_id,MACPHY_REQ
 	  return(&Macphy_req_table[Mod_id].Macphy_req_table_entry[i]);
       }
       break;
-      
+            
     case PHY_RESOURCES_KEY:
       for(i=0;i<NB_REQ_MAX;i++){
 	if(Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Active == 1)
@@ -87,6 +89,7 @@ MACPHY_DATA_REQ_TABLE_ENTRY* find_data_req_entry(unsigned char Mod_id,MACPHY_REQ
 	    return(&Macphy_req_table[Mod_id].Macphy_req_table_entry[i]);
       }  
       break;
+      */
     }
   }
 #ifndef PHY_EMUL 
@@ -110,13 +113,14 @@ void print_active_requests(unsigned char Mod_id) {
   for (i=0;i<NB_REQ_MAX;i++){
     
     if (Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Active == 1) {
-      msg("[MACPHY][DATA][REQ] Request %d: Direction %d ,Logical Chan %d, Phy Resources %p: Time alloc %x, Freq alloc %x\n",
+      msg("[MACPHY][DATA][REQ] Request %d: Direction %d, Pdu_type %d\n",
 	  i,
 	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Direction,
-	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Lchan_id.Index,
-	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources,
-	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources->Time_alloc,
-	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources->Freq_alloc);
+	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Pdu_type);
+	  //	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Lchan_id.Index);
+	  //	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources,
+	  //	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources->Time_alloc,
+	  //	  Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Phy_resources->Freq_alloc);
       //if(Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Pdu_type==RACH)
 	//msg("[RACH_REQ] Rach_pdu %p, Payload %p\n",Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Dir.Req_rx.Pdu.Rach_pdu,
 	//    Macphy_req_table[Mod_id].Macphy_req_table_entry[i].Macphy_data_req.Dir.Req_rx.Pdu.Rach_pdu->Rach_payload);
@@ -155,7 +159,7 @@ MACPHY_DATA_REQ *new_macphy_data_req(unsigned char Mod_id) {
 #ifndef USER_MODE
 EXPORT_SYMBOL(new_macphy_data_req);
 #endif
-
+ 
 
 #endif //PHY_CONTEXT
 
@@ -165,7 +169,7 @@ EXPORT_SYMBOL(new_macphy_data_req);
 // Function called by PHY to indicate available data/measurements for MAC
 
 /*___________________________________________________________________________________________________*/
-void macphy_data_ind(unsigned char Mod_id,MACPHY_DATA_REQ_RX *Req_rx,unsigned char Pdu_type,unsigned short Lchan_id_index) {
+void macphy_data_ind(unsigned char Mod_id,unsigned char Pdu_type,void *pdu,unsigned short rnti) {
 /*___________________________________________________________________________________________________*/
   //msg("[OPENAIR][MACPHY] Calling mac_resp In\n");
 
@@ -178,69 +182,21 @@ void macphy_data_ind(unsigned char Mod_id,MACPHY_DATA_REQ_RX *Req_rx,unsigned ch
    //   Req_rx->Meas.DL_meas=&DL_meas[Mod_id];
     
     switch (Pdu_type) {   
-    case RACH:
+    case ULSCH:
       
       //        msg("[OPENAIR][MACPHY] Received RACH, Sending to MAC\n");
-      if (Req_rx->crc_status[0] == 0)
-	nodeb_decode_rach(Mod_id,Req_rx->Pdu.Rach_pdu);
+      nodeb_decode_ulsch(Mod_id,(ULSCH_PDU *)pdu,rnti);
 
       break;
-    case UL_SACH:
-#ifdef DEBUG_NODEB_DECODE_SACH
-      if (Lchan_id_index>10) {
-	msg("[MAC][NODEB][MAC_PHY] TTI %d Inst %d Lchan %d\n",mac_xface->frame,Mod_id,Lchan_id_index);
-	
-	for (i=0;i<Req_rx->num_tb;i++)
-	  msg("[MAC][NODEB][MAC_PHY] TB %d : CRC %d\n",i,Req_rx->crc_status[i]);
-	msg("\n");
-      }
-#endif
-      nodeb_decode_sach(Mod_id,&Req_rx->Pdu.UL_sach_pdu,Req_rx->Meas.UL_meas,Lchan_id_index,&Req_rx->crc_status[0]);
-      //      mac_process_meas_ul(Mod_id,Req_rx->Meas.UL_meas,Index);//find meas_process; update meas_t;                      
-      break;
-      //    case UL_SACCH_SACH:
-      //      nodeb_decode_sacch(Mod_id,Req_rx->Pdu.UL_sacch_pdu,Req_rx->Meas.UL_meas,Lchan_id_index);
-      //      mac_process_meas_ul(Mod_id,Req_rx->Meas.UL_meas,Index);//find meas_process; update meas_t;                      
-      break;
-
       
-      //  This is a UE
-      
-    case CHBCH:
-      //#ifdef DEBUG_PHY
-      //   msg("[MAC][MAC_PHY] Calling ue_decode_chbch\n");
-      //#endif //DEBUG_PHY
-
-      ue_decode_chbch(Mod_id-NB_CH_INST,
-		      Req_rx->Pdu.Chbch_pdu,
-		      Req_rx->Meas.DL_meas,
-		      Lchan_id_index,
-		      Req_rx->crc_status[0]);
-
-      break;
-    case DL_SACH:
+    case DLSCH:
 #ifdef DEBUG_UE_DECODE_SACH
       msg("[MAC][UE][MAC_PHY] TTI %d Inst %d\n",mac_xface->frame,Mod_id);
-
-      for (i=0;i<Req_rx->num_tb;i++)
-	msg("[MAC][UE][MAC_PHY] TB %d : CRC %d\n",i,Req_rx->crc_status[i]);
-      msg("\n");
 #endif
 
+      ue_decode_dlsch(Mod_id-NB_CH_INST,
+		      (DLSCH_PDU *)pdu,rnti);
 
-      ue_decode_sach(Mod_id-NB_CH_INST,
-		     &Req_rx->Pdu.DL_sach_pdu,
-		     Req_rx->Meas.UL_meas,
-		     Lchan_id_index,
-		     &Req_rx->crc_status[0]);
-      break;
-      
-    case DL_SCH:
-      ue_decode_sch(Mod_id-NB_CH_INST,Req_rx->Meas.DL_meas,Lchan_id_index);
-      break;
-
-    case UL_SCH:
-      nodeb_decode_sch(Mod_id,Req_rx->Meas.UL_meas,Lchan_id_index);
       break;
       
     default:

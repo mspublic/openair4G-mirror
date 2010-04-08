@@ -11,6 +11,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
 
+#define DEBUG_RRC 1
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 extern EMULATION_VARS *Emul_vars;
@@ -26,8 +27,15 @@ void rrc_rx_tx(u8 Mod_id){
   /*------------------------------------------------------------------------------*/
 
   unsigned char i;
+#ifdef DEBUG_RRC
+  msg("rrc_rx_tx: Mod_id %d (CH status %d)\n",Mod_id,Mac_rlc_xface->Is_cluster_head[Mod_id]);
+#endif DEBUG_RRC
+
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   if(Mac_rlc_xface->Is_cluster_head[Mod_id] == 1){
+#ifdef DEBUG_RRC
+    msg("[eNB RRC] : Generating bcch_header\n");
+#endif
     ch_rrc_generate_bcch_header(Mod_id);
   }
   else{
@@ -371,7 +379,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[0],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&CH_rrc_inst[Mod_id].Srb0,BCCH,0);
-      ((CH_BCCH_HEADER*)(&CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header[0]))->Rv_tb_idx=0;
+      //      ((CH_BCCH_HEADER*)(&CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header[0]))->Rv_tb_idx=0;
       printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH for TB_size %d\n",NODE_ID[Mod_id],
 	     CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1].transport_block_size);
       CH_rrc_inst[Mod_id].Srb0.Active=1;
@@ -428,7 +436,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&UE_rrc_inst[Mod_id].Srb0[i],BCCH,0);
-      ((CH_BCCH_HEADER*)(&UE_rrc_inst[Mod_id].Srb0[i].Rx_buffer.Header[0]))->Rv_tb_idx=0;
+      //      ((CH_BCCH_HEADER*)(&UE_rrc_inst[Mod_id].Srb0[i].Rx_buffer.Header[0]))->Rv_tb_idx=0;
       UE_rrc_inst[Mod_id].Srb0[i].Active=1;
 
       Mac_meas_req.Lchan_id.Index = Index;
@@ -475,18 +483,20 @@ void ch_rrc_generate_bcch_header(u8 Mod_id){
  
   unsigned char k;
   
+ 
   if(CH_rrc_inst[Mod_id].Srb0.Active==0)
     return;
-  
+ 
+
   ((CH_BCCH_HEADER*)(CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header))->CH_id = CH_rrc_inst[Mod_id].Node_id;
   
   for(k=0;k<NB_UE_BRDCAST;k++)
     ((CH_BCCH_HEADER*)CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header)->UE_list[k]=CH_rrc_inst[Mod_id].Info.UE_list[k].L2_id[0];
   
-  ((CH_BCCH_HEADER*)(CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header))->Rach_time_alloc = RACH_TIME_ALLOC;
-  ((CH_BCCH_HEADER*)(CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header))->Rach_freq_alloc = RACH_FREQ_ALLOC;
+  //  ((CH_BCCH_HEADER*)(CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header))->Rach_time_alloc = RACH_TIME_ALLOC;
+  //  ((CH_BCCH_HEADER*)(CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header))->Rach_freq_alloc = RACH_FREQ_ALLOC;
   CH_rrc_inst[Mod_id].Srb0.Header_tx=1;
-  CH_rrc_inst[Mod_id].Srb0.Tx_buffer.W_idx=0;//CH_BCCH_HEADER_SIZE;
+  CH_rrc_inst[Mod_id].Srb0.Tx_buffer.W_idx=CH_BCCH_HEADER_SIZE;
 }
 
 /*------------------------------------------------------------------------------*/
@@ -503,8 +513,8 @@ void rrc_mac_association_req_tx(u8 Mod_id, unsigned char Idx){
   memcpy(&UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i],(char*)&UE_rrc_inst[Mod_id].Mac_id.L2_id[0],sizeof(L2_ID));
   i+=sizeof(L2_ID);
   UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].CH_id;
-  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_time_alloc;
-  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_freq_alloc;
+  //  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_time_alloc;
+  //  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_freq_alloc;
   if(UE_rrc_inst[Mod_id].Srb1[Idx].Tx_buffer.W_idx ==0){
     memcpy(&UE_rrc_inst[Mod_id].Srb1[Idx].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Rrc_dummy_pdu,i);
     UE_rrc_inst[Mod_id].Srb1[Idx].Tx_buffer.W_idx =i;
@@ -541,9 +551,9 @@ void ue_rrc_decode_bcch_header(u8 Mod_id , u8 Idx){
   case RRC_IDLE:
     if( UE_rrc_inst[Mod_id].Srb0[Idx].Header_rx !=0 ){
       memcpy(&Header1,((CH_BCCH_HEADER*) (UE_rrc_inst[Mod_id].Srb0[Idx].Rx_buffer.Header)),CH_BCCH_HEADER_SIZE);
-      UE_rrc_inst[Mod_id].Info[Idx].Nb_rach_res     = Header1.Nb_rach_res;
-      UE_rrc_inst[Mod_id].Info[Idx].Rach_time_alloc = Header1.Rach_time_alloc;
-      UE_rrc_inst[Mod_id].Info[Idx].Rach_freq_alloc = Header1.Rach_freq_alloc;
+      //      UE_rrc_inst[Mod_id].Info[Idx].Nb_rach_res     = Header1.Nb_rach_res;
+      //      UE_rrc_inst[Mod_id].Info[Idx].Rach_time_alloc = Header1.Rach_time_alloc;
+      //      UE_rrc_inst[Mod_id].Info[Idx].Rach_freq_alloc = Header1.Rach_freq_alloc;
       UE_rrc_inst[Mod_id].Info[Idx].Status = RRC_PRE_SYNCHRO;
       UE_rrc_inst[Mod_id].Info[Idx].CH_id = Header1.CH_id;
       Rrc_xface->CH_id[Mod_id][Idx]= Header1.CH_id;

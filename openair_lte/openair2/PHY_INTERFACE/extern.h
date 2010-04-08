@@ -12,9 +12,9 @@
 
 extern unsigned int frame;
 extern unsigned int mac_debug;
-
-//extern MAC_xface *mac_xface;
-
+#ifdef PHYSIM
+extern MAC_xface *mac_xface;
+#endif
 //extern MACPHY_PARAMS MACPHY_params;
 
 extern unsigned int mac_registered;

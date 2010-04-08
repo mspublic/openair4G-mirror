@@ -80,7 +80,7 @@ char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
   CH_mac_inst[Mod_id].Nb_rx_sched[2]=0;
   memcpy(&CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Phy_resources_tx,
 	 (PHY_RESOURCES*)&CHBCH_PHY_RESOURCES[CH_index],sizeof(PHY_RESOURCES));
-  CH_mac_inst[Mod_id].RX_rach_pdu.Rach_payload=(char*)malloc16(RACH_PAYLOAD_SIZE_MAX);
+  //  CH_mac_inst[Mod_id].RX_rach_pdu.Rach_payload=(char*)malloc16(RACH_PAYLOAD_SIZE_MAX);
   CH_mac_inst[Mod_id].Node_id=NODE_ID[Mod_id];
   for(i=0;i<(NB_CNX_CH+1);i++){
     CH_mac_inst[Mod_id].Def_meas[i].Status=IDLE;
@@ -156,7 +156,7 @@ int mac_top_init(){
 /***********************************************************************/
   unsigned char  Mod_id,i;  
   printk("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d\n",NB_INST);
-#ifdef PHY_EMUL
+#if ((PHY_EMUL==1)||(PHYSIM==1))
   UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
   printk("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
   CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
@@ -194,12 +194,12 @@ int mac_top_init(){
     else {
       printk("[OPENAIR][MAC] Running without an RRC\n");
     }
-
+#ifndef USER_MODE
 #ifndef PHY_EMUL
   printk("add openair2 proc\n");
   add_openair2_stats();
 #endif
-  
+#endif  
   printk("[OPENAIR][MAC][INIT] Init function finished\n");
   
   return(0);
@@ -212,11 +212,11 @@ int mac_init_global_param(){
   /***********************************************************************/
 
   int i; 
-  printk("[MAC] Init Global Param In, CHBCH_PDU_SIZE %d ...\n",sizeof(CHBCH_PDU));
-  if(sizeof(CHBCH_PDU) > 140){
-    printk("Size of CHBCH_PDU= %d, fix this !!!\n",sizeof(CHBCH_PDU));
-    return -1;
-  }  
+  //  printk("[MAC] Init Global Param In, CHBCH_PDU_SIZE %d ...\n",sizeof(CHBCH_PDU));
+  //  if(sizeof(CHBCH_PDU) > 140){
+  //    printk("Size of CHBCH_PDU= %d, fix this !!!\n",sizeof(CHBCH_PDU));
+  //    return -1;
+  //  }  
 
   Is_rrc_registered=0;  
   Mac_rlc_xface = NULL;
@@ -259,7 +259,8 @@ Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   
   printk("[MAC] Init CHBCH_PHY_RESOURCES\n");
-  
+
+  /*  
   CHBCH_PHY_RESOURCES[0].Time_alloc=CHBCH_TIME_ALLOC;
   CHBCH_PHY_RESOURCES[0].Freq_alloc=0x0f0f;
   CHBCH_PHY_RESOURCES[0].Antenna_alloc=0;
@@ -268,7 +269,8 @@ Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   CHBCH_PHY_RESOURCES[1].Freq_alloc=0xf0f0;
   CHBCH_PHY_RESOURCES[1].Antenna_alloc=5;
   CHBCH_PHY_RESOURCES[1].Coding_fmt=5;
- 
+  */
+
   for(i=0;i<MAX_NB_SCHED;i++)
     Sorted_index_table[i]=i; 
 
@@ -299,8 +301,8 @@ void mac_top_cleanup(u8 Mod_id){
 void emul_phy_sync(unsigned char Mod_id, unsigned char Chbch_index){
 /***********************************************************************/
 
- MACPHY_DATA_REQ *Macphy_data_req_sch;
-
+// MACPHY_DATA_REQ *Macphy_data_req_sch;
+/*
  if ((Macphy_data_req_sch = new_macphy_data_req(Mod_id))==NULL)
    mac_xface->macphy_exit("[get_chbch_sch] new_macphy_data_req fails\n");
  Macphy_data_req_sch->Pdu_type = CHBCH_SCH;  
@@ -313,8 +315,8 @@ void emul_phy_sync(unsigned char Mod_id, unsigned char Chbch_index){
      msg("[EMUL_PHY_SYNC]: Node %d to CH index %d, Freq_alloc %x\n",NODE_ID[Mod_id],
 	 Chbch_index,Macphy_data_req_sch->Phy_resources->Freq_alloc); 
 #endif //DEBUG_INITIAL_SYNC
+*/
 }
-
 
 
 #ifndef USER_MODE

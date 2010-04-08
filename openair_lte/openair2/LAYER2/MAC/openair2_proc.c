@@ -170,8 +170,8 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 	if (CH_mac_inst[Mod_id].Dcch_lchan[i].Active==1) {
 	  len+=sprintf(&buffer[len],"\nMR index %d: DL SINR (feedback) %d dB, CQI: %s\n\n",
 		       i,//CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0],
-		       CH_mac_inst[Mod_id].Def_meas[i].Wideband_sinr,
-		       print_cqi(CH_mac_inst[Mod_id].Def_meas[i].cqi));
+		       CH_mac_inst[Mod_id].Def_meas[i].Wideband_sinr);
+		       //print_cqi(CH_mac_inst[Mod_id].Def_meas[i].cqi));
 
 	  len+=sprintf(&buffer[len],"[MAC] LCHAN %d (DCCH), NB_TX_MAC= %d (%d bits/TTI, %d kbits/s), NB_RX_MAC= %d (errors %d, sacch errors %d, sach errors %d, sach_missing %d)\n\n",
 		       CH_mac_inst[Mod_id].Dcch_lchan[i].Lchan_info.Lchan_id.Index,

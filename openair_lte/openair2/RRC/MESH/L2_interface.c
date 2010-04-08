@@ -25,6 +25,7 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
+#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
@@ -49,10 +50,16 @@ u16 rrc_fill_buffer(RRC_BUFFER *Rx_buffer, char *Data, unsigned short Size){
   return Size;
 }
 //------------------------------------------------------------------------------------------------------------------//
-unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8 CH_index){
+unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, 
+				     unsigned short Srb_id, 
+				     unsigned char Nb_tb,
+				     char *Buffer,
+				     u8 CH_index){
     //------------------------------------------------------------------------------------------------------------------//
 
-  //     msg("[OPENAIR][RRC]Mod_id=%d: mac_rrc_data_req to SRB ID=%ld, params: \n",Mod_id,Srb_id,CH_index);
+#ifdef DEBUG_RRC
+  msg("[OPENAIR][RRC]Mod_id=%d: mac_rrc_data_req to SRB ID=%ld, params: \n",Mod_id,Srb_id,CH_index);
+#endif
   // msg("%d, %d\n",Mod_id, Srb_id);
   // msg("%d, %p\n ",Nb_tb,&Buffer[0]);
   //   msg("%d\n",CH_index);
@@ -62,27 +69,36 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id
     u8 H_size,i;  
     u16 tmp;
     if((Srb_id & RAB_OFFSET) == BCCH){
+#ifdef DEBUG_RRC
+      msg("[OPENAIR][RRC] BCCH request\n");
+#endif
       H_size=CH_BCCH_HEADER_SIZE;
       if(CH_rrc_inst[Mod_id].Srb0.Active==0) return 0;
       Srb_info=&CH_rrc_inst[Mod_id].Srb0;
       H_size = CH_BCCH_HEADER_SIZE;
+      memcpy(&Buffer[0],&Srb_info->Tx_buffer.Header[0],H_size);
+
+      /*
       if(Srb_info->Tx_buffer.R_idx == Srb_info->Tx_buffer.W_idx){//Fill buffer
 	Srb_info->Tx_buffer.R_idx=0;
 	ch_rrc_generate_bcch(Mod_id);
 
-	/*		
-      	tmp=( (Srb_info->Tx_buffer.W_idx)/(Srb_info->Tx_buffer.Tb_size-CH_BCCH_HEADER_SIZE));
-	if( tmp * (Srb_info->Tx_buffer.Tb_size-H_size) < (Srb_info->Tx_buffer.W_idx)  )
-	  tmp++;  
-	((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx = tmp << 4;
-	if(tmp>0) ((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx--;
+			
+      //	tmp=( (Srb_info->Tx_buffer.W_idx)/(Srb_info->Tx_buffer.Tb_size-CH_BCCH_HEADER_SIZE));
+	//if( tmp * (Srb_info->Tx_buffer.Tb_size-H_size) < (Srb_info->Tx_buffer.W_idx)  )
+//	  tmp++;  
+//	((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx = tmp << 4;
+//	if(tmp>0) ((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx--;
 	//		msg("Nb_fragment=%d, Rv_tb_index %d, W_idx %d\n",tmp,((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx,Srb_info->Tx_buffer.W_idx);
-	*/
-	}
-
+	
+      }
+      
+      
       //if(Srb_info->Tx_buffer.W_idx != Srb_info->Tx_buffer.R_idx){//Something to send (at least header)
       if((Srb_info->Tx_buffer.W_idx+H_size) > (Srb_info->Tx_buffer.R_idx + Srb_info->Tx_buffer.Tb_size)){
-	//      msg("Getting asked data from buffer of size %d\n", Nb_tb*Srb_info->Tx_buffer.Tb_size);
+#ifdef DEBUG_RRC
+	msg("[eNB RRC] Getting asked data from buffer of size %d (H_size %d)\n", Nb_tb*Srb_info->Tx_buffer.Tb_size,H_size);
+#endif
 	((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx+=Nb_tb;
 	((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Tb_data_size=(Nb_tb*Srb_info->Tx_buffer.Tb_size);
 	  memcpy(Buffer,(char *)&Srb_info->Tx_buffer.Header[0],H_size);
@@ -92,8 +108,10 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id
 	  Srb_info->Tx_buffer.R_idx +=(Nb_tb*Srb_info->Tx_buffer.Tb_size)-H_size;
       }
       else{
-	//msg("Getting part (at least header) of asked data from buffer of size %d, H_size %d\n"
-	// , Srb_info->Tx_buffer.W_idx -(Srb_info->Tx_buffer.R_idx-H_size),H_size );
+#ifdef DEBUG_RRC
+	msg("Getting part (at least header) of asked data from buffer of size %d, H_size %d\n"
+	 , Srb_info->Tx_buffer.W_idx -(Srb_info->Tx_buffer.R_idx-H_size),H_size );
+#endif
 	tmp = (((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx >> 4);
 	if(tmp>0)
 	  ((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx 
@@ -105,24 +123,30 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id
 	((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Tb_data_size 
 	  =  Srb_info->Tx_buffer.W_idx -(Srb_info->Tx_buffer.R_idx-H_size);
 	memcpy(&Buffer[0],&Srb_info->Tx_buffer.Header[0],H_size);
-	memcpy(&Buffer[H_size],
-	       &Srb_info->Tx_buffer.Payload[(Srb_info->Tx_buffer.R_idx)],
-	       (Srb_info->Tx_buffer.W_idx - Srb_info->Tx_buffer.R_idx));
+	
+//	memcpy(&Buffer[H_size],
+//	       &Srb_info->Tx_buffer.Payload[(Srb_info->Tx_buffer.R_idx)],
+//	       (Srb_info->Tx_buffer.W_idx - Srb_info->Tx_buffer.R_idx));
+	
 	//  msg("[CH][BCCH SEND]Rv_tb_idx=%d\n",((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Rv_tb_idx);
 	  Srb_info->Tx_buffer.R_idx = 0;
 	  Srb_info->Tx_buffer.W_idx = 0;	  
       }
+*/
+
       /*
        msg("[TX] BCCH_HEADER DUMP\n");
        for(i=0;i<H_size;i++)
 	 msg("%d.",Srb_info->Tx_buffer.Header[i]);
        msg("\n");
       */
-	return (((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Tb_data_size);
+      //	return (((CH_BCCH_HEADER*)(Srb_info->Tx_buffer.Header))->Tb_data_size);
+	return (CH_BCCH_HEADER_SIZE);
     }
 	
     
     if( (Srb_id & RAB_OFFSET ) == CCCH){
+      printf("[OPENAIR][CCCH] request (Srb_id %d)\n",Srb_id);
       H_size = CH_CCCH_HEADER_SIZE;
       if(CH_rrc_inst[Mod_id].Srb1.Active==0) return 0;
       Srb_info=&CH_rrc_inst[Mod_id].Srb1;
@@ -205,13 +229,13 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id
   
 
   else{   Mod_id-=NB_CH_INST; //This is an UE
-    //msg("filling rach,SRB_ID %d, W_idx=%d, R_idx=%d\n",Srb_info->Srb_id,Srb_info->Tx_buffer.W_idx,Srb_info->Tx_buffer.R_idx);
-    //msg("Buffers status %d,\n",Rrc_inst[0].Srb1[CH_index].Tx_buffer.W_idx);
+    msg("filling rach,SRB_ID %d\n",Srb_id);
+    msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.W_idx);
     if( (UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.R_idx) ){
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.W_idx);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.W_idx;
       UE_rrc_inst[Mod_id].Srb1[CH_index].Tx_buffer.W_idx=0;
-      //msg("[LE_XFACE]Frame %d: sending rach from NODE %d\n",Rrc_xface->Frame_index,NODE_ID[Mod_id+NB_CH_INST]);
+      msg("[LE_XFACE]Frame %d: sending rach from NODE %d\n",Rrc_xface->Frame_index,NODE_ID[Mod_id+NB_CH_INST]);
       return(Ret_size);
     }
     else{
@@ -247,11 +271,11 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu,u8 CH_index ){
     
     if((Srb_id & RAB_OFFSET) == BCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];
-      Rv_tb_idx_last =((CH_BCCH_HEADER*)(&Srb_info->Rx_buffer.Header[0]))->Rv_tb_idx;
+      //      Rv_tb_idx_last =((CH_BCCH_HEADER*)(&Srb_info->Rx_buffer.Header[0]))->Rv_tb_idx;
       //  msg("[OPNEAIR][RRC] RX_BCCH_DATA, Last Rv_tb_idx %d...\n",Rv_tb_idx_last);
       //      memcpy(&Srb_info->Rx_buffer.Header[0],(CH_BCCH_HEADER*)Sdu,CH_BCCH_HEADER_SIZE);
       memcpy(&Srb_info->Rx_buffer.Header[0],&Sdu[0],CH_BCCH_HEADER_SIZE);
-
+      /*
       Srb_info->Header_rx=1;
       Size=((CH_BCCH_HEADER*)(Srb_info->Rx_buffer.Header))->Tb_data_size;
       if(Size==0){ msg("BCCH SIZE 0\n");return;}
@@ -282,12 +306,12 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu,u8 CH_index ){
       //      Size = CH_BCCH_HEADER_SIZE ;
       if( Size > CH_BCCH_HEADER_SIZE ) {
 	//msg("[RRC_IND] Copying data, W_idx=%d, Tb_data_size %d, Rx_size\n",Srb_info->Rx_buffer.W_idx,Size);
-	/*msg("[RRC]BCCH HEADER DUMP\n");
-	u8 tmp;
-	for(tmp=0;tmp<CH_BCCH_HEADER_SIZE;tmp++)
-	  msg("[RRC] [%x]\t",Srb_info->Rx_buffer.Header[tmp]);
-	msg("\n");
-	*///
+	//msg("[RRC]BCCH HEADER DUMP\n");
+	//u8 tmp;
+	//for(tmp=0;tmp<CH_BCCH_HEADER_SIZE;tmp++)
+	//  msg("[RRC] [%x]\t",Srb_info->Rx_buffer.Header[tmp]);
+	//msg("\n");
+	//
 	msg("header :111: NODE %d, CH %d with sie %d (%d)\n",NODE_ID[Mod_id+NB_CH_INST],CH_index,Size,CH_BCCH_HEADER_SIZE);
 	Mac_rlc_xface->macphy_exit("");
 		//msg("header :111\n");
@@ -313,15 +337,15 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu,u8 CH_index ){
 	  Srb_info->Rx_buffer.W_idx=0;
 	Srb_info->Rx_buffer.R_idx=0;
 	//	rrc_reset_buffer(&Srb_info->Rx_buffer);
-	/*
-	msg("[RX] BCCH_HEADER DUMP, H_size %d\n",CH_BCCH_HEADER_SIZE);
-	for(i=0;i<20;i++)
-	  msg("%d.",Srb_info->Rx_buffer.Header[i]);
-	msg("\n");
-	*/
+	
+	//msg("[RX] BCCH_HEADER DUMP, H_size %d\n",CH_BCCH_HEADER_SIZE);
+	//for(i=0;i<20;i++)
+	//  msg("%d.",Srb_info->Rx_buffer.Header[i]);
+	//msg("\n");
+	
 
       }
-	
+	*/
       //    msg("dont say you did nothing!!!!\n");
     }
     

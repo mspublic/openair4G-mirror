@@ -11,110 +11,105 @@
 #ifdef PHY_EMUL
 #include "SIMULATION/PHY_EMULATION/impl_defs.h"
 #else
-#include "PHY/impl_defs.h"
-#include "PHY/TRANSPORT/defs.h"
+#include "PHY/impl_defs_top.h"
+#include "PHY/LTE_TRANSPORT/defs.h"
 #endif //PHY_EMUL
 
 #include "PHY_INTERFACE/defs.h"
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
+#include "PHY/LTE_TRANSPORT/extern.h"
 
-#define NDLS (CH_mac_inst[Mod_id].TX_chbch_pdu.Num_dl_sach)
-#define NULS (CH_mac_inst[Mod_id].TX_chbch_pdu.Num_ul_sach)
+#define NDLS (CH_mac_inst[Mod_id].Num_dlsch)
+#define NULS (CH_mac_inst[Mod_id].Num_ulsch)
 //#define DEBUG_MAC_REPORT
 //#define DEBUG_MAC_RLC
 //#define DEBUG_MAC_SCHEDULING
 
+#define DEBUG_MAC_DCI
+#define DEBUG_MAC_CCCH
+#define DEBUG_MAC_BCCH
 
-/********************************************************************************************************************/
+extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+/*
 void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry){
-  /********************************************************************************************************************/
+
   u8 idx=(Mac_rlc_xface->frame+1)%2;
   //ch_fill_ul_map(Mod_id,Lchan_entry);
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Lchan_id.Index= Lchan_entry->Lchan_info_dil.Lchan_id.Index;
-  //  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Time_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Time_alloc;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Freq_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Freq_alloc;
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Lchan_id.Index= Lchan_entry->Lchan_info_dil.Lchan_id.Index;
+  //  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Time_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Time_alloc;
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Freq_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Freq_alloc;
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Phy_resources.Time_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Time_alloc;
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Phy_resources.Freq_alloc=Lchan_entry->Lchan_info_dil.Phy_resources.Freq_alloc;
-  CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Lchan_id.Index=CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS-1].Lchan_id.Index;
+  CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Lchan_id.Index=CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS-1].Lchan_id.Index;
   Lchan_entry->Lchan_info_dil.Lchan_status=MAC_RX_READY;  //-->get_sach()  
   NULS++;  //decode UL_SACCH  for measurement & scheduling
 }
+*/
 
-/********************************************************************************************************************/
 void ch_fill_dl_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry){
-  /********************************************************************************************************************/
 
-  CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[NDLS].Freq_alloc = Lchan_entry->Lchan_info.Phy_resources_tx.Freq_alloc;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[NDLS].Coding_fmt = Lchan_entry->Lchan_info.Phy_resources_tx.Coding_fmt;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[NDLS].Nb_tb      = Lchan_entry->Lchan_info.Nb_sched_tb_dl;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[NDLS].Lchan_id.Index = Lchan_entry->Lchan_info.Lchan_id.Index;
+  /*
+  CH_mac_inst[Mod_id].DCI_pdu.DL_sacch_pdu[NDLS].Freq_alloc = Lchan_entry->Lchan_info.Phy_resources_tx.Freq_alloc;
+  CH_mac_inst[Mod_id].DCI_pdu.DL_sacch_pdu[NDLS].Coding_fmt = Lchan_entry->Lchan_info.Phy_resources_tx.Coding_fmt;
+  CH_mac_inst[Mod_id].DCI_pdu.DL_sacch_pdu[NDLS].Nb_tb      = Lchan_entry->Lchan_info.Nb_sched_tb_dl;
+  CH_mac_inst[Mod_id].DCI_pdu.DL_sacch_pdu[NDLS].Lchan_id.Index = Lchan_entry->Lchan_info.Lchan_id.Index;
+  */
+
   Lchan_entry->Lchan_info.Lchan_status_tx=MAC_TX_READY;  
   NDLS++;
  
-#ifdef DEBUG_MAC_CHBCH  
-  msg("[OPENAIR][MAC][NODEB %d] frame %d: DL_MAP %d for LCHAN %d (%x,%x), Tb_size %d, NUM_TB %d\n",
+#ifdef DEBUG_MAC_DCI  
+  msg("[OPENAIR][MAC][NODEB %d] frame %d: DL_MAP %d for LCHAN %d, Tb_size %d, NUM_TB %d\n",
 	NODE_ID[Mod_id],
       Mac_rlc_xface->frame,
       NDLS-1,
       Lchan_entry->Lchan_info.Lchan_id.Index,
-      Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc,
-      Lchan_entry->Lchan_info.Phy_resources_tx.Freq_alloc,
-      Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size,
-      CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[NDLS-1].Nb_tb);
+      Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size);
 #endif
 
 }
-/********************************************************************************************************************/
+
 void ch_fill_ul_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry){
-  /********************************************************************************************************************/
+
 
   u8 idx=(Mac_rlc_xface->frame)%3;
 
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Freq_alloc     =Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Coding_fmt     =Lchan_entry->Lchan_info.Phy_resources_rx_sched.Coding_fmt;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Lchan_id.Index =Lchan_entry->Lchan_info.Lchan_id.Index;
-  CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS].Nb_tb          =Lchan_entry->Lchan_info.Nb_sched_tb_ul_temp;
+  /*
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Freq_alloc     =Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc;
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Coding_fmt     =Lchan_entry->Lchan_info.Phy_resources_rx_sched.Coding_fmt;
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Lchan_id.Index =Lchan_entry->Lchan_info.Lchan_id.Index;
+  CH_mac_inst[Mod_id].DCI_pdu.UL_alloc_pdu[NULS].Nb_tb          =Lchan_entry->Lchan_info.Nb_sched_tb_ul_temp;
   // This corresponds to reception in TTI N+2
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Phy_resources.Time_alloc=Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc;  
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Phy_resources.Freq_alloc=Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc;
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Phy_resources.Coding_fmt=Lchan_entry->Lchan_info.Phy_resources_rx_sched.Coding_fmt;
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Nb_tb = Lchan_entry->Lchan_info.Nb_sched_tb_ul_temp;
   CH_mac_inst[Mod_id].Rx_sched[idx][NULS].Lchan_id.Index=Lchan_entry->Lchan_info.Lchan_id.Index;
-  
+  */
+
   NULS++;
   CH_mac_inst[Mod_id].Nb_rx_sched[idx]++;  
   
   
-#ifdef DEBUG_MAC_CHBCH
-  msg("[OPENAIR][MAC][NODEB %d] frame %d: UL_MAP %d for LCHAN %d, (%x,%x) , NB_Tb %d,MEas_Qdepth %d, on Idx %d (TO BE RECEIVED In frame %d), Nb_ul_idx(%d,%d,%d)\n",
+#ifdef DEBUG_MAC_DCI
+  msg("[OPENAIR][MAC][NODEB %d] frame %d: UL_MAP %d for LCHAN %d, NB_Tb %d,MEas_Qdepth %d, on Idx %d (TO BE RECEIVED In frame %d), Nb_ul_idx(%d,%d,%d)\n",
       NODE_ID[Mod_id],
-       Mac_rlc_xface->frame,
-      NULS-1,
-      Lchan_entry->Lchan_info.Lchan_id.Index,
-      Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
-      Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc,
-      CH_mac_inst[Mod_id].TX_chbch_pdu.UL_alloc_pdu[NULS-1].Nb_tb,
-      Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth,
-      idx,
-      Mac_rlc_xface->frame +3,
-      CH_mac_inst[Mod_id].Nb_rx_sched[0],
-      CH_mac_inst[Mod_id].Nb_rx_sched[1],
-      CH_mac_inst[Mod_id].Nb_rx_sched[2]);
+      Mac_rlc_xface->frame);
 #endif
 }
 
 /********************************************************************************************************************/
-void nodeb_generate_chbch(u8 Mod_id){
+void nodeb_generate_bcch(u8 Mod_id){
   /********************************************************************************************************************/
 
-  if(CH_mac_inst[Mod_id].Bcch_lchan.Active==0)
-    return;
+  //  if(CH_mac_inst[Mod_id].Bcch_lchan.Active==0)
+  //    return;
       
   u16 i=0,j=0,k=0;
   unsigned char idx,Size=0;
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
-  LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry_dil;
+  //  LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry_dil;
   MACPHY_DATA_REQ  *Macphy_data_req;
   unsigned short diff = 0;
   
@@ -144,36 +139,104 @@ void nodeb_generate_chbch(u8 Mod_id){
   
   idx=(Mac_rlc_xface->frame+1)%2;
 
-  if (Is_rrc_registered == 1)
+  /// BCCH
+  
+  if (Is_rrc_registered == 1) {
+#ifdef DEBUG_MAC_BCCH
+    msg("[MAC eNB] Sending request for BCCH to RRC\n");
+#endif
     Size=Rrc_xface->mac_rrc_data_req(Mod_id,
 				     CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Lchan_id.Index,
-				     1,
-				     &CH_mac_inst[Mod_id].TX_chbch_pdu.Bcch_payload[0],
+				     0,
+				     &CH_mac_inst[Mod_id].BCCH_pdu.Bcch_payload[0],
 				     0);
+  }
   else
     Size=DUMMY_BCCH_SIZE_BYTES;
-  
-  CH_mac_inst[Mod_id].TX_chbch_pdu.Num_bytes_bcch=Size; 
+#ifdef DEBUG_MAC_BCCH  
+  msg("[MAC eNB] Got BCCH from RRC of size %d (Header %d)\n",Size,
+      CH_BCCH_HEADER_SIZE);
+
+#endif
+  CH_mac_inst[Mod_id].BCCH_pdu.Num_bytes_bcch=Size; 
   
   CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Lchan_status_tx=MAC_TX_DONE;
 
-  if (Is_rrc_registered == 1)
+  memcpy(&CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+  CH_mac_inst[Mod_id].DCI_pdu.Num_common_dci = 1;
+  CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+  CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].L          = 3;
+  CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
+#ifdef DEBUG_MAC_CCCH    
+  msg("[MAC][eNb] Frame %d: Generated CCCH DCI, format 1A\n",mac_xface->frame);
+#endif
+  // Copy payload
+    // generate_dlsch
+}
+
+
+/********************************************************************************************************************/
+void nodeb_generate_ccch(u8 Mod_id){
+  /********************************************************************************************************************/
+
+  //  if(CH_mac_inst[Mod_id].Bcch_lchan.Active==0)
+  //    return;
+      
+  u16 i=0,j=0,k=0;
+  unsigned char idx,Size=0;
+  LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
+  //  LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry_dil;
+  MACPHY_DATA_REQ  *Macphy_data_req;
+  unsigned short diff = 0;
+  
+  if (Is_rrc_registered == 1) {
+#ifdef DEBUG_MAC_CCCH
+    msg("[MAC eNB] Sending request for CCCH to RRC\n");
+#endif
     Size=Rrc_xface->mac_rrc_data_req(Mod_id,
 				     CH_mac_inst[Mod_id].Ccch_lchan.Lchan_info.Lchan_id.Index,
 				     1,
-				     &CH_mac_inst[Mod_id].TX_chbch_pdu.Ccch_payload[0],
+				     &CH_mac_inst[Mod_id].CCCH_pdu.Ccch_payload[0],
 				     0);
+  }
   else
     Size = DUMMY_CCCH_SIZE_BYTES;
   
-  CH_mac_inst[Mod_id].TX_chbch_pdu.Num_bytes_ccch=Size;
+  //  CH_mac_inst[Mod_id].CCCH_pdu.Num_bytes_ccch=Size;
   CH_mac_inst[Mod_id].Ccch_lchan.Lchan_info.Lchan_status_tx=MAC_TX_DONE;
   
-#ifdef DEBUG_MAC_CHBCH
-  msg("[MAC]NODE B: generate CHBCH with %d BCCH bytes & %d CCCH bytes \n"
-      ,CH_mac_inst[Mod_id].TX_chbch_pdu.Num_bytes_bcch,CH_mac_inst[Mod_id].TX_chbch_pdu.Num_bytes_ccch);
-#endif DEBUG_MAC_CHBCH
-  
+#ifdef DEBUG_MAC_CCCH
+  msg("[MAC]NODE B: generate CCCH with %d bytes (header %d) TBS = % d\n"
+      ,Size,CH_CCCH_HEADER_SIZE,dlsch_tbs25[1][2]/8);
+#endif //DEBUG_MAC_CCCH
+
+  // pass to PHY here
+
+  if (Size>CH_CCCH_HEADER_SIZE) {
+    memcpy(&CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+    CH_mac_inst[Mod_id].DCI_pdu.Num_common_dci = 1;
+    CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+    CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].L          = 3;
+    CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
+#ifdef DEBUG_MAC_CCCH    
+    msg("[MAC][eNb] Frame %d: Generated CCCH DCI, format 1A\n",mac_xface->frame);
+#endif
+    // Copy payload
+    // generate_dlsch
+
+  }
+
+}
+
+void nodeb_generate_dci(unsigned char Mod_id) {
+
+  u16 i=0,j=0,k=0;
+  unsigned char idx,Size=0;
+  LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
+  //  LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry_dil;
+  MACPHY_DATA_REQ  *Macphy_data_req;
+  unsigned short diff = 0;
+    
   NDLS=0;
   NULS=0;
   
@@ -202,7 +265,7 @@ void nodeb_generate_chbch(u8 Mod_id){
 	ch_fill_ul_map(Mod_id,Lchan_entry);
 	CH_mac_inst[Mod_id].Dtch_lchan[j][i].Lchan_info.Lchan_status_rx = MAC_SCHED_RX_OK;
       }
-
+      /*
       for(k=0;k<(NB_CNX_CH-1);k++){
 	if ((CH_mac_inst[Mod_id].Dtch_dil_lchan[j][i][k].Active==1) && 
 	    (CH_mac_inst[Mod_id].Dtch_dil_lchan[j][i][k].Lchan_info_dil.Lchan_status == MAC_SCHED_TX)){
@@ -210,7 +273,7 @@ void nodeb_generate_chbch(u8 Mod_id){
 	  ch_fill_dil_map(Mod_id,Lchan_entry_dil);
 	}
       }
-      
+      */
     }
   }
   
@@ -221,11 +284,11 @@ void nodeb_generate_chbch(u8 Mod_id){
   }
   
   Macphy_data_req->Direction=TX;
-  Macphy_data_req->Pdu_type=CHBCH;
-  Macphy_data_req->Lchan_id.Index=(NODE_ID[Mod_id] << RAB_SHIFT2 );
+  Macphy_data_req->Pdu_type=DCI;
+  //  Macphy_data_req->Lchan_id.Index=65535;//(NODE_ID[Mod_id] << RAB_SHIFT2 );
   Macphy_data_req->CH_index=(NODE_ID[Mod_id] %2 );
-  Macphy_data_req->Dir.Req_tx.Pdu.Chbch_pdu=&CH_mac_inst[Mod_id].TX_chbch_pdu;
-  Macphy_data_req->Phy_resources = &CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Phy_resources_tx;
+  Macphy_data_req->Dir.Req_tx.Pdu.dci_pdu=&CH_mac_inst[Mod_id].DCI_pdu;
+  //  Macphy_data_req->Phy_resources = &CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Phy_resources_tx;
 }
 
 
@@ -260,78 +323,70 @@ void nodeb_get_sach(u8 Mod_id){
     
     Macphy_data_req->Direction=RX;
     
-    Macphy_data_req->Lchan_id.Index      = CH_mac_inst[Mod_id].Rx_sched[idx][i].Lchan_id.Index;
-    Index                                = Macphy_data_req->Lchan_id.Index;
+    //    Macphy_data_req->Lchan_id.Index      = CH_mac_inst[Mod_id].Rx_sched[idx][i].Lchan_id.Index;
+    //    Index                                = Macphy_data_req->Lchan_id.Index;
     
-    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Time_alloc;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Freq_alloc = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Freq_alloc;
-    Lchan_entry->Lchan_info.Phy_resources_rx.Coding_fmt = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Coding_fmt;
-    Macphy_data_req->num_tb                             = CH_mac_inst[Mod_id].Rx_sched[idx][i].Nb_tb;
+    //Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Time_alloc;
+    //Lchan_entry->Lchan_info.Phy_resources_rx.Freq_alloc = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Freq_alloc;
+    //Lchan_entry->Lchan_info.Phy_resources_rx.Coding_fmt = CH_mac_inst[Mod_id].Rx_sched[idx][i].Phy_resources.Coding_fmt;
+    //    Macphy_data_req->num_tb                             = CH_mac_inst[Mod_id].Rx_sched[idx][i].Nb_tb;
     
-    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc=0;
-    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc=0;
+    //    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
     
-    Macphy_data_req->Phy_resources       = &Lchan_entry->Lchan_info.Phy_resources_rx;
-  
+    //    Macphy_data_req->Phy_resources       = &Lchan_entry->Lchan_info.Phy_resources_rx;
+    /*  
     if( ((Macphy_data_req->Lchan_id.Index & RAB_OFFSET1) >> RAB_SHIFT1 ) == 0 ){
-      Macphy_data_req->Pdu_type            = UL_SACH;
-      Macphy_data_req->format_flag         = 1;
+      Macphy_data_req->Pdu_type            = ULSCH;
+      //      Macphy_data_req->format_flag         = 1;
       Macphy_data_req->CH_index = NODE_ID[Mod_id]%2;
-      Lchan_entry->Lchan_info.Nb_sched_tb_ul-=Macphy_data_req->num_tb;
+      //      Lchan_entry->Lchan_info.Nb_sched_tb_ul-=Macphy_data_req->num_tb;
       
 #ifdef DEBUG_MAC_CH_RX
-      msg("[MAC][NODEB %d] TTI %d: Programming UL_SACH for LCHAN %d, Freq %x, Time %x, Num_tb %d, remaining sched tb %d\n",
+      msg("[MAC][NODEB %d] TTI %d: Programming ULSCH for LCHAN %d\n",
 	  NODE_ID[Mod_id],
 	  Mac_rlc_xface->frame,
-	  Index,
-	  Lchan_entry->Lchan_info.Phy_resources_rx.Freq_alloc,
-	  Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc,
-	  Macphy_data_req->num_tb,
-	  Lchan_entry->Lchan_info.Nb_sched_tb_ul);
+	  Index);
+
       
 #endif //DEBUG_MAC_CH_RX
+    */
 
-      Macphy_data_req->tb_size_bytes = Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size;  
+      //      Macphy_data_req->tb_size_bytes = Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size;  
       // Fill active process map (even without HARQ!)
-      bitmap = 0;
-      bitmap_cnt = Macphy_data_req->num_tb;
-      while (bitmap_cnt>0) {
-	bitmap = (bitmap<<1) + 1;
-	bitmap_cnt--;
-      }
+      //      bitmap = 0;
+      //      bitmap_cnt = Macphy_data_req->num_tb;
+      //      while (bitmap_cnt>0) {
+      //	bitmap = (bitmap<<1) + 1;
+      //	bitmap_cnt--;
+      //      }
       
-      Macphy_data_req->Dir.Req_rx.Active_process_map = bitmap;
-    }
+      //      Macphy_data_req->Dir.Req_rx.Active_process_map = bitmap;
+      //    }
     
-    else{
-      
-      Macphy_data_req->Pdu_type            = UL_SACCH_SACH;
-      
-    }
-    
-    Macphy_data_req->Dir.Req_rx.Meas.UL_meas = &CH_mac_inst[Mod_id].UL_meas; 
-
+      //    Macphy_data_req->Dir.Req_rx.Meas.UL_meas = &CH_mac_inst[Mod_id].UL_meas; 
+    /*
 #ifdef DEBUG_MAC_CH_RX    
     //if(In_idx == DTCH){
     msg("_______________________________________________________________________________________\n");
-    msg("[OPENAIR][MAC] TTI %d Inst %d: GET_SACH for LCHAN_ID %d, numTb=%d on Freq_alloc %x, Idx %d\n",
+    msg("[OPENAIR][MAC] TTI %d Inst %d: GET_SACH for LCHAN_ID %d, Idx %d\n",
 	Mac_rlc_xface->frame,
 	  Mod_id,
 	Macphy_data_req->Lchan_id.Index,
-	Macphy_data_req->num_tb,
-	Macphy_data_req->Phy_resources->Freq_alloc,
+	//	Macphy_data_req->num_tb,
+	//	Macphy_data_req->Phy_resources->Freq_alloc,
 	idx);
 #endif //DEBUG_MAC_CH_RX
-
+    */
     Lchan_entry->Lchan_info.Lchan_status_rx=LCHAN_IDLE;
   }
   
   CH_mac_inst[Mod_id].Nb_rx_sched[idx]=0;
 }
 
-/********************************************************************************************************************/
+/******************************************************************************************************************
 void nodeb_decode_sch(u8 Mod_id, UL_MEAS* UL_meas, u16 Idx2){
-  /********************************************************************************************************************/
+
  
   unsigned char i;
   if(CH_mac_inst[Mod_id].Def_meas[Idx2].Active==1){
@@ -344,167 +399,12 @@ void nodeb_decode_sch(u8 Mod_id, UL_MEAS* UL_meas, u16 Idx2){
   }
 }
 
- /********************************************************************************************************************/
-
-void nodeb_process_sacch(unsigned char Mod_id,
-			 LCHAN_INFO_TABLE_ENTRY *Lchan_entry,
-			 unsigned char Lchan_index,
-			 unsigned char User_index,
-			 UL_SACCH_PDU* Sacch_pdu) {
-/********************************************************************************************************************/
-
-  u8 Qdepth,kk=1; u16 j=1;
-  int Diff;
-
-  // if logical channel is DCCH, get Queueing info from active LCHAN (1-bit per DTCH)
-  if(Lchan_index == DCCH){
-    
-    CH_mac_inst[Mod_id].Dcch_lchan[User_index].Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
-    
-    if(Sacch_pdu->UL_sacch_fb.Qdepth!=0){
-      Qdepth= Sacch_pdu->UL_sacch_fb.Qdepth & j ;
-      
-      if(Qdepth>0){
-#ifdef DEBUG_FEEDBAK
-	msg("__________============+++++++++++TX REQ FOR DCCH, TTI %d !!!!\n",Mac_rlc_xface->frame);
-#endif //DEBUG_FEEDBAK
-	CH_mac_inst[Mod_id].Dcch_lchan[User_index].Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=1;	
-	CH_mac_inst[Mod_id].Dcch_lchan[User_index].Lchan_info.Lchan_status_rx = MAC_SCHED_RX_REQ;      
-	Lchan_entry->Next_sched_limit-=DCCH_SCHED_PERIOD;
-      }
-      
-      else
-	Lchan_entry->Lchan_info.Lchan_status_rx=LCHAN_IDLE;    
-
-      j=2;
-      
-      // scan all bits in Qdepth field for BW requests
-      do{
-	// check bit j-1
-	Qdepth= Sacch_pdu->UL_sacch_fb.Qdepth & j ;
-
-	if(Qdepth!=0){ // if LCHAN needs BW
-	  if(CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Active == 1){
-	    // if LCHAN is activated
-
-#ifdef DEBUG_MAC_FEEDBACK
-	       msg("__________________________________________________________\n");
-	        msg("[NODEB %d]TTI %d, REQ_TX on DCCH FB from user %d for DTCH Lchan with Offset %d\n",
-	    	Mod_id,Mac_rlc_xface->frame,User_index,kk);
-#endif //DEBUG_MAC_FEEDBACK
-
-		if((CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth==0)
-		   && (CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Nb_sched_tb_ul==0) ){
-		  
-		  // if BW has not been allocated yet give one 1 TB to UL, rest comes with refined measurements
-		  CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth++;
-		  
-		  if((Mac_rlc_xface->frame-CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti)<SCHED_LONG_MAW)
-		    
-		    CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Req_rate = 
-		      (CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Req_rate *
-		       (SCHED_LONG_MAW-(Mac_rlc_xface->frame-CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti)) +   
-		       (CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Lchan_desc[0].transport_block_size*8))/SCHED_LONG_MAW;
-		  //(Mac_rlc_xface->frame-CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti))/SCHED_LONG_MAW;
-		  
-		  else
-		    
-		    CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Req_rate = 0;
-		  		      CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Lchan_desc[0].transport_block_size*8
-		    /((Mac_rlc_xface->frame-CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti));
-		  
-
-		  CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
-		}
-
-#ifdef DEBUG_MAC_FEEDBACK
-		msg("[MAC][NODEB] TTI: %d Requesting BW for user %d Lchan %d, Qdepth %d, Ul_sched %d\n",
-		    Mac_rlc_xface->frame,User_index,kk+DTCH_BD);
-#endif //DEBUG_MAC_FEEDBACK
-
-	  }
-	  else{
-
-#ifdef DEBUG_MAC_FEEDBACK
-	    msg("[MAC][NODEB]WARNINIG: DECODE UL_SACH_FB from UE_INDEX %d, Req_Tx_Op for LCHAN_ID %d wich is not Active!!!! \n",UE_index,Mac_inst[Mod_id].Dtch_lchan[kk][UE_index].Lchan_info.Lchan_id.Index);
-#endif //DEBUG_MAC_FEEDBACK
-	  }
-	}// if LCHAN needs BW
-
-	/*
-	else{//update RX_REQ_RATE
-	  CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Req_rate = 0;
-	  //	    (CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Req_rate *(SCHED_LONG_MAW-(Mac_rlc_xface->frame-CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti)))/SCHED_LONG_MAW;
-	  CH_mac_inst[Mod_id].Dtch_lchan[kk][User_index].Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
-	}
-	*/
-	j<<=1; // go to next bit
-	kk++; // increment LCHAN index
-      }while(j<64); // LCHAN loop
-    } // Qdepth has bandwidth requests
-  } // SACCH is from a DCCH
-  
-
-
-  else{ // SACCH was from a DTCH, get the BW information
-
-    if(Sacch_pdu->UL_sacch_fb.Qdepth!=0){
-
-      Diff=Sacch_pdu->UL_sacch_fb.Qdepth - Lchan_entry->Lchan_info.Nb_sched_tb_ul;
-      
-      if(Diff >= 0){
-	
-	Lchan_entry->Lchan_info.Req_rate=((Lchan_entry->Lchan_info.Req_rate
-					   *(1*SCHED_LONG_MAW-(Mac_rlc_xface->frame-Lchan_entry->Lchan_info.Last_feedback_tti)))
-					  +((Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size*8*
-					     (Sacch_pdu->UL_sacch_fb.Qdepth-(Lchan_entry->Lchan_info.Nb_sched_tb_ul
-									     + Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth)))*((1))))/(1*SCHED_LONG_MAW);//bits/TTI
-	
-	Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth= Diff;
-      }
-      
-      else{
-		msg("/**************************/ FIX THIS (ON FB )/*********************************/\n");
-	Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=0;
-	Lchan_entry->Lchan_info.Req_rate=0;
-	return;
-	
-      }
-      Lchan_entry->Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
-#ifdef DEBUG_MAC_FEEDBACK
-      
-      msg("[MAC][NODEB]Frame %d : DECODE UL_SACH_FB from UE_INDEX %d, Qdepth for LCHAN_ID  %d is %d TB, meas_Qdepth %d, Cuur_frame nodeb schedules %d Tb \n",
-	  Mac_rlc_xface->frame,
-	  User_index,
-	  Lchan_entry->Lchan_info.Lchan_id.Index,
-	  Sacch_pdu->UL_sacch_fb.Qdepth,
-	  Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth,
-	  Lchan_entry->Lchan_info.Nb_sched_tb_ul);
-#endif
-      
-    }
-    
-    else{
-      Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=0;
-    }
-  }
-  if(Lchan_entry->Lchan_info.Lchan_status_rx!=MAC_SCHED_RX_REQ)
-    Lchan_entry->Lchan_info.Lchan_status_rx=LCHAN_IDLE;
-  CH_mac_inst[Mod_id].Def_meas[User_index].Wideband_sinr = Sacch_pdu->UL_sacch_fb.Wideband_sinr;
-  CH_mac_inst[Mod_id].Def_meas[User_index].cqi = Sacch_pdu->UL_sacch_fb.cqi;
-  
-  for (j=0;j<NUMBER_OF_MEASUREMENT_SUBBANDS;j++) {
-    CH_mac_inst[Mod_id].Def_meas[User_index].Sinr_meas[0][j] = ((Sacch_pdu->UL_sacch_fb.cqi>>(2*j))&3);
-  }
-}
-
+*/
 
 /*******************************************************************************************************************/
-void nodeb_decode_sach(u8 Mod_id,
-		       UL_SACH_PDU* Sach_pdu, 
-		       UL_MEAS* UL_meas, 
-		       unsigned short Lchan_id_index,
-		       int *crc_status){
+void nodeb_decode_ulsch(u8 Mod_id,
+			ULSCH_PDU* ULSCH_pdu,unsigned short rnti) {
+
   /********************************************************************************************************************/
   
   u16 Rx_size,j,One=0x01;
@@ -513,15 +413,15 @@ void nodeb_decode_sach(u8 Mod_id,
   
   unsigned short User_index,Lchan_index;
   
-  User_index = ( ( Lchan_id_index & RAB_OFFSET2 ) >> RAB_SHIFT2 );
-  Lchan_index = (Lchan_id_index & RAB_OFFSET);
+  User_index = 0;//( ( Lchan_id_index & RAB_OFFSET2 ) >> RAB_SHIFT2 );
+  Lchan_index = DTCH_BD+1;//(Lchan_id_index & RAB_OFFSET);
   if(Lchan_index == DCCH){
     Lchan_entry=&CH_mac_inst[Mod_id].Dcch_lchan[User_index];
   }
   else{	
     Lchan_entry=&CH_mac_inst[Mod_id].Dtch_lchan[Lchan_index-DTCH_BD][User_index];
   }
- 
+  /*
   if(Lchan_entry){
     if (crc_status[0]== -SACCH_ERROR) {
       if (Lchan_index == DCCH) {
@@ -546,8 +446,9 @@ void nodeb_decode_sach(u8 Mod_id,
       }
       return;
     }
-    
-    conv_alloc_to_tb2(1,  // UL_SACH calculation
+  */
+    /*    
+    conv_alloc_to_tb2(1,  // ULSCH calculation
 		      Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc,
 		      Lchan_entry->Lchan_info.Phy_resources_rx.Freq_alloc,
 		      Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -556,6 +457,7 @@ void nodeb_decode_sach(u8 Mod_id,
 		      &Lchan_entry->Lchan_info.Phy_resources_rx.Coding_fmt,
 		      &Nb_tb,
 		      Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size); 
+    
 
     if(Nb_tb==0){
       msg("CH %d: decode sach %d, NB_TB=0, Freq_alloc %x\n",Mod_id,		      
@@ -569,7 +471,8 @@ void nodeb_decode_sach(u8 Mod_id,
     Rx_size = Nb_tb * Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size; 
 
     // Check if any TBs are in error, if at least one, return with error (to be changed later)
-
+    */
+  /*
     for (i=0;i<Nb_tb;i++)
       if (crc_status[i] == (-SACH_ERROR)) {
 
@@ -593,7 +496,7 @@ void nodeb_decode_sach(u8 Mod_id,
 	  CH_mac_inst[Mod_id].Dtch_lchan[Lchan_index-DTCH_BD][User_index].Lchan_info.NB_RX_ERRORS_TB[Nb_tb]++;
 	}	    
       }
-    
+  */
 
     if (Lchan_index != DCCH)
       CH_mac_inst[Mod_id].Dtch_lchan[Lchan_index-DTCH_BD][User_index].Lchan_info.NB_RX_TB[Nb_tb]+=Nb_tb;
@@ -602,13 +505,14 @@ void nodeb_decode_sach(u8 Mod_id,
     
     // Copy PHY decoded packets to 
     memcpy(&Lchan_entry->Lchan_info.Current_payload_rx[0],
-	   &Sach_pdu->Sach_payload[0],
+	   &ULSCH_pdu->payload[0],
 	   Rx_size);
-    
+    /*    
     for(i=0;i<NUMBER_OF_FREQUENCY_GROUPS;i++)
       if(( (One << i) & Lchan_entry->Lchan_info.Phy_resources_rx.Freq_alloc )!=0)
 	Nb_fg++;
-    
+    */
+
     Lchan_entry->Lchan_info.NB_RX+=Nb_tb;
  
     if (Is_rrc_registered == 1) {
@@ -631,26 +535,19 @@ void nodeb_decode_sach(u8 Mod_id,
 					&Lchan_entry->Lchan_info.Current_payload_rx[0],
 					Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size,
 					Nb_tb,
-					(unsigned int*)crc_status);
+					NULL);//(unsigned int*)crc_status);
 	
     }
     
-    //decode UL_SACCH_FB
-    // Process Feedback information
-    nodeb_process_sacch(Mod_id,
-			Lchan_entry,
-			Lchan_index,
-			User_index,
-			&Sach_pdu->UL_sacch_pdu);
     
     Lchan_entry->Lchan_info.Nb_rx_last_tti=Nb_tb*Lchan_entry->Lchan_info.Lchan_desc[0].transport_block_size*8;
-  }
 }
 
 
-/********************************************************************************************************************/
+
+/******************************************************************************************************************
 void nodeb_get_rach(u8 Mod_id,u8 nb_rach){
-  /********************************************************************************************************************/
+
   
   u8 i;
   
@@ -658,7 +555,7 @@ void nodeb_get_rach(u8 Mod_id,u8 nb_rach){
   for( i=0 ; i < 1 ; i++ ){
     if( (Macphy_data_req = new_macphy_data_req(Mod_id))==NULL ) return;
     Macphy_data_req->Direction                        = RX;
-    Macphy_data_req->Pdu_type                         = RACH;
+    Macphy_data_req->Pdu_type                         = ULSCH;
     Macphy_data_req->Lchan_id.Index                   = CH_mac_inst[Mod_id].Ccch_lchan.Lchan_info.Lchan_id.Index;
     Macphy_data_req->Phy_resources=&CH_mac_inst[Mod_id].Ccch_lchan.Lchan_info.Phy_resources_rx;
     Macphy_data_req->Phy_resources->Time_alloc=RACH_TIME_ALLOC;
@@ -677,15 +574,16 @@ void nodeb_get_rach(u8 Mod_id,u8 nb_rach){
       Macphy_data_req->Dir.Req_rx.Active_process_map = 1;
   }
 }
+*/
 
 /********************************************************************************************************************/
-void nodeb_decode_rach(u8 Mod_id,RACH_PDU *Rach_pdu){ 
+void nodeb_decode_rach(u8 Mod_id,ULSCH_PDU *Rach_pdu){ 
   /********************************************************************************************************************/
   unsigned char User_index,i=2,j;
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
-  if(Rach_pdu->Rach_payload[0]!=MAC_RACH_BW_REQ){
+  if(Rach_pdu->payload[0]!=MAC_RACH_BW_REQ){
     memcpy(&CH_mac_inst[Mod_id].Ccch_lchan.Lchan_info.Current_payload_rx[0],
-	   &Rach_pdu->Rach_payload[1],
+	   &Rach_pdu->payload[1],
 	   11);
     
     if (Is_rrc_registered == 1)
@@ -696,31 +594,31 @@ void nodeb_decode_rach(u8 Mod_id,RACH_PDU *Rach_pdu){
 
   //BW REQUEST
   else{
-    User_index=Rach_pdu->Rach_payload[1];
+    User_index=Rach_pdu->payload[1];
     // msg("CH: BW REQ from USER INDEX %d\n",User_index);
-    if(Rach_pdu->Rach_payload[i]!=0){
+    if(Rach_pdu->payload[i]!=0){
       
       Lchan_entry=&CH_mac_inst[Mod_id].Dcch_lchan[User_index];
       if((Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth==0)
 	 && (Lchan_entry->Lchan_info.Nb_sched_tb_ul==0) ){
-	Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=Rach_pdu->Rach_payload[i];
+	Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=Rach_pdu->payload[i];
 	Lchan_entry->Lchan_info.Lchan_status_rx = MAC_SCHED_RX_REQ;        
 	Lchan_entry->Lchan_info.NB_BW_REQ_RX++;        
 	//msg("BW request for DCCH %d, NB_TB %d\n",Lchan_entry->Lchan_info.Lchan_id.Index,
-	//    Rach_pdu->Rach_payload[i]);
+	//    Rach_pdu->payload[i]);
       }
     }
     i++;
     for(j=0;j<NB_RAB_MAX;j++){
-      if(Rach_pdu->Rach_payload[i]!=0){
+      if(Rach_pdu->payload[i]!=0){
 	Lchan_entry=&CH_mac_inst[Mod_id].Dtch_lchan[j][User_index];
 	if((Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth==0)
 	   && (Lchan_entry->Lchan_info.Nb_sched_tb_ul==0) ){
-	  Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=Rach_pdu->Rach_payload[i];
+	  Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=Rach_pdu->payload[i];
 	  Lchan_entry->Lchan_info.NB_BW_REQ_RX++;        
 	  //	  Lchan_entry->Lchan_info.Lchan_status_rx = MAC_SCHED_RX_REQ;        
 	  // msg("BW request for DTCH %d, NB_TB %d\n",Lchan_entry->Lchan_info.Lchan_id.Index,
-	  //   Rach_pdu->Rach_payload[i]);
+	  //   Rach_pdu->payload[i]);
 	}
       }
       i++;
@@ -730,7 +628,7 @@ void nodeb_decode_rach(u8 Mod_id,RACH_PDU *Rach_pdu){
 #define FFact 1
 
 /****************************************************************************************************************/
-void nodeb_generate_sach(u8 Mod_id){
+void nodeb_generate_dlsch(u8 Mod_id){
   /****************************************************************************************************************/
 
   u8 i;
@@ -742,11 +640,14 @@ void nodeb_generate_sach(u8 Mod_id){
   unsigned short Lchan_index,User_index,Tb_size;
   unsigned int bitmap,bitmap_cnt;
 
-  for( i=0;i<CH_mac_inst[Mod_id].TX_chbch_pdu.Num_dl_sach;i++ ){
+  for( i=0;i<CH_mac_inst[Mod_id].Num_dlsch;i++ ){
 
-    Lchan_index = CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[i].Lchan_id.Index & RAB_OFFSET;
-    User_index = (CH_mac_inst[Mod_id].TX_chbch_pdu.DL_sacch_pdu[i].Lchan_id.Index & RAB_OFFSET2) >> RAB_SHIFT2;
+    //    Lchan_index = CH_mac_inst[Mod_id].DL_sacch_pdu[i].Lchan_id.Index & RAB_OFFSET;
+    //    User_index = (CH_mac_inst[Mod_id].DL_sacch_pdu[i].Lchan_id.Index & RAB_OFFSET2) >> RAB_SHIFT2;
     
+    Lchan_index = 1+DTCH_BD;
+    User_index = 0;
+
     if (Lchan_index == DCCH)
       Lchan_entry  = &CH_mac_inst[Mod_id].Dcch_lchan[User_index];
     else
@@ -762,8 +663,8 @@ void nodeb_generate_sach(u8 Mod_id){
 	  Lchan_entry->Lchan_info.Lchan_id.Index,
 	  Lchan_entry->Lchan_info.Phy_resources_tx.Freq_alloc,
 	  Nb_tb,
-	  CH_mac_inst[0].TX_chbch_pdu.Num_dl_sach,
-	  CH_mac_inst[1].TX_chbch_pdu.Num_dl_sach);
+	  CH_mac_inst[0].Num_dlsch,
+	  CH_mac_inst[1].Num_dlsch);
       mac_xface->macphy_exit("");
       return;      
     }
@@ -771,27 +672,30 @@ void nodeb_generate_sach(u8 Mod_id){
     Lchan_entry->Lchan_info.NB_TX+=Nb_tb;
     Lchan_entry->Lchan_info.NB_TX_TB[Nb_tb]++;
     
-    if((Macphy_data_req = new_macphy_data_req(Mod_id))==NULL) return;
+    if((Macphy_data_req = new_macphy_data_req(Mod_id))==NULL) 
+      msg("nodeb_control_plane_procedures.c: nodeb_generate_dlsch: new_macphy_data_req fails\n",mac_xface->frame);
+    return;
+
     Macphy_data_req->Direction = TX;
-    Macphy_data_req->format_flag = 0;
-    Macphy_data_req->Pdu_type = DL_SACH;
-    Macphy_data_req->Lchan_id.Index=Lchan_entry->Lchan_info.Lchan_id.Index;
-    Macphy_data_req->Phy_resources = &Lchan_entry->Lchan_info.Phy_resources_tx;
-    Macphy_data_req->CH_index = NODE_ID[Mod_id]%2;
-    Macphy_data_req->num_tb        = Nb_tb;
-    Macphy_data_req->tb_size_bytes = Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size;
-    Tb_size= Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size;
-    bitmap = 0;
-      bitmap_cnt = Nb_tb;
-      while (bitmap_cnt>0) {
-	bitmap = (bitmap<<1) + 1;
-	bitmap_cnt--;
-      }
+    //    Macphy_data_req->format_flag = 0;
+    Macphy_data_req->Pdu_type = DLSCH;
+    //    Macphy_data_req->Lchan_id.Index=Lchan_entry->Lchan_info.Lchan_id.Index;
+    //    Macphy_data_req->Phy_resources = &Lchan_entry->Lchan_info.Phy_resources_tx;
+    //    Macphy_data_req->CH_index = NODE_ID[Mod_id]%2;
+    //   Macphy_data_req->num_tb        = Nb_tb;
+    //    Macphy_data_req->tb_size_bytes = Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size;
+    //   Tb_size= Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size;
+    //    bitmap = 0;
+    //      bitmap_cnt = Nb_tb;
+    //      while (bitmap_cnt>0) {
+    //	bitmap = (bitmap<<1) + 1;
+    //	bitmap_cnt--;
+    //      }
       // Fill HARQ info
-      Macphy_data_req->Dir.Req_tx.Active_process_map = bitmap;
-      Macphy_data_req->Dir.Req_tx.New_process_map    = bitmap;
+    //      Macphy_data_req->Dir.Req_tx.Active_process_map = bitmap;
+    //      Macphy_data_req->Dir.Req_tx.New_process_map    = bitmap;
       
-      memcpy(&Macphy_data_req->Dir.Req_tx.Pdu.DL_sach_pdu.Sach_payload[0],
+      memcpy(&Macphy_data_req->Dir.Req_tx.Pdu.DLSCH_pdu.payload[0],
 	     &Lchan_entry->Lchan_info.Current_payload_tx[0],
 	     Nb_tb*Lchan_entry->Lchan_info.Lchan_desc[1].transport_block_size);
       
@@ -825,9 +729,9 @@ void nodeb_generate_sach(u8 Mod_id){
 #define MIN_SCORE (1<<30)
 #define MAX_SCORE -MIN_SCORE
 
-/****************************************************************************************************************/
+/****************************************************************************************************************
 void nodeb_scheduler(u8 Mod_id){
-  /****************************************************************************************************************/
+
 
   unsigned short i,j,k,Winner=1;
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry=(LCHAN_INFO_TABLE_ENTRY *)NULL;
@@ -873,9 +777,7 @@ void nodeb_scheduler(u8 Mod_id){
   int tmp,tmp1,tmp2,tmp3;
 
   
-  /***********************************************************************************************************************/  
   // Downlink Scheduling
-  /***********************************************************************************************************************/  
   
   // Loop over all nodes connected to CH and their RABs
   // to collect Queuing information
@@ -1129,7 +1031,7 @@ void nodeb_scheduler(u8 Mod_id){
 	      CH_mac_inst[Mod_id].Nb_sched++;
 	    }
 	    
-	    conv_alloc_to_tb2(0,  // DL_SACH calculation
+	    conv_alloc_to_tb2(0,  // DLSCH calculation
 			      Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc,
 			      Lchan_entry->Lchan_info.Phy_resources_tx.Freq_alloc,
 			      Lchan_entry->Lchan_info.Target_spec_eff_tx,
@@ -1400,9 +1302,9 @@ void nodeb_scheduler(u8 Mod_id){
   }
 
 
-  /************************************************************************************************************************************/  
+
   //  nodeb_sched_ul(unsigned char Mod_id)
-  /************************************************************************************************************************************/  
+
 
   Total_rx_rate=0;
   CH_mac_inst[Mod_id].Nb_sched=0;
@@ -1589,7 +1491,7 @@ void nodeb_scheduler(u8 Mod_id){
 	    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc+=Curr_freq;
 
 	    // Get number of TB for SPEC_EFF
-	    conv_alloc_to_tb2(1,  // UL_SACH calculation
+	    conv_alloc_to_tb2(1,  // ULSCH calculation
 			      Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 			      Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc,
 			      Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1691,7 +1593,7 @@ void nodeb_scheduler(u8 Mod_id){
 	  if(CH_mac_inst[Mod_id].Dtch_lchan[kk][i].Active==1){
 	    Lchan_entry=&CH_mac_inst[Mod_id].Dtch_lchan[kk][i];
 	    if( Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc != 0 ){
-	      conv_alloc_to_tb2(1,  // UL_SACH calculation
+	      conv_alloc_to_tb2(1,  // ULSCH calculation
 				Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 				Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc,
 				Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1708,7 +1610,7 @@ void nodeb_scheduler(u8 Mod_id){
 		      ( UL_FREQ_MAP <<CH_mac_inst[Mod_id].Sinr_sorted_index[i][j] )) ){
 		  
 		  Temp_freq_alloc += ( UL_FREQ_MAP <<CH_mac_inst[Mod_id].Sinr_sorted_index[i][j] );
-		  conv_alloc_to_tb2(1,  // UL_SACH calculation
+		  conv_alloc_to_tb2(1,  // ULSCH calculation
 				    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 				    Temp_freq_alloc,
 				    Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1760,7 +1662,7 @@ void nodeb_scheduler(u8 Mod_id){
 	    Lchan_entry=&CH_mac_inst[Mod_id].Dcch_lchan[i];
 	    if( Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc != 0 ){
 	      
-	      conv_alloc_to_tb2(1,  // UL_SACH calculation
+	      conv_alloc_to_tb2(1,  // ULSCH calculation
 				Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 				Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc,
 				Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1776,7 +1678,7 @@ void nodeb_scheduler(u8 Mod_id){
 		      ( UL_FREQ_MAP <<CH_mac_inst[Mod_id].Sinr_sorted_index[i][j] )) ){
 		
 		  Temp_freq_alloc += ( UL_FREQ_MAP <<CH_mac_inst[Mod_id].Sinr_sorted_index[i][j] );
-		  conv_alloc_to_tb2(1,  // UL_SACH calculation
+		  conv_alloc_to_tb2(1,  // ULSCH calculation
 				    Lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 				    Temp_freq_alloc,
 				    Lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1817,7 +1719,7 @@ void nodeb_scheduler(u8 Mod_id){
 
       if(Looser_lchan_entry!=NULL){
 
-	conv_alloc_to_tb2(1,  // UL_SACH calculation
+	conv_alloc_to_tb2(1,  // ULSCH calculation
 			  Looser_lchan_entry->Lchan_info.Phy_resources_rx_sched.Time_alloc,
 			  Looser_lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc,
 			  Looser_lchan_entry->Lchan_info.Target_spec_eff_rx,
@@ -1877,3 +1779,4 @@ void nodeb_scheduler(u8 Mod_id){
     }
   }
 }
+*/

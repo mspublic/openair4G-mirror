@@ -19,6 +19,7 @@ ________________________________________________________________*/
 #endif //PHY_EMUL
 #include "PHY_INTERFACE/defs.h"
 
+
 extern PHY_RESOURCES CHBCH_PHY_RESOURCES[2];
 extern PHY_RESOURCES DL_SCH_PHY_RESOURCES[2];
 extern PHY_RESOURCES UL_SCH_PHY_RESOURCES[NB_UL_SCHED_MAX];
@@ -53,7 +54,11 @@ extern char Mac_dummy_buffer[50];
 //extern char crc[10];
 extern char Sorted_index_table[MAX_NB_SCHED];  
 #ifndef PHY_EMUL
+#ifndef PHYSIM
 #define NB_INST 1
+#else
+extern unsigned char NB_INST;
+#endif
 extern unsigned char NB_CH_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
@@ -61,6 +66,8 @@ extern void* bigphys_malloc(int);
 #else
 extern EMULATION_VARS *Emul_vars;
 #endif //PHY_EMUL
+
+
 
 #endif //DEF_H
 

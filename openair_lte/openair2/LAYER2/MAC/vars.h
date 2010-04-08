@@ -5,7 +5,6 @@
  Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
 ________________________________________________________________*/
 
-
 #ifndef __MAC_VARS_H__
 #define __MAC_VARS_H__
 #ifdef USER_MODE
@@ -15,6 +14,7 @@ ________________________________________________________________*/
 #include "defs.h"
 #include "PHY_INTERFACE/defs.h"
 #include "COMMON/mac_rrc_primitives.h"
+
 
 
 
