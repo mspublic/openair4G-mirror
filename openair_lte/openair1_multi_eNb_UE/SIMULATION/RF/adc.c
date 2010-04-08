@@ -16,6 +16,6 @@ void adc(double **r_re,
       ((short *)output[aa])[((i+output_offset)<<1)]   = (short)(r_re[aa][i+input_offset]*gain);
       ((short *)output[aa])[1+((i+output_offset)<<1)] = (short)(r_im[aa][i+input_offset]*gain);
     }
-//printf("Adc outputs %d %d  %d \n",i,((short *)output[0])[((i+offset)<<1)], ((i+offset)<<1) );
+    //printf("Adc outputs %d %e  %d \n",i,((short *)output[0])[((i+output_offset)<<1)], ((i+output_offset)<<1) );
   }
 }

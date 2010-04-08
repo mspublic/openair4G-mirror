@@ -26,7 +26,7 @@ ________________________________________________________________*/
 #define DEBUG_PHY
 #endif
 
-//#define DIAG_PHY
+#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
@@ -81,6 +81,10 @@ DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 #ifdef EMOS
 //  fifo_dump_emos_UE emos_dump_UE;
   fifo_dump_emos_eNb emos_dump_eNb;
+#endif
+
+#ifdef DIAG_PHY
+extern int rx_sig_fifo;
 #endif
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
@@ -284,7 +288,7 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l, PH
 			(last_slot == 2) ? 1 : 2,
 			1);
     
-    if (last_slot == 0) {
+    if (last_slot%2==0) {
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, freq_offset_filt = %d \n",mac_xface->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
       
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
@@ -450,7 +454,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
   case 8:
     if (dci_cnt != 1) {
       phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors ++;
-      msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: missed DCI!\n",mac_xface->frame,last_slot>>1,dci_cnt);
+      msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: missed DCI (dci_cnt %d)!\n",mac_xface->frame,last_slot>>1,dci_cnt);
       msg("[PHY_PROCEDURES_UE][DIAG] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, last_slot,
 	  PHY_vars->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
@@ -467,7 +471,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
   if (last_slot==18)
     debug_msg("[PHY_PROCEDURES_LTE][DIAG] Frame %d, slot %d: PDCCH: DCI errors %d, DCI received %d \n",mac_xface->frame,last_slot,phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors,phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received);
 
-
+  /*
   if (((last_slot>>1)==8) && (dci_cnt!=1) && (openair_daq_vars.one_shot_get_frame == 1)) {
     rtf_reset(rx_sig_fifo);
     for (i=0;i<NB_ANTENNAS_RX;i++) {
@@ -479,6 +483,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
     }    
     openair_daq_vars.one_shot_get_frame = 0;
   }
+  x*/
 
 #endif
 
@@ -541,7 +546,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 					    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					    SI_RNTI,
 					    format1A,
-					    &dlsch_ue_cntl, 
+					    &phy_vars_ue->dlsch_ue_cntl, 
 					    &phy_vars_ue->lte_frame_parms,
 					    SI_RNTI,
 					    RA_RNTI,
@@ -653,7 +658,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
     if (((last_slot%2)==0) && (l==0)) {
 
       if ( (dlsch_ue_active == 1) && (dlsch_ue_cntl_active == 1))
-	msg("[PHY_PROCEDURES_LTE] WARNING: phy_vars_ue->dlsch_ue and dlsch_ue_cntl active, but data structures can only handle one at a time\n");
+	msg("[PHY_PROCEDURES_LTE] WARNING: phy_vars_ue->dlsch_ue and phy_vars_ue->dlsch_ue_cntl active, but data structures can only handle one at a time\n");
 
       if (dlsch_ue_active == 1) {
 #ifdef DEBUG_PHY
@@ -732,7 +737,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   &dlsch_ue_cntl,
+		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
 		   dual_stream_UE);
 	
@@ -744,10 +749,10 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	  dlsch_cntl_errors=0;
 
 	/*
-	if (dlsch_ue_cntl) {
+	if (phy_vars_ue->dlsch_ue_cntl) {
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars_cntl[eNb_id]->llr[0],
 			       phy_vars_ue->lte_frame_parms,
-			       dlsch_ue_cntl,
+			       phy_vars_ue->dlsch_ue_cntl,
 			       ((last_slot>>1)-1)%10);
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
@@ -778,7 +783,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   phy_vars_ue->dlsch_ue[0][0],
+		   phy_vars_ue->dlsch_ue[0],
 		   m,
 		   dual_stream_UE);
       }
@@ -794,7 +799,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   &dlsch_ue_cntl,
+		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
 		   dual_stream_UE);
       }
@@ -830,7 +835,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   &dlsch_ue_cntl,
+		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
 		   dual_stream_UE);
       }
@@ -866,7 +871,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   &phy_vars_ue->lte_frame_parms,
 		   eNb_id,
 		   eNb_id_i,
-		   &dlsch_ue_cntl,
+		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
 		   dual_stream_UE);
       }
@@ -1034,6 +1039,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 		       eNb_id,
 		       next_slot);
 
+
   /*
   if (next_slot == 0) {
     generate_pss(lte_eNB_common_vars.txdataF[eNb_id],
@@ -1095,7 +1101,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 &CCCH_alloc_pdu,
 					 SI_RNTI,
 					 format1A,
-					 &dlsch_eNb_cntl,
+					 &phy_vars_eNb->dlsch_eNb_cntl,
 					 &phy_vars_eNb->lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
@@ -1148,7 +1154,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 					 &DLSCH_alloc_pdu2,
 					 C_RNTI,
 					 format2_2A_M10PRB,
-					 phy_vars_eNb->dlsch_eNb[0],
+					 &phy_vars_eNb->dlsch_eNb[0][0],
 					 &phy_vars_eNb->lte_frame_parms,
 					 SI_RNTI,
 					 RA_RNTI,
@@ -1262,6 +1268,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 		       phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 		       next_slot>>1);
     }
+
   }
 
   // For even next slots generate dlsch
@@ -1308,7 +1315,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
     }
 
     if (dlsch_eNb_cntl_active == 1) {
-      input_buffer_length = dlsch_eNb_cntl->harq_processes[0]->TBS/8;
+      input_buffer_length = phy_vars_eNb->dlsch_eNb_cntl->harq_processes[0]->TBS/8;
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
@@ -1318,13 +1325,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       
       dlsch_encoding(dlsch_input_buffer,
 		     &phy_vars_eNb->lte_frame_parms,
-		     dlsch_eNb_cntl);
+		     phy_vars_eNb->dlsch_eNb_cntl);
       
       re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 				      AMP,
 				      next_slot/2,
 				      lte_frame_parms,
-				      dlsch_eNb_cntl);
+				      phy_vars_eNb->dlsch_eNb_cntl);
       dlsch_eNb_cntl_active = 0;
 
 #ifdef DEBUG_PHY    
@@ -1334,6 +1341,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
     }
 
   }
+
+    write_output("eNb_txsigF0_pilots.m","eNb_txsF0_pilots", &(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][(next_slot>>1)*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size*12]),phy_vars_eNb->lte_frame_parms.ofdm_symbol_size*12,1,1);
+
+
 }
   
 

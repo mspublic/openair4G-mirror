@@ -406,7 +406,12 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
 #else
-    eNB_common_vars->txdata[eNb_id] = NULL;
+    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+      eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdata[eNb_id][i]);
+#endif
+    }
 #endif
   
 

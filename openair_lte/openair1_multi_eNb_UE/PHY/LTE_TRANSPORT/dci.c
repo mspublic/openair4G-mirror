@@ -20,7 +20,7 @@
 #endif
 
 //#define DEBUG_DCI_ENCODING 1
-//#define DEBUG_DCI_DECODING 1
+#define DEBUG_DCI_DECODING 1
 
 #ifndef __SSE3__
 __m128i zero2;

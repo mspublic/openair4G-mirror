@@ -1,6 +1,6 @@
 //PHY_CONFIG *PHY_config_secsys;
 
-PHY_VARS *PHY_vars_secsys;
+//PHY_VARS *PHY_vars_secsys;
 /*
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_secsys;
 
@@ -22,3 +22,7 @@ LTE_UE_ULSCH_t **ulsch_ue_secsys;
 */
 LTE_eNb_DLSCH_t *dlsch_eNb_cntl_secsys;
 LTE_UE_DLSCH_t *dlsch_ue_cntl_secsys;
+
+#define NofSYSTEMS 2
+#define PRI_SYS 0
+#define SEC_SYS 1

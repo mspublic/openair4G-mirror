@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
