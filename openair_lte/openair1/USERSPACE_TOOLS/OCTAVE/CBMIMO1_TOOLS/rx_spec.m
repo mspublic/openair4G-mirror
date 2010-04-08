@@ -6,8 +6,8 @@ gpib_device=28;   % this is configured in the signal generator Utilities->System
 cables_loss_dB = 6;    % we need to account for the power loss between the signa
 power_dBm = -95;
 
-gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
-gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); %  activate output 
+%gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
+%gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); %  activate output 
 
 oarf_set_calibrated_rx_gain(0); % turns off the AGC
 oarf_set_rx_gain(80,85,0,0);

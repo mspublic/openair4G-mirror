@@ -113,6 +113,9 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 25 : SET TIMING ADVANCE param\n");
     printf("[openair][INFO] Action 26 : SET FREQ OFFSET param\n");
     printf("[openair][INFO] Action 27 : Start Primary Clusterhead in cognitive mode - param 0/1 = frequency offset on/off - param NODE_ID\n");
+    printf("[openair][INFO] Action 28 : Set UE MCS - param 0-31\n");
+    printf("[openair][INFO] Action 29 : Start UE Rate Adaptation param 0/1 = frequency offset on/off - param NODE_ID\n");
+    printf("[openair][INFO] Action 30 : Set DLSCH Transmission Mode param 1-7\n");
     printf("[openair][INFO] Action 39 : Send EMOS recording flag\n"); 
     exit (-1);
   }
@@ -169,6 +172,12 @@ int main (int argc, char **argv) {
     printf("[openair][INFO][START] Action              is : SET_TIMING_ADVANCE\n");
   else if (action == 26) // Set freq offset
     printf("[openair][INFO][START] Action              is : SET_FREQ_OFFSET\n");
+  else if (action == 28) // 
+    printf("[openair][INFO][START] Action              is : SET_UE_MCS\n");
+  else if (action == 29) // 
+    printf("[openair][INFO][START] Action              is : SET_DLSCH_RATE_ADAPTATION\n");
+  else if (action == 30) // 
+    printf("[openair][INFO][START] Action              is : SET_DLSCH_TRANSMISSION_MODE\n");
   else if (action == 39) // Send EMOS Rec flag
     printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else {
@@ -685,6 +694,26 @@ case 24 :
     }
     break;
 
+  case 28:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE MCS to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_MCS, &fc);
+    break;
+
+  case 29:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET DLSCH Rate Adaptation to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_DLSCH_RATE_ADAPTATION, &fc);
+    break;
+
+  case 30:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET DLSCH Transmission Mode to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_DLSCH_TRANSMISSION_MODE, &fc);
+    break;
 	
   case 39:
     result=ioctl(openair_fd, openair_START_EMOS_NODEB);
