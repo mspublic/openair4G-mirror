@@ -372,7 +372,10 @@ for (aa=0;aa<aa_max;aa++) {
 	last_slot+=20;
       next_slot = (slot + 1)%20;
       
-      // where signal encoding and decoding is actually performed
+      /*-------------------------------------------------------------
+	                   ALL LTE PROCESSING
+      ---------------------------------------------------------------*/
+
       printf("\n");
       printf("Frame %d, slot %d : eNB procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 1;
@@ -392,6 +395,11 @@ for (aa=0;aa<aa_max;aa++) {
       
       //      write_output("eNb_txsigF0.m","eNb_txsF0", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+
+      /*-------------------------------------------------------------
+	ASSIGN POINTERS TO CORRECT BUFFERS ACCORDING TO TDD-STRUCTURE
+	                  -----  TX PART  -----
+      ---------------------------------------------------------------*/
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
 	txdataF = PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id];
@@ -578,27 +586,12 @@ for (aa=0;aa<aa_max;aa++) {
 #endif
 	}
       }
-      
-#ifdef SKIP_RF_CHAIN
-
-      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	  r_re[aa][i] = s_re[aa][i];
-	  r_im[aa][i] = s_im[aa][i];
-#ifdef SECONDARY_SYSTEM
-	  r_re_secsys[aa][i] = s_re_secsys[aa][i];
-	  r_im_secsys[aa][i] = s_im_secsys[aa][i];
-#endif
-	}
-      }
-
-      if (next_slot == 10) {
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0",r_re[0],lte_frame_parms->samples_per_tti,1,7);
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0_tmp.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
-      }
-
+    
+      /*-------------------------------------------------------------
+	ASSIGN POINTERS TO CORRECT BUFFERS ACCORDING TO TDD-STRUCTURE
+	                  -----  RX PART  -----
+      ---------------------------------------------------------------*/
+  
   if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
     rxdata = PHY_vars_UE[0]->lte_ue_common_vars.rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
@@ -629,6 +622,30 @@ for (aa=0;aa<aa_max;aa++) {
 
 #endif //SECONDARY_SYSTEM
 
+      /*-------------------------------------------------------------
+	                 TRANSMISSION SIMULATION
+      ---------------------------------------------------------------*/
+  
+#ifdef SKIP_RF_CHAIN
+
+      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
+	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	  r_re[aa][i] = s_re[aa][i];
+	  r_im[aa][i] = s_im[aa][i];
+#ifdef SECONDARY_SYSTEM
+	  r_re_secsys[aa][i] = s_re_secsys[aa][i];
+	  r_im_secsys[aa][i] = s_im_secsys[aa][i];
+#endif
+	}
+      }
+
+      if (next_slot == 10) {
+	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
+        write_output(fname,"eNb_txs0",r_re[0],lte_frame_parms->samples_per_tti,1,7);
+	sprintf(fname,"eNb_frame%d_slot%d_txsig0_tmp.m",mac_xface->frame,next_slot);
+        write_output(fname,"eNb_txs0_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
+      }
+
   slot_offset_time = next_slot*(lte_frame_parms->samples_per_tti>>1);
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -655,7 +672,11 @@ for (aa=0;aa<aa_max;aa++) {
       printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 
-      // simulate transmission
+      /*-------------------------------------------------------------
+	                     CHANNEL MODEL 
+                         ANTENNA(s) TO ANTENNA(s)
+      ---------------------------------------------------------------*/
+
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
@@ -690,7 +711,11 @@ for (aa=0;aa<aa_max;aa++) {
       printf("tx_pwr_secsys %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 
-      // simulate transmission
+      /*-------------------------------------------------------------
+	                     CHANNEL MODEL 
+                         ANTENNA(s) TO ANTENNA(s)
+      ---------------------------------------------------------------*/
+
       multipath_channel(ch_secsys,s_re_secsys,s_im_secsys,
 			r_re_secsys,r_im_secsys,
 			amps,Td,BW,ricean_factor,aoa,
@@ -723,7 +748,11 @@ for (aa=0;aa<aa_max;aa++) {
 	}
       }
    
-      // RF model
+      /*-------------------------------------------------------------
+	                       RF MODELLING 
+                                 RX PART
+      ---------------------------------------------------------------*/
+
       rf_rx(r_re,
 	    r_im,
 	    NULL,
@@ -773,16 +802,11 @@ for (aa=0;aa<aa_max;aa++) {
       printf("rx_pwr_secsys (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1); 
 
 #endif //SECONDARY_SYSTEM
-      
-  if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-    rxdata = PHY_vars_UE[0]->lte_ue_common_vars.rxdata;
-  else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-    rxdata = PHY_vars_eNb[0]->lte_eNB_common_vars.rxdata[eNb_id];
-  else //it must be a special subframe
-    if (next_slot%2==0) //DL part
-      rxdata = PHY_vars_UE[0]->lte_ue_common_vars.rxdata;
-    else // UL part
-      rxdata = PHY_vars_eNb[0]->lte_eNB_common_vars.rxdata[eNb_id];
+     
+      /*-------------------------------------------------------------
+	                     A/D CONVERSION
+			     (QUANTIZATION)
+      ---------------------------------------------------------------*/
 
   adc(r_re,
       r_im,
@@ -805,19 +829,6 @@ for (aa=0;aa<aa_max;aa++) {
   printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
   
 #ifdef SECONDARY_SYSTEM
-  if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-    rxdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
-  else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
-    rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
-  else //it must be a special subframe 
-    //--> for SEC_SYS listen every 100 frames, after of coarse initial synchronizatio. Need for a "init_synch`d" flag to check
-    //    if (init_sync==true || mac_xface->frame%100>0) {
-      if (next_slot%2==0) //DL part
-	rxdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
-      else // UL part
-	rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
-      // } else
-      //	rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
 
   slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
 
@@ -878,22 +889,8 @@ if (last_slot == 19) {
 
   fclose(rx_frame_file);
   */
-
-
-
     }
   }
-/*
-  write_output("rxsigF0.m","rxsF0", PHY_vars_eNb->lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
-  write_output("rxsigF1.m","rxsF1", PHY_vars_eNb->lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
-  write_output("srs_seq.m","srs",PHY_vars_eNb->lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",PHY_vars_eNb->lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
-  write_output("srs_est1.m","srsest1",PHY_vars_eNb->lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("rxsigF1_ext.m","rxsF1_ext", PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
-  write_output("drs_est0.m","drsest0",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-*/
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
@@ -914,6 +911,19 @@ if (last_slot == 19) {
   free(s_im);
   free(r_re);
   free(r_im);
+
+#ifdef SECONDARY_SYSTEM
+for (i=0;i<2;i++) {
+    free(s_re_secsys[i]);
+    free(s_im_secsys[i]);
+    free(r_re_secsys[i]);
+    free(r_im_secsys[i]);
+  }
+  free(s_re_secsys);
+  free(s_im_secsys);
+  free(r_re_secsys);
+  free(r_im_secsys);
+#endif //SECONDARY_SYSTEM
   
   lte_sync_time_free();
 
