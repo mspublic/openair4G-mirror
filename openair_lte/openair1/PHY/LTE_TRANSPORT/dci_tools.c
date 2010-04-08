@@ -168,7 +168,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
-    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI;
+    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (dlsch[0]->mode == 1) ? SISO : ALAMOUTI;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
@@ -238,11 +238,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     switch (tpmi) {
     case 0 : 
-      if (frame_parms->nb_antennas_tx > 1)
 	dlsch0->harq_processes[harq_pid]->mimo_mode   = ALAMOUTI;
-      else
-	dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
-      break;
+	break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;
       return(-1);
@@ -353,7 +350,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
-    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI;
+    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = dlsch[0]->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
@@ -416,10 +413,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     switch (tpmi) {
     case 0 : 
-      if (frame_parms->nb_antennas_tx > 1)
 	dlsch0->harq_processes[harq_pid]->mimo_mode   = ALAMOUTI;
-      else
-	dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
       break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;

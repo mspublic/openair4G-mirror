@@ -395,7 +395,7 @@ typedef struct {
 
 typedef struct {
   /// Transmission mode
-  unsigned char mode;
+  unsigned char mode1_flag;
   /// Current HARQ process id
   unsigned char current_harq_pid;
   /// Current RB allocation
