@@ -603,9 +603,10 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
     emos_dump_UE.frame_tx = *((unsigned int*) lte_ue_pbch_vars[eNb_id]->decoded_output);
-    //emos_dump_UE.mimo_mode = lte_ue_pbch_vars[eNb_id]->decoded_output[4];
+    emos_dump_UE.mimo_mode = lte_ue_pbch_vars[eNb_id]->decoded_output[4];
     //PHY_vars->PHY_measurements.frame_tx = *((unsigned int*) lte_ue_pbch_vars->decoded_output);
 #endif
+    dlsch_ue[0]->mode1_flag = (lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
   }
   else {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq++;
@@ -1297,6 +1298,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 #endif
     
     *((unsigned int*) pbch_pdu) = mac_xface->frame;
+    ((unsigned char*) pbch_pdu)[4] = dlsch_eNb[0]->mode;
     
     generate_pbch(lte_eNB_common_vars->txdataF[eNb_id],
 		  AMP,
