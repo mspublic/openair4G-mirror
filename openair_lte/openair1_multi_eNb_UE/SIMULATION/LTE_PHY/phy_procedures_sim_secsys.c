@@ -17,7 +17,7 @@
 #ifdef SECONDARY_SYSTEM
 #include "decl_secsys.h"
 #endif
-//#define SKIP_RF_CHAIN
+#define SKIP_RF_CHAIN
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 1
@@ -87,7 +87,8 @@ int main(int argc, char **argv) {
   double ip =0.0;
   double N0W, path_loss, path_loss_dB, tx_pwr, rx_pwr;
 #ifdef SECONDARY_SYSTEM
-  double path_loss_secsys, path_loss_dB_secsys, tx_pwr_secsys, rx_pwr_secsys;
+  double path_loss_secsys, path_loss_dB_secsys, tx_pwr_secsys, rx_pwr_secsys, SIR;
+  int SIRdB = 0;
 #endif
   int rx_pwr2;
 
@@ -166,6 +167,8 @@ int main(int argc, char **argv) {
 
   msg("[PHY_vars_UE] = %p",PHY_vars_UE);
 
+  lte_sync_time_init(lte_frame_parms);
+
   //use same frame parameters for UE as for eNb
   PHY_vars_UE[0]->lte_frame_parms = *lte_frame_parms;
 #ifdef SECONDARY_SYSTEM
@@ -184,6 +187,8 @@ int main(int argc, char **argv) {
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[0]->lte_eNB_common_vars,
 		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars);
+  PHY_vars_eNb[0]->is_secondary_eNb = 0;
+  PHY_vars_eNb[0]->is_init_sync = 0; // not used for primary eNb
 #ifdef SECONDARY_SYSTEM
   phy_init_lte_ue(lte_frame_parms,
 		  &PHY_vars_UE[1]->lte_ue_common_vars,
@@ -194,6 +199,8 @@ int main(int argc, char **argv) {
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[1]->lte_eNB_common_vars,
 		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars);
+  PHY_vars_eNb[1]->is_secondary_eNb = 1;
+  PHY_vars_eNb[0]->is_init_sync = 0;
 #endif
 
 #ifndef SECONDARY_SYSTEM
@@ -399,6 +406,7 @@ for (aa=0;aa<aa_max;aa++) {
       /*-------------------------------------------------------------
 	ASSIGN POINTERS TO CORRECT BUFFERS ACCORDING TO TDD-STRUCTURE
 	                  -----  TX PART  -----
+                 and perform OFDM modulation ifndef IFFT_FPGA
       ---------------------------------------------------------------*/
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
@@ -426,28 +434,28 @@ for (aa=0;aa<aa_max;aa++) {
 #endif
       }
       else //it must be a special subframe
-	//which also means that SECONDARY system must listen, and synchronize as UE. PSS located in the 3rd symbol in this slot.
+	//which also means that SECONDARY system must listen, and synchronize as an UE, every x(=10) frame(s). PSS located in the 3rd symbol in this slot.
 	if (next_slot%2==0) {//DL part
 	  txdataF = PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id];
-#ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
-	  txdataF = PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id_secsys];
+#ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here, primary will transmit
+	  txdataF_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id_secsys]; // should point to NULL (though this will now just point to a lot of zeros, since phy_procedures routine will not generate PSS).
 #endif
 #ifndef IFFT_FPGA
 	  txdata = PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id];
-#ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
-	  txdata = PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id_secsys];
+#ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here, primary will transmit
+	  txdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id_secsys]; // should point to NULL (though this will now just point to a lot of zeros, since phy_procedures routine will not generate PSS).
 #endif
 #endif
 	}
 	else {// UL part
 	  txdataF = PHY_vars_UE[0]->lte_ue_common_vars.txdataF;
 #ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
-	  txdataF = PHY_vars_UE[1]->lte_ue_common_vars.txdataF;
+	  txdataF_secsys = PHY_vars_UE[1]->lte_ue_common_vars.txdataF;
 #endif
 #ifndef IFFT_FPGA
 	  txdata = PHY_vars_UE[0]->lte_ue_common_vars.txdata;
 #ifdef SECONDARY_SYSTEM // SEC_SYS should be in Rx-mode here
-	  txdata = PHY_vars_UE[1]->lte_ue_common_vars.txdata;
+	  txdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.txdata;
 #endif
 #endif
 	}
@@ -609,15 +617,16 @@ for (aa=0;aa<aa_max;aa++) {
     rxdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
   else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
     rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
-  else //it must be a special subframe 
-    //--> for SEC_SYS listen every 100 frames, after of coarse initial synchronizatio. Need for a "init_synch`d" flag to check
-    //    if (init_sync==true || mac_xface->frame%100>0) {
+  else //it must be a special subframe
+    //which also means that SECONDARY system must listen, and synchronize as an UE, every x(=10) frame(s) or every frame the on power up. PSS is located in the 3rd symbol in this slot.
+    if (PHY_vars_eNb[1]->is_init_sync && mac_xface->frame%10>0) {
       if (next_slot%2==0) //DL part
 	rxdata_secsys = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
       else // UL part
 	rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
-      // } else
-      //	rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
+    } 
+    else // UL part
+      	rxdata_secsys = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
 
 
 #endif //SECONDARY_SYSTEM
@@ -627,14 +636,14 @@ for (aa=0;aa<aa_max;aa++) {
       ---------------------------------------------------------------*/
   
 #ifdef SKIP_RF_CHAIN
-
+  SIR = pow(10,(double)(SIRdB)/10);
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
 	  r_re[aa][i] = s_re[aa][i];
 	  r_im[aa][i] = s_im[aa][i];
 #ifdef SECONDARY_SYSTEM
-	  r_re_secsys[aa][i] = s_re_secsys[aa][i];
-	  r_im_secsys[aa][i] = s_im_secsys[aa][i];
+	  r_re_secsys[aa][i] = s_re_secsys[aa][i]+s_re[aa][i]*sqrt(1.0/(2*SIR));
+	  r_im_secsys[aa][i] = s_im_secsys[aa][i]+s_im[aa][i]*sqrt(1.0/(2*SIR));
 #endif
 	}
       }
@@ -869,8 +878,8 @@ if (last_slot == 19) {
  
     write_output("UE_txsig0_1.m","UE_txs0_1", PHY_vars_UE[1]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_txsig1_1.m","UE_txs1_1", PHY_vars_UE[1]->lte_ue_common_vars.txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_txsig0_1.m","eNb_txs0_1", PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_txsig1_1.m","eNb_txs1_1", PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_txsig0_1.m","eNb_txs0_1", PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id_secsys][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_txsig1_1.m","eNb_txs1_1", PHY_vars_eNb[1]->lte_eNB_common_vars.txdata[eNb_id_secsys][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   }
 #endif //SECONDARY_SYSTEM
   

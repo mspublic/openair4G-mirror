@@ -121,6 +121,12 @@ typedef struct
   LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX];
   LTE_eNb_DLSCH_t  *dlsch_eNb_cntl;
 
+  unsigned char    is_secondary_eNb; // primary by default
+  unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
+  unsigned char    is_ready_to_communicate; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
+  unsigned char    PeNb_id;          /// id of Primary eNb
+  int              rx_offset;        /// Timing offset (used if is_secondary_eNb)
+
 } PHY_VARS_eNB;
 
 /// Top-level PHY Data Structure for UE 

@@ -1447,8 +1447,37 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 #endif
 
 }
-
   
+void phy_procedures_eNB_S_RX_secsys(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
+
+  // goal here is to synchronize (again) on PSS from primary eNb
+  // should expect offset to be close to zero (all other than the first time)
+  int sync_pos=0, sync_pos_slot;
+
+  if (last_slot%2==1) {
+    phy_procedures_eNB_S_RX(last_slot, phy_vars_eNb);
+    } 
+  else if (mac_xface->frame>0) { // last_slot is 2 (where we`ll find PSS from primary eNb)
+
+  // dump one frame of data (would be from HW in real time mode), then call lte_sync_time.  Here, one frame of data would be captured from phy_vars_eNb->lte_eNb_common_vars->rxdata
+
+#ifdef DEBUG_PHY
+  msg("[PHY_PROCEDURES_LTE] Frame% d: slot(%d)\n",mac_xface->frame, last_slot);
+#endif
+  sync_pos = lte_sync_time(phy_vars_eNb->lte_eNB_common_vars.rxdata[0],
+			   &phy_vars_eNb->lte_frame_parms,
+			   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNb->lte_frame_parms.samples_per_tti,
+			   &phy_vars_eNb->PeNb_id);
+  write_output("eNb_rxsig0_1.m","eNb_rxs0_1", phy_vars_eNb->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + CYCLIC_PREFIX_LENGTH + 10;
+  phy_vars_eNb->rx_offset = sync_pos - sync_pos_slot;
+
+  // try decoding PBCH (requires rewriting rx_pbch(...))
+
+  // if success set phy_vars_eNb->is_init_sync = 1;
+  }
+}
+
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
   //#define DEBUG_PHY
@@ -1465,16 +1494,26 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
       phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
     }
     if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
+      if (!phy_vars_eNb->is_secondary_eNb) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
       phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
+      }
     }
     if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+      if (phy_vars_eNb->is_secondary_eNb) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX_secsys(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_procedures_eNB_S_RX_secsys(last_slot,phy_vars_eNb);
+      }
+      else {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
       phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
+      }
     }
 }
 
