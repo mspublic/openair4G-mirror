@@ -30,7 +30,7 @@ void ue_mac_scheduler_tx(u8 Mod_id) {
     ue_generate_rach(Mod_id,i);  
   
 
-  ue_generate_sach(Mod_id);   
+ //  ue_generate_sach(Mod_id);   
 
   
  

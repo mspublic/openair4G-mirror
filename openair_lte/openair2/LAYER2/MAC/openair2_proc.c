@@ -303,7 +303,7 @@ int add_openair2_stats()
 /*
  * Unregister the file when the module is closed.
  */
-void remove_openair_stats()
+void remove_openair2_stats()
 {
 
   if (proc_openair2_root) {

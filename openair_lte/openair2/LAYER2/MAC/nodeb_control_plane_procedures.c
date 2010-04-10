@@ -19,6 +19,7 @@
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "PHY/LTE_TRANSPORT/extern.h"
+#include "RRC/MESH/defs.h"
 
 #define NDLS (CH_mac_inst[Mod_id].Num_dlsch)
 #define NULS (CH_mac_inst[Mod_id].Num_ulsch)
@@ -31,6 +32,7 @@
 #define DEBUG_MAC_BCCH
 
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
 /*
 void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry){
 
@@ -162,13 +164,13 @@ void nodeb_generate_bcch(u8 Mod_id){
   
   CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Lchan_status_tx=MAC_TX_DONE;
 
-  memcpy(&CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+  memcpy(&CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_pdu[0],&BCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
   CH_mac_inst[Mod_id].DCI_pdu.Num_common_dci = 1;
   CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
   CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].L          = 3;
   CH_mac_inst[Mod_id].DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
 #ifdef DEBUG_MAC_CCCH    
-  msg("[MAC][eNb] Frame %d: Generated CCCH DCI, format 1A\n",mac_xface->frame);
+  msg("[MAC][eNb] Frame %d: Generated BCCH DCI, format 1A\n",mac_xface->frame);
 #endif
   // Copy payload
     // generate_dlsch

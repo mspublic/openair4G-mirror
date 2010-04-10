@@ -13,7 +13,7 @@ ________________________________________________________________*/
 // It prepares the next mini-frame for PHY and, in the case of DLC Frame boundary
 // it retrieves DLC BCCC/CCCH data and scheduling (WIDENS) parameters
 
-
+#define DEBUG_NODEB_SCHEDULER
 /********************************************************************************************************************/
 void nodeb_mac_scheduler_tx(unsigned char Mod_id,unsigned char subframe) {
 /********************************************************************************************************************/

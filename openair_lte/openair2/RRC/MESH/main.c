@@ -48,9 +48,9 @@ void rrc_rx_tx(u8 Mod_id){
 int rrc_init_global_param(void){
   /*------------------------------------------------------------------------------*/
 
-#ifdef USER_MODE
+  //#ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-#endif //USRE_MODE
+  //#endif //USRE_MODE
 
   Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
   Rrc_xface->openair_rrc_ch_init = openair_rrc_ch_init;
@@ -66,7 +66,7 @@ int rrc_init_global_param(void){
 #ifndef NO_RRM
   Rrc_xface->fn_rrc=fn_rrc;
 #endif
-  printk("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
+  msg("[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind %p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
 
   if(Mac_rlc_xface==NULL || Mac_rlc_xface->rrc_rlc_register_rrc==NULL||rlcrrc_data_ind==NULL)
     return -1; 
@@ -134,7 +134,7 @@ int L3_xface_init(void){
 #ifdef USER_MODE
   
   int sock ; 
-  printk("[RRC][L3_XFACE] init de l'interface \n");
+  msg("[RRC][L3_XFACE] init de l'interface \n");
   
   if(open_socket(&S_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH,0)==-1)
     return (-1);
@@ -145,7 +145,7 @@ int L3_xface_init(void){
     }
   
   socket_setnonblocking(S_rrc.s);
-  printk("Interface Connected... RRM-RRC\n");  
+  msg("Interface Connected... RRM-RRC\n");  
   return 0 ;	
   
 #else 
@@ -153,24 +153,24 @@ int L3_xface_init(void){
   ret=rtf_create(RRC2RRM_FIFO,32768);
 
   if (ret < 0) {
-    printk("[openair][MAC][INIT] Cannot create RRC2RRM fifo %d (ERROR %d)\n",RRC2RRM_FIFO,ret);
+    msg("[openair][MAC][INIT] Cannot create RRC2RRM fifo %d (ERROR %d)\n",RRC2RRM_FIFO,ret);
 
     return(-1);
   }
   else{
-    printk("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRC2RRM_FIFO);
+    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRC2RRM_FIFO);
     rtf_reset(RRC2RRM_FIFO);
   }
 
   ret=rtf_create(RRM2RRC_FIFO,32768);
 
   if (ret < 0) {
-    printk("[openair][MAC][INIT] Cannot create RRM2RRC fifo %d (ERROR %d)\n",RRM2RRC_FIFO,ret);
+    msg("[openair][MAC][INIT] Cannot create RRM2RRC fifo %d (ERROR %d)\n",RRM2RRC_FIFO,ret);
 
     return(-1);
   }
   else{
-    printk("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRM2RRC_FIFO);
+    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRM2RRC_FIFO);
     rtf_reset(RRM2RRC_FIFO);
   }
 
@@ -187,16 +187,16 @@ void openair_rrc_top_init(void){
 
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   
-  printk("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_CH_INST=%d\n",NB_INST,NB_UE_INST,NB_CH_INST);
-  printk("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);  
+  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d, NB_UE_INST=%d, NB_CH_INST=%d\n",NB_INST,NB_UE_INST,NB_CH_INST);
+  msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);  
   
   UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
   
-  printk("ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
+  msg("ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
   
   CH_rrc_inst = (CH_RRC_INST*)malloc16(NB_CH_INST*sizeof(CH_RRC_INST));
   
-  printk("ALLOCATE %d Bytes for CH_RRC_INST @ %p\n",(unsigned int)(NB_CH_INST*sizeof(CH_RRC_INST)),CH_rrc_inst);
+  msg("ALLOCATE %d Bytes for CH_RRC_INST @ %p\n",(unsigned int)(NB_CH_INST*sizeof(CH_RRC_INST)),CH_rrc_inst);
 
 #ifndef NO_RRM
 #ifndef USER_MODE
@@ -219,7 +219,7 @@ char openair_rrc_ch_init(u8 Mod_id){
 
   unsigned char i,j,k;
   CH_rrc_inst[Mod_id].Node_id=Mac_rlc_xface->Node_id[Mod_id];
-  printk("[OPENAIR][RRC][INIT CH] Mod_id:%d, Node_id=%d\n",Mod_id,CH_rrc_inst[Mod_id].Node_id);
+  msg("[OPENAIR][RRC][INIT CH] Mod_id:%d, Node_id=%d\n",Mod_id,CH_rrc_inst[Mod_id].Node_id);
   CH_rrc_inst[Mod_id].Info.Status = CH_READY;
   CH_rrc_inst[Mod_id].Info.Nb_ue=0;
   CH_rrc_inst[Mod_id].Mac_id.L2_id[0]=CH_rrc_inst[Mod_id].Node_id;
@@ -270,7 +270,7 @@ char openair_rrc_ch_init(u8 Mod_id){
     CH_rrc_inst[Mod_id].Info.Dtch_bd_config[i].Next_check_frame=0;
   }   
   
-  printk("[OPENAIR][RRC][INIT] INIT OK for Mod_id:%d, Node_id=%d\n",Mod_id,CH_rrc_inst[Mod_id].Node_id);
+  msg("[OPENAIR][RRC][INIT] INIT OK for Mod_id:%d, Node_id=%d\n",Mod_id,CH_rrc_inst[Mod_id].Node_id);
   
   //To be modified
   CH_rrc_inst[Mod_id].Mac_id.L2_id[0]= Mac_rlc_xface->Node_id[Mod_id];
@@ -293,7 +293,7 @@ char openair_rrc_mr_init(u8 Mod_id, unsigned char CH_IDX){
   unsigned char i,j,k,CH_index;
     UE_rrc_inst[Mod_id-NB_CH_INST].Node_id=Mac_rlc_xface->Node_id[Mod_id];
     Mod_id-=NB_CH_INST;
-    printk("[OPENAIR][RRC][INIT] Mod_id:%d, Node_id=%d\n",Mod_id,UE_rrc_inst[Mod_id].Node_id);
+    msg("[OPENAIR][RRC][INIT] Mod_id:%d, Node_id=%d\n",Mod_id,UE_rrc_inst[Mod_id].Node_id);
 
     for(CH_index =0; CH_index < NB_CNX_UE;CH_index++){
       for(j=0;j<NB_RAB_MAX;j++){
@@ -329,7 +329,7 @@ char openair_rrc_mr_init(u8 Mod_id, unsigned char CH_IDX){
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on(Mod_id+NB_CH_INST);
 #endif
-  printk("[OPENAIR][RRC][INIT] Init OK for Mod_id:%d, Node_id=%d\n",Mod_id,UE_rrc_inst[Mod_id].Node_id);
+  msg("[OPENAIR][RRC][INIT] Init OK for Mod_id:%d, Node_id=%d\n",Mod_id,UE_rrc_inst[Mod_id].Node_id);
   
   return 0;
 }
@@ -362,7 +362,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
   MAC_CONFIG_REQ Mac_config_req;
   MAC_MEAS_REQ Mac_meas_req;  
 
-  printk("OPENAIR RRC IN....\n");
+  msg("OPENAIR RRC IN....\n");
   if( Mac_rlc_xface->Is_cluster_head[Mod_id] == 1){
     
     for(i=0;i<NB_SIG_CNX_CH;i++){  
@@ -372,15 +372,15 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
       Mac_config_req.UE_CH_index=i;
       Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + BCCH;
-      printk("Calling Lchan_config\n");
+      msg("Calling Lchan_config\n");
       Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",CH_rrc_inst[Mod_id].Node_id,Index);
+      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",CH_rrc_inst[Mod_id].Node_id,Index);
       CH_rrc_inst[Mod_id].Srb0.Srb_id = Index;
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[0],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&CH_rrc_inst[Mod_id].Srb0,BCCH,0);
       //      ((CH_BCCH_HEADER*)(&CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header[0]))->Rv_tb_idx=0;
-      printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH for TB_size %d\n",NODE_ID[Mod_id],
+      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH for TB_size %d\n",NODE_ID[Mod_id],
 	     CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1].transport_block_size);
       CH_rrc_inst[Mod_id].Srb0.Active=1;
       CH_rrc_inst[Mod_id].Srb0.Tx_buffer.generate_fun=ch_rrc_generate_bcch;
@@ -391,13 +391,13 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       Mac_config_req.UE_CH_index=i;
       Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + CCCH;
       Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      //printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",NODE_ID[Mod_id],Index);
+      //msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",NODE_ID[Mod_id],Index);
       CH_rrc_inst[Mod_id].Srb1.Srb_id = Index;
       memcpy(&CH_rrc_inst[Mod_id].Srb1.Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb1.Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&CH_rrc_inst[Mod_id].Srb1,CCCH,1);
       ((CH_CCCH_HEADER*)(&CH_rrc_inst[Mod_id].Srb0.Tx_buffer.Header[0]))->Rv_tb_idx=0;
-      printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config CCCH %d done, TB_size=%d,%d\n",NODE_ID[Mod_id],Index,
+      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config CCCH %d done, TB_size=%d,%d\n",NODE_ID[Mod_id],Index,
 	     CH_rrc_inst[Mod_id].Srb1.Tx_buffer.Tb_size,CH_rrc_inst[Mod_id].Srb1.Rx_buffer.Tb_size);
       CH_rrc_inst[Mod_id].Srb1.Active=1;
       CH_rrc_inst[Mod_id].Srb1.Tx_buffer.generate_fun=ch_rrc_generate_ccch;
@@ -408,13 +408,13 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
       memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_DL_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
       Index = Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      printk("[OPENAIR][RRC][RRC_ON] NODE %d, Config DTCH BROADCAST %d done\n",NODE_ID[Mod_id],Index);
+      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config DTCH BROADCAST %d done\n",NODE_ID[Mod_id],Index);
       CH_rrc_inst[Mod_id].Rab[0][i].Active = 1;
       CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Rb_id = Index;//(i << RAB_SHIFT)+DTCH ;
       memcpy(&CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Lchan_desc[0],&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Lchan_desc[1],&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE);
       CH_rrc_inst[Mod_id].Rab[0][i].Status=RADIO_CONFIG_OK;
-      printk("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Index);
+      msg("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Index);
       Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Index,RADIO_ACCESS_BEARER,Rlc_info_um);
       
       CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0]=i;	

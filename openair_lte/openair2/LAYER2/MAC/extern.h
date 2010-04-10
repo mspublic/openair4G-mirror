@@ -8,6 +8,8 @@ ________________________________________________________________*/
 
 #ifndef __MAC_EXTERN_H__
 #define __MAC_EXTERN_H__
+
+
 #ifdef USER_MODE
 //#include "stdio.h"
 #endif //USER_MODE

@@ -10,6 +10,7 @@ ________________________________________________________________*/
 #include "defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/extern.h"
 #include "LAYER2/RLC/rlc.h"
 
 extern UE_RRC_INST *UE_rrc_inst;

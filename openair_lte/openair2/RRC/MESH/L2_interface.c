@@ -146,7 +146,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
 	
     
     if( (Srb_id & RAB_OFFSET ) == CCCH){
-      printf("[OPENAIR][CCCH] request (Srb_id %d)\n",Srb_id);
+      msg("[OPENAIR][CCCH] request (Srb_id %d)\n",Srb_id);
       H_size = CH_CCCH_HEADER_SIZE;
       if(CH_rrc_inst[Mod_id].Srb1.Active==0) return 0;
       Srb_info=&CH_rrc_inst[Mod_id].Srb1;

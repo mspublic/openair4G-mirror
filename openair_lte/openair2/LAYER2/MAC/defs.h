@@ -134,7 +134,7 @@ ________________________________________________________________*/
  */
 
 #define TB_SIZE_MAX 52
-#define NB_TB_BUFF_MAX  255
+#define NB_TB_BUFF_MAX  64
 
 
 #define NUMBER_DL_SACH_MAX 6
@@ -628,8 +628,20 @@ void nodeb_generate_dlsch(unsigned char Mod_id);
 @param *User_alloc_map Allocation of users to frequency groups (rbs)
 @param *rb_map Frequency map pattern. Bitmap depending on number of rb to be allocated.  Actual bitmaps are shifted based on CQI information
 */
+
+void nodeb_generate_bcch(u8 Mod_id);
+
+void nodeb_generate_ccch(u8 Mod_id);
+
+
 void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_alloc_map,unsigned char *User_alloc_map,unsigned short rb_map);
 
+void fill_rar(unsigned char *dlsch_buffer,
+	      unsigned short N_RB_UL,
+	      unsigned char input_buffer_length,
+	      unsigned short timing_advance_cmd);
+
+unsigned char process_rar(unsigned char *dlsch_buffer);
 
 
 //ue_control_plane_procedures
@@ -645,6 +657,9 @@ void ue_decode_dlsch(unsigned char,DLSCH_PDU *,unsigned short);
 void ue_generate_rach(unsigned char,unsigned char);
 void ue_generate_sch(unsigned char);
 void ue_scheduler(unsigned char, unsigned char);
+
+void ue_get_chbch(u8 Mod_id, u8 CH_index);
+
 int is_lchan_ul_scheduled(unsigned char Mod_id, unsigned char CH_index, unsigned short Lchan_index);
 
 //lchan_interface.h
@@ -728,7 +743,7 @@ void q_sort(char low, char high );
 //int SplitArray(int* array, int *indices, int pivot, int startIndex, int endIndex);
 //void quicksort(int* array, int * indices, int startIndex, int endIndex);
 
-
+#define msg debug_msg
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

@@ -27,6 +27,7 @@ ________________________________________________________________*/
 #include "PHY_INTERFACE/extern.h"
 #include "PHY_INTERFACE/defs.h"
 #include "LAYER2/PDCP/pdcp.h"
+#include "RRC/MESH/defs.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL
@@ -149,18 +150,18 @@ void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
   UE_mac_inst[Mod_id].Def_meas[CH_index].Active=0;
   Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,CH_index);
 }
-
+ 
 
 /***********************************************************************/
 int mac_top_init(){
 /***********************************************************************/
   unsigned char  Mod_id,i;  
-  printk("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d\n",NB_INST);
 #if ((PHY_EMUL==1)||(PHYSIM==1))
+  msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
   UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-  printk("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+  msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
   CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
-  printk("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
 #else 
   if(NODE_ID[0]<NB_CH_MAX){
     CH_mac_inst = (CH_MAC_INST*)malloc16(sizeof(CH_MAC_INST));
@@ -168,6 +169,7 @@ int mac_top_init(){
     NB_UE_INST=0;
   }
   else{
+    msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
     UE_mac_inst = (UE_MAC_INST*)malloc16(sizeof(UE_MAC_INST));
     NB_CH_INST=0;
     NB_UE_INST=1;
@@ -186,21 +188,21 @@ int mac_top_init(){
   
   
   if (Is_rrc_registered == 1){
-    printk("calling RRC\n");
+    msg("calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
     Rrc_xface->openair_rrc_top_init();
 #endif 
   }
     else {
-      printk("[OPENAIR][MAC] Running without an RRC\n");
+      msg("[OPENAIR][MAC] Running without an RRC\n");
     }
 #ifndef USER_MODE
 #ifndef PHY_EMUL
-  printk("add openair2 proc\n");
+  msg("add openair2 proc\n");
   add_openair2_stats();
 #endif
 #endif  
-  printk("[OPENAIR][MAC][INIT] Init function finished\n");
+  msg("[OPENAIR][MAC][INIT] Init function finished\n");
   
   return(0);
   
@@ -212,30 +214,30 @@ int mac_init_global_param(){
   /***********************************************************************/
 
   int i; 
-  //  printk("[MAC] Init Global Param In, CHBCH_PDU_SIZE %d ...\n",sizeof(CHBCH_PDU));
+  //  msg("[MAC] Init Global Param In, CHBCH_PDU_SIZE %d ...\n",sizeof(CHBCH_PDU));
   //  if(sizeof(CHBCH_PDU) > 140){
-  //    printk("Size of CHBCH_PDU= %d, fix this !!!\n",sizeof(CHBCH_PDU));
+  //    msg("Size of CHBCH_PDU= %d, fix this !!!\n",sizeof(CHBCH_PDU));
   //    return -1;
   //  }  
 
   Is_rrc_registered=0;  
   Mac_rlc_xface = NULL;
-  printk("[MAC] CALLING RLC_MODULE_INIT...\n");	
+  msg("[MAC] CALLING RLC_MODULE_INIT...\n");	
 
   if (rlc_module_init()!=0)
     return(-1);
 
-  printk("[MAC] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
+  msg("[MAC] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
   
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
   
   if(Mac_rlc_xface == NULL){
-    printk("[MAC] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
+    msg("[MAC] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
     return (-1);
     
   }	
 
-  printk("[MAC] malloc16 OK, mac_rlc_xface @ %p\n",(void *)Mac_rlc_xface);  
+  msg("[MAC] malloc16 OK, mac_rlc_xface @ %p\n",(void *)Mac_rlc_xface);  
 
   mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
@@ -248,9 +250,9 @@ int mac_init_global_param(){
   Mac_rlc_xface->rrc_rlc_data_req=rrc_rlc_data_req;
   Mac_rlc_xface->rrc_rlc_register_rrc=rrc_rlc_register_rrc;
   
-  printk("[MAC]INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc); 
+  msg("[MAC]INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc); 
   
-Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
+  Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   Mac_rlc_xface->mac_rlc_data_ind=mac_rlc_data_ind;
   Mac_rlc_xface->mac_rlc_status_ind=mac_rlc_status_ind;
   Mac_rlc_xface->pdcp_run=pdcp_run;
@@ -258,7 +260,7 @@ Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   
-  printk("[MAC] Init CHBCH_PHY_RESOURCES\n");
+  msg("[MAC] Init CHBCH_PHY_RESOURCES\n");
 
   /*  
   CHBCH_PHY_RESOURCES[0].Time_alloc=CHBCH_TIME_ALLOC;
@@ -274,14 +276,16 @@ Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   for(i=0;i<MAX_NB_SCHED;i++)
     Sorted_index_table[i]=i; 
 
-#ifdef USER_MODE
+
+
+//#ifdef USER_MODE
   msg("[MAC][GLOBAL_INIT] RRC_INIT_GLOBAL\n");
   rrc_init_global_param();
   Is_rrc_registered=1;
-#endif //USER_MODE
+//#endif //USER_MODE
  
   mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;  
-  printk("[MAC] Init Global Param Done\n");
+  msg("[MAC] Init Global Param Done\n");
 
   return 0;
 }

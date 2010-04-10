@@ -111,7 +111,7 @@ union{
 
 
 #define RRC_HEADER_SIZE_MAX 64
-#define RRC_BUFFER_SIZE_MAX 16384
+#define RRC_BUFFER_SIZE_MAX 1024
 typedef struct{
   char Payload[RRC_BUFFER_SIZE_MAX];
   char Header[RRC_HEADER_SIZE_MAX];  
