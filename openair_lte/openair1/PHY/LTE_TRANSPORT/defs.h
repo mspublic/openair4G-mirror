@@ -145,6 +145,8 @@ typedef struct {
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
+  /// Target MCS
+  unsigned char target_mcs; 
   /// Transmission mode
   unsigned char mode;
   /// Current HARQ process id
@@ -1166,6 +1168,11 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					unsigned short ra_rnti,
 					unsigned short p_rnti);
 
+int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
+				       unsigned char subframe,
+				       LTE_eNb_ULSCH_t *ulsch,
+				       LTE_DL_FRAME_PARMS *frame_parms);
+
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short rnti,
 				       unsigned char subframe,
@@ -1177,6 +1184,13 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short ra_rnti,
 				       unsigned short p_rnti,
 				       unsigned char eNb_id); 
+
+int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
+				      unsigned char subframe,
+				      LTE_UE_ULSCH_t *ulsch,
+				      PHY_MEASUREMENTS *meas,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned char eNb_id);
 
 int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short rnti,
@@ -1215,6 +1229,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 
 void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,LTE_eNB_UE_stats *stats);
+
+void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id);
 
 unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id);
 

@@ -108,6 +108,13 @@
 #include "PHY/LTE_REFSIG/defs.h"
 #endif //OPENAIR_LTE
 
+
+#ifndef USER_MODE
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
+#else
+#define debug_msg msg
+#endif
+
 #endif
 
 

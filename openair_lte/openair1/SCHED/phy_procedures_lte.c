@@ -28,19 +28,20 @@ ________________________________________________________________*/
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
 #endif
 //#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
 //use msg for something that should be always printed in any case
-
+/*
 #ifndef USER_MODE
-#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) msg
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
 #else
 #define debug_msg msg
 #endif
-
+*/
 
 /*
 void debug_msg(unsigned char debug_level, char* format_string) { 
@@ -263,8 +264,9 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 #ifdef DEBUG_PHY
     debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 #endif
-    
-    generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
+
+    if (UE_mode == ULSCH)
+      generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
 
     if ((ulsch_ue_rag_active == 1) && (ulsch_ue_rag_frame == mac_xface->frame) && (ulsch_ue_rag_subframe == (next_slot>>1))) {
       harq_pid = 0;
@@ -275,8 +277,9 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 					&PHY_vars->PHY_measurements,
 					lte_frame_parms,
 					eNb_id);
-      ulsch_ue[0]->power_offset = 14;
+      ulsch_ue[eNb_id]->power_offset = 14;
       rag_flag = 1;
+      
     }
     else {
       // get harq_pid from subframe relationship
@@ -331,14 +334,14 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
 #endif
     }
 
-#ifdef DEBUG_PHY
-    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
-      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
-	  mac_xface->frame,next_slot,
-	  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
-	  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
+    //#ifdef DEBUG_PHY
+
+    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
+	      mac_xface->frame,next_slot,
+	      43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
+	      43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
     debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL in symbol %d\n",mac_xface->frame,next_slot,PSS_UL_SYMBOL);
-#endif
+    //#endif
     generate_pss(lte_ue_common_vars->txdataF,
 		 AMP,
 		 lte_frame_parms,
@@ -436,7 +439,8 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
     // this is only for visualization in the scope
     lte_eNB_common_vars->sync_corr = sync_corr;
-
+    debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: sync_pos %d\n",mac_xface->frame, last_slot,
+	      sync_pos - sync_pos_slot);
     if (sync_pos>=0) {
       eNB_UE_stats[eNb_id].UE_id[UE_id] = 0x1234; 
       eNB_UE_stats[eNb_id].UE_timing_offset[UE_id] = sync_pos - sync_pos_slot; 
@@ -974,8 +978,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  }
 	}   
 	
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (%d errors)\n",
-		  mac_xface->frame,last_slot,ret,dlsch_errors);
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (%d errors, mcs %d)\n",
+		  mac_xface->frame,last_slot,ret,dlsch_errors,dlsch_ue[0]->harq_processes[0]->mcs);
 #endif
       }
       
@@ -1305,7 +1309,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		  lte_frame_parms,
 		  pbch_pdu);
   }
-  
+
+    
   // DCI generation
   if ((next_slot%2 == 0)) { 
     
@@ -1315,7 +1320,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 	  Macphy_req_table[0].Macphy_req_table_entry[i].Active=0;
 	  //	Macphy_req_table.Macphy_req_table_entry[i].Macphy_data_req.Phy_Resources_Entry->Active=0;
 	  Macphy_req_table[0].Macphy_req_cnt--;
-	  msg("[PHY][eNB PROCEDURES] Got DCI_PDU for %d/%d from MAC\n",mac_xface->frame,next_slot>>1);
+	  //	  debug_msg("[PHY][eNB PROCEDURES] Got DCI_PDU for %d/%d from MAC\n",mac_xface->frame,next_slot>>1);
     nb_dci_ue_spec = 0;
     nb_dci_common  = 0;
     dlsch_eNb_active = 0;
@@ -1326,9 +1331,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       }
     }
   }
+  
+
 #ifdef OPENAIR2
   if ((next_slot%2) == 0) {
-    printf("Checking for DCI in subframe %d, generate_RAR = %d\n",next_slot>>1,eNb_generate_rar);
+    //    debug_msg("[PHY Procedures] Frame %d : Checking for DCI in subframe %d, generate_RAR = %d\n",mac_xface->frame,next_slot>>1,eNb_generate_rar);
 
     if (CH_mac_inst[0].DCI_pdu.Num_common_dci == 1) {
       
@@ -1460,6 +1467,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     case 4:
       break;
     case 6:
+      DLSCH_alloc_pdu2.mcs1             = openair_daq_vars.target_ue_mcs;
       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
       dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
       dci_alloc[0].L          = 3;

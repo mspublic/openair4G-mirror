@@ -14,8 +14,8 @@ ________________________________________________________________*/
 *  @ingroup macxface
 */
 
-#ifndef __MAC_VARS_H__
-#define __MAC_VARS_H__
+#ifndef __MAC_INTERFACE_VARS_H__
+#define __MAC_INTERFACE_VARS_H__
 
 #ifdef OPENAIR2
 #include "PHY_INTERFACE/defs.h"
@@ -47,4 +47,4 @@ MACPHY_DATA_REQ_TABLE Macphy_req_table[1];
 
 
 
-#endif //__MAC_VARS_H__
+#endif //__MAC_INTERFACE_VARS_H__

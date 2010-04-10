@@ -354,18 +354,17 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 #endif
 #endif
 
-  if ((peak_val>>10 * length) < 10*mean_val) {
-#ifdef DEBUG_PHY
-    if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
-      msg("[SYNC TIME] No peak found\n");
-#endif
+  if ((peak_val>>10 * length) < 100*mean_val) {
+    //#ifdef DEBUG_PHY
+ 
+      debug_msg("[SYNC TIME] No peak found (%d,%d,%d)\n",peak_pos,peak_val,mean_val);
+      //#endif
     return(-1);
   }
   else {
-#ifdef DEBUG_PHY
-    if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10))
-      msg("[SYNC TIME] Peak found at pos %d, val = %d, mean_val = %d\n",peak_pos,peak_val,mean_val);
-#endif
+    //#ifdef DEBUG_PHY
+    debug_msg("[SYNC TIME] Peak found at pos %d, val = %d, mean_val = %d\n",peak_pos,peak_val,mean_val);
+    //#endif
     return(peak_pos);
   }
 

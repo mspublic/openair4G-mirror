@@ -169,6 +169,7 @@ int main(int argc, char *argv[]) {
   int openair_fd,i;
   unsigned int mem_base;
   char title[20];
+  unsigned int     bigphys_top;
 
   LTE_eNB_ULSCH *lte_eNb_ulsch;
 
@@ -189,6 +190,7 @@ int main(int argc, char *argv[]) {
   printf("Getting PHY_config ...\n");
 
   ioctl(openair_fd,openair_GET_CONFIG,PHY_config);
+  ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
 
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);

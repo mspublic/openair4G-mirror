@@ -9,6 +9,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "defs.h"
 #include "extern.h"
+#include "PHY/extern.h"
 
 #ifndef __SSE3__
 extern __m128i zero;

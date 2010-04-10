@@ -15,8 +15,8 @@ ________________________________________________________________*/
 * @ingroup macxface
 */
 
-#ifndef __MAC_EXTERN_H__
-#define __MAC_EXTERN_H__
+#ifndef __MAC_INTERFACE_EXTERN_H__
+#define __MAC_INTERFACE_EXTERN_H__
 
 #include "PHY/types.h"
 #include "PHY/extern.h"
@@ -47,14 +47,18 @@ extern unsigned short  sach_data_rate[16];
 extern unsigned int frame;
 
 extern unsigned int mac_registered;
+
+extern MAC_xface *mac_xface;
+/*
 #ifdef USER_MODE
 extern MAC_xface *mac_xface;
 #else
 #ifndef MAC_CONTEXT
 extern MAC_xface *mac_xface;
 #endif
-#endif
 
+#endif
+*/
 
 
 
@@ -64,4 +68,4 @@ extern MACPHY_DATA_REQ_TABLE Macphy_req_table[1];
 
 
 
-#endif /*__MAC_EXTERN_H__ */
+#endif /*__MAC_INTERFACE_EXTERN_H__ */

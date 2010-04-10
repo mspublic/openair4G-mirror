@@ -20,7 +20,11 @@
 
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/vars.h"
-
+#ifdef OPENAIR2
+#include "LAYER2/MAC/vars.h"
+#include "RRC/MESH/vars.h"
+#include "PHY_INTERFACE/vars.h"
+#endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"

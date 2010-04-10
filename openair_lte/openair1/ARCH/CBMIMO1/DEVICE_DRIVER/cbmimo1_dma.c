@@ -40,7 +40,7 @@ int openair_dma(unsigned char card_id,unsigned int cmd) {
     printk("[openair][DMA] Error: cmd %x, Leon IRQ active\n", cmd);
     return -1;
   }
-  printk("[openair][DMA] cmd %x\n",cmd);
+  printk("[openair][DMA] cmd %x on card %d\n",cmd,card_id);
 
   //openair_writel(cmd,bar[0]+REG_BAR+DMA_CMD);  // arms DMA
   openair_writel(pdev[card_id], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, ((cmd & FROM_GRLIB_IRQ_FROM_PCI_MASK) | FROM_GRLIB_IRQ_FROM_PCI));

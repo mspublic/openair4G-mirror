@@ -121,33 +121,36 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
     }
     
     
+   
+    //  printk("[PHY][INIT] mbox = %p,rxgainreg = %p\n",PHY_vars->mbox,rxgainreg);
+    
+  }    
+
 #ifndef USER_MODE
 #ifndef NOCARD_TEST
+  for (card_id=0;card_id<number_of_cards;card_id++) {
     // Allocate memory for PCI interface and store pointers to dma buffers
     msg("[PHY][INIT] Setting up Leon PCI interface structure\n");
-    pci_interface[card_id] = (PCI_interface_t *)((unsigned int)(tmp_ptr + ((OFDM_SYMBOL_SIZE_BYTES+FRAME_LENGTH_BYTES+PAGE_SIZE)>>2)));
+    pci_interface[card_id] = (PCI_interface_t *)bigmalloc16(sizeof(PCI_interface_t));
     msg("[PHY][INIT] PCI interface %d at %p\n",card_id,pci_interface[card_id]);
     openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
     
-    mbox = (unsigned int)(&pci_interface[card_id]->adac_cnt);
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
       pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
 #endif //NOCARD_TEST
 #endif // USER_MODE
-    
+  }
 
 #ifdef CBMIMO1
 #ifndef USER_MODE
+    mbox = (unsigned int)(&pci_interface[0]->adac_cnt);
+
     PHY_vars->mbox = mbox;
 #endif //// USER_MODE 
 #endif // // CBMIMO1
-    
-    //  printk("[PHY][INIT] mbox = %p,rxgainreg = %p\n",PHY_vars->mbox,rxgainreg);
-    
-  }    
-
+ 
 }
 
 #else  // USER_MODE

@@ -82,6 +82,8 @@ int setup_regs(unsigned char card_id);
 
 void dump_config(void);
 
+void l2_init();
+
 int add_chbch_stats(void);
 void remove_chbch_stats(void);
 void remove_openair_stats(void);

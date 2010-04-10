@@ -132,7 +132,10 @@ unsigned char first_sync_call;
 
 void openair1_restart(void) {
 
-  openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+  int i;
+  
+  for (i=0;i<number_of_cards;i++)
+    openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
   //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
   mac_xface->frame = 0;
@@ -363,10 +366,11 @@ void openair_sync(void) {
 
   //openair_set_lo_freq_openair(openair_daq_vars.freq,openair_daq_vars.freq);	
 
-  ret = setup_regs(0);
+  for (i=0;i<number_of_cards;i++) {
+    ret = setup_regs(i);
 
-  openair_get_frame(0); //received frame is stored in PHY_vars->RX_DMA_BUFFER
-
+    openair_get_frame(i); //received frame is stored in PHY_vars->RX_DMA_BUFFER
+  }
   // sleep during acquisition of frame
 
   time = rt_get_cpu_time_ns();
@@ -415,16 +419,17 @@ void openair_sync(void) {
     memcpy((void *)(RX_DMA_BUFFER[0][1]+FRAME_LENGTH_COMPLEX_SAMPLES),(void*)RX_DMA_BUFFER[0][1],OFDM_SYMBOL_SIZE_BYTES);
     
 #ifdef DEBUG_PHY
-    msg("[openair][SCHED][SYNC] freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
-	(pci_interface[0]->freq_info>>1)&3,
-	(pci_interface[0]->freq_info>>3)&3,
-	pci_interface[0]->adc_head[0],
-	pci_interface[0]->adc_head[1],
-	pci_interface[0]->ofdm_symbols_per_frame,
-	pci_interface[0]->rx_gain_val,
-	pci_interface[0]->tx_rx_switch_point,
-	pci_interface[0]->tcxo_dac,
-	pci_interface[0]->node_id);        
+    for (i=0;i<number_of_cards;i++) 
+      msg("[openair][SCHED][SYNC] card %d freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
+	  (pci_interface[i]->freq_info>>1)&3,
+	  (pci_interface[i]->freq_info>>3)&3,
+	  pci_interface[i]->adc_head[0],
+	  pci_interface[i]->adc_head[1],
+	  pci_interface[i]->ofdm_symbols_per_frame,
+	  pci_interface[i]->rx_gain_val,
+	  pci_interface[i]->tx_rx_switch_point,
+	  pci_interface[i]->tcxo_dac,
+	  pci_interface[i]->node_id);        
 
 #endif
 
@@ -500,6 +505,7 @@ void openair_sync(void) {
 	    openair_daq_vars.last_adac_cnt=-1;            
 
 	    UE_mode = PRACH;
+	    mac_xface->chbch_phy_sync_success(0,0);	    
 	  }
 	  
 	}
@@ -519,7 +525,7 @@ void openair_sync(void) {
     }
     PHY_vars->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
     PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB;
-    
+
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
 	PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
@@ -1009,6 +1015,8 @@ void openair_sched_exit(char *str) {
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
 }
+
+
 
 /*@}*/
 

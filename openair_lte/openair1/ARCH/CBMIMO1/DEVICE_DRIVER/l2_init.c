@@ -1,3 +1,8 @@
+#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
+#include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
+#include "SCHED/defs.h"
 void l2_init() {
 
   int ret;
@@ -13,17 +18,17 @@ void l2_init() {
   
   mac_init_global_param(); 
   
-  
+
   mac_xface->macphy_init=mac_top_init;
   msg("[MAIN]MAC_INIT IN...\n");
   ret = mac_init();
   
   if (ret >= 0) {
-    printf("Initialized MAC variables\n");
+    msg("Initialized MAC variables\n");
     
     //    last_slot = SLOTS_PER_FRAME-1;
     mac_xface->macphy_scheduler = macphy_scheduler;
-    printf("Initialized MAC SCHEDULER\n");
+    msg("Initialized MAC SCHEDULER\n");
     
     msg("ALL INIT OK\n");
     
@@ -38,7 +43,7 @@ void l2_init() {
     }
 
     
-    mac_xface->macphy_exit=exit;
+    mac_xface->macphy_exit=openair_sched_exit;
     
     
     

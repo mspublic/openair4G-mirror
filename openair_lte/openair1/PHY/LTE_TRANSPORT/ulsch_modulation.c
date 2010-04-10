@@ -11,6 +11,7 @@
 
 __m128i dft_in[300],dft_out[300];
 
+#ifndef OFDMA_ULSCH
 void dft_lte(mod_sym_t z,mod_sym_t d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
 
   switch Msc_PUSCH {
@@ -50,6 +51,7 @@ void dft_lte(mod_sym_t z,mod_sym_t d, unsigned short Msc_PUSCH, unsigned char Ns
   }
 }
 
+#endif
 void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int subframe,

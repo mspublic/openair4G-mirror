@@ -135,7 +135,7 @@ static void * dlsch_thread(void *param) {
 
 	
 	if ((mac_xface->frame % 100) == 0)
-	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors, %d received)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors,dlsch_received);
+	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors, %d received, current mcs %d, current TBS %d)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors,dlsch_received,dlsch_ue[0]->harq_processes[0]->mcs,dlsch_ue[0]->harq_processes[0]->TBS);
       }
   }
   msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);

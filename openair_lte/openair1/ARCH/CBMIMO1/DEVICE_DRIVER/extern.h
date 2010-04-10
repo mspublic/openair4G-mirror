@@ -36,5 +36,5 @@ extern unsigned int mbox;
 
 extern PCI_interface_t *pci_interface[4];
 
-extern unsigned int NODE_ID[1];
+extern unsigned short NODE_ID[1];
 #endif

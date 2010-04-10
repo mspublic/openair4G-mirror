@@ -9,7 +9,7 @@ extern unsigned int  distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 
-#define DEBUG_RAR
+//#define DEBUG_RAR
 
 int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       unsigned char subframe,
@@ -51,13 +51,13 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[0]->round++;
   }
 #ifdef DEBUG_RAR
-  printf("ulsch ra (eNb): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
-  printf("ulsch ra (eNb): rballoc  %x\n",ulsch->harq_processes[0]->first_rb);
-  printf("ulsch ra (eNb): harq_pid %d\n",0);
-  printf("ulsch ra (eNb): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
-  printf("ulsch ra (eNb): TBS      %d\n",ulsch->harq_processes[0]->TBS);
-  printf("ulsch ra (eNb): mcs      %d\n",ulsch->harq_processes[0]->mcs);
-  printf("ulsch ra (eNb): Or1      %d\n",ulsch->Or1);
+  debug_msg("ulsch ra (eNb): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
+  debug_msg("ulsch ra (eNb): rballoc  %x\n",ulsch->harq_processes[0]->first_rb);
+  debug_msg("ulsch ra (eNb): harq_pid %d\n",0);
+  debug_msg("ulsch ra (eNb): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
+  debug_msg("ulsch ra (eNb): TBS      %d\n",ulsch->harq_processes[0]->TBS);
+  debug_msg("ulsch ra (eNb): mcs      %d\n",ulsch->harq_processes[0]->mcs);
+  debug_msg("ulsch ra (eNb): Or1      %d\n",ulsch->Or1);
 #endif
   return(0);
 }
@@ -121,12 +121,12 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->harq_processes[0]->round++;
     }
 #ifdef DEBUG_RAR
-    printf("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
-    printf("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[0]->first_rb);
-    printf("ulsch (ue,ra): nb_rb    %d\n",ulsch->harq_processes[0]->nb_rb);
-    printf("ulsch (ue,ra): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
-    printf("ulsch (ue,ra): TBS      %d\n",ulsch->harq_processes[0]->TBS);
-    printf("ulsch (ue,ra): mcs      %d\n",ulsch->harq_processes[0]->mcs);
+    debug_msg("ulsch (ue,ra): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
+    debug_msg("ulsch (ue,ra): first_rb %x\n",ulsch->harq_processes[0]->first_rb);
+    debug_msg("ulsch (ue,ra): nb_rb    %d\n",ulsch->harq_processes[0]->nb_rb);
+    debug_msg("ulsch (ue,ra): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
+    debug_msg("ulsch (ue,ra): TBS      %d\n",ulsch->harq_processes[0]->TBS);
+    debug_msg("ulsch (ue,ra): mcs      %d\n",ulsch->harq_processes[0]->mcs);
 #endif
     return(0);
 }

@@ -153,11 +153,12 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 
   else {
     len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : RX Gain %d dB\n",mac_xface->frame,PHY_vars->rx_total_gain_dB);
-    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : UE 0 (%x) rssi (%d,%d) dBm\n",
+    len += sprintf(&buffer[len],"\n\neNB 0 Frame %d : UE 0 (%x) rssi (%d,%d) dBm, UE_mcs %d\n",
 		   mac_xface->frame,
 		   eNB_UE_stats[0].UE_id[0],
 		   eNB_UE_stats[0].UL_rssi[0][0],
-		   eNB_UE_stats[0].UL_rssi[0][1]);
+		   eNB_UE_stats[0].UL_rssi[0][1],
+		   openair_daq_vars.target_ue_mcs);
     len += sprintf(&buffer[len],"eNB 0 UE 0 (%x) DL_cqi %d, DL_pmi_single %x\n",
 		   eNB_UE_stats[0].UE_id[0],
 		   eNB_UE_stats[0].DL_cqi[0][0],

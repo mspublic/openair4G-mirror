@@ -5,6 +5,7 @@
 #include "PHY/defs.h"
 #include "PHY/TOOLS/twiddle_extern.h"
 #include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
@@ -58,6 +59,7 @@ extern LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
 
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
 extern DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
