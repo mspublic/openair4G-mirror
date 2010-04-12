@@ -23,9 +23,9 @@ ________________________________________________________________*/
 
 #include "defs.h"
 
-#ifndef USER_MODE
+//#ifndef USER_MODE
 #include "SCHED/extern.h"
-#endif
+//#endif
 
 #ifdef RTAI_ENABLED
 #include <rtai.h>

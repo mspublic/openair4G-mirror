@@ -12,7 +12,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 #define BW 10.0
 #define Td 1.0
@@ -92,6 +92,7 @@ int main(int argc, char **argv) {
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
   lte_ue_dlsch_vars_cntl = &(PHY_vars->lte_ue_dlsch_vars_cntl[0]);
+  lte_ue_dlsch_vars_ra = &PHY_vars->lte_ue_dlsch_vars_ra[0];
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
   generate_16qam_table();
   generate_RIV_tables();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
 
   dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
@@ -253,13 +254,13 @@ int main(int argc, char **argv) {
       mac_xface->is_cluster_head = 1;
       phy_procedures_lte(last_slot,next_slot);
       len = chbch_stats_read(stats_buffer,NULL,0,4096);
-      printf("%s\n\n",stats_buffer);
+      //printf("%s\n\n",stats_buffer);
 
       printf("Frame %d, slot %d : UE procedures\n",mac_xface->frame,slot);
       mac_xface->is_cluster_head = 0;
       phy_procedures_lte(last_slot,next_slot);
       len = chbch_stats_read(stats_buffer,NULL,0,4096);
-      printf("%s\n",stats_buffer);
+      //printf("%s\n",stats_buffer);
 
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);

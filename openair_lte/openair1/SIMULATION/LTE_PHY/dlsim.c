@@ -130,6 +130,9 @@ int main(int argc, char **argv) {
 
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
+  FILE *rx_frame_file;
+  int result;
+
   dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
 
   channel_length = (int) 11+2*BW*Td;
@@ -610,6 +613,23 @@ int main(int argc, char **argv) {
 	//    lte_sync_time_init(lte_frame_parms,lte_ue_common_vars);
 	//    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 	//    lte_sync_time_free();
+
+
+	// optional: read rx_frame from file
+	if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
+	  {
+	    printf("Cannot open rx_frame.m data file\n");
+	    exit(0);
+	  }
+  
+	result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+	printf("Read %d bytes\n",result);
+	result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
+	printf("Read %d bytes\n",result);
+	
+	fclose(rx_frame_file);
+
+
 #ifdef OUTPUT_DEBUG
 	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
@@ -627,7 +647,7 @@ int main(int argc, char **argv) {
 		     l,
 		     Ns%20,
 		     0,
-		     0);
+		     1);
 	    
 	    lte_ue_measurements(lte_ue_common_vars,
 				lte_frame_parms,

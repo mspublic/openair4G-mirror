@@ -1311,6 +1311,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
   }
 
     
+#ifdef OPENAIR2
+
   // DCI generation
   if ((next_slot%2 == 0)) { 
     
@@ -1333,7 +1335,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
   }
   
 
-#ifdef OPENAIR2
   if ((next_slot%2) == 0) {
     //    debug_msg("[PHY Procedures] Frame %d : Checking for DCI in subframe %d, generate_RAR = %d\n",mac_xface->frame,next_slot>>1,eNb_generate_rar);
 
