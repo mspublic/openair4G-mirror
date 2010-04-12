@@ -1,76 +1,228 @@
-void generate_phich_tdd(LTE_FRAME_PARMS frame_parms,unsigned char pnumber,unsigned char HI) {
+#include "defs.h"
+#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
 
-  unsigned int d[12],d2[12];
-  char z = (HI<<1)-1;
+#define DEBUG_PHICH
+
+extern unsigned short pcfich_reg[4];
+unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
+
+void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms) {
+
+  unsigned short n0 = (frame_parms->N_RB_DL * 2) - 4;
+  unsigned short n1 = (frame_parms->N_RB_DL * 3);
+  unsigned short n2 = n1;
+  unsigned short mprime = 0,mprime2=0;
+  unsigned short Ngroup_PHICH;
+
+  Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
+
+
+
+  if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
+    Ngroup_PHICH++;
+
+  if (frame_parms->Ncp == 1) {
+    Ngroup_PHICH<<=1;
+  }
+
+#ifdef DEBUG_PHICH
+  msg("Ngroup_PHICH %d (Ng_times6 %d)\n",Ngroup_PHICH,frame_parms->Ng_times6);
+#endif
+  
+
+  for (mprime=0;mprime<(Ngroup_PHICH>>1);mprime++) {
+    mprime2=mprime;
+    phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
+    // check for overlap with PCFICH
+    if ((phich_reg_ext[mprime][0] == pcfich_reg[0]) ||
+	(phich_reg_ext[mprime][0] == pcfich_reg[1]) ||
+	(phich_reg_ext[mprime][0] == pcfich_reg[2]) ||
+	(phich_reg_ext[mprime][0] == pcfich_reg[3])) {
+      mprime2++;
+      phich_reg_ext[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
+    }
+
+    phich_reg_ext[mprime][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
+    phich_reg_ext[mprime][2] = ((frame_parms->Nid_cell*n1/n0) + mprime + (2*n2/3))%n2;
+#ifdef DEBUG_PHICH
+  debug_msg("phich_reg :%d => %d,%d,%d\n",mprime,phich_reg_ext[mprime][0],phich_reg_ext[mprime][1],phich_reg_ext[mprime][2]);
+#endif
+  }
+}
+
+mod_sym_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
+mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2 
+
+// This routine generates the PHICH 
+// Note: (slightly modified for IFFT_FPGA as : 1, 1 => (1+j), -1 => (-1-j), j => (1-j), -j => (-1+j))
+void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
+			unsigned char mode1_flag,
+			unsigned char nseq_PHICH,
+			unsigned char ngroup_PHICH,
+			unsigned char HI,
+			mod_sym_t **y) {
+
+  mod_sym_t d[4],*dp;
+  unsigned int i,aa;
 
   // 
   // scrambling (later)
 
-  memset(d,0,12*sizeof(unsigned int));
+  memset(d,0,4*sizeof(mod_sym_t));
 
-  if (frame_parms->Ncp == 1) { // Normal Cyclic Prefix
-    switch (pnumber) {
-    case 0: // +1 +1 +1 +1
-      break;
-    case 1: // +1 -1 +1 -1
-      break;
-    case 2: // +1 +1 -1 -1
-      break;
-    case 3: // +1 -1 -1 +1
-      break;
-    case 4: // +j +j +j +j
-      break;
-    case 5: // +j -j +j -j
-      break;
-    case 6: // +j +j -j -j
-      break;
-    case 7: // +j -j -j +j
-      break;
-    default:
-      msg("phich_coding.c: Illegal PHICH Number\n");
-      }
-    else {
-      switch (pnumber) {
-      case 0: // +1 +1 
-	((short*)&d)[0] = z;
-	((short*)&d)[2] = z;
-	((short*)&d)[8] = z;
-	((short*)&d)[10] = z;
-	((short*)&d)[16] = z;
-	((short*)&d)[18] = z;
+
+  if (frame_parms->Ncp == 0) { // Normal Cyclic Prefix
+
+      switch (nseq_PHICH) {
+      case 0: // +1 +1 +1 +1
 	break;
-      case 1: // +1 -1 
-	((short*)&d)[4] = z;
-	((short*)&d)[6] = -z;
-	((short*)&d)[12] = z;
-	((short*)&d)[14] = -z;
-	((short*)&d)[20] = z;
-	((short*)&d)[22] = -z;
+      case 1: // +1 -1 +1 -1
 	break;
-      case 2: // +j +j 
-	((short*)&d)[1] = z;
-	((short*)&d)[3] = z;
-	((short*)&d)[9] = z;
-	((short*)&d)[11] = z;
-	((short*)&d)[17] = z;
-	((short*)&d)[19] = z;
+      case 2: // +1 +1 -1 -1
 	break;
-      case 3: // +j -j 
-	((short*)&d)[5] = z;
-	((short*)&d)[7] = -z;
-	((short*)&d)[13] = z;
-	((short*)&d)[15] = -z;
-	((short*)&d)[21] = z;
-	((short*)&d)[23] = -z;
+      case 3: // +1 -1 -1 +1
+	break;
+      case 4: // +j +j +j +j
+	break;
+      case 5: // +j -j +j -j
+	break;
+      case 6: // +j +j -j -j
+	break;
+      case 7: // +j -j -j +j
 	break;
       default:
 	msg("phich_coding.c: Illegal PHICH Number\n");
-      }
-      
-    }
-    
-    if (lte_frame_parms->nb_antennas_tx == 2) {
-      // do Alamouti precoding here
+      } // nseq_PHICH
 
+      // modulation here
+  }
+
+  else {
+
+    if ((ngroup_PHICH & 1) == 1)
+      dp = &d[2];
+    else  
+      dp = d;
+
+    switch (nseq_PHICH) {
+    case 0: // +1 +1 
+#ifndef IFFT_FPGA
+      ((short*)&dp)[0] = z;
+      ((short*)&dp)[2] = z;
+#else
+      dp[0] = 4;
+      dp[1] = 4;
+#endif
+      break;
+    case 1: // +1 -1
+#ifndef IFFT_FPGA 
+      ((short*)&dp)[4] = z;
+      ((short*)&dp)[6] = -z;
+#else
+      dp[2] = 4;
+      dp[3] = 1;
+#endif
+      break;
+    case 2: // +j +j 
+#ifndef IFFT_FPGA
+      ((short*)&dp)[1] = z;
+      ((short*)&dp)[3] = z;
+#else
+      dp[0] = 2;
+      dp[1] = 2;
+#endif
+      break;
+    case 3: // +j -j 
+#ifndef IFFT_FPGA
+      ((short*)&dp)[5] = z;
+      ((short*)&dp)[7] = -z;
+#else
+      dp[2]  = 2;
+      dp[3]  = 1;
+#endif
+      break;
+    default:
+      msg("phich_coding.c: Illegal PHICH Number\n");
     }
+
+
+
+    if (mode1_flag == 0) {
+      // do Alamouti precoding here
+      
+      // Symbol 0
+      // ignore for now
+
+      // Symbol 1
+      re_offset = frame_parms->N_RB_DL*18 + phich_reg_ext[ngroup_PHICH][1]<<2;
+      if (re_offset > frame_parms->N_RB_DL*24)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[0];
+      y[1][re_offset]   += alam_bpsk_perm1[d[0]-1];
+      y[0][re_offset+1] += d[1];
+      y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];
+      re_offset+=2;
+      if (re_offset > frame_parms->N_RB_DL*24)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[2];
+      y[1][re_offset]   += alam_bpsk_perm1[d[0]-1];
+      y[0][re_offset+1] += d[3];
+      y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];
+
+      // Symbol 2
+      re_offset = frame_parms->N_RB_DL*30 + phich_reg_ext[ngroup_PHICH][2]<<2;
+      if (re_offset > frame_parms->N_RB_DL*36)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[0];
+      y[1][re_offset]   += alam_bpsk_perm1[d[0]-1];
+      y[0][re_offset+1] += d[1];
+      y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];
+      re_offset+=2;
+      if (re_offset > frame_parms->N_RB_DL*36)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[2];
+      y[1][re_offset]   += alam_bpsk_perm1[d[0]-1];
+      y[0][re_offset+1] += d[3];
+      y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];      
+    }
+    else {
+      // Symbol 0
+      // ignore for now
+
+      // Symbol 1
+      re_offset = frame_parms->N_RB_DL*18 + phich_reg_ext[ngroup_PHICH][1]<<2;
+      if (re_offset > frame_parms->N_RB_DL*24)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[0];
+      y[1][re_offset]   += d[0];
+      y[0][re_offset+1] += d[1];
+      y[1][re_offset+1] += d[1];
+
+      re_offset+=2;
+      if (re_offset > frame_parms->N_RB_DL*24)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[2];
+      y[1][re_offset]   += d[2];
+      y[0][re_offset+1] += d[3];
+      y[1][re_offset+1] += d[3];
+
+      // Symbol 2
+      re_offset = frame_parms->N_RB_DL*30 + phich_reg_ext[ngroup_PHICH][2]<<2;
+      if (re_offset > frame_parms->N_RB_DL*36)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[0];
+      y[1][re_offset]   += d[0];
+      y[0][re_offset+1] += d[1];
+      y[1][re_offset+1] += d[1];
+      re_offset+=2;
+      if (re_offset > frame_parms->N_RB_DL*36)
+	re_offset-=frame_parms->N_RB_DL*12;
+      y[0][re_offset]   += d[2];
+      y[1][re_offset]   += d[2];
+      y[0][re_offset+1] += d[3];
+      y[1][re_offset+1] += d[3];
+      }
+    }
+  }  // normal/extended
+
 }
