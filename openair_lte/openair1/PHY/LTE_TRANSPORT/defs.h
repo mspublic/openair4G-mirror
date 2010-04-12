@@ -20,6 +20,9 @@
 /** @addtogroup _PHY_TRANSPORT_
  * @{
  */
+
+#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
 #define NSOFT 1827072
 #define LTE_NULL 2 
 
@@ -237,6 +240,10 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   unsigned char subframe_scheduling_flag;
+  /// PHICH active flag
+  unsigned char phich_active;
+  /// PHICH ACK
+  unsigned char phich_ACK;
   /// Last TPC command
   unsigned char TPC;
   /// First Allocated RB 
@@ -384,7 +391,7 @@ typedef struct {
   unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
   unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
   unsigned char rank[NUMBER_OF_UE_MAX];
-  unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id of connected UEs
+  unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
   unsigned short UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
 } LTE_eNB_UE_stats;
 
@@ -1225,6 +1232,8 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_eNb_ULSCH_t *ulsch,
 			     unsigned char subframe,
 			     unsigned char rag_flag);
+
+void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe,unsigned char mode1_flag);
 
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 

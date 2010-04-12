@@ -28,7 +28,27 @@ __m128i zero2;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero2,(xmmy)))
 #endif
 
+extern unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
 
+unsigned int check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,unsigned int mprime) {
+
+  unsigned short i;
+  unsigned short Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
+
+  //  printf("Checking phich_reg %d\n",mprime);
+  if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
+    Ngroup_PHICH++;
+
+  if (frame_parms->Ncp == 1) {
+    Ngroup_PHICH<<=1;
+  }
+
+
+  for (i=0;i<Ngroup_PHICH;i++)
+    if (mprime == phich_reg_ext[i][1])
+      return(1);
+  return(0);
+}
 
 unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
 
@@ -60,6 +80,8 @@ unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
   return((unsigned short)crc16);
 
 }
+
+
 
 static unsigned char d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
 static unsigned char w[3*3*(MAX_DCI_SIZE_BITS+16)];
@@ -220,6 +242,13 @@ void pdcch_demapping(unsigned short *llr,unsigned short *wbar,LTE_DL_FRAME_PARMS
 
       symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(1+lprime);
   
+
+      // if REG is allocated to PHICH, skip it
+      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
+	//	msg("generate_dci: skipping REG %d\n",kprime>>2);
+	kprime+=4;
+      }
+
       // Copy REG to TX buffer
       for (i=0;i<4;i++) {
 	
@@ -960,6 +989,9 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
   unsigned char qpsk_table_offset2 = 0;
 #endif
 
+
+
+
   wbar[0] = &wbar0[0];
   wbar[1] = &wbar1[0];
   y[0] = &yseq0[0];
@@ -1034,7 +1066,7 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
       for (i=0;i<Msymb;i+=2) {
 
 #ifdef DEBUG_DCI_ENCODING
-  msg("PDCCH Modulation: REG %d\n",i>>2);
+	msg("PDCCH Modulation: REG %d\n",i>>2);
 #endif
 	// first antenna position n -> x0
 	((short*)&y[0][i])[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
@@ -1133,7 +1165,13 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 #else
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(1+lprime+(sub_frame_offset*nsymb));
 #endif
-      // Copy REG to TX buffer
+
+      // if REG is allocated to PHICH, skip it
+      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
+	//	msg("decoding_dci: skipping REG %d\n",kprime>>2);
+	kprime+=4;
+      }
+      // Copy REG to TX buffer      
       for (i=0;i<4;i++) {
 	
 

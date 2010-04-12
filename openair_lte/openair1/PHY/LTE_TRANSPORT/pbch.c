@@ -206,7 +206,7 @@ int generate_pbch(mod_sym_t **txdataF,
 			   re_offset,
 			   symbol_offset,
 			   pbch_coded_data2,
-			   SISO,
+			   (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI,
 			   0,
 			   pilots,
 			   first_pilot,
@@ -506,6 +506,46 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
+void pbch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
+		   int **rxdataF_comp,
+		   unsigned char symbol) {
+
+
+  short *rxF0,*rxF1;
+  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
+  unsigned char rb,re,symbol_mod;
+  int jj;
+
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+  jj         = (symbol_mod*6*12);
+
+  rxF0     = (short*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
+  rxF1     = (short*)&rxdataF_comp[2][jj];  //tx antenna 1  h1*y
+
+  for (rb=0;rb<6;rb++) {
+
+    for (re=0;re<12;re+=2) {
+
+      // Alamouti RX combining
+      
+      rxF0[0] = rxF0[0] + rxF1[2];
+      rxF0[1] = rxF0[1] - rxF1[3];
+
+      rxF0[2] = rxF0[2] - rxF1[0];
+      rxF0[3] = rxF0[3] + rxF1[1];
+ 
+      rxF0+=4;
+      rxF1+=4;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+  
+}
+
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    LTE_UE_PBCH *lte_ue_pbch_vars,
 	    LTE_DL_FRAME_PARMS *frame_parms,
@@ -591,9 +631,9 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
 	
       if (mimo_mode == ALAMOUTI) {
-	//dlsch_alamouti(frame_parms,lte_ue_dlsch_vars->rxdataF_comp,lte_ue_dlsch_vars->dl_ch_mag,lte_ue_dlsch_vars->dl_ch_magb,symbol,nb_rb);
-	msg("[PBCH][RX] Alamouti receiver not yet implemented!\n");
-	return(-1);
+	pbch_alamouti(frame_parms,lte_ue_pbch_vars->rxdataF_comp,symbol);
+	//	msg("[PBCH][RX] Alamouti receiver not yet implemented!\n");
+	//	return(-1);
       }
       else if ((mimo_mode != ANTCYCLING) && (mimo_mode != SISO)) {
 	msg("[PBCH][RX] Unsupported MIMO mode\n");

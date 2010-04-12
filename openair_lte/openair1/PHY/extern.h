@@ -66,6 +66,7 @@ extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 extern UE_MODE_t UE_mode;
 
+extern unsigned short t_crnti;
 #include "PHY/LTE_TRANSPORT/extern.h"
 
 #endif

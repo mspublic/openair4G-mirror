@@ -1,10 +1,33 @@
+#include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "defs.h"
-#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
 
 #define DEBUG_PHICH
 
 extern unsigned short pcfich_reg[4];
 unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
+
+unsigned char subframe2_ul_harq(unsigned char tdd_config,unsigned char subframe) {
+
+  switch (tdd_config) {
+  case 3:
+    if ( (subframe == 8) || (subframe == 9) ){
+      return(subframe-8);
+    }
+    else if (subframe==0)
+      return(2);
+    else {
+      msg("phich.c: subframe2_ul_harq, illegal subframe %d for tdd_config %d\n",
+	  subframe,tdd_config);
+      return(0);
+    }
+    break;
+    
+  }
+  return(0);
+}
+
 
 void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -32,7 +55,7 @@ void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms) {
 
   for (mprime=0;mprime<(Ngroup_PHICH>>1);mprime++) {
     mprime2=mprime;
-    phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
+    phich_reg_ext[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
     // check for overlap with PCFICH
     if ((phich_reg_ext[mprime][0] == pcfich_reg[0]) ||
 	(phich_reg_ext[mprime][0] == pcfich_reg[1]) ||
@@ -56,7 +79,6 @@ mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1,
 // This routine generates the PHICH 
 // Note: (slightly modified for IFFT_FPGA as : 1, 1 => (1+j), -1 => (-1-j), j => (1-j), -j => (-1+j))
 void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
-			unsigned char mode1_flag,
 			unsigned char nseq_PHICH,
 			unsigned char ngroup_PHICH,
 			unsigned char HI,
@@ -64,7 +86,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
 
   mod_sym_t d[4],*dp;
   unsigned int i,aa;
-
+  unsigned int re_offset;
   // 
   // scrambling (later)
 
@@ -147,14 +169,14 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-    if (mode1_flag == 0) {
+    if (frame_parms->mode1_flag == 0) {
       // do Alamouti precoding here
       
       // Symbol 0
       // ignore for now
 
       // Symbol 1
-      re_offset = frame_parms->N_RB_DL*18 + phich_reg_ext[ngroup_PHICH][1]<<2;
+      re_offset = frame_parms->N_RB_DL*18 + (phich_reg_ext[ngroup_PHICH][1]<<2);
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -170,7 +192,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];
 
       // Symbol 2
-      re_offset = frame_parms->N_RB_DL*30 + phich_reg_ext[ngroup_PHICH][2]<<2;
+      re_offset = frame_parms->N_RB_DL*30 + (phich_reg_ext[ngroup_PHICH][2]<<2);
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -184,13 +206,13 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       y[1][re_offset]   += alam_bpsk_perm1[d[0]-1];
       y[0][re_offset+1] += d[3];
       y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];      
-    }
+    } // mode1_flag
     else {
       // Symbol 0
       // ignore for now
 
       // Symbol 1
-      re_offset = frame_parms->N_RB_DL*18 + phich_reg_ext[ngroup_PHICH][1]<<2;
+      re_offset = frame_parms->N_RB_DL*18 + (phich_reg_ext[ngroup_PHICH][1]<<2);
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -207,7 +229,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       y[1][re_offset+1] += d[3];
 
       // Symbol 2
-      re_offset = frame_parms->N_RB_DL*30 + phich_reg_ext[ngroup_PHICH][2]<<2;
+      re_offset = frame_parms->N_RB_DL*30 + (phich_reg_ext[ngroup_PHICH][2]<<2);
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -221,8 +243,27 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       y[1][re_offset]   += d[2];
       y[0][re_offset+1] += d[3];
       y[1][re_offset+1] += d[3];
-      }
-    }
-  }  // normal/extended
+    } // mode1_flag
+  }// normal/extended
+}  
 
+
+void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
+			unsigned char eNb_id,
+			unsigned char subframe) {
+
+  unsigned short UE_id=0;
+  unsigned char harq_pid;
+
+  harq_pid = subframe2_ul_harq(frame_parms->tdd_config,subframe);
+
+  if (ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
+
+    generate_phich_tdd(frame_parms,
+		       0, // nseq_PHICH
+		       0, // ngroup_PHICH,
+		       ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK,
+		       lte_eNB_common_vars->txdataF[eNb_id]);
+  }
 }
+

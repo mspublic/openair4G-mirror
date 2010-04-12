@@ -71,6 +71,8 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 UE_MODE_t UE_mode;
 
+unsigned short t_crnti=0x1432;
+
 #include "PHY/LTE_TRANSPORT/vars.h"
 
 #endif

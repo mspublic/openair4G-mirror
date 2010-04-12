@@ -27,8 +27,10 @@ typedef struct {
   unsigned char N_RB_UL;                /// Number of resource blocks (RB) in UL
   unsigned char Nid_cell;               /// Cell ID 
   unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
+  unsigned char Ng_times6;              /// Number of PHICH groups (times 6, 1,3,6,12)
   unsigned char nushift;                /// shift of pilot position in one RB
   unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
+  unsigned char mode1_flag;             /// flag to indicate SISO transmission
   unsigned short ofdm_symbol_size;
   unsigned char log2_symbol_size;
   unsigned short nb_prefix_samples;
