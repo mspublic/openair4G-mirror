@@ -12,10 +12,10 @@ extern unsigned int  distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 
-void fill_rar(unsigned char *dlsch_buffer,
-	      unsigned short N_RB_UL,
-	      unsigned char input_buffer_length,
-	      unsigned short timing_advance_cmd) {
+unsigned short fill_rar(unsigned char *dlsch_buffer,
+			unsigned short N_RB_UL,
+			unsigned char input_buffer_length,
+			unsigned short timing_advance_cmd) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
 
@@ -33,10 +33,11 @@ void fill_rar(unsigned char *dlsch_buffer,
   rar->TPC                    = 0;
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
-  rar->t_crnti                = 0x1234;
+  rar->t_crnti                = taus();
+  return(rar->t_crnti);
 }
 
-unsigned char process_rar(unsigned char *dlsch_buffer) {
+unsigned char process_rar(unsigned char *dlsch_buffer,unsigned short *t_crnti) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
@@ -54,6 +55,6 @@ unsigned char process_rar(unsigned char *dlsch_buffer) {
   msg("[MAC UE] rar->UL_delay %d\n",rar->UL_delay);
   msg("[MAC UE] rar->cqi_req %d\n",rar->cqi_req);
   msg("[MAC UE] rar->t_crnti %x\n",rar->t_crnti);
-
+  *t_crnti = rar->t_crnti;
   return(rar->UL_delay);
 }

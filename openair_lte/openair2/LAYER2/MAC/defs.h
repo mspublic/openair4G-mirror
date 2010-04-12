@@ -636,12 +636,12 @@ void nodeb_generate_ccch(u8 Mod_id);
 
 void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_alloc_map,unsigned char *User_alloc_map,unsigned short rb_map);
 
-void fill_rar(unsigned char *dlsch_buffer,
+unsigned short fill_rar(unsigned char *dlsch_buffer,
 	      unsigned short N_RB_UL,
 	      unsigned char input_buffer_length,
 	      unsigned short timing_advance_cmd);
 
-unsigned char process_rar(unsigned char *dlsch_buffer);
+unsigned char process_rar(unsigned char *dlsch_buffer,unsigned short *);
 
 
 //ue_control_plane_procedures
