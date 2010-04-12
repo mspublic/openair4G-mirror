@@ -743,7 +743,7 @@ void q_sort(char low, char high );
 //int SplitArray(int* array, int *indices, int pivot, int startIndex, int endIndex);
 //void quicksort(int* array, int * indices, int startIndex, int endIndex);
 
-#define msg debug_msg
+//#define msg debug_msg
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

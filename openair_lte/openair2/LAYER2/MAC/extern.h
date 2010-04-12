@@ -33,9 +33,10 @@ extern CH_MAC_INST *CH_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern u8 Is_rrc_registered;
 
-#ifndef USER_MODE
+//#ifndef USER_MODE
 extern MAC_xface *mac_xface;
 extern RRC_XFACE *Rrc_xface;
+/*
 #else
 #include "PHY_INTERFACE/extern.h"
 #ifndef CELLULAR
@@ -49,7 +50,7 @@ extern RRC_XFACE *Rrc_xface;
 #endif
 #endif //CELLULAR
 #endif
-
+*/
 
 extern u8 Is_rrc_registered;
 extern char Mac_dummy_buffer[50]; 

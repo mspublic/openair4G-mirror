@@ -284,19 +284,19 @@ static struct proc_dir_entry *proc_openair2_root;
  */
 int add_openair2_stats()
 {
-#ifdef  KERNEL_VERSION_GREATER_THAN_2629
+  //#ifdef  KERNEL_VERSION_GREATER_THAN_2629
   struct proc_dir_entry *pde;
-#endif
+  //#endif
 
   proc_openair2_root = proc_mkdir("openair2",0);
- #ifdef  KERNEL_VERSION_GREATER_THAN_2629
+  //#ifdef  KERNEL_VERSION_GREATER_THAN_2629
   // pde = proc_create_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root);
-  pde = proc_create_data("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, NULL,openair2_stats_read);
+  pde = create_proc_read_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, (read_proc_t*)&openair2_stats_read, NULL);
   if (!pde)
     printk("[OPENAIR][ERROR] can't create proc entry !\n");
-#else  
-  create_proc_info_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, openair2_stats_read);
-#endif 
+  //#else  
+  //create_proc_info_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, openair2_stats_read);
+  //#endif 
  
   return 0;
 }
@@ -309,11 +309,11 @@ void remove_openair2_stats()
   if (proc_openair2_root) {
     printk("[OPENAIR][CLEANUP] Removing openair proc entry\n");
     remove_proc_entry("lchan_stats", proc_openair2_root);
-#ifdef  KERNEL_VERSION_GREATER_THAN_2629   
+    //#ifdef  KERNEL_VERSION_GREATER_THAN_2629   
     
-#else
-    remove_proc_entry("openair2",&proc_root);
-#endif;
+    //#else
+    remove_proc_entry("openair2",NULL);
+    //#endif;
   }
 }
 #endif
