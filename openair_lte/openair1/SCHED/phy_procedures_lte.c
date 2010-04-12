@@ -36,6 +36,7 @@ ________________________________________________________________*/
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
 //use msg for something that should be always printed in any case
 /*
+
 #ifndef USER_MODE
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
 #else
@@ -53,6 +54,7 @@ void debug_msg(unsigned char debug_level, char* format_string) {
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) 
 	msg(format_string);
 */
+
 
 
 #define NS_PER_SLOT 500000
@@ -187,6 +189,29 @@ lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subfra
     
   }
 }
+
+unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) {
+
+  switch (tdd_config) {
+  case 3:
+    if ((subframe == 0) || (subframe == 8) || (subframe == 9))
+      return(1);
+    break;
+  case 4:
+    if ((subframe == 0) || (subframe == 8) )
+      return(1);
+    break;
+  case 5:
+    if (subframe == 0)
+      return(1);
+    break;
+  default:
+    return(0);
+    break;
+  }
+  return(0);
+}
+
 
 #ifdef EMOS
 void phy_procedures_emos_UE_TX(unsigned char next_slot) {
@@ -334,22 +359,22 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
 #endif
     }
 
-    //#ifdef DEBUG_PHY
 
-    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
-	      mac_xface->frame,next_slot,
-	      43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
-	      43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
-    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL in symbol %d\n",mac_xface->frame,next_slot,PSS_UL_SYMBOL);
-    //#endif
-    generate_pss(lte_ue_common_vars->txdataF,
-		 AMP,
-		 lte_frame_parms,
-		 lte_ue_common_vars->eNb_id,
-		 PSS_UL_SYMBOL,
-		 next_slot);
+    if (UE_mode == PRACH) {
+
+      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
+		mac_xface->frame,next_slot,
+		43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
+		43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
+      //#endif
+      generate_pss(lte_ue_common_vars->txdataF,
+		   AMP,
+		   lte_frame_parms,
+		   lte_ue_common_vars->eNb_id,
+		   PSS_UL_SYMBOL,
+		   next_slot);
+    }
   }
-
 }
 
 void phy_procedures_eNB_S_TX(unsigned char next_slot) {
@@ -602,7 +627,7 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
 		       lte_ue_pbch_vars[eNb_id],
 		       lte_frame_parms,
 		       eNb_id,
-		       SISO);
+		       ALAMOUTI);
   if (pbch_error) {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
@@ -677,7 +702,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 				   dci_alloc_rx,
 				   eNb_id,
 				   lte_frame_parms,
-				   SI_RNTI,RA_RNTI,C_RNTI);
+				   SI_RNTI,RA_RNTI,t_crnti);
 
   lte_ue_pdcch_vars[eNb_id]->dci_received += dci_cnt;
 #ifdef DIAG_PHY
@@ -740,7 +765,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
     debug_msg("[PHY PROCEDURES UE] subframe %d: Found rnti %x, format %d\n",last_slot>>1,dci_alloc_rx[i].rnti,
 	      dci_alloc_rx[i].format);
 #endif
-    if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
+    if ((UE_mode != PRACH) && (dci_alloc_rx[i].rnti == t_crnti) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
       
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 6) {
@@ -754,7 +779,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
-					    C_RNTI,
+					    t_crnti,
 					    format2_2A_M10PRB,
 					    dlsch_ue,
 					    lte_frame_parms,
@@ -815,7 +840,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #endif
       }
     }
-    else if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format0)) {
+    else if ((UE_mode != PRACH) && (dci_alloc_rx[i].rnti == t_crnti) && (dci_alloc_rx[i].format == format0)) {
 #ifdef DIAG_PHY
       if ((last_slot>>1) != 8) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
@@ -825,7 +850,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       }
 #endif
       generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
-					C_RNTI,
+					t_crnti,
 					last_slot>>1,
 					format0,
 					ulsch_ue[eNb_id],
@@ -1057,7 +1082,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  }
 	  else {
 	    debug_msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
-	    if (process_rar(dlsch_ue_ra->harq_processes[0]->b) == 0) {
+	    if (process_rar(dlsch_ue_ra->harq_processes[0]->b,&t_crnti) == 0) {
 	      ulsch_ue_rag_active=1;
 	      get_rag_alloc(lte_frame_parms->tdd_config,
 			    ((last_slot>>1)-1)%10,
@@ -1387,7 +1412,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &DLSCH_alloc_pdu2,
-					 C_RNTI,
+					 eNB_UE_stats[eNb_id].UE_id[0],
 					 format2_2A_M10PRB,
 					 dlsch_eNb,
 					 lte_frame_parms,
@@ -1472,7 +1497,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
       dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
       dci_alloc[0].L          = 3;
-      dci_alloc[0].rnti       = C_RNTI;
+      dci_alloc[0].rnti       = UE_stats[eNb_id].UE_id[0];
       nb_dci_ue_spec = 1;
       //#ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame, next_slot);
@@ -1480,7 +1505,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &DLSCH_alloc_pdu2,
-					 C_RNTI,
+					 UE_stats[eNb_id].UE_id[0],
 					 format2_2A_M10PRB,
 					 dlsch_eNb,
 					 lte_frame_parms,
@@ -1507,7 +1532,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
       dci_alloc[0].L          = 3;
-      dci_alloc[0].rnti       = C_RNTI;
+      dci_alloc[0].rnti       = UE_stats[eNb_id].UE_id[0];
       nb_dci_ue_spec = 1;
       
 #ifdef DEBUG_PHY
@@ -1515,7 +1540,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 #endif
       
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
-					 C_RNTI,
+					 UE_stats[eNb_id].UE_id[0],
 					 (next_slot>>1),
 					 format0,
 					 ulsch_eNb[0],
@@ -1576,6 +1601,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
   emos_dump_eNb.dci_cnt[next_slot>>1] = nb_dci_common+nb_dci_ue_spec;
 #endif
   
+  // if we have PHICH to generate
+  if ((next_slot%2)==0) {
+    if (is_phich_subframe(lte_frame_parms->tdd_config,next_slot>>1)) {
+      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_phich_top\n",mac_xface->frame, next_slot);
+      generate_phich_top(lte_frame_parms,eNb_id,next_slot>>1);
+    }
+
+  }
   // if we have DCI to generate do it now
   if (((next_slot%2)==0) && ((nb_dci_common+nb_dci_ue_spec)>0)) {
     //#ifdef DEBUG_PHY
@@ -1663,11 +1696,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     if (dlsch_eNb_ra_active == 1) {
       input_buffer_length = dlsch_eNb_ra->harq_processes[0]->TBS/8;
-      fill_rar(dlsch_input_buffer,
-	       lte_frame_parms->N_RB_UL,
-	       input_buffer_length,
-	       eNB_UE_stats[eNb_id].UE_timing_offset[0]>>2); 
-
+      eNB_UE_stats[eNb_id].UE_id[0] = fill_rar(dlsch_input_buffer,
+					   lte_frame_parms->N_RB_UL,
+					   input_buffer_length,
+					   eNB_UE_stats[eNb_id].UE_timing_offset[0]>>2); 
+      
       generate_eNb_ulsch_params_from_rar(dlsch_input_buffer,
 					 (next_slot>>1),
 					 ulsch_eNb[0],
@@ -1791,7 +1824,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     }
 
     if (ret == (1+MAX_TURBO_ITERATIONS)) {
+      ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_active = 1;
+      ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK = 0;
       ulsch_errors++;
+    }
+    else {
+      ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_active = 1;
+      ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK = 1;
     }
   }
     
