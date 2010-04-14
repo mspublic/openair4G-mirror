@@ -1,4 +1,6 @@
-#include "defs.h"
+#include "PHY/defs.h"
+#include "MAC_INTERFACE/extern.h"
+
 unsigned short pcfich_reg[4];
 
 #define DEBUG_PCFICH
