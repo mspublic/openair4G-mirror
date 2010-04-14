@@ -344,7 +344,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
 
     dlsch[0]->current_harq_pid = harq_pid;
-    printf("Format 1A: harq_pid %d\n",harq_pid);
+    //    printf("Format 1A: harq_pid %d\n",harq_pid);
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
       dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     else
