@@ -1384,12 +1384,12 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
 
     if (((DCI0_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type == 0) {
-      printf("Format 0\n");
+      //      printf("Format 0\n");
       dci_alloc[dci_cnt].format     = format0;
     }
     else {
       dci_alloc[dci_cnt].format     = format1A;
-      printf("Format 1A\n");
+      //      printf("Format 1A\n");
     }
     dci_cnt++;
     second_found = 1;
