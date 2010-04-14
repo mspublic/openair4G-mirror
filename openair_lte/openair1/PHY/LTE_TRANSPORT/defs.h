@@ -393,6 +393,7 @@ typedef struct {
   unsigned char rank[NUMBER_OF_UE_MAX];
   unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
   unsigned short UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
+  UE_MODE_t mode[NUMBER_OF_UE_MAX];
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -1088,8 +1089,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      short eNb_id,
 				      LTE_DL_FRAME_PARMS *frame_parms,
 				      unsigned short si_rnti,
-				      unsigned short ra_rnti,
-				      unsigned short c_rnti);
+				      unsigned short ra_rnti);
 
 unsigned char get_Qm(unsigned char I_MCS);
 

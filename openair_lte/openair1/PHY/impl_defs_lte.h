@@ -123,6 +123,7 @@ typedef struct {
   unsigned short *llr;
   unsigned short *wbar;
   char *e_rx;
+  unsigned short crnti;
   unsigned int dci_errors;          /// Total number of PDU errors (diagnostic mode)
   unsigned int dci_received;        /// Total number of PDU received
   unsigned int dci_false;           /// Total number of DCI False detection (diagnostic mode)

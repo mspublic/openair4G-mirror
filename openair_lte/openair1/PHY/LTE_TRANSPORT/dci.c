@@ -1270,8 +1270,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      short eNb_id,
 				      LTE_DL_FRAME_PARMS *frame_parms,
 				      unsigned short si_rnti,
-				      unsigned short ra_rnti,
-				      unsigned short c_rnti) {
+				      unsigned short ra_rnti) {
   
   unsigned short crc,dci_cnt,first_found,second_found,dci_len;
   int i;
@@ -1290,14 +1289,14 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
 
-  /*    
+  /*      
   for (i=0;i<3+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
 
   msg("CRC 0/1A: %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  
   */
-
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1310,16 +1309,32 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("DCI Aggregation 8: Found DCI 1A (SI_RNTI) in first position\n");
 #endif
   }
-  else if (crc == c_rnti) {
+  else if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
-    dci_alloc[dci_cnt].rnti       = c_rnti;
+    dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
+
+    if (((DCI0_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type == 0) {
+      dci_alloc[dci_cnt].format     = format0;
+      //      printf("DCI Format 0\n");
+    }
+    else {
+      /*
+      printf("DCI cnt %d : Format 1A (type %d,mcs %d, rv %d,hpid %d)\n",dci_cnt,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->rv,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->mcs,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->harq_pid);
+      */
+      dci_alloc[dci_cnt].format     = format1A;
+    }
+
+
     dci_cnt++;
     first_found=1;
 #ifdef DEBUG_DCI_DECODING
-    msg("DCI Aggregation 8: Found DCI 0 (C_RNTI) in first position\n");
+    msg("DCI Aggregation 8: Found DCI 0 (C_RNTI) in first position (format %d)\n",dci_alloc[dci_cnt].format);
 #endif
   }
   else if (crc == ra_rnti) {
@@ -1362,12 +1377,20 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("DCI Aggregation 8: Found DCI 1A (SI_RNTI) in second position\n");
 #endif
   }
-  else if (crc == c_rnti) {
+  else if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
-    dci_alloc[dci_cnt].rnti       = c_rnti;
+    dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
+
+    if (((DCI0_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type == 0) {
+      printf("Format 0\n");
+      dci_alloc[dci_cnt].format     = format0;
+    }
+    else {
+      dci_alloc[dci_cnt].format     = format1A;
+      printf("Format 1A\n");
+    }
     dci_cnt++;
     second_found = 1;
 #ifdef DEBUG_DCI_DECODING
@@ -1407,9 +1430,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1441,9 +1464,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1475,9 +1498,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     
     */
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_M10PRB;;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1508,9 +1531,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x\n",crc);
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));

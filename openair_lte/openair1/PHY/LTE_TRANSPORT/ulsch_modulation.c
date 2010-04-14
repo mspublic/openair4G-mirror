@@ -9,31 +9,104 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-__m128i dft_in[300],dft_out[300];
+__m128i dft_in_re128[2][300],dft_in_im128[2][300],dft_out_re128[2][300],dft_out_im128[2][300];
 
 #ifndef OFDMA_ULSCH
-void dft_lte(mod_sym_t z,mod_sym_t d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
+void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
 
-  switch Msc_PUSCH {
+  short *dft_in_re=(short*)dft_in_re128[0],*dft_in_im=(short*)dft_in_im128[0],*dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0];
+  short *dft_in_re2=(short*)dft_in_re128[1],*dft_in_im2=(short*)dft_in_im128[1],*dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1];
+  int *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10;
+  short *dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0],*dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0];
+  short *dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1],*dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1];
+  int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10;
+
+  d0 = d;
+  d1 = d0+Msc_PUSCH;
+  d2 = d1+Msc_PUSCH;
+  d3 = d2+Msc_PUSCH;
+  d4 = d3+Msc_PUSCH;
+  d5 = d4+Msc_PUSCH;  
+  d6 = d5+Msc_PUSCH;
+  d7 = d6+Msc_PUSCH;
+  d8 = d7+Msc_PUSCH;
+  d9 = d8+Msc_PUSCH;
+  d10 = d9+Msc_PUSCH;
+
+  for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=8) {
+    dft_in_re[ip] =  ((short*)d0)[i<<1];
+    dft_in_im[ip] =  ((short*)d0)[1+(i<<1)];
+
+    dft_in_re[ip+1] =  ((short*)d1)[i<<1];
+    dft_in_im[ip+1] =  ((short*)d1)[1+(i<<1)];
+
+    dft_in_re[ip+2] =  ((short*)d2)[i<<1];
+    dft_in_im[ip+2] =  ((short*)d2)[1+(i<<1)];
+
+    dft_in_re[ip+3] =  ((short*)d3)[i<<1];
+    dft_in_im[ip+3] =  ((short*)d3)[1+(i<<1)];
+
+    dft_in_re[ip+4] =  ((short*)d4)[i<<1];
+    dft_in_im[ip+4] =  ((short*)d4)[1+(i<<1)];
+
+    dft_in_re[ip+5] =  ((short*)d5)[i<<1];
+    dft_in_im[ip+5] =  ((short*)d5)[1+(i<<1)];
+
+    dft_in_re[ip+6] =  ((short*)d6)[i<<1];
+    dft_in_im[ip+6] =  ((short*)d6)[1+(i<<1)];
+
+    dft_in_re[ip+7] =  ((short*)d7)[i<<1];
+    dft_in_im[ip+7] =  ((short*)d7)[1+(i<<1)];
+
+    dft_in_re2[ip] =  ((short*)d8)[i<<1];
+    dft_in_im2[ip] =  ((short*)d8)[1+(i<<1)];
+
+    dft_in_re2[ip+1] =  ((short*)d9)[i<<1];
+    dft_in_im2[ip+1] =  ((short*)d9)[1+(i<<1)];
+
+    dft_in_re2[ip+2] =  ((short*)d10)[i<<1];
+    dft_in_im2[ip+2] =  ((short*)d10)[1+(i<<1)];
+  }
+
+
+  switch (Msc_PUSCH) {
   case 12:
     break;
   case 24:
+    dft24(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft24(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 36:
+    dft36(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft36(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 48:
+    dft48(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft48(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 60:
+    dft60(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft60(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 72:
+    dft72(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft72(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 96:
+    dft96(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft96(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 108:
+    dft108(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft108(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 120:
+    dft120(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft120(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 144:
+    dft144(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft144(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 168:
     break;
@@ -49,6 +122,54 @@ void dft_lte(mod_sym_t z,mod_sym_t d, unsigned short Msc_PUSCH, unsigned char Ns
     break;
     
   }
+
+  z0 = z;
+  z1 = z0+Msc_PUSCH;
+  z2 = z1+Msc_PUSCH;
+  z3 = z2+Msc_PUSCH;
+  z4 = z3+Msc_PUSCH;
+  z5 = z4+Msc_PUSCH;  
+  z6 = z5+Msc_PUSCH;
+  z7 = z6+Msc_PUSCH;
+  z8 = z7+Msc_PUSCH;
+  z9 = z8+Msc_PUSCH;
+  z10 = z9+Msc_PUSCH;
+
+  for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=8) {
+    ((short*)z0)[i<<1]     = dft_out_re[ip]; 
+    ((short*)z0)[1+(i<<1)] = dft_out_im[ip];  
+
+    ((short*)z1)[i<<1]     = dft_out_re[ip+1]; 
+    ((short*)z1)[1+(i<<1)] = dft_out_im[ip+1];  
+
+    ((short*)z2)[i<<1]     = dft_out_re[ip+2]; 
+    ((short*)z2)[1+(i<<1)] = dft_out_im[ip+2];  
+
+    ((short*)z3)[i<<1]     = dft_out_re[ip+3]; 
+    ((short*)z3)[1+(i<<1)] = dft_out_im[ip+3];  
+
+    ((short*)z4)[i<<1]     = dft_out_re[ip+4]; 
+    ((short*)z4)[1+(i<<1)] = dft_out_im[ip+4];  
+
+    ((short*)z5)[i<<1]     = dft_out_re[ip+5]; 
+    ((short*)z5)[1+(i<<1)] = dft_out_im[ip+5];  
+
+    ((short*)z6)[i<<1]     = dft_out_re[ip+6]; 
+    ((short*)z6)[1+(i<<1)] = dft_out_im[ip+6];  
+
+    ((short*)z7)[i<<1]     = dft_out_re[ip+7]; 
+    ((short*)z7)[1+(i<<1)] = dft_out_im[ip+7];  
+
+    ((short*)z8)[i<<1]     = dft_out_re2[ip]; 
+    ((short*)z8)[1+(i<<1)] = dft_out_im2[ip];  
+
+    ((short*)z9)[i<<1]     = dft_out_re2[ip+1]; 
+    ((short*)z9)[1+(i<<1)] = dft_out_im2[ip+1];  
+
+    ((short*)z10)[i<<1]     = dft_out_re2[ip+2]; 
+    ((short*)z10)[1+(i<<1)] = dft_out_im2[ip+2];  
+  }
+
 }
 
 #endif
@@ -229,7 +350,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     ulsch->z[i] = ulsch->d[i]; 
   }
 #else
-  dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch-3);
+  dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch);
 #endif
 
 #ifdef OFDMA_ULSCH

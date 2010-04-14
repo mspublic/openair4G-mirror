@@ -173,6 +173,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+
     dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch0 = dlsch[0];
@@ -271,8 +272,11 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       dlsch0->harq_processes[harq_pid]->status = ACTIVE;
     dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
     if (dlsch0->nb_rb > 0)
+#ifdef TBS_FIX
+      dlsch0->harq_processes[harq_pid]->TBS         = 3*dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1]/4;
+#else
       dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1];
- 
+#endif 
     break;
   default:
     return(-1);
@@ -339,7 +343,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
 
     dlsch[0]->current_harq_pid = harq_pid;
-
+    printf("Format 1A: harq_pid %d\n",harq_pid);
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
       dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     else
@@ -355,6 +359,8 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+
+
     dlsch0 = dlsch[0];
     break;
   case format2_2A_L10PRB:
@@ -448,7 +454,11 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
       dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
       if (dlsch0->nb_rb>1) 
+#ifdef TBS_FIX
+	dlsch0->harq_processes[harq_pid]->TBS         = 3*dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1]/4;
+#else
 	dlsch0->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch0->harq_processes[harq_pid]->mcs)][dlsch0->nb_rb-1];
+#endif
       else
 	dlsch0->harq_processes[harq_pid]->TBS         =0;
       
@@ -457,7 +467,11 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 	dlsch1->harq_processes[harq_pid]->status = ACTIVE;
       dlsch1->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs2;
       if (dlsch1->nb_rb>1) 
+#ifdef TBS_FIX
+	dlsch1->harq_processes[harq_pid]->TBS         = 3*dlsch_tbs25[dlsch1->harq_processes[harq_pid]->mcs][dlsch1->nb_rb-1]/4;
+#else
 	dlsch1->harq_processes[harq_pid]->TBS         = dlsch_tbs25[dlsch1->harq_processes[harq_pid]->mcs][dlsch1->nb_rb-1];
+#endif
       else
 	dlsch1->harq_processes[harq_pid]->TBS         = 0;
       break;
