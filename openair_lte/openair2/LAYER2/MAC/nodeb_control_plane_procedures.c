@@ -278,7 +278,8 @@ void nodeb_generate_dci(unsigned char Mod_id) {
       */
     }
   }
-  
+
+  /*  
   if ((Macphy_data_req=new_macphy_data_req(Mod_id))==NULL){
     msg("FATAL: GENERATE CHBCH: NO MORE DATA REQ\n");
     mac_xface->macphy_exit("");
@@ -291,6 +292,8 @@ void nodeb_generate_dci(unsigned char Mod_id) {
   Macphy_data_req->CH_index=(NODE_ID[Mod_id] %2 );
   Macphy_data_req->Dir.Req_tx.Pdu.dci_pdu=&CH_mac_inst[Mod_id].DCI_pdu;
   //  Macphy_data_req->Phy_resources = &CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Phy_resources_tx;
+  */
+
 }
 
 
