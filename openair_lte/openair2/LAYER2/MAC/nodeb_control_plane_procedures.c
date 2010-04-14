@@ -27,9 +27,9 @@
 //#define DEBUG_MAC_RLC
 //#define DEBUG_MAC_SCHEDULING
 
-#define DEBUG_MAC_DCI
-#define DEBUG_MAC_CCCH
-#define DEBUG_MAC_BCCH
+//#define DEBUG_MAC_DCI
+//#define DEBUG_MAC_CCCH
+//#define DEBUG_MAC_BCCH
 
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
