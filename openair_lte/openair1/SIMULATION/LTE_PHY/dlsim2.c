@@ -15,7 +15,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 1
+#define N_TRIALS 100
 
 int main(int argc, char **argv) {
 

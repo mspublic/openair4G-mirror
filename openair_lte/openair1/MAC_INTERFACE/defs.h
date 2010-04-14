@@ -77,7 +77,7 @@ typedef struct
     void (*macphy_init)(void);          /*  Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC */
     void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
 #ifdef OPENAIR2
-    void (*macphy_data_ind)(unsigned char, MACPHY_DATA_REQ_RX *,unsigned char, unsigned short);
+    void (*macphy_data_ind)(unsigned char, unsigned char, unsigned short);
     void (*out_of_sync_ind)(unsigned char,unsigned short);
 
     void (*mrbch_phy_sync_failure) (unsigned char Mod_id, unsigned char Free_ch_index);

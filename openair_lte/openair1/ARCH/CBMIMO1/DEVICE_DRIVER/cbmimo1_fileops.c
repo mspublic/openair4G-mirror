@@ -140,9 +140,9 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 }
 
 #define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,9,6)
-#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
-#define BCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
-#define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
+#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
+#define BCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
+#define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
 
 //-----------------------------------------------------------------------------
@@ -227,6 +227,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_ue_pdcch_vars  = &PHY_vars->lte_ue_pdcch_vars[0];
 	lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
 	lte_ue_dlsch_vars_ra = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+	lte_ue_dlsch_vars_1A = &PHY_vars->lte_ue_dlsch_vars_1A[0];
 
 	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
 	lte_eNB_ulsch_vars  = &PHY_vars->lte_eNB_ulsch_vars[0];
@@ -557,6 +558,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 			    lte_ue_dlsch_vars, 
 			    lte_ue_dlsch_vars_cntl, 
 			    lte_ue_dlsch_vars_ra,
+			    lte_ue_dlsch_vars_1A,
 			    lte_ue_pbch_vars, 
 			    lte_ue_pdcch_vars)) {
 	    msg("[openair][IOCTL] phy_init_lte_ue error\n");
