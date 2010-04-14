@@ -306,7 +306,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 					lte_frame_parms,
 					eNb_id);
       ulsch_ue[eNb_id]->power_offset = 14;
-      printf("UE: Setting rag_flag\n");
+      //      printf("UE: Setting rag_flag\n");
       rag_flag = 1;
       
     }
