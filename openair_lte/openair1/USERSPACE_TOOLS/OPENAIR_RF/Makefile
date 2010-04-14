@@ -117,6 +117,8 @@ $(USERRFOBJS) : %.o : %.c
 openair_rf: $(USERRFOBJS)
 	$(CCC) -o openair_rf_$(FNAME) $(CFLAGS) $(USERRFOBJS) -lm  
 
+read_rx_sig: read_rx_sig.c
+	$(CCC) -o read_rx_sig $(CFLAGS) read_rx_sig.c 
 
 clean:
 	rm -f $(USERRFOBJS)

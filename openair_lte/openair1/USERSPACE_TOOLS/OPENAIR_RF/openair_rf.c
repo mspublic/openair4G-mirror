@@ -106,7 +106,7 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 11 : TX SCCP/16QAM param 0/1 = 66 kHz frequency offset on/off\n");
     printf("[openair][INFO] Action 12 : TX I/Q impulses (delay test)\n");
     printf("[openair][INFO] Action 13 : TX real C/W fs/4 + offset with DC component - param 0/1 = 66 kHz frequency offset off/on\n");  
-    printf("[openair][INFO] Action 14 : SET RX RF Mode - param (CONFIG 0 (0-255), OPCNTL 0 (0-255), CONFIG 1 (0-255), OPCNTL 1 (0-255) )\n");
+    printf("[openair][INFO] Action 14 : SET RX RF Mode - param\n");
     printf("[openair][INFO] Action 15 : SET TCXO param (set > 255 to use calibrated value)\n");
     printf("[openair][INFO] Action 16 : SET CALIBRATED RX GAIN param (also turns off AGC)\n");
     printf("[openair][INFO] Action 22 : Update SoC firmware\n");
@@ -114,9 +114,8 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 26 : SET FREQ OFFSET param\n");
     printf("[openair][INFO] Action 27 : Start Primary Clusterhead in cognitive mode - param 0/1 = frequency offset on/off - param NODE_ID\n");
     printf("[openair][INFO] Action 28 : Set UE MCS - param 0-31\n");
-    printf("[openair][INFO] Action 29 : Start UE Rate Adaptation param 0/1 = frequency offset on/off - param NODE_ID\n");
+    printf("[openair][INFO] Action 29 : Start UE Rate Adaptation param 0/1\n");
     printf("[openair][INFO] Action 30 : Set DLSCH Transmission Mode param 1-7\n");
-    printf("[openair][INFO] Action 39 : Send EMOS recording flag\n"); 
     exit (-1);
   }
 
@@ -226,6 +225,7 @@ int main (int argc, char **argv) {
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = 6;
+  lte_frame_parms->mode1_flag  = 1; //default == SISO
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -715,11 +715,6 @@ case 24 :
     result = ioctl(openair_fd,openair_SET_DLSCH_TRANSMISSION_MODE, &fc);
     break;
 	
-  case 39:
-    result=ioctl(openair_fd, openair_START_EMOS_NODEB);
-    if (result) printf("[openair][START][INFO][EMOS] NOK, ioctl failed\n");
-    break;
-
   }
   
   close(openair_fd);

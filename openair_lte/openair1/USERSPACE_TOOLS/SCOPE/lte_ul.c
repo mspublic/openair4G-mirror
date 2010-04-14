@@ -43,6 +43,7 @@ FD_lte_scope *form;
 //char demod_data[2048];
 
 short *channel_drs[4],*channel_srs[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr;
+int* sync_corr;
 
 int length,offset;
 float avg=1;
@@ -67,6 +68,16 @@ void lte_scope_idle_callback(void) {
 
   float cum_avg;
   
+  // channel_t_re = sync_corr
+  for (i=0; i<640*3; i++)  {
+    sig2[i] = (float) (sync_corr[i]);
+    time2[i] = (float) i;
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,640*3,"","","");
+
+  /*
   // channel_t_re = srs
   cum_avg = 0;
   ind = 0;
@@ -90,7 +101,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,30,70);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-
+  */
 
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
@@ -195,7 +206,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
   //printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
-  //printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
+  printf("PHY_vars->lte_eNB_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
   //printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
   //printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
   printf("PHY_vars->lte_eNB_ulsch_vars[0] = %p\n",PHY_vars->lte_eNB_ulsch_vars[0]);
@@ -219,7 +230,10 @@ int main(int argc, char *argv[]) {
   else
     msg("Could not map physical memory\n");
 
-  // only if UE
+  sync_corr = (int*) (mem_base +
+		      (unsigned int)PHY_vars->lte_eNB_common_vars.sync_corr -
+		      (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+
   lte_eNb_ulsch = (LTE_eNB_ULSCH *) (mem_base + 
 				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[0] - 
 				     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);

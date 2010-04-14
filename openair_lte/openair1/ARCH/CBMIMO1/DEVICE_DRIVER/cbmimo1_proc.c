@@ -70,6 +70,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   PHY_vars->PHY_measurements.n0_power_dB[0],
 		   PHY_vars->PHY_measurements.n0_power_dB[1]);
     len += sprintf(&buffer[len], "RX Gain %d dB\n",PHY_vars->rx_total_gain_dB);
+    len += sprintf(&buffer[len], "UE mode = %s\n",mode_string[UE_mode]);
     
     for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
       len += sprintf(&buffer[len], "RX spatial power eNB%d: [%d %d; %d %d] dB\n",
@@ -167,6 +168,9 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   eNB_UE_stats[0].UE_id[0],
 		   eNB_UE_stats[0].UE_timing_offset[0],
 		   eNB_UE_stats[0].UE_timing_offset[0]>>2);
+    len += sprintf(&buffer[len],"eNB 0 UE 0 (%x) Mode = %s\n",
+		   eNB_UE_stats[0].UE_id[0],
+		   mode_string[eNB_UE_stats[0].mode[0]]);
 
   }
 

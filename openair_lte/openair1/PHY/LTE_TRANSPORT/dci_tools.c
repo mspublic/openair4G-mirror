@@ -355,7 +355,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
-    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = dlsch[0]->mode1_flag == 1 ?SISO : ALAMOUTI;
+    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 

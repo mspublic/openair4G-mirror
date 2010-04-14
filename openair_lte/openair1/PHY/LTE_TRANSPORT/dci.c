@@ -9,8 +9,6 @@
 #include <string.h>
 #endif
 #include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
-#include "extern.h"
 #include "PHY/extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
@@ -822,7 +820,7 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   _m_empty();
 
 }
-/*
+
 void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 		int **rxdataF_comp,
 		unsigned char l) {
@@ -841,7 +839,7 @@ void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
 }
-*/
+
 
 void pdcch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
@@ -939,9 +937,8 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 
   
 
-    if (mimo_mode == SISO) {
-      //    pdcch_siso(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
-    }
+    if (mimo_mode == SISO) 
+      pdcch_siso(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
     else
       pdcch_alamouti(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
 
@@ -960,7 +957,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   pdcch_deinterleaving((unsigned short*)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->e_rx,
 		       lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->wbar,
 		       frame_parms->Nid_cell);
-
+  return(0);
 }
 	     
 
@@ -1034,14 +1031,15 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
   // Now do modulation
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   e_ptr = e;
-  switch (frame_parms->nb_antennas_tx) {
+  if (frame_parms->mode1_flag) { //SISO
 
-  case 1:
 #ifndef IFFT_FPGA
     for (i=0;i<Msymb;i++) {
       ((short*)(&(y[0][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((short*)(&(y[1][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
       ((short*)(&(y[0][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((short*)(&(y[1][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
     }
 #else
@@ -1055,13 +1053,13 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
       e_ptr++;
       
       y[0][i] = (mod_sym_t) qpsk_table_offset;
+      y[1][i] = (mod_sym_t) qpsk_table_offset;
     }
 
 #endif
-    
-    break;
+  }
+  else { //ALAMOUTI    
 
-  case 2:
 #ifndef IFFT_FPGA
       for (i=0;i<Msymb;i+=2) {
 
@@ -1130,12 +1128,6 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 	y[0][i+1] = (mod_sym_t) qpsk_table_offset2;  // x1
       }
 #endif    
-      break;
-  default:
-    msg("dci.c: generate_dci_top(), unsupported number of antennas %d\n",frame_parms->nb_antennas_tx);
-    return;
-    break;
-
   }
 
 

@@ -82,7 +82,7 @@ int setup_regs(unsigned char card_id);
 
 void dump_config(void);
 
-void l2_init();
+void l2_init(void);
 
 int add_chbch_stats(void);
 void remove_chbch_stats(void);

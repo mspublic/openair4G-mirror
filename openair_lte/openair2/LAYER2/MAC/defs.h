@@ -17,11 +17,9 @@ ________________________________________________________________*/
 #include <string.h>
 #endif
 
+//#include "COMMON/openair_defs.h"
 
-
-#include "COMMON/openair_defs.h"
 #include "COMMON/platform_constants.h"
-
 #include "COMMON/mac_rrc_primitives.h"
 #include "PHY/defs.h"
 
@@ -134,7 +132,7 @@ ________________________________________________________________*/
  */
 
 #define TB_SIZE_MAX 52
-#define NB_TB_BUFF_MAX  64
+#define NB_TB_BUFF_MAX  32
 
 
 #define NUMBER_DL_SACH_MAX 6
@@ -743,7 +741,10 @@ void q_sort(char low, char high );
 //int SplitArray(int* array, int *indices, int pivot, int startIndex, int endIndex);
 //void quicksort(int* array, int * indices, int startIndex, int endIndex);
 
-//#define msg debug_msg
+#ifndef USER_MODE
+#define msg debug_msg
+#endif
+
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 

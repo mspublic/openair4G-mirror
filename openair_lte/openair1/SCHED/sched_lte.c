@@ -149,12 +149,10 @@ void openair1_restart(void) {
   }
   */
 
-#ifndef EMOS		
 #ifdef OPENAIR2
-  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
   mac_resynch();
 #endif //OPENAIR2
-#endif //EMOS
 
 }
 
@@ -247,9 +245,7 @@ static void * openair_thread(void *param) {
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
 
-#ifndef EMOS
-      mac_xface->macphy_scheduler(last_slot); 
-#endif
+      //      mac_xface->macphy_scheduler(last_slot); 
 
 #ifdef OPENAIR_LTE
       phy_procedures_lte(last_slot,next_slot);
@@ -495,17 +491,17 @@ void openair_sync(void) {
 	    
 	    openair_daq_vars.mode = openair_SYNCHED;
 	    mac_xface->frame = 0;
-#ifndef EMOS		
 #ifdef OPENAIR2
 	    msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
 	    mac_resynch();
 #endif //OPENAIR2
-#endif //EMOS
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
 
+#ifdef OPENAIR2
 	    UE_mode = PRACH;
 	    mac_xface->chbch_phy_sync_success(0,0);	    
+#endif
 	  }
 	  
 	}

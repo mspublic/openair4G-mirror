@@ -15,7 +15,7 @@ ________________________________________________________________*/
 #include <string.h>
 #endif
 
-#include "COMMON/openair_defs.h"
+#include "PHY/defs.h"
 #include "COMMON/platform_constants.h"
 
 #include "COMMON/mac_rrc_primitives.h"

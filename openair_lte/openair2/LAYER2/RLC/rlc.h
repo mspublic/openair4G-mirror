@@ -18,7 +18,7 @@
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
 #    include "mem_block.h"
-#    include "openair_defs.h"
+#    include "PHY/defs.h"
 //-----------------------------------------------------------------------------
 #    ifdef RLC_MAC_C
 #        define private_rlc_mac(x) x

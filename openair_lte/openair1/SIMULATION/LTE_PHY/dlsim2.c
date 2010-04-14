@@ -65,11 +65,12 @@ int main(int argc, char **argv) {
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
+  lte_ue_dlsch_vars_cntl = &(PHY_vars->lte_ue_dlsch_vars_cntl[0]);
+  lte_ue_dlsch_vars_ra = &PHY_vars->lte_ue_dlsch_vars_ra[0];
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
   lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
-  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
@@ -79,6 +80,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 1;
+  lte_frame_parms->mode1_flag = 1;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -110,7 +112,7 @@ int main(int argc, char **argv) {
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_pbch_vars,lte_ue_pdcch_vars);
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);
 
   /*  
   txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
@@ -320,7 +322,10 @@ int main(int argc, char **argv) {
   fclose(rx_frame_file);
   */
 
-  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms, LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti);
+  sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, 
+			   lte_frame_parms, 
+			   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti,
+			   &lte_ue_common_vars->eNb_id);
   //sync_pos = 3328;
 
   
@@ -377,7 +382,7 @@ int main(int argc, char **argv) {
 	      PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
 	      PHY_vars->PHY_measurements.wideband_cqi[0][0],
 	      PHY_vars->PHY_measurements.wideband_cqi[0][1],
-	      PHY_vars->rx_vars[0].rx_total_gain_dB);
+	      PHY_vars->rx_total_gain_dB);
 
 	  msg("[PHY_PROCEDURES_LTE] frame %d, N0 digital (%d, %d) dB, linear (%d, %d)\n",
 	      trial,

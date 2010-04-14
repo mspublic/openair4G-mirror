@@ -3,6 +3,7 @@
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#include "SIMULATION/TOOLS/defs.h"
 
 
 #define DEBUG_RAR

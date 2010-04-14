@@ -356,9 +356,8 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
   if ((peak_val>>10 * length) < 50*mean_val) {
     //#ifdef DEBUG_PHY
- 
-      debug_msg("[SYNC TIME] No peak found (%d,%d,%d)\n",peak_pos,peak_val,mean_val);
-      //#endif
+     debug_msg("[SYNC TIME] No peak found (%d,%d,%d)\n",peak_pos,peak_val,mean_val);
+    //#endif
     return(-1);
   }
   else {

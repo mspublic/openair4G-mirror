@@ -1656,8 +1656,10 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   log2_maxh = 4+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
   msg("[DLSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
+  msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
 #endif
  
+
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
 

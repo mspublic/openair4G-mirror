@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "openair_defs.h"
+#include "PHY/defs.h"
 
 #define LIST_NAME_MAX_CHAR 32
 

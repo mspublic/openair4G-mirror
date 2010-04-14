@@ -149,21 +149,18 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg) {
   /* arg is not meaningful if no arg is passed in user space */
   //-----------------------------------------------------------------------------
-   int ret=-1;
-   int i,aa;
-
-
+  int ret=-1;
+  int i,aa,eNb_id;
+  
   void *arg_ptr = (void *)arg;
-
-
-
 
   unsigned char *scale;
   unsigned char scale_mem;
   int tmp;
   unsigned int ltmp;
+
 #define invert4(x)        {ltmp=x; x=((ltmp & 0xff)<<24) | ((ltmp & 0xff00)<<8) | \
-                       ((ltmp & 0xff0000)>>8) | ((ltmp & 0xff000000)>>24); }
+				     ((ltmp & 0xff0000)>>8) | ((ltmp & 0xff000000)>>24); }
 
   static unsigned int fmw_off;
   static unsigned int update_firmware_command;
@@ -200,13 +197,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //----------------------
     printk("[openair][IOCTL]     openair_DUMP_CONFIG\n");
 
-
-#ifdef EMOS
-    openair_daq_vars.mac_registered=1;
-#endif
-    //#ifndef OPENAIR2 
-    openair_daq_vars.mac_registered=1;
-    //#endif
+    openair_daq_vars.mac_registered=1; // Fix this - should only be set if MAC is really registered
     
 #ifdef RTAI_ENABLED
     if (openair_daq_vars.node_configured > 0) {
@@ -298,6 +289,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_running = 0;
 
 	openair_daq_vars.timing_advance = 19;
+	openair_daq_vars.dlsch_transmission_mode = 2; //ALAMOUTI
+	openair_daq_vars.target_ue_mcs = 0;
+	openair_daq_vars.dlsch_rate_adaptation = 0;
+
+	lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
 
 	mac_xface->is_cluster_head = 0;
 
@@ -444,9 +440,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 	// Initialize MAC layer
 
-
+#ifdef OPENAIR2
 	l2_init();
 	mac_xface->mrbch_phy_sync_failure(0,0);
+#endif
       } // eNB Configuration check
 
       openair_daq_vars.node_id = PRIMARY_CH;
@@ -600,8 +597,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  mac_xface->is_secondary_cluster_head = 0;
 	  mac_xface->cluster_head_index = 0;
 	  NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-	
+	  UE_mode = PRACH;
+
+	  for (eNb_id=0;eNb_id<3;eNb_id++)
+	    lte_ue_pdcch_vars[eNb_id]->crnti = 0x1234;
+
+#ifdef OPENAIR2	
 	  l2_init();
+#endif
       }  
       openair_daq_vars.node_id = NODE;
       //openair_daq_vars.dual_tx = 0;
@@ -1472,13 +1475,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     break;
 
-  case openair_SET_RX_MODE:
-
-    //    rx_mode = ((unsigned int *)arg)[0]; 
-    //    msg("[openair][IOCTL] Set RX_MODE to %d\n",rx_mode);
-
-    break;
-
   case openair_SET_FREQ_OFFSET:
 
     if (openair_set_freq_offset(0,((int *)arg)[0]) == 0)
@@ -1488,14 +1484,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_SET_UE_MCS:
 
-    if ( ((((unsigned int *)arg)[0]) > 0) && 
+    if ( ((((unsigned int *)arg)[0]) >= 0) && 
 	 ((((unsigned int *)arg)[0]) <32) )
       openair_daq_vars.target_ue_mcs = (unsigned char)(((unsigned int *)arg)[0]);
     break;
 
   case openair_SET_DLSCH_RATE_ADAPTATION:
 
-    if ( ((((unsigned int *)arg)[0]) > 0) && 
+    if ( ((((unsigned int *)arg)[0]) >= 0) && 
 	 ((((unsigned int *)arg)[0]) <2) )
       openair_daq_vars.dlsch_rate_adaptation = (unsigned char)(((unsigned int *)arg)[0]);
     break;
@@ -1505,6 +1501,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( ((((unsigned int *)arg)[0]) > 0) && 
 	 ((((unsigned int *)arg)[0]) < 6) )
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
+    lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
     break;
 
   default:

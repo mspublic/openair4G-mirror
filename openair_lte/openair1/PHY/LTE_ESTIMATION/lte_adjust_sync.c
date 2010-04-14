@@ -17,7 +17,6 @@
 // The adjustment is performed once per frame based on the
 // last channel estimate of the receiver
 
-static int      max_pos_fil = 0;
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_COMMON *lte_ue_common,
@@ -26,7 +25,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 		      short coef)
 {
 
-
+  static int max_pos_fil = 0;
   int temp, i, aa, max_val = 0, max_pos = 0;
   int offset,diff;
   short Re,Im,ncoef;
@@ -101,4 +100,66 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif // NOCARD_TEST
 #endif // PHY_EMUL
 
+}
+
+
+int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
+			    LTE_eNB_COMMON *lte_eNb_common,
+			    unsigned char eNb_id,
+			    unsigned char clear,
+			    short coef)
+{
+
+  static int max_pos_fil2 = 0;
+  int temp, i, aa, max_val = 0, max_pos = 0;
+  int offset,diff;
+  short Re,Im,ncoef;
+
+  ncoef = 32768 - coef;
+
+  // do ifft of channel estimate
+  for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
+    fft((short*) &lte_eNb_common->srs_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
+	(short*) lte_eNb_common->srs_ch_estimates_time[aa],
+	frame_parms->twiddle_ifft,
+	frame_parms->rev,
+	frame_parms->log2_symbol_size,
+	frame_parms->log2_symbol_size/2,
+	0);
+  }
+
+#ifdef USER_MODE
+  write_output("srs_ch_estimates_time.m","srs_time",lte_eNb_common->srs_ch_estimates_time[0],frame_parms->ofdm_symbol_size*2,2,1);
+#endif
+
+  // we only use channel estimates from tx antenna 0 here
+  // remember we fixed the SRS to use only every second subcarriers
+  for (i = 0; i < frame_parms->nb_prefix_samples/2; i++) {
+    temp = 0;
+    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+      Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[(i<<2)];
+      Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[1+(i<<2)];
+      temp += (Re*Re/2) + (Im*Im/2);
+    }
+    if (temp > max_val) {
+      max_pos = i*2; 
+      max_val = temp;
+    }
+  }
+
+  // filter position to reduce jitter
+  if (clear == 1)
+    max_pos_fil2 = max_pos;
+  else
+    max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
+
+
+  diff = max_pos_fil2 - frame_parms->nb_prefix_samples/8;
+
+  //#ifdef DEBUG_PHY
+    //if (mac_xface->frame%100 == 0)
+    msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
+ //#endif //DEBUG_PHY
+
+ return(max_pos_fil2);
 }

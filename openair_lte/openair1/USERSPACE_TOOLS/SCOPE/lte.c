@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
 
 
   lte_ue_dlsch = (LTE_UE_DLSCH *) (mem_base + 
-				   (unsigned int)PHY_vars->lte_ue_dlsch_vars[0] - 
+				   (unsigned int)PHY_vars->lte_ue_dlsch_vars_cntl[0] - 
 				   bigphys_top);
 
   printf("lte_ue_dlsch (kernel)= %p\n",PHY_vars->lte_ue_dlsch_vars[0]);

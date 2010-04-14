@@ -187,6 +187,8 @@ openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/lte_mcs.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pbch.o  
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pilots.o  
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pss.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/phich.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pcfich.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/MODULATION/slot_fep.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/MODULATION/slot_fep_ul.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/CODING/lte_segmentation.o
@@ -240,15 +242,15 @@ endif
 openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
 openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
 
-openair_rf-objs += cbmimo1_device.o cbmimo1_fileops.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_generate_fs4.o cbmimo1_generate_ofdm.o cbmimo1_proc.o fifo_printf.o l2_init.o
+openair_rf-objs += cbmimo1_device.o cbmimo1_fileops.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_generate_fs4.o cbmimo1_generate_ofdm.o cbmimo1_proc.o fifo_printf.o 
 
 #openair_rf-objs += openair_device.o openair_fileops.o openair_rf_cntl.o openair_init.o openair_dma.o openair_get_frame.o  openair_generate_fs4.o openair_generate_ofdm.o
 
 
-
+ifdef OPENAIR2
 EXTRA_CFLAGS += -DOPENAIR2
 
-
+openair_rf-objs += l2_init.o
 openair_rf-objs +=  $(OPENAIR2_TOP)/UTIL/LISTS/list.o
 openair_rf-objs +=  $(OPENAIR2_TOP)/UTIL/LISTS/list2.o
 
@@ -302,7 +304,7 @@ openair_rf-objs +=  $(OPENAIR2_TOP)/PHY_INTERFACE/mac_phy_primitives.o
 openair_rf-objs +=  $(OPENAIR2_TOP)/LAYER2/MAC/openair2_proc.o $(OPENAIR2_TOP)/LAYER2/MAC/layer2_scheduler.o $(OPENAIR2_TOP)/LAYER2/MAC/nodeb_scheduler.o $(OPENAIR2_TOP)/LAYER2/MAC/ue_scheduler.o $(OPENAIR2_TOP)/LAYER2/MAC/main.o $(OPENAIR2_TOP)/LAYER2/MAC/ue_control_plane_procedures.o $(OPENAIR2_TOP)/LAYER2/MAC/nodeb_control_plane_procedures.o $(OPENAIR2_TOP)/LAYER2/MAC/lchan_interface.o $(OPENAIR2_TOP)/LAYER2/MAC/rar_tools.o
 
 openair_rf-objs += $(OPENAIR2_TOP)/RRC/L2_INTERFACE/openair_rrc_L2_interface.o
-
+endif
 
 
 

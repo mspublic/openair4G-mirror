@@ -13,7 +13,7 @@ ________________________________________________________________*/
 #ifdef USER_MODE
 //#include "stdio.h"
 #endif //USER_MODE
-#include "COMMON/openair_defs.h"
+#include "PHY/defs.h"
 #include "defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 #ifdef PHY_EMUL
