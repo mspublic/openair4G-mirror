@@ -1,11 +1,11 @@
 %Channel Capacity of Alamouti MIMO system
-clear all;
+%clear all;
 %clc;
 %close all;
 %warning off all
-format('long');
-load 'estimates.mat';
-load 'SISO.mat';
+%format('long');
+%load 'estimates.mat';
+%load 'SISO.mat';
 %M1=4;% QAM on first antenna
 
 MultiAntenna_Rx = 1; % 0 for Single antenna
