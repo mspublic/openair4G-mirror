@@ -16,7 +16,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 #define RF
 
 #define BW 10.0
@@ -131,13 +131,14 @@ int main(int argc, char **argv) {
 
   char stats_buffer[4096];
   int len;
+  unsigned char target_dl_mcs=4;
 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
   
   if (argc>1)
-    sigma2_dB = atoi(argv[1]);
+    target_dl_mcs = atoi(argv[1]);
 
   if (argc>2)
     n_frames = atoi(argv[2]);
@@ -342,7 +343,7 @@ int main(int argc, char **argv) {
     openair_daq_vars.dlsch_transmission_mode = 1;
   else
     openair_daq_vars.dlsch_transmission_mode = 2;
-  openair_daq_vars.target_ue_mcs = 0;
+  openair_daq_vars.target_ue_mcs = target_dl_mcs;
   openair_daq_vars.dlsch_rate_adaptation = 0;
 
   l2_init();
@@ -539,12 +540,12 @@ int main(int argc, char **argv) {
 
       if ((next_slot > 3) && (next_slot<12)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB = -60-20+6.2;  // UE
+	  path_loss_dB = -70-20+6.2;  // UE
 	else
-	  path_loss_dB = -60-20+ulsch_ue[0]->power_offset;
+	  path_loss_dB = -70-20+ulsch_ue[0]->power_offset;
       }
       else
-	path_loss_dB = -60;     // eNb
+	path_loss_dB = -70;     // eNb
 
       path_loss    = pow(10,path_loss_dB/10);
       
@@ -655,10 +656,11 @@ int main(int argc, char **argv) {
 	}
       */
       if ((last_slot == 19) && (mac_xface->frame == 1)) {
+	/*
 	write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);*/
       }
       //#endif
 
@@ -686,7 +688,7 @@ int main(int argc, char **argv) {
     write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
     write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
   */
-
+  /*
   write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
   write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
   write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
@@ -700,7 +702,7 @@ int main(int argc, char **argv) {
   write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
   write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars[0]->rxdataF_comp[1],12*4*6,1,1);
   write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars[0]->llr,12*2*6*2,1,0);
-
+  */
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
