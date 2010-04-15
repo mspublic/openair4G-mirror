@@ -17,6 +17,8 @@
 \par     Historique:
             L.IACOBELLI 2009-10-19
                 + new messages
+            L.IACOBELLI 2010-04-15
+                + add sensing unit emulation
 
 *******************************************************************************
 */
@@ -42,13 +44,14 @@
 #include "cmm_msg.h"
 #include "rrc_rrm_msg.h"
 #include "pusu_msg.h"
+#include "sensing_rrm_msg.h"
 
 #include "transact.h"
 #include "actdiff.h"
 #include "rrm_util.h"
 #include "rrm_constant.h"
 
-#define NUM_SCENARIO  8
+#define NUM_SCENARIO  14
 #define SENSORS_NB 2 //mod_lor_10_03_03
 #define PUSU_EMUL
 
@@ -68,6 +71,10 @@ extern msg_t *msg_rrc_rb_modify_cfm(Instance_t inst, RB_ID Rb_id, Transaction_t 
 extern msg_t *msg_rrc_rb_release_resp( Instance_t inst, Transaction_t Trans_id );
 extern msg_t *msg_rrc_MR_attach_ind( Instance_t inst, L2_ID L2_id );
 extern msg_t *msg_rrc_update_sens( Instance_t inst,  /*double info_time,*/ L2_ID L2_id, unsigned int NB_info, Sens_ch_t *Sens_meas, Transaction_t Trans_id);
+#endif
+
+#ifdef SNS_EMUL
+extern msg_t *msg_sensing_end_scan_conf ( Instance_t inst);
 #endif
 
 typedef struct {
@@ -109,18 +116,22 @@ static int flag_not_exit = 1 ;
 int attached_sensors = 0;//mod_lor_10_01_25
 
 static pthread_t        pthread_rrc_hnd,
+                        pthread_sns_hnd,
                         pthread_cmm_hnd ,
                         pthread_pusu_hnd , // Publish Subscribe : -> routing CH
                         pthread_action_differe_hnd;
 
 pthread_mutex_t         cmm_transact_exclu,
-                        rrc_transact_exclu;
+                        rrc_transact_exclu,
+                        sns_transact_exclu;
 
 unsigned int            cmm_transaction=512,
-                        rrc_transaction=256 ;
+                        rrc_transaction=256,
+                        sns_transaction=128 ;
 
 transact_t              *cmm_transact_list=NULL,
-                        *rrc_transact_list=NULL ;
+                        *rrc_transact_list=NULL,
+                        *sns_transact_list=NULL ;
 
 static RB_ID rb_id      =4 ;
 
@@ -129,7 +140,7 @@ actdiff_t       *list_actdiff   = NULL ;
 unsigned int    cnt_actdiff     = 512;
 
 
-extern void scenario(  int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm) ;
+extern void scenario(  int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm, sock_rrm_t *s_sns) ;
 
 /*****************************************************************************
  * \brief  thread d'emulation de l'interface du Publish/subcribe (routingCH).
@@ -276,7 +287,6 @@ static void * fn_rrc (
                         send_msg( s, msg_rrc_rb_establish_resp( header->inst, header->Trans_id )) ;
 
                         pthread_mutex_lock( &actdiff_exclu  ) ;
-
                         add_actdiff(&list_actdiff,0.05, cnt_actdiff++,  s,
                                     msg_rrc_rb_establish_cfm( header->inst, rb_id++, UNICAST,header->Trans_id) ) ;
 
@@ -370,19 +380,7 @@ static void * fn_rrc (
                         
                     }
                     break ;
-                case RRM_SCAN_ORD:
-                    {
-                        rrm_scan_ord_t *p  = (rrm_scan_ord_t *) msg ;
-                        msg_fct( "[RRM]>[RRC]:%d:RRM_SCAN_ORD\n",header->inst);
-                        
-                        /*fprintf(stderr,"NB_chan = %d;\nMeas_tpf: %d;\nOverlap: %d;\nSampl_freq: %d;\n",p->NB_chan, p->Meas_tpf, p->Overlap,p->Sampl_freq);//dbg
-                        fprintf(stderr,"Channels ids:   ");//dbg
-                        for ( int i=0; i<p->NB_chan; i++)//dbg
-                            fprintf(stderr," %d     ",p->ch_to_scan[i].Ch_id);//dbg
-                        fprintf(stderr," \n\n");//dbg*/
-                        
-                    }
-                    break ;
+               
                 case RRM_END_SCAN_REQ:
                     {
                         rrm_end_scan_req_t *p = (rrm_end_scan_req_t *) msg ;
@@ -528,7 +526,7 @@ static void * fn_cmm (
 #endif
                         msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
                         
-                        if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
+                        if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //AAA inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
                             //mod_lor_10_03_12++
                             unsigned int     Start_fr   = 1000;
                             unsigned int     Stop_fr    = 2000;
@@ -648,6 +646,91 @@ static void * fn_cmm (
 
     return NULL;
 }
+//mod_lor_10_04_15++ -> emulation sensing
+/*****************************************************************************
+ * \brief  thread d'emulation de l'interface du Publish/subcribe (routingCH).
+ * \return NULL
+ */
+#ifdef SNS_EMUL
+static void *fn_sns (
+    void * p_data /**< parametre du pthread */
+    )
+{
+    sock_rrm_t *s = (sock_rrm_t *) p_data ;
+    msg_head_t  *header ;
+
+#ifdef TRACE
+    FILE *fd = fopen( "VCD/rrm2sns.txt", "w") ;
+    PNULL(fd) ;
+#endif
+
+    fprintf(stderr,"SNS interfaces :starting ...\n");
+
+    while (flag_not_exit)
+    {
+        header = (msg_head_t *) recv_msg(s) ;
+        if (header == NULL )
+        {
+            fprintf(stderr,"Server closed connection\n");
+            flag_not_exit = 0;
+        }
+        else
+        {
+            char *msg = NULL ;
+
+            if ( header->size > 0 )
+            {
+                msg = (char *) (header +1) ;
+            }
+#ifdef TRACE
+            if ( header->msg_type < NB_MSG_SNS_RRM  )
+            fprintf(fd,"%lf RRM->SENSING %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_sns_rrm[header->msg_type],header->msg_type,header->Trans_id);
+            else
+            fprintf(fd,"%lf RRM->SENSING %-30s %d %d\n",get_currentclock(), "inconnu", header->msg_type,header->Trans_id);
+            fflush(fd);
+#endif
+            switch ( header->msg_type )
+            {
+                 case RRM_SCAN_ORD:
+                    {
+                        rrm_scan_ord_t *p  = (rrm_scan_ord_t *) msg ;
+                        msg_fct( "[RRM]>[SENSING]:%d:RRM_SCAN_ORD\n",header->inst);
+                        
+                        /*fprintf(stderr,"NB_chan = %d;\nMeas_tpf: %d;\nOverlap: %d;\nSampl_freq: %d;\n",p->NB_chan, p->Meas_tpf, p->Overlap,p->Sampl_freq);//dbg
+                        fprintf(stderr,"Channels ids:   ");//dbg
+                        for ( int i=0; i<p->NB_chan; i++)//dbg
+                            fprintf(stderr," %d     ",p->ch_to_scan[i].Ch_id);//dbg
+                        fprintf(stderr," \n\n");//dbg*/
+                        
+                    }
+                    break ;
+                case RRM_END_SCAN_ORD:
+                    {
+                        msg_fct( "[RRM]>[SENSING]:%d:RRM_END_SCAN_ORD\n",header->inst);
+                        send_msg( s, msg_sensing_end_scan_conf( header->inst)) ;
+                        
+                    }
+                    break ;
+              
+                
+                default:
+                    fprintf(stderr, "[RRM]>[SENSING]: msg unknown %d\n", header->msg_type) ;
+                    //printHex(msg,n,1);
+            }
+            RRM_FREE(header);
+        }
+    }
+
+    fprintf(stderr,"... stopped SENSING interfaces\n");
+#ifdef TRACE
+    fclose(fd) ;
+#endif
+
+    return NULL;
+}
+#endif /* SNS_EMUL */
+
+//mod_lor_10_04_15--
 
 /*****************************************************************************
  * \brief  thread d'emulation de l'interface du cmm.
@@ -679,6 +762,9 @@ int main( int argc , char **argv )
 #ifdef RRC_EMUL
     sock_rrm_t s_rrc ;
 #endif /* RRC_EMUL */
+#ifdef SNS_EMUL
+    sock_rrm_t s_sns ;
+#endif /* SNS_EMUL */
     sock_rrm_t s_cmm ;
     sock_rrm_t s_pusu ;
 
@@ -692,6 +778,7 @@ int main( int argc , char **argv )
     pthread_mutex_init( &actdiff_exclu      , NULL ) ;
     pthread_mutex_init( &cmm_transact_exclu , NULL ) ;
     pthread_mutex_init( &rrc_transact_exclu , NULL ) ;
+    pthread_mutex_init( &sns_transact_exclu , NULL ) ;
 
     fprintf(stderr,"Emulation des interfaces\n");
 
@@ -702,6 +789,15 @@ int main( int argc , char **argv )
         exit(1);
     fprintf(stderr,"Connected... RRM-RRC (s=%d)\n",s_rrc.s);
 #endif /* RRC_EMUL */
+
+#ifdef SNS_EMUL
+    fprintf(stderr,"Trying to connect... RRM-SNS\n");
+    open_socket(&s_sns, SENSING_RRM_SOCK_PATH, RRM_SENSING_SOCK_PATH,0) ;
+    if (s_sns.s  == -1)
+        exit(1);
+    fprintf(stderr,"Connected... RRM-SNS (s=%d)\n",s_sns.s);
+#endif /* SNS_EMUL */
+
 
     fprintf(stderr,"Trying to connect... RRM-CMM\n");
     open_socket(&s_cmm,CMM_RRM_SOCK_PATH,RRM_CMM_SOCK_PATH,0) ;
@@ -726,6 +822,16 @@ int main( int argc , char **argv )
         fprintf(stderr, "%s", strerror (ret));
     }
 #endif /* RRC_EMUL */
+
+#ifdef SNS_EMUL
+   /* Creation du thread SENSING */
+    fprintf(stderr,"Creation du thread SNS \n");
+    ret = pthread_create ( &pthread_sns_hnd, NULL, fn_sns, &s_sns );
+    if (ret)
+    {
+        fprintf(stderr, "%s", strerror (ret));
+    }
+#endif /* SNS_EMUL */
 
     /* Creation du thread CMM */
     ret = pthread_create(&pthread_cmm_hnd , NULL, fn_cmm, &s_cmm );
@@ -752,7 +858,7 @@ int main( int argc , char **argv )
 
 #ifdef RRC_EMUL
     usleep(100000);
-    scenario( NUM_SCENARIO, &s_rrc, &s_cmm );
+    scenario( NUM_SCENARIO, &s_rrc, &s_cmm, &s_sns );
 #endif /* RRC_EMUL */
 
     printf("Taper [RETURN] to exit\n\n" );
@@ -762,6 +868,11 @@ int main( int argc , char **argv )
 #ifdef RRC_EMUL
     close_socket(&s_rrc);
 #endif /* RRC_EMUL */
+
+#ifdef SNS_EMUL
+    close_socket(&s_sns);
+#endif /* SNS_EMUL */
+
     close_socket(&s_cmm);
 
 #ifdef PUSU_EMUL
@@ -776,6 +887,9 @@ int main( int argc , char **argv )
 #ifdef RRC_EMUL
     pthread_join (pthread_rrc_hnd, NULL);
 #endif /* RRC_EMUL */
+#ifdef SNS_EMUL
+    pthread_join (pthread_sns_hnd, NULL);
+#endif /* SNS_EMUL */
     pthread_join (pthread_action_differe_hnd, NULL);
 
     return 0 ;

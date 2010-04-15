@@ -43,11 +43,11 @@ extern "C" {
 \brief  Enumeration des messages entre RRM/RRCI et le RRC
 */
 typedef enum { 
-RRC_UPDATE_SENS             , ///< Message SENSING->RRM : update of the sensing information measured by the nodes
+SNS_UPDATE_SENS             , ///< Message SENSING->RRM : update of the sensing information measured by the nodes
 RRM_SCAN_ORD                , ///< Message RRM->SENSING : order to scann indicated channels
 RRM_END_SCAN_ORD            , ///< Message RRM->SENSING : end of a scanning process in sensors
 SNS_END_SCAN_CONF           , ///< Message SENSING->RRC : end of a scanning process in sensors
-NB_MSG_SENSING_RRM            ///< Nombre de message RRM-SENSING
+NB_MSG_SNS_RRM                ///< Nombre de message RRM-SENSING
 } MSG_SENSING_RRM_T ;
 
 /*! 

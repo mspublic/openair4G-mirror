@@ -37,6 +37,29 @@
 extern "C" {
 #endif
 
+//AAA: if rrc_emul add a 0 at the end of file name
+#ifdef RRC_EMUL
+//! \brief Socket path associated to RRM-CMM interface      
+#define RRM_CMM_SOCK_PATH "/tmp/rrm_cmm_socket0"
+//! \brief Socket path associated to CMM-RRM interface      
+#define CMM_RRM_SOCK_PATH "/tmp/cmm_rrm_socket0"
+
+//! \brief Socket path associated to RRM-RRC interface  
+#define RRM_RRC_SOCK_PATH "/tmp/rrm_rrc_socket0"
+//! \brief Socket path associated to RRC-RRM interface      
+#define RRC_RRM_SOCK_PATH "/tmp/rrc_rrm_socket0"
+
+//! \brief Socket path associated to RRM-PUSU interface     
+#define RRM_PUSU_SOCK_PATH "/tmp/rrm_pusu_socket0"
+//! \brief Socket path associated to PUSU-RRM interface     
+#define PUSU_RRM_SOCK_PATH "/tmp/pusu_rrm_socket0"
+
+//! \brief Socket path associated to RRM-SENSING interface     
+#define RRM_SENSING_SOCK_PATH "/tmp/rrm_sensing_socket0"
+//! \brief Socket path associated to SENSING-RRM interface     
+#define SENSING_RRM_SOCK_PATH "/tmp/sensing_rrm_socket0"
+
+#else
 //! \brief Socket path associated to RRM-CMM interface      
 #define RRM_CMM_SOCK_PATH "/tmp/rrm_cmm_socket"
 //! \brief Socket path associated to CMM-RRM interface      
@@ -56,6 +79,8 @@ extern "C" {
 #define RRM_SENSING_SOCK_PATH "/tmp/rrm_sensing_socket"
 //! \brief Socket path associated to SENSING-RRM interface     
 #define SENSING_RRM_SOCK_PATH "/tmp/sensing_rrm_socket"
+#endif /*RRC_EMUL*/
+
 
 
 //! \brief Identification of the RRM/CMM/RRC message begin      

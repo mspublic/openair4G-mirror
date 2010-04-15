@@ -229,7 +229,7 @@ void rrci_init_mr_req(
     ); 
 
 /*!
-\brief RRC sensing measurement indication 
+\brief sns and ip sensing measurement indication 
  */
 void rrc_update_sens( //mod_lor_10_01_25: RRC function, but also IP function
 	Instance_t         inst             , //!< Identification de l'instance
@@ -416,7 +416,7 @@ void rrc_rep_freq_all(
     );
     
 /*!
-\brief  Updating of the sensing measures -> correspondent message via IP
+\brief  IP interface. Updating of the sensing measures -> correspondent message via IP
 */
 void update_sens_results( 
 	Instance_t inst         , //!< Identification de l'instance
@@ -424,6 +424,13 @@ void update_sens_results(
 	unsigned int NB_info    , //!< Number of channel info
 	Sens_ch_t *Sens_meas    , //!< Pointer to the sensing information
 	double info_time
+	);
+	
+/*!
+\brief  Sensing Unit interface. End sensing confirmation
+*/	
+void sns_end_scan_conf( 
+	Instance_t inst          //!< Identification de l'instance
 	);
     
 

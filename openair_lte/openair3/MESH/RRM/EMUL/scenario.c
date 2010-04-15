@@ -15,9 +15,9 @@
 
    
 \par     Historique:
-            $Author$  $Date$  $Revision$
-            $Id$
-            $Log$
+            IACOBELLI Lorenzo 15/04/2010
+            - scenarios from 14 that include sensing unit emulation
+
 
 *******************************************************************************
 */
@@ -43,6 +43,7 @@
 #include "cmm_msg.h"
 #include "rrc_rrm_msg.h"
 #include "pusu_msg.h"
+#include "sensing_rrm_msg.h" //mod_lor_10_04_15
 
 #include "transact.h"
 #include "actdiff.h"
@@ -286,7 +287,7 @@ static void prg_rrc_end_scan_conf( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_
 
 static void prg_rrc_end_scan_req( sock_rrm_t *s_rrc, double date, L2_ID *L2_id_fc )
 {
-    rrc_transaction++;
+     rrc_transaction++;
     pthread_mutex_lock( &actdiff_exclu  ) ;
     add_actdiff(&list_actdiff,date, cnt_actdiff++, s_rrc, msg_rrc_end_scan_req ( 0, *L2_id_fc, rrc_transaction));
     pthread_mutex_unlock( &actdiff_exclu ) ;
@@ -1105,9 +1106,83 @@ static void scenario13(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm)
   
 }
 
+/**
+ * \brief Sensor node simulation:
+ *      - the node is connected to FC
+ *      - the node receives the init scan request order
+ *      - the node receive the end scan order
+ */
+static void scenario14(sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm, sock_rrm_t *s_sns)
+{
+    static Sens_ch_t Sensing_meas[3]={
+        { 100, 200, 1, 13.5, 0, NULL },
+        { 200, 300, 2,  7.4, 0, NULL },
+        { 300, 400, 3,  8.5, 0, NULL }
+        
+    };
+    static Sens_ch_t Sensing_meas2[3]={
+        { 100, 200, 1, 23.5, 0, NULL },
+        { 200, 300, 2, 27.4, 0, NULL },
+        { 300, 400, 3, 28.5, 0, NULL }
+        
+    };
+    
+    /*static SENSING_MEAS_T Sensing_meas2[3]={
+        { 16, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
+        { 25, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}} },
+        { 30, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x44,0x00}} }
+    };
+    static SENSING_MEAS_T Sensing_meas3[3]={
+        { 14, {{0xAA,0xCC,0x33,0x55,0x00,0x11,0x00,0x00}} },
+        { 17, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x22,0x00}} },
+        { 29, {{0xAA,0xCC,0x33,0x55,0x00,0x00,0x33,0x00}} }
+    };*/
+    
+    printf("\nSCENARIO 14: ...\n\n" ) ;
+
+// ========================= Attachement d'un senseur
+
+    rrc_transaction++;
+    pthread_mutex_lock( &actdiff_exclu  ) ;
+    add_actdiff(&list_actdiff,0.2, cnt_actdiff++, s_rrc,msg_rrc_phy_synch_to_CH_ind(0, 1, L2_id_ch ) ) ;
+    pthread_mutex_unlock( &actdiff_exclu ) ;
+                
+    pthread_mutex_lock( &rrc_transact_exclu ) ;
+    add_item_transact( &rrc_transact_list, rrc_transaction, INT_RRC,RRC_PHY_SYNCH_TO_CH_IND,0,NO_PARENT);
+    pthread_mutex_unlock( &rrc_transact_exclu ) ;
+
+// ========================= Connexion etablit du MR au CH
+    prg_rrc_cx_establish_ind( s_rrc, 1.0, &L2_id_ch, L3_info_ch,IPv4_ADDR, 10, 20 ) ;
+
+// ========================= Starting sensing operation
+    unsigned int interv= 1;
+    float date = 1.5;
+    prg_rrc_init_scan_req( s_rrc, date, &L2_id_ch,Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq);
+    //prg_cmm_init_sensing( s_cmm, 5.0, Start_fr,Stop_fr,Meas_band,Meas_tpf,Nb_channels,Overlap,Sampl_freq );
+// ========================= Remontée de mesure par le RRC
+    /*for (int i=0; i<3;i++){
+        date+=interv;
+        prg_rrc_update_sens( s_rrc, date, &L2_id_mr,3, Sensing_meas );
+    }*/
+// ========================= Monitoring
+    /*unsigned int ch_to_scan[3]={1,2};
+    unsigned int NB_chan= 2;
+    date+=interv;
+    prg_rrc_init_mon_req( s_rrc, date, &L2_id_ch, ch_to_scan, NB_chan, interv );
+    date+=interv;
+    prg_rrc_update_sens( s_rrc, date, &L2_id_mr,NB_chan, Sensing_meas2 );*/
+    
+// ========================= End of sensing
+    date+=interv;
+     printf( "prima sns socket -> %d\n" , s_sns->s ) ;//dbg
+    prg_rrc_end_scan_req( s_rrc, date, &L2_id_ch );
+     printf( "dopo sns socket -> %d\n" , s_sns->s ) ;//dbg  
+  
+}
 
 
-void scenario(int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
+
+void scenario(int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm,  sock_rrm_t *s_sns )
 {
     switch ( num )
     {
@@ -1125,6 +1200,8 @@ void scenario(int num , sock_rrm_t *s_rrc,  sock_rrm_t *s_cmm )
         case 11 : scenario11(s_rrc,  s_cmm ) ; break ;
         case 12 : scenario12(s_rrc,  s_cmm ) ; break ;
         case 13 : scenario13(s_rrc,  s_cmm ) ; break ;
+        //mod_lor_10_04_15 -> from here scenarios with sensing unit included 
+        case 14 : scenario14(s_rrc,  s_cmm, s_sns ) ; break ;
         default:
             fprintf( stderr,"Erreur : '%d' => Numero de test inconnu\n" , num ) ;
     }

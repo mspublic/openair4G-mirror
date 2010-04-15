@@ -41,8 +41,8 @@
 //! Macro creant la chaine a partir du nom de la variable
 #define STRINGIZER(x) #x
 //! Tableau pour le mode trace faisant la translation entre le numero et le nom du message
-const char *Str_msg_sensing_rrm[NB_MSG_SENSING_RRM] = {
-    STRINGIZER(RRC_UPDATE_SENS          ),
+const char *Str_msg_sns_rrm[NB_MSG_SNS_RRM] = {
+    STRINGIZER(SNS_UPDATE_SENS          ),
     STRINGIZER(RRM_SCAN_ORD             ),
     STRINGIZER(RRM_END_SCAN_ORD         ),
     STRINGIZER(SNS_END_SCAN_CONF        )

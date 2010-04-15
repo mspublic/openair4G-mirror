@@ -957,7 +957,7 @@ static void processing_msg_sensing(
   switch ( (MSG_SENSING_RRM_T)header->msg_type )
     {
 
-        case RRC_UPDATE_SENS :
+        case SNS_UPDATE_SENS :
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
                 msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);

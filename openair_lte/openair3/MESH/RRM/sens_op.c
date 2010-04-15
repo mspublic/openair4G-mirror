@@ -668,7 +668,9 @@ void sns_end_scan_conf(
     ///< AAA TO DO: Confirmation sent via RRC to the fusion centre
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
     rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_end_scan_conf( inst, rrm->rrc.trans_cnt)); 
+    fprintf(stderr, "before put RRM_end_scan_confirm\n");//dbg
+    PUT_RRC_MSG(msg_rrm_end_scan_conf( inst, rrm->rrc.trans_cnt));
+    fprintf(stderr, "after put RRM_end_scan_confirm\n"); //dbg
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 
 }
