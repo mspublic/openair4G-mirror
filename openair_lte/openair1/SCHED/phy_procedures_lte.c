@@ -1516,7 +1516,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     // RA  
     if (((next_slot>>1) == 7) && (eNb_generate_rar == 1)) {
-      msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
+      debug_msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
 
       // Schedule Random-Access Response 
       memcpy(&dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
