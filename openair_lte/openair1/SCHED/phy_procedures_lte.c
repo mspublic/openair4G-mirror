@@ -1137,7 +1137,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    dlsch_ra_errors++;
 	  }
 	  else {
-	    debug_msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
+	    msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
 
 #ifdef OPENAIR2
 	    if (process_rar(dlsch_ue_ra->harq_processes[0]->b,&lte_ue_pdcch_vars[eNb_id]->crnti) == 0) {
@@ -1549,7 +1549,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       dci_alloc[0].L          = 3;
       dci_alloc[0].rnti       = eNB_UE_stats[eNb_id].UE_id[0];
 
-
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					 &DLSCH_alloc_pdu1A,
 					 eNB_UE_stats[eNb_id].UE_id[0],
@@ -1901,9 +1900,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
-#ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch (1A) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
-#endif
+      //#ifdef DEBUG_PHY
+	msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch (1A) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+	//#endif
       
       dlsch_encoding(dlsch_input_buffer,
 		     lte_frame_parms,
@@ -1916,9 +1915,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 				      dlsch_eNb_1A);
       dlsch_eNb_1A_active = 0;
 
-#ifdef DEBUG_PHY    
-      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d, DLSCH (1A) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
-#endif
+      //#ifdef DEBUG_PHY    
+      msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d, DLSCH (1A) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
+      //#endif
 
     }
 

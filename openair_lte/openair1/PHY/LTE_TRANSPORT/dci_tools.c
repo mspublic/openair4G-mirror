@@ -131,6 +131,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   LTE_eNb_DLSCH_t *dlsch0=NULL,*dlsch1;
 
 
+
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
@@ -146,6 +147,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
+
       if (harq_pid>8) {
 	msg("dci_tools.c: ERROR: harq_pid > 8\n");
 	return(-1);

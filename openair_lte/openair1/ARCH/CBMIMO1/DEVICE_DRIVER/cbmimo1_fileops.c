@@ -372,7 +372,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	dlsch_eNb_ra = new_eNb_dlsch(1,1);
 	msg("[openair][IOCTL] eNb dlsch ra structures created \n");
 	
-
+	dlsch_eNb_1A = new_eNb_dlsch(1,1);
+	msg("[openair][IOCTL] eNb dlsch 1A structures created \n");
 	//#ifndef OPENAIR2
 
 
@@ -584,6 +585,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  
 	  dlsch_ue_cntl  = new_ue_dlsch(1,1);
 	  dlsch_ue_ra  = new_ue_dlsch(1,1);
+	  dlsch_ue_1A  = new_ue_dlsch(1,1);
 
 	  openair_daq_vars.node_configured += 2;
 	  msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
