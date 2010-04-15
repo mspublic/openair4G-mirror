@@ -93,20 +93,34 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   // TX buffers
   ue_common_vars->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 #ifdef IFFT_FPGA
+#ifdef USER_MODE
+  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    ue_common_vars->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+    bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+  }
+#else //USER_MODE
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
   }
   ue_common_vars->txdata = NULL;
-#else
+#endif
+#else //IFFT_FPGA
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
     bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
   }
   ue_common_vars->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+#ifdef USER_MODE
+  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    ue_common_vars->txdata[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    bzero(ue_common_vars->txdata[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+  }
+#else
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
   }
-#endif  
+#endif //USER_MODE
+#endif //IFFT_FPGA
 
   // RX buffers
   ue_common_vars->rxdata = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
@@ -120,12 +134,27 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
+#ifndef USER_MODE
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     ue_common_vars->rxdata[i] = PHY_vars->rx_vars[i].RX_DMA_BUFFER;
 #ifdef DEBUG_PHY
     msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] = %p\n",i,ue_common_vars->rxdata[i]);
 #endif
   }
+#else //USER_MODE
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+    ue_common_vars->rxdata[i] = (int*) malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+    if (ue_common_vars->rxdataF[i]) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] allocated at %p\n",i,ue_common_vars->rxdata[i]);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] not allocated\n",i);
+      return(-1);
+    }
+  }
+#endif //USER_MODE
 
   ue_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
   if (ue_common_vars->rxdataF) {

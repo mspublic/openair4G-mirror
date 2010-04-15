@@ -385,7 +385,7 @@ typedef struct {
   int                 tdd;		 /// 1 for TDD, 0 for FDD
 } PHY_CONFIG;
 
-
+/*
 /// Top-level PHY Data Structure  
 typedef struct
 {
@@ -415,7 +415,6 @@ typedef struct
 #else
   
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
-  /*
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];
@@ -423,11 +422,10 @@ typedef struct
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  */  
 #endif
 
 } PHY_VARS;
-
+*/
 
 
 

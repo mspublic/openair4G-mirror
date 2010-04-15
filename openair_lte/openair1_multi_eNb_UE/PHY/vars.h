@@ -32,7 +32,7 @@ int *primary_synch2_time;
 
 #include "PHY/CODING/vars.h"
 
-PHY_VARS *PHY_vars;
+//PHY_VARS *PHY_vars;
 
 short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
 

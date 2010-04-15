@@ -21,7 +21,7 @@ extern unsigned int sync_pos;
 extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
-extern PHY_VARS *PHY_vars;
+//extern PHY_VARS *PHY_vars;
 
 //extern PHY_LINKS *PHY_links;
 
