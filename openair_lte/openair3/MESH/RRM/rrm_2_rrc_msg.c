@@ -74,7 +74,8 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(OPEN_FREQ_QUERY_4        ),
     STRINGIZER(UPDATE_OPEN_FREQ_7       ),
     STRINGIZER(UPDATE_SN_OCC_FREQ_5     ),
-    STRINGIZER(RRM_UP_FREQ_ASS          )/*,
+    STRINGIZER(RRM_UP_FREQ_ASS          ),
+    STRINGIZER(RRM_END_SCAN_CONF        )/*,
     STRINGIZER(RRM_OPEN_FREQ            ),
     STRINGIZER(RRM_UPDATE_SN_FREQ       ),
     STRINGIZER(RRC_UPDATE_SN_FREQ       ),
@@ -546,7 +547,6 @@ msg_t *msg_rrm_up_freq_ass(
             
 {
     msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
-    //fprintf(stdout,"rrc_end_scan_ord() cp1\n"); //dbg
 
     if ( msg != NULL )
     {
@@ -741,3 +741,17 @@ msg_t *msg_update_SN_occ_freq_5(
     return msg ;
 }
 
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction
+        sns_end_scan_conf(). It sends confirmation of sensing interruprion to 
+        the RRC that will informe the fusion center about it 
+\return message formate
+*/
+msg_t * msg_rrm_end_scan_conf(
+    Instance_t    inst     , //!< instance ID
+    Transaction_t Trans_id   //!< Transaction ID
+    )
+{
+    return msg_rrm_generic_resp( inst,RRM_END_SCAN_CONF, Trans_id) ;
+}

@@ -44,7 +44,8 @@
 const char *Str_msg_sensing_rrm[NB_MSG_SENSING_RRM] = {
     STRINGIZER(RRC_UPDATE_SENS          ),
     STRINGIZER(RRM_SCAN_ORD             ),
-    STRINGIZER(RRM_END_SCAN_ORD         )
+    STRINGIZER(RRM_END_SCAN_ORD         ),
+    STRINGIZER(SNS_END_SCAN_CONF        )
 } ;
 #endif
 

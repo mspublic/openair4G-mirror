@@ -179,8 +179,10 @@ char *recv_msg(
     int taille =  SIZE_MAX_PAYLOAD ;
 
     buf                 = RRM_CALLOC( char,taille);
-    if ( buf == NULL ) 
+    if ( buf == NULL ) {
+        fprintf(stderr,"error recvmsg_un: 0x%02x\n", msghd.msg_flags) ;
         return NULL ;
+    }
         
     iov.iov_base        = (void *)buf;
     iov.iov_len         = taille ;

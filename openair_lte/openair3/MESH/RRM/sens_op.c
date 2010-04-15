@@ -158,7 +158,7 @@ void rrc_update_sens(
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
             canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-            fprintf(stderr,"inst %d, channel %d, is_free %d\n", inst,Sens_meas[i].Ch_id,Sens_meas[i].is_free);//dbg
+            //fprintf(stderr,"inst %d, channel %d, is_free %d\n", inst,Sens_meas[i].Ch_id,Sens_meas[i].is_free);//dbg
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg 
             
         }
@@ -191,7 +191,7 @@ void rrc_update_sens(
 #ifndef    RRC_EMUL   
     else if (!SCEN_2_DISTR && rrm->state != CLUSTERHEAD) ///< Case in which a sensor have to inform the FC via IP about its sensing results
     {
-
+        //fprintf (stdout,"msg IP to send from inst %d\n",rrm->id);//dbg
         pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
         rrm->ip.trans_cnt++ ;
         PUT_IP_MSG(msg_update_sens_results_3( inst, rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt)); 
@@ -287,11 +287,13 @@ void rrc_init_scan_req(
     
 
     memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+
     pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
     rrm->sensing.trans_cnt++ ;
-   // fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord  \n",rrm->sensing.trans_cnt);//dbg
+    //fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord on socket %d \n",rrm->sensing.trans_cnt,rrm->sensing.s->s);//dbg
     PUT_SENS_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
     pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
+    
     
 /*//mod_lor -> AAA: to remove when rrc_update_sens message is active.
     unsigned int length_info = 3;
@@ -455,6 +457,14 @@ void rrc_end_scan_req(
                 //fprintf(stderr,"sensing counter %d msg_rrm_end_scan_ord  \n",rrm->sensing.trans_cnt);//dbg
                 PUT_SENS_MSG(msg_rrm_end_scan_ord(inst, Nb_chan, channels, Trans_id ));
                 pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
+                /*//mod_lor_10_04_14++ provvisorio
+                ///< TO DO: This order is also sent to the RRC that have to send the confirmation
+                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                rrm->rrc.trans_cnt++ ;
+                fprintf(stderr,"rrc counter %d msg_rrm_end_scan_ord  \n",rrm->rrc.trans_cnt);//dbg
+                PUT_RRC_MSG(msg_rrm_end_scan_ord(inst, Nb_chan, channels, Trans_id ));
+                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                //mod_lor_10_04_14--*/
 
             }
             else {
@@ -579,7 +589,7 @@ void rrc_clust_mon_req(
 
 /*!
 *******************************************************************************
-\brief  Updating of the sensing measures 
+\brief  Updating of the sensing measures received via IP from another node
 */
 void update_sens_results( 
 	Instance_t inst         , //!< Identification de l'instance
@@ -624,7 +634,7 @@ void update_sens_results(
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_03_19--
             
-            fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free);
+            //fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
             
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
@@ -639,4 +649,27 @@ void update_sens_results(
 
 }
 
+//mod_lor_10_04_14++
+/*!
+*******************************************************************************
+\brief  SENSING unit end scan confirmation 
+*/
+void sns_end_scan_conf( 
+	Instance_t inst          //!< Identification de l'instance
+	)
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
 
+    ///< Next three lines delete the local sensing information database
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    del_node( &(rrm->rrc.pSensEntry), &(rrm->L2_id));
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    
+    ///< AAA TO DO: Confirmation sent via RRC to the fusion centre
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    rrm->rrc.trans_cnt++ ;
+    PUT_RRC_MSG(msg_rrm_end_scan_conf( inst, rrm->rrc.trans_cnt)); 
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+
+}
+//mod_lor_10_04_14--

@@ -546,7 +546,7 @@ static void * fn_cmm (
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
                             //msg_fct( "\npassato CH %d \n\n",header->inst); //dbg
                             pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,20, cnt_actdiff++, s,
+                            add_actdiff(&list_actdiff,30, cnt_actdiff++, s,
                                     msg_cmm_stop_sensing(0) );
 
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/

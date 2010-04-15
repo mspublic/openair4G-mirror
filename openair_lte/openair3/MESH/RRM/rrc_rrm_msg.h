@@ -76,6 +76,7 @@ typedef enum {
     UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
     UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
+    RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
     /*RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
     RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
     RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
@@ -441,6 +442,7 @@ msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned i
         unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id ); //mod_lor_10_03_12
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
+msg_t *msg_rrm_end_scan_conf( Instance_t inst, Transaction_t Trans_id);
              
 ///MESSAGES VIA IP
 msg_t *msg_update_sens_results_3( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 

@@ -404,6 +404,8 @@ static void * thread_send_msg_sensing (
 	    no_msg++;
 	  else
             {
+                int r =  send_msg( pItem->s, pItem->msg );
+                WARNING(r!=0);
 	      
             }
 	  RRM_FREE( pItem ) ;
@@ -958,17 +960,29 @@ static void processing_msg_sensing(
         case RRC_UPDATE_SENS :
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
-                msg_fct( "[RRC]>[RRM]:%d:RRC_UPDATE_SENS %d\n ",header->inst, header->Trans_id);
+                msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
                 /*for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");*/
-                fprintf(stderr,"NB_info = %d\n",p->NB_info);//dbg
+                //fprintf(stderr,"from inst%d NB_info = %d\n",header->inst, p->NB_info);//dbg
                 //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
                 rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
                 //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
             }
             break ;
-    }
+    //mod_lor_10_04_14++
+         case SNS_END_SCAN_CONF :
+            {
+                
+                msg_fct( "[SENSING]>[RRM]:%d:SNS_END_SCAN_CONF\n",header->inst);
+                
+                sns_end_scan_conf( header->inst );  
+            }
+            break ;
+        default :
+            fprintf(stderr,"SENSING:%d:\n",header->msg_type) ;
+            printHex(msg,len_msg,1) ;
+    }//mod_lor_10_04_14--
 }
 
 
@@ -1153,6 +1167,7 @@ static void rrm_scheduler ( )
                         }
                         else if ( pItem->s->s == rrm->sensing.s->s) {
                           processing_msg_sensing( rrm , header , msg , header->size ) ;
+                          //fprintf(stderr,"RRM Scheduler: sensing message ... \n"); //dbg
                         }
                         else
                             processing_msg_pusu( rrm , header , msg , header->size ) ;
