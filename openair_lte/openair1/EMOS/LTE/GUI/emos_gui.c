@@ -674,16 +674,16 @@ void refresh_interface()
 	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
 	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
 	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
 	    }
 	    else {
 	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
 	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
 	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
 	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
