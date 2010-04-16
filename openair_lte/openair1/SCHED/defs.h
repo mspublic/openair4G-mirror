@@ -94,9 +94,12 @@ typedef struct {
   unsigned int  node_id;
   unsigned int  rach_detection_count;
   unsigned int  channel_vacant[4];  
-  unsigned int  target_ue_mcs;
+  unsigned int  target_ue_dl_mcs;
+  unsigned int  target_ue_ul_mcs;
+  unsigned int  ue_ul_nb_rb;
   unsigned int  dlsch_rate_adaptation;
   unsigned int  dlsch_transmission_mode;
+  unsigned int  ulsch_allocation_mode;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE

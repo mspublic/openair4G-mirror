@@ -148,7 +148,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
 
-      if (harq_pid>8) {
+      if (harq_pid>1) {
 	msg("dci_tools.c: ERROR: harq_pid > 8\n");
 	return(-1);
       }
@@ -326,6 +326,12 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
   case format1A:  // This is DLSCH SACH allocation for control traffic
 
     // harq_pid field is reserved
+    rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
+    if (rballoc>RIV_max) {
+      msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+      return(-1);
+    }
+
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  // 
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
@@ -333,26 +339,33 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
-      if (harq_pid>8) {
+      if (harq_pid>1) {
 	msg("dci_tools.c: ERROR: harq_pid > 8\n");
 	return(-1);
       }
-      rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
-      if (rballoc>RIV_max) {
-	msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
-	return(-1);
-      }
+
       NPRB      = RIV2nb_rb_LUT25[rballoc];
+    }
+
+    if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 1) {
+      msg("dci_tools.c: ERROR: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
+      return(-1);       
     }
 
     dlsch[0]->current_harq_pid = harq_pid;
     //    printf("Format 1A: harq_pid %d\n",harq_pid);
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
-      dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+      dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[rballoc];
     else
-      dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+      dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
 
-    dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[rballoc];
+
+    if (dlsch[0]->nb_rb > 3) {
+      msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
+      return(-1);       
+    }
+    
     dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv;
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
@@ -757,10 +770,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     //    printf("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
-      msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
-	  mac_xface->frame, subframe);
+      msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
+	  mac_xface->frame, subframe,rnti,dci_format);
       return(-1);
     }
+    if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc > RIV_max) {
+      msg("dci_tools.c: ERROR: rb_alloc > RIV_max for ULSCH allocation\n");
+      return(-1);
+    }
+
 
     // indicate that this process is to be serviced in subframe n+4
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
@@ -768,7 +786,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
-    ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
+    ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     if (ulsch->harq_processes[harq_pid]->Ndi == 1)
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
@@ -804,7 +822,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round = 0;
     }
     else {
-      ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
+      if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs >= 28)
+	ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
+      else
+	ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI

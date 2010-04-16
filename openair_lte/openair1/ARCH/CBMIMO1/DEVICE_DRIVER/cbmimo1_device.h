@@ -89,11 +89,13 @@
 #define openair_SET_FREQ_OFFSET                       _IOR(openair_IOC_MAGIC,48,int) 
 
 #define openair_GET_BIGPHYSTOP                        _IOR(openair_IOC_MAGIC,49,int)
-#define openair_SET_UE_MCS                            _IOR(openair_IOC_MAGIC,50,int)
-#define openair_SET_DLSCH_RATE_ADAPTATION             _IOR(openair_IOC_MAGIC,51,int)
-#define openair_SET_DLSCH_TRANSMISSION_MODE           _IOR(openair_IOC_MAGIC,52,int)
-
-#define openair_MAXNR         52
+#define openair_SET_UE_DL_MCS                         _IOR(openair_IOC_MAGIC,50,int)
+#define openair_SET_UE_UL_MCS                         _IOR(openair_IOC_MAGIC,51,int)
+#define openair_SET_UE_UL_NB_RB                       _IOR(openair_IOC_MAGIC,52,int)
+#define openair_SET_DLSCH_RATE_ADAPTATION             _IOR(openair_IOC_MAGIC,53,int)
+#define openair_SET_DLSCH_TRANSMISSION_MODE           _IOR(openair_IOC_MAGIC,54,int)
+#define openair_SET_ULSCH_ALLOCATION_MODE             _IOR(openair_IOC_MAGIC,55,int)
+#define openair_MAXNR         55
 
 
 

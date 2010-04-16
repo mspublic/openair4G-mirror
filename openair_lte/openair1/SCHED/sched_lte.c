@@ -263,7 +263,7 @@ static void * openair_thread(void *param) {
       time_out = openair_get_mbox();
       diff = ((int) time_out - (int) time_in) % ((int) (NUMBER_OF_SYMBOLS_PER_FRAME));
 
-      if (diff > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT+2) { // we scheduled too late
+      if (diff > (NUMBER_OF_OFDM_SYMBOLS_PER_SLOT+2)) { // we scheduled too late
 	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, scheduler_interval_ns %d\n", 
 	    mac_xface->frame, last_slot,
 	    time_in,time_out,
@@ -370,17 +370,7 @@ void openair_sync(void) {
   // sleep during acquisition of frame
 
   time = rt_get_cpu_time_ns();
-  /*
-  for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
-    lte_ue_pbch_vars[i]->pdu_errors_conseq=0;
-    lte_ue_pbch_vars[i]->pdu_errors=0;
-    
-    lte_ue_pdcch_vars[i]->dci_errors = 0;
-    lte_ue_pdcch_vars[i]->dci_missed = 0;
-    lte_ue_pdcch_vars[i]->dci_false  = 0;    
-    lte_ue_pdcch_vars[i]->dci_received = 0;    
-  } 
-  */
+
   for (i=0;i<3*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
     rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
     //adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */

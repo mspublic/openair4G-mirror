@@ -65,6 +65,9 @@ int dlsch_subframe[8];
 extern int exit_openair;
 extern int dlsch_errors;
 extern int dlsch_received;
+extern int dlsch_errors_last;
+extern int dlsch_received_last;
+extern int dlsch_fer;
 
 
 /** DLSCH Decoding Thread */
@@ -130,12 +133,26 @@ static void * dlsch_thread(void *param) {
 	time_out = openair_get_mbox();
 	if (ret == (1+MAX_TURBO_ITERATIONS))
 	  dlsch_errors++;
-	else
-	  dlsch_received++;
 
+	if (mac_xface->frame % 100 == 0) {
+	  dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
+	  dlsch_errors_last = dlsch_errors;
+	  dlsch_received_last = dlsch_received;
+	}
+   
 	
-	if ((mac_xface->frame % 100) == 0)
-	  msg("[openair][SCHED][DLSCH] Frame %d: dlsch_decoding in %d, out %d, ret %d (%d errors, %d received, current mcs %d, current TBS %d)\n",mac_xface->frame,time_in,time_out,ret,dlsch_errors,dlsch_received,dlsch_ue[0]->harq_processes[0]->mcs,dlsch_ue[0]->harq_processes[0]->TBS);
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_decoding: in %d, out %d, ret %d (mcs %d, TBS %d)\n",
+		  mac_xface->frame,
+		  time_in,time_out,
+		  ret,
+		  dlsch_ue[0]->harq_processes[0]->mcs,
+		  dlsch_ue[0]->harq_processes[0]->TBS);
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_errors %d, dlsch_received %d, dlsch_fer %d\n",
+		  mac_xface->frame,
+		  dlsch_errors,
+		  dlsch_received,
+		  dlsch_fer);
+
       }
   }
   msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);

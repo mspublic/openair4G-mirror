@@ -96,7 +96,7 @@ endif
 EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR1_DIR)/ARCH/LEON3/hostpc
 
 ifdef OPENAIR_LTE
-EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA
+EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DTBS_FIX
 endif
 
 EXTRA_CFLAGS += -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM  -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT
@@ -167,6 +167,7 @@ openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_eNB_measurements.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/adjust_gain.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/dlsch_modulation.o  

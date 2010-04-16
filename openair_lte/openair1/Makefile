@@ -107,6 +107,14 @@ install_cbmimo1_softmodem_lte_l2:
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_l2.ko ; \
 	fi
 
+install_cbmimo1_softmodem_lte_emos_l2:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2.ko updatefirmware=1 ; \
+	else \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2.ko ; \
+	fi
+
 install_cbmimo1_softmodem_lte_emos:
 	make fifos
 	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \

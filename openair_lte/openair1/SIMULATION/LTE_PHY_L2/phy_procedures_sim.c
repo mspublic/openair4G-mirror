@@ -44,6 +44,7 @@ void l2_init() {
   int ret;
   int i,j;
 
+
   msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
   //    NB_NODE=2; 
   //    NB_INST=2;
@@ -132,6 +133,8 @@ int main(int argc, char **argv) {
   char stats_buffer[4096];
   int len;
   unsigned char target_dl_mcs=4;
+
+  unsigned int rx_gain;
 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
@@ -336,6 +339,7 @@ int main(int argc, char **argv) {
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
   PHY_vars->rx_total_gain_dB=140;
+  PHY_vars->rx_total_gain_eNB_dB=140;
 
   UE_mode = PRACH;
 
@@ -540,13 +544,15 @@ int main(int argc, char **argv) {
 
       if ((next_slot > 3) && (next_slot<12)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB = -70-20+6.2;  // UE
+	  path_loss_dB = -60-20+6.2;  // UE
 	else
-	  path_loss_dB = -70-20+ulsch_ue[0]->power_offset;
+	  path_loss_dB = -60-20+ulsch_ue[0]->power_offset;
+	rx_gain = PHY_vars->rx_total_gain_dB;
       }
-      else
-	path_loss_dB = -70;     // eNb
-
+      else {
+	path_loss_dB = -60;     // eNb
+	rx_gain = PHY_vars->rx_total_gain_eNB_dB;
+      }
       path_loss    = pow(10,path_loss_dB/10);
       
       //      path_loss_dB = 0;
@@ -570,17 +576,17 @@ int main(int argc, char **argv) {
 	    0,
 	    lte_frame_parms->nb_antennas_rx,
 	    lte_frame_parms->samples_per_tti>>1,
-	    1.0/7.68e6 * 1e9,      // sampling time (ns)
-	    0.0,            // freq offset (Hz) (-20kHz..20kHz)
-	    0.0,            // drift (Hz) NOT YET IMPLEMENTED
-	    nf,             // noise_figure NOT YET IMPLEMENTED
-	    (double)PHY_vars->rx_total_gain_dB-72.247,            // rx_gain (dB)
-	    200,            // IP3_dBm (dBm)
-	    &ip,            // initial phase
-	    30.0e3,         // pn_cutoff (kHz)
-	    -500.0,          // pn_amp (dBc) default: 50
-	    0.0,           // IQ imbalance (dB),
-	    0.0);           // IQ phase imbalance (rad)
+	    1.0/7.68e6 * 1e9,  // sampling time (ns)
+	    0.0,               // freq offset (Hz) (-20kHz..20kHz)
+	    0.0,               // drift (Hz) NOT YET IMPLEMENTED
+	    nf,                // noise_figure NOT YET IMPLEMENTED
+	    (double)rx_gain - 72.247,   // rx_gain (dB)
+	    200,               // IP3_dBm (dBm)
+	    &ip,               // initial phase
+	    30.0e3,            // pn_cutoff (kHz)
+	    -500.0,            // pn_amp (dBc) default: 50
+	    0.0,               // IQ imbalance (dB),
+	    0.0);              // IQ phase imbalance (rad)
       rx_pwr = signal_energy_fp(r_re,r_im,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
  
       printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  

@@ -143,7 +143,8 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define BCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
-#define DLSCH_RB_ALLOC 0x1fff
+#define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
+#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
 
 //-----------------------------------------------------------------------------
 int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg) {
@@ -290,9 +291,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	openair_daq_vars.timing_advance = 19;
 	openair_daq_vars.dlsch_transmission_mode = 2; //ALAMOUTI
-	openair_daq_vars.target_ue_mcs = 0;
+	openair_daq_vars.target_ue_dl_mcs = 0;
+	openair_daq_vars.target_ue_ul_mcs = 0;
 	openair_daq_vars.dlsch_rate_adaptation = 0;
-
+	openair_daq_vars.ue_ul_nb_rb = 6;
+	openair_daq_vars.ulsch_allocation_mode = 0;
 	lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
 
 	mac_xface->is_cluster_head = 0;
@@ -378,15 +381,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
 	// init DCI structures for testing
+	openair_daq_vars.target_ue_ul_mcs    = 1;
 	UL_alloc_pdu.type    = 0;
 	UL_alloc_pdu.hopping = 0;
 	UL_alloc_pdu.rballoc = UL_RB_ALLOC;
-	UL_alloc_pdu.mcs     = 1;
+	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
 	UL_alloc_pdu.ndi     = 1;
 	UL_alloc_pdu.TPC     = 0;
 	UL_alloc_pdu.cqi_req = 1;
 	
-	CCCH_alloc_pdu.type               = 0;
+	CCCH_alloc_pdu.type               = 1;
 	CCCH_alloc_pdu.vrb_type           = 0;
 	CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
 	CCCH_alloc_pdu.ndi      = 1;
@@ -407,18 +411,29 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	RA_alloc_pdu.mcs      = 1;
 	RA_alloc_pdu.harq_pid = 0;
 	
-	openair_daq_vars.target_ue_mcs    = 1;
+	openair_daq_vars.target_ue_dl_mcs    = 1;
+
 	DLSCH_alloc_pdu2.rah              = 0;
 	DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
 	DLSCH_alloc_pdu2.TPC              = 0;
 	DLSCH_alloc_pdu2.dai              = 0;
 	DLSCH_alloc_pdu2.harq_pid         = 0;
 	DLSCH_alloc_pdu2.tb_swap          = 0;
-	DLSCH_alloc_pdu2.mcs1             = openair_daq_vars.target_ue_mcs;
+	DLSCH_alloc_pdu2.mcs1             = openair_daq_vars.target_ue_dl_mcs;
 	DLSCH_alloc_pdu2.ndi1             = 1;
 	DLSCH_alloc_pdu2.rv1              = 0;
 	// Forget second codeword
 	DLSCH_alloc_pdu2.tpmi             = 0;
+
+	DLSCH_alloc_pdu1A.type               = 1;
+	DLSCH_alloc_pdu1A.vrb_type           = 0;
+	DLSCH_alloc_pdu1A.rballoc            = CCCH_RB_ALLOC;
+	DLSCH_alloc_pdu1A.ndi      = 1;
+	DLSCH_alloc_pdu1A.rv       = 1;
+	DLSCH_alloc_pdu1A.mcs      = 0;
+	DLSCH_alloc_pdu1A.harq_pid = 0;
+	DLSCH_alloc_pdu1A.TPC      = 1;   // set to 3 PRB
+
 #endif
 
 	openair_daq_vars.node_configured += 4;
@@ -464,7 +479,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       for (i=0;i<number_of_cards;i++) 
 	ret = setup_regs(i);
 
-      PHY_vars->rx_total_gain_dB = 138;
+      PHY_vars->rx_total_gain_eNB_dB = 138;
 
       if (ret == 0) {
 #ifdef OPENAIR_LTE
@@ -590,7 +605,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  openair_daq_vars.node_configured += 2;
 	  msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
 
-	 
+	  for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+	    lte_ue_pbch_vars[i]->pdu_errors_conseq=0;
+	    lte_ue_pbch_vars[i]->pdu_errors=0;
+	    
+	    lte_ue_pdcch_vars[i]->dci_errors = 0;
+	    lte_ue_pdcch_vars[i]->dci_missed = 0;
+	    lte_ue_pdcch_vars[i]->dci_false  = 0;    
+	    lte_ue_pdcch_vars[i]->dci_received = 0;    
+	  } 
 	
 #endif 
 
@@ -1484,11 +1507,25 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     else 
       msg("[openair][IOCTL] Problem setting frequency offset\n");
 
-  case openair_SET_UE_MCS:
+  case openair_SET_UE_DL_MCS:
 
     if ( ((((unsigned int *)arg)[0]) >= 0) && 
 	 ((((unsigned int *)arg)[0]) <32) )
-      openair_daq_vars.target_ue_mcs = (unsigned char)(((unsigned int *)arg)[0]);
+      openair_daq_vars.target_ue_dl_mcs = (unsigned char)(((unsigned int *)arg)[0]);
+    break;
+
+  case openair_SET_UE_UL_MCS:
+
+    if ( ((((unsigned int *)arg)[0]) >= 0) && 
+	 ((((unsigned int *)arg)[0]) <32) )
+      openair_daq_vars.target_ue_ul_mcs = (unsigned char)(((unsigned int *)arg)[0]);
+    break;
+
+  case openair_SET_UE_UL_NB_RB:
+
+    if ( ((((unsigned int *)arg)[0]) >= 0) && 
+	 ((((unsigned int *)arg)[0]) <10) )
+      openair_daq_vars.ue_ul_nb_rb = (unsigned char)(((unsigned int *)arg)[0]);
     break;
 
   case openair_SET_DLSCH_RATE_ADAPTATION:
@@ -1504,6 +1541,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	 ((((unsigned int *)arg)[0]) < 6) )
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
     lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
+    break;
+
+  case openair_SET_ULSCH_ALLOCATION_MODE:
+
+    if ( ((((unsigned int *)arg)[0]) >= 0) && 
+	 ((((unsigned int *)arg)[0]) <2) )
+      openair_daq_vars.ulsch_allocation_mode = (unsigned char)(((unsigned int *)arg)[0]);
     break;
 
   default:

@@ -342,10 +342,10 @@ typedef struct
   int            wideband_cqi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX];                     /// Wideband CQI (= SINR)
   int            wideband_cqi_dB[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX];                  /// Wideband CQI in dB (= SINR dB)
   char           wideband_cqi_tot[NUMBER_OF_UE_MAX];                                 /// Wideband CQI (sum of all RX antennas, in dB)
-  int            subband_cqi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI per RX antenna (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_UE_MAX][NUMBER_OF_SUBBANDS];              /// Total Subband CQI  (= SINR)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX][NUMBER_OF_SUBBANDS];  /// Subband CQI in dB (= SINR dB)
-  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][NUMBER_OF_SUBBANDS];           /// Total Subband CQI 
+  int            subband_cqi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX][100];  /// Subband CQI per RX antenna (= SINR)
+  int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];              /// Total Subband CQI  (= SINR)
+  int            subband_cqi_dB[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX][100];  /// Subband CQI in dB (= SINR dB)
+  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];           /// Total Subband CQI 
 
 } PHY_MEASUREMENTS_eNB;
 
@@ -390,6 +390,8 @@ typedef struct
   unsigned int *mbox;                
   /// Total RX gain
   unsigned int rx_total_gain_dB;
+  /// Total RX gain
+  unsigned int rx_total_gain_eNB_dB;
   /// Timing offset (UE)
   int rx_offset;
   /// TX/RX switch position in symbols (for TDD)
@@ -415,6 +417,7 @@ typedef struct
   SACH_DIAGNOSTICS   Sach_diagnostics[NB_CNX_CH][1+NB_RAB_MAX];
 #else
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
+  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[3]; /// Measurement variables 
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];

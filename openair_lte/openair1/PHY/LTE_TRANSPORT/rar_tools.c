@@ -8,6 +8,7 @@ extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
+extern unsigned short RIV_max;
 
 //#define DEBUG_RAR
 
@@ -24,6 +25,12 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
   //  printf("generate_eNb_ulsch_params_from_rar: subframe %d\n",subframe);
   
   ulsch->harq_processes[0]->TPC                = rar->TPC;
+
+  if (rar->rb_alloc>RIV_max) {
+    msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+    return(-1);
+  }
+
   ulsch->harq_processes[0]->first_rb           = RIV2first_rb_LUT25[rar->rb_alloc];
   ulsch->harq_processes[0]->nb_rb              = RIV2nb_rb_LUT25[rar->rb_alloc];
   ulsch->harq_processes[0]->Ndi                = 1;
@@ -79,8 +86,20 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 
 
     ulsch->harq_processes[0]->TPC                                   = rar->TPC;
+
+    if (rar->rb_alloc>RIV_max) {
+      msg("rar_tools.c: ERROR: rb_alloc > RIV_max\n");
+      return(-1);
+    }
+
     ulsch->harq_processes[0]->first_rb                              = RIV2first_rb_LUT25[rar->rb_alloc];
     ulsch->harq_processes[0]->nb_rb                                 = RIV2nb_rb_LUT25[rar->rb_alloc];
+
+    if (ulsch->harq_processes[0]->nb_rb > 3) {
+      msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+      return(-1);
+    }
+
     ulsch->harq_processes[0]->Ndi                                   = 1;
     if (ulsch->harq_processes[0]->Ndi == 1)
       ulsch->harq_processes[0]->status = ACTIVE;

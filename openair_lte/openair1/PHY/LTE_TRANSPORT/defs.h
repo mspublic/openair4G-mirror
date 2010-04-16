@@ -338,7 +338,7 @@ typedef struct {
   /// Subframe for RAG
   unsigned char RAG_subframe;
   /// Frame for RAG
-  unsigned short RAG_frame;
+  unsigned int RAG_frame;
 } LTE_eNb_ULSCH_t;
 
 typedef struct {

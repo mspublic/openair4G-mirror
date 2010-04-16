@@ -156,10 +156,10 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
   diff = max_pos_fil2 - frame_parms->nb_prefix_samples/8;
 
-  //#ifdef DEBUG_PHY
-    //if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
- //#endif //DEBUG_PHY
+#ifdef DEBUG_PHY
+    if (mac_xface->frame%100 == 0)
+      msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
+#endif //DEBUG_PHY
 
  return(max_pos_fil2);
 }

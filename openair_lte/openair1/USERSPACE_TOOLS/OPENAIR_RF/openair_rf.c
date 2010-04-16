@@ -113,9 +113,12 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 25 : SET TIMING ADVANCE param\n");
     printf("[openair][INFO] Action 26 : SET FREQ OFFSET param\n");
     printf("[openair][INFO] Action 27 : Start Primary Clusterhead in cognitive mode - param 0/1 = frequency offset on/off - param NODE_ID\n");
-    printf("[openair][INFO] Action 28 : Set UE MCS - param 0-31\n");
-    printf("[openair][INFO] Action 29 : Start UE Rate Adaptation param 0/1\n");
-    printf("[openair][INFO] Action 30 : Set DLSCH Transmission Mode param 1-7\n");
+    printf("[openair][INFO] Action 28 : Set UE DL MCS - param 0-31\n");
+    printf("[openair][INFO] Action 29 : Set UE UL MCS - param 0-31\n");
+    printf("[openair][INFO] Action 30 : Start UE UL NB RB 2-9\n");
+    printf("[openair][INFO] Action 31 : Start UE Rate Adaptation param 0/1\n");
+    printf("[openair][INFO] Action 32 : Set DLSCH Transmission Mode param 1-7\n");
+    printf("[openair][INFO] Action 33 : Set ULSCH Allocation Mode param 0-2\n");
     exit (-1);
   }
 
@@ -172,11 +175,17 @@ int main (int argc, char **argv) {
   else if (action == 26) // Set freq offset
     printf("[openair][INFO][START] Action              is : SET_FREQ_OFFSET\n");
   else if (action == 28) // 
-    printf("[openair][INFO][START] Action              is : SET_UE_MCS\n");
+    printf("[openair][INFO][START] Action              is : SET_UE_DL_MCS\n");
   else if (action == 29) // 
-    printf("[openair][INFO][START] Action              is : SET_DLSCH_RATE_ADAPTATION\n");
+    printf("[openair][INFO][START] Action              is : SET_UE_UL_MCS\n");
   else if (action == 30) // 
+    printf("[openair][INFO][START] Action              is : SET_UE_UL_NB_RB\n");
+  else if (action == 31) // 
+    printf("[openair][INFO][START] Action              is : SET_DLSCH_RATE_ADAPTATION\n");
+  else if (action == 32) // 
     printf("[openair][INFO][START] Action              is : SET_DLSCH_TRANSMISSION_MODE\n");
+  else if (action == 33) // 
+    printf("[openair][INFO][START] Action              is : SET_ULSCH_ALLOCATION_MODE\n");
   else if (action == 39) // Send EMOS Rec flag
     printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else {
@@ -697,22 +706,43 @@ case 24 :
   case 28:
     
     fc = atoi(argv[3]);
-    printf("[openair][START][INFO] SET UE MCS to %d\n",fc);
-    result = ioctl(openair_fd,openair_SET_UE_MCS, &fc);
+    printf("[openair][START][INFO] SET UE DL MCS to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_DL_MCS, &fc);
     break;
 
   case 29:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE UL MCS to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_UL_MCS, &fc);
+    break;
+
+  case 30:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE NB_RB to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_UL_NB_RB, &fc);
+    break;
+
+  case 31:
     
     fc = atoi(argv[3]);
     printf("[openair][START][INFO] SET DLSCH Rate Adaptation to %d\n",fc);
     result = ioctl(openair_fd,openair_SET_DLSCH_RATE_ADAPTATION, &fc);
     break;
 
-  case 30:
+  case 32:
     
     fc = atoi(argv[3]);
     printf("[openair][START][INFO] SET DLSCH Transmission Mode to %d\n",fc);
     result = ioctl(openair_fd,openair_SET_DLSCH_TRANSMISSION_MODE, &fc);
+    break;
+
+  case 33:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET ULSCH Allocation Mode to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_ULSCH_ALLOCATION_MODE, &fc);
     break;
 	
   }
