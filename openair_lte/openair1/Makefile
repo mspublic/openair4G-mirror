@@ -10,6 +10,9 @@ openair_rf_cbmimo1_softmodem_lte_l2.ko:
 openair_rf_cbmimo1_softmodem_lte_emos.ko:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 EMOS=1 && mv openair_rf.ko openair_rf_softmodem_lte_emos.ko)
 
+openair_rf_cbmimo1_softmodem_lte_emos_l2.ko:
+	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 EMOS=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_softmodem_lte_emos_l2.ko)
+
 openair_rf_cbmimo1_l2.ko:
 	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 DUALSTREAM=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_l2.ko)
 
