@@ -16,26 +16,39 @@ else
     is_eNb=0;
 end
 
-decimation = 1;
+decimation = 100;
 NFrames_max = 100*60*10;
 
 [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(fullfile(pathname, filename),NFrames_max,decimation,is_eNb);
 
-save('estimates.mat')
+%save('estimates.mat')
 
 %%
-figure(1)
+h_fig = figure(1);
 plot([estimates.frame_tx])
 title('Tx Frame number')
+saveas(h_fig,'frame_tx.eps','epsc2')
 
 rx_rssi_dBm = zeros(1,NFrames/decimation);
 for i=1:NFrames/decimation
     rx_rssi_dBm(i) = estimates(i).phy_measurements(1).rx_rssi_dBm(1);
 end
-figure(2)
+h_fig = figure(2);
 plot(rx_rssi_dBm)
 title('RX_rssi_dBm')
+saveas(h_fig,'RX_rssi_dBm.eps','epsc2')
 
-figure(3)
+h_fig = figure(3);
 plot([gps_data.longitude], [gps_data.latitude],'x');
+saveas(h_fig,'gps_trace.eps','epsc2')
+
+pbch_fer = zeros(1,NFrames/decimation,1);
+for i=1:NFrames/decimation
+    pbch_fer(i,:) = estimates(i).pbch_fer(1);
+end
+h_fig = figure(4);
+plot(pbch_fer)
+title('PBCH_fer')
+saveas(h_fig,'pbch_fer.eps','epsc2')
+
 end

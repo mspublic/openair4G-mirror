@@ -54,12 +54,16 @@ else
     %UCI_data_t_size = 49;
     %DCI_alloc_t_size = 16;
     %eNb_UE_stats_size = 20;
-    fifo_dump_emos_UE_size = 33492;
-    fifo_dump_emos_eNb_size = 36980;
-    gps_fix_t_size = 108;
+    %fifo_dump_emos_UE_size = 33492;
+    %fifo_dump_emos_eNb_size = 36980;
 end
 
 struct_template;
+
+gps_fix_t_size = 108;
+fifo_dump_emos_UE_size = fifo_dump_emos_struct_UE_a.size;
+fifo_dump_emos_eNb_size = fifo_dump_emos_struct_eNb_a.size;
+
 
 NO_ESTIMATES_DISK = 100;
 if (is_eNb)
