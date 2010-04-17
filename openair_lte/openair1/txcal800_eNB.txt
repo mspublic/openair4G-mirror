@@ -1,0 +1,3 @@
+Sector 0, cbmimo1_v2_13  138 140 140 140
+Sector 1, cbmimo1_v2_8
+Sector 2, cbmimo1_v2_7
