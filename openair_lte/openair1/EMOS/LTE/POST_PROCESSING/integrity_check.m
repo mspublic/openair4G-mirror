@@ -25,7 +25,7 @@ NFrames_max = 100*60*10;
 
 %%
 h_fig = figure(1);
-plot([estimates.frame_tx],[estimates.frame_rx])
+plot([estimates_UE.frame_tx],[estimates_UE.frame_rx])
 title('Frame number')
 ylabel('Received frame number');
 xlabel('Transmitted frame number');

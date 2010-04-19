@@ -5,26 +5,29 @@
 %warning off all
 %f%ormat('long');
 %load 'estimates_UE.mat';
-%load 'SISO.mat';
+load 'SISO.mat';
 %M1=4;% QAM on first antenna
 
-h = zeros(1,200);
+[x, y, z] = size(estimates_UE(1).channel);
 
-chcap_siso_single_stream_4Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_4Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_4Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+z = z/2;
+%h = zeros(1,200);
 
-chcap_siso_single_stream_16Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_16Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_16Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_siso_single_stream_4Qam_eNB1 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_4Qam_eNB2 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_4Qam_eNB3 = zeros(1,z, length(estimates_UE));
 
-chcap_siso_single_stream_64Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_64Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_siso_single_stream_64Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_siso_single_stream_16Qam_eNB1 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_16Qam_eNB2 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_16Qam_eNB3 = zeros(1,z, length(estimates_UE));
 
-SNR_eNB1 = zeros(1,length(h), length(estimates_UE));
-SNR_eNB2 = zeros(1,length(h), length(estimates_UE));
-SNR_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_siso_single_stream_64Qam_eNB1 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_64Qam_eNB2 = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_64Qam_eNB3 = zeros(1,z, length(estimates_UE));
+
+SNR_eNB1 = zeros(1,z, length(estimates_UE));
+SNR_eNB2 = zeros(1,z, length(estimates_UE));
+SNR_eNB3 = zeros(1,z, length(estimates_UE));
 
 
 for est=1:length(estimates_UE)
@@ -40,7 +43,19 @@ for est=1:length(estimates_UE)
     SNR_eNB2(1, :, est) = 10*log10(abs(h_eNB2).^2/N0);
     SNR_eNB3(1, :, est) = 10*log10(abs(h_eNB3).^2/N0);
     
-    while (min(SNR_eNB1(1, :, est)) < -20)
+    nan_in_SNR = isnan(SNR_eNB1);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB1(nan_in_SNR) = 0;
+    
+    nan_in_SNR = isnan(SNR_eNB2);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB2(nan_in_SNR) = 0;
+    
+    nan_in_SNR = isnan(SNR_eNB3);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB3(nan_in_SNR) = 0;
+    
+    while (min(SNR_eNB1(1, :, est)) < -20 )
         [value, index]  = min(SNR_eNB1(1, :, est));
         SNR_eNB1(1, index, est) = -20;
         continue
@@ -80,10 +95,10 @@ for est=1:length(estimates_UE)
         
     end
     
-    
+%     
     for const=1:3
         if const ==1
-            for c=1:length(h)
+            for c=1:z
                 
                 chcap_siso_single_stream_4Qam_eNB1(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB1(1, c, est))));
                 chcap_siso_single_stream_4Qam_eNB2(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB2(1, c, est))));
@@ -91,7 +106,7 @@ for est=1:length(estimates_UE)
                 
             end
         else if const==2
-                for c=1:length(h)
+                for c=1:z
                     
                     chcap_siso_single_stream_16Qam_eNB1(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB1(1, c, est))));
                     chcap_siso_single_stream_16Qam_eNB2(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB2(1, c, est))));
@@ -99,7 +114,7 @@ for est=1:length(estimates_UE)
                     
                 end
             else
-                for c=1:length(h)
+                for c=1:z
                     
                     chcap_siso_single_stream_64Qam_eNB1(1, c, est) = c_siso_64Qam(find(SNR == round(SNR_eNB1(1, c, est))));
                     chcap_siso_single_stream_64Qam_eNB2(1, c, est) = c_siso_64Qam(find(SNR == round(SNR_eNB2(1, c, est))));
@@ -116,7 +131,7 @@ save 'chcap_SISO_Measurements.mat' 'chcap_siso*' 'SNR_eNB*'
 % N0 = double(estimates_UE(1).phy_measurements(1).n0_power(1));
 %
 % N = 1000;  % No of noise realizations
-% for v=1:length(h)
+% for v=1:z
 %     seed(1) = 13579;
 %     seed(2) = 24680;
 %     rand('state', seed(1));

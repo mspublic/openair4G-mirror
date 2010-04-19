@@ -7,8 +7,10 @@
 %load 'estimates_UE.mat';
 %load 'SISO.mat';
 %M1=4;% QAM on first antenna
+[x, y, z] = size(estimates_UE(1).channel);
 
-h = zeros(1,200);
+z = z/2;
+h = zeros(1,z);
 
 MultiAntenna_Rx = 1; % 0 for Single antenna receivers
 % 1 for Multi Antenna receivers(2 antennas here)
@@ -129,6 +131,19 @@ for est=1:length(estimates_UE)
         SNR_eNB3(1, :, est) = SNR_eNB3_q(index_eNB3).snr;
         
     end
+    
+    nan_in_SNR = isnan(SNR_eNB1);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB1(nan_in_SNR) = 0;
+    
+    nan_in_SNR = isnan(SNR_eNB2);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB2(nan_in_SNR) = 0;
+    
+    nan_in_SNR = isnan(SNR_eNB3);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB3(nan_in_SNR) = 0;
+    
     
     while (min(SNR_eNB1(1, :, est)) < -20)
         [value, index]  = min(SNR_eNB1(1, :, est));
