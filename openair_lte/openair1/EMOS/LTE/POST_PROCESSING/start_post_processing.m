@@ -1,11 +1,13 @@
 clear all
 close all
 
+addpath('../IMPORT_FILTER')
+
 %pathname = '/extras/kaltenbe/EMOS/data/20100317_FIRST_LTE_TEST/';
 %filename_UE = 'data_term3_idx0_2010324_12628.EMOS';
 %filename_eNB = 'data_term1_idx0_2010324_12630.EMOS';
 
-pathname = '/home/kaltenbe/EMOS/data/';
+pathname = '/extras/kaltenbe/EMOS/data/ltetest/';
 filename_UE = 'data_term3_idx9_2010416_145915.EMOS';
 
 decimation = 1;
