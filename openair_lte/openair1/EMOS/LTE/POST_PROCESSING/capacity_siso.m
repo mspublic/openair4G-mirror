@@ -4,8 +4,8 @@
 %close all;
 %warning off all
 %f%ormat('long');
-%load 'estimates.mat';
-%load 'SISO.mat';
+load 'estimates.mat';
+load 'SISO.mat';
 %M1=4;% QAM on first antenna
 
 [x, y, z] = size(estimates(1).channel);

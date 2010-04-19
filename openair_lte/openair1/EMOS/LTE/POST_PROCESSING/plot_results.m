@@ -11,6 +11,10 @@
 % We measure channel for 200 resource elements in first subframe of each frame. And we
 % interpolate for the rest 4000 resource elements of that subframe.
 
+load 'chcap_alamouti_MultiAntennaUE_Measurements.mat'
+load 'chcap_beamforming_MultiAntennaUE_Measurements.mat'
+load 'chcap_SISO_Measurements.mat'
+
 %**************************************************************************
 %For SISO Scheme
 %
