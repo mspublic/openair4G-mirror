@@ -4,55 +4,55 @@
 %close all;
 %warning off all
 %format('long');
-%load 'estimates_UE.mat';
-%load 'SISO.mat';
+%load 'estimates.mat';
+load 'SISO.mat';
 %M1=4;% QAM on first antenna
 
-[x, y, z] = size(estimates_UE(1).channel);
+[x, y, z] = size(estimates(1).channel);
 
-z = z/2;
+z = z/4;
 
 MultiAntenna_Rx = 1; % 0 for Single antenna
 % 1 for Multi Antenna (2 antennas here)
 h = zeros(1,z);
 
-chcap_alamouti_4Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_4Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_4Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_alamouti_4Qam_eNB1 = zeros(1,length(h), length(estimates));
+chcap_alamouti_4Qam_eNB2 = zeros(1,length(h), length(estimates));
+chcap_alamouti_4Qam_eNB3 = zeros(1,length(h), length(estimates));
 
-chcap_alamouti_16Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_16Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_16Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_alamouti_16Qam_eNB1 = zeros(1,length(h), length(estimates));
+chcap_alamouti_16Qam_eNB2 = zeros(1,length(h), length(estimates));
+chcap_alamouti_16Qam_eNB3 = zeros(1,length(h), length(estimates));
 
-chcap_alamouti_64Qam_eNB1 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_64Qam_eNB2 = zeros(1,length(h), length(estimates_UE));
-chcap_alamouti_64Qam_eNB3 = zeros(1,length(h), length(estimates_UE));
+chcap_alamouti_64Qam_eNB1 = zeros(1,length(h), length(estimates));
+chcap_alamouti_64Qam_eNB2 = zeros(1,length(h), length(estimates));
+chcap_alamouti_64Qam_eNB3 = zeros(1,length(h), length(estimates));
 
-SNR_eNB1 = zeros(1,length(h), length(estimates_UE));
-SNR_eNB2 = zeros(1,length(h), length(estimates_UE));
-SNR_eNB3 = zeros(1,length(h), length(estimates_UE));
+SNR_eNB1 = zeros(1,length(h), length(estimates));
+SNR_eNB2 = zeros(1,length(h), length(estimates));
+SNR_eNB3 = zeros(1,length(h), length(estimates));
 
-for est=1:length(estimates_UE)
+for est=1:length(estimates)
     
-    N0 = double(estimates_UE(est).phy_measurements(1).n0_power(1));
+    N0 = double(estimates(est).phy_measurements(1).n0_power(1));
     
     % Channels for Sector 1
     if MultiAntenna_Rx == 1
         
-        h_eNB1_h11 = double(estimates_UE(est).channel(1,1,1:2:end)) + 1j*double(estimates_UE(est).channel(1,1,2:2:end));
-        h_eNB1_h12 = double(estimates_UE(est).channel(1,2,1:2:end)) + 1j*double(estimates_UE(est).channel(1,2,2:2:end));
-        h_eNB1_h21 = double(estimates_UE(est).channel(1,3,1:2:end)) + 1j*double(estimates_UE(est).channel(1,3,2:2:end));
-        h_eNB1_h22 = double(estimates_UE(est).channel(1,4,1:2:end)) + 1j*double(estimates_UE(est).channel(1,4,2:2:end));
+        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:2*z)) + 1j*double(estimates(est).channel(1,1,2:2:2*z));
+        h_eNB1_h12 = double(estimates(est).channel(1,2,1:2:2*z)) + 1j*double(estimates(est).channel(1,2,2:2:2*z));
+        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:2*z)) + 1j*double(estimates(est).channel(1,3,2:2:2*z));
+        h_eNB1_h22 = double(estimates(est).channel(1,4,1:2:2*z)) + 1j*double(estimates(est).channel(1,4,2:2:2*z));
         % Channels for Sector 2
-        h_eNB2_h11 = double(estimates_UE(est).channel(2,1,1:2:end)) + 1j*double(estimates_UE(est).channel(2,1,2:2:end));
-        h_eNB2_h12 = double(estimates_UE(est).channel(2,2,1:2:end)) + 1j*double(estimates_UE(est).channel(2,2,2:2:end));
-        h_eNB2_h21 = double(estimates_UE(est).channel(2,3,1:2:end)) + 1j*double(estimates_UE(est).channel(2,3,2:2:end));
-        h_eNB2_h22 = double(estimates_UE(est).channel(2,4,1:2:end)) + 1j*double(estimates_UE(est).channel(2,4,2:2:end));
+        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:2*z)) + 1j*double(estimates(est).channel(2,1,2:2:2*z));
+        h_eNB2_h12 = double(estimates(est).channel(2,2,1:2:2*z)) + 1j*double(estimates(est).channel(2,2,2:2:2*z));
+        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:2*z)) + 1j*double(estimates(est).channel(2,3,2:2:2*z));
+        h_eNB2_h22 = double(estimates(est).channel(2,4,1:2:2*z)) + 1j*double(estimates(est).channel(2,4,2:2:2*z));
         % Channels for Sector 3
-        h_eNB3_h11 = double(estimates_UE(est).channel(3,1,1:2:end)) + 1j*double(estimates_UE(est).channel(3,1,2:2:end));
-        h_eNB3_h12 = double(estimates_UE(est).channel(3,2,1:2:end)) + 1j*double(estimates_UE(est).channel(3,2,2:2:end));
-        h_eNB3_h21 = double(estimates_UE(est).channel(3,3,1:2:end)) + 1j*double(estimates_UE(est).channel(3,3,2:2:end));
-        h_eNB3_h22 = double(estimates_UE(est).channel(3,4,1:2:end)) + 1j*double(estimates_UE(est).channel(3,4,2:2:end));
+        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:2*z)) + 1j*double(estimates(est).channel(3,1,2:2:2*z));
+        h_eNB3_h12 = double(estimates(est).channel(3,2,1:2:2*z)) + 1j*double(estimates(est).channel(3,2,2:2:2*z));
+        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:2*z)) + 1j*double(estimates(est).channel(3,3,2:2:2*z));
+        h_eNB3_h22 = double(estimates(est).channel(3,4,1:2:2*z)) + 1j*double(estimates(est).channel(3,4,2:2:2*z));
         
         %SNR calculation for Alamouti Scheme
         SNR_eNB1(1, :, est) = 10*log10(((abs(h_eNB1_h11).^2) + (abs(h_eNB1_h12).^2) + (abs(h_eNB1_h21).^2) + (abs(h_eNB1_h22).^2))/N0);
@@ -61,16 +61,16 @@ for est=1:length(estimates_UE)
         
     else
         
-        h_eNB1_h11 = double(estimates_UE(est).channel(1,1,1:2:end)) + 1j*double(estimates_UE(est).channel(1,1,2:2:end));
-        h_eNB1_h21 = double(estimates_UE(est).channel(1,3,1:2:end)) + 1j*double(estimates_UE(est).channel(1,3,2:2:end));
+        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:2*z)) + 1j*double(estimates(est).channel(1,1,2:2:2*z));
+        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:2*z)) + 1j*double(estimates(est).channel(1,3,2:2:2*z));
         
         % Channels for Sector 2
-        h_eNB2_h11 = double(estimates_UE(est).channel(2,1,1:2:end)) + 1j*double(estimates_UE(est).channel(2,1,2:2:end));
-        h_eNB2_h21 = double(estimates_UE(est).channel(2,3,1:2:end)) + 1j*double(estimates_UE(est).channel(2,3,2:2:end));
+        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:2*z)) + 1j*double(estimates(est).channel(2,1,2:2:2*z));
+        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:2*z)) + 1j*double(estimates(est).channel(2,3,2:2:2*z));
         
         % Channels for Sector 3
-        h_eNB3_h11 = double(estimates_UE(est).channel(3,1,1:2:end)) + 1j*double(estimates_UE(est).channel(3,1,2:2:end));
-        h_eNB3_h21 = double(estimates_UE(est).channel(3,3,1:2:end)) + 1j*double(estimates_UE(est).channel(3,3,2:2:end));
+        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:2*z)) + 1j*double(estimates(est).channel(3,1,2:2:2*z));
+        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:2*z)) + 1j*double(estimates(est).channel(3,3,2:2:2*z));
         
         
         %SNR calculation for Alamouti Scheme
@@ -164,7 +164,7 @@ else
 end
 
 % % version 2: do Monte Carlo simulation for every channel
-% N0 = double(estimates_UE(1).phy_measurements(1).n0_power(1));
+% N0 = double(estimates(1).phy_measurements(1).n0_power(1));
 %
 % N = 1000;  % No of noise realizations
 % for v=1:length(h)
@@ -178,7 +178,7 @@ end
 %     [stream1]=sqrt(sigmasq_x1)*mapping(M1);     %x1   1x648
 %     logsum_siso = 0;
 %     %h=sqrt(1/2).*(randn(1,1)+sqrt(-1)*randn(1,1));
-%     %h = estimates_UE(1).channel(1,1,i+1)
+%     %h = estimates(1).channel(1,1,i+1)
 %     for s1=1:M1
 %         x1=stream1(s1);
 %         for k=1:N

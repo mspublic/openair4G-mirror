@@ -16,16 +16,16 @@ else
     is_eNb=0;
 end
 
-decimation = 100;
+decimation = 10;
 NFrames_max = 100*60*10;
 
 [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(fullfile(pathname, filename),NFrames_max,decimation,is_eNb);
 
-%save('estimates.mat')
+save('estimates.mat')
 
 %%
 h_fig = figure(1);
-plot([estimates_UE.frame_tx],[estimates_UE.frame_rx])
+plot([estimates.frame_tx],[estimates.frame_rx])
 title('Frame number')
 ylabel('Received frame number');
 xlabel('Transmitted frame number');
