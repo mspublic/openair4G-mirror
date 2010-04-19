@@ -144,7 +144,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 #else //USER_MODE
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     ue_common_vars->rxdata[i] = (int*) malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
-    if (ue_common_vars->rxdataF[i]) {
+    if (ue_common_vars->rxdata[i]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] allocated at %p\n",i,ue_common_vars->rxdata[i]);
 #endif

@@ -294,7 +294,7 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
  
   if (!llr128) {
     msg("dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
+    return;
   }
 
   qpsk_qpsk((short *)rxF,
@@ -1100,7 +1100,8 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 				unsigned char symbol,
 				unsigned char mod_order,
 				unsigned short nb_rb,
-				unsigned char output_shift) {
+				unsigned char output_shift,
+				PHY_MEASUREMENTS *phy_measurements) {
 
   unsigned short rb;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
@@ -1325,7 +1326,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
       }	
       
       if (symbol == frame_parms->first_dlsch_symbol) {
-	PHY_vars->PHY_measurements.rx_correlation[0][aarx] = signal_energy(&rho[aarx][symbol*frame_parms->N_RB_DL*12],rb*12);
+	phy_measurements->rx_correlation[0][aarx] = signal_energy(&rho[aarx][symbol*frame_parms->N_RB_DL*12],rb*12);
       } 
          
     }
@@ -1582,7 +1583,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     unsigned char eNb_id_i,
 	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
-	     unsigned char dual_stream_UE) {
+	     unsigned char dual_stream_UE,
+	     PHY_MEASUREMENTS *phy_measurements) {
   
   unsigned short nb_rb;
 
@@ -1671,7 +1673,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       symbol,
 			       get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 			       nb_rb,
-			       log2_maxh); // log2_maxh+I0_shift
+			       log2_maxh,
+			       phy_measurements); // log2_maxh+I0_shift
 
     if (dual_stream_UE == 1) {
       // get MF output for interfering stream
@@ -1685,7 +1688,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				 symbol,
 				 get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs),
 				 nb_rb,
-				 log2_maxh); // log2_maxh+I0_shift
+				 log2_maxh,
+				 phy_measurements); // log2_maxh+I0_shift
       
 
     // compute correlation between signal and interference channels

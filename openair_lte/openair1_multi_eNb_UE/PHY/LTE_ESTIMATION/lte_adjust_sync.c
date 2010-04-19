@@ -20,7 +20,7 @@
 static int      max_pos_fil = 0;
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_COMMON *lte_ue_common,
+		      PHY_VARS_UE *phy_vars_ue,
 		      unsigned char eNb_id,
 		      unsigned char clear,
 		      short coef)
@@ -32,16 +32,17 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   short Re,Im,ncoef;
 
   ncoef = 32767 - coef;
+  offset = phy_vars_ue->rx_offset;
 
 #ifdef DEBUG_PHY
   if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,PHY_vars->rx_vars[0].offset);
+    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,offset);
 #endif //DEBUG_PHY
 
   // do ifft of channel estimate
   for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
-    fft((short*) &lte_ue_common->dl_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
-	(short*) lte_ue_common->dl_ch_estimates_time[aa],
+    fft((short*) &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
+	(short*) phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa],
 	frame_parms->twiddle_ifft,
 	frame_parms->rev,
 	frame_parms->log2_symbol_size,
@@ -53,8 +54,8 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
     temp = 0;
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      Re = ((s16*)lte_ue_common->dl_ch_estimates_time[aa])[(i<<2)];
-      Im = ((s16*)lte_ue_common->dl_ch_estimates_time[aa])[1+(i<<2)];
+      Re = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa])[(i<<2)];
+      Im = ((s16*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
     if (temp > max_val) {
@@ -73,28 +74,29 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
 
   if ( diff > SYNCH_HYST )
-    PHY_vars->rx_vars[0].offset++;
+    offset++;
   else if (diff < -SYNCH_HYST)
-    PHY_vars->rx_vars[0].offset--;
+    offset--;
     
-  if ( PHY_vars->rx_vars[0].offset < 0 )
-    PHY_vars->rx_vars[0].offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( offset < 0 )
+    offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  if ( PHY_vars->rx_vars[0].offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
-    PHY_vars->rx_vars[0].offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+  if ( offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+    offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
+   phy_vars_ue->rx_offset = offset;
 
 
 #ifdef DEBUG_PHY
  if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,PHY_vars->rx_vars[0].offset,max_pos,max_pos_fil);
+    msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
 #endif //DEBUG_PHY
 
 #ifndef USER_MODE
 #ifndef PHY_EMUL
 #ifndef NOCARD_TEST
 #ifndef PLATON
-    pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
+    pci_interface->frame_offset = offset;
   //  openair_dma(ADJUST_SYNCH);
 #endif //PLATON
 #endif //PHY_EMUL

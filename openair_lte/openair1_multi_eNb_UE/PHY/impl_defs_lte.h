@@ -138,6 +138,12 @@ typedef struct {
   unsigned int pdu_fer;             /// FER (in percent) 
 } LTE_UE_PBCH;
 
+typedef enum {
+  PRACH=0,
+  RA_RESPONSE,
+  ULSCH
+} UE_MODE_t;
+
 /*
 /// Top-level PHY Data Structure for eNB 
 typedef struct

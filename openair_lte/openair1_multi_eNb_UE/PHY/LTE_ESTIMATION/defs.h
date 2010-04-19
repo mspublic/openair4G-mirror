@@ -100,27 +100,30 @@ int lte_est_freq_offset(int **dl_ch_estimates,
 /*! \brief Tracking of timing for LTE
 This function computes the time domain channel response, finds the peak and adjusts the timing in pci_interface.offset accordingly.
 \param frame_parms LTE DL frame parameter structure
+\param phy_vars_ue 
 \param ue_common LTE DL common RX variables structure
 \param clear If clear==1 moving average filter is reset
 \param coeff Coefficient of the moving average filter (Q1.15)
 */
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_COMMON *ue_common,
+		      PHY_VARS_UE *phy_vars_ue,
 		      unsigned char eNb_id,
 		      unsigned char clear,
 		      short coef);
 
-//! \brief this function fills the PHY_vars->PHY_measurement structure
-void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
-			LTE_DL_FRAME_PARMS *frame_parms,
-			PHY_MEASUREMENTS *phy_measurements,
-			unsigned int subframe_offset,
-			unsigned char N0_symbol,
-			unsigned char init_averaging);
+//! \brief this function fills the PHY_VARS_UE->PHY_measurement structure
+void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 unsigned int subframe_offset,
+			 unsigned char N0_symbol,
+			 unsigned char init_averaging);
 
 //! Automatic gain control
-void phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind);
+void phy_adjust_gain (unsigned char clear,
+		      short coef,
+		      unsigned char chsch_ind,
+		      PHY_VARS_UE *phy_vars_ue);
 
 int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      int **rxdataF_ext,

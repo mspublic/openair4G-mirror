@@ -99,14 +99,17 @@
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 #include "PHY/MODULATION/defs.h"
+
 #ifndef OPENAIR_LTE
 #include "PHY/TRANSPORT/defs.h"
 #include "PHY/ESTIMATION/defs.h"
 #else //OPENAIR_LTE
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "PHY/LTE_ESTIMATION/defs.h"
+//#include "PHY/LTE_ESTIMATION/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
+#include "PHY/LTE_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
+
+
 
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -114,6 +117,7 @@ typedef struct
   /// ACQ Mailbox for harware synch
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
+  unsigned int rx_total_gain_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
@@ -135,6 +139,7 @@ typedef struct
 {
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
+  unsigned int rx_total_gain_dB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
@@ -147,9 +152,21 @@ typedef struct
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_cntl;
 
+  unsigned char    is_secondary_ue; // primary by default
+  int              rx_offset; // Timing offset
+
 } PHY_VARS_UE;
 
-#endif
+#ifndef OPENAIR_LTE
+//#include "PHY/TRANSPORT/defs.h"
+//#include "PHY/ESTIMATION/defs.h"
+#else //OPENAIR_LTE
+#include "PHY/LTE_ESTIMATION/defs.h"
+  //#include "PHY/LTE_REFSIG/defs.h"
+  //#include "PHY/LTE_TRANSPORT/defs.h"
+#endif //OPENAIR_LTE
+
+#endif // USER_MODE
 
 
 

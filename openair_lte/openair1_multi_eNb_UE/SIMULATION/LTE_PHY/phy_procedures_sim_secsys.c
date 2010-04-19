@@ -17,7 +17,7 @@
 #ifdef SECONDARY_SYSTEM
 #include "decl_secsys.h"
 #endif
-#define SKIP_RF_CHAIN
+//#define SKIP_RF_CHAIN
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 1
@@ -111,7 +111,6 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  PHY_vars = malloc(sizeof(PHY_VARS));
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -184,6 +183,8 @@ int main(int argc, char **argv) {
 		  PHY_vars_UE[0]->lte_ue_dlsch_vars_cntl,
 		  PHY_vars_UE[0]->lte_ue_pbch_vars,
 		  PHY_vars_UE[0]->lte_ue_pdcch_vars);
+  PHY_vars_UE[0]->is_secondary_ue = 0;
+
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[0]->lte_eNB_common_vars,
 		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars);
@@ -196,11 +197,13 @@ int main(int argc, char **argv) {
 		  PHY_vars_UE[1]->lte_ue_dlsch_vars_cntl,
 		  PHY_vars_UE[1]->lte_ue_pbch_vars,
 		  PHY_vars_UE[1]->lte_ue_pdcch_vars);
+  PHY_vars_UE[1]->is_secondary_ue = 1;
+
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[1]->lte_eNB_common_vars,
 		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars);
   PHY_vars_eNb[1]->is_secondary_eNb = 1;
-  PHY_vars_eNb[0]->is_init_sync = 0;
+  PHY_vars_eNb[1]->is_init_sync = 0;
 #endif
 
 #ifndef SECONDARY_SYSTEM
@@ -369,7 +372,8 @@ for (aa=0;aa<aa_max;aa++) {
 
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-  PHY_vars->rx_vars[0].rx_total_gain_dB = 140;
+  PHY_vars_eNb[0]->rx_total_gain_dB = 140;
+  PHY_vars_eNb[1]->rx_total_gain_dB = 140;
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
@@ -527,11 +531,11 @@ for (aa=0;aa<aa_max;aa++) {
       slot_offset_time = (next_slot)*(lte_frame_parms->samples_per_tti>>1);
 
 #ifdef DEBUG_PHY
-      if (next_slot == 0 || next_slot == 10) {
-	sprintf(fname,"eNb_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
-	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
-	sprintf(fname,"eNb_frame%d_slot%d_txsigF1.m",mac_xface->frame,next_slot);
-	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
+      if (next_slot == 7 || next_slot == 9) {
+	sprintf(fname,"UE_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
+	sprintf(fname,"UE_frame%d_slot%d_txsigF1.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_txsF1",&txdataF_secsys[0][slot_offset],512*12,1,1); 
       }
 #endif
       /*
@@ -568,11 +572,30 @@ for (aa=0;aa<aa_max;aa++) {
 #endif //IFFT_FPGA
 
 #ifdef DEBUG_PHY
+      if (next_slot == 7 || next_slot == 9) {
+	sprintf(fname,"UE_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_txs0",&txdata[0][slot_offset_time],640*12,1,1);
+	sprintf(fname,"UE_frame%d_slot%d_txsig1.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_txs1",&txdata_secsys[0][slot_offset_time],640*12,1,1);
+      }
+#endif
+ 
+#ifdef DEBUG_PHY
+
+      if (next_slot == 9) {
+	sprintf(fname,"txsig.m");
+        write_output(fname,"txs",&(PHY_vars_UE[0]->lte_ue_common_vars.txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti>>1,1,1);
+	sprintf(fname,"txsig_tmp.m");
+        write_output(fname,"txs_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti>>1,1,1);
+      }
+
       if (next_slot == 11) {
 	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs0",&(PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id][0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
 	sprintf(fname,"eNb_frame%d_slot%d_txsig0_tmp.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs0_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
+	sprintf(fname,"eNb_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
+        write_output(fname,"eNb_txsF0",&(txdataF[0][slot_offset-lte_frame_parms->ofdm_symbol_size*((lte_frame_parms->Ncp==1) ? 6 : 7)]),lte_frame_parms->ofdm_symbol_size*((lte_frame_parms->Ncp==1) ? 6 : 7)*2,1,1);
       }
       
       if (next_slot == 4) {
@@ -636,23 +659,18 @@ for (aa=0;aa<aa_max;aa++) {
       ---------------------------------------------------------------*/
   
 #ifdef SKIP_RF_CHAIN
+#ifdef SECONDARY_SYSTEM
   SIR = pow(10,(double)(SIRdB)/10);
+#endif
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
 	  r_re[aa][i] = s_re[aa][i];
 	  r_im[aa][i] = s_im[aa][i];
 #ifdef SECONDARY_SYSTEM
-	  r_re_secsys[aa][i] = s_re_secsys[aa][i]+s_re[aa][i]*sqrt(1.0/(2*SIR));
-	  r_im_secsys[aa][i] = s_im_secsys[aa][i]+s_im[aa][i]*sqrt(1.0/(2*SIR));
+	  r_re_secsys[aa][i] = s_re_secsys[aa][i] +s_re[aa][i]*sqrt(1.0/(2*SIR));
+	  r_im_secsys[aa][i] = s_im_secsys[aa][i] +s_im[aa][i]*sqrt(1.0/(2*SIR));
 #endif
 	}
-      }
-
-      if (next_slot == 10) {
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0",r_re[0],lte_frame_parms->samples_per_tti,1,7);
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0_tmp.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
       }
 
   slot_offset_time = next_slot*(lte_frame_parms->samples_per_tti>>1);
@@ -669,6 +687,10 @@ for (aa=0;aa<aa_max;aa++) {
 
 #else //SKIP_RF_CHAIN
 
+      /*-------------------------------------------------------------
+                                   D/A
+      ---------------------------------------------------------------*/
+
       // convert to floating point
       tx_pwr = dac_fixed_gain(s_re,
 			      s_im,
@@ -679,33 +701,7 @@ for (aa=0;aa<aa_max;aa++) {
 			      14,
 			      0);
       printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
-//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 
-      /*-------------------------------------------------------------
-	                     CHANNEL MODEL 
-                         ANTENNA(s) TO ANTENNA(s)
-      ---------------------------------------------------------------*/
-
-      multipath_channel(ch,s_re,s_im,r_re,r_im,
-			amps,Td,BW,ricean_factor,aoa,
-			lte_frame_parms->nb_antennas_tx,
-			lte_frame_parms->nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			1, //forgetting factor (temporal variation, block stationary)
-			((first_call == 1) ? 1 : 0));
-      if (first_call == 1)
-	first_call = 0;
-
-      if (next_slot == 10) {
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0",r_re[0],lte_frame_parms->samples_per_tti,1,7);
-	sprintf(fname,"eNb_frame%d_slot%d_txsig0_tmp.m",mac_xface->frame,next_slot);
-        write_output(fname,"eNb_txs0_tmp",&(txdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
-      }
-
-      //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #ifdef SECONDARY_SYSTEM
    
       // convert to floating point
@@ -718,12 +714,33 @@ for (aa=0;aa<aa_max;aa++) {
 			      14,
 			      0);
       printf("tx_pwr_secsys %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
-//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 
+#endif
+
+     
       /*-------------------------------------------------------------
 	                     CHANNEL MODEL 
                          ANTENNA(s) TO ANTENNA(s)
       ---------------------------------------------------------------*/
+
+//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
+      multipath_channel(ch,s_re,s_im,r_re,r_im,
+			amps,Td,BW,ricean_factor,aoa,
+			lte_frame_parms->nb_antennas_tx,
+			lte_frame_parms->nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call == 1) ? 1 : 0));
+      if (first_call == 1)
+	first_call = 0;
+
+      //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+
+
+#ifdef SECONDARY_SYSTEM   
+//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 
       multipath_channel(ch_secsys,s_re_secsys,s_im_secsys,
 			r_re_secsys,r_im_secsys,
@@ -753,10 +770,13 @@ for (aa=0;aa<aa_max;aa++) {
 #ifdef SECONDARY_SYSTEM
 	  r_re_secsys[aa][i]=r_re_secsys[aa][i]*sqrt(path_loss_secsys/2); 
 	  r_im_secsys[aa][i]=r_im_secsys[aa][i]*sqrt(path_loss_secsys/2); 
+	  // add interference
+	  r_re_secsys[aa][i]=r_re_secsys[aa][i] + r_re[aa][i]; 
+	  r_im_secsys[aa][i]=r_im_secsys[aa][i] + r_im[aa][i]; 
 #endif //SECONDARY_SYSTEM
 	}
       }
-   
+
       /*-------------------------------------------------------------
 	                       RF MODELLING 
                                  RX PART
@@ -773,7 +793,7 @@ for (aa=0;aa<aa_max;aa++) {
 	    500,            // freq offset (Hz) (-20kHz..20kHz)
 	    0.0,            // drift (Hz) NOT YET IMPLEMENTED
 	    nf,             // noise_figure NOT YET IMPLEMENTED
-	    (double)PHY_vars->rx_vars[0].rx_total_gain_dB-72.247,            // rx_gain (dB)
+	    (double)PHY_vars_eNb[0]->rx_total_gain_dB-72.247,            // rx_gain (dB)
 	    200,            // IP3_dBm (dBm)
 	    &ip,            // initial phase
 	    30.0e3,         // pn_cutoff (kHz)
@@ -799,7 +819,7 @@ for (aa=0;aa<aa_max;aa++) {
 	    500,            // freq offset (Hz) (-20kHz..20kHz)
 	    0.0,            // drift (Hz) NOT YET IMPLEMENTED
 	    nf,             // noise_figure NOT YET IMPLEMENTED
-	    (double)PHY_vars->rx_vars[0].rx_total_gain_dB-72.247,            // rx_gain (dB)
+	    (double)PHY_vars_eNb[1]->rx_total_gain_dB-72.247,            // rx_gain (dB)
 	    200,            // IP3_dBm (dBm)
 	    &ip,            // initial phase
 	    30.0e3,         // pn_cutoff (kHz)
@@ -854,9 +874,24 @@ for (aa=0;aa<aa_max;aa++) {
   
   printf("rx_pwr_secsys (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
 
+   if (last_slot==5)  //phy_vars_eNb->is_secondary_eNb && 
+    write_output("srs_received.m","srs_rx", 
+		 &rxdata_secsys[0][slot_offset_time],
+		 PHY_vars_eNb[1]->lte_frame_parms.samples_per_tti>>1,
+		 1,1); //phy_vars_eNb->lte_frame_parms.ofdm_symbol_size
+
 #endif //SECONDARY_SYSTEM
 #endif //SKIP_RF_CHAIN
-  
+
+#ifdef DEBUG_PHY
+      if (next_slot == 7 || next_slot == 9) {
+	sprintf(fname,"UE_frame%d_slot%d_rxsig0.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_rxs0",&rxdata[0][slot_offset_time],640*12,1,1);
+	sprintf(fname,"UE_frame%d_slot%d_rxsig1.m",mac_xface->frame,next_slot);
+	write_output(fname,"UE_rxs1",&rxdata_secsys[0][slot_offset_time],640*12,1,1);
+      }
+#endif
+
   if (last_slot == 19) {
     write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -890,11 +925,6 @@ if (last_slot == 19) {
       printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
       exit(0);
     }
-  
-  result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
-  printf("Read %d bytes\n",result);
-  result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
-  printf("Read %d bytes\n",result);
 
   fclose(rx_frame_file);
   */
@@ -938,13 +968,3 @@ for (i=0;i<2;i++) {
 
   return(n_errors);
 }
-   
-
-
-/*  
-  for (i=1;i<4;i++)
-    memcpy((void *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[i*12*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*2],
-	   (void *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0],
-	   12*OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX*2);
-*/
-

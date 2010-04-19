@@ -188,12 +188,13 @@ void phy_procedures_UE_TX(unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {
 	     0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
 #endif
     }
-    
+   
+    if (!phy_vars_ue->is_secondary_ue) {
 #ifdef DEBUG_PHY
     debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 #endif
-    
-    generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
+      generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
+    }
 
     // get harq_pid from subframe relationship
     harq_pid = subframe2harq_pid_tdd(phy_vars_ue->lte_frame_parms.tdd_config,(next_slot>>1));
@@ -281,9 +282,8 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l, PH
   if (l==0) {
     // UE measurements 
     
-    lte_ue_measurements(&phy_vars_ue->lte_ue_common_vars,
+    lte_ue_measurements(phy_vars_ue,
 			&phy_vars_ue->lte_frame_parms,
-			&PHY_vars->PHY_measurements,
 			(last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,
 			(last_slot == 2) ? 1 : 2,
 			1);
@@ -293,20 +293,20 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l, PH
       
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, last_slot,
-	  PHY_vars->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
-	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
-	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
-	  PHY_vars->PHY_measurements.wideband_cqi[0][0],
-	  PHY_vars->PHY_measurements.wideband_cqi[0][1],
-	  PHY_vars->rx_vars[0].rx_total_gain_dB);
+	  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
+	  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+	  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+	  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
+	  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
+	  phy_vars_ue->rx_total_gain_dB);
       
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
 	  mac_xface->frame, last_slot,
-	  dB_fixed(PHY_vars->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)PHY_vars->rx_vars[0].rx_total_gain_dB,
-	  PHY_vars->PHY_measurements.n0_power_dB[0],
-	  PHY_vars->PHY_measurements.n0_power_dB[1],
-	  PHY_vars->PHY_measurements.n0_power[0],
-	  PHY_vars->PHY_measurements.n0_power[1]);
+	  dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
+	  phy_vars_ue->PHY_measurements.n0_power_dB[0],
+	  phy_vars_ue->PHY_measurements.n0_power_dB[1],
+	  phy_vars_ue->PHY_measurements.n0_power[0],
+	  phy_vars_ue->PHY_measurements.n0_power[1]);
     }
 
   }
@@ -318,11 +318,11 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l, PH
     // AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
       //      if (mac_xface->frame % 10 == 0)
-	phy_adjust_gain (0,512,0);
+      phy_adjust_gain (0,512,0,phy_vars_ue);
     
     eNb_id = 0;
     lte_adjust_synch(&phy_vars_ue->lte_frame_parms,
-		     &phy_vars_ue->lte_ue_common_vars,
+		     phy_vars_ue,
 		     eNb_id,
 		     1,
 		     16384);
@@ -334,14 +334,14 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l, PH
 void phy_procedures_emos_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 
   unsigned char eNb_id,i;
-  memcpy(&emos_dump_UE.PHY_measurements[last_slot],&PHY_vars->PHY_measurements,sizeof(PHY_MEASUREMENTS));
+  memcpy(&emos_dump_UE.PHY_measurements[last_slot],&phy_vars_ue->PHY_measurements,sizeof(PHY_MEASUREMENTS));
   if (last_slot==0) {
       emos_dump_UE.timestamp = rt_get_time_ns();
       emos_dump_UE.frame_rx = mac_xface->frame;
       emos_dump_UE.freq_offset = phy_vars_ue->lte_ue_common_vars.freq_offset;
       emos_dump_UE.timing_advance = openair_daq_vars.timing_advance;
       emos_dump_UE.timing_offset  = PHY_vars->rx_vars[0].offset;
-      emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_vars[0].rx_total_gain_dB;
+      emos_dump_UE.rx_total_gain_dB = phy_vars_ue->rx_total_gain_dB;
       emos_dump_UE.eNb_id = phy_vars_ue->lte_ue_common_vars.eNb_id;
   }
   if (last_slot==1) {
@@ -385,7 +385,7 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
 #ifdef EMOS
     emos_dump_UE.frame_tx = *((unsigned int*) phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output);
     //emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4];
-    //PHY_vars->PHY_measurements.frame_tx = *((unsigned int*) phy_vars_ue->lte_ue_pbch_vars->decoded_output);
+    //phy_vars_eNb->PHY_measurements.frame_tx = *((unsigned int*) phy_vars_ue->lte_ue_pbch_vars->decoded_output);
 #endif
   }
   else {
@@ -457,12 +457,12 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
       msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: missed DCI (dci_cnt %d)!\n",mac_xface->frame,last_slot>>1,dci_cnt);
       msg("[PHY_PROCEDURES_UE][DIAG] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, last_slot,
-	  PHY_vars->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
-	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
-	  PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
-	  PHY_vars->PHY_measurements.wideband_cqi[0][0],
-	  PHY_vars->PHY_measurements.wideband_cqi[0][1],
-	  PHY_vars->rx_vars[0].rx_total_gain_dB);
+	  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
+	  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+	  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+	  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
+	  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
+	  phy_vars_ue->rx_total_gain_dB);
     }
     break;
   default:
@@ -571,7 +571,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 					last_slot>>1,
 					format0,
 					phy_vars_ue->ulsch_ue[eNb_id],
-					&PHY_vars->PHY_measurements,
+					&phy_vars_ue->PHY_measurements,
 					&phy_vars_ue->lte_frame_parms,
 					SI_RNTI,
 					RA_RNTI,
@@ -674,7 +674,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   phy_vars_ue->dlsch_ue[0],
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
 	
 	dlsch_ue_active = 0;
       
@@ -739,7 +740,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
 	
 	//write_output("dlsch_cntl_llr.m","llr",phy_vars_ue->lte_ue_dlsch_vars[eNb_id]->llr[0],40,1,0);
 
@@ -785,7 +787,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   phy_vars_ue->dlsch_ue[0],
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
       if (dlsch_ue_cntl_active == 1) {
 #ifdef DEBUG_PHY
@@ -801,7 +804,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
     }
       
@@ -821,7 +825,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   phy_vars_ue->dlsch_ue[0],
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
       if (dlsch_ue_cntl_active == 1)  {
 #ifdef DEBUG_PHY
@@ -837,7 +842,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
     }
       
@@ -857,7 +863,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   phy_vars_ue->dlsch_ue[0],
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
       if(dlsch_ue_cntl_active == 1) {
 #ifdef DEBUG_PHY
@@ -873,7 +880,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 		   eNb_id_i,
 		   &phy_vars_ue->dlsch_ue_cntl,
 		   m,
-		   dual_stream_UE);
+		   dual_stream_UE,
+		   &phy_vars_ue->PHY_measurements);
       }
     }
   }
@@ -987,7 +995,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
   if (last_slot==4) {
       emos_dump_UE.timestamp = rt_get_time_ns();
       emos_dump_UE.frame_tx = mac_xface->frame;
-      emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_vars[0].rx_total_gain_dB;
+      emos_dump_UE.rx_total_gain_dB = phy_vars_ue->rx_total_gain_dB;
   }
   if (last_slot%2==0) {
     for (i=0; i<2; i++) 
@@ -1109,7 +1117,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       dlsch_eNb_cntl_active = 1;
 
       // Schedule UL subframe
-      /*
+      
       generate_eNb_ulsch_params_from_dci(&UL_alloc_pdu,
 					 C_RNTI,
 					 (next_slot>>1),
@@ -1126,7 +1134,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 	  mac_xface->frame,next_slot>>1,harq_pid);
 #endif
       phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-      */
+      
 
       break;
     case 1:
@@ -1377,7 +1385,29 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 	   lte_eNB_common_vars.srs_ch_estimates[0][0],
 	   NUMBER_OF_eNB_MAX*NB_ANTENNAS_RX*N_RB_UL_EMOS*N_PILOTS_PER_RB_UL);
   }
+
 #endif //EMOS
+
+#ifdef DEBUG_PHY
+  if (last_slot==5) { //phy_vars_eNb->is_secondary_eNb && 
+    write_output("srs_channel_slot5.m","srs_ch_5", 
+		 phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][0],
+		 phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,
+		 1,1); //phy_vars_eNb->lte_frame_parms.ofdm_symbol_size
+  }
+  if (last_slot==7) { //phy_vars_eNb->is_secondary_eNb && 
+    write_output("srs_channel_slot7.m","srs_ch_7", 
+		 phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][0],
+		 phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,
+		 1,1); //phy_vars_eNb->lte_frame_parms.ofdm_symbol_size
+  }
+  if (last_slot==9) { //phy_vars_eNb->is_secondary_eNb && 
+    write_output("srs_channel_slot9.m","srs_ch_9", 
+		 phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][0],
+		 phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,
+		 1,1); //phy_vars_eNb->lte_frame_parms.ofdm_symbol_size
+  }
+#endif
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
@@ -1393,7 +1423,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 			   eNb_id,  // this is the effective sector id
 			   UE_id,   // this is the UE instance to act upon
 			   phy_vars_eNb->ulsch_eNb);
-    eNB_UE_stats[eNb_id].UL_rssi[UE_id] = dB_fixed(ulsch_power) - PHY_vars->rx_vars[0].rx_total_gain_dB;
+    eNB_UE_stats[eNb_id].UL_rssi[UE_id] = dB_fixed(ulsch_power) - phy_vars_eNb->rx_total_gain_dB;
 
     debug_msg("[PHY PROCEDURES_LTE] frame %d, slot %d, subframe %d: ULSCH RX power %d dB\n",mac_xface->frame,last_slot,last_slot>>1,dB_fixed(ulsch_power));
 
@@ -1422,14 +1452,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
     
     rx_power = 0;
     for (aarx=0; aarx<lte_frame_parms.nb_antennas_rx; aarx++) {
-      PHY_vars->PHY_measurements.rx_power[eNb_id][aarx] = 
+      phy_vars_ue->PHY_measurements.rx_power[eNb_id][aarx] = 
 	signal_energy_nodc(lte_eNB_common_vars.rxdataF[eNb_id][aarx],
 		      lte_frame_parms.ofdm_symbol_size*lte_frame_parms.symbols_per_tti);
-      PHY_vars->PHY_measurements.rx_power_dB[eNb_id][aarx] = dB_fixed(PHY_vars->PHY_measurements.rx_power[eNb_id][aarx]);
-      rx_power +=  PHY_vars->PHY_measurements.rx_power[eNb_id][aarx];
+      phy_vars_ue->PHY_measurements.rx_power_dB[eNb_id][aarx] = dB_fixed(phy_vars_ue->PHY_measurements.rx_power[eNb_id][aarx]);
+      rx_power +=  phy_vars_ue->PHY_measurements.rx_power[eNb_id][aarx];
 
     }
-    PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
+    phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNb_id] = dB_fixed(rx_power);
 
     // AGC
     //if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
@@ -1437,7 +1467,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
     //phy_adjust_gain (0,16384,0);
 
 #ifdef DEBUG_PHY      
-    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,PHY_vars->PHY_measurements.rx_avg_power_dB[eNb_id] );
+    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: SRS channel estimation: avg_power_dB = %d\n",mac_xface->frame,last_slot,phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNb_id] );
 #endif
   }
   */

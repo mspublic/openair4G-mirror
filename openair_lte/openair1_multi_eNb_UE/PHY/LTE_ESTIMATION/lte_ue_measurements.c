@@ -44,9 +44,8 @@ void print_ints(char *s,__m128i *x) {
 __m128i pmi128_re,pmi128_im;
 __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 
-void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
+void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 LTE_DL_FRAME_PARMS *frame_parms,
-			 PHY_MEASUREMENTS *phy_measurements,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
 			 unsigned char init_averaging){
@@ -79,25 +78,25 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
   // noise measurements
   // for the moment we measure the noise on the third OFDM symbol (e.g. S subframe) 
   if (N0_symbol == 1)
-    phy_measurements->n0_power_tot = 0;
+    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     if (N0_symbol == 0) {
-      phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_vars[0].rx_total_gain_dB;
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = -105 + phy_vars_ue->rx_total_gain_dB;
     } 
     else if (N0_symbol == 1) {
 #ifdef USER_MODE
-      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
-      phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->fdm_symbol_size);
 #endif
-      phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
-      phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
+      phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     }
   }
 
   if (N0_symbol == 1) {
-    phy_measurements->n0_power_tot_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
+    phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot);
     //    printf("n0_power %d\n",phy_measurements->n0_avg_power_dB);
   }
 
@@ -106,44 +105,43 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       for (eNB_id=0;eNB_id<3;eNB_id++) {
 	  
-	phy_measurements->rx_spatial_power[eNB_id][aatx][aarx] = 
-	  (signal_energy_nodc(&ue_common_vars->dl_ch_estimates[eNB_id][(aatx*frame_parms->nb_antennas_tx) + aarx][8],
-			      (frame_parms->N_RB_DL*12)-8)*rx_power_correction) - 
-	  phy_measurements->n0_power[aarx];
+	phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
+	  (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx*frame_parms->nb_antennas_tx) + aarx][8],(frame_parms->N_RB_DL*12)-8)*rx_power_correction) - 
+	  phy_vars_ue->PHY_measurements.n0_power[aarx];
 	  
-	phy_measurements->rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(phy_measurements->rx_spatial_power[eNB_id][aatx][aarx]);
+	phy_vars_ue->PHY_measurements.rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx]);
 
 	if (aatx==0)
-	  phy_measurements->wideband_cqi[eNB_id][aarx] = phy_measurements->rx_spatial_power[eNB_id][aatx][aarx];
+	  phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx] = phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
 	else
-	  phy_measurements->wideband_cqi[eNB_id][aarx] += phy_measurements->rx_spatial_power[eNB_id][aatx][aarx];
+	  phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx] += phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
       }
     }
 
     for (eNB_id = 0; eNB_id < 3; eNB_id++){
       //      phy_measurements->rx_power[eNB_id][aarx]/=frame_parms->nb_antennas_tx;
-      phy_measurements->wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_measurements->wideband_cqi[eNB_id][aarx]);
-      rx_power[eNB_id] += phy_measurements->wideband_cqi[eNB_id][aarx];
-      //      phy_measurements->rx_avg_power_dB[eNB_id] += phy_measurements->rx_power_dB[eNB_id][aarx];
+      phy_vars_ue->PHY_measurements.wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx]);
+      rx_power[eNB_id] += phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx];
+      //      phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNB_id] += phy_vars_ue->PHY_measurements.rx_power_dB[eNB_id][aarx];
     }
 
   }
 
   for (eNB_id = 0; eNB_id < 3; eNB_id++){
-    //    phy_measurements->rx_avg_power_dB[eNB_id]/=frame_parms->nb_antennas_rx;
+    //    phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNB_id]/=frame_parms->nb_antennas_rx;
     if (init_averaging == 0)
       rx_power_avg[eNB_id] = ((k1*rx_power_avg[eNB_id]) + (k2*rx_power[eNB_id]))>>10;
     else
       rx_power_avg[eNB_id] = rx_power[eNB_id];
 
-    phy_measurements->wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_measurements->n0_power_tot);
+    phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_vars_ue->PHY_measurements.n0_power_tot);
 
-    phy_measurements->rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])-PHY_vars->rx_vars[0].rx_total_gain_dB;
+    phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])- phy_vars_ue->rx_total_gain_dB;
  
     //    if (eNB_id == 0)
-    //      printf("rx_power_avg[0] %d (%d,%d)\n",rx_power_avg[0],phy_measurements->rx_avg_power_dB[0],phy_measurements->rx_rssi_dBm[eNB_id]);
+    //      printf("rx_power_avg[0] %d (%d,%d)\n",rx_power_avg[0],phy_vars_ue->PHY_measurements.rx_avg_power_dB[0],phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id]);
  
-    //    printf("lte_ue_measurements: rx_power_dB[%d] %d (%f), sinr %d,cqi %d\n",eNB_id,phy_measurements->rx_avg_power_dB[eNB_id],10*log10(rx_power[eNB_id]),phy_measurements->wideband_sinr[eNB_id],phy_measurements->wideband_cqi[eNB_id]);
+    //    printf("lte_ue_measurements: rx_power_dB[%d] %d (%f), sinr %d,cqi %d\n",eNB_id,phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNB_id],10*log10(rx_power[eNB_id]),phy_vars_ue->PHY_measurements.wideband_sinr[eNB_id],phy_measurements->wideband_cqi[eNB_id]);
   
 
 
@@ -151,49 +149,49 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     if (eNB_id == 0) {
 
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	dl_ch0    = &ue_common_vars->dl_ch_estimates[eNB_id][aarx][4];
-	dl_ch1    = &ue_common_vars->dl_ch_estimates[eNB_id][2+aarx][4];
+	dl_ch0    = &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][4];
+	dl_ch1    = &phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][4];
 	
 	for (subband=0;subband<7;subband++) {
 	  
 	  // cqi
 	  if (aarx==0)
-	    phy_measurements->subband_cqi_tot[eNB_id][subband]=0;
+	    phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband]=0;
 
 	  if (subband<6) {
 	    //	    for (i=0;i<48;i++)
 	    //	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-	    phy_measurements->subband_cqi[eNB_id][aarx][subband] = 
-	      (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction - phy_measurements->n0_power[aarx];
+	    phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] = 
+	      (signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction - phy_vars_ue->PHY_measurements.n0_power[aarx];
 	      
-	    phy_measurements->subband_cqi_tot[eNB_id][subband] += phy_measurements->subband_cqi[eNB_id][aarx][subband];
-	    phy_measurements->subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][subband],
-										phy_measurements->n0_power[aarx]);
+	    phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband] += phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband];
+	    phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband],
+										phy_vars_ue->PHY_measurements.n0_power[aarx]);
 	  }
 	  else {
 	    //	    for (i=0;i<12;i++)
 	      //	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]); 
-	    phy_measurements->subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,12) + signal_energy_nodc(dl_ch1,12))*rx_power_correction - phy_measurements->n0_power[aarx];
-	    phy_measurements->subband_cqi_tot[eNB_id][subband] += phy_measurements->subband_cqi[eNB_id][aarx][subband];
-	    phy_measurements->subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][subband],
-										phy_measurements->n0_power[aarx]);							
+	    phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,12) + signal_energy_nodc(dl_ch1,12))*rx_power_correction - phy_vars_ue->PHY_measurements.n0_power[aarx];
+	    phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband] += phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband];
+	    phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband],
+										phy_vars_ue->PHY_measurements.n0_power[aarx]);							
 	  }
 	  dl_ch1+=48;
 	  dl_ch0+=48;
-	  //	  msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,phy_measurements->subband_cqi[eNB_id][aarx][subband],phy_measurements->subband_cqi_dB[eNB_id][aarx][subband]);
+	  //	  msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband],phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][aarx][subband]);
 	}
 	
       }
       for (subband=0;subband<7;subband++) {
-	phy_measurements->subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(phy_measurements->subband_cqi_tot[eNB_id][subband],phy_measurements->n0_power_tot);
-	//	  msg("subband_cqi_tot[%d][%d] => %d dB (n0 %d)\n",eNB_id,subband,phy_measurements->subband_cqi_tot_dB[eNB_id][subband],phy_measurements->n0_power_tot);
+	phy_vars_ue->PHY_measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband],phy_vars_ue->PHY_measurements.n0_power_tot);
+	//	  msg("subband_cqi_tot[%d][%d] => %d dB (n0 %d)\n",eNB_id,subband,phy_vars_ue->PHY_measurements.subband_cqi_tot_dB[eNB_id][subband],phy_vars_ue->PHY_measurements.n0_power_tot);
       }
       if (frame_parms->nb_antennas_tx == 2) {
 	
 	
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
-	  dl_ch0_128    = (__m128i *)&ue_common_vars->dl_ch_estimates[eNB_id][aarx][8];
-	  dl_ch1_128    = (__m128i *)&ue_common_vars->dl_ch_estimates[eNB_id][2+aarx][8];
+	  dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][8];
+	  dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][8];
 	  
 	  for (subband=0;subband<7;subband++) {
 	    
@@ -226,11 +224,11 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	      dl_ch0_128++;
 	      dl_ch1_128++;
 	    }
-	    phy_measurements->subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((short *)&pmi128_re)[1] + ((short *)&pmi128_re)[2] + ((short *)&pmi128_re)[3])>>2;
-	    phy_measurements->subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((short *)&pmi128_im)[1] + ((short *)&pmi128_im)[2] + ((short *)&pmi128_im)[3])>>2;
-	    phy_measurements->wideband_pmi_re[eNB_id][aarx] += phy_measurements->subband_pmi_re[eNB_id][subband][aarx];
-	    phy_measurements->wideband_pmi_im[eNB_id][aarx] += phy_measurements->subband_pmi_im[eNB_id][subband][aarx];
-	    //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_measurements->subband_pmi_re[eNB_id][subband][aarx],phy_measurements->subband_pmi_im[eNB_id][subband][aarx]);
+	    phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((short *)&pmi128_re)[1] + ((short *)&pmi128_re)[2] + ((short *)&pmi128_re)[3])>>2;
+	    phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((short *)&pmi128_im)[1] + ((short *)&pmi128_im)[2] + ((short *)&pmi128_im)[3])>>2;
+	    phy_vars_ue->PHY_measurements.wideband_pmi_re[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_re[eNB_id][subband][aarx];
+	    phy_vars_ue->PHY_measurements.wideband_pmi_im[eNB_id][aarx] += phy_vars_ue->PHY_measurements.subband_pmi_im[eNB_id][subband][aarx];
+	    //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_vars_ue->phy_measurements.subband_pmi_re[eNB_id][subband][aarx],phy_vars_ue->phy_measurements.subband_pmi_im[eNB_id][subband][aarx]);
 	    
 	  } // subband loop
 	} // rx antenna loop
@@ -238,12 +236,12 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     }  // if eNB_id == 0
 
     if (eNB_id == 0) {
-      phy_measurements->rank[eNB_id] = 0;
+      phy_vars_ue->PHY_measurements.rank[eNB_id] = 0;
       for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
-	if (phy_measurements->subband_cqi_dB[eNB_id][0][i] >= phy_measurements->subband_cqi_dB[eNB_id][1][i])
-	  phy_measurements->selected_rx_antennas[eNB_id][i] = 0;
+	if (phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][0][i] >= phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][1][i])
+	  phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i] = 0;
 	else
-	  phy_measurements->selected_rx_antennas[eNB_id][i] = 1;
+	  phy_vars_ue->PHY_measurements.selected_rx_antennas[eNB_id][i] = 1;
       }
     }
   }  // eNB_id loop

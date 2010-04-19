@@ -4,6 +4,9 @@
 #include "PHY/types.h"
 #include "PHY/defs.h" 
 
+unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
+unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
+
 PHY_CONFIG *PHY_config;
 
 unsigned int slot_count;
@@ -11,6 +14,7 @@ unsigned int slot_count;
 int node_configured=-1,node_running = 0;
 unsigned int chbch_error_cnt[2],chbch_running_error_cnt[2];
 unsigned int mchrach_error_cnt[2][8],sach_error_cnt=0;
+
 
 //unsigned char synch_source=0;
 
@@ -32,7 +36,7 @@ int *primary_synch2_time;
 
 #include "PHY/CODING/vars.h"
 
-//PHY_VARS *PHY_vars;
+PHY_VARS *PHY_vars;
 
 short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
 
@@ -67,8 +71,11 @@ LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
+UE_MODE_t UE_mode;
 
 #include "PHY/LTE_TRANSPORT/vars.h"
 

@@ -888,7 +888,8 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 				unsigned char symbol,
 				unsigned char mod_order,
 				unsigned short nb_rb,
-				unsigned char output_shift)
+				unsigned char output_shift,
+				PHY_VARS_UE *phy_vars_ue)
 \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
 @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
 @param dl_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
@@ -901,6 +902,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 @param mod_order Modulation order of allocation
 @param nb_rb Number of RBs in allocation
 @param output_shift Rescaling for compensated output (should be energy-normalizing)
+@param UE PHY_measurements
 */
 void dlsch_channel_compensation(int **rxdataF_ext,
 				int **dl_ch_estimates_ext,
@@ -912,7 +914,8 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 				unsigned char symbol,
 				unsigned char mod_order,
 				unsigned short nb_rb,
-				unsigned char output_shift);
+				unsigned char output_shift,
+				PHY_MEASUREMENTS *phy_measurements);
 
 /** \fn dlsch_channel_level(int **dl_ch_estimates_ext,
 			 LTE_DL_FRAME_PARMS *frame_parms,
@@ -976,6 +979,7 @@ unsigned int dlsch_decoding(short *dlsch_llr,
 @param dlsch_ue 
 @param symbol Symbol on which to act (within sub-frame)
 @param dual_stream_UE Flag to indicate dual-stream interference cancellation
+@param UE PHY_measurements
 */
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
@@ -984,7 +988,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     unsigned char eNb_id_i,
 	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
-	     unsigned char dual_stream_UE);
+	     unsigned char dual_stream_UE,
+	     PHY_MEASUREMENTS *phy_measurements);
 
 int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
