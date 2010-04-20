@@ -4,12 +4,12 @@
 %close all;
 %warning off all
 %format('long');
-load 'estimates.mat';
-load 'SISO.mat';
+load 'estimates.mat'
+load 'SISO.mat'
 %M1=4;% QAM on first antenna
 [x, y, z] = size(estimates(1).channel);
 
-z = z/4;
+z = z/2;
 h = zeros(1,z);
 
 MultiAntenna_Rx = 1; % 0 for Single antenna receivers
@@ -41,31 +41,31 @@ for est=1:length(estimates)
     if MultiAntenna_Rx == 1
         
         % Channels for Sector 1
-        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:2*z)) + 1j*double(estimates(est).channel(1,1,2:2:2*z));
-        h_eNB1_h12 = double(estimates(est).channel(1,2,1:2:2*z)) + 1j*double(estimates(est).channel(1,2,2:2:2*z));
-        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:2*z)) + 1j*double(estimates(est).channel(1,3,2:2:2*z));
-        h_eNB1_h22 = double(estimates(est).channel(1,4,1:2:2*z)) + 1j*double(estimates(est).channel(1,4,2:2:2*z));
+        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:end)) + 1j*double(estimates(est).channel(1,1,2:2:end));
+        h_eNB1_h12 = double(estimates(est).channel(1,2,1:2:end)) + 1j*double(estimates(est).channel(1,2,2:2:end));
+        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:end)) + 1j*double(estimates(est).channel(1,3,2:2:end));
+        h_eNB1_h22 = double(estimates(est).channel(1,4,1:2:end)) + 1j*double(estimates(est).channel(1,4,2:2:end));
         % Channels for Sector 2
-        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:2*z)) + 1j*double(estimates(est).channel(2,1,2:2:2*z));
-        h_eNB2_h12 = double(estimates(est).channel(2,2,1:2:2*z)) + 1j*double(estimates(est).channel(2,2,2:2:2*z));
-        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:2*z)) + 1j*double(estimates(est).channel(2,3,2:2:2*z));
-        h_eNB2_h22 = double(estimates(est).channel(2,4,1:2:2*z)) + 1j*double(estimates(est).channel(2,4,2:2:2*z));
+        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:end)) + 1j*double(estimates(est).channel(2,1,2:2:end));
+        h_eNB2_h12 = double(estimates(est).channel(2,2,1:2:end)) + 1j*double(estimates(est).channel(2,2,2:2:end));
+        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:end)) + 1j*double(estimates(est).channel(2,3,2:2:end));
+        h_eNB2_h22 = double(estimates(est).channel(2,4,1:2:end)) + 1j*double(estimates(est).channel(2,4,2:2:end));
         % Channels for Sector 3
-        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:2*z)) + 1j*double(estimates(est).channel(3,1,2:2:2*z));
-        h_eNB3_h12 = double(estimates(est).channel(3,2,1:2:2*z)) + 1j*double(estimates(est).channel(3,2,2:2:2*z));
-        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:2*z)) + 1j*double(estimates(est).channel(3,3,2:2:2*z));
-        h_eNB3_h22 = double(estimates(est).channel(3,4,1:2:2*z)) + 1j*double(estimates(est).channel(3,4,2:2:2*z));
+        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:end)) + 1j*double(estimates(est).channel(3,1,2:2:end));
+        h_eNB3_h12 = double(estimates(est).channel(3,2,1:2:end)) + 1j*double(estimates(est).channel(3,2,2:2:end));
+        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:end)) + 1j*double(estimates(est).channel(3,3,2:2:end));
+        h_eNB3_h22 = double(estimates(est).channel(3,4,1:2:end)) + 1j*double(estimates(est).channel(3,4,2:2:end));
         
         for qq=1:4
             
-            Rx1(qq).eNB1 =  abs(h_eNB1_h11 + qi(qq)*h_eNB1_h21).^2;
-            Rx2(qq).eNB1 =  abs(h_eNB1_h12 + qi(qq)*h_eNB1_h22).^2;
+            Rx1(qq).eNB1 =  abs(h_eNB1_h11(1,1,1:200) + qi(qq)*h_eNB1_h21(1,1,1:200)).^2;
+            Rx2(qq).eNB1 =  abs(h_eNB1_h12(1,1,1:200) + qi(qq)*h_eNB1_h22(1,1,1:200)).^2;
             
-            Rx1(qq).eNB2 =  abs(h_eNB2_h11 + qi(qq)*h_eNB2_h21).^2;
-            Rx2(qq).eNB2 =  abs(h_eNB2_h12 + qi(qq)*h_eNB2_h22).^2;
+            Rx1(qq).eNB2 =  abs(h_eNB2_h11(1,1,1:200) + qi(qq)*h_eNB2_h21(1,1,1:200)).^2;
+            Rx2(qq).eNB2 =  abs(h_eNB2_h12(1,1,1:200) + qi(qq)*h_eNB2_h22(1,1,1:200)).^2;
             
-            Rx1(qq).eNB3 =  abs(h_eNB3_h11 + qi(qq)*h_eNB3_h21).^2;
-            Rx2(qq).eNB3 =  abs(h_eNB3_h12 + qi(qq)*h_eNB3_h22).^2;
+            Rx1(qq).eNB3 =  abs(h_eNB3_h11(1,1,1:200) + qi(qq)*h_eNB3_h21(1,1,1:200)).^2;
+            Rx2(qq).eNB3 =  abs(h_eNB3_h12(1,1,1:200) + qi(qq)*h_eNB3_h22(1,1,1:200)).^2;
         end
         
         for i=1:4
@@ -82,33 +82,57 @@ for est=1:length(estimates)
         [value_eNB3, index_eNB3] = max(sum_eNB3_q);
         
         %SNR calculation
-        SNR_eNB1(1, :, est) = SNR_eNB1_q(index_eNB1).snr;
-        SNR_eNB2(1, :, est) = SNR_eNB2_q(index_eNB2).snr;
-        SNR_eNB3(1, :, est) = SNR_eNB3_q(index_eNB3).snr;
+        SNR_eNB1(1, 1:200, est) = SNR_eNB1_q(index_eNB1).snr;
+        SNR_eNB2(1, 1:200, est) = SNR_eNB2_q(index_eNB2).snr;
+        SNR_eNB3(1, 1:200, est) = SNR_eNB3_q(index_eNB3).snr;
+        
+        % after feedback in 3rd subframe
+        
+        q = double(estimates(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates(1).phy_measurements(1).subband_pmi_im(1,1,1));
+        
+        
+        qq = quantize_q(q);
+        
+            Rx11.eNB1 =  abs(h_eNB1_h11(1,1,201:end) + qq*h_eNB1_h21(1,1,201:end)).^2;
+            Rx22.eNB1 =  abs(h_eNB1_h12(1,1,201:end) + qq*h_eNB1_h22(1,1,201:end)).^2;
+            
+            Rx11.eNB2 =  abs(h_eNB2_h11(1,1,201:end) + qq*h_eNB2_h21(1,1,201:end)).^2;
+            Rx22.eNB2 =  abs(h_eNB2_h12(1,1,201:end) + qq*h_eNB2_h22(1,1,201:end)).^2;
+            
+            Rx11.eNB3 =  abs(h_eNB3_h11(1,1,201:end) + qq*h_eNB3_h21(1,1,201:end)).^2;
+            Rx22.eNB3 =  abs(h_eNB3_h12(1,1,201:end) + qq*h_eNB3_h22(1,1,201:end)).^2;
+       
+        
+       
+            SNR_eNB1(1, 201:end, est) = 10*log10((Rx11.eNB1(:) + Rx22.eNB1(:))/N0);
+            SNR_eNB2(1, 201:end, est) = 10*log10((Rx11.eNB2(:) + Rx22.eNB2(:))/N0);
+            SNR_eNB3(1, 201:end, est) = 10*log10((Rx11.eNB3(:) + Rx22.eNB3(:))/N0);
+            
+        
         
     else
         % Channels for Sector 1
-        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:2*z)) + 1j*double(estimates(est).channel(1,1,2:2:2*z));
-        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:2*z)) + 1j*double(estimates(est).channel(1,3,2:2:2*z));
+        h_eNB1_h11 = double(estimates(est).channel(1,1,1:2:end)) + 1j*double(estimates(est).channel(1,1,2:2:end));
+        h_eNB1_h21 = double(estimates(est).channel(1,3,1:2:end)) + 1j*double(estimates(est).channel(1,3,2:2:end));
         
         % Channels for Sector 2
-        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:2*z)) + 1j*double(estimates(est).channel(2,1,2:2:2*z));
-        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:2*z)) + 1j*double(estimates(est).channel(2,3,2:2:2*z));
+        h_eNB2_h11 = double(estimates(est).channel(2,1,1:2:end)) + 1j*double(estimates(est).channel(2,1,2:2:end));
+        h_eNB2_h21 = double(estimates(est).channel(2,3,1:2:end)) + 1j*double(estimates(est).channel(2,3,2:2:end));
         
         % Channels for Sector 3
-        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:2*z)) + 1j*double(estimates(est).channel(3,1,2:2:2*z));
-        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:2*z)) + 1j*double(estimates(est).channel(3,3,2:2:2*z));
+        h_eNB3_h11 = double(estimates(est).channel(3,1,1:2:end)) + 1j*double(estimates(est).channel(3,1,2:2:end));
+        h_eNB3_h21 = double(estimates(est).channel(3,3,1:2:end)) + 1j*double(estimates(est).channel(3,3,2:2:end));
         
         
         for qq=1:4
             
-            Rx1(qq).eNB1 =  abs(h_eNB1_h11 + qi(qq)*h_eNB1_h21).^2;
+             Rx1(qq).eNB1 =  abs(h_eNB1_h11(1,1,1:200) + qi(qq)*h_eNB1_h21(1,1,1:200)).^2;
             %Rx2(qq).eNB1 =  abs(h_eNB1_h12 + qi(qq)*h_eNB1_h22).^2;
             
-            Rx1(qq).eNB2 =  abs(h_eNB2_h11 + qi(qq)*h_eNB2_h21).^2;
+            Rx1(qq).eNB2 =  abs(h_eNB2_h11(1,1,1:200) + qi(qq)*h_eNB2_h21(1,1,1:200)).^2;
             %Rx2(qq).eNB2 =  abs(h_eNB2_h12 + qi(qq)*h_eNB2_h22).^2;
             
-            Rx1(qq).eNB3 =  abs(h_eNB3_h11 + qi(qq)*h_eNB3_h21).^2;
+            Rx1(qq).eNB3 =  abs(h_eNB3_h11(1,1,1:200) + qi(qq)*h_eNB3_h21(1,1,1:200)).^2;
             %Rx2(qq).eNB3 =  abs(h_eNB3_h12 + qi(qq)*h_eNB3_h22).^2;
         end
         
@@ -126,10 +150,31 @@ for est=1:length(estimates)
         [value_eNB3, index_eNB3] = max(sum_eNB3_q);
         
         %SNR calculation for
-        SNR_eNB1(1, :, est) = SNR_eNB1_q(index_eNB1).snr;
-        SNR_eNB2(1, :, est) = SNR_eNB2_q(index_eNB2).snr;
-        SNR_eNB3(1, :, est) = SNR_eNB3_q(index_eNB3).snr;
+        SNR_eNB1(1, 1:200, est) = SNR_eNB1_q(index_eNB1).snr;
+        SNR_eNB2(1, 1:200, est) = SNR_eNB2_q(index_eNB2).snr;
+        SNR_eNB3(1, 1:200, est) = SNR_eNB3_q(index_eNB3).snr;
+
+         % after feedback in 3rd subframe
         
+        q = double(estimates(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates(1).phy_measurements(1).subband_pmi_im(1,1,1));
+        
+        
+        qq = quantize_q(q);
+        
+            Rx11.eNB1 =  abs(h_eNB1_h11(1,1,201:end) + qq*h_eNB1_h21(1,1,201:end)).^2;
+           % Rx22.eNB1 =  abs(h_eNB1_h12(1,1,201:end) + qq*h_eNB1_h22(1,1,201:end)).^2;
+            
+            Rx11.eNB2 =  abs(h_eNB2_h11(1,1,201:end) + qq*h_eNB2_h21(1,1,201:end)).^2;
+           % Rx22.eNB2 =  abs(h_eNB2_h12(1,1,201:end) + qq*h_eNB2_h22(1,1,201:end)).^2;
+            
+            Rx11.eNB3 =  abs(h_eNB3_h11(1,1,201:end) + qq*h_eNB3_h21(1,1,201:end)).^2;
+            %Rx22.eNB3 =  abs(h_eNB3_h12(1,1,201:end) + qq*h_eNB3_h22(1,1,201:end)).^2;
+       
+        
+       
+            SNR_eNB1(1, 201:end, est) = 10*log10((Rx11.eNB1(:))/N0);
+            SNR_eNB2(1, 201:end, est) = 10*log10((Rx11.eNB2(:))/N0);
+            SNR_eNB3(1, 201:end, est) = 10*log10((Rx11.eNB3(:))/N0);
     end
     
     nan_in_SNR = isnan(SNR_eNB1);
