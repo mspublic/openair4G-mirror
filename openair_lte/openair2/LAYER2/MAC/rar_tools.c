@@ -32,7 +32,7 @@ unsigned short fill_rar(unsigned char *dlsch_buffer,
   rar->Timing_Advance_Command = timing_advance_cmd;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = computeRIV(N_RB_UL,0,2);
-  rar->mcs                    = 1;
+  rar->mcs                    = 2;
   rar->TPC                    = 0;
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
