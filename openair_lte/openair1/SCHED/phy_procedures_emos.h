@@ -1,11 +1,11 @@
 #ifndef __PHY_PROCEDURES_EMOS_H__
 #define __PHY_PROCEDURES_EMOS_H__
 
-#ifndef USER_MODE 
+//#ifndef USER_MODE 
 #include <rtai.h>
-#else
-typedef long long unsigned int RTIME;
-#endif
+//#else
+//typedef long long unsigned int RTIME;
+//#endif
 //#include "PHY/TOOLS/defs.h"
 #include "PHY/defs.h"
 

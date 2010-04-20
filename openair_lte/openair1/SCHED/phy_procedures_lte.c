@@ -531,9 +531,9 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   
   unsigned char eNb_id;
-
 #ifdef EMOS
   unsigned char aa;
+
   // first slot in frame is special
   if (((last_slot==0) || (last_slot==1) || (last_slot==12) || (last_slot==13)) && 
       ((l==0) || (l==4-lte_frame_parms->Ncp))) {
@@ -668,9 +668,9 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
       emos_dump_eNb.rx_total_gain_dB = PHY_vars->rx_total_gain_eNB_dB;
   }
 
-  if (last_slot==10) {
+  if (last_slot==8) {
     emos_dump_eNb.ulsch_errors = ulsch_errors;
-    memcpy(&emos_dump_eNb.PHY_measurements_eNB,&PHY_vars->PHY_measurements_eNB[0],3*sizeof(PHY_MEASUREMENTS_eNB));
+    memcpy(&emos_dump_eNb.PHY_measurements_eNB[0],&PHY_vars->PHY_measurements_eNB[0],3*sizeof(PHY_MEASUREMENTS_eNB));
 
   }
 

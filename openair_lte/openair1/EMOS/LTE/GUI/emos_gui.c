@@ -642,13 +642,18 @@ void refresh_interface()
   double snr_lin;
 
   static RTIME last_timestamp = (RTIME) 0; 
+  static RTIME timestamp = (RTIME) 0; 
   int disp_min_power = 30;
 	
-  if ((data_buffer) && (is_cluster_head==0))
+  if (data_buffer)
     {
+      if (is_cluster_head)
+	timestamp = fifo_output_eNB.timestamp;
+      else
+	timestamp = fifo_output_UE.timestamp;
 
       // Prepare data for Power meters
-      if (last_timestamp != fifo_output_UE.timestamp)
+      if (last_timestamp != timestamp)
 	{
 	  //printf("rx_power=%d, noise_power=%d, snr=%d\n",fifo_output->rx_power_db[0],fifo_output->n0_power_db[0],fifo_output->rx_power_db[0]-fifo_output->n0_power_db[0]);
 
@@ -667,7 +672,7 @@ void refresh_interface()
 	  }
 		  
 		    
-	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(fifo_output_UE.timestamp - start_time) / (float)1e9;
+	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(timestamp - start_time) / (float)1e9;
 	  for (chsch_index=0;chsch_index<2;chsch_index++){
 	    if (!is_cluster_head) {
 	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
@@ -678,12 +683,12 @@ void refresh_interface()
 	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
 	    }
 	    else {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -691,7 +696,7 @@ void refresh_interface()
 	  values_in_memory = SCREEN_MEMORY_SIZE;
 	}
 
-      last_timestamp = fifo_output_UE.timestamp;
+      last_timestamp = timestamp;
 		
       // Pannel widgets
       /////////////////////////////
@@ -702,10 +707,10 @@ void refresh_interface()
       // Power meters
       fl_set_xyplot_data(main_frm->pwr1_xyp, time_memory, power1_memory[0], values_in_memory, "", "time (s)", "dBm");
       //fl_add_xyplot_overlay(main_frm->pwr1_xyp, 1, time_memory, power1_memory[1], values_in_memory, FL_BLUE);
-      fl_set_xyplot_ybounds(main_frm->pwr1_xyp,	-100, -40);
+      fl_set_xyplot_ybounds(main_frm->pwr1_xyp,	-110, -40);
       fl_set_xyplot_data(main_frm->pwr2_xyp, time_memory, power2_memory[0], values_in_memory, "", "time (s)", "dBm");
       //fl_add_xyplot_overlay(main_frm->pwr2_xyp, 1, time_memory, power2_memory[1], values_in_memory, FL_BLUE);
-      fl_set_xyplot_ybounds(main_frm->pwr2_xyp,	-100, -40);
+      fl_set_xyplot_ybounds(main_frm->pwr2_xyp,	-110, -40);
 		
       if (noise_selector == N0)
 	{
@@ -728,6 +733,7 @@ void refresh_interface()
 	}
       // Channel response
       // if(domain_selector == FREQ_DOMAIN)
+      if (is_cluster_head==0)
 	{
 
 	  //convert to float
@@ -848,10 +854,12 @@ void refresh_interface()
 	    }
 	}
       */		
+      if (!is_cluster_head) {
       // BLER
 	sprintf(temp_label, "BLER: %d%%", fifo_output_UE.pbch_fer[0]);
 	fl_set_object_label(main_frm->bler_lbl, temp_label);
 	fl_set_object_lcolor(main_frm->bler_lbl, SCREEN_COLOR_ON);
+      }
 
       // RX mode
       if (!is_cluster_head) {
@@ -1072,13 +1080,13 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		is_cluster_head = 1;
 		node_id = 0; 
 		PHY_config->tdd = 1;
-		PHY_config->dual_tx = 1;
+		PHY_config->dual_tx = 0;
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
-		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_eNb);
+		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_ue);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==2) {
