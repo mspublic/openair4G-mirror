@@ -99,6 +99,7 @@ int setup_regs(unsigned char card_id) {
   pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
   //printk("[openair][INIT] freq0 = %d, freq1 = %d\n",(pci_interface[card_id]->freq_info>>1)&3,(pci_interface[card_id]->freq_info>>3)&3);
 
+  
   pci_interface[card_id]->rx_rf_mode = openair_daq_vars.rx_rf_mode;
 
   //printk("[openair][INIT] rx_gain_val = %d\n",openair_daq_vars.rx_gain_val);

@@ -13,3 +13,6 @@ extern unsigned char cs_ri_normal[4];
 extern unsigned char cs_ri_extended[4];
 extern unsigned char cs_ack_normal[4];
 extern unsigned char cs_ack_extended[4];
+
+
+extern unsigned char ue_power_offsets[25];

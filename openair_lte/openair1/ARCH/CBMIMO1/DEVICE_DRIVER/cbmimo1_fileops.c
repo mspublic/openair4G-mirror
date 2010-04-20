@@ -290,11 +290,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_running = 0;
 
 	openair_daq_vars.timing_advance = 19;
-	openair_daq_vars.dlsch_transmission_mode = 2; //ALAMOUTI
+	openair_daq_vars.dlsch_transmission_mode = openair_daq_vars.dlsch_transmission_mode; //ALAMOUTI
 	openair_daq_vars.target_ue_dl_mcs = 0;
 	openair_daq_vars.target_ue_ul_mcs = 0;
 	openair_daq_vars.dlsch_rate_adaptation = 0;
-	openair_daq_vars.ue_ul_nb_rb = 6;
+	openair_daq_vars.ue_ul_nb_rb = 2;
 	openair_daq_vars.ulsch_allocation_mode = 0;
 	lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
 
@@ -353,8 +353,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	for (i=0;i<2;i++) {
 	  dlsch_eNb[i] = new_eNb_dlsch(1,8);
-	  if (dlsch_eNb[i]) 
+	  if (dlsch_eNb[i]) {
 	    msg("[openair][IOCTL] eNb dlsch structure %d created \n",i);
+	  }
 	  else {
 	    printk("[openair][IOCTL] Can't get eNb dlsch structures\n");
 	    break;
@@ -423,7 +424,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	DLSCH_alloc_pdu2.ndi1             = 1;
 	DLSCH_alloc_pdu2.rv1              = 0;
 	// Forget second codeword
-	DLSCH_alloc_pdu2.tpmi             = 0;
+	if (openair_daq_vars.dlsch_transmission_mode == 6)
+	  DLSCH_alloc_pdu2.tpmi           = PUSCH_PRECODING0;
+	else
+	  DLSCH_alloc_pdu2.tpmi             = 0;
 
 	DLSCH_alloc_pdu1A.type               = 1;
 	DLSCH_alloc_pdu1A.vrb_type           = 0;
@@ -583,16 +587,18 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	  for (i=0;i<2;i++) {
 	    dlsch_ue[i]  = new_ue_dlsch(1,8);
-	    if (dlsch_ue) 
+	    if (dlsch_ue) {
 	      msg("[openair][IOCTL] UE dlsch structure %d created\n",i);
+	    }
 	    else {
 	      msg("[openair][IOCTL] Can't get ue dlsch structures\n");
 	      break;
 	    }
 	  }
 	  ulsch_ue[0]  = new_ue_ulsch(3);
-	  if (ulsch_ue[0]) 
+	  if (ulsch_ue[0]) {
 	    msg("[openair][IOCTL] ue ulsch structure %d created\n",i);
+	  }
 	  else {
 	    msg("[openair][IOCTL] Can't get ue ulsch structures\n");
 	    break;
@@ -1493,7 +1499,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     msg("[openair][IOCTL] openair_daq_vars.timing_advance = %d\n",openair_daq_vars.timing_advance);
 
-    ret = setup_regs(0);
+    for (i=0;i<number_of_cards;i++)
+      ret = setup_regs(i);
 
     if (ret != 0)
       msg("[openair][IOCTL] Failed to set timing advance\n");

@@ -1,9 +1,11 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "defs.h"
+#ifndef USER_MODE
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#endif
 
-
-#define DEBUG_PHICH
+//#define DEBUG_PHICH
 
 extern unsigned short pcfich_reg[4];
 unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
@@ -254,16 +256,27 @@ void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 
   unsigned short UE_id=0;
   unsigned char harq_pid;
+  unsigned char sector_id;
 
   harq_pid = subframe2_ul_harq(frame_parms->tdd_config,subframe);
 
   if (ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_active == 1) {
 
-    generate_phich_tdd(frame_parms,
-		       0, // nseq_PHICH
-		       0, // ngroup_PHICH,
-		       ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK,
-		       lte_eNB_common_vars->txdataF[eNb_id]);
+ #ifndef USER_MODE
+    for (eNb_id=0;eNb_id<number_of_cards;eNb_id++)
+      generate_phich_tdd(frame_parms,
+			 0, // nseq_PHICH
+			 0, // ngroup_PHICH,
+			 ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK,
+			 lte_eNB_common_vars->txdataF[sector_id]);
+#else
+      generate_phich_tdd(frame_parms,
+			 0, // nseq_PHICH
+			 0, // ngroup_PHICH,
+			 ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK,
+			 lte_eNB_common_vars->txdataF[0]);
+
+#endif
   }
 }
 

@@ -453,14 +453,14 @@ typedef struct __attribute__ ((__packed__)){
   unsigned char ndi1:1;
   /// Redundancy version 1
   unsigned char rv1:2;
+  /// TPMI information for precoding
+  unsigned char tpmi:3;
   /// Modulation and Coding Scheme and Redundancy Version 2
   unsigned char mcs2:5;
   /// New Data Indicator 2
   unsigned char ndi2:1;
   /// Redundancy version 2
   unsigned char rv2:2;
-  /// TPMI information for precoding
-  unsigned char tpmi:3;
 } DCI2_5MHz_2A_M10PRB_TDD_t;
 #define sizeof_DCI2_5MHz_2A_M10PRB_TDD_t 42
 

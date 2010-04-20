@@ -1181,16 +1181,17 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       LTE_DL_FRAME_PARMS *frame_parms);
 
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
-				       unsigned short rnti,
-				       unsigned char subframe,
-				       DCI_format_t dci_format,
-				       LTE_UE_ULSCH_t *ulsch,
-				       PHY_MEASUREMENTS *meas,
-				       LTE_DL_FRAME_PARMS *frame_parms,
-				       unsigned short si_rnti,
-				       unsigned short ra_rnti,
-				       unsigned short p_rnti,
-				       unsigned char eNb_id); 
+				      unsigned short rnti,
+				      unsigned char subframe,
+				      DCI_format_t dci_format,
+				      LTE_UE_ULSCH_t *ulsch,
+				      LTE_UE_DLSCH_t **dlsch,
+				      PHY_MEASUREMENTS *meas,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned short si_rnti,
+				      unsigned short ra_rnti,
+				      unsigned short p_rnti,
+				      unsigned char eNb_id); 
 
 int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 				      unsigned char subframe,

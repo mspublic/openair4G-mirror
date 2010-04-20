@@ -86,6 +86,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
       phy_measurements->n0_power_dB[aarx] = -105 + PHY_vars->rx_total_gain_dB;
     } 
     else if (N0_symbol == 1) {
+
 #ifdef USER_MODE
       phy_measurements->n0_power[aarx] = signal_energy(&ue_common_vars->rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
@@ -98,6 +99,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
   if (N0_symbol == 1) {
     phy_measurements->n0_power_tot_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
+    phy_measurements->n0_power_tot_dBm = phy_measurements->n0_power_tot_dB - PHY_vars->rx_total_gain_dB;
     //    printf("n0_power %d\n",phy_measurements->n0_avg_power_dB);
   }
 
@@ -146,8 +148,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
     //    printf("lte_ue_measurements: rx_power_dB[%d] %d (%f), sinr %d,cqi %d\n",eNB_id,phy_measurements->rx_avg_power_dB[eNB_id],10*log10(rx_power[eNB_id]),phy_measurements->wideband_sinr[eNB_id],phy_measurements->wideband_cqi[eNB_id]);
   
 
-    if (frame_parms->nb_antennas_tx > 1) {
-      // cqi/pmi information
+    if (frame_parms->mode1_flag==0) {
+      // cqi and pmi information 
       if (eNB_id == 0) {
 	
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
@@ -165,6 +167,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	      //	      printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
 	      phy_measurements->subband_cqi[eNB_id][aarx][subband] = 
 		(signal_energy_nodc(dl_ch0,48) + signal_energy_nodc(dl_ch1,48))*rx_power_correction - phy_measurements->n0_power[aarx];
+	      if (phy_measurements->subband_cqi[eNB_id][aarx][subband] < 0)
+		phy_measurements->subband_cqi[eNB_id][aarx][subband]=0;
 	      
 	      phy_measurements->subband_cqi_tot[eNB_id][subband] += phy_measurements->subband_cqi[eNB_id][aarx][subband];
 	      phy_measurements->subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][subband],
@@ -236,6 +240,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
       }
     }
     else {
+      //cqi information only for mode 1
       if (eNB_id == 0) {
 	
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {

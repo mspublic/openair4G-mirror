@@ -7,9 +7,6 @@
 #include "pmmintrin.h"
 #include "tmmintrin.h"
 #else
-__m128i zeroPMI;
-#define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmx)))
-#define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zeroPMI,(xmmy)))
 #endif
 
 //#define k1 1000
@@ -41,6 +38,8 @@ void lte_eNB_I0_measurements(LTE_eNB_COMMON *eNB_common_vars,
   }
 
   phy_measurements->n0_power_tot_dB = (unsigned short) dB_fixed(phy_measurements->n0_power_tot);
+
+  phy_measurements->n0_power_tot_dBm = phy_measurements->n0_power_tot_dB - PHY_vars->rx_total_gain_eNB_dB;
     //    printf("n0_power %d\n",phy_measurements->n0_avg_power_dB);
 
 }
@@ -134,6 +133,9 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 	phy_measurements->subband_cqi_tot[UE_id][rb]=0;
       
       phy_measurements->subband_cqi[eNB_id][aarx][rb] = (signal_energy_nodc(ul_ch,12))*rx_power_correction - phy_measurements->n0_power[aarx];
+      if (phy_measurements->subband_cqi[eNB_id][aarx][rb] < 0)
+	phy_measurements->subband_cqi[eNB_id][aarx][rb]=0;
+
       phy_measurements->subband_cqi_tot[eNB_id][rb] += phy_measurements->subband_cqi[eNB_id][aarx][rb];
       phy_measurements->subband_cqi_dB[eNB_id][aarx][rb] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][rb],
 									  2*phy_measurements->n0_power[aarx]);							
@@ -146,8 +148,11 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 
 
   for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
-    phy_measurements->subband_cqi_tot_dB[eNB_id][rb] = dB_fixed2(phy_measurements->subband_cqi_tot[eNB_id][rb],phy_measurements->n0_power_tot);
-    //	  msg("subband_cqi_tot[%d][%d] => %d dB (n0 %d)\n",eNB_id,rb,phy_measurements->subband_cqi_tot_dB[eNB_id][rb],phy_measurements->n0_power_tot);
+    phy_measurements->subband_cqi_tot_dB[eNB_id][rb] = dB_fixed2(phy_measurements->subband_cqi_tot[eNB_id][rb],
+								 phy_measurements->n0_power_tot);
+
+    if (phy_measurements->subband_cqi_tot_dB[eNB_id][rb] == 65)
+      msg("eNB meas error *****subband_cqi_tot[%d][%d] %d => %d dB (n0 %d)\n",eNB_id,rb,phy_measurements->subband_cqi_tot[eNB_id][rb],phy_measurements->subband_cqi_tot_dB[eNB_id][rb],phy_measurements->n0_power_tot);
   }
   
 }

@@ -32,6 +32,8 @@ char lte_cqi_snr_dB[15] = { -2,
 			    38,
 			    40};
 
+unsigned char ue_power_offsets[25] = {14,11,9,8,7,6,6,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,0,0,0};
+
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
 

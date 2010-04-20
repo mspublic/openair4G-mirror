@@ -296,7 +296,7 @@ typedef struct
   unsigned short n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
   unsigned int   n0_power_tot;                                    //! total estimated noise power (linear)
   unsigned short n0_power_tot_dB;                                 //! estimated avg noise power (dB)
-
+  short n0_power_tot_dBm;
   // UE measurements
   unsigned int   rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       //! estimated received spatial signal power (linear)
   unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];    //! estimated received spatial signal power (dB) 
@@ -331,6 +331,7 @@ typedef struct
   unsigned short n0_power_dB[NB_ANTENNAS_RX];                     //! estimated noise power (dB)
   unsigned int   n0_power_tot;                                    //! total estimated noise power (linear)
   unsigned short n0_power_tot_dB;                                 //! estimated avg noise power (dB)
+  short n0_power_tot_dBm;                                         //! estimated avg noise power (dB)
 
   // eNB measurements (per user)
   unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];       //! estimated received spatial signal power (linear)

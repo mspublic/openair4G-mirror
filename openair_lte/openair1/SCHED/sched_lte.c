@@ -169,7 +169,7 @@ static void * openair_thread(void *param) {
 
 
   u8           next_slot, last_slot;
-  unsigned int time_in,time_out;
+  unsigned int time_in,time_out,i;
   int diff;
 
 
@@ -187,13 +187,15 @@ static void * openair_thread(void *param) {
   
   msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
-  if (mac_xface->is_primary_cluster_head == 1)
+  if (mac_xface->is_primary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
-  else if (mac_xface->is_secondary_cluster_head == 1)
+  }
+  else if (mac_xface->is_secondary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
-  else
+  }
+  else {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
-  
+  }
   
   exit_openair = 0;
   
@@ -203,7 +205,8 @@ static void * openair_thread(void *param) {
     PHY_vars->rx_total_gain_dB = MIN_RF_GAIN;
 
 #ifdef CBMIMO1  
-  openair_set_rx_gain_cal_openair(0,PHY_vars->rx_total_gain_dB);
+  for (i=0;i<number_of_cards;i++) 
+    openair_set_rx_gain_cal_openair(i,PHY_vars->rx_total_gain_dB);
 #endif
 	
   // turn off AGC by default
@@ -217,8 +220,9 @@ static void * openair_thread(void *param) {
   openair_daq_vars.sched_cnt = 0;
   openair_daq_vars.instance_cnt = -1;
 
-  Zero_Buffer((void*)TX_DMA_BUFFER[0][0],
-  	      4*SLOT_LENGTH_BYTES_NO_PREFIX);
+  for (i=0;i<number_of_cards;i++) 
+    Zero_Buffer((void*)TX_DMA_BUFFER[i][0],
+		4*SLOT_LENGTH_BYTES_NO_PREFIX);
 
   while (exit_openair == 0){
     
@@ -386,11 +390,12 @@ void openair_sync(void) {
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       length=rtf_put(rx_sig_fifo,(unsigned char*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
-      if (length < FRAME_LENGTH_BYTES)
+      if (length < FRAME_LENGTH_BYTES) {
 	msg("[openair][sched][rx_sig_fifo_handler] Didn't put %d bytes for antenna %d (put %d)\n",FRAME_LENGTH_BYTES,i,length);
-      else
+      }
+      else {
 	msg("[openair][sched][rx_sig_fifo_handler] Worte %d bytes for antenna %d to fifo (put %d)\n",FRAME_LENGTH_BYTES,i,length);
-
+      }
     }    
 
     // signal that acquisition is done in control fifo
@@ -594,7 +599,8 @@ static void * top_level_scheduler(void *param) {
 
 	  msg("[openair][SCHED] staring RT acquisition, adac_cnt = %d\n",adac_cnt);
 #ifdef CBMIMO1
-	  openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+	  for (i=0;i<number_of_cards;i++)
+	    openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 #endif //CBMIMO1
 	  openair_daq_vars.sync_state = 1;
 	  openair_daq_vars.sched_cnt = 0;
@@ -649,8 +655,10 @@ static void * top_level_scheduler(void *param) {
 	    NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);
 
 #ifdef CBMIMO1
-	openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-	pci_interface[0]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+	for (i=0;i<number_of_cards;i++) {
+	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+	  pci_interface[i]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+	}
 #endif //CBMIMO1
 
 	mac_xface->frame = 0;

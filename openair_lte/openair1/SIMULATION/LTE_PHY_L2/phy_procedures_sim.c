@@ -133,18 +133,35 @@ int main(int argc, char **argv) {
   char stats_buffer[4096];
   int len;
   unsigned char target_dl_mcs=4;
+  unsigned char target_ul_mcs=2;
 
   unsigned int rx_gain;
+
+  unsigned char rate_adaptation_flag;
+
+  unsigned char transmission_mode;
 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
   
   if (argc>1)
-    target_dl_mcs = atoi(argv[1]);
+    transmission_mode = atoi(argv[1]);
+  else
+    transmission_mode = 2;
 
   if (argc>2)
-    n_frames = atoi(argv[2]);
+    target_dl_mcs = atoi(argv[1]);
+  else
+    target_dl_mcs = 0;
+
+  if (argc>3)
+    rate_adaptation_flag = (atoi(argv[3]) == 0) ? 0 : 1;
+  else
+    rate_adaptation_flag = 0;
+
+  if (argc>4)
+    n_frames = atoi(argv[4]);
   else
     n_frames = 10;
 
@@ -179,7 +196,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
   lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = 0;
+  lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
 
   init_frame_parms(lte_frame_parms);
@@ -219,11 +236,16 @@ int main(int argc, char **argv) {
       msg("Can't get eNb dlsch structures\n");
       exit(-1);
     }
+    else
+      msg("dlsch_eNb[%d] => %p\n",i,dlsch_eNb[i]);
+
     dlsch_ue[i]  = new_ue_dlsch(1,8);
     if (!dlsch_ue) {
       msg("Can't get ue dlsch structures\n");
       exit(-1);
     }
+    else
+      msg("dlsch_ue[%d] => %p\n",i,dlsch_ue[i]);
   }
   ulsch_eNb[0] = new_eNb_ulsch(3);
   if (!ulsch_eNb[0]) {
@@ -293,7 +315,10 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu2.tpmi             = 0;
+  if (transmission_mode == 6)
+    DLSCH_alloc_pdu2.tpmi           = 5;  // PUSCH_PRECODING0
+  else
+    DLSCH_alloc_pdu2.tpmi             = 0;
 
 
 #ifdef IFFT_FPGA
@@ -339,16 +364,23 @@ int main(int argc, char **argv) {
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
   PHY_vars->rx_total_gain_dB=140;
-  PHY_vars->rx_total_gain_eNB_dB=140;
+  PHY_vars->rx_total_gain_eNB_dB=150;
 
   UE_mode = PRACH;
+  lte_ue_pdcch_vars[0]->crnti = 0x1234;
 
-  if (lte_frame_parms->mode1_flag)
-    openair_daq_vars.dlsch_transmission_mode = 1;
-  else
+  if ((transmission_mode != 1) && (transmission_mode != 6))
     openair_daq_vars.dlsch_transmission_mode = 2;
-  openair_daq_vars.target_ue_mcs = target_dl_mcs;
-  openair_daq_vars.dlsch_rate_adaptation = 0;
+  else
+    openair_daq_vars.dlsch_transmission_mode = transmission_mode;
+
+
+  openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
+  openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
+  openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
+
+  openair_daq_vars.ue_ul_nb_rb = 2;
+
 
   l2_init();
   mac_xface->mrbch_phy_sync_failure(0,0);
@@ -364,7 +396,7 @@ int main(int argc, char **argv) {
       printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,eNB_UE_stats[0].UE_id[0]);
       mac_xface->is_cluster_head = 1;
 
-      mac_xface->macphy_scheduler(last_slot);      
+      //      mac_xface->macphy_scheduler(last_slot);      
       //	if(mac_xface->frame % 1024 == 0){
       len = openair2_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
       stats_buffer[len] = '\0';
@@ -542,17 +574,25 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      if ((next_slot > 3) && (next_slot<12)) {
+      path_loss_dB = -65;
+
+      if ((next_slot > 2) && (next_slot<10)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB = -60-20+6.2;  // UE
+	  path_loss_dB += (-20+6.2);  // UE
 	else
-	  path_loss_dB = -60-20+ulsch_ue[0]->power_offset;
-	rx_gain = PHY_vars->rx_total_gain_dB;
+	  path_loss_dB += (-20.0+(double)ulsch_ue[0]->power_offset);
+
+      }
+
+      if ((next_slot>2) && (next_slot<10)) {
+	rx_gain = PHY_vars->rx_total_gain_eNB_dB;
+	printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
       }
       else {
-	path_loss_dB = -60;     // eNb
-	rx_gain = PHY_vars->rx_total_gain_eNB_dB;
+	rx_gain = PHY_vars->rx_total_gain_dB;
+	printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
       }
+
       path_loss    = pow(10,path_loss_dB/10);
       
       //      path_loss_dB = 0;
@@ -569,6 +609,8 @@ int main(int argc, char **argv) {
       
       
       // RF model
+
+
       rf_rx(r_re,
 	    r_im,
 	    NULL,
@@ -635,24 +677,10 @@ int main(int argc, char **argv) {
 #endif
 
       //#ifdef DEBUG_PHY
-      /*  
-	  if ((last_slot == 8)) { // && (mac_xface->frame == 3)) {
+      
 
-	  printf("ulsch (ue,ra): NBRB     %d\n",ulsch_ue[0]->harq_processes[0]->nb_rb);
-	  printf("ulsch (ue,ra): first_rb %x\n",ulsch_ue[0]->harq_processes[0]->first_rb);
-	  printf("ulsch (ue,ra): nb_rb    %d\n",ulsch_ue[0]->harq_processes[0]->nb_rb);
-	  printf("ulsch (ue,ra): Ndi      %d\n",ulsch_ue[0]->harq_processes[0]->Ndi);  
-	  printf("ulsch (ue,ra): TBS      %d\n",ulsch_ue[0]->harq_processes[0]->TBS);
-	  printf("ulsch (ue,ra): mcs      %d\n",ulsch_ue[0]->harq_processes[0]->mcs);
-
-	  write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-	  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-	  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);      
-	  write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-	  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-	  }
   
-      */
+      
       /*
 	if (next_slot == 5) {
 	sprintf(fname,"eNB_frame%d_rxsig0_subframe2.m",mac_xface->frame);

@@ -150,7 +150,7 @@ static int __init openair_init_module( void )
   }
 
   // Now look for more cards on the same bus
-  while (i<2) {
+  while (i<3) {
     pdev[i] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, pdev[i-1]);
     if(pdev[i]) {
       printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondate %x\n",i,

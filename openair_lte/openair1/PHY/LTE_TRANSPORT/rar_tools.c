@@ -41,6 +41,7 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
   ulsch->beta_offset_cqi_times8                = 18;
   ulsch->beta_offset_ri_times8                 = 10;
   ulsch->beta_offset_harqack_times8            = 16;
+
   
   ulsch->Nsymb_pusch                           = 9;
   
@@ -94,6 +95,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 
     ulsch->harq_processes[0]->first_rb                              = RIV2first_rb_LUT25[rar->rb_alloc];
     ulsch->harq_processes[0]->nb_rb                                 = RIV2nb_rb_LUT25[rar->rb_alloc];
+    ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[0]->nb_rb];
 
     if (ulsch->harq_processes[0]->nb_rb > 3) {
       msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
