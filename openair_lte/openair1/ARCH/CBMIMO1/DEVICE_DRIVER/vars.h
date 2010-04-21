@@ -21,7 +21,7 @@ unsigned int openair_irq;
 struct pci_dev *pdev[4];
 unsigned long bar[4],iobar[4],bar_len[4];
 
-char number_of_cards,card,master_id;
+char card,master_id;
 
 int major;
 
@@ -37,3 +37,5 @@ unsigned short NODE_ID[1];
 EXPORT_SYMBOL(NODE_ID);
 
 #endif
+
+char number_of_cards;

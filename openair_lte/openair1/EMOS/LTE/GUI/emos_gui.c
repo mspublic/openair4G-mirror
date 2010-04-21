@@ -1073,20 +1073,19 @@ void power_callback(FL_OBJECT *ob, long user_data)
 	      //gains[2] = 30;
 	      //gains[3] = 17;
 			
-	      //ioctl_result=ioctl(openair_dev_fd,openair_SET_RX_MODE,&rxmode);
 	      ioctl_result = 0;
  
 	      if (terminal_idx==1) {
 		is_cluster_head = 1;
 		node_id = 0; 
 		PHY_config->tdd = 1;
-		PHY_config->dual_tx = 0;
+		PHY_config->dual_tx = 1;
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
-		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_ue);
+		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==2) {
@@ -1497,11 +1496,15 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
 
 void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
 {
+  int ioctl_result;
+
   fl_set_button(main_frm->siso_btn,0);
   fl_set_button(main_frm->alamouti_btn,0);
   fl_set_button(main_frm->precoding_btn,0);
   fl_set_button(ob,1);
   mimo_mode = user_data;
+
+  ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 }
 
 
@@ -1636,11 +1639,11 @@ int mac_phy_init()
   
   init_frame_parms(lte_frame_parms);
   
-  phy_init_top(NB_ANTENNAS_TX);
+  //phy_init_top(NB_ANTENNAS_TX);
 	  
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
+  //lte_frame_parms->twiddle_fft      = twiddle_fft;
+  //lte_frame_parms->twiddle_ifft     = twiddle_ifft;
+  //lte_frame_parms->rev              = rev;
   
   //phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   //phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);

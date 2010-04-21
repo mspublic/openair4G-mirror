@@ -290,7 +290,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_running = 0;
 
 	openair_daq_vars.timing_advance = 19;
-	openair_daq_vars.dlsch_transmission_mode = openair_daq_vars.dlsch_transmission_mode; //ALAMOUTI
+	openair_daq_vars.dlsch_transmission_mode = 2;
 	openair_daq_vars.target_ue_dl_mcs = 0;
 	openair_daq_vars.target_ue_ul_mcs = 0;
 	openair_daq_vars.dlsch_rate_adaptation = 0;

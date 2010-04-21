@@ -16,11 +16,11 @@ ________________________________________________________________*/
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#ifdef CBMIMO1
+//#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
-#endif
+//#endif
 
 //#ifdef USER_MODE
 #define DEBUG_PHY
@@ -122,6 +122,7 @@ extern int rx_sig_fifo;
 
 unsigned int ue_rag_frame;
 unsigned char ue_rag_subframe;
+static unsigned char I0_clear = 1;
 
 void get_rag_alloc(unsigned char tdd_config,
 		   unsigned char current_subframe, 
@@ -446,11 +447,33 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
   unsigned char eNb_id=0, UE_id=0;
   int time_in, time_out;
 
+  char fname[100],vname[100];
+
+
   if (last_slot%2==1) {
+
+    for (eNb_id == 0; eNb_id < number_of_cards; eNb_id++) {
+      for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+	
+	slot_fep_ul(lte_frame_parms,
+		    lte_eNB_common_vars,
+		    l,
+		    last_slot,
+		    eNb_id,
+#ifdef USER_MODE
+		    0
+#else
+		    1
+#endif
+		    );
+      }
+    }
 #ifndef USER_MODE
     time_in = openair_get_mbox();
 #endif
 
+
+    eNb_id = 0;
     // look for PSS in the last 3 symbols of the last slot
     // but before we need to zero pad the gaps that the HW removed
     bzero(eNb_sync_buffer[0],640*6*sizeof(int));
@@ -519,12 +542,27 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
     }
     
     // Get noise levels
+
+
     for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) {
+      /*
+      sprintf(fname,"rxsigF0_%d.m",eNb_id);
+      sprintf(vname,"rxsF0_%d",eNb_id);
+      write_output(fname,vname, &lte_eNB_common_vars->rxdataF[eNb_id][0][(19*lte_frame_parms->ofdm_symbol_size)<<1],512*2,2,1);
+      sprintf(fname,"rxsigF1_%d.m",eNb_id);
+      sprintf(vname,"rxsF1_%d",eNb_id);
+      write_output(fname,vname, &lte_eNB_common_vars->rxdataF[eNb_id][1][(19*lte_frame_parms->ofdm_symbol_size)<<1],512*2,2,1);
+      */
+
       lte_eNB_I0_measurements(lte_eNB_common_vars,
 			      lte_frame_parms,
 			      &PHY_vars->PHY_measurements_eNB[eNb_id],
-			      eNb_id);
+			      eNb_id,
+			      I0_clear);
     }
+
+    if (I0_clear == 1)
+      I0_clear = 0;
   }
 }
 

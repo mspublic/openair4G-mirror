@@ -164,6 +164,10 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[0],
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[1]);
+      for (i=0;i<25;i++)
+	len += sprintf(&buffer[len],"%2d ",
+		       PHY_vars->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
+      len += sprintf(&buffer[len],"\n");
     }
 
     eNB=0;

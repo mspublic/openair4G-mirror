@@ -9,6 +9,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
@@ -52,7 +53,8 @@ void l2_init() {
   NB_CH_INST=1;
   //    NODE_ID[0]=0;
   NB_UE_INST=1;
-  
+
+
   mac_init_global_param(); 
   
   
@@ -198,6 +200,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
+  number_of_cards = 3;
 
   init_frame_parms(lte_frame_parms);
   
@@ -690,11 +693,11 @@ int main(int argc, char **argv) {
 	}
       */
       if ((last_slot == 19) && (mac_xface->frame == 1)) {
-	/*
+	
 	write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);*/
+	write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       }
       //#endif
 

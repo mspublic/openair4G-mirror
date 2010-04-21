@@ -18,7 +18,7 @@
 extern struct pci_dev *pdev[4];
 extern unsigned long bar[4],iobar[4],bar_len[4];
 
-extern char number_of_cards,card,master_id;
+extern char card,master_id;
 
 extern int major;
 
@@ -38,3 +38,6 @@ extern PCI_interface_t *pci_interface[4];
 
 extern unsigned short NODE_ID[1];
 #endif
+
+
+extern char number_of_cards;

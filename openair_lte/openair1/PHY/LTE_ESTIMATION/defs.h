@@ -138,7 +138,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 void lte_eNB_I0_measurements(LTE_eNB_COMMON *eNB_common_vars,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     PHY_MEASUREMENTS_eNB *phy_measurements,
-			     unsigned char eNB_id);
+			     unsigned char eNB_id,
+			     unsigned char clear);
 
 
 void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,

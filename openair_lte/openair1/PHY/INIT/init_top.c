@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/extern.h"
-
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 /*
 
 * @addtogroup _PHY_STRUCTURES_
@@ -238,7 +238,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-  init_signal_buffers(1,1);
+  init_signal_buffers(number_of_cards,1);
   
 #ifdef DEBUG_PHY    
   msg("[openair][PHY][INIT] Initializing FFT engine\n");
