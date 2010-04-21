@@ -97,8 +97,9 @@ unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
 unsigned char tx_gain_table[4] = {157, 157, 140, 140};
 unsigned int timing_advance = 80;
-unsigned int tcxo = 143;  // Card v2_7 synched to v2_8
+unsigned int tcxo = 53;  
 int freq_correction =  -300;
+//unsigned int rf_mode_ue=0; //mixer low gain, lna off
 unsigned int rf_mode_ue=1; //mixer low gain, lna on
 unsigned int rf_mode_eNb=2; //mixer high gain, lna on
 
@@ -737,34 +738,34 @@ void refresh_interface()
 	{
 
 	  //convert to float
-	  disp_min_power = 0;
-	  disp_max_power = 10;
+	  disp_min_power = 30;
+	  disp_max_power = 80;
 	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
 	    for (aa=0; aa<NB_ANTENNAS_RX*NB_ANTENNAS_TX; aa++)
 	      for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
-		channel[as][aa][ac] = log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*((short*)fifo_output_UE.channel[as][aa])[2*ac]+
+		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*((short*)fifo_output_UE.channel[as][aa])[2*ac]+
 							   ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
 	  for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
 	    subcarrier_ind[ac]=ac;
 	      
 
 	  // Frequency domain plots
-	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, channel[0][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, &channel[0][0][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, channel[0][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, &channel[0][1][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, channel[0][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, &channel[0][2][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, channel[0][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, &channel[0][3][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec0_xyp, -100, 100);

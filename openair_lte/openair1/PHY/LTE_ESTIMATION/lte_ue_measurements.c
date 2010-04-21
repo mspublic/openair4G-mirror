@@ -131,7 +131,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
   }
 
-  for (eNB_id = 0; eNB_id < 3; eNB_id++){
+  for (eNB_id = 0; eNB_id < 1; eNB_id++){
     //    phy_measurements->rx_avg_power_dB[eNB_id]/=frame_parms->nb_antennas_rx;
     if (init_averaging == 0)
       rx_power_avg[eNB_id] = ((k1*rx_power_avg[eNB_id]) + (k2*rx_power[eNB_id]))>>10;
@@ -150,8 +150,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 
     if (frame_parms->mode1_flag==0) {
       // cqi and pmi information 
-      if (eNB_id == 0) {
-	
+ 	
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 	  dl_ch0    = &ue_common_vars->dl_ch_estimates[eNB_id][aarx][4];
 	  dl_ch1    = &ue_common_vars->dl_ch_estimates[eNB_id][2+aarx][4];
@@ -237,11 +236,9 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	    
 	  } // subband loop
 	} // rx antenna loop
-      }
     }
     else {
       //cqi information only for mode 1
-      if (eNB_id == 0) {
 	
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 	  dl_ch0    = &ue_common_vars->dl_ch_estimates[eNB_id][aarx][4];
@@ -270,7 +267,7 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	      phy_measurements->subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][subband],
 										  phy_measurements->n0_power[aarx]);							
 	    }
-	    dl_ch1+=48;
+	    dl_ch0+=48;
 	    //	  msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,phy_measurements->subband_cqi[eNB_id][aarx][subband],phy_measurements->subband_cqi_dB[eNB_id][aarx][subband]);
 	  }
 	  
@@ -286,11 +283,9 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	  //	    msg("subband_pmi[%d][%d][%d] => (%d,%d)\n",eNB_id,subband,aarx,phy_measurements->subband_pmi_re[eNB_id][subband][aarx],phy_measurements->subband_pmi_im[eNB_id][subband][aarx]);
 	  
 	} // rx antenna loop
-      }// if eNB_id == 0
     } // else nb_antennas_tx >1
   
  
-    if (eNB_id == 0) {
       phy_measurements->rank[eNB_id] = 0;
       for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 	if (phy_measurements->subband_cqi_dB[eNB_id][0][i] >= phy_measurements->subband_cqi_dB[eNB_id][1][i])
@@ -298,6 +293,5 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	else
 	  phy_measurements->selected_rx_antennas[eNB_id][i] = 1;
       }
-    }
   }  // eNB_id loop
 }

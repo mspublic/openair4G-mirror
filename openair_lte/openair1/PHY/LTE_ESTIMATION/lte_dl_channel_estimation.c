@@ -123,7 +123,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     rxF   = (short *)&rxdataF[aarx][((symbol_offset+k+frame_parms->first_carrier_offset)<<1)]; 
     dl_ch = (short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
 
-    memset(dl_ch,0,4*(frame_parms->ofdm_symbol_size));
+    if (eNb_id==0)
+      memset(dl_ch,0,4*(frame_parms->ofdm_symbol_size));
     
     if ((frame_parms->N_RB_DL==50) || (frame_parms->N_RB_DL==100)) {
       

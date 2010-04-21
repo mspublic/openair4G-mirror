@@ -75,7 +75,8 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s\n",mode_string[UE_mode]);
     len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",dlsch_ue[0]->harq_processes[0]->mcs);
     len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",dlsch_ue[1]->harq_processes[0]->mcs);
-    for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
+    //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
+    for (eNB=0;eNB<1;eNB++) {
       len += sprintf(&buffer[len], "[UE PROC] RX spatial power eNB%d: [%d %d; %d %d] dB\n",
 		     eNB,
 		     PHY_vars->PHY_measurements.rx_spatial_power_dB[eNB][0][0],
