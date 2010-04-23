@@ -107,8 +107,16 @@ extern "C" {
       sock_rrm_t      *s                  ; ///< Socket associé a l'interface SENSING
       unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface SENSING
       transact_t      *transaction        ; ///< liste des transactions non terminees
+      unsigned int    sens_active         ; ///< flag to determine if node is performing sensing //mod_lor_10_04_21
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
     } sensing	                          ; ///<  info relatif a l'interface SENSING
+	
+	//mod_lor_10_04_20++
+	struct {
+      sock_rrm_t      *s                  ; ///< Socket associé a l'interface SENSING
+      pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
+    } graph	;
+	//mod_lor_10_04_20--
 	
     //mod_lor_10_01_25++
     struct {

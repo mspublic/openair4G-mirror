@@ -536,6 +536,7 @@ static void * fn_cmm (
                             unsigned int     Overlap    = 5;
                             unsigned int     Sampl_freq = 10;
                             
+                            //system("PAUSE"); //mod_lor_10_04_21
                             pthread_mutex_lock( &actdiff_exclu  ) ; 
                             add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
                                     msg_cmm_init_sensing(header->inst,Start_fr,Stop_fr,Meas_band,Meas_tpf,
@@ -544,7 +545,7 @@ static void * fn_cmm (
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
                             //msg_fct( "\npassato CH %d \n\n",header->inst); //dbg
                             pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,30, cnt_actdiff++, s,
+                            add_actdiff(&list_actdiff,60, cnt_actdiff++, s,
                                     msg_cmm_stop_sensing(0) );
 
                             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
@@ -581,7 +582,7 @@ static void * fn_cmm (
                 case ROUTER_IS_CH_IND :
                     {
 #ifndef PHY_EMUL
-                        float delai  = 0.05 ;
+                        float delai  = 0.05 ; //mod_lor_10_04_22: 5 instead of 0.05
                         float delai2 = 0.08 ;
 #else
                         float delai  = 0.00 ;
@@ -610,7 +611,7 @@ static void * fn_cmm (
                         
                         if (header->inst==1){
                             pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,15, cnt_actdiff++, s, msg_cmm_ask_freq(header->inst) );
+                            add_actdiff(&list_actdiff,20, cnt_actdiff++, s, msg_cmm_ask_freq(header->inst) );
                             pthread_mutex_unlock( &actdiff_exclu ) ;
                         }
                     }

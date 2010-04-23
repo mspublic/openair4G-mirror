@@ -194,8 +194,26 @@ void rrc_update_sens(
         //fprintf (stdout,"msg IP to send from inst %d\n",rrm->id);//dbg
         pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
         rrm->ip.trans_cnt++ ;
+        
+        //mod_lor_10_04_22++
+        /*int r =  send_msg_int( rrm->ip.s, msg_update_sens_results_3( inst, rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt));
+                    WARNING(r!=0);*/
+        
         PUT_IP_MSG(msg_update_sens_results_3( inst, rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt)); 
+        //mod_lor_10_04_22--
         pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+        
+        //mod_lor_10_04_21++ AAA -> to remove when sensing remont automatically info
+        //sleep(10);
+        if(rrm->sensing.sens_active){
+            sleep(5);
+            pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
+            rrm->sensing.trans_cnt++ ;
+            //fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord on socket %d \n",rrm->sensing.trans_cnt,rrm->sensing.s->s);//dbg
+            PUT_SENS_MSG(msg_rrm_scan_ord( inst,  NB_info, 0, 0, 0, Sens_meas, rrm->sensing.trans_cnt )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
+            pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
+        }
+        //mod_lor_10_04_21--
 
     }
 #endif
@@ -668,9 +686,9 @@ void sns_end_scan_conf(
     ///< AAA TO DO: Confirmation sent via RRC to the fusion centre
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
     rrm->rrc.trans_cnt++ ;
-    fprintf(stderr, "before put RRM_end_scan_confirm\n");//dbg
+    //fprintf(stderr, "before put RRM_end_scan_confirm\n");//dbg
     PUT_RRC_MSG(msg_rrm_end_scan_conf( inst, rrm->rrc.trans_cnt));
-    fprintf(stderr, "after put RRM_end_scan_confirm\n"); //dbg
+    //fprintf(stderr, "after put RRM_end_scan_confirm\n"); //dbg
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 
 }

@@ -107,8 +107,9 @@ void open_freq_query(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     unsigned int NB_free_ch=0;
-    
+   // printf("before mutex open_freq_query\n");//dbg
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
+   // printf("after mutex open_freq_query\n");//dbg
     CHANNELS_DB_T *pChannelsEntry=rrm->rrc.pChannelsEntry;
     CHANNELS_DB_T *pChannels = pChannelsEntry;
     //TO DO: here should be implemented the method to determine if a frequency is free
@@ -142,7 +143,9 @@ void open_freq_query(
              
     pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
     rrm->ip.trans_cnt++ ;
+    //printf("before put ip in open_freq_query\n");//dbg
     PUT_IP_MSG(msg_update_open_freq_7( inst, L2_id, NB_free_ch, free_channels_hd, rrm->ip.trans_cnt));
+    //printf("after put ip in open_freq_query\n");//dbg
     pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
 
     

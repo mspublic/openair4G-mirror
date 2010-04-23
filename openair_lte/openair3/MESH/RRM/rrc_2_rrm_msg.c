@@ -510,7 +510,7 @@ msg_t *msg_rrc_update_sens(
         
     if ( msg != NULL )
     {
-        unsigned int size = sizeof( rrc_update_sens_t ) + (NB_info-1) * sizeof(Sens_ch_t) ;
+        unsigned int size = sizeof( rrc_update_sens_t );// + (NB_info-1) * sizeof(Sens_ch_t) ;//mod_lor_10_04_23
         
         rrc_update_sens_t *p = RRM_CALLOC2(rrc_update_sens_t , size ) ;
 

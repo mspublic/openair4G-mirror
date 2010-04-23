@@ -53,7 +53,7 @@ typedef enum {
     RRC_RB_RELEASE_RESP         , ///< Message RRC->RRM : reponse de liberation d'un RB
     RRC_MR_ATTACH_IND           , ///< Message RRC->RRM : indication d'attachement d'un MR
     RRM_SENSING_MEAS_REQ        , ///< Message RRM->RRC : requete de configuration de mesure sensing
-    RRC_SENSING_MEAS_RESP       , ///< Message RRC->RRM : reponse de configuration de mesure sensing
+    RRC_SENSING_MEAS_RESP       , ///< 10Message RRC->RRM : reponse de configuration de mesure sensing
     RRC_CX_ESTABLISH_IND        , ///< Message RRC->RRM : indication de connexion etablie
     RRC_PHY_SYNCH_TO_MR_IND     , ///< Message RRC->RRM : indication de synchronisation physique a un MR
     RRC_PHY_SYNCH_TO_CH_IND     , ///< Message RRC->RRM : indication de synchronisation physique a un CH
@@ -63,7 +63,7 @@ typedef enum {
     RRC_RB_MEAS_IND             , ///< Message RRC->RRM : indication de nouvel mesure sur un RB 
     RRM_RB_MEAS_RESP            , ///< Message RRM->RRC : reponse a l'indication de nouvel mesure sur un RB
     RRM_INIT_CH_REQ             , ///< Message RRM->RRC : init d'un CH
-    RRCI_INIT_MR_REQ            , ///< Message RRM->RRC : init d'un MR
+    RRCI_INIT_MR_REQ            , ///< 20Message RRM->RRC : init d'un MR
     RRM_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
     RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
     RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
@@ -73,7 +73,7 @@ typedef enum {
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
     RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
     OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
-    UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
+    UPDATE_OPEN_FREQ_7          , ///< 30Message IP       : list of frequencies usable by the secondary network
     UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process

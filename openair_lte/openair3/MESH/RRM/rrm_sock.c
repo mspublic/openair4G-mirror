@@ -277,7 +277,8 @@ int open_socket_int(
     s->in_dest_addr.sin_addr.s_addr = tmp;
     
     s->s = socket_fd ;
-    fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
+   // fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
+   // fprintf(stderr,"IP dest %X \n", s->in_dest_addr.sin_addr.s_addr);//dbg
     return socket_fd ; 
 }
 
@@ -298,7 +299,8 @@ char *recv_msg_int(
     int                 size_msg ;
     msg_head_t          *head  ;
     int                 ret ;
-    //struct sockaddr      newS;
+    //struct  sockaddr_in newS;
+    //socklen_t len_addr = sizeof(struct sockaddr_in);
     
     int taille =  SIZE_MAX_PAYLOAD ;
     //fprintf(stderr,"RF dentro recv_from \n  ");//dbg
@@ -309,12 +311,14 @@ char *recv_msg_int(
     }
         
     //fprintf(stderr,"RF s: %d\n  ", s->s);//dbg
-    socklen_t len_addr = sizeof(struct sockaddr_in);
-    ret = recvfrom(s->s, buf, taille, 0,(struct sockaddr *)&(s->in_dest_addr), &len_addr) ;
+    
+    
+    //ret = recvfrom(s->s, buf, taille, 0,(struct sockaddr *)&(newS), &len_addr) ;
+    ret = recvfrom(s->s, buf, taille, 0,NULL, 0) ; //mod_lor_10_04_23
     //fprintf(stderr,"RF dopo recv s = %d\n  ",s->s);//dbg 
     if ( ret <= 0  )
     {
-        fprintf(stderr,"RF ret %d\n  ",ret );//dbg
+        //fprintf(stderr,"RF ret %d\n  ",ret );//dbg
         perror("PB recvfrom_in");
         RRM_FREE(buf);
         return NULL ;
@@ -364,7 +368,8 @@ int send_msg_int(
     {
         memcpy( buf , &(msg->head) , sizeof(msg_head_t) ) ;
         memcpy( buf+sizeof(msg_head_t), msg->data, msg->head.size ) ;
-                
+        //fprintf(stderr,"Sendto IP msg on socket %d msg_type %d\n  ",s->s, msg->head.msg_type );//dbg    
+        //fprintf(stderr,"to %X \n\n\n\n\n", s->in_dest_addr.sin_addr.s_addr);//dbg    
         if ( sendto(s->s, buf, taille, 0, (struct  sockaddr *)&(s->in_dest_addr), sizeof(struct  sockaddr_in)) < 0 )
         {
             ret = -1; 

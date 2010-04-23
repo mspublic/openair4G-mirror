@@ -95,10 +95,10 @@ msg_t *msg_rrm_scan_ord(
     if ( msg != NULL )
     {
         unsigned int size;
-        if ( NB_chan != 0 ){
+        /*if ( NB_chan != 0 ){
             size = sizeof( rrm_scan_ord_t ) + (NB_chan-1) * sizeof(unsigned int) ;
             
-        }else
+        }else*/
             size =  sizeof( rrm_scan_ord_t );
         rrm_scan_ord_t *p = RRM_CALLOC2(rrm_scan_ord_t , size ) ;
 
@@ -146,7 +146,7 @@ msg_t *msg_rrm_end_scan_ord(
 
     if ( msg != NULL )
     {
-        unsigned int size = sizeof( rrm_end_scan_ord_t ) + (NB_chan-1) * sizeof(unsigned int) ;
+        unsigned int size = sizeof( rrm_end_scan_ord_t ); //+ (NB_chan-1) * sizeof(unsigned int) ;
         rrm_end_scan_ord_t *p = RRM_CALLOC2(rrm_end_scan_ord_t , size ) ;
 
         if ( p != NULL )

@@ -42,7 +42,8 @@ endif
 
 TARGET	    = emul_int rrm
 
-SRC	    = rrm.c
+#put rrm_graph.c instead of rrm.c to connect the graphic interface block to the rrm
+SRC	    = rrm_graph.c   
 SRC	   += rrm_sock.c
 SRC	   += rrm_util.c
 SRC	   += rrm_2_rrc_msg.c
@@ -84,13 +85,10 @@ CFLAGS	   += -DSNS_EMUL
 SRC_EMUL   += sensing_2_rrm_msg.c
 endif
 
-
-
 OBJ		= $(SRC:%.c=./obj/%.o)
 OBJ_EMUL	= $(SRC_EMUL:%.c=./obj/%.o)
 
-
-DEP		= $(SRC:%.c=./deps/%.d) $(SRC_EMUL:%.c=./deps/%.d)
+DEP		= $(SRC:%.c=./deps/%.d) $(SRC_EMUL:%.c=./deps/%.d) 
 
 all : Makefile deps $(TARGET)
 

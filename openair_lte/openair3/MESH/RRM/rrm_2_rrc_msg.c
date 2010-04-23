@@ -550,7 +550,7 @@ msg_t *msg_rrm_up_freq_ass(
 
     if ( msg != NULL )
     {
-        unsigned int size = sizeof(  rrm_up_freq_ass_t ) + (NB_chan-1) * sizeof(CHANNEL_T) ;
+        unsigned int size = sizeof(  rrm_up_freq_ass_t );// + (NB_chan-1) * sizeof(CHANNEL_T) ;//mod_lor_10_04_23
         rrm_up_freq_ass_t *p = RRM_CALLOC2( rrm_up_freq_ass_t , size ) ;
 
 
@@ -592,7 +592,7 @@ msg_t *msg_update_sens_results_3(
         
     if ( msg != NULL )
     {
-        unsigned int size = sizeof( rrm_update_sens_t ) + (NB_info-1) * sizeof(Sens_ch_t) ;
+        unsigned int size = sizeof( rrm_update_sens_t );// + (NB_info-1) * sizeof(Sens_ch_t) ; //mod_lor_10_04_23
         
         rrm_update_sens_t *p = RRM_CALLOC2(rrm_update_sens_t , size ) ;
 
@@ -673,7 +673,7 @@ msg_t *msg_update_open_freq_7(
 
     if ( msg != NULL )
     {
-        unsigned int size = sizeof( update_open_freq_t ) + (NB_free_ch-1) * sizeof(CHANNEL_T) ;
+        unsigned int size = sizeof( update_open_freq_t );// + (NB_free_ch-1) * sizeof(CHANNEL_T) ;//mod_lor_10_04_23
         
         update_open_freq_t *p = RRM_CALLOC2(update_open_freq_t , size ) ;
 
@@ -714,7 +714,7 @@ msg_t *msg_update_SN_occ_freq_5(
 
     if ( msg != NULL )
     {
-        unsigned int size = sizeof( update_SN_occ_freq_t ) + (NB_chan-1) * sizeof(unsigned int) ;
+        unsigned int size = sizeof( update_SN_occ_freq_t );// + (NB_chan-1) * sizeof(unsigned int) ;//mod_lor_10_04_23
         update_SN_occ_freq_t *p = RRM_CALLOC2(update_SN_occ_freq_t , size ) ;
 
         if ( p != NULL )
