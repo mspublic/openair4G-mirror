@@ -20,7 +20,7 @@ what_scheme = 3; % 1 -> SISO, 2 -> Alamouti, 3 -> Beamforming
 decimation = 1;
 NFrames_max = 100*60*10;
 
-[H, H_fq, estimates, gps_data, NFrames, thruput] = load_estimates_lte(fullfile(pathname, filename),NFrames_max,decimation,is_eNb,what_scheme);
+[H, H_fq, estimates, gps_data, NFrames, thruput] = load_estimates_lte_1(fullfile(pathname, filename),NFrames_max,decimation,is_eNb,what_scheme);
 
 save 'estimates.mat' 'gps_data' 'NFrames' 'thruput' 
 
