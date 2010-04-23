@@ -3,7 +3,7 @@ close all
 
 %% these lines are for syntetic data
 v = 1; s = 0.5; N = 20000;
-% r = ricernd(v*ones(1, N), s);
+ r = ricernd(v*ones(1, N), s);
 
 K = v.^2/(2*s.^2)
 rc = v + s*(randn(1,N)+1j*randn(1,N));

@@ -1,4 +1,4 @@
-function [lambda,Err]=fitcurve(x,y,funct,init_lam);
+function [lambda,Err]=fitcurve(x,y,funct,init_lam)
 % Created by: Mauro Fiacco
 % Date: 25/10/97
 %

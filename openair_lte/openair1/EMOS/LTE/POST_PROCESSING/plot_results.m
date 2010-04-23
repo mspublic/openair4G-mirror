@@ -1,7 +1,7 @@
-%% Plot Reults 
+%% Plot Reults
 %% Created on 19-04-2010
 %% Author Imran Latif (imran.latif@eurecom.fr)
-%% Eurecom Instuitute - Communications Mobile 
+%% Eurecom Instuitute - Communications Mobile
 
 % This file is used to plot different results from LTE Measurements
 % The measurements are considered for three different cases.
@@ -10,10 +10,24 @@
 % One Subframe contains 25 * (12 *14) = 4200 Resource Elements for normal cyclic prefix.
 % We measure channel for 200 resource elements in first subframe of each frame. And we
 % interpolate for the rest 4000 resource elements of that subframe.
+clear all;
+close all;
 
-load 'chcap_alamouti_MultiAntennaUE_Measurements.mat'
-load 'chcap_beamforming_MultiAntennaUE_Measurements.mat'
-load 'chcap_SISO_Measurements.mat'
+load 'estimates.mat'
+
+plotwrtdistanceCalc
+
+capacity_siso
+
+capacity_Alamouti
+
+capacity_Mode6_beamforming
+
+
+% 
+% load 'chcap_alamouti_MultiAntennaUE_Measurements.mat'
+% load 'chcap_beamforming_MultiAntennaUE_Measurements.mat'
+% load 'chcap_SISO_Measurements.mat'
 
 %**************************************************************************
 % %For SISO Scheme
@@ -74,15 +88,37 @@ for i = 1:TotalFrames
     
 end
 
-figure
-Title('SISO')
+figure;
+title('SISO');
 xlabel('Time[Seconds]');
-ylabel('Rate');
+ylabel('Throughput');
+hold on;
+plot(Ratepersec_4Qam,'b-o');
+plot(Ratepersec_16Qam,'g-o');
+plot(Ratepersec_64Qam,'r-o');
+%hold off;
+
+figure;
+hold on;
+title('Throughput SISO _ distance from BS ');
+xlabel('Distance from BS [Km]');
+ylabel('Throughput [Bits/sec]');
+dist(2:10:end);
+plot(dist(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist(2:10:end), Ratepersec_16Qam,'g-o');
+plot(dist(2:10:end), Ratepersec_64Qam,'r-o');
+%hold off;
+
+figure
 hold on
-plot(Ratepersec_4Qam,'b-o' );
-plot(Ratepersec_16Qam,'g-o' );
-plot(Ratepersec_64Qam,'r-o' );
-hold off;
+title('Throughput SISO _ distance Travelled ')
+xlabel('Distance travelled [Km]')
+ylabel('Throughput [Bits/sec]')
+plot(dist_travelled(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist_travelled(2:10:end), Ratepersec_16Qam,'g-o' );
+plot(dist_travelled(2:10:end), Ratepersec_64Qam,'r-o');
+hold off
+
 
 %*******************************************************************************************************
 %For Alamouti Scheme
@@ -140,19 +176,41 @@ for i = 1:TotalFrames
     
     
 end
+
 figure
-Title('alamouti')
+Title('Alamouti Scheme')
 xlabel('Time[Seconds]');
-ylabel('Rate');
+ylabel('Throughput');
 hold on
 plot(Ratepersec_4Qam,'b-o' );
 plot(Ratepersec_16Qam,'g-o' );
 plot(Ratepersec_64Qam,'r-o' );
 hold off;
+
+figure
+hold on
+title('Throughput Alamouti _ distance from BS ')
+xlabel('Distance from BS [Km]')
+ylabel('Throughput [Bits/sec]')
+plot(dist(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist(2:10:end), Ratepersec_16Qam,'g-o' );
+plot(dist(2:10:end), Ratepersec_64Qam,'r-o');
+hold off
+
+figure
+hold on
+title('Throughput Alamouti _ distance Travelled ')
+xlabel('Distance travelled [Km]')
+ylabel('Throughput [Bits/sec]')
+plot(dist_travelled(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist_travelled(2:10:end), Ratepersec_16Qam,'g-o' );
+plot(dist_travelled(2:10:end), Ratepersec_64Qam,'r-o');
+hold off
+
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 %*******************************************************************************************************
-%For Beamforming uPDATED
+%For Beamforming with Outdated Feedback
 [x y z] = size(chcap_beamforming_4Qam_eNB1);
 
 
@@ -217,10 +275,10 @@ for i = 1:TotalFrames
     WithFB_Frame_DL_sum_64Qam = Subframe_DL_sum_64Qam * 4;
     
     
-     Frame_DL_sum_4Qam(i) = WithFB_Frame_DL_sum_4Qam + Initial_Frame_DL_sum_4Qam;
-     Frame_DL_sum_16Qam(i) = WithFB_Frame_DL_sum_16Qam + Initial_Frame_DL_sum_16Qam;
-     Frame_DL_sum_64Qam(i) = WithFB_Frame_DL_sum_64Qam + Initial_Frame_DL_sum_64Qam;
-     
+    Frame_DL_sum_4Qam(i) = WithFB_Frame_DL_sum_4Qam + Initial_Frame_DL_sum_4Qam;
+    Frame_DL_sum_16Qam(i) = WithFB_Frame_DL_sum_16Qam + Initial_Frame_DL_sum_16Qam;
+    Frame_DL_sum_64Qam(i) = WithFB_Frame_DL_sum_64Qam + Initial_Frame_DL_sum_64Qam;
+    
     
     counter = counter + 1;
     
@@ -237,62 +295,83 @@ for i = 1:TotalFrames
     
 end
 figure
-Title('beamforming')
+Title('Beamforming Scheme')
 xlabel('Time[Seconds]');
-ylabel('Rate');
+ylabel('Throughput');
 hold on
 plot(Ratepersec_4Qam,'b-o' );
 plot(Ratepersec_16Qam,'g-o' );
 plot(Ratepersec_64Qam,'r-o' );
 hold off;
+
+figure
+hold on
+title('Throughput Beamforming _ distance from BS ')
+xlabel('Distance from BS [Km]')
+ylabel('Throughput [Bits/sec]')
+plot(dist(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist(2:10:end), Ratepersec_16Qam,'g-o' );
+plot(dist(2:10:end), Ratepersec_64Qam,'r-o');
+hold off
+
+figure
+hold on
+title('Throughput Beamforming _ distance Travelled ')
+xlabel('Distance travelled [Km]')
+ylabel('Throughput [Bits/sec]')
+plot(dist_travelled(2:10:end), Ratepersec_4Qam,'b-o');
+plot(dist_travelled(2:10:end), Ratepersec_16Qam,'g-o' );
+plot(dist_travelled(2:10:end), Ratepersec_64Qam,'r-o');
+hold off
+
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 % %*******************************************************************************************************
 % %For Beamforming
 % [x y z] = size(chcap_beamforming_4Qam_eNB1);
-% 
-% 
+%
+%
 % % Rounding of Number of frames to the multiple of 100 is done below:
 % TotalFrames = (round(z/100))*100;
-% 
+%
 % % Following will hold the data rate of one whole Frame
-% 
+%
 % Frame_DL_sum_4Qam = zeros(1, TotalFrames);
 % Frame_DL_sum_16Qam = zeros(1,TotalFrames);
 % Frame_DL_sum_64Qam = zeros(1,TotalFrames);
-% 
+%
 % % Following holds the accumulated data rate of 100 Frames. Since one frame
 % % lasts for 10ms in LTE so for data rate per second we need to add data of
 % % such a 100 Frames.
-% 
+%
 % Ratepersec_4Qam = zeros(1, TotalFrames/100);
 % Ratepersec_16Qam = zeros(1, TotalFrames/100);
 % Ratepersec_64Qam = zeros(1, TotalFrames/100);
-% 
+%
 % counter = 0;
 % k = 0;
 % for i = 1:TotalFrames
-%     
+%
 %     %following holds accumulated data rate of 200 resource elements
-%     
+%
 %     RS_sum_4Qam = sum(chcap_beamforming_4Qam_eNB1(1,:,i));
 %     RS_sum_16Qam = sum(chcap_beamforming_16Qam_eNB1(1,:,i));
 %     RS_sum_64Qam = sum(chcap_beamforming_64Qam_eNB1(1,:,i));
-%     
+%
 %     % since 4200/200 = 21 groups of 200 resource elements are there in one subframe, so to get
 %     % the estimate of whole subframe we need to multiply RS_sum_XQam by 21.
-%     
+%
 %     Subframe_DL_sum_4Qam = RS_sum_4Qam * 21;
 %     Subframe_DL_sum_16Qam = RS_sum_16Qam * 21;
 %     Subframe_DL_sum_64Qam = RS_sum_64Qam * 21;
-%     
+%
 %     %In LTE Confguration 3 we have 6 downlink subframes in one frame so
-%     
+%
 %     Frame_DL_sum_4Qam(i) = Subframe_DL_sum_4Qam * 6;
 %     Frame_DL_sum_16Qam(i) = Subframe_DL_sum_16Qam * 6;
 %     Frame_DL_sum_64Qam(i) = Subframe_DL_sum_64Qam * 6;
 %     counter = counter + 1;
-%     
+%
 %     if counter == 100 % means one second
 %         counter = 0;
 %         k = k+1;
@@ -300,10 +379,10 @@ hold off;
 %         Ratepersec_4Qam(1,k) = sum(Frame_DL_sum_4Qam(i-99 : i));
 %         Ratepersec_16Qam(1,k) = sum(Frame_DL_sum_16Qam(i-99 : i));
 %         Ratepersec_64Qam(1,k) = sum(Frame_DL_sum_64Qam(i-99 : i));
-%         
+%
 %     end
-%     
-%     
+%
+%
 % end
 % figure
 % Title('beamforming')
