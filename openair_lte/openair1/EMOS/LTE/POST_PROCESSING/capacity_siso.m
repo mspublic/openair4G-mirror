@@ -164,8 +164,3 @@ save 'chcap_SISO_Measurements.mat' 'chcap_siso*' 'SNR_eNB*'
 
 
 
-
-
-
-
-
