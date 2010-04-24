@@ -1,4 +1,4 @@
-function [gps_x, gps_y] = plot_gps_coordinates_sophia(mm, longitude, latitude, rx_rssi, label, color)
+function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
 % h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
 %
 %  This function plots the gps coordinates given by langitude and latutude
@@ -31,47 +31,15 @@ if nargin <= 5
     color = 'blue';
 end
 
-% % GOOGLE MAPS
-% % reference points in image coordinates 
-% x = [319.8624 417.6346 682.9017];
-% y = [457.7185 306.1954 439.7053];
-% % reference points in lat/lon
-% lat = [43.6166 43.6263 43.6172]; 
-% lon = [7.03778 7.04703 7.07062];
+load('maps/gps_calib_cordes.mat')
 
-% % GOOGLE MAPS with BS
-% % reference points in image coordinates 
-% x = [319.8624 391.9894 682.9017];
-% y = [457.7185 37.0563 439.7053];
-% % reference points in lat/lon
-% lat = [43.6166 43.6436 43.6172]; 
-% lon = [7.03778 7.04523 7.07062];
-
-% TOMTOM
-% reference points in image coordinates (these are taken from tomtom measurements)
-x = [ 4055  ...
-    %3939 4359 
-    4066 ...
-    %4128 
-    4968];
-y = [ 3576 ...
-    %3474 3530 
-    2999 ...
-    %2937 
-    4396];
-% reference points in lat/lon
-lat = [43.62269 ...
-    %43.62339 43.62293 
-    43.62650 ...
-    %43.62698 
-    43.61708];
-lon = [ 7.04670 ...
-    %7.04552  7.04948  
-    7.04689 ... 
-    %7.04746  
-    7.05468];
+x = image_points(:,1);
+y = image_points(:,2);
+lat = gps_points_num(:,1);
+lon = gps_points_num(:,2);
 
 %plot(x,y,'o')
+%keyboard;
 
 % calculate the scale factor of the projection by averaging
 pairs = nchoosek(1:length(x),2);
@@ -83,19 +51,20 @@ end
 
 % apply the correction factor, which was estimated manually by inspection
 scaley = mean(scaley);
-scalex = mean(scalex)*1.15;
+scalex = mean(scalex);
 
 gps_y = (latitude-lat(1))*mean(scaley) + y(1);     % gps_x is the north-south direction
 gps_x = (longitude-lon(1))*mean(scalex) + x(1);     % gps_y is the east-west direction
 
 if ~isempty(mm)
     image(mm);  % plots the image itself
+    hold on
 end
-hold on
     
 if (nargin == 4 && ~isempty(rx_rssi))
     for i=1:length(gps_x)
         plot(gps_x(i),gps_y(i),'x','color',m(cidx(i),:))
+        hold on
     end
     yt = round(linspace(min(rx_rssi),max(rx_rssi),8));
     hcb = colorbar;
@@ -117,4 +86,4 @@ end
 %else
 %    axis([min(gps_x)-100, max(gps_x)+100, min(gps_y)-100, max(gps_y)+100]);
 %end
-axis off
+axis image
