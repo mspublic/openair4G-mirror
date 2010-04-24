@@ -577,7 +577,7 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      path_loss_dB = -65;
+      path_loss_dB = -55;
 
       if ((next_slot > 2) && (next_slot<10)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm

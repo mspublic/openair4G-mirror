@@ -388,7 +388,7 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
       generate_pss(lte_ue_common_vars->txdataF,
 		   AMP,
 		   lte_frame_parms,
-		   lte_ue_common_vars->eNb_id,
+		   0, //lte_ue_common_vars->eNb_id,
 		   PSS_UL_SYMBOL,
 		   next_slot);
     }
@@ -1219,7 +1219,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
 	
-	//write_output("dlsch_cntl_llr.m","llr",lte_ue_dlsch_vars[eNb_id]->llr[0],40,1,0);
+	write_output("dlsch_cntl_llr.m","llr",lte_ue_dlsch_vars_ra[eNb_id]->llr[0],40,1,0);
 
 	dlsch_ue_ra_active = 0;
       
@@ -1241,7 +1241,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 #ifdef OPENAIR2
 	    if (UE_mode != ULSCH) {
 	      if (process_rar(dlsch_ue_ra->harq_processes[0]->b,&lte_ue_pdcch_vars[eNb_id]->crnti) == 0) {
-		ulsch_ue_rag_active=1;
+		//ulsch_ue_rag_active=1;
 		get_rag_alloc(lte_frame_parms->tdd_config,
 			      ((last_slot>>1)-1)%10,
 			      mac_xface->frame,

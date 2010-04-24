@@ -10,7 +10,7 @@ extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 extern unsigned short RIV_max;
 
-//#define DEBUG_RAR
+#define DEBUG_RAR
 
 int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       unsigned char subframe,

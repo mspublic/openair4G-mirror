@@ -71,10 +71,12 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   PHY_vars->PHY_measurements.n0_power_dB[0],
 		   PHY_vars->PHY_measurements.n0_power_dB[1]);
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",PHY_vars->rx_total_gain_dB);
-    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz\n",lte_ue_common_vars->freq_offset);
-    len += sprintf(&buffer[len], "[UE PROC] UE mode = %s\n",mode_string[UE_mode]);
-    len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",dlsch_ue[0]->harq_processes[0]->mcs);
-    len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",dlsch_ue[1]->harq_processes[0]->mcs);
+    if (lte_ue_common_vars && dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) {
+      len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz\n",lte_ue_common_vars->freq_offset);
+      len += sprintf(&buffer[len], "[UE PROC] UE mode = %s\n",mode_string[UE_mode]);
+      len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",dlsch_ue[0]->harq_processes[0]->mcs);
+      len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",dlsch_ue[1]->harq_processes[0]->mcs);
+    }
     //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
     for (eNB=0;eNB<1;eNB++) {
       len += sprintf(&buffer[len], "[UE PROC] RX spatial power eNB%d: [%d %d; %d %d] dB\n",
@@ -151,7 +153,8 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       
       len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.wideband_cqi_tot[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d : %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
-      len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0]);
+      if (dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) 
+	len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0]);
       
     }
   } // is_clusterhead

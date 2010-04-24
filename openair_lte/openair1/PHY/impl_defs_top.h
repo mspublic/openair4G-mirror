@@ -129,8 +129,11 @@ ________________________________________________________________*/
 #define TARGET_RX_POWER 50		// Target digital power for the AGC
 #define TARGET_RX_POWER_MAX 65		// Maximum digital power, such that signal does not saturate (value found by simulation)
 #define TARGET_RX_POWER_MIN 35		// Minimum digital power, anything below will be discarded (value found by simulation)
-#define MAX_RF_GAIN 160
-#define MIN_RF_GAIN 96
+//the min and max gains have to match the calibrated gain table
+//#define MAX_RF_GAIN 160
+//#define MIN_RF_GAIN 96
+#define MAX_RF_GAIN 150
+#define MIN_RF_GAIN 130
 
 #define PHY_SYNCH_OFFSET ((OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)-1)  // OFFSET of BEACON SYNCH
 #define PHY_SYNCH_MIN_POWER 1000
@@ -234,10 +237,12 @@ enum MODE {
 
 /// Data structure for transmission.
 typedef struct {
-  /* RAW TX sample buffer */
+  // RAW TX sample buffer
   mod_sym_t *TX_DMA_BUFFER[2];
-  /* Total transmit gain */           
+  /*
+  // Total transmit gain
   unsigned int tx_total_gain_dB;
+  */
 } TX_VARS ;  
 
 
@@ -245,6 +250,7 @@ typedef struct {
 typedef struct {
   int *RX_DMA_BUFFER;
 } RX_VARS;
+
 
 /// Measurement Variables
 #ifndef OPENAIR_LTE

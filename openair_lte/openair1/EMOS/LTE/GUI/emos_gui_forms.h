@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Tue Mar 23 12:41:49 2010.**/
+/** Header file generated with fdesign on Fri Apr 23 12:34:27 2010.**/
 
 #ifndef FD_main_frm_h_
 #define FD_main_frm_h_
@@ -15,6 +15,7 @@ extern void time_freq_callback(FL_OBJECT *, long);
 extern void refresh_timer_callback(FL_OBJECT *, long);
 extern void noise_snr_callback(FL_OBJECT *, long);
 extern void terminal_button_callback(FL_OBJECT *, long);
+extern void checkpoint_callback(FL_OBJECT *, long);
 
 
 extern void get_dir_callback(FL_OBJECT *, long);
@@ -79,6 +80,7 @@ typedef struct {
 	FL_OBJECT *sec2_lbl;
 	FL_OBJECT *terminal_btn1;
 	FL_OBJECT *terminal_btn3;
+	FL_OBJECT *next_cp;
 } FD_main_frm;
 
 extern FD_main_frm * create_form_main_frm(void);

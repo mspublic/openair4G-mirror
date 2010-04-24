@@ -10,7 +10,7 @@ Unit of measure: FL_COORD_PIXEL
 Name: main_frm
 Width: 1010
 Height: 710
-Number of Objects: 70
+Number of Objects: 75
 
 --------------------
 class: FL_BOX
@@ -1280,6 +1280,96 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: 
+callback: 
+argument: 
+
+--------------------
+class: FL_BOX
+type: ROUNDED_BOX
+box: 610 610 180 90
+boxtype: FL_ROUNDED_BOX
+colors: FL_WHEAT FL_COL1
+alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: 
+argument: 
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 630 660 100 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LIGHTER_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: Checkpoint
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: checkpoint_callback
+argument: 0
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 740 620 40 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LIGHTER_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_BOLD_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: +
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: checkpoint_callback
+argument: 1
+
+--------------------
+class: FL_BUTTON
+type: NORMAL_BUTTON
+box: 740 660 40 30
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LIGHTER_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_BOLD_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: -
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: checkpoint_callback
+argument: -1
+
+--------------------
+class: FL_TEXT
+type: NORMAL_TEXT
+box: 640 625 90 20
+boxtype: FL_FLAT_BOX
+colors: FL_WHEAT FL_MCOL
+alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: Next CP: 1
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: next_cp
 callback: 
 argument: 
 

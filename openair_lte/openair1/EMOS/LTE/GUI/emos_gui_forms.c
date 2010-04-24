@@ -337,6 +337,27 @@ FD_main_frm *create_form_main_frm(void)
   obj = fl_add_text(FL_NORMAL_TEXT,300,620,110,20,"terminal type");
     fl_set_object_color(obj,FL_PALEGREEN,FL_MCOL);
     fl_set_object_lalign(obj,FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
+  obj = fl_add_box(FL_ROUNDED_BOX,610,610,180,90,"");
+    fl_set_object_color(obj,FL_WHEAT,FL_COL1);
+    fl_set_object_lalign(obj,FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
+  obj = fl_add_button(FL_NORMAL_BUTTON,630,660,100,30,"Checkpoint");
+    fl_set_object_boxtype(obj,FL_ROUNDED3D_UPBOX);
+    fl_set_object_color(obj,FL_LIGHTER_COL1,FL_COL1);
+    fl_set_object_lsize(obj,FL_TINY_SIZE);
+    fl_set_object_callback(obj,checkpoint_callback,0);
+  obj = fl_add_button(FL_NORMAL_BUTTON,740,620,40,30,"+");
+    fl_set_object_boxtype(obj,FL_ROUNDED3D_UPBOX);
+    fl_set_object_color(obj,FL_LIGHTER_COL1,FL_COL1);
+    fl_set_object_lstyle(obj,FL_BOLD_STYLE);
+    fl_set_object_callback(obj,checkpoint_callback,1);
+  obj = fl_add_button(FL_NORMAL_BUTTON,740,660,40,30,"-");
+    fl_set_object_boxtype(obj,FL_ROUNDED3D_UPBOX);
+    fl_set_object_color(obj,FL_LIGHTER_COL1,FL_COL1);
+    fl_set_object_lstyle(obj,FL_BOLD_STYLE);
+    fl_set_object_callback(obj,checkpoint_callback,-1);
+  fdui->next_cp = obj = fl_add_text(FL_NORMAL_TEXT,640,625,90,20,"Next CP: 1");
+    fl_set_object_color(obj,FL_WHEAT,FL_MCOL);
+    fl_set_object_lalign(obj,FL_ALIGN_LEFT|FL_ALIGN_INSIDE);
   fl_end_form();
 
   fdui->main_frm->fdui = fdui;

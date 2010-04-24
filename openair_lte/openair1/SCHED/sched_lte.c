@@ -199,10 +199,14 @@ static void * openair_thread(void *param) {
   
   exit_openair = 0;
   
-  if (mac_xface->is_primary_cluster_head ==1)
+  if (mac_xface->is_primary_cluster_head ==1) {
     PHY_vars->rx_total_gain_dB = 138;
-  else
+    PHY_vars->rx_total_gain_eNB_dB = 138;
+  }
+  else {
     PHY_vars->rx_total_gain_dB = MIN_RF_GAIN;
+    PHY_vars->rx_total_gain_eNB_dB = MIN_RF_GAIN;
+  }
 
 #ifdef CBMIMO1  
   for (i=0;i<number_of_cards;i++) 
@@ -647,9 +651,6 @@ static void * top_level_scheduler(void *param) {
 	openair_daq_vars.sync_state = 1;
 	openair_daq_vars.sched_cnt = 0;
 	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
-
-	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
-	//openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
 
 	msg("[openair][sched][top_level_scheduler] Starting RT acquisition, ofdm_symbols_per_frame %d, log2_symbol_size %d\n",
 	    NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);

@@ -81,6 +81,11 @@ int is_cluster_head = 0;
 int node_id = 8;
 int tx_gain = 0;
 unsigned char mimo_mode = 1;
+int checkpoint = 1;
+int frame_tx;
+time_t starttime_tmp;
+struct tm starttime;
+
 
 /*
 unsigned char tx_gain_table_c[36] = {
@@ -95,13 +100,15 @@ unsigned char tx_gain_table_c[36] = {
   177, 173, 30, 17}; //20dBm
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
-unsigned char tx_gain_table[4] = {157, 157, 140, 140};
+unsigned char tx_gain_table[4] = {137, 137, 140, 140};
 unsigned int timing_advance = 80;
 unsigned int tcxo = 53;  
 int freq_correction =  -300;
 //unsigned int rf_mode_ue=0; //mixer low gain, lna off
 unsigned int rf_mode_ue=1; //mixer low gain, lna on
-unsigned int rf_mode_eNb=2; //mixer high gain, lna on
+//unsigned int rf_mode_eNb=2; //mixer high gain, lna on
+// for the interference test we use a UE but set it to eNb mode
+unsigned int rf_mode_eNb=1; //mixer high gain, lna on
 
 
 
@@ -146,6 +153,7 @@ void power_callback(FL_OBJECT *ob, long user_data);
 //void set_origin_callback(FL_OBJECT *ob, long user_data);
 void refresh_callback(FL_OBJECT *ob, long user_data);
 void record_callback(FL_OBJECT *ob, long user_data);
+void checkpoint_callback(FL_OBJECT *ob, long user_data);
 void new_data_callback(int fifo_fd, void* data);
 void time_freq_callback(FL_OBJECT *ob, long user_data);
 void noise_snr_callback(FL_OBJECT *ob, long user_data);
@@ -1292,6 +1300,33 @@ void record_callback(FL_OBJECT *ob, long user_data)
     }
 }
 
+void checkpoint_callback(FL_OBJECT *ob, long user_data)
+{	
+  char temp_label[1024];
+  char filename[1024];
+  FILE *checkpoints_file = NULL; 
+
+  if (user_data==1)
+    checkpoint++;
+  else if (user_data==-1)
+    checkpoint--;
+  else if (user_data==0) {
+    sprintf(filename,"%scheckpoints.txt",dumpfile_dir);
+    checkpoints_file = fopen(filename,"a");
+    if (checkpoints_file) {
+      fprintf(checkpoints_file,"date %d%d%d_%d%d%d, checkpoint %d, frame_tx %d, file_index %d, frame_counter %d\n", 1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec, checkpoint, frame_tx, file_index, frame_counter);
+  fclose(checkpoints_file);
+    }
+    checkpoint++;
+  }
+  
+  sprintf(temp_label, "Next CP: %d", checkpoint);
+  fl_set_object_label(main_frm->next_cp, temp_label);
+  
+  
+}
+
+
 int open_dumpfile()
 {
   char  dumpfile_name[1024];
@@ -1310,8 +1345,6 @@ int open_dumpfile()
     }
 			
   // open the dumpfile
-  time_t starttime_tmp;
-  struct tm starttime;
 	
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
@@ -1339,7 +1372,6 @@ int open_dumpfile()
 void new_data_callback(int fifo_fd, void* data)
 {
   int n_bytes = 0;
-  int frame_tx;
   char temp_text[1024];
 	
   // Read data from FIFO
