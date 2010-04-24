@@ -29,6 +29,7 @@
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fff
 
+int number_of_cards=3;
 
 int main(int argc, char **argv) {
 
