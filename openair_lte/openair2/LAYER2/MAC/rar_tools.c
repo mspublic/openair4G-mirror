@@ -37,6 +37,10 @@ unsigned short fill_rar(unsigned char *dlsch_buffer,
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
   rar->t_crnti                = taus();
+
+#ifdef DEBUG_RAR
+  debug_msg("[MAC eNB] Generating RAR for CRNTI %x\n",rar->t_crnti);
+#endif
   return(rar->t_crnti);
 }
 
