@@ -41,15 +41,16 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
 
   if ( (rx_power_fil_dB < TARGET_RX_POWER - 5) && (PHY_vars->rx_total_gain_dB < MAX_RF_GAIN) ) {
     PHY_vars->rx_total_gain_dB = min(PHY_vars->rx_total_gain_dB+5,MAX_RF_GAIN);
-    PHY_vars->rx_total_gain_eNB_dB = PHY_vars->rx_total_gain_dB;
   }
   else if ( (rx_power_fil_dB > TARGET_RX_POWER + 5) && (PHY_vars->rx_total_gain_dB > MIN_RF_GAIN) ) {
     PHY_vars->rx_total_gain_dB = max(PHY_vars->rx_total_gain_dB-5,MIN_RF_GAIN);
-    PHY_vars->rx_total_gain_eNB_dB = PHY_vars->rx_total_gain_dB;
   }
 
+  PHY_vars->rx_total_gain_eNB_dB = PHY_vars->rx_total_gain_dB;
+
 #ifndef USER_MODE
-  openair_set_rx_gain_cal_openair(0,PHY_vars->rx_total_gain_dB);
+  for (i=0;i<number_of_cards;i++)
+    openair_set_rx_gain_cal_openair(i,PHY_vars->rx_total_gain_dB);
 #endif
 
 #ifdef DEBUG_PHY

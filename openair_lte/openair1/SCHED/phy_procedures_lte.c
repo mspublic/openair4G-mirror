@@ -446,13 +446,13 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
   int aa,l,sync_pos,sync_pos_slot;
   unsigned char eNb_id=0, UE_id=0;
   int time_in, time_out;
-
+  short *x, *y, *z;
   char fname[100],vname[100];
 
 
   if (last_slot%2==1) {
-
-    for (eNb_id == 0; eNb_id < number_of_cards; eNb_id++) {
+    
+    for (eNb_id = 0; eNb_id < number_of_cards; eNb_id++) {
       for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
 	
 	slot_fep_ul(lte_frame_parms,
@@ -473,31 +473,34 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #endif
 
 
-    eNb_id = 0;
     // look for PSS in the last 3 symbols of the last slot
     // but before we need to zero pad the gaps that the HW removed
+    // also add the signals from all antennas of all eNbs
     bzero(eNb_sync_buffer[0],640*6*sizeof(int));
     bzero(eNb_sync_buffer[1],640*6*sizeof(int));
 
-    for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) {
-      for (l=PSS_UL_SYMBOL; l<lte_frame_parms->symbols_per_tti/2; l++) {
-	memcpy(&eNb_sync_buffer[aa][(l-PSS_UL_SYMBOL)*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)+lte_frame_parms->nb_prefix_samples], 
-	       &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*
+    for(eNb_id = 0;eNb_id<number_of_cards;eNb_id++) {
+      for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) {
+	for (l=PSS_UL_SYMBOL; l<lte_frame_parms->symbols_per_tti/2; l++) {
+	  
+	  x = (short*) &eNb_sync_buffer[0][(l-PSS_UL_SYMBOL)*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)+lte_frame_parms->nb_prefix_samples];
 #ifdef USER_MODE
-							(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)+lte_frame_parms->nb_prefix_samples
+	  y = (short*) &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)+lte_frame_parms->nb_prefix_samples];
 #else
-							lte_frame_parms->ofdm_symbol_size
+	  y = (short*) &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*lte_frame_parms->ofdm_symbol_size];
 #endif
-							],
-	       lte_frame_parms->ofdm_symbol_size*sizeof(int));
+	  z = x;
+	  
+	  add_vector16(x,y,z,lte_frame_parms->ofdm_symbol_size*sizeof(int));
+	}
       }
     }
 
 #ifdef USER_MODE
     write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
 #endif
-
-
+    
+    eNb_id = 0;
     if (eNB_UE_stats[0].mode[0] == PRACH) {
       sync_pos_slot = lte_frame_parms->nb_prefix_samples; //this is where the sync pos should be wrt eNb_sync_buffer
 
@@ -520,6 +523,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       lte_eNB_common_vars->sync_corr = sync_corr;
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: sync_pos %d\n",mac_xface->frame, last_slot,
 		sync_pos - sync_pos_slot);
+
       if (sync_pos>=0) {
 	eNB_UE_stats[eNb_id].UE_id[UE_id] = 0x1234; 
 	eNB_UE_stats[eNb_id].UE_timing_offset[UE_id] = sync_pos - sync_pos_slot;
@@ -2241,7 +2245,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   
 void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
-#undef DEBUG_PHY
+  //#undef DEBUG_PHY
   if (mac_xface->is_cluster_head == 0) {
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_UL) {
 #ifdef DEBUG_PHY

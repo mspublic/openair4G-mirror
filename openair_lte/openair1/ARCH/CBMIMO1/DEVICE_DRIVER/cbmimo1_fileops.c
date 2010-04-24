@@ -1,4 +1,4 @@
-#ifndef USER_MODE
+q#ifndef USER_MODE
 #define __NO_VERSION__
 
 //#include "rt_compat.h"
@@ -481,12 +481,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       
-      PHY_vars->rx_total_gain_eNB_dB = 138;
-      PHY_vars->rx_total_gain_dB = 138;
-      openair_set_rx_gain_cal_openair(0,PHY_vars->rx_total_gain_dB);
-
       for (i=0;i<number_of_cards;i++) 
 	ret = setup_regs(i);
+
+      PHY_vars->rx_total_gain_dB = 138;
+      PHY_vars->rx_total_gain_eNB_dB = 138;
+      for (i=0;i<number_of_cards;i++)
+	openair_set_rx_gain_cal_openair(i,PHY_vars->rx_total_gain_eNB_dB);
 
       if (ret == 0) {
 #ifdef OPENAIR_LTE
@@ -881,7 +882,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     printk("[openair][IOCTL]     openair_SET_CALIBRATED_RX_GAIN ...(%p)\n",(void *)arg);
 
-    openair_set_rx_gain_cal_openair(0,((unsigned int *)arg)[0]);
+    for (i=0;i<number_of_cards;i++)
+      openair_set_rx_gain_cal_openair(i,((unsigned int *)arg)[0]);
+
     PHY_vars->rx_total_gain_dB = ((unsigned int *)arg)[0];
     PHY_vars->rx_total_gain_eNB_dB = ((unsigned int *)arg)[0];
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF; // ((unsigned int *)arg)[0] & 0x1; 

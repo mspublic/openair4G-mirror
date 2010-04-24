@@ -104,7 +104,7 @@ void lte_eNB_I0_measurements(LTE_eNB_COMMON *eNB_common_vars,
       }
     }
     phy_measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_power_tot);
-    phy_measurements->n0_subband_power_tot_dBm[rb] = phy_measurements->n0_subband_power_dB[rb] - PHY_vars->rx_total_gain_eNB_dB - 14;
+    phy_measurements->n0_subband_power_tot_dBm[rb] = phy_measurements->n0_subband_power_tot_dB[rb] - PHY_vars->rx_total_gain_eNB_dB - 14;
     
   }
 }

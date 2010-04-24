@@ -15,7 +15,7 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DP
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA  -O2
+CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA 
 
 CFLAGS += -DOPENAIR2 -DTBS_FIX
 ifdef EMOS
@@ -94,6 +94,7 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_vv.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cadd_vv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
