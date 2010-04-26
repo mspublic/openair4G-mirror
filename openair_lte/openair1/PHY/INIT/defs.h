@@ -51,6 +51,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_ULSCH **eNB_ulsch);
 
 
+void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
+
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
 #endif

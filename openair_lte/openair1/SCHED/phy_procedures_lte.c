@@ -353,7 +353,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 #endif
 
       if (rag_flag == 1)
-	msg("[PHY_PROCEDURES][UE] Frame %d, Subframe %d Generating RAG\n",mac_xface->frame,next_slot>>1);
+	msg("[PHY_PROCEDURES][UE] Frame %d, Subframe %d Generating RAG (nb_rb %d, first_rb %d)\n",mac_xface->frame,next_slot>>1,ulsch_ue[0]->harq_processes[0]->nb_rb,ulsch_ue[0]->harq_processes[0]->first_rb);
       ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
       ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0],rag_flag);
 
@@ -655,6 +655,7 @@ void phy_procedures_emos_UE_RX(unsigned char last_slot) {
   if (last_slot==0) {
       emos_dump_UE.timestamp = rt_get_time_ns();
       emos_dump_UE.frame_rx = mac_xface->frame;
+      emos_dump_UE.UE_mode = UE_mode;
       emos_dump_UE.freq_offset = lte_ue_common_vars->freq_offset;
       emos_dump_UE.timing_advance = openair_daq_vars.timing_advance;
       emos_dump_UE.timing_offset  = PHY_vars->rx_offset;
@@ -864,6 +865,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       }
 #endif
 
+      
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
 					    lte_ue_pdcch_vars[eNb_id]->crnti,
@@ -959,8 +961,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					    P_RNTI)==0) {
 	dlsch_ue_ra_active = 1;
 #ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra %p\n",
-		  dlsch_ue_ra->rb_alloc[0],dlsch_ue_ra);
+	msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra %p\n",
+	    dlsch_ue_ra->rb_alloc[0],dlsch_ue_ra);
 #endif
       }
     }
@@ -1077,6 +1079,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 
       if (UE_mode == RA_RESPONSE) {
 	rag_timer--;
+	msg("[UE RAR] rag_timer %d\n",rag_timer);
+
 	if (rag_timer == 0) {
 	  UE_mode = PRACH;
 	  lte_ue_pdcch_vars[eNb_id]->crnti = 0x1234;
@@ -1150,7 +1154,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	}
 
 	if (mac_xface->frame % 100 == 0) {
-	  dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
+	  if ((dlsch_received - dlsch_received_last) != 0) 
+	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
 	  dlsch_errors_last = dlsch_errors;
 	  dlsch_received_last = dlsch_received;
 	}
@@ -1252,7 +1257,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 #ifdef OPENAIR2
 	    if (UE_mode != ULSCH) {
 	      if (process_rar(dlsch_ue_ra->harq_processes[0]->b,&lte_ue_pdcch_vars[eNb_id]->crnti) == 0) {
-		//ulsch_ue_rag_active=1;
+		ulsch_ue_rag_active=1;
 		get_rag_alloc(lte_frame_parms->tdd_config,
 			      ((last_slot>>1)-1)%10,
 			      mac_xface->frame,
@@ -1630,7 +1635,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     // RA  
     if (((next_slot>>1) == 7) && (eNb_generate_rar == 1)) {
-      debug_msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
+      msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
 
       // Schedule Random-Access Response 
       memcpy(&dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));

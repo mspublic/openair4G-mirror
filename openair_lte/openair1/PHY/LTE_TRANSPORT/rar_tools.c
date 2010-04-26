@@ -49,7 +49,7 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[0]->status = ACTIVE;
     ulsch->harq_processes[0]->rvidx = 0;
     ulsch->harq_processes[0]->mcs         = rar->mcs;
-    ulsch->harq_processes[0]->TBS         = dlsch_tbs25[ulsch->harq_processes[0]->mcs][ulsch->harq_processes[0]->nb_rb];
+    ulsch->harq_processes[0]->TBS         = dlsch_tbs25[ulsch->harq_processes[0]->mcs][ulsch->harq_processes[0]->nb_rb-1];
     ulsch->harq_processes[0]->Msc_initial   = 12*ulsch->harq_processes[0]->nb_rb;
     ulsch->harq_processes[0]->Nsymb_initial = 9;
     ulsch->harq_processes[0]->round = 0;
@@ -59,13 +59,13 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[0]->round++;
   }
 #ifdef DEBUG_RAR
-  debug_msg("ulsch ra (eNb): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
-  debug_msg("ulsch ra (eNb): rballoc  %x\n",ulsch->harq_processes[0]->first_rb);
-  debug_msg("ulsch ra (eNb): harq_pid %d\n",0);
-  debug_msg("ulsch ra (eNb): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
-  debug_msg("ulsch ra (eNb): TBS      %d\n",ulsch->harq_processes[0]->TBS);
-  debug_msg("ulsch ra (eNb): mcs      %d\n",ulsch->harq_processes[0]->mcs);
-  debug_msg("ulsch ra (eNb): Or1      %d\n",ulsch->Or1);
+  msg("ulsch ra (eNb): NBRB     %d\n",ulsch->harq_processes[0]->nb_rb);
+  msg("ulsch ra (eNb): rballoc  %x\n",ulsch->harq_processes[0]->first_rb);
+  msg("ulsch ra (eNb): harq_pid %d\n",0);
+  msg("ulsch ra (eNb): Ndi      %d\n",ulsch->harq_processes[0]->Ndi);  
+  msg("ulsch ra (eNb): TBS      %d\n",ulsch->harq_processes[0]->TBS);
+  msg("ulsch ra (eNb): mcs      %d\n",ulsch->harq_processes[0]->mcs);
+  msg("ulsch ra (eNb): Or1      %d\n",ulsch->Or1);
 #endif
   return(0);
 }
@@ -95,6 +95,9 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 
     ulsch->harq_processes[0]->first_rb                              = RIV2first_rb_LUT25[rar->rb_alloc];
     ulsch->harq_processes[0]->nb_rb                                 = RIV2nb_rb_LUT25[rar->rb_alloc];
+    if (ulsch->harq_processes[0]->nb_rb ==0)
+      return(-1);
+
     ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[0]->nb_rb];
 
     if (ulsch->harq_processes[0]->nb_rb > 3) {
@@ -132,7 +135,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->harq_processes[0]->status = ACTIVE;
       ulsch->harq_processes[0]->rvidx = 0;
       ulsch->harq_processes[0]->mcs         = rar->mcs;
-      ulsch->harq_processes[0]->TBS         = dlsch_tbs25[ulsch->harq_processes[0]->mcs][ulsch->harq_processes[0]->nb_rb];
+      ulsch->harq_processes[0]->TBS         = dlsch_tbs25[ulsch->harq_processes[0]->mcs][ulsch->harq_processes[0]->nb_rb-1];
       ulsch->harq_processes[0]->Msc_initial   = 12*ulsch->harq_processes[0]->nb_rb;
       ulsch->harq_processes[0]->Nsymb_initial = 9;
       ulsch->harq_processes[0]->round = 0;

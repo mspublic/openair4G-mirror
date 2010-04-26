@@ -135,7 +135,8 @@ static void * dlsch_thread(void *param) {
 	  dlsch_errors++;
 
 	if (mac_xface->frame % 100 == 0) {
-	  dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
+	  if (dlsch_received - dlsch_received_last != 0)
+	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
 	  dlsch_errors_last = dlsch_errors;
 	  dlsch_received_last = dlsch_received;
 	}

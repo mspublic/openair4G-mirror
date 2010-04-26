@@ -100,15 +100,16 @@ unsigned char tx_gain_table_c[36] = {
   177, 173, 30, 17}; //20dBm
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
-unsigned char tx_gain_table[4] = {137, 137, 140, 140};
+unsigned char tx_gain_table_ue[4] = {137, 137, 140, 140};
+unsigned char tx_gain_table_eNb[4] = {137, 137, 140, 140};
 unsigned int timing_advance = 80;
 unsigned int tcxo = 53;  
 int freq_correction =  -300;
 //unsigned int rf_mode_ue=0; //mixer low gain, lna off
 unsigned int rf_mode_ue=1; //mixer low gain, lna on
-//unsigned int rf_mode_eNb=2; //mixer high gain, lna on
+unsigned int rf_mode_eNb=2; //mixer high gain, lna on
 // for the interference test we use a UE but set it to eNb mode
-unsigned int rf_mode_eNb=1; //mixer high gain, lna on
+// unsigned int rf_mode_eNb=1; //mixer low gain, lna on
 
 
 
@@ -1093,7 +1094,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
@@ -1105,7 +1106,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
@@ -1116,7 +1117,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TIMING_ADVANCE,&timing_advance);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TCXO_DAC,&tcxo);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_FREQ_OFFSET,&freq_correction);
@@ -1131,7 +1132,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
 		ioctl_result+=ioctl(openair_dev_fd, openair_START_NODE, &fc);
 	      }
 	      else 

@@ -145,7 +145,8 @@ typedef struct {
 } LTE_UE_PBCH;
 
 typedef enum {
-  PRACH=0,
+  NOT_SYNCHED=0,
+  PRACH,
   RA_RESPONSE,
   ULSCH
 } UE_MODE_t;

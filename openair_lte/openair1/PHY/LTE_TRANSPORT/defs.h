@@ -1211,6 +1211,12 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short p_rnti);
 
 
+void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
+
+void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms);
+
+void init_transport_channels(unsigned char);
+
 void generate_RIV_tables(void);
 
 

@@ -21,8 +21,12 @@ void openair_set_rx_rf_mode(unsigned char card_id,unsigned int arg) {
 #ifndef NOCARD_TEST
   printk("[openair][RF_CNTL] Setting RX_RF MODE on card %d to %d\n",card_id,arg);
 
-    openair_daq_vars.rx_rf_mode = arg;
+  openair_daq_vars.rx_rf_mode = arg;
 
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->rx_rf_mode  = arg;
+  else
+    printk("[openair][RF_CNTL] rx_rf_mode not configured\n");
 
 
   //  openair_dma(SET_RX_RF_MODE);

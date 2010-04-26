@@ -224,10 +224,12 @@ int main (int argc, char **argv) {
 #ifndef OPENAIR_LTE  
   phy_init(NB_ANTENNAS_TX);
 #else
+
   lte_frame_parms = &(PHY_config->lte_frame_parms);
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
+  lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;

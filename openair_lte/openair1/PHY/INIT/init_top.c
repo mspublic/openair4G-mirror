@@ -2,7 +2,7 @@
 #ifndef USER_MODE
 #define __NO_VERSION__
 #endif
-
+ 
 #include "defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/extern.h"

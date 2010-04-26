@@ -139,12 +139,6 @@ int openair_device_mmap(struct file *filp, struct vm_area_struct *vma) {
   return 0; 
 }
 
-#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,9,6)
-#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
-#define BCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
-#define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
-#define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
-#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
 
 //-----------------------------------------------------------------------------
 int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg) {
@@ -152,6 +146,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   //-----------------------------------------------------------------------------
   int ret=-1;
   int i,aa,eNb_id;
+  int ue,eNb;
   
   void *arg_ptr = (void *)arg;
 
@@ -231,14 +226,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	lte_frame_parms->twiddle_ifft     = twiddle_ifft;
 	lte_frame_parms->rev              = rev;
 
-	lte_gold(lte_frame_parms);
-	lte_sync_time_init(lte_frame_parms);
-
-	generate_64qam_table();
-	generate_16qam_table();
-	generate_RIV_tables();
-
-	set_taus_seed();
+	phy_init_lte_top(lte_frame_parms);
 
 #else
 	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
@@ -384,60 +372,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	// init DCI structures for testing
 	openair_daq_vars.target_ue_ul_mcs    = 1;
-	UL_alloc_pdu.type    = 0;
-	UL_alloc_pdu.hopping = 0;
-	UL_alloc_pdu.rballoc = UL_RB_ALLOC;
-	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
-	UL_alloc_pdu.ndi     = 1;
-	UL_alloc_pdu.TPC     = 0;
-	UL_alloc_pdu.cqi_req = 1;
-	
-	CCCH_alloc_pdu.type               = 1;
-	CCCH_alloc_pdu.vrb_type           = 0;
-	CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-	CCCH_alloc_pdu.ndi      = 1;
-	CCCH_alloc_pdu.mcs      = 1;
-	CCCH_alloc_pdu.harq_pid = 0;
 
-	BCCH_alloc_pdu.type               = 0;
-	BCCH_alloc_pdu.vrb_type           = 0;
-	BCCH_alloc_pdu.rballoc            = BCCH_RB_ALLOC;
-	BCCH_alloc_pdu.ndi      = 1;
-	BCCH_alloc_pdu.mcs      = 1;
-	BCCH_alloc_pdu.harq_pid = 0;
+	init_transport_channels(openair_daq_vars.dlsch_transmission_mode);
 
-	RA_alloc_pdu.type               = 0;
-	RA_alloc_pdu.vrb_type           = 0;
-	RA_alloc_pdu.rballoc            = RA_RB_ALLOC;
-	RA_alloc_pdu.ndi      = 1;
-	RA_alloc_pdu.mcs      = 1;
-	RA_alloc_pdu.harq_pid = 0;
-	
-	openair_daq_vars.target_ue_dl_mcs    = 1;
 
-	DLSCH_alloc_pdu2.rah              = 0;
-	DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
-	DLSCH_alloc_pdu2.TPC              = 0;
-	DLSCH_alloc_pdu2.dai              = 0;
-	DLSCH_alloc_pdu2.harq_pid         = 0;
-	DLSCH_alloc_pdu2.tb_swap          = 0;
-	DLSCH_alloc_pdu2.mcs1             = openair_daq_vars.target_ue_dl_mcs;
-	DLSCH_alloc_pdu2.ndi1             = 1;
-	DLSCH_alloc_pdu2.rv1              = 0;
-	// Forget second codeword
-	if (openair_daq_vars.dlsch_transmission_mode == 6)
-	  DLSCH_alloc_pdu2.tpmi           = PUSCH_PRECODING0;
-	else
-	  DLSCH_alloc_pdu2.tpmi             = 0;
-
-	DLSCH_alloc_pdu1A.type               = 1;
-	DLSCH_alloc_pdu1A.vrb_type           = 0;
-	DLSCH_alloc_pdu1A.rballoc            = CCCH_RB_ALLOC;
-	DLSCH_alloc_pdu1A.ndi      = 1;
-	DLSCH_alloc_pdu1A.rv       = 1;
-	DLSCH_alloc_pdu1A.mcs      = 0;
-	DLSCH_alloc_pdu1A.harq_pid = 0;
-	DLSCH_alloc_pdu1A.TPC      = 1;   // set to 3 PRB
 
 #endif
 
@@ -492,6 +430,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       if (ret == 0) {
 #ifdef OPENAIR_LTE
 	openair_daq_vars.mode = openair_SYNCHED;
+	for (ue=0;ue<NUMBER_OF_UE_MAX;ue++)
+	  for (eNb=0;eNb<NUMBER_OF_eNB_MAX;eNb++)
+	    eNB_UE_stats[eNb].mode[ue] = PRACH;
 #else
 	openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
 #endif

@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -164,6 +164,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       NPRB      = RIV2nb_rb_LUT25[rballoc];
     }
 
+    if (NPRB==0)
+      return(-1);
+
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
       dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     else
@@ -295,15 +298,15 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   }
 #ifdef DEBUG_DCI
   if (dlsch0) {
-    printf("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
-    printf("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
-    printf("dlsch0 eNB: harq_pid %d\n",harq_pid);
-    printf("dlsch0 eNB: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
-    printf("dlsch0 eNB: rvidx    %d\n",dlsch0->harq_processes[harq_pid]->rvidx);  
-    printf("dlsch0 eNB: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
-    printf("dlsch0 eNB: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
-    printf("dlsch0 eNB: tpmi %d\n",tpmi);
-    printf("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
+    msg("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
+    msg("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
+    msg("dlsch0 eNB: harq_pid %d\n",harq_pid);
+    msg("dlsch0 eNB: Ndi      %d\n",dlsch0->harq_processes[harq_pid]->Ndi);  
+    msg("dlsch0 eNB: rvidx    %d\n",dlsch0->harq_processes[harq_pid]->rvidx);  
+    msg("dlsch0 eNB: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
+    msg("dlsch0 eNB: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
+    msg("dlsch0 eNB: tpmi %d\n",tpmi);
+    msg("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
   }
 #endif
   return(0);
@@ -357,13 +360,16 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       NPRB      = RIV2nb_rb_LUT25[rballoc];
     }
 
+    if (NPRB==0)
+      return(-1);
+
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 1) {
       msg("dci_tools.c: ERROR: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
       return(-1);       
     }
 
     dlsch[0]->current_harq_pid = harq_pid;
-    //    printf("Format 1A: harq_pid %d\n",harq_pid);
+    //    msg("Format 1A: harq_pid %d\n",harq_pid);
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type == 0)
       dlsch[0]->rb_alloc[0]                       = localRIV2alloc_LUT25[rballoc];
     else
@@ -442,7 +448,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     // Fix this
     tpmi = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->tpmi;
-    //    printf("ue: tpmi %d\n",tpmi);
+    //    msg("ue: tpmi %d\n",tpmi);
 
     switch (tpmi) {
     case 0 : 
@@ -517,14 +523,14 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
   
 #ifdef DEBUG_DCI
   if (dlsch[0]) {
-    printf("dlsch0 UE: %p\n",dlsch[0]);
-    printf("dlsch0 UE: NBRB     %d\n",dlsch[0]->nb_rb);
-    printf("dlsch0 UE: rballoc  %x\n",dlsch[0]->rb_alloc[0]);
-    printf("dlsch0 UE: harq_pid %d\n",harq_pid);
-    printf("dlsch0 UE: Ndi      %d\n",dlsch[0]->harq_processes[harq_pid]->Ndi);  
-    printf("dlsch0 UE: rvidx    %d\n",dlsch[0]->harq_processes[harq_pid]->rvidx);  
-    printf("dlsch0 UE: TBS      %d\n",dlsch[0]->harq_processes[harq_pid]->TBS);
-    printf("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
+    msg("dlsch0 UE: %p\n",dlsch[0]);
+    msg("dlsch0 UE: NBRB     %d\n",dlsch[0]->nb_rb);
+    msg("dlsch0 UE: rballoc  %x\n",dlsch[0]->rb_alloc[0]);
+    msg("dlsch0 UE: harq_pid %d\n",harq_pid);
+    msg("dlsch0 UE: Ndi      %d\n",dlsch[0]->harq_processes[harq_pid]->Ndi);  
+    msg("dlsch0 UE: rvidx    %d\n",dlsch[0]->harq_processes[harq_pid]->rvidx);  
+    msg("dlsch0 UE: TBS      %d\n",dlsch[0]->harq_processes[harq_pid]->TBS);
+    msg("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
   }
 #endif
   return(0);
@@ -533,7 +539,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 /*
 unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subframe) {
 
-  printf("subframe2harq_pid_tdd: tdd_config %d, subframe %d\n",tdd_config,subframe);
+  msg("subframe2harq_pid_tdd: tdd_config %d, subframe %d\n",tdd_config,subframe);
 
   switch (tdd_config) {
 
@@ -795,7 +801,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = 0;
     else 
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
-    //    printf("harq_pid = %d\n",harq_pid);
+    //    msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
@@ -818,7 +824,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
-
+    
     if (ulsch->harq_processes[harq_pid]->Ndi == 1)
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
@@ -868,12 +874,12 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-    printf("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    printf("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-    printf("ulsch (ue): harq_pid %d\n",harq_pid);
-    printf("ulsch (ue): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-    printf("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    printf("ulsch (ue): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    msg("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("ulsch (ue): harq_pid %d\n",harq_pid);
+    msg("ulsch (ue): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    msg("ulsch (ue): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    msg("ulsch (ue): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
 #endif
     return(0);
   }
@@ -903,7 +909,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 
     harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
 
-    //    printf("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
+    //    msg("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
 
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
@@ -933,13 +939,13 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
-    printf("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    printf("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-    printf("ulsch (eNb): harq_pid %d\n",harq_pid);
-    printf("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-    printf("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    printf("ulsch (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    printf("ulsch (eNb): Or1      %d\n",ulsch->Or1);
+    msg("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    msg("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("ulsch (eNb): harq_pid %d\n",harq_pid);
+    msg("ulsch (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+    msg("ulsch (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    msg("ulsch (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    msg("ulsch (eNb): Or1      %d\n",ulsch->Or1);
 #endif
     return(0);
   }
@@ -961,7 +967,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
    generate_RIV_tables();
 
    for (i=0;i<512;i++) {
-     printf("RIV %d: nb_rb %d, alloc %x, alloc_dist %x\n",
+     msg("RIV %d: nb_rb %d, alloc %x, alloc_dist %x\n",
 	    i,
 	    RIV2nb_rb_LUT25[i],
 	    localRIV2alloc_LUT25[i],
@@ -971,20 +977,20 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 
    rah = 0;
    rballoc = 0x1fff;
-   printf("rballoc 0 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 0 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
    rah = 1;
 
    rballoc = 0x1678;
-   printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
 
    rballoc = 0xfffc;
-   printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
    rballoc = 0xfffd;
-   printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
    rballoc = 0xffff;
-   printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
    rballoc = 0xfffe;
-   printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+   msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
  }
 
 #endif

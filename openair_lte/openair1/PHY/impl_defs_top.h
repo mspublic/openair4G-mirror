@@ -212,6 +212,7 @@ ________________________________________________________________*/
 
 #endif //OPENAIR_LTE
 
+/*
 enum STATUS_RX {STATUS_RX_OFF,
 		STATUS_RX_ON,
 		STATUS_RX_SYNCING,
@@ -234,6 +235,7 @@ enum MODE {
   SYNCHED,
   SYNCHING,
   NOT_SYNCHED};
+*/
 
 /// Data structure for transmission.
 typedef struct {

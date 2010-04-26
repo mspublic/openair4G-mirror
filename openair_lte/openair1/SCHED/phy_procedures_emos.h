@@ -47,6 +47,7 @@ struct fifo_dump_emos_struct_UE {
   RTIME	           timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
   unsigned int     frame_rx;               //! Framenumber of the RX 
+  UE_MODE_t        UE_mode;
   PHY_MEASUREMENTS PHY_measurements[20];       //! Structure holding all PHY measurements (one for every slot)
   char             pbch_pdu[NUMBER_OF_eNB_MAX][PBCH_PDU_SIZE];           /// Contents of the PBCH
   unsigned int     pbch_errors[NUMBER_OF_eNB_MAX];                        /// Total number of errors on PBCH

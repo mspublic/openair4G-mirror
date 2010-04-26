@@ -192,6 +192,7 @@ openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pilots.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pss.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/phich.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/pcfich.o
+openair_rf-objs += $(OPENAIR1_TOP)/PHY/LTE_TRANSPORT/lte_transport_init.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/MODULATION/slot_fep.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/MODULATION/slot_fep_ul.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/CODING/lte_segmentation.o

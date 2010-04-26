@@ -1,6 +1,7 @@
 //#include <string.h>
 #include "defs.h"
 #include "PHY/extern.h"
+#include "SIMULATION/TOOLS/defs.h"
 #ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
@@ -87,7 +88,21 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING 
   phy_framing->log2Nd = frame_parms->log2_symbol_size;
 } 
 
+void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 
+  lte_gold(lte_frame_parms);
+  lte_sync_time_init(lte_frame_parms);
+  
+  generate_64qam_table();
+  generate_16qam_table();
+  generate_RIV_tables();
+  
+  generate_pcfich_reg_mapping(lte_frame_parms);
+  generate_phich_reg_mapping_ext(lte_frame_parms);
+  
+  set_taus_seed(1328);
+  
+}
 
 int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_UE_COMMON *ue_common_vars,

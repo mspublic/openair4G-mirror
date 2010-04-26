@@ -371,6 +371,7 @@ int main(int argc, char **argv) {
   PHY_vars->rx_total_gain_eNB_dB=150;
 
   UE_mode = PRACH;
+  eNB_UE_stats[0].mode[0] = PRACH;
   lte_ue_pdcch_vars[0]->crnti = 0x1234;
 
   if ((transmission_mode != 1) && (transmission_mode != 6))

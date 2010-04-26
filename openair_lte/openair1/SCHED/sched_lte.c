@@ -75,6 +75,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 
 #ifdef EMOS
 #include "phy_procedures_emos.h"
+extern  fifo_dump_emos_UE emos_dump_UE;
 #endif
 
 /// Mutex for instance count on MACPHY scheduling 
@@ -118,8 +119,8 @@ extern pthread_cond_t dlsch_cond[8];
 #ifdef CBMIMO1
 #define NUMBER_OF_CHUNKS_PER_SLOT NUMBER_OF_OFDM_SYMBOLS_PER_SLOT
 #define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
-#define SYNCH_WAIT_TIME 4096  // number of symbols between SYNCH retries
-#define SYNCH_WAIT_TIME_RUNNING 128  // number of symbols between SYNCH retries
+#define SYNCH_WAIT_TIME 4000  // number of symbols between SYNCH retries
+#define SYNCH_WAIT_TIME_RUNNING 100  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
 #define NS_PER_SLOT 500000
 #define MAX_DRIFT_COMP 3000
@@ -497,8 +498,8 @@ void openair_sync(void) {
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
 
-#ifdef OPENAIR2
 	    UE_mode = PRACH;
+#ifdef OPENAIR2
 	    mac_xface->chbch_phy_sync_success(0,0);	    
 #endif
 	  }
@@ -519,7 +520,10 @@ void openair_sync(void) {
       rx_power += PHY_vars->PHY_measurements.wideband_cqi[0][i];
     }
     PHY_vars->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
-    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB;
+    if (openair_daq_vars.rx_rf_mode == 0)
+      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB + 25;
+    else
+      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB;
 
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
@@ -530,6 +534,19 @@ void openair_sync(void) {
 	PHY_vars->rx_total_gain_dB,
 	pci_interface[0]->tdd,
 	pci_interface[0]->dual_tx);
+
+#ifdef EMOS
+    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
+    emos_dump_UE.timestamp = rt_get_time_ns();
+    emos_dump_UE.UE_mode = UE_mode;
+    emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
+
+    debug_msg("[SCHED_LTE] Writing EMOS data to FIFO\n");
+    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {
+      msg("[SCHED_LTE] Problem writing EMOS data to FIFO\n");
+    }
+#endif
+
 
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
@@ -879,6 +896,7 @@ int openair_sched_init(void) {
   }
 
   openair_daq_vars.mode = openair_NOT_SYNCHED;
+  UE_mode = NOT_SYNCHED;
   
   error_code = rtf_create(rx_sig_fifo, NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
   printk("[openair][SCHED][INIT] Created rx_sig_fifo (%d bytes), error_code %d\n",
