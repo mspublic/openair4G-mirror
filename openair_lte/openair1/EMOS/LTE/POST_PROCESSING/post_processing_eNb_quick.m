@@ -9,15 +9,21 @@ filenames = {d.name};
 decimation = 100;
 NFrames_max = 100*60*10;
 
-timestamp_cat = [];
-rx_N0_dBm_cat = [];
-gps_lon_cat = [];
-gps_lat_cat = [];
-frame_tx_cat = [];
-rx_N0_subband_dBm_cat = [];
+if (exist(fullfile(pathname,'results_eNB.mat'),'file'))
+    load(fullfile(pathname,'results_eNB.mat'));
+    start_idx = file_idx;
+else
+    timestamp_cat = [];
+    rx_N0_dBm_cat = [];
+    gps_lon_cat = [];
+    gps_lat_cat = [];
+    frame_tx_cat = [];
+    rx_N0_subband_dBm_cat = [];
+    start_idx = 1;
+end
 
 %%
-for file_idx = 16:length(filenames)
+for file_idx = start_idx:length(filenames)
     disp(filenames{file_idx});
     
     [path,file,ext,ver] = fileparts(filenames{file_idx});
@@ -31,17 +37,19 @@ for file_idx = 16:length(filenames)
     [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
 
 %%
-    rx_N0_dBm = zeros(1,NFrames/decimation);
-    rx_N0_subband_dBm = zeros(NFrames/decimation,25);
+    rx_N0_dBm = zeros(NFrames/decimation,3);
+    rx_N0_subband_dBm = zeros(NFrames/decimation,3,25);
     for i=1:NFrames/decimation
-        rx_N0_dBm(i) = estimates(i).phy_measurements_eNb(1).n0_power_tot_dBm(1);
-        rx_N0_subband_dBm(i,:) = estimates(i).phy_measurements_eNb(1).n0_subband_power_tot_dBm;
+        for j=1:3
+           rx_N0_dBm(i,j) = estimates(i).phy_measurements_eNb(j).n0_power_tot_dBm;
+           rx_N0_subband_dBm(i,j,:) = estimates(i).phy_measurements_eNb(j).n0_subband_power_tot_dBm;
+        end
     end
     
     timestamp_cat = [timestamp_cat [estimates.timestamp]];
     frame_tx_cat = [frame_tx_cat [estimates.frame_tx]];
-    rx_N0_dBm_cat = [rx_N0_dBm_cat rx_N0_dBm];
-    rx_N0_subband_dBm_cat = [rx_N0_subband_dBm_cat; rx_N0_subband_dBm];
+    rx_N0_dBm_cat = [rx_N0_dBm_cat; rx_N0_dBm];
+    rx_N0_subband_dBm_cat = cat(1,rx_N0_subband_dBm_cat,rx_N0_subband_dBm);
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
     

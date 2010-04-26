@@ -15,7 +15,7 @@ plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,rx_rssi_dBm_cat(:,1));
 title('RX I0 [dBm]')
 xlabel('Frame number')
 ylabel('RX I0 [dBm]')
-saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.eps'),'epsc2')
+saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.jpg'),'jpg')
 
 h_fig = figure(4);
 pbch_fer_cat(pbch_fer_cat<=100)=0;

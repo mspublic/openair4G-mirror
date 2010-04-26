@@ -10,14 +10,22 @@ filenames = {d.name};
 decimation = 100;
 NFrames_max = 100*60*10;
 
-timestamp_cat = [];
-rx_rssi_dBm_cat = [];
-gps_lon_cat = [];
-gps_lat_cat = [];
-frame_tx_cat = [];
-pbch_fer_cat = [];
+if (exist(fullfile(pathname,'results_eNB.mat'),'file'))
+    load(fullfile(pathname,'results_eNB.mat'));
+    start_idx = file_idx;
+else
+    timestamp_cat = [];
+    rx_rssi_dBm_cat = [];
+    gps_lon_cat = [];
+    gps_lat_cat = [];
+    frame_tx_cat = [];
+    pbch_fer_cat = [];
+    dlsch_fer_cat = [];
+    mcs_cat = [];
+    start_idx = 1;
+end
 
-for file_idx = 1:length(filenames)
+for file_idx = start_idx:length(filenames)
     disp(filenames{file_idx});
     
     [path,file,ext,ver] = fileparts(filenames{file_idx});
@@ -33,19 +41,25 @@ for file_idx = 1:length(filenames)
 %%
     rx_rssi_dBm = zeros(NFrames/decimation,3);
     pbch_fer = zeros(NFrames/decimation,1);
+    dlsch_fer = zeros(NFrames/decimation,1);
+    mcs = zeros(NFrames/decimation,1);
     for i=1:NFrames/decimation
         rx_rssi_dBm(i,:) = estimates(i).phy_measurements(1).rx_rssi_dBm(:);
         pbch_fer(i) = estimates(i).pbch_fer(1);
+        dlsch_fer(i) = estimates(i).dlsch_fer(1);
+        mcs(i) = get_mcs(estimates(i).dci_alloc(1,6).dci_pdu);
     end
     
     timestamp_cat = [timestamp_cat [estimates.timestamp]];
     frame_tx_cat = [frame_tx_cat [estimates.frame_tx]];
     rx_rssi_dBm_cat = [rx_rssi_dBm_cat; rx_rssi_dBm];
     pbch_fer_cat = [pbch_fer_cat; pbch_fer];
+    dlsch_fer_cat = [dlsch_fer_cat; dlsch_fer];
+    mcs_cat = [mcs_cat mcs];
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
     
-    save(fullfile(pathname,'results_UE.mat'),'timestamp_cat','frame_tx_cat','rx_rssi_dBm_cat','pbch_fer_cat','gps_lon_cat','gps_lat_cat','file_idx');
+    save(fullfile(pathname,'results_UE.mat'),'timestamp_cat','frame_tx_cat','rx_rssi_dBm_cat','pbch_fer_cat','dlsch_fer_cat','mcs_cat','gps_lon_cat','gps_lat_cat','file_idx');
 
 %     h_fig = figure(2);
 %     hold off
@@ -63,6 +77,4 @@ for file_idx = 1:length(filenames)
 %     ylabel('RX I0 [dBm]')
 %     saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.eps'),'epsc2')
 end    
-
-
 

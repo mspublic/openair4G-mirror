@@ -1,0 +1,9 @@
+function mcs = get_mcs(dci_pdu)
+mask = uint16(0);
+mask = bitset(mask,8);
+mask = bitset(mask,9);
+mask = bitset(mask,10);
+mask = bitset(mask,11);
+mask = bitset(mask,12);
+mcs = bitand(mask,dci_pdu(2));
+mcs = bitshift(mcs,-8);
