@@ -666,13 +666,13 @@ void qpsk_qpsk(short *stream0_in,
 @param nb_rb number of RBs for this allocation
 */
 
-void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-			 int **rxdataF_comp,
-			 int **rxdataF_comp_i,
-			 int **rho_i,
-			 short *dlsch_llr,
-			 unsigned char symbol,
-			 unsigned short nb_rb);
+int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+			int **rxdataF_comp,
+			int **rxdataF_comp_i,
+			int **rho_i,
+			short *dlsch_llr,
+			unsigned char symbol,
+			unsigned short nb_rb);
 
 /** \fn dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
@@ -1251,6 +1251,8 @@ unsigned int pmi2hex_2Ar2(unsigned char pmi);
 unsigned int cqi2hex(unsigned short cqi);
 
 unsigned short computeRIV(unsigned short N_RB_DL,unsigned short RBstart,unsigned short Lcrbs);
+
+unsigned int pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,unsigned char wideband_pmi);
 
 /**@}*/
 #endif

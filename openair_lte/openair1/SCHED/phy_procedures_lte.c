@@ -959,7 +959,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 					    P_RNTI)==0) {
 	dlsch_ue_ra_active = 1;
 #ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH RA_RNTI format 1A\n");
+	debug_msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH RA_RNTI format 1A, rb_alloc %x, dlsch_ue_ra %p\n",
+		  dlsch_ue_ra->rb_alloc[0],dlsch_ue_ra);
 #endif
       }
     }
@@ -1183,7 +1184,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
 	
-	//write_output("dlsch_cntl_llr.m","llr",lte_ue_dlsch_vars[eNb_id]->llr[0],40,1,0);
+	//	write_output("dlsch_ra_llr.m","llr",lte_ue_dlsch_vars_ra[eNb_id]->llr[0],40,1,0);
 
 	dlsch_ue_cntl_active = 0;
       
@@ -1223,7 +1224,11 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
 	
-	write_output("dlsch_cntl_llr.m","llr",lte_ue_dlsch_vars_ra[eNb_id]->llr[0],40,1,0);
+
+//	write_output("dlsch_ra_rxdataF.m","rxdataF",lte_ue_dlsch_vars_ra[eNb_id]->rxdataF_comp[0],12*3*6,1,0);	
+//	write_output("dlsch_ra_llr.m","llr",lte_ue_dlsch_vars_ra[eNb_id]->llr[0],40,1,0);	
+
+//	printf("dlsch_vars_ra %p\n",lte_ue_dlsch_vars_ra[0]);
 
 	dlsch_ue_ra_active = 0;
       
@@ -1238,6 +1243,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    dlsch_ra_errors++;
+	    //write_output("rxsigF0.m","rxsF0", &lte_ue_common_vars->rxdataF[0][0],512*12*2,2,1);	    
+	    //exit(-1);
 	  }
 	  else {
 	    msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
@@ -1905,7 +1912,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		       next_slot>>1);
   }
 
-
+  eNb_id=0;
   // For even next slots generate dlsch
   if ((next_slot%2) == 0) {
 
@@ -1998,7 +2005,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       //	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
 #ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch (RA) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (eNB %d): Calling generate_dlsch (RA) with input size = %d\n",mac_xface->frame, next_slot, eNb_id,input_buffer_length);
 #endif
       
       dlsch_encoding(dlsch_input_buffer,
@@ -2147,7 +2154,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     printf("ulsch (ue): Ndi      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->Ndi);  
     printf("ulsch (ue): TBS      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->TBS);
     printf("ulsch (ue): mcs      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->mcs);
-    
       //write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
     write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
     write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[harq_pid]->nb_rb*12*2*9,1,0);      

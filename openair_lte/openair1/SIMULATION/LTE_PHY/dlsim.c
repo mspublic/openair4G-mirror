@@ -9,10 +9,12 @@
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
 
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+
 #define BW 10.0
 #define Td 1.0
 
-//#define OUTPUT_DEBUG 1
+#define OUTPUT_DEBUG 1
 #define N_TRIALS 100
 
 #define RBmask0 0x00fc00fc
@@ -20,7 +22,7 @@
 #define RBmask2 0x0
 #define RBmask3 0x0
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode) {
 
   unsigned int ind;
 
@@ -42,6 +44,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
   lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
   lte_ue_dlsch_vars_ra   = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+  lte_ue_dlsch_vars_1A   = &PHY_vars->lte_ue_dlsch_vars_1A[0];
 
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
@@ -56,6 +59,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
   lte_frame_parms->n_RRC = 0;
+  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
 
   init_frame_parms(lte_frame_parms);
   
@@ -74,9 +78,16 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   generate_16qam_table();
   generate_RIV_tables();
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  generate_pcfich_reg_mapping(lte_frame_parms);
+  generate_phich_reg_mapping_ext(lte_frame_parms);
+
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
+
+  
   printf("Done lte_param_init\n");
+
+
 }
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
@@ -102,7 +113,7 @@ int main(int argc, char **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.005;
+  double aoa=.03,ricean_factor=0.0000005;
   int channel_length;
   struct complex **ch;
 
@@ -135,7 +146,7 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(2,2);
+  lte_param_init(2,2,2);
 
   num_layers = 1;
 
@@ -211,6 +222,9 @@ int main(int argc, char **argv) {
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
+
+  lte_ue_pdcch_vars[0]->crnti = C_RNTI;
+
   // Fill in UL_alloc
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
@@ -237,7 +251,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu2.tpmi             = 0;
+  DLSCH_alloc_pdu2.tpmi             = 2 ;  // precoding
 
   // Create transport channel structures for SI pdus
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
@@ -448,6 +462,7 @@ int main(int argc, char **argv) {
 
 #ifdef OUTPUT_DEBUG  
   write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0][0],300*120,1,4);
+  write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[0][1],300*120,1,4);
 #endif
 
   // do talbe lookup and write results to txdataF2
@@ -486,6 +501,7 @@ int main(int argc, char **argv) {
 
 #ifdef OUTPUT_DEBUG  
   write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
+  write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
 #endif
   
   tx_lev = 0;
@@ -559,7 +575,7 @@ int main(int argc, char **argv) {
 	//    lte_sync_time(lte_ue_common_vars->rxdata, lte_frame_parms);
 	//    lte_sync_time_free();
 
-
+	/*
 	// optional: read rx_frame from file
 	if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
 	  {
@@ -573,7 +589,7 @@ int main(int argc, char **argv) {
 	printf("Read %d bytes\n",result);
 	
 	fclose(rx_frame_file);
-
+	*/
 
 #ifdef OUTPUT_DEBUG
 	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&lte_ue_common_vars->rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
@@ -582,17 +598,17 @@ int main(int argc, char **argv) {
 	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 #endif
 	SNRmeas = 10*log10((signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))/signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(1*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))) - 1);
-//	printf("SNRmeas %f\n",SNRmeas);
+	printf("SNRmeas %f\n",SNRmeas);
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {
-	
+	    //	    printf("Ns %d, l %d\n",Ns,l);
 	    slot_fep(lte_frame_parms,
 		     lte_ue_common_vars,
 		     l,
 		     Ns%20,
 		     0,
-		     1);
+		     0);
 	    
 	    lte_ue_measurements(lte_ue_common_vars,
 				lte_frame_parms,
@@ -610,9 +626,14 @@ int main(int argc, char **argv) {
 		       lte_frame_parms,
 		       eNb_id,
 		       2,
-		       (lte_frame_parms->nb_antennas_tx == 1) ? SISO : ALAMOUTI);
+		       (lte_frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI);
 
-	      dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,lte_frame_parms,SI_RNTI,RA_RNTI,C_RNTI);
+	      dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,lte_frame_parms,SI_RNTI,RA_RNTI);
+	      //	      printf("dci_cnt %d\n",dci_cnt);
+	      //	      write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+	      //	      exit(-1);
+
+
 	      for (i=0;i<dci_cnt;i++)
 		if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
 	          generate_ue_dlsch_params_from_dci(0,
@@ -624,6 +645,8 @@ int main(int argc, char **argv) {
 						    SI_RNTI,
 						    RA_RNTI,
 						    P_RNTI);
+
+
 		  dlsch_active = 1;
 		}
 		else {

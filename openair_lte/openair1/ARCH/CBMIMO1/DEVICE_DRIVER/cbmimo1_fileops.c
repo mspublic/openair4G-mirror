@@ -1,4 +1,4 @@
-q#ifndef USER_MODE
+#ifndef USER_MODE
 #define __NO_VERSION__
 
 //#include "rt_compat.h"

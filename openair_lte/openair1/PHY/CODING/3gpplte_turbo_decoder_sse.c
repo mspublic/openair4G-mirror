@@ -825,7 +825,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       break;
     }
 
-    if (crc == oldcrc) {
+    if ((crc == oldcrc) && (crc!=0)) {
       decoder_in_use[inst] = 0;
       return(iteration_cnt);
     }

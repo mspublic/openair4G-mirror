@@ -23,14 +23,14 @@ Blah Blah
 #endif //USER_MODE
 */
 
-#ifdef CBMIMO1
+//#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
-#endif //CBMIMO1
+//#endif //CBMIMO1
 
 
 #ifndef USER_MODE

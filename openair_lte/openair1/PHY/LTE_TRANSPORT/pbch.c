@@ -512,7 +512,7 @@ void pbch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   short *rxF0,*rxF1;
-  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
+  //  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
   unsigned char rb,re,symbol_mod;
   int jj;
 
@@ -552,7 +552,7 @@ int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    unsigned char eNb_id,
 	    MIMO_mode_t mimo_mode) {
 
-  unsigned char log2_maxh,aatx,aarx;
+  unsigned char log2_maxh;//,aatx,aarx;
   int max_h=0;
 
   int symbol,i,ret;

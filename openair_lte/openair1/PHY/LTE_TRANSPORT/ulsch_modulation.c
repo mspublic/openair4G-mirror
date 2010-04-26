@@ -4,7 +4,7 @@
 #include "PHY/CODING/extern.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
-
+#include <math.h>
 #define OFDMA_ULSCH
 
 //#define DEBUG_ULSCH_MODULATION
@@ -17,9 +17,11 @@ void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
   short *dft_in_re=(short*)dft_in_re128[0],*dft_in_im=(short*)dft_in_im128[0],*dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0];
   short *dft_in_re2=(short*)dft_in_re128[1],*dft_in_im2=(short*)dft_in_im128[1],*dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1];
   int *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10;
-  short *dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0],*dft_out_re=(short*)dft_out_re128[0],*dft_out_im=(short*)dft_out_im128[0];
-  short *dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1],*dft_out_re2=(short*)dft_out_re128[1],*dft_out_im2=(short*)dft_out_im128[1];
+
   int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10;
+  int i,ip;
+
+  printf("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   d0 = d;
   d1 = d0+Msc_PUSCH;
@@ -36,7 +38,7 @@ void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=8) {
     dft_in_re[ip] =  ((short*)d0)[i<<1];
     dft_in_im[ip] =  ((short*)d0)[1+(i<<1)];
-
+    printf("%d+sqrt(-1)*(%d),\n",dft_in_re[ip],dft_in_im[ip]);
     dft_in_re[ip+1] =  ((short*)d1)[i<<1];
     dft_in_im[ip+1] =  ((short*)d1)[1+(i<<1)];
 
@@ -81,12 +83,12 @@ void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
     dft36(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 48:
-    dft48(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
-    dft48(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
+    dft48(dft_in_re,dft_out_re,dft_in_im,dft_out_im,1);
+    dft48(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2,1);
     break;
   case 60:
-    dft60(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
-    dft60(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
+    dft60(dft_in_re,dft_out_re,dft_in_im,dft_out_im,1);
+    dft60(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2,1);
     break;
   case 72:
     dft72(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
@@ -109,8 +111,12 @@ void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
     dft144(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 168:
+    //    dft168(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    //    dft168(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 180:
+    dft180(dft_in_re,dft_out_re,dft_in_im,dft_out_im);
+    dft180(dft_in_re2,dft_out_re2,dft_in_im2,dft_out_im2);
     break;
   case 192:
     break;
@@ -138,6 +144,7 @@ void dft_lte(int *z,int *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=8) {
     ((short*)z0)[i<<1]     = dft_out_re[ip]; 
     ((short*)z0)[1+(i<<1)] = dft_out_im[ip];  
+    printf("dft_out %d : (%d,%d)\n",i,dft_out_re[ip],dft_out_im[ip]);
 
     ((short*)z1)[i<<1]     = dft_out_re[ip+1]; 
     ((short*)z1)[1+(i<<1)] = dft_out_im[ip+1];  

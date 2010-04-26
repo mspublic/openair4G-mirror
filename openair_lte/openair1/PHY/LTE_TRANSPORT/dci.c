@@ -50,7 +50,7 @@ unsigned int check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,unsigned int mprime
 
 unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
 
-  unsigned short crc16,i,*dci16=(short*)dci;
+  unsigned short crc16,*dci16=(unsigned short*)dci;
   
   /*
   unsigned char crc;
@@ -132,7 +132,7 @@ unsigned char *generate_dci0(unsigned char *dci,
 			     unsigned char aggregation_level,
 			     unsigned short rnti) {
   
-  unsigned short coded_bits,i;
+  unsigned short coded_bits;
 
   if (aggregation_level>3) {
     msg("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
@@ -826,7 +826,7 @@ void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 		unsigned char l) {
 
 
-  unsigned char symbol_offset,second_pilot,rb,re,jj,ii;
+  unsigned char rb,re,jj,ii;
 
   jj=0;
   ii=0;
@@ -944,7 +944,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 
     pdcch_llr(frame_parms,
 	      lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,
-	      lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,
+	      (char *)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,
 	      s);
 
 
@@ -1350,13 +1350,13 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	       dci_decoded_output);
   crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-  /*      
+  /*        
   for (i=0;i<dci_len/8;i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  
   */
-
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1414,7 +1414,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
     crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-    /*    
+    /*        
   for (i=0;i<1+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
@@ -1482,13 +1482,13 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
 
     crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-    /*    
+    /*
   for (i=0;i<3+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    
     */
+    
 
     if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;

@@ -3,17 +3,17 @@ CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; f
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32  -msse3 -msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32  #-msse3 #-msse4
 #CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
 #CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
-CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) -DIFFT_FPGA
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA  -O2
+CFLAGS += -DOPENAIR_LTE -O2 -DTBS_FIX
 
 ifdef EMOS
 CFLAGS += -DEMOS
@@ -101,7 +101,7 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_vv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
-
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/lte_dfts.o
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte.o
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o

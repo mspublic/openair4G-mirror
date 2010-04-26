@@ -127,11 +127,11 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
   unsigned char harq_pid;
   unsigned short rballoc;
-  unsigned char NPRB,tbswap,tpmi;
+  unsigned char NPRB,tbswap,tpmi=0;
   LTE_eNb_DLSCH_t *dlsch0=NULL,*dlsch1;
 
 
-
+  //  printf("Generate eNB DCI, format %d, rnti %x (pdu %p)\n",dci_format,rnti,dci_pdu);
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
@@ -144,6 +144,10 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       harq_pid=0;
       // see 36-212 V8.6.0 p. 45
       NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
+
+      //      printf("TPC %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC,RA_alloc_pdu.TPC);
+      //      printf("RV %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv,RA_alloc_pdu.rv);
+      //      printf("NDI %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi,RA_alloc_pdu.ndi);
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
@@ -165,7 +169,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     else
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
 
-    dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    dlsch[0]->nb_rb                               = NPRB;//RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
+    //    printf("NPRB %d\n",NPRB);
     dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv;
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
@@ -174,7 +179,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
-    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB-1];
 
     dlsch[0]->current_harq_pid = harq_pid;
 
@@ -245,28 +250,29 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 	break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,0);
       break;
     case 2:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1m1;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,1);
       break;
     case 3:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1j;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,2);
       break;
     case 4:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1mj;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,3);
       break;
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
-      break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
       return(-1);
       break;
     }
+
+    //    printf("Set pmi %x (tpmi %d)\n",dlsch0->pmi_alloc,tpmi);
 
     if (lte_frame_parms->mode1_flag == 1)
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
@@ -296,8 +302,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     printf("dlsch0 eNB: rvidx    %d\n",dlsch0->harq_processes[harq_pid]->rvidx);  
     printf("dlsch0 eNB: TBS      %d\n",dlsch0->harq_processes[harq_pid]->TBS);
     printf("dlsch0 eNB: mcs      %d\n",dlsch0->harq_processes[harq_pid]->mcs);
-    printf("dlsch0 eNB: tpmi%d\n",tpmi);
-    printf("dlsch0 eNB: mimo_mode%d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
+    printf("dlsch0 eNB: tpmi %d\n",tpmi);
+    printf("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
   }
 #endif
   return(0);
@@ -363,7 +369,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     else
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
 
-    dlsch[0]->nb_rb                               = RIV2nb_rb_LUT25[rballoc];
+    dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
 
     if (dlsch[0]->nb_rb > 3) {
       msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
@@ -378,7 +384,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
-    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB];
+    dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB-1];
 
 
     dlsch0 = dlsch[0];
@@ -444,22 +450,23 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       break;
     case 1:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING11;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,0);
       break;
     case 2:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1m1;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,1);
       break;
     case 3:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1j;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,2);
       break;
     case 4:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = UNIFORM_PRECODING1mj;
-      return(-1);
+      dlsch0->pmi_alloc                             = pmi_extend(frame_parms,3);
       break;
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
+      // pmi stored from ulsch allocation routine
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
@@ -467,6 +474,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       break;
     }
 
+    
     if (lte_frame_parms->mode1_flag == 1)
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
 
@@ -509,6 +517,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
   
 #ifdef DEBUG_DCI
   if (dlsch[0]) {
+    printf("dlsch0 UE: %p\n",dlsch[0]);
     printf("dlsch0 UE: NBRB     %d\n",dlsch[0]->nb_rb);
     printf("dlsch0 UE: rballoc  %x\n",dlsch[0]->rb_alloc[0]);
     printf("dlsch0 UE: harq_pid %d\n",harq_pid);
@@ -607,7 +616,7 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id) {
 
   unsigned char i;
-  unsigned short pmiq;
+  unsigned short pmiq=0;
   unsigned short pmivect = 0;
   unsigned char rank = meas->rank[eNb_id];
   int pmi;
@@ -748,7 +757,16 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
 }
 
 
+unsigned int pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,unsigned char wideband_pmi) {
 
+  unsigned char i,wideband_pmi2=wideband_pmi&3;
+  unsigned int pmi_ex = 0;
+
+  for (i=0;i<14;i+=2) 
+    pmi_ex|=(wideband_pmi2<<i);
+
+  return(pmi_ex);
+}
 
 
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,

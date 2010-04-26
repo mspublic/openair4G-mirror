@@ -19,7 +19,7 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
 
   
 
-  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+  //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
   
   //  printf("generate_eNb_ulsch_params_from_rar: subframe %d\n",subframe);
@@ -77,7 +77,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 				      LTE_DL_FRAME_PARMS *frame_parms,
 				      unsigned char eNb_id) {
   
-  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+  //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
 
 #ifdef DEBUG_RAR

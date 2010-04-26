@@ -11,6 +11,7 @@
 #include "PHY_INTERFACE/vars.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
+
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
@@ -386,6 +387,9 @@ int main(int argc, char **argv) {
 
 
   l2_init();
+
+
+
   mac_xface->mrbch_phy_sync_failure(0,0);
   mac_xface->chbch_phy_sync_success(1,0);
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {

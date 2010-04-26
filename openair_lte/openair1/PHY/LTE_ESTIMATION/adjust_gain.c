@@ -7,6 +7,7 @@
 #ifndef USER_MODE
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
 
 void
@@ -40,11 +41,16 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind)
   // Adjust gain in PHY_vars->rx_vars[0].rx_total_gain_dB
 
   if ( (rx_power_fil_dB < TARGET_RX_POWER - 5) && (PHY_vars->rx_total_gain_dB < MAX_RF_GAIN) ) {
-    PHY_vars->rx_total_gain_dB = min(PHY_vars->rx_total_gain_dB+5,MAX_RF_GAIN);
+    PHY_vars->rx_total_gain_dB = PHY_vars->rx_total_gain_dB+5;
   }
   else if ( (rx_power_fil_dB > TARGET_RX_POWER + 5) && (PHY_vars->rx_total_gain_dB > MIN_RF_GAIN) ) {
-    PHY_vars->rx_total_gain_dB = max(PHY_vars->rx_total_gain_dB-5,MIN_RF_GAIN);
+    PHY_vars->rx_total_gain_dB = PHY_vars->rx_total_gain_dB-5;
   }
+
+  if (PHY_vars->rx_total_gain_dB>MAX_RF_GAIN)
+    PHY_vars->rx_total_gain_dB = MAX_RF_GAIN;
+  else if (PHY_vars->rx_total_gain_dB<MIN_RF_GAIN)
+    PHY_vars->rx_total_gain_dB = MIN_RF_GAIN;
 
   PHY_vars->rx_total_gain_eNB_dB = PHY_vars->rx_total_gain_dB;
 

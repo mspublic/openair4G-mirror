@@ -89,11 +89,15 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
   mod_sym_t d[4],*dp;
   unsigned int i,aa;
   unsigned int re_offset;
+  unsigned short c;
   // 
   // scrambling (later)
 
   memset(d,0,4*sizeof(mod_sym_t));
 
+  if (HI>0)
+    HI=1;
+  c = (1-(2*HI))*1024;
 
   if (frame_parms->Ncp == 0) { // Normal Cyclic Prefix
 
@@ -131,8 +135,8 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
     switch (nseq_PHICH) {
     case 0: // +1 +1 
 #ifndef IFFT_FPGA
-      ((short*)&dp)[0] = z;
-      ((short*)&dp)[2] = z;
+      ((short*)&dp)[0] = c;
+      ((short*)&dp)[2] = c;
 #else
       dp[0] = 4;
       dp[1] = 4;
@@ -140,8 +144,8 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       break;
     case 1: // +1 -1
 #ifndef IFFT_FPGA 
-      ((short*)&dp)[4] = z;
-      ((short*)&dp)[6] = -z;
+      ((short*)&dp)[4] = c;
+      ((short*)&dp)[6] = -c;
 #else
       dp[2] = 4;
       dp[3] = 1;
@@ -149,8 +153,8 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       break;
     case 2: // +j +j 
 #ifndef IFFT_FPGA
-      ((short*)&dp)[1] = z;
-      ((short*)&dp)[3] = z;
+      ((short*)&dp)[1] = c;
+      ((short*)&dp)[3] = c;
 #else
       dp[0] = 2;
       dp[1] = 2;
@@ -158,8 +162,8 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       break;
     case 3: // +j -j 
 #ifndef IFFT_FPGA
-      ((short*)&dp)[5] = z;
-      ((short*)&dp)[7] = -z;
+      ((short*)&dp)[5] = c;
+      ((short*)&dp)[7] = -c;
 #else
       dp[2]  = 2;
       dp[3]  = 1;

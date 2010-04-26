@@ -39,5 +39,4 @@ extern PCI_interface_t *pci_interface[4];
 extern unsigned short NODE_ID[1];
 #endif
 
-
 extern char number_of_cards;
