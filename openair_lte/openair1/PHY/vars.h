@@ -73,7 +73,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 UE_MODE_t UE_mode;
 
-char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","ULSCH"};
+char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 
  

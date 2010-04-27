@@ -131,8 +131,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   LTE_eNB_COMMON *lte_eNb_common,
-			   unsigned char eNb_id,
+			   unsigned int *eNb_id,
 			   unsigned char clear,
+			   unsigned char number_of_cards,
 			   short coef);
 
 void lte_eNB_I0_measurements(LTE_eNB_COMMON *eNB_common_vars,

@@ -79,6 +79,10 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
 endif
 
 # PHY Coding routines
@@ -97,7 +101,7 @@ endif
 # Utility routines
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/dB_routines.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/TOOLS/memory_routines.o $(TOP_DIR)/PHY/TOOLS/signal_energy.o $(TOP_DIR)/PHY/TOOLS/sqrt.o $(TOP_DIR)/PHY/TOOLS/log2_approx.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 
-PHY_OBJS +=$(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o 
+PHY_OBJS +=$(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o 
 
 # CONFIG routines
 PHY_OBJS +=$(TOP_DIR)/PHY/CONFIG/openair_configure.o $(TOP_DIR)/PHY/CONFIG/openair_readconfigfile.o

@@ -122,8 +122,8 @@ int ulsch_encoding(unsigned char *a,
   unsigned short offset;
   unsigned int crc=1;
   unsigned short iind;
-  unsigned short A=ulsch->harq_processes[harq_pid]->TBS;
-  unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  unsigned short A;
+  unsigned char Q_m;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
   unsigned char y[6*14*1200];
   unsigned char *columnset;
@@ -134,6 +134,31 @@ int ulsch_encoding(unsigned char *a,
   unsigned char ack_parity;
   unsigned int i,q,j,iprime;
   unsigned short o_RCC;
+
+  if (!ulsch) {
+    msg("ulsch_coding.c: Null ulsch ptr\n",ulsch);
+    return(-1);
+  }
+
+  if (harq_pid > 2) {
+    msg("ulsch_coding.c: Illegal harq_pid %d\n",harq_pid);
+    return(-1);
+  }
+    
+  if (ulsch->O_ACK > 2)
+    {
+    msg("ulsch_coding.c: Illegal O_ACK %d\n",ulsch->O_ACK);
+    return(-1);
+  }
+
+  if (ulsch->O_RI > 1)
+    {
+    msg("ulsch_coding.c: Illegal O_RI %d\n",ulsch->O_RI);
+    return(-1);
+  }
+
+  A=ulsch->harq_processes[harq_pid]->TBS;
+  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
 #ifdef DEBUG_ULSCH_CODING
   for (i=0;i<ulsch->O_ACK;i++)

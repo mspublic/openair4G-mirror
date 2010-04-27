@@ -2,6 +2,8 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "SCHED/defs.h"
+#include "SCHED/extern.h"
 
 #include "emmintrin.h"
 
@@ -299,4 +301,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	  phy_measurements->selected_rx_antennas[eNB_id][i] = 1;
       }
   }  // eNB_id loop
+
+  _mm_empty();
+  _m_empty();
+
 }

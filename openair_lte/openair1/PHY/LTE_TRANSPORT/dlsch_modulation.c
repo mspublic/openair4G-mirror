@@ -761,6 +761,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    txdataF[1][tti_offset] = (mod_sym_t) (1+qpsk_precoder[precoder_index][qpsk_table_offset-1]);   // prec(x0)
 
 	    //printf("precoding %d (index %d): (%d,%d)\n",tti_offset, precoder_index,txdataF[0][tti_offset]-1,txdataF[1][tti_offset]-1);
+
+	    
 	    break;
 
 	  case 4:

@@ -825,7 +825,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
     
     rxF       = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2];
 
-    debug_msg("Doing extraction with pmi %x\n",pmi2hex_2Ar1(pmi));
+    //debug_msg("Doing extraction with pmi %x\n",pmi2hex_2Ar1(pmi));
 
     if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
@@ -1394,6 +1394,8 @@ void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
     //    ch0[0] = _mm_slli_epi16(ch0[0],1);
     break;
   }
+  _mm_empty();
+  _m_empty();
 }
 
 void dlsch_channel_compensation_prec(int **rxdataF_ext,
@@ -1449,24 +1451,27 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
 
     for (rb=0;rb<nb_rb;rb++) {
       // combine TX channels using precoder from pmi
-
-#ifdef DEBUG_DLSCH_DEMOD
-      printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
+      //#ifdef DEBUG_DLSCH_DEMOD
+      //     printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
 
       
-      print_shorts("ch0(0):",&dl_ch128_0[0]);
-      print_shorts("ch1(0):",&dl_ch128_1[0]);
+      //      print_shorts("ch0(0):",&dl_ch128_0[0]);
+      //      print_shorts("ch1(0):",&dl_ch128_1[0]);
       prec2A_128(pmi_ext[rb],&dl_ch128_0[0],&dl_ch128_1[0]);
-      print_shorts("prec(ch0,ch1):",&dl_ch128_0[0]);
-      print_shorts("ch0(1):",&dl_ch128_0[1]);
-      print_shorts("ch1(1):",&dl_ch128_1[1]);
+      //      print_shorts("prec(ch0,ch1):",&dl_ch128_0[0]);
+      //      print_shorts("ch0(1):",&dl_ch128_0[1]);
+      //      print_shorts("ch1(1):",&dl_ch128_1[1]);
       prec2A_128(pmi_ext[rb],&dl_ch128_0[1],&dl_ch128_1[1]);
-      print_shorts("prec(ch0,ch1):",&dl_ch128_0[1]);
-      print_shorts("ch0(2):",&dl_ch128_0[2]);
-      print_shorts("ch1(2):",&dl_ch128_1[2]); 
+      //      print_shorts("prec(ch0,ch1):",&dl_ch128_0[1]);
+      //      print_shorts("ch0(2):",&dl_ch128_0[2]);
+      //      print_shorts("ch1(2):",&dl_ch128_1[2]); 
       prec2A_128(pmi_ext[rb],&dl_ch128_0[2],&dl_ch128_1[2]); 
-      print_shorts("prec(ch0,ch1):",&dl_ch128_0[2]);      
-#endif      
+
+      //      print_shorts("prec(ch0,ch1):",&dl_ch128_0[2]);      
+      
+
+      //      print_shorts("prec(ch0,ch1):",&dl_ch128_0[2]);      
+      //#endif      
 
       if (mod_order>2) {  
 	// get channel amplitude if not QPSK
@@ -1655,12 +1660,38 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   unsigned char log2_maxh,aatx,aarx;
   int avgs;
 
-  unsigned char harq_pid0 = dlsch_ue[0]->current_harq_pid;
+  unsigned char harq_pid0;
 
+  if (eNb_id > 2) {
+    msg("dlsch_demodulation.c: Illegal eNb_id %d\n",eNb_id);
+   return(-1);
+  }
+
+  if (!lte_ue_common_vars) {
+    msg("dlsch_demodulation.c: Null lte_ue_common_vars\n");
+    return(-1);
+  }
+
+  if (!dlsch_ue[0]) {
+    msg("dlsch_demodulation.c: Null dlsch_ue pointer\n");
+    return(-1);
+  }
+
+  if (!lte_ue_dlsch_vars) {
+    msg("dlsch_demodulation.c: Null lte_ue_dlsch_vars pointer\n");
+    return(-1);
+  }
+
+  if (!lte_frame_parms) {
+    msg("dlsch_demodulation.c: Null lte_frame_parms\n");
+    return(-1);
+  }
+
+  harq_pid0 = dlsch_ue[0]->current_harq_pid;
   //  printf("rx_dlsch (eNb_id %d, dlsch_vars %p): symbol %d, rb_alloc[0] %x\n",eNb_id,lte_ue_dlsch_vars[eNb_id],symbol,dlsch_ue[0]->rb_alloc[0]);
 
   if (frame_parms->nb_antennas_tx>1) {
-    debug_msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
+    //debug_msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
 
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				   lte_ue_common_vars->dl_ch_estimates[eNb_id],

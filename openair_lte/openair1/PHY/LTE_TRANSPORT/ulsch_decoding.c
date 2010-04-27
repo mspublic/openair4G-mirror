@@ -120,7 +120,18 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   }
   
   nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
+  if (nb_rb>25) {
+    msg("ulsch_decoding.c: FATAL ERROR: illegal nb_rb %d\n",nb_rb);
+    return(-1);
+  }
   A = ulsch->harq_processes[harq_pid]->TBS;
+
+  if (A > 6144) {
+    msg("ulsch_decoding.c: FATAL ERROR: illegal TBS %d\n",A);
+    return(-1);
+  }
+
+    
   Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
   
@@ -138,7 +149,10 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 		     &ulsch->harq_processes[harq_pid]->F);
     //  CLEAR LLR's HERE for first packet in process
   }
-
+  else {
+    msg("ulsch_decoding.c: FATAL ERROR: Ndi 0 not checked yet\n");
+    return(-1);
+  }
 
 
   sumKr = 0;

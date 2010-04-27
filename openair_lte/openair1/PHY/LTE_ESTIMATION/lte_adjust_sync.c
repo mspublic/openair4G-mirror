@@ -102,48 +102,64 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
+int max_val;
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
-			    LTE_eNB_COMMON *lte_eNb_common,
-			    unsigned char eNb_id,
-			    unsigned char clear,
-			    short coef)
+			   LTE_eNB_COMMON *lte_eNb_common,
+			   unsigned int  *eNb_id,
+			   unsigned char clear,
+			   unsigned char number_of_cards,
+			   short coef)
+
 {
 
   static int max_pos_fil2 = 0;
-  int temp, i, aa, max_val = 0, max_pos = 0;
+  int temp, i, aa, max_pos = 0,ind;
   int offset,diff;
   short Re,Im,ncoef;
+#ifdef USER_MODE
+  char fname[100],vname[100];
+#endif
 
   ncoef = 32768 - coef;
 
-  // do ifft of channel estimate
-  for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
-    fft((short*) &lte_eNb_common->srs_ch_estimates[eNb_id][aa][LTE_CE_OFFSET],
-	(short*) lte_eNb_common->srs_ch_estimates_time[aa],
-	frame_parms->twiddle_ifft,
-	frame_parms->rev,
-	frame_parms->log2_symbol_size,
-	frame_parms->log2_symbol_size/2,
-	0);
-  }
+  for (ind=0;ind<number_of_cards;ind++) {
+
+    if (ind==0)
+      max_val=0;
+
+    for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
+      // do ifft of channel estimate
+      fft((short*) &lte_eNb_common->srs_ch_estimates[ind][aa][0],
+	  (short*) lte_eNb_common->srs_ch_estimates_time[aa],
+	  frame_parms->twiddle_ifft,
+	  frame_parms->rev,
+	  frame_parms->log2_symbol_size,
+	  frame_parms->log2_symbol_size/2,
+	  0);
 
 #ifdef USER_MODE
-  write_output("srs_ch_estimates_time.m","srs_time",lte_eNb_common->srs_ch_estimates_time[0],frame_parms->ofdm_symbol_size*2,2,1);
+      sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
+      sprintf(vname,"srs_time_%d%d",ind,aa);
+      write_output(fname,vname,lte_eNb_common->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
-
-  // we only use channel estimates from tx antenna 0 here
-  // remember we fixed the SRS to use only every second subcarriers
-  for (i = 0; i < frame_parms->nb_prefix_samples/2; i++) {
-    temp = 0;
-    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[(i<<2)];
-      Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[1+(i<<2)];
-      temp += (Re*Re/2) + (Im*Im/2);
     }
-    if (temp > max_val) {
-      max_pos = i*2; 
-      max_val = temp;
+  
+    
+    // we only use channel estimates from tx antenna 0 here
+    // remember we fixed the SRS to use only every second subcarriers
+    for (i = 0; i < frame_parms->nb_prefix_samples/2; i++) {
+      temp = 0;
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[(i<<2)];
+	Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[1+(i<<2)];
+	temp += (Re*Re/2) + (Im*Im/2);
+      }
+      if (temp > max_val) {
+	max_pos = i*2; 
+	max_val = temp;
+	*eNb_id = ind;
+      }
     }
   }
 
@@ -152,14 +168,14 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     max_pos_fil2 = max_pos;
   else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
-
-
+  
+  
   diff = max_pos_fil2 - frame_parms->nb_prefix_samples/8;
-
+  
 #ifdef DEBUG_PHY
-    if (mac_xface->frame%100 == 0)
-      msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
+  if (mac_xface->frame%100 == 0)
+    msg("[PHY][Adjust Sync] frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
 #endif //DEBUG_PHY
-
- return(max_pos_fil2);
+  
+  return(max_pos_fil2);
 }

@@ -125,6 +125,8 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
   unsigned int limit,rb;
   int *ul_ch;
 
+  //printf("Running eNB_srs_measurements for eNB_id %d\n",eNB_id);
+
   if (init_averaging == 1)
     rx_power_avg_eNB[eNB_id][UE_id] = 0;
   rx_power = 0;
@@ -152,19 +154,19 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 	  
     phy_measurements->rx_spatial_power_dB[UE_id][0][aarx] = (unsigned short) dB_fixed(phy_measurements->rx_spatial_power[UE_id][0][aarx]);
 
-    phy_measurements->wideband_cqi[eNB_id][aarx] = phy_measurements->rx_spatial_power[eNB_id][0][aarx];
+    phy_measurements->wideband_cqi[UE_id][aarx] = phy_measurements->rx_spatial_power[UE_id][0][aarx];
 
   
     
-  //      phy_measurements->rx_power[eNB_id][aarx]/=frame_parms->nb_antennas_tx;
-    phy_measurements->wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_measurements->wideband_cqi[eNB_id][aarx]);
-    rx_power += phy_measurements->wideband_cqi[eNB_id][aarx];
-    //      phy_measurements->rx_avg_power_dB[eNB_id] += phy_measurements->rx_power_dB[eNB_id][aarx];
+  //      phy_measurements->rx_power[UE_id][aarx]/=frame_parms->nb_antennas_tx;
+    phy_measurements->wideband_cqi_dB[UE_id][aarx] = (unsigned short) dB_fixed(phy_measurements->wideband_cqi[UE_id][aarx]);
+    rx_power += phy_measurements->wideband_cqi[UE_id][aarx];
+    //      phy_measurements->rx_avg_power_dB[UE_id] += phy_measurements->rx_power_dB[UE_id][aarx];
   }
 
   
 
-  //    phy_measurements->rx_avg_power_dB[eNB_id]/=frame_parms->nb_antennas_rx;
+  //    phy_measurements->rx_avg_power_dB[UE_id]/=frame_parms->nb_antennas_rx;
   if (init_averaging == 0)
     rx_power_avg_eNB[UE_id][eNB_id] = ((k1*rx_power_avg_eNB[UE_id][eNB_id]) + (k2*rx_power))>>10; 
   else
@@ -175,10 +177,7 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 
   phy_measurements->rx_rssi_dBm[UE_id] = (int)dB_fixed(rx_power_avg_eNB[UE_id][eNB_id])-PHY_vars->rx_total_gain_eNB_dB;
  
-    //    if (eNB_id == 0)
-    //      printf("rx_power_avg[0] %d (%d,%d)\n",rx_power_avg[0],phy_measurements->rx_avg_power_dB[0],phy_measurements->rx_rssi_dBm[eNB_id]);
  
-    //    printf("lte_ue_measurements: rx_power_dB[%d] %d (%f), sinr %d,cqi %d\n",eNB_id,phy_measurements->rx_avg_power_dB[eNB_id],10*log10(rx_power[eNB_id]),phy_measurements->wideband_sinr[eNB_id],phy_measurements->wideband_cqi[eNB_id]);
   
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
@@ -186,24 +185,25 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
     
     for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 
+      //      printf("eNB_common_vars->srs_ch_estimates[0] => %x\n",eNB_common_vars->srs_ch_estimates[0]);
       if (rb < 12)
 	ul_ch    = &eNB_common_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset + (rb*12)];
       else if (rb>12)
 	ul_ch    = &eNB_common_vars->srs_ch_estimates[eNB_id][aarx][6 + (rb-13)*12];
       else {
-	phy_measurements->subband_cqi_dB[eNB_id][aarx][rb] = 0;
+	phy_measurements->subband_cqi_dB[UE_id][aarx][rb] = 0;
 	continue;
       }
       // cqi
       if (aarx==0)
 	phy_measurements->subband_cqi_tot[UE_id][rb]=0;
       
-      phy_measurements->subband_cqi[eNB_id][aarx][rb] = (signal_energy_nodc(ul_ch,12))*rx_power_correction - phy_measurements->n0_power[aarx];
-      if (phy_measurements->subband_cqi[eNB_id][aarx][rb] < 0)
-	phy_measurements->subband_cqi[eNB_id][aarx][rb]=0;
+      phy_measurements->subband_cqi[UE_id][aarx][rb] = (signal_energy_nodc(ul_ch,12))*rx_power_correction - phy_measurements->n0_power[aarx];
+      if (phy_measurements->subband_cqi[UE_id][aarx][rb] < 0)
+	phy_measurements->subband_cqi[UE_id][aarx][rb]=0;
 
-      phy_measurements->subband_cqi_tot[eNB_id][rb] += phy_measurements->subband_cqi[eNB_id][aarx][rb];
-      phy_measurements->subband_cqi_dB[eNB_id][aarx][rb] = dB_fixed2(phy_measurements->subband_cqi[eNB_id][aarx][rb],
+      phy_measurements->subband_cqi_tot[UE_id][rb] += phy_measurements->subband_cqi[UE_id][aarx][rb];
+      phy_measurements->subband_cqi_dB[UE_id][aarx][rb] = dB_fixed2(phy_measurements->subband_cqi[UE_id][aarx][rb],
 									  2*phy_measurements->n0_power[aarx]);							
       // 2*n0_power since we have noise from the odd carriers in the comb of the srs
 
@@ -214,11 +214,11 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 
 
   for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
-    phy_measurements->subband_cqi_tot_dB[eNB_id][rb] = dB_fixed2(phy_measurements->subband_cqi_tot[eNB_id][rb],
+    phy_measurements->subband_cqi_tot_dB[UE_id][rb] = dB_fixed2(phy_measurements->subband_cqi_tot[UE_id][rb],
 								 phy_measurements->n0_power_tot);
     /*
-    if (phy_measurements->subband_cqi_tot_dB[eNB_id][rb] == 65)
-      msg("eNB meas error *****subband_cqi_tot[%d][%d] %d => %d dB (n0 %d)\n",eNB_id,rb,phy_measurements->subband_cqi_tot[eNB_id][rb],phy_measurements->subband_cqi_tot_dB[eNB_id][rb],phy_measurements->n0_power_tot);
+    if (phy_measurements->subband_cqi_tot_dB[UE_id][rb] == 65)
+      msg("eNB meas error *****subband_cqi_tot[%d][%d] %d => %d dB (n0 %d)\n",UE_id,rb,phy_measurements->subband_cqi_tot[UE_id][rb],phy_measurements->subband_cqi_tot_dB[UE_id][rb],phy_measurements->n0_power_tot);
     */
   }
   

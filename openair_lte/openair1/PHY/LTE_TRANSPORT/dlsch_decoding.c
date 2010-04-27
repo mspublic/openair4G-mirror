@@ -2,7 +2,7 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 
-#define DEBUG_DLSCH_DECODING
+//#define DEBUG_DLSCH_DECODING
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
 
@@ -69,13 +69,13 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 			     LTE_DL_FRAME_PARMS *lte_frame_parms,
 			     LTE_UE_DLSCH_t *dlsch,
 			     unsigned char subframe){
-
+  
   
 
-  unsigned short nb_rb = dlsch->nb_rb;
-  unsigned char harq_pid = dlsch->current_harq_pid;
-  unsigned int A = dlsch->harq_processes[harq_pid]->TBS;
-  unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
+  unsigned short nb_rb;
+  unsigned char harq_pid;
+  unsigned int A;
+  unsigned char mod_order;
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret,offset;
   unsigned short iind;
@@ -84,6 +84,48 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   short dummy_w[8][3*(6144+64)];
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   unsigned char crc_type;
+
+  if (!dlsch_llr) {
+    msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  if (!dlsch) {
+    msg("dlsch_decoding.c: NULL dlsch pointer\n");
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  if (!lte_frame_parms) {
+    msg("dlsch_decoding.c: NULL lte_frame_parms pointer\n");
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  if (subframe>9) {
+    msg("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  nb_rb = dlsch->nb_rb;
+
+
+  if (nb_rb > 25) {
+    msg("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  harq_pid = dlsch->current_harq_pid;
+  if (harq_pid > 1) {
+    msg("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  A = dlsch->harq_processes[harq_pid]->TBS;
+  if (A > 6144) {
+    msg("dlsch_decoding.c: Illegal TBS %d\n",A);
+    return(MAX_TURBO_ITERATIONS);
+  }
+
+  mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   ret = MAX_TURBO_ITERATIONS;
 
@@ -104,7 +146,10 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 		     &dlsch->harq_processes[harq_pid]->F);
     //  CLEAR LLR's HERE for first packet in process
   }
-
+  else {
+    msg("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
+    return(MAX_TURBO_ITERATIONS);
+  }
 
   r_offset = 0;
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {

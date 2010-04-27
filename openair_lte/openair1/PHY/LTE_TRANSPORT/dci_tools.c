@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-#define DEBUG_DCI
+//#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -132,6 +132,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
 
   //  printf("Generate eNB DCI, format %d, rnti %x (pdu %p)\n",dci_format,rnti,dci_pdu);
+
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
@@ -276,6 +277,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     }
 
     //    printf("Set pmi %x (tpmi %d)\n",dlsch0->pmi_alloc,tpmi);
+
 
     if (lte_frame_parms->mode1_flag == 1)
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
@@ -843,7 +845,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
-    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 

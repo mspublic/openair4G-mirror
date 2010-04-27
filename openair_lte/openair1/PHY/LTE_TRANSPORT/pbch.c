@@ -295,6 +295,7 @@ unsigned short pbch_extract(int **rxdataF,
     }
 
   }
+
   return(0);
 }
 
@@ -345,6 +346,9 @@ int pbch_channel_level(int **dl_ch_estimates_ext,
 
       //msg("Channel level : %d, %d\n",avg1, avg2);
     }
+
+  _mm_empty();
+  _m_empty();
 
   return(avg2);
 
@@ -439,6 +443,8 @@ void pbch_channel_compensation(int **rxdataF_ext,
 	
       }
     }
+  _mm_empty();
+  _m_empty();
 }     
 
 void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
@@ -461,6 +467,8 @@ void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
   }
+  _mm_empty();
+  _m_empty();
 }
 
 void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,

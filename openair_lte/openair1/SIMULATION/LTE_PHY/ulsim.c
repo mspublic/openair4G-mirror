@@ -7,6 +7,8 @@
 #include "PHY/vars.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
+#include "SCHED/defs.h"
+#include "SCHED/vars.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
@@ -267,6 +269,7 @@ int main(int argc, char **argv) {
 
 #ifdef IFFT_FPGA
   write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[300*12*subframe],300*12,1,4);
+
   //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 
   // do talbe lookup and write results to txdataF2

@@ -26,7 +26,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
   msg("slot_fep: offset %d, symbol %d, nb_prefix_samples %d\n",offset, symbol, nb_prefix_samples);
 #endif
-  
+
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
     fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
 	(short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],

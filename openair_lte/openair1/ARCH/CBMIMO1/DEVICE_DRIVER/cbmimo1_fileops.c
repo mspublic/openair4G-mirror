@@ -573,7 +573,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  mac_xface->is_secondary_cluster_head = 0;
 	  mac_xface->cluster_head_index = 0;
 	  NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-	  UE_mode = PRACH;
+	  //UE_mode = PRACH;
+	  UE_mode = NOT_SYNCHED;
 
 	  for (eNb_id=0;eNb_id<3;eNb_id++)
 	    lte_ue_pdcch_vars[eNb_id]->crnti = 0x1234;

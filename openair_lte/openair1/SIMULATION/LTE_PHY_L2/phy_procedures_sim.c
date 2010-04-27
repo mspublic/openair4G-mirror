@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   number_of_cards = 3;
-
+  openair_daq_vars.rx_rf_mode = 1;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));

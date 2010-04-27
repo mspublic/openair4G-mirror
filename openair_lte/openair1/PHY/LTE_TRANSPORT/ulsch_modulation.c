@@ -7,6 +7,7 @@
 #include <math.h>
 #define OFDMA_ULSCH
 
+
 //#define DEBUG_ULSCH_MODULATION
 
 __m128i dft_in_re128[2][300],dft_in_im128[2][300],dft_out_re128[2][300],dft_out_im128[2][300];
@@ -200,12 +201,36 @@ void ulsch_modulation(mod_sym_t **txdataF,
 #endif
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  unsigned char Q_m;
   mod_sym_t *txptr;
   unsigned int symbol_offset;
-  unsigned short first_rb = ulsch->harq_processes[harq_pid]->first_rb;
-  unsigned short nb_rb = ulsch->harq_processes[harq_pid]->nb_rb,G;
+  unsigned short first_rb;
+  unsigned short nb_rb,G;
 
+  if (!ulsch) {
+    msg("ulsch_modulation.c: Null ulsch\n");
+    return;
+  }
+
+  if (harq_pid > 2) {
+    msg("ulsch_modulation.c: Illegal harq_pid %d\n",harq_pid);
+    return;
+  }
+
+  first_rb = ulsch->harq_processes[harq_pid]->first_rb;
+  nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
+
+  if (nb_rb == 0) {
+    msg("ulsch_modulation.c: Illegal nb_rb %d\n",nb_rb);
+    return;
+  }
+
+  if (first_rb >25 ) {
+    msg("ulsch_modulation.c: Illegal first_rb %d\n",first_rb);
+    return;
+  }
+
+  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
   G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 #ifdef DEBUG_ULSCH_MODULATION

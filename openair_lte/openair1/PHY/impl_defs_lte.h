@@ -148,7 +148,7 @@ typedef enum {
   NOT_SYNCHED=0,
   PRACH,
   RA_RESPONSE,
-  ULSCH
+  PUSCH
 } UE_MODE_t;
 /*
 /// Top-level PHY Data Structure for eNB 

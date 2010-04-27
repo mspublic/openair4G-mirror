@@ -13,7 +13,7 @@
 #include "MAC_INTERFACE/extern.h"
 
 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 int* sync_corr = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
@@ -277,7 +277,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
 #ifdef USER_MODE
-  write_output("sync_corr.m","synccorr",sync_corr,length,1,2);
+  write_output("sync_corr_ue.m","synccorr",sync_corr,length,1,2);
 #endif
 #endif
 
@@ -350,7 +350,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
 #ifdef DEBUG_PHY
 #ifdef USER_MODE
-  write_output("sync_corr.m","synccorr",sync_corr,length,1,2);
+  write_output("sync_corr_eNb.m","synccorr",sync_corr,length,1,2);
 #endif
 #endif
 
