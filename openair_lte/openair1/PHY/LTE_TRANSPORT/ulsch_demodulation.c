@@ -474,7 +474,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
   unsigned short rx_power_correction;
 
-  //  printf("rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+  //  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
@@ -483,13 +483,15 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     rx_power_correction = 1;
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
-    /*      
-
-    printf("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d)\n",rag_flag,l,
-	   ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
-	   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
-
+          
+    /*    
+    msg("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",rag_flag,l,
+	ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
+	ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+	eNB_common_vars->rxdataF,
+    	eNB_ulsch_vars->rxdataF_ext);
     */
+    
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],

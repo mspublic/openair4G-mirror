@@ -182,8 +182,19 @@ int main(int argc, char *argv[]) {
   unsigned int mem_base;
   char title[20];
   unsigned int     bigphys_top;
-
   LTE_eNB_ULSCH *lte_eNb_ulsch;
+  unsigned char eNb_id, UE_id=0;
+
+  if (argc>1) {
+    eNb_id = atoi(argv[1]);
+    if (eNb_id > 2) {
+      printf("eNb_id hast to be <= 2!\n");
+      exit(-1);
+    }
+  }
+  else {
+    eNb_id = 0;
+  }
 
   PHY_vars = malloc(sizeof(PHY_VARS));
 
@@ -208,8 +219,8 @@ int main(int argc, char *argv[]) {
   printf("TX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.txdataF);
   printf("RX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.rxdata);
   printf("PHY_vars->lte_eNB_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
-  printf("PHY_vars->lte_eNB_ulsch_vars[0] = %p\n",PHY_vars->lte_eNB_ulsch_vars[0]);
-  printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] = %p\n",PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0]);
+  printf("PHY_vars->lte_eNB_ulsch_vars[%d] = %p\n",UE_id,PHY_vars->lte_eNB_ulsch_vars[UE_id]);
+  printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[%d] = %p\n",eNb_id,PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
@@ -234,7 +245,7 @@ int main(int argc, char *argv[]) {
 		      bigphys_top);
 
   lte_eNb_ulsch = (LTE_eNB_ULSCH *) (mem_base + 
-				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[0] - 
+				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[UE_id] - 
 				     bigphys_top);
 
   printf("lte_eNb_ulsch = %p\n",lte_eNb_ulsch);
@@ -243,25 +254,25 @@ int main(int argc, char *argv[]) {
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
     channel_srs[i] = (short*)(mem_base + 
-			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[0] + 
+			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id] + 
 			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			      bigphys_top);
 
     channel_drs[i] = (short*)(mem_base + 
-			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[0] + 
+			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[eNb_id] + 
 			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			      i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
 			      bigphys_top);
 
     ulsch_ext[i] = (short*)(mem_base + 
-			    (unsigned int)lte_eNb_ulsch->rxdataF_ext[0] + 
+			    (unsigned int)lte_eNb_ulsch->rxdataF_ext[eNb_id] + 
 			      nb_ant_rx*sizeof(int*) + 
 			      i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
 			    bigphys_top);
     /*
     ulsch_ext[i] = (short*)(mem_base + 
-			(unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF[0] + 
+			(unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF[eNb_id] + 
 			nb_ant_rx*sizeof(int*) + 
 			i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			bigphys_top);
@@ -269,7 +280,7 @@ int main(int argc, char *argv[]) {
   }
     
   rx_sig_ptr = (short **)(mem_base + 
-			  (unsigned int)PHY_vars->lte_eNB_common_vars.rxdata[0] -
+			  (unsigned int)PHY_vars->lte_eNB_common_vars.rxdata[eNb_id] -
 			  bigphys_top);
 
   for (i=0;i<nb_ant_rx;i++) {
@@ -279,7 +290,7 @@ int main(int argc, char *argv[]) {
   }
     
   ulsch_comp = (short*)(mem_base + 
-			(unsigned int)lte_eNb_ulsch->rxdataF_comp[0] + 
+			(unsigned int)lte_eNb_ulsch->rxdataF_comp[eNb_id] + 
 			nb_ant_rx*sizeof(int*) -
 			bigphys_top);
 

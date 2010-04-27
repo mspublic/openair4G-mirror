@@ -1997,6 +1997,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					   input_buffer_length,
 					   eNB_UE_stats[eNb_id].UE_timing_offset[0]>>2); 
       eNB_UE_stats[eNb_id].mode[0] = RA_RESPONSE;
+      
+      //msg("Filling eNb_ulsch_params for RAR\n");
       generate_eNb_ulsch_params_from_rar(dlsch_input_buffer,
 					 (next_slot>>1),
 					 ulsch_eNb[0],
@@ -2094,7 +2096,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 		  );
   }
 
-  
   eNb_id=0;
   if ((eNB_UE_stats[0].mode[UE_id]!=PRACH) && (last_slot%2==1)) {
 
@@ -2123,17 +2124,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 								     24576);
     first_run = 0;
     
-    
     debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: user %d in sector %d: timing_advance = %d\n",
 	      mac_xface->frame, last_slot, 
 	      UE_id, eNb_id,
 	      eNB_UE_stats[eNb_id].UE_timing_offset[UE_id]);
-
-
-
   }
 
-  //printf("Running ulsch reception: eNb_id %d\n",eNb_id);
+  //  msg("Running ulsch reception: eNb_id %d (RAG active %d)\n",eNb_id,ulsch_eNb[0]->RAG_active);
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
@@ -2164,6 +2161,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			   rag_flag);
 
 
+
     for (i=0;i<NB_ANTENNAS_RX;i++)
       eNB_UE_stats[0].UL_rssi[UE_id][i] = dB_fixed(ulsch_power[i]) - PHY_vars->rx_total_gain_eNB_dB;
 
@@ -2180,7 +2178,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     printf("ulsch (ue): mcs      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->mcs);
       //write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
     write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-    write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[harq_pid]->nb_rb*12*2*9,1,0);      
+    write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[0]->llr,ulsch_ue[0]->harq_processes[harq_pid]->nb_rb*12*2*9,1,0);      
     write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
     write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
     
@@ -2235,7 +2233,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     }
 
     if (rag_flag == 1) {
-      msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors,ulsch_decoding_attempts);  
+      msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH (RAG) for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors,ulsch_decoding_attempts);  
     }
     else {
       debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors,ulsch_decoding_attempts);  
