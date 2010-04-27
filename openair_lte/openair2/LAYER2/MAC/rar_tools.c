@@ -6,7 +6,7 @@
 #include "SIMULATION/TOOLS/defs.h"
 
 
-#define DEBUG_RAR
+//#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
