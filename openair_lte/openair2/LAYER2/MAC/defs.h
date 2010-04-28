@@ -639,7 +639,7 @@ unsigned short fill_rar(unsigned char *dlsch_buffer,
 	      unsigned char input_buffer_length,
 	      unsigned short timing_advance_cmd);
 
-unsigned char process_rar(unsigned char *dlsch_buffer,unsigned short *);
+unsigned short process_rar(unsigned char *dlsch_buffer,unsigned short *);
 
 
 //ue_control_plane_procedures

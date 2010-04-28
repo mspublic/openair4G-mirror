@@ -44,11 +44,11 @@ unsigned short fill_rar(unsigned char *dlsch_buffer,
   return(rar->t_crnti);
 }
 
-unsigned char process_rar(unsigned char *dlsch_buffer,unsigned short *t_crnti) {
+unsigned short process_rar(unsigned char *dlsch_buffer,unsigned short *t_crnti) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
-
+#ifdef DEBUG_RAR
   msg("[MAC UE] rarh->E %d\n",rarh->E);
   msg("[MAC UE] rarh->T %d\n",rarh->T);
   msg("[MAC UE] rarh->RAPID %d\n",rarh->RAPID);
@@ -62,6 +62,7 @@ unsigned char process_rar(unsigned char *dlsch_buffer,unsigned short *t_crnti) {
   msg("[MAC UE] rar->UL_delay %d\n",rar->UL_delay);
   msg("[MAC UE] rar->cqi_req %d\n",rar->cqi_req);
   msg("[MAC UE] rar->t_crnti %x\n",rar->t_crnti);
+#endif
   *t_crnti = rar->t_crnti;
-  return(rar->UL_delay);
+  return(rar->Timing_Advance_Command);
 }
