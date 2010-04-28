@@ -42,7 +42,7 @@ FD_lte_scope *form;
 //short channel_f[2048];
 //char demod_data[2048];
 
-short *channel_drs[4],*channel_srs[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
+short *channel_drs[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
 int* sync_corr;
 
 int length,offset;
@@ -104,7 +104,7 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  fl_set_xyplot_ybounds(form->channel_t_re,30,70);
+  //fl_set_xyplot_ybounds(form->channel_t_re,30,70);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
 
   // channel_t_im = rx_sig
@@ -255,6 +255,12 @@ int main(int argc, char *argv[]) {
 
     channel_srs[i] = (short*)(mem_base + 
 			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id] + 
+			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
+			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
+			      bigphys_top);
+
+    channel_srs_time[i] = (short*)(mem_base + 
+			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates_time + 
 			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			      bigphys_top);

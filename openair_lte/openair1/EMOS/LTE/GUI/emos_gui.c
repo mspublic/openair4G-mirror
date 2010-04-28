@@ -80,7 +80,7 @@ int chsch_index;
 int is_cluster_head = 0;
 int node_id = 8;
 int tx_gain = 0;
-unsigned char mimo_mode = 1;
+unsigned char mimo_mode = 2;
 int checkpoint = 1;
 int frame_tx;
 time_t starttime_tmp;
@@ -100,8 +100,8 @@ unsigned char tx_gain_table_c[36] = {
   177, 173, 30, 17}; //20dBm
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
-unsigned char tx_gain_table_ue[4] = {137, 137, 140, 140};
-unsigned char tx_gain_table_eNb[4] = {137, 137, 140, 140};
+unsigned char tx_gain_table_ue[4] = {144, 144, 140, 140};
+unsigned char tx_gain_table_eNb[4] = {170, 170, 140, 140};
 unsigned int timing_advance = 80;
 unsigned int tcxo = 53;  
 int freq_correction =  -300;
@@ -1092,6 +1092,13 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		PHY_config->dual_tx = 1;
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
+
+		tx_gain_table_eNb[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_eNb[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_eNb[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		tx_gain_table_eNb[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		rf_mode_eNb= atoi(fl_get_input(main_frm->rf_mode_txt));
+
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
@@ -1116,6 +1123,14 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		PHY_config->dual_tx = 0;
 		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
+
+		tx_gain_table_ue[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_ue[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_ue[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		tx_gain_table_ue[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		rf_mode_ue= atoi(fl_get_input(main_frm->rf_mode_txt));
+
+
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TIMING_ADVANCE,&timing_advance);
@@ -1520,12 +1535,29 @@ void new_data_callback(int fifo_fd, void* data)
 //
 void terminal_button_callback(FL_OBJECT *ob, long user_data)
 {
+  char temp_label[1024];
   fl_set_button(main_frm->terminal_btn1,0);
   //fl_set_button(main_frm->terminal_btn2,0);
   fl_set_button(main_frm->terminal_btn3,0);
   //fl_set_button(main_frm->terminal_btn4,0);
   fl_set_button(ob,1);
   terminal_idx = user_data;
+  if (terminal_idx == 1) {
+    sprintf(temp_label,"%d",tx_gain_table_eNb[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_eNb[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_eNb);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+  }
+  else if (terminal_idx == 3) {
+    sprintf(temp_label,"%d",tx_gain_table_ue[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_ue[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_ue);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+  }
 }
 
 void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
@@ -1658,6 +1690,7 @@ int mac_phy_init()
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
+  lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;

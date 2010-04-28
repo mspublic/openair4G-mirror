@@ -101,7 +101,9 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
 
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte.o
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 

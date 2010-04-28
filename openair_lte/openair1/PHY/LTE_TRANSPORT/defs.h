@@ -392,7 +392,7 @@ typedef struct {
   unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
   unsigned char rank[NUMBER_OF_UE_MAX];
   unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
-  unsigned short UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
+  int UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
   UE_MODE_t mode[NUMBER_OF_UE_MAX];
 } LTE_eNB_UE_stats;
 

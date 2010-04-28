@@ -110,7 +110,26 @@ void openair1_restart(void);
 #endif //USER_MODE
 
 #ifdef OPENAIR_LTE
+typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
+ 
 void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot);
+void get_rag_alloc(unsigned char tdd_config,
+		   unsigned char current_subframe, 
+		   unsigned int current_frame,
+		   unsigned int *frame,
+		   unsigned char *subframe);
+unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK);
+lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);
+unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe);
+void phy_procedures_UE_TX(unsigned char next_slot);
+int phy_procedures_UE_RX(unsigned char last_slot);
+void phy_procedures_UE_S_TX(unsigned char next_slot);
+void phy_procedures_UE_S_RX(unsigned char last_slot);
+void phy_procedures_eNB_TX(unsigned char next_slot);
+void phy_procedures_eNB_RX(unsigned char last_slot);
+void phy_procedures_eNB_S_TX(unsigned char next_slot);
+void phy_procedures_eNB_S_RX(unsigned char last_slot);
+
 #else
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);
@@ -124,10 +143,6 @@ unsigned int find_chbch(void);
 unsigned int find_mrbch(void);
 #endif
 
-#ifdef OPENAIR_LTE
-typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
-#endif
- 
 #endif
 
 /*@}*/

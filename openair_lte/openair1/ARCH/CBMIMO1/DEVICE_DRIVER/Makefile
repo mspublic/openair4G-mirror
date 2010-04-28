@@ -234,7 +234,9 @@ endif
 # PHY Procedures
 # note that ifdef OPENAIR_LTE and ifdef EMOS we use phy_procedures_lte.o
 ifdef OPENAIR_LTE 
-openair_rf-objs += $(OPENAIR1_TOP)/SCHED/phy_procedures_lte.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/phy_procedures_lte_ue.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/phy_procedures_lte_eNb.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/phy_procedures_lte_common.o
 else
 ifdef EMOS
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/phy_procedures_emos.o

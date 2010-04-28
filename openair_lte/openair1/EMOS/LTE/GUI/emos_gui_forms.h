@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Fri Apr 23 12:34:27 2010.**/
+/** Header file generated with fdesign on Wed Apr 28 10:36:50 2010.**/
 
 #ifndef FD_main_frm_h_
 #define FD_main_frm_h_
@@ -81,6 +81,9 @@ typedef struct {
 	FL_OBJECT *terminal_btn1;
 	FL_OBJECT *terminal_btn3;
 	FL_OBJECT *next_cp;
+	FL_OBJECT *rf_gain_txt;
+	FL_OBJECT *digital_gain_txt;
+	FL_OBJECT *rf_mode_txt;
 } FD_main_frm;
 
 extern FD_main_frm * create_form_main_frm(void);
