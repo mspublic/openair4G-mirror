@@ -43,6 +43,7 @@
 #include "rrm_sock.h"
 #include "cmm_msg.h"
 #include "rrc_rrm_msg.h"
+#include "ip_msg.h" //mod_lor_10_04_27
 #include "pusu_msg.h"
 #include "sensing_rrm_msg.h"
 
@@ -52,8 +53,11 @@
 #include "rrm_constant.h"
 
 #define NUM_SCENARIO  14
-#define SENSORS_NB 2 //mod_lor_10_03_03
+#define SENSORS_NB 3 //mod_lor_10_03_03
 #define PUSU_EMUL
+#define BTS_ID 1
+#define FC_ID 0
+
 
 #ifdef RRC_EMUL
 
@@ -82,6 +86,8 @@ typedef struct {
     L3_INFO_T           L3_info_t           ; ///< type de l'identification de niveau L3
     unsigned char       L3_info[MAX_L3_INFO]; ///< identification de niveau L3
 } node_info_t ;
+
+static char c; //mod_lor_10_04_27
 
 /*node_info_t node_info[10] = {
  { .L2_id={{0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv6_ADDR, .L3_info={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11} },
@@ -167,7 +173,7 @@ static void *fn_pusu (
         if (header == NULL )
         {
             fprintf(stderr,"Server closed connection\n");
-            flag_not_exit = 0;
+            //flag_not_exit = 0; //mod_lor_10_04_27
         }
         else
         {
@@ -188,13 +194,13 @@ static void *fn_pusu (
             {
                 case RRM_PUBLISH_IND:
                     {
-                        msg_fct( "[RRM]>[PUSU]:%d:RRM_PUBLISH_IND\n",header->inst);
+         //               msg_fct( "[RRM]>[PUSU]:%d:RRM_PUBLISH_IND\n",header->inst);
                         send_msg( s, msg_pusu_resp( header->inst, PUSU_PUBLISH_RESP, header->Trans_id )) ;
                     }
                     break ;
                 case RRM_UNPUBLISH_IND:
                     {
-                        msg_fct( "[RRM]>[PUSU]:%d:RRM_UNPUBLISH_IND\n",header->inst);
+         //                 msg_fct( "[RRM]>[PUSU]:%d:RRM_UNPUBLISH_IND\n",header->inst);
                         send_msg( s, msg_pusu_resp( header->inst, PUSU_UNPUBLISH_RESP, header->Trans_id )) ;
                     }
                     break ;
@@ -206,13 +212,13 @@ static void *fn_pusu (
                     break ;
                 case RRM_SENSING_INFO_IND:
                     {
-                        msg_fct( "[RRM]>[PUSU]:%d:RRM_SENSING_INFO_IND\n",header->inst);
+              //            msg_fct( "[RRM]>[PUSU]:%d:RRM_SENSING_INFO_IND\n",header->inst);
                         send_msg( s, msg_pusu_resp( header->inst, PUSU_SENSING_INFO_RESP, header->Trans_id )) ;
                     }
                     break ;
                 case RRM_CH_LOAD_IND:
                     {
-                        msg_fct( "[RRM]>[PUSU]:%d:RRM_CH_LOAD_IND\n",header->inst);
+               //           msg_fct( "[RRM]>[PUSU]:%d:RRM_CH_LOAD_IND\n",header->inst);
                         send_msg( s, msg_pusu_resp( header->inst, PUSU_CH_LOAD_RESP, header->Trans_id )) ;
                     }
                     break ;
@@ -260,7 +266,7 @@ static void * fn_rrc (
         if (header == NULL )
         {
             fprintf(stderr,"Server closed connection\n");
-            flag_not_exit = 0;
+            //flag_not_exit = 0;//mod_lor_10_04_27
         }
         else
         {
@@ -449,7 +455,7 @@ static void * fn_cmm (
         if (header == NULL )
         {
             fprintf(stderr,"Server closed connection\n");
-            flag_not_exit = 0;
+            //flag_not_exit = 0;//mod_lor_10_04_27
         }
         else
         {
@@ -471,7 +477,7 @@ static void * fn_cmm (
                 case RRM_CX_SETUP_CNF :
                     {
                         // rrm_cx_setup_cnf_t *p = (rrm_cx_setup_cnf_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_CX_SETUP_CNF\n",header->inst);
+             //             msg_fct( "[RRM]>[CMM]:%d:RRM_CX_SETUP_CNF\n",header->inst);
 
                         pthread_mutex_lock( &cmm_transact_exclu ) ;
                         del_item_transact( &cmm_transact_list, header->Trans_id );
@@ -481,19 +487,19 @@ static void * fn_cmm (
                 case RRM_CX_MODIFY_CNF :
                     {
                         //rrm_cx_modify_cnf_t *p = (rrm_cx_modify_cnf_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_CX_MODIFY_CNF\n",header->inst);
+                //          msg_fct( "[RRM]>[CMM]:%d:RRM_CX_MODIFY_CNF\n",header->inst);
                     }
                     break ;
                 case RRM_CX_RELEASE_CNF :
                     {
                         //rrm_cx_release_cnf_t *p = (rrm_cx_release_cnf_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_CX_RELEASE_CNF\n",header->inst);
+                //          msg_fct( "[RRM]>[CMM]:%d:RRM_CX_RELEASE_CNF\n",header->inst);
                     }
                     break ;
                 case RRM_CX_RELEASE_ALL_CNF :
                     {
                         //rrm_cx_release_all_cnf_t *p = (rrm_cx_release_all_cnf_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_CX_RELEASE_ALL_CNF\n",header->inst);
+                 //         msg_fct( "[RRM]>[CMM]:%d:RRM_CX_RELEASE_ALL_CNF\n",header->inst);
                     }
                     break ;
                 case RRCI_ATTACH_REQ :
@@ -504,7 +510,7 @@ static void * fn_cmm (
                         float delai = 0.00 ;
 #endif
                         rrci_attach_req_t *p = (rrci_attach_req_t *) msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:RRCI_ATTACH_REQ \n",header->inst);
+                 //         msg_fct( "[RRM]>[CMM]:%d:RRCI_ATTACH_REQ \n",header->inst);
                         //MSG_L2ID(p->L2_id);
                         pthread_mutex_lock( &actdiff_exclu  ) ;
 
@@ -524,9 +530,10 @@ static void * fn_cmm (
 #else
                         float delai = 0.00 ;
 #endif
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
+                 //         msg_fct( "[RRM]>[CMM]:%d:RRM_ATTACH_IND\n",header->inst);
                         
-                        if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //AAA inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
+                         /*   //mod_lor_10_04_27++
+                        //if (WSN && attached_sensors==SENSORS_NB && header->inst == 0){ //AAA inst_to_change: remove header->inst == 0 in case WSN and SN not on the same machine
                             //mod_lor_10_03_12++
                             unsigned int     Start_fr   = 1000;
                             unsigned int     Stop_fr    = 2000;
@@ -536,21 +543,29 @@ static void * fn_cmm (
                             unsigned int     Overlap    = 5;
                             unsigned int     Sampl_freq = 10;
                             
-                            //system("PAUSE"); //mod_lor_10_04_21
-                            pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
-                                    msg_cmm_init_sensing(header->inst,Start_fr,Stop_fr,Meas_band,Meas_tpf,
-                                    Nb_channels,Overlap, Sampl_freq) );
+                          
+                            scanf("%c",&c); //mod_lor_10_04_27
+                            if (c == 's'){//mod_lor_10_04_27
 
-                            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
-                            //msg_fct( "\npassato CH %d \n\n",header->inst); //dbg
-                            pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,60, cnt_actdiff++, s,
-                                    msg_cmm_stop_sensing(0) );
+                                pthread_mutex_lock( &actdiff_exclu  ) ; 
+                                add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
+                                        msg_cmm_init_sensing(header->inst,Start_fr,Stop_fr,Meas_band,Meas_tpf,
+                                        Nb_channels,Overlap, Sampl_freq) );
 
-                            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
+                                pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
+                                scanf("%c",&c); //mod_lor_10_04_27
+                            }
+                            
+                            if (c == 'e'){//mod_lor_10_04_27
+                                pthread_mutex_lock( &actdiff_exclu  ) ; 
+                                add_actdiff(&list_actdiff,5, cnt_actdiff++, s,
+                                        msg_cmm_stop_sensing(0) );
+
+                                pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
+                            }
+                            
                         } //mod_lor_10_03_12++
-
+                        //mod_lor_10_04_27--*/
                     }
                     break ;
                 case RRM_MR_ATTACH_IND :
@@ -563,7 +578,7 @@ static void * fn_cmm (
 #endif
                         rrm_MR_attach_ind_t *p = (rrm_MR_attach_ind_t *) msg ;
 
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_MR_ATTACH_IND\n",header->inst);
+                  //        msg_fct( "[RRM]>[CMM]:%d:RRM_MR_ATTACH_IND\n",header->inst);
                         memcpy( L2_id_mr.L2_id, p->L2_id.L2_id, sizeof(L2_ID));
 
                         pthread_mutex_lock( &actdiff_exclu  ) ;
@@ -589,7 +604,7 @@ static void * fn_cmm (
                         float delai2 = 0.00 ;
 #endif
                         router_is_CH_ind_t *p =(router_is_CH_ind_t *)msg ;
-                        msg_fct( "[RRM]>[CMM]:%d:ROUTER_IS_CH_IND\n",header->inst);
+                 //         msg_fct( "[RRM]>[CMM]:%d:ROUTER_IS_CH_IND\n",header->inst);
 
                         memcpy( node_info[header->inst].L2_id.L2_id, p->L2_id.L2_id, sizeof(L2_ID));
                         //print_L2_id(&L2_id_ch ); printf("=>L2_id_ch\n");
@@ -609,26 +624,30 @@ static void * fn_cmm (
                         add_item_transact( &cmm_transact_list, cmm_transaction, INT_CMM, CMM_CX_SETUP_REQ,0,NO_PARENT);
                         pthread_mutex_unlock( &cmm_transact_exclu ) ;
                         
+                        /*//mod_lor_10_04_27++
                         if (header->inst==1){
-                            pthread_mutex_lock( &actdiff_exclu  ) ; 
-                            add_actdiff(&list_actdiff,20, cnt_actdiff++, s, msg_cmm_ask_freq(header->inst) );
-                            pthread_mutex_unlock( &actdiff_exclu ) ;
-                        }
+                            //scanf("%c",&c); //mod_lor_10_04_27
+                            //if (c == 'a'){//mod_lor_10_04_27
+                                pthread_mutex_lock( &actdiff_exclu  ) ; 
+                                add_actdiff(&list_actdiff,20, cnt_actdiff++, s, msg_cmm_ask_freq(header->inst) );
+                                pthread_mutex_unlock( &actdiff_exclu ) ;
+                            //}
+                        }//mod_lor_10_04_27--*/
                     }
                     break ;
                 case RRCI_CH_SYNCH_IND :
                     {
-                        msg_fct( "[RRM]>[CMM]:%d:RRCI_CH_SYNCH_IND\n",header->inst);
+              //            msg_fct( "[RRM]>[CMM]:%d:RRCI_CH_SYNCH_IND\n",header->inst);
                     }
                     break ;
                 case RRM_MR_SYNCH_IND :
                     {
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_MR_SYNCH_IND\n",header->inst);
+          //                msg_fct( "[RRM]>[CMM]:%d:RRM_MR_SYNCH_IND\n",header->inst);
                     }
                     break ;
                 case RRM_NO_SYNCH_IND:
                     {
-                        msg_fct( "[RRM]>[CMM]:%d:RRM_NO_SYNCH_IND\n",header->inst);
+          //                msg_fct( "[RRM]>[CMM]:%d:RRM_NO_SYNCH_IND\n",header->inst);
                     }
                     break ;
                 default :
@@ -673,7 +692,7 @@ static void *fn_sns (
         if (header == NULL )
         {
             fprintf(stderr,"Server closed connection\n");
-            flag_not_exit = 0;
+            //flag_not_exit = 0; //mod_lor_10_04_27
         }
         else
         {
@@ -800,18 +819,18 @@ int main( int argc , char **argv )
 #endif /* SNS_EMUL */
 
 
-    fprintf(stderr,"Trying to connect... RRM-CMM\n");
+    fprintf(stderr,"Trying to connect... CRRM-CMM\n");
     open_socket(&s_cmm,CMM_RRM_SOCK_PATH,RRM_CMM_SOCK_PATH,0) ;
     if (s_cmm.s  == -1)
         exit(1);
-    fprintf(stderr,"Connected... RRM-CMM (s=%d)\n",s_cmm.s);
+    fprintf(stderr,"Connected... CRRM-CMM (s=%d)\n",s_cmm.s);
 
 #ifdef PUSU_EMUL
-    fprintf(stderr,"Trying to connect... RRM-PUSU\n");
+    fprintf(stderr,"Trying to connect... CRRM-PUSU\n");
     open_socket(&s_pusu,PUSU_RRM_SOCK_PATH,RRM_PUSU_SOCK_PATH,0) ;
     if (s_pusu.s  == -1)
         exit(1);
-    fprintf(stderr,"Connected... RRM-PUSU (s=%d)\n",s_pusu.s);
+    fprintf(stderr,"Connected... CRRM-PUSU (s=%d)\n",s_pusu.s);
 #endif
 
 #ifdef RRC_EMUL
@@ -861,11 +880,46 @@ int main( int argc , char **argv )
     usleep(100000);
     scenario( NUM_SCENARIO, &s_rrc, &s_cmm, &s_sns );
 #endif /* RRC_EMUL */
+    sleep(5);
+    printf("Commands: \n    'q' to exit\n    's' to start sensing\n    'e' to end sensing\n    'a' to active BTS request\n\n\n" );
+    //getchar() ;//mod_lor_10_04_27
+    while (flag_not_exit){
+        scanf("%c",&c);
+        if (c == 'q')
+            flag_not_exit = 0;//mod_lor_10_04_27
+        else if (c == 's'){//mod_lor_10_04_27
+            printf("Starting sensing ... \n\n");
+            unsigned int     Start_fr   = 1000;
+            unsigned int     Stop_fr    = 2000;
+            unsigned int     Meas_band  = 200;
+            unsigned int     Meas_tpf   = 2;
+            unsigned int     Nb_channels= (Stop_fr-Start_fr)/Meas_band; 
+            unsigned int     Overlap    = 5;
+            unsigned int     Sampl_freq = 10;
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm,
+                    msg_cmm_init_sensing(FC_ID,Start_fr,Stop_fr,Meas_band,Meas_tpf,
+                    Nb_channels,Overlap, Sampl_freq) );
+            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
+        }
+        else if (c == 'e'){//mod_lor_10_04_27
+            printf("Ending sensing ... \n\n");
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm,
+                    msg_cmm_stop_sensing(FC_ID) );
 
-    printf("Taper [RETURN] to exit\n\n" );
-    getchar() ;
-
-    flag_not_exit = 0;
+            pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
+        }
+        else if (c == 'a'){
+            printf("Activating BTS to request frequencies  ... \n\n");
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_ask_freq(BTS_ID) );
+            pthread_mutex_unlock( &actdiff_exclu ) ;
+        }
+    }
+    //mod_lor_10_04_27--*/    
+    
+    
 #ifdef RRC_EMUL
     close_socket(&s_rrc);
 #endif /* RRC_EMUL */

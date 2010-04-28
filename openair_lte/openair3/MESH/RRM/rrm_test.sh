@@ -3,7 +3,7 @@ killall emul_int
 killall graph
 killall rrm
 
-xterm -T CMM -hold -e ./emul_int  &
+xterm -T COMMAND_CONSOLE -bg '#000000' -fg '#00ff00' -hold -e ./emul_int  &
 
 sleep 2
 

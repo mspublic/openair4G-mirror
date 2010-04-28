@@ -61,7 +61,8 @@ SRC	   += channels_db.c
 SRC	   += msg_mngt.c
 SRC	   += sens_op.c
 SRC	   += freq_ass_op.c
-SRC        += rrm_2_sensing_msg.c
+SRC    += rrm_2_sensing_msg.c 
+SRC    += ip_msg.c 
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

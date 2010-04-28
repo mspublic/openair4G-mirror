@@ -67,14 +67,14 @@ typedef enum {
     RRM_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
     RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
     RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
-    UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
+    //UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
     RRM_END_SCAN_REQ            , ///< Message RRM->RRC : end of a scanning process
     RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
-    RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
-    OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
-    UPDATE_OPEN_FREQ_7          , ///< 30Message IP       : list of frequencies usable by the secondary network
-    UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
+    RRC_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
+    //OPEN_FREQ_QUERY_4           , ///< Message IP   : BTS to ask free frequencies to FC
+    //UPDATE_OPEN_FREQ_7          , ///< 30Message IP       : list of frequencies usable by the secondary network
+    //UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
     /*RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
@@ -347,18 +347,19 @@ typedef struct {
 } rrm_up_freq_ass_t ;
 
 ///< TYPEDEF VIA IP
+//mod_lor_10_04_27++
 /*! 
 *******************************************************************************
 \brief  Definition des parametres de les fonctions  
         rrm_update_sens()dans une structure permettant le passage 
         des parametres via un socket
 */
-typedef struct {
+/*typedef struct {
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
     unsigned int        NB_info                ; //!< Number of sensed channels
     Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< Sensing information
     double              info_time              ; //!< Data of the information
-} rrm_update_sens_t ; 
+} rrm_update_sens_t ; */
 
 
 /*! 
@@ -366,10 +367,10 @@ typedef struct {
 \brief  Definition des parametres de les fonctions rrm_ask_for_freq() et rrc_ask_for_freq()dans 
         une structure permettant le passage des parametres via un socket
 */
-typedef struct {
+/*typedef struct {
     L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of Fusion Centre
     QOS_CLASS_T      QoS          ; //!< QoS required; if 0 all QoS at disposition
-} open_freq_query_t;
+} open_freq_query_t;*/
 
 /*! 
 *******************************************************************************
@@ -377,12 +378,12 @@ typedef struct {
         rrc_open_freq() et rrm_open_freq() dans une structure permettant le passage 
         des parametres via un socket
 */
-typedef struct {
+/*typedef struct {
     double              date;
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of FC/CH
     unsigned int        NB_chan                ; //!< number of free channels
     CHANNEL_T           fr_channels[NB_SENS_MAX]; //!< description of free channelS
-} update_open_freq_t;
+} update_open_freq_t;*/
 
 /*! 
 *******************************************************************************
@@ -390,11 +391,12 @@ typedef struct {
         rrm_update_SN_freq()dans 
         une structure permettant le passage des parametres via un socket
 */
-typedef struct {
+/*typedef struct {
     L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC/BTS
     unsigned int        NB_chan              ; //!< Number of channels 
     unsigned int        occ_channels[NB_SENS_MAX]; //!< Vector of channels
-} update_SN_occ_freq_t;
+} update_SN_occ_freq_t;*/
+//mod_lor_10_04_27--
 
 #ifdef TRACE
 extern const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] ; 
@@ -443,13 +445,13 @@ msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned i
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
 msg_t *msg_rrm_end_scan_conf( Instance_t inst, Transaction_t Trans_id);
-             
+/*//mod_lor_10_04_27++             
 ///MESSAGES VIA IP
 msg_t *msg_update_sens_results_3( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
 msg_t *msg_open_freq_query_4( Instance_t inst, L2_ID L2_id, QOS_CLASS_T QoS, Transaction_t Trans_id );
 msg_t *msg_update_open_freq_7( Instance_t inst, L2_ID L2_id, unsigned int NB_free_ch, CHANNEL_T *fr_channels, Transaction_t Trans_id);
 msg_t *msg_update_SN_occ_freq_5( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *occ_channels, Transaction_t Trans_id);
-
+//mod_lor_10_04_27--*/
 
 #ifdef __cplusplus
 }

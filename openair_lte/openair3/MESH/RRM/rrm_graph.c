@@ -51,6 +51,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "ip_msg.h" //mod_lor_10_04_27
 #include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "pusu_msg.h"
@@ -832,7 +833,7 @@ static void processing_msg_cmm(
                 if (rrm->role == FUSIONCENTER){
                     unsigned char tmp [4]={0x0A,0x00,0x02,0x02};
                     DataIp.sock_path_dest = tmp ; ///< dest IP address for internet socket
-                }else if (rrm->role == BTS){
+                }else if (rrm->role == BTS || rrm->role == CH_COLL){ //mod_lor_10_04_27
                     unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
                     DataIp.sock_path_dest = tmp  ; ///< dest IP address for internet socket
                 }else 
@@ -1311,11 +1312,18 @@ static void processing_msg_ip(
     )
 {
 #ifdef TRACE
-    if ( header->msg_type < NB_MSG_RRC_RRM )
+   //mod_lor_10_04_27++
+    /*if ( header->msg_type < NB_MSG_RRC_RRM )
     fprintf(ip2rrm_fd,"%lf IP->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_rrc_rrm[header->msg_type], header->msg_type,header->Trans_id);
     else
     fprintf(ip2rrm_fd,"%lf CMM->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);
+    fflush(ip2rrm_fd);*/
+    if ( header->msg_type < NB_MSG_IP )//mod_lor_10_04_27
+    fprintf(ip2rrm_fd,"%lf IP->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_ip[header->msg_type], header->msg_type,header->Trans_id);
+    else
+    fprintf(ip2rrm_fd,"%lf IP->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);
     fflush(ip2rrm_fd);
+    //mod_lor_10_04_27--
 #endif
 
     switch ( header->msg_type )
@@ -1326,7 +1334,7 @@ static void processing_msg_ip(
                 rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d \n",rrm->id, header->inst);
                 //mod_lor_10_04_20++
-                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 
                 //mod_lor_10_04_20--
                 update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
@@ -1354,7 +1362,7 @@ static void processing_msg_ip(
                 open_freq_query_t *p = (open_freq_query_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:OPEN_FREQ_QUERY_4 from %d\n",rrm->id, header->inst);
                 //mod_lor_10_04_20++
-                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
@@ -1367,7 +1375,7 @@ static void processing_msg_ip(
                 update_open_freq_t *p = (update_open_freq_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 from %d\n",rrm->id, header->inst);
                 //mod_lor_10_04_20++
-                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
@@ -1380,7 +1388,7 @@ static void processing_msg_ip(
                 update_SN_occ_freq_t *p = (update_SN_occ_freq_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 from %d\n",rrm->id, header->inst);
                 //mod_lor_10_04_20++
-                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--

@@ -25,6 +25,9 @@ L.IACOBELLI 2009-10-19
 #ifndef __GRAPH_ENUM_H
 #define __GRAPH_ENUM_H
 
+#define BTS_ID 1
+#define FC_ID 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,14 +74,14 @@ typedef enum {
     RRM_INIT_MON_REQ            , ///< Message RRM->RRC : initiation of a scanning monitoring
     RRM_INIT_SCAN_REQ           , ///< Message RRM->RRC : initiation of a scanning process
     RRC_INIT_SCAN_REQ           , ///< Message RRC->RRM : initiation of a scanning process
-    UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
+    //UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
     RRM_END_SCAN_REQ            , ///< Message RRM->RRC : end of a scanning process
     RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
     RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
-    OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
-    UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
-    UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
+   // OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
+   // UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
+    //UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
     NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
@@ -113,10 +116,21 @@ typedef enum {
     CMM_ASK_FREQ            , ///< Message CMM->RRM : in BTS, message to start an open freq. query
     NB_MSG_CMM_RRM            ///< Nombre de message de l'interface
 } MSG_CMM_RRM_T ;
+ //mod_lor_10_04_27++
+typedef enum { 
+    UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
+    OPEN_FREQ_QUERY_4           , ///< Message IP       : BTS to ask free frequencies to FC
+    UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
+    UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
+NB_MSG_IP                   ///< Nombre de message IP
+} MSG_IP_T ;
+ //mod_lor_10_04_27--
+
 typedef enum {
     SNS=0,
     RRC,
     CMM,
+    IP,  //mod_lor_10_04_27
     NB_INTERF
 }INTERF_T;
 

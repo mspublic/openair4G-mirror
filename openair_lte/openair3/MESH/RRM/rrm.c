@@ -51,6 +51,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "ip_msg.h" //mod_lor_10_04_27
 #include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "pusu_msg.h"
@@ -719,16 +720,16 @@ static void processing_msg_cmm(
                 DataIp.name = "IP"             ; ///< Nom du thread
                 DataIp.sock_path_local=p->L3_info;///< local IP address for internet socket
                 DataIp.local_port = 7000          ; ///< local IP port for internet socket
-                //mod_lor_10_03_02++: setting for topology with FC and BTS on instances 0 and 1
+                //mod_lor_10_03_01++: setting for topology with FC and BTS on instances 0 and 1
                 if (rrm->role == FUSIONCENTER){
                     unsigned char tmp [4]={0x0A,0x00,0x02,0x02};
                     DataIp.sock_path_dest = tmp ; ///< dest IP address for internet socket
-                }else if (rrm->role == BTS){
+                }else if (rrm->role == BTS || rrm->role == CH_COLL){ //mod_lor_10_04_27
                     unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
                     DataIp.sock_path_dest = tmp  ; ///< dest IP address for internet socket
                 }else 
                     fprintf (stderr, "wrong node role %d \n", rrm->role);
-                //mod_lor_10_03_02--
+                //mod_lor_10_03_01--
                 DataIp.dest_port = 0          ; ///< dest IP port for internet socket
                 DataIp.s.s = -1      ; 
                 DataIp.instance = rrm->id;
@@ -1082,11 +1083,18 @@ static void processing_msg_ip(
     )
 {
 #ifdef TRACE
-    if ( header->msg_type < NB_MSG_RRC_RRM )
+    //mod_lor_10_04_27++
+    /*if ( header->msg_type < NB_MSG_RRC_RRM )
     fprintf(ip2rrm_fd,"%lf IP->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_rrc_rrm[header->msg_type], header->msg_type,header->Trans_id);
     else
     fprintf(ip2rrm_fd,"%lf CMM->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);
+    fflush(ip2rrm_fd);*/
+    if ( header->msg_type < NB_MSG_IP )//mod_lor_10_04_27
+    fprintf(ip2rrm_fd,"%lf IP->RRM %d %-30s %d %d\n",get_currentclock(),header->inst,Str_msg_ip[header->msg_type], header->msg_type,header->Trans_id);
+    else
+    fprintf(ip2rrm_fd,"%lf IP->RRM %-30s %d %d\n",get_currentclock(),"inconnu", header->msg_type,header->Trans_id);
     fflush(ip2rrm_fd);
+    //mod_lor_10_04_27--
 #endif
 
     switch ( header->msg_type )

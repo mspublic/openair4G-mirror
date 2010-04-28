@@ -144,6 +144,16 @@ void rrc_phy_synch_to_MR_ind(
             rrm->role = BTS; 
             fprintf(stderr,"[RRM] BTS\n");
         }
+        //mod_lor_10_04_27++
+        else if (rrm->id == 0 && SCEN_2_CENTR){
+            rrm->role = FUSIONCENTER; 
+            fprintf(stderr,"[RRM] CH1\n");
+        }
+        else if (SCEN_2_CENTR){
+            rrm->role = CH_COLL; 
+            fprintf(stderr,"[RRM] CH2\n");
+        }
+        //mod_lor_10_04_27--
         //mod_lor_10_03_01--
 
         PUT_CMM_MSG( msg_router_is_CH_ind( inst,rrm->L2_id)) ;

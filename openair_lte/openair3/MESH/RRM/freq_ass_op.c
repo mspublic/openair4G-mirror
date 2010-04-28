@@ -36,6 +36,7 @@
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
 #include "sensing_rrm_msg.h"
+#include "ip_msg.h" //mod_lor_10_04_27
 #include "cmm_msg.h"
 #include "msg_mngt.h"
 #include "pusu_msg.h"

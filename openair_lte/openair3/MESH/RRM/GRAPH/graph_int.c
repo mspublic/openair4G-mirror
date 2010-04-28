@@ -62,7 +62,7 @@ typedef struct {
 int rrm_xface_init(int rrm_inst){
 
   int sock ; 
-  printf("[RRM_XFACE] init de l'interface ");
+  printf("[CRRM_XFACE] init de l'interface ");
   sleep(3);
   if(open_socket(&S_graph, RRM_SOCK_PATH, RRM_SOCK_PATH,rrm_inst)==-1)
     return (-1);
@@ -73,7 +73,7 @@ int rrm_xface_init(int rrm_inst){
     }
   
 
-  printf("Graphical Interface Connected... RRM of node %d on socket %d\n",rrm_inst, S_graph.s);  
+  printf("Graphical Interface Connected... CRRM of node %d on socket %d\n",rrm_inst, S_graph.s);  
   return 0 ;	
   
 }
@@ -150,6 +150,8 @@ main(int argc,char **argv) {
             msg_interf=RRC;
         else if ((msg_type-=NB_MSG_RRC_RRM)< NB_MSG_CMM_RRM)
             msg_interf=CMM;
+         else if ((msg_type-=NB_MSG_CMM_RRM)< NB_MSG_IP)
+            msg_interf=IP;
         else {
             printf("Error! Unknown message %d!!!\n",Header->msg_type);
             break;
@@ -163,7 +165,7 @@ main(int argc,char **argv) {
                 {
                     case SNS_UPDATE_SENS :
                         {
-                            msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS transaction number:%d\n",Header->inst, Header->Trans_id) ;
+                            msg_fct( "[SENSING]>[CRRM]:%d:SNS_UPDATE_SENS transaction number:%d\n",Header->inst, Header->Trans_id) ;
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Sensing information received from sensing unit\n");
                             msg_fct( "Updating of local sensing database with recived data:\n");
@@ -193,7 +195,7 @@ main(int argc,char **argv) {
                     case SNS_END_SCAN_CONF :
                         {
                             
-                            msg_fct( "[SENSING]>[RRM]:%d:SNS_END_SCAN_CONF\n",Header->inst);
+                            msg_fct( "[SENSING]>[CRRM]:%d:SNS_END_SCAN_CONF\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Sending confirmation of stopped sensing to Fusion Center ...\n");
                         }
@@ -209,67 +211,74 @@ main(int argc,char **argv) {
                 {
                     case RRC_RB_ESTABLISH_RESP:
                         {
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_RESP \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_ESTABLISH_RESP \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_RB_ESTABLISH_CFM:
                         {
                             
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_ESTABLISH_CFM \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_ESTABLISH_CFM \n",Header->inst);
+                            if (Header->inst == BTS_ID){
+                                printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22 
+                                msg_fct( "******************************************************************\n");
+                                msg_fct( "Link between Fusion Center and BTS opened\n");
+                                msg_fct( "******************************************************************\n");
+                                printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_22
+                            }
                             
                         }
                         break ;
 
                     case RRC_RB_MODIFY_RESP:
                         {
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_RESP \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_MODIFY_RESP \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_RB_MODIFY_CFM:
                         {
 
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MODIFY_CFM\n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_MODIFY_CFM\n",Header->inst);
                             
                         }
                         break ;
 
                     case RRC_RB_RELEASE_RESP:
                         {
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_RELEASE_RESP \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_RELEASE_RESP \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_MR_ATTACH_IND :
                         {
                             
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_MR_ATTACH_IND \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_MR_ATTACH_IND \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_SENSING_MEAS_RESP:
                         {
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_RESP \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_SENSING_MEAS_RESP \n",Header->inst);
                         }
                         break ;
                     case RRC_CX_ESTABLISH_IND:
                         {
                     
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_CX_ESTABLISH_IND \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_CX_ESTABLISH_IND \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_PHY_SYNCH_TO_MR_IND :
                         {
                            
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_PHY_SYNCH_TO_MR_IND.... \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_PHY_SYNCH_TO_CH_IND :
                         {
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_PHY_SYNCH_TO_CH_IND.... \n",Header->inst);
                             
 
                         }
@@ -277,21 +286,21 @@ main(int argc,char **argv) {
                     case RRC_SENSING_MEAS_IND :
                         {
 
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_SENSING_MEAS_IND \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_SENSING_MEAS_IND \n",Header->inst);
                             
                         }
                         break ;
                     case RRC_RB_MEAS_IND :
                         {
                 
-                            msg_fct( "[RRC]>[RRM]:%d:RRC_RB_MEAS_IND \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:%d:RRC_RB_MEAS_IND \n",Header->inst);
                         }
                         break ;
 
 
                     case RRC_INIT_SCAN_REQ :
                         {
-                            msg_fct( "[RRC]>[RRM]:RRC_INIT_SCAN_REQ \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:RRC_INIT_SCAN_REQ \n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Order to start sensing activity received from Fusion Center\n");
                             msg_fct( "Activation of sensing unit ...\n");
@@ -304,7 +313,7 @@ main(int argc,char **argv) {
                     case RRC_END_SCAN_CONF :
                         {
                            
-                            msg_fct( "[RRC]>[RRM]:RRC_END_SCAN_CONF \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:RRC_END_SCAN_CONF \n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Sensor %d confirms the end of sensing activity\n",(Header->inst - 1));
                             printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_22
@@ -313,7 +322,7 @@ main(int argc,char **argv) {
                     case RRC_END_SCAN_REQ :
                         {
                            
-                            msg_fct( "[RRC]>[RRM]:RRC_END_SCAN_REQ \n",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:RRC_END_SCAN_REQ \n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Order to stop sensing activity received from Fusion Center\n");
                             msg_fct( "Command to stop sensing activity transmitted to sensing unit\n");
@@ -324,9 +333,18 @@ main(int argc,char **argv) {
                         break ;
                     case RRC_INIT_MON_REQ :
                         {
-                            msg_fct( "[RRC]>[RRM]:RRC_INIT_MON_REQ \n ",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:RRC_INIT_MON_REQ \n ",Header->inst);
                         }
                         break ;
+                    default :
+                    msg("[CRRC]WARNING: msg unknown %d switched as %d\n",Header->msg_type,msg_type) ;
+                }
+                break;
+            }
+            case IP:{
+                switch ( msg_type )
+                {
+                
                     case UPDATE_SENS_RESULTS_3 :
                         {
                             
@@ -336,7 +354,7 @@ main(int argc,char **argv) {
                             msg_fct( "Updating of sensing database using recived data:\n");
                             //mod_lor_10_04_21++
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
-                            for (i=0;i<p->NB_chan;i++){
+                            for (i=(p->NB_chan-1);i>=0;i--){
                                 if(p->free[i]==1){
                                     printf("\e[38;5;%dm",colorfree);   //mod_lor_10_04_21
                                     msg_fct( "      Channel %d: no primary user detected\n",p->channels[i]);
@@ -371,7 +389,9 @@ main(int argc,char **argv) {
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_23
                             msg_fct( "Received information about available frequencies from Fusion Center\n");
                             msg_fct( "Updating of local channel database ...\n");
+                            sleep(1);
                             msg_fct( "Decision about frequencies to use ...\n");
+                            sleep(1);
                             msg_fct( "Sending update of frequencies used by Secondary Network to Fusion Center ...\n");
                             printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_23
                             
@@ -391,7 +411,7 @@ main(int argc,char **argv) {
                         break ;
            
                     default :
-                    msg("[RRC]WARNING: msg unknown %d switched as %d\n",Header->msg_type,msg_type) ;
+                    msg("[IP]WARNING: msg unknown %d switched as %d\n",Header->msg_type,msg_type) ;
                 }
                 break;
             }
@@ -401,34 +421,34 @@ main(int argc,char **argv) {
                     case CMM_CX_SETUP_REQ:
                         {
                             
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_CX_SETUP_REQ\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_CX_SETUP_REQ\n",Header->inst);
                             
                             }
                         break ;
                     case CMM_CX_MODIFY_REQ:
                         {
                             
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_CX_MODIFY_REQ\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_CX_MODIFY_REQ\n",Header->inst);
                             
                         }
                         break ;
                     case CMM_CX_RELEASE_REQ :
                         {
                            
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_REQ\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_CX_RELEASE_REQ\n",Header->inst);
                             
                         }
                         break ;
                     case CMM_CX_RELEASE_ALL_REQ :
                         {
     
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_CX_RELEASE_ALL_REQ\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_CX_RELEASE_ALL_REQ\n",Header->inst);
                             
                         }
                         break ;
                     case CMM_ATTACH_CNF : 
                         {
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_ATTACH_CNF\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_ATTACH_CNF\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "******************************************************************\n");
                             msg_fct( "The sensor is now connected to the fusion center\n");
@@ -438,13 +458,13 @@ main(int argc,char **argv) {
                         break ;
                     case CMM_INIT_MR_REQ :
                         {
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_MR_REQ \n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_INIT_MR_REQ \n",Header->inst);
           
                         }
                         break ;
                     case CMM_INIT_CH_REQ :
                         {
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_CH_REQ \n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_INIT_CH_REQ \n",Header->inst);
                             
                             
                         }
@@ -455,7 +475,7 @@ main(int argc,char **argv) {
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "******************************************************************\n"); 
                             printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_22           
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_INIT_SENSING\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Order to start sensing received \n");
                             msg_fct( "Sending sensing parameters to sensors connected ...\n");
@@ -464,7 +484,7 @@ main(int argc,char **argv) {
                         break ;
                     case CMM_STOP_SENSING :
                         {
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",Header->inst);
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_STOP_SENSING\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22 
                             msg_fct( "Order to stop sensing received \n");
                             msg_fct( "Sending order to stop sensing actions to sensors connected ...\n");
@@ -476,7 +496,14 @@ main(int argc,char **argv) {
                         break ;
                     case CMM_ASK_FREQ :
                         {
-                            msg_fct( "[CMM]>[RRM]:%d:CMM_ASK_FREQ\n",Header->inst);
+                            
+                            msg_fct( "[CMM]>[CRRM]:%d:CMM_ASK_FREQ\n",Header->inst);
+                            printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22 
+                            msg_fct( "Need of frequencies for secondary users \n");
+                            msg_fct( "Sending requests of available channels to Fusion Center ...\n");
+                            sleep(1);
+                            msg_fct( "Waiting for available channels information ...\n");
+                            printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_22
                            
                         }
                         break ;

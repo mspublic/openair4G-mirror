@@ -34,6 +34,7 @@
 #include "cmm_rrm_interface.h"
 #include "rrm_sock.h"
 #include "rrc_rrm_msg.h"
+#include "ip_msg.h" //mod_lor_10_04_27
 #include "sensing_rrm_msg.h"
 #include "cmm_msg.h"
 #include "msg_mngt.h"

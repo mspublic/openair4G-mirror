@@ -572,15 +572,14 @@ msg_t *msg_rrm_up_freq_ass(
 
 
 ///! MESSAGES SENT VIA IP
-
+//mod_lor_10_04_27++
 /*!
 *******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
         update_sens_results_3().
 \return message formate
 */
-
-msg_t *msg_update_sens_results_3( 
+/*msg_t *msg_update_sens_results_3( 
     Instance_t inst, 
     L2_ID L2_id,                //!< FC L2_id
     unsigned int NB_info,
@@ -623,14 +622,14 @@ msg_t *msg_update_sens_results_3(
     
     return msg ;
 
-}
+}*/
 
 /*!
 *******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
         open_freq_query_4().
 \return message formate
-*/
+*//*
 msg_t *msg_open_freq_query_4( 
     Instance_t    inst, 
     L2_ID         L2_id           ,
@@ -653,14 +652,14 @@ msg_t *msg_open_freq_query_4(
         msg->data = (char *) p ;
     }
     return msg ;
-}
+}*/
 
 /*!
 *******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
         rrm_open_freq().
 \return message formate
-*/
+*//*
 msg_t *msg_update_open_freq_7( 
     Instance_t    inst, 
     L2_ID         L2_id           ,
@@ -691,7 +690,7 @@ msg_t *msg_update_open_freq_7(
         msg->data = (char *) p ;
     }
     return msg ;
-}
+}*/
 
 /*!
 *******************************************************************************
@@ -699,7 +698,7 @@ msg_t *msg_update_open_freq_7(
         rrm_update_SN_freq().
 \return message formate
 */
-
+/*
 msg_t *msg_update_SN_occ_freq_5(
         Instance_t inst             , //!< instance ID 
         L2_ID L2_id                 , //!< Layer 2 (MAC) ID of FC
@@ -740,6 +739,7 @@ msg_t *msg_update_SN_occ_freq_5(
     }
     return msg ;
 }
+//mod_lor_10_04_27--*/
 
 /*!
 *******************************************************************************
