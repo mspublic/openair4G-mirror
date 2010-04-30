@@ -17,12 +17,12 @@ else
     is_eNb=0;
 end
 
-decimation = 100;
+decimation = 1;
 NFrames_max = 100*60*10;
 
 [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(fullfile(pathname, filename),NFrames_max,decimation,is_eNb);
 
-%save('estimates.mat')
+save('estimates.mat')
 
 %%
 if is_eNb==0

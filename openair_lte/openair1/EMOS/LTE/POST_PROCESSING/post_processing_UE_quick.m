@@ -1,4 +1,6 @@
-pathname = 'G:\EMOS\data\20100421 interference eNb + DL test\';
+%pathname = 'G:\EMOS\data\20100421 interference eNb + DL test\';
+
+pathname = '/extras/kaltenbe/EMOS/lte_cnes_data/20100421 interference eNb + DL test/'
 d = dir([pathname 'data_term3*.EMOS']);
 filenames = {d.name};
 
