@@ -1458,6 +1458,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   case openair_SET_FREQ_OFFSET:
 
+    openair_daq_vars.freq_offset = ((int *)arg)[0];
     if (openair_set_freq_offset(0,((int *)arg)[0]) == 0)
       msg("[openair][IOCTL] Set frequency offset to %d\n",((int *)arg)[0]);
     else 

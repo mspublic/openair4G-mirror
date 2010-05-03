@@ -72,7 +72,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   PHY_vars->PHY_measurements.n0_power_dB[1]);
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",PHY_vars->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
     if (lte_ue_common_vars && dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) {
-      len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz\n",lte_ue_common_vars->freq_offset);
+      len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",lte_ue_common_vars->freq_offset,openair_daq_vars.freq_offset);
       len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[UE_mode],UE_mode);
       len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",dlsch_ue[0]->harq_processes[0]->mcs);
       len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",dlsch_ue[1]->harq_processes[0]->mcs);

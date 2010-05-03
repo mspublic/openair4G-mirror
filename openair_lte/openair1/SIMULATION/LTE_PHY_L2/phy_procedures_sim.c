@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.5;
+  double aoa=.03,ricean_factor=.5;
   int channel_length;
   struct complex **ch;
   unsigned char pbch_pdu[6];
@@ -122,6 +122,8 @@ int main(int argc, char **argv) {
   unsigned int first_rb = 0;
   unsigned int eNb_id = 0;
   unsigned int slot_offset;
+  unsigned int sample_offset;
+  unsigned int channel_offset=276;
   int n_frames;
 
   int slot,last_slot, next_slot;
@@ -642,17 +644,23 @@ int main(int argc, char **argv) {
       printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif
 
+      sample_offset = 0;
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
 	rxdata = lte_ue_common_vars->rxdata;
-      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL)
+      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
 	rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+	sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
+      }
       else //it must be a special subframe
 	if (next_slot%2==0) //DL part
 	  rxdata = lte_ue_common_vars->rxdata;
-	else // UL part
+	else {// UL part
 	  rxdata = lte_eNB_common_vars->rxdata[eNb_id];
+	  sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
+	}
 
-      slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1);
+      printf("sample_offset = %d, rxdata[0]=%p\n",sample_offset,rxdata[0]);
+      slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1) + sample_offset;
 
 #ifdef RF
       adc(r_re,
@@ -697,7 +705,7 @@ int main(int argc, char **argv) {
 	write_output(fname,"eNB_rxs1",&rxdata[1][2*lte_frame_parms->samples_per_tti],640*12,1,1);
 	}
       */
-      if ((last_slot == 19) && (mac_xface->frame == 1)) {
+      if ((last_slot == 18) && (mac_xface->frame == 0)) {
 	
 	write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);

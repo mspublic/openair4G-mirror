@@ -445,7 +445,7 @@ void openair_sync(void) {
       
       // the sync is in the 3rd (last_ symbol of the special subframe
       // so the position wrt to the start of the frame is 
-      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + CYCLIC_PREFIX_LENGTH + 10;
+      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
       
       PHY_vars->rx_offset = sync_pos - sync_pos_slot;
       

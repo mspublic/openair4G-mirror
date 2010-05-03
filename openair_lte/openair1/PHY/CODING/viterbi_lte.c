@@ -368,6 +368,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   }
   //  printf("Max state %d\n",prev_state0);
   _mm_empty();
+  _m_empty();
 
 }
 

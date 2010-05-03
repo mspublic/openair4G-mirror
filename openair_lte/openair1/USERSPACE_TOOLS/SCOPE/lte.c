@@ -181,7 +181,7 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->decoder_input,llr_time,llr,192,"","","");
-  fl_set_xyplot_ybounds(form->decoder_input,-50,50);
+  fl_set_xyplot_ybounds(form->decoder_input,-100,100);
 
   j=0;
   for(i=0;i<12*12;i++) {
@@ -197,8 +197,8 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot,-50,50);
-  fl_set_xyplot_ybounds(form->scatter_plot,-50,50);
+  fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+  fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
 
   for(i=0;i<12*12*7*2;i++) {
     llr[i] = (float) dlsch_llr[i];
@@ -207,7 +207,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,12*12*7*2,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-50,50);
+  fl_set_xyplot_ybounds(form->demod_out,-100,100);
 
   j=0;
   for (s=2;s<12;s++) {
@@ -225,10 +225,10 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
 
-  usleep(100000);
+  usleep(500000);
 }
 //-----------------------------------------------------------------------------
 do_scope(){

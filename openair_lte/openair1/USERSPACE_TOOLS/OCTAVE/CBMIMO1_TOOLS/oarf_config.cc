@@ -123,7 +123,7 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   fclose(config);
 
   PHY_config->dual_tx = dual_tx;
-
+  PHY_config->tdd     = 0;
   returnvalue=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 
   close(openair_fd);

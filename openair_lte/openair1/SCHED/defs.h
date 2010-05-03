@@ -86,6 +86,7 @@ typedef struct {
   unsigned int  rx_gain_val;
   unsigned int  rx_gain_mode;
   unsigned int  tcxo_dac;
+  int           freq_offset;
   unsigned int  tx_rx_switch_point;
   unsigned int  timing_advance;
   int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
