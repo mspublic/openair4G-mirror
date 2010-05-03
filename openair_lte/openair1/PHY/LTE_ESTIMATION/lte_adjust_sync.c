@@ -143,10 +143,10 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       write_output(fname,vname,lte_eNb_common->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
     }
-    
+
     // we only use channel estimates from tx antenna 0 here
     // remember we fixed the SRS to use only every second subcarriers
-    for (i = 0; i < frame_parms->nb_prefix_samples/2; i++) {
+    for (i = 0; i < frame_parms->ofdm_symbol_size/2; i++) {
       temp = 0;
       for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 	Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[ind][aa])[(i<<2)];

@@ -16,7 +16,7 @@
 #include <signal.h>
 #include <strings.h>
 #include "forms.h"
-#include "lte_scope.h"
+#include "lte_scope_ul.h"
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -68,18 +68,17 @@ void lte_scope_idle_callback(void) {
 
   float cum_avg;
   
-  /*
   // channel_t_re = sync_corr
   for (i=0; i<640*3; i++)  {
-    sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
+    //sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
+    sig2[i] = (float)(sync_corr[i]);
     time2[i] = (float) i;
   }
 
-  fl_set_xyplot_ybounds(form->channel_t_re,55,90);
+  //fl_set_xyplot_ybounds(form->channel_t_re,55,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,640*3,"","","");
-*/  
-  
-  // channel_t_re = srs_time
+
+  // channel_srs
   cum_avg = 0;
   ind = 0;
   for (k=0;k<2;k++){
@@ -104,9 +103,34 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,30,70);
-  fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
+  fl_set_xyplot_ybounds(form->channel_srs,30,90);
+  fl_set_xyplot_data(form->channel_srs,sig_time,mag_sig,ind,"","","");
     
+  // channel_srs_time
+  cum_avg = 0;
+  ind = 0;
+  for (k=0;k<1;k++){
+    for (j=0;j<1;j++) {
+      
+      for (i=0;i<PHY_config->lte_frame_parms.ofdm_symbol_size/2;i++){
+	sig_time[ind] = (float)ind;
+	Re = (float)(channel_srs_time[k+2*j][4*i]);
+	Im = (float)(channel_srs_time[k+2*j][4*i+1]);
+	//mag_sig[ind] = (short) rand(); 
+	mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+	cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
+	ind++;
+      }
+      //ind+=16; // spacing for visualization
+    }
+  }
+
+  avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
+
+  fl_set_xyplot_ybounds(form->channel_srs_time,30,90);
+  fl_set_xyplot_data(form->channel_srs_time,sig_time,mag_sig,ind,"","","");
+
+
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
     sig2[i] = (float) (10.0*log10((double)rx_sig[0][2*i]*(double)rx_sig[0][2*i] + (double)rx_sig[0][1+(2*i)]*(double)rx_sig[0][1+(2*i)] + (double)rx_sig[1][2*i]*(double)rx_sig[1][2*i] + (double)rx_sig[1][1+(2*i)]*(double)rx_sig[1][1+(2*i)]));
@@ -260,7 +284,7 @@ int main(int argc, char *argv[]) {
 			      bigphys_top);
 
     channel_srs_time[i] = (short*)(mem_base + 
-			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates_time + 
+			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates_time[eNb_id] + 
 			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
 			      bigphys_top);
@@ -305,7 +329,7 @@ int main(int argc, char *argv[]) {
 		       (unsigned int)lte_eNb_ulsch->llr -
 			bigphys_top);
 
-  sprintf(title, "LTE SCOPE"),
+  sprintf(title, "LTE SCOPE %d", eNb_id),
 
   fl_initialize(&argc, argv, title, 0, 0);    /* SIGSCOPE */
   form = create_form_lte_scope();                 /* SIGSCOPE */

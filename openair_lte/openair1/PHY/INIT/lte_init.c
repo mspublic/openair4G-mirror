@@ -644,10 +644,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  return(-1);
 	}
       }
-  } //eNb_id 
 
-  // Channel estimates for SRS (time)
-  for (eNb_id=0;eNb_id<3;eNb_id++) {
+    // Channel estimates for SRS (time)
     eNB_common_vars->srs_ch_estimates_time[eNb_id] = (int **)malloc16(4*sizeof(int*));
     if (eNB_common_vars->srs_ch_estimates_time[eNb_id]) {
 #ifdef DEBUG_PHY
@@ -659,9 +657,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time not allocated\n");
       return(-1);
     }
-  }
-  
-  for (eNb_id=0;eNb_id<3;eNb_id++) {
+
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       for (j=0; j<frame_parms->nb_antennas_tx; j++) {
 	eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
@@ -678,7 +674,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  return(-1);
 	}
       }
-  }
+  } //eNb_id
+
 
 #ifndef NO_UL_REF 
   generate_ul_ref_sigs_rx();

@@ -43,7 +43,8 @@ int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length, int
 int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      int eNb_id,
-		      int length);
+		      int length,
+		      int* peak_val);
 
 
 /*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,
