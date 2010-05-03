@@ -115,7 +115,6 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
   static int max_pos_fil2 = 0;
   int temp, i, aa, max_pos = 0,ind;
-  int offset,diff;
   short Re,Im,ncoef;
 #ifdef USER_MODE
   char fname[100],vname[100];
@@ -131,7 +130,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
       // do ifft of channel estimate
       fft((short*) &lte_eNb_common->srs_ch_estimates[ind][aa][0],
-	  (short*) lte_eNb_common->srs_ch_estimates_time[aa],
+	  (short*) lte_eNb_common->srs_ch_estimates_time[ind][aa],
 	  frame_parms->twiddle_ifft,
 	  frame_parms->rev,
 	  frame_parms->log2_symbol_size,
@@ -141,22 +140,21 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef USER_MODE
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNb_common->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
+      write_output(fname,vname,lte_eNb_common->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
     }
-  
     
     // we only use channel estimates from tx antenna 0 here
     // remember we fixed the SRS to use only every second subcarriers
     for (i = 0; i < frame_parms->nb_prefix_samples/2; i++) {
       temp = 0;
       for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-	Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[(i<<2)];
-	Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[aa])[1+(i<<2)];
+	Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[ind][aa])[(i<<2)];
+	Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[ind][aa])[1+(i<<2)];
 	temp += (Re*Re/2) + (Im*Im/2);
       }
       if (temp > max_val) {
-	max_pos = i*2; 
+	max_pos = i; 
 	max_val = temp;
 	*eNb_id = ind;
       }
@@ -168,9 +166,6 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     max_pos_fil2 = max_pos;
   else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
-  
-  
-  diff = max_pos_fil2 - frame_parms->nb_prefix_samples/8;
   
 #ifdef DEBUG_PHY
   if (mac_xface->frame%100 == 0)

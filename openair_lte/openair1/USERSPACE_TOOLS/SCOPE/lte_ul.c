@@ -71,15 +71,15 @@ void lte_scope_idle_callback(void) {
   /*
   // channel_t_re = sync_corr
   for (i=0; i<640*3; i++)  {
-    sig2[i] = (float) (sync_corr[i]);
+    sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  fl_set_xyplot_ybounds(form->channel_t_re,55,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,640*3,"","","");
-  */
-
-  // channel_t_re = srs
+*/  
+  
+  // channel_t_re = srs_time
   cum_avg = 0;
   ind = 0;
   for (k=0;k<2;k++){
@@ -106,14 +106,14 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,30,70);
   fl_set_xyplot_data(form->channel_t_re,sig_time,mag_sig,ind,"","","");
-
+    
   // channel_t_im = rx_sig
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
-    sig2[i] = (float) (rx_sig[0][2*i]);
+    sig2[i] = (float) (10.0*log10((double)rx_sig[0][2*i]*(double)rx_sig[0][2*i] + (double)rx_sig[0][1+(2*i)]*(double)rx_sig[0][1+(2*i)] + (double)rx_sig[1][2*i]*(double)rx_sig[1][2*i] + (double)rx_sig[1][1+(2*i)]*(double)rx_sig[1][1+(2*i)]));
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,0,100);
+  fl_set_xyplot_ybounds(form->channel_t_im,30,80);
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
 
   // channel_f = drs
@@ -147,7 +147,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,i,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-50,50);
+  fl_set_xyplot_ybounds(form->demod_out,-400,400);
 
   // scatter_plot2 = ulsch_comp
   for(i=0;i<12*12*12;i++) {
@@ -156,10 +156,10 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,i,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-400,400);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-400,400);
 
-  usleep(100000);
+  usleep(500000);
 }
 //-----------------------------------------------------------------------------
 void do_scope(void){

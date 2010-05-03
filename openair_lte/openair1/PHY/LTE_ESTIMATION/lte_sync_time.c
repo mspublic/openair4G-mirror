@@ -328,8 +328,8 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     if (n<length-frame_parms->ofdm_symbol_size) {
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
-      //for (ar=0;ar<frame_parms->nb_antennas_rx;ar++)  {
-      ar = 0; {
+      for (ar=0;ar<frame_parms->nb_antennas_rx;ar++)  {
+	//      ar = 0; {
 	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
 	((short*)sync_corr)[2*n] += ((short*) &result)[0];
 	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];

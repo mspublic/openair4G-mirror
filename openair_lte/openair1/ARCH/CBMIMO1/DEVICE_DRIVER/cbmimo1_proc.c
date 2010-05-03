@@ -178,12 +178,13 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     }
 
     eNB=0;
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d : UE 0 (%x) rssi (%d,%d) dBm, DLSCH Mode %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
+    len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d : UE 0 (%x) rssi (%d,%d) dBm, Sector %d, DLSCH Mode %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
 		   eNB,
 		   mac_xface->frame,
 		   eNB_UE_stats[eNB].UE_id[0],
 		   eNB_UE_stats[eNB].UL_rssi[0][0],
 		   eNB_UE_stats[eNB].UL_rssi[0][1],
+		   eNB_UE_stats[eNB].sector[0],
 		   openair_daq_vars.dlsch_transmission_mode,
 		   openair_daq_vars.ulsch_allocation_mode,
 		   (openair_daq_vars.dlsch_transmission_mode == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[eNB].DL_cqi[0][0]<<1)),

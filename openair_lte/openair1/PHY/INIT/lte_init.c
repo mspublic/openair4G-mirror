@@ -647,35 +647,38 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   } //eNb_id 
 
   // Channel estimates for SRS (time)
-  eNB_common_vars->srs_ch_estimates_time = (int **)malloc16(4*sizeof(int*));
-  if (eNB_common_vars->srs_ch_estimates_time) {
+  for (eNb_id=0;eNb_id<3;eNb_id++) {
+    eNB_common_vars->srs_ch_estimates_time[eNb_id] = (int **)malloc16(4*sizeof(int*));
+    if (eNB_common_vars->srs_ch_estimates_time[eNb_id]) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time allocated at %p\n",
-	eNB_common_vars->srs_ch_estimates_time);
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time allocated at %p\n",
+	  eNB_common_vars->srs_ch_estimates_time[eNb_id]);
 #endif
-  }
-  else {
-    msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time not allocated\n");
-    return(-1);
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time not allocated\n");
+      return(-1);
+    }
   }
   
-  for (i=0; i<frame_parms->nb_antennas_rx; i++)
-    for (j=0; j<frame_parms->nb_antennas_tx; j++) {
-      eNB_common_vars->srs_ch_estimates_time[(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
-      if (eNB_common_vars->srs_ch_estimates_time[(j<<1)+i]) {
+  for (eNb_id=0;eNb_id<3;eNb_id++) {
+    for (i=0; i<frame_parms->nb_antennas_rx; i++)
+      for (j=0; j<frame_parms->nb_antennas_tx; j++) {
+	eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	if (eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] allocated at %p\n",(j<<1)+i,
-	    eNB_common_vars->srs_ch_estimates_time[(j<<1)+i]);
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] allocated at %p\n",(j<<1)+i,
+	      eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i]);
 #endif
-	
-	memset(eNB_common_vars->srs_ch_estimates_time[(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	  
+	  memset(eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] not allocated\n",i);
+	  return(-1);
+	}
       }
-      else {
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] not allocated\n",i);
-	return(-1);
-      }
-    }
-
+  }
 
 #ifndef NO_UL_REF 
   generate_ul_ref_sigs_rx();

@@ -394,6 +394,7 @@ typedef struct {
   unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
   int UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
   UE_MODE_t mode[NUMBER_OF_UE_MAX];
+  unsigned char sector[NUMBER_OF_UE_MAX];
 } LTE_eNB_UE_stats;
 
 typedef struct {

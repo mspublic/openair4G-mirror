@@ -174,8 +174,11 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
     // also add the signals from all antennas of all eNbs
     bzero(eNb_sync_buffer[0],640*6*sizeof(int));
     bzero(eNb_sync_buffer[1],640*6*sizeof(int));
+    
+    // for(eNb_id = 0;eNb_id<number_of_cards;eNb_id++) {
 
-    for(eNb_id = 0;eNb_id<number_of_cards;eNb_id++) {
+    eNb_id = mac_xface->frame % 3; {
+
       for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) {
 	for (l=PSS_UL_SYMBOL; l<lte_frame_parms->symbols_per_tti/2; l++) {
 	  
@@ -191,12 +194,13 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	}
       }
     }
-
+    
 #ifdef USER_MODE
     write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
 #endif
     
-    eNb_id = 0;
+
+
     if (eNB_UE_stats[0].mode[0] == PRACH) {
       sync_pos_slot = lte_frame_parms->nb_prefix_samples; //this is where the sync pos should be wrt eNb_sync_buffer
 
@@ -205,7 +209,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
       sync_pos = lte_sync_time_eNb(eNb_sync_buffer, 
 				   lte_frame_parms, 
-				   eNb_id, 
+				   0,//eNb_id,
 				   (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples));
 #ifdef USER_MODE
       sync_pos = 4 + sync_pos_slot;
@@ -224,6 +228,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	eNB_UE_stats[0].UE_id[UE_id] = 0x1234; 
 	eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - sync_pos_slot;
 	eNB_UE_stats[0].mode[UE_id] = PRACH;
+	eNB_UE_stats[0].sector[UE_id] = eNb_id;
 	//#ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d, timing_advance %d (time_in %d, time_out %d)\n",
 		  mac_xface->frame, last_slot, 
@@ -681,10 +686,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		       next_slot>>1);
   }
 
-  eNb_id=0;
-  // For even next slots generate dlsch
+    // For even next slots generate dlsch
   if ((next_slot%2) == 0) {
-
+    
     if (dlsch_eNb_active == 1) {
       harq_pid = dlsch_eNb[0]->current_harq_pid;
       input_buffer_length = dlsch_eNb[0]->harq_processes[harq_pid]->TBS/8;
@@ -692,18 +696,20 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
       //#ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
       //#endif
       
       dlsch_encoding(dlsch_input_buffer,
 		     lte_frame_parms,
 		     dlsch_eNb[0]);
       
-      re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
-				      AMP,
-				      next_slot/2,
-				      lte_frame_parms,
-				      dlsch_eNb[0]);
+      for (eNb_id=0;eNb_id<number_of_cards;eNb_id++)
+	
+	re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+					AMP,
+					next_slot/2,
+					lte_frame_parms,
+					dlsch_eNb[0]);
       /*
 	if (mimo_mode == DUALSTREAM) {
 	dlsch_encoding(input_buffer,
@@ -745,11 +751,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		     lte_frame_parms,
 		     dlsch_eNb_cntl);
       
-      re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
-				      AMP,
-				      next_slot/2,
-				      lte_frame_parms,
-				      dlsch_eNb_cntl);
+      for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) 
+	re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+					AMP,
+					next_slot/2,
+					lte_frame_parms,
+					dlsch_eNb_cntl);
       dlsch_eNb_cntl_active = 0;
 
 #ifdef DEBUG_PHY    
@@ -781,19 +788,19 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       //      for (i=0;i<input_buffer_length;i++)
       //	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
-#ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (eNB %d): Calling generate_dlsch (RA) with input size = %d\n",mac_xface->frame, next_slot, eNb_id,input_buffer_length);
-#endif
+      //#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Calling generate_dlsch (RA) with input size = %d\n",mac_xface->frame, next_slot, eNb_id,input_buffer_length);
+	//#endif
       
       dlsch_encoding(dlsch_input_buffer,
 		     lte_frame_parms,
 		     dlsch_eNb_ra);
-      
-      re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
-				      AMP,
-				      next_slot/2,
-				      lte_frame_parms,
-				      dlsch_eNb_ra);
+      for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) 
+	re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+					AMP,
+					next_slot/2,
+					lte_frame_parms,
+					dlsch_eNb_ra);
       dlsch_eNb_ra_active = 0;
 
 #ifdef DEBUG_PHY    
@@ -815,11 +822,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 		     lte_frame_parms,
 		     dlsch_eNb_1A);
       
-      re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
-				      AMP,
-				      next_slot/2,
-				      lte_frame_parms,
-				      dlsch_eNb_1A);
+      for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) 
+	re_allocated = dlsch_modulation(lte_eNB_common_vars->txdataF[eNb_id],
+					AMP,
+					next_slot/2,
+					lte_frame_parms,
+					dlsch_eNb_1A);
       dlsch_eNb_1A_active = 0;
 
       //#ifdef DEBUG_PHY    
@@ -921,6 +929,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 #ifdef DEBUG_PHY
     msg("[PHY PROCEDURES_LTE] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,harq_pid);
 #endif
+
+    if (rag_flag == 1)
+      msg("[PHY PROCEDURES_LTE] frame %d, slot %d, subframe %d: Scheduling ULSCH Recption for RAG in Sector %d\n",
+	  mac_xface->frame,last_slot,last_slot>>1,eNb_id);
 
     ulsch_power = rx_ulsch(lte_eNB_common_vars,
 			   lte_eNB_ulsch_vars[0],  // this should be UE_id
