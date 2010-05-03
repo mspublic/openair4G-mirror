@@ -180,8 +180,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       bzero(eNb_sync_buffer[0],640*6*sizeof(int));
       bzero(eNb_sync_buffer[1],640*6*sizeof(int));
       
-      // for(eNb_id = 0;eNb_id<number_of_cards;eNb_id++) {
-      
+      // we alternately process the signals from the three different sectors
       eNb_id = mac_xface->frame % 3; 
       if (eNb_id == 0) {
 	max_peak_val = 0;
@@ -210,13 +209,11 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
       sync_pos_slot = 0; //this is where the sync pos should be wrt eNb_sync_buffer
 
-      //    if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10))
-      //      msg("[PHY_PROCEDURES_LTE][eNb_UL] Entering lte_sync_time\n");
-
       sync_pos = lte_sync_time_eNb(eNb_sync_buffer, 
 				   lte_frame_parms, 
 				   0,//eNb_id,
-				   (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),
+				   (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * 
+				   (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),
 				   &sync_val);
 
       if (sync_val > max_peak_val) {

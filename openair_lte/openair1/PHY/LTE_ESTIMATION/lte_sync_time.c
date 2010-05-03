@@ -327,7 +327,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     return (-1);
   }
 
-  peak_val = 0;
+  *peak_val = 0;
   peak_pos = 0;
   mean_val = 0;
 
@@ -351,7 +351,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     sync_corr[n] = abs32(sync_corr[n]);
     mean_val += sync_corr[n]>>10;
 
-    if (sync_corr[n]>peak_val) {
+    if (sync_corr[n]>*peak_val) {
       *peak_val = sync_corr[n];
       peak_pos = n;
     }
