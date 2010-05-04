@@ -100,12 +100,11 @@ unsigned char tx_gain_table_c[36] = {
   177, 173, 30, 17}; //20dBm
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
-unsigned char tx_gain_table_ue[4] = {144, 144, 140, 140};
+unsigned char tx_gain_table_ue[4] = {200, 200, 140, 140};
 unsigned char tx_gain_table_eNb[4] = {170, 170, 140, 140};
-unsigned int timing_advance = 80;
-unsigned int tcxo = 52;  
-//int freq_correction =  -300;
-int freq_correction =  0;
+unsigned int timing_advance = 0;
+unsigned int tcxo = 53;  
+int freq_correction =  400;
 //unsigned int rf_mode_ue=0; //mixer low gain, lna off
 unsigned int rf_mode_ue=1; //mixer low gain, lna on
 unsigned int rf_mode_eNb=2; //mixer high gain, lna on

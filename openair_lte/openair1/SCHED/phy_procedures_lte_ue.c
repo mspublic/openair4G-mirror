@@ -853,17 +853,17 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	      timing_advance = timing_advance - (1<<11);
 	    
 	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (from cntl)timing_advance = %d\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance);
-
-	    /*
-	    openair_daq_vars.timing_advance += timing_advance*4;
-
+	    if ( (mac_xface->frame % 100) == 0) {
+	      if ((timing_advance > 3) || (timing_advance < -3) )
+		openair_daq_vars.timing_advance += timing_advance*4;
+	      
 #ifdef CBMIMO1
 	      for (card_id=0;card_id<number_of_cards;card_id++)
 		pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
 #endif
-	    */
+	      
+	    }
 	  }
-
 	}   
 	
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (cntl) ret %d (%d errors)\n",
