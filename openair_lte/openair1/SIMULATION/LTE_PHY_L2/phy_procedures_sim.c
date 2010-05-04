@@ -19,7 +19,7 @@
 #include "SCHED/vars.h"
 
 //#define DEBUG_PHY
-#define RF
+//#define RF
 
 #define BW 10.0
 #define Td 1.0
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   unsigned int eNb_id = 0;
   unsigned int slot_offset;
   unsigned int sample_offset;
-  unsigned int channel_offset=276;
+  unsigned int channel_offset=278;
   int n_frames;
 
   int slot,last_slot, next_slot;
@@ -659,7 +659,7 @@ int main(int argc, char **argv) {
 	  sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
 	}
 
-      printf("sample_offset = %d, rxdata[0]=%p\n",sample_offset,rxdata[0]);
+      printf("sample_offset = %d, openair_daq_vars.timing_advance=%d\n",sample_offset,openair_daq_vars.timing_advance);
       slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1) + sample_offset;
 
 #ifdef RF

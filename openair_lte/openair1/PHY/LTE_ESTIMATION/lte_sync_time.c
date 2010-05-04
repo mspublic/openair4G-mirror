@@ -13,7 +13,7 @@
 #include "MAC_INTERFACE/extern.h"
 
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int* sync_corr = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
@@ -298,15 +298,15 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      int eNb_id,
 		      int length,
-		      int *peak_val) {
+		      int *peak_val_out) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
-  unsigned int n, ar, peak_pos, mean_val;
+  unsigned int n, ar, peak_val, peak_pos, mean_val;
   int result;
   short *primary_synch_time;
 
-  //msg("[SYNC TIME] Calling sync_time_eNb(%p,%p,%d,%d)\n",rxdata,frame_parms,eNb_id,length);
+  // msg("[SYNC TIME] Calling sync_time_eNb(%p,%p,%d,%d)\n",rxdata,frame_parms,eNb_id,length);
   if (sync_corr == NULL) {
     msg("[SYNC TIME] sync_corr not yet allocated! Exiting.\n");
     return(-1);
@@ -327,7 +327,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     return (-1);
   }
 
-  *peak_val = 0;
+  peak_val = 0;
   peak_pos = 0;
   mean_val = 0;
 
@@ -339,40 +339,37 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++)  {
-      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
-	((short*)sync_corr)[2*n]   += ((short*) &result)[0];
-	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
+      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 12);
+	//((short*)sync_corr)[2*n]   += ((short*) &result)[0];
+	//((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
+	sync_corr[n] += abs32(result);
+
       }
 
     }
     // calculate the absolute value of sync_corr[n]
     //    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
     //      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
-    sync_corr[n] = abs32(sync_corr[n]);
+    //sync_corr[n] = abs32(sync_corr[n]);
     mean_val += sync_corr[n]>>10;
 
-    if (sync_corr[n]>*peak_val) {
-      *peak_val = sync_corr[n];
+    if (sync_corr[n]>peak_val) {
+      peak_val = sync_corr[n];
       peak_pos = n;
     }
   }
 
-#ifdef DEBUG_PHY
-#ifdef USER_MODE
-    if (eNb_id==0)
-      write_output("sync_corr_eNb.m","synccorr",sync_corr,length,1,2);
-#endif
-#endif
+  *peak_val_out = peak_val;
 
-  if ((*peak_val>>10 * length) < 50*mean_val) {
+  if ((peak_val>>10 * length) <= (50*mean_val)) {
 #ifdef DEBUG_PHY
-     debug_msg("[SYNC TIME] No peak found (%d,%d,%d)\n",peak_pos,*peak_val,mean_val);
+    debug_msg("[SYNC TIME] No peak found (%u,%u,%u)\n",peak_pos,peak_val,mean_val);
 #endif
     return(-1);
   }
   else {
 #ifdef DEBUG_PHY
-    debug_msg("[SYNC TIME] Peak found at pos %d, val = %d, mean_val = %d\n",peak_pos,*peak_val,mean_val);
+    debug_msg("[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
 #endif
     return(peak_pos);
   }

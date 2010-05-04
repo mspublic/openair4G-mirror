@@ -55,7 +55,8 @@ static char eNb_generate_rag_ack = 0;
 static int ulsch_decoding_attempts=0;
 
 int ulsch_errors=0,ulsch_consecutive_errors=0;
-int max_peak_val, max_eNb_id, max_sync_pos;
+unsigned int max_peak_val; 
+int max_eNb_id, max_sync_pos;
 
 DCI_ALLOC_t dci_alloc[8];
 
@@ -140,7 +141,8 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot) {
  
 void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
-  int aa,l,sync_pos,sync_val,sync_pos_slot;
+  int aa,l,sync_pos,sync_pos_slot;
+  unsigned int sync_val;
   unsigned char eNb_id=0, UE_id=0;
   int time_in, time_out;
   short *x, *y, *z;
@@ -173,6 +175,15 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #endif
 
 
+    // we alternately process the signals from the three different sectors
+    eNb_id = mac_xface->frame % 3; 
+
+    if (eNb_id == 0) {
+      max_peak_val = 0;
+      max_eNb_id = 0;
+      max_sync_pos = 0;
+    }
+
     if (eNB_UE_stats[0].mode[0] == PRACH) {
       // look for PSS in the last 3 symbols of the last slot
       // but before we need to zero pad the gaps that the HW removed
@@ -180,13 +191,6 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       bzero(eNb_sync_buffer[0],640*6*sizeof(int));
       bzero(eNb_sync_buffer[1],640*6*sizeof(int));
       
-      // we alternately process the signals from the three different sectors
-      eNb_id = mac_xface->frame % 3; 
-      if (eNb_id == 0) {
-	max_peak_val = 0;
-	max_eNb_id = 0;
-	max_sync_pos = 0;
-      }
 	
       for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) {
 	for (l=PSS_UL_SYMBOL; l<lte_frame_parms->symbols_per_tti/2; l++) {
@@ -197,14 +201,15 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #else
 	  y = (short*) &lte_eNB_common_vars->rxdata[eNb_id][aa][(last_slot*lte_frame_parms->symbols_per_tti/2+l)*lte_frame_parms->ofdm_symbol_size];
 #endif
-	  z = x;
-	  add_vector16(x,y,z,lte_frame_parms->ofdm_symbol_size*2);
-	  //memcpy(x,y,lte_frame_parms->ofdm_symbol_size*sizeof(int));
+	  //z = x;
+	  //add_vector16(x,y,z,lte_frame_parms->ofdm_symbol_size*2);
+	  memcpy(x,y,lte_frame_parms->ofdm_symbol_size*sizeof(int));
 	}
       }
-
+      
 #ifdef USER_MODE
       write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
+      write_output("eNb_sync_buffer1.m","eNb_sync_buf1",eNb_sync_buffer[1],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
 #endif
 
       sync_pos_slot = 0; //this is where the sync pos should be wrt eNb_sync_buffer
@@ -216,11 +221,21 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 				   (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),
 				   &sync_val);
 
-      if (sync_val > max_peak_val) {
+#ifdef USER_MODE
+      if (eNb_id==0)
+	write_output("sync_corr_eNb.m","synccorr",sync_corr,
+		     (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * 
+		     (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),1,2);
+#endif
+
+      if ((sync_pos>=0) && (sync_val > max_peak_val)) {
 	max_peak_val = sync_val;
 	max_eNb_id = eNb_id;
 	max_sync_pos = sync_pos;
       }
+
+      debug_msg("[PHY_PROCEDURES_LTE] found eNb_id=%d, sync_pos=%d, sync_val=%u, max_peak_val=%u, max_peak_pos=%d\n",eNb_id,sync_pos,sync_val,max_peak_val,max_sync_pos);
+
 
 #ifndef USER_MODE
       time_out = openair_get_mbox();
@@ -229,25 +244,35 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       // this is only for visualization in the scope
       lte_eNB_common_vars->sync_corr = sync_corr;
 
-      if ((sync_pos>=0) && (eNb_id==2)) {
-	eNB_UE_stats[0].UE_id[UE_id] = 0x1234; 
-	eNB_UE_stats[0].UE_timing_offset[UE_id] = max(max_sync_pos - sync_pos_slot - lte_frame_parms->nb_prefix_samples/8,0);
-	eNB_UE_stats[0].mode[UE_id] = PRACH;
-	eNB_UE_stats[0].sector[UE_id] = max_eNb_id;
-	//#ifdef DEBUG_PHY
-	msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d, timing_advance %d (time_in %d, time_out %d)\n",
-		  mac_xface->frame, last_slot, 
-		  UE_id, max_eNb_id,
-		  sync_pos, 
-		  eNB_UE_stats[0].UE_timing_offset[UE_id],
-		  time_in, time_out);
-	//#endif
-	
-	eNb_generate_rar = 1;
+      if (max_peak_val>0) {
+	if (eNb_id==2) {
+	  eNB_UE_stats[0].UE_id[UE_id] = 0x1234; 
+	  eNB_UE_stats[0].UE_timing_offset[UE_id] = max(max_sync_pos - sync_pos_slot - lte_frame_parms->nb_prefix_samples/8,0);
+	  eNB_UE_stats[0].mode[UE_id] = PRACH;
+	  eNB_UE_stats[0].sector[UE_id] = max_eNb_id;
+	  //#ifdef DEBUG_PHY
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d, timing_advance %d (time_in %d, time_out %d)\n",
+	      mac_xface->frame, last_slot, 
+	      UE_id, max_eNb_id,
+	      max_sync_pos, 
+	      eNB_UE_stats[0].UE_timing_offset[UE_id],
+	      time_in, time_out);
+	  //#endif
+	  
+	  eNb_generate_rar = 1;
+	  max_peak_val = 0;
+	  max_eNb_id = 0;
+	  max_sync_pos = 0;
+      
+	}
       }
       else {
 	debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: No user found\n",mac_xface->frame,last_slot);
 	eNb_generate_rar = 0;
+	max_peak_val = 0;
+	max_eNb_id = 0;
+	max_sync_pos = 0;
+
       }
     }
     
@@ -409,7 +434,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     // RA  
     if (((next_slot>>1) == 7) && (eNb_generate_rar == 1)) {
-      msg("[eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
+      msg("[PHY_PROCEDURES_LTE][eNB] Frame %d, slot %d: Generated RAR DCI, format 1A\n",mac_xface->frame, next_slot); 
 
       // Schedule Random-Access Response 
       memcpy(&dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
@@ -778,7 +803,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					   input_buffer_length,
 					   eNB_UE_stats[0].UE_timing_offset[0]/4); 
       eNB_UE_stats[0].mode[0] = RA_RESPONSE;
-      msg("Filling eNb_ulsch_params for RAR\n");
+      //msg("Filling eNb_ulsch_params for RAR\n");
       generate_eNb_ulsch_params_from_rar(dlsch_input_buffer,
 					 (next_slot>>1),
 					 ulsch_eNb[0],
@@ -907,7 +932,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 				      24576);
     first_run = 0;
 
-    eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
+    //    eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
+    //    eNB_UE_stats[0].sector[UE_id] = eNb_id;
     
     debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: user %d in sector %d: timing_advance = %d\n",
 	mac_xface->frame, last_slot, 

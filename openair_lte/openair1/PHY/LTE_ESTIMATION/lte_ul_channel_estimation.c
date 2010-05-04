@@ -72,8 +72,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  // interpolate between estimates
 	  if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    multadd_complex_vector_real_scalar((short*) ul_ch1,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((short*) ul_ch2,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((short*) ul_ch1,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((short*) ul_ch2,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	  }
 	} //for(k=...
 

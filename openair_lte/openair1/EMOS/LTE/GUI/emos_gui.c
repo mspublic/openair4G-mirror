@@ -1115,6 +1115,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
@@ -1571,7 +1572,7 @@ void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
   fl_set_button(ob,1);
   mimo_mode = user_data;
 
-  ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
+  //ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 }
 
 

@@ -10,7 +10,7 @@
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
-#define DEBUG_ULSCH
+//#define DEBUG_ULSCH
 
 #ifndef __SSE3__
 __m128i zeroU;

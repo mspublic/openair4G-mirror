@@ -164,71 +164,63 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 
   else {
     for (eNB=0;eNB<number_of_cards;eNB++) {
-      len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d : RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
+      len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
 		     eNB,number_of_cards,
 		     mac_xface->frame,
 		     PHY_vars->rx_total_gain_eNB_dB,
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[0],
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[1]);
+      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Subband I0: ",
+		     eNB,
+		     mac_xface->frame);
       for (i=0;i<25;i++)
 	len += sprintf(&buffer[len],"%2d ",
 		       PHY_vars->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
       len += sprintf(&buffer[len],"\n");
+
+      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Wideband CQI: (%d,%d) dB\n",
+		     eNB,
+		     mac_xface->frame,
+		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][0],
+		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][1]);
+      
+      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Subband CQI: ",
+		     eNB,
+		     mac_xface->frame);
+      for (i=0;i<25;i++)
+	len += sprintf(&buffer[len],"%2d ",
+		       PHY_vars->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[0][i]);
+      len += sprintf(&buffer[len],"\n");
+      
     }
 
-    eNB=0;
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d : UE 0 (%x) rssi (%d,%d) dBm, Sector %d, DLSCH Mode %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
-		   eNB,
+    len += sprintf(&buffer[len],"[eNB PROC] Frame %d: UE 0 (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
 		   mac_xface->frame,
-		   eNB_UE_stats[eNB].UE_id[0],
-		   eNB_UE_stats[eNB].UL_rssi[0][0],
-		   eNB_UE_stats[eNB].UL_rssi[0][1],
-		   eNB_UE_stats[eNB].sector[0],
+		   eNB_UE_stats[0].UE_id[0],
+		   eNB_UE_stats[0].UL_rssi[0][0],
+		   eNB_UE_stats[0].UL_rssi[0][1],
+		   eNB_UE_stats[0].sector[0],
 		   openair_daq_vars.dlsch_transmission_mode,
 		   openair_daq_vars.ulsch_allocation_mode,
-		   (openair_daq_vars.dlsch_transmission_mode == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[eNB].DL_cqi[0][0]<<1)),
+		   (openair_daq_vars.dlsch_transmission_mode == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0].DL_cqi[0][0]<<1)),
 		   openair_daq_vars.target_ue_ul_mcs,
 		   openair_daq_vars.ue_ul_nb_rb
 		   );
-    
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d : UE 0 (%x) Wideband CQI (%d,%d) dB\n",
-		   eNB,
-		   mac_xface->frame,
-		   eNB_UE_stats[eNB].UE_id[0],
-		   PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][0],
-		   PHY_vars->PHY_measurements_eNB[0].wideband_cqi_dB[0][1]);
-    
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d : UE 0 (%x) Subband CQI :",
-		   eNB,
-		   mac_xface->frame,
-		   eNB_UE_stats[eNB].UE_id[0],
-		   PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi[0][0],
-		   PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi[0][1]);
-    for (i=0;i<25;i++)
-      len += sprintf(&buffer[len],"%2d ",
-		     PHY_vars->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[0][i]);
-    len += sprintf(&buffer[len],"\n");
-    
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d UE 0 (%x) DL_cqi %d, DL_pmi_single %x\n",
-		   eNB,
-		   eNB_UE_stats[eNB].UE_id[0],
-		   eNB_UE_stats[eNB].DL_cqi[0][0],
-		   pmi2hex_2Ar1(eNB_UE_stats[eNB].DL_pmi_single[0]));
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d UE 0 (%x) Timing advance %d samples (%d 16Ts)\n",
-		   eNB,
-		   eNB_UE_stats[eNB].UE_id[0],
-		   eNB_UE_stats[eNB].UE_timing_offset[0],
-		   eNB_UE_stats[eNB].UE_timing_offset[0]>>2);
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d UE 0 (%x) Mode = %s(%d)\n",
-		   eNB,
-		   eNB_UE_stats[eNB].UE_id[0],
+      
+    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) DL_cqi %d, DL_pmi_single %x\n",
+		   eNB_UE_stats[0].UE_id[0],
+		   eNB_UE_stats[0].DL_cqi[0][0],
+		   pmi2hex_2Ar1(eNB_UE_stats[0].DL_pmi_single[0]));
+    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) Timing advance %d samples (%d 16Ts)\n",
+		   eNB_UE_stats[0].UE_id[0],
+		   eNB_UE_stats[0].UE_timing_offset[0],
+		   eNB_UE_stats[0].UE_timing_offset[0]>>2);
+    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) Mode = %s(%d)\n",
+		   eNB_UE_stats[0].UE_id[0],
 		   mode_string[eNB_UE_stats[0].mode[0]],
 		   eNB_UE_stats[0].mode[0]);
   }
-
-  
-
 
   return len;
 }
