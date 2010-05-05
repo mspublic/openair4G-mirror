@@ -177,6 +177,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
     // we alternately process the signals from the three different sectors
     eNb_id = mac_xface->frame % 3; 
+    //eNb_id = 2;
 
     if (eNb_id == 0) {
       max_peak_val = 0;
@@ -219,11 +220,12 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 				   0,//eNb_id,
 				   (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * 
 				   (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),
-				   &sync_val);
+				   &sync_val,
+				   lte_eNB_common_vars->sync_corr[eNb_id]);
 
 #ifdef USER_MODE
       if (eNb_id==0)
-	write_output("sync_corr_eNb.m","synccorr",sync_corr,
+	write_output("sync_corr_eNb.m","synccorr",lte_eNB_common_vars->sync_corr[eNb_id],
 		     (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * 
 		     (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),1,2);
 #endif
@@ -241,9 +243,6 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       time_out = openair_get_mbox();
 #endif
       
-      // this is only for visualization in the scope
-      lte_eNB_common_vars->sync_corr = sync_corr;
-
       if (max_peak_val>0) {
 	if (eNb_id==2) {
 	  eNB_UE_stats[0].UE_id[UE_id] = 0x1234; 
@@ -251,10 +250,11 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	  eNB_UE_stats[0].mode[UE_id] = PRACH;
 	  eNB_UE_stats[0].sector[UE_id] = max_eNb_id;
 	  //#ifdef DEBUG_PHY
-	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d, timing_advance %d (time_in %d, time_out %d)\n",
+	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d val %d , timing_advance %d (time_in %d, time_out %d)\n",
 	      mac_xface->frame, last_slot, 
 	      UE_id, max_eNb_id,
 	      max_sync_pos, 
+	      max_peak_val,
 	      eNB_UE_stats[0].UE_timing_offset[UE_id],
 	      time_in, time_out);
 	  //#endif
@@ -264,7 +264,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	  max_eNb_id = 0;
 	  max_sync_pos = 0;
       
-	}
+	  }
       }
       else {
 	debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: No user found\n",mac_xface->frame,last_slot);
@@ -799,9 +799,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     if (dlsch_eNb_ra_active == 1) {
       input_buffer_length = dlsch_eNb_ra->harq_processes[0]->TBS/8;
       eNB_UE_stats[0].UE_id[0] = fill_rar(dlsch_input_buffer,
-					   lte_frame_parms->N_RB_UL,
-					   input_buffer_length,
-					   eNB_UE_stats[0].UE_timing_offset[0]/4); 
+					  lte_frame_parms->N_RB_UL,
+					  input_buffer_length,
+					  eNB_UE_stats[0].UE_timing_offset[0]/4); 
       eNB_UE_stats[0].mode[0] = RA_RESPONSE;
       //msg("Filling eNb_ulsch_params for RAR\n");
       generate_eNb_ulsch_params_from_rar(dlsch_input_buffer,
@@ -932,8 +932,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 				      24576);
     first_run = 0;
 
-    //    eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
-    //    eNB_UE_stats[0].sector[UE_id] = eNb_id;
+    eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
+    eNB_UE_stats[0].sector[UE_id] = eNb_id;
     
     debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: user %d in sector %d: timing_advance = %d\n",
 	mac_xface->frame, last_slot, 

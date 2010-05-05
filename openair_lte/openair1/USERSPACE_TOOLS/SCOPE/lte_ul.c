@@ -43,7 +43,7 @@ FD_lte_scope *form;
 //char demod_data[2048];
 
 short *channel_drs[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
-int* sync_corr;
+unsigned int* sync_corr;
 
 int length,offset;
 float avg=1;
@@ -70,12 +70,12 @@ void lte_scope_idle_callback(void) {
   
   // channel_t_re = sync_corr
   for (i=0; i<640*3; i++)  {
-    //sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
-    sig2[i] = (float)(sync_corr[i]);
+    sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
+    //sig2[i] = (float)(sync_corr[i]);
     time2[i] = (float) i;
   }
 
-  //fl_set_xyplot_ybounds(form->channel_t_re,55,90);
+  fl_set_xyplot_ybounds(form->channel_t_re,50,100);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,640*3,"","","");
 
   // channel_srs
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
   printf("Bigphys_top = %p\n",bigphys_top);
   printf("TX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.txdataF);
   printf("RX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.rxdata);
-  printf("PHY_vars->lte_eNB_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
+  printf("PHY_vars->lte_eNB_common_vars.sync_corr[%d] = %p\n",eNb_id,PHY_vars->lte_eNB_common_vars.sync_corr[eNb_id]);
   printf("PHY_vars->lte_eNB_ulsch_vars[%d] = %p\n",UE_id,PHY_vars->lte_eNB_ulsch_vars[UE_id]);
   printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[%d] = %p\n",eNb_id,PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id]);
 
@@ -264,9 +264,9 @@ int main(int argc, char *argv[]) {
   else
     msg("Could not map physical memory\n");
 
-  sync_corr = (int*) (mem_base +
-		      (unsigned int)PHY_vars->lte_eNB_common_vars.sync_corr -
-		      bigphys_top);
+  sync_corr = (unsigned int*) (mem_base +
+			       (unsigned int)PHY_vars->lte_eNB_common_vars.sync_corr[eNb_id] -
+			       bigphys_top);
 
   lte_eNb_ulsch = (LTE_eNB_ULSCH *) (mem_base + 
 				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[UE_id] - 

@@ -441,7 +441,7 @@ void openair_sync(void) {
       //sync_pos = 0;
 
       // this is only for visualization in the scope
-      lte_eNB_common_vars->sync_corr = sync_corr;
+      lte_ue_common_vars->sync_corr = sync_corr;
       
       // the sync is in the 3rd (last_ symbol of the special subframe
       // so the position wrt to the start of the frame is 

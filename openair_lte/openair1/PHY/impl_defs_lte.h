@@ -74,8 +74,8 @@ typedef struct{
   /// hold the channel estimates in frequency domain based on SRS
   int **srs_ch_estimates[3];
   int **srs_ch_estimates_time[3];  
-  int* srs;               /// holds the SRS for channel estimation at the RX
-  int *sync_corr;         /// holds output of the sync correlator
+  int *srs;               /// holds the SRS for channel estimation at the RX
+  unsigned int *sync_corr[3];         /// holds output of the sync correlator
 } LTE_eNB_COMMON;
 
 typedef struct{
