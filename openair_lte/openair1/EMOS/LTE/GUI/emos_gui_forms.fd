@@ -1406,8 +1406,8 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: rf_gain_txt
-callback: 
-argument: 
+callback: input_callback
+argument: 0
 
 --------------------
 class: FL_INPUT
@@ -1424,8 +1424,8 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: digital_gain_txt
-callback: 
-argument: 
+callback: input_callback
+argument: 0
 
 --------------------
 class: FL_INPUT
@@ -1442,8 +1442,8 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: rf_mode_txt
-callback: 
-argument: 
+callback: input_callback
+argument: 0
 
 =============== FORM ===============
 Name: splash_frm

@@ -904,12 +904,17 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 				       unsigned short p_rnti) {
   
   unsigned char harq_pid;
-
+  unsigned int rb_alloc;
 
   if (dci_format == format0) {
 
 
     harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
+    rb_alloc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
+    if (rb_alloc>RIV_max) {
+      msg("rar_tools.c: ERROR: rb_alloc > RIV_max\n");
+      return(-1);
+    }
 
     //    msg("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
 
@@ -931,6 +936,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
+      //if (ulsch->harq_processes[harq_pid]->mcs)
       ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;

@@ -158,6 +158,7 @@ void checkpoint_callback(FL_OBJECT *ob, long user_data);
 void new_data_callback(int fifo_fd, void* data);
 void time_freq_callback(FL_OBJECT *ob, long user_data);
 void noise_snr_callback(FL_OBJECT *ob, long user_data);
+void input_callback(FL_OBJECT *ob, long user_data);
 void gps_data_callback(int gps_fd, void* data);
 
 void initialize_interface();
@@ -1134,7 +1135,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TIMING_ADVANCE,&timing_advance);
+		//ioctl_result += ioctl(openair_dev_fd, openair_SET_TIMING_ADVANCE,&timing_advance);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TCXO_DAC,&tcxo);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_FREQ_OFFSET,&freq_correction);
 		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_ue);
@@ -1642,6 +1643,9 @@ void get_dir_callback(FL_OBJECT *ob, long user_data)
   printf("Directory = %s\n",dumpfile_dir);
   fl_hide_form(config_frm->config_dialog);
 }	
+
+void input_callback(FL_OBJECT *ob, long user_data)
+{}
 
 //
 // Initializes the MAC and PHY vars

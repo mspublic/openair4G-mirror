@@ -277,6 +277,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.mode    = openair_NOT_SYNCHED;
 	openair_daq_vars.node_running = 0;
 
+	openair_daq_vars.manual_timing_advance = 0;
 	openair_daq_vars.timing_advance = 19;
 	openair_daq_vars.dlsch_transmission_mode = 2;
 	openair_daq_vars.target_ue_dl_mcs = 0;
@@ -1444,6 +1445,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
   case openair_SET_TIMING_ADVANCE:
+    openair_daq_vars.manual_timing_advance = 1;
     openair_daq_vars.timing_advance = ((unsigned int *)arg)[0]; 
 
     msg("[openair][IOCTL] openair_daq_vars.timing_advance = %d\n",openair_daq_vars.timing_advance);

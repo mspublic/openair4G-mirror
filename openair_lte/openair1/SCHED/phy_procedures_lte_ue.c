@@ -216,12 +216,14 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
 
     if (UE_mode == PRACH) {
 
-      openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+      if (openair_daq_vars.manual_timing_advance == 0) {
+	openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
 
 #ifdef CBMIMO1
       for (card_id=0;card_id<number_of_cards;card_id++)
 	pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
 #endif
+      }
 
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
 		mac_xface->frame,next_slot,
@@ -852,17 +854,19 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    if ((timing_advance>>10) & 1) //it is negative
 	      timing_advance = timing_advance - (1<<11);
 	    
-	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (from cntl)timing_advance = %d\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance);
-	    if ( (mac_xface->frame % 100) == 0) {
-	      if ((timing_advance > 3) || (timing_advance < -3) )
-		openair_daq_vars.timing_advance += timing_advance*4;
-	      
+	    if (openair_daq_vars.manual_timing_advance == 0) {
+	      if ( (mac_xface->frame % 100) == 0) {
+		if ((timing_advance > 3) || (timing_advance < -3) )
+		  openair_daq_vars.timing_advance += timing_advance*4;
+		
 #ifdef CBMIMO1
-	      for (card_id=0;card_id<number_of_cards;card_id++)
-		pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
+		for (card_id=0;card_id<number_of_cards;card_id++)
+		  pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
 #endif
 	      
+	      }
 	    }
+	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (from cntl) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance, openair_daq_vars.timing_advance);
 	  }
 	}   
 	
@@ -920,14 +924,16 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	      if ((timing_advance>>10) & 1) //it is negative
 		timing_advance = timing_advance - (1<<11);
 
-	      openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT + timing_advance*4;
-	      msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (rar) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance,openair_daq_vars.timing_advance);
-
-
+	      if (openair_daq_vars.manual_timing_advance == 0) {
+		openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT + timing_advance*4;
+		
 #ifdef CBMIMO1
-	      for (card_id=0;card_id<number_of_cards;card_id++)
-		pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
+		for (card_id=0;card_id<number_of_cards;card_id++)
+		  pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
 #endif
+	      }
+
+	      msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (rar) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance,openair_daq_vars.timing_advance);
 
 	      ulsch_ue_rag_active=1;
 	      get_rag_alloc(lte_frame_parms->tdd_config,

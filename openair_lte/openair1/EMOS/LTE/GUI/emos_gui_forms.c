@@ -362,10 +362,13 @@ FD_main_frm *create_form_main_frm(void)
     fl_set_object_color(obj,FL_PALEGREEN,FL_COL1);
   fdui->rf_gain_txt = obj = fl_add_input(FL_NORMAL_INPUT,925,340,60,20,"RF gain");
     fl_set_object_lsize(obj,FL_TINY_SIZE);
+    fl_set_object_callback(obj,input_callback,0);
   fdui->digital_gain_txt = obj = fl_add_input(FL_NORMAL_INPUT,925,375,60,20,"digital gain");
     fl_set_object_lsize(obj,FL_TINY_SIZE);
+    fl_set_object_callback(obj,input_callback,0);
   fdui->rf_mode_txt = obj = fl_add_input(FL_NORMAL_INPUT,925,410,60,20,"RF mode");
     fl_set_object_lsize(obj,FL_TINY_SIZE);
+    fl_set_object_callback(obj,input_callback,0);
   fl_end_form();
 
   fdui->main_frm->fdui = fdui;

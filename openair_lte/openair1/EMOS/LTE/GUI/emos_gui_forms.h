@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Wed Apr 28 10:36:50 2010.**/
+/** Header file generated with fdesign on Wed May  5 09:35:39 2010.**/
 
 #ifndef FD_main_frm_h_
 #define FD_main_frm_h_
@@ -16,6 +16,7 @@ extern void refresh_timer_callback(FL_OBJECT *, long);
 extern void noise_snr_callback(FL_OBJECT *, long);
 extern void terminal_button_callback(FL_OBJECT *, long);
 extern void checkpoint_callback(FL_OBJECT *, long);
+extern void input_callback(FL_OBJECT *, long);
 
 
 extern void get_dir_callback(FL_OBJECT *, long);

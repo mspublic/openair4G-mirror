@@ -88,9 +88,10 @@ typedef struct {
   unsigned int  tcxo_dac;
   int           freq_offset;
   unsigned int  tx_rx_switch_point;
+  unsigned int  manual_timing_advance;  /// 1 to override automatic timing advance
   unsigned int  timing_advance;
-  int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
-  int tdd;                    /// 1 for TDD mode, 0 for FDD mode
+  unsigned int  dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
+  unsigned int  tdd;                    /// 1 for TDD mode, 0 for FDD mode
   unsigned int  rx_rf_mode;
   unsigned int  node_id;
   unsigned int  rach_detection_count;
