@@ -45,7 +45,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 		      int eNb_id,
 		      int length,
 		      int* peak_val,
-		      unsigned int* sync_corr_buffer);
+		      unsigned int* sync_corr_eNb);
 
 
 /*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,

@@ -176,7 +176,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
 
     // we alternately process the signals from the three different sectors
-    eNb_id = mac_xface->frame % 3; 
+    eNb_id = mac_xface->frame % number_of_cards; 
     //eNb_id = 2;
 
     if (eNb_id == 0) {
@@ -244,7 +244,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #endif
       
       if (max_peak_val>0) {
-	if (eNb_id==2) {
+	if (eNb_id==number_of_cards-1) {
 	  eNB_UE_stats[0].UE_id[UE_id] = 0x1234; 
 	  eNB_UE_stats[0].UE_timing_offset[UE_id] = max(max_sync_pos - sync_pos_slot - lte_frame_parms->nb_prefix_samples/8,0);
 	  eNB_UE_stats[0].mode[UE_id] = PRACH;

@@ -15,7 +15,7 @@
 
 #define DEBUG_PHY
 
-int* sync_corr = NULL;
+int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
 short syncF_tmp[2048*2] __attribute__((aligned(16)));
 //short sync1F_tmp[256*2] __attribute__((aligned(16)));
@@ -26,15 +26,15 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
   int i,k;
   //unsigned short ds = frame_parms->log2_symbol_size - 7;
   
-  sync_corr = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
-  if (sync_corr) {
+  sync_corr_ue = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
+  if (sync_corr_ue) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr allocated at %p\n", sync_corr);
+    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue);
 #endif
     //common_vars->sync_corr = sync_corr;
   }
   else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr not allocated\n");
+    msg("[openair][LTE_PHY][SYNC] sync_corr_ue not allocated\n");
     return(-1);
   }
 
@@ -167,12 +167,12 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
 void lte_sync_time_free(void) {
 
 #ifdef USER_MODE
-  free(sync_corr);
+  free(sync_corr_ue);
   free(primary_synch0_time);
   free(primary_synch1_time);
   free(primary_synch2_time);
 #endif
-  sync_corr = NULL;
+  sync_corr_ue = NULL;
 
 }
 
@@ -192,8 +192,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int sync_out[3] = {0,0,0};
 
   //msg("[SYNC TIME] Calling sync_time.\n");
-  if (sync_corr == NULL) {
-    msg("[SYNC TIME] sync_corr not yet allocated! Exiting.\n");
+  if (sync_corr_ue == NULL) {
+    msg("[SYNC TIME] sync_corr_ue not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -213,7 +213,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     }
 #endif
 
-    sync_corr[n] = 0;
+    sync_corr_ue[n] = 0;
     for (s=0;s<3;s++)
       sync_out[s]=0;
 
@@ -234,8 +234,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
-	((short*)sync_corr)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
+	((short*)sync_corr_ue)[2*n] += ((short*) &result)[0];
+	((short*)sync_corr_ue)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_out)[4] += ((short*) &result)[0];
 	((short*)sync_out)[5] += ((short*) &result)[1];
       }
@@ -268,7 +268,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     // calculate the absolute value of sync_corr[n]
     //    sync_corr[n] = ((int)((short*)sync_corr)[2*n])*((int)((short*)sync_corr)[2*n])
     //      +((int)((short*)sync_corr)[2*n+1])*((int)((short*)sync_corr)[2*n+1]);
-    sync_corr[n] = abs32(sync_corr[n]);
+    sync_corr_ue[n] = abs32(sync_corr_ue[n]);
 
     for (s=0;s<3;s++) {
       sync_out[s] = abs32(sync_out[s]);
@@ -286,7 +286,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
 
 #ifdef USER_MODE
-  write_output("sync_corr_ue.m","synccorr",sync_corr,length,1,2);
+  write_output("sync_corr_ue.m","synccorr",sync_corr_ue,length,1,2);
 #endif
 #endif
 
@@ -299,7 +299,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 		      int eNb_id,
 		      int length,
 		      int *peak_val_out,
-		      unsigned int *sync_corr_buffer) {
+		      unsigned int *sync_corr_eNb) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -308,8 +308,8 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
   short *primary_synch_time;
 
   // msg("[SYNC TIME] Calling sync_time_eNb(%p,%p,%d,%d)\n",rxdata,frame_parms,eNb_id,length);
-  if (sync_corr_buffer == NULL) {
-    msg("[SYNC TIME] sync_corr_buffer not yet allocated! Exiting.\n");
+  if (sync_corr_eNb == NULL) {
+    msg("[SYNC TIME] sync_corr_eNb not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -334,7 +334,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
   for (n=0; n<length; n+=4) {
 
-    sync_corr_buffer[n] = 0;
+    sync_corr_eNb[n] = 0;
 
     if (n<(length-frame_parms->ofdm_symbol_size-frame_parms->nb_prefix_samples)) {
 
@@ -343,15 +343,15 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
       	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
 	//((short*)sync_corr)[2*n]   += ((short*) &result)[0];
 	//((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
-	sync_corr_buffer[n] += abs32(result);
+	sync_corr_eNb[n] += abs32(result);
 
       }
 
     }
-    mean_val += sync_corr_buffer[n]>>10;
+    mean_val += sync_corr_eNb[n]>>10;
 
-    if (sync_corr[n]>peak_val) {
-      peak_val = sync_corr_buffer[n];
+    if (sync_corr_eNb[n]>peak_val) {
+      peak_val = sync_corr_eNb[n];
       peak_pos = n;
     }
   }

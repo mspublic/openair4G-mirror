@@ -203,7 +203,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   eNB_UE_stats[0].sector[0],
 		   openair_daq_vars.dlsch_transmission_mode,
 		   openair_daq_vars.ulsch_allocation_mode,
-		   (openair_daq_vars.dlsch_transmission_mode == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0].DL_cqi[0][0]<<1)),
+		   (openair_daq_vars.dlsch_rate_adaptation == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0].DL_cqi[0][0]<<1)),
 		   openair_daq_vars.target_ue_ul_mcs,
 		   openair_daq_vars.ue_ul_nb_rb
 		   );

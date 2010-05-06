@@ -1366,7 +1366,7 @@ int open_dumpfile()
 	
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  sprintf(dumpfile_name,"%sdata_term%d_idx%2d_%4d%2d%2dT%2d%2d%2d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
 	
   dumpfile_id = fopen(dumpfile_name,"w");
   if (dumpfile_id == NULL)
@@ -1376,7 +1376,7 @@ int open_dumpfile()
       return -1;
     }
 	
-  sprintf(date_string,"date: %4d%2d%2dT%2d%2d%2d",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  sprintf(date_string,"date: %04d%02d%02dT%02d%02d%02d",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
   fl_set_object_label(main_frm->date_lbl, date_string);
   sprintf(temp_label, "idx: %d", file_index);
   fl_set_object_label(main_frm->idx_lbl, temp_label);

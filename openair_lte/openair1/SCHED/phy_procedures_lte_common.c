@@ -19,19 +19,19 @@ void get_rag_alloc(unsigned char tdd_config,
     case 5:
     case 6:
       *subframe = 2;
-      *frame = current_frame+1;
+      *frame = current_frame+2;
       break;
     case 7:
       *subframe = 3;
-      *frame = current_frame+1;
+      *frame = current_frame+2;
       break;
     case 8:
       *subframe = 4;
-      *frame = current_frame+1;
+      *frame = current_frame+2;
       break;
     case 9:
       *subframe = 2;
-      *frame = current_frame+2;
+      *frame = current_frame+3;
       break;
     }
   }

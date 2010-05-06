@@ -679,7 +679,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     if (eNB_common_vars->sync_corr[eNb_id]) {
       bzero(eNB_common_vars->sync_corr[eNb_id],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->sync_corr[%d] allocated at %p\n", eNb_id, sync_corr);
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->sync_corr[%d] allocated at %p\n", eNb_id, eNB_common_vars->sync_corr[eNb_id]);
 #endif
     }
     else {
