@@ -29,6 +29,7 @@ typedef struct {
   unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
   unsigned char nushift;                /// shift of pilot position in one RB
   unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
+  unsigned char mode1_flag;             /// flag to indicate SISO transmission
   unsigned short ofdm_symbol_size;
   unsigned char log2_symbol_size;
   unsigned short nb_prefix_samples;

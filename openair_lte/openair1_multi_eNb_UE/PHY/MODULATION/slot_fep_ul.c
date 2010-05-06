@@ -1,6 +1,6 @@
 #include "PHY/defs.h"
 #include "defs.h"
-//#define DEBUG_FEP
+#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
@@ -8,7 +8,9 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		unsigned char Ns,
 		unsigned char eNb_id,
 		int no_prefix) {
- 
+#ifdef DEBUG_FEP
+  char fname[40], vname[40];
+#endif
   unsigned char aa;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
@@ -48,6 +50,11 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 			    (short*) eNb_common_vars->srs_ch_estimates[eNb_id][aa],
 			    frame_parms->ofdm_symbol_size,
 			    15);
+#ifdef DEBUG_FEP
+	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
+	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
+	write_output(fname,vname,eNb_common_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
+#endif
     }
   }
 

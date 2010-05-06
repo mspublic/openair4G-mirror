@@ -7,6 +7,8 @@
 static  __m128i shift     __attribute__ ((aligned(16)));
 static  __m128i m0,m1     __attribute__ ((aligned(16)));
 
+//#define DEBUG_CMULT
+
 int mult_cpx_vector(short *x1, 
 		    short *x2, 
 		    short *y, 
@@ -169,19 +171,19 @@ int mult_cpx_vector_norep(short *x1,
 
   register __m128i m0,m1,m2,m3;
 
-  /*    
-#ifdef USER_MODE
+       
+#ifdef DEBUG_CMULT
   __m128i temp;
   int *tempd;
   short *temps;
-#endif
-  */
+#endif //DEBUG_CMULT
+  
 
   __m128i *x1_128; 
   __m128i *x2_128; 
   __m128i *y_128; 
 
-  //  __m128i temp;
+  //__m128i temp;
   
 
   shift = _mm_cvtsi32_si128(output_shift);
@@ -195,33 +197,37 @@ int mult_cpx_vector_norep(short *x1,
   for(i=0;i<(N>>3);i++)
   {
     
-    /*    
-#ifdef USER_MODE
+        
+#ifdef DEBUG_CMULT
     printf("i=%d\n",i);
     temps = (short *)x1_128;
     printf("x1 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
     temps = (short *)x2_128;
     printf("x2 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
 #endif
-    */
+    
 
     m0 = _mm_madd_epi16(x1_128[0],x2_128[0]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
 
-    /*
+    
+#ifdef DEBUG_CMULT
     temp = m0;
     
     tempd = &temp;
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
-    */
+#endif //DEBUG_CMULT
+    
 
     m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
-    /*
+        
+#ifdef DEBUG_CMULT
     temp = m0;
 
     tempd = (int *)&temp;
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
-    */
+#endif //DEBUG_CMULT
+    
 
     m1 = m0;
 
@@ -229,18 +235,32 @@ int mult_cpx_vector_norep(short *x1,
 
     m0 = _mm_madd_epi16(x1_128[1],x2_128[1]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
 
-    /*
-    tempw = (int *)&m0;
-    printf("m0[1] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+#ifdef DEBUG_CMULT
+    printf("i=%d\n",i);
+    temps = (short *)&x1_128[1];
+    printf("x1 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+    temps = (short *)&x2_128[1];
+    printf("x2 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+#endif
+
+#ifdef DEBUG_CMULT
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[1] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
+    
 
 
     m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
-    /*
-    tempw = (int *)&m0;
-    printf("m0[1] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+    
+#ifdef DEBUG_CMULT
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[1] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
 
 
     m2 = m0;
@@ -253,33 +273,59 @@ int mult_cpx_vector_norep(short *x1,
 
 
     m0 = _mm_madd_epi16(x1_128[2],x2_128[2]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    /*
-    tempw = (int *)&m0;
-    printf("m0[2] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+    
+#ifdef DEBUG_CMULT
+    printf("i=%d\n",i);
+    temps = (short *)&x1_128[2];
+    printf("x1 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+    temps = (short *)&x2_128[2];
+    printf("x2 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+#endif //DEBUG_CMULT
+
+#ifdef DEBUG_CMULT
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[2] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
 
     m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
-    /*
-    tempw = (int *)&m0;
-    printf("m0[2] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+    
+#ifdef DEBUG_CMULT
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[2] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
 
     m1 = m0;
     //    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
 
     m0 = _mm_madd_epi16(x1_128[3],x2_128[3]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    /*
-    tempw = (int *)&m0;
-    printf("m0[3] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+   
+#ifdef DEBUG_CMULT
+    printf("i=%d\n",i);
+    temps = (short *)&x1_128[3];
+    printf("x1 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+    temps = (short *)&x2_128[3];
+    printf("x2 : %d,%d,%d,%d,%d,%d,%d,%d\n",temps[0],temps[1],temps[2],temps[3],temps[4],temps[5],temps[6],temps[7]);
+ 
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[3] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
 
     m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
-    /*
-    tempw = (int *)&m0;
-    printf("m0[3] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
-    */
+    
+#ifdef DEBUG_CMULT
+    temp = m0;
+    tempd = (int *)&temp;
+    printf("m0[3] : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
+#endif //DEBUG_CMULT
+    
 
     m2 = m0;
     //    m2 = _mm_packs_epi32(m2,m0);        // 1- pack in a 128 bit register [re im re im]

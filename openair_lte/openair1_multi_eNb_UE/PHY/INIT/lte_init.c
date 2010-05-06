@@ -398,7 +398,9 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_COMMON *eNB_common_vars,
-		     LTE_eNB_ULSCH **eNB_ulsch_vars){
+		     LTE_eNB_ULSCH **eNB_ulsch_vars,
+		     unsigned char is_secondary_eNb,
+		     PHY_VARS_eNB *phy_vars_eNb){
 
   int i, j, eNb_id, UE_id;
 
@@ -408,7 +410,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
     // TX vars
 #ifndef IFFT_FPGA
-    eNB_common_vars->txdata[eNb_id] = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+    eNB_common_vars->txdata[eNb_id] = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*)); //frame_parms->nb_antennas_tx
     if (eNB_common_vars->txdata[eNb_id]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d] allocated at %p\n",eNb_id,
@@ -420,7 +422,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       return(-1);
     }
 
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    for (i=0; i<2; i++) { //frame_parms->nb_antennas_tx
 #ifndef USER_MODE
       if (eNb_id == 0) 
 	eNB_common_vars->txdata[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
@@ -435,7 +437,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
 #else
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    for (i=0; i<2; i++) { //frame_parms->nb_antennas_tx
       eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdata[eNb_id][i]);
@@ -444,7 +446,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
   
 
-    eNB_common_vars->txdataF[eNb_id] = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
+    eNB_common_vars->txdataF[eNb_id] = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*)); //frame_parms->nb_antennas_tx
     if (eNB_common_vars->txdataF[eNb_id]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d] allocated at %p\n",eNb_id,
@@ -456,7 +458,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       return(-1);
     }
 #ifdef IFFT_FPGA
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    for (i=0; i<2; i++) { //frame_parms->nb_antennas_tx
 #ifndef USER_MODE
       if (eNb_id == 0) 
 	eNB_common_vars->txdataF[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
@@ -476,11 +478,11 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
 #else //IFFT_FPGA
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+    for (i=0; i<2; i++) { //frame_parms->nb_antennas_tx
       eNB_common_vars->txdataF[eNb_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
       bzero(eNB_common_vars->txdataF[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdataF[eNb_id][i]);
+      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p, length = %d\n",eNb_id,i,eNB_common_vars->txdataF[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
 #endif
     }
 #endif  
@@ -554,7 +556,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++) {
+      for (j=0; j<2; j++) { //frame_parms->nb_antennas_tx
 	eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size));
 	if (eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY
@@ -673,7 +675,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++)
-	for (j=0; j<frame_parms->nb_antennas_tx; j++) {
+	for (j=0; j<2; j++) { //frame_parms->nb_antennas_tx
 	  eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id][(j<<1) + i] = 
 	    (int *)malloc16(frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12);
 	  if (eNB_ulsch_vars[UE_id]->drs_ch_estimates[eNb_id][(j<<1)+i]) {
@@ -787,6 +789,37 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     
   } //UE_id 
 
+  if (is_secondary_eNb) {
+    for (eNb_id=0; eNb_id<3; eNb_id++) {
+      phy_vars_eNb->dl_precoder_SeNb[eNb_id] = (int **)malloc16(4*sizeof(int*));
+      if (phy_vars_eNb->dl_precoder_SeNb[eNb_id]) {
+#ifdef DEBUG_PHY
+	msg("[openair][SECSYS_PHY][INIT] phy_vars_eNb->dl_precoder_SeNb[%d] allocated at %p\n",eNb_id,
+	    phy_vars_eNb->dl_precoder_SeNb[eNb_id]);
+#endif
+      }
+      else {
+	msg("[openair][SECSYS_PHY][INIT] phy_vars_eNb->dl_precoder_SeNb[%d] not allocated\n",eNb_id);
+	return(-1);
+      }
+      
+      for (j=0; j<2; j++) { //phy_vars_eNb->lte_frame_parms.nb_antennas_tx
+	phy_vars_eNb->dl_precoder_SeNb[eNb_id][j] = (int *)malloc16(2*sizeof(int)*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)); // repeated format (hence the '2*')
+	if (phy_vars_eNb->dl_precoder_SeNb[eNb_id][j]) {
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] phy_vars_eNb->dl_precoder_SeNb[%d][%d] allocated at %p\n",eNb_id,j,
+	      phy_vars_eNb->dl_precoder_SeNb[eNb_id][j]);
+#endif
+	  memset(phy_vars_eNb->dl_precoder_SeNb[eNb_id][j],0,2*sizeof(int)*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size));
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] phy_vars_eNb->dl_precoder_SeNb[%d][%d] not allocated\n",eNb_id,j);
+	  return(-1);
+	}
+      } //for(j=...nb_antennas_tx
+      
+    } //for(eNb_id...
+  }
   return (0);  
 }
     

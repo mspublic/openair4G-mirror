@@ -44,7 +44,15 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
 int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_COMMON *eNB_common,
-		     LTE_eNB_ULSCH **eNB_ulsch);
+		     LTE_eNB_ULSCH **eNB_ulsch,
+		     unsigned char is_secondary_eNb,
+		     PHY_VARS_eNB *phy_vars_eNb);
+/*
+  \fn int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb)
+\brief Allocate and Initialize the PHY variables relevant to the LTE implementation
+@param phy_vars_eNb pointer to LTE parameter structure for the eNb
+*/
+int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
 
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);

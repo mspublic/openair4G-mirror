@@ -95,7 +95,7 @@
 #include "impl_defs.h"
 #endif //OPENAIR_LTE
 
-#include "PHY/INIT/defs.h"
+
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 #include "PHY/MODULATION/defs.h"
@@ -128,9 +128,13 @@ typedef struct
 
   unsigned char    is_secondary_eNb; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
-  unsigned char    is_ready_to_communicate; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   unsigned char    PeNb_id;          /// id of Primary eNb
   int              rx_offset;        /// Timing offset (used if is_secondary_eNb)
+  unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
+
+  /// hold the precoder for NULL beam to the primary user
+  int **dl_precoder_SeNb[3];
 
 } PHY_VARS_eNB;
 
@@ -156,6 +160,9 @@ typedef struct
   int              rx_offset; // Timing offset
 
 } PHY_VARS_UE;
+
+
+#include "PHY/INIT/defs.h"
 
 #ifndef OPENAIR_LTE
 //#include "PHY/TRANSPORT/defs.h"

@@ -73,6 +73,9 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
+ifdef MeNBMUE
+PHY_OBJS += $(TOP_DIR)/PHY/INIT/secsys_init.o
+endif
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
 ifdef EMOS
@@ -99,6 +102,7 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_vv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/sqrt.o
 
 
 ifndef MeNBMUE
@@ -117,7 +121,7 @@ OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 all: dlsim dlsim2 ulsim ulsim2 physim dlsim_secsys physim_secsys
 
 test:
-	echo $(CFLAGS)
+	echo $(PHY_OBJS)
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<

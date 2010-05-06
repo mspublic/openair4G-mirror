@@ -135,7 +135,9 @@ void random_channel(double *amps,
 		       unsigned int channel_length,
 		       double path_loss_dB,
 		       double forgetting factor,
-		       unsigned char clear);
+		       unsigned char clear,
+		       unsigned char keep_channel,
+		       unsigned char channel_id);
 \brief This function generates and applys a random frequency selective random channel model.
 @param ch Pointer to spatio-temporal channel coefficients
 @param tx_sig_re input signal (real component) 
@@ -154,6 +156,8 @@ void random_channel(double *amps,
 @param path_loss_dB Path loss in dB
 @param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
 @param clear Set to 1 to initialize first random channel
+@param keep_channel Set to 1 to keep channel constant for null-B/F
+@param channel_id see Enum CH_ID in phy_procedures_sim_secsys.c
 */
 void multipath_channel(struct complex **ch,
 		       double **tx_sig_re, 
@@ -171,5 +175,7 @@ void multipath_channel(struct complex **ch,
 		       unsigned int channel_length,
 		       double path_loss_dB,
 		       double forgetting_factor,
-		       unsigned char clear);
+		       unsigned char clear,
+		       unsigned char keep_channel,
+		       unsigned char channel_id);
 /* *@} */

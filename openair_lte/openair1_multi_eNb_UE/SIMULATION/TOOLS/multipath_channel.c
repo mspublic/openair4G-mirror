@@ -6,7 +6,8 @@
 #include "SIMULATION/RF/defs.h"
 
 #define MAX_CHANNEL_LENGTH 200
-struct complex a[4][4][MAX_CHANNEL_LENGTH];
+struct complex a[6][4][4][MAX_CHANNEL_LENGTH];
+// 6 = #number of different channels between 4 units (f.ex 2 eNbs and 2 UEs)
 
 void multipath_channel(struct complex **ch,
 		       double **tx_sig_re, 
@@ -24,7 +25,9 @@ void multipath_channel(struct complex **ch,
 		       unsigned int channel_length,
 		       double path_loss_dB,
 		       double forgetting_factor,
-		       unsigned char clear) {
+		       unsigned char clear,
+		       unsigned char keep_channel,
+		       unsigned char channel_id) {
  
   int i,ii,j,l;
   struct complex rx_tmp,tx;
@@ -41,10 +44,13 @@ void multipath_channel(struct complex **ch,
       phase.r = cos(2.0*M_PI*(i-j)/aoa);
       phase.i = sin(2.0*M_PI*(i-j)/aoa);
       
-
+      if (keep_channel && clear != 1) {
+	// do nothing - keep channel
+      } else {
       memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));
       
-      random_channel(amps,Td, &a[i][j][0],8,BW,ch[i + (j*nb_antennas_rx)],ricean_factor,&phase,forgetting_factor,clear);
+      random_channel(amps,Td, &a[channel_id][i][j][0],8,BW,ch[i + (j*nb_antennas_rx)],ricean_factor,&phase,forgetting_factor,clear);
+      }
       /*
       if ((i==0) && (j==0)) {
 	printf("Forgetting factor %f, Ricean factor %f\n",forgetting_factor,ricean_factor);

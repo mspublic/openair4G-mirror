@@ -59,7 +59,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned char skip_dc,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
-  unsigned int tti_offset;
+  unsigned int tti_offset, aa;
   unsigned char re;
   unsigned char qam64_table_offset_re = 0;
   unsigned char qam64_table_offset_im = 0;
@@ -110,9 +110,11 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	switch (mod_order) {
 	case 2:  //QPSK
 	  
-	  ((short*)&txdataF[nu][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	    ((short*)&txdataF[aa][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
-	  ((short*)&txdataF[nu][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	    ((short*)&txdataF[aa][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  break;
 	  
@@ -930,6 +932,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
 	re_offset+=12; // go to next RB
 	
+
 	// check if we crossed the symbol boundary and skip DC
 #ifdef IFFT_FPGA
 	if (re_offset >= frame_parms->N_RB_DL*12) {

@@ -26,7 +26,7 @@ ________________________________________________________________*/
 #define DEBUG_PHY
 #endif
 
-#define DIAG_PHY
+//#define DIAG_PHY
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
@@ -214,7 +214,7 @@ void phy_procedures_UE_TX(unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {
       nb_rb = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
       
       generate_drs_puch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
-      
+
       input_buffer_length = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       
       for (i=0;i<input_buffer_length;i++) {
@@ -1314,6 +1314,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 	dlsch_eNb[1]);
 	}
       */
+
       dlsch_eNb_active = 0;
 
       //#ifdef DEBUG_PHY    
@@ -1508,6 +1509,136 @@ void phy_procedures_eNB_S_RX_secsys(unsigned char last_slot,PHY_VARS_eNB *phy_va
   }
 }
 
+void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
+
+  int aa, i, eNb_id=0;
+  short re_next, im_next,re_last, im_last;
+
+  switch (last_slot) {
+  case 5:
+    write_output("srs_ch_est_0_5.m","srs_ce_0_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    write_output("srs_ch_est_1_5.m","srs_ce_1_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    // interpolate last SRS_ch_estimates in freq (from slot 7)
+    
+    // then interpolate in time (from slot 5 and 7) and rearrange according to create NULL-beam
+    /*
+     * [h1 h2] ==> [-h2 h1]
+     */
+    break;
+  case 7: 
+    write_output("srs_ch_est_0_7.m","srs_ce_0_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    write_output("srs_ch_est_1_7.m","srs_ce_1_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    for (aa=0; aa<phy_vars_eNb->lte_frame_parms.nb_antennas_rx; aa++) {
+      // first half (positive freq), samples on odd
+      for (i=2; i<phy_vars_eNb->lte_frame_parms.ofdm_symbol_size>>1; i+=2) {
+	// interpolate last SRS_ch_estimates in freq (from slot 5)
+	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1)];
+	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1) + 1];
+	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1)];
+	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1) + 1];
+
+	// rearrange according to create NULL-beam
+	/*
+	 * [h1 h2] ==> [-h2 h1]
+	 * don't forget format of dl_precoder_SeNb, repeated
+	 * ifndef IFFT_FPGA --> NO_PREFIX
+	 */
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2)] = -re_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 2] = re_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 1] = -im_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 3] = im_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2)] = -((re_last + re_next)>>1);
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 2] = ((re_last + re_next)>>1);
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 1] = -(im_last + im_next)>>1;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 3] = (im_last + im_next)>>1;
+      }
+
+      // second half (negative freq), samples on even
+      for (i=((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size>>1)+1); i<phy_vars_eNb->lte_frame_parms.ofdm_symbol_size; i+=2) {
+	// interpolate last SRS_ch_estimates in freq (from slot 5)
+	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1)];
+	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1) + 1];
+	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1)];
+	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1) + 1];
+
+	// rearrange according to create NULL-beam
+	/*
+	 * [h1 h2] ==> [-h2 h1]
+	 */
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2)] = -re_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 2] = re_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 1] = -im_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[((i-1)<<2) + 3] = im_last;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2)] = -((re_last + re_next)>>1);
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 2] = ((re_last + re_next)>>1);
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 1] = -(im_last + im_next)>>1;
+	((short *)phy_vars_eNb->dl_precoder_SeNb[eNb_id][1-aa])[(i<<2) + 3] = (im_last + im_next)>>1;
+      }
+    }
+    write_output("srs_ch_est_0.m","srs_ce_0",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
+    write_output("precoder_1.m","prec_1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
+    write_output("srs_ch_est_1.m","srs_ce_1",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
+    write_output("precoder_0.m","prec_0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
+
+    phy_vars_eNb->has_valid_precoder = 1;
+    break;
+  default:
+    break;
+    }
+}
+
+void phy_precode_nullBeam_apply(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
+
+  int i, aa, l, slot_n_symb_offset, eNb_id=0, output_norm;
+
+  if (((next_slot < 3) || (next_slot > 9)) && phy_vars_eNb->has_valid_precoder) {
+    output_norm = log2_approx(iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)) + iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)));
+
+    if (next_slot>>1==5) {
+      write_output("precoder_a0.m","prec_a0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
+      write_output("precoder_a1.m","prec_a1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
+      write_output("txdataF_a0_before.m","txF_a0_b",&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1),1,1);
+      write_output("txdataF_a1_before.m","txF_a1_b",&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1),1,1);
+    }
+
+    for (l=0; l<phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1; l++) {
+      slot_n_symb_offset = next_slot*((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)<<1)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1) + l*((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)<<1);
+      for (aa=0; aa<(phy_vars_eNb->lte_frame_parms.nb_antennas_tx+phy_vars_eNb->nb_virtual_tx); aa++) {
+	for (i=0; i<phy_vars_eNb->lte_frame_parms.ofdm_symbol_size; i++) {
+	  ((short *)(txdataF_rep_tmp[aa]))[(i<<2)] = ((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0]))[slot_n_symb_offset + (i<<1)];          // real part
+	  ((short *)(txdataF_rep_tmp[aa]))[(i<<2)+1] = -(((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0]))[slot_n_symb_offset + (i<<1)+1]);   //-imag part
+	  ((short *)(txdataF_rep_tmp[aa]))[(i<<2)+2] = ((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0]))[slot_n_symb_offset + (i<<1)+1];      // imag part
+	  ((short *)(txdataF_rep_tmp[aa]))[(i<<2)+3] = ((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0]))[slot_n_symb_offset + (i<<1)];        // real part
+	} //for(i... OFDM carriers
+      } //for(aa... antennas_tx
+
+      for (aa=0; aa<(phy_vars_eNb->lte_frame_parms.nb_antennas_tx+phy_vars_eNb->nb_virtual_tx); aa++) {
+      // precode. Using mult_cpx_vector_norep
+	
+	mult_cpx_vector_norep((short *)(phy_vars_eNb->dl_precoder_SeNb[eNb_id][aa]), // input 1
+			      (short *)(txdataF_rep_tmp[aa]), // input 2
+			      &(((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa]))[slot_n_symb_offset]), // output
+			      phy_vars_eNb->lte_frame_parms.ofdm_symbol_size, // length of vectors (512)
+			      output_norm // output_shift
+			      );
+	
+      } //for(aa... antennas_tx
+    } //for(l... symbols
+
+    if (next_slot>>1==5) {
+      write_output("txdataF_rep_a0.m","txF_rep_a0",txdataF_rep_tmp[0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
+      write_output("txdataF_rep_a1.m","txF_rep_a1",txdataF_rep_tmp[1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
+      write_output("txdataF_a0.m","txF_a0",&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1),1,1);
+      write_output("txdataF_a1.m","txF_a1",&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1),1,1);
+    }
+  }
+  else {
+#ifdef DEBUG_PHY
+      msg("phy_precode_nullBeam_apply should not have been called, since next_slot is not a DL or the precoder is not ready");
+#endif
+  }
+}
+
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
   //#define DEBUG_PHY
@@ -1515,36 +1646,65 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
+      if (phy_vars_eNb->is_secondary_eNb) {
+	if (phy_vars_eNb->has_valid_precoder) {
+	  phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
+#ifdef DEBUG_PHY
+	  msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_apply(%d)\n",mac_xface->frame, next_slot);
+#endif
+	  phy_precode_nullBeam_apply(next_slot,phy_vars_eNb);
+	}
+      } 
+      else {
+	phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
+      }
     }
     if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_UL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
       phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
-    }
-    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
-      if (!phy_vars_eNb->is_secondary_eNb) {
-#ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
-#endif
-      phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
-      }
-    }
-    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
       if (phy_vars_eNb->is_secondary_eNb) {
 #ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX_secsys(%d)\n",mac_xface->frame, last_slot);
+	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_create(%d)\n",mac_xface->frame, last_slot);
 #endif
-      phy_procedures_eNB_S_RX_secsys(last_slot,phy_vars_eNb);
+	phy_precode_nullBeam_create(last_slot,phy_vars_eNb);
+      }
+    }
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
+      if (phy_vars_eNb->is_secondary_eNb) {
+	if ( mac_xface->frame%10 && phy_vars_eNb->has_valid_precoder) {
+#ifdef DEBUG_PHY
+	  msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
+#endif
+	  phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
+#ifdef DEBUG_PHY
+	  msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_apply(%d)\n",mac_xface->frame, next_slot);
+#endif
+	  phy_precode_nullBeam_apply(next_slot,phy_vars_eNb);
+	}
       }
       else {
 #ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
+	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
+	phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
       }
     }
+if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+  if (phy_vars_eNb->is_secondary_eNb) {
+#ifdef DEBUG_PHY
+    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX_secsys(%d)\n",mac_xface->frame, last_slot);
+#endif
+    phy_procedures_eNB_S_RX_secsys(last_slot,phy_vars_eNb);
+  }
+  else {
+#ifdef DEBUG_PHY
+    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+    phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
+  }
+ }
 }
 
 void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {

@@ -18,11 +18,13 @@
 #include "decl_secsys.h"
 #endif
 //#define SKIP_RF_CHAIN
+#define CHANNEL_FROM_FILE
+#define SKIP_RF_RX
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 1
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
@@ -37,7 +39,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 int main(int argc, char **argv) {
 
-  int i,l,aa,sector,i_max,l_max,aa_max;
+  int i,j,l,aa,sector,i_max,l_max,aa_max;
   double sigma2, sigma2_dB=0;
   mod_sym_t **txdataF;
 #ifdef SECONDARY_SYSTEM
@@ -54,16 +56,10 @@ int main(int argc, char **argv) {
    int **txdata_secsys, **rxdata_secsys;
 #endif
   double **s_re,**s_im,**r_re,**r_im;
-#ifdef SECONDARY_SYSTEM
-  double **s_re_secsys,**s_im_secsys,**r_re_secsys,**r_im_secsys;
-#endif
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=0.5; //0.0000005;
   int channel_length;
   struct complex **ch;
-#ifdef SECONDARY_SYSTEM
-  struct complex **ch_secsys;
-#endif
   unsigned char pbch_pdu[6];
   int sync_pos, sync_pos_slot;
   FILE *rx_frame_file;
@@ -83,16 +79,39 @@ int main(int argc, char **argv) {
 
   int slot,last_slot, next_slot;
 
+  double rx_gain_lin;
+
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB, tx_pwr, rx_pwr;
 #ifdef SECONDARY_SYSTEM
-  double path_loss_secsys, path_loss_dB_secsys, tx_pwr_secsys, rx_pwr_secsys, SIR;
+  enum UNIT_ID {
+    PeNb,    /// PeNb
+    SeNb,    /// SeNb
+    P_UE,    /// P_UE
+    S_UE    /// S_UE
+  };
+  enum CH_ID {
+    PeSe,    /// PeNb <--> SeNb
+    PeSu,    /// PeNb <--> S_UE
+    SePu,    /// SeNb <--> P_UE
+    PuSu,    /// P_UE <--> S_UE
+    PePu,    /// PeNb <--> P_UE
+    SeSu     /// SeNb <--> S_UE
+  };
+  double path_loss_ar_dB[6], path_loss_ar[6];
+  struct complex **ch_ar[6];
+  double tx_pwr_secsys, rx_pwr_secsys, SIR;
   int SIRdB = 0;
+  double **s_re_secsys,**s_im_secsys,**r_re_secsys,**r_im_secsys;
+  double **r_re_crossLink[6],**r_im_crossLink[6]; //all entries with i==j will be zero, denoting the channel to itself.
+  FILE *channel_file;
+  char has_channel;
+  char channel_output[] = "channel_output.txt";
 #endif
   int rx_pwr2;
 
-  unsigned char first_call = 1, first_call_secsys = 1;
+  unsigned char first_call = 1, first_call_secsys_DL = 1, first_call_secsys_UL = 1;
 
   char stats_buffer[4096];
   int len;
@@ -107,9 +126,12 @@ int main(int argc, char **argv) {
   if (argc>2)
     n_frames = atoi(argv[2]);
   else
-    n_frames = 2;
+    n_frames = 5;
 
   channel_length = (int) 11+2*BW*Td;
+#ifdef SECONDARY_SYSTEM
+  double ch_tmp[2*channel_length*4*6]; // #ofElementsInComplex*channel_length*(nbRx*nbTx)*#ofChannels
+#endif
 
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
@@ -173,6 +195,8 @@ int main(int argc, char **argv) {
 #ifdef SECONDARY_SYSTEM
   //use same frame parameters for secondary system
   PHY_vars_eNb[1]->lte_frame_parms = *lte_frame_parms;
+  PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx = 1;
+  PHY_vars_eNb[1]->nb_virtual_tx = 1;  // # of virtual antennas tx
   //use same frame parameters for UE as for eNb
   PHY_vars_UE[1]->lte_frame_parms = *lte_frame_parms;
 #endif
@@ -185,10 +209,12 @@ int main(int argc, char **argv) {
 		  PHY_vars_UE[0]->lte_ue_pdcch_vars);
   PHY_vars_UE[0]->is_secondary_ue = 0;
 
+  PHY_vars_eNb[0]->is_secondary_eNb = 0;
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[0]->lte_eNB_common_vars,
-		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars);
-  PHY_vars_eNb[0]->is_secondary_eNb = 0;
+		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars,
+		   PHY_vars_eNb[0]->is_secondary_eNb,
+		   PHY_vars_eNb[1]);
   PHY_vars_eNb[0]->is_init_sync = 0; // not used for primary eNb
 #ifdef SECONDARY_SYSTEM
   phy_init_lte_ue(lte_frame_parms,
@@ -199,11 +225,14 @@ int main(int argc, char **argv) {
 		  PHY_vars_UE[1]->lte_ue_pdcch_vars);
   PHY_vars_UE[1]->is_secondary_ue = 1;
 
+  PHY_vars_eNb[1]->is_secondary_eNb = 1;
   phy_init_lte_eNB(lte_frame_parms,
 		   &PHY_vars_eNb[1]->lte_eNB_common_vars,
-		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars);
-  PHY_vars_eNb[1]->is_secondary_eNb = 1;
+		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars,
+		   PHY_vars_eNb[1]->is_secondary_eNb,
+		   PHY_vars_eNb[1]);
   PHY_vars_eNb[1]->is_init_sync = 0;
+  PHY_vars_eNb[1]->has_valid_precoder = 0;
 #endif
 
 #ifndef SECONDARY_SYSTEM
@@ -264,6 +293,24 @@ for (aa=0;aa<aa_max;aa++) {
 #ifdef SECONDARY_SYSTEM
   PHY_vars_eNb[1]->dlsch_eNb_cntl = new_eNb_dlsch(1,1);
   PHY_vars_UE[1]->dlsch_ue_cntl  = new_ue_dlsch(1,1);
+
+  txdataF_rep_tmp = (int **)malloc(2*(PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx+PHY_vars_eNb[1]->nb_virtual_tx)*sizeof(int*));
+  for (aa=0; aa<(PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx+PHY_vars_eNb[1]->nb_virtual_tx); aa++) {
+    txdataF_rep_tmp[aa] = (int *)malloc16(2*sizeof(int)*(PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size)); // repeated format (hence the '2*')
+    if (txdataF_rep_tmp[aa]) {
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] txdataF_rep_tmp[%d] allocated at %p\n",aa,txdataF_rep_tmp[aa]);
+#endif
+    bzero(txdataF_rep_tmp[aa],2*(sizeof(int))*(PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size));
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] txdataF_rep_tmp[%d] not allocated\n",aa);
+      return(-1);
+    }
+#ifdef DEBUG_PHY
+    msg("[openair][LTE_PHY][INIT] txdataF_rep_tmp[%d] = %p, length = %d\n",aa,txdataF_rep_tmp[aa],2*(sizeof(int))*(PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size));
+#endif
+  }
 #endif
  
 
@@ -333,9 +380,13 @@ for (aa=0;aa<aa_max;aa++) {
   s_im_secsys = malloc(2*sizeof(double*));
   r_re_secsys = malloc(2*sizeof(double*));
   r_im_secsys = malloc(2*sizeof(double*));
+  for (l=0; l<6; l++) {
+    r_re_crossLink[l] = malloc(2*sizeof(double*));
+    r_im_crossLink[l] = malloc(2*sizeof(double*));
+  }
 #endif
   
-  for (i=0;i<2;i++) {
+  for (i=0;i<2;i++) { //loop over antennas
 
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     bzero(s_re[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -355,6 +406,12 @@ for (aa=0;aa<aa_max;aa++) {
     bzero(r_re_secsys[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_im_secsys[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     bzero(r_im_secsys[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    for (l=0; l<6; l++) { //loop over channel index
+      r_re_crossLink[l][i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+      bzero(r_re_crossLink[l][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+      r_im_crossLink[l][i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+      bzero(r_im_crossLink[l][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    } // channel index
 #endif
   }
 
@@ -362,18 +419,52 @@ for (aa=0;aa<aa_max;aa++) {
   for (i = 0; i<4; i++)
     ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 #ifdef SECONDARY_SYSTEM
-  ch_secsys = (struct complex**) malloc(4 * sizeof(struct complex*));
-  for (i = 0; i<4; i++)
-    ch_secsys[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
-#endif
+  for (l=0; l<6; l++) {
+    ch_ar[l] = (struct complex**) malloc(4 * sizeof(struct complex*));
+    for (i = 0; i<4; i++)
+      ch_ar[l][i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
+  }
+  channel_file = fopen(channel_output,"r");
+  if (channel_file) {
+    if (fscanf(channel_file,"%d",&has_channel) != EOF) {
+      if (has_channel == 1) {
+	for (aa=0; aa<6; aa++) { //loop over channel index
+	  for (i=0; i<lte_frame_parms->nb_antennas_rx; i++) {
+	    for (j=0; j<lte_frame_parms->nb_antennas_tx; j++) {
+	      for (l=0; l<channel_length; l++) {
+		if (fscanf(channel_file,"%lf %lf",&ch_ar[aa][i + j*2][l].r, &ch_ar[aa][i + j*2][l].i) != 2) break;
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    fclose(channel_file);
+  }
+
+#ifndef CHANNEL_FROM_FILE
+  has_channel = 0;
+  first_call = 1;
+  first_call_secsys_DL = 1;
+  first_call_secsys_UL = 1;
+#endif //CHANNEL_FROM_FILE
+ 
+#endif //SECONDARY_SYSTEM
 
   randominit(0);
   set_taus_seed(0);
 
+#ifdef SECONDARY_SYSTEM
+  PHY_vars_eNb[1]->lte_frame_parms.mode1_flag = 1;
+  printf("SeNb - transmission mode %d\n",PHY_vars_eNb[1]->lte_frame_parms.mode1_flag);
+#endif
+
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
   PHY_vars_eNb[0]->rx_total_gain_dB = 140;
+#ifdef SECONDARY_SYSTEM			
   PHY_vars_eNb[1]->rx_total_gain_dB = 140;
+#endif			
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
@@ -404,8 +495,10 @@ for (aa=0;aa<aa_max;aa++) {
       printf("\n");
 
       
-      //      write_output("eNb_txsigF0.m","eNb_txsF0", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-      //      write_output("eNb_txsigF1.m","eNb_txsF1", PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+      write_output("eNb_txsigF0_0.m","eNb_txsF0_0", &PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)],lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1),1,1);
+      write_output("eNb_txsigF0_1.m","eNb_txsF0_1", &PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)],lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1),1,1);
+      write_output("UE_txsigF1_0.m","UE_txsF1_0", &PHY_vars_UE[0]->lte_ue_common_vars.txdataF[0][next_slot*lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)],lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1),1,1);
+      write_output("UE_txsigF1_1.m","UE_txsF1_1", &PHY_vars_UE[0]->lte_ue_common_vars.txdataF[1][next_slot*lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1)],lte_frame_parms->ofdm_symbol_size*(lte_frame_parms->symbols_per_tti>>1),1,1);
 
       /*-------------------------------------------------------------
 	ASSIGN POINTERS TO CORRECT BUFFERS ACCORDING TO TDD-STRUCTURE
@@ -606,17 +699,6 @@ for (aa=0;aa<aa_max;aa++) {
       }
 #endif
       
-      // get pointer to data ready to be transmitted
-      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	  s_re[aa][i] = (double)(((short *)txdata[aa])[(slot_offset_time+i)<<1]);
-	  s_im[aa][i] = (double)(((short *)txdata[aa])[((slot_offset_time+i)<<1)+1]);
-#ifdef SECONDARY_SYSTEM
-	  s_re_secsys[aa][i] = (double)(((short *)txdata_secsys[aa])[(slot_offset_time+i)<<1]);
-	  s_im_secsys[aa][i] = (double)(((short *)txdata_secsys[aa])[((slot_offset_time+i)<<1)+1]);
-#endif
-	}
-      }
     
       /*-------------------------------------------------------------
 	ASSIGN POINTERS TO CORRECT BUFFERS ACCORDING TO TDD-STRUCTURE
@@ -659,6 +741,17 @@ for (aa=0;aa<aa_max;aa++) {
       ---------------------------------------------------------------*/
   
 #ifdef SKIP_RF_CHAIN
+      // get pointer to data ready to be transmitted
+      for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
+	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	  s_re[aa][i] = (double)(((short *)txdata[aa])[(slot_offset_time+i)<<1]);
+	  s_im[aa][i] = (double)(((short *)txdata[aa])[((slot_offset_time+i)<<1)+1]);
+#ifdef SECONDARY_SYSTEM
+	  s_re_secsys[aa][i] = (double)(((short *)txdata_secsys[aa])[(slot_offset_time+i)<<1]);
+	  s_im_secsys[aa][i] = (double)(((short *)txdata_secsys[aa])[((slot_offset_time+i)<<1)+1]);
+#endif
+	}
+      }
 #ifdef SECONDARY_SYSTEM
   SIR = pow(10,(double)(SIRdB)/10);
 #endif
@@ -724,7 +817,13 @@ for (aa=0;aa<aa_max;aa++) {
       ---------------------------------------------------------------*/
 
 //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
-      multipath_channel(ch,s_re,s_im,r_re,r_im,
+      multipath_channel(
+#ifdef SECONDARY_SYSTEM
+			ch_ar[PePu],
+#else
+			ch,
+#endif
+			s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
@@ -732,17 +831,28 @@ for (aa=0;aa<aa_max;aa++) {
 			channel_length,
 			0,
 			1, //forgetting factor (temporal variation, block stationary)
-			((first_call == 1) ? 1 : 0));
+			((first_call == 1) ? 1 : 0),
+#ifdef SECONDARY_SYSTEM
+			(has_channel) ? 1 : 
+#endif			
+			((next_slot>>1==1) ? 0 : 1),
+#ifdef SECONDARY_SYSTEM
+			PePu
+#else
+			0
+#endif			
+);
       if (first_call == 1)
 	first_call = 0;
 
-      //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+      if (next_slot==5)
+	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 
 
 #ifdef SECONDARY_SYSTEM   
 //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
-
-      multipath_channel(ch_secsys,s_re_secsys,s_im_secsys,
+      // SeNb to S_UE
+      multipath_channel(ch_ar[SeSu],s_re_secsys,s_im_secsys,
 			r_re_secsys,r_im_secsys,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
@@ -751,16 +861,133 @@ for (aa=0;aa<aa_max;aa++) {
 			channel_length,
 			0,
 			1, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0));
-      if (first_call_secsys == 1)
-	first_call_secsys = 0;
+			((first_call_secsys_DL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			SeSu);
+      msg("ch_ar[%i][0][0].r = %lf\n",SeSu,ch_ar[SeSu][0][0].r);
+
+      // channel models for interference paths
+      if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
+	// from PeNb to SeNb
+	multipath_channel(ch_ar[PeSe],s_re,s_im,
+			r_re_crossLink[PeSe],r_im_crossLink[PeSe],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_DL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			PeSe);
+      msg("ch_ar[%i][0][0].r = %lf\n",PeSe,ch_ar[PeSe][0][0].r);
+	// from PeNb to S_UE
+	multipath_channel(ch_ar[PeSu],s_re,s_im,
+			r_re_crossLink[PeSu],r_im_crossLink[PeSu],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_DL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			PeSu);
+      msg("ch_ar[%i][0][0].r = %lf\n",PeSu,ch_ar[PeSu][0][0].r);
+	// from SeNb to PeNb
+	multipath_channel(ch_ar[PeSe],s_re_secsys,s_im_secsys,
+			r_re_crossLink[PeSe],r_im_crossLink[PeSe],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_DL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			PeSe);
+	// from SeNb to P_UE
+	multipath_channel(ch_ar[SePu],s_re_secsys,s_im_secsys,
+			r_re_crossLink[SePu],r_im_crossLink[SePu],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_DL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			SePu);
+      msg("ch_ar[%i][0][0].r = %lf\n",SePu,ch_ar[SePu][0][0].r);
+      if (first_call_secsys_DL == 1)
+	first_call_secsys_DL = 0;
+      } else { //UL
+	// from P_UE to SeNb
+	multipath_channel(ch_ar[SePu],s_re,s_im,
+			r_re_crossLink[SePu],r_im_crossLink[SePu],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_UL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			SePu);
+      msg("ch_ar[%i][0][0].r = %lf\n",SePu,ch_ar[SePu][0][0].r);
+	// from P_UE to S_UE
+	multipath_channel(ch_ar[PuSu],s_re,s_im,
+			r_re_crossLink[PuSu],r_im_crossLink[PuSu],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_UL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			PuSu);
+      msg("ch_ar[%i][0][0].r = %lf\n",PuSu,ch_ar[PuSu][0][0].r);
+	// from S_UE to P_eNb
+	multipath_channel(ch_ar[PeSu],s_re_secsys,s_im_secsys,
+			r_re_crossLink[PeSu],r_im_crossLink[PeSu],
+			amps,Td,BW,ricean_factor,aoa,
+			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_tx,
+			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,
+			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			channel_length,
+			0,
+			1, //forgetting factor (temporal variation, block stationary)
+			((first_call_secsys_UL == 1) ? 1 : 0),
+			(has_channel) ? 1 : ((next_slot>>1==1) ? 0 : 1),
+			PeSu);
+      msg("ch_ar[%i][0][0].r = %lf\n",PeSu,ch_ar[PeSu][0][0].r);
+      if (first_call_secsys_UL == 1)
+	first_call_secsys_UL = 0;
+      }
+
 #endif
 
+#ifdef SECONDARY_SYSTEM
+  SIR = pow(10,(double)(SIRdB)/10);
+#endif
       path_loss_dB = -70;
       path_loss    = pow(10,path_loss_dB/10);
 #ifdef SECONDARY_SYSTEM
-      path_loss_dB_secsys = -70;
-      path_loss_secsys    = pow(10,path_loss_dB_secsys/10);
+      path_loss_ar_dB[SeSu] = -70;
+      path_loss_ar[SeSu]    = pow(10,path_loss_ar_dB[SeSu]/10);
+      path_loss_ar_dB[SePu] = -70;
+      path_loss_ar[SePu]    = pow(10,path_loss_ar_dB[SePu]/10);
+      path_loss_ar_dB[PeSe] = -70;
+      path_loss_ar[PeSe]    = pow(10,path_loss_ar_dB[PeSe]/10);
+      path_loss_ar_dB[PeSu] = -70;
+      path_loss_ar[PeSu]    = pow(10,path_loss_ar_dB[PeSu]/10);
 #endif //SECONDARY_SYSTEM
       
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
@@ -768,11 +995,34 @@ for (aa=0;aa<aa_max;aa++) {
 	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss/2); 
 	  r_im[aa][i]=r_im[aa][i]*sqrt(path_loss/2);
 #ifdef SECONDARY_SYSTEM
-	  r_re_secsys[aa][i]=r_re_secsys[aa][i]*sqrt(path_loss_secsys/2); 
-	  r_im_secsys[aa][i]=r_im_secsys[aa][i]*sqrt(path_loss_secsys/2); 
-	  // add interference
-	  r_re_secsys[aa][i]=r_re_secsys[aa][i] + r_re[aa][i]; 
-	  r_im_secsys[aa][i]=r_im_secsys[aa][i] + r_im[aa][i]; 
+	  r_re_secsys[aa][i] = r_re_secsys[aa][i]*sqrt(path_loss_ar[SeSu]/2); 
+	  r_im_secsys[aa][i] = r_im_secsys[aa][i]*sqrt(path_loss_ar[SeSu]/2); 
+      if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
+	// from PeNb to SeNb
+	  r_re_secsys[aa][i] += r_re_crossLink[PeSe][aa][i]*sqrt(path_loss_ar[PeSe]/2); 
+	  r_im_secsys[aa][i] += r_im_crossLink[PeSe][aa][i]*sqrt(path_loss_ar[PeSe]/2);
+	// from PeNb to S_UE
+	  r_re_secsys[aa][i] += r_re_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]/2); 
+	  r_im_secsys[aa][i] += r_im_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]/2);
+	// from SeNb to P_UE
+	  r_re[aa][i] += r_re_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+	  r_im[aa][i] += r_im_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+      } else { // UL
+	// from P_UE to SeNb
+	  r_re_secsys[aa][i] += 4*r_re_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+	  r_im_secsys[aa][i] += 4*r_im_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+	// from S_UE to PeNb
+	  r_re[aa][i] += r_re_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]/2); 
+	  r_im[aa][i] += r_im_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]/2); 
+      }
+
+	  // check if B/F works, exclude wanted signal
+	  if (next_slot>>1 == 5) {
+	// from SeNb to P_UE
+	    r_re[aa][i] = r_re_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+	    r_im[aa][i] = r_im_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]/2); 
+	  }
+	  
 #endif //SECONDARY_SYSTEM
 	}
       }
@@ -782,6 +1032,7 @@ for (aa=0;aa<aa_max;aa++) {
                                  RX PART
       ---------------------------------------------------------------*/
 
+#ifndef SKIP_RF_RX
       rf_rx(r_re,
 	    r_im,
 	    NULL,
@@ -801,6 +1052,17 @@ for (aa=0;aa<aa_max;aa++) {
 	    0.0,           // IQ imbalance (dB),
 	    0.0);           // IQ phase imbalance (rad)
 
+#else //SKIP_RF_RX
+      N0W = pow(10.0,.1*(-174.0 - 10*log10((1.0/7.68e6 * 1e9)*1e-9)));
+      rx_gain_lin = pow(10.0,.05*((double)PHY_vars_eNb[0]->rx_total_gain_dB-72.247));
+      for (aa=0; aa<PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx; aa++) {
+	for (i=0; i<PHY_vars_eNb[0]->lte_frame_parms.samples_per_tti>>1; i++) {
+	  r_re[aa][i] = rx_gain_lin*(r_re[aa][i] + (sqrt(.5*N0W)*gaussdouble(0.0,1.0)));
+	  r_im[aa][i] = rx_gain_lin*(r_im[aa][i] + (sqrt(.5*N0W)*gaussdouble(0.0,1.0)));
+	}
+      }
+#endif //SKIP_RF_RX
+
       rx_pwr = signal_energy_fp(r_re,r_im,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
  
       printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1); 
@@ -808,6 +1070,7 @@ for (aa=0;aa<aa_max;aa++) {
 
 #ifdef SECONDARY_SYSTEM
       // RF model
+#ifndef SKIP_RF_RX
       rf_rx(r_re_secsys,
 	    r_im_secsys,
 	    NULL,
@@ -826,6 +1089,18 @@ for (aa=0;aa<aa_max;aa++) {
 	    -500.0,          // pn_amp (dBc) default: 50
 	    0.0,           // IQ imbalance (dB),
 	    0.0);           // IQ phase imbalance (rad)
+
+#else //SKIP_RF_RX
+      N0W = pow(10.0,.1*(-174.0 - 10*log10((1.0/7.68e6 * 1e9)*1e-9)));
+      rx_gain_lin = pow(10.0,.05*((double)PHY_vars_eNb[1]->rx_total_gain_dB-72.247));
+      for (aa=0; aa<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; aa++) {
+	for (i=0; i<PHY_vars_eNb[1]->lte_frame_parms.samples_per_tti>>1; i++) {
+	  r_re_secsys[aa][i] = rx_gain_lin*(r_re_secsys[aa][i] + (sqrt(.5*N0W)*gaussdouble(0.0,1.0)));
+	  r_im_secsys[aa][i] = rx_gain_lin*(r_im_secsys[aa][i] + (sqrt(.5*N0W)*gaussdouble(0.0,1.0)));
+	}
+      }
+#endif //SKIP_RF_RX
+
       rx_pwr = signal_energy_fp(r_re_secsys,r_im_secsys,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
  
       printf("rx_pwr_secsys (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1); 
@@ -853,13 +1128,11 @@ for (aa=0;aa<aa_max;aa++) {
         write_output(fname,"eNb_txs0_tmp",&(rxdata[0][slot_offset_time]),lte_frame_parms->samples_per_tti,1,1);
       }
 
-  rx_pwr2 = signal_energy(rxdata[0]+slot_offset,lte_frame_parms->samples_per_tti>>1);
+  rx_pwr2 = signal_energy(rxdata[0]+slot_offset_time,lte_frame_parms->samples_per_tti>>1);
   
   printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
   
 #ifdef SECONDARY_SYSTEM
-
-  slot_offset = 2*(next_slot)*(lte_frame_parms->samples_per_tti>>1);
 
   adc(r_re_secsys,
       r_im_secsys,
@@ -870,11 +1143,11 @@ for (aa=0;aa<aa_max;aa++) {
       lte_frame_parms->samples_per_tti>>1,
       12);
   
-  rx_pwr2 = signal_energy(rxdata_secsys[0]+slot_offset,lte_frame_parms->samples_per_tti>>1);
+  rx_pwr2 = signal_energy(rxdata_secsys[0]+slot_offset_time,lte_frame_parms->samples_per_tti>>1);
   
   printf("rx_pwr_secsys (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
 
-   if (last_slot==5)  //phy_vars_eNb->is_secondary_eNb && 
+   if (next_slot==7)  //phy_vars_eNb->is_secondary_eNb && 
     write_output("srs_received.m","srs_rx", 
 		 &rxdata_secsys[0][slot_offset_time],
 		 PHY_vars_eNb[1]->lte_frame_parms.samples_per_tti>>1,
@@ -883,16 +1156,12 @@ for (aa=0;aa<aa_max;aa++) {
 #endif //SECONDARY_SYSTEM
 #endif //SKIP_RF_CHAIN
 
-#ifdef DEBUG_PHY
-      if (next_slot == 7 || next_slot == 9) {
-	sprintf(fname,"UE_frame%d_slot%d_rxsig0.m",mac_xface->frame,next_slot);
-	write_output(fname,"UE_rxs0",&rxdata[0][slot_offset_time],640*12,1,1);
-	sprintf(fname,"UE_frame%d_slot%d_rxsig1.m",mac_xface->frame,next_slot);
-	write_output(fname,"UE_rxs1",&rxdata_secsys[0][slot_offset_time],640*12,1,1);
+      if (last_slot == 11 && mac_xface->frame>0) {
+	sprintf(fname,"UE0_frame%d_slot%d_rxsigF0.m",mac_xface->frame,last_slot);
+	write_output(fname,"UE0_rxsF0",&PHY_vars_UE[0]->lte_ue_common_vars.rxdataF[0][(last_slot-1)*PHY_vars_UE[0]->lte_frame_parms.ofdm_symbol_size*PHY_vars_UE[0]->lte_frame_parms.symbols_per_tti>>1],PHY_vars_UE[0]->lte_frame_parms.ofdm_symbol_size*PHY_vars_UE[0]->lte_frame_parms.symbols_per_tti,1,1);
       }
-#endif
 
-  if (last_slot == 19) {
+      if (last_slot == 19) {
     write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb[0]->lte_eNB_common_vars.rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -908,8 +1177,8 @@ for (aa=0;aa<aa_max;aa++) {
 if (last_slot == 19) {
     write_output("UE_rxsig0_1.m","UE_rxs0_1", PHY_vars_UE[1]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_rxsig1_1.m","UE_rxs1_1", PHY_vars_UE[1]->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_rxsig0_1.m","eNb_rxs0_1", PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("eNb_rxsig1_1.m","eNb_rxs1_1", PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig0_1.m","eNb_rxs0_1", PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    write_output("eNb_rxsig1_1.m","eNb_rxs1_1", PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
  
     write_output("UE_txsig0_1.m","UE_txs0_1", PHY_vars_UE[1]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     write_output("UE_txsig1_1.m","UE_txs1_1", PHY_vars_UE[1]->lte_ue_common_vars.txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -928,8 +1197,27 @@ if (last_slot == 19) {
 
   fclose(rx_frame_file);
   */
+    } //for(slot...
+  } //for(mac_xface->frame...
+
+#ifdef SECONDARY_SYSTEM
+  if (!fopen(channel_output,"r")) {
+    channel_file = fopen(channel_output,"w");
+    if (channel_file) {
+      fprintf(channel_file,"%d\n",1);
+      for (aa=0; aa<6; aa++) { //loop over channel index
+	for (i=0; i<lte_frame_parms->nb_antennas_rx; i++) {
+	  for (j=0; j<lte_frame_parms->nb_antennas_tx; j++) {
+	    for (l=0; l<channel_length; l++) {
+	      fprintf(channel_file,"%f %f\n",ch_ar[aa][i + j*2][l].r, ch_ar[aa][i + j*2][l].i);
+	    }
+	  }
+	}
+      }
+      fclose(channel_file);
     }
   }
+#endif
 
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
@@ -962,8 +1250,53 @@ for (i=0;i<2;i++) {
   free(s_im_secsys);
   free(r_re_secsys);
   free(r_im_secsys);
+  for (l=0; l<6; l++) {
+    free(r_re_crossLink[l]);
+    free(r_im_crossLink[l]);
+  }
 #endif //SECONDARY_SYSTEM
   
+#ifndef SECONDARY_SYSTEM
+  free(PHY_vars_eNb[0]);
+  free(PHY_vars_UE[0]);
+#else //SECONDARY_SYSTEM
+  free(PHY_vars_eNb[0]);
+  free(PHY_vars_eNb[1]);
+  free(PHY_vars_UE[0]);
+  free(PHY_vars_UE[1]);
+#endif
+
+  for (i = 0; i<4; i++)
+    free(ch[i]);
+  free(ch);
+#ifdef SECONDARY_SYSTEM
+  for (l=0; l<6; l++) {
+    for (i = 0; i<4; i++)
+      free(ch_ar[l][i]);
+    free(ch_ar[l]);
+  }
+#endif //SECONDARY_SYSTEM
+
+//loop over eNBs
+for (aa=0;aa<aa_max;aa++) {
+  //loop over UEs
+  for (l=0;l<l_max;l++) {
+    //loop over transport channels per DLSCH
+    for (i=0;i<2;i++) {
+      free_eNb_dlsch(PHY_vars_eNb[aa]->dlsch_eNb[l][i]);
+      free_ue_dlsch(PHY_vars_UE[l]->dlsch_ue[aa][i]);
+    }
+  }
+}
+//loop over eNBs
+for (aa=0;aa<aa_max;aa++) {
+  //loop over UEs
+  for (l=0;l<l_max;l++) {
+    free_eNb_ulsch(PHY_vars_eNb[aa]->ulsch_eNb[l]);
+    free_ue_ulsch(PHY_vars_UE[l]->ulsch_ue[aa]);
+  }
+}
+
   lte_sync_time_free();
 
   return(n_errors);

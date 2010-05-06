@@ -269,6 +269,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       break;
     }
 
+    if (frame_parms->mode1_flag == 1)
+      dlsch0->harq_processes[harq_pid]->mimo_mode = SISO;
+
     dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
     if (dlsch0->harq_processes[harq_pid]->Ndi == 1)
       dlsch0->harq_processes[harq_pid]->status = ACTIVE;

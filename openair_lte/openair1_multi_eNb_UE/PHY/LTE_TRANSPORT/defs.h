@@ -586,6 +586,7 @@ void generate_pilots(mod_sym_t **txdataF,
 @param amp Amplitude of signal
 @param frame_parms Pointer to frame descriptor
 @param eNb_id Nid2 (0,1,2)
+@param is_secondary_eNb (0,1,2)
 @param slot index (0..19)
 */
 int generate_pilots_slot(mod_sym_t **txdataF,
