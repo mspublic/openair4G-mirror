@@ -27,8 +27,8 @@
 
 #define openair_sched_exit() exit(-1)
 
-#define max(a,b)  ((a>b) ? (a) : (b))
-#define min(a,b)  ((a<b) ? (a) : (b))
+#define max(a,b)  ((a)>(b) ? (a) : (b))
+#define min(a,b)  ((a)<(b) ? (a) : (b))
 
 #else // USER_MODE
 #include "ARCH/COMMON/defs.h"

@@ -110,7 +110,8 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
   m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k+term_flag],y_parity128[k]),1);
 
-
+  _mm_empty();
+  _m_empty();
   
 }
 
@@ -261,6 +262,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       //      print_shorts("alpha",alpha128);
 	  
   }
+  _mm_empty();
+  _m_empty();
 
 }
 
@@ -320,6 +323,8 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
       }
       
     }
+  _mm_empty();
+  _m_empty();
 }
 
 

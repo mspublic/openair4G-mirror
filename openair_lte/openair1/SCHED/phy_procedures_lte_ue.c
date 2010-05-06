@@ -82,7 +82,6 @@ extern int rx_sig_fifo;
 
 unsigned int ue_rag_frame;
 unsigned char ue_rag_subframe;
-static unsigned char I0_clear = 1;
 
 
 #ifdef EMOS
@@ -216,30 +215,33 @@ void phy_procedures_UE_S_TX(unsigned char next_slot) {
 
     if (UE_mode == PRACH) {
 
-      if (openair_daq_vars.manual_timing_advance == 0) {
-	openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+      if ((openair_daq_vars.timing_advance == TIMING_ADVANCE_INIT) ||
+	  (openair_daq_vars.manual_timing_advance != 0)) {
 
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
+		  mac_xface->frame,next_slot,
+		  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
+		  43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
+	
+	generate_pss(lte_ue_common_vars->txdataF,
+		     AMP,
+		     lte_frame_parms,
+		     0, //lte_ue_common_vars->eNb_id,
+		     PSS_UL_SYMBOL,
+		     next_slot);
+      }
+      else {
+	openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT;
+	
 #ifdef CBMIMO1
-      for (card_id=0;card_id<number_of_cards;card_id++)
-	pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
+	for (card_id=0;card_id<number_of_cards;card_id++)
+	  pci_interface[card_id]->timing_advance = openair_daq_vars.timing_advance;
 #endif
       }
-
-      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating PSS for UL, TX power %d dBm (PL %d dB)\n",
-		mac_xface->frame,next_slot,
-		43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]-114,
-		43-PHY_vars->PHY_measurements.rx_rssi_dBm[0]);
-
-      generate_pss(lte_ue_common_vars->txdataF,
-		   AMP,
-		   lte_frame_parms,
-		   0, //lte_ue_common_vars->eNb_id,
-		   PSS_UL_SYMBOL,
-		   next_slot);
     }
   }
 }
-
+  
 void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
   
   unsigned char eNb_id;
@@ -439,7 +441,7 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
   }
 }
 
-void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {	
+int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {	
 
   unsigned int dci_cnt, i;
 
@@ -483,7 +485,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
   if (UE_mode == PUSCH)
     if (dci_cnt > 2) {
       msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: received %d>2 DCI!\n",mac_xface->frame,last_slot>>1,dci_cnt);
-      //exit_openair=1;
+      return(-1);
     }
 #endif
 
@@ -502,7 +504,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	debug_msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
-	//exit_openair=1;
+	return(-1);
 	
       }
 #endif
@@ -533,8 +535,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	debug_msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
-	//exit_openair=1;
-
+	return(-1);
       }
 #endif
 
@@ -562,7 +563,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received SI_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
-	//exit_openair=1;
+	return(-1);
       }
 #endif
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
@@ -588,7 +589,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
       if ((UE_mode == PUSCH) && ((last_slot>>1) != 7)) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
-	//exit_openair=1;
+	return(-1);
       }
 #endif
 
@@ -614,7 +615,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
-	//exit_openair=1;
+	return(-1);
       }
 #endif
 
@@ -645,8 +646,8 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
+	return(-1);
       }
-	//exit_openair=1;
 #endif
       /*
 	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
@@ -667,11 +668,12 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #ifdef DIAG_PHY
       lte_ue_pdcch_vars[eNb_id]->dci_errors++;
       lte_ue_pdcch_vars[eNb_id]->dci_false++;
-      //exit_openair=1;
+      return(-1);
 #endif
     }
 
   }
+  return(0);
 }
 
 
@@ -857,7 +859,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    if (openair_daq_vars.manual_timing_advance == 0) {
 	      if ( (mac_xface->frame % 100) == 0) {
 		if ((timing_advance > 3) || (timing_advance < -3) )
-		  openair_daq_vars.timing_advance += timing_advance*4;
+		  openair_daq_vars.timing_advance = max(0,(int)openair_daq_vars.timing_advance+timing_advance*4);
 		
 #ifdef CBMIMO1
 		for (card_id=0;card_id<number_of_cards;card_id++)
@@ -893,11 +895,6 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   dual_stream_UE);
 	
 
-//	write_output("dlsch_ra_rxdataF.m","rxdataF",lte_ue_dlsch_vars_ra[eNb_id]->rxdataF_comp[0],12*3*6,1,0);	
-//	write_output("dlsch_ra_llr.m","llr",lte_ue_dlsch_vars_ra[eNb_id]->llr[0],40,1,0);	
-
-//	printf("dlsch_vars_ra %p\n",lte_ue_dlsch_vars_ra[0]);
-
 	dlsch_ue_ra_active = 0;
       
 	if (mac_xface->frame < dlsch_ra_errors)
@@ -911,8 +908,6 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    dlsch_ra_errors++;
-	    //write_output("rxsigF0.m","rxsF0", &lte_ue_common_vars->rxdataF[0][0],512*12*2,2,1);	    
-	    //exit(-1);
 	  }
 	  else {
 	    debug_msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
@@ -925,7 +920,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		timing_advance = timing_advance - (1<<11);
 
 	      if (openair_daq_vars.manual_timing_advance == 0) {
-		openair_daq_vars.timing_advance = TIMING_ADVANCE_INIT + timing_advance*4;
+		openair_daq_vars.timing_advance = max(0,TIMING_ADVANCE_INIT + timing_advance*4);
 		
 #ifdef CBMIMO1
 		for (card_id=0;card_id<number_of_cards;card_id++)
@@ -1002,8 +997,11 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
     if (((last_slot%2)==0) && (l==(4-lte_frame_parms->Ncp)))  {
 
       debug_msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Calling pdcch procedures\n",mac_xface->frame,last_slot);
-      lte_ue_pdcch_procedures(eNb_id,last_slot);
-	
+      if (lte_ue_pdcch_procedures(eNb_id,last_slot) == -1) {
+	msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Error in pdcch procedures\n",mac_xface->frame,last_slot);
+	return(-1);
+      }
+
       if (dlsch_ue_active == 1) {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 0,1,2\n",mac_xface->frame,last_slot);
@@ -1036,8 +1034,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
-    
-
+      
+      
       if (dlsch_ue_ra_active == 1) {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (RA) demod symbols 0,1,2\n",mac_xface->frame,last_slot);
@@ -1056,10 +1054,10 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
       }
     }
     if (((last_slot%2)==1) && (l==0)) {
-	
+      
       if (dlsch_ue_active == 1)  {
 #ifdef DEBUG_PHY
-	  debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 3,4,5\n",mac_xface->frame,last_slot);
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 3,4,5\n",mac_xface->frame,last_slot);
 #endif
 	
 	// process symbols 3,4,5
@@ -1073,12 +1071,12 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
-    
+      
       if (dlsch_ue_cntl_active == 1)  {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (cntl) demod symbols 3,4,5\n",mac_xface->frame,last_slot);
 #endif
-	
+	  
 	// process symbols 3,4,5
 	for (m=4-lte_frame_parms->Ncp+1;m<(lte_frame_parms->symbols_per_tti/2);m++)
 	  rx_dlsch(lte_ue_common_vars,
@@ -1106,7 +1104,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   m,
 		   dual_stream_UE);
       }
-
+      
       if (dlsch_ue_1A_active == 1)  {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH (1A) demod symbols 3,4,5\n",mac_xface->frame,last_slot);
@@ -1124,9 +1122,9 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		   dual_stream_UE);
       }    
     }
-   
+    
     if (((last_slot%2)==1) && (l==(4-lte_frame_parms->Ncp))) {
-	
+      
       if(dlsch_ue_active == 1) {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: DLSCH demod symbols 6,7,8\n",mac_xface->frame,last_slot);
