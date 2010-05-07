@@ -44,12 +44,13 @@ typedef short channel_t;
 
 #define MAX_DECODING_THREADS 5 //4 for DLSCH, 1 for PBCH
 
+//#define DEBUG_LOGMAP
 
 void log_map (llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst);
 void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);
 void compute_alpha(llr_t*alpha,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,unsigned char inst);
 void compute_beta(llr_t* beta,llr_t* m11,llr_t* m10,llr_t* alpha, unsigned short frame_length,unsigned char F,unsigned char inst);
-void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m11,llr_t* m10,llr_t* extrinsic, llr_t* ap, unsigned short frame_length);
+void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m11,llr_t* m10,llr_t* extrinsic, llr_t* ap, unsigned short frame_length,unsigned char inst);
 
 // global variables
 //
@@ -81,13 +82,17 @@ llr_t *m10_g[MAX_DECODING_THREADS] = {m10_0, m10_1, m10_2, m10_3, m10_4};
 
 void log_map(llr_t* systematic,channel_t* y_parity, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,unsigned char inst) {
 
+#ifdef DEBUG_LOGMAP
+  msg("log_map\n");
+#endif
+
   compute_gamma(m11_g[inst],m10_g[inst],systematic,y_parity,frame_length,term_flag);
 
   compute_alpha(alpha_g[inst],m11_g[inst],m10_g[inst],frame_length,F,inst);
 
   compute_beta(beta_g[inst],m11_g[inst],m10_g[inst],alpha_g[inst],frame_length,F,inst);
 
-  compute_ext(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],ext,systematic,frame_length);
+  compute_ext(alpha_g[inst],beta_g[inst],m11_g[inst],m10_g[inst],ext,systematic,frame_length,inst);
 
 }
 
@@ -100,11 +105,15 @@ void compute_gamma(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   __m128i *m10_128        = (__m128i *)m10;
   __m128i *m11_128        = (__m128i *)m11;
 
+#ifdef DEBUG_LOGMAP
+  msg("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
+#endif
+
   for (k=0;k<frame_length>>3;k++) {
       m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
       m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
 
-      //      printf("gamma %d : (%d,%d) -> (%d,%d)\n",k,systematic[k],y_parity[k],m11[k],m10[k]);
+      //      msg("gamma %d : (%d,%d) -> (%d,%d)\n",k,systematic[k],y_parity[k],m11[k],m10[k]);
   }
   // Termination
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
@@ -142,6 +151,11 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 #endif
 
   llr_t m11,m10;
+
+
+#ifdef DEBUG_LOGMAP
+  msg("compute_alpha\n");
+#endif
   
   THRES128 = _mm_set1_epi16(THRES);
 
@@ -168,7 +182,7 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
       m11=m_11[k];
       m10=m_10[k];
-      //      printf("m11 %d, m10 %d\n",m11,m10);
+      //      msg("m11 %d, m10 %d\n",m11,m10);
 
       // First compute state transitions  (Think about LUT!)
       //      mtmp = m11_128;
@@ -191,9 +205,9 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       mbot_g[inst][k] = _mm_sign_epi16(mtmp,BOT);
 
       //      print_shorts("mtop=",&mtop);
-      //      printf("M0T %d, M1T %d, M2T %d, M3T %d, M4T %d, M5T %d, M6T %d, M7T %d\n",M0T,M1T,M2T,M3T,M4T,M5T,M6T,M7T);
+      //      msg("M0T %d, M1T %d, M2T %d, M3T %d, M4T %d, M5T %d, M6T %d, M7T %d\n",M0T,M1T,M2T,M3T,M4T,M5T,M6T,M7T);
       //      print_shorts("mbot=",&mbot);
-      //      printf("M0B %d, M1B %d, M2B %d, M3B %d, M4B %d, M5B %d, M6B %d, M7B %d\n",M0B,M1B,M2B,M3B,M4B,M5B,M6B,M7B);
+      //      msg("M0B %d, M1B %d, M2B %d, M3B %d, M4B %d, M5B %d, M6B %d, M7B %d\n",M0B,M1B,M2B,M3B,M4B,M5B,M6B,M7B);
 
 
       // Now compute max-logmap
@@ -255,7 +269,7 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       else {
 	//	print_shorts("new",&new);
 	*alpha128 = _mm_subs_epi16(new,THRES128);
-	//	printf("alpha overflow %d",k);
+	//	msg("alpha overflow %d",k);
 	//	print_shorts(" ",alpha128);
       }
       
@@ -264,7 +278,6 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
   }
   _mm_empty();
   _m_empty();
-
 }
 
 
@@ -279,6 +292,12 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
   int* newcmp_int;
 #endif
 
+
+#ifdef DEBUG_LOGMAP
+  msg("compute_beta, %p,%p,%p,%p,framelength %d,F %d,inst %d\n",
+      beta,m_11,m_10,alpha,frame_length,F,inst);
+#endif
+
   THRES128 = _mm_set1_epi16(THRES);
 
   beta128   = (__m128i*)&beta[(frame_length+3)*STATES];
@@ -289,6 +308,7 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
 
 
   // set filler bit positions to 0 zero-state
+
   for (k=0;k<F;k++)
     beta128_i[k] = *beta128;
 
@@ -319,7 +339,7 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
 	*beta128 = new;
       else{
 	*beta128 = _mm_subs_epi16(new,THRES128);
-	//	printf("Beta overflow : %d\n",k);
+	//	msg("Beta overflow : %d\n",k);
       }
       
     }
@@ -327,15 +347,19 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
   _m_empty();
 }
 
+__m128i alpha_km1_top[MAX_DECODING_THREADS],alpha_km1_bot[MAX_DECODING_THREADS],alpha_k_top[MAX_DECODING_THREADS],alpha_k_bot[MAX_DECODING_THREADS],alphaloc_1[MAX_DECODING_THREADS],alphaloc_2[MAX_DECODING_THREADS],alphaloc_3[MAX_DECODING_THREADS],alphaloc_4[MAX_DECODING_THREADS];
+__m128i alpha_beta_1[MAX_DECODING_THREADS],alpha_beta_2[MAX_DECODING_THREADS],alpha_beta_3[MAX_DECODING_THREADS],alpha_beta_4[MAX_DECODING_THREADS],alpha_beta_max04[MAX_DECODING_THREADS],alpha_beta_max15[MAX_DECODING_THREADS],alpha_beta_max26[MAX_DECODING_THREADS],alpha_beta_max37[MAX_DECODING_THREADS];
+__m128i tmp0[MAX_DECODING_THREADS],tmp1[MAX_DECODING_THREADS],tmp2[MAX_DECODING_THREADS],tmp3[MAX_DECODING_THREADS],tmp00[MAX_DECODING_THREADS],tmp10[MAX_DECODING_THREADS],tmp20[MAX_DECODING_THREADS],tmp30[MAX_DECODING_THREADS];
+__m128i m00_max[MAX_DECODING_THREADS],m01_max[MAX_DECODING_THREADS],m10_max[MAX_DECODING_THREADS],m11_max[MAX_DECODING_THREADS];
 
-void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
+void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length,unsigned char inst)
 {
   int k;
 
-  __m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
-  __m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
-  __m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
-  __m128i m00_max,m01_max,m10_max,m11_max;
+  //  __m128i alpha_km1_top,alpha_km1_bot,alpha_k_top,alpha_k_bot,alpha_1,alpha_2,alpha_3,alpha_4;
+  //  __m128i alpha_beta_1,alpha_beta_2,alpha_beta_3,alpha_beta_4,alpha_beta_max04,alpha_beta_max15,alpha_beta_max26,alpha_beta_max37;
+  //  __m128i tmp0,tmp1,tmp2,tmp3,tmp00,tmp10,tmp20,tmp30;
+  //  __m128i m00_max,m01_max,m10_max,m11_max;
   __m128i *alpha128=(__m128i *)alpha;
   __m128i *alpha128_ptr,*beta128_ptr;
   __m128i *beta128=(__m128i *)beta;
@@ -344,6 +368,8 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
   //
   // LLR computation, 8 consequtive bits per loop
   //
+
+  //  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m11,m10,ext,systematic,framelength);
   for (k=0;k<(frame_length+3);k+=8)
     {
 
@@ -357,18 +383,18 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       // these are [0 2 1 3 6 4 7 5] 
       //      print_shorts("a_km1",&alpha128_ptr[0]);
       
-      alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
-      alpha_km1_bot = _mm_unpackhi_epi32(alpha128_ptr[0],alpha128_ptr[0]);
-      alpha_k_top = _mm_unpacklo_epi32(alpha128_ptr[4],alpha128_ptr[4]);
-      alpha_k_bot = _mm_unpackhi_epi32(alpha128_ptr[4],alpha128_ptr[4]);
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[0],alpha128_ptr[0]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[0],alpha128_ptr[0]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[4],alpha128_ptr[4]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[4],alpha128_ptr[4]);
       // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
       //      print_shorts("a_km1_top",&alpha_km1_top);      
       //      print_shorts("a_km1_top",&alpha_km1_bot);      
 
-      alpha_1 = _mm_unpacklo_epi64(alpha_km1_top,alpha_k_top);
-      alpha_2 = _mm_unpackhi_epi64(alpha_km1_top,alpha_k_top);
-      alpha_3 = _mm_unpacklo_epi64(alpha_km1_bot,alpha_k_bot);
-      alpha_4 = _mm_unpackhi_epi64(alpha_km1_bot,alpha_k_bot);
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
       //      print_shorts("a_1",&alpha_1);      
       //      print_shorts("a_2",&alpha_2);      
       //      print_shorts("a_3",&alpha_3);      
@@ -381,17 +407,17 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       // these are [0 1 4 5 7 6 3 2]
       //      print_shorts("b",&beta128_ptr[0]);
 
-      alpha_beta_1   = _mm_unpacklo_epi64(beta128_ptr[0],beta128_ptr[4]);
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[0],beta128_ptr[4]);
       //      print_shorts("ab_1",&alpha_beta_1);
-      alpha_beta_2   = _mm_shuffle_epi32(alpha_beta_1,_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
       //      print_shorts("ab_2",&alpha_beta_2);
-      alpha_beta_3   = _mm_unpackhi_epi64(beta128_ptr[0],beta128_ptr[4]);
-      alpha_beta_4   = _mm_shuffle_epi32(alpha_beta_3,_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[0],beta128_ptr[4]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-      alpha_beta_1   = _mm_adds_epi16(alpha_beta_1,alpha_1);
-      alpha_beta_2   = _mm_adds_epi16(alpha_beta_2,alpha_2);
-      alpha_beta_3   = _mm_adds_epi16(alpha_beta_3,alpha_3);      
-      alpha_beta_4   = _mm_adds_epi16(alpha_beta_4,alpha_4);
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
 
 
 
@@ -401,20 +427,20 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 	print_shorts("alpha_beta_2",&alpha_beta_2);
 	print_shorts("alpha_beta_3",&alpha_beta_3);
 	print_shorts("alpha_beta_4",&alpha_beta_4);
-	printf("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
-	printf("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
-	printf("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
-	printf("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
+	msg("m00: %d %d %d %d\n",m00_1,m00_2,m00_3,m00_4);
+	msg("m10: %d %d %d %d\n",m10_1,m10_2,m10_3,m10_4);
+	msg("m11: %d %d %d %d\n",m11_1,m11_2,m11_3,m11_4);
+	msg("m01: %d %d %d %d\n",m01_1,m01_2,m01_3,m01_4);
       */
-      alpha_beta_max04 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
-      alpha_beta_max04 = _mm_max_epi16(alpha_beta_max04,alpha_beta_3);
-      alpha_beta_max04 = _mm_max_epi16(alpha_beta_max04,alpha_beta_4);
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_3[inst]);
+      alpha_beta_max04[inst] = _mm_max_epi16(alpha_beta_max04[inst],alpha_beta_4[inst]);
       // these are the 4 mxy_1 below for k and k+4
       
 
       /*
 	print_shorts("alpha_beta_max04",&alpha_beta_max04);
-	printf("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
+	msg("%d %d %d %d\n",m00_1,m10_1,m11_1,m01_1);
       */
       
 
@@ -426,17 +452,17 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       alpha128_ptr[5]   = _mm_shufflehi_epi16(alpha128_ptr[5],_MM_SHUFFLE(1,3,0,2));
       // these are [0 2 1 3 6 4 7 5] 
 
-      alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[1],alpha128_ptr[1]);
-      alpha_km1_bot = _mm_unpackhi_epi32(alpha128_ptr[1],alpha128_ptr[1]);
-      alpha_k_top = _mm_unpacklo_epi32(alpha128_ptr[5],alpha128_ptr[5]);
-      alpha_k_bot = _mm_unpackhi_epi32(alpha128_ptr[5],alpha128_ptr[5]);
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[1],alpha128_ptr[1]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[1],alpha128_ptr[1]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[5],alpha128_ptr[5]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[5],alpha128_ptr[5]);
       // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
 
 
-      alpha_1 = _mm_unpacklo_epi64(alpha_km1_top,alpha_k_top);
-      alpha_2 = _mm_unpackhi_epi64(alpha_km1_top,alpha_k_top);
-      alpha_3 = _mm_unpacklo_epi64(alpha_km1_bot,alpha_k_bot);
-      alpha_4 = _mm_unpackhi_epi64(alpha_km1_bot,alpha_k_bot);
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
 
       beta128_ptr[1] = _mm_shuffle_epi32(beta128_ptr[1],_MM_SHUFFLE(1,3,2,0));
       beta128_ptr[1] = _mm_shufflehi_epi16(beta128_ptr[1],_MM_SHUFFLE(2,3,0,1));
@@ -444,20 +470,20 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       beta128_ptr[5] = _mm_shufflehi_epi16(beta128_ptr[5],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 7 6 3 2]
 
-      alpha_beta_1   = _mm_unpacklo_epi64(beta128_ptr[1],beta128_ptr[5]);
-      alpha_beta_2   = _mm_shuffle_epi32(alpha_beta_1,_MM_SHUFFLE(2,3,0,1));
-      alpha_beta_3   = _mm_unpackhi_epi64(beta128_ptr[1],beta128_ptr[5]);
-      alpha_beta_4   = _mm_shuffle_epi32(alpha_beta_3,_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[1],beta128_ptr[5]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[1],beta128_ptr[5]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-      alpha_beta_1   = _mm_adds_epi16(alpha_beta_1,alpha_1);
-      alpha_beta_2   = _mm_adds_epi16(alpha_beta_2,alpha_2);
-      alpha_beta_3   = _mm_adds_epi16(alpha_beta_3,alpha_3);      
-      alpha_beta_4   = _mm_adds_epi16(alpha_beta_4,alpha_4);
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
 
 
-      alpha_beta_max15 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
-      alpha_beta_max15 = _mm_max_epi16(alpha_beta_max15,alpha_beta_3);
-      alpha_beta_max15 = _mm_max_epi16(alpha_beta_max15,alpha_beta_4);
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_3[inst]);
+      alpha_beta_max15[inst] = _mm_max_epi16(alpha_beta_max15[inst],alpha_beta_4[inst]);
 
       // bits 2 + 6
 
@@ -468,17 +494,17 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       alpha128_ptr[6]   = _mm_shufflehi_epi16(alpha128_ptr[6],_MM_SHUFFLE(1,3,0,2));
       // these are [0 2 1 3 6 4 7 5] 
 
-      alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[2],alpha128_ptr[2]);
-      alpha_km1_bot = _mm_unpackhi_epi32(alpha128_ptr[2],alpha128_ptr[2]);
-      alpha_k_top = _mm_unpacklo_epi32(alpha128_ptr[6],alpha128_ptr[6]);
-      alpha_k_bot = _mm_unpackhi_epi32(alpha128_ptr[6],alpha128_ptr[6]);
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[2],alpha128_ptr[2]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[2],alpha128_ptr[2]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[6],alpha128_ptr[6]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[6],alpha128_ptr[6]);
       // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
 
 
-      alpha_1 = _mm_unpacklo_epi64(alpha_km1_top,alpha_k_top);
-      alpha_2 = _mm_unpackhi_epi64(alpha_km1_top,alpha_k_top);
-      alpha_3 = _mm_unpacklo_epi64(alpha_km1_bot,alpha_k_bot);
-      alpha_4 = _mm_unpackhi_epi64(alpha_km1_bot,alpha_k_bot);
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
 
       beta128_ptr[2] = _mm_shuffle_epi32(beta128_ptr[2],_MM_SHUFFLE(1,3,2,0));
       beta128_ptr[2] = _mm_shufflehi_epi16(beta128_ptr[2],_MM_SHUFFLE(2,3,0,1));
@@ -486,24 +512,24 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       beta128_ptr[6] = _mm_shufflehi_epi16(beta128_ptr[6],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 7 6 3 2]
 
-      alpha_beta_1   = _mm_unpacklo_epi64(beta128_ptr[2],beta128_ptr[6]);
-      alpha_beta_2   = _mm_shuffle_epi32(alpha_beta_1,_MM_SHUFFLE(2,3,0,1));
-      alpha_beta_3   = _mm_unpackhi_epi64(beta128_ptr[2],beta128_ptr[6]);
-      alpha_beta_4   = _mm_shuffle_epi32(alpha_beta_3,_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[2],beta128_ptr[6]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[2],beta128_ptr[6]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-      alpha_beta_1   = _mm_adds_epi16(alpha_beta_1,alpha_1);
-      alpha_beta_2   = _mm_adds_epi16(alpha_beta_2,alpha_2);
-      alpha_beta_3   = _mm_adds_epi16(alpha_beta_3,alpha_3);      
-      alpha_beta_4   = _mm_adds_epi16(alpha_beta_4,alpha_4);
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
       /*
 	print_shorts("alpha_beta_1",&alpha_beta_1);
 	print_shorts("alpha_beta_2",&alpha_beta_2);
 	print_shorts("alpha_beta_3",&alpha_beta_3);
 	print_shorts("alpha_beta_4",&alpha_beta_4);
       */
-      alpha_beta_max26 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
-      alpha_beta_max26 = _mm_max_epi16(alpha_beta_max26,alpha_beta_3);
-      alpha_beta_max26 = _mm_max_epi16(alpha_beta_max26,alpha_beta_4);
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_3[inst]);
+      alpha_beta_max26[inst] = _mm_max_epi16(alpha_beta_max26[inst],alpha_beta_4[inst]);
 
       
       //      print_shorts("alpha_beta_max26",&alpha_beta_max26);
@@ -516,17 +542,17 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       alpha128_ptr[7]   = _mm_shufflehi_epi16(alpha128_ptr[7],_MM_SHUFFLE(1,3,0,2));
       // these are [0 2 1 3 6 4 7 5] 
 
-      alpha_km1_top = _mm_unpacklo_epi32(alpha128_ptr[3],alpha128_ptr[3]);
-      alpha_km1_bot = _mm_unpackhi_epi32(alpha128_ptr[3],alpha128_ptr[3]);
-      alpha_k_top = _mm_unpacklo_epi32(alpha128_ptr[7],alpha128_ptr[7]);
-      alpha_k_bot = _mm_unpackhi_epi32(alpha128_ptr[7],alpha128_ptr[7]);
+      alpha_km1_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[3],alpha128_ptr[3]);
+      alpha_km1_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[3],alpha128_ptr[3]);
+      alpha_k_top[inst] = _mm_unpacklo_epi32(alpha128_ptr[7],alpha128_ptr[7]);
+      alpha_k_bot[inst] = _mm_unpackhi_epi32(alpha128_ptr[7],alpha128_ptr[7]);
       // these are [0 2 0 2 1 3 1 3] and [6 4 6 4 7 5 7 5]
 
 
-      alpha_1 = _mm_unpacklo_epi64(alpha_km1_top,alpha_k_top);
-      alpha_2 = _mm_unpackhi_epi64(alpha_km1_top,alpha_k_top);
-      alpha_3 = _mm_unpacklo_epi64(alpha_km1_bot,alpha_k_bot);
-      alpha_4 = _mm_unpackhi_epi64(alpha_km1_bot,alpha_k_bot);
+      alphaloc_1[inst] = _mm_unpacklo_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_2[inst] = _mm_unpackhi_epi64(alpha_km1_top[inst],alpha_k_top[inst]);
+      alphaloc_3[inst] = _mm_unpacklo_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
+      alphaloc_4[inst] = _mm_unpackhi_epi64(alpha_km1_bot[inst],alpha_k_bot[inst]);
 
       beta128_ptr[3] = _mm_shuffle_epi32(beta128_ptr[3],_MM_SHUFFLE(1,3,2,0));
       beta128_ptr[3] = _mm_shufflehi_epi16(beta128_ptr[3],_MM_SHUFFLE(2,3,0,1));
@@ -534,20 +560,20 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       beta128_ptr[7] = _mm_shufflehi_epi16(beta128_ptr[7],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 7 6 3 2]
 
-      alpha_beta_1   = _mm_unpacklo_epi64(beta128_ptr[3],beta128_ptr[7]);
-      alpha_beta_2   = _mm_shuffle_epi32(alpha_beta_1,_MM_SHUFFLE(2,3,0,1));
-      alpha_beta_3   = _mm_unpackhi_epi64(beta128_ptr[3],beta128_ptr[7]);
-      alpha_beta_4   = _mm_shuffle_epi32(alpha_beta_3,_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_1[inst]   = _mm_unpacklo_epi64(beta128_ptr[3],beta128_ptr[7]);
+      alpha_beta_2[inst]   = _mm_shuffle_epi32(alpha_beta_1[inst],_MM_SHUFFLE(2,3,0,1));
+      alpha_beta_3[inst]   = _mm_unpackhi_epi64(beta128_ptr[3],beta128_ptr[7]);
+      alpha_beta_4[inst]   = _mm_shuffle_epi32(alpha_beta_3[inst],_MM_SHUFFLE(2,3,0,1));
       // these are [0 1 4 5 0 1 4 5] [4 5 0 1 4 5 0 1] [7 6 3 2 7 6 3 2] [3 2 7 6 3 2 7 6]
-      alpha_beta_1   = _mm_adds_epi16(alpha_beta_1,alpha_1);
-      alpha_beta_2   = _mm_adds_epi16(alpha_beta_2,alpha_2);
-      alpha_beta_3   = _mm_adds_epi16(alpha_beta_3,alpha_3);      
-      alpha_beta_4   = _mm_adds_epi16(alpha_beta_4,alpha_4);
+      alpha_beta_1[inst]   = _mm_adds_epi16(alpha_beta_1[inst],alphaloc_1[inst]);
+      alpha_beta_2[inst]   = _mm_adds_epi16(alpha_beta_2[inst],alphaloc_2[inst]);
+      alpha_beta_3[inst]   = _mm_adds_epi16(alpha_beta_3[inst],alphaloc_3[inst]);      
+      alpha_beta_4[inst]   = _mm_adds_epi16(alpha_beta_4[inst],alphaloc_4[inst]);
 
 
-      alpha_beta_max37 = _mm_max_epi16(alpha_beta_1,alpha_beta_2);
-      alpha_beta_max37 = _mm_max_epi16(alpha_beta_max37,alpha_beta_3);
-      alpha_beta_max37 = _mm_max_epi16(alpha_beta_max37,alpha_beta_4);
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_1[inst],alpha_beta_2[inst]);
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_3[inst]);
+      alpha_beta_max37[inst] = _mm_max_epi16(alpha_beta_max37[inst],alpha_beta_4[inst]);
 
       // transpose alpha_beta matrix
       /*
@@ -556,22 +582,22 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 	print_shorts("alpha_beta_max26",&alpha_beta_max26);
 	print_shorts("alpha_beta_max37",&alpha_beta_max37);
       */
-      tmp0 = _mm_unpacklo_epi16(alpha_beta_max04,alpha_beta_max15);
-      tmp1 = _mm_unpackhi_epi16(alpha_beta_max04,alpha_beta_max15);
-      tmp2 = _mm_unpacklo_epi16(alpha_beta_max26,alpha_beta_max37);
-      tmp3 = _mm_unpackhi_epi16(alpha_beta_max26,alpha_beta_max37);
+      tmp0[inst] = _mm_unpacklo_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
+      tmp1[inst] = _mm_unpackhi_epi16(alpha_beta_max04[inst],alpha_beta_max15[inst]);
+      tmp2[inst] = _mm_unpacklo_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
+      tmp3[inst] = _mm_unpackhi_epi16(alpha_beta_max26[inst],alpha_beta_max37[inst]);
 
 
-      tmp00 = _mm_unpacklo_epi32(tmp0,tmp2);
-      tmp10 = _mm_unpackhi_epi32(tmp0,tmp2);
-      tmp20 = _mm_unpacklo_epi32(tmp1,tmp3);
-      tmp30 = _mm_unpackhi_epi32(tmp1,tmp3);
+      tmp00[inst] = _mm_unpacklo_epi32(tmp0[inst],tmp2[inst]);
+      tmp10[inst] = _mm_unpackhi_epi32(tmp0[inst],tmp2[inst]);
+      tmp20[inst] = _mm_unpacklo_epi32(tmp1[inst],tmp3[inst]);
+      tmp30[inst] = _mm_unpackhi_epi32(tmp1[inst],tmp3[inst]);
 
 
-      m00_max = _mm_unpacklo_epi64(tmp00,tmp20);
-      m10_max = _mm_unpackhi_epi64(tmp00,tmp20);
-      m11_max = _mm_unpacklo_epi64(tmp10,tmp30);
-      m01_max = _mm_unpackhi_epi64(tmp10,tmp30);
+      m00_max[inst] = _mm_unpacklo_epi64(tmp00[inst],tmp20[inst]);
+      m10_max[inst] = _mm_unpackhi_epi64(tmp00[inst],tmp20[inst]);
+      m11_max[inst] = _mm_unpacklo_epi64(tmp10[inst],tmp30[inst]);
+      m01_max[inst] = _mm_unpackhi_epi64(tmp10[inst],tmp30[inst]);
 
       /*
 	print_shorts("m00_max",&m00_max);
@@ -588,20 +614,20 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
       ext_128        = (__m128i*)&ext[k];
       systematic_128 = (__m128i*)&systematic[k];
 
-      m11_max = _mm_adds_epi16(m11_max,*m11_128);
-      m10_max = _mm_adds_epi16(m10_max,*m10_128);
-      m00_max = _mm_subs_epi16(m00_max,*m11_128);
-      m01_max = _mm_subs_epi16(m01_max,*m10_128);
+      m11_max[inst] = _mm_adds_epi16(m11_max[inst],*m11_128);
+      m10_max[inst] = _mm_adds_epi16(m10_max[inst],*m10_128);
+      m00_max[inst] = _mm_subs_epi16(m00_max[inst],*m11_128);
+      m01_max[inst] = _mm_subs_epi16(m01_max[inst],*m10_128);
 
-      m01_max = _mm_max_epi16(m01_max,m00_max);
-      m10_max = _mm_max_epi16(m11_max,m10_max);
+      m01_max[inst] = _mm_max_epi16(m01_max[inst],m00_max[inst]);
+      m10_max[inst] = _mm_max_epi16(m11_max[inst],m10_max[inst]);
 
       //      print_shorts("m01_max",&m01_max);
       //      print_shorts("m10_max",&m10_max);
 
        
    
-      *ext_128 = _mm_subs_epi16(m10_max,_mm_adds_epi16(m01_max,*systematic_128));
+      *ext_128 = _mm_subs_epi16(m10_max[inst],_mm_adds_epi16(m01_max[inst],*systematic_128));
       /*
       if ((((short *)ext_128)[0] > 8192) ||
 	  (((short *)ext_128)[1] > 8192) ||
@@ -611,7 +637,7 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 	  (((short *)ext_128)[5] > 8192) ||
 	  (((short *)ext_128)[6] > 8192) ||
 	  (((short *)ext_128)[7] > 8192)) {
-	printf("ext overflow %d:",k);
+	msg("ext overflow %d:",k);
 	print_shorts("**ext_128",ext_128);
       }
       */
@@ -731,18 +757,18 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
     systematic0_g[inst][i]= *yp; yp++;
     yparity1_g[inst][i] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 1 (%d): %d %d\n",i,systematic0_g[inst][i],yparity1_g[inst][i]);
+    msg("Term 1 (%d): %d %d\n",i,systematic0_g[inst][i],yparity1_g[inst][i]);
 #endif //DEBUG_LOGMAP
   }
   for (i=n+8;i<n+11;i++) {
     systematic0_g[inst][i]= *yp; yp++;
     yparity2_g[inst][i-8] = *yp; yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 2 (%d): %d %d\n",i-3,systematic0_g[inst][i],yparity2_g[inst][i-3]);
+    msg("Term 2 (%d): %d %d\n",i-3,systematic0_g[inst][i],yparity2_g[inst][i-3]);
 #endif //DEBUG_LOGMAP
   }
 #ifdef DEBUG_LOGMAP
-  printf("\n");
+  msg("\n");
 #endif //DEBUG_LOGMAP
 
 
@@ -807,14 +833,14 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
-      //      printf("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      //      msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:
       oldcrc&=0x00ffffff;
       crc = crc24b(decoded_bytes,
 		  n-24)>>8;
-      //      printf("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
+      //      msg("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
 
       break;
     case CRC16:
@@ -876,7 +902,7 @@ int test_logmap8()
 
   for (i = 0; i < 132; i++){
     channel_output[i] = 15*(2*output[i] - 1);
-    //    printf("Position %d : %d\n",i,channel_output[i]);
+    //    msg("Position %d : %d\n",i,channel_output[i]);
   }
 
   memset(decoded_output,0,16);
