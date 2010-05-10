@@ -31,7 +31,7 @@ if nargin <= 5
     color = 'blue';
 end
 
-load('maps/gps_calib_cordes.mat')
+load('gps_calib_cordes.mat')
 
 x = image_points(:,1);
 y = image_points(:,2);
