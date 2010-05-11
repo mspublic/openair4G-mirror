@@ -45,6 +45,9 @@ static int openair1_state_read(char *buffer, char **my_buffer, off_t off, int le
 }
 #endif //USER_MODE
 
+extern unsigned int current_dlsch_cqi;
+extern unsigned int dlsch_fer;
+
 #ifndef USER_MODE
 static int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 #else
@@ -76,6 +79,8 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     if (lte_ue_common_vars && dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) {
       len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",lte_ue_common_vars->freq_offset,openair_daq_vars.freq_offset);
       len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[UE_mode],UE_mode);
+      if (UE_mode == PUSCH)
+	len += sprintf(&buffer[len], "[UE PROC] DLSCH FER %d, cqi = %d\n",dlsch_fer,current_dlsch_cqi);
       len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",dlsch_ue[0]->harq_processes[0]->mcs);
       len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",dlsch_ue[1]->harq_processes[0]->mcs);
     }

@@ -14,6 +14,8 @@ unsigned short RIV2nb_rb_LUT25[512];
 unsigned short RIV2first_rb_LUT25[512];
 unsigned short RIV_max=0;
 
+extern unsigned int current_dlsch_cqi;
+
 unsigned int conv_rballoc(unsigned char ra_header,unsigned int short rb_alloc) {
 
   unsigned int rb_alloc2=0,i,shift,subset;
@@ -733,7 +735,7 @@ void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id
   case wideband_cqi:
 
     if (rank == 0) {
-      ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = sinr2cqi(meas->wideband_cqi_tot[eNb_id]);
+      ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1 = current_dlsch_cqi;//sinr2cqi(meas->wideband_cqi_tot[eNb_id]);
       ((wideband_cqi_rank1_2A_5MHz *)o)->pmi  = quantize_subband_pmi(meas,eNb_id);
       
     }

@@ -85,6 +85,7 @@ int checkpoint = 1;
 int frame_tx;
 time_t starttime_tmp;
 struct tm starttime;
+int current_dlsch_cqi; //this is actually defined in phy_procedures_lte_ue.c - we should get rid of this
 
 
 /*
@@ -1414,8 +1415,13 @@ void new_data_callback(int fifo_fd, void* data)
     frame_tx = fifo_output_eNB.frame_tx;
   }
   else {
-    frame_tx = fifo_output_UE.frame_tx;
+    // if UE is not synched use rec_frame_counter instead
+    if (fifo_output_UE.UE_mode == NOT_SYNCHED)
+      frame_tx = rec_frame_counter;
+    else
+      frame_tx = fifo_output_UE.frame_tx;
   }
+
 
   if (terminal_mode == TERM_MODE_MULTI)
     {

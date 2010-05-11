@@ -64,6 +64,7 @@ int dlsch_received_last = 0;
 int dlsch_fer = 0;
 int dlsch_cntl_errors = 0;
 int dlsch_ra_errors = 0;
+int current_dlsch_cqi = 0;
 
 unsigned char  ulsch_ue_rag_active;
 unsigned int  ulsch_ue_rag_frame;
@@ -687,6 +688,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
   int timing_advance;
   unsigned short dummy;
   unsigned char card_id;
+  unsigned int dlsch_buffer_length;
 
   if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1) == SF_S) 
     if ((last_slot%2)==0)
@@ -804,18 +806,23 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
 	  dlsch_errors_last = dlsch_errors;
 	  dlsch_received_last = dlsch_received;
+	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
+	    current_dlsch_cqi--;
+	  if ((dlsch_fer == 0) && (current_dlsch_cqi<7))
+	    current_dlsch_cqi++;
 	}
    
-	
+ 	
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
 		  mac_xface->frame,last_slot,ret,
 		  dlsch_ue[0]->harq_processes[0]->mcs,
 		  dlsch_ue[0]->harq_processes[0]->TBS);
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d\n",
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
 		  mac_xface->frame,last_slot,
 		  dlsch_errors,
 		  dlsch_received,
-		  dlsch_fer);
+		  dlsch_fer,
+		  current_dlsch_cqi);
 #endif
       }
       
@@ -869,6 +876,10 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	      }
 	    }
 	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (from cntl) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance, openair_daq_vars.timing_advance);
+	    dlsch_buffer_length = dlsch_ue_cntl->harq_processes[0]->TBS/8;
+	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (from cntl) DLSCH PMI %x (saved %x)\n",mac_xface->frame,((last_slot>>1)-1)%10,
+		      pmi2hex_2Ar1(*((unsigned short*)&dlsch_ue_cntl->harq_processes[0]->b[dlsch_buffer_length-2])),
+		      pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc));
 	  }
 	}   
 	

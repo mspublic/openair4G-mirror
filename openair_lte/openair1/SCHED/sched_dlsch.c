@@ -68,6 +68,7 @@ extern int dlsch_received;
 extern int dlsch_errors_last;
 extern int dlsch_received_last;
 extern int dlsch_fer;
+extern int current_dlsch_cqi;
 
 
 /** DLSCH Decoding Thread */
@@ -139,6 +140,12 @@ static void * dlsch_thread(void *param) {
 	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
 	  dlsch_errors_last = dlsch_errors;
 	  dlsch_received_last = dlsch_received;
+
+	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
+	    current_dlsch_cqi--;
+	  if ((dlsch_fer == 0) && (current_dlsch_cqi<7))
+	    current_dlsch_cqi++;
+
 	}
    
 	
@@ -148,11 +155,12 @@ static void * dlsch_thread(void *param) {
 		  ret,
 		  dlsch_ue[0]->harq_processes[0]->mcs,
 		  dlsch_ue[0]->harq_processes[0]->TBS);
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_errors %d, dlsch_received %d, dlsch_fer %d\n",
+	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
 		  mac_xface->frame,
 		  dlsch_errors,
 		  dlsch_received,
-		  dlsch_fer);
+		  dlsch_fer,
+		  current_dlsch_cqi);
 
       }
   }
