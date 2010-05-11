@@ -1497,7 +1497,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_DLSCH_TRANSMISSION_MODE:
 
     if ( ((((unsigned int *)arg)[0]) > 0) && 
-	 ((((unsigned int *)arg)[0]) < 6) )
+	 ((((unsigned int *)arg)[0]) < 7) )
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
     lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
     break;

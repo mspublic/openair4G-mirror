@@ -101,7 +101,7 @@ unsigned char tx_gain_table_c[36] = {
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
 unsigned char tx_gain_table_ue[4] = {200, 200, 140, 140};
-unsigned char tx_gain_table_eNb[4] = {170, 170, 140, 140};
+unsigned char tx_gain_table_eNb[4] = {195, 195, 140, 140};
 unsigned int timing_advance = 0;
 unsigned int tcxo = 53;  
 int freq_correction =  400;

@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   unsigned int eNb_id = 0;
   unsigned int slot_offset;
   unsigned int sample_offset;
-  unsigned int channel_offset=278;
+  unsigned int channel_offset=0;
   int n_frames;
 
   int slot,last_slot, next_slot;

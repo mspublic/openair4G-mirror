@@ -41,15 +41,15 @@ unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned 
 
   switch (tdd_config) {
   case 3:
-    if (subframe == 2) {
-      o_ACK[0] = harq_ack[5].ack;
+    if (subframe == 2) {  // ACK subframes 5 and 6
+      o_ACK[0] = harq_ack[5].ack;  
       o_ACK[1] = harq_ack[6].ack;
     }
-    else if (subframe == 3) {
-      o_ACK[0] = harq_ack[7].ack;
+    else if (subframe == 3) {   // ACK subframes 7 and 8
+      o_ACK[0] = harq_ack[6].ack; //harq_ack[7].ack;
       o_ACK[1] = harq_ack[8].ack;
     }
-    else if (subframe == 4) {
+    else if (subframe == 4) {  // ACK subframes 9 and 0
       o_ACK[0] = harq_ack[9].ack;
       o_ACK[1] = harq_ack[0].ack;
     }

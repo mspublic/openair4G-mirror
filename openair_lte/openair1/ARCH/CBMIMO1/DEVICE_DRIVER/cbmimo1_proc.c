@@ -13,6 +13,8 @@
 static struct proc_dir_entry *proc_openair1_root;
 #endif 
 
+extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
+
 #ifndef USER_MODE
 static int openair1_state_read(char *buffer, char **my_buffer, off_t off, int length) {
 
@@ -171,7 +173,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[0],
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[1]);
-      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Subband I0: ",
+      len += sprintf(&buffer[len],"[eNB PROC] Subband I0: ",
 		     eNB,
 		     mac_xface->frame);
       for (i=0;i<25;i++)
@@ -179,15 +181,12 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		       PHY_vars->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
       len += sprintf(&buffer[len],"\n");
 
-      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Wideband CQI: (%d,%d) dB\n",
-		     eNB,
-		     mac_xface->frame,
+      len += sprintf(&buffer[len],"[eNB PROC] Wideband CQI: (%d,%d) dB\n",
 		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][0],
 		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][1]);
-      
-      len += sprintf(&buffer[len],"[eNB PROC] eNB %d Frame %d: Subband CQI: ",
-		     eNB,
-		     mac_xface->frame);
+       
+      len += sprintf(&buffer[len],"[eNB PROC] Subband CQI: ");
+		     
       for (i=0;i<25;i++)
 	len += sprintf(&buffer[len],"%2d ",
 		       PHY_vars->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[0][i]);
@@ -195,31 +194,35 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       
     }
 
-    len += sprintf(&buffer[len],"[eNB PROC] Frame %d: UE 0 (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
-		   mac_xface->frame,
+    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, DLSCH Rate adaptation %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
 		   eNB_UE_stats[0].UE_id[0],
 		   eNB_UE_stats[0].UL_rssi[0][0],
 		   eNB_UE_stats[0].UL_rssi[0][1],
 		   eNB_UE_stats[0].sector[0],
 		   openair_daq_vars.dlsch_transmission_mode,
+		   openair_daq_vars.dlsch_rate_adaptation,
 		   openair_daq_vars.ulsch_allocation_mode,
 		   (openair_daq_vars.dlsch_rate_adaptation == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0].DL_cqi[0][0]<<1)),
 		   openair_daq_vars.target_ue_ul_mcs,
 		   openair_daq_vars.ue_ul_nb_rb
 		   );
       
-    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) DL_cqi %d, DL_pmi_single %x\n",
-		   eNB_UE_stats[0].UE_id[0],
+    len += sprintf(&buffer[len],"[eNB PROC] DL_cqi %d, DL_pmi_single %x\n",
 		   eNB_UE_stats[0].DL_cqi[0][0],
 		   pmi2hex_2Ar1(eNB_UE_stats[0].DL_pmi_single[0]));
-    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) Timing advance %d samples (%d 16Ts)\n",
-		   eNB_UE_stats[0].UE_id[0],
+    len += sprintf(&buffer[len],"[eNB PROC] Timing advance %d samples (%d 16Ts)\n",
 		   eNB_UE_stats[0].UE_timing_offset[0],
 		   eNB_UE_stats[0].UE_timing_offset[0]>>2);
-    len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) Mode = %s(%d)\n",
-		   eNB_UE_stats[0].UE_id[0],
+    len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
 		   mode_string[eNB_UE_stats[0].mode[0]],
 		   eNB_UE_stats[0].mode[0]);
+    if (eNB_UE_stats[0].mode[0] == PUSCH) {
+      len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d,%d/%d,%d/%d), DLSCH NAK %d\n",
+		     ulsch_errors[0],ulsch_decoding_attempts[0],
+		     ulsch_errors[1],ulsch_decoding_attempts[1],
+		     ulsch_errors[2],ulsch_decoding_attempts[2],
+		     dlsch_NAK);
+    }
   }
 
   return len;
