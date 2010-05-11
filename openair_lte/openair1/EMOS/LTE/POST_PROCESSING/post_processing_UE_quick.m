@@ -21,16 +21,17 @@ else
     rx_rssi_dBm_cat = [];
     gps_lon_cat = [];
     gps_lat_cat = [];
-    frame_tx_cat = [];
+    frame_tx_cat = [];  
     pbch_fer_cat = [];
     dlsch_fer_cat = [];
+    tbs_cat = [];
     mcs_cat = [];
     UE_mode_cat = [];
+    NFrames = zeros(1,length(filenames));
+    start_time = zeros(1,length(filenames));
     start_idx = 1;
 end
 
-NFrames = zeros(1,length(filenames));
-start_time = zeros(1,length(filenames));
 for file_idx = start_idx:length(filenames)
     disp(filenames{file_idx});
     
@@ -55,11 +56,13 @@ for file_idx = start_idx:length(filenames)
     pbch_fer = zeros(NFrames(file_idx)/decimation,1);
     dlsch_fer = zeros(NFrames(file_idx)/decimation,1);
     mcs = zeros(NFrames(file_idx)/decimation,1);
+    tbs = zeros(NFrames(file_idx)/decimation,1);
     for i=1:NFrames(file_idx)/decimation
         rx_rssi_dBm(i,:) = estimates(i).phy_measurements(1).rx_rssi_dBm(:);
         pbch_fer(i) = estimates(i).pbch_fer(1);
         dlsch_fer(i) = estimates(i).dlsch_fer(1);
-        mcs(i) = get_mcs(estimates(i).dci_alloc(1,6).dci_pdu);
+        mcs(i) = get_mcs(estimates(i).dci_alloc(7,1).dci_pdu);
+        tbs(i) = get_tbs(mcs(i),25);
     end
     
     phy_measurements_cat = [phy_measurements_cat phy_measurements];
@@ -69,11 +72,15 @@ for file_idx = start_idx:length(filenames)
     pbch_fer_cat = [pbch_fer_cat; pbch_fer];
     dlsch_fer_cat = [dlsch_fer_cat; dlsch_fer];
     mcs_cat = [mcs_cat; mcs];
+    tbs_cat = [tbs_cat; tbs];
     UE_mode_cat = [UE_mode_cat [estimates.UE_mode]];
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
     
-    save(fullfile(pathname,'results_UE.mat'),'timestamp_cat','frame_tx_cat','rx_rssi_dBm_cat','pbch_fer_cat','dlsch_fer_cat','mcs_cat','UE_mode_cat','phy_measurements','gps_lon_cat','gps_lat_cat','file_idx','NFrames','start_time','filenames','filedates');
+    save(fullfile(pathname,'results_UE.mat'),'timestamp_cat','frame_tx_cat',...
+        'rx_rssi_dBm_cat','pbch_fer_cat','dlsch_fer_cat','mcs_cat','tbs_cat',...
+        'UE_mode_cat','phy_measurements_cat','gps_lon_cat','gps_lat_cat',...
+        'file_idx','NFrames','start_time','filenames','filedates');
 
 %     h_fig = figure(2);
 %     hold off

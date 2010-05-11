@@ -29,7 +29,19 @@ struct_template
 % post_processing_UE_quick
 % plot_results_UE_quick
 %%
-pathname = 'H:\EMOS\data\20100506 coverage run part 1\';
+% pathname = 'H:\EMOS\data\20100506 coverage run part 1\';
+% post_processing_UE_quick
+% plot_results_UE_quick
+% post_processing_eNb_quick
+% plot_results_eNb_quick
+%%
+%pathname = '/media/Iomega HDD/EMOS/data/20100507 coverage run part 2/';
+%post_processing_UE_quick
+%plot_results_UE_quick
+%post_processing_eNb_quick
+%plot_results_eNb_quick
+%%
+pathname = '/home/kaltenbe/EMOS/data/20100507 mcs test/';
 post_processing_UE_quick
 plot_results_UE_quick
 post_processing_eNb_quick

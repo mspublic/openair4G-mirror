@@ -17,7 +17,7 @@ else
     is_eNb=0;
 end
 
-decimation = 1;
+decimation = 100;
 NFrames_max = 100*60*10;
 
 [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(fullfile(pathname, filename),NFrames_max,decimation,is_eNb);

@@ -24,7 +24,11 @@ if (nargin == 4 && ~isempty(rx_rssi))
     cmin = min(rx_rssi);
     cmax = max(rx_rssi);
     s = (cmax-cmin)/(length(m)-1);
-    cidx = ceil((rx_rssi-cmin)/s+1);
+    if (s==0)
+        cidx = ones(size(rx_rssi));
+    else
+        cidx = ceil((rx_rssi-cmin)/s+1);
+    end
 end
 
 if nargin <= 5
