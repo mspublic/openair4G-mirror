@@ -9,7 +9,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "MAC_INTERFACE/extern.h"
 
-extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK,dlsch_fer;
+extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
 
 #ifndef USER_MODE
 static struct proc_dir_entry *proc_openair1_root;

@@ -274,7 +274,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
 
       dlsch0->pmi_alloc                             = eNB_UE_stats[0].DL_pmi_single[0];
-
+      break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
       return(-1);
