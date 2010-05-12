@@ -36,7 +36,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 #ifdef DEBUG_CH
   msg("lte_ul_channel_estimation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
   write_output("drs_seq.m","drs",ul_ref_sigs_rx[0][0][Msc_RS_idx],2*Msc_RS,2,1);
+#endif
 #endif
 #endif
 

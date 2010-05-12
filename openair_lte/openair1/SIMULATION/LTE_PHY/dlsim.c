@@ -10,6 +10,8 @@
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+#include "SCHED/defs.h"
+#include "SCHED/vars.h"
 
 #define BW 10.0
 #define Td 1.0
@@ -21,6 +23,8 @@
 #define RBmask1 0x0
 #define RBmask2 0x0
 #define RBmask3 0x0
+
+unsigned char dlsch_cqi;
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode) {
 
@@ -103,7 +107,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 int main(int argc, char **argv) {
 
   int i,aa,s,ind,Kr,Kr_bytes;;
-  double sigma2, sigma2_dB=10,SNR,snr0,snr1,SNRmeas;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,SNRmeas;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -204,7 +208,7 @@ int main(int argc, char **argv) {
   }
   printf("Target mcs %d\n",mcs);
 
-  printf("Sizeof UL_alloc_pdu %d bytes (%d bits)\n",sizeof(DCI0_5MHz_TDD0_t),sizeof_DCI0_5MHz_TDD_0_t);
+  printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
   nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
 
@@ -251,7 +255,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu2.tpmi             = 2 ;  // precoding
+  DLSCH_alloc_pdu2.tpmi             = 5 ;  // precoding
 
   // Create transport channel structures for SI pdus
   dlsch_eNb_cntl = new_eNb_dlsch(1,1);
@@ -277,6 +281,11 @@ int main(int argc, char **argv) {
   }
   
 
+  if (DLSCH_alloc_pdu2.tpmi == 5) {
+    dlsch_eNb[0]->pmi_alloc = (unsigned short)(taus()&0xffff);
+    dlsch_ue[0]->pmi_alloc = dlsch_eNb[0]->pmi_alloc;
+    eNB_UE_stats[0].DL_pmi_single[0] = dlsch_eNb[0]->pmi_alloc;
+  }
   
   generate_eNb_dlsch_params_from_dci(0,
                                      &DLSCH_alloc_pdu2,

@@ -28,6 +28,12 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+
+#ifdef DEBUG_PHY
+    if ((Ns==5) && (eNb_id==0) && (aa==0)) 
+      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
+		   (frame_parms->ofdm_symbol_size*6),1,1);
+#endif
     fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
 	(short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	frame_parms->twiddle_fft,

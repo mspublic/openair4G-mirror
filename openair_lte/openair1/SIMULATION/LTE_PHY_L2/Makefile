@@ -15,7 +15,8 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DP
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA 
+CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+
 
 CFLAGS += -DOPENAIR2 -DTBS_FIX
 ifdef EMOS
@@ -27,7 +28,6 @@ CFLAGS += -DDEBUG_PHY
 endif
 
 
-CFLAGS += -DOFDMA_ULSCH
 
 PHY_OBJS = $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
@@ -93,6 +93,7 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
 TOOLS_OBJS = $(TOP_DIR)/PHY/TOOLS/file_output.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/lte_dfts.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_vv.o
@@ -227,5 +228,10 @@ clean:
 	rm -f *.o
 	rm -f *.exe*
 
+cleanl1:
+	rm -f physim
+	rm -f $(OBJ)
+	rm -f *.o
+	rm -f *.exe
 cleanl2:
 	rm -f $(L2_OBJS)

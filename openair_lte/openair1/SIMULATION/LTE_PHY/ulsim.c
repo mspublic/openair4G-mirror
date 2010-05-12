@@ -18,7 +18,7 @@
 
 #define BW 10.0
 #define Td 1.0
-#define N_TRIALS 10
+#define N_TRIALS 1
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 //DCI_ALLOC_t dci_alloc;
@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
+  generate_64qam_table();
+  generate_16qam_table();
 
   generate_RIV_tables();
   /*
@@ -178,7 +180,7 @@ int main(int argc, char **argv) {
 
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.rballoc = computeRIV(lte_frame_parms->N_RB_UL,0,8);// 12 RBs from position 8
-  UL_alloc_pdu.mcs     = 1;
+  UL_alloc_pdu.mcs     = 18;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
@@ -267,8 +269,9 @@ int main(int argc, char **argv) {
 
   ulsch_modulation(lte_ue_common_vars->txdataF,AMP,subframe,lte_frame_parms,ulsch_ue[0],0);
 
-#ifdef IFFT_FPGA
-  write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[300*12*subframe],300*12,1,4);
+  //  exit(-1);
+#ifdef IFFT_FPGA_UE
+  write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[0][300*12*subframe],300*12,1,4);
 
   //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 
@@ -299,9 +302,8 @@ int main(int argc, char **argv) {
 		 CYCLIC_PREFIX);
     
 #else
-  write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[300*12*subframe],300*12,1,4);
+  write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[0][512*12*subframe],512*12,1,1);
   //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
     PHY_ofdm_mod(lte_ue_common_vars->txdataF[aa],        // input
 		 txdata[aa],         // output
@@ -447,8 +449,8 @@ int main(int argc, char **argv) {
   write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
   write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
   write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[eNb_id]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);	
-  
+  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[0]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);	
+  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*12,1,1);	  
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);

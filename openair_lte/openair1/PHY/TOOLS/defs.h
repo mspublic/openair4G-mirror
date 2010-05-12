@@ -493,6 +493,22 @@ int dot_product(short *x,
 		unsigned char output_shift);
 
 
+void dft24(int *x,int *y,unsigned char scale_flag);
+void dft36(int *x,int *y,unsigned char scale_flag);
+void dft48(int *x,int *y,unsigned char scale_flag);
+void dft60(int *x,int *y,unsigned char scale_flag);
+void dft72(int *x,int *y,unsigned char scale_flag);
+void dft96(int *x,int *y,unsigned char scale_flag);
+void dft108(int *x,int *y,unsigned char scale_flag);
+void dft120(int *x,int *y,unsigned char scale_flag);
+void dft144(int *x,int *y,unsigned char scale_flag);
+void dft180(int *x,int *y,unsigned char scale_flag);
+void dft192(int *x,int *y,unsigned char scale_flag);
+void dft216(int *x,int *y,unsigned char scale_flag);
+void dft240(int *x,int *y,unsigned char scale_flag);
+void dft288(int *x,int *y,unsigned char scale_flag);
+void dft300(int *x,int *y,unsigned char scale_flag);
+
 /** @} */ 
 
 

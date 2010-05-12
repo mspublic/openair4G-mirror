@@ -15,6 +15,9 @@ PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o $(TOP_DIR
 
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
+
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
 

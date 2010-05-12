@@ -272,7 +272,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       break;
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
+
       dlsch0->pmi_alloc                             = eNB_UE_stats[0].DL_pmi_single[0];
+
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
       return(-1);
@@ -851,8 +853,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     dlsch[0]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
 
+#ifdef DEBUG_PHY
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
       print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNb_id);
+#endif
 
     ulsch->O_ACK                                  = 2;
 

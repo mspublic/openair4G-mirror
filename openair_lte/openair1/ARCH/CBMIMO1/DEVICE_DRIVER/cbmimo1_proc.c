@@ -9,6 +9,8 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "MAC_INTERFACE/extern.h"
 
+extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK,dlsch_fer;
+
 #ifndef USER_MODE
 static struct proc_dir_entry *proc_openair1_root;
 #endif 
@@ -163,8 +165,12 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       
       len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.wideband_cqi_tot[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d : %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
+      if (openair_daq_vars.dlsch_transmission_mode == 6)
+	len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.precoded_cqi_dB[eNB][0]);
       if (dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) 
 	len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0]);
+
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH FER : %d\n",dlsch_fer);
       
     }
   } // is_clusterhead
@@ -178,9 +184,10 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_tot_dBm,
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[0],
 		     PHY_vars->PHY_measurements_eNB[eNB].n0_power_dB[1]);
-      len += sprintf(&buffer[len],"[eNB PROC] Subband I0: ",
-		     eNB,
-		     mac_xface->frame);
+
+      len += sprintf(&buffer[len],"[eNB PROC] Subband I0: ");
+
+
       for (i=0;i<25;i++)
 	len += sprintf(&buffer[len],"%2d ",
 		       PHY_vars->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
@@ -189,9 +196,10 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       len += sprintf(&buffer[len],"[eNB PROC] Wideband CQI: (%d,%d) dB\n",
 		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][0],
 		     PHY_vars->PHY_measurements_eNB[eNB].wideband_cqi_dB[0][1]);
-       
+      
       len += sprintf(&buffer[len],"[eNB PROC] Subband CQI: ");
-		     
+
+
       for (i=0;i<25;i++)
 	len += sprintf(&buffer[len],"%2d ",
 		       PHY_vars->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[0][i]);

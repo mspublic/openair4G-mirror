@@ -112,7 +112,7 @@
 #ifndef USER_MODE
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
 #else
-#define debug_msg msg
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) msg
 #endif
 
 #endif

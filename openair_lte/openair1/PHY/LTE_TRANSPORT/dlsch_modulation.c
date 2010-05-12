@@ -41,8 +41,35 @@ void generate_16qam_table(void) {
       } 
 }
 
+
 #ifndef IFFT_FPGA
- 
+
+void layer1prec2A(int *antenna0_sample, int *antenna1_sample, unsigned char precoding_index) {
+
+  switch (precoding_index) {
+
+  case 0: // 1 1
+    *antenna1_sample=*antenna0_sample;
+    break;
+
+  case 1: // 1 -1
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[0];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[1];
+    break;
+
+  case 2: // 1 j
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = ((short *)antenna0_sample)[0];
+    break;
+
+  case 3: // 1 -j
+    ((short *)antenna1_sample)[0] = ((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[0];
+    break;
+  }
+
+} 
+
 int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned int *jj,
 		       unsigned short re_offset,
@@ -53,7 +80,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned char pilots,
 		       unsigned char first_pilot,
 		       unsigned char mod_order,
-		       unsigned char precoding,
+		       unsigned char precoder_index,
 		       short amp,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
@@ -379,7 +406,86 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	}
       }
-          
+       
+      else if ((mimo_mode >= UNIFORM_PRECODING11)&&(mimo_mode <= PUSCH_PRECODING1)) {
+	// this is for transmission modes 4-6 (1 layer)
+
+	switch (mod_order) {
+	case 2:  //QPSK
+	  
+	  ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+	  ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  qam16_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam16_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  break;
+	  
+	case 6:  //64QAM
+	  
+	  
+	  qam64_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam64_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+
+	  
+	  break;
+	  
+	}
+      }
+      
       else {
 	msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
 	return(-1);
@@ -760,7 +866,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
 	    txdataF[1][tti_offset] = (mod_sym_t) (1+qpsk_precoder[precoder_index][qpsk_table_offset-1]);   // prec(x0)
 
-	    //printf("precoding %d (index %d): (%d,%d)\n",tti_offset, precoder_index,txdataF[0][tti_offset]-1,txdataF[1][tti_offset]-1);
+	    //	    printf("precoding %d (index %d): (%d,%d)\n",tti_offset, precoder_index,txdataF[0][tti_offset]-1,txdataF[1][tti_offset]-1);
 
 	    
 	    break;
@@ -839,6 +945,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 #endif
 
 unsigned char get_pmi_5MHz(MIMO_mode_t mode,unsigned int pmi_alloc,unsigned short rb) {
+
+  //  printf("Getting pmi for RB %d => %d\n",rb,(pmi_alloc>>((rb>>2)<<1))&3);
   if (mode <= PUSCH_PRECODING1)
     return((pmi_alloc>>((rb>>2)<<1))&3);
   else
@@ -872,7 +980,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->pmi_alloc,mod_order, dlsch->layer_index, rb_alloc[0], l);
+    msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    
     pilots=0;
     first_pilot=0;

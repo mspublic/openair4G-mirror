@@ -19,7 +19,7 @@
 #include "SCHED/vars.h"
 
 //#define DEBUG_PHY
-//#define RF
+#define RF
 
 #define BW 10.0
 #define Td 1.0
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.5;
+  double aoa=.03,ricean_factor=.1;
   int channel_length;
   struct complex **ch;
   unsigned char pbch_pdu[6];
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
   char stats_buffer[4096];
   int len;
   unsigned char target_dl_mcs=4;
-  unsigned char target_ul_mcs=2;
+  unsigned char target_ul_mcs=1;
 
   unsigned int rx_gain;
 
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
     transmission_mode = 2;
 
   if (argc>2)
-    target_dl_mcs = atoi(argv[1]);
+    target_dl_mcs = atoi(argv[2]);
   else
     target_dl_mcs = 0;
 
@@ -170,6 +170,8 @@ int main(int argc, char **argv) {
   else
     n_frames = 10;
 
+  printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
+	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
   channel_length = (int) 11+2*BW*Td;
 
   PHY_vars = malloc(sizeof(PHY_VARS));
@@ -277,7 +279,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
-  UL_alloc_pdu.mcs     = 1;
+  UL_alloc_pdu.mcs     = 0;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
@@ -403,29 +405,33 @@ int main(int argc, char **argv) {
 	last_slot+=20;
       next_slot = (slot + 1)%20;
 
-      printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,eNB_UE_stats[0].UE_id[0]);
+
       mac_xface->is_cluster_head = 1;
 
-      //      mac_xface->macphy_scheduler(last_slot);      
-      //	if(mac_xface->frame % 1024 == 0){
-      len = openair2_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
-      stats_buffer[len] = '\0';
-      puts(stats_buffer);
-      //	}
+      if (((mac_xface->frame % 10) == 0) && (slot==19)) {
+	printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,eNB_UE_stats[0].UE_id[0]);
+	len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
+	stats_buffer[len] = '\0';
+	puts(stats_buffer);
+      }
 
       phy_procedures_lte(last_slot,next_slot);
-      len = chbch_stats_read(stats_buffer,NULL,0,4096);
-      printf("%s\n\n",stats_buffer);
 
-      printf("Frame %d, slot %d : UE procedures (Power offset %d, Mode %s, t_CRNTI %x)\n",
-	     mac_xface->frame,slot,
-	     ulsch_ue[0]->power_offset,
-	     mode_string[UE_mode],
-	     lte_ue_pdcch_vars[0]->crnti);
       mac_xface->is_cluster_head = 0;
+
       phy_procedures_lte(last_slot,next_slot);
-      len = chbch_stats_read(stats_buffer,NULL,0,4096);
-      printf("%s\n",stats_buffer);
+
+      if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
+	len = chbch_stats_read(stats_buffer,NULL,0,4096);
+	printf("%s\n\n",stats_buffer);
+	
+	printf("Frame %d, slot %d : UE procedures (Power offset %d, Mode %s, t_CRNTI %x)\n",
+	       mac_xface->frame,slot,
+	       ulsch_ue[0]->power_offset,
+	       mode_string[UE_mode],
+	       lte_ue_pdcch_vars[0]->crnti);
+      }
+
 
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
@@ -557,7 +563,7 @@ int main(int argc, char **argv) {
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
 			      0);
-      printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+      //      printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 #else
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -584,7 +590,7 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      path_loss_dB = -55;
+      path_loss_dB = -60;
 
       if ((next_slot > 2) && (next_slot<10)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm
@@ -596,11 +602,11 @@ int main(int argc, char **argv) {
 
       if ((next_slot>2) && (next_slot<10)) {
 	rx_gain = PHY_vars->rx_total_gain_eNB_dB;
-	printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
+	//	printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
       }
       else {
 	rx_gain = PHY_vars->rx_total_gain_dB;
-	printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
+	//	printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
       }
 
       path_loss    = pow(10,path_loss_dB/10);
@@ -641,7 +647,7 @@ int main(int argc, char **argv) {
 	    0.0);              // IQ phase imbalance (rad)
       rx_pwr = signal_energy_fp(r_re,r_im,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
  
-      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
+      //      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif
 
       sample_offset = 0;
@@ -659,7 +665,7 @@ int main(int argc, char **argv) {
 	  sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
 	}
 
-      printf("sample_offset = %d, openair_daq_vars.timing_advance=%d\n",sample_offset,openair_daq_vars.timing_advance);
+      //      printf("sample_offset = %d, openair_daq_vars.timing_advance=%d\n",sample_offset,openair_daq_vars.timing_advance);
       slot_offset = (next_slot)*(lte_frame_parms->samples_per_tti>>1) + sample_offset;
 
 #ifdef RF
@@ -674,7 +680,7 @@ int main(int argc, char **argv) {
   
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,lte_frame_parms->samples_per_tti>>1);
   
-      printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+      //      printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
 
 #else
       for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {
@@ -706,11 +712,12 @@ int main(int argc, char **argv) {
 	}
       */
       if ((last_slot == 18) && (mac_xface->frame == 0)) {
-	
+#ifdef DEBUG_PHY	
 	write_output("UE_rxsig0.m","UE_rxs0", lte_ue_common_vars->rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("UE_rxsig1.m","UE_rxs1", lte_ue_common_vars->rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("eNb_rxsig0.m","eNb_rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("eNb_rxsig1.m","eNb_rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+#endif
       }
       //#endif
 

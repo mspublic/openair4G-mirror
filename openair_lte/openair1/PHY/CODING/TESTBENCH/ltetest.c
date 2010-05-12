@@ -5,6 +5,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/vars.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
 #include "PHY/CODING/defs.h"
 //#include "PHY/CODING/lte_interleaver.h"
@@ -35,6 +36,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   
   crcTableInit();
 
+  number_of_cards = 1;
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
@@ -42,6 +44,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
   lte_ue_dlsch_vars_ra   = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+  lte_ue_dlsch_vars_1A   = &PHY_vars->lte_ue_dlsch_vars_1A[0];
  
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->Ncp                = 1;
@@ -64,7 +67,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   
   generate_64qam_table();
   generate_16qam_table();
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,
+		  lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,
+		  lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   printf("Done lte_param_init\n");
 }
 /*
