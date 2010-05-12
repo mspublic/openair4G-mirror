@@ -23,7 +23,7 @@ ________________________________________________________________*/
 //#endif
 
 #ifdef USER_MODE
-#define DEBUG_PHY
+//#define DEBUG_PHY
 #endif
 
 #ifdef OPENAIR2
@@ -84,6 +84,28 @@ extern int rx_sig_fifo;
 unsigned int ue_rag_frame;
 unsigned char ue_rag_subframe;
 
+#ifdef USER_MODE
+
+void dump_dlsch() {
+  unsigned int coded_bits_per_codeword;
+
+  coded_bits_per_codeword = ( dlsch_ue[0]->nb_rb * (12 * get_Qm(dlsch_ue[0]->harq_processes[0]->mcs)) * (lte_frame_parms->num_dlsch_symbols));
+  write_output("rxsigF0.m","rxsF0", lte_ue_common_vars->rxdataF[0],2*12*lte_frame_parms->ofdm_symbol_size,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", lte_ue_dlsch_vars[0]->rxdataF_ext[0],2*12*lte_frame_parms->ofdm_symbol_size,1,1);
+  write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[0],300*12,1,1);
+  /*
+    write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[1],300*12,1,1);
+    write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[2],300*12,1,1);
+    write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[3],300*12,1,1);
+    write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[0]->rho[0],300*12,1,1);
+  */
+  write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",lte_ue_dlsch_vars[0]->rxdataF_comp[0],300*12,1,1);
+  write_output("dlsch_rxF_llr.m","dlsch_llr",lte_ue_dlsch_vars[0]->llr[0],coded_bits_per_codeword,1,0);
+  
+  write_output("dlsch_mag1.m","dlschmag1",lte_ue_dlsch_vars[0]->dl_ch_mag,300*12,1,1);
+  write_output("dlsch_mag2.m","dlschmag2",lte_ue_dlsch_vars[0]->dl_ch_magb,300*12,1,1);
+}
+#endif
 
 #ifdef EMOS
 void phy_procedures_emos_UE_TX(unsigned char next_slot) {
@@ -277,8 +299,10 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
 #endif
 			(last_slot == 2) ? 1 : 2,
 			1);
-    
+
+#ifdef DEBUG_PHY    
     if (last_slot == 0) {
+
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, freq_offset_filt = %d \n",mac_xface->frame, last_slot, lte_ue_common_vars->freq_offset);
       
       debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
@@ -298,7 +322,7 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
 	  PHY_vars->PHY_measurements.n0_power[0],
 	  PHY_vars->PHY_measurements.n0_power[1]);
     }
-
+#endif
   }
   
 
@@ -798,6 +822,13 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    dlsch_errors++;
+#ifdef USER_MODE
+	    if (mac_xface->frame > 10) {
+	      printf("DLSCH in error, dumping\n");
+	      dump_dlsch();
+	      exit(-1);
+	    }
+#endif
 	  }
 	}
 
@@ -808,7 +839,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  dlsch_received_last = dlsch_received;
 	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
 	    current_dlsch_cqi--;
-	  if ((dlsch_fer == 0) && (current_dlsch_cqi<7))
+	  if ((dlsch_fer == 0) && (current_dlsch_cqi<8))
 	    current_dlsch_cqi++;
 	}
    
@@ -939,7 +970,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 #endif
 	      }
 
-	      msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (rar) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance,openair_daq_vars.timing_advance);
+	      debug_msg("[PHY_PROCEDURES_LTE] Frame %d, subframe %d, received (rar) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance,openair_daq_vars.timing_advance);
 
 	      ulsch_ue_rag_active=1;
 	      get_rag_alloc(lte_frame_parms->tdd_config,
@@ -956,7 +987,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	   
 	
 	  if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 100)) {
-	    msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (RA) ret %d (%d errors)\n",
+	    debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding (RA) ret %d (%d errors)\n",
 		mac_xface->frame,last_slot,ret,dlsch_ra_errors);
 	  }
 	}

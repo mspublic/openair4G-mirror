@@ -53,9 +53,9 @@ static char dlsch_eNb_1A_active = 0;
 static char eNb_generate_rar = 0;
 static char eNb_generate_rag_ack = 0;
 
-
 int ulsch_errors[3]={0,0,0},ulsch_consecutive_errors[3]={0,0,0},ulsch_decoding_attempts[3]={0,0,0},dlsch_NAK=0;
 unsigned int max_peak_val; 
+
 int max_eNb_id, max_sync_pos;
 
 DCI_ALLOC_t dci_alloc[8];
@@ -69,6 +69,30 @@ extern int rx_sig_fifo;
 #endif
 
 static unsigned char I0_clear = 1;
+
+
+#ifdef USER_MODE
+void dump_ulsch() {
+ 
+    write_output("rxsigF0.m","rxsF0", &lte_eNB_common_vars->rxdataF[0][0][0],512*12*2,2,1);
+  write_output("rxsigF1.m","rxsF1", &lte_eNB_common_vars->rxdataF[0][1][0],512*12*2,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", &lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
+  write_output("rxsigF1_ext.m","rxsF1_ext", &lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*12*2,2,1);
+  write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
+  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
+  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+  write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
+  write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[0]->llr,ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);	
+  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*12,1,1);	  
+
+  // UE TX sig in subframe 3
+  write_output("txsigF0.m","txsF0", &lte_ue_common_vars->txdataF[0][512*12*3],512*12,1,1);
+
+
+}
+#endif
 
 #ifdef EMOS
 void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
@@ -209,8 +233,10 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
       }
       
 #ifdef USER_MODE
+      /*
       write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
       write_output("eNb_sync_buffer1.m","eNb_sync_buf1",eNb_sync_buffer[1],(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples)*(lte_frame_parms->symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
+      */
 #endif
 
       sync_pos_slot = 0; //this is where the sync pos should be wrt eNb_sync_buffer
@@ -224,10 +250,12 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 				   lte_eNB_common_vars->sync_corr[eNb_id]);
 
 #ifdef USER_MODE
+      
       if (eNb_id==0)
 	write_output("sync_corr_eNb.m","synccorr",lte_eNB_common_vars->sync_corr[eNb_id],
 		     (lte_frame_parms->symbols_per_tti/2 - PSS_UL_SYMBOL) * 
 		     (lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),1,2);
+      
 #endif
 
       if ((sync_pos>=0) && (sync_val > max_peak_val)) {
@@ -250,7 +278,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	  eNB_UE_stats[0].mode[UE_id] = PRACH;
 	  eNB_UE_stats[0].sector[UE_id] = max_eNb_id;
 	  //#ifdef DEBUG_PHY
-	  msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d val %d , timing_advance %d (time_in %d, time_out %d)\n",
+	  debug_msg("[PHY_PROCEDURES_LTE] frame %d, slot %d: Found user %x in sector %d at pos %d val %d , timing_advance %d (time_in %d, time_out %d)\n",
 	      mac_xface->frame, last_slot, 
 	      UE_id, max_eNb_id,
 	      max_sync_pos, 
@@ -581,6 +609,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC_12;
       else
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC;
+      if (openair_daq_vars.dlsch_transmission_mode == 6)
+	DLSCH_alloc_pdu2.tpmi = 5;  // PUSCH precoding
 
       if (openair_daq_vars.dlsch_transmission_mode == 6)
 	DLSCH_alloc_pdu2.tpmi   = 5;
@@ -906,8 +936,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
     eNb_id=0;
 #ifdef USER_MODE
+    /*
     write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
     write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+    */
 #endif
     
     sync_pos = lte_est_timing_advance(lte_frame_parms,
@@ -1000,8 +1032,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
       
     if (ulsch_eNb[0]->cqi_crc_status == 1) {
+#ifdef DEBUG_PHY
       if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) 
       	print_CQI(ulsch_eNb[0]->o,ulsch_eNb[0]->o_RI,wideband_cqi,0);
+#endif
       extract_CQI(ulsch_eNb[0]->o,ulsch_eNb[0]->o_RI,wideband_cqi,UE_id,&eNB_UE_stats[0]);
       eNB_UE_stats[0].rank[0] = ulsch_eNb[UE_id]->o_RI[0];
     }
@@ -1021,6 +1055,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 	eNB_UE_stats[0].mode[0] = PRACH;
 	ulsch_consecutive_errors[harq_pid]=0;
       }
+#ifdef USER_MODE
+      if (rag_flag == 1) {
+	dump_ulsch();
+	exit(-1);
+      }
+#endif
     }
     else {
       ulsch_eNb[0]->harq_processes[harq_pid]->phich_active = 1;
@@ -1030,9 +1070,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
       if (rag_flag == 1) {
 	eNb_generate_rag_ack = 1;
 	eNB_UE_stats[0].mode[0] = PUSCH;
-	msg("[eNB Procedures] Frame %d : RX Subframe %d Setting UE mode to PUSCH\n",mac_xface->frame,last_slot>>1);
+	//	msg("[eNB Procedures] Frame %d : RX Subframe %d Setting UE mode to PUSCH\n",mac_xface->frame,last_slot>>1);
 	//eNb_generate_rag_ack = 0;
 	//eNB_UE_stats[0].mode[0] = PRACH;
+	dlsch_NAK=0;
       }
     }
 
