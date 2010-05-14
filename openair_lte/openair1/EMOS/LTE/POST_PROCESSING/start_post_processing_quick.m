@@ -41,7 +41,14 @@ struct_template
 %post_processing_eNb_quick
 %plot_results_eNb_quick
 %%
-pathname = '/home/kaltenbe/EMOS/data/20100507 mcs test/';
+pathname = 'H:\EMOS\data\20100511_mode2_parcours1_part5\';
+post_processing_UE_quick
+plot_results_UE_quick
+post_processing_eNb_quick
+plot_results_eNb_quick
+
+%%
+pathname = 'H:\EMOS\data\20100511_mode2_parcours2_part1\';
 post_processing_UE_quick
 plot_results_UE_quick
 post_processing_eNb_quick

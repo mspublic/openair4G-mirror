@@ -21,6 +21,7 @@ else
     rx_rssi_dBm_cat = [];
     gps_lon_cat = [];
     gps_lat_cat = [];
+    gps_time_cat = [];
     frame_tx_cat = [];  
     pbch_fer_cat = [];
     dlsch_fer_cat = [];
@@ -76,10 +77,11 @@ for file_idx = start_idx:length(filenames)
     UE_mode_cat = [UE_mode_cat [estimates.UE_mode]];
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
+    gps_time_cat = [gps_time_cat [gps_data.timestamp]];
     
     save(fullfile(pathname,'results_UE.mat'),'timestamp_cat','frame_tx_cat',...
         'rx_rssi_dBm_cat','pbch_fer_cat','dlsch_fer_cat','mcs_cat','tbs_cat',...
-        'UE_mode_cat','phy_measurements_cat','gps_lon_cat','gps_lat_cat',...
+        'UE_mode_cat','phy_measurements_cat','gps_lon_cat','gps_lat_cat','gps_time_cat',...
         'file_idx','NFrames','start_time','filenames','filedates');
 
 %     h_fig = figure(2);

@@ -2,6 +2,7 @@ load(fullfile(pathname,'results_UE.mat'));
 mm=imread('maps/cordes.png');
 
 UE_synched = (UE_mode_cat>0);
+UE_connected = (UE_mode_cat==3);
 
 %%
 h_fig = figure(1);
@@ -16,7 +17,8 @@ saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 %%
 h_fig = figure(2);
 hold off
-plot(double(timestamp_cat)./1e9,rx_rssi_dBm_cat,'x')
+good = (rx_rssi_dBm_cat<40 & rx_rssi_dBm_cat>-120);
+plot(double(timestamp_cat(good(:,1)))./1e9,rx_rssi_dBm_cat(good(:,1),1),'x')
 title('RX RSSI [dBm]')
 xlabel('Time [sec]')
 ylabel('RX RSSI [dBm]')
@@ -24,7 +26,8 @@ saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 
 h_fig = figure(3);
 hold off
-plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,double(rx_rssi_dBm_cat(:,1)));
+plot_gps_coordinates(mm,gps_lon_cat(good(:,1)), gps_lat_cat(good(:,1)),...
+    double(rx_rssi_dBm_cat(good(:,1),1)));
 title('RX RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.jpg'),'jpg')
 
@@ -56,8 +59,8 @@ saveas(h_fig,fullfile(pathname,'UE_mode_gps.jpg'),'jpg')
 h_fig = figure(7);
 hold off
 good = (dlsch_fer_cat<=100 & dlsch_fer_cat>=0).';
-plot(double(timestamp_cat(UE_synched & good))./1e9,...
-    (100-dlsch_fer_cat(UE_synched & good)).*tbs_cat(UE_synched & good));
+plot(double(timestamp_cat(UE_connected & good))./1e9,...
+    (100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good)*7,'x');
 xlabel('Time [sec]')
 ylabel('Throughput L1 [bps]')
 title('DLSCH Throughput')
@@ -66,8 +69,8 @@ saveas(h_fig,fullfile(pathname,'DLSCH_throughput.eps'),'epsc2')
 
 h_fig = figure(8);
 hold off
-plot_gps_coordinates(mm,gps_lon_cat(UE_synched & good), gps_lat_cat(UE_synched & good),...
-    double((100-dlsch_fer_cat(UE_synched & good)).*tbs_cat(UE_synched & good)));
+plot_gps_coordinates(mm,gps_lon_cat(UE_connected & good), gps_lat_cat(UE_connected & good),...
+    double((100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good))*7);
 title('DLSCH Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'DLSCH_troughput_gps.jpg'),'jpg')
 
