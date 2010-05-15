@@ -581,7 +581,7 @@ int main(int argc, char **argv) {
 			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
 			channel_length,
 			0,
-			1,
+			.1,
 			(first_call == 1) ? 1 : 0);
       
       if (first_call == 1)
@@ -590,7 +590,7 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      path_loss_dB = -60;
+      path_loss_dB = -67;
 
       if ((next_slot > 2) && (next_slot<10)) {
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm

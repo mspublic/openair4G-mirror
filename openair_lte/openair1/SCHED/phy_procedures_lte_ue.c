@@ -825,8 +825,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 #ifdef USER_MODE
 	    if (mac_xface->frame > 10) {
 	      printf("DLSCH in error, dumping\n");
-	      dump_dlsch();
-	      exit(-1);
+	      //	      dump_dlsch();
+	      //	      exit(-1);
 	    }
 #endif
 	  }
@@ -839,8 +839,13 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  dlsch_received_last = dlsch_received;
 	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
 	    current_dlsch_cqi--;
-	  if ((dlsch_fer == 0) && (current_dlsch_cqi<8))
+#ifndef USER_MODE
+	  if ((dlsch_fer < 4) && (current_dlsch_cqi<8))
 	    current_dlsch_cqi++;
+#else
+	  if ((dlsch_fer < 4) && (current_dlsch_cqi<16))
+	    current_dlsch_cqi++;
+#endif
 	}
    
  	

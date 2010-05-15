@@ -215,6 +215,8 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	    // for 5 MHz channelization, there are 7 subbands, 6 of size 4 RBs and 1 of size 1 RB
 	    limit = (subband < 6) ? 12 : 3;
 	    for (i=0;i<limit;i++) {
+
+	      // For each RE in subband perform ch0 * conj(ch1)
 	      // multiply by conjugated channel
 	      //	      print_shorts("ch0",dl_ch0_128);
 	      //	      print_shorts("ch1",dl_ch1_128);
@@ -223,10 +225,11 @@ void lte_ue_measurements(LTE_UE_COMMON *ue_common_vars,
 	      //	      print_ints("re",&mmtmpPMI0);
 	      
 	      // mmtmpPMI0 contains real part of 4 consecutive outputs (32-bit)
-	      mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch0_128[0],_MM_SHUFFLE(2,3,0,1));
+
+	      mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));
 	      mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
 	      mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);
-	      mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch1_128[0]);
+	      mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[0]);
 	      //	      print_ints("im",&mmtmpPMI1);
 	      // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
 	      
