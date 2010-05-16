@@ -20,6 +20,7 @@ __m128i zeroU;
 
 __m128i idft_in128[4][300],idft_in128[4][300],idft_out128[4][300],idft_out128[4][300];
 
+#ifndef OFDMA_ULSCH
 void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,int *z, unsigned short Msc_PUSCH) {
 
   int *idft_in0=(int*)idft_in128[0],*idft_out0=(int*)idft_out128[0];
@@ -211,6 +212,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,int *z, unsigned short Msc_PUSCH) 
 
 
 }
+#endif
 
 
 __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
