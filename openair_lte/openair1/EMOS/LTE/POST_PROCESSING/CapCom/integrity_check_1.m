@@ -19,7 +19,8 @@
 % what_scheme = 1; % 1 -> SISO, 2 -> Alamouti, 3 -> Beamforming
 %clear all;
 clc;
-pathname = '/extras/kaltenbe/EMOS/lte_cnes_data/20100421 interference eNb + DL test/';
+%pathname = '/extras/kaltenbe/EMOS/lte_cnes_data/20100421 interference eNb + DL test/';
+pathname = '/media/Iomega_HDD/EMOS/data/20100506 coverage run part 1/';
 %pathname = '/extras/kaltenbe/EMOS/data/ltetest/';
 d = dir([pathname 'data_term3*.EMOS']);
 filenames = {d.name};
@@ -40,7 +41,7 @@ for file_idx = 1:length(filenames)
     
 [H, H_fq, gps_data, NFrames, minestimates, throughput] = load_estimates_lte_1(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
 
-%save(regexprep((fullfile(filenames{file_idx},'results_UE.mat')), '/', '_'), 'gps_data', 'NFrames', 'throughput', 'minestimates', 'file_idx');
+save(regexprep((fullfile(filenames{file_idx},'results_UE.mat')), '/', '_'), 'gps_data', 'NFrames', 'throughput', 'minestimates', 'file_idx');
 
 end
 

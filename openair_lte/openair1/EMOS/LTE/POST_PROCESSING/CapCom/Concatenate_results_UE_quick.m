@@ -1,9 +1,9 @@
 %load(fullfile(pathname,'results_UE.mat'));
-addpath('../IntegrityCheck')
+%addpath('../IntegrityCheck')
 clear all;
 clc;
 %mm=imread('maps/cordes.png');
-d = dir(['/homes/latif/devel/openair_lte/openair1/EMOS/LTE/POST_PROCESSING/IntegrityCheck/' '*.mat'])
+d = dir(['/homes/latif/devel/openair_lte/openair1/EMOS/LTE/POST_PROCESSING/CapCom/' '*.mat'])
 filenames = {d.name};
 rps_SISO_4Qam_eNB1_cat =[];
 rps_SISO_16Qam_eNB1_cat =[];
@@ -69,6 +69,14 @@ for f = 1:length(filenames)
     
     
 end
+
+for i=1:length(gps_long_cat)
+    if (gps_long_cat(i) == 0 && gps_lat_cat(i) == 0)
+        gps_long_cat(i) = gps_long_cat(i-1);
+        gps_lat_cat(i) = gps_lat_cat(i-1);
+    end
+end
+
 
 save 'results_UE.mat'
 % 

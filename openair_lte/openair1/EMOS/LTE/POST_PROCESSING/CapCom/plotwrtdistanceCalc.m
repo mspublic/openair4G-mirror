@@ -37,7 +37,7 @@ rxx_rssi_dBm = rx_rssi_dBm_cat(1:100:end);
 % end
 in = in+1;
 h_fig = figure(in);
-plot(dist, rxx_rssi_dBm, 'r-x')
+plot(dist, rxx_rssi_dBm, 'rx')
 title('RX RSSI _ distance from BS [dBm]')
 xlabel('Distance from BS [Km]')
 ylabel('RX RSSI [dBm]')
@@ -75,7 +75,7 @@ gps_long_cat(end) = [];
 dist_travelled = cumsum(dist_travelled);
 in = in+1;
 h_fig = figure(in);
-plot(dist_travelled, rxx_rssi_dBm, 'r-x')
+plot(dist_travelled, rxx_rssi_dBm, 'rx')
 title('RX RSSI _ distance travelled[dBm]')
 xlabel('Distance travelled by MS [Km]')
 ylabel('RX RSSI [dBm]')

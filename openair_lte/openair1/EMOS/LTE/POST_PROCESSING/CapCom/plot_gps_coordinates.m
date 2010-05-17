@@ -4,7 +4,7 @@ function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi,
 %  This function plots the gps coordinates given by langitude and latutude
 %  onto the map of garbejaire. If langitude and latutude are matrices, each
 %  row is treated as a seperate user and plotted in a different color.
-%  This function uses the Plate carr�e projection
+%  This function uses the Plate carr???e projection
 %  (http://en.wikipedia.org/wiki/Plate_carr%C3%A9e_projection). We assume
 %  the coordinates of 3 reference points are known in lat/lon as well as
 %  x/y coordinates. This projection method is only fairly accurate. Also
