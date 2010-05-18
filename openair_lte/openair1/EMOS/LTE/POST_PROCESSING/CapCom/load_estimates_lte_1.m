@@ -44,9 +44,9 @@ end
 %  - 100 entries of type fifo_dump_emos (defined in phy_procedures_emos.h)
 %  - 1 entry of type gps_fix_t defined in gps.h
 
-if exist('../IMPORT_FILTER/a.out','file')
-    [dummy,result] = system('../IMPORT_FILTER/a.out');
-    eval(result);
+if exist('../../IMPORT_FILTER/a.out','file')
+     [dummy,result] = system('../../IMPORT_FILTER/a.out')
+     eval(result);
 else
     warning('File dump_size.c has to be compiled to enable error checking of sizes');
     %PHY_measurements_size = 1120;
