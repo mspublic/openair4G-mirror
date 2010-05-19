@@ -24,9 +24,9 @@ for i = 1:length(estimates_UE)
     % since 4200/200 = 21 groups of 200 resource elements are there in one subframe, so to get
     % the estimate of whole subframe we need to multiply RS_sum_XQam by 21.
     
-    Subframe_DL_sum_4Qam = RS_sum_4Qam * 12.75;
-    Subframe_DL_sum_16Qam = RS_sum_16Qam * 12.75;
-    Subframe_DL_sum_64Qam = RS_sum_64Qam * 12.75;
+    Subframe_DL_sum_4Qam = RS_sum_4Qam * 12;
+    Subframe_DL_sum_16Qam = RS_sum_16Qam * 12;
+    Subframe_DL_sum_64Qam = RS_sum_64Qam * 12;
     
     %In LTE Confguration 3 we have 6 downlink subframes in one frame so
     
