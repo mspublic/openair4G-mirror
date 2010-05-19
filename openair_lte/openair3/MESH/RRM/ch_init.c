@@ -137,32 +137,34 @@ void rrc_phy_synch_to_MR_ind(
         pthread_mutex_unlock( &( rrm->rrc.exclu )  ) ;
         //mod_lor_10_03_01++
         //if (WSN){
-        if (WSN && rrm->id == 0){ //inst_to_change: to modify with regard to the implementation (i.e. delete rrm->id == 0 if implemented on two different machines 
+        if (WSN && rrm->id == FC_ID){ 
             rrm->role = FUSIONCENTER; 
-            fprintf(stderr,"[RRM] FUSIONCENTER\n");
-        }else if (SCEN_1){
+            fprintf(stderr,"[CRRM] FUSIONCENTER\n");
+        }else if (rrm->id == BTS_ID && SCEN_1){
             rrm->role = BTS; 
-            fprintf(stderr,"[RRM] BTS\n");
+            fprintf(stderr,"[CRRM] BTS\n");
         }
         //mod_lor_10_04_27++
-        else if (rrm->id == 0 && SCEN_2_CENTR){
+        else if (rrm->id == FC_ID && SCEN_2_CENTR){
             rrm->role = FUSIONCENTER; 
-            fprintf(stderr,"[RRM] CH1\n");
+            fprintf(stderr,"[CRRM] CH1\n");
         }
-        else if (SCEN_2_CENTR){
+        else if (rrm->id == CH_COLL_ID &&SCEN_2_CENTR){
             rrm->role = CH_COLL; 
-            fprintf(stderr,"[RRM] CH2\n");
+            fprintf(stderr,"[CRRM] CH2\n");
         }
+        else 
+            fprintf(stderr,"Warning!!! No role assigned\n");
         //mod_lor_10_04_27--
         //mod_lor_10_03_01--
 
         PUT_CMM_MSG( msg_router_is_CH_ind( inst,rrm->L2_id)) ;
 
         rrm->state = CLUSTERHEAD_INIT0 ; 
-        fprintf(stderr,"[RRM] CLUSTERHEAD_INIT0\n");
+        fprintf(stderr,"[CRRM] CLUSTERHEAD_INIT0\n");
     }
     else
-        fprintf(stderr,"[RRM] RRC_PHY_SYNCH_TO_MR_IND/TIMEOUT_IN  is not allowed (Only IN):etat=%d\n",rrm->state);
+        fprintf(stderr,"[CRRM] RRC_PHY_SYNCH_TO_MR_IND/TIMEOUT_IN  is not allowed (Only IN):etat=%d\n",rrm->state);
 }        
 
 
