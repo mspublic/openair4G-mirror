@@ -6,18 +6,14 @@
 \brief      Fichier d'entete contenant les declarations des types, des defines ,
 et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI. 
             
-Les fonctions servent à créer le buffer de message, remplir 
-l'entete et copier les parametres de fonction. Chaque fonction 
-retourne le message qui pourra être envoye sur le socket entre le 
-CMM et le RRM ou RRCI.
 
-\author     BURLOT Pascal
 
-\date       17/07/08
+\author     IACOBELLI Lorenzo
+
+\date       20/04/10
 
 \par     Historique:
-L.IACOBELLI 2009-10-19
-+ sensing messages 
+
 
 *******************************************************************************
 */
@@ -25,12 +21,27 @@ L.IACOBELLI 2009-10-19
 #ifndef __GRAPH_ENUM_H
 #define __GRAPH_ENUM_H
 
-#define BTS_ID 1
+//mod_lor_10_05_12++
+
+/*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
+*/
+#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
+#define SCEN_1         1
+#define SCEN_2_CENTR   0
+#define SCEN_2_DISTR   0
+
+//mod_lor_10_05_12--*/
+
+#define BTS_ID 1  //put -1 in case we are not in SCEN_1
 #define FC_ID 0
+#define CH_COLL_ID -1
+#define NB_SENS_MAX 20
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
 /*!
 *******************************************************************************
@@ -118,11 +129,15 @@ typedef enum {
 } MSG_CMM_RRM_T ;
  //mod_lor_10_04_27++
 typedef enum { 
-    UPDATE_SENS_RESULTS_3       , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
+    UPDATE_SENS_RESULTS_3  = 0  , ///< Message IP       : update to send to CH/FC //mod_lor_10_01_25
     OPEN_FREQ_QUERY_4           , ///< Message IP       : BTS to ask free frequencies to FC
     UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
     UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
-NB_MSG_IP                   ///< Nombre de message IP
+    INIT_COLL_SENS_REQ          , ///< Message IP       : CH1 sends request to start collaboration to CH2
+    STOP_COLL_SENS              , ///< Message IP       : CH1 sends order to stop collaboration to CH2
+    UP_CLUST_SENS_RESULTS       , ///< Message IP       : update to send to CH from CH_COLL
+    STOP_COLL_SENS_CONF         , ///< Message IP       : CH2 sends confirmationof stop collaboration to CH1
+    NB_MSG_IP                   ///< Nombre de message IP
 } MSG_IP_T ;
  //mod_lor_10_04_27--
 
@@ -133,6 +148,8 @@ typedef enum {
     IP,  //mod_lor_10_04_27
     NB_INTERF
 }INTERF_T;
+
+
 
 
 #endif /* GRAPH_ENUM_H */

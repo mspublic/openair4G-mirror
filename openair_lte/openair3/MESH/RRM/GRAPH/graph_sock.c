@@ -34,7 +34,6 @@
 //#define PID_USERSPACE		0xAA
 
 
-
 #define msg printf
 #define RRM_FREE free
 
