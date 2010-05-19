@@ -292,11 +292,12 @@ void rrc_init_mon_req(
  /*!
 \brief update open frequencies -> correspondent message via IP
  */    
-void update_open_freq( //mod_lor_10_01_25: IP function
+unsigned int update_open_freq( //mod_lor_10_01_25: IP function; //mod_lor_10_05_18: return unsigned int instead of void
     Instance_t inst,            //!< instance ID
     L2_ID L2_id,                //!< L2_id of the FC/CH
     unsigned int NB_chan,
-    CHANNEL_T *fr_channels, 
+    unsigned int *occ_channels  , //!< vector on wich the selected frequencies will be saved //mod_lor_10_05_18
+    CHANNELS_DB_T *fr_channels, 
     Transaction_t Trans_id
     );
 
@@ -313,7 +314,7 @@ void open_freq_query( //mod_lor_10_01_25: IP function
 /*!
 \brief update secondary network frequencies in use  -> correspondent message via IP
  */ 
-void update_SN_occ_freq( //mod_lor_10_01_25: IP function
+unsigned int update_SN_occ_freq( //mod_lor_10_01_25: IP function
     Instance_t inst             , //!< instance ID 
     L2_ID L2_id                 , //!< Layer 2 (MAC) ID of BTS
     unsigned int NB_chan        ,
@@ -432,6 +433,18 @@ void update_sens_results(
 void sns_end_scan_conf( 
 	Instance_t inst          //!< Identification de l'instance
 	);
+
+//mod_lor_10_05_10++
+/*!
+\brief  Updating sensing information received from collaborative Cluster
+*/	
+void up_coll_sens_results( //AAA: to add weights for the collaborative cluster information
+	Instance_t inst         , //!< Identification de l'instance
+	L2_ID L2_id             , //!< Adresse L2 of the source of information 
+	unsigned int NB_info    , //!< Number of channel info
+	Sens_ch_t *Sens_meas    , //!< Pointer to the sensing information
+	double info_time
+	);//mod_lor_10_05_10--
     
 
 

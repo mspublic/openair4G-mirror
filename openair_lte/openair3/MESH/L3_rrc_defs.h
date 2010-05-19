@@ -20,6 +20,24 @@
 #define SCEN_2_CENTR   0
 #define SCEN_2_DISTR   0
 
+//mod_lor_10_05_05++
+/*!
+*******************************************************************************
+\brief Id of different CRRM entities in case of multiple entities on same machine       
+  */
+#define BTS_ID 1
+#define FC_ID 0
+#define CH_COLL_ID -1
+//mod_lor_10_05_05--
+
+/*! 
+ *******************************************************************************
+ \brief Parameters about channels:
+ * 
+*/
+#define CH_NEEDED_FOR_SN 2 //!< Number of channels needed by secondary network//mod_lor_10_05_17
+#define NB_SENS_MAX    20  //!< Maximum number of channels accepted by the system
+
 /*! \brief Transaction ID descriptor
 */
 typedef unsigned int Transaction_t;
@@ -41,8 +59,6 @@ typedef unsigned short QOS_CLASS_T;
 #define LCHAN_DTCH_B    3
 #define LCHAN_DTCH      4
 #define LCHAN_MRBCH     5
-
-#define NB_SENS_MAX    10
 
 /*!\brief Layer 2 Identifier
  */
@@ -134,6 +150,22 @@ typedef enum {
   UNICAST,            /*!< Unicast bearer*/
   MULTICAST           /*!< Multicast bearer*/
 } RB_TYPE;
+
+
+/*!
+*******************************************************************************
+\brief Entete de la file des messages reçus ou a envoyer		
+*/
+typedef struct channels_db_s { 
+	double               info_time ; ///< information age 
+	unsigned int         is_free   ; ///< channel availability  
+	unsigned int         priority  ; ///< channel priority
+	unsigned int         is_ass    ; ///< channel used by secondary network
+	L2_ID                source_id ; ///< SU using channel (source)
+    L2_ID                dest_id   ; ///< SU using channel (dest)
+	CHANNEL_T            channel   ; ///< channel description
+	struct channels_db_s *next     ; ///< next node pointer
+} CHANNELS_DB_T ;
 
 #endif //__L3_RRC_DEFS_H__
 /** @} */
