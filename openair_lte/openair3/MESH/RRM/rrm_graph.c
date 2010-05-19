@@ -1,7 +1,7 @@
 /*!
 *******************************************************************************
 
-\file       rrm.c
+\file       rrm_graph.c
 
 \brief      RRM (Radio Ressource Manager )
 
@@ -11,25 +11,13 @@
                 - de recevoir des commandes du CMM
                 - de gérer le voisinage
 
-\author     BURLOT Pascal
+\author     IACOBELLI Lorenzo
 
-\date       10/07/08
+\date       20/04/2010
 
 
 \par     Historique:
-        P.BURLOT 2009-01-20 
-            + separation de la file de message CMM/RRM a envoyer en 2 files 
-              distinctes ( file_send_cmm_msg, file_send_rrc_msg)
-            + l'envoi de message via la fifo:
-                - envoi du header
-                - puis des donnees s'il y en a
-            + reception des donnees de la fifo:
-                - copie du message dans la file d'attente des messages
-                - traitement du cas du message n'ayant pas de data (ex: response )
-        L.IACOBELLI 2009-10-19
-            + sensing database
-            + channels database
-            + new cases 
+        
 
 *******************************************************************************
 */
@@ -71,7 +59,16 @@
 ** DEFINE LOCAL
 ** ----------------------------------------------------------------------------
 */
- 
+//mod_lor_10_05_18++
+/*!
+*******************************************************************************
+\brief Definition of IP @ in main entities. i.e. they have to correspond 
+        to the ones in node_info vector in emul_interface.c
+*/
+ static unsigned char FC_L3id [4]={0x0A,0x00,0x01,0x01};
+ static unsigned char BTS_L3id [4]={0x0A,0x00,0x02,0x02};
+ static unsigned char CH_COLL_L3id [4]={0x0A,0x00,0x02,0x02};
+//mod_lor_10_05_18--
 /*
 ** ----------------------------------------------------------------------------
 ** DECLARATION DE NOUVEAU TYPE
@@ -192,8 +189,9 @@ static msg_t *msg_graph_resp(
 //mod_lor_10_04_21++
 typedef struct {
     unsigned int        NB_chan              ; //!< Number of channels 
+    unsigned int        NB_val               ; //!< Number of values 
     unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
-    unsigned int        free[NB_SENS_MAX]    ; //!< Vector of values
+    unsigned int        val[NB_SENS_MAX]    ; //!< Vector of values
 
 } gen_sens_info_t ;
 
@@ -201,8 +199,9 @@ static msg_t *msg_generic_sens_resp(
     Instance_t   inst     , //!< instance ID
     int          msg_type,  //!< type of message
     unsigned int NB_chan,//!< Number of channels 
+    unsigned int NB_val , //!< Number of values
     unsigned int *channels, //!< Vector of channels
-    unsigned int *free    , //!< Vector of values
+    unsigned int *val    , //!< Vector of values
     Transaction_t trans
     )
 {
@@ -221,13 +220,11 @@ static msg_t *msg_generic_sens_resp(
             msg->head.size     = size;
  
             p->NB_chan = NB_chan;
-            if ( NB_chan != 0 ){
-                
+            if ( NB_chan != 0 )
                 memcpy( p->channels, channels, NB_chan*sizeof(unsigned int) );
-                memcpy( p->free, free, NB_chan*sizeof(unsigned int) );
-                
-            }
-  
+            p->NB_val = NB_val;
+            if ( NB_chan != 0 )
+                memcpy( p->val, val, NB_val*sizeof(unsigned int) );
        
         }
         msg->data = (char *) p ;
@@ -785,7 +782,34 @@ static void processing_msg_cmm(
 #ifndef    RRC_EMUL          
                 
                 if (rrm->ip.s->s == -1){ 
-                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    //mod_lor_10_05_06++
+                    unsigned char tmp [4];
+                    /*for (int i=0; i<10;i++ )
+                        if (memcmp( &(node_info[i].L2_id), &(p->L2_id), sizeof(L2_ID) )){
+                            fprintf(stderr,"Inst. to connect with %d\n",i);
+                            break;
+                        }//memcpy()*/
+                    //mod_lor_10_05_18++: destination addresses depends on 
+                    //scenario and on role, they are declared at beginning of file
+                    if (SCEN_2_CENTR && rrm->id == 4){
+                        tmp[0]=CH_COLL_L3id[0];
+                        tmp[1]=CH_COLL_L3id[1];
+                        tmp[2]=CH_COLL_L3id[2];
+                        tmp[3]=CH_COLL_L3id[3];
+                    }
+                   else {
+                        tmp[0]=FC_L3id[0];
+                        tmp[1]=FC_L3id[1];
+                        tmp[2]=FC_L3id[2];
+                        tmp[3]=FC_L3id[3];
+                    }//mod_lor_10_05_18--
+                       //unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    /*fprintf(stderr,"IP_addr :");//dbg //mod_lor_10_05_06
+                    for (int i=0;i<4;i++)//dbg
+                        fprintf(stderr," %X",tmp[i]);//dbg
+                    fprintf(stderr,"\n");//dbg*/
+                    
+                    //mod_lor_10_05_06--
                     fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
                     int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
                     if ( sock != -1 )
@@ -830,14 +854,17 @@ static void processing_msg_cmm(
                 DataIp.sock_path_local=p->L3_info;///< local IP address for internet socket
                 DataIp.local_port = 7000          ; ///< local IP port for internet socket
                 //mod_lor_10_03_02++: setting for topology with FC and BTS on instances 0 and 1
+                //mod_lor_10_05_18++
                 if (rrm->role == FUSIONCENTER){
-                    unsigned char tmp [4]={0x0A,0x00,0x02,0x02};
-                    DataIp.sock_path_dest = tmp ; ///< dest IP address for internet socket
-                }else if (rrm->role == BTS || rrm->role == CH_COLL){ //mod_lor_10_04_27
-                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
-                    DataIp.sock_path_dest = tmp  ; ///< dest IP address for internet socket
+                    if (SCEN_1)
+                        DataIp.sock_path_dest = BTS_L3id ; ///< dest IP address for internet socket
+                    else if (SCEN_2_CENTR)
+                        DataIp.sock_path_dest = CH_COLL_L3id ; ///< dest IP address for internet socket
+                }else if (rrm->role == BTS ||rrm->role == CH_COLL){ //mod_lor_10_04_27
+                    DataIp.sock_path_dest = FC_L3id  ; ///< dest IP address for internet socket
                 }else 
                     fprintf (stderr, "wrong node role %d \n", rrm->role);
+                //mod_lor_10_05_18--
                 //mod_lor_10_03_02--
                 DataIp.dest_port = 0          ; ///< dest IP port for internet socket
                 DataIp.s.s = -1      ; 
@@ -865,6 +892,7 @@ static void processing_msg_cmm(
             {
                 cmm_init_sensing_t *p = (cmm_init_sensing_t *) msg ;                
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",header->inst);
+                rrm->sensing.sens_active=1;//mod_lor_10_05_07
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM +NB_MSG_RRC_RRM;
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
@@ -881,6 +909,7 @@ static void processing_msg_cmm(
         case CMM_STOP_SENSING :
             {
                 msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",rrm->id);
+                rrm->sensing.sens_active=0;//mod_lor_10_05_07
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM +NB_MSG_RRC_RRM;
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
@@ -1181,7 +1210,7 @@ static void processing_msg_sensing(
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
                
-                msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
+                msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS trans %d\n",header->inst, header->Trans_id);
                 if(rrm->sensing.sens_active == 0)//mod_lor_10_04_23
                     break;
                 rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );
@@ -1195,10 +1224,8 @@ static void processing_msg_sensing(
                 for (int i=0; i< p->NB_info; i++){
                     channels[i]=p->Sens_meas[i].Ch_id;
                     free[i]=p->Sens_meas[i].is_free; 
-                
                 }
-              
-                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,p->NB_info,channels,free, Trans));
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,p->NB_info,p->NB_info,channels,free, Trans) );
                     WARNING(r!=0);
                 //mod_lor_10_04_21--
                 //mod_lor_10_04_20--
@@ -1331,11 +1358,12 @@ static void processing_msg_ip(
         case UPDATE_SENS_RESULTS_3 :
             {
                 //fprintf(stderr,"1node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
+                if(rrm->sensing.sens_active == 0)//mod_lor_10_05_07
+                    break;
                 rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
-                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d \n",rrm->id, header->inst);
+                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d trans %d\n",rrm->id, header->inst, header->Trans_id);
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
-                
                 //mod_lor_10_04_20--
                 update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
                 //mod_lor_10_04_21++
@@ -1346,17 +1374,51 @@ static void processing_msg_ip(
                 CHANNELS_DB_T *channel=rrm->rrc.pChannelsEntry;
                 for (i=0;channel!=NULL && i<NB_SENS_MAX;i++){
                     channels[i]=channel->channel.Ch_id;
-                    free[i]=channel->is_free;
+                    if (!(rrm->ip.waiting_SN_update) && !(channel->is_free) && channel->is_ass) //mod_lor_10_05_18
+                        free[i] = 3;
+                    else
+                        free[i]=channel->is_free;
                     channel=channel->next;
+                    printf("  ->channel %d is %d\n",channels[i],free[i]);//dbg
                 }
                 pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,i,channels,free, header->Trans_id));
+                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,i,i,channels,free, header->Trans_id));
                     WARNING(r!=0);
                 
                 //mod_lor_10_04_21--
                 
             }
             break ;
+        //mod_lor_10_05_07++    
+        case UP_CLUST_SENS_RESULTS :
+            {
+                if(rrm->sensing.sens_active == 0)//mod_lor_10_05_07
+                    break;
+                update_coll_sens_t *p = (update_coll_sens_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:UP_CLUST_SENS_RESULTS from %d \n",rrm->id, header->inst);
+                up_coll_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                //mod_lor_10_04_21++
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
+                unsigned int        free[NB_SENS_MAX]    ; //!< Vector of values
+                int i;
+                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                CHANNELS_DB_T *channel=rrm->rrc.pChannelsEntry;
+                for (i=0;channel!=NULL && i<NB_SENS_MAX;i++){
+                    
+                    channels[i]=channel->channel.Ch_id;
+                    free[i]=channel->is_free;
+                    channel=channel->next;
+                }
+                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,i,i,channels,free, header->Trans_id));
+                    WARNING(r!=0);
+                
+                //mod_lor_10_04_21--
+                
+            }
+            break ;
+        //mod_lor_10_05_07--
         case OPEN_FREQ_QUERY_4 :
             {
                 open_freq_query_t *p = (open_freq_query_t *) msg ;
@@ -1372,30 +1434,113 @@ static void processing_msg_ip(
             break ;
         case UPDATE_OPEN_FREQ_7 :
             {
-                update_open_freq_t *p = (update_open_freq_t *) msg ;
+                update_open_freq_t *p = (update_open_freq_t *) msg ; 
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 from %d\n",rrm->id, header->inst);
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
-                int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
+                //mod_lor_10_05_18++: occ_channels passed as parameter to update open freq.
+                //channels vector incremented by one to have place to save the lenght of the vector
+                unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
+                unsigned int        occ_channels[NB_SENS_MAX]    ; //!< Vector of values
+                unsigned int        occ_ch_NB; //!< Number of occupied channels
+                int i, j=0;
+                for (i=0;i<p->NB_chan;i++){
+                    if (p->channels[i].is_free){
+                        channels[j]=p->channels[i].channel.Ch_id;
+                        j++;
+                    }
+                }            
+                occ_ch_NB = update_open_freq( rrm->id, p->L2_id, p->NB_chan, occ_channels, p->channels, header->Trans_id ); //mod_lor_10_05_18
+                //mod_lor_10_05_18--
+                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,j,occ_ch_NB,channels,occ_channels, header->Trans_id)); //mod_lor_10_05_17
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
-                update_open_freq( rrm->id, p->L2_id, p->NB_chan, p->fr_channels, header->Trans_id ); 
+                
                 
             }
             break ;
         case UPDATE_SN_OCC_FREQ_5 :
             {
                 update_SN_occ_freq_t *p = (update_SN_occ_freq_t *) msg ;
+
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 from %d\n",rrm->id, header->inst);
+                msg_fct( "Channels used by SN:\n");//dbg
+                for (int i=0; i<p->NB_chan; i++)//dbg
+                    msg_fct( "  %d  ", p->occ_channels[i]);//dbg
+                msg_fct( "\n");//dbg
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                //int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
+                
+                //mod_lor_10_04_20--
+                //mod_lor_10_05_18++
+                unsigned int alarm[2];
+                if (update_SN_occ_freq( rrm->id, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id )){
+                    alarm[0]=1;
+                    int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,p->NB_chan,2,p->occ_channels,alarm, header->Trans_id)); //mod_lor_10_05_17
+                    WARNING(r!=0);  
+                    open_freq_query( rrm->id, p->L2_id, 0, header->Trans_id );//mod_lor_10_05_17
+                }
+                else{
+                    alarm[0]=0;
+                    int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,p->NB_chan,2,p->occ_channels,alarm, header->Trans_id)); //mod_lor_10_05_17
+                    WARNING(r!=0);
+                }//mod_lor_10_05_18--
+            }
+            break ;
+            
+        //mod_lor_10_05_05++
+        case INIT_COLL_SENS_REQ :
+            {
+                init_coll_sens_req_t *p = (init_coll_sens_req_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:INIT_COLL_SENS_REQ from %d\n",rrm->id, header->inst);
+                rrm->sensing.sens_active=1;//mod_lor_10_05_07
+                //mod_lor_10_05_10++
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
-                //mod_lor_10_04_20--
-                update_SN_occ_freq( rrm->id, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id );  
+                //mod_lor_10_05_10--
+                memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
+                cmm_init_sensing(rrm->id,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
+                        p->Nb_channels, p->Overlap,p->Sampl_freq);
                 
             }
             break ;
+        //mod_lor_10_05_05--
+        //mod_lor_10_05_06++
+        case STOP_COLL_SENS :
+            {
+                //init_coll_sens_req_t *p = (init_coll_sens_req_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:STOP_COLL_SENS from %d\n",rrm->id, header->inst);
+                //mod_lor_10_05_10++
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
+                    WARNING(r!=0);
+                //mod_lor_10_05_10--
+                //memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
+                rrm->sensing.sens_active=0;//mod_lor_10_05_07
+                cmm_stop_sensing(rrm->id);
+                
+            }
+            break ;
+        //mod_lor_10_05_06--
+        //mod_lor_10_05_12++
+        case STOP_COLL_SENS_CONF :
+            {
+                stop_coll_sens_conf_t *p = (stop_coll_sens_conf_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:STOP_COLL_SENS_CONF from %d\n",rrm->id, header->inst);
+                //mod_lor_10_05_10++
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
+                    WARNING(r!=0);
+                //mod_lor_10_05_10--
+                //memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
+                rrc_end_scan_conf( header->inst, p->L2_id, header->Trans_id );
+                
+            }
+            break ;
+        //mod_lor_10_05_12--
        
         default :
             fprintf(stderr,"IP:\n") ;

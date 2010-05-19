@@ -35,6 +35,7 @@ extern "C" {
   */
 #define MAX_RRM     10
 
+
   /*!
 *******************************************************************************
 \brief Structure definissant une instance RRM       
@@ -43,7 +44,6 @@ extern "C" {
 
   typedef struct {
     int  id                                 ; ///< identification de l'instance RRM
-    
     enum { 
       ISOLATEDNODE=0   , ///< Node is in a isolated State
       CLUSTERHEAD_INIT0, ///< Node is in a Cluster Head initialization State  
@@ -64,7 +64,7 @@ extern "C" {
 
     unsigned char       L3_info[MAX_L3_INFO]; ///< identification de niveau L3   
     //mod_lor_10_01_25
-    unsigned char       L3_info_corr[MAX_L3_INFO]; ///< identification de niveau L3 du correspondant: FC si le noeud est un senseur ou la BS, BS si le noeud est le FC
+    unsigned char       L3_info_corr[MAX_L3_INFO]; ///< identification de niveau L3 du correspondant: FC si le noeud est un senseur ou la BS, BS si le noeud est le FC, CH1 for CH2, CH2 for CH1
     
     file_head_t         file_send_cmm_msg   ; ///< File des messages en emission
     file_head_t         file_send_rrc_msg   ; ///< File des messages en emission
@@ -123,6 +123,7 @@ extern "C" {
       sock_rrm_int_t      *s              ; ///< Socket associé a l'IP
       unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface IP
       transact_t      *transaction        ; ///< liste des transactions non terminees
+      unsigned int    waiting_SN_update   ; ///< flag to know if an update is expected from SN about frequencies in use //mod_lor_10_05_18
       pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
     } ip     							  ; ///<  info relatif a l'interface IP
     //mod_lor_10_01_25--

@@ -71,7 +71,16 @@
 ** DEFINE LOCAL
 ** ----------------------------------------------------------------------------
 */
- 
+//mod_lor_10_05_18++
+/*!
+*******************************************************************************
+\brief Definition of IP @ in main entities. i.e. they have to correspond 
+        to the ones in node_info vector in emul_interface.c
+*/
+ static unsigned char FC_L3id [4]={0x0A,0x00,0x01,0x01};
+ static unsigned char BTS_L3id [4]={0x0A,0x00,0x02,0x02};
+ static unsigned char CH_COLL_L3id [4]={0x0A,0x00,0x02,0x02};
+//mod_lor_10_05_18--
 /*
 ** ----------------------------------------------------------------------------
 ** DECLARATION DE NOUVEAU TYPE
@@ -495,7 +504,7 @@ static void * thread_recv_msg_int (
     int sock ;
 
     fprintf(stderr,"%s interfaces :starting on inst. %d ... ",data->name, data->instance  );
-    fprintf(stderr,"\n");//dbg
+    fprintf(stderr,"\n");
                
     fflush(stderr);
 
@@ -689,7 +698,35 @@ static void processing_msg_cmm(
 #ifndef    RRC_EMUL          
                 
                 if (rrm->ip.s->s == -1){ 
-                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    //mod_lor_10_05_06++
+                    unsigned char tmp [4];
+                    /*for (int i=0; i<10;i++ )
+                        if (memcmp( &(node_info[i].L2_id), &(p->L2_id), sizeof(L2_ID) )){
+                            fprintf(stderr,"Inst. to connect with %d\n",i);
+                            break;
+                        }//memcpy()*/
+                       
+                    //mod_lor_10_05_18++: destination addresses depends on 
+                    //scenario and on role, they are declared at beginning of file
+                    if (SCEN_2_CENTR && rrm->id == 4){
+                        tmp[0]=CH_COLL_L3id[0];
+                        tmp[1]=CH_COLL_L3id[1];
+                        tmp[2]=CH_COLL_L3id[2];
+                        tmp[3]=CH_COLL_L3id[3];
+                    }
+                   else {
+                        tmp[0]=FC_L3id[0];
+                        tmp[1]=FC_L3id[1];
+                        tmp[2]=FC_L3id[2];
+                        tmp[3]=FC_L3id[3];
+                    }//mod_lor_10_05_18--
+                       //unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
+                    /*fprintf(stderr,"IP_addr :");//dbg //mod_lor_10_05_06
+                    for (int i=0;i<4;i++)//dbg
+                        fprintf(stderr," %X",tmp[i]);//dbg
+                    fprintf(stderr,"\n");//dbg*/
+                    
+                    //mod_lor_10_05_06--
                     fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
                     int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
                     if ( sock != -1 )
@@ -721,14 +758,17 @@ static void processing_msg_cmm(
                 DataIp.sock_path_local=p->L3_info;///< local IP address for internet socket
                 DataIp.local_port = 7000          ; ///< local IP port for internet socket
                 //mod_lor_10_03_01++: setting for topology with FC and BTS on instances 0 and 1
+                //mod_lor_10_05_18++
                 if (rrm->role == FUSIONCENTER){
-                    unsigned char tmp [4]={0x0A,0x00,0x02,0x02};
-                    DataIp.sock_path_dest = tmp ; ///< dest IP address for internet socket
-                }else if (rrm->role == BTS || rrm->role == CH_COLL){ //mod_lor_10_04_27
-                    unsigned char tmp [4]={0x0A,0x00,0x01,0x01};
-                    DataIp.sock_path_dest = tmp  ; ///< dest IP address for internet socket
+                    if (SCEN_1)
+                        DataIp.sock_path_dest = BTS_L3id ; ///< dest IP address for internet socket
+                    else if (SCEN_2_CENTR)
+                        DataIp.sock_path_dest = CH_COLL_L3id ; ///< dest IP address for internet socket
+                }else if (rrm->role == BTS ||rrm->role == CH_COLL){ //mod_lor_10_04_27
+                    DataIp.sock_path_dest = FC_L3id  ; ///< dest IP address for internet socket
                 }else 
                     fprintf (stderr, "wrong node role %d \n", rrm->role);
+                //mod_lor_10_05_18--
                 //mod_lor_10_03_01--
                 DataIp.dest_port = 0          ; ///< dest IP port for internet socket
                 DataIp.s.s = -1      ; 
@@ -756,14 +796,15 @@ static void processing_msg_cmm(
             {
                 cmm_init_sensing_t *p = (cmm_init_sensing_t *) msg ;                
                 msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_SENSING\n",header->inst);
+                rrm->sensing.sens_active=1;//mod_lor_10_05_07
                 cmm_init_sensing(header->inst,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
                         p->Nb_channels, p->Overlap,p->Sampl_freq);
-                fprintf(output_2,"PROVA\n"); //mod_lor_10_04_20
             }
             break ;
         case CMM_STOP_SENSING :
             {
                 msg_fct( "[CMM]>[RRM]:%d:CMM_STOP_SENSING\n",rrm->id);
+                rrm->sensing.sens_active=0;//mod_lor_10_05_07
                 //print_sens_db(rrm->rrc.pSensEntry);//dbg
                 cmm_stop_sensing(header->inst);
             }
@@ -859,9 +900,10 @@ static void processing_msg_rrc(
                                     p->L3_info,p->L3_info_t,
                                     p->DTCH_B_id,p->DTCH_id) ;
                 //mod_lor_10_01_25++
-                if (rrm->state == MESHROUTER)
+                if (rrm->state == MESHROUTER){
                     memcpy(rrm->L3_info_corr,p->L3_info, IPv4_ADDR);
-               
+                    
+               }
                     //mod_lor_10_01_25--*/
             }
             break ;
@@ -972,15 +1014,17 @@ static void processing_msg_sensing(
         case SNS_UPDATE_SENS :
             {
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
-                msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
+                if (rrm->sensing.sens_active) {//mod_lor_10_05_07
+                    msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
                 /*for ( int i=0;i<8;i++)
                     msg_fct("%02X", p->L2_id.L2_id[i]);
                 msg_fct( ")\n");*/
                 //fprintf(stderr,"from inst%d NB_info = %d\n",header->inst, p->NB_info);//dbg
                 //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
                 
-                rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
+                    rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
                 //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
+                }//mod_lor_10_05_07
             }
             break ;
     //mod_lor_10_04_14++
@@ -1104,13 +1148,27 @@ static void processing_msg_ip(
                 //fprintf(stderr,"1node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
                 rrm_update_sens_t *p = (rrm_update_sens_t *) msg ;
                 //fprintf(stdout,"Ip dest in FC before update%X\n",rrm_inst[0].ip.s->in_dest_addr.sin_addr.s_addr); //dbg
-                msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d \n",rrm->id, header->inst);
-                update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                if (rrm->sensing.sens_active){ //mod_lor_10_05_07
+                    msg_fct( "[IP]>[RRM]:%d:UPDATE_SENS_RESULTS_3 from %d \n",rrm->id, header->inst);
+               
+                    update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                } //mod_lor_10_05_07
                 //fprintf(stdout,"Ip dest in FC after update%X\n",rrm_inst[0].ip.s->in_dest_addr.sin_addr.s_addr); //dbg
                 //fprintf(stderr,"2node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
                 
             }
             break ;
+        //mod_lor_10_05_07++    
+        case UP_CLUST_SENS_RESULTS :
+            {
+                update_coll_sens_t *p = (update_coll_sens_t *) msg ;
+                if (rrm->sensing.sens_active){ 
+                    msg_fct( "[IP]>[RRM]:%d:UP_CLUST_SENS_RESULTS from %d \n",rrm->id, header->inst);
+                    up_coll_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
+                } 
+            }
+            break ;
+        //mod_lor_10_05_07--
         case OPEN_FREQ_QUERY_4 :
             {
                 open_freq_query_t *p = (open_freq_query_t *) msg ;
@@ -1122,8 +1180,9 @@ static void processing_msg_ip(
         case UPDATE_OPEN_FREQ_7 :
             {
                 update_open_freq_t *p = (update_open_freq_t *) msg ;
+                unsigned int occ_channels[p->NB_chan]; //mod_lor_10_05_18: occ_channels passed as parameter to update open freq.
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_OPEN_FREQ_7 from %d\n",rrm->id, header->inst);
-                update_open_freq( rrm->id, p->L2_id, p->NB_chan, p->fr_channels, header->Trans_id ); 
+                update_open_freq( rrm->id, p->L2_id, p->NB_chan, occ_channels, p->channels, header->Trans_id ); 
                 
             }
             break ;
@@ -1131,10 +1190,46 @@ static void processing_msg_ip(
             {
                 update_SN_occ_freq_t *p = (update_SN_occ_freq_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:UPDATE_SN_OCC_FREQ_5 from %d\n",rrm->id, header->inst);
-                update_SN_occ_freq( rrm->id, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id );  
+                if(update_SN_occ_freq( rrm->id, p->L2_id, p->NB_chan, p->occ_channels, header->Trans_id )) //mod_lor_10_05_18
+                    open_freq_query( rrm->id, p->L2_id, 0, header->Trans_id ); //mod_lor_10_05_18
                 
             }
             break ;
+        //mod_lor_10_05_05++
+        case INIT_COLL_SENS_REQ :
+            {
+                init_coll_sens_req_t *p = (init_coll_sens_req_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:INIT_COLL_SENS_REQ from %d\n",rrm->id, header->inst);
+                rrm->sensing.sens_active=1;//mod_lor_10_05_07
+                memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
+                cmm_init_sensing(rrm->id,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
+                        p->Nb_channels, p->Overlap,p->Sampl_freq);
+                
+            }
+            break ;
+        //mod_lor_10_05_05--
+        //mod_lor_10_05_06++
+        case STOP_COLL_SENS :
+            {
+                //init_coll_sens_req_t *p = (init_coll_sens_req_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:STOP_COLL_SENS from %d\n",rrm->id, header->inst);
+                //memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
+                rrm->sensing.sens_active=0;//mod_lor_10_05_07
+                cmm_stop_sensing(rrm->id);
+                
+            }
+            break ;
+        //mod_lor_10_05_06--
+        //mod_lor_10_05_12++
+        case STOP_COLL_SENS_CONF :
+            {
+                stop_coll_sens_conf_t *p = (stop_coll_sens_conf_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:STOP_COLL_SENS_CONF from %d\n",rrm->id, header->inst);
+                rrc_end_scan_conf( header->inst, p->L2_id, header->Trans_id );
+                
+            }
+            break ;
+        //mod_lor_10_05_12--
        
         default :
             fprintf(stderr,"IP:\n") ;

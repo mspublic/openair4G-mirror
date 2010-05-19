@@ -55,8 +55,9 @@
 #define NUM_SCENARIO  14
 #define SENSORS_NB 3 //mod_lor_10_03_03
 #define PUSU_EMUL
-#define BTS_ID 1
+/*#define BTS_ID 1
 #define FC_ID 0
+#define CH_COLL_ID 0*/
 
 
 #ifdef RRC_EMUL
@@ -115,6 +116,16 @@ node_info_t node_info[10] = {
  { .L2_id={{0x09,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x09,0x00,0xAA,0xCC} }
 } ;
 //mod_lor_10_01_25--*/
+/*****************************************************************************
+ * \brief  Sensing Parameters
+ */
+unsigned int     Start_fr   = 1000; //!< Low frequency limit
+unsigned int     Stop_fr    = 2000; //!< High frequency limit
+unsigned int     Meas_band  = 200;  //!< Channel bandwidth
+unsigned int     Meas_tpf   = 2;    //!< Misuration time per frequency
+unsigned int     Overlap    = 5;    //!< Overlap
+unsigned int     Sampl_freq = 10;   //!< Sample frequency
+            
 
 //void print_pusu_msg( neighbor_entry_RRM_to_CMM_t *pEntry );
 
@@ -516,7 +527,7 @@ static void * fn_cmm (
 
                         add_actdiff(&list_actdiff,delai, cnt_actdiff++, s,
                                 msg_cmm_attach_cnf(header->inst,p->L2_id,node_info[header->inst].L3_info_t,node_info[header->inst].L3_info,header->Trans_id ) ) ;
-
+                    
                         pthread_mutex_unlock( &actdiff_exclu ) ;
                     }
                     break ;
@@ -889,13 +900,11 @@ int main( int argc , char **argv )
             flag_not_exit = 0;//mod_lor_10_04_27
         else if (c == 's'){//mod_lor_10_04_27
             printf("Starting sensing ... \n\n");
-            unsigned int     Start_fr   = 1000;
-            unsigned int     Stop_fr    = 2000;
-            unsigned int     Meas_band  = 200;
-            unsigned int     Meas_tpf   = 2;
             unsigned int     Nb_channels= (Stop_fr-Start_fr)/Meas_band; 
-            unsigned int     Overlap    = 5;
-            unsigned int     Sampl_freq = 10;
+            if (Nb_channels>NB_SENS_MAX){
+                printf("ERROR! too many channels! Maximum number of channels is %d",NB_SENS_MAX);
+                break;
+            }
             pthread_mutex_lock( &actdiff_exclu  ) ; 
             add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm,
                     msg_cmm_init_sensing(FC_ID,Start_fr,Stop_fr,Meas_band,Meas_tpf,
@@ -911,10 +920,14 @@ int main( int argc , char **argv )
             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
         }
         else if (c == 'a'){
-            printf("Activating BTS to request frequencies  ... \n\n");
-            pthread_mutex_lock( &actdiff_exclu  ) ; 
-            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_ask_freq(BTS_ID) );
-            pthread_mutex_unlock( &actdiff_exclu ) ;
+            printf("Activating BTS to ask for frequencies  ... \n\n");
+            if (BTS_ID>=0){
+                pthread_mutex_lock( &actdiff_exclu  ) ; 
+                add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_ask_freq(BTS_ID) );
+                pthread_mutex_unlock( &actdiff_exclu ) ;
+            }
+            else
+                printf("BTS not connected  ... \n\n");
         }
     }
     //mod_lor_10_04_27--*/    

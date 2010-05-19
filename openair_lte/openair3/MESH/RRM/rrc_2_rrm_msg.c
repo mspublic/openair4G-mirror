@@ -31,7 +31,7 @@
 #include "L3_rrc_interface.h"
 #include "rrc_rrm_msg.h"
 #include "rrm_util.h"
-#include "sensing_rrm_msg.h" //AAA: mod_lor_10_04_15
+//#include "sensing_rrm_msg.h" //mod_lor_10_04_15
 
 #else
 

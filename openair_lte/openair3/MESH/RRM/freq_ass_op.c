@@ -83,9 +83,7 @@ void cmm_ask_freq(
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
-    
-    //rrm->role = BTS;
-           
+
     pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
     rrm->ip.trans_cnt++ ;
     PUT_IP_MSG(msg_open_freq_query_4( inst, rrm->L2_id_FC, 0, rrm->ip.trans_cnt));
@@ -107,48 +105,45 @@ void open_freq_query(
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
-    unsigned int NB_free_ch=0;
+    unsigned int NB_chan=0;
    // printf("before mutex open_freq_query\n");//dbg
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
    // printf("after mutex open_freq_query\n");//dbg
     CHANNELS_DB_T *pChannelsEntry=rrm->rrc.pChannelsEntry;
     CHANNELS_DB_T *pChannels = pChannelsEntry;
-    //TO DO: here should be implemented the method to determine if a frequency is free
-    
-    while (pChannels!=NULL){
-        if (pChannels->is_free)
-            NB_free_ch++;
-        pChannels = pChannels->next;
-    }
+
     //fprintf(stdout,"cp3 : NB_free_chan %d\n", NB_free_ch); //dbg
-    
-    CHANNEL_T free_channels_hd[NB_free_ch];
-    int j = 0;
+    //mod_lor_10_05_17++: send vector with all frequencies (not only free ones)
+    CHANNELS_DB_T channels_hd[NB_SENS_MAX];
     pChannels = pChannelsEntry;
     while (pChannels!=NULL){//mod_lor_10_03_08
-        if (pChannels->is_free){
-
-            memcpy(&(free_channels_hd[j]) , &(pChannels->channel), sizeof(CHANNEL_T));
-            //fprintf(stdout,"open_freq_query: channel %d\n", free_channels_hd[j].Ch_id); //dbg
-            j++;
-        }
+        memcpy(&(channels_hd[NB_chan]) , pChannels, sizeof(CHANNELS_DB_T));
         pChannels = pChannels->next;
+        NB_chan++;
     }
+    //mod_lor_10_05_17--
    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
     
     //fprintf(stdout,"NB_free_chan %d\n", NB_free_ch); //dbg
     //for (int i = 0; i<NB_free_ch; i++)//dbg
        // fprintf(stdout,"channel %d meas %f\n", free_channels_hd[i].Ch_id, free_channels_hd[i].meas); //dbg
-                        
+    
+    //printf("channels in open_freq_query_funct\n");//dbg
+    //for (int i=0; i<NB_chan;i++)//dbg
+    //    printf("  %d  ",channels_hd[i].channel.Ch_id);//dbg
+    //printf("\n");//dbg                    
             
              
     pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
     rrm->ip.trans_cnt++ ;
-    //printf("before put ip in open_freq_query\n");//dbg
-    PUT_IP_MSG(msg_update_open_freq_7( inst, L2_id, NB_free_ch, free_channels_hd, rrm->ip.trans_cnt));
-    //printf("after put ip in open_freq_query\n");//dbg
+    PUT_IP_MSG(msg_update_open_freq_7( inst, L2_id, NB_chan, channels_hd, rrm->ip.trans_cnt));
+    rrm->ip.waiting_SN_update=1;//mod_lor_10_05_18
     pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
 
+   // printf("channels in open_freq_query_funct after IP_msg\n");//dbg
+   // for (int i=0; i<NB_chan;i++)//dbg
+   //     printf("  %d  ",channels_hd[i].channel.Ch_id);//dbg
+   // printf("\n");//dbg    
     
 }
 
@@ -157,51 +152,78 @@ void open_freq_query(
  \brief RRC open frequency.  
  *
 */
-void update_open_freq( 
+unsigned int update_open_freq(   //mod_lor_10_05_18
     Instance_t inst             , //!< identification de l'instance
     L2_ID L2_id                 , //!< L2_id of the FC/CH
-    unsigned int NB_chan        , //!< Number of available channels
-    CHANNEL_T *fr_channels      , //!< List of available channels
+    unsigned int NB_chan        , //!< Number of channels
+    unsigned int *occ_channels  , //!< vector on wich the selected frequencies will be saved //mod_lor_10_05_18
+    CHANNELS_DB_T *channels     , //!< List of channels
     Transaction_t Trans_id        //!< Transaction ID
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ;
-    unsigned int NB_occ_chan = 0      ;
-    unsigned int occ_channels[NB_chan];
+    unsigned int NB_occ_chan = 0 ;
+    //unsigned int occ_channels[NB_chan];
+    CHANNELS_DB_T *chann_checked;
     CHANNEL_T ass_channels[NB_chan];
     for (int i=0; i<NB_chan; i++)
     {
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-        if(up_chann_db( &(rrm->rrc.pChannelsEntry), fr_channels[i], 1, 0)==NULL) //info_time still to evaluate
+         //mod_lor_10_05_17++
+         fprintf(stderr, "update channel : %d that is %d\n",channels[i].channel.Ch_id, channels[i].is_free);
+        chann_checked = up_chann_db( &(rrm->rrc.pChannelsEntry), channels[i].channel, channels[i].is_free, 0);
+        if(chann_checked == NULL) //info_time still to evaluate
             fprintf(stderr, "error in updating free channels in BTS \n");
+        else if (chann_checked->is_ass && !(chann_checked->is_free)){
+            fprintf(stderr, "  -> Channel %d in use not free anymore! \n",channels[i].channel.Ch_id);
+            chann_checked->is_ass = 0;
+        }else if (chann_checked->is_ass && chann_checked->is_free){
+            ass_channels[NB_occ_chan]=chann_checked->channel;
+            occ_channels[NB_occ_chan]=chann_checked->channel.Ch_id ;
+            NB_occ_chan++;
+        }
+        
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-        //fprintf(stderr,"chann db pointer  @%p \n", canal);//dbg 
-        //rrm_t *rrm = &rrm_inst[inst] ;
-        //TO DO: next 3 lines have to be substituted by the process that allocate frequencies to SUs 
-        ass_channels[i]=fr_channels[i] ;
-        //fprintf(stderr,"update_open_freq -> ass_channel  %d \n", ass_channels[i].Ch_id);//dbg
-        occ_channels[i]=fr_channels[i].Ch_id ;
-        //fprintf(stderr,"update_open_freq -> occ_channel  %d \n", occ_channels[i]);//dbg
+        
+       
+    }
+    
+    while (NB_occ_chan<CH_NEEDED_FOR_SN){
+        chann_checked=select_new_channel( rrm->rrc.pChannelsEntry, rrm->L2_id, rrm->L2_id);
+        if (chann_checked == NULL){
+            //fprintf(stderr, "Channel is null \n"); //dbg
+            break;
+        }
+        ass_channels[NB_occ_chan]=chann_checked->channel;
+        occ_channels[NB_occ_chan]=chann_checked->channel.Ch_id ;
         NB_occ_chan++;
     }
     
-    // TO DO -> part in which the free channels are assigned to secondary users.         
+    fprintf(stderr, "Channels for SN selected by BTS: \n"); //dbg
+    for (int i=0; i<NB_occ_chan;i++)//dbg
+        fprintf(stderr, "   %d   ", occ_channels[i]);//dbg
+    fprintf(stderr, "\n");//dbg
+    
+    //mod_lor_10_05_17--
+    
+        
     pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
     rrm->ip.trans_cnt++ ;
     PUT_IP_MSG(msg_update_SN_occ_freq_5( inst, rrm->L2_id, NB_occ_chan, occ_channels, rrm->ip.trans_cnt));
     pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
 
-    
+    //AAA: BTS sends a vector containing the channels that have to be used by secondary users
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
     PUT_RRC_MSG(msg_rrm_up_freq_ass( inst, rrm->L2_id,  NB_occ_chan, ass_channels));
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-    
+
+    return (NB_occ_chan);//mod_lor_10_05_18
 }
 
 /*!
 \brief RRC update secondary network frequencies in use  (SENDORA first scenario)
  */ 
-void update_SN_occ_freq(
+unsigned int update_SN_occ_freq( //mod_lor_10_05_18
     Instance_t inst             , //!< instance ID 
     L2_ID L2_id                 , //!< Layer 2 (MAC) ID of BTS
     unsigned int NB_chan        , //!< number of channels used by secondary network
@@ -210,22 +232,33 @@ void update_SN_occ_freq(
     )
         
 {
-    rrm_t *rrm = &rrm_inst[inst] ; 
+    rrm_t *rrm = &rrm_inst[inst] ;
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;  //mod_lor_10_05_18
+    rrm->ip.waiting_SN_update=0;                //mod_lor_10_05_18
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;//mod_lor_10_05_18
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
     CHANNELS_DB_T *pChannelsEntry=rrm->rrc.pChannelsEntry;
     CHANNELS_DB_T *pChannels;
-    Sens_node_t *nodes_db = rrm->rrc.pSensEntry;
+    unsigned int need_to_update = 0;
+    //Sens_node_t *nodes_db = rrm->rrc.pSensEntry;
     //fprintf(stderr,"update_SN_occ_freq  %d \n", inst);//dbg 
     //for (pChannels = rrm->rrc.pChannelsEntry; pChannels!=NULL; pChannels=pChannels->next)//dbg
     //    fprintf(stderr,"channel   %d  in db\n", pChannels->channel.Ch_id);//dbg
-    for (int i=0; i<NB_chan; i++){
+    for (int i=0; i<NB_chan ; i++){//&& !need_to_update
         //fprintf(stderr,"occ_channels  %d  val %d\n", i,occ_channels[i]);//dbg
         pChannels = up_chann_ass( pChannelsEntry  , occ_channels[i], 1, L2_id, L2_id );
-        
-        
+        //mod_lor_10_05_17++ : to send update when a selected channel is not free anymore
+        if (pChannels==NULL){
+            need_to_update=1;
+            
+        }
+        //mod_lor_10_05_17--
     }
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-    // TO DO -> start monitoring on the SN channels
+    //if (need_to_update)//mod_lor_10_05_17
+    //    open_freq_query( rrm->id, L2_id, 0, Trans_id );//mod_lor_10_05_17
+    
+    // start monitoring on the SN channels
     /*while (nodes_db!=NULL){
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;
@@ -233,7 +266,7 @@ void update_SN_occ_freq(
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
         nodes_db = nodes_db->next;
     }*/
-    
+    return (need_to_update); //mod_lor_10_05_17
     
     
 }
@@ -359,7 +392,7 @@ void update_SN_occ_freq(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     up_chann_ass( rrm->rrc.pChannelsEntry, all_channel.Ch_id, 1, L2_id_source, L2_id_dest);
-    //TO DO: add Session_id field in CHANNELS_DB or maybe a "active_session" variable in rrm.h
+    //TO DO SCEN_2_DISTR: add Session_id field in CHANNELS_DB or maybe a "active_session" variable in rrm.h
     if (L2_ID_cmp(&(L2_id_source), &(rrm->L2_id)) == 0 || L2_ID_cmp(&(L2_id_dest), &(rrm->L2_id)) == 0 ){
         pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
         rrm->cmm.trans_cnt++ ;

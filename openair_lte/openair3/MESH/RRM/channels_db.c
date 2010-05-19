@@ -247,16 +247,18 @@ CHANNELS_DB_T *up_chann_db(
     }
 
     pNewItem->info_time =  info_time ;
-    if (is_free == pNewItem->is_free)
+    //mod_lor_10_05_17++
+    pNewItem->is_free=is_free;
+    /*if (is_free == pNewItem->is_free)
         return pNewItem;
     if (!(pNewItem->is_ass)){
         pNewItem->is_free=is_free;
         return pNewItem;
-    }
-    
-    else 
-        fprintf(stderr,"to implement \n");//dbg
-     
+    }*/
+    return pNewItem;
+    //else 
+    //    fprintf(stderr,"Primary User detected on channel %d in use by secondary network\n", channel.Ch_id);//mod_lor_10_05_12
+     //mod_lor_10_05_17--
     //PRINT_CHANNELS_DB(*ch_entry); //dbg
     return NULL;
 }
@@ -286,12 +288,12 @@ CHANNELS_DB_T *up_chann_ass(
     //fprintf(stderr,"up_channels 2b is_free: %d is_ass: %d\n",pChannels->is_free,pChannels->is_ass);//dbg 
     if (!(pChannels->is_free)){
         fprintf(stderr,"The channel %d is not free!\n", Ch_id);
-
+        return (NULL); //mod_lor_10_05_17
     }else if (pChannels->is_ass == is_ass){
         //fprintf(stderr,"up_channels 3 is_ass\n");//dbg
         if (is_ass && L2_ID_cmp (&(source_id), &(pChannels->source_id))!=0)
             fprintf(stderr,"The channel %d is already assigned \n", Ch_id);
-        fprintf(stderr,"No updating performed for channel %d \n", Ch_id);
+        //fprintf(stderr,"No updating performed for channel %d \n", Ch_id);//dbg
 
     }else {
         pChannels->is_ass = is_ass;
@@ -306,3 +308,44 @@ CHANNELS_DB_T *up_chann_ass(
     //fprintf(stderr,"up_channels 6 END\n");//dbg
     return (pChannels);
 }
+
+//mod_lor_10_05_17++
+/*!
+*******************************************************************************
+\brief  The function select a new channel among the free ones. It selects the 
+        first channel marked as free and not assigned in the channels database 
+        and assigns it to the nodes whose L2_ids are passed as imput
+
+\return  the pointer to selected channel entry; NULL if not available channels are found
+*/ 
+CHANNELS_DB_T *select_new_channel( 
+        CHANNELS_DB_T *ch_entry  , ///< pointeur sur l'entree de la liste de noeuds
+        L2_ID source_id          , ///< In case of channel assigned: address of the source node that is using it
+        L2_ID dest_id              ///< In case of channel assigned: address of the destination node that is using it
+     ) 
+     
+{
+        
+    CHANNELS_DB_T *pChannels = ch_entry;
+    
+    while ( pChannels != NULL)
+    { 
+        if ( pChannels->is_free && !(pChannels->is_ass) )
+            break  ;
+        
+        pChannels = pChannels->next ;
+    }
+    
+    
+    if (pChannels == NULL){
+        fprintf(stderr,"*SELECT NEW CHANNEL* -> No free channels available!\n");
+        return (NULL);
+    }
+    else{
+        pChannels->is_ass = 1;
+        memcpy( pChannels->source_id.L2_id, source_id.L2_id, sizeof(L2_ID) )  ;
+        memcpy( pChannels->dest_id.L2_id, dest_id.L2_id, sizeof(L2_ID) )  ;
+    }
+    return (pChannels);
+}
+//mod_lor_10_05_17--

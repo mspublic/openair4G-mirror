@@ -96,11 +96,13 @@ int take_decision(
         }
         pSensNode = pSensNode->next;
     }
-        
-    if (is_free>0)
+    //mod_lor_10_05_07++
+    /*if (is_free>0)
         return 1;
     else
-        return 0;
+        return 0;*/
+    return is_free;
+    //mod_lor_10_05_07--
     
 }
 //mod_lor_10_03_19--
@@ -138,7 +140,7 @@ void rrc_update_sens(
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
     
     
-    //AAA: for the moment the channel db is reserved for CHs and SUs only in S2D 
+    //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR 
     
     
     if ( SCEN_2_DISTR) 
@@ -164,7 +166,7 @@ void rrc_update_sens(
             
         }
        
-        //AAA: just to save the right L2_id for the simulation
+        //AAA: just to save the right L2_id in SCEN_2_DISTR
         if ( rrm->state != CLUSTERHEAD && SCEN_2_DISTR)
             memcpy( rrm->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
     
@@ -204,10 +206,10 @@ void rrc_update_sens(
         //mod_lor_10_04_22--
         pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
         
-        //mod_lor_10_04_21++ AAA -> to remove when sensing remont automatically info
+        //mod_lor_10_04_21++ TO DO -> to remove when sensing remont automatically info
         //sleep(10);
         if(rrm->sensing.sens_active){
-            sleep(5);
+            sleep(10);
             pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
             rrm->sensing.trans_cnt++ ;
             //fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord on socket %d \n",rrm->sensing.trans_cnt,rrm->sensing.s->s);//dbg
@@ -239,8 +241,10 @@ void cmm_init_sensing(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
     
-    if ( (rrm->state == CLUSTERHEAD_INIT1 ) || (rrm->state == CLUSTERHEAD ) )
+    //if ( (rrm->state == CLUSTERHEAD_INIT1 ) || (rrm->state == CLUSTERHEAD ) )
+    if (rrm->role == FUSIONCENTER || rrm->role == CH_COLL) //mod_lor_10_05_05
     {
+        
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
         rrm->rrc.trans_cnt++ ;
         //fprintf(stderr,"rrc counter %d in rrm_init_scan_req  \n",rrm->rrc.trans_cnt);//dbg
@@ -248,13 +252,15 @@ void cmm_init_sensing(
                          Nb_channels,  Overlap, Sampl_freq, rrm->rrc.trans_cnt));
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
         
-        
-       /* if (SCEN_2_CENTR){
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            rrm->rrc.trans_cnt++ ;
-            PUT_RRC_MSG(msg_rrm_clust_scan_req( inst, rrm->L2_id_FC, interv, 1, rrm->rrc.trans_cnt));
-            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-        }*/
+       //mod_lor_10_05_05++ 
+       if (SCEN_2_CENTR && rrm->role == FUSIONCENTER){
+            pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+            rrm->ip.trans_cnt++ ;
+            PUT_IP_MSG(msg_init_coll_sens_req( inst, rrm->L2_id, Start_fr, Stop_fr,Meas_band, Meas_tpf,
+                         Nb_channels,  Overlap, Sampl_freq, rrm->ip.trans_cnt));
+            pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+        }
+        //mod_lor_10_05_05--
         
     }
     else
@@ -313,36 +319,6 @@ void rrc_init_scan_req(
     PUT_SENS_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
     pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
     
-    
-/*//mod_lor -> AAA: to remove when rrc_update_sens message is active.
-    unsigned int length_info = 3;
-    Sens_ch_t Sensing_meas[length_info];
-    act_start_fr = Start_fr;
-    for (int i = 0; i<length_info; i++){
-        Sensing_meas[i].Start_f = act_start_fr   ; 
-        act_start_fr+=Meas_band;
-        Sensing_meas[i].Final_f = act_start_fr  ; ///< frequence final du canal
-        Sensing_meas[i].Ch_id  = i + 1    ; ///< ID du canal
-        Sensing_meas[i].meas   = 10+i   ; ///< Sensing results 
-        Sensing_meas[i].is_free  = ((inst%2  )+((i+1)%2  ))%2; ///< Decision about the channel
-        if (inst==4)
-             Sensing_meas[i].is_free  = ((inst%2  )+((i)%2  ))%2; ///< Decision about the channel
-        fprintf(stderr,"inst %d, channel %d, is_free %d\n", inst,Sensing_meas[i].Ch_id,Sensing_meas[i].is_free);//dbg
-    }   
-    
-#ifdef    RRC_EMUL 
-    rrc_update_sens( inst,rrm->L2_id, length_info, Sensing_meas,0);
-
-#else
-    
-    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
-    rrm->ip.trans_cnt++ ;
-    PUT_IP_MSG(msg_update_sens_results_3( inst, rrm->L2_id, 3, Sensing_meas, rrm->ip.trans_cnt));
-    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
-#endif    
-//mod_lor -< */
-
-    
 }//mod_lor_10_03_13--
 
 /*!
@@ -356,8 +332,9 @@ void cmm_stop_sensing(
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
-    //fprintf(stderr,"1 end\n");//dbg
-    if ( (rrm->state == CLUSTERHEAD_INIT1 ) || (rrm->state == CLUSTERHEAD ) )
+ //   fprintf(stderr,"stop sensing %d role %d\n\n\n\n\n\n\n\n\n", rrm->id, rrm->role);//dbg
+   // if ( (rrm->state == CLUSTERHEAD_INIT1 ) || (rrm->state == CLUSTERHEAD ) )
+    if ( (rrm->role == FUSIONCENTER ) || (rrm->role == CH_COLL ) ) //mod_lor_10_05_06
     {
         //fprintf(stderr,"2 end\n");//dbg
         Sens_node_t     *p = rrm->rrc.pSensEntry;
@@ -373,13 +350,32 @@ void cmm_stop_sensing(
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             p = p->next;
         }
-        if (SCEN_2_CENTR){ //!< To inform the CH that is collaborating in sensing to stop sensing
+        //mod_lor_10_05_06++
+        if (SCEN_2_CENTR){ //TO DO: need to add control to know if collaboration is active
+            if (rrm->role == FUSIONCENTER){
+                sleep(2);
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                rrm->ip.trans_cnt++ ;
+                //fprintf(stderr,"rrc counter %d in msg_rrm_end_scan_req  \n",rrm->rrc.trans_cnt);//dbg
+                PUT_IP_MSG(msg_stop_coll_sens( inst));
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+            }else{
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                rrm->ip.trans_cnt++ ;
+                //fprintf(stderr,"rrc counter %d in msg_rrm_end_scan_req  \n",rrm->rrc.trans_cnt);//dbg
+                //PUT_IP_MSG(msg_stop_coll_sens_conf( inst));
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+            }
+        }
+        
+        /*if (SCEN_2_CENTR ){ //!< To inform the CH that is collaborating in sensing to stop sensing
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             rrm->rrc.trans_cnt++ ;
             //fprintf(stderr,"rrc counter %d in msg_rrm_end_scan_req  \n",rrm->rrc.trans_cnt);//dbg
             PUT_RRC_MSG(msg_rrm_end_scan_req( inst, rrm->L2_id_FC, rrm->rrc.trans_cnt));
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-        }
+        }*/
+        //mod_lor_10_05_06--
         
     }
     
@@ -410,11 +406,9 @@ void rrc_end_scan_conf(
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
     if ((rrm->role == CH_COLL) && (rrm->rrc.pSensEntry == NULL)){
-        pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-        rrm->rrc.trans_cnt++ ;
-        //fprintf(stderr,"rrc counter %d in end_scan_conf->to do  \n",rrm->rrc.trans_cnt);//dbg
-        //To send via IP: PUT_RRC_MSG(msg_rrm_end_scan_conf( inst, rrm->L2_id_FC, rrm->rrc.trans_cnt));
-        pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+        pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+        PUT_IP_MSG(msg_stop_coll_sens_conf( inst, rrm->L2_id)); //mod_lor_10_05_12
+        pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
     }
         
     
@@ -438,7 +432,7 @@ void rrc_end_scan_req(
         fprintf(stderr,"Database empty \n");
         
     else{
-        if (rrm->role == CH_COLL && (L2_ID_cmp(&(rrm->L2_id_FC),  &L2_id))==0 )
+        if (rrm->role == CH_COLL && (L2_ID_cmp(&(rrm->L2_id_FC),  &L2_id))==0 ) ///< case SCEN_2_CENTR
         {
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;//mod_lor_10_03_08
             pNode = rrm->rrc.pSensEntry;//mod_lor_10_03_08
@@ -473,18 +467,8 @@ void rrc_end_scan_req(
                 
                 pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
                 rrm->sensing.trans_cnt++ ;
-                //fprintf(stderr,"sensing counter %d msg_rrm_end_scan_ord  \n",rrm->sensing.trans_cnt);//dbg
                 PUT_SENS_MSG(msg_rrm_end_scan_ord(inst, Nb_chan, channels, Trans_id ));
                 pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
-                /*//mod_lor_10_04_14++ provvisorio
-                ///< TO DO: This order is also sent to the RRC that have to send the confirmation
-                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-                rrm->rrc.trans_cnt++ ;
-                fprintf(stderr,"rrc counter %d msg_rrm_end_scan_ord  \n",rrm->rrc.trans_cnt);//dbg
-                PUT_RRC_MSG(msg_rrm_end_scan_ord(inst, Nb_chan, channels, Trans_id ));
-                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-                //mod_lor_10_04_14--*/
-
             }
             else {
                 fprintf(stderr,"The message received is not from the right FC \n");
@@ -549,7 +533,7 @@ void rrc_clust_scan_req(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
 
-    memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ; //AAA: how to save the CH1 address? -> to evaluate
+    memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ; 
     rrm->role = CH_COLL; 
     
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
@@ -629,17 +613,20 @@ void update_sens_results(
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     //fprintf(stderr,"node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
     //fprintf(stderr,"2 cluster_head\n");//dbg
-    //AAA: for the moment the channel db is reserved for CHs and SUs only in S2D 
+    //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR
     
     
   
-    if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR) //mod_lor_10_03_08: role instead of status -> to check
+    if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR || rrm->role == CH_COLL ) //mod_lor_10_03_08: role instead of status -> to check
+    //mod_lor_10_05_06 -> 2nd option of if changed (before SCEN_2_DISTR)
     {
         
         //fprintf(stderr,"cluster_head\n");//dbg
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
         int is_free;
+        int decision;
+        unsigned int send_up_to_SN =0; //mod_lor_10_05_12
         for (i=0; i<NB_info; i++){
             
             channel.Start_f = Sens_meas[i].Start_f;
@@ -649,17 +636,46 @@ void update_sens_results(
             
             //mod_lor_10_03_19++
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            is_free = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
+            decision = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_03_19--
             
-            //fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
+            //mod_lor_10_05_07++
+            if (decision>0)
+                is_free = 1;
+            else
+                is_free = 0;
+                
+            if(rrm->role == CH_COLL){
+                Sens_meas[i].is_free = is_free;
+                Sens_meas[i].meas = decision;
+            }
+            //mod_lor_10_05_07--
+            
+            fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
             
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            //mod_lor_10_05_12++
+            if (!(rrm->ip.waiting_SN_update) && canal->is_ass && !(canal->is_free)){//mod_lor_10_05_18
+                //fprintf(stderr,"send_up_to_SN =1\n");//dbg
+                send_up_to_SN =1;//mod_lor_10_05_12--
+            }
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg
             
+        }
+        //mod_lor_10_05_07++
+        if(rrm->role == CH_COLL){
+            pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+            rrm->ip.trans_cnt++ ;
+            PUT_IP_MSG(msg_up_clust_sens_results( inst, rrm->L2_id, NB_info, decision, Sens_meas, rrm->ip.trans_cnt));
+            pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+
+        }//mod_lor_10_05_07--
+        //mod_lor_10_05_12++
+        if (send_up_to_SN && rrm->role == FUSIONCENTER){
+            open_freq_query(inst, L2_id, 0, 0);
         }
 
     
@@ -684,7 +700,7 @@ void sns_end_scan_conf(
     del_node( &(rrm->rrc.pSensEntry), &(rrm->L2_id));
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
-    ///< AAA TO DO: Confirmation sent via RRC to the fusion centre
+    // AAA TO DO: Confirmation sent via RRC to the fusion centre in case FC id != 0
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
     rrm->rrc.trans_cnt++ ;
     //fprintf(stderr, "before put RRM_end_scan_confirm\n");//dbg
@@ -694,3 +710,81 @@ void sns_end_scan_conf(
 
 }
 //mod_lor_10_04_14--
+
+//mod_lor_10_05_10++
+/*!
+*******************************************************************************
+\brief  Updating of the sensing measures received via IP from another node
+*/
+void up_coll_sens_results( 
+	Instance_t inst         , //!< Identification de l'instance
+	L2_ID L2_id             , //!< Adresse L2 of the source of information 
+	unsigned int NB_info    , //!< Number of channel info
+	Sens_ch_t *Sens_meas    , //!< Pointer to the sensing information
+	double info_time
+	)
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+
+   
+    int i;
+
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    //fprintf(stderr,"inst update %d\n", rrm->state);//dbg
+    update_node_info( &(rrm->rrc.pSensEntry), &L2_id, NB_info, Sens_meas, info_time);
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    //fprintf(stderr,"node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
+    //fprintf(stderr,"2 cluster_head\n");//dbg
+    //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR 
+    
+    
+  
+    if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR || rrm->role == CH_COLL ) //mod_lor_10_03_08: role instead of status -> to check
+    //mod_lor_10_05_06 -> 2nd option of if changed (before SCEN_2_DISTR)
+    {
+        
+        //fprintf(stderr,"cluster_head\n");//dbg
+        CHANNEL_T channel ;
+        CHANNELS_DB_T *canal;
+        int is_free;
+        int decision;
+        for (i=0; i<NB_info; i++){
+            
+            channel.Start_f = Sens_meas[i].Start_f;
+            channel.Final_f = Sens_meas[i].Final_f;
+            channel.Ch_id   = Sens_meas[i].Ch_id;
+            channel.QoS     = 0;
+            
+            //mod_lor_10_03_19++
+            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            decision = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
+            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            //mod_lor_10_03_19--
+            
+            //mod_lor_10_05_07++
+            if (decision>0)
+                is_free = 1;
+            else
+                is_free = 0;
+                
+            if(rrm->role == CH_COLL){
+                Sens_meas[i].is_free = is_free;
+                Sens_meas[i].meas = decision;
+            }
+            //mod_lor_10_05_07--
+            
+            fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
+            
+            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
+            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg
+            
+        }
+
+    
+    }else   
+        fprintf(stderr,"error!!! Cannot update channels \n");
+
+}
+//mod_lor_10_05_10--

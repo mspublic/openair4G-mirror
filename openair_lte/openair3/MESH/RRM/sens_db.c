@@ -403,6 +403,7 @@ Sens_node_t *update_node_info(
 {
     Sens_node_t *pItem = get_node_info(*node_entry,L2_id);
     
+       
     if ( pItem != NULL)
     { 
         pItem->info_time   = info_time ;
@@ -442,11 +443,14 @@ Sens_ch_t *update_channel_info(
     unsigned int        is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_03_17: intxflot
     )
 {
+    
     Sens_ch_t *pItem = get_chann_info(*ch_entry,Ch_id);
+    
     
     if ( pItem != NULL)
     { 
         pItem->meas        = meas ;
+        pItem->is_free     = is_free ;//mod_lor_10_05_06
     }
     else 
         pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, meas, is_free);

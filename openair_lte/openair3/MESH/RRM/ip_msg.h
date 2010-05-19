@@ -26,6 +26,7 @@
 #include "L3_rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 
+
 #ifdef OPENAIR2_IN
 #include "rrm_sock.h"
 #else
@@ -46,7 +47,11 @@ typedef enum {
     OPEN_FREQ_QUERY_4           , ///< Message IP       : BTS to ask free frequencies to FC
     UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
     UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
-    /*RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
+    INIT_COLL_SENS_REQ          , ///< Message IP       : CH1 sends request to start collaboration to CH2
+    STOP_COLL_SENS              , ///< Message IP       : CH1 sends order to stop collaboration to CH2
+    UP_CLUST_SENS_RESULTS       , ///< Message IP       : update to send to CH from CH_COLL
+    STOP_COLL_SENS_CONF         , ///< Message IP       : CH2 sends confirmationof stop collaboration to CH1
+    /*STOP_COLL_SENS             , ///< Message RRC->RRM : in FC/CH to report a frequency query
     RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
     RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
     RRC_UPDATE_SN_FREQ          , ///< Message RRC->RRM : FC receives used freq. from BTS
@@ -73,10 +78,10 @@ typedef enum {
 
 } MSG_IP_T ;
 
-
+//mod_lor_10_05_05++
 /*! 
 *******************************************************************************
-\brief  Definition des parametres de la fonction rrc_init_scan_req() dans 
+\brief  Definition des parametres de la fonction init_coll_sens_req() dans 
         une structure permettant le passage des parametres via un socket
 */
 typedef struct {
@@ -89,6 +94,7 @@ typedef struct {
     unsigned int     Overlap;       //!< Overlap factor (%)
     unsigned int     Sampl_freq;    //!< Sampling frequency (Ms/s)
 } init_coll_sens_req_t;  
+//mod_lor_10_05_05--
 
 /*! 
 *******************************************************************************
@@ -103,6 +109,21 @@ typedef struct {
     double              info_time              ; //!< Data of the information
 } rrm_update_sens_t ; 
 
+//mod_lor_10_05_07++
+/*! 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions  
+        rrm_update_sens()dans une structure permettant le passage 
+        des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of sensing node
+    unsigned int        NB_info                ; //!< Number of sensed channels
+    unsigned int        info_value             ; //!< value assigned to information
+    Sens_ch_t           Sens_meas[NB_SENS_MAX] ; //!< Sensing information
+    double              info_time              ; //!< Data of the information
+} update_coll_sens_t ; 
+//mod_lor_10_05_07--
 
 /*! 
 *******************************************************************************
@@ -123,9 +144,10 @@ typedef struct {
 typedef struct {
     double              date;
     L2_ID               L2_id                  ; //!< Layer 2 ID (MAC) of FC/CH
-    unsigned int        NB_chan                ; //!< number of free channels
-    CHANNEL_T           fr_channels[NB_SENS_MAX]; //!< description of free channelS
+    unsigned int        NB_chan                ; //!< number of channels
+    CHANNELS_DB_T       channels[NB_SENS_MAX]; //!< description of channelS
 } update_open_freq_t;
+
 
 /*! 
 *******************************************************************************
@@ -139,6 +161,16 @@ typedef struct {
     unsigned int        occ_channels[NB_SENS_MAX]; //!< Vector of channels
 } update_SN_occ_freq_t;
 
+/*! 
+*******************************************************************************
+\brief  Definition des parametres des fonctions rrm_update_SN_freq() et 
+        rrm_update_SN_freq()dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC/BTS
+} stop_coll_sens_conf_t;
+
 #ifdef TRACE
 extern const char *Str_msg_ip[NB_MSG_IP] ; 
 #endif
@@ -151,10 +183,14 @@ extern const char *Str_msg_ip[NB_MSG_IP] ;
 ///MESSAGES VIA IP
 msg_t *msg_update_sens_results_3( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
 msg_t *msg_open_freq_query_4( Instance_t inst, L2_ID L2_id, QOS_CLASS_T QoS, Transaction_t Trans_id );
-msg_t *msg_update_open_freq_7( Instance_t inst, L2_ID L2_id, unsigned int NB_free_ch, CHANNEL_T *fr_channels, Transaction_t Trans_id);
+msg_t *msg_update_open_freq_7( Instance_t inst, L2_ID L2_id, unsigned int NB_ch, CHANNELS_DB_T *channels, Transaction_t Trans_id);
 msg_t *msg_update_SN_occ_freq_5( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, unsigned int *occ_channels, Transaction_t Trans_id);
-
-
+msg_t *msg_init_coll_sens_req( Instance_t inst, L2_ID L2_id, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
+        unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq, Transaction_t Trans_id ); //mod_lor_10_05_05
+msg_t *msg_stop_coll_sens( Instance_t inst);//mod_lor_10_05_06
+msg_t *msg_up_clust_sens_results( Instance_t inst, L2_ID L2_id, unsigned int NB_info, 
+                        unsigned int info_value, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); //mod_lor_10_05_07
+msg_t *msg_stop_coll_sens_conf( Instance_t inst, L2_ID L2_id);//mod_lor_10_05_12
 #ifdef __cplusplus
 }
 #endif

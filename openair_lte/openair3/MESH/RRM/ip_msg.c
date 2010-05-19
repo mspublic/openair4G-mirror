@@ -40,11 +40,11 @@ const char *Str_msg_ip[NB_MSG_IP] = {
     STRINGIZER(UPDATE_SENS_RESULTS_3    ), 
     STRINGIZER(OPEN_FREQ_QUERY_4        ),
     STRINGIZER(UPDATE_OPEN_FREQ_7       ),
-    STRINGIZER(UPDATE_SN_OCC_FREQ_5     )/*,
-    STRINGIZER(RRM_OPEN_FREQ            ),
-    STRINGIZER(RRM_UPDATE_SN_FREQ       ),
-    STRINGIZER(RRC_UPDATE_SN_FREQ       ),
-    STRINGIZER(RRM_CLUST_SCAN_REQ       ),
+    STRINGIZER(UPDATE_SN_OCC_FREQ_5     ),
+    STRINGIZER(INIT_COLL_SENS_REQ       ),
+    STRINGIZER(STOP_COLL_SENS           ),
+    STRINGIZER(UP_CLUST_SENS_RESULTS    ),
+    STRINGIZER(STOP_COLL_SENS_CONF      )/*,
     STRINGIZER(RRC_CLUST_SCAN_REQ       ),
     STRINGIZER(RRM_CLUST_SCAN_CONF      ),
     STRINGIZER(RRM_CLUST_MON_REQ        ),
@@ -90,7 +90,7 @@ static void init_ip_msg_head(
         msg_head->size     = size;
     }
 }
-///! MESSAGES SENT VIA IP
+
 
 /*!
 *******************************************************************************
@@ -183,8 +183,8 @@ msg_t *msg_open_freq_query_4(
 msg_t *msg_update_open_freq_7( 
     Instance_t    inst, 
     L2_ID         L2_id           ,
-    unsigned int NB_free_ch,
-    CHANNEL_T *fr_channels,
+    unsigned int NB_ch,
+    CHANNELS_DB_T *channels, //mod_lor_10_05_17
     Transaction_t Trans_id 
     )
 {
@@ -200,11 +200,11 @@ msg_t *msg_update_open_freq_7(
         {
             init_ip_msg_head(&(msg->head),inst,UPDATE_OPEN_FREQ_7, size ,Trans_id);
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
-            p->NB_chan       = NB_free_ch    ;
+            p->NB_chan       = NB_ch    ;
             
-            if ( NB_free_ch > 0 )
+            if ( NB_ch > 0 )
             {
-                memcpy( p->fr_channels , fr_channels, NB_free_ch * sizeof(CHANNEL_T) )  ;
+                memcpy( p->channels , channels, NB_ch * sizeof(CHANNELS_DB_T) )  ;
             }
         }
         msg->data = (char *) p ;
@@ -259,3 +259,145 @@ msg_t *msg_update_SN_occ_freq_5(
     }
     return msg ;
 }
+
+//mod_lor_10_05_05++
+/*!
+*******************************************************************************
+\brief  Message to be sent to a CH that will collaborate in sensing operation.
+\return message formate
+*/
+msg_t *msg_init_coll_sens_req( 
+    Instance_t       inst,        //!< instance ID of asking CH
+    L2_ID L2_id                 , //!< Layer 2 (MAC) ID of asking CH
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq,
+    Transaction_t    Trans_id        //!< Transaction ID
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        init_coll_sens_req_t *p = RRM_CALLOC(init_coll_sens_req_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst, INIT_COLL_SENS_REQ, sizeof( init_coll_sens_req_t) ,0);
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            p->Start_fr     = Start_fr;
+            p->Stop_fr      = Stop_fr;
+            p->Meas_band    = Meas_band;
+            p->Meas_tpf     = Meas_tpf;
+            p->Nb_channels  = Nb_channels;
+            p->Overlap      = Overlap;
+            p->Sampl_freq   = Sampl_freq;
+
+        }       
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+//mod_lor_10_05_05--
+//mod_lor_10_05_06++
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_stop_sensing.
+\return message formate
+*/
+msg_t *msg_stop_coll_sens( 
+    Instance_t inst        //!< identification de l'instance
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        init_ip_msg_head(&(msg->head),inst,STOP_COLL_SENS, 0 ,0);            
+        msg->data = NULL ;
+    }
+    return msg  ;
+}
+//mod_lor_10_05_06--
+//mod_lor_10_05_12++
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_stop_sensing.
+\return message formate
+*/
+msg_t *msg_stop_coll_sens_conf( 
+    Instance_t inst,        //!< identification de l'instance
+    L2_ID L2_id
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        stop_coll_sens_conf_t *p = RRM_CALLOC(stop_coll_sens_conf_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst,STOP_COLL_SENS_CONF, sizeof( init_coll_sens_req_t) ,0);            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+        }
+    }
+    return msg  ;
+}
+//mod_lor_10_05_12--
+
+//mod_lor_10_05_07++
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        up_clust_sens_results().
+\return message formate
+*/
+
+msg_t *msg_up_clust_sens_results( 
+    Instance_t inst, 
+    L2_ID L2_id,                //!< FC L2_id
+    unsigned int NB_info,
+    unsigned int info_value,
+    Sens_ch_t *Sens_meas, 
+    Transaction_t Trans_id
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
+        
+    if ( msg != NULL )
+    {
+        unsigned int size = sizeof( update_coll_sens_t );// + (NB_info-1) * sizeof(Sens_ch_t) ; //mod_lor_10_04_23
+        
+        update_coll_sens_t *p = RRM_CALLOC2(update_coll_sens_t , size ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst, UP_CLUST_SENS_RESULTS, size ,Trans_id);
+
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+        
+            p->NB_info       = NB_info    ;
+            p->info_time     = 0 ;
+            p->info_value    = info_value;
+            
+            if ( NB_info > 0 )
+            {
+                memcpy( p->Sens_meas , Sens_meas, NB_info * sizeof(Sens_ch_t) )  ;
+            }
+        }
+        msg->data = (char *) p ;
+    }
+    
+    return msg ;
+
+}
+
+//mod_lor_10_05_07--
