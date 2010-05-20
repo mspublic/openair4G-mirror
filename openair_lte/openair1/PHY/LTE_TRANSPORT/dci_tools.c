@@ -436,6 +436,12 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch1->nb_rb                               = dlsch0->nb_rb;
 
     dlsch0->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
+
+    if (dlsch0->harq_processes[harq_pid]->mcs>14) {
+      msg("dci_tools.c: mcs > 14 disabled for now\n");
+      return(-1);
+    }
+
     dlsch1->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs2;
     dlsch0->harq_processes[harq_pid]->rvidx     = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rv1;
     dlsch1->harq_processes[harq_pid]->rvidx     = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rv2;

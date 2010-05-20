@@ -44,6 +44,7 @@ PHY_CONFIG *PHY_config;
 //float estimate_freq(short *);
 
 //unsigned int revbits(unsigned int x);
+int current_dlsch_cqi;
 
 //-----------------------------------------------------------------------------
 int main (int argc, char **argv) {
