@@ -37,6 +37,8 @@
 */
 #define CH_NEEDED_FOR_SN 2 //!< Number of channels needed by secondary network//mod_lor_10_05_17
 #define NB_SENS_MAX    20  //!< Maximum number of channels accepted by the system
+#define MAX_NUM_SB 5//mod_eure_lor
+#define NUM_SB 5//mod_eure_lor
 
 /*! \brief Transaction ID descriptor
 */
@@ -99,7 +101,13 @@ typedef struct  Sens_ch_s {
     unsigned int        Start_f    ; ///< frequence initial du canal //mod_lor_10_03_17: intxflot
     unsigned int        Final_f    ; ///< frequence final du canal   //mod_lor_10_03_17: intxflot
     unsigned int        Ch_id      ; ///< ID du canal
-    float               meas       ; ///< Sensing results 
+    //mod_eure_lor++
+    char I0[MAX_NUM_SB] ;
+    char mu0[MAX_NUM_SB];
+    char mu1[MAX_NUM_SB];
+    //mod_eure_lor--
+    //float               meas       ; ///< Sensing results 
+
     unsigned int        is_free    ; ///< Decision about the channel
     struct  Sens_ch_s   *next      ; ///< pointeur sur le prochain canal 
 } Sens_ch_t ;

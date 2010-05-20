@@ -119,9 +119,9 @@ node_info_t node_info[10] = {
 /*****************************************************************************
  * \brief  Sensing Parameters
  */
-unsigned int     Start_fr   = 1000; //!< Low frequency limit
-unsigned int     Stop_fr    = 2000; //!< High frequency limit
-unsigned int     Meas_band  = 200;  //!< Channel bandwidth
+unsigned int     Start_fr   = 2000; //!< Low frequency limit KHz
+unsigned int     Stop_fr    = 3000; //!< High frequency limit KHz
+unsigned int     Meas_band  = 200;  //!< Channel bandwidth KHz
 unsigned int     Meas_tpf   = 2;    //!< Misuration time per frequency
 unsigned int     Overlap    = 5;    //!< Overlap
 unsigned int     Sampl_freq = 10;   //!< Sample frequency

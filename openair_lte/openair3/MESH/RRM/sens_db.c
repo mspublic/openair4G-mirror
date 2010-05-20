@@ -80,8 +80,8 @@ void print_sens_db(
         pCurrentChannel=pCurrentItem->info_hd;
         while ( pCurrentChannel != NULL)
         {
-            fprintf(stderr,"\n        @%p(\n.channel_id=%d, \n.meas=%f , \n.st_fr= %d, \n.end_fr= %d,  \n.free= %d,  ",    
-                pCurrentChannel, pCurrentChannel->Ch_id, pCurrentChannel->meas,pCurrentChannel->Start_f,pCurrentChannel->Final_f,pCurrentChannel->is_free);  //mod_lor_10_03_17: intxflot
+            fprintf(stderr,"\n        @%p(\n.channel_id=%d, \n.start_fr=%d , \n.end_fr= %d,  \n.free= %d,  ",    
+                pCurrentChannel, pCurrentChannel->Ch_id, pCurrentChannel->Start_f,pCurrentChannel->Final_f,pCurrentChannel->is_free);  //mod_lor_10_03_17: intxflot
             pCurrentChannel = pCurrentChannel->next ;
             
         }
@@ -178,8 +178,8 @@ Sens_node_t *add_node(
     //fprintf(stderr,"starting ch pointer  @%p \n", pNewItem->info_hd);//dbg
     for ( int i=0; i<NB_info; i++ ){
         if ( add_chann( &(pNewItem->info_hd), ch_info_hd[i].Start_f, 
-                    ch_info_hd[i].Final_f, ch_info_hd[i].Ch_id, 
-                    ch_info_hd[i].meas, ch_info_hd[i].is_free) == NULL )
+                    ch_info_hd[i].Final_f, ch_info_hd[i].Ch_id, ch_info_hd[i].I0,ch_info_hd[i].mu0,ch_info_hd[i].mu1,
+                    /*ch_info_hd[i].meas,*/ ch_info_hd[i].is_free) == NULL )
             fprintf(stderr, "ERROR: info %d problem\n", i) ;
         //fprintf(stderr,"returned pointer  @%p Channel id %d\n", pNewItem->info_hd, ch_info_hd[i].Ch_id);//dbg
     }
@@ -206,7 +206,12 @@ Sens_ch_t *add_chann(
         unsigned int        Start_f    , ///< frequence initial du canal //mod_lor_10_03_17: intxflot
         unsigned int        Final_f    , ///< frequence final du canal //mod_lor_10_03_17: intxflot
         unsigned int        Ch_id      , ///< Channel ID //mod_lor_10_03_17: intxflot
-        float               meas       , ///< Sensing results 
+        //mod_eure_lor++
+        char *I0 ,
+        char *mu0,
+        char *mu1,
+        //mod_eure_lor--
+        //float               meas       , ///< Sensing results 
         unsigned int        is_free      ///< Evaluation about the availability of the channel
         
      ) 
@@ -225,9 +230,15 @@ Sens_ch_t *add_chann(
     pNewItem->Start_f =  Start_f ;
     pNewItem->Final_f =  Final_f ;
     pNewItem->Ch_id   =  Ch_id;
-    pNewItem->meas    =  meas;
+    //printf("sens_db add 1:  %d    ", pNewItem->Ch_id);//dbg
+    //mod_eure_lor++
+    memcpy(pNewItem->I0 ,I0, MAX_NUM_SB);
+    memcpy(pNewItem->mu0,mu0, MAX_NUM_SB);
+    memcpy(pNewItem->mu1,mu1, MAX_NUM_SB);
+    //mod_eure_lor--
+    //pNewItem->meas    =  meas;
     pNewItem->is_free =  is_free;
-
+    //printf("sens_db add 2:  %d\n", pNewItem->Ch_id);//dbg
     *ch_entry         =  pNewItem ;
     pNewItem->next      =  pOldEntry;   
     //fprintf(stderr,"new pointer  @%p \n", *ch_entry);//dbg
@@ -410,7 +421,7 @@ Sens_node_t *update_node_info(
         pItem->Nb_chan     = NB_info ;
         for ( int i=0; i<NB_info; i++ )
             if ( update_channel_info( &(pItem->info_hd), ch_info_hd[i].Start_f, 
-                        ch_info_hd[i].Final_f, ch_info_hd[i].Ch_id, ch_info_hd[i].meas, 
+                        ch_info_hd[i].Final_f, ch_info_hd[i].Ch_id,  ch_info_hd[i].I0,ch_info_hd[i].mu0,ch_info_hd[i].mu1,//ch_info_hd[i].meas, 
                         ch_info_hd[i].is_free) == NULL )
                 fprintf(stderr, "ERROR: info %d problem\n", i) ;
     }
@@ -439,22 +450,37 @@ Sens_ch_t *update_channel_info(
     unsigned int        Start_f    , ///< frequence initial du canal  //mod_lor_10_03_17: intxflot
     unsigned int        Final_f    , ///< frequence final du canal   //mod_lor_10_03_17: intxflot
     unsigned int        Ch_id      , ///< ID du canal   //mod_lor_10_03_17: intxflot
-    float               meas       , ///< Sensing results
+    //mod_eure_lor++
+    char *I0 ,
+    char *mu0,
+    char *mu1,
+    //mod_eure_lor--
+    //float               meas       , ///< Sensing results
     unsigned int        is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_03_17: intxflot
     )
 {
+    //printf("sens_db update passed ch_id: %d\n",Ch_id);//dbg
     
     Sens_ch_t *pItem = get_chann_info(*ch_entry,Ch_id);
     
     
     if ( pItem != NULL)
     { 
-        pItem->meas        = meas ;
+      //  printf("sens_db update1: %d   ", pItem->Ch_id);//dbg
+        //mod_eure_lor++
+        memcpy( pItem->I0 ,I0, MAX_NUM_SB);
+        memcpy( pItem->mu0,mu0, MAX_NUM_SB);
+        memcpy( pItem->mu1,mu1, MAX_NUM_SB);
+        
+        //pItem->meas        = meas ;
         pItem->is_free     = is_free ;//mod_lor_10_05_06
+       // printf("sens_db update2: %d\n", pItem->Ch_id);//dbg
     }
     else 
-        pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, meas, is_free);
-        
+        //pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, meas, is_free);
+        pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, I0, mu0,mu1,is_free);
+        //mod_eure_lor--
+    
     return pItem;
 }
 

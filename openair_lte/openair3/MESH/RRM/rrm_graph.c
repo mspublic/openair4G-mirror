@@ -1213,7 +1213,9 @@ static void processing_msg_sensing(
                 msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS trans %d\n",header->inst, header->Trans_id);
                 if(rrm->sensing.sens_active == 0)//mod_lor_10_04_23
                     break;
-                rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );
+                //for (int i =0; i <p->NB_info; i++)//dbg
+                //    msg_fct("ch_id: %d\n",p->Sens_meas[i].Ch_id);//dbg
+                rrc_update_sens( header->inst, rrm->L2_id, p->NB_info, p->Sens_meas, p->info_time );
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type ;
                 //mod_lor_10_04_21++
@@ -1379,7 +1381,7 @@ static void processing_msg_ip(
                     else
                         free[i]=channel->is_free;
                     channel=channel->next;
-                    printf("  ->channel %d is %d\n",channels[i],free[i]);//dbg
+                  //  printf("  ->channel %d is %d\n",channels[i],free[i]);//dbg
                 }
                 pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
                 int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,i,i,channels,free, header->Trans_id));

@@ -1016,13 +1016,15 @@ static void processing_msg_sensing(
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
                 if (rrm->sensing.sens_active) {//mod_lor_10_05_07
                     msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
-                /*for ( int i=0;i<8;i++)
-                    msg_fct("%02X", p->L2_id.L2_id[i]);
-                msg_fct( ")\n");*/
+                    //for (int i =0; i <p->NB_info; i++)//dbg
+                    //msg_fct("ch_id: %d\nUSER: ",p->Sens_meas[i].Ch_id);//dbg
+                    //for ( int i=0;i<8;i++)//dbg
+                    //    msg_fct("%02X", p->L2_id.L2_id[i]);//dbg
+                    //msg_fct( ")\n");//dbg
                 //fprintf(stderr,"from inst%d NB_info = %d\n",header->inst, p->NB_info);//dbg
                 //update_sens_results( 0, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); //dbg -> test_emul
                 
-                    rrc_update_sens( header->inst, p->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
+                    rrc_update_sens( header->inst, rrm->L2_id, p->NB_info, p->Sens_meas, p->info_time );  //fix info_time & understand trans_id
                 //fprintf(stderr,"end case RRC_UPDATE_SENS\n");//dbg
                 }//mod_lor_10_05_07
             }

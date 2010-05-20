@@ -299,7 +299,7 @@ void rrc_init_scan_req(
         act_start_fr+=Meas_band;
         ch_info_init[i].Final_f = act_start_fr  ; ///< frequence final du canal
         ch_info_init[i].Ch_id  = i + 1    ; ///< ID du canal
-        ch_info_init[i].meas   = 0    ; ///< Sensing results 
+        //ch_info_init[i].meas   = 0    ; ///< Sensing results 
         ch_info_init[i].is_free  = 2  ; ///< Decision about the channel
     }
     
@@ -648,7 +648,7 @@ void update_sens_results(
                 
             if(rrm->role == CH_COLL){
                 Sens_meas[i].is_free = is_free;
-                Sens_meas[i].meas = decision;
+                //Sens_meas[i].meas = decision;
             }
             //mod_lor_10_05_07--
             
@@ -769,7 +769,7 @@ void up_coll_sens_results(
                 
             if(rrm->role == CH_COLL){
                 Sens_meas[i].is_free = is_free;
-                Sens_meas[i].meas = decision;
+                //Sens_meas[i].meas = decision;
             }
             //mod_lor_10_05_07--
             
