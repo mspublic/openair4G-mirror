@@ -34,7 +34,8 @@ ________________________________________________________________*/
 #define DIAG_PHY
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
-#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
+#define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 12/25 RBs)
+#define DLSCH_RB_ALLOC_6 0x0999  // skip DC RB (total 6/25 RBs)
 
 #define NS_PER_SLOT 500000
 
@@ -605,10 +606,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       else
 	DLSCH_alloc_pdu2.mcs1   = (eNB_UE_stats[0].DL_cqi[0][0]<<1);
 
+      if (DLSCH_alloc_pdu2.mcs1 > 14)
+	DLSCH_alloc_pdu2.mcs1 = 14
+
       if (DLSCH_alloc_pdu2.mcs1 > 10)
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC_12;
       else
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC;
+
       if (openair_daq_vars.dlsch_transmission_mode == 6)
 	DLSCH_alloc_pdu2.tpmi = 5;  // PUSCH precoding
 
@@ -692,7 +697,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       // get UL harq_pid for subframe+4
       harq_pid = subframe2harq_pid_tdd(3,((next_slot>>1)+4)%10);
       ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
-            
       break;
 
     }
