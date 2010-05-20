@@ -2,54 +2,20 @@ close all
 clear all
 
 addpath('../IMPORT_FILTER')
+addpath('maps')
 struct_template
+decimation = 100;
 
-%%
-%pathname = 'G:\EMOS\data\20100420 interference measurement\';
-%post_processing_eNb_quick
-%plot_results_eNb_quick
-%%
-%pathname = 'H:\EMOS\data\20100421 interference eNb + DL test\';
-%post_processing_eNb_quick
-%plot_results_eNb_quick
-%%
-%pathname = 'G:\EMOS\data\20100421 interference eNb + DL test\';
-%post_processing_UE_quick
-%plot_results_UE_quick
-%%
-%pathname = 'G:\EMOS\data\20100422 interference drive test\';
-%post_processing_eNb_quick
-%plot_results_eNb_quick
-%%
-% pathname = 'H:\EMOS\data\20100430\';
-% post_processing_UE_quick
-% plot_results_UE_quick
-%%
-% pathname = 'H:\EMOS\data\20100504 coverage run part 1\';
-% post_processing_UE_quick
-% plot_results_UE_quick
-%%
-% pathname = 'H:\EMOS\data\20100506 coverage run part 1\';
-% post_processing_UE_quick
-% plot_results_UE_quick
-% post_processing_eNb_quick
-% plot_results_eNb_quick
-%%
-%pathname = '/media/Iomega HDD/EMOS/data/20100507 coverage run part 2/';
-%post_processing_UE_quick
-%plot_results_UE_quick
-%post_processing_eNb_quick
-%plot_results_eNb_quick
-%%
-pathname = 'H:\EMOS\data\20100511_mode2_parcours1_part5\';
+%% post processing
+pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\';
 post_processing_UE_quick
-plot_results_UE_quick
 post_processing_eNb_quick
+pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\nomadic\';
+post_processing_UE_quick
+post_processing_eNb_quick
+
+%% plot results
+pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\';
+plot_results_UE_quick
 plot_results_eNb_quick
 
-%%
-pathname = 'H:\EMOS\data\20100511_mode2_parcours2_part1\';
-post_processing_UE_quick
-plot_results_UE_quick
-post_processing_eNb_quick
-plot_results_eNb_quick

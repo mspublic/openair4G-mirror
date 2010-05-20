@@ -1,3 +1,7 @@
+if ~exist(pathname,'dir')
+    error('Path does not exist!')
+end
+
 d = dir([pathname 'data_term1*.EMOS']);
 filenames = {d.name};
 filedates = {d.date};
@@ -9,7 +13,6 @@ filenames = filenames(idx);
 %     file_idx(i) = sscanf(d(i).name,'data_term1_idx%d_%s.EMOS',1);
 % end
 
-decimation = 100;
 NFrames_max = 100*60*10;
 
 if (exist(fullfile(pathname,'results_eNB.mat'),'file'))

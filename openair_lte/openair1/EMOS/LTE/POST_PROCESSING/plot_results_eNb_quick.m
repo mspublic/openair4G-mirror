@@ -11,16 +11,18 @@ NFrames = framestamp_max-framestamp_min+1;
 
 align_matrix = false(2,NFrames);
 align_matrix(1,floor(estimates_eNB.frame_tx_cat/decimation) - framestamp_min + 1) = true;
-% the UE might contain frames with the same frame number. In this loop we
-% find them and save their indices
+% the UE might contain frames with the same frame number or corrupt frame numbers. 
+% In this loop we find them and save their indices. They are deemed corrupt
+% if the current is smaller or 1e6 larger than the previous 
 framestamp_last = -1;
 UE_duplicates = false(1,length(estimates_UE.frame_tx_cat));
 for i=1:length(estimates_UE.frame_tx_cat)
     framestamp = floor(estimates_UE.frame_tx_cat(i)/decimation);
-    if (framestamp==framestamp_last)
+    if ((framestamp<=framestamp_last) || (abs(framestamp-framestamp_last)>1e6)) 
         UE_duplicates(i) = true;
+    else
+        align_matrix(2, framestamp - framestamp_min + 1) = true; 
     end
-    align_matrix(2, framestamp - framestamp_min + 1) = true; 
     framestamp_last = framestamp;
 end
 eNB_aligned = align_matrix(1,:);

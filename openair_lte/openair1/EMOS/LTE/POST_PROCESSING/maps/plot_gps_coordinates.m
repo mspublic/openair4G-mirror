@@ -16,10 +16,10 @@ function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi,
 %   mm ... image matrix (from imread) of the map; can be empty for no map
 %   longitude, latitude  ... from gps data
 %   rx_rssi ... data to be plotted
-%   label ... text label for data
-%   color ... plot data in color instead of using data in rx_rssi
+%   label (optional) ... text label for data
+%   color (optional) ... plot data in color instead of using data in rx_rssi
 
-if (nargin == 4 && ~isempty(rx_rssi))
+if (~isempty(rx_rssi))
     m = colormap;
     cmin = min(rx_rssi);
     cmax = max(rx_rssi);
@@ -65,7 +65,7 @@ if ~isempty(mm)
     hold on
 end
     
-if (nargin == 4 && ~isempty(rx_rssi))
+if (~isempty(rx_rssi))
     for i=1:length(gps_x)
         plot(gps_x(i),gps_y(i),'x','color',m(cidx(i),:))
         hold on
