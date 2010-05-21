@@ -49,6 +49,8 @@ unsigned int conv_rballoc(unsigned char ra_header,unsigned int short rb_alloc) {
   return(rb_alloc2);
 }
 
+
+
 unsigned int conv_nprb(unsigned char ra_header,unsigned int short rb_alloc) {
 
   unsigned int nprb=0,i;
@@ -116,6 +118,7 @@ void generate_RIV_tables() {
     }
   }
 }
+
 
 int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 					void *dci_pdu,
