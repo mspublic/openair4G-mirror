@@ -44,7 +44,7 @@ void multipath_channel(struct complex **ch,
       phase.r = cos(2.0*M_PI*(i-j)/aoa);
       phase.i = sin(2.0*M_PI*(i-j)/aoa);
       
-      if (keep_channel && clear != 1) {
+      if (keep_channel) {
 	// do nothing - keep channel
       } else {
       memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));
@@ -82,7 +82,6 @@ void multipath_channel(struct complex **ch,
 	  }
 	  rx_tmp.r += (tx.r * ch[ii+(j*nb_antennas_rx)][l].r) - (tx.i * ch[ii+(j*nb_antennas_rx)][l].i);
 	  rx_tmp.i += (tx.i * ch[ii+(j*nb_antennas_rx)][l].r) + (tx.r * ch[ii+(j*nb_antennas_rx)][l].i);
-	  
 	} //l
       }  // j
       rx_sig_re[ii][i] = rx_tmp.r*path_loss;

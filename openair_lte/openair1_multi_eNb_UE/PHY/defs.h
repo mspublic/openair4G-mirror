@@ -136,6 +136,10 @@ typedef struct
   /// hold the precoder for NULL beam to the primary user
   int **dl_precoder_SeNb[3];
 
+#ifdef USER_MODE
+  double   const_ch[4][2]; // constant channel coefficient
+#endif
+
 } PHY_VARS_eNB;
 
 /// Top-level PHY Data Structure for UE 
@@ -157,7 +161,15 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue_cntl;
 
   unsigned char    is_secondary_ue; // primary by default
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
+
+  /// hold the precoder for NULL beam to the primary eNb
+  int **ul_precoder_S_UE;
+
+#ifdef USER_MODE
+  double   const_ch[4][2]; // constant channel coefficient
+#endif
 
 } PHY_VARS_UE;
 

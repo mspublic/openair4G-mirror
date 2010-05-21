@@ -1643,11 +1643,13 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   //    printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
 
   if (symbol==frame_parms->first_dlsch_symbol) {
-    dlsch_channel_level(lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+    if (nb_rb) {
+      dlsch_channel_level(lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
 			frame_parms,
 			avg,
 			nb_rb);
     //  msg("[DLSCH] avg[0] %d\n",avg[0]);
+    }
   }
 
   avgs = 0;
