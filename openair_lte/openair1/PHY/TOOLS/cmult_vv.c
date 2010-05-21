@@ -5,7 +5,7 @@
 
 #ifndef EXPRESSMIMO_TARGET
 static  __m128i shift     __attribute__ ((aligned(16)));
-static  __m128i m0,m1     __attribute__ ((aligned(16)));
+static  __m128i m0,m1,m2,m3     __attribute__ ((aligned(16)));
 
 int mult_cpx_vector(short *x1, 
 		    short *x2, 
@@ -144,6 +144,7 @@ int mult_cpx_vector(short *x1,
   return(0);
 }
  
+__m128i norep_m0,norep_m1,norep_m2,norep_shift;
 
 int mult_cpx_vector_norep(short *x1, 
 			   short *x2, 
@@ -167,7 +168,7 @@ int mult_cpx_vector_norep(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m3;
+
 
   /*    
 #ifdef USER_MODE
@@ -184,17 +185,17 @@ int mult_cpx_vector_norep(short *x1,
   //  __m128i temp;
   
 
-  shift = _mm_cvtsi32_si128(output_shift);
+  norep_shift = _mm_cvtsi32_si128(output_shift);
   x1_128 = (__m128i *)&x1[0];
   x2_128 = (__m128i *)&x2[0];
   y_128 = (__m128i *)&y[0];
 
   //  printf("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
-
+  //  msg("mult_cpx_vector_norep: shift %d, %p,%p,%p\n",output_shift,&norep_m0,&norep_m1,&norep_m2);
   // we compute 4 cpx multiply for each loop
   for(i=0;i<(N>>3);i++)
   {
-    
+    //    msg("%d\n",i);
     /*    
 #ifdef USER_MODE
     printf("i=%d\n",i);
@@ -205,7 +206,7 @@ int mult_cpx_vector_norep(short *x1,
 #endif
     */
 
-    m0 = _mm_madd_epi16(x1_128[0],x2_128[0]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
+    norep_m0 = _mm_madd_epi16(x1_128[0],x2_128[0]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
 
     /*
     temp = m0;
@@ -214,7 +215,7 @@ int mult_cpx_vector_norep(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
+    norep_m0 = _mm_sra_epi32(norep_m0,norep_shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
     /*
     temp = m0;
@@ -223,11 +224,11 @@ int mult_cpx_vector_norep(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-    m1 = m0;
+    norep_m1 = norep_m0;
 
     
 
-    m0 = _mm_madd_epi16(x1_128[1],x2_128[1]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
+    norep_m0 = _mm_madd_epi16(x1_128[1],x2_128[1]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
 
     /*
     tempw = (int *)&m0;
@@ -235,7 +236,7 @@ int mult_cpx_vector_norep(short *x1,
     */
 
 
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
+    norep_m0 = _mm_sra_epi32(norep_m0,norep_shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
     /*
     tempw = (int *)&m0;
@@ -243,48 +244,48 @@ int mult_cpx_vector_norep(short *x1,
     */
 
 
-    m2 = m0;
+    norep_m2 = norep_m0;
     //    m2 = _mm_packs_epi32(m2,m0);        // 1- pack in a 128 bit register [re im re im]
 
     //    print_shorts(m2,"m2");
 
-    y_128[0] = _mm_packs_epi32(m1,m2);        // 1- pack in a 128 bit register [re im re im]
+    y_128[0] = _mm_packs_epi32(norep_m1,norep_m2);        // 1- pack in a 128 bit register [re im re im]
 
 
 
-    m0 = _mm_madd_epi16(x1_128[2],x2_128[2]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
+    norep_m0 = _mm_madd_epi16(x1_128[2],x2_128[2]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
     /*
     tempw = (int *)&m0;
     printf("m0[2] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
     */
 
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
+    norep_m0 = _mm_sra_epi32(norep_m0,norep_shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
     /*
     tempw = (int *)&m0;
     printf("m0[2] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
     */
 
-    m1 = m0;
+    norep_m1 = norep_m0;
     //    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
 
-    m0 = _mm_madd_epi16(x1_128[3],x2_128[3]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
+    norep_m0 = _mm_madd_epi16(x1_128[3],x2_128[3]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
     /*
     tempw = (int *)&m0;
     printf("m0[3] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
     */
 
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
+    norep_m0 = _mm_sra_epi32(norep_m0,norep_shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
     /*
     tempw = (int *)&m0;
     printf("m0[3] : %d,%d,%d,%d\n",tempw[0],tempw[1],tempw[2],tempw[3]);
     */
 
-    m2 = m0;
+    norep_m2 = norep_m0;
     //    m2 = _mm_packs_epi32(m2,m0);        // 1- pack in a 128 bit register [re im re im]
 
-    y_128[1] = _mm_packs_epi32(m1,m2);        // 1- pack in a 128 bit register [re im re im]
+    y_128[1] = _mm_packs_epi32(norep_m1,norep_m2);        // 1- pack in a 128 bit register [re im re im]
 
 
 
@@ -324,7 +325,7 @@ int mult_cpx_vector_norep2(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m3;
+
 
   /*
 #ifdef USER_MODE
@@ -346,7 +347,7 @@ int mult_cpx_vector_norep2(short *x1,
   x1_128 = (__m128i *)&x1[0];
   x2_128 = (__m128i *)&x2[0];
 
-  //  printf("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
+
 
   // we compute 2 cpx multiply for each loop
   for(i=0;i<(N>>1);i++)
@@ -447,7 +448,7 @@ int mult_cpx_vector_norep_conj(short *x1,
   x2_128 = (__m128i *)&x2[0];
   y_128 = (__m128i *)&y[0];
 
-  //  printf("mult_cpx_vector_norep: shift %d\n",output_shift);
+  //  msg("mult_cpx_vector_norep: shift %d\n",output_shift);
 
   // we compute 4 cpx multiply for each loop
   for(i=0;i<(N>>3);i++)
