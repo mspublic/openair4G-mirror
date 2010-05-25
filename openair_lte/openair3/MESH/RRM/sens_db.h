@@ -46,7 +46,7 @@ typedef struct Sens_node_s {
 
 
 Sens_node_t *add_node( Sens_node_t **node_entry, L2_ID *L2_id, unsigned int NB_info, Sens_ch_t *ch_info_hd, double info_time ) ;
-Sens_ch_t *add_chann( Sens_ch_t **ch_entry, unsigned int Start_f, unsigned int Final_f, unsigned int Ch_id, char *I0 ,char *mu0, char *mu1, unsigned int is_free);        //mod_eure_lor_10_03_17: intxflot
+Sens_ch_t *add_chann( Sens_ch_t **ch_entry, unsigned int Start_f, unsigned int Final_f, unsigned int Ch_id, char *I0 ,char *mu0, char *mu1, unsigned int *is_free);        //mod_eure_lor_10_03_17: intxflot
 void del_channels_info( Sens_ch_t **ch_info_entry);
 void del_node( Sens_node_t **node_entry, L2_ID *L2_id ) ;
 void del_all_nodes( Sens_node_t **node_entry ) ;
@@ -56,7 +56,7 @@ Sens_node_t *update_node_info( Sens_node_t **node_entry, L2_ID *L2_id, unsigned 
 Sens_node_t *update_node_par( Sens_node_t **node_entry, L2_ID *L2_id,  unsigned int NB_info, Sens_ch_t *ch_info_hd, double info_time,
                     unsigned int tpc, unsigned int overlap, unsigned int sampl_freq); //mod_lor_10_02_19 : function creation
 //Sens_ch_t *update_channel_info( Sens_ch_t **ch_entry, unsigned int Start_f, unsigned int Final_f, unsigned int Ch_id, float meas, unsigned int is_free ); //mod_lor_10_03_17: intxflot
-Sens_ch_t *update_channel_info( Sens_ch_t **ch_entry, unsigned int Start_f, unsigned int Final_f, unsigned int Ch_id, char *I0 ,char *mu0, char *mu1, unsigned int is_free ); //mod_eure_lor_10_03_17: intxflot
+Sens_ch_t *update_channel_info( Sens_ch_t **ch_entry, unsigned int Start_f, unsigned int Final_f, unsigned int Ch_id, char *I0 ,char *mu0, char *mu1, unsigned int *is_free ); //mod_eure_lor_10_03_17: intxflot
 void print_sens_db( Sens_node_t *pEntry );
 
 #ifdef __cplusplus

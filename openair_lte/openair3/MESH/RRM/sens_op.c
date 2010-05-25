@@ -78,30 +78,41 @@ static int L2_ID_cmp(
         applyed rule: strict majority
 \return 1 if channel is free, 0 otherwise
 */
-int take_decision( 
+//mod_eure_lor
+void take_decision( 
 	Sens_node_t *SensDB     , //!< pointer to the sensing database
-	unsigned int Ch_id        //!< channel ID
+	unsigned int Ch_id      , //!< channel ID
+	unsigned int *is_free
 	
 	)
 {
     Sens_node_t *pSensNode = SensDB;
     Sens_ch_t *pSensChann;
-    int is_free = 0;
+    //int is_free = 0;
+    int i;
     while (pSensNode!= NULL){
         if((pSensChann = get_chann_info(  pSensNode->info_hd , Ch_id)) != NULL)    {
-            if (pSensChann->is_free==1)
-                is_free++;
-            else  if (pSensChann->is_free==0)
-                is_free--;
+            for (i = 0; i<MAX_NUM_SB; i++){
+                if (pSensChann->is_free[i]==1)
+                    is_free[i]++;
+                else  if (pSensChann->is_free[i]==0)
+                    is_free[i]--;
+            }
         }
         pSensNode = pSensNode->next;
     }
     //mod_lor_10_05_07++
+    for (i = 0; i<MAX_NUM_SB; i++){
+        if (is_free[i]>0)
+            is_free[i]=1;
+        else  
+            is_free[i]=0;
+    }
     /*if (is_free>0)
         return 1;
     else
         return 0;*/
-    return is_free;
+    //return is_free;
     //mod_lor_10_05_07--
     
 }
@@ -121,13 +132,16 @@ void rrc_update_sens(
     rrm_t *rrm = &rrm_inst[inst] ; 
 
    
-    int i;
+    int i,j;
     
-    /*fprintf(stderr,"NB_info = %d\n",NB_info);//dbg
-    Sens_ch_t *p;//dbg
-    for ( i=0; i<NB_info; i++)//dbg
-        fprintf(stderr," %d     ",Sens_meas[i].Ch_id);//dbg
-    fprintf(stderr," \nrrm_database     ");//dbg
+    //fprintf(stderr,"rrc_update_sens NB_info = %d\n",NB_info);//dbg
+   // Sens_ch_t *p;//dbg
+    /*for ( i=0; i<NB_info; i++){//dbg
+        fprintf(stderr," Ch_id %d     \n",Sens_meas[i].Ch_id);//dbg
+        for (j=0;j<MAX_NUM_SB;j++)
+            fprintf(stderr,"    SB %d  is %d   \n",j,Sens_meas[i].is_free[j]);//dbg
+    }*/
+    /*fprintf(stderr," \nrrm_database     ");//dbg
     if (rrm->rrc.pSensEntry != NULL)//dbg
         for ( p=rrm->rrc.pSensEntry->info_hd; p!=NULL; p=p->next)//dbg
             fprintf(stderr," %d     ",p->Ch_id);//dbg
@@ -150,7 +164,7 @@ void rrc_update_sens(
         
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        int is_free;
+        unsigned int *is_free; //mod_eure_lor
         for (i=0; i<NB_info; i++){
             
             channel.Start_f = Sens_meas[i].Start_f;
@@ -159,7 +173,7 @@ void rrc_update_sens(
             channel.QoS     = 0;
             is_free     = Sens_meas[i].is_free;
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
             //fprintf(stderr,"inst %d, channel %d, is_free %d\n", inst,Sens_meas[i].Ch_id,Sens_meas[i].is_free);//dbg
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg 
@@ -300,16 +314,19 @@ void rrc_init_scan_req(
         ch_info_init[i].Final_f = act_start_fr  ; ///< frequence final du canal
         ch_info_init[i].Ch_id  = i + 1    ; ///< ID du canal
         //ch_info_init[i].meas   = 0    ; ///< Sensing results 
-        ch_info_init[i].is_free  = 2  ; ///< Decision about the channel
+        //mod_eure_lor++
+        for (int j=0;j<MAX_NUM_SB;j++)
+            ch_info_init[i].is_free[j]  = 2  ; ///< Decision about the channel
+        //mod_eure_lor--
     }
     
     
-    //fprintf(stderr,"2 update\n");//dbg
+
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_13
     update_node_par( &(rrm->rrc.pSensEntry), &(rrm->L2_id), Nb_channels, ch_info_init, 0,Meas_tpf,Overlap,Sampl_freq); //mod_lor_10_02_19 
     //update_node_info( &(rrm->rrc.pSensEntry), &(rrm->L2_id), Nb_channels, ch_info_init, 0); 
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_13
-    
+
 
     memcpy( rrm->L2_id_FC.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
 
@@ -318,7 +335,7 @@ void rrc_init_scan_req(
     //fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord on socket %d \n",rrm->sensing.trans_cnt,rrm->sensing.s->s);//dbg
     PUT_SENS_MSG(msg_rrm_scan_ord( inst,  Nb_channels, Meas_tpf, Overlap, Sampl_nb, ch_info_init, Trans_id )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
     pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
-    
+
 }//mod_lor_10_03_13--
 
 /*!
@@ -624,7 +641,9 @@ void update_sens_results(
         //fprintf(stderr,"cluster_head\n");//dbg
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        int is_free;
+        unsigned int is_free[MAX_NUM_SB];
+        for (i=0;i<MAX_NUM_SB;i++)
+            is_free[i]=0;
         int decision;
         unsigned int send_up_to_SN =0; //mod_lor_10_05_12
         for (i=0; i<NB_info; i++){
@@ -633,29 +652,38 @@ void update_sens_results(
             channel.Final_f = Sens_meas[i].Final_f;
             channel.Ch_id   = Sens_meas[i].Ch_id;
             channel.QoS     = 0;
-            
+            /*fprintf(stdout,"Channel in msg %d : \n", channel.Ch_id); //dbg ou LOG
+            for (decision = 0; decision<MAX_NUM_SB; decision++)
+                fprintf(stdout,"SB %d : is %d\n", decision,Sens_meas[i].is_free[decision]); //dbg ou LOG
+            */
             //mod_lor_10_03_19++
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            decision = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
-            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            take_decision(rrm->rrc.pSensEntry, channel.Ch_id,is_free);//mod_eure_lor
+         //   pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_03_19--
             
             //mod_lor_10_05_07++
-            if (decision>0)
+            /*if (decision>0)
                 is_free = 1;
             else
-                is_free = 0;
+                is_free = 0;*/
                 
+            
+           
+                //Sens_meas[i].meas = decision;
+            
             if(rrm->role == CH_COLL){
-                Sens_meas[i].is_free = is_free;
+                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB);
                 //Sens_meas[i].meas = decision;
             }
             //mod_lor_10_05_07--
-            
-            fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
-            
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
+            /*
+            fprintf(stdout,"Channel %d : \n", channel.Ch_id); //dbg ou LOG
+            for (decision = 0; decision<MAX_NUM_SB; decision++)
+                fprintf(stdout,"SB %d : is %d\n", decision,is_free[decision]); //dbg ou LOG
+            */
+         //   pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO: fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_05_12++
             if (!(rrm->ip.waiting_SN_update) && canal->is_ass && !(canal->is_free)){//mod_lor_10_05_18
@@ -746,7 +774,9 @@ void up_coll_sens_results(
         //fprintf(stderr,"cluster_head\n");//dbg
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        int is_free;
+        unsigned int is_free[MAX_NUM_SB];
+        for (i=0;i<MAX_NUM_SB;i++)
+            is_free[i]=0;
         int decision;
         for (i=0; i<NB_info; i++){
             
@@ -756,7 +786,7 @@ void up_coll_sens_results(
             channel.QoS     = 0;
             
             //mod_lor_10_03_19++
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            /*pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             decision = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_03_19--
@@ -770,13 +800,29 @@ void up_coll_sens_results(
             if(rrm->role == CH_COLL){
                 Sens_meas[i].is_free = is_free;
                 //Sens_meas[i].meas = decision;
-            }
+            }*/
             //mod_lor_10_05_07--
+            //mod_lor_10_03_19++
+            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            take_decision(rrm->rrc.pSensEntry, channel.Ch_id,is_free);//mod_eure_lor
+            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            //mod_lor_10_03_19--
             
-            fprintf(stdout,"Channel %d is %d \n", channel.Ch_id,is_free); //dbg ou LOG
+            //mod_lor_10_05_07++
+            /*if (decision>0)
+                is_free = 1;
+            else
+                is_free = 0;*/
+                
+            if(rrm->role == CH_COLL){
+                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB);
+                //Sens_meas[i].meas = decision;
+            }
+            
+            fprintf(stdout,"Channel %d is %d:\n", channel.Ch_id,is_free[0]); //dbg ou LOG
             
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free, info_time);
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO: fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg
             

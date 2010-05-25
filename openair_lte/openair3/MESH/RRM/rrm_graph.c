@@ -1213,6 +1213,11 @@ static void processing_msg_sensing(
                 msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS trans %d\n",header->inst, header->Trans_id);
                 if(rrm->sensing.sens_active == 0)//mod_lor_10_04_23
                     break;
+               /* for (int i=0; i< p->NB_info; i++){
+                    printf("SNS before rrc_update-> CH: %d \n",p->Sens_meas[i].Ch_id);//dbg
+                    for (int j=0; j< MAX_NUM_SB; j++)
+                        printf("SB %d is_free %d\n",j,p->Sens_meas[i].is_free[j]);
+                }*/
                 //for (int i =0; i <p->NB_info; i++)//dbg
                 //    msg_fct("ch_id: %d\n",p->Sens_meas[i].Ch_id);//dbg
                 rrc_update_sens( header->inst, rrm->L2_id, p->NB_info, p->Sens_meas, p->info_time );
@@ -1225,8 +1230,14 @@ static void processing_msg_sensing(
             
                 for (int i=0; i< p->NB_info; i++){
                     channels[i]=p->Sens_meas[i].Ch_id;
-                    free[i]=p->Sens_meas[i].is_free; 
+                    free[i]=p->Sens_meas[i].is_free[0];//TO DO 
+                    //printf("SNS -> CH: %d is_free %d\n",channels[i],free[i]);//dbg
                 }
+                /*for (int i=0; i< p->NB_info; i++){
+                    printf("SNS after rrc_update-> CH: %d \n",p->Sens_meas[i].Ch_id);//dbg
+                    for (int j=0; j< MAX_NUM_SB; j++)
+                        printf("SB %d is_free %d\n",j,p->Sens_meas[i].is_free[j]);
+                }*/
                 int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,p->NB_info,p->NB_info,channels,free, Trans) );
                     WARNING(r!=0);
                 //mod_lor_10_04_21--

@@ -21,7 +21,7 @@ VPATH		= $(CHEMIN):$(EMUL):$(CHEMIN)/deps:$(CHEMIN)/obj
 
 INCLUDE     = -I.  -I$(OPENAIR2_RRC) -I$(OPENAIR3_RRM) -I$(INTERFACE) -I$(OPENAIR2_DIR) -I$(OPENAIR1_SENSING)
 CFLAGS		+= -Wall -g  $(INCLUDE) -DDEBUG -mmmx -msse -msse2 -std=gnu99 -DNOTRACE -DOPENAIR2_IN
-LDFLAGS		= -lm
+LDFLAGS		= -lm -lforms -lX11 -L/usr/X11R6/lib -lXpm -lpthread 
 
 ifeq ($(OSTYPE),Cygwin)
 
@@ -63,6 +63,7 @@ SRC	   += sens_op.c
 SRC	   += freq_ass_op.c
 SRC    += rrm_2_sensing_msg.c 
 SRC    += ip_msg.c 
+SRC    += sensing_form.c 
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

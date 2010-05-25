@@ -166,11 +166,12 @@ unsigned int update_open_freq(   //mod_lor_10_05_18
     //unsigned int occ_channels[NB_chan];
     CHANNELS_DB_T *chann_checked;
     CHANNEL_T ass_channels[NB_chan];
+    printf("In update_open_freq: NB_chan: %d\n",NB_chan);
     for (int i=0; i<NB_chan; i++)
     {
         pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
          //mod_lor_10_05_17++
-         fprintf(stderr, "update channel : %d that is %d\n",channels[i].channel.Ch_id, channels[i].is_free);
+        // fprintf(stderr, "update channel : %d that is %d\n",channels[i].channel.Ch_id, channels[i].is_free);//dbg
         chann_checked = up_chann_db( &(rrm->rrc.pChannelsEntry), channels[i].channel, channels[i].is_free, 0);
         if(chann_checked == NULL) //info_time still to evaluate
             fprintf(stderr, "error in updating free channels in BTS \n");
@@ -214,6 +215,7 @@ unsigned int update_open_freq(   //mod_lor_10_05_18
 
     //AAA: BTS sends a vector containing the channels that have to be used by secondary users
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    //printf("In update_open_freq: NB_chan passed: %d\n",NB_occ_chan);
     PUT_RRC_MSG(msg_rrm_up_freq_ass( inst, rrm->L2_id,  NB_occ_chan, ass_channels));
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
 

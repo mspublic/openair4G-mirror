@@ -65,6 +65,10 @@
 #include "rrm_util.h"
 #include "rrm.h"
 
+#include "forms.h"
+#include "sensing_form.h"
+
+
 
 /*
 ** ----------------------------------------------------------------------------
@@ -80,6 +84,7 @@
  static unsigned char FC_L3id [4]={0x0A,0x00,0x01,0x01};
  static unsigned char BTS_L3id [4]={0x0A,0x00,0x02,0x02};
  static unsigned char CH_COLL_L3id [4]={0x0A,0x00,0x02,0x02};
+ FD_sensing_form *form;
 //mod_lor_10_05_18--
 /*
 ** ----------------------------------------------------------------------------
@@ -177,6 +182,69 @@ static FILE *output_2 = NULL; //mod_lor_10_04_20
 ** DECLARATION DES FONCTIONS
 ** ----------------------------------------------------------------------------
 */
+//mod_eure_lor
+/*!
+*******************************************************************************
+\brief  function to plot the spectrum sensing results
+
+\return NULL
+*/
+//TO DO: passarlo alla ricezione di un sns_update -> Sens_ch_t é quindi un vettore
+void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, unsigned int sensor) {
+    
+    float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
+    //float f[100],spec_dBm[100];
+    unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
+    unsigned int SB_BW;
+    int i, j, k=0;
+    //printf("nb_info %d tot sub: %d \n",NB_info, tot_sub_bands);//dbg
+    // Compute frequencies and store in f 
+    for (i=0;i<NB_info ;i++) {
+        SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
+        for (j=0; j< MAX_NUM_SB;j++){
+            f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
+            // Transfer power measurements to spec_dBm (float)
+            spec_dBm[k] = S[i].mu0[j];
+           
+            //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]); //dbg
+             k++;
+        }
+    }
+   /* printf("Before for \n");
+
+    for (i=0;i<100 ;i++) {
+        
+            f[i]=i/100.0;
+            // Transfer power measurements to spec_dBm (float)
+            spec_dBm[i] = rand()%20;
+           
+            //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]);
+
+        
+    }
+    printf("After for %d\n",i);
+    fl_set_xyplot_xbounds(form->spec_SN1,(float)0.0,(float)1.1);
+    fl_set_xyplot_ybounds(form->spec_SN1,(float)0,(float)20);
+    fl_set_xyplot_data(form->spec_SN1,f,spec_dBm,100,"","","");*/
+    if (sensor == 1){
+        fl_set_xyplot_xbounds(form->spec_SN1,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(form->spec_SN1,-115,-70);
+
+        fl_set_xyplot_data(form->spec_SN1,f,spec_dBm,tot_sub_bands,"","","");
+    }else if (sensor == 2){
+        fl_set_xyplot_xbounds(form->spec_SN2,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(form->spec_SN2,-115,-70);
+
+        fl_set_xyplot_data(form->spec_SN2,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == 3){
+        fl_set_xyplot_xbounds(form->spec_SN3,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(form->spec_SN3,-115,-70);
+
+        fl_set_xyplot_data(form->spec_SN3,f,spec_dBm,tot_sub_bands,"","","");
+    }else 
+        printf("Error! Sensor %d not considered",sensor);
+    fl_check_forms();
+}
 /*!
 *******************************************************************************
 \brief  thread de traitement des ttl des transactions (rrc ou cmm).
@@ -714,6 +782,12 @@ static void processing_msg_cmm(
                         tmp[2]=CH_COLL_L3id[2];
                         tmp[3]=CH_COLL_L3id[3];
                     }
+                    else if (rrm->id == 5){
+                        tmp[0]=BTS_L3id[0];
+                        tmp[1]=BTS_L3id[1];
+                        tmp[2]=BTS_L3id[2];
+                        tmp[3]=BTS_L3id[3];
+                    }
                    else {
                         tmp[0]=FC_L3id[0];
                         tmp[1]=FC_L3id[1];
@@ -728,13 +802,15 @@ static void processing_msg_cmm(
                     
                     //mod_lor_10_05_06--
                     fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
-                    int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
-                    if ( sock != -1 )
-                    {
-                        fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
-                        fflush(stderr);
-                    }else
-                        fprintf(stderr," Error in IP socket opening \n");
+                    if (rrm->id != 5){
+                        int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
+                        if ( sock != -1 )
+                        {
+                            fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
+                            fflush(stderr);
+                        }else
+                            fprintf(stderr," Error in IP socket opening \n");
+                    }
                 }else
                         fprintf(stderr," Socket IP for inst %d already opened %d \n",rrm->id,rrm->ip.s->s);
 #endif            //mod_lor_10_01_25--*/
@@ -1016,6 +1092,7 @@ static void processing_msg_sensing(
                 rrc_update_sens_t *p  = (rrc_update_sens_t *) msg ;
                 if (rrm->sensing.sens_active) {//mod_lor_10_05_07
                     msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS \n",header->inst);
+                    plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
                     //for (int i =0; i <p->NB_info; i++)//dbg
                     //msg_fct("ch_id: %d\nUSER: ",p->Sens_meas[i].Ch_id);//dbg
                     //for ( int i=0;i<8;i++)//dbg
@@ -1239,6 +1316,9 @@ static void processing_msg_ip(
     }
 }
 //mod_lor_10_01_25--
+//mod_eure_lor
+//TO DO: passarlo alla ricezione di un sns_update -> Sens_ch_t é quindi un vettore
+
 
 /*!
 *******************************************************************************
@@ -1321,6 +1401,10 @@ static void rrm_scheduler ( )
       }
         if ( no_msg == nb_inst )
       usleep(1000);
+      
+      // call xforms plotting information
+      //plot_spectra(XXXX);
+      
       }
     fprintf(stderr,"... stopped RRM Scheduler\n"); fflush(stderr);
 }
@@ -1410,6 +1494,8 @@ int main( int argc , char **argv )
     sock_rrm_int_t  DataIpS[MAX_RRM]; //mod_lor_10_01_25
     pthread_attr_t attr ;
 
+    
+    
     /* Vérification des arguments */
     while ((c = getopt(argc,argv,"i:f:h")) != -1)
         switch (c)
@@ -1558,7 +1644,7 @@ int main( int argc , char **argv )
         
     }
     
-    
+   
     
     //open_socket( &DataRrc.s,  DataRrc.sock_path_local, DataRrc.sock_path_dest ,0 );
 
@@ -1644,7 +1730,10 @@ int main( int argc , char **argv )
         fprintf (stderr, "%s", strerror (ret));
         exit(-1) ;
     }
-
+     fl_initialize(&argc, argv, "Fusion Center Spetral Measurements", 0, 0);  
+     form = create_form_sensing_form(); //mod_eure_lor
+     fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Fusion Center Spetral Measurements");     
+     fl_check_forms();      
     /* main loop */
     rrm_scheduler( ) ;
 

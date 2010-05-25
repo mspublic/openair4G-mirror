@@ -559,7 +559,7 @@ msg_t *msg_rrm_up_freq_ass(
         
             
             init_rrc_msg_head(&(msg->head),inst,RRM_UP_FREQ_ASS, size,0);
-            
+            p->NB_chan = NB_chan;
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
             memcpy( p->ass_channels, ass_channels, NB_chan*sizeof(CHANNEL_T) );
 

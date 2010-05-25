@@ -101,6 +101,7 @@ msg_t *msg_rrm_scan_ord(
         }else*/
             size =  sizeof( rrm_scan_ord_t );
         rrm_scan_ord_t *p = RRM_CALLOC2(rrm_scan_ord_t , size ) ;
+       
 
         if ( p != NULL )
         {

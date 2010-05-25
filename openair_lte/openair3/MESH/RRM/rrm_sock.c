@@ -36,7 +36,7 @@
 #include "rrm_sock.h"
 
 //! \brief  Taille maximale de la charge utile
-#define SIZE_MAX_PAYLOAD    2048
+#define SIZE_MAX_PAYLOAD    16384 //mod_lor_10_05_24
 
 
 

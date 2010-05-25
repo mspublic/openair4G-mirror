@@ -210,10 +210,10 @@ Sens_ch_t *add_chann(
         char *I0 ,
         char *mu0,
         char *mu1,
-        //mod_eure_lor--
-        //float               meas       , ///< Sensing results 
-        unsigned int        is_free      ///< Evaluation about the availability of the channel
         
+        //float               meas       , ///< Sensing results 
+        unsigned int        *is_free      ///< Evaluation about the availability of the channel
+        //mod_eure_lor--
      ) 
 {
     Sens_ch_t *pOldEntry = *ch_entry;
@@ -235,9 +235,10 @@ Sens_ch_t *add_chann(
     memcpy(pNewItem->I0 ,I0, MAX_NUM_SB);
     memcpy(pNewItem->mu0,mu0, MAX_NUM_SB);
     memcpy(pNewItem->mu1,mu1, MAX_NUM_SB);
+    memcpy(pNewItem->is_free,  is_free,MAX_NUM_SB);
     //mod_eure_lor--
     //pNewItem->meas    =  meas;
-    pNewItem->is_free =  is_free;
+    //pNewItem->is_free =  is_free;
     //printf("sens_db add 2:  %d\n", pNewItem->Ch_id);//dbg
     *ch_entry         =  pNewItem ;
     pNewItem->next      =  pOldEntry;   
@@ -454,9 +455,10 @@ Sens_ch_t *update_channel_info(
     char *I0 ,
     char *mu0,
     char *mu1,
-    //mod_eure_lor--
+    
     //float               meas       , ///< Sensing results
-    unsigned int        is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_03_17: intxflot
+    unsigned int        *is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_03_17: intxflot
+    //mod_eure_lor--
     )
 {
     //printf("sens_db update passed ch_id: %d\n",Ch_id);//dbg
@@ -471,9 +473,9 @@ Sens_ch_t *update_channel_info(
         memcpy( pItem->I0 ,I0, MAX_NUM_SB);
         memcpy( pItem->mu0,mu0, MAX_NUM_SB);
         memcpy( pItem->mu1,mu1, MAX_NUM_SB);
-        
+        memcpy(pItem->is_free, is_free, MAX_NUM_SB);
         //pItem->meas        = meas ;
-        pItem->is_free     = is_free ;//mod_lor_10_05_06
+        //pItem->is_free     = is_free ;//mod_lor_10_05_06
        // printf("sens_db update2: %d\n", pItem->Ch_id);//dbg
     }
     else 
