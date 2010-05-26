@@ -67,7 +67,7 @@ for est=1:length(estimates_UE)
         
         % after feedback in 3rd subframe
         
-        q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates_UE(1).phy_measurements(1).subband_pmi_im(1,1,1));
+        q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im(1,1,1));
         
         
         qq = quantize_q(q);
