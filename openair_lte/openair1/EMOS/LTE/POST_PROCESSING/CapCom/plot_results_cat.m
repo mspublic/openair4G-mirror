@@ -5,7 +5,7 @@ close all;
 clc;
 
 %%
-load 'results_UE.mat';
+load '/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/results_UE.mat';
 mm=imread('cordes.png');
 plotwrtdistanceCalc;
 
@@ -109,6 +109,22 @@ plot(dist_travelled, rps_SISO_64Qam_eNB1_cat,'rd');
 
 legend('QPSK','16QAM','64QAM')
 
+
+%%
+in = in+1;    
+h_fig = figure(in);
+title('Alamouti');
+xlabel('Time[Seconds]');
+ylabel('Throughput');
+hold on;
+plot(round(double(timestamp_cat(1:100:end))/1e9),rps_SISO_16Qam_eNB1_cat,'bo');
+plot(round(double(timestamp_cat(1:100:end))/1e9),rps_Alamouti_16Qam_eNB1_cat,'rd');
+plot(round(double(timestamp_cat(1:100:end))/1e9),rps_Beamforming_16Qam_eNB1_maxq_cat,'go');
+hold off;
+legend('SISO','ALAM','BMFR')
+
+
+%%
 % in = in+1;    
 % h_fig = figure(in);
 % title(['Alamouti']);

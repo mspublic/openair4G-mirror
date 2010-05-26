@@ -1,8 +1,10 @@
-function [Rate_4Qam,Rate_16Qam,Rate_64Qam]  = calc_rps_SISO(estimates_UE)
+function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO(estimates_UE)
 
 capacity_siso_1 
 
-[x y z] = size(chcap_siso_single_stream_4Qam_eNB1);
+[x y z] = size(chcap_siso_single_stream_4Qam);
+
+siso_SNR_persecond = mean(SNR_eNB(:));
 % figure
 % hold on
 % plot(SNR_eNB1, 'b-x');
@@ -17,9 +19,9 @@ Frame_DL_sum_64Qam = zeros(1,length(estimates_UE));
 for i = 1:length(estimates_UE)
     %following holds accumulated data rate of 200 resource elements
     
-    RS_sum_4Qam = sum(chcap_siso_single_stream_4Qam_eNB1(1,:,i));
-    RS_sum_16Qam = sum(chcap_siso_single_stream_16Qam_eNB1(1,:,i));
-    RS_sum_64Qam = sum(chcap_siso_single_stream_64Qam_eNB1(1,:,i));
+    RS_sum_4Qam = sum(chcap_siso_single_stream_4Qam(1,:,i));
+    RS_sum_16Qam = sum(chcap_siso_single_stream_16Qam(1,:,i));
+    RS_sum_64Qam = sum(chcap_siso_single_stream_64Qam(1,:,i));
     
     % since 4200/200 = 21 groups of 200 resource elements are there in one subframe, so to get
     % the estimate of whole subframe we need to multiply RS_sum_XQam by 21.

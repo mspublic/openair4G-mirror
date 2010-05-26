@@ -3,7 +3,7 @@
 clear all;
 clc;
 %mm=imread('maps/cordes.png');
-d = dir(['/homes/latif/devel/openair_lte/openair1/EMOS/LTE/POST_PROCESSING/CapCom/' '*.mat'])
+d = dir(['/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/*.mat'])
 filenames = {d.name};
 rps_SISO_4Qam_eNB1_cat =[];
 rps_SISO_16Qam_eNB1_cat =[];

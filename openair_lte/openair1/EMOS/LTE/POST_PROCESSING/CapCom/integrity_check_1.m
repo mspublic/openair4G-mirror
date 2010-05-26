@@ -20,8 +20,8 @@
 %clear all;
 clc;
 %pathname = '/extras/kaltenbe/EMOS/lte_cnes_data/20100421 interference eNb + DL test/';
-pathname = '/media/Iomega_HDD/EMOS/data/20100506 coverage run part 1/';
-%pathname = '/extras/kaltenbe/EMOS/data/ltetest/';
+%pathname = '/media/Iomega_HDD/EMOS/data/20100506 coverage run part 1/';
+pathname = '/extras/kaltenbe/EMOS/lte_cnes_data/20100511_mode2_parcours2_part1/';
 d = dir([pathname 'data_term3*.EMOS']);
 filenames = {d.name};
 
@@ -29,6 +29,7 @@ decimation = 1;
 NFrames_max = 100*60*10;
 
 for file_idx = 1:length(filenames)
+   % n = round(length(filenames)/2);
     disp(filenames{file_idx});
     decimation
     [path,file,ext,ver] = fileparts(filenames{file_idx});
@@ -39,9 +40,9 @@ for file_idx = 1:length(filenames)
         is_eNb=0;
     end
     
-[H, H_fq, gps_data, NFrames, minestimates, throughput] = load_estimates_lte_1(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
+[H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_1(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
 
-save(regexprep((fullfile(filenames{file_idx},'results_UE.mat')), '/', '_'), 'gps_data', 'NFrames', 'throughput', 'minestimates', 'file_idx');
+save(regexprep((fullfile(filenames{file_idx},'results_UE.mat')), '/', '_'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx');
 
 end
 

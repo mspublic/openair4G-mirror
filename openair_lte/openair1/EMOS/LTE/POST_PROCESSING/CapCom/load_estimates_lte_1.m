@@ -1,4 +1,4 @@
-function [H, H_fq, gps_data, NFrames, minestimates, throughput] = load_estimates_lte_1(filename, NFrames_max, decimation, is_eNb)
+function [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_1(filename, NFrames_max, decimation, is_eNb)
 % 
 % EMOS Single User Import Filter
 %
@@ -44,8 +44,8 @@ end
 %  - 100 entries of type fifo_dump_emos (defined in phy_procedures_emos.h)
 %  - 1 entry of type gps_fix_t defined in gps.h
 
-if exist('../../IMPORT_FILTER/a.out','file')
-     [dummy,result] = system('../../IMPORT_FILTER/a.out')
+if exist('/homes/latif/test_devel/openair1/EMOS/LTE/IMPORT_FILTER/a.out','file')
+     [dummy,result] = system('/homes/latif/test_devel/openair1/EMOS/LTE/IMPORT_FILTER/a.out')
      eval(result);
 else
     warning('File dump_size.c has to be compiled to enable error checking of sizes');
@@ -122,6 +122,11 @@ Ratepersec_4Qam_beamforming_feedbackq = zeros(1,floor(NFrames/100));
 Ratepersec_16Qam_beamforming_feedbackq = zeros(1,floor(NFrames/100));
 Ratepersec_64Qam_beamforming_feedbackq = zeros(1,floor(NFrames/100));
 
+siso_SNR = [];
+alam_SNR = [];
+bmfr_maxq_SNR = [];
+bmfr_fbq_SNR = [];
+
 gps_data = repmat(gps_data_struct,1,NFrames/100);
 minestimates = repmat(min_estimates_struct, 1,NFrames);
 k = 1;
@@ -142,6 +147,9 @@ for n=1:NFiles
 %         if (mod((k-1),decimation) == 0)
 %             estimates(((k-1)/decimation)+1) = estimates_tmp;
 %         end
+
+%         if (estimates_tmp.UE_mode == 3)
+            
         count = count +1;
         estimates(1,count) = estimates_tmp;
         minestimates(k).rx_rssi_dBm = estimates(1,count).phy_measurements(1).rx_rssi_dBm(1);
@@ -149,34 +157,32 @@ for n=1:NFiles
         minestimates(k).frame_rx = estimates(1,count).frame_rx;
         minestimates(k).pbch_fer = estimates(1,count).pbch_fer(1);
         minestimates(k).timestamp = estimates(1,count).timestamp;
+%         end
         
-        %read GPS data
+        %read GPS data and estimates every second
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
             gps_data(l) = binread(fid,gps_data_struct,1,4,'l');
             l=l+1;
             count = 0;
-            %estimates_frame = estimates(1,(k-99):k);
+                                  
+                [Ratepersec_4Qam_SISO(sec),Ratepersec_16Qam_SISO(sec),Ratepersec_64Qam_SISO(sec),siso_SNR_persecond]  = calc_rps_SISO(estimates);
+                siso_SNR = [siso_SNR siso_SNR_persecond];
             
-            %if what_scheme == 1
-                [Ratepersec_4Qam_SISO(sec),Ratepersec_16Qam_SISO(sec),Ratepersec_64Qam_SISO(sec)]  = calc_rps_SISO(estimates);
-            %else
-             %   if what_scheme == 2
-                [Ratepersec_4Qam_alamouti(sec),Ratepersec_16Qam_alamouti(sec),Ratepersec_64Qam_alamouti(sec)]  = calc_rps_Alamouti(estimates);
-                    
-              %  else
-                [Ratepersec_4Qam_beamforming_maxq(sec),Ratepersec_16Qam_beamforming_maxq(sec),Ratepersec_64Qam_beamforming_maxq(sec),Ratepersec_4Qam_beamforming_feedbackq(sec),Ratepersec_16Qam_beamforming_feedbackq(sec),Ratepersec_64Qam_beamforming_feedbackq(sec)]  = calc_rps_Beamforming(estimates);
-               % end
-            %end
+             
+                [Ratepersec_4Qam_alamouti(sec),Ratepersec_16Qam_alamouti(sec),Ratepersec_64Qam_alamouti(sec),alam_SNR_persecond]  = calc_rps_Alamouti(estimates);
+                alam_SNR = [alam_SNR alam_SNR_persecond];    
+            
+                [Ratepersec_4Qam_beamforming_maxq(sec),Ratepersec_16Qam_beamforming_maxq(sec),Ratepersec_64Qam_beamforming_maxq(sec),Ratepersec_4Qam_beamforming_feedbackq(sec),Ratepersec_16Qam_beamforming_feedbackq(sec),Ratepersec_64Qam_beamforming_feedbackq(sec),bmfr_optmq_SNR, bmfr_feedbkq_SNR]  = calc_rps_Beamforming(estimates);
+           
+               bmfr_maxq_SNR = [bmfr_maxq_SNR bmfr_optmq_SNR];
+               bmfr_fbq_SNR = [bmfr_fbq_SNR bmfr_feedbkq_SNR];
+               
+           
             
             sec = sec +1;
             
-            %plot_results(estimates_frame);
-            
+                       
         end
-        %I will have to add it here if the data is huge
-        %enough************************************************************
-        %******************************************************************
-        %******************************************************************
         k=k+1;
     end
 
@@ -200,6 +206,13 @@ throughput.rateps_beamforming_64Qam_eNB1_feedbackq = Ratepersec_64Qam_beamformin
 throughput.rateps_beamforming_4Qam_eNB1_maxq = Ratepersec_4Qam_beamforming_maxq;
 throughput.rateps_beamforming_16Qam_eNB1_maxq = Ratepersec_16Qam_beamforming_maxq;
 throughput.rateps_beamforming_64Qam_eNB1_maxq = Ratepersec_64Qam_beamforming_maxq;
+
+SNR.siso = siso_SNR;
+SNR.alamouti = alam_SNR;
+SNR.bmfr_maxq = bmfr_maxq_SNR;
+SNR.bmfr_feedbackq = bmfr_fbq_SNR;
+
+
 % H_fq = complex(zeros(NRx,NTx,NFreq/NTx,NFrames));
 % H_fq(1,:,:,:) = reshape(chan0,NTx,NFreq/NTx,NFrames);
 % H_fq(2,:,:,:) = reshape(chan1,NTx,NFreq/NTx,NFrames);
