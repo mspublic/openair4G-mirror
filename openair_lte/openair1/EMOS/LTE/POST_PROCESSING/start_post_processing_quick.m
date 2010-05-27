@@ -2,20 +2,22 @@ close all
 clear all
 
 addpath('../IMPORT_FILTER')
-addpath('maps')
-struct_template
 decimation = 100;
+struct_template;
+
+root_path = '/media/Iomega HDD/EMOS/data';
+
+d = dir(fullfile(root_path, '*mode1_parcours1*'));
+dir_names = {d.name};
 
 %% post processing
-pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\';
-post_processing_UE_quick
-post_processing_eNb_quick
-pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\nomadic\';
-post_processing_UE_quick
-post_processing_eNb_quick
+for i=1:length(dir_names)
+    pathname = fullfile(root_path,dir_names{i},'nomadic');
+    if exist(pathname,'dir')
+        post_processing_UE_quick_new
+    end
+end
 
-%% plot results
-pathname = 'G:\EMOS\data\20100520_mode2_parcours1_part4_part5\';
-plot_results_UE_quick
-plot_results_eNb_quick
+eval_nomadic_points
+
 

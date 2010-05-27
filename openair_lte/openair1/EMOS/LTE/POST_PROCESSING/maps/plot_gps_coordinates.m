@@ -1,4 +1,4 @@
-function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
+function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color, varargin)
 % h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
 %
 %  This function plots the gps coordinates given by langitude and latutude
@@ -34,6 +34,11 @@ end
 if nargin <= 5
     color = 'blue';
 end
+if nargin <= 6
+    style = {'Marker','x'};
+else
+    style = varargin;
+end
 
 load('gps_calib_cordes.mat')
 
@@ -67,7 +72,7 @@ end
     
 if (~isempty(rx_rssi))
     for i=1:length(gps_x)
-        plot(gps_x(i),gps_y(i),'x','color',m(cidx(i),:))
+        plot(gps_x(i),gps_y(i),'color',m(cidx(i),:),style{:})
         hold on
     end
     yt = round(linspace(min(rx_rssi),max(rx_rssi),8));
@@ -91,3 +96,4 @@ end
 %    axis([min(gps_x)-100, max(gps_x)+100, min(gps_y)-100, max(gps_y)+100]);
 %end
 axis image
+axis off

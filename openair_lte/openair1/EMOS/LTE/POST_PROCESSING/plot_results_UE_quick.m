@@ -17,7 +17,7 @@ if (nomadic_flag)
     nomadic.timebase = nomadic.gps_time_cat-gps_time_cat(1);
 end
 
-%%
+%% Frame TX number over time
 h_fig = figure(1);
 hold off
 %frame_tx_cat(frame_tx_cat>100*60*60*8) = NaN;
@@ -32,16 +32,25 @@ xlabel('Time [sec]')
 ylabel('TX Frame')
 saveas(h_fig,fullfile(pathname,'frame_tx.eps'),'epsc2')
 
-%%
+%% RX RSSI over time and GPS coordinates
 h_fig = figure(2);
 hold off
 good = (rx_rssi_dBm_cat<40 & rx_rssi_dBm_cat>-120);
+n0_power_tot_dBm = [phy_measurements_cat(:).n0_power_tot_dBm];
+if isa(n0_power_tot_dBm,'uint16') % it was read with the wrong datatype
+    n0_power_tot_dBm = double(n0_power_tot_dBm)-pow2(16);
+else
+    n0_power_tot_dBm = double(n0_power_tot_dBm);
+end
+    
 plot(timebase(good(:,1)),rx_rssi_dBm_cat(good(:,1),1),'x')
+hold on
+plot(timebase(good(:,1)),n0_power_tot_dBm(good(:,1)),'g.')
 if (nomadic_flag)
     hold on
     nomadic.good = (nomadic.rx_rssi_dBm_cat<40 & nomadic.rx_rssi_dBm_cat>-120);
     plot(nomadic.timebase(nomadic.good(:,1)),nomadic.rx_rssi_dBm_cat(nomadic.good(:,1),1),'rx')
-    legend('vehicular','nomadic')
+    legend('vehicular','noise','nomadic')
 end
 title('RX RSSI [dBm]')
 xlabel('Time [sec]')
@@ -55,12 +64,12 @@ plot_gps_coordinates(mm,gps_lon_cat(good(:,1)), gps_lat_cat(good(:,1)),...
 if (nomadic_flag)
     hold on
     plot_gps_coordinates([],nomadic.gps_lon_cat(nomadic.good(:,1)),nomadic.gps_lat_cat(nomadic.good(:,1)), ...
-        nomadic.rx_rssi_dBm_cat(nomadic.good(:,1),1),'nomadic')
+        nomadic.rx_rssi_dBm_cat(nomadic.good(:,1),1),'nomadic');
 end
 title('RX RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.jpg'),'jpg')
 
-%%
+%% PBCH FER over time and GPS coordinates
 h_fig = figure(4);
 hold off
 good = (pbch_fer_cat<=100 & pbch_fer_cat>=0).';
@@ -83,24 +92,25 @@ plot_gps_coordinates(mm,gps_lon_cat(UE_synched & good), gps_lat_cat(UE_synched &
 title('PBCH FER')
 saveas(h_fig,fullfile(pathname,'PBCH_fer_gps.jpg'),'jpg')
 
-%%
+%% UE mode over GPS coordinates
 h_fig = figure(6);
 hold off
 plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,double(UE_mode_cat));
 title('UE mode')
 saveas(h_fig,fullfile(pathname,'UE_mode_gps.jpg'),'jpg')
 
-%%
+%% DLSCH FER over time and GPS coordinates
 h_fig = figure(7);
 hold off
 good = (dlsch_fer_cat<=100 & dlsch_fer_cat>=0).';
 plot(timebase(UE_connected & good),...
-    (100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good)*7,'x');
+    (100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good)*7*4/3,'x');
 if (nomadic_flag)
     hold on
     nomadic.good = (nomadic.dlsch_fer_cat<=100 & nomadic.dlsch_fer_cat>=0).';
     plot(nomadic.timebase(nomadic.UE_connected & nomadic.good),...
-        (100-nomadic.dlsch_fer_cat(nomadic.UE_connected & nomadic.good)).*nomadic.tbs_cat(nomadic.UE_connected & nomadic.good)*7,'rx')
+        (100-nomadic.dlsch_fer_cat(nomadic.UE_connected & nomadic.good)).*...
+        nomadic.tbs_cat(nomadic.UE_connected & nomadic.good)*7*4/3,'rx')
     legend('vehicular','nomadic')
 end
 xlabel('Time [sec]')
@@ -116,7 +126,7 @@ plot_gps_coordinates(mm,gps_lon_cat(UE_connected & good), gps_lat_cat(UE_connect
 title('DLSCH Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'DLSCH_troughput_gps.jpg'),'jpg')
 
-%%
+%% MCS over GPS coordinates
 h_fig = figure(9);
 hold off
 plot_gps_coordinates(mm,gps_lon_cat(UE_connected & good), gps_lat_cat(UE_connected & good),...
