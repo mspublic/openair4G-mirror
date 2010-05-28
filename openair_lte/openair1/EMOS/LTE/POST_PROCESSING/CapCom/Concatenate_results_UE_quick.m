@@ -3,7 +3,7 @@
 clear all;
 clc;
 %mm=imread('maps/cordes.png');
-d = dir(['/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/*.mat'])
+d = dir(['/homes/latif/New Folder/Results_Single_antenna_RX/mode2_parcours1_part1_2_3.1_3.2_4_5_6/*.mat'])
 filenames = {d.name};
 rps_SISO_4Qam_eNB1_cat =[];
 rps_SISO_16Qam_eNB1_cat =[];
@@ -21,6 +21,11 @@ rps_Alamouti_64Qam_eNB1_cat = [];
  rps_Beamforming_16Qam_eNB1_feedbackq_cat = [];
  rps_Beamforming_64Qam_eNB1_feedbackq_cat = [];
 
+siso_SNR_cat = [];
+alam_SNR_cat= [];
+bmfr_maxq_cat = [];
+bmfr_feedbackq_cat = [];
+
 
 gps_long_cat = [];
 gps_lat_cat = [];
@@ -36,7 +41,7 @@ pbch_fer_cat = [];
 in = 0;
 for f = 1:length(filenames)
     s = cat(1, filenames{f});
-    load (s);
+    load(s);
     rps_SISO_4Qam_eNB1_cat = [rps_SISO_4Qam_eNB1_cat throughput.rateps_SISO_4Qam_eNB1];
     rps_SISO_16Qam_eNB1_cat = [rps_SISO_16Qam_eNB1_cat throughput.rateps_SISO_16Qam_eNB1];
     rps_SISO_64Qam_eNB1_cat = [rps_SISO_64Qam_eNB1_cat throughput.rateps_SISO_64Qam_eNB1];
@@ -53,7 +58,11 @@ for f = 1:length(filenames)
      rps_Beamforming_4Qam_eNB1_maxq_cat = [rps_Beamforming_4Qam_eNB1_maxq_cat throughput.rateps_beamforming_4Qam_eNB1_maxq];
      rps_Beamforming_16Qam_eNB1_maxq_cat = [rps_Beamforming_16Qam_eNB1_maxq_cat throughput.rateps_beamforming_16Qam_eNB1_maxq];
      rps_Beamforming_64Qam_eNB1_maxq_cat = [rps_Beamforming_64Qam_eNB1_maxq_cat throughput.rateps_beamforming_64Qam_eNB1_maxq];
-
+        
+     siso_SNR_cat = [siso_SNR_cat SNR.siso];
+     alam_SNR_cat= [alam_SNR_cat SNR.alamouti];
+     bmfr_maxq_cat = [bmfr_maxq_cat SNR.bmfr_maxq];
+     bmfr_feedbackq_cat = [bmfr_feedbackq_cat SNR.bmfr_feedbackq];
      
     gps_long_cat = [gps_long_cat gps_data.longitude];
     gps_lat_cat = [gps_lat_cat gps_data.latitude];
