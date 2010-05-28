@@ -17,17 +17,18 @@ chcap_beamforming_16Qam = zeros(1,length(h), length(estimates_UE));
 chcap_beamforming_64Qam = zeros(1,length(h), length(estimates_UE));
 
 SNR_eNB = zeros(1,length(h), length(estimates_UE));
-
+q_index = [0 32 64 96 128 160 192 200];
 for est=1:length(estimates_UE)
     
     N0 = double(estimates_UE(est).phy_measurements(1).n0_power(1));
-    
+   
     % for checking the connected Sector
     H = estimates_UE(est).channel;
     Hc = double(H(1:2:end,:,:))+1j*double(H(2:2:end,:,:));
     Hs = squeeze(10*log10(sum(sum(abs(Hc).^2,1),2)));
     [val, ind] = max(Hs);
-    
+     antenna_index = estimates_UE(est).phy_measurements(1).selected_rx_antennas(ind,:);
+     
     if MultiAntenna_Rx == 1
     
         if (ind == 1)
@@ -67,16 +68,25 @@ for est=1:length(estimates_UE)
         
         % after feedback in 3rd subframe
         
-        q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im(1,1,1));
+        Rx111 = [];
+        Rx222 = [];
         
-        
-        qq = quantize_q(q);
-        
-            Rx11 =  abs(h11_eNB(1:200) + qq*h21_eNB(1:200)).^2;
-            Rx22 =  abs(h12_eNB(1:200) + qq*h22_eNB(1:200)).^2;
+       % q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re((antenna_index(i)+1),i,ind))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im((antenna_index(i)+1),i,ind));
+       % q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(ind,:,1))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im(ind,:,1));
+        for i =1:1:7
+           
+           q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re((antenna_index(i)+1),i,ind))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im((antenna_index(i)+1),i,ind));
             
-      
-            SNR_eNB(1, 201:end, est) = 10*log10((Rx11 + Rx22)/N0);
+            qq(i) = quantize_q(q);
+        
+            Rx11 =  abs(h11_eNB((q_index(i)+1):q_index(i+1)) + qq(i)*h21_eNB((q_index(i)+1):q_index(i+1))).^2;
+            Rx22 =  abs(h12_eNB((q_index(i)+1):q_index(i+1)) + qq(i)*h22_eNB((q_index(i)+1):q_index(i+1))).^2;
+            
+            Rx111 = [Rx111 Rx11'];
+            Rx222 = [Rx222 Rx22'];
+        end
+        
+            SNR_eNB(1, 201:end, est) = 10*log10((Rx111 + Rx222)/N0);
         
         
         
@@ -115,15 +125,22 @@ for est=1:length(estimates_UE)
         
         % after feedback in 3rd subframe
         
-        q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(1,1,1))+1j*double(estimates_UE(1).phy_measurements(1).subband_pmi_im(1,1,1));
+        %q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re(ind,:,1))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im(ind,:,1));
+        Rx111 = [];
+        for i =1:1:7
+            
+            q = double(estimates_UE(est).phy_measurements(1).subband_pmi_re((antenna_index(i)+1),i,ind))+1j*double(estimates_UE(est).phy_measurements(1).subband_pmi_im((antenna_index(i)+1),i,ind));
+            
+            qq(i) = quantize_q(q);
         
+            Rx11 =  abs(h11_eNB((q_index(i)+1):q_index(i+1)) + qq(i)*h21_eNB((q_index(i)+1):q_index(i+1))).^2;
+                       
+            Rx111 = [Rx111 Rx11'];
+           
+        end
         
-        qq = quantize_q(q);
-        
-            Rx11 =  abs(h11_eNB(1:200) + qq*h21_eNB(1:200)).^2;
-               
-            SNR_eNB(1, 201:end, est) = 10*log10((Rx11)/N0);
-        
+            SNR_eNB(1, 201:end, est) = 10*log10((Rx111)/N0);
+          
             
     end
     
