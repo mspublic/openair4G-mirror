@@ -1,3 +1,16 @@
+% file: eval_nomadic_points.m
+% author: florian.kaltenberger@eurecom.fr
+% purpose: plots the nomadic results from the UE for several directories
+
+% in the following two lines set the root path and select the subfolders
+% you want to plot
+root_path = '~/EMOS/data/';  
+d = dir(fullfile(root_path, '*mode1_parcours1'));
+dir_names = {d.name};
+
+mm=imread('maps/cordes.png');
+decimation = 100;
+
 results_UE = [];
 results_UE_nomadic = [];
 
@@ -48,7 +61,6 @@ end
 %%
 fid = fopen('nomadic_results.csv','w');
 for i=1:length(results_UE_nomadic)
-    %%
     rx_rssi_dBm_mean(i) = mean(results_UE_nomadic(i).rx_rssi_dBm(:,1));
 
     UE_synched = (results_UE_nomadic(i).UE_mode_cat>0);
@@ -58,7 +70,7 @@ for i=1:length(results_UE_nomadic)
     idx = 1;
     for m=[1,2,6]
         throughput_mean(i,idx) = mean((100-results_UE_nomadic(i).dlsch_fer(UE_connected & good & mimo_mode==m)).*...
-            results_UE_nomadic(i).tbs_cat(UE_connected & good & mimo_mode==m)*7*4/3);
+            results_UE_nomadic(i).tbs_cat(UE_connected & good & mimo_mode==m)*6);
         fprintf(fid,'%d; %d; %s; %f; %f; %f; %f\n',i, m, results_UE_nomadic(i).filename, rx_rssi_dBm_mean(i), throughput_mean(i,idx), ...
             mean([results_UE_nomadic(i).gps_data.latitude]),mean([results_UE_nomadic(i).gps_data.longitude]));
         idx=idx+1;
@@ -99,5 +111,5 @@ tbs_cat = cat(1,results_UE_nomadic.tbs_cat).';
 good = (dlsch_fer_cat<=100 & dlsch_fer_cat>=0);
 gps_data = [results_UE_nomadic.gps_data];
 timebase = [gps_data.timestamp];
-plot(timebase(UE_connected & good),(100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good)*7*4/3,'rx');
+plot(timebase(UE_connected & good),(100-dlsch_fer_cat(UE_connected & good)).*tbs_cat(UE_connected & good)*6,'rx');
 

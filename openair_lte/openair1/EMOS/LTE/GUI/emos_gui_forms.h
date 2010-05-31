@@ -7,7 +7,6 @@
 extern void power_callback(FL_OBJECT *, long);
 extern void refresh_callback(FL_OBJECT *, long);
 extern void rx_mode_button_callback(FL_OBJECT *, long);
-extern void file_index_callback(FL_OBJECT *, long);
 extern void record_callback(FL_OBJECT *, long);
 extern void exit_callback(FL_OBJECT *, long);
 extern void config_btn_callback(FL_OBJECT *, long);
@@ -60,7 +59,6 @@ typedef struct {
 	FL_OBJECT *alamouti_btn;
 	FL_OBJECT *precoding_btn;
 	FL_OBJECT *cbmimo_lbl;
-	FL_OBJECT *file_index_dial;
 	FL_OBJECT *fix_lbl;
 	FL_OBJECT *rec_btn;
 	FL_OBJECT *exit_btn;
@@ -85,6 +83,9 @@ typedef struct {
 	FL_OBJECT *rf_gain_txt;
 	FL_OBJECT *digital_gain_txt;
 	FL_OBJECT *rf_mode_txt;
+	FL_OBJECT *link_adaptation_button;
+	FL_OBJECT *label_input;
+	FL_OBJECT *label_button;
 } FD_main_frm;
 
 extern FD_main_frm * create_form_main_frm(void);
