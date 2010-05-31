@@ -607,7 +607,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 	DLSCH_alloc_pdu2.mcs1   = (eNB_UE_stats[0].DL_cqi[0][0]<<1);
 
       if (DLSCH_alloc_pdu2.mcs1 > 14)
-	DLSCH_alloc_pdu2.mcs1 = 14
+	DLSCH_alloc_pdu2.mcs1 = 14;
 
       if (DLSCH_alloc_pdu2.mcs1 > 10)
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC_12;

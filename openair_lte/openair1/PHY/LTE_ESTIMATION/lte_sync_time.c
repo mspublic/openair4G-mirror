@@ -13,7 +13,7 @@
 #include "MAC_INTERFACE/extern.h"
 
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));

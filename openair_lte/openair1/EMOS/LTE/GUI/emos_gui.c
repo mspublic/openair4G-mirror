@@ -86,7 +86,7 @@ int frame_tx;
 time_t starttime_tmp;
 struct tm starttime;
 int current_dlsch_cqi; //this is actually defined in phy_procedures_lte_ue.c - we should get rid of this
-
+int rate_adaptation = 1;
 
 /*
 unsigned char tx_gain_table_c[36] = {
@@ -1105,6 +1105,8 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_eNb);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_RATE_ADAPTATION, &rate_adaptation);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==2) {
@@ -1116,7 +1118,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
@@ -1578,7 +1579,18 @@ void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
   fl_set_button(ob,1);
   mimo_mode = user_data;
 
-  //ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
+  if (power)
+    ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
+}
+
+void link_adpt_callback(FL_OBJECT *ob, long user_data)
+{
+  int ioctl_result;
+
+  rate_adaptation = fl_get_button(main_frm->la_btn);
+
+  if (power)
+    ioctl_result = ioctl(openair_dev_fd, openair_SET_DLSCH_RATE_ADAPTATION, &rate_adaptation);
 }
 
 
