@@ -1,11 +1,11 @@
 %plot_results_cat
 
-clear all;
-close all;
-clc;
+%clear all;
+%close all;
+%clc;
 
 %%
-load '/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/results_UE.mat';
+%load '/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/results_UE.mat';
 mm=imread('cordes.png');
 plotwrtdistanceCalc;
 
