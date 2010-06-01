@@ -3,7 +3,8 @@
 clear all;
 clc;
 %mm=imread('maps/cordes.png');
-d = dir(['/homes/latif/New Folder/Results_Single_antenna_RX/mode2_parcours1_part1_2_3.1_3.2_4_5_6/*.mat'])
+pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/20100510_mode2_parcours1_part1/';
+d = dir(fullfile(pathname, '*.mat'));
 filenames = {d.name};
 rps_SISO_4Qam_eNB1_cat =[];
 rps_SISO_16Qam_eNB1_cat =[];
@@ -40,7 +41,7 @@ rx_rssi_dBm_cat = [];
 pbch_fer_cat = [];
 in = 0;
 for f = 1:length(filenames)
-    s = cat(1, filenames{f});
+    s = fullfile(pathname, filenames{f});
     load(s);
     rps_SISO_4Qam_eNB1_cat = [rps_SISO_4Qam_eNB1_cat throughput.rateps_SISO_4Qam_eNB1];
     rps_SISO_16Qam_eNB1_cat = [rps_SISO_16Qam_eNB1_cat throughput.rateps_SISO_16Qam_eNB1];
