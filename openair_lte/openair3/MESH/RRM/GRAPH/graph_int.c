@@ -49,6 +49,7 @@
 
 sock_rrm_t S_graph;
 static int flag_not_exit = 1 ;
+static int SN_active = 0;
 //mod_lor_10_04_21++
 typedef struct {
     unsigned int        NB_chan              ; //!< Number of channels 
@@ -100,7 +101,7 @@ main(int argc,char **argv) {
     int colorfree=2;
     int colorbusy=9;
     int comments=88;//mod_lor_10_04_22
-    int i;
+    int i,j;
     if (rrm_inst == FC_ID){
         //colorbg = 223;
         colorfg = 21;
@@ -162,16 +163,30 @@ main(int argc,char **argv) {
             case SNS:{
                 switch ( msg_type )
                 {
-                    case SNS_UPDATE_SENS :
+                    case SNS_UPDATE_SENS : //mod_lor_10_06_02
                         {
                             msg_fct( "[SENSING]>[CRRM]:%d:SNS_UPDATE_SENS transaction number:%d\n",Header->inst, Header->Trans_id) ;
+                            gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Sensing information received from sensing unit\n");
-                            msg_fct( "Updating of local sensing database with recived data:\n");
+                            msg_fct( "Results about frequencies from ");
+                            printf("\e[38;5;%dm",colorfree);
+                            msg_fct( "%d ",(p->channels[0]/1000));
+                            printf("\e[38;5;%dm",comments);
+                            msg_fct( "MHz and ");
+                            printf("\e[38;5;%dm",colorfree);
+                            msg_fct( "%d ",(p->channels[1]/1000));
+                            printf("\e[38;5;%dm",comments);
+                            msg_fct( "MHz\nBandwidth of analyzed subbands: ");
+                            printf("\e[38;5;%dm",colorfree);
+                            msg_fct( "%d ",p->values[0]);
+                            printf("\e[38;5;%dm",comments);
+                            msg_fct( "KHz\n");
+                            msg_fct( "Updating of local sensing database with recived data ...\n");
 
                             //mod_lor_10_04_21++
-                            gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
-                            for (i=0;i<p->NB_chan;i++){
+                            
+                           /* for (i=0;i<p->NB_chan;i++){
                                 if(p->values[i]==1){
                                     printf("\e[38;5;%dm",colorfree);   //mod_lor_10_04_21
                                     msg_fct( "      Channel %d: no primary user detected\n",p->channels[i]);
@@ -183,7 +198,7 @@ main(int argc,char **argv) {
                                     //printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_21
                                 }
                             }
-                            printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
+                            printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22*/
                             if (SCEN_1)//mod_lor_10_05_12++
                                 msg_fct( "Trasmission of the new information to the Fusion Center\n");
                             else
@@ -360,8 +375,9 @@ main(int argc,char **argv) {
                 switch ( msg_type )
                 {
                 
-                    case UPDATE_SENS_RESULTS_3 :
+                    case UPDATE_SENS_RESULTS_3 : //mod_lor_10_06_02
                         {
+                            gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
                             if (SCEN_1){//mod_lor_10_05_12++
                                 msg_fct( "[SENSOR %d msg]:UPDATE_SENS_RESULTS_3 transaction number:%d\n",(Header->inst-1), Header->Trans_id);
                                 printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
@@ -372,10 +388,36 @@ main(int argc,char **argv) {
                                 msg_fct( "Sensing information received from Secondary User %d (local update number: %d)\n",(Header->inst-1),(Header->Trans_id - 4096));
                             }//mod_lor_10_05_12--
                             
+                            msg_fct( "Sensing results about frequencies from ");
+                            printf("\e[38;5;%dm",colorfree);
+                            msg_fct( "%d ",(p->channels[0]/1000));
+                            printf("\e[38;5;%dm",comments);
+                            msg_fct( "MHz and ");
+                            printf("\e[38;5;%dm",colorfree);
+                            msg_fct( "%d ",(p->channels[1]/1000));
+                            printf("\e[38;5;%dm",comments);
+                            msg_fct( "MHz\nUpdating of sensing database using recived data ...\n");
                             
-                            msg_fct( "Updating of sensing database using recived data:\n");
+                            if(SN_active){
+                                msg_fct( "Checking if frequencies in use by Secondary Network are still free ...\n");
+                                if(p->values[1]==1){
+                                    printf("\e[38;5;%dm",colorbusy);
+                                    printf("Primary detected on frequencies in in use by Secondary Network\n");
+                                    printf("\e[38;5;%dm",comments);   
+                                    msg_fct( "Sending update of open frequencies to Secondary Network\n");
+                                }
+                                else if (p->values[1]==0){
+                                    printf("\e[38;5;%dm",colorfree);
+                                    printf("No primary communication detected on frequencies in use by Secondary Network\n");
+                                    
+                                }
+                            }
+                            else if (p->values[1]==1){
+                                printf("\e[38;5;%dm",comments);   
+                                msg_fct( "Sending update of open frequencies to Secondary Network\n");
+                            }
                             //mod_lor_10_04_21++
-                            gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
+                            /*
                             unsigned int up_to_send = 0;
                             for (i=(p->NB_chan-1);i>=0;i--){
                                 if(p->values[i]==1){
@@ -394,7 +436,7 @@ main(int argc,char **argv) {
                             if (up_to_send){
                                 printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                                 msg_fct( "Sending update of open frequencies to Secondary Network\n");
-                            }
+                            }*/
                             printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_21
                             //mod_lor_10_04_21--
                             
@@ -412,31 +454,34 @@ main(int argc,char **argv) {
                             
                         }
                         break ;
-                    case UPDATE_OPEN_FREQ_7 :
+                    case UPDATE_OPEN_FREQ_7 : //mod_lor_10_06_02
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
                             msg_fct( "[FC msg]:UPDATE_OPEN_FREQ_7 from %d\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_23
                             msg_fct( "Received information about available frequencies from Fusion Center\n");
-                            msg_fct( "Updating of channel database ...\n");
-                             for (i=(p->NB_chan-1);i>=0;i--){
-                                //if(p->values[i]==1){
+                            if (p->NB_chan==0) {
+                                printf("\e[38;5;%dm",colorbusy);
+                                msg_fct( "No available channels for Secondary Network \n");
+                            }else{
+                                msg_fct( "Updating of channel database ...\n");
+                                for (i=(p->NB_chan-1);i>=0;i--){ 
                                     printf("\e[38;5;%dm",colorfree);   //mod_lor_10_04_21
-                                    msg_fct( "      Channel %d is available\n",p->channels[i]);
-                                    
-                               /* }
-                                else{
-                                    printf("\e[38;5;%dm",colorbusy);   //mod_lor_10_04_21
-                                    msg_fct( "      Channel %d: primary user detected\n",p->channels[i]);
-                        
-                                }*/
-                            }
-                            printf("\e[38;5;%dm",comments);   //mod_lor_10_04_23
-                            msg_fct( "Selection of frequencies for Secondary network ...\n");
-                            //mod_lor_10_05_18++
-                            for (i=(p->NB_val-1);i>=0;i--){
-                                printf("\e[38;5;%dm",colorfree);
-                                msg_fct( "      Channel %d selected for SN\n",p->values[i]);
+                                    msg_fct( "      Channel from %d KHz to %d KHz is available\n",p->channels[i-1], p->channels[i]);
+                                    i=i-2;
+                                }
+                                printf("\e[38;5;%dm",comments);   //mod_lor_10_04_23
+                                msg_fct( "Selection of frequencies for Secondary network ...\n");
+                                //mod_lor_10_05_18++
+                                for (i=(p->NB_val-1);i>=0;i--){
+                                    for (j=(p->NB_chan-3);j>=0;j=j-3){
+                                        if (p->channels[j]==p->values[i]){
+                                            printf("\e[38;5;%dm",colorfree);
+                                            msg_fct( "      Channel from %d KHz to %d KHz selected for SN\n",p->channels[j+1],p->channels[j+2]);
+                                            break;
+                                        }
+                                    }                                
+                                }
                             }
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_23
                             //mod_lor_10_05_18--
@@ -446,9 +491,11 @@ main(int argc,char **argv) {
                             
                         }
                         break ;
-                    case UPDATE_SN_OCC_FREQ_5 :
+                    case UPDATE_SN_OCC_FREQ_5 : //mod_lor_10_06_02
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
+                            if (p->NB_chan>0)
+                                SN_active = 1; //mod_lor_10_06_02
                             printf("\e[38;5;%dm",colorBTS_msg);  //mod_lor_10_04_23
                             msg_fct( "[BTS msg]:UPDATE_SN_OCC_FREQ_5 from %d\n", Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
@@ -458,12 +505,21 @@ main(int argc,char **argv) {
                                  msg_fct( "SN did not select any channel\n");
                             printf("\e[38;5;%dm",colorBTS_msg);
                             for (i=0;i<p->NB_chan;i++){
-                                msg_fct( "      Channel %d used by Secondary Network\n",p->channels[i] );
+                                printf("\e[38;5;%dm",comments);
+                                msg_fct( "      Channel from " );
+                                printf("\e[38;5;%dm",colorfree);
+                                msg_fct( "%d ",p->channels[i] );
+                                printf("\e[38;5;%dm",comments);
+                                msg_fct( "MHz to");
+                                printf("\e[38;5;%dm",colorfree);
+                                msg_fct( " %d ",p->channels[++i] );
+                                printf("\e[38;5;%dm",comments);
+                                msg_fct( " used by Secondary Network\n" );
                             }
                             if (p->values[0]){
                                 if (p->NB_chan != 0){
                                     printf("\e[38;5;%dm",colorbusy);
-                                    msg_fct( "  -> Channels selected by SN are not available anymore!\n");
+                                    msg_fct( "  -> Channels in use by SN are not available anymore!\n");
                                     printf("\e[38;5;%dm",comments);
                                 }
                                 msg_fct( "Sending update of open frequencies to BTS ...\n");

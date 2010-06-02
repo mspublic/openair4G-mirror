@@ -95,7 +95,7 @@ static void init_ip_msg_head(
 /*!
 *******************************************************************************
 \brief  La fonction formate en un message les parametres de la fonction 
-        update_sens_results_3().
+        update_sens_results().
 \return message formate
 */
 

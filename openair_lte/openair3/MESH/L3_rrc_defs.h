@@ -28,6 +28,7 @@
 #define BTS_ID 1
 #define FC_ID 0
 #define CH_COLL_ID -1
+#define FIRST_SENSOR_ID 2
 //mod_lor_10_05_05--
 
 /*! 
@@ -35,10 +36,17 @@
  \brief Parameters about channels:
  * 
 */
-#define CH_NEEDED_FOR_SN 2 //!< Number of channels needed by secondary network//mod_lor_10_05_17
+#define NB_OF_SENSORS 3
+#define CH_NEEDED_FOR_SN 1 //!< Number of channels needed by secondary network//mod_lor_10_05_17
+#define SB_NEEDED_FOR_SN 25 //mod_lor_10_05_26: 
 #define NB_SENS_MAX    20  //!< Maximum number of channels accepted by the system
-#define MAX_NUM_SB 5//mod_eure_lor
-#define NUM_SB 5//mod_eure_lor
+#define MAX_NUM_SB 100//mod_eure_lor
+#define SB_BANDWIDTH   200  //! in khz, bandwidth of each sub-band; AAA -> modify only in relation with NUM_SB and sensing parameters in emul_interface!  //mod_lor_10_05_26
+#define NUM_SB 100//mod_eure_lor
+#define LAMBDA0 -105   //mod_lor_10_05_26: for mu0 that is the averaged value
+#define LAMBDA1 -100   //mod_lor_10_05_26: for mu1 that is the maximum value
+#define MIN_NB_SB_CH 25   //mod_lor_10_05_26: for mu1 that is the maximum value
+#define BG 25 //! sub-bands of protection between channels
 
 /*! \brief Transaction ID descriptor
 */
@@ -105,10 +113,11 @@ typedef struct  Sens_ch_s {
     char I0[MAX_NUM_SB] ;
     char mu0[MAX_NUM_SB];
     char mu1[MAX_NUM_SB];
-    //mod_eure_lor--
+    
     //float               meas       ; ///< Sensing results 
 
-    unsigned int        is_free    ; ///< Decision about the channel
+    unsigned int        is_free  [MAX_NUM_SB]  ; ///< Decision about the channel //mod_lor_10_05_28 ->char instead of int
+    //mod_eure_lor--
     struct  Sens_ch_s   *next      ; ///< pointeur sur le prochain canal 
 } Sens_ch_t ;
 
@@ -166,7 +175,7 @@ typedef enum {
 */
 typedef struct channels_db_s { 
 	double               info_time ; ///< information age 
-	unsigned int         is_free   ; ///< channel availability  
+	unsigned int         is_free   ; ///< channel availability   //mod_lor_10_05_28 ->char instead of int
 	unsigned int         priority  ; ///< channel priority
 	unsigned int         is_ass    ; ///< channel used by secondary network
 	L2_ID                source_id ; ///< SU using channel (source)

@@ -43,7 +43,7 @@ endif
 TARGET	    = emul_int rrm
 
 #put rrm_graph.c instead of rrm.c to connect the graphic interface block to the rrm
-SRC	    = rrm.c   
+SRC	    = rrm_graph.c   
 SRC	   += rrm_sock.c
 SRC	   += rrm_util.c
 SRC	   += rrm_2_rrc_msg.c
@@ -64,6 +64,7 @@ SRC	   += freq_ass_op.c
 SRC    += rrm_2_sensing_msg.c 
 SRC    += ip_msg.c 
 SRC    += sensing_form.c 
+SRC    += SN_freq_form.c 
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

@@ -71,52 +71,29 @@ static int L2_ID_cmp(
     return memcmp( L2_id1, L2_id2, sizeof(L2_ID) ) ;
 }
 
-//mod_lor_10_03_19++
+
+
+//mod_lor_10_05_26++
 /*!
 *******************************************************************************
-\brief  Function that decides if a channel is free: 
-        applyed rule: strict majority
-\return 1 if channel is free, 0 otherwise
+\brief  Function that decides locally if a channel is free using mu0 and mu1 datas: 
+        
+\return 
 */
-//mod_eure_lor
-void take_decision( 
-	Sens_node_t *SensDB     , //!< pointer to the sensing database
-	unsigned int Ch_id      , //!< channel ID
-	unsigned int *is_free
-	
-	)
+void take_local_decision(
+    Sens_ch_t *Sens_info
+    )
 {
-    Sens_node_t *pSensNode = SensDB;
-    Sens_ch_t *pSensChann;
-    //int is_free = 0;
-    int i;
-    while (pSensNode!= NULL){
-        if((pSensChann = get_chann_info(  pSensNode->info_hd , Ch_id)) != NULL)    {
-            for (i = 0; i<MAX_NUM_SB; i++){
-                if (pSensChann->is_free[i]==1)
-                    is_free[i]++;
-                else  if (pSensChann->is_free[i]==0)
-                    is_free[i]--;
-            }
-        }
-        pSensNode = pSensNode->next;
+    unsigned int i;
+    for (i=0; i < NUM_SB; i++){
+        if (Sens_info->mu0[i]>LAMBDA0 && Sens_info->mu1[i]>LAMBDA1)
+            Sens_info->is_free[i]=0; // primary system is present
+        else
+            Sens_info->is_free[i]=1; // primary system is not present
     }
-    //mod_lor_10_05_07++
-    for (i = 0; i<MAX_NUM_SB; i++){
-        if (is_free[i]>0)
-            is_free[i]=1;
-        else  
-            is_free[i]=0;
-    }
-    /*if (is_free>0)
-        return 1;
-    else
-        return 0;*/
-    //return is_free;
-    //mod_lor_10_05_07--
-    
-}
-//mod_lor_10_03_19--
+} 
+//mod_lor_10_05_26--
+
 /*!
 *******************************************************************************
 \brief  Updating of the sensing measures 
@@ -148,11 +125,16 @@ void rrc_update_sens(
     else//dbg
         fprintf(stderr," empty     ");//dbg
     fprintf(stderr,"\n1 update\n");//dbg*/
+    for (i=0; i<NB_info;i++){
+        take_local_decision(&Sens_meas[i]); //mod_lor_10_05_26
+        //for (int j=0; j<NUM_SB; j++)//dbg
+        //    fprintf(stderr,"sns_update: channel %d is %d\n",Sens_meas[i].Ch_id, Sens_meas[i].is_free[j]);//dbg*/
+    }
     
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
     update_node_info( &(rrm->rrc.pSensEntry), &L2_id, NB_info, Sens_meas, info_time);
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-    
+
     
     //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR 
     
@@ -164,7 +146,7 @@ void rrc_update_sens(
         
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        unsigned int *is_free; //mod_eure_lor
+        unsigned int *is_free; //mod_eure_lor //mod_lor_10_05_28 ->char instead of int
         for (i=0; i<NB_info; i++){
             
             channel.Start_f = Sens_meas[i].Start_f;
@@ -222,14 +204,14 @@ void rrc_update_sens(
         
         //mod_lor_10_04_21++ TO DO -> to remove when sensing remont automatically info
         //sleep(10);
-        if(rrm->sensing.sens_active){
+        /*if(rrm->sensing.sens_active){
             sleep(10);
             pthread_mutex_lock( &( rrm->sensing.exclu ) ) ;
             rrm->sensing.trans_cnt++ ;
             //fprintf(stderr,"sensing counter %d in msg_rrm_scan_ord on socket %d \n",rrm->sensing.trans_cnt,rrm->sensing.s->s);//dbg
             PUT_SENS_MSG(msg_rrm_scan_ord( inst,  NB_info, 0, 0, 0, Sens_meas, rrm->sensing.trans_cnt )); //mod_lor_10_04_01: Sampl_nb instead of Sampl_freq
             pthread_mutex_unlock( &( rrm->sensing.exclu ) ) ;
-        }
+        }*/
         //mod_lor_10_04_21--
 
     }
@@ -611,7 +593,7 @@ void rrc_clust_mon_req(
 *******************************************************************************
 \brief  Updating of the sensing measures received via IP from another node
 */
-void update_sens_results( 
+unsigned int update_sens_results( 
 	Instance_t inst         , //!< Identification de l'instance
 	L2_ID L2_id             , //!< Adresse L2 of the source of information 
 	unsigned int NB_info    , //!< Number of channel info
@@ -621,27 +603,65 @@ void update_sens_results(
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
 
-   
-    int i;
-
+    CHANNELS_DB_T *channel;
+    int i,j,k, send_up_to_SN=0;
+    
+   /* printf("Update from node\n");
+    for (i=0;i<NB_info;i++){
+        printf("channel %d st: %d end: %d\n", Sens_meas[i].Ch_id,Sens_meas[i].Start_f,Sens_meas[i].Final_f);
+        for (k=0;k<NUM_SB;k++)
+            printf ("bk= %d, mu0=%d; mu1=%d; I0 = %d; is_free = %d\n",k,Sens_meas[i].mu0[k],Sens_meas[i].mu1[k],Sens_meas[i].I0[k], Sens_meas[i].is_free[k]);
+    }*/
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    //fprintf(stderr,"inst update %d\n", rrm->state);//dbg
     update_node_info( &(rrm->rrc.pSensEntry), &L2_id, NB_info, Sens_meas, info_time);
+    //print_sens_db( rrm->rrc.pSensEntry   );//dbg
+    //sleep (20);
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    
+    //mod_lor_10_05_28
+    if (!(rrm->ip.waiting_SN_update) ){
+        pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+        channel = rrm->rrc.pChannelsEntry;
+        while (channel!=NULL){
+            //printf("Channel!=NULL\n");
+            if (channel->is_ass)
+                if((send_up_to_SN = evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)))
+                    break;
+            channel = channel->next;
+        }
+        pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+        if (send_up_to_SN && rrm->role == FUSIONCENTER){
+            return 1;
+            //open_freq_query(inst, L2_id, 0, 0);
+        }
+    }
+    return 0;
+    
+    
     //fprintf(stderr,"node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
     //fprintf(stderr,"2 cluster_head\n");//dbg
     //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR
-    
+    /*Sens_node_t *pn = rrm->rrc.pSensEntry;
+    Sens_ch_t *pc;
+    while (pn!=NULL){
+        pc = pn->info_hd;
+        while (pc!=NULL){
+            for (int j=0; j<NUM_SB; j++)//dbg
+                fprintf(stderr,"sns_update: channel %d sb %d is %d\n",pc->Ch_id, j, pc->is_free[j]);//dbg
+            pc=pc->next;
+        }
+        pn=pn->next;
+    }*/
     
   
-    if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR || rrm->role == CH_COLL ) //mod_lor_10_03_08: role instead of status -> to check
+    /*if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR || rrm->role == CH_COLL ) //mod_lor_10_03_08: role instead of status -> to check
     //mod_lor_10_05_06 -> 2nd option of if changed (before SCEN_2_DISTR)
     {
         
         //fprintf(stderr,"cluster_head\n");//dbg
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        unsigned int is_free[MAX_NUM_SB];
+        unsigned int is_free[MAX_NUM_SB];//mod_lor_10_05_28 ->char instead of int
         for (i=0;i<MAX_NUM_SB;i++)
             is_free[i]=0;
         int decision;
@@ -652,18 +672,18 @@ void update_sens_results(
             channel.Final_f = Sens_meas[i].Final_f;
             channel.Ch_id   = Sens_meas[i].Ch_id;
             channel.QoS     = 0;
-            /*fprintf(stdout,"Channel in msg %d : \n", channel.Ch_id); //dbg ou LOG
+            printf(stdout,"Channel in msg %d : \n", channel.Ch_id); //dbg ou LOG
             for (decision = 0; decision<MAX_NUM_SB; decision++)
                 fprintf(stdout,"SB %d : is %d\n", decision,Sens_meas[i].is_free[decision]); //dbg ou LOG
             */
             //mod_lor_10_03_19++
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+       /*     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
             take_decision(rrm->rrc.pSensEntry, channel.Ch_id,is_free);//mod_eure_lor
          //   pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_03_19--
             
             //mod_lor_10_05_07++
-            /*if (decision>0)
+            if (decision>0)
                 is_free = 1;
             else
                 is_free = 0;*/
@@ -672,18 +692,18 @@ void update_sens_results(
            
                 //Sens_meas[i].meas = decision;
             
-            if(rrm->role == CH_COLL){
-                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB);
+       /*     if(rrm->role == CH_COLL){
+                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB*sizeof(unsigned int));//mod_lor_10_05_28 ->char instead of int
                 //Sens_meas[i].meas = decision;
             }
             //mod_lor_10_05_07--
-            /*
+            
             fprintf(stdout,"Channel %d : \n", channel.Ch_id); //dbg ou LOG
             for (decision = 0; decision<MAX_NUM_SB; decision++)
                 fprintf(stdout,"SB %d : is %d\n", decision,is_free[decision]); //dbg ou LOG
             */
          //   pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO: fix it!
+    /*        canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO: fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //mod_lor_10_05_12++
             if (!(rrm->ip.waiting_SN_update) && canal->is_ass && !(canal->is_free)){//mod_lor_10_05_18
@@ -708,7 +728,7 @@ void update_sens_results(
 
     
     }else   
-        fprintf(stderr,"error!!! Cannot update channels \n");
+        fprintf(stderr,"error!!! Cannot update channels \n");*/
 
 }
 
@@ -774,7 +794,7 @@ void up_coll_sens_results(
         //fprintf(stderr,"cluster_head\n");//dbg
         CHANNEL_T channel ;
         CHANNELS_DB_T *canal;
-        unsigned int is_free[MAX_NUM_SB];
+        unsigned int is_free[MAX_NUM_SB];//mod_lor_10_05_28 ->char instead of int
         for (i=0;i<MAX_NUM_SB;i++)
             is_free[i]=0;
         int decision;
@@ -815,7 +835,7 @@ void up_coll_sens_results(
                 is_free = 0;*/
                 
             if(rrm->role == CH_COLL){
-                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB);
+                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB*sizeof(unsigned int)); //mod_lor_10_05_28 ->char instead of int
                 //Sens_meas[i].meas = decision;
             }
             

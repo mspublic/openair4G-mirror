@@ -304,7 +304,7 @@ unsigned int update_open_freq( //mod_lor_10_01_25: IP function; //mod_lor_10_05_
 /*!
 \brief ask for frequencies   -> correspondent message via IP
  */     
-void open_freq_query( //mod_lor_10_01_25: IP function
+unsigned int open_freq_query( //mod_lor_10_01_25: IP function
     Instance_t    inst, 
     L2_ID         L2_id           ,
     QOS_CLASS_T   QoS             ,
@@ -419,7 +419,7 @@ void rrc_rep_freq_all(
 /*!
 \brief  IP interface. Updating of the sensing measures -> correspondent message via IP
 */
-void update_sens_results( 
+unsigned int update_sens_results( 
 	Instance_t inst         , //!< Identification de l'instance
 	L2_ID L2_id             , //!< Adresse L2 of the source of information 
 	unsigned int NB_info    , //!< Number of channel info
@@ -445,7 +445,6 @@ void up_coll_sens_results( //AAA: to add weights for the collaborative cluster i
 	Sens_ch_t *Sens_meas    , //!< Pointer to the sensing information
 	double info_time
 	);//mod_lor_10_05_10--
-    
 
 
 /*! @} */

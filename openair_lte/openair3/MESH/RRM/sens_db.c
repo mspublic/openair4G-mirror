@@ -60,7 +60,7 @@ void print_sens_db(
     //unsigned int i; //dbg
     Sens_node_t *pCurrentItem = pEntry;
     Sens_ch_t *pCurrentChannel;
-    int i;
+    int i,k;
     
     fprintf(stderr,"node entry  @%p \n", pEntry);//dbg
     //fprintf(stderr,"sens list=[\n");
@@ -74,14 +74,18 @@ void print_sens_db(
         fprintf(stderr,"\nnode : ");
         for ( i=0;i<8;i++)
             fprintf(stderr,"%02X", pCurrentItem->L2_id.L2_id[i]);
-        fprintf(stderr,"\ntpc :%d     ",pCurrentItem->tpc);
-        fprintf(stderr,"overlap :%d      ",pCurrentItem->overlap);
-        fprintf(stderr,"sampl_freq :%d  \n",pCurrentItem->sampl_freq);
+       // fprintf(stderr,"\ntpc :%d     ",pCurrentItem->tpc);
+       // fprintf(stderr,"overlap :%d      ",pCurrentItem->overlap);
+       // fprintf(stderr,"sampl_freq :%d  \n",pCurrentItem->sampl_freq);
         pCurrentChannel=pCurrentItem->info_hd;
         while ( pCurrentChannel != NULL)
         {
-            fprintf(stderr,"\n        @%p(\n.channel_id=%d, \n.start_fr=%d , \n.end_fr= %d,  \n.free= %d,  ",    
-                pCurrentChannel, pCurrentChannel->Ch_id, pCurrentChannel->Start_f,pCurrentChannel->Final_f,pCurrentChannel->is_free);  //mod_lor_10_03_17: intxflot
+            fprintf(stderr,"\n        @%p(\n.channel_id=%d, \n.start_fr=%d , \n.end_fr= %d:\n ",    
+                pCurrentChannel, pCurrentChannel->Ch_id, pCurrentChannel->Start_f,pCurrentChannel->Final_f);  //mod_lor_10_03_17: intxflot
+            for (k=0;k<NUM_SB;k++)
+                //printf("%d %d; ",k,pCurrentChannel->is_free[k]); 
+                printf ("k= %d, mu0=%d; mu1=%d; I0 = %d; is_free = %d\n",k,pCurrentChannel->mu0[k],pCurrentChannel->mu1[k],pCurrentChannel->I0[k], pCurrentChannel->is_free[k]);
+            printf("\n\n");
             pCurrentChannel = pCurrentChannel->next ;
             
         }
@@ -212,12 +216,13 @@ Sens_ch_t *add_chann(
         char *mu1,
         
         //float               meas       , ///< Sensing results 
-        unsigned int        *is_free      ///< Evaluation about the availability of the channel
+        unsigned int        *is_free      ///< Evaluation about the availability of the channel //mod_lor_10_05_28 ->char instead of int
         //mod_eure_lor--
      ) 
 {
     Sens_ch_t *pOldEntry = *ch_entry;
     Sens_ch_t *pNewItem = RRM_CALLOC( Sens_ch_t , 1 ) ;
+    int i;
     
     /*fprintf(stderr,"\nadd_channel: %d\n", Ch_id);//dbg
     fprintf(stderr,"old header  @%p \n", pOldEntry);//dbg
@@ -235,7 +240,10 @@ Sens_ch_t *add_chann(
     memcpy(pNewItem->I0 ,I0, MAX_NUM_SB);
     memcpy(pNewItem->mu0,mu0, MAX_NUM_SB);
     memcpy(pNewItem->mu1,mu1, MAX_NUM_SB);
-    memcpy(pNewItem->is_free,  is_free,MAX_NUM_SB);
+    memcpy(pNewItem->is_free,  is_free,MAX_NUM_SB*sizeof(unsigned int));//mod_lor_10_05_28 ->char instead of int
+    //for (i=0; i<MAX_NUM_SB; i++)
+    //        printf("up_chann: Channel %d sb %d is_free %d pitem is_free %d\n",Ch_id,i,is_free[i],pNewItem->is_free[i]);
+
     //mod_eure_lor--
     //pNewItem->meas    =  meas;
     //pNewItem->is_free =  is_free;
@@ -418,18 +426,21 @@ Sens_node_t *update_node_info(
        
     if ( pItem != NULL)
     { 
+        //printf ("node existing\n\n");//dbg
         pItem->info_time   = info_time ;
         pItem->Nb_chan     = NB_info ;
-        for ( int i=0; i<NB_info; i++ )
+        for ( int i=0; i<NB_info; i++ ){
+           // printf ("node info: %d\n",i);//dbg
             if ( update_channel_info( &(pItem->info_hd), ch_info_hd[i].Start_f, 
                         ch_info_hd[i].Final_f, ch_info_hd[i].Ch_id,  ch_info_hd[i].I0,ch_info_hd[i].mu0,ch_info_hd[i].mu1,//ch_info_hd[i].meas, 
                         ch_info_hd[i].is_free) == NULL )
                 fprintf(stderr, "ERROR: info %d problem\n", i) ;
+        }
     }
     else {
         //fprintf(stderr,"DBG2 passed node entry @%p \n", node_entry);//dbg
         //fprintf(stderr,"DBG2 passed hd @%p \n", *node_entry); //dbg
-
+        //printf ("adding node\n\n");//dbg
         pItem = add_node( node_entry, L2_id, NB_info, ch_info_hd, info_time);
     }
     
@@ -457,30 +468,35 @@ Sens_ch_t *update_channel_info(
     char *mu1,
     
     //float               meas       , ///< Sensing results
-    unsigned int        *is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_03_17: intxflot
+    unsigned int        *is_free      ///< Evaluation about the availability of the channel   //mod_lor_10_05_28 ->char instead of int
     //mod_eure_lor--
     )
 {
     //printf("sens_db update passed ch_id: %d\n",Ch_id);//dbg
     
     Sens_ch_t *pItem = get_chann_info(*ch_entry,Ch_id);
-    
+    int i;
     
     if ( pItem != NULL)
     { 
+       // printf ("channel existing\n\n");//dbg
       //  printf("sens_db update1: %d   ", pItem->Ch_id);//dbg
         //mod_eure_lor++
         memcpy( pItem->I0 ,I0, MAX_NUM_SB);
         memcpy( pItem->mu0,mu0, MAX_NUM_SB);
         memcpy( pItem->mu1,mu1, MAX_NUM_SB);
-        memcpy(pItem->is_free, is_free, MAX_NUM_SB);
-        //pItem->meas        = meas ;
+        memcpy(pItem->is_free, is_free, MAX_NUM_SB*sizeof(unsigned int));
+     //pItem->meas        = meas ;
         //pItem->is_free     = is_free ;//mod_lor_10_05_06
+         //for (i=0; i<NUM_SB;i++)
+         //   printf ("sb %d is_free_db %d, is_free %d\n",i,pItem->is_free[i],is_free[i]);//dbg
        // printf("sens_db update2: %d\n", pItem->Ch_id);//dbg
     }
-    else 
+    else {
+        //printf ("channel to add\n\n");//dbg
         //pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, meas, is_free);
         pItem = add_chann( ch_entry, Start_f, Final_f, Ch_id, I0, mu0,mu1,is_free);
+    }
         //mod_eure_lor--
     
     return pItem;

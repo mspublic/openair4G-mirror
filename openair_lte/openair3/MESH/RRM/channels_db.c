@@ -99,7 +99,7 @@ static int L2_ID_cmp(
 CHANNELS_DB_T *add_chann_db( 
         CHANNELS_DB_T **ch_entry  , ///< pointeur sur l'entree de la liste de noeuds
         CHANNEL_T channel         , ///< channel to insert in the list
-        unsigned int is_free      , ///< Information about the availability of the channel
+        unsigned int is_free      , ///< Information about the availability of the channel //mod_lor_10_05_28 ->char instead of int
         double info_time            ///< Date of information update
      ) 
 {
@@ -231,7 +231,7 @@ CHANNELS_DB_T *get_chann_db_info(
 CHANNELS_DB_T *up_chann_db( 
         CHANNELS_DB_T **ch_entry  , ///< pointeur sur l'entree de la liste de noeuds
         CHANNEL_T channel         , ///< channel to insert in the list
-        unsigned int is_free      , ///< Information about the availability of the channel
+        unsigned int is_free      , ///< Information about the availability of the channel //mod_lor_10_05_28 ->char instead of int
         double info_time            ///< Date of information update
      ) 
 {
