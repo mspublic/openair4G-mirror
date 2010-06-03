@@ -498,8 +498,8 @@ void openair_sync(void) {
 
 	if (pbch_decoded) {
 
-	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
-	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[eNb_id]->decoded_output[4];
+	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[0]->decoded_output[4] == 1);
+	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[0]->decoded_output[4];
 
 	  if (openair_daq_vars.node_running == 1) {
       

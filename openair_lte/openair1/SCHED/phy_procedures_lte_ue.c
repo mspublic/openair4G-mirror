@@ -540,7 +540,7 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #endif      
 #ifdef DIAG_PHY
       if ((UE_mode == PUSCH) && ((last_slot>>1) != 6)) {
-	debug_msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
+	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	return(-1);
@@ -571,7 +571,7 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 #endif      
 #ifdef DIAG_PHY
       if ((UE_mode == PUSCH) && ((last_slot>>1) != 7)) {
-	debug_msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
+	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	lte_ue_pdcch_vars[eNb_id]->dci_false++;
 	return(-1);
@@ -1059,7 +1059,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
       debug_msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Calling pdcch procedures\n",mac_xface->frame,last_slot);
       if (lte_ue_pdcch_procedures(eNb_id,last_slot) == -1) {
 	msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Error in pdcch procedures\n",mac_xface->frame,last_slot);
-	return(-1);
+	//return(-1);
+	exit_openair=1;
       }
 
       if (dlsch_ue_active == 1) {
