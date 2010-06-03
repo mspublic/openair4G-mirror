@@ -18,7 +18,7 @@
 #include <gps.h>
 
 // Realtime includes
-//#include <rtai.h>
+#include <rtai.h>
 #include <rtai_fifos.h>
 
 // Xform includes
@@ -87,6 +87,8 @@ time_t starttime_tmp;
 struct tm starttime;
 int current_dlsch_cqi; //this is actually defined in phy_procedures_lte_ue.c - we should get rid of this
 int rate_adaptation = 1;
+int use_label = 0;
+unsigned int frequency = 0;
 
 /*
 unsigned char tx_gain_table_c[36] = {
@@ -120,6 +122,7 @@ char *fifo_buffer = NULL;
 char *fifo_ptr = NULL;
 char  date_string[1024] = "date: ";
 char  dumpfile_dir[1024] = "$HOME/EMOS/data/";
+char  label_str[16] = "";
 
 // GUI variables
 float power1_memory[2][SCREEN_MEMORY_SIZE];
@@ -160,6 +163,8 @@ void new_data_callback(int fifo_fd, void* data);
 void time_freq_callback(FL_OBJECT *ob, long user_data);
 void noise_snr_callback(FL_OBJECT *ob, long user_data);
 void input_callback(FL_OBJECT *ob, long user_data);
+void label_callback(FL_OBJECT *ob, long user_data);
+void label_btn_callback(FL_OBJECT *ob, long user_data);
 void gps_data_callback(int gps_fd, void* data);
 
 void initialize_interface();
@@ -1067,7 +1072,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
   int ioctl_result;
   char temp_text[1024];
   unsigned int fc; 
-  unsigned int frequency = 1;
   //unsigned char gains[4];
 
 	
@@ -1092,14 +1096,7 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 0; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 1;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
-
-		tx_gain_table_eNb[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
-		tx_gain_table_eNb[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
-		tx_gain_table_eNb[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
-		tx_gain_table_eNb[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
-		rf_mode_eNb= atoi(fl_get_input(main_frm->rf_mode_txt));
 
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
@@ -1114,7 +1111,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 1; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 1;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
@@ -1125,7 +1121,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 8; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 0;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 
 		tx_gain_table_ue[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
@@ -1148,7 +1143,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 9; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 0;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
@@ -1368,7 +1362,10 @@ int open_dumpfile()
 	
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  if (use_label) 
+    sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%s_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,label_str,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  else
+    sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
 	
   dumpfile_id = fopen(dumpfile_name,"w");
   if (dumpfile_id == NULL)
@@ -1558,6 +1555,10 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
     fl_set_input(main_frm->digital_gain_txt, temp_label);
     sprintf(temp_label,"%d",rf_mode_eNb);
     fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency);
+    fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
   }
   else if (terminal_idx == 3) {
     sprintf(temp_label,"%d",tx_gain_table_ue[0]);
@@ -1566,6 +1567,10 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
     fl_set_input(main_frm->digital_gain_txt, temp_label);
     sprintf(temp_label,"%d",rf_mode_ue);
     fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency);
+    fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
   }
 }
 
@@ -1617,27 +1622,6 @@ void noise_snr_callback(FL_OBJECT *ob, long user_data)
   printf("noise_selector = %d\n",noise_selector);
 }
 
-//
-// Refresh function
-//
-void file_index_callback(FL_OBJECT *ob, long user_data)
-{
-  char temp_label[1024];
-	
-  // update the dial
-  file_index = fl_get_dial_value(main_frm->file_index_dial);
-  file_index += user_data;
-  if (file_index > 100)
-    file_index = 100;
-  else if (file_index < 0)
-    file_index = 0;
-
-  fl_set_dial_value(main_frm->file_index_dial, file_index);
-	
-  sprintf(temp_label, "idx: %d", file_index);
-  fl_set_object_label(main_frm->idx_lbl, temp_label);
-}
-
 void refresh_timer_callback(FL_OBJECT *ob, long user_data)
 {
   refresh_interface();
@@ -1663,7 +1647,32 @@ void get_dir_callback(FL_OBJECT *ob, long user_data)
 }	
 
 void input_callback(FL_OBJECT *ob, long user_data)
-{}
+{
+  tx_gain_table_eNb[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  tx_gain_table_eNb[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  rf_mode_eNb= atoi(fl_get_input(main_frm->rf_mode_txt));
+  frequency = atoi(fl_get_input(main_frm->freq_txt));
+  tcxo = atoi(fl_get_input(main_frm->tcxo_txt));
+
+}
+
+void label_callback(FL_OBJECT *ob, long user_data)
+{
+  strcpy(label_str,fl_get_input(main_frm->label_input));
+  if (label_str) {
+    fl_set_button(main_frm->label_button,1);
+    use_label = 1;
+  }
+}
+
+void label_btn_callback(FL_OBJECT *ob, long user_data)
+{
+  use_label = fl_get_button(main_frm->label_button);
+  if (!use_label)
+    fl_set_input(main_frm->label_input, "");
+}
 
 //
 // Initializes the MAC and PHY vars
