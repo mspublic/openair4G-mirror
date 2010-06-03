@@ -12,10 +12,15 @@
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
+#include "SCHED/defs.h"
+#include "SCHED/vars.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 #define BW 10.0
 #define Td 1.0
 #define N_TRIALS 100
+
+int current_dlsch_cqi; //FIXME! 
 
 int main(int argc, char **argv) {
 
@@ -39,7 +44,7 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
-
+  int transmission_mode = 1;
   unsigned char eNb_id = 0;
 
   double nf[2] = {3.0,3.0}; //currently unused
@@ -50,11 +55,11 @@ int main(int argc, char **argv) {
   fifo_dump_emos emos_dump;
 #endif
 
-
-
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
 
+  if (argc>2)
+    transmission_mode = atoi(argv[2]);
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -67,6 +72,7 @@ int main(int argc, char **argv) {
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars[0]);
   lte_ue_dlsch_vars_cntl = &(PHY_vars->lte_ue_dlsch_vars_cntl[0]);
   lte_ue_dlsch_vars_ra = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+  lte_ue_dlsch_vars_1A = &(PHY_vars->lte_ue_dlsch_vars_1A[0]);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
   lte_eNB_common_vars = &(PHY_vars->lte_eNB_common_vars);
@@ -80,12 +86,15 @@ int main(int argc, char **argv) {
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 1;
-  lte_frame_parms->mode1_flag = 1;
+  lte_frame_parms->num_dlsch_symbols  = 6;
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
   lte_frame_parms->n_RRC = 0;
+  lte_frame_parms->mode1_flag = (transmission_mode==1 ? 1 : 0);
 
+  number_of_cards = 1;
+  openair_daq_vars.rx_rf_mode = 1;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -111,8 +120,11 @@ int main(int argc, char **argv) {
 
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
-
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_pbch_vars,lte_ue_pdcch_vars);
+  generate_64qam_table();
+  generate_16qam_table();
+  generate_RIV_tables();
+ 
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);
 
   /*  
   txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
@@ -173,6 +185,8 @@ int main(int argc, char **argv) {
 
   for (i=0;i<6;i++)
     pbch_pdu[i] = i;
+
+  printf("Generating PBCH for mode1_flag = %d\n", lte_frame_parms->mode1_flag);
 
   generate_pbch(lte_eNB_common_vars->txdataF[eNb_id],
 		1087,
@@ -301,8 +315,8 @@ int main(int argc, char **argv) {
   //printf("sigma2 = %g\n",sigma2);
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((r_re[aa][i])); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((r_im[aa][i])); // + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i] = (short) ((r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+      ((short*) lte_ue_common_vars->rxdata[aa])[2*i+1] = (short) ((r_im[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
     }
   }
 
@@ -333,7 +347,7 @@ int main(int argc, char **argv) {
   // however, the pbch is only in the 0th slot
   // so we assume that sync_pos points to the 0th slot
   // so the position wrt to the start of the frame is 
-  sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1) + CYCLIC_PREFIX_LENGTH;
+  sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT-1);
   
   msg("sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
   
@@ -421,8 +435,16 @@ int main(int argc, char **argv) {
 		    lte_frame_parms,
 		    0,
 		    SISO)) {
-	  msg("pbch decoded sucessfully!\n");
+	  msg("pbch decoded sucessfully for SISO!\n");
 	}
+	else if (rx_pbch(lte_ue_common_vars,
+			 lte_ue_pbch_vars[0],
+			 lte_frame_parms,
+			 0,
+			 ALAMOUTI)) {
+	  msg("pbch decoded sucessfully for ALAMOUTI!\n");
+	}
+
 	else {
 	  n_errors++;
 	}

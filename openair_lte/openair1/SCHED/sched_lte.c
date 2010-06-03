@@ -364,6 +364,7 @@ void openair_sync(void) {
   int l;
   int rx_power;
   unsigned int adac_cnt;
+  int pbch_decoded = 0;
 
   RTIME time;
 
@@ -475,19 +476,34 @@ void openair_sync(void) {
 
 	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
+	pbch_decoded = 0;
 	if (rx_pbch(lte_ue_common_vars,
 		    lte_ue_pbch_vars[0],
 		    lte_frame_parms,
 		    0,
 		    SISO)) {
 	  
-	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for SISO!\n");
+	  pbch_decoded = 1;
+	}
+	else if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars[0],
+		    lte_frame_parms,
+		    0,
+		    ALAMOUTI)) {
+
+	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for ALAMOUTI!\n");
+	  pbch_decoded = 1;
+	}
+
+	if (pbch_decoded) {
+
+	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
+	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[eNb_id]->decoded_output[4];
 
 	  if (openair_daq_vars.node_running == 1) {
       
-
 	    pci_interface[0]->frame_offset = PHY_vars->rx_offset;
-
 	    
 	    openair_daq_vars.mode = openair_SYNCHED;
 	    mac_xface->frame = 0;

@@ -340,7 +340,20 @@ void lte_ue_measurement_procedures(unsigned char last_slot, unsigned short l) {
 		     eNb_id,
 		     1,
 		     16384);
-    // write frequency offset to pci interface
+
+    //if (openair_daq_vars.auto_freq_correction == 1) 
+    /*
+    if (mac_xface->frame % 100 == 0) {
+      if ((ue_common_vars->freq_offset>100) && (openair_daq_vars.freq_offset < 500)) {
+	openair_daq_vars.freq_offset+=100;
+	openair_set_freq_offset(0,penair_daq_vars.freq_offset);
+      }
+      else if ((ue_common_vars->freq_offset<-100) && (openair_daq_vars.freq_offset > -500)) {
+	openair_daq_vars.freq_offset-=100;
+	openair_set_freq_offset(0,penair_daq_vars.freq_offset);
+      }
+    }
+    */
   }
 }
 
@@ -404,7 +417,7 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
 		       lte_ue_pbch_vars[eNb_id],
 		       lte_frame_parms,
 		       eNb_id,
-		       ALAMOUTI);
+		       (lte_frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI);
   if (pbch_error) {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
@@ -413,6 +426,7 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot) {
     //PHY_vars->PHY_measurements.frame_tx = *((unsigned int*) lte_ue_pbch_vars->decoded_output);
 #endif
     lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
+    openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[eNb_id]->decoded_output[4];
   }
   else {
     lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq++;
@@ -847,8 +861,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    current_dlsch_cqi++;
 #endif
 	}
-   
- 	
+
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
 		  mac_xface->frame,last_slot,ret,
 		  dlsch_ue[0]->harq_processes[0]->mcs,

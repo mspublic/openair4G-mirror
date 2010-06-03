@@ -165,6 +165,7 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       
       len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.wideband_cqi_tot[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d : %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
+      len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",openair_daq_vars.dlsch_transmission_mode,lte_frame_parms->mode1_flag);
       if (openair_daq_vars.dlsch_transmission_mode == 6)
 	len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.precoded_cqi_dB[eNB][0]);
       if (dlsch_ue && dlsch_ue[0] && dlsch_ue[1]) 
