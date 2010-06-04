@@ -28,7 +28,7 @@ power_dBm=-70;
 
 oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
 
-oarf_set_rx_rfmode(1);
+oarf_set_rx_rfmode(0);
     
 oarf_set_rx_gain(100,100,0,0);
 

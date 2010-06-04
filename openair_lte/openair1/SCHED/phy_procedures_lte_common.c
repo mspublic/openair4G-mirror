@@ -109,6 +109,7 @@ unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) 
   return(0);
 }
 
+//#define DEBUG_PHY 1
 
 void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 

@@ -33,7 +33,7 @@ oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
 
 saturation_threshold =5;              % min number of samples (real+imaginary) equal to the max per frame to declare saturation
 
-ALL_power_dBm = [-95];
+ALL_power_dBm = [-102];
 ALL_rxrfmode = 0:2;
 ALL_gain2391 = 5:10:160;           % this is some strange scale
 ALL_gain9862 = 0; %:1:18;             % this in in dB

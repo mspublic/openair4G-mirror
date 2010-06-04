@@ -11,7 +11,7 @@ power_dBm = -95;
 
 oarf_set_calibrated_rx_gain(0); % turns off the AGC
 oarf_set_rx_gain(80,85,0,0);
-oarf_set_rx_rfmode(2);
+oarf_set_rx_rfmode(0);
 
 s=oarf_get_frame(0);
 f = (7.68*(0:length(s(:,1))-1)/(length(s(:,1))))-3.84;

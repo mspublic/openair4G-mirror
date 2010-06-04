@@ -10,8 +10,8 @@ gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
 freqband=0;            % frequency band used by the openair card
 
-fc = 1902600e3+5e6*freqband-(1043.1e6);   % this has to be the same as in the config file
-%fc = 1902600e3+5e6*freqband;
+%fc = 1902600e3+5e6*freqband-(1043.1e6);   % this has to be the same as in the config file
+fc = 1902600e3+5e6*freqband;
 
 fs = 7680e3;
 %fs = 6500e3;
@@ -70,7 +70,7 @@ for power_dBm=ALL_power_dBm
     for gain2391= [0 0 0 ALL_gain2391] %the first 3 runs give strange results, so we run the loop 3 times more
  
        oarf_set_rx_gain(gain2391,gain2391,gain9862,gain9862);
-	   oarf_set_rx_rfmode(2);
+	   oarf_set_rx_rfmode(1);
        oarf_stop(freqband); %this actually writes the gain to the registers
        sleep(.5);
 

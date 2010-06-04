@@ -11,6 +11,10 @@
 #include <stdio.h>
 #endif
 
+#include "PHY/defs.h"
+#include "PHY/extern.h"
+
+
 #ifndef EXPRESSMIMO_TARGET
 #include "emmintrin.h"
 #endif //EXPRESSMIMO_TARGET
@@ -81,11 +85,6 @@ void phy_generate_viterbi_tables_lte() {
 #define RESCALE 0x00000040
 
 
-static  __m128i  __attribute__((aligned(16))) TB[4*8192];
-
-static  __m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,even0_30b,even32_62a,even32_62b,odd1_31a,odd1_31b,odd33_63a,odd33_63b,TBeven0_30,TBeven32_62,TBodd1_31,TBodd33_63 __attribute__((aligned(16)));
-
-static  __m128i rescale,min_state,min_state2 __attribute__((aligned(16)));
 
 #ifdef DEBUG_VITERBI
 void print_bytes(char *s,__m128i *x) {
@@ -112,6 +111,12 @@ void print_shorts(__m128i x,char *s) {
 #endif // USER_MODE
 
 
+__m128i  TB[4*8192];
+
+__m128i metrics0_15,metrics16_31,metrics32_47,metrics48_63,even0_30a,even0_30b,even32_62a,even32_62b,odd1_31a,odd1_31b,odd33_63a,odd33_63b,TBeven0_30,TBeven32_62,TBodd1_31,TBodd33_63;// __attribute__((aligned(16)));
+
+__m128i rescale,min_state,min_state2;// __attribute__((aligned(16)));
+
 void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n) {
   
 
@@ -126,8 +131,8 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   short position;
 
   // set initial metrics
+  debug_msg("Doing viterbi\n");
 
-  //  metrics0_15 = _mm_cvtsi32_si128(INIT0);
   metrics0_15 = _mm_xor_si128(metrics0_15,metrics0_15);
   metrics16_31 = _mm_xor_si128(metrics16_31,metrics16_31);
   metrics32_47 = _mm_xor_si128(metrics32_47,metrics32_47);

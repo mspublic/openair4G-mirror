@@ -1251,7 +1251,9 @@ void dci_decoding(unsigned char DCI_LENGTH,
   for (i=0;i<16+DCI_LENGTH;i++)
     msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 #endif  
+  debug_msg("Doing DCI Viterbi \n");
   phy_viterbi_lte_sse2(d_rx+96,decoded_output,16+DCI_LENGTH);
+  debug_msg("Done DCI Viterbi \n");
 }
 
 

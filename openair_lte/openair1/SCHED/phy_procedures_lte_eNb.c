@@ -22,6 +22,8 @@ ________________________________________________________________*/
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 //#endif
 
+//#define DEBUG_PHY
+
 #ifdef USER_MODE
 //#define DEBUG_PHY
 #endif
@@ -323,6 +325,8 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 			      &PHY_vars->PHY_measurements_eNB[eNb_id],
 			      eNb_id,
 			      I0_clear);
+
+
     }
 
     if (I0_clear == 1)
@@ -906,10 +910,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   static unsigned char first_run = 1;
   int sync_pos;
   
-  //printf("Running phy_procedures_eNb_RX(%d), eNb_mode = %s\n",last_slot,mode_string[eNB_UE_stats[0].mode[UE_id]]);
+  //  debug_msg("Running phy_procedures_eNb_RX(%d), eNb_mode = %s\n",last_slot,mode_string[eNB_UE_stats[0].mode[UE_id]]);
 
   for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
-    for (eNb_id=0;eNb_id<number_of_cards;eNb_id++)
+
+    for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) {
       slot_fep_ul(lte_frame_parms,
 		  lte_eNB_common_vars,
 		  l,
@@ -921,6 +926,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 		  1
 #endif
 		  );
+    }
   }
 
   
@@ -928,6 +934,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   if ((eNB_UE_stats[0].mode[UE_id]!=PRACH) && (last_slot%2==1)) {
 
     for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) {
+      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
+
       lte_eNB_srs_measurements(lte_eNB_common_vars,
 			       lte_frame_parms,
 			       &eNB_UE_stats[0],
@@ -935,7 +943,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			       eNb_id,
 			       UE_id,
 			       1);
-
+      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
     }
 
     eNb_id=0;
@@ -946,12 +954,15 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     */
 #endif
     
+    debug_msg("timing advance \n",l,eNb_id);
     sync_pos = lte_est_timing_advance(lte_frame_parms,
 				      lte_eNB_common_vars,
 				      &eNb_id,
 				      first_run,
 				      number_of_cards,
 				      24576);
+
+    debug_msg("timing advance \n",l,eNb_id);
     first_run = 0;
 
     eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
@@ -965,7 +976,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
   }
 
-  //  msg("Running ulsch reception: eNb_id %d (RAG active %d)\n",eNb_id,ulsch_eNb[0]->RAG_active);
+  debug_msg("Running ulsch reception: eNb_id %d (RAG active %d)\n",eNb_id,ulsch_eNb[0]->RAG_active);
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);

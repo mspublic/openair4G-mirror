@@ -498,11 +498,16 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot) {
 	   2,
 	   (lte_frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI); 
 
+  //  debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
+
+
   dci_cnt = dci_decoding_procedure(lte_ue_pdcch_vars,
 				   dci_alloc_rx,
 				   eNb_id,
 				   lte_frame_parms,
 				   SI_RNTI,RA_RNTI);
+
+  //  debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
 
   lte_ue_pdcch_vars[eNb_id]->dci_received += dci_cnt;
 
@@ -1059,8 +1064,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
       debug_msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Calling pdcch procedures\n",mac_xface->frame,last_slot);
       if (lte_ue_pdcch_procedures(eNb_id,last_slot) == -1) {
 	msg("[PHY PROCEDURES_LTE] Frame %d, slot %d: Error in pdcch procedures\n",mac_xface->frame,last_slot);
-	//return(-1);
-	exit_openair=1;
+	return(-1);
+	//exit_openair=1;
       }
 
       if (dlsch_ue_active == 1) {
