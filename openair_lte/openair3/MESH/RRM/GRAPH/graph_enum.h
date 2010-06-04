@@ -36,6 +36,7 @@ et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI.
 #define FC_ID 0
 #define CH_COLL_ID -1
 #define NB_SENS_MAX 20
+#define FIRST_SENSOR_ID 2
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,6 +96,7 @@ typedef enum {
     //UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
+    RRC_UP_FREQ_ASS             , ///< Message RRC->RRM ://mod_lor_10_06_04
     NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
 
 } MSG_RRC_RRM_T ;

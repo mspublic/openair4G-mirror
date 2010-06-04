@@ -140,7 +140,7 @@ unsigned int take_decision_sens(
     Sens_ch_t *pSensChann;
     int i, flag=0;
     for (i = 0; i<NUM_SB; i++) // initialization of is_free vector
-        finalSensChann->is_free[i]=10; //AAA: to change when is_free becomes char instead of unsigned int
+        finalSensChann->is_free[i]=10; //TO DO: to change when is_free becomes char instead of unsigned int
     while (pSensNode!= NULL ){
 
         if((pSensChann = get_chann_info(  pSensNode->info_hd , Ch_id)) != NULL){

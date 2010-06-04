@@ -46,7 +46,7 @@
 #define LAMBDA0 -105   //mod_lor_10_05_26: for mu0 that is the averaged value
 #define LAMBDA1 -100   //mod_lor_10_05_26: for mu1 that is the maximum value
 #define MIN_NB_SB_CH 25   //mod_lor_10_05_26: for mu1 that is the maximum value
-#define BG 25 //! sub-bands of protection between channels
+#define BG 2 //! sub-bands of protection between channels
 
 /*! \brief Transaction ID descriptor
 */

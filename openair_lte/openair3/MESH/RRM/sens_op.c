@@ -155,7 +155,7 @@ void rrc_update_sens(
             channel.QoS     = 0;
             is_free     = Sens_meas[i].is_free;
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO fix it!
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO SCEN2 DISTR fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ; //mod_lor_10_03_08
             //fprintf(stderr,"inst %d, channel %d, is_free %d\n", inst,Sens_meas[i].Ch_id,Sens_meas[i].is_free);//dbg
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg 
@@ -842,7 +842,7 @@ void up_coll_sens_results(
             fprintf(stdout,"Channel %d is %d:\n", channel.Ch_id,is_free[0]); //dbg ou LOG
             
             pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO: fix it!
+            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO SCEN2: fix it!
             pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
             //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg
             

@@ -182,7 +182,7 @@ static FILE *output_2 = NULL; //mod_lor_10_04_20
 
 \return NULL
 */
-//TO DO: passarlo alla ricezione di un sns_update -> Sens_ch_t é quindi un vettore
+
 void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, unsigned int sensor) {
     
     float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
@@ -247,7 +247,7 @@ void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, uns
 
 \return NULL
 */
-//TO DO: passarlo alla ricezione di un sns_update -> Sens_ch_t é quindi un vettore
+
 void plot_SN_channels(CHANNELS_DB_T *channels_db, unsigned int NB_info, unsigned int *selected, /*FD_Secondary_Network_frequencies *SN_form,*/ unsigned int rrm_id) {
     
     float f[SB_NEEDED_FOR_SN*NB_info],spec_dBm[SB_NEEDED_FOR_SN*NB_info];
@@ -1305,6 +1305,26 @@ static void processing_msg_rrc(
                 rrc_init_mon_req( header->inst, p->L2_id, p->ch_to_scan, p->NB_chan, p->interval, header->Trans_id );  
             }
             break ;
+        //mod_lor_10_06_04++
+        case RRC_UP_FREQ_ASS :
+            {
+                rrm_up_freq_ass_t *p  = (rrm_up_freq_ass_t *) msg ;
+                msg_fct( "[RRC]>[RRM]:%d:RRC_UP_FREQ_ASS \n",header->inst);
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                unsigned int        channels[2*p->NB_chan];                //!< Vector of channels
+                unsigned int        free[2*p->NB_chan]    ;                //!< Vector of values
+                
+                
+                channels[0]=p->ass_channels[0].Start_f;            //!<saved starting frequency
+                channels[1]=p->ass_channels[0].Final_f; //!<saved final frequency
+                
+                
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,2*p->NB_chan,2*p->NB_chan,channels,free, 0) );
+                    WARNING(r!=0);
+                
+            }
+            break;
+        //mod_lor_10_06_04--
 
         default :
             fprintf(stderr,"RRC:\n") ;
@@ -1887,7 +1907,6 @@ int main( int argc , char **argv )
 
     sock_rrm_int_t  DataIpS[MAX_RRM]; //mod_lor_10_01_25
     pthread_attr_t attr ;
-
     /* Vérification des arguments */
     while ((c = getopt(argc,argv,"i:f:h")) != -1)
         switch (c)
@@ -1907,7 +1926,6 @@ int main( int argc , char **argv )
                 help();
                 exit(0);
         }
-
     if (nb_inst <= 0 )
     {
         fprintf(stderr,"[RRM] Provide a node id\n");
@@ -1918,7 +1936,6 @@ int main( int argc , char **argv )
         fprintf(stderr,"[RRM] the instance number (%d) is upper than MAX_RRM (%d)\n", nb_inst, MAX_RRM);
         exit(-1);
     }
-
 #ifdef RRC_KERNEL_MODE
     msg("RRM INIT :open fifos\n");
     while (( Rrm_fifos.rrc_2_rrm_fifo= open ("/dev/rtf14", O_RDONLY )) < 0) 
@@ -1987,7 +2004,6 @@ int main( int argc , char **argv )
 #endif
     output_2 = fopen( "VCD/output_2.txt", "w") ; //mod_lor_10_04_20
     PNULL(output_2) ; //mod_lor_10_04_20
-
     for ( ii = 0 ; ii < nb_inst ; ii++ ){
         DataIpS[ii].s               = -1 ;    //mod_lor_10_01_25
         if ( !flag_cfg )
@@ -2058,7 +2074,6 @@ int main( int argc , char **argv )
     }
     
     
-    
     //open_socket( &DataRrc.s,  DataRrc.sock_path_local, DataRrc.sock_path_dest ,0 );
 
     /* Creation du thread de reception des messages RRC*/
@@ -2126,8 +2141,7 @@ int main( int argc , char **argv )
     }
     
     //mod_lor_10_01_25++
-    
-    /* Creation du thread RRC d'envoi des messages */
+    /* Creation du thread IP d'envoi des messages */
     ret = pthread_create (&pthread_send_ip_msg_hnd, NULL, thread_send_msg_ip, NULL );
     if (ret)
     {
@@ -2135,7 +2149,6 @@ int main( int argc , char **argv )
         exit(-1) ;
     }
     //mod_lor_10_01_25--*/
-
     /* Creation du thread TTL */
     ret = pthread_create (&pthread_ttl_hnd , NULL, thread_processing_ttl, NULL);
     if (ret)
@@ -2143,16 +2156,15 @@ int main( int argc , char **argv )
         fprintf (stderr, "%s", strerror (ret));
         exit(-1) ;
     }
-    
      //mod_eure_lor++
-     if (FC_ID>=0){
-        fl_initialize(&argc, argv, "Fusion Center Spetral Measurements", 0, 0);  
+     fl_initialize(&argc, argv, "Fusion Center Spectral Measurements", 0, 0);
+     if (FC_ID>=0){ 
         form = create_form_sensing_form(); 
-        fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spetral Measurements");     
+        fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spectral Measurements");     
         fl_check_forms();    
      }
      //mod_eure_lor--
-     
+    
      //mod_lor_10_06_01++ 
      if (BTS_ID>=0){
          //fl_initialize(&argc, argv, "Secondary Network Frequencies", 0, 0);  
