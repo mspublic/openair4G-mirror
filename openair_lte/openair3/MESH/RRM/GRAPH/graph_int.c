@@ -415,11 +415,11 @@ main(int argc,char **argv) {
                             printf("\e[38;5;%dm",comments);
                             msg_fct( "MHz\nUpdating of sensing database using recived data ...\n");
                             
-                            if(SN_active){
+                            if(SN_active &&p->values[1]!=3){
                                 msg_fct( "Checking if frequencies in use by Secondary Network are still free ...\n");
                                 if(p->values[1]==1){
                                     printf("\e[38;5;%dm",colorbusy);
-                                    printf("Primary detected on frequencies in in use by Secondary Network\n");
+                                    printf("Primary detected on frequencies in use by Secondary Network\n");
                                     printf("\e[38;5;%dm",comments);   
                                     msg_fct( "Sending update of open frequencies to Secondary Network\n");
                                 }
@@ -518,9 +518,11 @@ main(int argc,char **argv) {
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "Update received from BTS about frequencies used by Secondary Network\n");
                             msg_fct( "Updating CHANNEL DATABASE :\n");
-                            if (p->NB_chan == 0)
+                            if (p->NB_chan == 0){
                                  msg_fct( "SN did not select any channel\n");
-                            printf("\e[38;5;%dm",colorBTS_msg);
+                                 SN_active = 0;
+                             }
+                            //printf("\e[38;5;%dm",colorBTS_msg);
                             for (i=0;i<p->NB_chan;i++){
                                 printf("\e[38;5;%dm",comments);
                                 msg_fct( "      Channel from " );

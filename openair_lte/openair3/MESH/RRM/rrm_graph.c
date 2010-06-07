@@ -1521,11 +1521,15 @@ static void processing_msg_ip(
                 free[0]=SB_BANDWIDTH;                           //!<saved subband dimension
                 
                 if(update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time)||SN_waiting == 1) {//mod_lor_10_06_02
-                    if ((open_freq_query(rrm->id, rrm->L2_id, 0, 1)>0) && SN_waiting){   //mod_lor_10_06_02
+                    
+                    if ((open_freq_query(rrm->id, rrm->L2_id, 0, SN_waiting)>0) && SN_waiting){   //mod_lor_10_06_02
                         SN_waiting=0; //mod_lor_10_06_02
+                        
                         free[1]=1;    //To transmit to the graphic interface if an update have to be sent to SN
-                    }else
-                        free[1]=0;
+                    }else if(SN_waiting)
+                        free[1]=3;
+                    else
+                        free[1]=1;
                 }else
                     free[1]=0;
                 //mod_lor_10_04_21++

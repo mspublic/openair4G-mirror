@@ -399,6 +399,7 @@ unsigned int open_freq_query( //mod_lor_10_06_02
         printf("Error!!! Found free channels: %d, copyed channels: %d\n",NB_chan, ind);
     //mod_lor_10_05_26--   
     if (Trans_id!=1 || NB_chan!=0) {  //mod_lor_10_06_02
+    
         pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
         rrm->ip.trans_cnt++ ;
         PUT_IP_MSG(msg_update_open_freq_7( inst, L2_id, NB_chan, channels_hd, rrm->ip.trans_cnt));
