@@ -135,8 +135,9 @@ float snr2_memory[2][SCREEN_MEMORY_SIZE];
 // float bw2_memory[];
 float capacity_memory[SCREEN_MEMORY_SIZE];
 float time_memory[SCREEN_MEMORY_SIZE];
-float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
-float channelT[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+//float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][NUMBER_OF_OFDM_CARRIERS_EMOS];
+//float channelT[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 float subcarrier_ind[N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 //float *delay_ind = NULL;
 
@@ -657,6 +658,7 @@ void refresh_interface()
   //struct complexf channel_temp2[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant/2];	//frequency response of one link of the MIMO channel
   float norm = 0;
   double snr_lin;
+  int length;
 
   static RTIME last_timestamp = (RTIME) 0; 
   static RTIME timestamp = (RTIME) 0; 
@@ -759,118 +761,102 @@ void refresh_interface()
 	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
 	    for (aa=0; aa<NB_ANTENNAS_RX*NB_ANTENNAS_TX; aa++)
 	      for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
-		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*((short*)fifo_output_UE.channel[as][aa])[2*ac]+
-							   ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
+		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac]+
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
 	  for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
 	    subcarrier_ind[ac]=ac;
-	      
+
+	  length = N_RB_DL_EMOS*2;
+
+	}
+      else
+	{
+
+	  //convert to float
+	  disp_min_power = 30;
+	  disp_max_power = 80;
+	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
+	    for (aa=0; aa<NB_ANTENNAS_RX; aa++)
+	      for (ac=0; ac<NUMBER_OF_OFDM_CARRIERS_EMOS; ac++)
+		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_eNB.channel[0][as][aa])[2*ac]*
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac]+
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac+1]*
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac+1]));
+	  for (ac=0; ac<NUMBER_OF_OFDM_CARRIERS_EMOS; ac++)
+	    subcarrier_ind[ac]=ac;
+
+	  length = NUMBER_OF_OFDM_CARRIERS_EMOS;
+	}
+
+	  
 
 	  // Frequency domain plots
-	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, &channel[0][0][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, channel[0][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, &channel[0][1][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, channel[0][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, &channel[0][2][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, channel[0][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, &channel[0][3][N_RB_DL_EMOS*2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, channel[0][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec0_xyp,	disp_min_power, disp_max_power);
 
-	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec1_xyp, subcarrier_ind, channel[1][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec1_xyp, subcarrier_ind, channel[1][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec1_xyp, subcarrier_ind, channel[1][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec1_xyp, subcarrier_ind, channel[1][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec1_xyp, subcarrier_ind, channel[1][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec1_xyp, subcarrier_ind, channel[1][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec1_xyp,	disp_min_power, disp_max_power);
 
-	  fl_set_xyplot_data(main_frm->ch11_sec2_xyp, subcarrier_ind, channel[2][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec2_xyp, subcarrier_ind, channel[2][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec2_xyp, subcarrier_ind, channel[2][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec2_xyp, subcarrier_ind, channel[2][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec2_xyp, subcarrier_ind, channel[2][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec2_xyp, subcarrier_ind, channel[2][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec2_xyp, subcarrier_ind, channel[2][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec2_xyp, subcarrier_ind, channel[2][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec2_xyp,	disp_min_power, disp_max_power);
 
-	}
-      /*
-      else
-	{
-	  // Time domain plots
-	  fl_set_xyplot_data(main_frm->ch11_xyp, delay_ind, channel[0][0], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch11_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch11_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch11_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_xyp, delay_ind, channel[0][1], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch12_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch12_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch12_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_xyp, delay_ind, channel[1][0], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch21_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch21_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch21_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_xyp, delay_ind, channel[1][1], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch22_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch22_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch22_xyp,	disp_min_power, disp_max_power);
-	  if ((num_tx_ant*num_ch)==4)
-	    {	
-	      fl_set_xyplot_data(main_frm->ch13_xyp, delay_ind, channel[0][2], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch13_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch13_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch13_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch14_xyp, delay_ind, channel[0][3], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch14_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch14_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch14_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch23_xyp, delay_ind, channel[1][2], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch23_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch23_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch23_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch24_xyp, delay_ind, channel[1][3], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch24_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch24_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch24_xyp,	disp_min_power, disp_max_power);
-	    }
-	}
-      */		
+    
       if (!is_cluster_head) {
       // BLER
 	sprintf(temp_label, "BLER: %d%%", fifo_output_UE.pbch_fer[0]);
