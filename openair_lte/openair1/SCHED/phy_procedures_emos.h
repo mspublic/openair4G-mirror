@@ -21,9 +21,7 @@ typedef long long unsigned int RTIME;
 #define N_PILOTS_PER_RB 4  // per tx antenna
 #define N_SLOTS_EMOS 4     // we take slots 0,1,12,13
 
-#define N_RB_UL_EMOS 25
-#define N_PILOTS_PER_RB_UL 12
-#define N_SRS_SYMBOLS 5
+#define N_SRS_SYMBOLS 3
 
 #define MAX_DCI_PER_FRAME 20
 #define MAX_UCI_PER_FRAME 20
@@ -89,10 +87,10 @@ struct fifo_dump_emos_struct_eNb {
   unsigned char    mimo_mode;              /// Transmission mode
   // RX
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[3];            /// UL measurements
-  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][10]; /// Contains received feedback
+  LTE_eNB_UE_stats eNB_UE_stats[1][3]; /// Contains received feedback
   unsigned int     ulsch_errors;
   unsigned int     rx_total_gain_dB;       /// Total gain
-  int              channel[N_SRS_SYMBOLS][NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][N_RB_UL_EMOS*N_PILOTS_PER_RB_UL]; ///UL channel estimate
+  int              channel[N_SRS_SYMBOLS][NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX][NUMBER_OF_OFDM_CARRIERS_EMOS]; ///UL channel estimate
 };
 
  

@@ -337,27 +337,32 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 #ifdef EMOS
 void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
 
-  unsigned char eNb_id,i;
+  unsigned char eNb_id,i,aa;
 
   if (last_slot%2==1) {
-    for (eNb_id = 0; eNb_id<3; eNb_id++)  
-      memcpy(&emos_dump_eNb.eNB_UE_stats[0][last_slot>>1],&eNB_UE_stats,sizeof(LTE_eNB_UE_stats));
+    memcpy(&emos_dump_eNb.eNB_UE_stats[0][(last_slot>>1)-2],&eNB_UE_stats,sizeof(LTE_eNB_UE_stats));
   }
 
   if (last_slot==4) {
       emos_dump_eNb.rx_total_gain_dB = PHY_vars->rx_total_gain_eNB_dB;
+      emos_dump_eNb.mimo_mode = openair_daq_vars.dlsch_transmission_mode;
   }
 
   if (last_slot==8) {
     emos_dump_eNb.ulsch_errors = ulsch_errors[1];
-    memcpy(&emos_dump_eNb.PHY_measurements_eNB[0],&PHY_vars->PHY_measurements_eNB[0],3*sizeof(PHY_MEASUREMENTS_eNB));
+    for (eNb_id = 0; eNb_id<3; eNb_id++)  
+      memcpy(&emos_dump_eNb.PHY_measurements_eNB[eNb_id],
+	     &PHY_vars->PHY_measurements_eNB[eNb_id],
+	     sizeof(PHY_MEASUREMENTS_eNB));
 
   }
 
   if (last_slot%2==1) {
-    memcpy(&emos_dump_eNb.channel[(last_slot>>1)-2][0][0][0],
-	   lte_eNB_common_vars->srs_ch_estimates[0][0],
-	   NUMBER_OF_eNB_MAX*NB_ANTENNAS_RX*N_RB_UL_EMOS*N_PILOTS_PER_RB_UL);
+    for (eNb_id = 0; eNb_id<3; eNb_id++)  
+      for (aa=0; aa<lte_frame_parms->nb_antennas_rx; aa++) 
+	memcpy(&emos_dump_eNb.channel[(last_slot>>1)-2][eNb_id][aa][0],
+	       lte_eNB_common_vars->srs_ch_estimates[eNb_id][aa],
+	       lte_frame_parms->ofdm_symbol_size*sizeof(int));
   }
 
 }
