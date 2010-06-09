@@ -709,13 +709,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       break;
 
     }
+
+#ifdef EMOS
+    emos_dump_eNb.dci_cnt[next_slot>>1] = nb_dci_common+nb_dci_ue_spec;
+#endif
+
   }
 #endif //DIAG_PHY
 
-
-#ifdef EMOS
-  emos_dump_eNb.dci_cnt[next_slot>>1] = nb_dci_common+nb_dci_ue_spec;
-#endif
 
   // if we have PHICH to generate
   if ((next_slot%2)==0) {
