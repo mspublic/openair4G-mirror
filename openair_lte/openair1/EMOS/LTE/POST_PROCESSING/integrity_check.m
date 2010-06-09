@@ -1,4 +1,5 @@
 addpath('../IMPORT_FILTER')
+addpath('maps')
 
 %% load file
 [filename, pathname] = uigetfile('*.EMOS', 'Pick a file');
@@ -78,13 +79,13 @@ else
     ylabel('RX I0 [dBm]')
     %saveas(h_fig,['RX_I0_dBm' file(5:end) '.eps'],'epsc2')
 
-    h_fig = figure(3);
-    hold off
-    plot_gps_coordinates([],[gps_data.longitude], [gps_data.latitude],rx_N0_dBm);
-    title('RX I0 [dBm]')
-    xlabel('Frame number')
-    ylabel('RX I0 [dBm]')
-    %saveas(h_fig,['RX_I0_dBm_gps' file(5:end) '.jpg'],'jpg')
+%     h_fig = figure(3);
+%     hold off
+%     plot_gps_coordinates([],[gps_data.longitude], [gps_data.latitude],rx_N0_dBm);
+%     title('RX I0 [dBm]')
+%     xlabel('Frame number')
+%     ylabel('RX I0 [dBm]')
+%     %saveas(h_fig,['RX_I0_dBm_gps' file(5:end) '.jpg'],'jpg')
 
 end
 end

@@ -44,7 +44,7 @@ end
 %  - 100 entries of type fifo_dump_emos (defined in phy_procedures_emos.h)
 %  - 1 entry of type gps_fix_t defined in gps.h
 
-if exist('../IMPORT_FILTER/a.out','file')
+if exist('../IMPORT_FILTER/a.out','file') && isunix
     [dummy,result] = system('../IMPORT_FILTER/a.out');
     eval(result);
 else
