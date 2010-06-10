@@ -2,6 +2,8 @@ close all
 clear all
 
 addpath('../IMPORT_FILTER')
+addpath('maps')
+addpath('CapCom')
 decimation = 100;
 struct_template;
 

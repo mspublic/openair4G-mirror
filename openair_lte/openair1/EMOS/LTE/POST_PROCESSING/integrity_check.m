@@ -68,8 +68,10 @@ if is_eNb==0
     %end
 else
     rx_N0_dBm = zeros(1,NFrames/decimation);
+    rx_rssi_dBm = zeros(1,NFrames/decimation);
     for i=1:NFrames/decimation
         rx_N0_dBm(i) = estimates(i).phy_measurements_eNb(1).n0_power_tot_dBm(1);
+        rx_rssi_dBm(i) = estimates(i).phy_measurements_eNb(1).rx_rssi_dBm;
     end
     
     h_fig = figure(2);
@@ -79,13 +81,13 @@ else
     ylabel('RX I0 [dBm]')
     %saveas(h_fig,['RX_I0_dBm' file(5:end) '.eps'],'epsc2')
 
-%     h_fig = figure(3);
-%     hold off
-%     plot_gps_coordinates([],[gps_data.longitude], [gps_data.latitude],rx_N0_dBm);
-%     title('RX I0 [dBm]')
-%     xlabel('Frame number')
-%     ylabel('RX I0 [dBm]')
-%     %saveas(h_fig,['RX_I0_dBm_gps' file(5:end) '.jpg'],'jpg')
+    h_fig = figure(3);
+    hold off
+    plot([estimates.frame_tx],rx_rssi_dBm);
+    title('RX RSSI [dBm]')
+    xlabel('Frame number')
+    ylabel('RX RSSI [dBm]')
+    %saveas(h_fig,['RX_I0_dBm_gps' file(5:end) '.jpg'],'jpg')
 
 end
 end

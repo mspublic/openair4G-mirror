@@ -102,6 +102,20 @@ NFrames = min(sum(NFrames_file), NFrames_max);
 
 if (is_eNb)
     estimates = repmat(fifo_dump_emos_struct_eNb,1,100);
+        
+    Ratepersec_4Qam_SISO_1Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_16Qam_SISO_1Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_64Qam_SISO_1Rx = zeros(1,floor(NFrames/100));
+    
+    Ratepersec_4Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_16Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_64Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
+
+    siso_SNR_1Rx = zeros(1,floor(NFrames/100));
+    siso_SNR_2Rx = zeros(1,floor(NFrames/100));
+
+    minestimates = [];
+    %minestimates = repmat(min_estimates_struct, 1,NFrames);
 else
     estimates = repmat(fifo_dump_emos_struct_UE,1,100);
     
@@ -163,15 +177,20 @@ for n=1:NFiles
         
         if (is_eNb)
             estimates_tmp = binread(fid,fifo_dump_emos_struct_eNb,1,4,'l');
-        else
+ 
+%             minestimates(k).mcs = get_mcs(estimates_tmp.dci_alloc(10,1).dci_pdu,'format0');
+%             minestimates(k).tbs = get_tbs(minestimates(k).mcs,25);
+%             minestimates(k).rx_rssi_dBm = estimates_tmp.phy_measurements(1).rx_rssi_dBm(1);
+%             minestimates(k).frame_tx = estimates_tmp.frame_tx;
+%             minestimates(k).timestamp = estimates_tmp.timestamp;
+%             minestimates(k).UE_mode = estimates_tmp.eNb_UE_stats(1).UE_mode;
+%             %minestimates(k).phy_measurements = estimates_tmp.phy_measurements(1);
+%             minestimates(k).ulsch_errors = estimates_tmp.ulsch_errors;
+%             %minestimates(k).ulsch_fer = estimates_tmp.ulsch_fer;
+%             minestimates(k).mimo_mode = estimates_tmp.mimo_mode;
+%             minestimates(k).eNb_id = estimates_tmp.eNb_UE_stats.sector;
+         else
             estimates_tmp = binread(fid,fifo_dump_emos_struct_UE,1,4,'l');
-            
-            
-            %         if (mod((k-1),decimation) == 0)
-            %             estimates(((k-1)/decimation)+1) = estimates_tmp;
-            %         end
-            
-            %         if (estimates_tmp.UE_mode == 3)
             
             minestimates(k).mcs = get_mcs(estimates_tmp.dci_alloc(7,1).dci_pdu);
             minestimates(k).tbs = get_tbs(minestimates(k).mcs,25);
@@ -189,10 +208,7 @@ for n=1:NFiles
         end
         count = count +1;
         estimates(1,count) = estimates_tmp;
-        
-        
-        %         end
-        
+       
         %read GPS data and estimates every second
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
             gps_data(l) = binread(fid,gps_data_struct,1,4,'l');
@@ -200,6 +216,8 @@ for n=1:NFiles
             count = 0;
             
             if (is_eNb)
+                 [Ratepersec_4Qam_SISO_1Rx(sec),Ratepersec_16Qam_SISO_1Rx(sec),Ratepersec_64Qam_SISO_1Rx(sec),siso_SNR_1Rx(sec)] = calc_rps_SISO_UL(estimates,1);,...
+                 [Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),siso_SNR_2Rx(sec)] = calc_rps_SISO_UL(estimates,2);
             else
                 [Ratepersec_4Qam_SISO_1Rx(sec),Ratepersec_16Qam_SISO_1Rx(sec),Ratepersec_64Qam_SISO_1Rx(sec),siso_SNR_1Rx_persecond,...
                     Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),...
@@ -245,6 +263,14 @@ H=[];
 H_fq=[];
 
 if (is_eNb)
+    throughput.rateps_SISO_4Qam_eNB1_1Rx = Ratepersec_4Qam_SISO_1Rx;
+    throughput.rateps_SISO_16Qam_eNB1_1Rx = Ratepersec_16Qam_SISO_1Rx;
+    throughput.rateps_SISO_64Qam_eNB1_1Rx = Ratepersec_64Qam_SISO_1Rx;
+    throughput.rateps_SISO_4Qam_eNB1_2Rx = Ratepersec_4Qam_SISO_2Rx;
+    throughput.rateps_SISO_16Qam_eNB1_2Rx = Ratepersec_16Qam_SISO_2Rx;
+    throughput.rateps_SISO_64Qam_eNB1_2Rx = Ratepersec_64Qam_SISO_2Rx;
+    SNR.siso_1Rx = siso_SNR_1Rx;
+    SNR.siso_2Rx = siso_SNR_2Rx;
 else
     
     throughput.rateps_SISO_4Qam_eNB1_1Rx = Ratepersec_4Qam_SISO_1Rx;
