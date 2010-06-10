@@ -191,7 +191,15 @@ for n=1:NFiles
 %             minestimates(k).eNb_id = estimates_tmp.eNb_UE_stats.sector;
          else
             estimates_tmp = binread(fid,fifo_dump_emos_struct_UE,1,4,'l');
+        end  
             
+            %         if (mod((k-1),decimation) == 0)
+            %             estimates(((k-1)/decimation)+1) = estimates_tmp;
+            %         end
+            
+            %         if (estimates_tmp.UE_mode == 3)
+            count = count +1;
+            estimates(1,count) = estimates_tmp;
             minestimates(k).mcs = get_mcs(estimates_tmp.dci_alloc(7,1).dci_pdu);
             minestimates(k).tbs = get_tbs(minestimates(k).mcs,25);
             minestimates(k).rx_rssi_dBm = estimates_tmp.phy_measurements(1).rx_rssi_dBm(1);
@@ -205,10 +213,13 @@ for n=1:NFiles
             minestimates(k).dlsch_errors = estimates_tmp.dlsch_errors;
             minestimates(k).mimo_mode = estimates_tmp.mimo_mode;
             minestimates(k).eNb_id = estimates_tmp.eNb_id;
-        end
-        count = count +1;
-        estimates(1,count) = estimates_tmp;
-       
+%         end
+%         count = count +1;
+%         estimates(1,count) = estimates_tmp;
+%         
+        
+        %         end
+        
         %read GPS data and estimates every second
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
             gps_data(l) = binread(fid,gps_data_struct,1,4,'l');

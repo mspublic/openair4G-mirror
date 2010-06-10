@@ -38,10 +38,10 @@ rxx_rssi_dBm = rx_rssi_dBm_cat(1:100:end);
 in = in+1;
 h_fig = figure(in);
 plot(dist, rxx_rssi_dBm, 'rx')
-title('RX RSSI _ distance from BS [dBm]')
+title('RX RSSI distance from BS [dBm]')
 xlabel('Distance from BS [Km]')
 ylabel('RX RSSI [dBm]')
-%saveas(h_fig, fullfile(pathname,'RX_I0_dBm.eps')'RX_rssi_dBm_dist_from_BS.eps','epsc2')
+saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_from_BS.eps'),'epsc2');
 
 
 % For Distance travelled we need to take first point as starting point and
@@ -79,5 +79,6 @@ plot(dist_travelled, rxx_rssi_dBm, 'rx')
 title('RX RSSI _ distance travelled[dBm]')
 xlabel('Distance travelled by MS [Km]')
 ylabel('RX RSSI [dBm]')
+saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_travelled.eps'),'epsc2');
 %saveas(h_fig,'RX_rssi_dBm_dist_from_BS.eps','epsc2')
 

@@ -5,9 +5,13 @@ load 'SISO.mat';
 
 z = x/4;
 
-chcap_siso_single_stream_4Qam = zeros(1,z, length(estimates_UE));
-chcap_siso_single_stream_16Qam = zeros(1,z, length(estimates_UE));
-chcap_siso_single_stream_64Qam = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_4Qam_2Rx = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_16Qam_2Rx = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_64Qam_2Rx = zeros(1,z, length(estimates_UE));
+
+chcap_siso_single_stream_4Qam_1Rx = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_16Qam_1Rx = zeros(1,z, length(estimates_UE));
+chcap_siso_single_stream_64Qam_1Rx = zeros(1,z, length(estimates_UE));
 
 SNR_eNB = zeros(1,z, length(estimates_UE));
 
@@ -21,33 +25,51 @@ for est=1:length(estimates_UE)
     Hs = squeeze(10*log10(sum(sum(abs(Hc).^2,1),2)));
     [val, ind] = max(Hs);
     
-    if (ind == 1)
-        h_eNB = double(estimates_UE(est).channel(1:2:2*z,1,1)) + 1j*double(estimates_UE(est).channel(2:2:2*z,1,1));
-    else if (ind == 2)
-            h_eNB = double(estimates_UE(est).channel(1:2:2*z,1,2)) + 1j*double(estimates_UE(est).channel(2:2:2*z,1,2));
-        else
-            h_eNB = double(estimates_UE(est).channel(1:2:2*z,1,3)) + 1j*double(estimates_UE(est).channel(2:2:2*z,1,3));
-        end
-    end
+         
+        h11_eNB = double(estimates_UE(est).channel(1:2:2*z,1,ind)) + 1j*double(estimates_UE(est).channel(2:2:2*z,1,ind));
+        h12_eNB = double(estimates_UE(est).channel(1:2:2*z,2,ind)) + 1j*double(estimates_UE(est).channel(2:2:2*z,2,ind));
+        h21_eNB = double(estimates_UE(est).channel(1:2:2*z,3,ind)) + 1j*double(estimates_UE(est).channel(2:2:2*z,3,ind));
+        h22_eNB = double(estimates_UE(est).channel(1:2:2*z,4,ind)) + 1j*double(estimates_UE(est).channel(2:2:2*z,4,ind));
     
      
     % version 1: using tabulated values
-    SNR_eNB(1, :, est) = 10*log10(abs(h_eNB).^2/N0);
-   
-    nan_in_SNR = isnan(SNR_eNB);
-    nan_in_SNR = find(nan_in_SNR == 1);
-    SNR_eNB(nan_in_SNR) = 0;
+    SNR_eNB_1Rx(1, :, est) = 10*log10(abs(h11_eNB + h21_eNB).^2/N0);
     
-    while (min(SNR_eNB(1, :, est)) < -20 )
-        [value, index]  = min(SNR_eNB(1, :, est));
-        SNR_eNB(1, index, est) = -20;
+    SNR_eNB_2Rx(1, :, est) = 10*log10(((abs(h11_eNB + h21_eNB).^2)+(abs(h12_eNB + h22_eNB).^2))/N0);
+   
+    nan_in_SNR = isnan(SNR_eNB_1Rx);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB_1Rx(nan_in_SNR) = 0;
+    
+    nan_in_SNR = isnan(SNR_eNB_2Rx);
+    nan_in_SNR = find(nan_in_SNR == 1);
+    SNR_eNB_2Rx(nan_in_SNR) = 0;
+    
+    while (min(SNR_eNB_1Rx(1, :, est)) < -20 )
+        [value, index]  = min(SNR_eNB_1Rx(1, :, est));
+        SNR_eNB_1Rx(1, index, est) = -20;
         continue
         
     end
     
-    while (max(SNR_eNB(1, :, est)) > 40)
-        [value, index]  = max(SNR_eNB(1, :, est));
-        SNR_eNB(1, index, est) = 40;
+    while (max(SNR_eNB_1Rx(1, :, est)) > 40)
+        [value, index]  = max(SNR_eNB_1Rx(1, :, est));
+        SNR_eNB_1Rx(1, index, est) = 40;
+        continue
+        
+    end
+    
+    
+    while (min(SNR_eNB_2Rx(1, :, est)) < -20 )
+        [value, index]  = min(SNR_eNB_2Rx(1, :, est));
+        SNR_eNB_2Rx(1, index, est) = -20;
+        continue
+        
+    end
+    
+    while (max(SNR_eNB_2Rx(1, :, est)) > 40)
+        [value, index]  = max(SNR_eNB_2Rx(1, :, est));
+        SNR_eNB_2Rx(1, index, est) = 40;
         continue
         
     end
@@ -56,19 +78,22 @@ for est=1:length(estimates_UE)
         if const ==1
             for c=1:z
                 
-                chcap_siso_single_stream_4Qam(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB(1, c, est))));
+                chcap_siso_single_stream_4Qam_1Rx(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB_1Rx(1, c, est))));
+                chcap_siso_single_stream_4Qam_2Rx(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB_2Rx(1, c, est))));
                 
             end
         else if const==2
                 for c=1:z
                     
-                    chcap_siso_single_stream_16Qam(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB(1, c, est))));
+                    chcap_siso_single_stream_16Qam_1Rx(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB_1Rx(1, c, est))));
+                    chcap_siso_single_stream_16Qam_2Rx(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB_2Rx(1, c, est))));
                     
                 end
             else
                 for c=1:z
                     
-                    chcap_siso_single_stream_64Qam(1, c, est) = c_siso_64Qam(find(SNR == round(SNR_eNB(1, c, est))));
+                    chcap_siso_single_stream_64Qam_1Rx(1, c, est) = c_siso_64Qam(find(SNR == round(SNR_eNB_1Rx(1, c, est))));
+                    chcap_siso_single_stream_64Qam_2Rx(1, c, est) = c_siso_64Qam(find(SNR == round(SNR_eNB_2Rx(1, c, est))));
                     
                 end
             end
