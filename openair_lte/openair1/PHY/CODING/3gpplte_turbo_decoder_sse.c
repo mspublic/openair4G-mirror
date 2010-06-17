@@ -138,12 +138,16 @@ __m128i mbot_4[6144] __attribute__ ((aligned(16)));
 __m128i *mtop_g[MAX_DECODING_THREADS] = {mtop_0, mtop_1, mtop_2, mtop_3, mtop_4};
 __m128i *mbot_g[MAX_DECODING_THREADS] = {mbot_0, mbot_1, mbot_2, mbot_3, mbot_4};
 
+__m128i mtmp[MAX_DECODING_THREADS],mtmp2[MAX_DECODING_THREADS],lsw[MAX_DECODING_THREADS],msw[MAX_DECODING_THREADS],new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],newcmp[MAX_DECODING_THREADS];
+__m128i TOP,BOT,THRES128;
+
 void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
   int k;
   __m128i *alpha128=(__m128i *)alpha;
-  __m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
-  __m128i TOP,BOT,THRES128;
+
+  //  __m128i mtmp,mtmp2,lsw,msw,new,mb,newcmp;
+  //  __m128i TOP,BOT,THRES128;
 
 
 #ifndef __SSE4_1__
@@ -188,21 +192,21 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       //      mtmp = m11_128;
       // Think about __mm_set1_epi16 instruction!!!!
 
-      mtmp  = _mm_set1_epi16(m11);
+      mtmp[inst]  = _mm_set1_epi16(m11);
       //      print_shorts("m11) mtmp",&mtmp);
 
-      mtmp2 = _mm_set1_epi16(m10);
+      mtmp2[inst] = _mm_set1_epi16(m10);
       //      print_shorts("m10) mtmp2",&mtmp2);
 
-      mtmp = _mm_unpacklo_epi32(mtmp,mtmp2);
+      mtmp[inst] = _mm_unpacklo_epi32(mtmp[inst],mtmp2[inst]);
       //      print_shorts("unpacklo) mtmp",&mtmp);
       // mtmp = [m11(0) m11(0) m10(0) m10(0) m11(0) m11(0) m10(0) m10(0)]
-      mtmp = _mm_shuffle_epi32(mtmp,_MM_SHUFFLE(0,1,3,2));
+      mtmp[inst] = _mm_shuffle_epi32(mtmp[inst],_MM_SHUFFLE(0,1,3,2));
       // mtmp = [m11(0) m11(0) m10(0) m10(0) m10(0) m10(0) m11(0) m11(0)]
       //      print_shorts("shuffle) mtmp",&mtmp);
 
-      mtop_g[inst][k] = _mm_sign_epi16(mtmp,TOP);
-      mbot_g[inst][k] = _mm_sign_epi16(mtmp,BOT);
+      mtop_g[inst][k] = _mm_sign_epi16(mtmp[inst],TOP);
+      mbot_g[inst][k] = _mm_sign_epi16(mtmp[inst],BOT);
 
       //      print_shorts("mtop=",&mtop);
       //      msg("M0T %d, M1T %d, M2T %d, M3T %d, M4T %d, M5T %d, M6T %d, M7T %d\n",M0T,M1T,M2T,M3T,M4T,M5T,M6T,M7T);
@@ -212,8 +216,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
       // Now compute max-logmap
 
-      lsw  = _mm_adds_epi16(*alpha128,mtop_g[inst][k]);
-      msw  = _mm_adds_epi16(*alpha128,mbot_g[inst][k]);
+      lsw[inst]  = _mm_adds_epi16(*alpha128,mtop_g[inst][k]);
+      msw[inst]  = _mm_adds_epi16(*alpha128,mbot_g[inst][k]);
 
       //      print_shorts("lsw=",&lsw);
       //      print_shorts("msw=",&msw);
@@ -225,28 +229,28 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       // lsw = [mb3 new3 mb2 new2 mb1 new1 mb0 new0] 
       // msw = [mb7 new7 mb6 new6 mb4 new4 mb3 new3] 
 
-      lsw = _mm_shufflelo_epi16(lsw,_MM_SHUFFLE(3,1,2,0));
+      lsw[inst] = _mm_shufflelo_epi16(lsw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shufflelo) lsw=",&lsw);
-      lsw = _mm_shufflehi_epi16(lsw,_MM_SHUFFLE(3,1,2,0));
+      lsw[inst] = _mm_shufflehi_epi16(lsw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shufflehi) lsw=",&lsw);
 
-      msw = _mm_shufflelo_epi16(msw,_MM_SHUFFLE(3,1,2,0));
+      msw[inst] = _mm_shufflelo_epi16(msw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shufflelo) msw=",&msw);
-      msw = _mm_shufflehi_epi16(msw,_MM_SHUFFLE(3,1,2,0));
+      msw[inst] = _mm_shufflehi_epi16(msw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shufflehi) msw=",&msw);
 
       // lsw = [mb3 mb2 new3 new2 mb1 mb0 new1 new0] 
       // msw = [mb7 mb6 new7 new6 mb4 mb3 new4 new3] 
 
-      lsw = _mm_shuffle_epi32(lsw,_MM_SHUFFLE(3,1,2,0));
+      lsw[inst] = _mm_shuffle_epi32(lsw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shuffle) lsw=",&lsw);
-      msw = _mm_shuffle_epi32(msw,_MM_SHUFFLE(3,1,2,0));
+      msw[inst] = _mm_shuffle_epi32(msw[inst],_MM_SHUFFLE(3,1,2,0));
       //      print_shorts("shuffle) msw=",&msw);
       // lsw = [mb3 mb2 mb1 mb0 new3 new2 new1 new0] 
       // msw = [mb7 mb6 mb4 mb3 new7 new6 new4 new3] 
 
-      new = _mm_unpacklo_epi64(lsw,msw);
-      mb  = _mm_unpackhi_epi64(lsw,msw);
+      new[inst] = _mm_unpacklo_epi64(lsw[inst],msw[inst]);
+      mb[inst]  = _mm_unpackhi_epi64(lsw[inst],msw[inst]);
       // new = [new7 new6 new4 new3 new3 new2 new1 new0] 
       // mb = [mb7 mb6 mb4 mb3 mb3 mb2 mb1 mb0] 
       // Now both are in right order, so compute max
@@ -256,19 +260,19 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       //      *alpha128 = _mm_max_epi16(new,mb);
       
             
-      new = _mm_max_epi16(new,mb);
-      newcmp = _mm_cmpgt_epi16(new,THRES128);
+      new[inst] = _mm_max_epi16(new[inst],mb[inst]);
+      newcmp[inst] = _mm_cmpgt_epi16(new[inst],THRES128);
 
 #ifndef __SSE4_1__
-      newcmp_int = (int*) &newcmp;
+      newcmp_int = (int*) &newcmp[inst];
       if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
 #else
-      if (_mm_testz_si128(newcmp,newcmp)) // if any states above THRES normalize
+      if (_mm_testz_si128(newcmp[inst],newcmp[inst])) // if any states above THRES normalize
 #endif
-	*alpha128 = new;
+	*alpha128 = new[inst];
       else {
 	//	print_shorts("new",&new);
-	*alpha128 = _mm_subs_epi16(new,THRES128);
+	*alpha128 = _mm_subs_epi16(new[inst],THRES128);
 	//	msg("alpha overflow %d",k);
 	//	print_shorts(" ",alpha128);
       }
@@ -280,13 +284,14 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
   _m_empty();
 }
 
+__m128i new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],oldh[MAX_DECODING_THREADS],oldl[MAX_DECODING_THREADS],THRES128,newcmp[MAX_DECODING_THREADS];
 
 void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F,unsigned char inst)
 {
   int k;
 
   __m128i *beta128,*beta128_i;
-  __m128i new,mb,oldh,oldl,THRES128,newcmp;
+  //  __m128i new,mb,oldh,oldl,THRES128,newcmp;
 
 #ifndef __SSE4_1__
   int* newcmp_int;
@@ -316,29 +321,29 @@ void compute_beta(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned shor
   for (k=(frame_length+2);k>=F;k--)
     {
 
-      oldh = _mm_unpackhi_epi16(*beta128,*beta128);
-      oldl = _mm_unpacklo_epi16(*beta128,*beta128);
+      oldh[inst] = _mm_unpackhi_epi16(*beta128,*beta128);
+      oldl[inst] = _mm_unpacklo_epi16(*beta128,*beta128);
 
-      mb   = _mm_adds_epi16(oldh,mbot_g[inst][k]);
-      new  = _mm_adds_epi16(oldl,mtop_g[inst][k]);
+      mb[inst]   = _mm_adds_epi16(oldh[inst],mbot_g[inst][k]);
+      new[inst]  = _mm_adds_epi16(oldl[inst],mtop_g[inst][k]);
 
       beta128--;
       //      *beta128= _mm_max_epi16(new,mb);
             
-      new = _mm_max_epi16(new,mb);
+      new[inst] = _mm_max_epi16(new[inst],mb[inst]);
       //      print_shorts("alpha128",alpha128);
 
-      newcmp = _mm_cmpgt_epi16(new,THRES128);
+      newcmp[inst] = _mm_cmpgt_epi16(new[inst],THRES128);
 
 #ifndef __SSE4_1__
-      newcmp_int = (int*) &newcmp;
+      newcmp_int = (int*) &newcmp[inst];
       if (newcmp_int[0]==0 && newcmp_int[1]==0 && newcmp_int[2]==0 && newcmp_int[3]==0) // if any states above THRES normalize
 #else
-      if (_mm_testz_si128(newcmp,newcmp))
+      if (_mm_testz_si128(newcmp[inst],newcmp[inst]))
 #endif
-	*beta128 = new;
+	*beta128 = new[inst];
       else{
-	*beta128 = _mm_subs_epi16(new,THRES128);
+	*beta128 = _mm_subs_epi16(new[inst],THRES128);
 	//	msg("Beta overflow : %d\n",k);
       }
       
