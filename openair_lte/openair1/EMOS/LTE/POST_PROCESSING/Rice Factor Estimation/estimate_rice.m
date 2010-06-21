@@ -42,7 +42,7 @@ for t=1:NTau
 
     s2(t) = Ga(t) - V2(t);
 
-    K(t) = V2(t)/s2(t)
+    K(t) = V2(t)/s2(t);
 end
 
 % %% plot

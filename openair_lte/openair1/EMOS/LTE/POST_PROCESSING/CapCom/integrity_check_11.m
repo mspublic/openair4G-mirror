@@ -34,7 +34,12 @@ for dir_idx=1:1:length(dd)
                 % use try-catch here to skip the file if the load_estimates
                 % function returns an error
                 [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR, K_fac] = load_estimates_lte_1(fullfile(fpath,filenames{file_idx}),NFrames_max,decimation,is_eNb);             
-                save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx', 'K_fac');
+
+                if is_eNb
+                    save(regexprep((fullfile(fpath,filenames{file_idx},'results_eNB.mat')), '.EMOS/results_eNB.mat', '_results_eNB.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx');
+                else
+                    save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx', 'K_fac');
+                end
                 
                 % We need to call the concatenate script here
                 

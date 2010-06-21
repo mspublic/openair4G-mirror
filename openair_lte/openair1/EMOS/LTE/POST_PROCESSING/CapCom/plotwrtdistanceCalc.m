@@ -4,12 +4,12 @@
 
 BS_Lat = 44.084015;
 BS_Long = 1.965765;
-MS_Lat = gps_lat_cat;
-MS_Long = gps_long_cat;
-dist = zeros(1,length(gps_lat_cat));
+MS_Lat = [gps_data_cat.latitude];
+MS_Long = [gps_data_cat.longitude];
+dist = zeros(1,length(gps_data_cat));
 %dist = Dist_Calc_from_GPS(BS_Lat, BS_Long, MS_Lat, MS_Long);
 
- for i = 1:length(gps_lat_cat)
+ for i = 1:length(gps_data_cat)
  
 %     MS_Lat(i) = gps_data(i).latitude;
 %     MS_Long(i) = gps_data(i).longitude;
@@ -29,7 +29,7 @@ step = 100;
 %         end
 %     end
 % end
-rxx_rssi_dBm = rx_rssi_dBm_cat(1:100:end);
+rxx_rssi_dBm = [minestimates_cat(1:100:end).rx_rssi_dBm];
 % j = 0;
 % for i=1:step:NFrames
 %     j = j + 1;
@@ -51,26 +51,22 @@ saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_from_BS.eps'),'epsc2');
 % start_Lat = gps_data(1).latitude;
 % start_Long = gps_data(1).longitude;
 
-start_Lat = gps_lat_cat(1);
-start_Long = gps_long_cat(1);
+% start_Lat = gps_lat_cat(1);
+% start_Long = gps_long_cat(1);
 
 % current_Lat = zeros(1,length(gps_data));
 % current_Long = zeros(1,length(gps_data));
- dist_travelled = zeros(1,length(gps_lat_cat));
-y = length(gps_lat_cat);
+dist_travelled = zeros(1,length(gps_data_cat));
 
-gps_lat_cat(y+1) = gps_lat_cat(y);
-gps_long_cat(y+1) = gps_long_cat(y);
-for i = 2:( y + 1)
-    
-%    current_Lat(i) = gps_data(i).latitude;
-%    current_Long(i) = gps_data(i).longitude;
-    dist_travelled(i-1) =  Dist_Calc_from_GPS(gps_lat_cat(i-1), gps_long_cat(i-1), gps_lat_cat(i), gps_long_cat(i)); 
-    %current_Lat(i), current_Long(i));
+for i = 2:length(gps_data_cat);
+    % current_Lat(i) = gps_data(i).latitude;
+    % current_Long(i) = gps_data(i).longitude;
+    dist_travelled(i) =  Dist_Calc_from_GPS(MS_Lat(i-1), MS_Long(i-1), MS_Lat(i), MS_Long(i)); 
+    % current_Lat(i), current_Long(i));
     % Please remember that the above calculated distance is in KiloMeters
 end
-gps_lat_cat(end) = [];
-gps_long_cat(end) = [];
+% gps_lat_cat(end) = [];
+% gps_long_cat(end) = [];
 
 dist_travelled = cumsum(dist_travelled);
 in = in+1;

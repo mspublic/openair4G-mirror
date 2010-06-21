@@ -36,4 +36,7 @@ function [DISTANCE] = Dist_Calc_from_GPS(LAT1, LONG1, LAT2, LONG2)
    
 %    disp('distance in Kilometers: ');
 %    DISTANCE
+if isnan(DISTANCE)
+    DISTANCE = 0;
+end
  

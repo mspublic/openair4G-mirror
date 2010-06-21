@@ -1,14 +1,24 @@
-function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx)
+function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, tweak)
+
+if nargin < 3
+    tweak = 0;
+end
 
 %Channel Capacity of SISO system
 
 load 'SISO.mat';
 
-chcap_siso_single_stream_4Qam = zeros(1, 3*144, length(estimates_eNB));
-chcap_siso_single_stream_16Qam = zeros(1, 3*144, length(estimates_eNB));
-chcap_siso_single_stream_64Qam = zeros(1, 3*144, length(estimates_eNB));
+if tweak
+    srs_len = 113;
+else
+    srs_len = 144;
+end
 
-SNR_eNB = zeros(1,3*144,length(estimates_eNB));
+chcap_siso_single_stream_4Qam = zeros(1, 3*srs_len, length(estimates_eNB));
+chcap_siso_single_stream_16Qam = zeros(1, 3*srs_len, length(estimates_eNB));
+chcap_siso_single_stream_64Qam = zeros(1, 3*srs_len, length(estimates_eNB));
+
+SNR_eNB = zeros(1,3*srs_len,length(estimates_eNB));
 
 for est=1:length(estimates_eNB)
     
@@ -21,9 +31,14 @@ for est=1:length(estimates_eNB)
                 double(estimates_eNB(est).channel(2:2:end,:,:,1:3)).^2;
 
     % extract 144 carriers with constitute SRS
-    ind = [363:2:512 2:2:138];
-
-    H_abs_sqr_tot = sum(H_abs_sqr(ind,1:nb_rx,sector+1,:),2);
+    if tweak
+        H_abs_sqr = reshape(H_abs_sqr,450,2,2,3);
+        ind = [363:2:450 2:2:138 ];
+        H_abs_sqr_tot = sum(H_abs_sqr(ind,ones(1,nb_rx),1,:),2);
+    else
+        ind = [363:2:512 2:2:138];
+        H_abs_sqr_tot = sum(H_abs_sqr(ind,1:nb_rx,sector+1,:),2);
+    end
     
     SNR_eNB(1, :, est) = 10*log10(H_abs_sqr_tot(:)/N0);
    
@@ -44,13 +59,13 @@ for est=1:length(estimates_eNB)
 end
 
 
-siso_SNR_persecond = squeeze(mean(SNR_eNB,2));
+siso_SNR_persecond = mean(SNR_eNB(:));
 
 % for the UL we have 300 subcarriers times 9 symbols (2 are DRS, 1 is SRS)
 
-Rate_4Qam = squeeze(sum(chcap_siso_single_stream_4Qam,2)*300/144*9);
-Rate_16Qam = squeeze(sum(chcap_siso_single_stream_16Qam,2)*300/144*9);
-Rate_64Qam = squeeze(sum(chcap_siso_single_stream_64Qam,2)*300/144*9);
+Rate_4Qam = sum(sum(chcap_siso_single_stream_4Qam,2)*300/srs_len*9,3);
+Rate_16Qam = sum(sum(chcap_siso_single_stream_16Qam,2)*300/srs_len*9,3);
+Rate_64Qam = sum(sum(chcap_siso_single_stream_64Qam,2)*300/srs_len*9,3);
 
 
 
