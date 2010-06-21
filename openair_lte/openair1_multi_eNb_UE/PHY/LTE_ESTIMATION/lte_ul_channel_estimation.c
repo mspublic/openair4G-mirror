@@ -2,7 +2,7 @@
 #include "PHY/extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
-#define DEBUG_CH
+//#define DEBUG_CH
 
 int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      int **rxdataF_ext,

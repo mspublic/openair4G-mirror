@@ -73,7 +73,6 @@ void print_ints(char *s,__m128i *x) {
 
 #endif
 
-__m128i *llr128;
 short *llr;
 
 
@@ -281,17 +280,31 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rho_i,
 			 short *dlsch_llr,
 			 unsigned char symbol,
-			 unsigned short nb_rb) {
+			 unsigned short nb_rb,
+			 short **llr128p) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-
+  __m128i *llr128;
   //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
-
-  if (symbol == frame_parms->first_dlsch_symbol)
+  
+  if (symbol == frame_parms->first_dlsch_symbol) {
     llr128 = (__m128i*)dlsch_llr;
- 
+  }
+  else {
+    llr128 = (__m128i*)(*llr128p);
+  }
+  
+  // alternative solution
+  /*
+  switch (symbol) {
+  case frame_parms->first_dlsch_symbol:
+    llr128 = (__m128i*)dlsch_llr;
+    break;
+  case: ...
+  */
+
   if (!llr128) {
     msg("dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
     return;
@@ -304,6 +317,7 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 	    nb_rb*12);
 
   llr128 += nb_rb*3;
+  *llr128p = (short *)llr128;
 
 
 }
@@ -312,13 +326,19 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
 		    short *dlsch_llr,
 		    unsigned char symbol,
-		    unsigned short nb_rb) {
+		    unsigned short nb_rb,
+		    short **llr128p) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  __m128i *llr128;
   int i;
 
-  if (symbol == frame_parms->first_dlsch_symbol)
+  if (symbol == frame_parms->first_dlsch_symbol) {
     llr128 = (__m128i*)dlsch_llr;
+  }
+  else {
+    llr128 = (__m128i*)(*llr128p);
+  }
  
   if (!llr128) {
     msg("dlsch_qpsk_llr: llr is null, symbol %d, llr128=%p\n",symbol, llr128);
@@ -332,6 +352,8 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr128++;
   }
 
+  *llr128p = (short *)llr128;
+
   _mm_empty();
   _m_empty();
 
@@ -344,18 +366,24 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     short *dlsch_llr,
 		     int **dl_ch_mag,
 		     unsigned char symbol,
-		     unsigned short nb_rb) {
+		     unsigned short nb_rb,
+		     short **llr128p) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag;
+  __m128i *llr128;
   int i;
   //  unsigned char symbol_mod;
 
 //  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
 
-  if (symbol == frame_parms->first_dlsch_symbol)
-    llr128 = (__m128i*)&dlsch_llr[0];
-
+  if (symbol == frame_parms->first_dlsch_symbol) {
+    llr128 = (__m128i*)dlsch_llr;
+  }
+  else {
+    llr128 = (__m128i*)(*llr128p);
+  }
+  
   //  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   ch_mag =(__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -377,6 +405,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     //    print_bytes("rxF[i]",&rxF[i]);
     //    print_bytes("rxF[i+1]",&rxF[i+1]);
   }
+
+  *llr128p = (short *)llr128;
 
   _mm_empty();
   _m_empty();
@@ -1584,11 +1614,12 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
 	     unsigned char dual_stream_UE,
-	     PHY_MEASUREMENTS *phy_measurements) {
+	     PHY_MEASUREMENTS *phy_measurements,
+	     unsigned char is_secondary_ue) {
   
   unsigned short nb_rb;
 
-  unsigned char log2_maxh,aatx,aarx;
+  unsigned char aatx,aarx;
   int avgs;
   short i;
   unsigned char harq_pid0 = dlsch_ue[0]->current_harq_pid;
@@ -1617,7 +1648,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				     frame_parms);
   }
   else {
-
+    if (!is_secondary_ue) {
       nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
@@ -1637,6 +1668,26 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 					 dlsch_ue[0]->rb_alloc,
 					 symbol,
 					 frame_parms);
+    } else { // is secondary ue
+      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				       lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
+				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
+				       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+				       dlsch_ue[0]->pmi_alloc,
+				       lte_ue_dlsch_vars[eNb_id]->pmi_ext,
+				       dlsch_ue[0]->rb_alloc,
+				       symbol,
+				       frame_parms);
+      dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				       lte_ue_common_vars->dl_ch_estimates[eNb_id_i - 1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
+				       lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
+				       lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
+				       dlsch_ue[0]->pmi_alloc,
+				       lte_ue_dlsch_vars[eNb_id_i]->pmi_ext,
+				       dlsch_ue[0]->rb_alloc,
+				       symbol,
+				       frame_parms);
+    }
 
   }
 
@@ -1649,19 +1700,20 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			avg,
 			nb_rb);
     //  msg("[DLSCH] avg[0] %d\n",avg[0]);
+      
+      avgs = 0;
+      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
+	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
+      lte_ue_dlsch_vars[eNb_id]->log2_maxh = (log2_approx(avgs)/2);
+#ifdef DEBUG_PHY
+      msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_dlsch_vars[eNb_id]->log2_maxh,avg[0],avgs);
+#endif
     }
   }
+  aatx = frame_parms->nb_antennas_tx;
+  aarx = frame_parms->nb_antennas_rx;
 
-  avgs = 0;
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
-    for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-      avgs = max(avgs,avg[(aarx<<1)+aatx]);
-
-  log2_maxh = 4+(log2_approx(avgs)/2);
-#ifdef DEBUG_PHY
-  msg("[DLSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avg[0],avgs);
-#endif
- 
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
 
@@ -1675,10 +1727,10 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       symbol,
 			       get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs),
 			       nb_rb,
-			       log2_maxh,
+			       lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 			       phy_measurements); // log2_maxh+I0_shift
 
-    if (dual_stream_UE == 1) {
+    if ((dual_stream_UE == 1) || is_secondary_ue) {
       // get MF output for interfering stream
       dlsch_channel_compensation(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 				 lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
@@ -1688,9 +1740,9 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				 (aatx>1) ? lte_ue_dlsch_vars[eNb_id_i]->rho : NULL,
 				 frame_parms,
 				 symbol,
-				 get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs),
+				 (is_secondary_ue) ? 2 : get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs), // if is_secondary_ue, one assumes the interfering constellation is QPSK
 				 nb_rb,
-				 log2_maxh,
+				 lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 				 phy_measurements); // log2_maxh+I0_shift
       
 
@@ -1701,7 +1753,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
 				    lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
 				    lte_ue_dlsch_vars[eNb_id]->dl_ch_rho_ext,
-				    log2_maxh);
+				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
     
     }
 
@@ -1718,7 +1770,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    symbol,
 				    get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs),
 				    nb_rb,
-				    log2_maxh);
+				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
   }
   if (frame_parms->nb_antennas_rx > 1)
     dlsch_detection_mrc(frame_parms,
@@ -1730,7 +1782,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,
 			symbol,
 			nb_rb,
-			dual_stream_UE);
+			(is_secondary_ue) ? 1 : dual_stream_UE); // if is_secondary_ue, one can exploit the dual_stream_UE flag for this function. Even though this is not really safe programming, it will work for this purpose.
 
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
@@ -1746,20 +1798,36 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     }
     switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
-      if (dual_stream_UE == 0)
-	dlsch_qpsk_llr(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->llr[0],symbol,nb_rb);
+      if ((dual_stream_UE == 0) && (!is_secondary_ue))
+	dlsch_qpsk_llr(frame_parms,
+		       lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
+		       lte_ue_dlsch_vars[eNb_id]->llr[0],
+		       symbol,nb_rb,
+		       lte_ue_dlsch_vars[eNb_id]->llr128);
       else
 	dlsch_qpsk_qpsk_llr(frame_parms,
 			    lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
 			    lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp,
 			    lte_ue_dlsch_vars[eNb_id]->dl_ch_rho_ext,
-			    lte_ue_dlsch_vars[eNb_id]->llr[0],symbol,nb_rb);
+			    lte_ue_dlsch_vars[eNb_id]->llr[0],
+			    symbol,nb_rb,
+			    lte_ue_dlsch_vars[eNb_id]->llr128);
       break;
     case 4 :
-      dlsch_16qam_llr(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->llr[0],lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,symbol,nb_rb);
+      dlsch_16qam_llr(frame_parms,
+		      lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
+		      lte_ue_dlsch_vars[eNb_id]->llr[0],
+		      lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
+		      symbol,nb_rb,
+		      lte_ue_dlsch_vars[eNb_id]->llr128);
       break;
     case 6 :
-      dlsch_64qam_llr(frame_parms,lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,lte_ue_dlsch_vars[eNb_id]->llr[0],lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,symbol,nb_rb);
+      dlsch_64qam_llr(frame_parms,
+		      lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
+		      lte_ue_dlsch_vars[eNb_id]->llr[0],
+		      lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
+		      lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,
+		      symbol,nb_rb);
       break;
     default:
       msg("rx_dlsch.c : Unknown mod_order!!!!\n");

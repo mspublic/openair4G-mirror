@@ -1,7 +1,7 @@
 //#include <string.h>
 #include "defs.h"
 #include "PHY/extern.h"
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -85,7 +85,8 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_UE_DLSCH **ue_dlsch_vars,
 		    LTE_UE_DLSCH **ue_dlsch_vars_cntl,
 		    LTE_UE_PBCH **ue_pbch_vars,
-		    LTE_UE_PDCCH **ue_pdcch_vars) {
+		    LTE_UE_PDCCH **ue_pdcch_vars,
+		    PHY_VARS_UE *phy_vars_ue) {
 
   int i,j;
   unsigned char eNb_id;
@@ -302,6 +303,8 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     ue_dlsch_vars[eNb_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
     ue_dlsch_vars[eNb_id]->llr[1] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
 
+    ue_dlsch_vars[eNb_id]->llr128 = (short **)malloc16(sizeof(short **));
+
 
     ue_dlsch_vars_cntl[eNb_id]->rxdataF_ext    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
@@ -344,6 +347,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 	ue_dlsch_vars_cntl[eNb_id]->dl_ch_magb[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
     ue_dlsch_vars_cntl[eNb_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
   
+    ue_dlsch_vars_cntl[eNb_id]->llr128 = (short **)malloc16(sizeof(short **));
 
    ue_pdcch_vars[eNb_id]->rxdataF_ext    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
@@ -393,6 +397,36 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 #ifndef NO_UL_REF 
   generate_ul_ref_sigs();
 #endif
+
+
+  if (phy_vars_ue->is_secondary_ue) {
+      phy_vars_ue->ul_precoder_S_UE = (int **)malloc16(4*sizeof(int*));
+      if (phy_vars_ue->ul_precoder_S_UE) {
+#ifdef DEBUG_PHY
+	msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE allocated at %p\n",phy_vars_ue->ul_precoder_S_UE);
+#endif
+      }
+      else {
+	msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE not allocated\n");
+	return(-1);
+      }
+      
+      for (j=0; j<2; j++) { //phy_vars_ue->lte_frame_parms.nb_antennas_tx
+	phy_vars_ue->ul_precoder_S_UE[j] = (int *)malloc16(2*sizeof(int)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size)); // repeated format (hence the '2*')
+	if (phy_vars_ue->ul_precoder_S_UE[j]) {
+#ifdef DEBUG_PHY
+	  msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE[%d] allocated at %p\n",j,
+	      phy_vars_ue->ul_precoder_S_UE[j]);
+#endif
+	  memset(phy_vars_ue->ul_precoder_S_UE[j],0,2*sizeof(int)*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size));
+	}
+	else {
+	  msg("[openair][SECSYS_PHY][INIT] phy_vars_ue->ul_precoder_S_UE[%d] not allocated\n",j);
+	  return(-1);
+	}
+      } //for(j=...nb_antennas_tx
+  }
+
   return(0);
 }
 

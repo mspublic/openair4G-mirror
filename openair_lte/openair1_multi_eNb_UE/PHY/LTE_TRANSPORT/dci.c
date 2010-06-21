@@ -855,9 +855,10 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
 	     unsigned char n_pdcch_symbols,
-	     MIMO_mode_t mimo_mode) {
+	     MIMO_mode_t mimo_mode,
+	     unsigned char is_secondary_ue) {
 
-  unsigned char log2_maxh,aatx,aarx;
+  unsigned char log2_maxh,aatx,aarx,eNb_id_i=eNb_id+1;//add 1 to eNb_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNb are shifted by 1
   int avgs,s;
 
   for (s=1;s<1+n_pdcch_symbols;s++) {
@@ -870,13 +871,27 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			     frame_parms);
     }
     else {
-      
-      pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+      if (is_secondary_ue) {
+	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				 lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
+			       lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
+			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
+			       s,
+			       frame_parms);
+	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				 lte_ue_common_vars->dl_ch_estimates[eNb_id_i - 1],//subtract 1 to eNb_id_i to compensate for the non-shifted pilots from the PeNb
+				 &lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[2],//shift by two to simulate transmission from a second antenna
+				 &lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[2],//shift by two to simulate transmission from a second antenna
+				 s,
+				 frame_parms);
+      } else {
+	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 			       lte_ue_common_vars->dl_ch_estimates[eNb_id],
 			       lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
 			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 			       s,
 			       frame_parms);
+      }
     }
   }
   pdcch_channel_level(lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,

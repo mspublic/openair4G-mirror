@@ -86,6 +86,8 @@ void multipath_channel(struct complex **ch,
       }  // j
       rx_sig_re[ii][i] = rx_tmp.r*path_loss;
       rx_sig_im[ii][i] = rx_tmp.i*path_loss;
+      //rx_sig_re[ii][i] = sqrt(.5)*(tx_sig_re[0][i] + tx_sig_re[1][i]);
+      //rx_sig_im[ii][i] = sqrt(.5)*(tx_sig_im[0][i] + tx_sig_im[1][i]);
       
     } // ii
   } // i

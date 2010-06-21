@@ -125,6 +125,10 @@ typedef struct
   LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX][2];
   LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX];
   LTE_eNb_DLSCH_t  *dlsch_eNb_cntl;
+  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
+
+  char dlsch_eNb_active;
+  char dlsch_eNb_cntl_active;
 
   unsigned char    is_secondary_eNb; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
@@ -160,9 +164,14 @@ typedef struct
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_cntl;
 
+  char dlsch_ue_active;
+  char dlsch_ue_cntl_active;
+  int dlsch_errors, dlsch_cntl_errors, dci_errors, turbo_iterations, turbo_cntl_iterations;
+
   unsigned char    is_secondary_ue; // primary by default
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
+  unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
 
   /// hold the precoder for NULL beam to the primary eNb
   int **ul_precoder_S_UE;

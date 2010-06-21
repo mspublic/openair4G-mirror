@@ -284,7 +284,7 @@ typedef struct {
 #else //OPENAIR_LTE
 
 #define NUMBER_OF_eNB_MAX 3
-#define NUMBER_OF_UE_MAX 2
+#define NUMBER_OF_UE_MAX 3
 #define NUMBER_OF_SUBBANDS 7
 
 typedef struct
@@ -319,6 +319,7 @@ typedef struct
   int            subband_pmi_im[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS][NB_ANTENNAS_RX]; ///Subband PMI for each RX antenna
   char           selected_rx_antennas[NUMBER_OF_eNB_MAX][NUMBER_OF_SUBBANDS];         /// chosen RX antennas (1=Rx antenna 1, 2=Rx antenna 2, 3=both Rx antennas)
   unsigned char  rank[NUMBER_OF_eNB_MAX];                                             /// Wideband Rank indication
+  short          dlsch_errors;                                                        /// DLSCH error counter
 
 } PHY_MEASUREMENTS;
 

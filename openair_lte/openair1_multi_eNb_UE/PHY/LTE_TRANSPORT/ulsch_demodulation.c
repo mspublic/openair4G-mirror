@@ -562,14 +562,14 @@ int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		     ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
       break;
     case 4 :
-      dlsch_16qam_llr(frame_parms,
+      ulsch_16qam_llr(frame_parms,
 		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
 		      l,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
       break;
     case 6 :
-      dlsch_64qam_llr(frame_parms,
+      ulsch_64qam_llr(frame_parms,
 		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],

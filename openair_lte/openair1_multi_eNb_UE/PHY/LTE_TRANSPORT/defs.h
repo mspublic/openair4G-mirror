@@ -36,7 +36,7 @@
 #define SI_RNTI 0xffff 
 #define RA_RNTI 0xfffe
 #define P_RNTI  0xfffd
-#define C_RNTI  0x1234
+//#define C_RNTI  0x1234
 
 #define PMI_2A_11 0
 #define PMI_2A_1m1 1
@@ -376,6 +376,8 @@ typedef struct {
   unsigned char rank[NUMBER_OF_UE_MAX];
   unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id of connected UEs
   unsigned char UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
+  UE_MODE_t mode[NUMBER_OF_UE_MAX];
+  unsigned char sector[NUMBER_OF_UE_MAX];
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -637,7 +639,8 @@ void qpsk_qpsk(short *stream0_in,
     int **rho_i,
     short *dlsch_llr,
     unsigned char symbol,
-    unsigned short nb_rb)
+    unsigned short nb_rb,
+    short **llr128p)
 
 \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
 @param frame_parms Frame descriptor structure
@@ -647,6 +650,7 @@ void qpsk_qpsk(short *stream0_in,
 @param dlsch_llr llr output
 @param symbol OFDM symbol index in sub-frame
 @param nb_rb number of RBs for this allocation
+@param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
 void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -655,13 +659,15 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rho_i,
 			 short *dlsch_llr,
 			 unsigned char symbol,
-			 unsigned short nb_rb);
+			 unsigned short nb_rb,
+			 short **llr128p);
 
 /** \fn dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
 		    short *dlsch_llr,
 		    unsigned char symbol,
-		    unsigned short nb_rb)
+		    unsigned short nb_rb,
+		    short **llr128p)
 
 \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
 @param frame_parms Frame descriptor structure
@@ -669,19 +675,22 @@ void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 @param dlsch_llr llr output
 @param symbol OFDM symbol index in sub-frame
 @param nb_rb number of RBs for this allocation
+@param llr128p pointer to pointer to symbol in dlsch_llr
 */
 int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
 		    short *dlsch_llr,
 		    unsigned char symbol,
-		    unsigned short nb_rb);
+		    unsigned short nb_rb,
+		    short **llr128p);
 
 /** \fn dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        int **rxdataF_comp,
 		       short *dlsch_llr,
 		       int **dl_ch_mag,
 		       unsigned char symbol,
-		       unsigned short nb_rb)
+		       unsigned short nb_rb,
+		       short **llr128p)
 \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
 @param frame_parms Frame descriptor structure
 @param rxdataF_comp Compensated channel output
@@ -689,6 +698,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation and weighted for mid-point in 16QAM constellation
 @param symbol OFDM symbol index in sub-frame
 @param nb_rb number of RBs for this allocation
+@param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -696,7 +706,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     short *dlsch_llr,
 		     int **dl_ch_mag,
 		     unsigned char symbol,
-		     unsigned short nb_rb);
+		     unsigned short nb_rb,
+		     short **llr128p);
 
 /** \fn void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        int **rxdataF_comp,
@@ -981,6 +992,7 @@ unsigned int dlsch_decoding(short *dlsch_llr,
 @param symbol Symbol on which to act (within sub-frame)
 @param dual_stream_UE Flag to indicate dual-stream interference cancellation
 @param UE PHY_measurements
+@param is_secondary_ue Flag to indicate wether it should follow special receiver logic
 */
 int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
@@ -990,14 +1002,16 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH_t **dlsch_ue,
 	     unsigned char symbol,
 	     unsigned char dual_stream_UE,
-	     PHY_MEASUREMENTS *phy_measurements);
+	     PHY_MEASUREMENTS *phy_measurements,
+	     unsigned char is_secondary_ue);
 
 int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
 	     unsigned char n_pdcch_symbols,
-	     MIMO_mode_t mimo_mode);
+	     MIMO_mode_t mimo_mode,
+	     unsigned char is_secondary_ue);
 
 
 int rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,

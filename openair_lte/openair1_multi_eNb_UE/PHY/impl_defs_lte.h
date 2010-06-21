@@ -110,6 +110,8 @@ typedef struct {
   int **rho;
   int **rho_i;
   short *llr[2];
+  unsigned char log2_maxh;
+  short **llr128;  // to be type casted locally
   //unsigned int *rb_alloc;
   //unsigned char Qm[2];
   //MIMO_mode_t mimo_mode;
@@ -122,8 +124,11 @@ typedef struct {
   unsigned short *llr;
   unsigned short *wbar;
   char *e_rx;
-  unsigned int dci_errors;          /// Total number of PDU errors
+  unsigned short crnti;
+  unsigned int dci_errors;          /// Total number of PDU errors (diagnostic mode)
   unsigned int dci_received;        /// Total number of PDU received
+  unsigned int dci_false;           /// Total number of DCI False detection (diagnostic mode)
+  unsigned int dci_missed;          /// Total number of DCI (diagnostic mode)
 } LTE_UE_PDCCH;
 
 typedef struct {
