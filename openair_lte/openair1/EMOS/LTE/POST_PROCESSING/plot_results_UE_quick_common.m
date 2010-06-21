@@ -36,7 +36,7 @@ good = (rx_rssi_dBm_cat<40 & rx_rssi_dBm_cat>-120);
     
 plot(timebase(good(:,1)),rx_rssi_dBm_cat(good(:,1),1),'x')
 hold on
-plot(timebase(good(:,1)),n0_power_tot_dBm(good(:,1)),'g.')
+%plot(timebase(good(:,1)),n0_power_tot_dBm(good(:,1)),'g.')
 if (nomadic_flag)
     hold on
     nomadic.good = (nomadic.rx_rssi_dBm_cat<40 & nomadic.rx_rssi_dBm_cat>-120);
@@ -48,6 +48,7 @@ xlabel('Time [sec]')
 ylabel('RX RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 
+%%
 h_fig = figure(3);
 hold off
 plot_gps_coordinates(mm,gps_lon_cat(good(:,1)), gps_lat_cat(good(:,1)),...

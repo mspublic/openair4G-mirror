@@ -4,19 +4,18 @@
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '~/EMOS/data/';  
-d = dir(fullfile(root_path, '*mode1_parcours1'));
-dir_names = {d.name};
+% root_path = '~/EMOS/data/';  
+% d = dir(fullfile(root_path, '*mode1_parcours1'));
+% dir_names = {d.name};
 
-mm=imread('maps/cordes.png');
 decimation = 100;
 
 results_UE = [];
 results_UE_nomadic = [];
 
 for i=1:length(dir_names)
-    if exist(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'),'file')
-        nomadic = load(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'));
+    if exist(fullfile(root_path,dir_names{i},'results_UE_new.mat'),'file')
+        nomadic = load(fullfile(root_path,dir_names{i},'results_UE_new.mat'));
         results_UE_nomadic = cat(2,results_UE_nomadic,nomadic.minestimates);
     end
 end
@@ -71,7 +70,8 @@ for i=1:length(results_UE_nomadic)
     for m=[1,2,6]
         throughput_mean(i,idx) = mean((100-results_UE_nomadic(i).dlsch_fer(UE_connected & good & mimo_mode==m)).*...
             results_UE_nomadic(i).tbs_cat(UE_connected & good & mimo_mode==m)*6);
-        fprintf(fid,'%d; %d; %s; %f; %f; %f; %f\n',i, m, results_UE_nomadic(i).filename, rx_rssi_dBm_mean(i), throughput_mean(i,idx), ...
+        fprintf(fid,'%d; %d; %s; %f; %f; %d; %f; %f\n',i, m, results_UE_nomadic(i).filename, rx_rssi_dBm_mean(i), throughput_mean(i,idx), ...
+            sum(UE_connected & good & mimo_mode==m), ...
             mean([results_UE_nomadic(i).gps_data.latitude]),mean([results_UE_nomadic(i).gps_data.longitude]));
         idx=idx+1;
     end

@@ -36,7 +36,8 @@ for file_idx = start_idx:length(filenames)
     end
 
     [H, H_fq, estimates, gps_data, NFrames(file_idx)] = load_estimates_lte(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
-    start_time(file_idx) = datenum(file(18:32),'yyyymmddTHHMMSS');
+    time_idx = regexp(file,'\d{8}T\d{6}');
+    start_time(file_idx) = datenum(file(time_idx:end),'yyyymmddTHHMMSS');
 
 %%
     phy_measurements = repmat(phy_measurements_struct,1,NFrames(file_idx)/decimation);

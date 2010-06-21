@@ -5,12 +5,12 @@
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '~/EMOS/data/';  
-d = dir(fullfile(root_path, '*mode2_parcours1*'));
+root_path = 'F:\EMOS\data\';  
+d = dir(fullfile(root_path, '*mode2_parcours*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '~/EMOS/data/results_mode2/';
+pathname = 'F:\EMOS\data\results_mode2\';
 
 mm=imread('maps/cordes.png');
 decimation = 100;

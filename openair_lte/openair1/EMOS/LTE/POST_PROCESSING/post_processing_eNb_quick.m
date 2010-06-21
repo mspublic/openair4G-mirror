@@ -2,7 +2,7 @@ if ~exist(pathname,'dir')
     error('Path does not exist!')
 end
 
-d = dir([pathname 'data_term1*.EMOS']);
+d = dir(fullfile(pathname, 'data_term1*.EMOS'));
 filenames = {d.name};
 filedates = {d.date};
 [filedates,idx] = sort(filedates);
@@ -61,7 +61,8 @@ for file_idx = start_idx:length(filenames)
     end
 
     [H, H_fq, estimates, gps_data, NFrames(file_idx)] = load_estimates_lte(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
-    start_time(file_idx) = datenum(file(18:32),'yyyymmddTHHMMSS');
+    time_idx = regexp(file,'\d{8}T\d{6}');
+    start_time(file_idx) = datenum(file(time_idx:end),'yyyymmddTHHMMSS');
 
 %%
     phy_measurements = repmat(phy_measurements_eNb_struct,NFrames(file_idx)/decimation,3);
@@ -81,31 +82,31 @@ for file_idx = start_idx:length(filenames)
         end
     end
     
-    [Rate_4Qam_1RX,Rate_16Qam_1RX,Rate_64Qam_1RX, siso_SNR_1RX]  = calc_rps_SISO_UL(estimates, 1);
-    [Rate_4Qam_2RX,Rate_16Qam_2RX,Rate_64Qam_2RX, siso_SNR_2RX]  = calc_rps_SISO_UL(estimates, 2);
+    [Rate_4Qam_1RX,Rate_16Qam_1RX,Rate_64Qam_1RX, siso_SNR_1RX]  = calc_rps_SISO_UL(estimates, 1, 1);
+    [Rate_4Qam_2RX,Rate_16Qam_2RX,Rate_64Qam_2RX, siso_SNR_2RX]  = calc_rps_SISO_UL(estimates, 2, 1);
 
     phy_measurements_cat = [phy_measurements_cat; phy_measurements];
     eNb_UE_stats_cat = [eNb_UE_stats_cat eNb_UE_stats];
     timestamp_cat = [timestamp_cat [estimates.timestamp]];
     frame_tx_cat = [frame_tx_cat [estimates.frame_tx]];
     ulsch_errors_cat = [ulsch_errors_cat [estimates.ulsch_errors]];
-    mcs_cat = [mcs_cat; mcs];
-    tbs_cat = [tbs_cat; tbs];
+    mcs_cat = [mcs_cat mcs];
+    tbs_cat = [tbs_cat tbs];
     rx_N0_dBm_cat = [rx_N0_dBm_cat; rx_N0_dBm];
     %rx_N0_subband_dBm_cat = cat(1,rx_N0_subband_dBm_cat,rx_N0_subband_dBm);
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
     gps_time_cat = [gps_time_cat [gps_data.timestamp]];
     
-    Rate_4Qam_1RX_cat = [Rate_4Qam_1RX_cat Rate_4Qam_1RX];
-    Rate_16Qam_1RX_cat = [Rate_16Qam_1RX_cat Rate_16Qam_1RX];
-    Rate_64Qam_1RX_cat = [Rate_64Qam_1RX_cat Rate_64Qam_1RX];
-    siso_SNR_1RX_cat = [siso_SNR_1RX_cat siso_SNR_1RX];
+    Rate_4Qam_1RX_cat = [Rate_4Qam_1RX_cat; Rate_4Qam_1RX];
+    Rate_16Qam_1RX_cat = [Rate_16Qam_1RX_cat; Rate_16Qam_1RX];
+    Rate_64Qam_1RX_cat = [Rate_64Qam_1RX_cat; Rate_64Qam_1RX];
+    siso_SNR_1RX_cat = [siso_SNR_1RX_cat; siso_SNR_1RX];
 
-    Rate_4Qam_2RX_cat = [Rate_4Qam_2RX_cat Rate_4Qam_2RX];
-    Rate_16Qam_2RX_cat = [Rate_16Qam_2RX_cat Rate_16Qam_2RX];
-    Rate_64Qam_2RX_cat = [Rate_64Qam_2RX_cat Rate_64Qam_2RX];
-    siso_SNR_2RX_cat = [siso_SNR_2RX_cat siso_SNR_2RX];
+    Rate_4Qam_2RX_cat = [Rate_4Qam_2RX_cat; Rate_4Qam_2RX];
+    Rate_16Qam_2RX_cat = [Rate_16Qam_2RX_cat; Rate_16Qam_2RX];
+    Rate_64Qam_2RX_cat = [Rate_64Qam_2RX_cat; Rate_64Qam_2RX];
+    siso_SNR_2RX_cat = [siso_SNR_2RX_cat; siso_SNR_2RX];
     
     
     save(fullfile(pathname,'results_eNB.mat'),'phy_measurements_cat',...

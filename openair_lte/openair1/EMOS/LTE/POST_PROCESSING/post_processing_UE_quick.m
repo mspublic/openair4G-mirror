@@ -2,7 +2,7 @@ if ~exist(pathname,'dir')
     error('Path does not exist!')
 end
 
-d = dir([pathname 'data_term3*.EMOS']);
+d = dir(fullfile(pathname, 'data_term3*.EMOS'));
 filenames = {d.name};
 filedates = {d.date};
 [filedates,idx] = sort(filedates);
