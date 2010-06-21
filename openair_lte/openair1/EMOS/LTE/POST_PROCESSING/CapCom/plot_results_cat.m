@@ -6,26 +6,55 @@
 
 %%
 %load '/homes/latif/test_devel/openair1/EMOS/LTE/POST_PROCESSING/CapCom/Parcour2_Part2_Results/results_UE.mat';
-mm=imread('cordes.png');
-plotwrtdistanceCalc;
+%mm=imread('cordes.png');
+%plotwrtdistanceCalc;
+in = 0;
+thr_alamouti_1Rx = max(throughput.rateps_alamouti_64Qam_eNB1_1Rx, max(throughput.rateps_alamouti_16Qam_eNB1_1Rx,throughput.rateps_alamouti_4Qam_eNB1_1Rx));
+thr_alamouti_2Rx = max(throughput.rateps_alamouti_64Qam_eNB1_2Rx, max(throughput.rateps_alamouti_16Qam_eNB1_2Rx,throughput.rateps_alamouti_4Qam_eNB1_2Rx));
+thr_siso_1Rx = max(throughput.rateps_SISO_64Qam_eNB1_1Rx, max(throughput.rateps_SISO_16Qam_eNB1_1Rx,throughput.rateps_SISO_4Qam_eNB1_1Rx));
+thr_siso_2Rx = max(throughput.rateps_SISO_64Qam_eNB1_2Rx, max(throughput.rateps_SISO_16Qam_eNB1_2Rx,throughput.rateps_SISO_4Qam_eNB1_2Rx));
+thr_bmfr_maxq_1Rx = max(throughput.rateps_beamforming_64Qam_eNB1_1Rx_maxq, max(throughput.rateps_beamforming_16Qam_eNB1_1Rx_maxq,throughput.rateps_beamforming_4Qam_eNB1_1Rx_maxq));
+thr_bmfr_maxq_2Rx = max(throughput.rateps_beamforming_64Qam_eNB1_2Rx_maxq, max(throughput.rateps_beamforming_16Qam_eNB1_2Rx_maxq,throughput.rateps_beamforming_4Qam_eNB1_2Rx_maxq));
+thr_bmfr_feedbackq_2Rx = max(throughput.rateps_beamforming_64Qam_eNB1_2Rx_feedbackq, max(throughput.rateps_beamforming_16Qam_eNB1_2Rx_feedbackq,throughput.rateps_beamforming_4Qam_eNB1_2Rx_feedbackq));
+thr_bmfr_feedbackq_1Rx = max(throughput.rateps_beamforming_64Qam_eNB1_1Rx_feedbackq, max(throughput.rateps_beamforming_16Qam_eNB1_1Rx_feedbackq,throughput.rateps_beamforming_4Qam_eNB1_1Rx_feedbackq));
 
-%%
+
+UE_connected = all(reshape([minestimates.UE_mode]==3,100,[]),1);
+thr_alamouti_1Rx(~UE_connected) = 0;
+thr_alamouti_2Rx(~UE_connected) = 0;
+thr_siso_1Rx(~UE_connected) = 0;
+thr_siso_2Rx(~UE_connected) = 0;
+thr_bmfr_maxq_1Rx(~UE_connected) = 0;
+thr_bmfr_maxq_2Rx(~UE_connected) = 0;
+thr_bmfr_feedbackq_1Rx(~UE_connected) = 0;
+thr_bmfr_feedbackq_2Rx(~UE_connected) = 0;
 in = in+1;    
 h_fig = figure(in);
-title('SISO');
-xlabel('Time[Seconds]');
-ylabel('Throughput');
+title('Effective Throughputs for 1RX');
+xlabel('Speed[Meters/Second]');
+ylabel('Throughput[Bits/sec]');
 hold on;
-plot(round(double(timestamp_cat(1:100:end))/1e9),rps_SISO_4Qam_eNB1_cat,'bx');
-plot(round(double(timestamp_cat(1:100:end))/1e9),rps_SISO_16Qam_eNB1_cat,'go');
-plot(round(double(timestamp_cat(1:100:end))/1e9),rps_SISO_64Qam_eNB1_cat,'rd');
-hold off;
-legend('QPSK','16QAM','64QAM')
+plot(gps_data.speed, thr_siso_1Rx,  'bx');
+plot(gps_data.speed,thr_alamouti_1Rx,'go');
+plot(gps_data.speed,thr_bmfr_maxq_1Rx,'rd');
+%plot(thr_bmfr_feedbackq_1Rx,'y*');
+legend('SISO','Alamouti','Optimal Beamforming')
 
 in = in+1;    
 h_fig = figure(in);
-[gps_x, gps_y] = plot_gps_coordinates(mm, gps_long_cat, gps_lat_cat, rps_SISO_16Qam_eNB1_cat);
-title('SISO Throughput 16QAM');
+title('Effective Throughputs for 2RX');
+xlabel('Speed[Meters/Second]');
+ylabel('Throughput[Bits/sec]');
+hold on;
+plot(gps_data.speed, thr_siso_2Rx,  'bx');
+plot(gps_data.speed,thr_alamouti_2Rx,'go');
+plot(gps_data.speed,thr_bmfr_maxq_2Rx,'rd');
+%plot(thr_bmfr_feedbackq_2Rx,'y*');
+legend('SISO','Alamouti','Optimal Beamforming')
+% in = in+1;    
+% h_fig = figure(in);
+% [gps_x, gps_y] = plot_gps_coordinates(mm, gps_long_cat, gps_lat_cat, rps_SISO_16Qam_eNB1_cat);
+% title('SISO Throughput 16QAM');
 
 
 %%

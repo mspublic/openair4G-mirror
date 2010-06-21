@@ -31,11 +31,17 @@ for dir_idx=1:1:length(dd)
                 
                 %[H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_1(filename,NFrames_max,decimation,is_eNb);
                 
-                [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_1(fullfile(fpath,filenames{file_idx}),NFrames_max,decimation,is_eNb);             
-                save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx');
+                % use try-catch here to skip the file if the load_estimates
+                % function returns an error
+                [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR, K_fac] = load_estimates_lte_1(fullfile(fpath,filenames{file_idx}),NFrames_max,decimation,is_eNb);             
+                save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx', 'K_fac');
+                
+                % We need to call the concatenate script here
                 
             end
         end
         
     end
 end
+%then at the end we need to call the plot concatenate results
+
