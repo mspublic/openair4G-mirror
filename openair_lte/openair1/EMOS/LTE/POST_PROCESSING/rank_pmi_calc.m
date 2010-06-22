@@ -1,10 +1,9 @@
-load 'estimates.mat'
+load 'estimates1.mat'
 c = [];
 pmi1 = [];
 pmi2 = [];
 lat = [];
 lon = [];
-rank_Ind = [];
 %%
 for b = 1:1:length(estimates)
     
@@ -30,8 +29,13 @@ for b = 1:1:length(estimates)
         
         
     end
+    if sum(ran==1)>=4
+   
+    rank_Ind(b) = 1;
+    else 
+        rank_Ind(b) = 0;
+    end
     
-    rank_Ind = [rank_Ind ran];
     pmi1 = [pmi1 qq1];
     pmi2 = [pmi2 qq2];
 end
@@ -39,11 +43,12 @@ end
 %%
 mm=imread('maps/cordes.png');
 
+pmi1 = reshape(pmi1,7,[]);
 figure
 title('PMI');
-plot_gps_coordinates(mm, lon,lat,pmi1);
+plot_gps_coordinates(mm, lon,lat,pmi1(1,:));
 
-
+%%
 [I] = find(c);
 
 figure
