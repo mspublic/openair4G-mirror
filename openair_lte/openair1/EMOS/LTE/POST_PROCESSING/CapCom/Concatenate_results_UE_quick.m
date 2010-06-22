@@ -4,7 +4,7 @@
 %clc;
 %mm=imread('maps/cordes.png');
 %pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/20100510_mode2_parcours1_part1/';
-d = dir(fullfile(pathname, '*.mat'));
+d = dir(fullfile(pathname, 'data_term3*.mat'));
 filenames = {d.name};
 
 gps_data_cat = [];

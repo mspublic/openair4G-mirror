@@ -1,4 +1,4 @@
-function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, NFrames_max, decimation, is_eNb)
+function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, NFrames_max, decimation, is_eNb, version)
 % 
 % EMOS Single User Import Filter
 %
@@ -25,6 +25,9 @@ function [H, H_fq, estimates, gps_data, NFrames] = load_estimates_lte(filename, 
 %   Date      Version   Comment
 %   20100317  0.1       Created based on load_estimates
 
+if nargin < 5
+    version = Inf;
+end
 if nargin < 4
     is_eNb = 0;
 end
@@ -59,6 +62,11 @@ else
 end
 
 struct_template;
+
+if (version < 1)
+    fifo_dump_emos_struct_eNb = fifo_dump_emos_struct_eNb_old;
+    fifo_dump_emos_struct_eNb_a = fifo_dump_emos_struct_eNb_old_a;
+end
 
 gps_fix_t_size = gps_data_struct_a.size;
 fifo_dump_emos_UE_size = fifo_dump_emos_struct_UE_a.size;
