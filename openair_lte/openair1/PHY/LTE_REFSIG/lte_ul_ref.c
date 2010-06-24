@@ -103,10 +103,17 @@ void generate_ul_ref_sigs_rx(void) {
 	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)(floor(32767*sin(M_PI*phase)));
 	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short)(floor(32767*cos(M_PI*phase)));
 #else
+#ifndef OFDMA_ULSCH
+	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(short)(floor(32767*cos(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =-(short)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)(floor(32767*sin(M_PI*phase)));
+	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short)(floor(32767*cos(M_PI*phase)));
+#else
 	  ul_ref_sigs_rx[u][v][Msc_RS][n<<2]     =(short) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	  ul_ref_sigs_rx[u][v][Msc_RS][1+(n<<2)] =(short)((-sin(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	  ul_ref_sigs_rx[u][v][Msc_RS][2+(n<<2)] =(short)((-sin(M_PI*phase)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
 	  ul_ref_sigs_rx[u][v][Msc_RS][3+(n<<2)] =(short) ((cos(M_PI*phase)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+#endif
 #endif
 #ifdef MAIN
 	  if (Msc_RS<5)
@@ -131,10 +138,17 @@ void generate_ul_ref_sigs_rx(void) {
 	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
 	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
 #else
+#ifndef OFDMA_ULSCH
+	ul_ref_sigs_rx[u][0][0][n<<2]    = (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref12[(u*12) + n]/4)));
+	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref12[(u*12) + n]/4)));
+#else
 	ul_ref_sigs_rx[u][0][0][n<<2]    = (short)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][0][1+(n<<2)]= (short)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][0][2+(n<<2)]= (short)((sin(M_PI*ref12[(u*12) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][0][3+(n<<2)]= (short)((cos(M_PI*ref12[(u*12) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+#endif
 #endif
       }
 
@@ -150,10 +164,17 @@ void generate_ul_ref_sigs_rx(void) {
 	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
 	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
 #else
+#ifndef OFDMA_ULSCH
+	ul_ref_sigs_rx[u][0][1][n<<2]    = (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][2+(n<<2)]=-(short)(floor(32767*sin(M_PI*ref24[(u*24) + n]/4)));
+	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)(floor(32767*cos(M_PI*ref24[(u*24) + n]/4)));
+#else
 	ul_ref_sigs_rx[u][0][1][n<<2]    = (short)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][1][1+(n<<2)]= (short)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][1][2+(n<<2)]= (short)((sin(M_PI*ref24[(u*24) + n]/4)>=0) ? -ONE_OVER_SQRT2_Q15 : ONE_OVER_SQRT2_Q15);
 	ul_ref_sigs_rx[u][0][1][3+(n<<2)]= (short)((cos(M_PI*ref24[(u*24) + n]/4)>=0) ? ONE_OVER_SQRT2_Q15 : -ONE_OVER_SQRT2_Q15);
+#endif
 #endif
       }
       

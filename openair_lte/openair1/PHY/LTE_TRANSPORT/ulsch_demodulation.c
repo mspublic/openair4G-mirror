@@ -649,6 +649,7 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
 }
 int avgU[2];
 
+int ulsch_power[2];
 
 int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     LTE_eNB_ULSCH *eNB_ulsch_vars,
@@ -659,7 +660,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     LTE_eNb_ULSCH_t **ulsch,
 	     unsigned char rag_flag) {
 
-  int ulsch_power[2];
+
 
 
   unsigned int l,i;
@@ -670,7 +671,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
   unsigned short rx_power_correction;
 
-  //  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+    msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
@@ -680,13 +681,13 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
           
-    /*    
+        
     msg("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",rag_flag,l,
 	ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
 	ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
 	eNB_common_vars->rxdataF,
     	eNB_ulsch_vars->rxdataF_ext);
-    */
+   
     
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
@@ -766,11 +767,11 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     // Equalization on MRC here
         
     // Inverse-Transform equalized outputs
-  //  printf("Doing IDFTs\n");
+  msg("Doing IDFTs\n");
   lte_idft(frame_parms,
 	   eNB_ulsch_vars->rxdataF_comp[eNb_id][0],
 	   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
-    
+  msg("Done\n");  
 
 #endif
 

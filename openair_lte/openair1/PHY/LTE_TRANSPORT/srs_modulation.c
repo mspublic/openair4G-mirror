@@ -197,6 +197,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
       carrier_pos=0;
   }
 #endif
+#endif
   //  write_output("srs_tx.m","srstx",&txdataF[symbol_offset],512,1,1);
   return(0);
 }

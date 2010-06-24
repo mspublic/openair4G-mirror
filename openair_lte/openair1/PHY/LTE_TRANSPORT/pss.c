@@ -115,7 +115,6 @@ int generate_pss(mod_sym_t **txdataF,
     ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k) + 1] = 
       (amp * primary_sync[2*m+1]) >> 15;
-
 #endif
 #else
     ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
@@ -127,8 +126,8 @@ int generate_pss(mod_sym_t **txdataF,
 #endif	
     k+=1;
 #ifdef IFFT_FPGA
-#ifndef RAW_IFFT 
-   if (k >= frame_parms->N_RB_DL*12) 
+#ifndef RAW_IFFT
+    if (k >= frame_parms->N_RB_DL*12) 
       k-=frame_parms->N_RB_DL*12;
 #else
     if (k >= frame_parms->ofdm_symbol_size) {

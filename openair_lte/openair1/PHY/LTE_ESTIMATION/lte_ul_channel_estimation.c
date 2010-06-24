@@ -47,6 +47,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
+      //      msg("Componentwise prod aa %d, symbol_offset %d\n",aa,symbol_offset);
       mult_cpx_vector_norep2((short*) &rxdataF_ext[aa][symbol_offset<<1],
 			     (short*) ul_ref_sigs_rx[0][0][Msc_RS_idx],
 			     (short*) &ul_ch_estimates[aa][symbol_offset],

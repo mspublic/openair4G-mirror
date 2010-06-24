@@ -50,7 +50,11 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
       // Allocate memory for TX DMA Buffer
       
 #ifdef IFFT_FPGA
+#ifndef RAW_IFFT
       tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
+#else
+      tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES_NO_PREFIX;
+#endif
 #else
       tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
 #endif
