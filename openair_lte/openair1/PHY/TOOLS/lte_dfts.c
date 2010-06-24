@@ -9,8 +9,9 @@
 
 #include "emmintrin.h"
 #include "xmmintrin.h"
+
 #include "pmmintrin.h"
-#include "smmintrin.h"
+#include "tmmintrin.h"
 
 static short conjugatedft[8] __attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
@@ -172,7 +173,7 @@ static __m128i tmpre,tmpim;
 
 
 
-
+/*
 #define  bfly4(x0,x1,x2,x3,y0,y1,y2,y3,tw1,tw2,tw3)   cmult(*(x0),*(W0),&x0r_2,&x0i_2);\
   cmult(*(x1),*(tw1),&x1r_2,&x1i_2);\
   cmult(*(x2),*(tw2),&x2r_2,&x2i_2);\
@@ -189,7 +190,24 @@ static __m128i tmpre,tmpim;
   dy3r = _mm_subs_epi16(x0r_2,_mm_adds_epi16(x1i_2,_mm_subs_epi16(x2r_2,x3i_2)));\
   dy3i = _mm_adds_epi16(x0i_2,_mm_subs_epi16(x1r_2,_mm_adds_epi16(x2i_2,x3r_2)));\
   *(y3) = cpack(dy3r,dy3i);
+  */
 
+#define  bfly4(x0,x1,x2,x3,y0,y1,y2,y3,tw1,tw2,tw3)   cmult(*(x0),*(W0),&x0r_2,&x0i_2);\
+  cmult(*(x1),*(tw1),&x1r_2,&x1i_2);\
+  cmult(*(x2),*(tw2),&x2r_2,&x2i_2);\
+  cmult(*(x3),*(tw3),&x3r_2,&x3i_2);\
+  dy0r = _mm_add_epi32(x0r_2,_mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2)));\
+  dy0i = _mm_add_epi32(x0i_2,_mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2)));\
+  *(y0)  = cpack(dy0r,dy0i);\
+  dy1r = _mm_add_epi32(x0r_2,_mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2)));\
+  dy1i = _mm_sub_epi32(x0i_2,_mm_add_epi32(x1r_2,_mm_sub_epi32(x2i_2,x3r_2)));\
+  *(y1)  = cpack(dy1r,dy1i);\
+  dy2r = _mm_sub_epi32(x0r_2,_mm_sub_epi32(x1r_2,_mm_sub_epi32(x2r_2,x3r_2)));\
+  dy2i = _mm_sub_epi32(x0i_2,_mm_sub_epi32(x1i_2,_mm_sub_epi32(x2i_2,x3i_2)));\
+  *(y2)  = cpack(dy2r,dy2i);\
+  dy3r = _mm_sub_epi32(x0r_2,_mm_add_epi32(x1i_2,_mm_sub_epi32(x2r_2,x3i_2)));\
+  dy3i = _mm_add_epi32(x0i_2,_mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2)));\
+  *(y3) = cpack(dy3r,dy3i);
 /*
 static inline void bfly4_tw1(__m128i *x0r, __m128i *x1r, __m128i *x2r, __m128i *x3r,
 		      __m128i *y0r, __m128i *y1r, __m128i *y2r, __m128i *y3r,

@@ -440,8 +440,8 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch0->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
 
-    if (dlsch0->harq_processes[harq_pid]->mcs>14) {
-      msg("dci_tools.c: mcs > 14 disabled for now\n");
+    if (dlsch0->harq_processes[harq_pid]->mcs>20) {
+      msg("dci_tools.c: mcs > 20 disabled for now\n");
       return(-1);
     }
 

@@ -16,3 +16,5 @@ extern unsigned char cs_ack_extended[4];
 
 
 extern unsigned char ue_power_offsets[25];
+
+extern unsigned short scfdma_amps[26];

@@ -49,6 +49,8 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     dft_in1[ip+2] =  d6[i];
     dft_in1[ip+3] =  d7[i];
     dft_in2[ip]   =  d8[i];
+    //    printf("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
+
     //    dft_in_re2[ip+1] =  d9[i];
     //    dft_in_re2[ip+2] =  d10[i];
   }
@@ -159,6 +161,8 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     z8[i]     = dft_out2[ip]; 
     //    z9[i]     = dft_out_re2[ip+1]; 
     //    z10[i]     = dft_out_re2[ip+2]; 
+    //    printf("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
+
   }
   //  printf("\n");
 }
@@ -172,9 +176,17 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      unsigned char rag_flag) {
 
 #ifdef IFFT_FPGA_UE
+#ifndef RAW_IFFT
   unsigned char qam64_table_offset = 0;
   unsigned char qam16_table_offset = 0;
-  unsigned char qpsk_table_offset = 0; 
+  unsigned char qpsk_table_offset = 0;
+#else
+  unsigned char qam64_table_offset_re = 0;
+  unsigned char qam64_table_offset_im = 0;
+  unsigned char qam16_table_offset_re = 0;
+  unsigned char qam16_table_offset_im = 0;
+  short gain_lin_QPSK;
+#endif 
 #else
   unsigned char qam64_table_offset_re = 0;
   unsigned char qam64_table_offset_im = 0;
@@ -231,7 +243,11 @@ void ulsch_modulation(mod_sym_t **txdataF,
   }
 
 #ifndef IFFT_FPGA_UE
-  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);
+#else
+#ifdef RAW_IFFT
+  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);
+#endif  
 #endif
 
   // Modulation
@@ -249,6 +265,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       //      if (i<Msc_PUSCH)
       //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
 #else
+#ifndef RAW_IFFT
       qpsk_table_offset = 1;
       if (ulsch->b_tilde[j] == 1)
 	qpsk_table_offset+=1;
@@ -256,6 +273,11 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	qpsk_table_offset+=2;
       
       ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
+#else
+      ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+      ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
+
+#endif
 #endif    
 
       break;
@@ -282,6 +304,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
       //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
 #else
+#ifndef RAW_IFFT
       qam16_table_offset = 5;
       if (ulsch->b_tilde[j] == 1)
 	qam16_table_offset+=2;
@@ -297,7 +320,27 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
       
       ulsch->d[i] = (mod_sym_t) qam16_table_offset;
+#else
+      qam16_table_offset_re = 0;
+      if (ulsch->b_tilde[j] == 1)
+	qam16_table_offset_re+=2;
+
+      if (ulsch->b_tilde[j+1] == 1)
+	qam16_table_offset_re+=1;
       
+      
+      qam16_table_offset_im = 0;
+      if (ulsch->b_tilde[j+2] == 1)
+	qam16_table_offset_im+=2;
+
+      if (ulsch->b_tilde[j+3] == 1)
+	qam16_table_offset_im+=1;
+
+      
+      ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+      ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+
+#endif      
 #endif
       
       break;
@@ -330,7 +373,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 
 #else
-      
+#ifndef RAW_IFFT      
       qam64_table_offset = 21;
       if (ulsch->b_tilde[j] == 1)
 	qam64_table_offset+=4;
@@ -354,7 +397,32 @@ void ulsch_modulation(mod_sym_t **txdataF,
       
       
       ulsch->d[i] = (mod_sym_t) qam64_table_offset;
+#else
+      qam64_table_offset_re = 0;
+      if (ulsch->b_tilde[j] == 1)
+	qam64_table_offset_re+=4;
       
+      if (ulsch->b_tilde[j+1] == 1)
+	qam64_table_offset_re+=2;
+      
+      if (ulsch->b_tilde[j+2] == 1)
+	qam64_table_offset_re+=1;
+      
+      qam64_table_offset_im = 0;
+      if (ulsch->b_tilde[j+3] == 1)
+	qam64_table_offset_im+=4;
+      
+      if (ulsch->b_tilde[j+4] == 1)
+	qam64_table_offset_im+=2;
+      
+      if (ulsch->b_tilde[j+5] == 1)
+	qam64_table_offset_im+=1;
+      
+      
+      ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+      ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+
+#endif      
 #endif //IFFT_FPGA_UE
       break;
 

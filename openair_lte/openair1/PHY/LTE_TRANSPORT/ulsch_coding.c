@@ -254,6 +254,11 @@ int ulsch_encoding(unsigned char *a,
     
   }
 
+  if (ulsch->harq_processes[harq_pid]->C == 0) {
+    msg("ulsch_coding.c : error, null segment\n");
+    return(-1);
+  }
+
   sumKr = 0;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     if (r<ulsch->harq_processes[harq_pid]->Cminus)

@@ -1127,12 +1127,12 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
 
-int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
-		      mod_sym_t *txdataF,
-		      short amp,
-		      unsigned int sub_frame_number,
-		      unsigned int first_rb,
-		      unsigned int nb_rb);
+int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
+		       mod_sym_t *txdataF,
+		       short amp,
+		       unsigned int sub_frame_number,
+		       unsigned int first_rb,
+		       unsigned int nb_rb);
 
 int compareints (const void * a, const void * b);
 
