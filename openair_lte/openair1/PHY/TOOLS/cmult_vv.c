@@ -1,3 +1,5 @@
+#include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "defs.h"
 #ifdef USER_MODE
 #include <stdio.h>
@@ -303,11 +305,14 @@ int mult_cpx_vector_norep(short *x1,
   return(0);
 }
 
+static __m128i norep2_tmp32 __attribute__ ((aligned(16)));
+static __m128i norep2_m0 __attribute__ ((aligned(16)));
+//static __m128i norep2_shift     __attribute__ ((aligned(16)));
 int mult_cpx_vector_norep2(short *x1, 
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   unsigned short output_shift)
+			   int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements with normal formatted output and no loop unrollin
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0 Re1 Im1 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -337,17 +342,16 @@ int mult_cpx_vector_norep2(short *x1,
 
   __m128i *x1_128; 
   __m128i *x2_128; 
-  __m128i tmp32;
   int     *y_32 = (int*)y; 
 
   //  __m128i temp;
   
 
-  shift = _mm_cvtsi32_si128(output_shift);
+  //  norep2_shift = _mm_cvtsi32_si128(output_shift);
   x1_128 = (__m128i *)&x1[0];
   x2_128 = (__m128i *)&x2[0];
 
-
+  //  debug_msg("cmult_norep2\n");
 
   // we compute 2 cpx multiply for each loop
   for(i=0;i<(N>>1);i++)
@@ -363,7 +367,7 @@ int mult_cpx_vector_norep2(short *x1,
 #endif
     */
 
-    m0 = _mm_madd_epi16(x1_128[0],x2_128[0]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
+    norep2_m0 = _mm_madd_epi16(x1_128[0],x2_128[0]); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
 
     /*
     temp = m0;
@@ -372,7 +376,7 @@ int mult_cpx_vector_norep2(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
+    norep2_m0 = _mm_srai_epi32(norep2_m0,output_shift);        // 1- shift right by shift in order to  compensate for the input amplitude
 
     /*
     temp = m0;
@@ -381,7 +385,7 @@ int mult_cpx_vector_norep2(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-    tmp32 = _mm_packs_epi32(m0,m0);        // Re0 Im0 Re1 Im1 Re0 Im0 Re1 Im1
+    norep2_tmp32 = _mm_packs_epi32(norep2_m0,norep2_m0);        // Re0 Im0 Re1 Im1 Re0 Im0 Re1 Im1
 
     /*
 #ifdef USER_MODE
@@ -389,8 +393,8 @@ int mult_cpx_vector_norep2(short *x1,
 #endif
     */
 
-    y_32[0] = ((int *)&tmp32)[0];        // 1- pack in a 128 bit register [re im re im]
-    y_32[1] = ((int *)&tmp32)[1];        // 1- pack in a 128 bit register [re im re im]
+    y_32[0] = ((int *)&norep2_tmp32)[0];        // 1- pack in a 128 bit register [re im re im]
+    y_32[1] = ((int *)&norep2_tmp32)[1];        // 1- pack in a 128 bit register [re im re im]
 
     x1_128+=1;
     x2_128+=1;

@@ -1,11 +1,18 @@
+#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
+#endif
+
+#include "PHY/defs.h"
+#include "PHY/extern.h"
+#include "defs.h"
 
 #include "emmintrin.h"
 #include "xmmintrin.h"
+#include "pmmintrin.h"
+#include "smmintrin.h"
 
-
-short conjugatedft[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
+static short conjugatedft[8] __attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 
 
 #ifndef __SSE3__
@@ -14,9 +21,9 @@ __m128i zerodft;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zerodft,(xmmy)))
 #endif
 
- __m128i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
+static  __m128i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
 
-short reflip[8] = {1,-1,1,-1,1,-1,1,-1};
+static short reflip[8]  __attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
@@ -34,7 +41,7 @@ inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 }
 
 
-__m128i mmtmpb,cre,cim;
+static __m128i mmtmpb,cre,cim;
 
 inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
@@ -46,7 +53,7 @@ inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) {
 
 }
 
-__m128i cpack_tmp1,cpack_tmp2;
+static __m128i cpack_tmp1,cpack_tmp2;
 inline __m128i cpack(__m128i xre,__m128i xim) {
 
   cpack_tmp1 = _mm_unpacklo_epi32(xre,xim);
@@ -57,7 +64,7 @@ inline __m128i cpack(__m128i xre,__m128i xim) {
 
 }
 
-__m128i cre,cim;
+static __m128i cre,cim;
 inline void packed_cmult(__m128i a,__m128i b, __m128i *c) {
 
   cmult(a,b,&cre,&cim);
@@ -102,10 +109,10 @@ static short dft_norm_table[16] = {9459,  //12
                                    14654}; //sqrt(5) //300
 		     
 
-__m128i x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
-__m128i x2r_2,x2i_2,x3r_2,x3i_2,dy2r,dy2i,dy3r,dy3i;
-__m128i x1_2,x2_2;
-__m128i bfly2_tmp1,bfly2_tmp2;
+static __m128i x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
+static __m128i x2r_2,x2i_2,x3r_2,x3i_2,dy2r,dy2i,dy3r,dy3i;
+static __m128i x1_2,x2_2;
+static __m128i bfly2_tmp1,bfly2_tmp2;
 
 static inline void bfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m128i *tw) {
 
@@ -137,7 +144,7 @@ static inline void bfly2_tw1(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1)
 
 
 
-__m128i tmpre,tmpim;
+static __m128i tmpre,tmpim;
 
 #define bfly3(x0,x1,x2,y0,y1,y2,tw1,tw2) packed_cmult(*(x1),*(tw1),&x1_2); \
   packed_cmult(*(x2),*(tw2),&x2_2); \
@@ -209,7 +216,7 @@ static inline void bfly4_tw1(__m128i *x0r, __m128i *x1r, __m128i *x2r, __m128i *
 
 //  x3_2    = _mm_sign_epi16(*(x3),*(__m128i*)reflip);
 
-__m128i x1_flip,x3_flip,x3_2;
+static __m128i x1_flip,x3_flip,x3_2;
 #define bfly4_tw1(x0,x1,x2,x3,y0,y1,y2,y3)  *(y0) = _mm_adds_epi16(*(x0),_mm_adds_epi16(*(x1),_mm_adds_epi16(*(x2),*(x3)))); \
   x1_flip = _mm_sign_epi16(*(x1),*(__m128i*)conjugatedft);\
   x1_flip = _mm_shufflelo_epi16(x1_flip,_MM_SHUFFLE(2,3,0,1));\
@@ -222,17 +229,17 @@ __m128i x1_flip,x3_flip,x3_2;
   *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(*(x2),x3_flip)));
 
 
-__m128i x4_2;
 
+static __m128i x1_2;
+static __m128i x2_2;
+static __m128i x3_2;
+static __m128i x4_2;
 static inline void bfly5(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,__m128i *x4,
 			 __m128i *y0, __m128i *y1, __m128i *y2, __m128i *y3,__m128i *y4,
 			 __m128i *tw1,__m128i *tw2,__m128i *tw3,__m128i *tw4) {
 
 
-  __m128i x1_2;
-  __m128i x2_2;
-  __m128i x3_2;
-  __m128i x4_2;
+
 
   packed_cmult(*(x1),*(tw1),&x1_2);
   packed_cmult(*(x2),*(tw2),&x2_2);
@@ -313,9 +320,9 @@ __m128i *W4_12=(__m128i *)W4_12s;
 __m128i *W6_12=(__m128i *)W6_12s;
 
 
-__m128i norm128;
+static __m128i norm128;
 
-__m128i tmp_dft12[12];
+static __m128i tmp_dft12[12];
 static inline void dft12f(__m128i *x0,
   __m128i *x1,
   __m128i *x2,
@@ -345,7 +352,9 @@ static inline void dft12f(__m128i *x0,
 
 __m128i *tmp_dft12_ptr = &tmp_dft12[0];
 
-  bfly4_tw1(x0, 
+// msg("dft12\n");
+ 
+ bfly4_tw1(x0, 
     x3, 
     x6, 
     x9,
@@ -415,7 +424,7 @@ __m128i *tmp_dft12_ptr = &tmp_dft12[0];
 	y11,	
 	W3_12,
         W6_12);
-
+  /*
   norm128 = _mm_set1_epi16(dft_norm_table[0]);
 
   *y0 = _mm_slli_epi16(_mm_mulhi_epi16(*y0,norm128),1);
@@ -430,12 +439,13 @@ __m128i *tmp_dft12_ptr = &tmp_dft12[0];
   *y9 = _mm_slli_epi16(_mm_mulhi_epi16(*y9,norm128),1);
   *y10 = _mm_slli_epi16(_mm_mulhi_epi16(*y10,norm128),1);
   *y11 = _mm_slli_epi16(_mm_mulhi_epi16(*y11,norm128),1);
+  */
 
 }	    
 
 
 
-__m128i tmp[12];
+static __m128i tmp[12];
 
 #define dft12(x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,y0,y1,y2,y3,y4,y5,y6,y7,y8,y9,y10,y11) \
   bfly4_tw1((x0),(x3),(x6),(x9),tmp,tmp+3,tmp+6,tmp+9);\
@@ -458,17 +468,19 @@ static short tw24[88]__attribute__((aligned(16))) = {31650,-8480,31650,-8480,316
 						      -23169,-23169,-23169,-23169,-23169,-23169,-23169,-23169,
 						      -28377,-16383,-28377,-16383,-28377,-16383,-28377,-16383,
 						      -31650,-8480,-31650,-8480,-31650,-8480,-31650,-8480};
+static __m128i ytmp128array[300];
+static __m128i x2128array[300];
 
 void dft24(int *x,int *y,unsigned char scale_flag) {
   
   __m128i *x128=(__m128i *)x;
   __m128i *y128=(__m128i *)y;
   __m128i *tw128=(__m128i *)&tw24[0];
-  __m128i ytmp128array[24];
   __m128i *ytmp128=&ytmp128array[0];
   int i,j,k;
 
-  dft12(x128,
+  //  msg("dft24\n");
+  dft12f(x128,
 	x128+2,
 	x128+4,
 	x128+6,
@@ -492,8 +504,9 @@ void dft24(int *x,int *y,unsigned char scale_flag) {
 	ytmp128+18,
 	ytmp128+20,
 	ytmp128+22);
+  //  msg("dft24b\n");
 
-  dft12(x128+1,
+  dft12f(x128+1,
 	x128+3,
 	x128+5,
 	x128+7,
@@ -518,12 +531,14 @@ void dft24(int *x,int *y,unsigned char scale_flag) {
 	ytmp128+21,
 	ytmp128+23);
 
+  //  msg("dft24c\n");
+
   bfly2_tw1(ytmp128, 
 	    ytmp128+1,
 	    y128, 
 	    y128+12);
 
-
+  //  msg("dft24d\n");
   
   for (i=2,j=1,k=0;i<24;i+=2,j++,k++) {
     
@@ -532,7 +547,7 @@ void dft24(int *x,int *y,unsigned char scale_flag) {
 	  y128+j, 
 	  y128+j+12,
 	  tw128+k);
-
+    //    msg("dft24e\n");
   }
 
   if (scale_flag==1) {
@@ -578,13 +593,12 @@ void dft36(int *x,int *y,unsigned char scale_flag) {
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa36[0];
   __m128i *twb128=(__m128i *)&twb36[0];
-  __m128i ytmp128array[36];
   __m128i *ytmp128=&ytmp128array[0];
 
 
   int i,j,k;
 
-  dft12(x128,
+  dft12f(x128,
 	x128+3,
 	x128+6,
 	x128+9,
@@ -609,7 +623,7 @@ void dft36(int *x,int *y,unsigned char scale_flag) {
 	ytmp128+30,
 	ytmp128+33);
 
-  dft12(x128+1,
+  dft12f(x128+1,
 	x128+4,
 	x128+7,
 	x128+10,
@@ -634,7 +648,7 @@ void dft36(int *x,int *y,unsigned char scale_flag) {
 	ytmp128+31,
 	ytmp128+34);
 
-  dft12(x128+2,
+  dft12f(x128+2,
 	x128+5,
 	x128+8,
 	x128+11,
@@ -735,11 +749,11 @@ void dft48(int *x, int *y,unsigned char scale_flag) {
   __m128i *twa128=(__m128i *)&twa48[0];
   __m128i *twb128=(__m128i *)&twb48[0];
   __m128i *twc128=(__m128i *)&twc48[0];
-  __m128i ytmp128array[48];
   __m128i *ytmp128=&ytmp128array[0];
   int i,j,k;
 
-  dft12(x128,
+
+  dft12f(x128,
 	x128+4,
 	x128+8,
 	x128+12,
@@ -765,7 +779,7 @@ void dft48(int *x, int *y,unsigned char scale_flag) {
 	ytmp128+44);
 
 
-  dft12(x128+1,
+  dft12f(x128+1,
 	x128+5,
 	x128+9,
 	x128+13,
@@ -791,7 +805,7 @@ void dft48(int *x, int *y,unsigned char scale_flag) {
 	ytmp128+45);
 
 
-  dft12(x128+2,
+  dft12f(x128+2,
 	x128+6,
 	x128+10,
 	x128+14,
@@ -817,7 +831,7 @@ void dft48(int *x, int *y,unsigned char scale_flag) {
 	ytmp128+46);
 
 
-  dft12(x128+3,
+  dft12f(x128+3,
 	x128+7,
 	x128+11,
 	x128+15,
@@ -937,11 +951,10 @@ void dft60(int *x,int *y,unsigned char scale) {
   __m128i *twb128=(__m128i *)&twb60[0];
   __m128i *twc128=(__m128i *)&twc60[0];
   __m128i *twd128=(__m128i *)&twd60[0];
-  __m128i ytmp128array[60];
   __m128i *ytmp128=&ytmp128array[0];
   int i,j,k;
 
-  dft12(x128,
+  dft12f(x128,
 	x128+5,
 	x128+10,
 	x128+15,
@@ -966,7 +979,7 @@ void dft60(int *x,int *y,unsigned char scale) {
 	ytmp128+50,
 	ytmp128+55);
 
-  dft12(x128+1,
+  dft12f(x128+1,
 	x128+6,
 	x128+11,
 	x128+16,
@@ -991,7 +1004,7 @@ void dft60(int *x,int *y,unsigned char scale) {
 	ytmp128+51,
 	ytmp128+56);
 
-  dft12(x128+2,
+  dft12f(x128+2,
 	x128+7,
 	x128+12,
 	x128+17,
@@ -1016,7 +1029,7 @@ void dft60(int *x,int *y,unsigned char scale) {
 	ytmp128+52,
 	ytmp128+57);
 
-  dft12(x128+3,
+  dft12f(x128+3,
 	x128+8,
 	x128+13,
 	x128+18,
@@ -1041,7 +1054,7 @@ void dft60(int *x,int *y,unsigned char scale) {
 	ytmp128+53,
 	ytmp128+58);
 
-  dft12(x128+4,
+  dft12f(x128+4,
 	x128+9,
 	x128+14,
 	x128+19,
@@ -1151,9 +1164,8 @@ void dft72(int *x,int *y,unsigned char scale_flag){
   __m128i *x128=(__m128i *)x;
   __m128i *y128=(__m128i *)y;
   __m128i *tw128=(__m128i *)&tw72[0];
-  __m128i x2128array[72];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[72];
+
   __m128i *ytmp128=&ytmp128array[0];
 
   for (i=0,j=0;i<36;i++,j+=2) {
@@ -1241,9 +1253,7 @@ void dft96(int *x,int *y,unsigned char scale_flag){
   __m128i *x128=(__m128i *)x;
   __m128i *y128=(__m128i *)y;
   __m128i *tw128=(__m128i *)&tw96[0];
-  __m128i x2128array[96];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[96];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -1357,9 +1367,7 @@ void dft108(int *x,int *y,unsigned char scale_flag){
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa108[0];
   __m128i *twb128=(__m128i *)&twb108[0];
-  __m128i x2128array[108];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[108];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -1465,9 +1473,7 @@ void dft120(int *x,int *y, unsigned char scale_flag){
   __m128i *x128=(__m128i *)x;
   __m128i *y128=(__m128i *)y;
   __m128i *tw128=(__m128i *)&tw120[0];
-  __m128i x2128array[120];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[120];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -1605,9 +1611,7 @@ void dft144(int *x,int *y,unsigned char scale_flag){
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa144[0];
   __m128i *twb128=(__m128i *)&twb144[0];
-  __m128i x2128array[144];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[144];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -1774,9 +1778,7 @@ void dft180(int *x,int *y,unsigned char scale_flag){
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa180[0];
   __m128i *twb128=(__m128i *)&twb180[0];
-  __m128i x2128array[180];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[180];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -1968,9 +1970,7 @@ void dft192(int *x,int *y,unsigned char scale_flag){
   __m128i *twa128=(__m128i *)&twa192[0];
   __m128i *twb128=(__m128i *)&twb192[0];
   __m128i *twc128=(__m128i *)&twc192[0];
-  __m128i x2128array[192];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[192];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -2166,9 +2166,7 @@ void dft216(int *x,int *y,unsigned char scale_flag){
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa216[0];
   __m128i *twb128=(__m128i *)&twb216[0];
-  __m128i x2128array[216];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[216];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -2396,9 +2394,7 @@ void dft240(int *x,int *y,unsigned char scale_flag){
   __m128i *twa128=(__m128i *)&twa240[0];
   __m128i *twb128=(__m128i *)&twb240[0];
   __m128i *twc128=(__m128i *)&twc240[0];
-  __m128i x2128array[240];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[240];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -2641,9 +2637,7 @@ void dft288(int *x,int *y,unsigned char scale_flag){
   __m128i *y128=(__m128i *)y;
   __m128i *twa128=(__m128i *)&twa288[0];
   __m128i *twb128=(__m128i *)&twb288[0];
-  __m128i x2128array[288];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[288];
   __m128i *ytmp128=&ytmp128array[0];
 
 
@@ -2932,9 +2926,7 @@ void dft300(int *x,int *y,unsigned char scale_flag){
   __m128i *twb128=(__m128i *)&twb300[0];
   __m128i *twc128=(__m128i *)&twc300[0];
   __m128i *twd128=(__m128i *)&twd300[0];
-  __m128i x2128array[300];
   __m128i *x2128 = (__m128i *)&x2128array[0];
-  __m128i ytmp128array[300];
   __m128i *ytmp128=&ytmp128array[0];
 
 

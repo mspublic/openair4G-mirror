@@ -126,7 +126,7 @@ int mult_cpx_vector_norep2(short *x1,
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   unsigned short output_shift);
+			   int output_shift);
  
 int mult_cpx_vector_norep_conj(short *x1, 
 			       short *x2, 
