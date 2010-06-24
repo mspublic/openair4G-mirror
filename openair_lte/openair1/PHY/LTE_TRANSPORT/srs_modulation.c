@@ -182,6 +182,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
       carrier_pos=0;
   }
 #endif
+  //  write_output("srs_tx.m","srstx",&txdataF[symbol_offset],512,1,1);
   return(0);
 }
 
@@ -258,7 +259,11 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size) 
+#ifdef OFDMA_ULSCH
       carrier_pos=1;
+#else
+      carrier_pos=0;
+#endif
   }
   /*
   for (k=0;k<Msc_RS;k++) {
@@ -292,6 +297,8 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
       carrier_pos=0;
   }
   */
+
+  //  write_output("srs_rx.m","srsrx",txdataF,1024,2,1);
   return(0);
 }
 
