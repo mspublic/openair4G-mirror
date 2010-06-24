@@ -64,8 +64,8 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 	msg("generate_drs_puch: doing RB %d, re_offset=%d, drs_offset=%d\n",rb,re_offset,drs_offset);
 #endif
 
-#ifndef IFFT_FPGA_UE
-#ifndef RAW_IFFT
+#ifdef IFFT_FPGA_UE
+#ifdef RAW_IFFT
 	for (k=0;k<12;k++) {
 	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
 	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
@@ -93,19 +93,12 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 #else
 	for (k=0;k<12;k++) {
-	  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-	  
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
 	  re_offset++;
 	  drs_offset++;
-	  if (re_offset >= frame_parms->N_RB_UL*12)
-	    re_offset=0;
+	  if (re_offset >= frame_parms->ofdm_symbol_size)
+	    re_offset = 0;
 	}
 #endif
       } 
@@ -122,12 +115,21 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 	    re_offset=0;  
 	}
 #else
+#ifdef OFDMA_ULSCH
 	if (re_offset >= frame_parms->ofdm_symbol_size) {
 	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
 	    re_offset=7;
 	  else                         // even number of RBs (doesn't straddle DC)
 	    re_offset=1;  
 	}
+#else
+	if (re_offset >= frame_parms->N_RB_DL*12) {
+	  if (frame_parms->N_RB_DL&1)  // odd number of RBs 
+	    re_offset=6;
+	  else                         // even number of RBs (doesn't straddle DC)
+	    re_offset=0;  
+	}
+#endif
 #endif
 #else
 	if (re_offset >= frame_parms->ofdm_symbol_size) {
