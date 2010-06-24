@@ -20,6 +20,8 @@
 #define Td 1.0
 #define N_TRIALS 1
 
+int current_dlsch_cqi;
+
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 //DCI_ALLOC_t dci_alloc;
 
