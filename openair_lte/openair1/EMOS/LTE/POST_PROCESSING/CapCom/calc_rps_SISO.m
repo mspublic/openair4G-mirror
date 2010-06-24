@@ -40,8 +40,10 @@ for i = 1:length(estimates_UE)
     RS_sum_16Qam_2Rx = sum(chcap_siso_single_stream_16Qam_2Rx(1,:,i));
     RS_sum_64Qam_2Rx = sum(chcap_siso_single_stream_64Qam_2Rx(1,:,i));
 
-    % since 4200/200 = 21 groups of 200 resource elements are there in one subframe, so to get
-    % the estimate of whole subframe we need to multiply RS_sum_XQam by 21.
+    % The number of RE availiable for the DLSCH is 9 OFDM symbols * 300
+    % subcarriers - 300 pilots = 2400.
+    % since 2400/200 = 12 groups of 200 resource elements are there in one subframe, so to get
+    % the estimate of whole subframe we need to multiply RS_sum_XQam by 12.
     
     Subframe_DL_sum_4Qam_1stRx = RS_sum_4Qam_1stRx * 12;
     Subframe_DL_sum_16Qam_1stRx = RS_sum_16Qam_1stRx * 12;

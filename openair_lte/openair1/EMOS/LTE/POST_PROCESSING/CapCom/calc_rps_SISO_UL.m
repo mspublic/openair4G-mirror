@@ -1,8 +1,7 @@
-function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, tweak)
+function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, tweak, avg)
 
-if nargin < 3
-    tweak = 0;
-end
+% set tweak=1 if using measurements with the storage bug
+% set avg=1 if averaging should be performed over all estimates
 
 %Channel Capacity of SISO system
 
@@ -58,17 +57,18 @@ for est=1:length(estimates_eNB)
                     
 end
 
-
-siso_SNR_persecond = mean(SNR_eNB(:));
-
 % for the UL we have 300 subcarriers times 9 symbols (2 are DRS, 1 is SRS)
-
-Rate_4Qam = sum(sum(chcap_siso_single_stream_4Qam,2)*300/srs_len*9,3);
-Rate_16Qam = sum(sum(chcap_siso_single_stream_16Qam,2)*300/srs_len*9,3);
-Rate_64Qam = sum(sum(chcap_siso_single_stream_64Qam,2)*300/srs_len*9,3);
-
-
-
+if avg
+    siso_SNR_persecond = mean(SNR_eNB(:));
+    Rate_4Qam = sum(sum(chcap_siso_single_stream_4Qam,2)*300/srs_len*9,3);
+    Rate_16Qam = sum(sum(chcap_siso_single_stream_16Qam,2)*300/srs_len*9,3);
+    Rate_64Qam = sum(sum(chcap_siso_single_stream_64Qam,2)*300/srs_len*9,3);
+else
+    siso_SNR_persecond = squeeze(mean(SNR_eNB,2));
+    Rate_4Qam = squeeze(sum(chcap_siso_single_stream_4Qam,2)*300/144*9);
+    Rate_16Qam = squeeze(sum(chcap_siso_single_stream_16Qam,2)*300/144*9);
+    Rate_64Qam = squeeze(sum(chcap_siso_single_stream_64Qam,2)*300/144*9);
+end
         
  
         
