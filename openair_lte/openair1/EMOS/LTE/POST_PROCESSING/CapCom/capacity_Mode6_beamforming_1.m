@@ -20,7 +20,13 @@ chcap_beamforming_64Qam_2Rx = zeros(1,length(h), length(estimates_UE));
 SNR_eNB_1Rx = zeros(1,length(h), length(estimates_UE));
 SNR_eNB_2Rx = zeros(1,length(h), length(estimates_UE));
 
-q_index = [0 32 64 96 128 160 192 200];
+index(1).subband = [1:8 51:58 101:108 151:158];
+index(2).subband = [9:16 59:66 109:116 159:166];
+index(3).subband = [17:24 67:74 117:124 167:174];
+index(4).subband = [25:32 75:82 125:132 175:182];
+index(5).subband = [33:40 83:90 133:140 183:190];
+index(6).subband = [41:48 91:98 141:148 191:198];
+index(7).subband = [49 50 99 100 149 150 199 200];
 
 for est=1:length(estimates_UE)
     
@@ -42,8 +48,8 @@ for est=1:length(estimates_UE)
             
             for qq=1:4
        
-            Rx1(qq).eNB =  abs(h11_eNB((q_index(i)+1):q_index(i+1)) + qi(qq)*h21_eNB((q_index(i)+1):q_index(i+1))).^2;
-            Rx2(qq).eNB =  abs(h12_eNB((q_index(i)+1):q_index(i+1)) + qi(qq)*h22_eNB((q_index(i)+1):q_index(i+1))).^2;
+            Rx1(qq).eNB =  abs(h11_eNB(index(i).subband) + qi(qq)*h21_eNB(index(i).subband)).^2;
+            Rx2(qq).eNB =  abs(h12_eNB(index(i).subband) + qi(qq)*h22_eNB(index(i).subband)).^2;
                 
             end
             
@@ -62,8 +68,8 @@ for est=1:length(estimates_UE)
         [value_eNB_2Rx, index_eNB_2Rx] = max(sum_eNB_q_2Rx);
 
         %SNR calculation
-        SNR_eNB_1Rx(1, ((q_index(i)+1):q_index(i+1)), est) = SNR_eNB_q_1Rx(index_eNB_1Rx).snr;
-        SNR_eNB_2Rx(1, ((q_index(i)+1):q_index(i+1)), est) = SNR_eNB_q_2Rx(index_eNB_2Rx).snr;
+        SNR_eNB_1Rx(1, (index(i).subband), est) = SNR_eNB_q_1Rx(index_eNB_1Rx).snr;
+        SNR_eNB_2Rx(1, (index(i).subband), est) = SNR_eNB_q_2Rx(index_eNB_2Rx).snr;
         end
         
         
@@ -80,8 +86,8 @@ for est=1:length(estimates_UE)
             
             qq(i) = quantize_q(q);
         
-            Rx11 =  abs(h11_eNB((q_index(i)+1):q_index(i+1)) + qq(i)*h21_eNB((q_index(i)+1):q_index(i+1))).^2;
-            Rx22 =  abs(h12_eNB((q_index(i)+1):q_index(i+1)) + qq(i)*h22_eNB((q_index(i)+1):q_index(i+1))).^2;
+            Rx11 =  abs(h11_eNB(index(i).subband) + qq(i)*h21_eNB(index(i).subband)).^2;
+            Rx22 =  abs(h12_eNB(index(i).subband) + qq(i)*h22_eNB(index(i).subband)).^2;
             
             Rx111 = [Rx111 Rx11'];
             Rx222 = [Rx222 Rx22'];
@@ -99,29 +105,29 @@ for est=1:length(estimates_UE)
     SNR_eNB_2Rx(nan_in_SNR) = 0;
     
     while (min(SNR_eNB_1Rx(1, :, est)) < -20)
-        [value, index]  = min(SNR_eNB_1Rx(1, :, est));
-        SNR_eNB_1Rx(1, index, est) = -20;
+        [value, inde]  = min(SNR_eNB_1Rx(1, :, est));
+        SNR_eNB_1Rx(1, inde, est) = -20;
         continue
         
     end
     
     while (max(SNR_eNB_1Rx(1, :, est)) > 40)
-        [value, index]  = max(SNR_eNB_1Rx(1, :, est));
-        SNR_eNB_1Rx(1, index, est) = 40;
+        [value, inde]  = max(SNR_eNB_1Rx(1, :, est));
+        SNR_eNB_1Rx(1, inde, est) = 40;
         continue
         
     end
  
     while (min(SNR_eNB_2Rx(1, :, est)) < -20)
-        [value, index]  = min(SNR_eNB_2Rx(1, :, est));
-        SNR_eNB_2Rx(1, index, est) = -20;
+        [value, inde]  = min(SNR_eNB_2Rx(1, :, est));
+        SNR_eNB_2Rx(1, inde, est) = -20;
         continue
         
     end
     
     while (max(SNR_eNB_2Rx(1, :, est)) > 40)
-        [value, index]  = max(SNR_eNB_2Rx(1, :, est));
-        SNR_eNB_2Rx(1, index, est) = 40;
+        [value, inde]  = max(SNR_eNB_2Rx(1, :, est));
+        SNR_eNB_2Rx(1, inde, est) = 40;
         continue
     end
     
