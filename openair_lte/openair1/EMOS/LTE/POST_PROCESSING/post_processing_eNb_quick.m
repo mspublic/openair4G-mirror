@@ -53,6 +53,8 @@ for file_idx = start_idx:length(filenames)
     disp(filenames{file_idx});
     
     [path,file,ext,ver] = fileparts(filenames{file_idx});
+    time_idx = regexp(file,'\d{8}T\d{6}');
+    start_time(file_idx) = datenum(file(time_idx:end),'yyyymmddTHHMMSS');
 
     if file(10)=='1'
         is_eNb=1;
@@ -60,9 +62,13 @@ for file_idx = start_idx:length(filenames)
         is_eNb=0;
     end
 
-    [H, H_fq, estimates, gps_data, NFrames(file_idx)] = load_estimates_lte(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb);
-    time_idx = regexp(file,'\d{8}T\d{6}');
-    start_time(file_idx) = datenum(file(time_idx:end),'yyyymmddTHHMMSS');
+    if (start_time(file_idx) >= datenum('20100910T000000','yyyymmddTHHMMSS'));
+        version = 1;
+    else 
+        version = 0;
+    end
+    
+    [H, H_fq, estimates, gps_data, NFrames(file_idx)] = load_estimates_lte(fullfile(pathname,filenames{file_idx}),NFrames_max,decimation,is_eNb,version);
 
 %%
     phy_measurements = repmat(phy_measurements_eNb_struct,NFrames(file_idx)/decimation,3);
@@ -73,7 +79,11 @@ for file_idx = start_idx:length(filenames)
     %rx_N0_subband_dBm = zeros(NFrames(file_idx)/decimation,3,25);
     for i=1:NFrames(file_idx)/decimation
         phy_measurements(i,:) = estimates(i).phy_measurements_eNb;
-        eNb_UE_stats(i) = estimates(i).eNb_UE_stats(1,1);
+        if (version<1)
+            eNb_UE_stats(i) = estimates(i).eNb_UE_stats(3,1);
+        else
+            eNb_UE_stats(i) = estimates(i).eNb_UE_stats(1,1);
+        end
         mcs(i) = get_mcs(estimates(i).dci_alloc(10,1).dci_pdu,'format0');
         tbs(i) = get_tbs(mcs(i),25);
         for j=1:3
@@ -82,8 +92,8 @@ for file_idx = start_idx:length(filenames)
         end
     end
     
-    [Rate_4Qam_1RX,Rate_16Qam_1RX,Rate_64Qam_1RX, siso_SNR_1RX]  = calc_rps_SISO_UL(estimates, 1, 1);
-    [Rate_4Qam_2RX,Rate_16Qam_2RX,Rate_64Qam_2RX, siso_SNR_2RX]  = calc_rps_SISO_UL(estimates, 2, 1);
+    [Rate_4Qam_1RX,Rate_16Qam_1RX,Rate_64Qam_1RX, siso_SNR_1RX]  = calc_rps_SISO_UL(estimates, 1, version, 0);
+    [Rate_4Qam_2RX,Rate_16Qam_2RX,Rate_64Qam_2RX, siso_SNR_2RX]  = calc_rps_SISO_UL(estimates, 2, version, 0);
 
     phy_measurements_cat = [phy_measurements_cat; phy_measurements];
     eNb_UE_stats_cat = [eNb_UE_stats_cat eNb_UE_stats];
@@ -112,7 +122,7 @@ for file_idx = start_idx:length(filenames)
     save(fullfile(pathname,'results_eNB.mat'),'phy_measurements_cat',...
         'eNb_UE_stats_cat','timestamp_cat','frame_tx_cat','mcs_cat','tbs_cat',...
         'ulsch_errors_cat','rx_N0_dBm_cat','gps_lon_cat','gps_lat_cat','gps_time_cat',...
-        'Rate*','siso*',...
+        'Rate*cat','siso*cat',...
         'file_idx','NFrames','start_time','filenames','filedates');
 
     %%

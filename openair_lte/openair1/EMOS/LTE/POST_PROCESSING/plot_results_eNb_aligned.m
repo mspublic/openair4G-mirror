@@ -13,12 +13,13 @@ align_matrix = false(2,NFrames);
 align_matrix(1,floor(estimates_eNB.frame_tx_cat/decimation) - framestamp_min + 1) = true;
 % the UE might contain frames with the same frame number or corrupt frame numbers. 
 % In this loop we find them and save their indices. They are deemed corrupt
-% if the current is smaller or 1e6 larger than the previous 
+% if the current is smaller than the previous or if it is bigger or smaller
+% than framestamp_min or framestamp_max respectively
 framestamp_last = -1;
 UE_duplicates = false(1,length(estimates_UE.frame_tx_cat));
 for i=1:length(estimates_UE.frame_tx_cat)
     framestamp = floor(estimates_UE.frame_tx_cat(i)/decimation);
-    if ((framestamp<=framestamp_last) || (abs(framestamp-framestamp_last)>1e6)) 
+    if ((framestamp<=framestamp_last) || (framestamp>framestamp_max) || (framestamp<framestamp_min)) 
         UE_duplicates(i) = true;
     else
         align_matrix(2, framestamp - framestamp_min + 1) = true; 
@@ -30,12 +31,12 @@ UE_aligned  = align_matrix(2,:);
 
 % calculate the indices where the ue and the eNB were connected (they might
 % not have set the flag in the same frame)
-UE_connected = (estimates_UE.UE_mode_cat==3);
-eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]==3);
+UE_connected = (estimates_UE.UE_mode_cat);
+eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]);
 connected_matrix = false(2,NFrames);
 connected_matrix(1,floor(estimates_eNB.frame_tx_cat/decimation) - framestamp_min + 1) = eNB_connected;
 connected_matrix(2,floor(estimates_UE.frame_tx_cat/decimation) - framestamp_min + 1) = UE_connected;
-all_connected = all(connected_matrix,1);
+all_connected = all(connected_matrix>0,1);
 
 % get the aligned gps data, removing duplicates
 gps_lat_aligned = zeros(1,NFrames);
@@ -44,15 +45,22 @@ gps_lat_aligned(1,UE_aligned) = estimates_UE.gps_lat_cat(~UE_duplicates);
 gps_lon_aligned(1,UE_aligned) = estimates_UE.gps_lon_cat(~UE_duplicates);
 
 %%
-h_fig = figure(11);
+h_fig = figure(99);
 hold off
-plot(estimates_eNB.frame_tx_cat,estimates_eNB.rx_N0_dBm_cat,'x')
-%plot(double(timestamp_cat)/1e9,rx_N0_dBm_cat,'x')
-title('UL I0 [dBm]')
-xlabel('Frames')
-ylabel('UL I0 [dBm]')
-legend('Sector 0','Sector 1','Sector 2')
-saveas(h_fig,fullfile(pathname,'UL_I0_dBm.eps'),'epsc2')
+plot(estimates_eNB.frame_tx_cat)
+hold on
+plot(estimates_UE.frame_tx_cat(~UE_duplicates),'r')
+legend('eNB','UE')
+
+% frame_aligned = zeros(NFrames,2);
+% frame_aligned(eNB_aligned,1) = estimates_eNB.frame_tx_cat;
+% frame_aligned(UE_aligned,2) = estimates_UE.frame_tx_cat(~UE_duplicates);
+h_fig = figure(98);
+hold off
+plot(estimates_eNB.frame_tx_cat,eNB_connected,'x');
+hold on
+plot(estimates_UE.frame_tx_cat(~UE_duplicates),UE_connected,'rx')
+legend('eNb','UE')
 
 %%
 UL_rssi_cat = zeros(length(estimates_eNB.eNb_UE_stats_cat),2);
@@ -62,12 +70,45 @@ end
 UL_rssi_aligned = zeros(NFrames,2);
 UL_rssi_aligned(eNB_aligned,:) = UL_rssi_cat;
 
-h_fig = figure(12);
+h_fig = figure(15);
 hold off
 plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
         gps_lat_aligned(all_connected), ...
         mean(UL_rssi_aligned(all_connected,:),2));
 title('UL RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm_gps.jpg'),'jpg')
+
+%%
+ulsch_throughput_aligned = zeros(NFrames,1);
+ulsch_throughput_aligned(eNB_aligned,1) = ulsch_throughput;
+h_fig = figure(16);
+hold off
+plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
+        gps_lat_aligned(all_connected), ...
+        ulsch_throughput_aligned(all_connected,1));
+title('UL Throughput (modem) [dBm]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_dBm_gps.jpg'),'jpg')
+
+%%
+ulsch_throughput_ideal_1Rx_aligned = zeros(NFrames,1);
+ulsch_throughput_ideal_1Rx_aligned(eNB_aligned,1) = ulsch_throughput_ideal_1Rx;
+h_fig = figure(17);
+hold off
+plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
+        gps_lat_aligned(all_connected), ...
+        ulsch_throughput_ideal_1Rx_aligned(all_connected,1));
+title('UL Throughput (ideal, 1Rx) [dBm]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_dBm_gps.jpg'),'jpg')
+
+%%
+ulsch_throughput_ideal_2Rx_aligned = zeros(NFrames,1);
+ulsch_throughput_ideal_2Rx_aligned(eNB_aligned,1) = ulsch_throughput_ideal_2Rx;
+h_fig = figure(18);
+hold off
+plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
+        gps_lat_aligned(all_connected), ...
+        ulsch_throughput_ideal_2Rx_aligned(all_connected,1));
+title('UL Throughput (ideal, 2Rx) [dBm]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_dBm_gps.jpg'),'jpg')
 
 

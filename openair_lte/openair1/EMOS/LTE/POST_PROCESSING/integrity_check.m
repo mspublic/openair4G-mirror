@@ -32,7 +32,7 @@ if is_eNb==0
     title('Frame number')
     ylabel('Received frame number');
     xlabel('Transmitted frame number');
-    %saveas(h_fig,'frame_tx.eps','epsc2')
+    saveas(h_fig,'frame_tx.eps','epsc2')
 
     rx_rssi_dBm = zeros(1,NFrames/decimation);
     for i=1:NFrames/decimation
@@ -43,12 +43,12 @@ if is_eNb==0
     title('RX RSSI [dBm]')
     xlabel('Frame number')
     ylabel('RX RSSI [dBm]')
-    %saveas(h_fig,'RX_rssi_dBm.eps','epsc2')
+    saveas(h_fig,'RX_rssi_dBm.eps','epsc2')
 
     h_fig = figure(3);
     plot_gps_coordinates([],[gps_data.longitude], [gps_data.latitude],rx_rssi_dBm);
     title('RX RSSI [dBm]')
-    %saveas(h_fig,'RX_rssi_dBm_gps.jpg','jpg')
+    saveas(h_fig,'RX_rssi_dBm_gps.jpg','jpg')
 
     pbch_fer = zeros(1,NFrames/decimation,1);
     for i=1:NFrames/decimation
@@ -59,7 +59,7 @@ if is_eNb==0
     title('PBCH FER')
     xlabel('Transmitted frame number');
     ylabel('PBCH FER')
-    %saveas(h_fig,'pbch_fer.eps','epsc2')
+    saveas(h_fig,'pbch_fer.eps','epsc2')
 
     %h_fig = figure(4);
     %mcs = zeros(1,NFrames/decimation,1);
