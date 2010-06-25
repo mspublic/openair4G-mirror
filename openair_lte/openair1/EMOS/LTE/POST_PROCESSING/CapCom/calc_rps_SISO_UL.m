@@ -22,8 +22,12 @@ SNR_eNB = zeros(1,3*srs_len,length(estimates_eNB));
 for est=1:length(estimates_eNB)
     
     % choose the right sector
-    sector = estimates_eNB(est).eNb_UE_stats(2).sector;
-
+    if (version<1)
+        sector = estimates_eNB(est).eNb_UE_stats(3,1).sector;
+    else
+        sector = estimates_eNB(est).eNb_UE_stats(1,1).sector;
+    end
+    
     N0 = double(estimates_eNB(est).phy_measurements_eNb(sector+1).n0_power(1));
     
     H_abs_sqr = double(estimates_eNB(est).channel(1:2:end,:,:,1:3)).^2 + ...
