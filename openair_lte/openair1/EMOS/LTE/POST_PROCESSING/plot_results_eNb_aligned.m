@@ -59,7 +59,7 @@ h_fig = figure(98);
 hold off
 plot(estimates_eNB.frame_tx_cat,eNB_connected,'x');
 hold on
-plot(estimates_UE.frame_tx_cat(~UE_duplicates),UE_connected,'rx')
+plot(estimates_UE.frame_tx_cat(~UE_duplicates),UE_connected(~UE_duplicates),'rx')
 legend('eNb','UE')
 
 %%

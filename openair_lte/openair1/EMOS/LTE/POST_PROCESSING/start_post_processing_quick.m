@@ -34,6 +34,9 @@ pathname = 'H:\EMOS\20100608_VTP_MODE6_ZONES_PUSCH_PART3\';
 post_processing_UE_quick
 post_processing_eNb_quick
 
+pathname = 'H:\EMOS\20100609_VTP_MODE6_ZONES_PUSCH_PART4\';
+post_processing_UE_quick
+post_processing_eNb_quick
 
 % these measurements contain fixed UL storage
 pathname = 'H:\EMOS\20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1\';
@@ -84,11 +87,18 @@ plot_results_eNb_quick
 plot_results_eNb_aligned
 
 %%
+pathname = 'H:\EMOS\20100609_VTP_MODE6_ZONES_PUSCH_PART4\';
+%plot_results_UE_quick
+plot_results_eNb_quick
+plot_results_eNb_aligned
+
+%%
 pathname = 'H:\EMOS\20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1\';
 %plot_results_UE_quick
 plot_results_eNb_quick
 plot_results_eNb_aligned
 
+%%
 pathname = 'H:\EMOS\20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2\';
 %plot_results_UE_quick
 plot_results_eNb_quick
