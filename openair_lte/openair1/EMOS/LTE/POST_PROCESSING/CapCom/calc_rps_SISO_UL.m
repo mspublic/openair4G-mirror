@@ -1,13 +1,13 @@
-function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, tweak, avg)
+function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, version, avg)
 
-% set tweak=1 if using measurements with the storage bug
+% set version=0 if using measurements with the storage bug
 % set avg=1 if averaging should be performed over all estimates
 
 %Channel Capacity of SISO system
 
 load 'SISO.mat';
 
-if tweak
+if version<1
     srs_len = 113;
 else
     srs_len = 144;
@@ -30,7 +30,7 @@ for est=1:length(estimates_eNB)
                 double(estimates_eNB(est).channel(2:2:end,:,:,1:3)).^2;
 
     % extract 144 carriers with constitute SRS
-    if tweak
+    if version<1
         H_abs_sqr = reshape(H_abs_sqr,450,2,2,3);
         ind = [363:2:450 2:2:138 ];
         H_abs_sqr_tot = sum(H_abs_sqr(ind,ones(1,nb_rx),1,:),2);
@@ -65,9 +65,9 @@ if avg
     Rate_64Qam = sum(sum(chcap_siso_single_stream_64Qam,2)*300/srs_len*9,3);
 else
     siso_SNR_persecond = squeeze(mean(SNR_eNB,2));
-    Rate_4Qam = squeeze(sum(chcap_siso_single_stream_4Qam,2)*300/144*9);
-    Rate_16Qam = squeeze(sum(chcap_siso_single_stream_16Qam,2)*300/144*9);
-    Rate_64Qam = squeeze(sum(chcap_siso_single_stream_64Qam,2)*300/144*9);
+    Rate_4Qam = squeeze(sum(chcap_siso_single_stream_4Qam,2)*300/srs_len*9);
+    Rate_16Qam = squeeze(sum(chcap_siso_single_stream_16Qam,2)*300/srs_len*9);
+    Rate_64Qam = squeeze(sum(chcap_siso_single_stream_64Qam,2)*300/srs_len*9);
 end
         
  
