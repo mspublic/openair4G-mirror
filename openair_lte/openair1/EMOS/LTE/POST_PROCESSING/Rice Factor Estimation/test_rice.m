@@ -2,7 +2,7 @@ clear all
 close all
 
 %% these lines are for syntetic data
-v = 0; s = 0.5; N = 20000;
+v = 10; s = 0.5; N = 20000;
  r = ricernd(v*ones(1, N), s);
 
 K = v.^2/(2*s.^2)

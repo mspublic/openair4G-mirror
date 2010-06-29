@@ -17,31 +17,15 @@ dist = zeros(1,length(gps_data_cat));
 %     % Please remember that the above calculated distance is in KiloMeters
  end
 step = 100;
-% if (decimation == 1)
-% rx_rssi_dBm = zeros(1,NFrames/(decimation*100));
-% step = 100;
-% else if(decimation == 10)
-%     rx_rssi_dBm = zeros(1,NFrames/(decimation*10));
-%     step = 10;
-%     else if decimation ==100
-%             rx_rssi_dBm = zeros(1,NFrames/decimation);
-%             step = 1;
-%         end
-%     end
-% end
-rxx_rssi_dBm = [minestimates_cat(1:100:end).rx_rssi_dBm];
-% j = 0;
-% for i=1:step:NFrames
-%     j = j + 1;
-%     rxx_rssi_dBm(j) = minestimates(i).rx_rssi_dBm;
-% end
-in = in+1;
-h_fig = figure(in);
-plot(dist, rxx_rssi_dBm, 'rx')
-title('RX RSSI distance from BS [dBm]')
-xlabel('Distance from BS [Km]')
-ylabel('RX RSSI [dBm]')
-saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_from_BS.eps'),'epsc2');
+
+% rxx_rssi_dBm = [minestimates_cat(1:100:end).rx_rssi_dBm];
+% in = in+1;
+% h_fig = figure(in);
+% plot(dist, rxx_rssi_dBm, 'rx')
+% title('RX RSSI distance from BS [dBm]')
+% xlabel('Distance from BS [Km]')
+% ylabel('RX RSSI [dBm]')
+% saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_from_BS.eps'),'epsc2');
 
 
 % For Distance travelled we need to take first point as starting point and
@@ -69,12 +53,12 @@ end
 % gps_long_cat(end) = [];
 
 dist_travelled = cumsum(dist_travelled);
-in = in+1;
-h_fig = figure(in);
-plot(dist_travelled, rxx_rssi_dBm, 'rx')
-title('RX RSSI _ distance travelled[dBm]')
-xlabel('Distance travelled by MS [Km]')
-ylabel('RX RSSI [dBm]')
-saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_travelled.eps'),'epsc2');
-%saveas(h_fig,'RX_rssi_dBm_dist_from_BS.eps','epsc2')
-
+% in = in+1;
+% h_fig = figure(in);
+% plot(dist_travelled, rxx_rssi_dBm, 'rx')
+% title('RX RSSI _ distance travelled[dBm]')
+% xlabel('Distance travelled by MS [Km]')
+% ylabel('RX RSSI [dBm]')
+% saveas(h_fig, fullfile(pathname,'RX_RSSI_distance_travelled.eps'),'epsc2');
+% %saveas(h_fig,'RX_rssi_dBm_dist_from_BS.eps','epsc2')
+% 

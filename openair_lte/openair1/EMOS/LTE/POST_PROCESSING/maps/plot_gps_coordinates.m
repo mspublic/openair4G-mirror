@@ -72,8 +72,10 @@ end
     
 if (~isempty(rx_rssi))
     for i=1:length(gps_x)
-        plot(gps_x(i),gps_y(i),'color',m(cidx(i),:),style{:})
-        hold on
+        if (latitude(i)~=0 && longitude(i)~=0 && ~isnan(cidx(i)))
+            plot(gps_x(i),gps_y(i),'color',m(cidx(i),:),style{:})
+            hold on
+        end
     end
     yt = round(linspace(min(rx_rssi),max(rx_rssi),8));
     hcb = colorbar;

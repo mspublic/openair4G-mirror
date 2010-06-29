@@ -8,6 +8,8 @@ if (nomadic_flag)
     nomadic.timebase = nomadic.gps_time_cat-gps_time_cat(1);
 end
 
+[dist, dist_traveled] = calc_dist(gps_lat_cat,gps_lon_cat);
+
 %% Frame TX number over time
 h_fig = figure(1);
 hold off
@@ -60,6 +62,31 @@ if (nomadic_flag)
 end
 title('RX RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_gps.jpg'),'jpg')
+
+%%
+h_fig = figure(31);
+hold off
+plot_in_bins(dist,double(rx_rssi_dBm_cat(good(:,1),1)),0:ceil(max(dist)));
+xlabel('Distance [km]')
+ylabel('RX RSSI [dBm]')
+saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_dist_bars.eps'),'epsc2');
+
+%% fit path loss model
+h_fig = figure(32);
+hold off
+plot(dist, double(rx_rssi_dBm_cat(good(:,1),1)), 'rx')
+hold on
+PL = double(rx_rssi_dBm_cat(good(:,1),1)) - 43;
+d = 0:0.1:ceil(max(dist));
+res = [ones(length(PL),1) log10(dist.')]\PL;
+plot(d,res(1)+res(2)*log10(d)+43,'b')
+plot(d,43-cost231_hata(d),'k')
+legend('measured','fitted','COST231-Hata');
+title('RX RSSI distance from BS [dBm]')
+xlabel('Distance from BS [Km]')
+ylabel('RX RSSI [dBm]')
+saveas(h_fig, fullfile(pathname,'RX_RSSI_dBm_dist_with_PL.eps'),'epsc2');
+
 
 %% PBCH FER over time and GPS coordinates
 h_fig = figure(4);

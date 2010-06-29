@@ -32,13 +32,23 @@ legend('Sector 0','Sector 1','Sector 2')
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm.eps'),'epsc2')
 
 %%
+if (estimates_eNB.start_time(1) >= datenum('20100610T000000','yyyymmddTHHMMSS'));
+    version = 1;
+    good = true(size(estimates_eNB.Rate_64Qam_1RX_cat));
+else 
+    version = 0;
+    good = ([estimates_eNB.eNb_UE_stats_cat.sector].'==0);
+end
+
 estimates_eNB.ulsch_fer_cat = [100 diff(estimates_eNB.ulsch_errors_cat)];
 ulsch_throughput = double(estimates_eNB.tbs_cat) .* double(100 - estimates_eNB.ulsch_fer_cat) .* 3;
 ulsch_throughput(1,~eNB_connected) = 0;
 ulsch_throughput_ideal_1Rx = estimates_eNB.Rate_64Qam_1RX_cat;
 ulsch_throughput_ideal_1Rx(~eNB_connected,1) = 0;
+ulsch_throughput_ideal_1Rx(~good) = nan;
 ulsch_throughput_ideal_2Rx = estimates_eNB.Rate_64Qam_2RX_cat;
 ulsch_throughput_ideal_2Rx(~eNB_connected,1) = 0;
+ulsch_throughput_ideal_2Rx(~good) = nan;
 h_fig = figure(13);
 hold off
 plot(estimates_eNB.frame_tx_cat,ulsch_throughput,'x');

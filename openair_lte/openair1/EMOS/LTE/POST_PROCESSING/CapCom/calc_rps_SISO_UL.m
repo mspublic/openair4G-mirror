@@ -1,9 +1,16 @@
 function [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, version, avg)
-
-% set version=0 if using measurements with the storage bug
+% Channel Capacity of SISO system
+%   [Rate_4Qam,Rate_16Qam,Rate_64Qam, siso_SNR_persecond]  = calc_rps_SISO_UL(estimates_eNB, nb_rx, version, avg)
+%
+% set version=0 if using measurements with the storage bug. 
+%   All measurements before the 10.6.2010 did not store the UL properly. 
+%   In fact only the first 133 carriers of the 1st Rx antenna of sector 0 
+%   was stored. So if version==0 and sector~=0, we return 0. If version==0
+%   and sector==0, we extrapolate and assume the same signal on both RX
+%   antennas.
+%
 % set avg=1 if averaging should be performed over all estimates
 
-%Channel Capacity of SISO system
 
 load 'SISO.mat';
 
@@ -24,6 +31,9 @@ for est=1:length(estimates_eNB)
     % choose the right sector
     if (version<1)
         sector = estimates_eNB(est).eNb_UE_stats(3,1).sector;
+        if sector~=0 
+            continue
+        end
     else
         sector = estimates_eNB(est).eNb_UE_stats(1,1).sector;
     end

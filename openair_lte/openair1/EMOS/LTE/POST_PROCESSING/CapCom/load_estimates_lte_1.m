@@ -246,7 +246,9 @@ for n=1:NFiles
             
             com_h = [(abs(h11_eNB').^2) (abs(h12_eNB').^2) (abs(h21_eNB').^2) (abs(h22_eNB').^2)];
             
-            K_fac(k) = estimate_rice(com_h);
+            [K_fac(k),v2,s2] = estimate_rice(com_h);
+%             PD = fitdist(sqrt(com_h(com_h>0).'), 'rician');
+%             K_fac(k) = PD.s.^2/(2*PD.sigma.^2);
         end
         
         
@@ -257,8 +259,8 @@ for n=1:NFiles
             count = 0;
             
             if (is_eNb)
-                [Ratepersec_4Qam_SISO_1Rx(sec),Ratepersec_16Qam_SISO_1Rx(sec),Ratepersec_64Qam_SISO_1Rx(sec),siso_SNR_1Rx(sec)] = calc_rps_SISO_UL(estimates,1,version<1);
-                [Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),siso_SNR_2Rx(sec)] = calc_rps_SISO_UL(estimates,2,version<1);
+                [Ratepersec_4Qam_SISO_1Rx(sec),Ratepersec_16Qam_SISO_1Rx(sec),Ratepersec_64Qam_SISO_1Rx(sec),siso_SNR_1Rx(sec)] = calc_rps_SISO_UL(estimates,1,version,1);
+                [Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),siso_SNR_2Rx(sec)] = calc_rps_SISO_UL(estimates,2,version,1);
             else
                 
                 [Ratepersec_4Qam_SISO_1stRx(sec),Ratepersec_16Qam_SISO_1stRx(sec),Ratepersec_64Qam_SISO_1stRx(sec),Ratepersec_4Qam_SISO_2ndRx(sec),...

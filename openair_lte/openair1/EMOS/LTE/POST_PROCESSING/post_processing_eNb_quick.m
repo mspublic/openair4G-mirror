@@ -62,7 +62,7 @@ for file_idx = start_idx:length(filenames)
         is_eNb=0;
     end
 
-    if (start_time(file_idx) >= datenum('20100910T000000','yyyymmddTHHMMSS'));
+    if (start_time(file_idx) >= datenum('20100610T000000','yyyymmddTHHMMSS'));
         version = 1;
     else 
         version = 0;

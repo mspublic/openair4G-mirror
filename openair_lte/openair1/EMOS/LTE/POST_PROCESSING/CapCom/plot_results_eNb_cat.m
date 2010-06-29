@@ -15,14 +15,24 @@ for n = 1:length(nn)
     eval([nn{n} '_cat(~UE_connected) = 0;']);
 end
 
-%% get real throughput from modem
-ulsch_error = double([1 diff([minestimates_cat.ulsch_errors])]);
-rateps_modem = (1-ulsch_error) .* double([minestimates_cat.tbs]);
-rateps_modem([minestimates.UE_mode]~=3) = 0;
-rateps_modem = sum(reshape(rateps_modem,100,[]),1)*3;
+% %% get real throughput from modem
+% ulsch_error = double([1 diff([minestimates_cat.ulsch_errors])]);
+% rateps_modem = (1-ulsch_error) .* double([minestimates_cat.tbs]);
+% rateps_modem([minestimates.UE_mode]~=3) = 0;
+% rateps_modem = sum(reshape(rateps_modem,100,[]),1)*3;
+% 
+% ulsch_mcs = [minestimates_cat.mcs];
+% mod_order = zeros(size(ulsch_mcs));
+% mod_order(ulsch_mcs<10) = 2;
+% mod_order(ulsch_mcs>=10 & ulsch_mcs<17) = 4;
+% mod_order(ulsch_mcs>=17) = 6;
+% rateps_uncoded_modem = 2700*mod_order;
+% rateps_uncoded_modem([minestimates.UE_mode]~=3) = 0;
+% rateps_uncoded_modem = sum(reshape(rateps_uncoded_modem,100,[]),1)*3;
 
 
-%% plot as CDFs
+
+%% plot coded throughput as CDFs
 in = in+1;    
 h_fig = figure(in);
 colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
@@ -40,17 +50,47 @@ for n = 1:length(nn)
         ni=ni+1;
     end
 end
-[f,x] = ecdf(rateps_modem);
-plot(x,f,colors{ni},'Linewidth',2);
-legend_str{ni} = 'rateps_modem';
-ni=ni+1;
+% [f,x] = ecdf(rateps_modem);
+% plot(x,f,colors{ni},'Linewidth',2);
+% legend_str{ni} = 'rateps_modem';
+% ni=ni+1;
 
 
 legend(legend_str,'Interpreter','none','Location','SouthOutside');
 xlabel('Throughput [bps]')
 ylabel('P(x<abscissa)')
 grid on
+saveas(h_fig,fullfile(pathname,'UL_coded_throughput_cdf_comparison.eps'),'epsc2');
 
+%% plot uncoded throughput as CDFs
+in = in+1;    
+h_fig = figure(in);
+colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
+legend_str = {};
+ni=1;
+for n = 1:length(nn)
+    hold on
+    si = strfind(nn{n},'64Qam');
+    if si
+        eval(['[f,x] = ecdf(coded2uncoded(' nn{n} '_cat,''UL''));']);
+        plot(x,f,colors{ni},'Linewidth',2);
+        legend_tmp = nn{n};
+        legend_tmp(si:si+10) = [];
+        legend_str{ni} = legend_tmp;
+        ni=ni+1;
+    end
+end
+% [f,x] = ecdf(rateps_uncoded_modem);
+% plot(x,f,colors{ni},'Linewidth',2);
+% legend_str{ni} = 'rateps_modem';
+% ni=ni+1;
+
+
+legend(legend_str,'Interpreter','none','Location','SouthOutside');
+xlabel('Uncoded Throughput [bps]')
+ylabel('P(x<abscissa)')
+grid on
+saveas(h_fig,fullfile(pathname,'UL_uncoded_throughput_cdf_comparison.eps'),'epsc2');
 
 if 0
 %% plot as a function of the speed of the UE (histogram)
@@ -122,8 +162,21 @@ ylabel('Throughput[Bits/sec]');
 hold on;
 plot(rateps_SISO_64Qam_eNB1_1Rx_cat, 'bx');
 plot(rateps_SISO_64Qam_eNB1_2Rx_cat, 'go');
-plot(rateps_modem,'rd')
-legend('SISO 1Rx','SISO 2Rx','Modem')
+%plot(rateps_modem,'rd')
+legend('SISO 1Rx','SISO 2Rx')
+saveas(h_fig,fullfile(pathname,'UL_coded_throughput_time.eps'),'epsc2');
+
+in = in+1;    
+h_fig = figure(in);
+title('Uncoded Throughputs for 1stRX');
+xlabel('Time[Seconds]');
+ylabel('Throughput[Bits/sec]');
+hold on;
+plot(coded2uncoded(rateps_SISO_64Qam_eNB1_1Rx_cat,'UL'), 'bx');
+plot(coded2uncoded(rateps_SISO_64Qam_eNB1_2Rx_cat,'UL'), 'go');
+%plot(rateps_uncoded_modem,'rd')
+legend('SISO 1Rx','SISO 2Rx')
+saveas(h_fig,fullfile(pathname,'UL_uncoded_throughput_time.eps'),'epsc2');
 
 
 if 0

@@ -3,9 +3,9 @@ filenames = {d.name};
 
 gps_data_cat = [];
 
-minestimates_cat = [];
+%minestimates_cat = [];
 
-K_fac_cat = [];
+%K_fac_cat = [];
 
 %%
 for f = 1:length(filenames)
@@ -34,9 +34,9 @@ for f = 1:length(filenames)
 
     gps_data_cat = cat(2,gps_data_cat,gps_data);
     
-    minestimates_cat = cat(2,minestimates_cat,minestimates);    
+    %minestimates_cat = cat(2,minestimates_cat,minestimates);    
     
-    K_fac_cat = cat(2,K_fac_cat,K_fac);
+    %K_fac_cat = cat(2,K_fac_cat,K_fac);
     
 end
 

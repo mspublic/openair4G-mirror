@@ -86,8 +86,8 @@ hold off
 plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
         gps_lat_aligned(all_connected), ...
         ulsch_throughput_aligned(all_connected,1));
-title('UL Throughput (modem) [dBm]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_dBm_gps.jpg'),'jpg')
+title('UL Throughput (modem) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_gps.jpg'),'jpg')
 
 %%
 ulsch_throughput_ideal_1Rx_aligned = zeros(NFrames,1);
@@ -97,8 +97,8 @@ hold off
 plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
         gps_lat_aligned(all_connected), ...
         ulsch_throughput_ideal_1Rx_aligned(all_connected,1));
-title('UL Throughput (ideal, 1Rx) [dBm]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_dBm_gps.jpg'),'jpg')
+title('UL Throughput (ideal, 1Rx) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_gps.jpg'),'jpg')
 
 %%
 ulsch_throughput_ideal_2Rx_aligned = zeros(NFrames,1);
@@ -108,7 +108,7 @@ hold off
 plot_gps_coordinates(mm,gps_lon_aligned(all_connected), ...
         gps_lat_aligned(all_connected), ...
         ulsch_throughput_ideal_2Rx_aligned(all_connected,1));
-title('UL Throughput (ideal, 2Rx) [dBm]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_dBm_gps.jpg'),'jpg')
+title('UL Throughput (ideal, 2Rx) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_gps.jpg'),'jpg')
 
 
