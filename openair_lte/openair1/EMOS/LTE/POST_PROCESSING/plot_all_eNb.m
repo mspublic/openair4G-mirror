@@ -8,7 +8,7 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Mode6/';  
+root_path = '/emos/EMOS/Mode6';
 d = dir(fullfile(root_path, '*PUSCH*'));
 dir_names = {d.name};
 
@@ -17,11 +17,12 @@ pathname = '/emos/EMOS/Mode6/results';
 
 mm=imread('maps/cordes.png');
 decimation = 100;
-dim = zeros(1,length(dir_names));
 
 for i=1:length(dir_names)
-    if exist(fullfile(root_path,dir_names{i},'results_UE.mat'),'file')
-        temp = load(fullfile(root_path,dir_names{i},'results_UE.mat'));
+    if exist(fullfile(root_path,dir_names{i},'results_eNB.mat'),'file')
+        temp = load(fullfile(root_path,dir_names{i},'results_eNB.mat'));
+        %results_eNB = cat(1,results_eNB,temp);
+        
         nn = fieldnames(temp);
         if (i==1)
             for n = 1:length(nn)
@@ -32,9 +33,7 @@ for i=1:length(dir_names)
         for n = 1:length(nn)
             eval([nn{n} '= cat(' num2str(dim(n)) ', ' nn{n} ', temp.' nn{n} ');']);
         end
-            
-        %results_UE = cat(1,results_UE,temp);
-        
+       
     end
 %    if exist(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'),'file')
 %        nomadic = load(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'));
@@ -55,15 +54,8 @@ for i=1:length(dir_names)
 %    end
 end
 
-% %%
-% table = [[results_UE.gps_lon_cat]; [results_UE.gps_lat_cat]; double([results_UE.UE_mode_cat])].';
-% dlmwrite('UE_mode_all.csv',table,'delimiter',';','precision','%10.8f');
-% dlmwrite('UE_mode_2and3.csv',table([results_UE.UE_mode_cat]==3 | [results_UE.UE_mode_cat]==2,:),'delimiter',';','precision','%10.8f');
+% save(fullfile(pathname,'results_eNB.mat'));
+save(fullfile(pathname,'results_eNB.mat'),nn{:});
 
-save(fullfile(pathname,'results_UE.mat'),nn{:});
-
-nomadic_flag = false;
 h_fig = 0;
-
-plot_results_UE_quick_common
-
+plot_results_eNB_quick

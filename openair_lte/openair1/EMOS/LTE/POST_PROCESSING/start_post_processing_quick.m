@@ -9,7 +9,7 @@ struct_template;
 
 root_path = '/emos/EMOS/Mode6/';
 
-d = dir(fullfile(root_path, '*PUSCH*'));
+d = dir(fullfile(root_path, '*'));
 dir_names = {d.name};
 
 %% post processing for nomadic points
@@ -25,16 +25,19 @@ dir_names = {d.name};
 % 
 
  
-% % post processing for vehicular measurements
-% for i=1:length(dir_names)
-%     pathname = fullfile(root_path,dir_names{i});
-%     post_processing_UE_quick
-%     post_processing_eNb_quick
-% end
+% post processing for vehicular measurements
+for i=1:length(dir_names)
+    pathname = fullfile(root_path,dir_names{i});
+    post_processing_UE_quick
+    post_processing_eNb_quick
+end
 
 for i=1:length(dir_names)
     pathname = fullfile(root_path,dir_names{i});
-    %plot_results_UE_quick
+    disp(pathname);
+    h_fig = 0;
+    plot_results_UE_quick
+    get_gps_coordinates_eNB
     plot_results_eNb_quick
-    plot_results_eNb_aligned
+    %plot_results_eNb_aligned
 end

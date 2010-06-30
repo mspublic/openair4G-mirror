@@ -32,6 +32,9 @@ for est=1:length(estimates_eNB)
     if (version<1)
         sector = estimates_eNB(est).eNb_UE_stats(3,1).sector;
         if sector~=0 
+            chcap_siso_single_stream_4Qam(1, :, est) = nan;
+            chcap_siso_single_stream_16Qam(1, :, est) = nan;
+            chcap_siso_single_stream_64Qam(1, :, est) = nan;
             continue
         end
     else

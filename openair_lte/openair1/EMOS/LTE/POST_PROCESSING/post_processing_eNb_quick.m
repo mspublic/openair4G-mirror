@@ -27,6 +27,7 @@ else
     gps_lon_cat = [];
     gps_lat_cat = [];
     gps_time_cat = [];
+    gps_speed_cat = [];
     frame_tx_cat = [];
     ulsch_errors_cat = [];
     mcs_cat = [];
@@ -107,6 +108,7 @@ for file_idx = start_idx:length(filenames)
     gps_lon_cat = [gps_lon_cat [gps_data.longitude]];
     gps_lat_cat = [gps_lat_cat [gps_data.latitude]];
     gps_time_cat = [gps_time_cat [gps_data.timestamp]];
+    gps_speed_cat = [gps_speed_cat [gps_data.speed]];
     
     Rate_4Qam_1RX_cat = [Rate_4Qam_1RX_cat; Rate_4Qam_1RX];
     Rate_16Qam_1RX_cat = [Rate_16Qam_1RX_cat; Rate_16Qam_1RX];
@@ -121,7 +123,7 @@ for file_idx = start_idx:length(filenames)
     
     save(fullfile(pathname,'results_eNB.mat'),'phy_measurements_cat',...
         'eNb_UE_stats_cat','timestamp_cat','frame_tx_cat','mcs_cat','tbs_cat',...
-        'ulsch_errors_cat','rx_N0_dBm_cat','gps_lon_cat','gps_lat_cat','gps_time_cat',...
+        'ulsch_errors_cat','rx_N0_dBm_cat','gps_lon_cat','gps_lat_cat','gps_time_cat','gps_speed_cat',...
         'Rate*cat','siso*cat',...
         'file_idx','NFrames','start_time','filenames','filedates');
 

@@ -21,8 +21,8 @@ function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi,
 
 if (~isempty(rx_rssi))
     m = colormap;
-    cmin = min(rx_rssi);
-    cmax = max(rx_rssi);
+    cmin = min(rx_rssi(isfinite(rx_rssi)));
+    cmax = max(rx_rssi(isfinite(rx_rssi)));
     s = (cmax-cmin)/(length(m)-1);
     if (s==0)
         cidx = ones(size(rx_rssi));
@@ -72,12 +72,12 @@ end
     
 if (~isempty(rx_rssi))
     for i=1:length(gps_x)
-        if (latitude(i)~=0 && longitude(i)~=0 && ~isnan(cidx(i)))
+        if (latitude(i)~=0 && longitude(i)~=0 && isfinite(rx_rssi(i)))
             plot(gps_x(i),gps_y(i),'color',m(cidx(i),:),style{:})
             hold on
         end
     end
-    yt = round(linspace(min(rx_rssi),max(rx_rssi),8));
+    yt = round(linspace(cmin,cmax,8));
     hcb = colorbar;
     set(hcb,'YTickMode','manual');
     set(hcb,'YTick',8:8:length(m));

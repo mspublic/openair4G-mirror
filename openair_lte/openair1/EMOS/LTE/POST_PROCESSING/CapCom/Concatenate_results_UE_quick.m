@@ -1,15 +1,12 @@
-%load(fullfile(pathname,'results_UE.mat'));
-%addpath('../IntegrityCheck')
-%clear all;
-%clc;
-%mm=imread('maps/cordes.png');
 %pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/20100510_mode2_parcours1_part1/';
+
 d = dir(fullfile(pathname, 'data_term3*.mat'));
 filenames = {d.name};
 
 gps_data_cat = [];
 
 %minestimates_cat = [];
+UE_mode_cat = [];
 
 K_fac_cat = [];
 
@@ -40,7 +37,9 @@ for f = 1:length(filenames)
 
     gps_data_cat = cat(2,gps_data_cat,gps_data);
     
-    %minestimates_cat = cat(2,minestimates_cat,minestimates);   
+    %minestimates_cat = cat(2,minestimates_cat,minestimates);  
+    
+    UE_mode_cat = cat(2,UE_mode_cat,[minestimates.UE_mode]);
     
     K_fac_cat = cat(2,K_fac_cat,K_fac);
     
