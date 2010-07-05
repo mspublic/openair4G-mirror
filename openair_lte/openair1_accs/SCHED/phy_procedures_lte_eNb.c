@@ -174,7 +174,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
   int time_in, time_out;
   short *x, *y, *z;
   char fname[100],vname[100];
-
+  unsigned char selected_pcc;
 
   if (last_slot%2==1) {
     
@@ -331,6 +331,9 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 
     if (I0_clear == 1)
       I0_clear = 0;
+
+    selected_pcc = accs_select_pcc(ccat);
+    debug_msg("[PHY_PROCEDURES_LTE] Selected PCC %d\n",selected_pcc);
   }
 }
 

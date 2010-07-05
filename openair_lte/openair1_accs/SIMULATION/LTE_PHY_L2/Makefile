@@ -79,7 +79,7 @@ PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
 ifdef EMOS
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
 endif
-
+PHY_OBJS += $(TOP_DIR)/PHY/ACCS/select_pcc.o
 
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  

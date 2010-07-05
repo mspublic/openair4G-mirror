@@ -69,6 +69,8 @@ extern UE_MODE_t UE_mode;
 extern char mode_string[4][20];
 
 extern unsigned short t_crnti;
+
+#include "PHY/ACCS/extern.h"
 #include "PHY/LTE_TRANSPORT/extern.h"
 
 #endif

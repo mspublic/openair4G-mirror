@@ -106,6 +106,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "PHY/LTE_ESTIMATION/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
+#include "PHY/ACCS/defs.h"
 #endif //OPENAIR_LTE
 
 
