@@ -180,11 +180,11 @@ saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode6_feedbackq_1stRx.eps
 % 2nd Rx antenna
 in = in+1;    
 h_fig = figure(in);
-saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode1_2ndRx.eps'),'epsc2');
 title('Ideal Throughput vs Speed for Mode1, 2ndRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
 plot_in_bins([gps_data_cat.speed], rateps_SISO_64Qam_eNB1_2ndRx_cat,  0:5:40);
+saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode1_2ndRx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);

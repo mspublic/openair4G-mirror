@@ -7,9 +7,9 @@ addpath('CapCom')
 decimation = 100;
 struct_template;
 
-root_path = '/emos/EMOS/Mode6/';
+root_path = '/emos/EMOS/Mode1/';
 
-d = dir(fullfile(root_path, '*'));
+d = dir(fullfile(root_path, '*mode1*'));
 dir_names = {d.name};
 
 %% post processing for nomadic points
@@ -37,7 +37,7 @@ for i=1:length(dir_names)
     disp(pathname);
     h_fig = 0;
     plot_results_UE_quick
-    get_gps_coordinates_eNB
-    plot_results_eNb_quick
+    %get_gps_coordinates_eNB
+    %plot_results_eNb_quick
     %plot_results_eNb_aligned
 end

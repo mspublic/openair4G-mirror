@@ -8,12 +8,12 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Mode6/';  
-d = dir(fullfile(root_path, '*PUSCH*'));
+root_path = '/emos/EMOS/Mode1/';  
+d = dir(fullfile(root_path, '*mode1*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/EMOS/Mode6/results';
+pathname = '/emos/EMOS/Mode1/results';
 
 mm=imread('maps/cordes.png');
 decimation = 100;

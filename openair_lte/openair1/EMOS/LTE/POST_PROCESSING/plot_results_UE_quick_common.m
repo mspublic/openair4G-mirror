@@ -1,7 +1,7 @@
 %%
 UE_synched = (UE_mode_cat>0);
 UE_connected = (UE_mode_cat==3);
-timebase = gps_time_cat-gps_time_cat(1);
+timebase = gps_time_cat-gps_time_cat(find(~isnan(gps_time_cat),1));
 if (nomadic_flag)
     nomadic.UE_synched = (nomadic.UE_mode_cat>0);
     nomadic.UE_connected = (nomadic.UE_mode_cat==3);    
@@ -79,11 +79,12 @@ saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_dist_bars.eps'),'epsc2');
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-plot(dist(good(:,1)), double(rx_rssi_dBm_cat(good(:,1),1)), 'rx')
+dist_ok = (dist>0).';
+plot(dist(dist_ok & good(:,1)), double(rx_rssi_dBm_cat(dist_ok & good(:,1),1)), 'rx')
 hold on
-PL = double(rx_rssi_dBm_cat(good(:,1),1)) - 43;
-d = 0:0.1:ceil(max(dist(good(:,1))));
-res = [ones(length(PL),1) log10(dist(good(:,1)).')]\PL;
+PL = double(rx_rssi_dBm_cat(dist_ok & good(:,1),1)) - 43;
+d = 0:0.1:ceil(max(dist(dist_ok & good(:,1))));
+res = [ones(length(PL),1) log10(dist(dist_ok & good(:,1)).')]\PL;
 plot(d,res(1)+res(2)*log10(d)+43,'b')
 plot(d,43-cost231_hata(d),'k')
 legend('measured','fitted','COST231-Hata');

@@ -5,14 +5,14 @@ estimates_eNB = load(fullfile(pathname,'results_eNB.mat'));
 % not have set the flag in the same frame)
 eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]==3);
 timebase = estimates_eNB.gps_time_cat - min(estimates_eNB.gps_time_cat);
-[dist, dist_traveled] = calc_dist(gps_lat_cat,gps_lon_cat);
+[dist, dist_traveled] = calc_dist(estimates_eNB.gps_lat_cat,estimates_eNB.gps_lon_cat);
 
 %% N0 over time
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-plot(timebase,estimates_eNB.rx_N0_dBm_cat,'x')
-%plot(double(timestamp_cat)/1e9,rx_N0_dBm_cat,'x')
+%plot(timebase,estimates_eNB.rx_N0_dBm_cat,'x')
+plot(double(estimates_eNB.timestamp_cat)/1e9,estimates_eNB.rx_N0_dBm_cat,'x')
 title('UL I0 [dBm]')
 xlabel('Time [sec]')
 ylabel('UL I0 [dBm]')
@@ -48,33 +48,6 @@ plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ..
 title('UL RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm_gps.jpg'),'jpg')
 
-%% Throughputs on maps
-h_fig = h_fig+1;
-figure(h_fig);
-hold off
-plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
-        ulsch_throughput);
-title('UL Throughput (modem) [bps]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_gps.jpg'),'jpg')
-
-%%
-h_fig = h_fig+1;
-figure(h_fig);
-hold off
-plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
-        ulsch_throughput_ideal_1Rx*100);
-title('UL Throughput (ideal, 1Rx) [bps]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_gps.jpg'),'jpg')
-
-%%
-h_fig = h_fig+1;
-figure(h_fig);
-hold off
-plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
-        ulsch_throughput_ideal_2Rx);
-title('UL Throughput (ideal, 2Rx) [bps]')
-saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_gps.jpg'),'jpg')
-
 
 %% ULSCH throughput over time
 % if (estimates_eNB.start_time(1) >= datenum('20100610T000000','yyyymmddTHHMMSS'));
@@ -107,6 +80,34 @@ title('UL Throughput [bps]')
 xlabel('Time [sec]')
 ylabel('UL Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'UL_throughput.eps'),'epsc2')
+
+%% Throughputs on maps
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
+        ulsch_throughput);
+title('UL Throughput (modem) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_gps.jpg'),'jpg')
+
+%%
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
+        ulsch_throughput_ideal_1Rx*100);
+title('UL Throughput (ideal, 1Rx) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_gps.jpg'),'jpg')
+
+%%
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
+        ulsch_throughput_ideal_2Rx);
+title('UL Throughput (ideal, 2Rx) [bps]')
+saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_gps.jpg'),'jpg')
+
 
 %% Coded throughput CDF comparison
 h_fig = h_fig+1;
@@ -147,7 +148,7 @@ saveas(h_fig,fullfile(pathname,'UL_uncoded_throughput_cdf_comparison.eps'),'epsc
 %% plot througput as a function of speed
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
-plot_in_bins(gps_speed_cat, ulsch_throughput,  0:5:40);
+    plot_in_bins(estimates_eNB.gps_speed_cat, ulsch_throughput,  0:5:40);
 title('UL Throughput vs Speed');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
@@ -155,7 +156,7 @@ saveas(h_fig,fullfile(pathname,'UL_throughput_speed.eps'),'epsc2');
 
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
-plot_in_bins(gps_speed_cat, ulsch_throughput_ideal_1Rx*100,  0:5:40);
+plot_in_bins(estimates_eNB.gps_speed_cat, ulsch_throughput_ideal_1Rx*100,  0:5:40);
 title('UL Throughput vs Speed, ideal, 1Rx');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
@@ -163,7 +164,7 @@ saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_speed.eps'),'epsc2');
 
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
-plot_in_bins(gps_speed_cat, ulsch_throughput_ideal_2Rx*100,  0:5:40);
+plot_in_bins(estimates_eNB.gps_speed_cat, ulsch_throughput_ideal_2Rx*100,  0:5:40);
 title('UL Throughput vs Speed, ideal, 2Rx');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');

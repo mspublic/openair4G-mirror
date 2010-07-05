@@ -8,7 +8,7 @@ mm=imread('maps/cordes.png');
 decimation = 100;
 
 load(fullfile(pathname,'results_UE.mat'));
-if exist(fullfile(pathname,'nomadic'),'dir')
+if exist(fullfile(pathname,'nomadic','results_UE.mat'),'dir')
     nomadic = load(fullfile(pathname,'nomadic','results_UE.mat'));
     nomadic_flag = true;
 else
