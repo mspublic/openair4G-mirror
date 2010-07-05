@@ -199,7 +199,7 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
       first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
       
-      generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
+      generate_drs_pusch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
       
       input_buffer_length = ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       
