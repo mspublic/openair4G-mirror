@@ -16,7 +16,7 @@ function uncoded_rps = coded2uncoded(coded_rps,direction)
 % 16QAM: 	5.76 Mbps	3.24 Mbps
 % 64QAM: 	8.64 Mbps	4.86 Mbps
 
-uncoded_rps = zeros(size(coded_rps));
+uncoded_rps = coded_rps;
 
 switch (direction)
     case 'DL'

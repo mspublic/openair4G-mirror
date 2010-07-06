@@ -6,10 +6,13 @@ close all
 
 decimation = 1;
 NFrames_max = 100*60*10;
-pathname = '/emos/EMOS/Mode2/20100520_mode2_parcours1_part4_part5/';
+%pathname = '/emos/EMOS/Mode2/20100520_mode2_parcours1_part4_part5/';
+pathname = '/emos/EMOS/Mode2/results';
 
 %%
-Concatenate_results_UE_quick
+%Concatenate_results_UE_quick
+
+load(fullfile(pathname,'results_cat_UE.mat'));
 
 plot_results_cat
 

@@ -15,4 +15,7 @@ for k=1:length(edges)
 end
 
 bar(edges,out);
+for i=1:length(edges)
+    text(edges(i),max(out(i,:)),num2str(n(i)), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
+end
 legend('Mean','50% percentile','90% percentile','95% percentile');

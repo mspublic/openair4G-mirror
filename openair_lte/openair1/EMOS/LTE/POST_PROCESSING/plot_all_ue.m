@@ -8,12 +8,12 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Mode1/';  
-d = dir(fullfile(root_path, '*mode1*'));
+root_path = '/emos/EMOS/Mode2_update/';  
+d = dir(fullfile(root_path, '*mode*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/EMOS/Mode1/results';
+pathname = '/emos/EMOS/Mode2_update/results';
 
 mm=imread('maps/cordes.png');
 decimation = 100;
@@ -22,15 +22,15 @@ dim = zeros(1,length(dir_names));
 for i=1:length(dir_names)
     if exist(fullfile(root_path,dir_names{i},'results_UE.mat'),'file')
         temp = load(fullfile(root_path,dir_names{i},'results_UE.mat'));
-        nn = fieldnames(temp);
         if (i==1)
+            nn = fieldnames(temp);
             for n = 1:length(nn)
                 eval([nn{n} '= [];']);
                 [dummy, dim(n)] = eval(['max(size(temp.' nn{n} '))']); 
             end
         end
         for n = 1:length(nn)
-            eval([nn{n} '= cat(' num2str(dim(n)) ', ' nn{n} ', temp.' nn{n} ');']);
+            eval([nn{n} '   = cat(' num2str(dim(n)) ', ' nn{n} ', temp.' nn{n} ');']);
         end
             
         %results_UE = cat(1,results_UE,temp);

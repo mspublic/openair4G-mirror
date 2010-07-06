@@ -7,9 +7,9 @@ addpath('CapCom')
 decimation = 100;
 struct_template;
 
-root_path = '/emos/EMOS/Mode1/';
+root_path = '/emos/EMOS/Mode2_update/';
 
-d = dir(fullfile(root_path, '*mode1*'));
+d = dir(fullfile(root_path, '*mode*'));
 dir_names = {d.name};
 
 %% post processing for nomadic points

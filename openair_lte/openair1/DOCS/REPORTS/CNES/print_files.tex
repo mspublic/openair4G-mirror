@@ -1,0 +1,271 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[pdftex,dvips]{graphicx}
+\usepackage[T1]{fontenc}
+\usepackage{url}
+\usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
+
+
+
+\newcommand{\printfile}[1]{
+ \begin{minipage}{8cm}
+  \centering
+  \includegraphics[width=8cm]{/extras/kaltenbe/CNES/emos_postprocessed_data/#1}
+  \url{#1}
+
+ \end{minipage}
+}
+
+%\addtolength{\textwidth}{3cm}
+%\setlength{\marginparwidth}{0cm}
+%\setlength{\hoffset}{0cm}
+
+\begin{document}
+% \section{Mode 1}
+% 
+% \printfile{./Mode1/20100526_mode1_parcours1_part4_part5/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode1/20100527_mode1_parcours1/RX_RSSI_dBm_gps.jpg}
+% 
+% \section{Mode 2}
+% \printfile{./Mode2/20100510_mode2_parcours1_part1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100510_mode2_parcours1_part2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100510_mode2_parcours1_part3.1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100510_mode2_parcours1_part3.2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100511_mode2_parcours1_part4_5_6/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100511_mode2_parcours2_part5/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100512_mode2_parcours2_part7/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100512_mode2_parcours2_part7/nomadic/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100518_mode2_parcours1_part6.1/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100518_mode2_parcours1_part6.1/nomadic/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100518_mode2_parcours1_part6.2/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100518_mode2_parcours1_part6.2/nomadic/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100518_mode2_parcours1_part6.3/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100518_mode2_parcours1_part6.3/nomadic/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100519_mode2_parcours1_part7.1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100519_mode2_parcours1_part7.2/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100519_mode2_parcours1_part7.2/nomadic/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100519_mode2_parcours1_part7.3/RX_RSSI_dBm_gps.jpg}
+% %\printfile{./Mode2/20100519_mode2_parcours1_part7.3/nomadic/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100520_mode2_parcours1_part4_part5/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100520_mode2_parcours1_part9_parcours2_part1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100521_mode2_parcours2_part1_part2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100524_mode2_parcours2_part3_part4.1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100524_mode2_parcours2_part3_part4.2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100524_mode2_parcours2_part3_part4.3/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100525_mode2_parcours2_part4_part8_part9_part10.1/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100525_mode2_parcours2_part4_part8_part9_part10.2/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100525_mode2_parcours2_part4_part8_part9_part10.3/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100607_VTP_MODE2_PARCOURS1_S2_3/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode2/20100608_VTP_MODE2_PARCOURS1_S7_9/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode2/20100608_VTP_MODE2_PARCOURS1_S8/RX_RSSI_dBm_gps.jpg}
+% 
+% \section{Mode 6}
+% 
+% \printfile{./Mode6/20100528_mode6_parcours1_section1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100528_mode6_parcours1_section2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART3/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100609_VTP_MODE6_ZONES_PUSCH_PART4/RX_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/RX_RSSI_dBm_gps.jpg}
+% 
+% \section{UL}
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART3/UL_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/UL_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART1/UL_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100609_VTP_MODE6_ZONES_PUSCH_PART4/UL_RSSI_dBm_gps.jpg}
+% 
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/UL_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/UL_RSSI_dBm_gps.jpg}
+% 
+% \section{UL ideal}
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART3/UL_throughput_ideal_2Rx_gps.jpg}
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/UL_throughput_ideal_2Rx_gps.jpg}
+% 
+% \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART1/UL_throughput_ideal_2Rx_gps.jpg}
+% \printfile{./Mode6/20100609_VTP_MODE6_ZONES_PUSCH_PART4/UL_throughput_ideal_2Rx_gps.jpg}
+% 
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/UL_throughput_ideal_2Rx_gps.jpg}
+% \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/UL_throughput_ideal_2Rx_gps.jpg}
+
+%\section{all plots}
+
+\section{Interference measurements}
+
+
+\section{RX RSSI}
+\printfile{Mode2/results/RX_RSSI_dBm_gps.jpg}
+\printfile{Mode2/results/RX_RSSI_dBm.pdf}
+
+\printfile{Mode2/results/RX_RSSI_dBm_dist_bars.pdf}
+\printfile{Mode2/results/RX_RSSI_dBm_dist_with_PL.pdf}
+
+\printfile{Mode6/results/UL_RSSI_dBm_gps.jpg}
+\printfile{Mode6/results/UL_RSSI_dBm.pdf}
+
+
+\section{Coverage measurements}
+We need here a comparison of mode 1 and 2!!!
+
+%\subsection{PBCH}
+\printfile{Mode1/results/PBCH_FER.pdf}
+\printfile{Mode1/results/PBCH_fer_gps.jpg}
+
+\printfile{Mode2_update/results/PBCH_FER.pdf}
+\printfile{Mode2_update/results/PBCH_fer_gps.jpg}
+
+
+\subsection{Rice Factor}
+
+%\printfile{Mode2/results/K_factor_gps.jpg}
+
+\subsection{UE mode comparison}
+%\printfile{Mode6/results/frame_tx.pdf}
+\printfile{Mode1/results/UE_mode_gps.jpg}
+\printfile{Mode2/results/UE_mode_gps.jpg}
+
+\printfile{Mode2_update/results/UE_mode_gps.jpg}
+\printfile{Mode6/results/UE_mode_gps.jpg}
+
+\subsection{DL L1 (coded) Throughput}
+
+\subsubsection{CDF}
+
+The CDF comparison is done in two different ways. In the first way, the measurement points where the UE was not connected, the throughput was set to 0. However, to compare measurements taken in different transmission modes (not the ideal rates) this is unfair, because the routes were not the same. Therefore in a second comparison we only compare the points where the UE was connected.
+
+\printfile{results/DLSCH_throughput_cdf_comparison.pdf}
+\printfile{results/DLSCH_throughput_connected_cdf_comparison.pdf}
+
+\subsubsection{Time}
+
+\printfile{Mode1/results/DLSCH_throughput.pdf}
+\printfile{Mode2/results/DLSCH_throughput.pdf}
+
+\printfile{Mode6/results/DLSCH_throughput.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_time_1stRx.pdf}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_time_2ndRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_time_2Rx.pdf}
+
+
+\subsubsection{Map}
+
+\printfile{Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{Mode2/results/DLSCH_troughput_gps.jpg}
+
+\printfile{Mode6/results/DLSCH_troughput_gps.jpg}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_Alamouti_gps_2Rx.jpg}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_SISO_gps_2Rx.jpg}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/coded_throughput_optBeamforming_gps_2Rx.jpg}
+
+
+\subsubsection{Distance}
+
+\printfile{Mode1/results/DLSCH_throughput_dist.pdf}
+\printfile{Mode2/results/DLSCH_throughput_dist.pdf}
+
+\printfile{Mode6/results/DLSCH_throughput_dist.pdf}
+
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode1_1stRx.pdf}
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode1_2ndRx.pdf}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode1_2Rx.pdf}
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode2_1stRx.pdf}
+%
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode2_2ndRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode2_2Rx.pdf}
+
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode6_feedbackq_1stRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
+%
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode6_maxq_1stRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
+
+\subsubsection{Speed}
+
+\printfile{Mode1/results/DLSCH_throughput_speed.pdf}
+\printfile{Mode2/results/DLSCH_throughput_speed.pdf}
+
+\printfile{Mode6/results/DLSCH_throughput_speed.pdf}
+
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode1_1stRx.pdf}
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode1_2ndRx.pdf}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode1_2Rx.pdf}
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode2_1stRx.pdf}
+%
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode2_2ndRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode2_2Rx.pdf}
+
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode6_feedbackq_1stRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode6_feedbackq_2Rx.pdf}
+%
+%\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode6_maxq_1stRx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_throughput_speed_mode6_maxq_2Rx.pdf}
+
+
+
+\subsubsection{DL L0 (uncoded) throughput}
+
+\printfile{results/DLSCH_uncoded_throughput_cdf_comparison.pdf}
+\printfile{results/DLSCH_uncoded_throughput_connected_cdf_comparison.pdf}
+
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/ideal_uncoded_throughput_time_2Rx.pdf}
+\printfile{Mode2/20100520_mode2_parcours1_part4_part5/uncoded_throughput_cdf_comparison.pdf}
+
+\subsection{UL L1 (coded) throughput}
+
+\subsubsection{CDF}
+\printfile{Mode6/results/UL_throughput_cdf_comparison.pdf}
+
+\subsubsection{Time}
+\printfile{Mode6/results/UL_throughput.pdf}
+
+\subsubsection{Map}
+\printfile{Mode6/results/UL_throughput_gps.jpg}
+
+\printfile{Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
+\printfile{Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+
+\subsubsection{Distance}
+\printfile{Mode6/results/UL_throughput_dist.pdf}
+
+\printfile{Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
+\printfile{Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
+
+
+\subsubsection{Speed}
+\printfile{Mode6/results/UL_throughput_speed.pdf}
+
+\printfile{Mode6/results/UL_throughput_ideal_1Rx_speed.pdf}
+\printfile{Mode6/results/UL_throughput_ideal_2Rx_speed.pdf}
+
+
+
+\subsection{UL L0 (uncoded) throughput}
+
+\printfile{Mode6/results/UL_uncoded_throughput_cdf_comparison.pdf}
+
+
+
+\end{document}          
