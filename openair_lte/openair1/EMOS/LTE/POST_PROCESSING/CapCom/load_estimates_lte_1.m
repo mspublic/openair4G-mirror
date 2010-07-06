@@ -165,7 +165,7 @@ else
     Ratepersec_4Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
-    
+   % Rate_mode4_sch = zeros(1,floor(NFrames/100));
     
     siso_SNR_1stRx = zeros(1,floor(NFrames/100));
     siso_SNR_2ndRx = zeros(1,floor(NFrames/100));
@@ -179,9 +179,13 @@ else
     bmfr_maxq_SNR_2Rx = zeros(1,floor(NFrames/100));
     bmfr_fbq_SNR_2Rx = zeros(1,floor(NFrames/100));
     
-    K_fac = zeros(1,NFrames);
+    K_fac = [];
     
     minestimates = repmat(min_estimates_struct, 1,NFrames);
+    h11_eNbm = [];
+    h12_eNbm = [];
+    h21_eNbm = [];
+    h22_eNbm = [];
 end
 gps_data = repmat(gps_data_struct,1,NFrames/100);
 
@@ -237,25 +241,30 @@ for n=1:NFiles
             Hc = double(H(1:2:end,:,:))+1j*double(H(2:2:end,:,:));
             Hs = squeeze(10*log10(sum(sum(abs(Hc).^2,1),2)));
             [val, ind] = max(Hs);
-            
-            
-            h11_eNB = double(estimates_tmp.channel(1:2:end,1,ind)) + 1j*double(estimates_tmp.channel(2:2:end,1,ind));
-            h12_eNB = double(estimates_tmp.channel(1:2:end,2,ind)) + 1j*double(estimates_tmp.channel(2:2:end,2,ind));
-            h21_eNB = double(estimates_tmp.channel(1:2:end,3,ind)) + 1j*double(estimates_tmp.channel(2:2:end,3,ind));
-            h22_eNB = double(estimates_tmp.channel(1:2:end,4,ind)) + 1j*double(estimates_tmp.channel(2:2:end,4,ind));
-            
-            com_h = [(abs(h11_eNB').^2) (abs(h12_eNB').^2) (abs(h21_eNB').^2) (abs(h22_eNB').^2)];
-            
-            [K_fac(k),v2,s2] = estimate_rice(com_h);
-%             PD = fitdist(sqrt(com_h(com_h>0).'), 'rician');
-%             K_fac(k) = PD.s.^2/(2*PD.sigma.^2);
+
+            h11_eNB = double(estimates_tmp.channel(1:2:end/2,1,ind)) + 1j*double(estimates_tmp.channel(2:2:end/2,1,ind));
+            h12_eNB = double(estimates_tmp.channel(1:2:end/2,2,ind)) + 1j*double(estimates_tmp.channel(2:2:end/2,2,ind));
+            h21_eNB = double(estimates_tmp.channel(1:2:end/2,3,ind)) + 1j*double(estimates_tmp.channel(2:2:end/2,3,ind));
+            h22_eNB = double(estimates_tmp.channel(1:2:end/2,4,ind)) + 1j*double(estimates_tmp.channel(2:2:end/2,4,ind));
+
+            h11_eNB1 = reshape(h11_eNB, 50,4);
+            h12_eNB1 = reshape(h12_eNB, 50,4);
+            h21_eNB1 = reshape(h21_eNB, 50,4);
+            h22_eNB1 = reshape(h22_eNB, 50,4);
+
+            h11_eNbm = [h11_eNbm mean((abs(h11_eNB1)).^2,1)];
+            h12_eNbm = [h12_eNbm mean((abs(h12_eNB1)).^2,1)];
+            h21_eNbm = [h21_eNbm mean((abs(h21_eNB1)).^2,1)];
+            h22_eNbm = [h22_eNbm mean((abs(h22_eNB1)).^2,1)];
+          
+          
         end
         
         
         %read GPS data and estimates every second
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
             gps_data(l) = binread(fid,gps_data_struct,1,4,'l');
-            l=l+1;
+            
             count = 0;
             
             if (is_eNb)
@@ -263,25 +272,37 @@ for n=1:NFiles
                 [Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),siso_SNR_2Rx(sec)] = calc_rps_SISO_UL(estimates,2,version,1);
             else
                 
+               K1(l) = estimate_rice(h11_eNbm);
+               K2(l) = estimate_rice(h12_eNbm);
+               K3(l) = estimate_rice(h21_eNbm);
+               K4(l) = estimate_rice(h22_eNbm);
+                h11_eNbm = [];
+                h12_eNbm = [];
+                h21_eNbm = [];
+                h22_eNbm = [];
+                K_fac = [K_fac K1(l) K2(l) K3(l) K4(l)];
+                
+%                 %[Rate_mode4_sch(sec), mode4_SNR] = calc_rps_mode4(estimates);
+%                 
                 [Ratepersec_4Qam_SISO_1stRx(sec),Ratepersec_16Qam_SISO_1stRx(sec),Ratepersec_64Qam_SISO_1stRx(sec),Ratepersec_4Qam_SISO_2ndRx(sec),...
                     Ratepersec_16Qam_SISO_2ndRx(sec),Ratepersec_64Qam_SISO_2ndRx(sec),siso_SNR_1stRx(sec),siso_SNR_2ndRx(sec),...
                     Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),...
                     siso_SNR_2Rx(sec)]  = calc_rps_SISO(estimates);
-                
-%                 siso_SNR_1stRx = [siso_SNR_1stRx siso_SNR_1stRx_persecond];
-%                 siso_SNR_2ndRx = [siso_SNR_2ndRx siso_SNR_2ndRx_persecond];
-%                 siso_SNR_2Rx = [siso_SNR_2Rx siso_SNR_2Rx_persecond];
-                
-                % include results for 1 Rx with other Rx antenna
+%                 
+% %                  siso_SNR_1stRx = [siso_SNR_1stRx siso_SNR_1stRx];
+% %                  siso_SNR_2ndRx = [siso_SNR_2ndRx siso_SNR_2ndRx];
+% %                  siso_SNR_2Rx = [siso_SNR_2Rx siso_SNR_2Rx];
+%                 
+%                 % include results for 1 Rx with other Rx antenna
                 [Ratepersec_4Qam_alamouti_1stRx(sec),Ratepersec_16Qam_alamouti_1stRx(sec),Ratepersec_64Qam_alamouti_1stRx(sec),...
                     Ratepersec_4Qam_alamouti_2ndRx(sec),Ratepersec_16Qam_alamouti_2ndRx(sec),Ratepersec_64Qam_alamouti_2ndRx(sec),...
                     alam_SNR_1stRx(sec),alam_SNR_2ndRx(sec),Ratepersec_4Qam_alamouti_2Rx(sec),Ratepersec_16Qam_alamouti_2Rx(sec),...
                     Ratepersec_64Qam_alamouti_2Rx(sec),alam_SNR_2Rx(sec)]  = calc_rps_Alamouti(estimates);
-                
-%                 alam_SNR_1stRx = [alam_SNR_1stRx alam_SNR_1stRx_persecond];
-%                 alam_SNR_2ndRx = [alam_SNR_2ndRx alam_SNR_2ndRx_persecond];
-%                 alam_SNR_2Rx = [alam_SNR_2Rx alam_SNR_2Rx_persecond];
-                
+%                 
+% %                  alam_SNR_1stRx = [alam_SNR_1stRx alam_SNR_1stRx];
+% %                  alam_SNR_2ndRx = [alam_SNR_2ndRx alam_SNR_2ndRx];
+% %                  alam_SNR_2Rx = [alam_SNR_2Rx alam_SNR_2Rx];
+%                 
                 [Ratepersec_4Qam_beamforming_maxq_1Rx(sec),Ratepersec_16Qam_beamforming_maxq_1Rx(sec),...
                     Ratepersec_64Qam_beamforming_maxq_1Rx(sec),Ratepersec_4Qam_beamforming_feedbackq_1Rx(sec),...
                     Ratepersec_16Qam_beamforming_feedbackq_1Rx(sec),Ratepersec_64Qam_beamforming_feedbackq_1Rx(sec),...
@@ -289,13 +310,14 @@ for n=1:NFiles
                     Ratepersec_16Qam_beamforming_maxq_2Rx(sec),Ratepersec_64Qam_beamforming_maxq_2Rx(sec),...
                     Ratepersec_4Qam_beamforming_feedbackq_2Rx(sec),Ratepersec_16Qam_beamforming_feedbackq_2Rx(sec),...
                     Ratepersec_64Qam_beamforming_feedbackq_2Rx(sec),bmfr_maxq_SNR_2Rx(sec), bmfr_fbq_SNR_2Rx(sec)]  = calc_rps_Beamforming(estimates);
-                
-%                 bmfr_maxq_SNR_1Rx = [bmfr_maxq_SNR_1Rx bmfr_optmq_SNR_1Rx];
-%                 bmfr_fbq_SNR_1Rx = [bmfr_fbq_SNR_1Rx bmfr_feedbkq_SNR_1Rx];
-%                 bmfr_maxq_SNR_2Rx = [bmfr_maxq_SNR_2Rx bmfr_optmq_SNR_2Rx];
-%                 bmfr_fbq_SNR_2Rx = [bmfr_fbq_SNR_2Rx bmfr_feedbkq_SNR_2Rx];
-                
+                 
+%                  bmfr_maxq_SNR_1Rx = [bmfr_maxq_SNR_1Rx bmfr_optmq_SNR_1Rx];
+%                  bmfr_fbq_SNR_1Rx = [bmfr_fbq_SNR_1Rx bmfr_feedbkq_SNR_1Rx];
+%                  bmfr_maxq_SNR_2Rx = [bmfr_maxq_SNR_2Rx bmfr_optmq_SNR_2Rx];
+%                  bmfr_fbq_SNR_2Rx = [bmfr_fbq_SNR_2Rx bmfr_feedbkq_SNR_2Rx];
+%                 
             end
+            l=l+1;
             
             sec = sec +1;
             
@@ -368,6 +390,8 @@ else
     throughput.rateps_beamforming_4Qam_eNB1_2Rx_maxq = Ratepersec_4Qam_beamforming_maxq_2Rx;
     throughput.rateps_beamforming_16Qam_eNB1_2Rx_maxq = Ratepersec_16Qam_beamforming_maxq_2Rx;
     throughput.rateps_beamforming_64Qam_eNB1_2Rx_maxq = Ratepersec_64Qam_beamforming_maxq_2Rx;
+    
+    %throughput.rateps_mode4_sch = Rate_mode4_sch;
     
     SNR.siso_2Rx = siso_SNR_2Rx;
     SNR.alamouti_2Rx = alam_SNR_2Rx;
