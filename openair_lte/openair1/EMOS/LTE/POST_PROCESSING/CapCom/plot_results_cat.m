@@ -1,4 +1,7 @@
 %plot_results_cat
+load '/extras/kaltenbe/CNES/emos_postprocessed_data/Complete_Concat_Mat_Files/results/results_cat_UE.mat';
+
+pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/Complete_Concat_Mat_Files/results/';
 
 %%
 mm=imread('cordes.png');
@@ -9,9 +12,10 @@ plotwrtdistanceCalc;
 
 %% set throughput to 0 when UE was not connected
 UE_connected = all(reshape(UE_mode_cat,100,[])==3,1);
-nn = fieldnames(throughput);
+vars = whos('rateps*');
+nn = {vars.name};
 for n = 1:length(nn)
-    eval([nn{n} '_cat(~UE_connected) = 0;']);
+    eval([nn{n} '(~UE_connected) = 0;']);
 end
 K_fac_cat = reshape(K_fac_cat,4,[]);
 K_fac_cat(:,~UE_connected) = nan;
@@ -48,7 +52,7 @@ for n = 1:length(nn)
     hold on
     si = strfind(nn{n},'64Qam');
     if si
-        eval(['[f,x] = ecdf(' nn{n} '_cat);']);
+        eval(['[f,x] = ecdf(' nn{n} ');']);
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -79,7 +83,7 @@ for n = 1:length(nn)
     hold on
     si = strfind(nn{n},'64Qam');
     if si
-        eval(['[f,x] = ecdf(coded2uncoded(' nn{n} '_cat,''DL''));']);
+        eval(['[f,x] = ecdf(coded2uncoded(' nn{n} ',''DL''));']);
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
