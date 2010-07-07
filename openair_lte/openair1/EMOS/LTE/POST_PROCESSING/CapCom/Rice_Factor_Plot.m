@@ -32,7 +32,7 @@ end
 end
 save(fullfile(root_path, 'mode2_K_factor.mat'), 'lat_cat', 'lon_cat','K_fac_cat');
 
-mm=imread('maps/cordes.png');
+mm='cordes';
 
 %% Plotting Script
 in = 0;

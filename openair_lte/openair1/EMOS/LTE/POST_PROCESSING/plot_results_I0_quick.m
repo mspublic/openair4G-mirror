@@ -13,7 +13,7 @@ for i=1:length(filenames)
 end
 
 load(fullfile(pathname,'results.mat'));
-mm=imread('maps/cordes.png');
+mm='cordes';
 
 %%
 h_fig = figure(2);

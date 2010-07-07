@@ -1,3 +1,5 @@
+h_fig = 0;
+
 %%
 UE_synched = (UE_mode_cat>0);
 UE_connected = (UE_mode_cat==3);
@@ -193,6 +195,7 @@ saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'e
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 dlsch_throughput(~UE_connected | ~good) = nan;
+gps_speed_cat(~UE_connected | ~good) = nan;
 plot_in_bins(gps_speed_cat, dlsch_throughput,  0:5:40);
 title('DLSCH Throughput vs Speed');
 xlabel('Speed[Meters/Second]');
@@ -203,6 +206,7 @@ saveas(h_fig,fullfile(pathname,'DLSCH_throughput_speed.eps'),'epsc2');
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 dlsch_throughput(~UE_connected | ~good) = nan;
+dist(~UE_connected | ~good)  = nan;
 plot_in_bins(dist, dlsch_throughput,  0:15);
 title('DLSCH Throughput vs Dist');
 xlabel('Dist[km]');

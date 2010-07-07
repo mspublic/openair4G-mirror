@@ -1,4 +1,4 @@
-function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color, varargin)
+function [gps_x, gps_y] = plot_gps_coordinates(map, longitude, latitude, rx_rssi, label, color, varargin)
 % h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
 %
 %  This function plots the gps coordinates given by langitude and latutude
@@ -13,11 +13,31 @@ function [gps_x, gps_y] = plot_gps_coordinates(mm, longitude, latitude, rx_rssi,
 %  neccesary.
 %
 %  The function takes the following parameters
-%   mm ... image matrix (from imread) of the map; can be empty for no map
+%   map ... 'cordes','penne','ambialet'
 %   longitude, latitude  ... from gps data
 %   rx_rssi ... data to be plotted
 %   label (optional) ... text label for data
 %   color (optional) ... plot data in color instead of using data in rx_rssi
+
+persistent mm image_points gps_points_num;
+
+switch map
+    case 'cordes'
+        if isempty(mm)
+            mm=imread('cordes.png');
+            load('gps_calib_cordes.mat')
+        end
+    case 'penne'
+        if  isempty(mm)
+            mm=imread('Penne1.PNG');
+            load('gps_calib_penne.mat')
+        end
+    case 'ambialet'
+        error('map not yet availiable');
+    otherwise
+        mm=[];
+        load('gps_calib_cordes.mat')
+end
 
 if (~isempty(rx_rssi))
     m = colormap;
@@ -39,8 +59,6 @@ if nargin <= 6
 else
     style = varargin;
 end
-
-load('gps_calib_cordes.mat')
 
 x = image_points(:,1);
 y = image_points(:,2);

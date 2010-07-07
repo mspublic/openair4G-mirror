@@ -3,7 +3,8 @@
 % purpose: plots the results from the UE after post_processing_ue_quick
 % requires pathname to be set to the right directory
 
-mm=imread('maps/cordes.png');
+mm='cordes';
+%mm='penne';
 %pathname = 
 decimation = 100;
 

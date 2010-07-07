@@ -5,7 +5,7 @@ close all;
 %clc;
 
 %%
-mm=imread('cordes.png');
+mm='cordes';
 in = 0;
 
 %% set throughput to 0 when UE was not connected

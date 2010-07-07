@@ -22,7 +22,7 @@ end
 
 %%
 addpath('maps')
-mm=imread('maps/cordes.png');
+mm='cordes';
 
 %%
 h_fig = figure(1);

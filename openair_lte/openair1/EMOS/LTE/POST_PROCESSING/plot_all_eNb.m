@@ -15,7 +15,7 @@ dir_names = {d.name};
 % set to the output directory
 pathname = '/emos/EMOS/Mode6/results';
 
-mm=imread('maps/cordes.png');
+mm='cordes';
 decimation = 100;
 
 for i=1:length(dir_names)

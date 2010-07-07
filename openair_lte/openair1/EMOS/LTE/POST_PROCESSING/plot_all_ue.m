@@ -15,7 +15,7 @@ dir_names = {d.name};
 % set to the output directory
 pathname = '/emos/EMOS/Mode2_update/results';
 
-mm=imread('maps/cordes.png');
+mm='cordes';
 decimation = 100;
 dim = zeros(1,length(dir_names));
 

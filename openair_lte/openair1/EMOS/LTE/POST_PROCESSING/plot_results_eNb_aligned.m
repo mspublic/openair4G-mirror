@@ -1,7 +1,7 @@
 %% load data
 estimates_UE = load(fullfile(pathname,'results_UE.mat'));
 estimates_eNB = load(fullfile(pathname,'results_eNB.mat'));
-mm=imread('maps/cordes.png');
+mm='cordes';
 
 %% align the gps measurements of the UE with the eNB
 % calculate the align matrix

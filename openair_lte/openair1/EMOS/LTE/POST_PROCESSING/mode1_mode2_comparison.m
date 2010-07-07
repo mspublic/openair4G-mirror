@@ -1,6 +1,6 @@
 mode1=load('G:\EMOS\data\20100526_mode1_parcours1_part4_part5\results_UE.mat');
 mode2=load('G:\EMOS\data\20100520_mode2_parcours1_part4_part5\results_UE.mat');
-mm=imread('maps/cordes.png');
+mm='cordes';
 
 
 %%

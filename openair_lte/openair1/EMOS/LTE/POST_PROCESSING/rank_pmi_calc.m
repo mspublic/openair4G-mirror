@@ -104,7 +104,7 @@ save(fullfile(pathname, 'Mode2_PMI_Cat.mat'), 'lat_cat', 'rank_Ind_cat', 'lon_ca
 %%
 %PLOTTING SCRIPT
 
-mm=imread('maps/cordes.png');
+mm='cordes';
 in = 0;
 in = in + 1;
 h_fig = figure(in);
