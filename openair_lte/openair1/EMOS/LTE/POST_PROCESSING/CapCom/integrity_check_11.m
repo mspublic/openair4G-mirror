@@ -1,7 +1,7 @@
 close all
 clear all
 clc;
-pathname = '/emos/EMOS/Mode2_update';
+pathname = '/emos/EMOS/Mode2_update/';
 dd = dir(fullfile(pathname,'*mode*'));
 % dd(1).name = '/Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/';
 % dd(1).isdir = 1;
@@ -18,7 +18,7 @@ for dir_idx=1:1:length(dd)
     
     fpath = fullfile(pathname,dd(dir_idx).name);
     
-    d = dir(fullfile(fpath, 'data_term3*.EMOS'));
+    d = dir(fullfile(fpath, 'data_term1*.EMOS'));
     filenames = {d.name};
     
     decimation = 1;

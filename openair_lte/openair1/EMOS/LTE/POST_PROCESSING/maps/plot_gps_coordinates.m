@@ -39,6 +39,10 @@ switch map
         load('gps_calib_cordes.mat')
 end
 
+if nargin<=3
+    rx_rssi = [];
+end
+
 if (~isempty(rx_rssi))
     m = colormap;
     cmin = min(rx_rssi(isfinite(rx_rssi)));

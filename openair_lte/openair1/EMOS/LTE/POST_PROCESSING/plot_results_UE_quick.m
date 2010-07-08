@@ -3,11 +3,6 @@
 % purpose: plots the results from the UE after post_processing_ue_quick
 % requires pathname to be set to the right directory
 
-mm='cordes';
-%mm='penne';
-%pathname = 
-decimation = 100;
-
 load(fullfile(pathname,'results_UE.mat'));
 if exist(fullfile(pathname,'nomadic','results_UE.mat'),'dir')
     nomadic = load(fullfile(pathname,'nomadic','results_UE.mat'));
