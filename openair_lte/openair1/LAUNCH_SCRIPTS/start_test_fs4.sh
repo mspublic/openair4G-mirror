@@ -1,5 +1,5 @@
 sh /opt/XIO2000/xio_script.sh
-cd USERSPACE_TOOLS/OPENAIR_RF
+cd ../USERSPACE_TOOLS/OPENAIR_RF
 ./openair_rf_cbmimo1_lte 0 4 1
 rmmod -f openair_rf
 cd ../..
@@ -9,4 +9,4 @@ cd USERSPACE_TOOLS/OPENAIR_RF
 ./openair_rf_cbmimo1_lte 0 6 150 150 140 140
 ./openair_rf_cbmimo1_lte 0 14 0
 ./openair_rf_cbmimo1_lte 0 8 1
-cd ../..
+cd ../../LAUNCH_SCRIPTS
