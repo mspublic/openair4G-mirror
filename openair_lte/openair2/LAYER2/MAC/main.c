@@ -199,7 +199,7 @@ int mac_top_init(){
 #ifndef USER_MODE
 #ifndef PHY_EMUL
   msg("add openair2 proc\n");
-  add_openair2_stats();
+////  add_openair2_stats();
 #endif
 #endif  
   msg("[OPENAIR][MAC][INIT] Init function finished\n");
