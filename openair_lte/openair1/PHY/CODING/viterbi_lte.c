@@ -149,6 +149,8 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
 
   for (iter=0;iter<2;iter++) {
     in = y;
+    TB_ptr=&TB[0];
+
     //    printf("Iteration %d\n",iter);
     for (position=0;position<n;position++) {
       
