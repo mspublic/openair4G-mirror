@@ -16,10 +16,12 @@ siso_SNR_2Rx_persecond = mean(SNR_eNB_2Rx(:));
 Frame_DL_sum_4Qam_1stRx = zeros(1, length(estimates_UE));
 Frame_DL_sum_16Qam_1stRx = zeros(1,length(estimates_UE));
 Frame_DL_sum_64Qam_1stRx = zeros(1,length(estimates_UE));
+Frame_DL_sum_BM_1stRx = zeros(1,length(estimates_UE));
 
 Frame_DL_sum_4Qam_2ndRx = zeros(1, length(estimates_UE));
 Frame_DL_sum_16Qam_2ndRx = zeros(1,length(estimates_UE));
 Frame_DL_sum_64Qam_2ndRx = zeros(1,length(estimates_UE));
+Frame_DL_sum_BM_2ndRx = zeros(1,length(estimates_UE));
 
 Frame_DL_sum_4Qam_2Rx = zeros(1, length(estimates_UE));
 Frame_DL_sum_16Qam_2Rx = zeros(1,length(estimates_UE));
@@ -31,10 +33,12 @@ for i = 1:length(estimates_UE)
     RS_sum_4Qam_1stRx = sum(chcap_siso_single_stream_4Qam_1stRx(1,:,i));
     RS_sum_16Qam_1stRx = sum(chcap_siso_single_stream_16Qam_1stRx(1,:,i));
     RS_sum_64Qam_1stRx = sum(chcap_siso_single_stream_64Qam_1stRx(1,:,i));
+    RS_sum_BM_1stRx = sum(chcap_siso_single_stream_BM_1stRx(1,:,i));
     
     RS_sum_4Qam_2ndRx = sum(chcap_siso_single_stream_4Qam_2ndRx(1,:,i));
     RS_sum_16Qam_2ndRx = sum(chcap_siso_single_stream_16Qam_2ndRx(1,:,i));
     RS_sum_64Qam_2ndRx = sum(chcap_siso_single_stream_64Qam_2ndRx(1,:,i));
+    RS_sum_BM_2ndRx = sum(chcap_siso_single_stream_BM_2ndRx(1,:,i));
 
     RS_sum_4Qam_2Rx = sum(chcap_siso_single_stream_4Qam_2Rx(1,:,i));
     RS_sum_16Qam_2Rx = sum(chcap_siso_single_stream_16Qam_2Rx(1,:,i));
@@ -48,10 +52,12 @@ for i = 1:length(estimates_UE)
     Subframe_DL_sum_4Qam_1stRx = RS_sum_4Qam_1stRx * 12;
     Subframe_DL_sum_16Qam_1stRx = RS_sum_16Qam_1stRx * 12;
     Subframe_DL_sum_64Qam_1stRx = RS_sum_64Qam_1stRx * 12;
+    Subframe_DL_sum_BM_1stRx = RS_sum_BM_1stRx * 12;
     
     Subframe_DL_sum_4Qam_2ndRx = RS_sum_4Qam_2ndRx * 12;
     Subframe_DL_sum_16Qam_2ndRx = RS_sum_16Qam_2ndRx * 12;
     Subframe_DL_sum_64Qam_2ndRx = RS_sum_64Qam_2ndRx * 12;
+    Subframe_DL_sum_BM_2ndRx = RS_sum_BM_2ndRx * 12;
     
     Subframe_DL_sum_4Qam_2Rx = RS_sum_4Qam_2Rx * 12;
     Subframe_DL_sum_16Qam_2Rx = RS_sum_16Qam_2Rx * 12;
@@ -63,9 +69,12 @@ for i = 1:length(estimates_UE)
     Frame_DL_sum_16Qam_1stRx(i) = Subframe_DL_sum_16Qam_1stRx * 6;
     Frame_DL_sum_64Qam_1stRx(i) = Subframe_DL_sum_64Qam_1stRx * 6;
     
+    Frame_DL_sum_BM_1stRx(i) = Subframe_DL_sum_BM_1stRx * 6;
+    
     Frame_DL_sum_4Qam_2ndRx(i) = Subframe_DL_sum_4Qam_2ndRx * 6;
     Frame_DL_sum_16Qam_2ndRx(i) = Subframe_DL_sum_16Qam_2ndRx * 6;
     Frame_DL_sum_64Qam_2ndRx(i) = Subframe_DL_sum_64Qam_2ndRx * 6;
+    Frame_DL_sum_BM_2ndRx(i) = Subframe_DL_sum_BM_2ndRx * 6;
     
      Frame_DL_sum_4Qam_2Rx(i) = Subframe_DL_sum_4Qam_2Rx * 6;
     Frame_DL_sum_16Qam_2Rx(i) = Subframe_DL_sum_16Qam_2Rx * 6;
@@ -77,10 +86,12 @@ end
         Rate_4Qam_1stRx = sum(Frame_DL_sum_4Qam_1stRx(:));
         Rate_16Qam_1stRx = sum(Frame_DL_sum_16Qam_1stRx(:));
         Rate_64Qam_1stRx = sum(Frame_DL_sum_64Qam_1stRx(:));
+        Rate_BM_1stRx = sum(Frame_DL_sum_BM_1stRx(:));
         
         Rate_4Qam_2ndRx = sum(Frame_DL_sum_4Qam_2ndRx(:));
         Rate_16Qam_2ndRx = sum(Frame_DL_sum_16Qam_2ndRx(:));
         Rate_64Qam_2ndRx = sum(Frame_DL_sum_64Qam_2ndRx(:));
+        Rate_BM_2ndRx = sum(Frame_DL_sum_BM_2ndRx(:));
         
         Rate_4Qam_2Rx = sum(Frame_DL_sum_4Qam_2Rx(:));
         Rate_16Qam_2Rx = sum(Frame_DL_sum_16Qam_2Rx(:));
