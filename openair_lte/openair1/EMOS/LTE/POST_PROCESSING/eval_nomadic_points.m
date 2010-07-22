@@ -8,17 +8,25 @@
 % d = dir(fullfile(root_path, '*mode1_parcours1'));
 % dir_names = {d.name};
 
-decimation = 100;
+%%
+% decimation = 100;
+% 
+% results_UE = [];
+% results_UE_nomadic = [];
+% 
+% for i=1:length(dir_names)
+%     if exist(fullfile(root_path,dir_names{i},'results_UE_new.mat'),'file')
+%         nomadic = load(fullfile(root_path,dir_names{i},'results_UE_new.mat'));
+%         results_UE_nomadic = cat(2,results_UE_nomadic,nomadic.minestimates);
+%     end
+% end
 
-results_UE = [];
-results_UE_nomadic = [];
-
-for i=1:length(dir_names)
-    if exist(fullfile(root_path,dir_names{i},'results_UE_new.mat'),'file')
-        nomadic = load(fullfile(root_path,dir_names{i},'results_UE_new.mat'));
-        results_UE_nomadic = cat(2,results_UE_nomadic,nomadic.minestimates);
-    end
-end
+%pathname='/emos/EMOS/Nomadic/20100611_NOMADIC_ALL_MODES/';
+%pathname='/emos/EMOS/Nomadic/20100527_nomadic_all_modes/';
+load(fullfile(pathname,'results_UE_new.mat'));
+results_UE_nomadic=minestimates;
+load(fullfile(pathname,'results_eNB_new.mat'));
+results_eNB_nomadic=minestimates;
 
 %%
 addpath('maps')
@@ -33,12 +41,12 @@ for i=1:length(results_UE_nomadic)
     if i==1 
         mmi = mm;
     else
-        mmi = [];
+        mmi = '';
     end
     plot_gps_coordinates(mmi,[results_UE_nomadic(i).gps_data.longitude], [results_UE_nomadic(i).gps_data.latitude], ...
-        double(results_UE_nomadic(i).UE_mode_cat),sprintf('N%d',i),'black','Marker','.','Markersize',20);
+        double(results_UE_nomadic(i).UE_mode_cat),[0 3], sprintf('N%d',i),'black','Marker','.','Markersize',20);
 end
-%saveas(h_fig,'UE_mode_cordes.jpg','jpg');
+saveas(h_fig,fullfile(pathname,'UE_mode_nomadic.jpg'),'jpg');
 
 %%
 h_fig = figure(2);
@@ -50,29 +58,47 @@ for i=1:length(results_UE_nomadic)
     if i==1 
         mmi = mm;
     else
-        mmi = [];
+        mmi = '';
     end
     plot_gps_coordinates(mmi,[results_UE_nomadic(i).gps_data.longitude], [results_UE_nomadic(i).gps_data.latitude], ...
-        double(results_UE_nomadic(i).rx_rssi_dBm(:,1)),sprintf('N%d',i),'black','Marker','.','Markersize',20);
+        double(results_UE_nomadic(i).rx_rssi_dBm(:,1)),[-110 -30], sprintf('N%d',i),'black','Marker','.','Markersize',20);
 end
-%saveas(h_fig,'RX_RSSI_cordes.jpg','jpg');
+saveas(h_fig,fullfile(pathname,'RX_RSSI_nomadic.jpg'),'jpg');
 
 %%
-fid = fopen('nomadic_results.csv','w');
+fid = fopen(fullfile(pathname,'nomadic_results.csv'),'w');
 for i=1:length(results_UE_nomadic)
     rx_rssi_dBm_mean(i) = mean(results_UE_nomadic(i).rx_rssi_dBm(:,1));
+    ul_rssi_dBm_mean(i) = mean(mean([results_eNB_nomadic(i).eNb_UE_stats.UL_rssi]));
 
     UE_synched = (results_UE_nomadic(i).UE_mode_cat>0);
     UE_connected = (results_UE_nomadic(i).UE_mode_cat==3);
-    mimo_mode = (results_UE_nomadic(i).mimo_mode);
+    UE_mimo_mode = (results_UE_nomadic(i).mimo_mode);
+    
+    eNB_synched = ([results_eNB_nomadic(i).eNb_UE_stats.UE_mode]>0);
+    eNB_connected = ([results_eNB_nomadic(i).eNb_UE_stats.UE_mode]==3);
+    eNB_mimo_mode = (results_eNB_nomadic(i).mimo_mode);
+    
     good = (results_UE_nomadic(i).dlsch_fer<=100 & results_UE_nomadic(i).dlsch_fer>=0).';
+    dlsch_throughput = double(100-results_UE_nomadic(i).dlsch_fer) .* double(results_UE_nomadic(i).tbs_cat) .* 6;
+    
+    results_eNB_nomadic(i).ulsch_fer = [100 diff([results_eNB_nomadic(i).ulsch_errors])];
+    ulsch_throughput = double([results_eNB_nomadic(i).tbs_cat]) .* double(100 - results_eNB_nomadic(i).ulsch_fer) .* 3;
+       
+    lat = [results_UE_nomadic(i).gps_data.latitude];
+    lon = [results_UE_nomadic(i).gps_data.longitude];
     idx = 1;
     for m=[1,2,6]
-        throughput_mean(i,idx) = mean((100-results_UE_nomadic(i).dlsch_fer(UE_connected & good & mimo_mode==m)).*...
-            results_UE_nomadic(i).tbs_cat(UE_connected & good & mimo_mode==m)*6);
-        fprintf(fid,'%d; %d; %s; %f; %f; %d; %f; %f\n',i, m, results_UE_nomadic(i).filename, rx_rssi_dBm_mean(i), throughput_mean(i,idx), ...
-            sum(UE_connected & good & mimo_mode==m), ...
-            mean([results_UE_nomadic(i).gps_data.latitude]),mean([results_UE_nomadic(i).gps_data.longitude]));
+%        throughput_mean(i,idx) = mean((100-results_UE_nomadic(i).dlsch_fer(UE_connected & good & UE_mimo_mode==m)).*...
+%            results_UE_nomadic(i).tbs_cat(UE_connected & good & UE_mimo_mode==m)*6);
+        fprintf(fid,'%d; %d; %s; %s; %f; %f; %f; %f; %d; %d; %f; %f\n',i, m, ...
+            results_UE_nomadic(i).filename, results_eNB_nomadic(i).filename, ...
+            rx_rssi_dBm_mean(i), ul_rssi_dBm_mean(i), ...
+            mean(dlsch_throughput(UE_connected & good & UE_mimo_mode==m)), ...
+            mean(ulsch_throughput(eNB_connected)), ...
+            sum(UE_connected & good & UE_mimo_mode==m), ...
+            sum(eNB_connected), ...
+            mean(lat(lat~=0)),mean(lon(lon~=0)));
         idx=idx+1;
     end
 end

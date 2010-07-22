@@ -52,12 +52,12 @@ end_mode6 = 16276;
 h_fig = figure(3);
 hold off
 plot(mode1.dist_travelled(start_mode1:start_mode1+length_mode1)-mode1.dist_travelled(start_mode1), ...
-    mode1.rx_rssi_dBm_cat(start_mode1:start_mode1+length_mode1,1),'x')
+    mode1.rx_rssi_dBm_cat(start_mode1:start_mode1+length_mode1,1))
 hold on
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2), ...
-    mode2.rx_rssi_dBm_cat(start_mode2:start_mode2+length_mode2,1),'rx')
+    mode2.rx_rssi_dBm_cat(start_mode2:start_mode2+length_mode2,1),'r')
 plot(-mode6.dist_travelled(end_mode6)+mode6.dist_travelled(end_mode6:start_mode6), ...
-    mode6.rx_rssi_dBm_cat(end_mode6:start_mode6,1),'gx')
+    mode6.rx_rssi_dBm_cat(end_mode6:start_mode6,1),'g')
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('RX RSSI [dBm]')
@@ -89,12 +89,12 @@ mode6.throughput(~mode6.UE_connected) = 0;
 h_fig = figure(5);
 hold off
 plot(mode1.dist_travelled(start_mode1:start_mode1+length_mode1)-mode1.dist_travelled(start_mode1),...
-    mode1.throughput(start_mode1:start_mode1+length_mode1),'x');
+    mode1.throughput(start_mode1:start_mode1+length_mode1));
 hold on
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
-    mode2.throughput(start_mode2:start_mode2+length_mode2),'rx');
+    mode2.throughput(start_mode2:start_mode2+length_mode2),'r');
 plot(-mode6.dist_travelled(end_mode6)+mode6.dist_travelled(end_mode6:start_mode6), ...
-    mode6.throughput(end_mode6:start_mode6,1),'gx')
+    mode6.throughput(end_mode6:start_mode6,1),'g')
 
 
 legend('Mode1','Mode2','Mode6')

@@ -52,6 +52,8 @@ end
 title('RX RSSI [dBm]')
 xlabel('Time [sec]')
 ylabel('RX RSSI [dBm]')
+ylim([-110 -30]);
+ylim([-110 -30]);
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 
 %%
@@ -59,7 +61,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,gps_lon_cat(good(:,1)), gps_lat_cat(good(:,1)),...
-    double(rx_rssi_dBm_cat(good(:,1),1)));
+    double(rx_rssi_dBm_cat(good(:,1),1)),[-110 -30]);
 if (nomadic_flag)
     hold on
     plot_gps_coordinates([],nomadic.gps_lon_cat(nomadic.good(:,1)),nomadic.gps_lat_cat(nomadic.good(:,1)), ...
@@ -75,6 +77,7 @@ hold off
 plot_in_bins(dist(good(:,1)),double(rx_rssi_dBm_cat(good(:,1),1)),0:ceil(max(dist)));
 xlabel('Distance [km]')
 ylabel('RX RSSI [dBm]')
+ylim([-110 -30]);
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm_dist_bars.eps'),'epsc2');
 
 %% fit path loss model
@@ -82,17 +85,20 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 dist_ok = (dist>0).';
-plot(dist(dist_ok & good(:,1)), double(rx_rssi_dBm_cat(dist_ok & good(:,1),1)), 'rx')
+semilogx(dist(dist_ok & good(:,1)), double(rx_rssi_dBm_cat(dist_ok & good(:,1),1)), 'rx')
 hold on
+max_dist = ceil(max(dist(dist_ok & good(:,1))));
 PL = double(rx_rssi_dBm_cat(dist_ok & good(:,1),1)) - 43;
-d = 0:0.1:ceil(max(dist(dist_ok & good(:,1))));
+d = logspace(-1,log10(max_dist),100);
 res = [ones(length(PL),1) log10(dist(dist_ok & good(:,1)).')]\PL;
-plot(d,res(1)+res(2)*log10(d)+43,'b')
-plot(d,43-cost231_hata(d),'k')
-legend('measured','fitted','COST231-Hata');
+semilogx(d,res(1)+res(2)*log10(d)+43,'b')
+semilogx(d,43-cost231_hata(d),'k')
+legend('measured',sprintf('fitted (PL_0=%4.2fdB, R=%4.2f)',res(1)+43,res(2)/10),'COST231-Hata');
 title('RX RSSI distance from BS [dBm]')
 xlabel('Distance from BS [Km]')
 ylabel('RX RSSI [dBm]')
+xlim([0.1 max_dist])
+ylim([-110 -30]);
 saveas(h_fig, fullfile(pathname,'RX_RSSI_dBm_dist_with_PL.eps'),'epsc2');
 
 
@@ -117,7 +123,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,gps_lon_cat(UE_synched & good), gps_lat_cat(UE_synched & good),...
-    double(pbch_fer_cat(UE_synched & good)));
+    double(pbch_fer_cat(UE_synched & good)),[0 100]);
 title('PBCH FER')
 saveas(h_fig,fullfile(pathname,'PBCH_fer_gps.jpg'),'jpg')
 
@@ -147,6 +153,7 @@ if (nomadic_flag)
 end
 xlabel('Time [sec]')
 ylabel('Throughput L1 [bps]')
+ylim([0 8.64e6]);
 title('DLSCH Throughput')
 saveas(h_fig,fullfile(pathname,'DLSCH_throughput.eps'),'epsc2')
 
@@ -154,7 +161,7 @@ saveas(h_fig,fullfile(pathname,'DLSCH_throughput.eps'),'epsc2')
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,dlsch_throughput);
+plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,dlsch_throughput,[0 8.64e6]);
 title('DLSCH Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'DLSCH_troughput_gps.jpg'),'jpg')
 
@@ -171,8 +178,10 @@ saveas(h_fig,fullfile(pathname,'DLSCH_troughput_gps.jpg'),'jpg')
 %% Coded throughput CDF comparison
 h_fig = h_fig+1;
 figure(h_fig);
+hold off
 [f,x] = ecdf(dlsch_throughput);
 plot(x,f,'b','Linewidth',2)
+xlim([0 8.64e6]);
 title('DLSCH Throughput CDF')
 xlabel('Throughput [bps]')
 ylabel('P(x<abscissa)')
@@ -182,8 +191,10 @@ saveas(h_fig,fullfile(pathname,'DLSCH_throughput_cdf_comparison.eps'),'epsc2')
 %% Unoded throughput CDF comparison
 h_fig = h_fig+1;
 figure(h_fig);
+hold off
 [f,x] = ecdf(coded2uncoded(dlsch_throughput,'DL'));
 plot(x,f,'b','Linewidth',2)
+xlim([0 8.64e6]);
 title('DLSCH Uncoded Throughput CDF')
 xlabel('Throughput [bps]')
 ylabel('P(x<abscissa)')
@@ -194,23 +205,29 @@ saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'e
 %% plot througput as a function of speed
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
+hold off
 dlsch_throughput(~UE_connected | ~good) = nan;
-gps_speed_cat(~UE_connected | ~good) = nan;
-plot_in_bins(gps_speed_cat, dlsch_throughput,  0:5:40);
+%gps_speed_cat(~UE_connected | ~good) = nan;
+[out,n,n2] = plot_in_bins(gps_speed_cat, dlsch_throughput,  0:5:40);
+ylim([0 8.64e6]);
 title('DLSCH Throughput vs Speed');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
 saveas(h_fig,fullfile(pathname,'DLSCH_throughput_speed.eps'),'epsc2');
+csvwrite(fullfile(pathname,'DLSCH_throughput_speed.csv'),n2./n);
 
 %% plot througput as a function of distance
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
+hold off
 dlsch_throughput(~UE_connected | ~good) = nan;
-dist(~UE_connected | ~good)  = nan;
-plot_in_bins(dist, dlsch_throughput,  0:15);
+%dist(~UE_connected | ~good)  = nan;
+[out,n,n2] = plot_in_bins(dist, dlsch_throughput,  0:17);
+ylim([0 8.64e6]);
 title('DLSCH Throughput vs Dist');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
 saveas(h_fig,fullfile(pathname,'DLSCH_throughput_dist.eps'),'epsc2');
+csvwrite(fullfile(pathname,'DLSCH_throughput_dist.csv'),n2./n);
 
 

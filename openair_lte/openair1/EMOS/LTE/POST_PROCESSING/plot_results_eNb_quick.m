@@ -33,6 +33,7 @@ title('UL RSSI [dBm]')
 xlabel('Time [sec]')
 ylabel('UL RSSI [dBm]')
 legend('Sector 0','Sector 1','Sector 2')
+ylim([-110 -30]);
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm.eps'),'epsc2')
 
 %% UL RSSI on map
@@ -45,7 +46,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
-        mean(UL_rssi_cat,2));
+        mean(UL_rssi_cat,2),[-110 -30]);
 title('UL RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm_gps.jpg'),'jpg')
 
@@ -111,7 +112,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat(good), estimates_eNB.gps_lat_cat(good), ...
-        ulsch_throughput_ideal_2Rx);
+        ulsch_throughput_ideal_2Rx(good)*100);
 title('UL Throughput (ideal, 2Rx) [bps]')
 saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_gps.jpg'),'jpg')
 

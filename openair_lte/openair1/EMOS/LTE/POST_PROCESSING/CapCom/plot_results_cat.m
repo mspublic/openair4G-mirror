@@ -8,13 +8,13 @@ in = 0;
 plotwrtdistanceCalc;
 speed = [gps_data_cat.speed];
 
-%% set throughput to 0 when UE was not connected
+%% set throughput to 0 when UE was not synched
 UE_connected = all(reshape(UE_mode_cat,100,[])==3,1);
 UE_synched = all(reshape(UE_mode_cat,100,[])>0,1);
 vars = whos('rateps*');
 nn = {vars.name};
 for n = 1:length(nn)
-    eval([nn{n} '(~UE_connected) = 0;']);
+    eval([nn{n} '(~UE_synched) = 0;']);
 end
 K_fac_cat = reshape(K_fac_cat,4,[]);
 K_fac_cat(:,~UE_synched) = nan;
@@ -107,22 +107,22 @@ saveas(h_fig,fullfile(pathname,'uncoded_throughput_cdf_comparison.eps'),'epsc2')
 
 in = in+1;    
 h_fig = figure(in);
-[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_SISO_64Qam_eNB1_2Rx_cat);
+[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_SISO_64Qam_eNB1_2Rx_cat, [0 8.64e6]);
 title('Ideal Throughput (TX mode 1, 2 Rx)');
 saveas(h_fig,fullfile(pathname,'coded_throughput_SISO_gps_2Rx.jpg'),'jpg');
 in = in+1;    
 h_fig = figure(in);
-[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_alamouti_64Qam_eNB1_2Rx_cat);
+[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_alamouti_64Qam_eNB1_2Rx_cat, [0 8.64e6]);
 title('Ideal Througput (TX mode 2, 2 Rx)');
 saveas(h_fig,fullfile(pathname,'coded_throughput_Alamouti_gps_2Rx.jpg'),'jpg');
 in = in+1;    
 h_fig = figure(in);
-[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat);
+[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat, [0 8.64e6]);
 title('Ideal Throughput (TX mode 6, optimal feedback, 2 Rx)');
 saveas(h_fig,fullfile(pathname,'coded_throughput_optBeamforming_gps_2Rx.jpg'),'jpg');
 in = in+1;    
 h_fig = figure(in);
-[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat);
+[gps_x, gps_y] = plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat, [0 8.64e6]);
 title('Ideal Throughput (TX mode 6, real feedback, 2Rx)');
 saveas(h_fig,fullfile(pathname,'coded_throughput_feedbackBeamforming_gps_2Rx.jpg'),'jpg');
 
@@ -140,6 +140,7 @@ plot(rateps_alamouti_64Qam_eNB1_1stRx_cat,'go');
 plot(rateps_beamforming_64Qam_eNB1_1Rx_maxq_cat,'rd');
 plot(rateps_beamforming_64Qam_eNB1_1Rx_feedbackq_cat,'c*');
 legend('TX mode 1','TX mode 2','TX mode 6, optimal feedback', 'TX mode 6, real feedback')
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'coded_throughput_time_1stRx.eps'),'epsc2');
 
 in = in+1;    
@@ -153,6 +154,7 @@ plot(rateps_alamouti_64Qam_eNB1_2ndRx_cat,'go');
 plot(rateps_beamforming_64Qam_eNB1_1Rx_maxq_cat,'rd');
 plot(rateps_beamforming_64Qam_eNB1_1Rx_feedbackq_cat,'c*');
 legend('TX mode 1','TX mode 2','TX mode 6, optimal feedback', 'TX mode 6, real feedback')
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'coded_throughput_time_2ndRx.eps'),'epsc2');
 
 
@@ -167,6 +169,7 @@ plot(rateps_alamouti_64Qam_eNB1_2Rx_cat,'go');
 plot(rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat,'rd');
 plot(rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat,'c*');
 legend('TX mode 1','TX mode 2','TX mode 6, optimal feedback', 'TX mode 6, real feedback')
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'coded_throughput_time_2Rx.eps'),'epsc2');
 
 
@@ -186,6 +189,7 @@ plot(coded2uncoded(rateps_alamouti_64Qam_eNB1_2Rx_cat,'DL'),'go');
 plot(coded2uncoded(rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat,'DL'),'rd');
 plot(coded2uncoded(rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat,'DL'),'c*');
 legend('TX mode 1','TX mode 2','TX mode 6, optimal feedback', 'TX mode 6, real feedback')
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_uncoded_throughput_time_2Rx.eps'),'epsc2');
 
 
@@ -194,8 +198,8 @@ saveas(h_fig,fullfile(pathname,'ideal_uncoded_throughput_time_2Rx.eps'),'epsc2')
 for n = 1:length(nn)
     eval([nn{n} '(~UE_connected) = nan;']);
 end
-dist(~UE_connected) = nan;
-speed(~UE_connected) = nan;
+%dist(~UE_connected) = nan;
+%speed(~UE_connected) = nan;
 
 
 %% plot as a function of distance from BS (histogram)
@@ -203,84 +207,94 @@ speed(~UE_connected) = nan;
 % 1st Rx antenna
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_SISO_64Qam_eNB1_1stRx_cat,  0:15);
+plot_in_bins(dist, rateps_SISO_64Qam_eNB1_1stRx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode1, 1stRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode1_1stRx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_1stRx_cat,  0:15);
+plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_1stRx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode2, 1stRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode2_1stRx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_1Rx_maxq_cat,  0:15);
+plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_1Rx_maxq_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode6, ideal feedback, 1stRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode6_maxq_1stRx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_1Rx_feedbackq_cat,  0:15);
+plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_1Rx_feedbackq_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode6, real feedback, 1stRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode6_feedbackq_1stRx.eps'),'epsc2');
 
 % 2nd Rx antenna
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_SISO_64Qam_eNB1_2ndRx_cat,  0:15);
+plot_in_bins(dist, rateps_SISO_64Qam_eNB1_2ndRx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode1, 2ndRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode1_2ndRx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_2ndRx_cat,  0:15);
+plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_2ndRx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode2, 2ndRX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode2_2ndRx.eps'),'epsc2');
 
 % both Rx antennas
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_SISO_64Qam_eNB1_2Rx_cat,  0:15);
+plot_in_bins(dist, rateps_SISO_64Qam_eNB1_2Rx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode1, 2RX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode1_2Rx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_2Rx_cat,  0:15);
+plot_in_bins(dist, rateps_alamouti_64Qam_eNB1_2Rx_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode2, 2RX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode2_2Rx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat,  0:15);
+plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode6, ideal feedback, 2RX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode6_maxq_2Rx.eps'),'epsc2');
 
 in = in+1;    
 h_fig = figure(in);
-plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat,  0:15);
+plot_in_bins(dist, rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat,  0:17);
 title('Ideal Throughput vs Dist for Mode6, real feedback, 2RX');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_dist_mode6_feedbackq_2Rx.eps'),'epsc2');
 
 %% plot as a function of the speed of the UE (histogram)
@@ -292,6 +306,7 @@ plot_in_bins(speed, rateps_SISO_64Qam_eNB1_1stRx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode1, 1stRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode1_1stRx.eps'),'epsc2');
 
 in = in+1;    
@@ -300,6 +315,7 @@ plot_in_bins(speed, rateps_alamouti_64Qam_eNB1_1stRx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode2, 1stRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode2_1stRx.eps'),'epsc2');
 
 in = in+1;    
@@ -308,6 +324,7 @@ plot_in_bins(speed, rateps_beamforming_64Qam_eNB1_1Rx_maxq_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode6, ideal feedback, 1stRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode6_maxq_1stRx.eps'),'epsc2');
 
 in = in+1;    
@@ -316,15 +333,17 @@ plot_in_bins(speed, rateps_beamforming_64Qam_eNB1_1Rx_feedbackq_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode6, real feedback, 1stRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode6_feedbackq_1stRx.eps'),'epsc2');
 
 % 2nd Rx antenna
 in = in+1;    
 h_fig = figure(in);
+plot_in_bins(speed, rateps_SISO_64Qam_eNB1_2ndRx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode1, 2ndRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
-plot_in_bins(speed, rateps_SISO_64Qam_eNB1_2ndRx_cat,  0:5:40);
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode1_2ndRx.eps'),'epsc2');
 
 in = in+1;    
@@ -333,6 +352,7 @@ plot_in_bins(speed, rateps_alamouti_64Qam_eNB1_2ndRx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode2, 2ndRX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode2_2ndRx.eps'),'epsc2');
 
 % both Rx antennas
@@ -342,6 +362,7 @@ plot_in_bins(speed, rateps_SISO_64Qam_eNB1_2Rx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode1, 2RX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode1_2Rx.eps'),'epsc2');
 
 in = in+1;    
@@ -350,6 +371,7 @@ plot_in_bins(speed, rateps_alamouti_64Qam_eNB1_2Rx_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode2, 2RX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode2_2Rx.eps'),'epsc2');
 
 in = in+1;    
@@ -358,6 +380,7 @@ plot_in_bins(speed, rateps_beamforming_64Qam_eNB1_2Rx_maxq_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode6, ideal feedback, 2RX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode6_maxq_2Rx.eps'),'epsc2');
 
 in = in+1;    
@@ -366,6 +389,7 @@ plot_in_bins(speed, rateps_beamforming_64Qam_eNB1_2Rx_feedbackq_cat,  0:5:40);
 title('Ideal Throughput vs Speed for Mode6, real feedback, 2RX');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
+ylim([0 8.64e6]);
 saveas(h_fig,fullfile(pathname,'ideal_throughput_speed_mode6_feedbackq_2Rx.eps'),'epsc2');
 
 

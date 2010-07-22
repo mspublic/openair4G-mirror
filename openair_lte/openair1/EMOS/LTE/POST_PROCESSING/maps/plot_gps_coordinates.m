@@ -1,4 +1,4 @@
-function [gps_x, gps_y] = plot_gps_coordinates(map, longitude, latitude, rx_rssi, label, color, varargin)
+function [gps_x, gps_y] = plot_gps_coordinates(map, longitude, latitude, rx_rssi, limits, label, color, varargin)
 % h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
 %
 %  This function plots the gps coordinates given by langitude and latutude
@@ -43,22 +43,42 @@ if nargin<=3
     rx_rssi = [];
 end
 
-if (~isempty(rx_rssi))
-    m = colormap;
-    cmin = min(rx_rssi(isfinite(rx_rssi)));
-    cmax = max(rx_rssi(isfinite(rx_rssi)));
-    s = (cmax-cmin)/(length(m)-1);
-    if (s==0)
-        cidx = ones(size(rx_rssi));
-    else
-        cidx = ceil((rx_rssi-cmin)/s+1);
+if nargin<=4
+    if (~isempty(rx_rssi))
+        m = colormap;
+        cmin = min(rx_rssi(isfinite(rx_rssi)));
+        cmax = max(rx_rssi(isfinite(rx_rssi)));
+        cidx = fix((rx_rssi-cmin)/(cmax-cmin)*(length(m)-1))+1;
+%         s = (cmax-cmin)/(length(m)-1);
+%         if (s==0)
+%             cidx = ones(size(rx_rssi));
+%         else
+%             cidx = ceil((rx_rssi-cmin)/s+1);
+%         end
+    end
+else
+    if isempty(rx_rssi)
+        error('rx_rssi cannot be empty if limits is provided');
+    end
+    if (~isempty(limits))
+        m = colormap;
+        cmin = limits(1);
+        cmax = limits(2);
+        rx_rssi(rx_rssi<cmin | rx_rssi>cmax) = nan;
+        cidx = fix((rx_rssi-cmin)/(cmax-cmin)*(length(m)-1))+1;
+%         s = (cmax-cmin)/(length(m)-1);
+%         if (s==0)
+%             cidx = ones(size(rx_rssi));
+%         else
+%             cidx = ceil((rx_rssi-cmin)/s+1);
+%         end
     end
 end
-
-if nargin <= 5
+    
+if nargin <= 6
     color = 'blue';
 end
-if nargin <= 6
+if nargin <= 7
     style = {'Marker','x'};
 else
     style = varargin;
@@ -99,15 +119,19 @@ if (~isempty(rx_rssi))
             hold on
         end
     end
-    yt = round(linspace(cmin,cmax,8));
     hcb = colorbar;
     set(hcb,'YTickMode','manual');
-    set(hcb,'YTick',8:8:length(m));
-    set(hcb,'YTickLabel',yt);
+    set(hcb,'YTick',1:8:length(m));
+    yt = round(linspace(cmin,cmax,64));
+    yt = yt(1:8:length(m));
+    for j=1:length(yt)
+        label{j} = sprintf('%4.3g', yt(j));
+    end
+    set(hcb,'YTickLabel',label);
 else
     plot(gps_x,gps_y,'x','Color',color);
 end
-if nargin >= 5
+if nargin >= 6
     h = text(mean(gps_x),mean(gps_y),label);
     set(h,'Color',color,'FontWeight','bold');
 end
