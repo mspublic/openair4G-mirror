@@ -63,10 +63,10 @@ end
 
 struct_template;
 
-if (version < 1)
-    fifo_dump_emos_struct_eNb = fifo_dump_emos_struct_eNb_old;
-    fifo_dump_emos_struct_eNb_a = fifo_dump_emos_struct_eNb_old_a;
-end
+% if (version < 1)
+%     fifo_dump_emos_struct_eNb = fifo_dump_emos_struct_eNb_old;
+%     fifo_dump_emos_struct_eNb_a = fifo_dump_emos_struct_eNb_old_a;
+% end
 
 gps_fix_t_size = gps_data_struct_a.size;
 fifo_dump_emos_UE_size = fifo_dump_emos_struct_UE_a.size;
@@ -129,42 +129,53 @@ else
     Ratepersec_4Qam_SISO_1stRx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_SISO_1stRx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_SISO_1stRx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_SISO_1stRx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_SISO_2ndRx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_SISO_2ndRx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_SISO_2ndRx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_SISO_2ndRx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_SISO_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_SISO_2Rx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_alamouti_1stRx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_alamouti_1stRx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_alamouti_1stRx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_alamouti_1stRx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_alamouti_2ndRx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_alamouti_2ndRx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_alamouti_2ndRx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_alamouti_2ndRx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_alamouti_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_alamouti_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_alamouti_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_alamouti_2Rx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_beamforming_maxq_1Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_beamforming_maxq_1Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_beamforming_maxq_1Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_beamforming_maxq_1Rx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_beamforming_maxq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_beamforming_maxq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_beamforming_maxq_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_beamforming_maxq_2Rx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_beamforming_feedbackq_1Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_beamforming_feedbackq_1Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_beamforming_feedbackq_1Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_beamforming_feedbackq_1Rx = zeros(1,floor(NFrames/100));
     
     Ratepersec_4Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
     Ratepersec_64Qam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
+    Ratepersec_supportedQam_beamforming_feedbackq_2Rx = zeros(1,floor(NFrames/100));
+    
    % Rate_mode4_sch = zeros(1,floor(NFrames/100));
     
     siso_SNR_1stRx = zeros(1,floor(NFrames/100));
@@ -287,7 +298,8 @@ for n=1:NFiles
                 [Ratepersec_4Qam_SISO_1stRx(sec),Ratepersec_16Qam_SISO_1stRx(sec),Ratepersec_64Qam_SISO_1stRx(sec),Ratepersec_4Qam_SISO_2ndRx(sec),...
                     Ratepersec_16Qam_SISO_2ndRx(sec),Ratepersec_64Qam_SISO_2ndRx(sec),siso_SNR_1stRx(sec),siso_SNR_2ndRx(sec),...
                     Ratepersec_4Qam_SISO_2Rx(sec),Ratepersec_16Qam_SISO_2Rx(sec),Ratepersec_64Qam_SISO_2Rx(sec),...
-                    siso_SNR_2Rx(sec)]  = calc_rps_SISO(estimates);
+                    siso_SNR_2Rx(sec),Ratepersec_supportedQam_SISO_1stRx(sec),Ratepersec_supportedQam_SISO_2ndRx(sec),...
+                    Ratepersec_supportedQam_SISO_2Rx(sec)]  = calc_rps_SISO(estimates);
 %                 
 % %                  siso_SNR_1stRx = [siso_SNR_1stRx siso_SNR_1stRx];
 % %                  siso_SNR_2ndRx = [siso_SNR_2ndRx siso_SNR_2ndRx];
@@ -297,7 +309,8 @@ for n=1:NFiles
                 [Ratepersec_4Qam_alamouti_1stRx(sec),Ratepersec_16Qam_alamouti_1stRx(sec),Ratepersec_64Qam_alamouti_1stRx(sec),...
                     Ratepersec_4Qam_alamouti_2ndRx(sec),Ratepersec_16Qam_alamouti_2ndRx(sec),Ratepersec_64Qam_alamouti_2ndRx(sec),...
                     alam_SNR_1stRx(sec),alam_SNR_2ndRx(sec),Ratepersec_4Qam_alamouti_2Rx(sec),Ratepersec_16Qam_alamouti_2Rx(sec),...
-                    Ratepersec_64Qam_alamouti_2Rx(sec),alam_SNR_2Rx(sec)]  = calc_rps_Alamouti(estimates);
+                    Ratepersec_64Qam_alamouti_2Rx(sec),alam_SNR_2Rx(sec),Ratepersec_supportedQam_alamouti_1stRx(sec),...
+                    Ratepersec_supportedQam_alamouti_2ndRx(sec),Ratepersec_supportedQam_alamouti_2Rx(sec)]  = calc_rps_Alamouti(estimates);
 %                 
 % %                  alam_SNR_1stRx = [alam_SNR_1stRx alam_SNR_1stRx];
 % %                  alam_SNR_2ndRx = [alam_SNR_2ndRx alam_SNR_2ndRx];
@@ -309,7 +322,9 @@ for n=1:NFiles
                     bmfr_maxq_SNR_1Rx(sec), bmfr_fbq_SNR_1Rx(sec), Ratepersec_4Qam_beamforming_maxq_2Rx(sec),...
                     Ratepersec_16Qam_beamforming_maxq_2Rx(sec),Ratepersec_64Qam_beamforming_maxq_2Rx(sec),...
                     Ratepersec_4Qam_beamforming_feedbackq_2Rx(sec),Ratepersec_16Qam_beamforming_feedbackq_2Rx(sec),...
-                    Ratepersec_64Qam_beamforming_feedbackq_2Rx(sec),bmfr_maxq_SNR_2Rx(sec), bmfr_fbq_SNR_2Rx(sec)]  = calc_rps_Beamforming(estimates);
+                    Ratepersec_64Qam_beamforming_feedbackq_2Rx(sec),bmfr_maxq_SNR_2Rx(sec), bmfr_fbq_SNR_2Rx(sec),...
+                    Ratepersec_supportedQam_beamforming_maxq_1Rx(sec),Ratepersec_supportedQam_beamforming_feedbackq_1Rx(sec),...
+                    Ratepersec_supportedQam_beamforming_maxq_2Rx(sec),Ratepersec_supportedQam_beamforming_feedbackq_2Rx(sec)]  = calc_rps_Beamforming(estimates);
                  
 %                  bmfr_maxq_SNR_1Rx = [bmfr_maxq_SNR_1Rx bmfr_optmq_SNR_1Rx];
 %                  bmfr_fbq_SNR_1Rx = [bmfr_fbq_SNR_1Rx bmfr_feedbkq_SNR_1Rx];
@@ -347,26 +362,36 @@ else
     throughput.rateps_SISO_4Qam_eNB1_1stRx = Ratepersec_4Qam_SISO_1stRx;
     throughput.rateps_SISO_16Qam_eNB1_1stRx = Ratepersec_16Qam_SISO_1stRx;
     throughput.rateps_SISO_64Qam_eNB1_1stRx = Ratepersec_64Qam_SISO_1stRx;
+    throughput.rateps_SISO_supportedQam_eNB1_1stRx = Ratepersec_supportedQam_SISO_1stRx;
     
     throughput.rateps_SISO_4Qam_eNB1_2ndRx = Ratepersec_4Qam_SISO_2ndRx;
     throughput.rateps_SISO_16Qam_eNB1_2ndRx = Ratepersec_16Qam_SISO_2ndRx;
     throughput.rateps_SISO_64Qam_eNB1_2ndRx = Ratepersec_64Qam_SISO_2ndRx;
+    throughput.rateps_SISO_supportedQam_eNB1_2ndRx = Ratepersec_supportedQam_SISO_2ndRx;
+    
+%     K_fac = [];
+%     
+%     SNR = [];
     
     throughput.rateps_alamouti_4Qam_eNB1_1stRx = Ratepersec_4Qam_alamouti_1stRx;
     throughput.rateps_alamouti_16Qam_eNB1_1stRx = Ratepersec_16Qam_alamouti_1stRx;
     throughput.rateps_alamouti_64Qam_eNB1_1stRx = Ratepersec_64Qam_alamouti_1stRx;
+    throughput.rateps_alamouti_supportedQam_eNB1_1stRx = Ratepersec_supportedQam_alamouti_1stRx;
     
     throughput.rateps_alamouti_4Qam_eNB1_2ndRx = Ratepersec_4Qam_alamouti_2ndRx;
     throughput.rateps_alamouti_16Qam_eNB1_2ndRx = Ratepersec_16Qam_alamouti_2ndRx;
     throughput.rateps_alamouti_64Qam_eNB1_2ndRx = Ratepersec_64Qam_alamouti_2ndRx;
+    throughput.rateps_alamouti_supportedQam_eNB1_2ndRx = Ratepersec_supportedQam_alamouti_2ndRx;
     
     throughput.rateps_beamforming_4Qam_eNB1_1Rx_feedbackq = Ratepersec_4Qam_beamforming_feedbackq_1Rx;
     throughput.rateps_beamforming_16Qam_eNB1_1Rx_feedbackq = Ratepersec_16Qam_beamforming_feedbackq_1Rx;
     throughput.rateps_beamforming_64Qam_eNB1_1Rx_feedbackq = Ratepersec_64Qam_beamforming_feedbackq_1Rx;
+    throughput.rateps_beamforming_supportedQam_eNB1_1Rx_feedbackq = Ratepersec_supportedQam_beamforming_feedbackq_1Rx;
     
     throughput.rateps_beamforming_4Qam_eNB1_1Rx_maxq = Ratepersec_4Qam_beamforming_maxq_1Rx;
     throughput.rateps_beamforming_16Qam_eNB1_1Rx_maxq = Ratepersec_16Qam_beamforming_maxq_1Rx;
     throughput.rateps_beamforming_64Qam_eNB1_1Rx_maxq = Ratepersec_64Qam_beamforming_maxq_1Rx;
+    throughput.rateps_beamforming_supportedQam_eNB1_1Rx_maxq = Ratepersec_supportedQam_beamforming_maxq_1Rx;
     
     SNR.siso_1stRx = siso_SNR_1stRx;
     SNR.siso_2ndRx = siso_SNR_2ndRx;
@@ -378,18 +403,22 @@ else
     throughput.rateps_SISO_4Qam_eNB1_2Rx = Ratepersec_4Qam_SISO_2Rx;
     throughput.rateps_SISO_16Qam_eNB1_2Rx = Ratepersec_16Qam_SISO_2Rx;
     throughput.rateps_SISO_64Qam_eNB1_2Rx = Ratepersec_64Qam_SISO_2Rx;
+    throughput.rateps_SISO_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_SISO_2Rx;
     
     throughput.rateps_alamouti_4Qam_eNB1_2Rx = Ratepersec_4Qam_alamouti_2Rx;
     throughput.rateps_alamouti_16Qam_eNB1_2Rx = Ratepersec_16Qam_alamouti_2Rx;
     throughput.rateps_alamouti_64Qam_eNB1_2Rx = Ratepersec_64Qam_alamouti_2Rx;
+    throughput.rateps_alamouti_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_alamouti_2Rx;
     
     throughput.rateps_beamforming_4Qam_eNB1_2Rx_feedbackq = Ratepersec_4Qam_beamforming_feedbackq_2Rx;
     throughput.rateps_beamforming_16Qam_eNB1_2Rx_feedbackq = Ratepersec_16Qam_beamforming_feedbackq_2Rx;
     throughput.rateps_beamforming_64Qam_eNB1_2Rx_feedbackq = Ratepersec_64Qam_beamforming_feedbackq_2Rx;
+    throughput.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq = Ratepersec_supportedQam_beamforming_feedbackq_2Rx;
     
     throughput.rateps_beamforming_4Qam_eNB1_2Rx_maxq = Ratepersec_4Qam_beamforming_maxq_2Rx;
     throughput.rateps_beamforming_16Qam_eNB1_2Rx_maxq = Ratepersec_16Qam_beamforming_maxq_2Rx;
     throughput.rateps_beamforming_64Qam_eNB1_2Rx_maxq = Ratepersec_64Qam_beamforming_maxq_2Rx;
+    throughput.rateps_beamforming_supportedQam_eNB1_2Rx_maxq = Ratepersec_supportedQam_beamforming_maxq_2Rx;
     
     %throughput.rateps_mode4_sch = Rate_mode4_sch;
     
