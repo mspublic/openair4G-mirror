@@ -745,8 +745,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     //    printf("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
-      msg("dci_tools.c: frame %d, subframe %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
-	  mac_xface->frame, subframe);
+      msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
+	  mac_xface->frame, subframe, rnti, dci_format);
       return(-1);
     }
 

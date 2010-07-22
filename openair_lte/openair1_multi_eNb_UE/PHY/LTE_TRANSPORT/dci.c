@@ -894,10 +894,13 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
       }
     }
   }
+  if (is_secondary_ue) {
+    frame_parms->nb_antennas_tx = 2; //work around to keep call to the next function without changing it. nb_antennas_tx is now the added antennas from primary and secondary (one from secondary because of the B/F)
+  }
   pdcch_channel_level(lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 		      frame_parms,
 		      avgP,
-		      frame_parms->N_RB_DL);  
+		      frame_parms->N_RB_DL);
   
   avgs = 0;
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
@@ -946,6 +949,10 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   pdcch_deinterleaving((unsigned short*)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->e_rx,
 		       lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->wbar,
 		       frame_parms->Nid_cell);
+
+  if (is_secondary_ue) {
+    frame_parms->nb_antennas_tx = 1;
+  }  
 
 }
 	     

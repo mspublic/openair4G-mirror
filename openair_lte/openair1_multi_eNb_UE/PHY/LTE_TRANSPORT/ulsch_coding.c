@@ -229,6 +229,11 @@ int ulsch_encoding(unsigned char *a,
     
   }
 
+  // check for integrity
+  if (ulsch->harq_processes[harq_pid]->C == 0) {
+	msg("ulsch_coding: Number of segments 0, when calling the encoder. Decoded scheduling wrongx!\n");    
+    return(-1);
+  }
   sumKr = 0;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     if (r<ulsch->harq_processes[harq_pid]->Cminus)

@@ -90,9 +90,9 @@ void random_channel(double *amps,
  
       ch[k].r += s*a[l].r;
       ch[k].i += s*a[l].i;
-      //            printf("delay %f (%f,%f) : %f [%f=%f,%f,%f]\n",delay,a[l].r,a[l].i,s,(double)k - (delay*bw)-(bw*t_max),(double)k,delay*bw,bw*t_max);
+      //printf("delay %f (%f,%f) : %f [%f=%f,%f,%f]\n",delay,a[l].r,a[l].i,s,(double)k - (delay*bw*2)-(bw*t_max),(double)k,delay*bw*2,bw*t_max);
     }
-    //            printf("tap  %d : (%f,%f)\n",k,ch[k].r,ch[k].i);
+    //printf("tap  %d : (%f,%f)\n",k,ch[k].r,ch[k].i);
   }
 }
 

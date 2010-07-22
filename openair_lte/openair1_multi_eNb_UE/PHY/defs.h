@@ -138,7 +138,8 @@ typedef struct
   unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
 
   /// hold the precoder for NULL beam to the primary user
-  int **dl_precoder_SeNb[3];
+  int              **dl_precoder_SeNb[3];
+  char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
 #ifdef USER_MODE
   double   const_ch[4][2]; // constant channel coefficient
@@ -174,7 +175,8 @@ typedef struct
   unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
 
   /// hold the precoder for NULL beam to the primary eNb
-  int **ul_precoder_S_UE;
+  int              **ul_precoder_S_UE;
+  char             *log2_maxp; /// holds the maximum channel/precoder coefficient
 
 #ifdef USER_MODE
   double   const_ch[4][2]; // constant channel coefficient

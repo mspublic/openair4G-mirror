@@ -31,6 +31,7 @@ ________________________________________________________________*/
 
 //#define DIAG_PHY
 
+
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
 //define DEBUG_PHY and set debug_msg to option 2 to print everything all frames
 //use msg for something that should be always printed in any case
@@ -465,15 +466,16 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 	    phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->crnti);
 
   phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received += dci_cnt;
-#ifdef DIAG_PHY
+  //#ifdef DIAG_PHY
   switch (last_slot>>1) {
-  case 0:
+    //case 0:
   case 5:
-  case 8:
+    //case 8:
     if (dci_cnt != 1) {
       phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors ++;
-      msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: missed DCI (dci_cnt %d)!\n",mac_xface->frame,last_slot>>1,dci_cnt);
-      msg("[PHY_PROCEDURES_UE][DIAG] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+      /*
+msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: missed DCI (dci_cnt %d)!\n",mac_xface->frame,last_slot>>1,dci_cnt);
+      //msg("[PHY_PROCEDURES_UE][DIAG] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 	  mac_xface->frame, last_slot,
 	  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
 	  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
@@ -481,13 +483,14 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 	  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
 	  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
 	  phy_vars_ue->rx_total_gain_dB);
+      */
     }
     break;
   default:
     break;
-  }
-  if (last_slot==18)	
+  }	
 #ifdef DEBUG_PHY
+  if (last_slot==18)
     debug_msg("[PHY_PROCEDURES_LTE][DIAG] Frame %d, slot %d: PDCCH: DCI errors %d, DCI received %d \n",mac_xface->frame,last_slot,phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors,phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received);	
 #endif //DEBUG_PHY
 
@@ -505,7 +508,7 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
   }
   x*/
 
-#endif
+  //#endif //DIAG_PHY
 
 #ifdef EMOS
   emos_dump_UE.dci_cnt[last_slot>>1] = dci_cnt;
@@ -529,14 +532,14 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 #endif
     if ((dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->crnti) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
 
-#ifdef DIAG_PHY
+      //#ifdef DIAG_PHY
       if ((last_slot>>1) != 5) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
 	return;
       }
-#endif
+      //#endif //DIAG_PHY
 
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
@@ -554,14 +557,14 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
       }
     }
     else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A)) {
-#ifdef DIAG_PHY
+      //#ifdef DIAG_PHY
       if ((last_slot>>1) != 0) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received SI_RNTI!\n",mac_xface->frame,last_slot>>1);
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
 	return;
       }
-#endif
+      //#endif
       if (generate_ue_dlsch_params_from_dci(last_slot>>1,
 					    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					    SI_RNTI,
@@ -578,14 +581,14 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
       }
     }
     else if ((dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->crnti) && (dci_alloc_rx[i].format == format0)) {
-#ifdef DIAG_PHY
+      //#ifdef DIAG_PHY
       if ((last_slot>>1) != 8) {
 	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received C_RNTI!\n",mac_xface->frame,last_slot>>1);
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
 	return;
       }
-#endif
+      //#endif
       generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->crnti,
 					last_slot>>1,
@@ -602,12 +605,12 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
 #endif
     }
     else if ((dci_alloc_rx[i].rnti == RA_RNTI) && (dci_alloc_rx[i].format == format0)) {
-#ifdef DIAG_PHY
-	msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
+      //#ifdef DIAG_PHY
+      msg("[PHY PROCEDURES UE][DIAG] frame %d, subframe %d: should not have received RA_RNTI!\n",mac_xface->frame,last_slot>>1);
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
 	return;
-#endif
+	//#endif
       /*
 	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 	RA_RNTI,
@@ -624,11 +627,11 @@ void lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *ph
     }
     else {
       msg("[PHY PROCEDURES UE] Frame %d, subframe %d: received DCI with RNTI=%x and format %d!\n",mac_xface->frame,last_slot>>1,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format);
-#ifdef DIAG_PHY
+      //#ifdef DIAG_PHY
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors++;
 	//exit_openair=1;
 	return;
-#endif
+	//#endif
     }
 
   }
@@ -1138,7 +1141,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
     // Get DCI parameters from MAC
     switch (next_slot>>1) {
     case 0:
-      if (1) { //!phy_vars_eNb->is_secondary_eNb) {
+      if (1){ //!phy_vars_eNb->is_secondary_eNb) {
 	memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
 	dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
 	dci_alloc[0].L          = 3;
@@ -1193,7 +1196,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 		  mac_xface->frame,next_slot>>1,harq_pid);
 #endif
 	phy_vars_eNb->ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-	
       }
       break;
     case 1:
@@ -1590,14 +1592,16 @@ void phy_procedures_eNB_S_RX_secsys(unsigned char last_slot,PHY_VARS_eNB *phy_va
 
 void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
-  int aa, i, eNb_id=0,PeNb_id=phy_vars_eNb->PeNb_id;
+  int aa, i, eNb_id=0,PeNb_id=0;
   short re_next, im_next,re_last, im_last;
+  short zero_detections = 0, ind_of_maxp =0;
+  int maxp=0;
 
   switch (last_slot) {
   case 5:
 #ifdef DEBUG_PHY
-    write_output("srs_ch_est_0_5.m","srs_ce_0_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
-    write_output("srs_ch_est_1_5.m","srs_ce_1_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1); 
+    write_output("srs_ch_est_0_5.m","srs_ce_0_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    write_output("srs_ch_est_1_5.m","srs_ce_1_5",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1); 
 #endif //DEBUG_PHY   
     // interpolate last SRS_ch_estimates in freq (from slot 7)
     
@@ -1608,19 +1612,38 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
     break;
   case 7: 
 #ifdef DEBUG_PHY
-    write_output("srs_ch_est_0_7.m","srs_ce_0_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
-    write_output("srs_ch_est_1_7.m","srs_ce_1_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1); 
+    write_output("srs_ch_est_0_7.m","srs_ce_0_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
+    write_output("srs_ch_est_1_7.m","srs_ce_1_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1); 
 #endif //DEBUG_PHY   
     for (aa=0; aa<phy_vars_eNb->lte_frame_parms.nb_antennas_rx; aa++) {
+      zero_detections = 0;
       // first half (positive freq), samples on odd
       for (i=2; i<phy_vars_eNb->lte_frame_parms.ofdm_symbol_size>>1; i+=2) {
 	
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1) + 1];
+	if ((re_last + im_last) >= maxp) {
+	  maxp = re_last + im_last;
+	  ind_of_maxp = i;
+	}
+
 	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1)];
 	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1) + 1];
+        if ((re_next + im_next) >= maxp) {
+	  maxp = re_next + im_next;
+	  ind_of_maxp = i;
+	}
 	
+	if (re_last == 0) {
+	  zero_detections += 1;
+	}
+	if (zero_detections > 3 && i<10) {
+	  //very unlikely --> thus a probable error
+	  //printf("error in creating the precoder");
+	  phy_vars_eNb->has_valid_precoder = 0;
+	  return(-1);
+	}
 	/*
 	re_last = phy_vars_eNb->const_ch[aa][0];
 	im_last = phy_vars_eNb->const_ch[aa][1];
@@ -1649,9 +1672,17 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1) + 1];
+	if ((re_last + im_last) > maxp) {
+	  maxp = re_last+ im_last;
+	  ind_of_maxp = i;
+	}
+
 	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1)];
 	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1) + 1];
-	
+	if ((re_next + im_next) > maxp) {
+	  maxp = re_next + im_next;
+	  ind_of_maxp = i;
+	}
 	/*
 	re_last = phy_vars_eNb->const_ch[aa][0];
 	im_last = phy_vars_eNb->const_ch[aa][1];
@@ -1677,8 +1708,11 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
       // interpolate first positive and last negative frequency
       re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size-1)<<1)];
       im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size-1)<<1) + 1];
+      if ((re_last + im_last) > maxp) maxp = re_last+ im_last;
+
       re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[2];
       im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[3];
+      if ((re_next + im_next) > maxp) maxp = re_next + im_next;
 	
 	// rearrange according to create NULL-beam
 	/*
@@ -1691,13 +1725,17 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 
     }
 #ifdef DEBUG_PHY
-    write_output("srs_ch_est_0.m","srs_ce_0",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
+    write_output("srs_ch_est_0.m","srs_ce_0",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("precoder_1.m","prec_1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
-    write_output("srs_ch_est_1.m","srs_ce_1",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[0][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
+    write_output("srs_ch_est_1.m","srs_ce_1",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("precoder_0.m","prec_0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
 #endif //DEBUG_PHY
 
     phy_vars_eNb->has_valid_precoder = 1;
+    phy_vars_eNb->log2_maxp = log2_approx(maxp);
+#ifdef DEBUG_PHY
+    printf("index of max precoder coefficient, %d\n", ind_of_maxp);
+#endif
     break;
   default:
     break;
@@ -1710,7 +1748,10 @@ void phy_precode_nullBeam_apply(unsigned char next_slot,PHY_VARS_eNB *phy_vars_e
   
   if (((next_slot < 3) || (next_slot > 9)) && phy_vars_eNb->has_valid_precoder) {
     output_norm = log2_approx(iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)) + iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)));
-    
+
+    if (next_slot==10) {
+      //printf("sigenergy %d, output_norm %d\n",signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size) + signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size), output_norm);
+    }
 #ifdef DEBUG_PHY
     if (next_slot==11) {
       write_output("precoder_a0.m","prec_a0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
@@ -1738,7 +1779,7 @@ void phy_precode_nullBeam_apply(unsigned char next_slot,PHY_VARS_eNB *phy_vars_e
 			      (short *)(txdataF_rep_tmp[aa]), // input 2
 			      &(((short *)(phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa]))[slot_n_symb_offset]), // output
 			      phy_vars_eNb->lte_frame_parms.ofdm_symbol_size, // length of vectors (512)
-			      output_norm // output_shift
+			      phy_vars_eNb->log2_maxp - 4 // output_shift
 			      );
 	
       } //for(aa... antennas_tx
@@ -1762,8 +1803,9 @@ void phy_precode_nullBeam_apply_ue(unsigned char next_slot,PHY_VARS_UE *phy_vars
 
   int i, aa, l, slot_n_symb_offset, output_norm;
 
-  if (((next_slot < 10) || (next_slot > 3)) && phy_vars_ue->has_valid_precoder) {
+  if (((next_slot < 10) && (next_slot > 3)) && phy_vars_ue->has_valid_precoder) {
     output_norm = log2_approx(iSqrt(signal_energy_nodc(phy_vars_ue->ul_precoder_S_UE[0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size)) + iSqrt(signal_energy_nodc(phy_vars_ue->ul_precoder_S_UE[1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size)));
+
 
     for (l=0; l<phy_vars_ue->lte_frame_parms.symbols_per_tti>>1; l++) {
       slot_n_symb_offset = next_slot*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1) + l*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1);
@@ -1784,7 +1826,7 @@ void phy_precode_nullBeam_apply_ue(unsigned char next_slot,PHY_VARS_UE *phy_vars
 			      (short *)(txdataF_rep_tmp[aa]), // input 2
 			      &(((short *)(phy_vars_ue->lte_ue_common_vars.txdataF[aa]))[slot_n_symb_offset]), // output
 			      phy_vars_ue->lte_frame_parms.ofdm_symbol_size, // length of vectors (512)
-			      output_norm // output_shift
+			      phy_vars_ue->log2_maxp - 4 // output_shift
 			      );
 	
       } //for(aa... antennas_tx
@@ -1795,17 +1837,39 @@ void phy_precode_nullBeam_apply_ue(unsigned char next_slot,PHY_VARS_UE *phy_vars
 void phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue) {  
 
   int aa,i,symb_offset,n_car,PeNb_id=0;
+  short zero_detections = 0, ind_of_maxp =0;
+  int maxp=0;
 
   n_car = phy_vars_ue->lte_frame_parms.N_RB_DL*phy_vars_ue->lte_frame_parms.symbols_per_tti; //300 in the 5MHz case
   symb_offset = phy_vars_ue->lte_frame_parms.ofdm_symbol_size-(n_car>>1);
 
   if (last_slot==2 || last_slot==10 || 1) { //always allow being called? Why not?
     for (aa=0; aa<phy_vars_ue->lte_frame_parms.nb_antennas_rx; aa++) {
+      zero_detections = 0;
       for (i=0; i<(n_car>>1); i++) {
 	
       //positive frequencies
 	phy_vars_ue->ul_precoder_S_UE[1-aa][i<<1] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i+(n_car>>1)]; //Re0Im0
 	phy_vars_ue->ul_precoder_S_UE[1-aa][(i<<1)+1] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i+(n_car>>1)]; //Re0Im0
+
+	if (phy_vars_ue->ul_precoder_S_UE[1-aa][i<<1] == 0) {
+	  zero_detections += 1;
+	}
+	if (zero_detections > 3 && i<10) {
+	  //very unlikely --> thus a probable error
+	  //printf("error in creating the precoder");
+	  phy_vars_ue->has_valid_precoder = 0;
+	  return(-1);
+	}
+
+	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]  + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]) > maxp) {
+	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]  + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]);
+	  ind_of_maxp = i;
+	}
+	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]) > maxp) {
+	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
+	  ind_of_maxp = i;
+	}
 	/*
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
@@ -1817,6 +1881,15 @@ void phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_var
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)+1] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
 	
+	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]) > maxp) {
+	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]);
+	  ind_of_maxp = i;
+	}
+
+	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]) > maxp) {
+	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
+	  ind_of_maxp = i;
+	}
 	/*
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
@@ -1834,6 +1907,10 @@ void phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_var
 #endif //DEBUG_PHY
     
     phy_vars_ue->has_valid_precoder = 1;
+    phy_vars_ue->log2_maxp = log2_approx(maxp);
+#ifdef DEBUG_PHY
+    printf("index of max precoder coefficient, %d\n", ind_of_maxp);
+#endif
   }
 }
 
@@ -1841,6 +1918,32 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
   char aa;
   int eNb_id=0;
   
+  if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_UL) {
+#ifdef DEBUG_PHY
+    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+    phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
+    if (phy_vars_eNb->is_secondary_eNb) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_create(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_precode_nullBeam_create(last_slot,phy_vars_eNb);
+    }
+  }
+  if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+    if (phy_vars_eNb->is_secondary_eNb) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX_secsys(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_procedures_eNB_S_RX_secsys(last_slot,phy_vars_eNb);
+    }
+    else {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
+    }
+  }
   if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY
     msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_TX(%d)\n",mac_xface->frame, next_slot);
@@ -1855,26 +1958,25 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
 	phy_precode_nullBeam_apply(next_slot,phy_vars_eNb);
 #endif //NULL_SHAPE_BF_ENABLED
       }
-    } 
+      else { //make sure tx-buffer is cleared, in case no transmission.
+	for (aa=0; aa<(phy_vars_eNb->lte_frame_parms.nb_antennas_tx+phy_vars_eNb->nb_virtual_tx); aa++) {
+#ifdef IFFT_FPGA
+	  memset(&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 0,(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#else
+	  memset(&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][next_slot*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 0,phy_vars_eNb->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#endif
+	}
+      }
+    }
     else {
       phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
     }
   }
-  if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_UL) {
-#ifdef DEBUG_PHY
-    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_RX(%d)\n",mac_xface->frame, last_slot);
-#endif
-    phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
-    if (phy_vars_eNb->is_secondary_eNb) {
-#ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_create(%d)\n",mac_xface->frame, last_slot);
-#endif
-      phy_precode_nullBeam_create(last_slot,phy_vars_eNb);
-    }
-  }
   if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
     if (phy_vars_eNb->is_secondary_eNb && next_slot%2==0) {
-      if ( mac_xface->frame%10 && phy_vars_eNb->has_valid_precoder) {
+      if ( mac_xface->frame%100 && phy_vars_eNb->has_valid_precoder) {
 #ifdef DEBUG_PHY
 	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
@@ -1905,47 +2007,27 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
       phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
     }
   }
-  if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
-    if (phy_vars_eNb->is_secondary_eNb) {
-#ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX_secsys(%d)\n",mac_xface->frame, last_slot);
-#endif
-      phy_procedures_eNB_S_RX_secsys(last_slot,phy_vars_eNb);
-    }
-    else {
-#ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
-#endif
-      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
-    }
-  }
 }
 
 
 void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {
+  char aa;
   
-  if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,next_slot>>1)==SF_UL) {
-#ifdef DEBUG_PHY
-    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_TX(%d)\n",mac_xface->frame, next_slot);
-#endif
-    if (phy_vars_ue->is_secondary_ue) {
-      if (phy_vars_ue->has_valid_precoder) {
-	phy_procedures_UE_TX(next_slot, phy_vars_ue);
-#ifdef NULL_SHAPE_BF_ENABLED
-	phy_precode_nullBeam_apply_ue(next_slot,phy_vars_ue);
-#endif //NULL_SHAPE_BF_ENABLED
-      }
-    }
-    else {
-      phy_procedures_UE_TX(next_slot, phy_vars_ue);
-    }
-  }
   if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY
     msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
     phy_procedures_UE_RX(last_slot, phy_vars_ue);
     if (phy_vars_ue->is_secondary_ue && last_slot==10 && mac_xface->frame>0) {
+      phy_precode_nullBeam_create_ue(last_slot,phy_vars_ue);
+    }
+  }
+  if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+#ifdef DEBUG_PHY
+    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+    phy_procedures_UE_RX(last_slot, phy_vars_ue);
+    if (phy_vars_ue->is_secondary_ue && last_slot==2 && mac_xface->frame>0) {
       phy_precode_nullBeam_create_ue(last_slot,phy_vars_ue);
     }
   }
@@ -1960,18 +2042,47 @@ void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY
 	phy_precode_nullBeam_apply_ue(next_slot,phy_vars_ue);
 #endif //NULL_SHAPE_BF_ENABLED
       }
+      else { //make sure tx-buffer is cleared, in case no transmission.
+	for (aa=0; aa<(phy_vars_ue->lte_frame_parms.nb_antennas_tx+phy_vars_ue->nb_virtual_tx); aa++) {
+#ifdef IFFT_FPGA
+	  memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 0,(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#else
+	  memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#endif
+	}
+      }
     }
     else {
       phy_procedures_UE_S_TX(next_slot, phy_vars_ue);
     }
   }
-  if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+  if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,next_slot>>1)==SF_UL) {
 #ifdef DEBUG_PHY
-    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_RX(%d)\n",mac_xface->frame, last_slot);
+    msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-    phy_procedures_UE_RX(last_slot, phy_vars_ue);
-    if (phy_vars_ue->is_secondary_ue && last_slot==2 && mac_xface->frame>0) {
-      phy_precode_nullBeam_create_ue(last_slot,phy_vars_ue);
+    if (phy_vars_ue->is_secondary_ue) {
+      if (phy_vars_ue->has_valid_precoder) {
+	phy_procedures_UE_TX(next_slot, phy_vars_ue);
+#ifdef NULL_SHAPE_BF_ENABLED
+	phy_precode_nullBeam_apply_ue(next_slot,phy_vars_ue);
+#endif //NULL_SHAPE_BF_ENABLED
+      }
+      else { //make sure tx-buffer is cleared, in case no transmission.
+	for (aa=0; aa<(phy_vars_ue->lte_frame_parms.nb_antennas_tx+phy_vars_ue->nb_virtual_tx); aa++) {
+#ifdef IFFT_FPGA
+	  memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 0,(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#else
+	  memset(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][next_slot*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+#endif
+	}
+      }
+    }
+    else {
+      phy_procedures_UE_TX(next_slot, phy_vars_ue);
     }
   }
 }
