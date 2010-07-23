@@ -107,10 +107,36 @@
 
 %\section{all plots}
 
-\section{Interference measurements}
+\section{Interference measurements (Cordes)}
+
+After setting up the eNB and UE at a specific cell site, interference measurement(IM) is the very first and most important step of measurement campaign. Interference measurements are conducted to make sure that under test frequency band is exclusively used for the campaign and no other operator is using this frequency band in a specific cell. The under test frequency band is 859.6 Mhz. In interference measurements eNB and UE work only in reception mode. Then with the help of Rx RSSI at both eNb and UE, it is checked if there was any signal on this frequency or not. When there is no signal recorded on both eNB and UE, it is perfectly fine to conclude that no other operator is using this frequnecy band in the specific cell which is actually a 'GO' signal for the rest of measurement campaign.
+
 
 
 \section{RX RSSI}
+
+Received signal strength indicator is a measure of the strength of signal which is received at the antenna. Closer the transmitter to receiver, stronger the Rx Rssi at the receiver and vice versa. More definitions of RSSI can be found on[reference].
+
+In measurement campaign, unit of Rx RSSI is dBm. Rx Rssi of both UE and eNB measured during coverage runs and vehicular test procedures is plotted on the regional map of the specific cell. In the plot any value above -94dBm is considered as an information carrying signal. 
+
+UE's Rx Rssi is also plotted as a function of time, distance from the eNB and the distance travelled. Where as the eNB's Rx Rssi is plotted as a function of time. 
+
+
+\section{Ideal Throughput Measurement}
+
+\subsection{Information Theory}
+
+\subsection{LTE Throughput in Practise}
+
+LTE 3GPP release 8.6 is used for the measurement campaign. LTE TDD is implemented. Uplink-downlink configuration 3 is used in which there are 6 downlink subframe and 3 uplink subframes in a frame(10ms). In ideal capacity calculation the downlink capacity is measured for the single antenna and two antennas UE.  
+
+The bandwidth of LTE was 5MHz during measurement campaign. In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one subframe of one PRB. Out of these 144 REs 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available REs in one subframe become then 25 * 96 = 2400 REs. 
+
+The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity is calculated. Then capacity of rest of 96 REs is extrapolated by multiplying the sum capacity of 8 channel estimates by the factor of 12 which which gives us the sum capacity of one PRB for one subframe. The same procedure is done for the rest of 24 PRBs and at the end their cumulative sum is taken giving us the downlink throughput of one complete subframe. Since Uplink-downlink configuration 3 is used in which there are 6 downlink subframes in a frame so then the sum capacity of one subframe is multiplied by the factor of 6 to calculate the downlink throughput of one frame. 
+
+One frame in LTE is of 1ms duration. In order to get the downlink throughput per second, the downlink throughput of 100 frames is added together giving the throughput in bits per seconds.
+
+
 \printfile{Mode2/results/RX_RSSI_dBm_gps.jpg}
 \printfile{Mode2/results/RX_RSSI_dBm.pdf}
 
@@ -119,7 +145,6 @@
 
 \printfile{Mode6/results/UL_RSSI_dBm_gps.jpg}
 \printfile{Mode6/results/UL_RSSI_dBm.pdf}
-
 
 \section{Coverage measurements}
 We need here a comparison of mode 1 and 2!!!
@@ -130,7 +155,6 @@ We need here a comparison of mode 1 and 2!!!
 
 \printfile{Mode2_update/results/PBCH_FER.pdf}
 \printfile{Mode2_update/results/PBCH_fer_gps.jpg}
-
 
 \subsection{Rice Factor}
 
@@ -164,7 +188,6 @@ The CDF comparison is done in two different ways. In the first way, the measurem
 \printfile{Mode2/results/coded_throughput_time_2ndRx.pdf}
 \printfile{Mode2/results/coded_throughput_time_2Rx.pdf}
 
-
 \subsubsection{Map}
 
 \printfile{Mode1/results/DLSCH_troughput_gps.jpg}
@@ -177,7 +200,6 @@ The CDF comparison is done in two different ways. In the first way, the measurem
 
 \printfile{Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
 \printfile{Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
-
 
 \subsubsection{Distance}
 
@@ -206,14 +228,12 @@ For the comparsion over distance travelled we select a small but representative 
 
 \printfile{results/all_modes_comparison_rssi_dBm.jpg}
 \printfile{results/all_modes_comparison_rssi_dBm.pdf}
-
 \printfile{results/all_modes_comparison_troughput_distance_travelled.pdf}
 
 \subsubsection{Speed}
 
 \printfile{Mode1/results/DLSCH_throughput_speed.pdf}
 \printfile{Mode2/results/DLSCH_throughput_speed.pdf}
-
 \printfile{Mode6/results/DLSCH_throughput_speed.pdf}
 
 %\printfile{Mode2/results/ideal_throughput_speed_mode1_1stRx.pdf}
@@ -231,8 +251,6 @@ For the comparsion over distance travelled we select a small but representative 
 %\printfile{Mode2/results/ideal_throughput_speed_mode6_maxq_1stRx.pdf}
 \printfile{Mode2/results/ideal_throughput_speed_mode6_maxq_2Rx.pdf}
 
-
-
 \subsubsection{DL L0 (uncoded) throughput}
 
 \printfile{results/DLSCH_uncoded_throughput_cdf_comparison.pdf}
@@ -248,29 +266,21 @@ For the comparsion over distance travelled we select a small but representative 
 
 \subsubsection{Map}
 \printfile{Mode6/results/UL_throughput_gps.jpg}
-
 \printfile{Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
 \printfile{Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
 
 \subsubsection{Distance}
 \printfile{Mode6/results/UL_throughput_dist.pdf}
-
 \printfile{Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
 \printfile{Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
 
-
 \subsubsection{Speed}
 \printfile{Mode6/results/UL_throughput_speed.pdf}
-
 \printfile{Mode6/results/UL_throughput_ideal_1Rx_speed.pdf}
 \printfile{Mode6/results/UL_throughput_ideal_2Rx_speed.pdf}
-
-
 
 \subsection{UL L0 (uncoded) throughput}
 
 \printfile{Mode6/results/UL_uncoded_throughput_cdf_comparison.pdf}
-
-
 
 \end{document}          
