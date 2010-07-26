@@ -82,7 +82,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
   short coded_bits=0;
   short dummy_w[8][3*(6144+64)];
-  unsigned int r,r_offset=0,Kr,Kr_bytes;
+  unsigned int r,r_offset=0,Kr,Kr_bytes,err_flag=0;
   unsigned char crc_type;
 
   if (!dlsch_llr) {
@@ -120,10 +120,13 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   }
 
   A = dlsch->harq_processes[harq_pid]->TBS;
+
+#ifndef USER_MODE
   if (A > 6144) {
     msg("dlsch_decoding.c: Illegal TBS %d\n",A);
     return(MAX_TURBO_ITERATIONS);
   }
+#endif
 
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
@@ -146,11 +149,13 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 		     &dlsch->harq_processes[harq_pid]->F);
     //  CLEAR LLR's HERE for first packet in process
   }
+  /*
   else {
     msg("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
     return(MAX_TURBO_ITERATIONS);
   }
-
+  */
+  err_flag = 0;
   r_offset = 0;
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
 
@@ -247,36 +252,42 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 	msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     msg("\n");
     */
-    
-    ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
-					dlsch->harq_processes[harq_pid]->c[r],
-					Kr,
-					f1f2mat[iind*2],   
-					f1f2mat[(iind*2)+1], 
-					MAX_TURBO_ITERATIONS,
-					crc_type,
-					(r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-					harq_pid+1);
-    
+
+    if (err_flag == 0) {
+      ret = phy_threegpplte_turbo_decoder(&dlsch->harq_processes[harq_pid]->d[r][96],
+					  dlsch->harq_processes[harq_pid]->c[r],
+					  Kr,
+					  f1f2mat[iind*2],   
+					  f1f2mat[(iind*2)+1], 
+					  MAX_TURBO_ITERATIONS,
+					  crc_type,
+					  (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+					  harq_pid+1);
+    }
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //    msg("CRC failed\n");
+      err_flag = 1;
+    }
 
-      dlsch->harq_ack[subframe].ack = 0;
-      dlsch->harq_ack[subframe].harq_id = harq_pid;
-      //      msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
-      if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
-	dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
-      }
-      return(ret);
-    }
-    else {
+  }
+
+  if (err_flag == 1) {
+    dlsch->harq_ack[subframe].ack = 0;
+    dlsch->harq_ack[subframe].harq_id = harq_pid;
+    //      msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
+    if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
       dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
-      dlsch->harq_processes[harq_pid]->round  = 0;
-      dlsch->harq_ack[subframe].ack = 1;
-      dlsch->harq_ack[subframe].harq_id = harq_pid;
-      //      msg("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
     }
+    
+    return((1+MAX_TURBO_ITERATIONS));
+  }
+  else {
+    dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
+    dlsch->harq_processes[harq_pid]->round  = 0;
+    dlsch->harq_ack[subframe].ack = 1;
+    dlsch->harq_ack[subframe].harq_id = harq_pid;
+    //      msg("DLSCH: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
   }
   // Reassembly of Transport block here
   offset = 0;

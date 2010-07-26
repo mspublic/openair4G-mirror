@@ -61,12 +61,13 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     // do frequency offset estimation here!
     // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
 #ifdef DEBUG_FEP
-	printf("Frequency offset estimation\n");
+    printf("Frequency offset estimation\n");
 #endif   
-    lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
-			frame_parms,
-			l,
-			&ue_common_vars->freq_offset);
+    if ((Ns == 0) & (l==3)) 
+      lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
+			  frame_parms,
+			  l,
+			  &ue_common_vars->freq_offset);
   }
 
 #ifdef DEBUG_FEP

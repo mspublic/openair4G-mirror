@@ -9,13 +9,12 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "MAC_INTERFACE/extern.h"
 
-extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
+extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK[8];
 
 #ifndef USER_MODE
 static struct proc_dir_entry *proc_openair1_root;
 #endif 
 
-extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
 
 #ifndef USER_MODE
 static int openair1_state_read(char *buffer, char **my_buffer, off_t off, int length) {
@@ -164,7 +163,12 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		     PHY_vars->PHY_measurements.selected_rx_antennas[eNB][6]);
       
       len += sprintf(&buffer[len], "[UE PROC] Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.wideband_cqi_tot[eNB]);
-      len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d : %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
+      len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (max): %x\n",eNB,pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars->PHY_measurements,eNB)));
+      len += sprintf(&buffer[len], "[UE PROC] Quantized PMI eNB %d (both): %x,%x\n",eNB,
+		     pmi2hex_2Ar1(quantize_subband_pmi2(&PHY_vars->PHY_measurements,eNB,0)),
+		     pmi2hex_2Ar1(quantize_subband_pmi2(&PHY_vars->PHY_measurements,eNB,1)));
+
+
       len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",openair_daq_vars.dlsch_transmission_mode,lte_frame_parms->mode1_flag);
       if (openair_daq_vars.dlsch_transmission_mode == 6)
 	len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,PHY_vars->PHY_measurements.precoded_cqi_dB[eNB][0]);
@@ -231,11 +235,15 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   mode_string[eNB_UE_stats[0].mode[0]],
 		   eNB_UE_stats[0].mode[0]);
     if (eNB_UE_stats[0].mode[0] == PUSCH) {
-      len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d,%d/%d,%d/%d), DLSCH NAK %d\n",
+      len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d,%d/%d,%d/%d), DLSCH NAK (%d,%d,%d,%d)\n",
 		     ulsch_errors[0],ulsch_decoding_attempts[0],
 		     ulsch_errors[1],ulsch_decoding_attempts[1],
 		     ulsch_errors[2],ulsch_decoding_attempts[2],
-		     dlsch_NAK);
+		     dlsch_NAK[0],
+		     dlsch_NAK[1],
+		     dlsch_NAK[2],
+		     dlsch_NAK[3]);
+
     }
   }
 

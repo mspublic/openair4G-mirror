@@ -440,10 +440,12 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch0->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
 
+    /*
     if (dlsch0->harq_processes[harq_pid]->mcs>20) {
-      msg("dci_tools.c: mcs > 20 disabled for now\n");
+      msg("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0->harq_processes[harq_pid]->mcs);
       return(-1);
     }
+    */
 
     dlsch1->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs2;
     dlsch0->harq_processes[harq_pid]->rvidx     = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rv1;
@@ -515,7 +517,10 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
     else
       dlsch0->harq_processes[harq_pid]->TBS         =0;
-    
+    /*
+    if (dlsch0->harq_processes[harq_pid]->mcs > 18)
+      printf("mcs %d, TBS %d\n",dlsch0->harq_processes[harq_pid]->mcs,dlsch0->harq_processes[harq_pid]->TBS);
+    */
     dlsch1->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi2;
     if (dlsch1->harq_processes[harq_pid]->Ndi == 1)
       dlsch1->harq_processes[harq_pid]->status = ACTIVE;
@@ -649,6 +654,40 @@ unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id)
     if (rank == 0) {
       pmi_re = meas->subband_pmi_re[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
       pmi_im = meas->subband_pmi_im[eNb_id][i][meas->selected_rx_antennas[eNb_id][i]];
+
+      if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
+	pmiq = PMI_2A_11;
+      else if ((pmi_re < pmi_im) && (pmi_re > -pmi_im))
+	pmiq = PMI_2A_1j;
+      else if ((pmi_re < pmi_im) && (pmi_re < -pmi_im))
+	pmiq = PMI_2A_1m1;
+      else if ((pmi_re > pmi_im) && (pmi_re < -pmi_im))
+	pmiq = PMI_2A_1mj;
+      pmivect |= (pmiq<<(2*i));
+    }
+    else {
+      // This needs to be done properly!!!
+      pmivect = 0;
+    }
+  }
+
+  return(pmivect);
+}
+
+unsigned short quantize_subband_pmi2(PHY_MEASUREMENTS *meas,unsigned char eNb_id,unsigned char a_id) {
+
+  unsigned char i;
+  unsigned short pmiq=0;
+  unsigned short pmivect = 0;
+  unsigned char rank = meas->rank[eNb_id];
+  int pmi;
+  int pmi_re,pmi_im;
+
+  for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
+
+    if (rank == 0) {
+      pmi_re = meas->subband_pmi_re[eNb_id][i][a_id];
+      pmi_im = meas->subband_pmi_im[eNb_id][i][a_id];
 
       if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
 	pmiq = PMI_2A_11;

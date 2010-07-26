@@ -64,7 +64,7 @@ int dlsch_received_last = 0;
 int dlsch_fer = 0;
 int dlsch_cntl_errors = 0;
 int dlsch_ra_errors = 0;
-int current_dlsch_cqi = 0;
+int current_dlsch_cqi = 5;
 
 unsigned char  ulsch_ue_rag_active;
 unsigned int  ulsch_ue_rag_frame;
@@ -163,7 +163,11 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 #endif
+#ifdef OFDMA_ULSCH
       generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1);
+#else
+      generate_srs_tx(lte_frame_parms,lte_ue_common_vars->txdataF[0],scfdma_amps[12],next_slot>>1);
+#endif
     }
 
     if ((ulsch_ue_rag_active == 1) && (ulsch_ue_rag_frame == mac_xface->frame) && (ulsch_ue_rag_subframe == (next_slot>>1))) {
@@ -198,9 +202,12 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
 
       first_rb = ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
-      
+
+#ifdef OFDMA_ULSCH      
       generate_drs_pusch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
-      
+#else
+      generate_drs_pusch(lte_frame_parms,lte_ue_common_vars->txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb);
+#endif      
       input_buffer_length = ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       
       for (i=0;i<input_buffer_length;i++) {
@@ -213,8 +220,11 @@ void phy_procedures_UE_TX(unsigned char next_slot) {
       if (rag_flag == 1)
 	msg("[PHY_PROCEDURES][UE] Frame %d, Subframe %d Generating RAG (nb_rb %d, first_rb %d)\n",mac_xface->frame,next_slot>>1,ulsch_ue[0]->harq_processes[0]->nb_rb,ulsch_ue[0]->harq_processes[0]->first_rb);
       ulsch_encoding(ulsch_input_buffer,lte_frame_parms,ulsch_ue[0],harq_pid);
+#ifdef OFDMA_ULSCH
       ulsch_modulation(lte_ue_common_vars->txdataF,AMP,(next_slot>>1),lte_frame_parms,ulsch_ue[0],rag_flag);
-
+#else
+      ulsch_modulation(lte_ue_common_vars->txdataF,scfdma_amps[nb_rb],(next_slot>>1),lte_frame_parms,ulsch_ue[0],rag_flag);
+#endif
     }
   }
 }
@@ -782,6 +792,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	
     // process last DLSCH symbols + invoke decoding
     if (((last_slot%2)==0) && (l==0)) {
+      //      printf("phy_procedures: lte_ue_dlsch_vars %p lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars,lte_ue_dlsch_vars[0]);
 
       if ( (dlsch_ue_active == 1) && (dlsch_ue_cntl_active == 1))
 	msg("[PHY_PROCEDURES_LTE] WARNING: dlsch_ue and dlsch_ue_cntl active, but data structures can only handle one at a time\n");
@@ -843,7 +854,8 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    dlsch_errors++;
 #ifdef USER_MODE
 	    if (mac_xface->frame > 10) {
-	      printf("DLSCH in error, dumping\n");
+	      printf("DLSCH (rv %d,mcs %d) in error\n",dlsch_ue[0]->harq_processes[harq_pid]->rvidx,
+		     dlsch_ue[0]->harq_processes[harq_pid]->mcs);
 	      //	      dump_dlsch();
 	      //	      exit(-1);
 	    }
@@ -851,20 +863,23 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  }
 	}
 
-	if (mac_xface->frame % 100 == 0) {
+	if (mac_xface->frame % 200 == 0) {
 	  if ((dlsch_received - dlsch_received_last) != 0) 
-	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
+	    dlsch_fer = (200*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
 	  dlsch_errors_last = dlsch_errors;
 	  dlsch_received_last = dlsch_received;
-	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
+	  
+	  // CQI adaptation when current MCS is odd, even is handled by eNb
+	  if ((dlsch_fer > 20) && (current_dlsch_cqi>0) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 0))
 	    current_dlsch_cqi--;
 #ifndef USER_MODE
-	  if ((dlsch_fer < 4) && (current_dlsch_cqi<8))
+	  if ((dlsch_fer < 8) && (current_dlsch_cqi<8) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    current_dlsch_cqi++;
 #else
-	  if ((dlsch_fer < 4) && (current_dlsch_cqi<16))
+	  if ((dlsch_fer < 8) && (current_dlsch_cqi<16) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    current_dlsch_cqi++;
 #endif
+	  
 	}
 
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
@@ -875,7 +890,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 		  mac_xface->frame,last_slot,
 		  dlsch_errors,
 		  dlsch_received,
-		  dlsch_fer,
+		  dlsch_fer/2,
 		  current_dlsch_cqi);
 #endif
       }

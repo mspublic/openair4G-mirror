@@ -37,9 +37,9 @@ int dot_product(short *x,
 
   for (n=0;n<(N>>2);n++) {
 
-    //    printf("n=%d, x128=%p, y128=%p\n",n,x128,y128);
+    //printf("n=%d, x128=%p, y128=%p\n",n,x128,y128);
     //    print_shorts("x",&x128[0]);
-	//    print_shorts("y",&y128[0]);
+    //    print_shorts("y",&y128[0]);
 
     // this computes Re(z) = Re(x)*Re(y) + Im(x)*Im(y)
     mmtmp1 = _mm_madd_epi16(x128[0],y128[0]);
@@ -49,7 +49,7 @@ int dot_product(short *x,
     // shift and accumulate results
     mmtmp1 = _mm_srai_epi32(mmtmp1,output_shift);
     mmcumul_re = _mm_add_epi32(mmcumul_re,mmtmp1);
-    //            print_ints("re",&mmcumul_re);
+    //    print_ints("re",&mmcumul_re);
 
     
     // this computes Im(z) = Re(x)*Im(y) - Re(y)*Im(x)
@@ -67,7 +67,7 @@ int dot_product(short *x,
     // shift and accumulate results
     mmtmp3 = _mm_srai_epi32(mmtmp3,output_shift);
     mmcumul_im = _mm_add_epi32(mmcumul_im,mmtmp3);
-    //              print_ints("im",&mmcumul_im);
+    //    print_ints("im",&mmcumul_im);
 
     x128++;
     y128++;
@@ -75,21 +75,21 @@ int dot_product(short *x,
 
   // this gives Re Re Im Im
   mmcumul = _mm_hadd_epi32(mmcumul_re,mmcumul_im);
-  //    print_ints("cumul1",&mmcumul);
+  //  print_ints("cumul1",&mmcumul);
 
   // this gives Re Im Re Im  
   mmcumul = _mm_hadd_epi32(mmcumul,mmcumul);  
 
-  //    print_ints("cumul2",&mmcumul);
+  //  print_ints("cumul2",&mmcumul);
 
 
   //mmcumul = _mm_srai_epi32(mmcumul,output_shift);
   // extract the lower half
   mmtmp7 = _mm_movepi64_pi64(mmcumul);
-
+  //  print_ints("mmtmp7",&mmtmp7);
   // pack the result
   mmtmp7 = _mm_packs_pi32(mmtmp7,mmtmp7);
-
+  //  print_shorts("mmtmp7",&mmtmp7);
   // convert back to integer
   result = _mm_cvtsi64_si32(mmtmp7);
 

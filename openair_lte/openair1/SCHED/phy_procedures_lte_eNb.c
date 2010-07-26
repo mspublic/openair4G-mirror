@@ -56,8 +56,9 @@ static char dlsch_eNb_1A_active = 0;
 static char eNb_generate_rar = 0;
 static char eNb_generate_rag_ack = 0;
 
-int ulsch_errors[3]={0,0,0},ulsch_consecutive_errors[3]={0,0,0},ulsch_decoding_attempts[3]={0,0,0},dlsch_NAK=0;
+int ulsch_errors[3]={0,0,0},ulsch_consecutive_errors[3]={0,0,0},ulsch_decoding_attempts[3]={0,0,0},dlsch_NAK[8]={0,0,0,0,0,0,0,0},dlsch_l2_errors=0;
 unsigned int max_peak_val; 
+char dlsch_mcs_offset=0;
 
 int max_eNb_id, max_sync_pos;
 
@@ -612,9 +613,19 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       
       if (openair_daq_vars.dlsch_rate_adaptation == 0)
 	DLSCH_alloc_pdu2.mcs1   = openair_daq_vars.target_ue_dl_mcs;
-      else
-	DLSCH_alloc_pdu2.mcs1   = (eNB_UE_stats[0].DL_cqi[0][0]<<1);
+      else {
+	// if we got an increase in mcs from UE, make sure we don't increment too much
+	if ((eNB_UE_stats[0].DL_cqi[0][0]<<1)+dlsch_mcs_offset > (DLSCH_alloc_pdu2.mcs1+1))
+	  dlsch_mcs_offset=0;
+	DLSCH_alloc_pdu2.mcs1   = (eNB_UE_stats[0].DL_cqi[0][0]<<1)+dlsch_mcs_offset;
+	if (DLSCH_alloc_pdu2.mcs1 == 31)
+	  DLSCH_alloc_pdu2.mcs1=0;
+      }
+      //      msg("mcs: %d, mcs_offset %d\n",DLSCH_alloc_pdu2.mcs1,dlsch_mcs_offset);
 
+#ifdef USER_MODE
+      DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC;
+#else
       if (DLSCH_alloc_pdu2.mcs1 > 14)
 	DLSCH_alloc_pdu2.mcs1 = 14;
 
@@ -622,14 +633,21 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC_12;
       else
 	DLSCH_alloc_pdu2.rballoc = DLSCH_RB_ALLOC;
-
-      if (openair_daq_vars.dlsch_transmission_mode == 6)
-	DLSCH_alloc_pdu2.tpmi = 5;  // PUSCH precoding
+#endif
 
       if (openair_daq_vars.dlsch_transmission_mode == 6)
 	DLSCH_alloc_pdu2.tpmi   = 5;
       else
 	DLSCH_alloc_pdu2.tpmi   = 0;
+
+      if (dlsch_eNb[0]->harq_processes[0]->round == 0) {
+	DLSCH_alloc_pdu2.ndi1 = 1;
+      }
+      else {
+	DLSCH_alloc_pdu2.ndi1 = 0;
+      }
+
+      DLSCH_alloc_pdu2.rv1 = dlsch_eNb[0]->harq_processes[0]->round&3;
 
       memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
       dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
@@ -650,9 +668,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 					 SI_RNTI,
 					 RA_RNTI,
 					 P_RNTI);
+      
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame, next_slot);
       dlsch_eNb_active = 1;
-      
 
       break;
       
@@ -749,6 +767,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     if (dlsch_eNb_active == 1) {
       harq_pid = dlsch_eNb[0]->current_harq_pid;
       input_buffer_length = dlsch_eNb[0]->harq_processes[harq_pid]->TBS/8;
+
       for (i=0;i<input_buffer_length;i++)
 	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
@@ -915,7 +934,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   unsigned char harq_pid,rag_flag;
   static unsigned char first_run = 1;
   int sync_pos;
-  
+  unsigned char dl_harq_pid;
+
   //  debug_msg("Running phy_procedures_eNb_RX(%d), eNb_mode = %s\n",last_slot,mode_string[eNB_UE_stats[0].mode[UE_id]]);
 
   for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
@@ -1094,7 +1114,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 	//	msg("[eNB Procedures] Frame %d : RX Subframe %d Setting UE mode to PUSCH\n",mac_xface->frame,last_slot>>1);
 	//eNb_generate_rag_ack = 0;
 	//eNB_UE_stats[0].mode[0] = PRACH;
-	dlsch_NAK=0;
+	for (i=0;i<dlsch_eNb[0]->Mdlharq;i++)
+	  dlsch_NAK[i]=0;
       }
     }
 
@@ -1104,8 +1125,48 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     else {
       debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, harq_pid, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors[harq_pid],ulsch_decoding_attempts[harq_pid]);  
 
-      if (ulsch_eNb[0]->o_ACK[0] == 0)
-	dlsch_NAK++;
+      // process HARQ feedback
+      dl_harq_pid = dlsch_eNb[0]->harq_ids[ul_ACK_subframe2_dl_subframe(lte_frame_parms->tdd_config,
+									last_slot>>1,
+									0)];
+      // Clear NAK stats and adjust mcs offset
+      if (dlsch_NAK[0] > 10) {
+	if (dlsch_mcs_offset == 1)
+	  dlsch_mcs_offset=0;
+	else
+	  dlsch_mcs_offset=-1;
+      }
+
+      if ((mac_xface->frame % 100) == 0) {
+	if ((dlsch_mcs_offset == 0) && (dlsch_NAK[0] < 2))
+	  dlsch_mcs_offset = 1;
+	if ((dlsch_mcs_offset == 1) && (dlsch_NAK[0] > 2))
+	  dlsch_mcs_offset = 0;
+	if ((dlsch_mcs_offset == 0) && (dlsch_NAK[0] > 2))
+	  dlsch_mcs_offset = -1;
+	if ((dlsch_mcs_offset == -1) && (dlsch_NAK[0] < 2))
+	  dlsch_mcs_offset = 0;
+
+	for (i=0;i<dlsch_eNb[0]->Mdlharq;i++)
+	  dlsch_NAK[i] = 0;
+      }
+	
+      if (ulsch_eNb[0]->o_ACK[0] == 0) {
+	dlsch_NAK[dlsch_eNb[0]->harq_processes[dl_harq_pid]->round]++;
+	dlsch_eNb[0]->harq_processes[dl_harq_pid]->round++;
+
+	//	printf("Frame %d Setting round to %d for pid %d (subframe %d)\n",mac_xface->frame,
+	//	       	dlsch_eNb[0]->harq_processes[dl_harq_pid]->round,dl_harq_pid,last_slot>>1);
+
+	if (dlsch_eNb[0]->harq_processes[dl_harq_pid]->round == dlsch_eNb[0]->Mdlharq) {
+	  dlsch_eNb[0]->harq_processes[dl_harq_pid]->round = 0;
+	  dlsch_l2_errors++;
+	}
+      }
+      else {
+	dlsch_eNb[0]->harq_processes[dl_harq_pid]->round = 0;
+	//	printf("Frame %d Setting round to 0 for pid %d (subframe %d)\n",mac_xface->frame,dl_harq_pid,last_slot>>1);
+      }
     }
   }
     

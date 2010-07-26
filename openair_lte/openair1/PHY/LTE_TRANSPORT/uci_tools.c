@@ -35,24 +35,36 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,
 
   case wideband_cqi: //and subband pmi
     if (rank == 0) {
-      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1;      
+      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[UE_id][0] > 28)
+	stats->DL_cqi[UE_id][0] = 28;
       stats->DL_pmi_single[UE_id] = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1;      
-      stats->DL_cqi[UE_id][1]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2;      
+      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[UE_id][0] > 28)
+	stats->DL_cqi[UE_id][0] = 28;      
+      stats->DL_cqi[UE_id][1]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2;
+      if (stats->DL_cqi[UE_id][1] > 28)
+	stats->DL_cqi[UE_id][1] = 28;      
       stats->DL_pmi_dual[UE_id]   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;      
     }
     break;
   case hlc_cqi:
     if (rank == 0) {
-      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1;      
+      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[UE_id][0] > 28)
+	stats->DL_cqi[UE_id][0] = 28;      
       stats->DL_diffcqi[UE_id][0] = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1;      
       stats->DL_pmi_single[UE_id] = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1;      
-      stats->DL_cqi[UE_id][1]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2;      
+      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[UE_id][0] > 28)
+	stats->DL_cqi[UE_id][0] = 28;      
+      stats->DL_cqi[UE_id][1]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2;
+      if (stats->DL_cqi[UE_id][1] > 28)
+	stats->DL_cqi[UE_id][1] = 28;      
       stats->DL_diffcqi[UE_id][0] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1;      
       stats->DL_diffcqi[UE_id][1] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2;      
       stats->DL_pmi_dual[UE_id]   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;      

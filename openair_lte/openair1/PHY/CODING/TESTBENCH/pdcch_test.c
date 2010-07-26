@@ -5,6 +5,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/vars.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
 #include "PHY/CODING/defs.h"
 //#include "PHY/CODING/lte_interleaver.h"
@@ -16,6 +17,8 @@
 //#include "PHY/LTE_TRANSPORT/dci.h"
 
 //#include "decoder.h"
+
+char current_dlsch_cqi;
 
 void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 
@@ -34,6 +37,10 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
   lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars);
   lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars);
+  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
+  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
+  lte_ue_dlsch_vars_ra   = &PHY_vars->lte_ue_dlsch_vars_ra[0];
+  lte_ue_dlsch_vars_1A   = &PHY_vars->lte_ue_dlsch_vars_1A[0];
 
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->Ncp                = 1;
@@ -54,7 +61,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   
   generate_64qam_table();
   generate_16qam_table();
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
   printf("Done lte_param_init\n");
 }
 
@@ -155,12 +162,13 @@ int test_pdcch(double sigma,
     crce = extract_crc(decoded_output,DCI_LENGTH);
     crc = crc16(decoded_output,DCI_LENGTH);
     // check for errors
-    printf("DCI_LEN %d : %x,%x\n",DCI_LENGTH,
+    /*printf("DCI_LEN %d : %x,%x\n",DCI_LENGTH,
 	   extract_crc(decoded_output,DCI_LENGTH),
 	   crc);
-    for (i=0;i<(3+((DCI_LENGTH>>3)));i++) {
-      printf("decoded output %d -> %x\n",i,decoded_output[i]);
-      /*
+*/
+
+    for (i=0;i<(((DCI_LENGTH>>3)));i++) {
+//      printf("decoded output %d -> %x\n",i,decoded_output[i]);
       if (decoded_output[i]!=i) {
 	*errors = *errors+1;
 	if ((extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)) == 0) {
@@ -168,12 +176,11 @@ int test_pdcch(double sigma,
 	  	  printf("%x %x => %x\n",extract_crc(decoded_output,DCI_LENGTH),(crc16(decoded_output,DCI_LENGTH)>>16),
 	  	 (extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)));
 	}
-	//	break;
+	break;
       }
-      */
     }
 
-    exit(-1);
+    //exit(-1);
     if (*errors == 100)
       break;
   }
@@ -245,7 +252,7 @@ int ret,ret2;
   
   
 
-  for (SNR=9;SNR<10;SNR+=.2) {
+  for (SNR=-2;SNR<4;SNR+=.2) {
 
 
     printf("\n\nSNR %f dB\n",SNR);

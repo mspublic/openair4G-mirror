@@ -21,8 +21,8 @@
 //#define DEBUG_PHY
 #define RF
 
-#define BW 10.0
-#define Td 1.0
+#define BW 7.68
+
 #define N_TRIALS 1
 
 /*
@@ -40,6 +40,8 @@
 unsigned short NODE_ID[1];
 unsigned char NB_INST=2;
 
+#include "forms.h"
+#include "phy_procedures_sim_form.h"
 
 void l2_init() {
 
@@ -96,6 +98,72 @@ void l2_init() {
   }
 }
 
+struct complex **ch;
+
+FD_phy_procedures_sim *form;
+
+float I[3600],Q[3600],I2[3600],Q2[3600],I3[100],Q3[100];
+
+do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, struct complex **ch,unsigned int ch_len) {
+
+  int j,s,i;
+
+
+  j=0;
+  //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
+  for (s=4;s<12;s++) {
+    for(i=0;i<12*12;i++) {
+      I[j] = (float)((short*)lte_ue_dlsch_vars[0]->rxdataF_comp[0])[(2*25*12*s)+2*i];
+      Q[j] = (float)((short*)lte_ue_dlsch_vars[0]->rxdataF_comp[0])[(2*25*12*s)+2*i+1];
+      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
+      j++;
+    }
+    if (s==5)
+      s=6;
+    else if (s==8)
+      s=9;
+  }
+  if (j>0)
+    fl_set_xyplot_data(form->pdsch_constellation,I,Q,j,"","","");
+
+
+  fl_set_xyplot_xbounds(form->pdsch_constellation,-800,800);
+  fl_set_xyplot_ybounds(form->pdsch_constellation,-800,800);
+
+
+  j=0;
+  //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
+  for (s=0;s<12;s++) {
+    for(i=0;i<6*12;i++) {
+      I2[j] = (float)((short*)lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0])[(2*25*12*s)+2*i];
+      Q2[j] = (float)((short*)lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0])[(2*25*12*s)+2*i+1];
+      //      printf("%d (%d): %f,%f : %d,%d\n",j,(25*12*s)+i,I[j],Q[j],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i],lte_ue_dlsch_vars[0]->rxdataF_comp[0][(2*25*12*s)+2*i+1]);
+      j++;
+    }
+    if (s==1)
+      s=2;
+    else if (s==7)
+      s=8;
+  }
+  if (j>0)
+    fl_set_xyplot_data(form->pusch_constellation,I2,Q2,j,"","","");
+
+  fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
+  fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
+
+  for (j=0;j<ch_len;j++) {
+
+    I3[j] = j;
+    Q3[j] = 10*log10(ch[0][j].r*ch[0][j].r + ch[0][j].i*ch[0][j].i);
+  }
+
+  fl_set_xyplot_data(form->ch00,I3,Q3,ch_len,"","","");
+  fl_set_xyplot_ybounds(form->ch00,-50,10);
+}
+
+
+
+
 int main(int argc, char **argv) {
 
   int i,l,aa,sector;
@@ -107,9 +175,9 @@ int main(int argc, char **argv) {
   int **txdata,**rxdata;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.1;
+  double aoa=.03,ricean_factor=.5,Td=1.0;
   int channel_length;
-  struct complex **ch;
+
   unsigned char pbch_pdu[6];
   int sync_pos, sync_pos_slot;
   FILE *rx_frame_file;
@@ -138,7 +206,7 @@ int main(int argc, char **argv) {
   char stats_buffer[4096];
   int len;
   unsigned char target_dl_mcs=4;
-  unsigned char target_ul_mcs=1;
+  unsigned char target_ul_mcs=10;
 
   unsigned int rx_gain;
 
@@ -165,10 +233,18 @@ int main(int argc, char **argv) {
   else
     rate_adaptation_flag = 0;
 
-  if (argc>4)
+  if (argc>=4)
     n_frames = atoi(argv[4]);
   else
     n_frames = 10;
+
+  if (argc>5) {
+    ricean_factor = atof(argv[5]);
+  }
+
+  if (argc>=6) {
+    Td = atof(argv[6]);
+  }
 
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
 	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
@@ -393,7 +469,9 @@ int main(int argc, char **argv) {
 
   l2_init();
 
-
+  fl_initialize(&argc, argv, NULL, 0, 0);    
+  form = create_form_phy_procedures_sim();                 
+  fl_show_form(form->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,"LTE SIM");   
 
   mac_xface->mrbch_phy_sync_failure(0,0);
   mac_xface->chbch_phy_sync_success(1,0);
@@ -420,6 +498,9 @@ int main(int argc, char **argv) {
       mac_xface->is_cluster_head = 0;
 
       phy_procedures_lte(last_slot,next_slot);
+
+      if (last_slot == 14) 
+	do_forms(lte_ue_dlsch_vars,lte_eNB_ulsch_vars,ch,channel_length);
 
       if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
 	len = chbch_stats_read(stats_buffer,NULL,0,4096);
@@ -563,8 +644,9 @@ int main(int argc, char **argv) {
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
 			      0);
-      //      printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+      //        printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 #else
+
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
 	  s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
@@ -581,7 +663,7 @@ int main(int argc, char **argv) {
 			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
 			channel_length,
 			0,
-			.1,
+			.9,
 			(first_call == 1) ? 1 : 0);
       
       if (first_call == 1)
@@ -590,14 +672,17 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      path_loss_dB = -67;
+      path_loss_dB = -50;
 
       if ((next_slot > 2) && (next_slot<10)) {
+#ifdef OFDMA_ULSCH
 	if (UE_mode == PRACH) // 6 RBs, 23 dBm
 	  path_loss_dB += (-20+6.2);  // UE
 	else
 	  path_loss_dB += (-20.0+(double)ulsch_ue[0]->power_offset);
-
+#else
+	path_loss_dB += (-20);
+#endif
       }
 
       if ((next_slot>2) && (next_slot<10)) {

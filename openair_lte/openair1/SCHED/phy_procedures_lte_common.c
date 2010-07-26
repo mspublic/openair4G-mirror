@@ -37,6 +37,31 @@ void get_rag_alloc(unsigned char tdd_config,
   }
 }
 
+unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index) {
+
+  switch (tdd_config) {
+  case 3:
+    if (subframe == 2) {  // ACK subframes 5 and 6
+      return(5+ACK_index);
+    }
+    else if (subframe == 3) {   // ACK subframes 7 and 8
+      return(6+ACK_index);
+      //      return(7+ACK_index);  // To be updated
+    }
+    else if (subframe == 4) {  // ACK subframes 9 and 0
+      return((9+ACK_index)%10);
+    }
+    else {
+      msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	  subframe,tdd_config);
+      return(0);
+    }
+    break;
+    
+  }
+  return(0);
+}
+
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
 
   switch (tdd_config) {

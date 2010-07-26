@@ -20,7 +20,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   unsigned char nu,aarx;
   unsigned short k;
   unsigned int rb,pilot_cnt;
-  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2;
+  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2,*f2_dc,*f_dc;
   int ch_offset,symbol_offset;
   unsigned int n;
   int i;
@@ -60,6 +60,10 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     fr=filt24_0r2; //for first pilot of rightmost RB
     //    f2r2=filt24_0r2;
     f2r2=filt24_2r;
+
+    f_dc=filt24_0_dcr;  
+    f2_dc=filt24_2_dcl;  
+
     break;
   case 1 :
     f=filt24_1;
@@ -68,6 +72,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2l2=filt24_3l2;
     fr=filt24_1r2;
     f2r2=filt24_3r;
+    f_dc=filt24_1_dcr;  //for first pilot of RB, first half
+    f2_dc=filt24_3_dcl;  //for first pilot of RB, first half
     break;
   case 2 :
     f=filt24_2;
@@ -76,6 +82,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2l2=filt24_4l2;
     fr=filt24_2r2;
     f2r2=filt24_4r;
+    f_dc=filt24_2_dcr;  //for first pilot of RB, first half
+    f2_dc=filt24_4_dcl;  //for first pilot of RB, first half
     break;
   case 3 :
     f=filt24_3;
@@ -84,6 +92,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2l2=filt24_5l2;
     fr=filt24_3r2;
     f2r2=filt24_5r;
+    f_dc=filt24_3_dcr;  //for first pilot of RB, first half
+    f2_dc=filt24_5_dcl;  //for first pilot of RB, first half
     break;
   case 4 :
     f=filt24_4;
@@ -92,6 +102,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2l2=filt24_6l2;
     fr=filt24_4r2;
     f2r2=filt24_6r;
+    f_dc=filt24_4_dcr;  //for first pilot of RB, first half
+    f2_dc=filt24_6_dcl;  //for first pilot of RB, first half
     break;
   case 5 :
     f=filt24_5;
@@ -100,6 +112,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f2l2=filt24_7l2;
     fr=filt24_5r2;
     f2r2=filt24_7r;
+    f_dc=filt24_5_dcr;  //for first pilot of RB, first half
+    f2_dc=filt24_7_dcl;  //for first pilot of RB, first half
     break;
   default:
     msg("lte_dl_channel_estimation: k=%d -> ERROR\n",k);
@@ -322,13 +336,13 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_CH
-      printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-
-      ch[0] = 1024;
-      ch[1] = -128;
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	
+	ch[0] = 1024;
+	ch[1] = -128;
 #endif
-
-
+	
+	
 	multadd_real_vector_complex_scalar(f,
 					   ch,
 					   dl_ch,
@@ -343,8 +357,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 #ifdef DEBUG_CH
 	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 
-      ch[0] = 1024;
-      ch[1] = -128;
+	ch[0] = 1024;
+	ch[1] = -128;
 #endif
 	multadd_real_vector_complex_scalar(f2,
 					   ch,
@@ -366,7 +380,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 #endif
 
                  
-      multadd_real_vector_complex_scalar(f,
+      multadd_real_vector_complex_scalar(f_dc,
 					 ch,
 					 dl_ch,
 					 24);
@@ -386,7 +400,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       ch[1] = -128;
 #endif
 
-      multadd_real_vector_complex_scalar(f2,
+      multadd_real_vector_complex_scalar(f2_dc,
 					 ch,
 					 dl_ch,
 					 24);
@@ -404,8 +418,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 #ifdef DEBUG_CH
 	printf("pilot %d rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",26+pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);	
 
-      ch[0] = 1024;
-      ch[1] = -128;
+	ch[0] = 1024;
+	ch[1] = -128;
 #endif
 
 	multadd_real_vector_complex_scalar(f,
@@ -421,8 +435,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 #ifdef DEBUG_CH
 	printf("pilot %d : rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",27+pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 
-      ch[0] = 1024;
-      ch[1] = -128;
+	ch[0] = 1024;
+	ch[1] = -128;
 #endif
 	
 	multadd_real_vector_complex_scalar(f2,

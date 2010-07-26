@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 #include "extern.h"
 
-#define DEBUG_ULSCH_DECODING
+//#define DEBUG_ULSCH_DECODING
 
 void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
 
@@ -126,7 +126,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   }
   A = ulsch->harq_processes[harq_pid]->TBS;
 
-  if (A > 6144) {
+  if (A > 2*6144) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal TBS %d\n",A);
     return(-1);
   }

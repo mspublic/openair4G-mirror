@@ -154,5 +154,13 @@ void lte_eNB_srs_measurements(LTE_eNB_COMMON *eNB_common_vars,
 			      unsigned char init_averaging);
 
 
+void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
+		       int **rxdataF_comp,
+		       int **ul_ch_mag,
+		       int **ul_ch_mag_b,
+		       unsigned char symbol,
+		       unsigned short Msc_RS,
+		       unsigned char Qm);
+
 /** @} */ 
 #endif
