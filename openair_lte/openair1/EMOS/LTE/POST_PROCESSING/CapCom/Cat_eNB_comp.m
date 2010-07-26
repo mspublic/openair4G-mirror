@@ -3,6 +3,7 @@ clear all;
 close all;
 clc
 
+start_idx = 1;
 root_path = '/extras/kaltenbe/CNES/emos_postprocessed_data/Mode2/';
 
 d = dir(fullfile(root_path, '*mode*'));
@@ -12,7 +13,7 @@ for d_idx=1:length(dir_names)
     
     pathname = fullfile(root_path,dir_names{d_idx})
     try
-        temp = load(fullfile(pathname, 'results_cat_UE.mat'));
+        temp = load(fullfile(pathname, 'results_cat_eNb.mat'));
     catch exception
         disp(exception.getReport)
         disp(sprintf('Detected error in folder %s, skipping it',pathname));
@@ -31,7 +32,7 @@ for d_idx=1:length(dir_names)
         eval([nn{n} ' = [' nn{n} ' ' 'temp.' nn{n} '];']);
     end
     
-    save(fullfile(root_path,'results_cat_UE.mat'), '*_cat');
+    save(fullfile(root_path,'results_cat_eNb.mat'), '*_cat');
     start_idx = start_idx + 1;
     
 end
