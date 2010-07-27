@@ -6,9 +6,12 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
+
+#ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#endif
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 
@@ -40,7 +43,7 @@
 unsigned short NODE_ID[1];
 unsigned char NB_INST=2;
 
-
+#ifdef OPENAIR2
 void l2_init() {
 
   int ret;
@@ -95,6 +98,7 @@ void l2_init() {
     Mac_rlc_xface->Is_cluster_head[1] = 0;
   }
 }
+#endif
 
 int main(int argc, char **argv) {
 
@@ -390,13 +394,13 @@ int main(int argc, char **argv) {
 
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-
+#ifdef OPENAIR2
   l2_init();
-
-
 
   mac_xface->mrbch_phy_sync_failure(0,0);
   mac_xface->chbch_phy_sync_success(1,0);
+#endif
+
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
     for (slot=0 ; slot<20 ; slot++) {
@@ -559,7 +563,7 @@ int main(int argc, char **argv) {
       tx_pwr = dac_fixed_gain(s_re,
 			      s_im,
 			      txdata,
-			      2,
+			      lte_frame_parms->nb_antennas_tx,
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
 			      0);
@@ -674,7 +678,7 @@ int main(int argc, char **argv) {
 	  0,
 	  slot_offset,
 	  rxdata,
-	  2,
+	  lte_frame_parms->nb_antennas_rx,
 	  lte_frame_parms->samples_per_tti>>1,
 	  12);
   

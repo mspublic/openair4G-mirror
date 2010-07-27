@@ -977,7 +977,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  else {
 	    debug_msg("[PHY_PROCEDURES_LTE] Received RAR in frame %d, subframe %d\n",mac_xface->frame,((last_slot>>1)-1)%10);
 
-#ifdef OPENAIR2
+	    //#ifdef OPENAIR2
 	    if (UE_mode != PUSCH) {
 	      timing_advance = process_rar(dlsch_ue_ra->harq_processes[0]->b,&lte_ue_pdcch_vars[eNb_id]->crnti);
 
@@ -1005,7 +1005,7 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	      rag_timer = 100;
 	      ulsch_ue[0]->power_offset = 6;
 	    }
-#endif
+	    //#endif
 	  }
 	   
 	

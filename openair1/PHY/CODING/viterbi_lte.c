@@ -131,7 +131,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   short position;
 
   // set initial metrics
-  debug_msg("Doing viterbi\n");
+  //debug_msg("Doing viterbi\n");
 
   metrics0_15 = _mm_xor_si128(metrics0_15,metrics0_15);
   metrics16_31 = _mm_xor_si128(metrics16_31,metrics16_31);
@@ -139,7 +139,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   metrics48_63 = _mm_xor_si128(metrics32_47,metrics32_47);
 
   rescale = _mm_cvtsi32_si128(RESCALE);
-  debug_msg("Doing viterbi 2\n");
+  //debug_msg("Doing viterbi 2\n");
   /*
   print_bytes(metrics0_15,"metrics0_15");
   print_bytes(metrics16_31,"metrics16_31");

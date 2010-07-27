@@ -267,8 +267,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot) {
 	max_sync_pos = sync_pos;
       }
 
-      debug_msg("[PHY_PROCEDURES_LTE] found eNb_id=%d, sync_pos=%d, sync_val=%u, max_peak_val=%u, max_peak_pos=%d\n",eNb_id,sync_pos,sync_val,max_peak_val,max_sync_pos);
-
+      //debug_msg("[PHY_PROCEDURES_LTE] Frame %d, found eNb_id=%d, sync_pos=%d, sync_val=%u, max_peak_val=%u, max_peak_pos=%d\n",mac_xface->frame,eNb_id,sync_pos,sync_val,max_peak_val,max_sync_pos);
 
 #ifndef USER_MODE
       time_out = openair_get_mbox();
@@ -443,6 +442,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
   }
   
   */
+#endif //OPENAIR2
 
   eNb_id=0;
   if ((next_slot%2) == 0) {
@@ -450,6 +450,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     nb_dci_ue_spec=0;
     nb_dci_common=0;
 
+#ifdef OPENAIR2
     if (CH_mac_inst[0].DCI_pdu.Num_common_dci == 1) {
       
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
@@ -469,6 +470,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       nb_dci_common = 0;
       
     }
+#endif //OPENAIR2
 
     // RA  
     if (((next_slot>>1) == 7) && (eNb_generate_rar == 1)) {
@@ -519,9 +521,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       eNb_generate_rag_ack=0;
     }
 
+#ifdef OPENAIR2
     // RA 
-
-
     if (CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci == 1) {
       
       generate_eNb_dlsch_params_from_dci(next_slot>>1,
@@ -539,10 +540,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
     else {
       dlsch_eNb_active = 0;
     }
-  }
 #endif //OPENAIR2
-#ifdef DIAG_PHY
+  }
 
+#ifdef DIAG_PHY
   if (((next_slot % 2)==0) && (eNB_UE_stats[0].mode[0] == PUSCH) ) {
     switch (next_slot>>1) {
     case 0:
@@ -825,7 +826,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
 
     }
 
-#ifdef OPENAIR2
+    //#ifdef OPENAIR2
     if (dlsch_eNb_ra_active == 1) {
       input_buffer_length = dlsch_eNb_ra->harq_processes[0]->TBS/8;
       eNB_UE_stats[0].UE_id[0] = fill_rar(dlsch_input_buffer,
@@ -867,7 +868,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d, DLSCH (RA) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
 #endif
     }
-#endif //OPENAIR2
+    //#endif //OPENAIR2
     
     if (dlsch_eNb_1A_active == 1) {
       input_buffer_length = dlsch_eNb_1A->harq_processes[0]->TBS/8;
@@ -940,7 +941,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   if ((eNB_UE_stats[0].mode[UE_id]!=PRACH) && (last_slot%2==1)) {
 
     for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) {
-      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
+      //debug_msg("srs meas eNb_id %d\n",l,eNb_id);
 
       lte_eNB_srs_measurements(lte_eNB_common_vars,
 			       lte_frame_parms,
@@ -949,7 +950,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			       eNb_id,
 			       UE_id,
 			       1);
-      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
+      //debug_msg("srs meas eNb_id %d\n",l,eNb_id);
     }
 
     eNb_id=0;
@@ -960,7 +961,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     */
 #endif
     
-    debug_msg("timing advance \n",l,eNb_id);
+    //debug_msg("timing advance \n",l,eNb_id);
     sync_pos = lte_est_timing_advance(lte_frame_parms,
 				      lte_eNB_common_vars,
 				      &eNb_id,
@@ -968,7 +969,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 				      number_of_cards,
 				      24576);
 
-    debug_msg("timing advance \n",l,eNb_id);
+    //debug_msg("timing advance \n",l,eNb_id);
     first_run = 0;
 
     eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
@@ -982,7 +983,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 
   }
 
-  debug_msg("Running ulsch reception: eNb_id %d (RAG active %d)\n",eNb_id,ulsch_eNb[0]->RAG_active);
+  //debug_msg("Running ulsch reception: eNb_id %d (RAG active %d)\n",eNb_id,ulsch_eNb[0]->RAG_active);
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid_tdd(3,last_slot>>1);
@@ -1076,12 +1077,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 	eNB_UE_stats[0].mode[0] = PRACH;
 	ulsch_consecutive_errors[harq_pid]=0;
       }
+      /*
 #ifdef USER_MODE
       if (rag_flag == 1) {
 	dump_ulsch();
 	exit(-1);
       }
 #endif
+      */
     }
     else {
       ulsch_eNb[0]->harq_processes[harq_pid]->phich_active = 1;
