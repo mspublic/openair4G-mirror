@@ -3,7 +3,7 @@
 #include "PHY/CODING/extern.h"
 #include "extern.h"
 
-#define DEBUG_ULSCH_DECODING
+//#define DEBUG_ULSCH_DECODING
 
 void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
 
