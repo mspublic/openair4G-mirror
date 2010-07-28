@@ -233,34 +233,32 @@ UE mode & meaning \\
 \subsection{Introduction}
 
 
-In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one subframe of one PRB. Out of these 144 REs 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available REs in one subframe become then 25 * 96 = 2400 REs. This results in a maximum throughput of \ldots
-
-[we can copy-past text from the measurement methodology document here. Don't forget the uplink]
+In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one downlink subframe of one PRB and total of 3600 REs for 25 PRBs. Out of these 144 REs of one PRB 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. But please note that these throughputs for both DL and UL are uncoded throughputs. 
 
 \subsubsection{Ideal Throughput Calculation}
-The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity is calculated using the following capacity formula of fixed constellation size Q_{m},
+The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity is calculated using the following capacity formula of fixed constellation size $Q_{m}$,
 
  
 \begin{equation} \label{eq:capacity}
-C(\underline{\textbf{h}},N) = \max_{Q_{m}=\{2,4,6\}} \sum_{i = 0}^{N_{RE}-1}\left[ Q_{m}-\frac{1}{Q_{m}}\sum_{m = 0}^{Q_{m}-1}\int_{-\inf}^{\inf} \! p(y_{i}/h_{i},m)log_{2}\frac{p(y_{i}/h_{i},m)}{p(y_{i})} \, dy\right] 
+C(\underline{\textbf{h}},N) = \max_{Q_{m}=\{2,4,6\}} \sum_{i = 0}^{N_{RE}-1}\left[ Q_{m}-\frac{1}{Q_{m}}\sum_{m = 0}^{Q_{m}-1}\int_{-\inf}^{\inf} \! p(y_{i}/h_{i},m)\log_{2}\frac{p(y_{i}/h_{i},m)}{p(y_{i})} \, dy_i\right] 
 \end{equation}
 
 
 The capacity formula in (\ref{eq:capacity}) is for the SISO case(Mode 1 in LTE). As we know that Alamouti Scheme(Mode 2 in LTE) and Precoding Scheme (Mode 6 in LTE) both give rise in the received SNR, so (\ref{eq:capacity}) still holds for the mode 2 and 6 with relatively higher SNR than mode 1. We calculate the SNR of mode 1,2 and 6 in the following ways:
 
 \begin{equation} \label{eq:snrsiso}
-SNR_{siso_{2Rx}} = 10*\text{log}_{10}{\left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{i}}}}\right\rbrace}. 
+SNR_{siso_{2Rx}} = 10*{\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{i}}}\right\rbrace
 \end{equation}
 
 \begin{equation} \label{eq:snralam}
-SNR_{Alamouti_{2Rx}} = 10*\text{log}_{10}{\left\lbrace {\sum_{i=1}^2} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{i}}}}\right\rbrace}. 
+SNR_{Alamouti_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{i}}}\right\rbrace. 
 \end{equation}
 
 \begin{equation} \label{eq:snrbmfr}
-SNR_{Precoding_{2Rx}} = 10*\text{log}_{10}{\left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{i}}}}\right\rbrace}. 
+SNR_{Precoding_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{i}}}\right\rbrace. 
 \end{equation}
 
-In (\ref{eq:snrsiso}), (\ref{eq:snralam}) and (\ref{eq:snrbmfr}) the N_{i}, \textnormal{is the noise variance on each of the receive antennas with i} = \left\lbrace 1,2\right\rbrace . 
+In (\ref{eq:snrsiso}), (\ref{eq:snralam}) and (\ref{eq:snrbmfr}) the $N_{i}$, is the noise variance on each of the receive antennas with $ i = \left\lbrace 1,2\right\rbrace $. 
 
 Using (\ref{eq:snrsiso}), (\ref{eq:snralam}), and (\ref{eq:snrbmfr}) Shannon capacity for each RE is calculated using the famous Shannon Capacity formula to see what modulation scheme be supported for this RE and using (\ref{eq:capacity}) the ideal capacity of each RE is calculated.
 
