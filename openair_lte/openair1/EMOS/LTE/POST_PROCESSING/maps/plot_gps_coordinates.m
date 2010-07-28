@@ -32,9 +32,12 @@ switch map
             mm=imread('Penne1.PNG');
             load('gps_calib_penne.mat')
         end
-    case 'ambialet'
-        error('map not yet availiable');
-    otherwise
+     case 'ambialet'
+        if  isempty(mm)
+            mm=imread('ambialet3.png');
+            load('gps_calib_ambialet3.mat')
+        end
+     otherwise
         mm=[];
         load('gps_calib_cordes.mat')
 end
