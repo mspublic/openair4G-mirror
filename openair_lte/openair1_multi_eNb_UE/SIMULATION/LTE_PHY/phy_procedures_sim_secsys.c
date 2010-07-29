@@ -27,7 +27,7 @@
 //#define CHANNEL_FROM_FILE   //--Unstable, doesn't work properly. Possibly how the channel is written to file.
 //#define FLAT_CHANNEL
 #define SKIP_RF_RX
-#define DISABLE_SECONDARY
+//#define DISABLE_SECONDARY
 #define BW 7.68 //Fs in MHz
 #define Td 1
 #define N_TRIALS_MAX 30
