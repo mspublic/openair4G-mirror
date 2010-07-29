@@ -1,34 +1,43 @@
 \documentclass[a4paper,10pt]{article}
 
 \usepackage[pdftex,dvips]{graphicx}
-\usepackage{amsmath}
 \usepackage[T1]{fontenc}
 \usepackage{url}
 \usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
-
-
+\usepackage{amsmath}
 
 \newcommand{\printfile}[2][]{
  \begin{minipage}{8cm}
   \centering
-  %\includegraphics[width=8cm]{/extras/kaltenbe/CNES/emos_postprocessed_data/#2}
-  %\includegraphics[width=8cm]{/emos/EMOS/#1}
+  \includegraphics[width=8cm]{/extras/kaltenbe/CNES/emos_postprocessed_data/#2}
+  %\includegraphics[width=8cm]{/emos/EMOS/#2}
   \url{#2}: #1
 
  \end{minipage}
 }
+
+\title{Post Processing Results of LTE Measurement Campaign}
+\author{Florian Kaltenberger, Raymond Knopp, Imran Latif, Rizwan Ghaffar,\\ 
+Dominique Nussbaum, Herve Callewaert} 
 
 %\addtolength{\textwidth}{3cm}
 %\setlength{\marginparwidth}{0cm}
 %\setlength{\hoffset}{0cm}
 
 \begin{document}
-% \section{Mode 1}
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+% \subsection{Mode 1}
 % 
 % \printfile{./Mode1/20100526_mode1_parcours1_part4_part5/RX_RSSI_dBm_gps.jpg}
 % \printfile{./Mode1/20100527_mode1_parcours1/RX_RSSI_dBm_gps.jpg}
 % 
-% \section{Mode 2}
+% \subsection{Mode 2}
 % \printfile{./Mode2/20100510_mode2_parcours1_part1/RX_RSSI_dBm_gps.jpg}
 % \printfile{./Mode2/20100510_mode2_parcours1_part2/RX_RSSI_dBm_gps.jpg}
 % 
@@ -73,10 +82,10 @@
 % 
 % \printfile{./Mode2/20100608_VTP_MODE2_PARCOURS1_S8/RX_RSSI_dBm_gps.jpg}
 % 
-% \section{Mode 6}
+% \subsection{Mode 6}
 % 
-% \printfile{./Mode6/20100528_mode6_parcours1_section1/RX_RSSI_dBm_gps.jpg}
-% \printfile{./Mode6/20100528_mode6_parcours1_section2/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100528_mode6_parcours1_subsection1/RX_RSSI_dBm_gps.jpg}
+% \printfile{./Mode6/20100528_mode6_parcours1_subsection2/RX_RSSI_dBm_gps.jpg}
 % 
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART1/RX_RSSI_dBm_gps.jpg}
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/RX_RSSI_dBm_gps.jpg}
@@ -87,7 +96,7 @@
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/RX_RSSI_dBm_gps.jpg}
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/RX_RSSI_dBm_gps.jpg}
 % 
-% \section{UL}
+% \subsection{UL}
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART3/UL_RSSI_dBm_gps.jpg}
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/UL_RSSI_dBm_gps.jpg}
 % 
@@ -97,7 +106,7 @@
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/UL_RSSI_dBm_gps.jpg}
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/UL_RSSI_dBm_gps.jpg}
 % 
-% \section{UL ideal}
+% \subsection{UL ideal}
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART3/UL_throughput_ideal_2Rx_gps.jpg}
 % \printfile{./Mode6/20100608_VTP_MODE6_ZONES_PUSCH_PART2/UL_throughput_ideal_2Rx_gps.jpg}
 % 
@@ -107,23 +116,17 @@
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.1/UL_throughput_ideal_2Rx_gps.jpg}
 % \printfile{./Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/UL_throughput_ideal_2Rx_gps.jpg}
 
-%\section{all plots}
+%\subsection{all plots}
 
 \section{Introduction}
 
 This document summarizes the results of the LTE measurement campaign that was conducted by Eurecom and Sogeti April-July 2010 for the CNES.
 
-The Eurecom testbench implements the LTE 3GPP release 8.6 \cite{3gpp_docs} with 5 MHz bandwidth and TDD uplink-downlink configuration 3 (i.e., there are 6 downlink subframes and 3 uplink subframes in a frame of 10ms). Extended cyclic prefix is used in both UL and DL. The carrier frequency is 859.6 Mhz. 
+The Eurecom testbench implements the LTE 3GPP release 8.6 \cite{3GPPTS36.211,3GPPTS36.212,3GPPTS36.213} with 5 MHz bandwidth and TDD uplink-downlink configuration 3 (i.e., there are 6 downlink subframes and 3 uplink subframes in a frame of 10ms). Extended cyclic prefix is used in both UL and DL. The carrier frequency is 859.6 Mhz. 
  
-The measurement methodology and specification of the post processing are described in \cite{measurments_spec}. The measurment sites are 
-\begin{itemize}
- \item Bournazel (close to Cordes-sur-ciel)
- \item Penne
- \item Ambialet
-\end{itemize}
-The are described in more detail in \cite{cordes_desc,penne_desc,ambialet_desc}. A list of all the measurements taken is given in \cite{measurments_spreadsheet}. 
+The measurement methodology and specification of the post processing are described in \cite{measurements_spec}. The measurment sites are Cordes-sur-ciel \cite{cordes_desc}, Penne \cite{penne_desc}, and Ambialet \cite{ambialet_desc}. A list of all the measurements taken is given in \cite{measurements_spreadsheet}. 
 
-According to the test plan \cite{}, the recorded measurements are divided into several directories
+According to the test plan \cite{test_plan}, the recorded measurements are divided into several directories
 \begin{center}
 % use packages: array
 \begin{tabular}{l|p{6cm}}
@@ -134,80 +137,34 @@ Coverage & exterior road \\
 Mode1 & parcours 2 \\ 
 Mode2 & parcours 1 and 2 \\ 
 Mode6 & parcours 2, zones PUSCH \\ 
-Mode2 update\footnote{only at the site in Bournazel} & After a bug\footnote{The receiver for the PBCH was always assuming transmission mode 1. This caused a slight degradation in the performance in mode2, but only at the cell edge (at high SNR, both receiver structures work fine).} in the reception of the PBCH in transmission mode 2 was discovered, some of the routes of mode2 were done again. This data is only used for the evaluation of the PBCH performance. 
 \end{tabular}
 \end{center}
 
+For the site of Cordes, a second mode 2 measurement, called mode2 update has been taken. This is due to a bug\footnote{The receiver for the PBCH was always assuming transmission mode 1. This caused a slight degradation in the performance in mode2, but only at the cell edge (at high SNR, both receiver structures work fine).} that was discovered in the reception of the PBCH in transmission mode 2. This data is only used for the evaluation of the PBCH performance.
 
+For the site of Penne, a part of the measurements has been taken using OFDMA in the UL and some with SC-FDMA in the uplink.
 
-\section{Interference measurements}
+In the following subsections we give a general description of the post processing done. The structure of the subsections is maintained in the subsequent sections, which show the results for the different sites. 
+
+\subsection{Interference measurements}
 
 After setting up the eNB and UE at a specific cell site, interference measurement (IM) is the very first and most important step of measurement campaign. Interference measurements are conducted to make sure that under test frequency band is exclusively used for the campaign and no other operator is using this frequency band in a specific cell. The following two figures show the measured interference in dBm at the UE and at the eNB.
 
-
-\printfile[Interference at eNb]{Interference/20100421 interference eNb + DL test/RX_I0_dBm.pdf}
-\printfile[Interference at UE]{Interference/results/RX_RSSI_dBm_gps.jpg}
+\subsection{RX RSSI}
 
 
-\section{RX RSSI}
+The received signal strength indicator (RSSI) of both UE and eNB measured during coverage runs and vehicular test procedures is plotted on the regional map of the specific cell as well as a function of time. We show the RSSI in dBm for the coverage run, the measurements in mode 1, 2, and 6 as well as the uplink RSSI. 
 
+Further we show the UE RSSI measurements of all measurements as a function of the distance. The plot also shows a fitted simple path loss model $\mathrm{PL}(R) = \mathrm{PL}_0 + 10n\log_{10}(R)$ as well as the path loss according to the COST231-Hata model \cite{cost231}.
 
-The received signal strength indicator (RSSI) is a measure of the strength of signal which is received at the antenna. Rx RSSI of both UE and eNB measured during coverage runs and vehicular test procedures is plotted on the regional map of the specific cell as well as a function of time. We show the received signal strength in dBm for the coverage run, the measurements in mode 1, 2, and 6 as well as the uplink RSSI. The path loss evaluation includes the data of all the measurements.
+\subsection{PBCH comparison}
+We show the frame error rate on the PBCH in mode 1 and 2. A more detailed comparison of some interresing parts of the routes will be given in subsection \ref{sec:dist_travelled}
 
+\subsection{Rice Factor}
+This plot shows the Rice factor on a map. The Rice factor has been calculated using the method of moments \cite{Greenstein1999}, averaging over widband channel estimates of 100 frames.
 
-\subsection{Coverage}
-\printfile{Coverage/results/RX_RSSI_dBm_gps.jpg}
-\printfile{Coverage/results/RX_RSSI_dBm.pdf}
-
-\printfile{Coverage/results/UL_RSSI_dBm_gps.jpg}
-\printfile{Coverage/results/UL_RSSI_dBm.pdf}
-
-\subsection{Mode 1}
-\printfile{Mode1/results/RX_RSSI_dBm_gps.jpg}
-\printfile{Mode1/results/RX_RSSI_dBm.pdf}
-
-\printfile{Mode1/results/UL_RSSI_dBm_gps.jpg}
-\printfile{Mode1/results/UL_RSSI_dBm.pdf}
-
-\subsection{Mode2}
-
-
-
-
-
-\printfile{Mode2/results/RX_RSSI_dBm_gps.jpg}
-\printfile{Mode2/results/RX_RSSI_dBm.pdf}
-
-\printfile{Mode2_update/results/UL_RSSI_dBm_gps.jpg}
-\printfile{Mode2_update/results/UL_RSSI_dBm.pdf}
-
-\subsection{Mode6}
-\printfile{Mode6/results/RX_RSSI_dBm_gps.jpg}
-\printfile{Mode6/results/RX_RSSI_dBm.pdf}
-
-\printfile{Mode6/results/UL_RSSI_dBm_gps.jpg}
-\printfile{Mode6/results/UL_RSSI_dBm.pdf}
-
-\subsection{Path loss}
-\printfile{results/RX_RSSI_dBm_dist_bars.pdf}
-\printfile{results/RX_RSSI_dBm_dist_with_PL.pdf}
-
-
-\section{PBCH comparison}
-We show the frame error rate on the PBCH in mode 1 and 2. A more detailed comparison of some interresing parts of the routes will be given in section \ref{sec:dist_travelled}.
-
-\printfile{Mode1/results/PBCH_FER.pdf}
-\printfile{Mode1/results/PBCH_fer_gps.jpg}
-
-\printfile{Mode2_update/results/PBCH_FER.pdf}
-\printfile{Mode2_update/results/PBCH_fer_gps.jpg}
-
-\section{Rice Factor}
-
-\printfile{Mode2/results/K_factor_gps.jpg}
-
-\section{UE mode comparison}
-The following figures show the UE mode of the different measurments. The UE mode is defined in the following table.
+\subsection{UE mode comparison}
+The following figures show the UE mode of the different measurements. The UE mode is defined in the following table.
 
 \begin{center}
 % use packages: array
@@ -222,27 +179,12 @@ UE mode & meaning \\
 \end{center}
 
 
-\printfile{Mode1/results/UE_mode_gps.jpg}
-\printfile{Mode2/results/UE_mode_gps.jpg}
+\subsection{L1 (coded) Throughput}
 
-\printfile{Mode2_update/results/UE_mode_gps.jpg}
-\printfile{Mode6/results/UE_mode_gps.jpg}
-
-\section{L1 (coded) Throughput}
-
-
-\subsection{Introduction}
-
-
-In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one downlink subframe of one PRB and total of 3600 REs for 25 PRBs. Out of these 144 REs of one PRB 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. 
+In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). In the extended cyclic prefix configuration each PRB consists of 144 resource elements (RE), giving a total of 3600 REs for 25 PRBs. On the downlink, out of the 144 REs of one PRB 32 are used for control signals and another 16 are used as cell specific reference signals (in the two transmit antenna configuration) so the effective REs for data transmission in one PRB are 144-32-16 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leaving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. Please note that these throughputs for both DL and UL are uncoded throughputs. 
 
 \subsubsection{Ideal Throughput Calculation}
-The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 per receive antenna in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity per resource element is calculated using the following capacity formula of finite constellation size $Q_{m}$,
-
- 
-% \begin{equation} \label{eq:capacity}
-% C(\underline{\textbf{h}},N) = \max_{Q_{m}=\{2,4,6\}} \sum_{i = 0}^{N_{RE}-1}\left[ Q_{m}-\frac{1}{Q_{m}}\sum_{m = 0}^{Q_{m}-1}\int_{-\inf}^{\inf} \! p(y_{i}/h_{i},m)\log_{2}\frac{p(y_{i}/h_{i},m)}{p(y_{i})} \, dy_i\right] 
-% \end{equation}
+The channel estimation results in 200 channel estimates for each subframe and each transmit-receive antenna pair. For each channel estimate, the capacity is calculated using the following capacity formula of finite constellation size $m \in {2,4,6}$ (QPSK, 16QAM, 64QAM) and noise variance $N_0$.
 
 \begin{align}
 C_m\left(N_0\right)
@@ -254,19 +196,20 @@ C_m\left(N_0\right)
 Where $y_1 = h_1x_1 + z_1$ is the received signal at the receiver. (\ref{eq:capacity}) is the formula for ergodic capacity of random fading channel per resource element and is a function of SNR and supported modulation scheme. At first the SNR for all the three transmission modes is calculated and then using Shanon capacity formula the supported modulation scheme is identified. After that the capacity of each RE is calculated using (\ref{eq:capacity}), SNR and supported modulation scheme. The SNR for transmission mode 1,2 and 6 is calculated in the following way:
 
 \begin{equation} \label{eq:snrsiso}
-SNR_{mode1_{2Rx}} = 10*{\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace
+SNR_{mode1_{2Rx}} = 10*{\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^{n_{Rx}}} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace,
 \end{equation}
+where $N_{0i}$ is the noise variance of receive antenna $i$.
 
 Since antenna configuration during measurement campaign is 2x2 on downlink and in transmission mode 1 the signal is replicated on both of the transmit antennas so superposition of both channels is considered at the each receive antenna and then Maximal Ratio Combining (MRC) is applied at receiver to reach (\ref{eq:snrsiso}). 
  
 \begin{equation} \label{eq:snralam}
-SNR_{mode2_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{0i}}}\right\rbrace. 
+SNR_{mode2_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^{n_{Rx}}} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{0i}}}\right\rbrace. 
 \end{equation}
 
 In transmission mode 2 , two complex symbols (i.e. $s_1$ and $s_2$) are transmitted over two symbol times from two Tx antennas. In first symobl time $s_1$ and $s_2$ are transmitted through antenna 1 and antenna 2 respectively whereas in second symbol time $-{s_{2}^{*}}$ and ${s_{1}^{*}}$ is transmitted through antenna 1 and antenna 2 respectively. This gives diversity order of 2 at each of the receive antenna where both of the received channels are considered disticntively thus giving rise in received SNR. 
 
 \begin{equation} \label{eq:snrbmfr}
-SNR_{mode6_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace. 
+SNR_{mode6_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^{n_{Rx}}} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace. 
 \end{equation}
 
 And in transmission mode 6 high SNR is obtained by using precoder $q$ which focuses the transmit energy in specific direction only, so the joint precoded channel is considered in (\ref{eq:snrbmfr}). In ideal capacity calculation for transmission mode 6, two methods of precoder calculation are considered. In first method the feedback from UE is utilized and sum capacity is calcualted, where as in the second method the optimal $q$ which maximizes the overall sum capacity is calculated. Please note that $q$ is selected on subband basis in each subframe.
@@ -283,84 +226,198 @@ In ideal capacity calculation the downlink capacity is measured for the single a
 
 For the ideal curves we use the channel measurments from mode 2.
 
-\subsubsection{Modem Throughput Calculation}
+%\subsubsection{Modem Throughput Calculation}
 
 
 
-\subsection{CDF}
+\subsubsection{CDF}
+\label{sec:cdf}
 
 % \printfile{Mode1/results/DLSCH_throughput_cdf_comparison.pdf}
 % \printfile{Mode2/results/DLSCH_throughput_cdf_comparison.pdf}
 % \printfile{Mode6/results/DLSCH_throughput_cdf_comparison.pdf}
 
-We plot the CDF of the throughput that was measured with our modem as well as the ideal throughputs as explained in the Introduction. In the first plot the data includes all the measurment points, even when the UE was not connected (in which case the throughput is 0). Note that data for the ideal curves is the same as for mode 2. 
+We plot the CDF of the throughput that was measured with our modem as well as the ideal throughputs as explained in the Introduction. In the first plot the data includes all the measurement points, even when the UE was not connected (in which case the throughput is 0). Note that data for the ideal curves is the same as for mode 2. 
 
-However, since the routes of the measurements for mode 1 and mode 6 were not exactly the same as for mode 2 (measurments have not be started and stopped at the same points, routes were taken in different orders, crashes of the equipment, \ldots), a comparison of the outage between the different modes is unfair. Therefore in a second comparison we only compare the points where the UE was connected. 
+However, since the routes of the measurements for mode 1 and mode 6 were not exactly the same as for mode 2 (measurements have not be started and stopped at the same points, routes were taken in different orders, crashes of the equipment, \ldots), a comparison of the outage between the different modes is unfair. Therefore in a second comparison we only compare the points where the UE was connected. 
+
+In a third comparison we emulate the performance of a broadcast service. This is done by using the ideal throughput measurements for all points where the UE was synched to the eNB. For all other points the throughput is set to 0.
 
 Last but not least we show the throughput of the UL, where we have only used the measurements of mode 6.
 
-\printfile{results/DLSCH_throughput_cdf_comparison.pdf}
-\printfile{results/DLSCH_throughput_connected_cdf_comparison.pdf}
 
-\printfile{Mode6/results/UL_throughput_cdf_comparison.pdf}
+\subsubsection{Time}
 
-
-\subsection{Time}
-
-\printfile{Mode1/results/DLSCH_throughput.pdf}
-\printfile{Mode2/results/DLSCH_throughput.pdf}
-
-\printfile{Mode6/results/DLSCH_throughput.pdf}
-\printfile{Mode2/results/coded_throughput_time_1stRx.pdf}
-
-\printfile{Mode2/results/coded_throughput_time_2ndRx.pdf}
-\printfile{Mode2/results/coded_throughput_time_2Rx.pdf}
-
-\printfile{Mode6/results/UL_throughput.pdf}
+The plots in this subsection show the DLSCH throughput for mode 1, 2 and 6 over time. Further we show the ideal throughput for the three modes using only the first, only the second or both receive antennas at the UE.
 
 
-\subsection{Map}
+\subsubsection{Map}
 
-\printfile{Mode1/results/DLSCH_troughput_gps.jpg}
-\printfile{Mode2/results/DLSCH_troughput_gps.jpg}
+The plots in this subsection show the DLSCH throughput for mode 1, 2 and 6 as well as the ideal throughputs for the three modes using  both receive antennas at the UE on a map.
 
-\printfile{Mode6/results/DLSCH_troughput_gps.jpg}
-\printfile{Mode6/results/UL_throughput_gps.jpg}
+\subsubsection{Distance}
 
-\printfile{Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
-\printfile{Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
+For the plots in this subsection we divide the measurements in bins according to their distance of the UE to the eNb. Each bin is 1km wide. For each bin we show the mean, the 50\%, the 90\%, and the 95\% percentile of the DLSCH throughput for mode 1, 2 and 6. 
 
-\printfile{Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
-\printfile{Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
+\subsubsection{Speed}
 
-\printfile{Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
-\printfile{Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+For the plots in this subsection we divide the measurements in bins according to the UE speed. Each bin is 5m/s wide. For each bin we show the mean, the 50\%, the 90\%, and the 95\% percentile of the DLSCH throughput for mode 1, 2 and 6. 
 
-\subsection{Distance}
 
-\printfile{Mode1/results/DLSCH_throughput_dist.pdf}
-\printfile{Mode2/results/DLSCH_throughput_dist.pdf}
+\subsubsection{Distance travelled}
+\label{sec:dist_travelled}
 
-\printfile{Mode6/results/DLSCH_throughput_dist.pdf}
-\printfile{Mode6/results/UL_throughput_dist.pdf}
+For a closer comparison of the three modes we select a small but representative subset of the measurements. For each subset we first show the map showing the RX RSSI. Then we show the RX RSSI for all three measurements over the distance travelled. This allows to verify if the measurement routes were the same. Then we show the DLSCH throughput as well as the CQI over the distance travelled for the same route. 
+
+The last subset (Subset 3) has been chosen on the cell edge to allow a comparison of the reception of the PBCH in mode 1 and mode 2.
+
+%TODO: add PBCH FER for zoom 1 and 2 (this requires to select the correspondig portion of the mode2 update); 
+
+
+\subsection{L0 (uncoded) throughput}
+
+We show the CDF of the uncoded throughput similar to section \ref{sec:cdf}.
+
+
+\section{Cordes}
+\label{sec:cordes}
+
+\subsection{Interference measurements}
+
+\printfile[Interference at eNb]{CORDES/Interference/results/RX_I0_dBm.pdf}
+\printfile[Interference at UE]{CORDES/Interference/results/RX_I0_dBm_gps.jpg}
+
+
+\subsection{RX RSSI}
+
+
+% \subsubsection{Coverage}
+% \printfile{CORDES/Coverage/results/RX_RSSI_dBm_gps.jpg}
+% \printfile{CORDES/Coverage/results/RX_RSSI_dBm.pdf}
+% 
+% \printfile{CORDES/Coverage/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{CORDES/Coverage/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode 1}
+\printfile{CORDES/Mode1/results/RX_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode1/results/RX_RSSI_dBm.pdf}
+
+% \printfile{Mode1/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{Mode1/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode2}
+
+\printfile{CORDES/Mode2/results/RX_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode2/results/RX_RSSI_dBm.pdf}
+
+% \printfile{Mode2_update/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{Mode2_update/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode6}
+\printfile{CORDES/Mode6/results/RX_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode6/results/RX_RSSI_dBm.pdf}
+
+\printfile{CORDES/Mode6/results/UL_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode6/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Path loss}
+\printfile{CORDES/results/RX_RSSI_dBm_dist_bars.pdf}
+\printfile{CORDES/results/RX_RSSI_dBm_dist_with_PL.pdf}
+
+
+\subsection{PBCH comparison}
+We show the frame error rate on the PBCH in mode 1 and 2. A more detailed comparison of some interresing parts of the routes will be given in subsection \ref{sec:dist_travelled_cordes}.
+
+\printfile{CORDES/Mode1/results/PBCH_FER.pdf}
+\printfile{CORDES/Mode1/results/PBCH_fer_gps.jpg}
+
+\printfile{CORDES/Mode2_update/results/PBCH_FER.pdf}
+\printfile{CORDES/Mode2_update/results/PBCH_fer_gps.jpg}
+
+\subsection{Rice Factor}
+
+\printfile{CORDES/Mode2/results/K_factor_gps.jpg}
+
+\subsection{UE mode comparison}
+
+\printfile{CORDES/Mode1/results/UE_mode_gps.jpg}
+\printfile{CORDES/Mode2/results/UE_mode_gps.jpg}
+
+\printfile{CORDES/Mode2_update/results/UE_mode_gps.jpg}
+\printfile{CORDES/Mode6/results/UE_mode_gps.jpg}
+
+\subsection{L1 (coded) Throughput}
+
+
+\subsubsection{CDF}
+
+% \printfile{Mode1/results/DLSCH_throughput_cdf_comparison.pdf}
+% \printfile{Mode2/results/DLSCH_throughput_cdf_comparison.pdf}
+% \printfile{Mode6/results/DLSCH_throughput_cdf_comparison.pdf}
+
+\printfile{CORDES/results/throughput_cdf_comparison.pdf}
+\printfile{CORDES/results/throughput_connected_cdf_comparison.pdf}
+
+
+\printfile{CORDES/Mode2/results/coded_throughput_cdf_comparison.pdf}
+\printfile{CORDES/Mode6/results/UL_throughput_cdf_comparison.pdf}
+
+\subsubsection{Time}
+
+\printfile{CORDES/Mode1/results/DLSCH_throughput.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput.pdf}
+
+\printfile{CORDES/Mode6/results/DLSCH_throughput.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_1stRx.pdf}
+
+\printfile{CORDES/Mode2/results/coded_throughput_time_2ndRx.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_2Rx.pdf}
+
+\printfile{CORDES/Mode6/results/UL_throughput.pdf}
+
+
+\subsubsection{Map}
+
+\printfile{CORDES/Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode2/results/DLSCH_troughput_gps.jpg}
+
+\printfile{CORDES/Mode6/results/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode6/results/UL_throughput_gps.jpg}
+
+\printfile{CORDES/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
+
+\printfile{CORDES/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
+
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+
+\subsubsection{Distance}
+
+\printfile{CORDES/Mode1/results/DLSCH_throughput_dist.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput_dist.pdf}
+
+\printfile{CORDES/Mode6/results/DLSCH_throughput_dist.pdf}
+\printfile{CORDES/Mode6/results/UL_throughput_dist.pdf}
 
 %\printfile{Mode2/results/ideal_throughput_dist_mode1_1stRx.pdf}
 %\printfile{Mode2/results/ideal_throughput_dist_mode1_2ndRx.pdf}
 
-\printfile{Mode2/results/ideal_throughput_dist_mode1_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode1_2Rx.pdf}
 %\printfile{Mode2/results/ideal_throughput_dist_mode2_1stRx.pdf}
 %
 %\printfile{Mode2/results/ideal_throughput_dist_mode2_2ndRx.pdf}
-\printfile{Mode2/results/ideal_throughput_dist_mode2_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode2_2Rx.pdf}
 
 %\printfile{Mode2/results/ideal_throughput_dist_mode6_feedbackq_1stRx.pdf}
-\printfile{Mode2/results/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
 %
 %\printfile{Mode2/results/ideal_throughput_dist_mode6_maxq_1stRx.pdf}
-\printfile{Mode2/results/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
 
-\printfile{Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
-\printfile{Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
 
 \begin{table}
 \centering
@@ -388,50 +445,13 @@ Dist (km) & Mode 1 & Mode 2 & Mode 6\\
 \caption{Service coverage for all three modes in percent.}
 \end{table}
 
-\subsection{Distance travelled}
-\label{sec:dist_travelled}
-For a closer comparison of the 
-
-For the comparsion over distance travelled we select a small but representative portion of the measurements shown in the next figure.
-
-TODO: add PBCH FER for zoom 1 and 2 (this requires to select the correspondig portion of the mode2 update); plot CQI and CQI gain
-
-
-\printfile[Map of zoom 1]{results/all_modes_comparison_rssi_dBm.jpg}
-\printfile[RSSI comparison of zoom 1]{results/all_modes_comparison_rssi_dBm.pdf}
-
-\printfile[DLSCH throughput of zoom 1]{results/all_modes_comparison_troughput_distance_travelled.pdf}
-\printfile[DLSCH CQI of zoom 1]{results/all_modes_comparison_cqi_distance_travelled.pdf}
-
-\printfile[Map of zoom 2]{results/all_modes_comparison2_rssi_dBm.jpg}
-\printfile[RSSI comparison of zoom 2]{results/all_modes_comparison2_rssi_dBm.pdf}
-
-\printfile[DLSCH throughput of zoom 2]{results/all_modes_comparison2_troughput_distance_travelled.pdf}
-\printfile[DLSCH CQI of zoom 2]{results/all_modes_comparison2_cqi_distance_travelled.pdf}
-
-\printfile[Map of zoom 3]{results/all_modes_comparison3_rssi_dBm.jpg}
-\printfile[RSSI comparison of zoom 3]{results/all_modes_comparison3_rssi_dBm.pdf}
-
-\printfile[DLSCH throughput of zoom 3]{results/all_modes_comparison3_troughput_distance_travelled.pdf}
-\printfile[PBCH FER of zoom 3]{results/all_modes_comparison3_pbch_fer_distance_travelled.pdf}
-
-\subsection{Speed}
-
-\printfile{Mode1/results/DLSCH_throughput_speed.pdf}
-\printfile{Mode2/results/DLSCH_throughput_speed.pdf}
-
-\printfile{Mode6/results/DLSCH_throughput_speed.pdf}
-
-\printfile{Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
-\printfile{Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
-
-\subsubsection{Distance}
-\printfile{Mode6/results/UL_throughput_dist.pdf}
-\printfile{Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
-\printfile{Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
-
 \subsubsection{Speed}
-\printfile{Mode6/results/UL_throughput_speed.pdf}
+
+\printfile{CORDES/Mode1/results/DLSCH_throughput_speed.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput_speed.pdf}
+
+\printfile{CORDES/Mode6/results/DLSCH_throughput_speed.pdf}
+\printfile{CORDES/Mode6/results/UL_throughput_speed.pdf}
 
 \begin{table}
 \centering
@@ -450,11 +470,228 @@ speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
 \caption{Service coverage for all three modes in percent.}
 \end{table}
 
-\section{L0 (uncoded) throughput}
 
-\printfile{results/DLSCH_uncoded_throughput_cdf_comparison.pdf}
-\printfile{results/DLSCH_uncoded_throughput_connected_cdf_comparison.pdf}
+\subsubsection{Distance travelled}
+\label{sec:dist_travelled_cordes}
 
-\printfile{Mode6/results/UL_uncoded_throughput_cdf_comparison.pdf}
+For a closer comparison of the three modes we select a small but representative subset of the measurements. For each subset we first show the map showing the RX RSSI. Then we show the RX RSSI for all three measurements over the distance travelled. This allows to verify if the measurement routes were the same. Then we show the DLSCH throughput as well as the CQI over the distance travelled for the same route. 
+
+The last subset (Subset 3) has been chosen on the cell edge to allow a comparison of the reception of the PBCH in mode 1 and mode 2.
+
+%TODO: add PBCH FER for zoom 1 and 2 (this requires to select the correspondig portion of the mode2 update); 
+
+\subsubsection*{Subset 1}
+
+\printfile[Map of zoom 1]{CORDES/results/all_modes_comparison_rssi_dBm.jpg}
+\printfile[RSSI comparison of zoom 1]{CORDES/results/all_modes_comparison_rssi_dBm.pdf}
+
+\printfile[DLSCH throughput of zoom 1]{CORDES/results/all_modes_comparison_troughput_distance_travelled.pdf}
+\printfile[DLSCH CQI of zoom 1]{CORDES/results/all_modes_comparison_cqi_distance_travelled.pdf}
+
+\printfile[Ideal DLSCH throughput of zoom 1]{CORDES/results/all_modes_comparison_throughput_ideal_distance_travelled.pdf}
+
+\subsubsection*{Subset 2}
+
+\printfile[Map of zoom 2]{CORDES/results/all_modes_comparison2_rssi_dBm.jpg}
+\printfile[RSSI comparison of zoom 2]{CORDES/results/all_modes_comparison2_rssi_dBm.pdf}
+
+\printfile[DLSCH throughput of zoom 2]{CORDES/results/all_modes_comparison2_troughput_distance_travelled.pdf}
+\printfile[DLSCH CQI of zoom 2]{CORDES/results/all_modes_comparison2_cqi_distance_travelled.pdf}
+
+\printfile[Ideal DLSCH throughput of zoom 1]{CORDES/results/all_modes_comparison2_throughput_ideal_distance_travelled.pdf}
+
+\subsubsection*{Subset 3}
+
+\printfile[Map of zoom 3]{CORDES/results/all_modes_comparison3_rssi_dBm.jpg}
+\printfile[RSSI comparison of zoom 3]{CORDES/results/all_modes_comparison3_rssi_dBm.pdf}
+
+\printfile[DLSCH throughput of zoom 3]{CORDES/results/all_modes_comparison3_troughput_distance_travelled.pdf}
+\printfile[PBCH FER of zoom 3]{CORDES/results/all_modes_comparison3_pbch_fer_distance_travelled.pdf}
+
+
+\subsection{L0 (uncoded) throughput}
+
+\printfile{CORDES/results/DLSCH_uncoded_throughput_cdf_comparison.pdf}
+\printfile{CORDES/results/DLSCH_uncoded_throughput_connected_cdf_comparison.pdf}
+
+\printfile{CORDES/Mode6/results/UL_uncoded_throughput_cdf_comparison.pdf}
+
+\section{Penne}
+\label{sec:penne}
+
+\subsection{Interference measurements}
+
+%\printfile[Interference at eNb]{PENNE/Interference/results/RX_I0_dBm.pdf}
+%\printfile[Interference at UE]{PENNE/Interference/results/RX_I0_dBm_gps.jpg}
+
+
+\subsection{RX RSSI}
+
+
+% \subsubsection{Coverage}
+% \printfile{PENNE/Coverage/results/RX_RSSI_dBm_gps.jpg}
+% \printfile{PENNE/Coverage/results/RX_RSSI_dBm.pdf}
+% 
+% \printfile{PENNE/Coverage/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{PENNE/Coverage/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode 1}
+\printfile{PENNE/Mode1/results/RX_RSSI_dBm_gps.jpg}
+\printfile{PENNE/Mode1/results/RX_RSSI_dBm.pdf}
+
+% \printfile{Mode1/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{Mode1/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode2}
+
+\printfile{PENNE/Mode2/results/RX_RSSI_dBm_gps.jpg}
+\printfile{PENNE/Mode2/results/RX_RSSI_dBm.pdf}
+
+% \printfile{Mode2_update/results/UL_RSSI_dBm_gps.jpg}
+% \printfile{Mode2_update/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Mode6}
+\printfile{PENNE/Mode6/results/RX_RSSI_dBm_gps.jpg}
+\printfile{PENNE/Mode6/results/RX_RSSI_dBm.pdf}
+
+\printfile{PENNE/Mode6/results/UL_RSSI_dBm_gps.jpg}
+\printfile{PENNE/Mode6/results/UL_RSSI_dBm.pdf}
+
+\subsubsection{Path loss}
+%\printfile{PENNE/results/RX_RSSI_dBm_dist_bars.pdf}
+%\printfile{PENNE/results/RX_RSSI_dBm_dist_with_PL.pdf}
+
+
+\subsection{PBCH comparison}
+We show the frame error rate on the PBCH in mode 1 and 2. A more detailed comparison of some interresing parts of the routes will be given in subsection \ref{sec:dist_travelled_cordes}.
+
+\printfile{PENNE/Mode1/results/PBCH_FER.pdf}
+\printfile{PENNE/Mode1/results/PBCH_fer_gps.jpg}
+
+\printfile{PENNE/Mode2/results/PBCH_FER.pdf}
+\printfile{PENNE/Mode2/results/PBCH_fer_gps.jpg}
+
+\subsection{Rice Factor}
+
+\printfile{PENNE/Mode2/results/K_factor_gps.jpg}
+
+\subsection{UE mode comparison}
+
+\printfile{PENNE/Mode1/results/UE_mode_gps.jpg}
+\printfile{PENNE/Mode2/results/UE_mode_gps.jpg}
+
+\printfile{PENNE/Mode2_OFDMA/results/UE_mode_gps.jpg}
+\printfile{PENNE/Mode6/results/UE_mode_gps.jpg}
+
+\subsection{L1 (coded) Throughput}
+
+
+\subsubsection{CDF}
+
+% \printfile{Mode1/results/DLSCH_throughput_cdf_comparison.pdf}
+% \printfile{Mode2/results/DLSCH_throughput_cdf_comparison.pdf}
+% \printfile{Mode6/results/DLSCH_throughput_cdf_comparison.pdf}
+
+%\printfile{PENNE/results/throughput_cdf_comparison.pdf}
+%\printfile{PENNE/results/throughput_connected_cdf_comparison.pdf}
+
+
+\printfile{PENNE/Mode2/results/coded_throughput_cdf_comparison.pdf}
+\printfile{PENNE/Mode6/results/UL_throughput_cdf_comparison.pdf}
+
+\subsubsection{Time}
+
+\printfile{PENNE/Mode1/results/DLSCH_throughput.pdf}
+\printfile{PENNE/Mode2/results/DLSCH_throughput.pdf}
+
+\printfile{PENNE/Mode6/results/DLSCH_throughput.pdf}
+\printfile{PENNE/Mode2/results/coded_throughput_time_1stRx.pdf}
+
+\printfile{PENNE/Mode2/results/coded_throughput_time_2ndRx.pdf}
+\printfile{PENNE/Mode2/results/coded_throughput_time_2Rx.pdf}
+
+\printfile{PENNE/Mode6/results/UL_throughput.pdf}
+
+
+\subsubsection{Map}
+
+\printfile{PENNE/Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{PENNE/Mode2/results/DLSCH_troughput_gps.jpg}
+
+\printfile{PENNE/Mode6/results/DLSCH_troughput_gps.jpg}
+\printfile{PENNE/Mode6/results/UL_throughput_gps.jpg}
+
+\printfile{PENNE/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
+\printfile{PENNE/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
+
+\printfile{PENNE/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
+\printfile{PENNE/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
+
+\printfile{PENNE/Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
+\printfile{PENNE/Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+
+\subsubsection{Distance}
+
+\printfile{PENNE/Mode1/results/DLSCH_throughput_dist.pdf}
+\printfile{PENNE/Mode2/results/DLSCH_throughput_dist.pdf}
+
+\printfile{PENNE/Mode6/results/DLSCH_throughput_dist.pdf}
+\printfile{PENNE/Mode6/results/UL_throughput_dist.pdf}
+
+%\printfile{Mode2/results/ideal_throughput_dist_mode1_1stRx.pdf}
+%\printfile{Mode2/results/ideal_throughput_dist_mode1_2ndRx.pdf}
+
+\printfile{PENNE/Mode2/results/ideal_throughput_dist_mode1_2Rx.pdf}
+%\printfile{Mode2/results/ideal_throughput_dist_mode2_1stRx.pdf}
+%
+%\printfile{Mode2/results/ideal_throughput_dist_mode2_2ndRx.pdf}
+\printfile{PENNE/Mode2/results/ideal_throughput_dist_mode2_2Rx.pdf}
+
+%\printfile{Mode2/results/ideal_throughput_dist_mode6_feedbackq_1stRx.pdf}
+\printfile{PENNE/Mode2/results/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
+%
+%\printfile{Mode2/results/ideal_throughput_dist_mode6_maxq_1stRx.pdf}
+\printfile{PENNE/Mode2/results/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
+
+\printfile{PENNE/Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
+\printfile{PENNE/Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
+
+\begin{table}
+\centering
+\begin{tabular}{l|l|l|l}
+Dist (km) & Mode 1 & Mode 2 & Mode 6\\
+\hline
+\end{tabular}
+\caption{Service coverage for all three modes in percent.}
+\end{table}
+
+\subsubsection{Speed}
+
+\printfile{PENNE/Mode1/results/DLSCH_throughput_speed.pdf}
+\printfile{PENNE/Mode2/results/DLSCH_throughput_speed.pdf}
+
+\printfile{PENNE/Mode6/results/DLSCH_throughput_speed.pdf}
+\printfile{PENNE/Mode6/results/UL_throughput_speed.pdf}
+
+\begin{table}
+\centering
+\begin{tabular}{l|l|l|l}
+speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
+\hline
+\end{tabular}
+\caption{Service coverage for all three modes in percent.}
+\end{table}
+
+
+
+\section{Ambialet}
+\label{sec:ambialet}
+
+\section{Conclusions}
+
+
+\bibliographystyle{IEEEtranS} 
+\bibliography{print_files}
+
 
 \end{document}          
