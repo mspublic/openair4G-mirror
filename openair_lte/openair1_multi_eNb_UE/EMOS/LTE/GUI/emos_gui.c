@@ -18,7 +18,7 @@
 #include <gps.h>
 
 // Realtime includes
-//#include <rtai.h>
+#include <rtai.h>
 #include <rtai_fifos.h>
 
 // Xform includes
@@ -55,7 +55,7 @@ Window config_wnd;
 int power = TERM_OFF;
 int record = REC_OFF;
 int record_multi = REC_OFF;
-int terminal_mode = TERM_MODE_SINGL;
+int terminal_mode = TERM_MODE_MULTI;
 int file_index = 0;
 int emos_ready = EMOS_READY;
 int openair_dev_fd;
@@ -80,8 +80,17 @@ int chsch_index;
 int is_cluster_head = 0;
 int node_id = 8;
 int tx_gain = 0;
-unsigned char mimo_mode = 1;
+unsigned char mimo_mode = 2;
+int checkpoint = 1;
+int frame_tx;
+time_t starttime_tmp;
+struct tm starttime;
+int current_dlsch_cqi; //this is actually defined in phy_procedures_lte_ue.c - we should get rid of this
+int rate_adaptation = 1;
+int use_label = 0;
+unsigned int frequency = 0;
 
+/*
 unsigned char tx_gain_table_c[36] = {
   113, 111, 0, 0, //-20dBm
   119, 118, 0, 0, //-15dBm
@@ -93,6 +102,18 @@ unsigned char tx_gain_table_c[36] = {
   160, 158, 0, 0, //15dBm
   177, 173, 30, 17}; //20dBm
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
+*/
+unsigned char tx_gain_table_ue[4] = {200, 200, 140, 140};
+unsigned char tx_gain_table_eNb[4] = {195, 195, 140, 140};
+unsigned int timing_advance = 0;
+unsigned int tcxo = 128;  
+int freq_correction =  0;
+//unsigned int rf_mode_ue=0; //mixer low gain, lna off
+unsigned int rf_mode_ue=1; //mixer low gain, lna on
+unsigned int rf_mode_eNb=2; //mixer high gain, lna on
+// for the interference test we use a UE but set it to eNb mode
+// unsigned int rf_mode_eNb=1; //mixer low gain, lna on
+
 
 
 fifo_dump_emos_UE fifo_output_UE;
@@ -101,6 +122,7 @@ char *fifo_buffer = NULL;
 char *fifo_ptr = NULL;
 char  date_string[1024] = "date: ";
 char  dumpfile_dir[1024] = "$HOME/EMOS/data/";
+char  label_str[16] = "";
 
 // GUI variables
 float power1_memory[2][SCREEN_MEMORY_SIZE];
@@ -113,8 +135,9 @@ float snr2_memory[2][SCREEN_MEMORY_SIZE];
 // float bw2_memory[];
 float capacity_memory[SCREEN_MEMORY_SIZE];
 float time_memory[SCREEN_MEMORY_SIZE];
-float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
-float channelT[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+//float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
+float channel[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][NUMBER_OF_OFDM_CARRIERS_EMOS];
+//float channelT[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 float subcarrier_ind[N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS];
 //float *delay_ind = NULL;
 
@@ -136,9 +159,13 @@ void power_callback(FL_OBJECT *ob, long user_data);
 //void set_origin_callback(FL_OBJECT *ob, long user_data);
 void refresh_callback(FL_OBJECT *ob, long user_data);
 void record_callback(FL_OBJECT *ob, long user_data);
+void checkpoint_callback(FL_OBJECT *ob, long user_data);
 void new_data_callback(int fifo_fd, void* data);
 void time_freq_callback(FL_OBJECT *ob, long user_data);
 void noise_snr_callback(FL_OBJECT *ob, long user_data);
+void input_callback(FL_OBJECT *ob, long user_data);
+void label_callback(FL_OBJECT *ob, long user_data);
+void label_btn_callback(FL_OBJECT *ob, long user_data);
 void gps_data_callback(int gps_fd, void* data);
 
 void initialize_interface();
@@ -631,15 +658,21 @@ void refresh_interface()
   //struct complexf channel_temp2[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant/2];	//frequency response of one link of the MIMO channel
   float norm = 0;
   double snr_lin;
+  int length;
 
   static RTIME last_timestamp = (RTIME) 0; 
+  static RTIME timestamp = (RTIME) 0; 
   int disp_min_power = 30;
 	
-  if ((data_buffer) && (is_cluster_head==0))
+  if (data_buffer)
     {
+      if (is_cluster_head)
+	timestamp = fifo_output_eNB.timestamp;
+      else
+	timestamp = fifo_output_UE.timestamp;
 
       // Prepare data for Power meters
-      if (last_timestamp != fifo_output_UE.timestamp)
+      if (last_timestamp != timestamp)
 	{
 	  //printf("rx_power=%d, noise_power=%d, snr=%d\n",fifo_output->rx_power_db[0],fifo_output->n0_power_db[0],fifo_output->rx_power_db[0]-fifo_output->n0_power_db[0]);
 
@@ -658,23 +691,23 @@ void refresh_interface()
 	  }
 		  
 		    
-	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(fifo_output_UE.timestamp - start_time) / (float)1e9;
+	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(timestamp - start_time) / (float)1e9;
 	  for (chsch_index=0;chsch_index<2;chsch_index++){
 	    if (!is_cluster_head) {
 	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
 	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
 	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
 	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
 	    }
 	    else {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
-	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][0];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[chsch_index][1];
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
+	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[0];
+	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[1];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -682,7 +715,7 @@ void refresh_interface()
 	  values_in_memory = SCREEN_MEMORY_SIZE;
 	}
 
-      last_timestamp = fifo_output_UE.timestamp;
+      last_timestamp = timestamp;
 		
       // Pannel widgets
       /////////////////////////////
@@ -693,10 +726,10 @@ void refresh_interface()
       // Power meters
       fl_set_xyplot_data(main_frm->pwr1_xyp, time_memory, power1_memory[0], values_in_memory, "", "time (s)", "dBm");
       //fl_add_xyplot_overlay(main_frm->pwr1_xyp, 1, time_memory, power1_memory[1], values_in_memory, FL_BLUE);
-      fl_set_xyplot_ybounds(main_frm->pwr1_xyp,	-100, -40);
+      fl_set_xyplot_ybounds(main_frm->pwr1_xyp,	-110, -40);
       fl_set_xyplot_data(main_frm->pwr2_xyp, time_memory, power2_memory[0], values_in_memory, "", "time (s)", "dBm");
       //fl_add_xyplot_overlay(main_frm->pwr2_xyp, 1, time_memory, power2_memory[1], values_in_memory, FL_BLUE);
-      fl_set_xyplot_ybounds(main_frm->pwr2_xyp,	-100, -40);
+      fl_set_xyplot_ybounds(main_frm->pwr2_xyp,	-110, -40);
 		
       if (noise_selector == N0)
 	{
@@ -719,130 +752,117 @@ void refresh_interface()
 	}
       // Channel response
       // if(domain_selector == FREQ_DOMAIN)
+      if (is_cluster_head==0)
 	{
 
 	  //convert to float
-	  disp_min_power = 0;
-	  disp_max_power = 10;
+	  disp_min_power = 30;
+	  disp_max_power = 80;
 	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
 	    for (aa=0; aa<NB_ANTENNAS_RX*NB_ANTENNAS_TX; aa++)
 	      for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
-		channel[as][aa][ac] = log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*((short*)fifo_output_UE.channel[as][aa])[2*ac]+
-							   ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
+		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_UE.channel[as][aa])[2*ac]*
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac]+
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]*
+							      ((short*)fifo_output_UE.channel[as][aa])[2*ac+1]));
 	  for (ac=0; ac<N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS; ac++)
 	    subcarrier_ind[ac]=ac;
-	      
+
+	  length = N_RB_DL_EMOS*2;
+
+	}
+      else
+	{
+
+	  //convert to float
+	  disp_min_power = 30;
+	  disp_max_power = 80;
+	  for (as=0; as<NUMBER_OF_eNB_MAX; as++)
+	    for (aa=0; aa<NB_ANTENNAS_RX; aa++)
+	      for (ac=0; ac<NUMBER_OF_OFDM_CARRIERS_EMOS; ac++)
+		channel[as][aa][ac] = 10*log10(1.0 + (float) (((short*)fifo_output_eNB.channel[0][as][aa])[2*ac]*
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac]+
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac+1]*
+							      ((short*)fifo_output_eNB.channel[0][as][aa])[2*ac+1]));
+	  for (ac=0; ac<NUMBER_OF_OFDM_CARRIERS_EMOS; ac++)
+	    subcarrier_ind[ac]=ac;
+
+	  length = NUMBER_OF_OFDM_CARRIERS_EMOS;
+	}
+
+	  
 
 	  // Frequency domain plots
-	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, channel[0][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec0_xyp, subcarrier_ind, channel[0][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, channel[0][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec0_xyp, subcarrier_ind, channel[0][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, channel[0][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec0_xyp, subcarrier_ind, channel[0][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec0_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, channel[0][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec0_xyp, subcarrier_ind, channel[0][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec0_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec0_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec0_xyp,	disp_min_power, disp_max_power);
 
-	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec1_xyp, subcarrier_ind, channel[1][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec1_xyp, subcarrier_ind, channel[1][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec1_xyp, subcarrier_ind, channel[1][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec1_xyp, subcarrier_ind, channel[1][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec1_xyp, subcarrier_ind, channel[1][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec1_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec1_xyp, subcarrier_ind, channel[1][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec1_xyp, subcarrier_ind, channel[1][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec1_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec1_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec1_xyp,	disp_min_power, disp_max_power);
 
-	  fl_set_xyplot_data(main_frm->ch11_sec2_xyp, subcarrier_ind, channel[2][0], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch11_sec2_xyp, subcarrier_ind, channel[2][0], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch11_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch11_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch11_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch11_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_sec2_xyp, subcarrier_ind, channel[2][1], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch12_sec2_xyp, subcarrier_ind, channel[2][1], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch12_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch12_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch12_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch12_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_sec2_xyp, subcarrier_ind, channel[2][2], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch21_sec2_xyp, subcarrier_ind, channel[2][2], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch21_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch21_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch21_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch21_sec2_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_sec2_xyp, subcarrier_ind, channel[2][3], N_RB_DL_EMOS*2, "", "subcarrier index", "dB");
+	  fl_set_xyplot_data(main_frm->ch22_sec2_xyp, subcarrier_ind, channel[2][3], length, "", "subcarrier index", "dB");
 	  fl_set_xyplot_xtics(main_frm->ch22_sec2_xyp, 0, 0);
 	  //fl_set_xyplot_ytics(main_frm->ch22_xyp, -1, -1);
 	  //fl_set_xyplot_xbounds(main_frm->ch22_sec2_xyp, -100, 100);
 	  fl_set_xyplot_ybounds(main_frm->ch22_sec2_xyp,	disp_min_power, disp_max_power);
 
-	}
-      /*
-      else
-	{
-	  // Time domain plots
-	  fl_set_xyplot_data(main_frm->ch11_xyp, delay_ind, channel[0][0], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch11_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch11_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch11_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch12_xyp, delay_ind, channel[0][1], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch12_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch12_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch12_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch21_xyp, delay_ind, channel[1][0], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch21_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch21_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch21_xyp,	disp_min_power, disp_max_power);
-	  fl_set_xyplot_data(main_frm->ch22_xyp, delay_ind, channel[1][1], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	  fl_set_xyplot_xtics(main_frm->ch22_xyp, 2, 1);
-	  fl_set_xyplot_xbounds(main_frm->ch22_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	  fl_set_xyplot_ybounds(main_frm->ch22_xyp,	disp_min_power, disp_max_power);
-	  if ((num_tx_ant*num_ch)==4)
-	    {	
-	      fl_set_xyplot_data(main_frm->ch13_xyp, delay_ind, channel[0][2], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch13_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch13_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch13_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch14_xyp, delay_ind, channel[0][3], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch14_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch14_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch14_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch23_xyp, delay_ind, channel[1][2], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch23_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch23_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch23_xyp,	disp_min_power, disp_max_power);
-	      fl_set_xyplot_data(main_frm->ch24_xyp, delay_ind, channel[1][3], NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant, "", "delay", "dB");
-	      fl_set_xyplot_xtics(main_frm->ch24_xyp, 2, 1);
-	      fl_set_xyplot_xbounds(main_frm->ch24_xyp,	0, delay_ind[NUMBER_OF_OFDM_CARRIERS_EMOS/num_tx_ant]);
-	      fl_set_xyplot_ybounds(main_frm->ch24_xyp,	disp_min_power, disp_max_power);
-	    }
-	}
-      */		
+    
+      if (!is_cluster_head) {
       // BLER
-	sprintf(temp_label, "BLER: %d%%", fifo_output_UE.pdu_fer[0]);
+	sprintf(temp_label, "BLER: %d%%", fifo_output_UE.pbch_fer[0]);
 	fl_set_object_label(main_frm->bler_lbl, temp_label);
 	fl_set_object_lcolor(main_frm->bler_lbl, SCREEN_COLOR_ON);
+      }
 
       // RX mode
       if (!is_cluster_head) {
@@ -1038,7 +1058,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
   int ioctl_result;
   char temp_text[1024];
   unsigned int fc; 
-  unsigned int frequency = 1;
   //unsigned char gains[4];
 
 	
@@ -1056,7 +1075,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 	      //gains[2] = 30;
 	      //gains[3] = 17;
 			
-	      //ioctl_result=ioctl(openair_dev_fd,openair_SET_RX_MODE,&rxmode);
 	      ioctl_result = 0;
  
 	      if (terminal_idx==1) {
@@ -1064,11 +1082,14 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 0; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 1;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
+
 		// Load the configuration to the device driver
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
+		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_eNb);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_RATE_ADAPTATION, &rate_adaptation);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_1ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==2) {
@@ -1076,10 +1097,9 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 1; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 1;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_eNb);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
@@ -1087,10 +1107,21 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 8; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 0;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
+
+		tx_gain_table_ue[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_ue[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+		tx_gain_table_ue[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		tx_gain_table_ue[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+		rf_mode_ue= atoi(fl_get_input(main_frm->rf_mode_txt));
+
+
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
+		//ioctl_result += ioctl(openair_dev_fd, openair_SET_TIMING_ADVANCE,&timing_advance);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TCXO_DAC,&tcxo);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_FREQ_OFFSET,&freq_correction);
+		ioctl_result += ioctl(openair_dev_fd, openair_RX_RF_MODE,&rf_mode_ue);
 		ioctl_result += ioctl(openair_dev_fd, openair_START_NODE, &fc);
 	      }
 	      else if (terminal_idx==4) {
@@ -1098,10 +1129,9 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		node_id = 9; 
 		PHY_config->tdd = 1;
 		PHY_config->dual_tx = 0;
-		frequency = 0;
 		fc = (1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((node_id&0xFF) << 7);
 		ioctl_result += ioctl(openair_dev_fd, openair_DUMP_CONFIG,(char *)PHY_config);
-		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,&tx_gain_table[tx_gain/5+4]);
+		ioctl_result += ioctl(openair_dev_fd, openair_SET_TX_GAIN,tx_gain_table_ue);
 		ioctl_result+=ioctl(openair_dev_fd, openair_START_NODE, &fc);
 	      }
 	      else 
@@ -1270,6 +1300,33 @@ void record_callback(FL_OBJECT *ob, long user_data)
     }
 }
 
+void checkpoint_callback(FL_OBJECT *ob, long user_data)
+{	
+  char temp_label[1024];
+  char filename[1024];
+  FILE *checkpoints_file = NULL; 
+
+  if (user_data==1)
+    checkpoint++;
+  else if (user_data==-1)
+    checkpoint--;
+  else if (user_data==0) {
+    sprintf(filename,"%scheckpoints.txt",dumpfile_dir);
+    checkpoints_file = fopen(filename,"a");
+    if (checkpoints_file) {
+      fprintf(checkpoints_file,"date %d%d%d_%d%d%d, checkpoint %d, frame_tx %d, file_index %d, frame_counter %d\n", 1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec, checkpoint, frame_tx, file_index, frame_counter);
+  fclose(checkpoints_file);
+    }
+    checkpoint++;
+  }
+  
+  sprintf(temp_label, "Next CP: %d", checkpoint);
+  fl_set_object_label(main_frm->next_cp, temp_label);
+  
+  
+}
+
+
 int open_dumpfile()
 {
   char  dumpfile_name[1024];
@@ -1288,12 +1345,13 @@ int open_dumpfile()
     }
 			
   // open the dumpfile
-  time_t starttime_tmp;
-  struct tm starttime;
 	
   time(&starttime_tmp);
   localtime_r(&starttime_tmp,&starttime);
-  sprintf(dumpfile_name,"%sdata_term%d_idx%d_%d%d%d_%d%d%d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  if (use_label) 
+    sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%s_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,label_str,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  else
+    sprintf(dumpfile_name,"%sdata_term%d_idx%02d_%04d%02d%02dT%02d%02d%02d.EMOS",dumpfile_dir,terminal_idx,file_index,1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
 	
   dumpfile_id = fopen(dumpfile_name,"w");
   if (dumpfile_id == NULL)
@@ -1303,7 +1361,7 @@ int open_dumpfile()
       return -1;
     }
 	
-  sprintf(date_string,"date: %d%d%d_%d%d%d",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
+  sprintf(date_string,"date: %04d%02d%02dT%02d%02d%02d",1900+starttime.tm_year, starttime.tm_mon+1, starttime.tm_mday, starttime.tm_hour, starttime.tm_min, starttime.tm_sec); 
   fl_set_object_label(main_frm->date_lbl, date_string);
   sprintf(temp_label, "idx: %d", file_index);
   fl_set_object_label(main_frm->idx_lbl, temp_label);
@@ -1317,7 +1375,6 @@ int open_dumpfile()
 void new_data_callback(int fifo_fd, void* data)
 {
   int n_bytes = 0;
-  int frame_tx;
   char temp_text[1024];
 	
   // Read data from FIFO
@@ -1338,10 +1395,17 @@ void new_data_callback(int fifo_fd, void* data)
       fl_set_object_lcolor(main_frm->msg_text, SCREEN_COLOR_ON);
     }
   
-  if (is_cluster_head) 
+  if (is_cluster_head) {
     frame_tx = fifo_output_eNB.frame_tx;
-  else
-    frame_tx = fifo_output_UE.frame_tx;
+  }
+  else {
+    // if UE is not synched use rec_frame_counter instead
+    if (fifo_output_UE.UE_mode == NOT_SYNCHED)
+      frame_tx = rec_frame_counter;
+    else
+      frame_tx = fifo_output_UE.frame_tx;
+  }
+
 
   if (terminal_mode == TERM_MODE_MULTI)
     {
@@ -1372,7 +1436,7 @@ void new_data_callback(int fifo_fd, void* data)
 	{
 	  error("Dumpfile not open");
 	}
-      else
+      else 
 	{
 	  // copy the data to the fifo buffer
 	  memcpy(fifo_ptr, data_buffer, CHANNEL_BUFFER_SIZE);
@@ -1463,21 +1527,61 @@ void new_data_callback(int fifo_fd, void* data)
 //
 void terminal_button_callback(FL_OBJECT *ob, long user_data)
 {
+  char temp_label[1024];
   fl_set_button(main_frm->terminal_btn1,0);
   //fl_set_button(main_frm->terminal_btn2,0);
   fl_set_button(main_frm->terminal_btn3,0);
   //fl_set_button(main_frm->terminal_btn4,0);
   fl_set_button(ob,1);
   terminal_idx = user_data;
+  if (terminal_idx == 1) {
+    sprintf(temp_label,"%d",tx_gain_table_eNb[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_eNb[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_eNb);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency);
+    fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
+  }
+  else if (terminal_idx == 3) {
+    sprintf(temp_label,"%d",tx_gain_table_ue[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_ue[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_ue);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency);
+    fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
+  }
 }
 
 void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
 {
+  int ioctl_result;
+
   fl_set_button(main_frm->siso_btn,0);
   fl_set_button(main_frm->alamouti_btn,0);
   fl_set_button(main_frm->precoding_btn,0);
   fl_set_button(ob,1);
   mimo_mode = user_data;
+
+  if (power)
+    ioctl_result=ioctl(openair_dev_fd,openair_SET_DLSCH_TRANSMISSION_MODE,&mimo_mode);
+}
+
+void link_adpt_callback(FL_OBJECT *ob, long user_data)
+{
+  int ioctl_result;
+
+  rate_adaptation = fl_get_button(main_frm->la_btn);
+
+  if (power)
+    ioctl_result = ioctl(openair_dev_fd, openair_SET_DLSCH_RATE_ADAPTATION, &rate_adaptation);
 }
 
 
@@ -1504,27 +1608,6 @@ void noise_snr_callback(FL_OBJECT *ob, long user_data)
   printf("noise_selector = %d\n",noise_selector);
 }
 
-//
-// Refresh function
-//
-void file_index_callback(FL_OBJECT *ob, long user_data)
-{
-  char temp_label[1024];
-	
-  // update the dial
-  file_index = fl_get_dial_value(main_frm->file_index_dial);
-  file_index += user_data;
-  if (file_index > 100)
-    file_index = 100;
-  else if (file_index < 0)
-    file_index = 0;
-
-  fl_set_dial_value(main_frm->file_index_dial, file_index);
-	
-  sprintf(temp_label, "idx: %d", file_index);
-  fl_set_object_label(main_frm->idx_lbl, temp_label);
-}
-
 void refresh_timer_callback(FL_OBJECT *ob, long user_data)
 {
   refresh_interface();
@@ -1548,6 +1631,34 @@ void get_dir_callback(FL_OBJECT *ob, long user_data)
   printf("Directory = %s\n",dumpfile_dir);
   fl_hide_form(config_frm->config_dialog);
 }	
+
+void input_callback(FL_OBJECT *ob, long user_data)
+{
+  tx_gain_table_eNb[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  tx_gain_table_eNb[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  rf_mode_eNb= atoi(fl_get_input(main_frm->rf_mode_txt));
+  frequency = atoi(fl_get_input(main_frm->freq_txt));
+  tcxo = atoi(fl_get_input(main_frm->tcxo_txt));
+
+}
+
+void label_callback(FL_OBJECT *ob, long user_data)
+{
+  strcpy(label_str,fl_get_input(main_frm->label_input));
+  if (label_str) {
+    fl_set_button(main_frm->label_button,1);
+    use_label = 1;
+  }
+}
+
+void label_btn_callback(FL_OBJECT *ob, long user_data)
+{
+  use_label = fl_get_button(main_frm->label_button);
+  if (!use_label)
+    fl_set_input(main_frm->label_input, "");
+}
 
 //
 // Initializes the MAC and PHY vars
@@ -1597,6 +1708,7 @@ int mac_phy_init()
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
+  lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
@@ -1604,6 +1716,7 @@ int mac_phy_init()
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = 6;
+  lte_frame_parms->mode1_flag  = 1; //default == SISO
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -1611,11 +1724,11 @@ int mac_phy_init()
   
   init_frame_parms(lte_frame_parms);
   
-  phy_init_top(NB_ANTENNAS_TX);
+  //phy_init_top(NB_ANTENNAS_TX);
 	  
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
+  //lte_frame_parms->twiddle_fft      = twiddle_fft;
+  //lte_frame_parms->twiddle_ifft     = twiddle_ifft;
+  //lte_frame_parms->rev              = rev;
   
   //phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
   //phy_init_lte_eNB(lte_frame_parms, lte_eNB_common_vars);

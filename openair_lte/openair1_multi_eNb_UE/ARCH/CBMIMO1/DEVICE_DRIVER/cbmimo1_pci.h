@@ -35,6 +35,9 @@ typedef struct  {
   int tcxo_dac;               /// TCXO tuning voltage  (Read by LEON during init)
   int rx_rf_mode;             /// RX RF mode           (Read by LEON during init)
   int freq_offset;            /// Freq offset for compensation //20 bits for frequency (7.68e6/pow2(20)), 1 bit for direction
+  int nb_rb;
+  int first_rb;
+  int mast_flag;
   int dac_dma_error_cnt;          /// PCI DMA error counter (Written by LEON)
   int adc_dma_error_cnt;          /// PCI DMA error counter (Written by LEON)
   //  cmd_t pci_cmd;              /// CMD register

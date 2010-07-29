@@ -20,6 +20,9 @@
 /** @addtogroup _PHY_TRANSPORT_
  * @{
  */
+
+#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
 #define NSOFT 1827072
 #define LTE_NULL 2 
 
@@ -44,7 +47,7 @@
 #define PMI_2A_1mj 3
 
 typedef enum {
-  IDLE,
+  SCH_IDLE,
   ACTIVE,
   DISABLED
 } SCH_status_t;
@@ -145,6 +148,8 @@ typedef struct {
 } LTE_UL_UE_HARQ_t;
 
 typedef struct {
+  /// Target MCS
+  unsigned char target_mcs; 
   /// Transmission mode
   unsigned char mode;
   /// Current HARQ process id
@@ -224,6 +229,8 @@ typedef struct {
   unsigned char beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   unsigned char beta_offset_harqack_times8;
+  /// power_offset
+  unsigned char power_offset;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -233,6 +240,10 @@ typedef struct {
   SCH_status_t status;
   /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
   unsigned char subframe_scheduling_flag;
+  /// PHICH active flag
+  unsigned char phich_active;
+  /// PHICH ACK
+  unsigned char phich_ACK;
   /// Last TPC command
   unsigned char TPC;
   /// First Allocated RB 
@@ -322,6 +333,12 @@ typedef struct {
   unsigned char beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   unsigned char beta_offset_harqack_times8;
+  /// Flag to indicate that eNB awaits UE RAG 
+  unsigned char RAG_active;
+  /// Subframe for RAG
+  unsigned char RAG_subframe;
+  /// Frame for RAG
+  unsigned int RAG_frame;
 } LTE_eNb_ULSCH_t;
 
 typedef struct {
@@ -368,14 +385,14 @@ typedef struct {
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
-  int UL_rssi[NUMBER_OF_UE_MAX];
+  int UL_rssi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX];
   unsigned char DL_cqi[NUMBER_OF_UE_MAX][2];
   unsigned char DL_diffcqi[NUMBER_OF_UE_MAX][2];
   unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
   unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
   unsigned char rank[NUMBER_OF_UE_MAX];
-  unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id of connected UEs
-  unsigned char UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
+  unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
+  int UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
   UE_MODE_t mode[NUMBER_OF_UE_MAX];
   unsigned char sector[NUMBER_OF_UE_MAX];
 } LTE_eNB_UE_stats;
@@ -389,7 +406,7 @@ typedef struct {
 
 typedef struct {
   /// Transmission mode
-  unsigned char mode;
+  unsigned char mode1_flag;
   /// Current HARQ process id
   unsigned char current_harq_pid;
   /// Current RB allocation
@@ -653,7 +670,7 @@ void qpsk_qpsk(short *stream0_in,
 @param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
-void dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			 int **rxdataF_comp,
 			 int **rxdataF_comp_i,
 			 int **rho_i,
@@ -1091,8 +1108,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      short eNb_id,
 				      LTE_DL_FRAME_PARMS *frame_parms,
 				      unsigned short si_rnti,
-				      unsigned short ra_rnti,
-				      unsigned short c_rnti);
+				      unsigned short ra_rnti);
 
 unsigned char get_Qm(unsigned char I_MCS);
 
@@ -1151,12 +1167,12 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
 
-int generate_drs_puch(LTE_DL_FRAME_PARMS *frame_parms,
-		      mod_sym_t *txdataF,
-		      short amp,
-		      unsigned int sub_frame_number,
-		      unsigned int first_rb,
-		      unsigned int nb_rb);
+int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
+		       mod_sym_t *txdataF,
+		       short amp,
+		       unsigned int sub_frame_number,
+		       unsigned int first_rb,
+		       unsigned int nb_rb);
 
 int compareints (const void * a, const void * b);
 
@@ -1165,7 +1181,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      short amp,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch);
+		      LTE_UE_ULSCH_t *ulsch,
+		      unsigned char rag_flag);
 
 
 void ulsch_extract_rbs_single(int **rxdataF,
@@ -1180,36 +1197,52 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
 unsigned char subframe2harq_pid_tdd_eNBrx(unsigned char tdd_config,unsigned char subframe);
 
 int generate_ue_dlsch_params_from_dci(unsigned char subframe,
+				      void *dci_pdu,
+				      unsigned short rnti,
+				      DCI_format_t dci_format,
+				      LTE_UE_DLSCH_t **dlsch_ue,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned short si_rnti,
+				      unsigned short ra_rnti,
+				      unsigned short p_rnti);
+
+int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 				       void *dci_pdu,
 				       unsigned short rnti,
 				       DCI_format_t dci_format,
-				       LTE_UE_DLSCH_t **dlsch_ue,
-				       LTE_DL_FRAME_PARMS *frame_parms,
-				       unsigned short si_rnti,
-				       unsigned short ra_rnti,
-				       unsigned short p_rnti);
-
-int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
-					void *dci_pdu,
-					unsigned short rnti,
-					DCI_format_t dci_format,
-					LTE_eNb_DLSCH_t **dlsch_eNb,
-					LTE_DL_FRAME_PARMS *frame_parms,
-					unsigned short si_rnti,
-					unsigned short ra_rnti,
-					unsigned short p_rnti);
-
-int generate_ue_ulsch_params_from_dci(void *dci_pdu,
-				       unsigned short rnti,
-				       unsigned char subframe,
-				       DCI_format_t dci_format,
-				       LTE_UE_ULSCH_t *ulsch,
-				       PHY_MEASUREMENTS *meas,
+				       LTE_eNb_DLSCH_t **dlsch_eNb,
 				       LTE_DL_FRAME_PARMS *frame_parms,
 				       unsigned short si_rnti,
 				       unsigned short ra_rnti,
 				       unsigned short p_rnti,
-				       unsigned char eNb_id); 
+				       unsigned short DL_pmi_single);
+
+int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
+				       unsigned char subframe,
+				       LTE_eNb_ULSCH_t *ulsch,
+				       LTE_DL_FRAME_PARMS *frame_parms);
+
+int generate_ue_ulsch_params_from_dci(void *dci_pdu,
+				      unsigned short rnti,
+				      unsigned char subframe,
+				      DCI_format_t dci_format,
+				      LTE_UE_ULSCH_t *ulsch,
+				      LTE_UE_DLSCH_t **dlsch,
+				      PHY_MEASUREMENTS *meas,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned short si_rnti,
+				      unsigned short ra_rnti,
+				      unsigned short p_rnti,
+				      unsigned char eNb_id,
+				      int current_dlsch_cqi); 
+
+int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
+				      unsigned char subframe,
+				      LTE_UE_ULSCH_t *ulsch,
+				      PHY_MEASUREMENTS *meas,
+				      LTE_DL_FRAME_PARMS *frame_parms,
+				      unsigned char eNb_id,
+				      int current_dlsch_cqi);
 
 int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short rnti,
@@ -1222,16 +1255,23 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 					unsigned short p_rnti);
 
 
+void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
+
+void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms);
+
+void init_transport_channels(unsigned char);
+
 void generate_RIV_tables(void);
 
 
-int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     LTE_eNB_ULSCH *eNB_ulsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned int subframe,
 	     unsigned char eNb_id,  // this is the effective sector id
 	     unsigned char UE_id,   // this is the UE instance to act upon
-	     LTE_eNb_ULSCH_t **ulsch);
+	     LTE_eNb_ULSCH_t **ulsch,
+	     unsigned char rag_flag);
 
 int ulsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
@@ -1241,11 +1281,19 @@ int ulsch_encoding(unsigned char *a,
 unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_eNb_ULSCH_t *ulsch,
-			     unsigned char subframe);
+			     unsigned char subframe,
+			     unsigned char rag_flag);
+
+void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
+			unsigned char subframe,
+			LTE_eNb_ULSCH_t *ulsch_eNb,
+			mod_sym_t **txdataF);
 
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 
 void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,LTE_eNB_UE_stats *stats);
+
+void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id, int current_dlsch_cqi);
 
 unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id);
 
@@ -1256,6 +1304,8 @@ unsigned int pmi2hex_2Ar2(unsigned char pmi);
 unsigned int cqi2hex(unsigned short cqi);
 
 unsigned short computeRIV(unsigned short N_RB_DL,unsigned short RBstart,unsigned short Lcrbs);
+
+unsigned int pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,unsigned char wideband_pmi);
 
 /**@}*/
 #endif

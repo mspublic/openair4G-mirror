@@ -146,7 +146,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
 
-#ifndef IFFT_FPGA
+#ifndef IFFT_FPGA_UE
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
   //msg("carrier_pos = %d\n",carrier_pos);
   
@@ -158,9 +158,10 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
     ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=1;
+      carrier_pos=0;
   }
 #else
+#ifndef RAW_IFFT
   carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
   //msg("carrier_pos = %d\n",carrier_pos);
 
@@ -181,7 +182,23 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
     if (carrier_pos >= frame_parms->N_RB_UL*12)
       carrier_pos=0;
   }
+#else
+  carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
+  //msg("carrier_pos = %d\n",carrier_pos);
+  
+  sub_frame_offset = sub_frame_number*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
+  symbol_offset = sub_frame_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+
+  for (k=0;k<Msc_RS;k++) {
+    ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
+    ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
+    carrier_pos+=2;
+    if (carrier_pos >= frame_parms->ofdm_symbol_size)
+      carrier_pos=0;
+  }
 #endif
+#endif
+  //  write_output("srs_tx.m","srstx",&txdataF[symbol_offset],512,1,1);
   return(0);
 }
 
@@ -258,7 +275,11 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size) 
+#ifdef OFDMA_ULSCH
       carrier_pos=1;
+#else
+      carrier_pos=0;
+#endif
   }
   /*
   for (k=0;k<Msc_RS;k++) {
@@ -292,6 +313,8 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
       carrier_pos=0;
   }
   */
+
+  //  write_output("srs_rx.m","srsrx",txdataF,1024,2,1);
   return(0);
 }
 

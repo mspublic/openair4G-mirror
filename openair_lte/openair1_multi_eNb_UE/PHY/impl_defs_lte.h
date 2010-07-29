@@ -18,6 +18,7 @@ ________________________________________________________________*/
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
 #define PBCH_PDU_SIZE 6 //bytes
+#define TIMING_ADVANCE_INIT 0
 
 #define PSS_UL_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -27,6 +28,7 @@ typedef struct {
   unsigned char N_RB_UL;                /// Number of resource blocks (RB) in UL
   unsigned char Nid_cell;               /// Cell ID 
   unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
+  unsigned char Ng_times6;              /// Number of PHICH groups (times 6, 1,3,6,12)
   unsigned char nushift;                /// shift of pilot position in one RB
   unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
   unsigned char mode1_flag;             /// flag to indicate SISO transmission
@@ -50,18 +52,18 @@ typedef struct {
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
-  SISO,
-  ALAMOUTI,
-  ANTCYCLING,
-  UNIFORM_PRECODING11,
-  UNIFORM_PRECODING1m1,
-  UNIFORM_PRECODING1j,
-  UNIFORM_PRECODING1mj,
-  PUSCH_PRECODING0,
-  PUSCH_PRECODING1,
-  DUALSTREAM_UNIFORM_PRECODING1,
-  DUALSTREAM_UNIFORM_PRECODINGj,
-  DUALSTREAM_PUSCH_PRECODING
+  SISO=0,
+  ALAMOUTI=1,
+  ANTCYCLING=2,
+  UNIFORM_PRECODING11=3,
+  UNIFORM_PRECODING1m1=4,
+  UNIFORM_PRECODING1j=5,
+  UNIFORM_PRECODING1mj=6,
+  PUSCH_PRECODING0=7,
+  PUSCH_PRECODING1=8,
+  DUALSTREAM_UNIFORM_PRECODING1=9,
+  DUALSTREAM_UNIFORM_PRECODINGj=10,
+  DUALSTREAM_PUSCH_PRECODING=11
 } MIMO_mode_t;
 
 typedef struct{
@@ -70,9 +72,10 @@ typedef struct{
   int **rxdata[3];           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF[3];          ///holds the received data in the frequency domain
   /// hold the channel estimates in frequency domain based on SRS
-  int **srs_ch_estimates[3];  
-  int* srs;               /// holds the SRS for channel estimation at the RX
-  int *sync_corr;         /// holds output of the sync correlator
+  int **srs_ch_estimates[3];
+  int **srs_ch_estimates_time[3];  
+  int *srs;               /// holds the SRS for channel estimation at the RX
+  unsigned int *sync_corr[3];         /// holds output of the sync correlator
 } LTE_eNB_COMMON;
 
 typedef struct{
@@ -128,7 +131,7 @@ typedef struct {
   unsigned int dci_errors;          /// Total number of PDU errors (diagnostic mode)
   unsigned int dci_received;        /// Total number of PDU received
   unsigned int dci_false;           /// Total number of DCI False detection (diagnostic mode)
-  unsigned int dci_missed;          /// Total number of DCI (diagnostic mode)
+  unsigned int dci_missed;          /// Total number of DCI missed (diagnostic mode)
 } LTE_UE_PDCCH;
 
 typedef struct {
@@ -145,41 +148,11 @@ typedef struct {
 } LTE_UE_PBCH;
 
 typedef enum {
-  PRACH=0,
+  NOT_SYNCHED=0,
+  PRACH,
   RA_RESPONSE,
-  ULSCH
+  PUSCH
 } UE_MODE_t;
-
-/*
-/// Top-level PHY Data Structure for eNB 
-typedef struct
-{
-  /// ACQ Mailbox for harware synch
-  unsigned int *mbox;                
-  LTE_DL_FRAME_PARMS  lte_frame_parms;
-  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
-  LTE_eNB_COMMON   lte_eNB_common_vars;
-  LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX];
-    LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX];
-
-} PHY_VARS_eNB;
-
-/// Top-level PHY Data Structure for UE 
-typedef struct
-{
-  //PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
-  LTE_DL_FRAME_PARMS  lte_frame_parms;
-  LTE_UE_COMMON    lte_ue_common_vars;
-  LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];
-  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX];
-    LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
-
-} PHY_VARS_UE;
-*/
 
 
 #endif

@@ -24,11 +24,11 @@ void openair_generate_fs4(unsigned char IQ_imb) {
 
   for (i=0;i<120;i++) {
     for (j=0; j<300; j++) {
-      ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+j] = 0; 
-      ((mod_sym_t*)TX_DMA_BUFFER[1])[300*i+j] = 0; 
+      ((mod_sym_t*)TX_DMA_BUFFER[0][0])[300*i+j] = 0; 
+      ((mod_sym_t*)TX_DMA_BUFFER[0][1])[300*i+j] = 0; 
     }
-    ((mod_sym_t*)TX_DMA_BUFFER[0])[300*i+127] = 148; // corresponds to 2^14 in mod_table
-    ((mod_sym_t*)TX_DMA_BUFFER[1])[300*i+127] = 148; // corresponds to 2^14 in mod_table
+    ((mod_sym_t*)TX_DMA_BUFFER[0][0])[300*i+127] = 148; // corresponds to 2^14 in mod_table
+    ((mod_sym_t*)TX_DMA_BUFFER[0][1])[300*i+127] = 148; // corresponds to 2^14 in mod_table
   }
 
 }
@@ -45,15 +45,15 @@ void openair_generate_fs4(unsigned char IQ_imb) {
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i+=4) {
 #ifdef BIT8_TXMUX
-    ((unsigned int *)TX_DMA_BUFFER[0])[i]   = (0x007f<<16) | (0x007f);
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+1] = (pQ<<24) | (pQ<<8);
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+2] = (0x0081<<16) | (0x0081);
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+3] = (mQ<<24) | (mQ<<8);
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i]   = (0x007f<<16) | (0x007f);
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+1] = (pQ<<24) | (pQ<<8);
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+2] = (0x0081<<16) | (0x0081);
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+3] = (mQ<<24) | (mQ<<8);
 #else
-    ((unsigned int *)TX_DMA_BUFFER[0])[i]   = 0x7fff;
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+1] = (pQ<<16);
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+2] = 0x8001;
-    ((unsigned int *)TX_DMA_BUFFER[0])[i+3] = mQ<<16;
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i]   = 0x7fff;
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+1] = (pQ<<16);
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+2] = 0x8001;
+    ((unsigned int *)TX_DMA_BUFFER[0][0])[i+3] = mQ<<16;
 #endif
   }
 

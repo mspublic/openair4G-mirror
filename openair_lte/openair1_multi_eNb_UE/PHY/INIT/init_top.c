@@ -2,11 +2,11 @@
 #ifndef USER_MODE
 #define __NO_VERSION__
 #endif
-
+ 
 #include "defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/extern.h"
-
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 /*
 
 * @addtogroup _PHY_STRUCTURES_
@@ -23,14 +23,14 @@ Blah Blah
 #endif //USER_MODE
 */
 
-#ifdef CBMIMO1
+//#ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
-#endif //CBMIMO1
+//#endif //CBMIMO1
 
 
 #ifndef USER_MODE
@@ -50,7 +50,11 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
       // Allocate memory for TX DMA Buffer
       
 #ifdef IFFT_FPGA
+#ifndef RAW_IFFT
       tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
+#else
+      tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES_NO_PREFIX;
+#endif
 #else
       tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
 #endif
@@ -121,37 +125,40 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
     }
     
     
+   
+    //  printk("[PHY][INIT] mbox = %p,rxgainreg = %p\n",PHY_vars->mbox,rxgainreg);
+    
+  }    
+
 #ifndef USER_MODE
 #ifndef NOCARD_TEST
+  for (card_id=0;card_id<number_of_cards;card_id++) {
     // Allocate memory for PCI interface and store pointers to dma buffers
     msg("[PHY][INIT] Setting up Leon PCI interface structure\n");
-    pci_interface[card_id] = (PCI_interface_t *)((unsigned int)(tmp_ptr + ((OFDM_SYMBOL_SIZE_BYTES+FRAME_LENGTH_BYTES+PAGE_SIZE)>>2)));
+    pci_interface[card_id] = (PCI_interface_t *)bigmalloc16(sizeof(PCI_interface_t));
     msg("[PHY][INIT] PCI interface %d at %p\n",card_id,pci_interface[card_id]);
     openair_writel(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET+4,(unsigned int)virt_to_phys((volatile void*)pci_interface[card_id]));  
     
-    mbox = (unsigned int)(&pci_interface[card_id]->adac_cnt);
     for (i=0;i<NB_ANTENNAS_RX;i++) {
       pci_interface[card_id]->adc_head[i] = (unsigned int)virt_to_phys((volatile void*)RX_DMA_BUFFER[card_id][i]);
       pci_interface[card_id]->dac_head[i] = (unsigned int)virt_to_phys((volatile void*)TX_DMA_BUFFER[card_id][i]);
     }
 #endif //NOCARD_TEST
 #endif // USER_MODE
-    
+  }
 
 #ifdef CBMIMO1
 #ifndef USER_MODE
-    PHY_vars->mbox = mbox;
-#endif //// USER_MODE 
-#endif // // CBMIMO1
-    
-    //  printk("[PHY][INIT] mbox = %p,rxgainreg = %p\n",PHY_vars->mbox,rxgainreg);
-    
-  }    
+    mbox = (unsigned int)(&pci_interface[0]->adac_cnt);
 
+    PHY_vars->mbox = mbox;
+#endif // USER_MODE 
+#endif // CBMIMO1
 }
 
 #else  // USER_MODE
 int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
+
 
   unsigned char buffer_id,i;
   unsigned int tx_dma_buffer_size_bytes;
@@ -200,11 +207,11 @@ int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
       
 #ifndef USER_MODE
 
-#endif // //USER_MODE
+#endif //USER_MODE
     }
   }
 }
-#endif
+#endif //USER_MODE
 
 int phy_init_top(unsigned char nb_antennas_tx) {
 
@@ -213,7 +220,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
 
   int i,j,n,tb;
 
-  //  bzero((void *)PHY_vars,sizeof(PHY_VARS));
+  // bzero((void *)PHY_vars,sizeof(PHY_VARS));
 
 
   msg("[openair][PHY][INIT]OFDM size             : %d\n",NUMBER_OF_OFDM_CARRIERS);
@@ -235,7 +242,7 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-  init_signal_buffers(1,1);
+  init_signal_buffers(number_of_cards,1);
   
 #ifdef DEBUG_PHY    
   msg("[openair][PHY][INIT] Initializing FFT engine\n");

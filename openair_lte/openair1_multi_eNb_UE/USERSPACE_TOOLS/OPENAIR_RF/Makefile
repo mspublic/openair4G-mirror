@@ -53,7 +53,7 @@ endif
 # PHY TOOLS routines
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/PHY/TOOLS/cmult_vv.o $(TOP_DIR)/PHY/TOOLS/cmult_sv.o $(TOP_DIR)/PHY/TOOLS/cmult_mm.o $(TOP_DIR)/PHY/TOOLS/cmult_vvh.o $(TOP_DIR)/PHY/TOOLS/cadd_vv.o 
 #ifdef CBMIMO1
-PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
+#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
 #endif
 
 # PHY ESTIMATION routines 
@@ -79,6 +79,10 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
 endif
 
 # PHY Coding routines
@@ -97,7 +101,7 @@ endif
 # Utility routines
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/dB_routines.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/TOOLS/memory_routines.o $(TOP_DIR)/PHY/TOOLS/signal_energy.o $(TOP_DIR)/PHY/TOOLS/sqrt.o $(TOP_DIR)/PHY/TOOLS/log2_approx.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 
-PHY_OBJS +=$(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o 
+PHY_OBJS +=$(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o 
 
 # CONFIG routines
 PHY_OBJS +=$(TOP_DIR)/PHY/CONFIG/openair_configure.o $(TOP_DIR)/PHY/CONFIG/openair_readconfigfile.o
@@ -117,6 +121,8 @@ $(USERRFOBJS) : %.o : %.c
 openair_rf: $(USERRFOBJS)
 	$(CCC) -o openair_rf_$(FNAME) $(CFLAGS) $(USERRFOBJS) -lm  
 
+read_rx_sig: read_rx_sig.c
+	$(CCC) -o read_rx_sig $(CFLAGS) read_rx_sig.c 
 
 clean:
 	rm -f $(USERRFOBJS)

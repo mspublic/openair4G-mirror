@@ -41,8 +41,35 @@ void generate_16qam_table(void) {
       } 
 }
 
+
 #ifndef IFFT_FPGA
- 
+
+void layer1prec2A(int *antenna0_sample, int *antenna1_sample, unsigned char precoding_index) {
+
+  switch (precoding_index) {
+
+  case 0: // 1 1
+    *antenna1_sample=*antenna0_sample;
+    break;
+
+  case 1: // 1 -1
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[0];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[1];
+    break;
+
+  case 2: // 1 j
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = ((short *)antenna0_sample)[0];
+    break;
+
+  case 3: // 1 -j
+    ((short *)antenna1_sample)[0] = ((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[0];
+    break;
+  }
+
+} 
+
 int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned int *jj,
 		       unsigned short re_offset,
@@ -53,13 +80,13 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned char pilots,
 		       unsigned char first_pilot,
 		       unsigned char mod_order,
-		       unsigned char precoding,
+		       unsigned char precoder_index,
 		       short amp,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
-  unsigned int tti_offset, aa;
+  unsigned int tti_offset,aa;
   unsigned char re;
   unsigned char qam64_table_offset_re = 0;
   unsigned char qam64_table_offset_im = 0;
@@ -137,8 +164,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
 	  
-	  ((short *)&txdataF[nu][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((short *)&txdataF[nu][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+	    ((short *)&txdataF[aa][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	    ((short *)&txdataF[aa][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  }
 	  
 	  break;
 	  
@@ -168,232 +197,314 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
 	  
-	  ((short *)&txdataF[nu][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((short *)&txdataF[nu][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+	    ((short *)&txdataF[aa][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	    ((short *)&txdataF[aa][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  }
+	  break;
+	  
+	}
+      }
+            
+      else if (mimo_mode == ALAMOUTI){
+	
+	switch (mod_order) {
+	case 2:  //QPSK
+	  
+	  // first antenna position n -> x0
+	  
+	  ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj=*jj+1;
+	  ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj=*jj+1;
+	  
+	  // second antenna position n -> -x1*
+	  
+	  ((short*)&txdataF[1][tti_offset])[0] = (output[*jj]==0) ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  *jj=*jj+1;
+	  ((short*)&txdataF[1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj=*jj+1;
+	  
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  // Antenna 0 position n 
+	  
+	  qam16_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam16_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  
+	  // Antenna 1 position n Real part -> -x1*
+	  
+	  qam16_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam16_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[1][tti_offset])[0]=-(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short *)&txdataF[1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  
+	  
+	  break;
+	case 6:   // 64-QAM
+	  
+	  // Antenna 0
+	  qam64_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam64_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  
+	  
+	  // Antenna 1 => -x1*
+	  qam64_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam64_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[1][tti_offset])[0]=-(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short *)&txdataF[1][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  
+	  break;
+	}
+	// fill in the rest of the ALAMOUTI precoding
+	((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0]; //x1
+	((short *)&txdataF[0][tti_offset+1])[1] = ((short *)&txdataF[1][tti_offset])[1];
+	((short *)&txdataF[1][tti_offset+1])[0] = ((short *)&txdataF[0][tti_offset])[0];  //x0*
+	((short *)&txdataF[1][tti_offset+1])[1] = -((short *)&txdataF[0][tti_offset])[1];
+	
+      }
+      else if (mimo_mode == ANTCYCLING ) {
+	switch (mod_order) {
+	case 2:  //QPSK
+	  
+	  ((short*)&txdataF[re&1][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+	  ((short*)&txdataF[re&1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  qam16_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam16_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  
+	  
+	  break;
+	  
+	case 6:  //64QAM
+	  
+	  qam64_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam64_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  
+	}
+      }
+       
+      else if ((mimo_mode >= UNIFORM_PRECODING11)&&(mimo_mode <= PUSCH_PRECODING1)) {
+	// this is for transmission modes 4-6 (1 layer)
+
+	switch (mod_order) {
+	case 2:  //QPSK
+	  
+	  ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+	  ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  qam16_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam16_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  break;
+	  
+	case 6:  //64QAM
+	  
+	  
+	  qam64_table_offset_re = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  
+	  
+	  qam64_table_offset_im = 0;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+
+	  if (frame_parms->nb_antennas_tx == 2) 
+	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+
+	  
 	  break;
 	  
 	}
       }
       
-	else if (mimo_mode == ALAMOUTI){
-	  
-	  switch (mod_order) {
-	  case 2:  //QPSK
-	    
-	    // first antenna position n -> x0
-	    
-	    ((short*)&txdataF[0][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	    *jj=*jj+1;
-	    ((short*)&txdataF[0][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	    *jj=*jj+1;
-	    
-	    // second antenna position n -> -x1*
-	    
-	    ((short*)&txdataF[1][tti_offset])[0] = (output[*jj]==0) ? (gain_lin_QPSK) : -gain_lin_QPSK;
-	    *jj=*jj+1;
-	    ((short*)&txdataF[1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	    *jj=*jj+1;
-	    
-	    break;
-	    
-	  case 4:  //16QAM
-	    
-	    // Antenna 0 position n 
-	    
-	    qam16_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam16_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-	    
-	    // Antenna 1 position n Real part -> -x1*
-	    
-	    qam16_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam16_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[1][tti_offset])[0]=-(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	    ((short *)&txdataF[1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-	    
-	    
-	    break;
-	  case 6:   // 64-QAM
-	    
-	    // Antenna 0
-	    qam64_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam64_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[0][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	    ((short *)&txdataF[0][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
-
-
-		    // Antenna 1 => -x1*
-	    qam64_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam64_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[1][tti_offset])[0]=-(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	    ((short *)&txdataF[1][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
-		    
-	    break;
-	  }
-	  // fill in the rest of the ALAMOUTI precoding
-	  ((short *)&txdataF[0][tti_offset+1])[0] = -((short *)&txdataF[1][tti_offset])[0]; //x1
-	  ((short *)&txdataF[0][tti_offset+1])[1] = ((short *)&txdataF[1][tti_offset])[1];
-	  ((short *)&txdataF[1][tti_offset+1])[0] = ((short *)&txdataF[0][tti_offset])[0];  //x0*
-	  ((short *)&txdataF[1][tti_offset+1])[1] = -((short *)&txdataF[0][tti_offset])[1];
-	  
-	}
-	else if (mimo_mode == ANTCYCLING ) {
-	  switch (mod_order) {
-	  case 2:  //QPSK
-	    
-	    ((short*)&txdataF[re&1][tti_offset])[0] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	    *jj = *jj + 1;
-	    ((short*)&txdataF[re&1][tti_offset])[1] = (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	    *jj = *jj + 1;
-	    break;
-	    
-	  case 4:  //16QAM
-	    
-	    qam16_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam16_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam16_table_offset_im+=1;
-	    *jj=*jj+1;
-
-	    ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	    ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-	    
-	    
-	    break;
-	  
-	  case 6:  //64QAM
-
-	    qam64_table_offset_re = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_re+=1;
-	    *jj=*jj+1;
-	    
-	    
-	    qam64_table_offset_im = 0;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=4;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=2;
-	    *jj=*jj+1;
-	    if (output[*jj] == 1)
-	      qam64_table_offset_im+=1;
-	    *jj=*jj+1;
-	    
-	    ((short *)&txdataF[re&1][tti_offset])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	    ((short *)&txdataF[re&1][tti_offset])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
-
-	  }
-	}
-		    
-	else {
-	  msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
-	  return(-1);
-	}
-	
-      } 
+      else {
+	msg("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
+	return(-1);
+      }
       
+     
+    
       if (mimo_mode == ALAMOUTI) {
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;
       }
+    }
   }
   return(0);
 }
 
 #else // ifndef IFFT_FPGA
 
-static mod_sym_t qpsk_precoder[4][4]   = {0,1,2,3,3,2,1,0,1,3,0,2,2,0,3,1};
+static mod_sym_t qpsk_precoder[4][4]   = {0,1,2,3, 3,2,1,0, 1,3,0,2, 2,0,3,1};
 static mod_sym_t qam16_precoder[4][16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
                                 10,11,8,9,14,15,12,13,2,3,0,1,6,7,4,5,
                                 2,6,10,14,3,7,11,15,0,4,8,12,1,5,9,13,
@@ -420,7 +531,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned char skip_dc,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
-  unsigned int tti_offset;
+  unsigned int tti_offset,aa;
   unsigned char re;
   unsigned char qam64_table_offset = 0;
   unsigned char qam16_table_offset = 0;
@@ -439,16 +550,16 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   for (re=0;re<12;re++) {
 
 
-     if ((skip_dc == 1) && (re==6))
+    if ((skip_dc == 1) && (re==6))
       re_off=re_off - frame_parms->N_RB_DL*12;
    // check that re is not a pilot (need shift for 2nd pilot symbol!!!!)
     // Again this is not LTE, here for SISO only positions 3-5 and 8-11 are allowed for data REs
     // This allows for pilots from adjacent eNbs to be interference free
 
     tti_offset = symbol_offset + re_off + re;
-      
+    
     if (is_not_pilot(pilots,first_pilot,re)) { 
-
+      //      printf("dlsch_modulation tti_offset %d (re %d)\n",tti_offset,re);
       *re_allocated = *re_allocated + 1;
 
 	if (mimo_mode == SISO) {  //SISO mapping
@@ -463,7 +574,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qpsk_table_offset+=2;
 	    *jj=*jj+1;
 
-	    txdataF[nu][tti_offset] = (mod_sym_t) qpsk_table_offset;
+	    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	      txdataF[aa][tti_offset] = (mod_sym_t) qpsk_table_offset;
 
 	    break;
 	    
@@ -485,7 +597,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qam16_table_offset+=4;
 	    *jj=*jj+1;
 	    
-	    txdataF[0][tti_offset] = (mod_sym_t) qam16_table_offset;
+	    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	      txdataF[aa][tti_offset] = (mod_sym_t) qam16_table_offset;
 	    	    
 	    break;
 	   
@@ -514,7 +627,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qam64_table_offset+=8;
 	    *jj=*jj+1;
 	    
-	    txdataF[0][tti_offset] = (mod_sym_t) qam64_table_offset;
+	    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+	      txdataF[aa][tti_offset] = (mod_sym_t) qam64_table_offset;
 	    break;
 
 	  }
@@ -562,6 +676,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    txdataF[1][tti_offset] = (mod_sym_t) qpsk_table_offset;     // -x1*
 	    txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;  // x1
 
+	    //	    printf("txdataF[0][tti_offset] %d %d\n",txdataF[0][tti_offset],txdataF[0][tti_offset+1]); 
 	    break;
 
 	  case 4:  //16QAM
@@ -749,9 +864,11 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 
 	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
-	    txdataF[1][tti_offset+1] = (mod_sym_t) (1+qpsk_precoder[precoder_index][qpsk_table_offset-1]);   // x0*
+	    txdataF[1][tti_offset] = (mod_sym_t) (1+qpsk_precoder[precoder_index][qpsk_table_offset-1]);   // prec(x0)
 
+	    //	    printf("precoding %d (index %d): (%d,%d)\n",tti_offset, precoder_index,txdataF[0][tti_offset]-1,txdataF[1][tti_offset]-1);
 
+	    
 	    break;
 
 	  case 4:
@@ -828,8 +945,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 #endif
 
 unsigned char get_pmi_5MHz(MIMO_mode_t mode,unsigned int pmi_alloc,unsigned short rb) {
+
+  //  printf("Getting pmi for RB %d => %d\n",rb,(pmi_alloc>>((rb>>2)<<1))&3);
   if (mode <= PUSCH_PRECODING1)
-    return((pmi_alloc>>(rb>>1))&3);
+    return((pmi_alloc>>((rb>>2)<<1))&3);
   else
     return((pmi_alloc>>(rb>>2))&1);
 }
@@ -861,7 +980,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    printf("Generating DLSCH (harq_pid %d,mimo %d, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,mod_order, dlsch->layer_index, rb_alloc[0], l);
+    msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    
     pilots=0;
     first_pilot=0;
@@ -962,4 +1081,3 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
   return (re_allocated);
 }
-

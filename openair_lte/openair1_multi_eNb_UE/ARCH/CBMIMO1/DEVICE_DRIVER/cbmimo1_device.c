@@ -20,7 +20,11 @@
 
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/vars.h"
-
+#ifdef OPENAIR2
+#include "LAYER2/MAC/vars.h"
+#include "RRC/MESH/vars.h"
+#include "PHY_INTERFACE/vars.h"
+#endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
@@ -135,7 +139,8 @@ static int __init openair_init_module( void )
   pdev[0] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, NULL);
 
   if(pdev[0]) {
-    printk("[openair][INIT_MODULE][INFO]:  openair card found\n");
+    printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondate %x\n",i,
+	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
     i=1;
   }
   else {
@@ -143,7 +148,19 @@ static int __init openair_init_module( void )
     
     return -ENODEV;
   }
-  
+
+  // Now look for more cards on the same bus
+  while (i<3) {
+    pdev[i] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, pdev[i-1]);
+    if(pdev[i]) {
+      printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondate %x\n",i,
+	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
+      i++;
+    }
+    else {
+      break;
+    }
+  }
 
   // at least one device found, enable it
   number_of_cards = i;
@@ -156,7 +173,7 @@ static int __init openair_init_module( void )
     }
     else {
 	
-      printk("[openair][INIT_MODULE][INFO]: Device %ld enabled\n",i);
+      printk("[openair][INIT_MODULE][INFO]: Device %ld (%p)enabled\n",i,pdev[i]);
     }
       
       
@@ -185,14 +202,16 @@ static int __init openair_init_module( void )
   }
 
 
-  openair_readl(pdev[0], 
-		FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
-		&res);
-  if ((res & FROM_GRLIB_BOOT_GOK) != 0)
-    printk("[openair][INIT_MODULE][INFO]: LEON3 is ok!\n");
-  else {
-    printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
-    return -ENODEV;
+  for (i=0;i<number_of_cards;i++) {
+    openair_readl(pdev[i], 
+		  FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
+		  &res);
+    if ((res & FROM_GRLIB_BOOT_GOK) != 0)
+      printk("[openair][INIT_MODULE][INFO]: LEON3 on card %d is ok!\n",i);
+    else {
+      printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
+      return -ENODEV;
+    }
   }
   /* The boot strap of Leon is waiting for us, polling the HOK bit and 
    * waiting for us to assert it high.
@@ -211,14 +230,15 @@ static int __init openair_init_module( void )
    * we ask for auto. jump to user firmware.
    * (for more information on how to transmit parameter to modules at insmod time,
    * refer to [LinuxDeviceDrivers, 3rd edition, by Corbet/Rubini/Kroah-Hartman] pp 35-36). */
-  if (!updatefirmware) {
-    printk("[openair][INIT_MODULE][INFO]: Setting HOK bit with auto jump to user firmware.\n");
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
-  } else {
-    printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+  for (i=0;i<number_of_cards;i++) {
+    if (!updatefirmware) {
+      printk("[openair][INIT_MODULE][INFO]: Card %d Setting HOK bit with auto jump to user firmware.\n",i);
+      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
+    } else {
+      printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
+      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+    }
   }
-
 #endif //NOCARD_TEST
 #endif //PHY_EMUL
 

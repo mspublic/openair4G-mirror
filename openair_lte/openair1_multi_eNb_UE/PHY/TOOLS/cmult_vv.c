@@ -352,7 +352,7 @@ int mult_cpx_vector_norep2(short *x1,
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   unsigned short output_shift)
+			   int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements with normal formatted output and no loop unrollin
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0 Re1 Im1 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|

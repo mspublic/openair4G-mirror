@@ -36,7 +36,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 #ifdef DEBUG_CH
   msg("lte_ul_channel_estimation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
   write_output("drs_seq.m","drs",ul_ref_sigs_rx[0][0][Msc_RS_idx],2*Msc_RS,2,1);
+#endif
 #endif
 #endif
 
@@ -45,6 +47,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
+      //      msg("Componentwise prod aa %d, symbol_offset %d\n",aa,symbol_offset);
       mult_cpx_vector_norep2((short*) &rxdataF_ext[aa][symbol_offset<<1],
 			     (short*) ul_ref_sigs_rx[0][0][Msc_RS_idx],
 			     (short*) &ul_ch_estimates[aa][symbol_offset],
@@ -72,8 +75,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  // interpolate between estimates
 	  if ((k != pilot_pos1) && (k != pilot_pos2))  {
-	    multadd_complex_vector_real_scalar((short*) ul_ch1,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
-	    multadd_complex_vector_real_scalar((short*) ul_ch2,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((short*) ul_ch1,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
+	    multadd_complex_vector_real_scalar((short*) ul_ch2,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	  }
 	} //for(k=...
 

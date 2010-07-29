@@ -27,23 +27,23 @@ int openair_get_adac_cnt() {
 }
 
 
-int openair_dma(unsigned int cmd) {
+int openair_dma(unsigned char card_id,unsigned int cmd) {
 
 #ifndef NOCARD_TEST
   int i;
   int res;
 
-  openair_readl(pdev[0],FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,&res);
+  openair_readl(pdev[card_id],FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,&res);
   //  printk("[openair][DMA] cmd %d\n",cmd);
 
   if ((res & FROM_GRLIB_IRQ_FROM_PCI) != 0) {
-    printk("[openair][DMA] Error: cmd %d, Leon IRQ active\n", cmd);
+    printk("[openair][DMA] Error: cmd %x, Leon IRQ active\n", cmd);
     return -1;
   }
-  printk("[openair][DMA] cmd %d\n",cmd);
+  printk("[openair][DMA] cmd %x on card %d\n",cmd,card_id);
 
   //openair_writel(cmd,bar[0]+REG_BAR+DMA_CMD);  // arms DMA
-  openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, ((cmd & FROM_GRLIB_IRQ_FROM_PCI_MASK) | FROM_GRLIB_IRQ_FROM_PCI));
+  openair_writel(pdev[card_id], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, ((cmd & FROM_GRLIB_IRQ_FROM_PCI_MASK) | FROM_GRLIB_IRQ_FROM_PCI));
   //  openair_writel(PCI_INTR_VAL,bar[0]+REG_BAR+PCI_INTR_OFF); // trigger interrupt
   //  openair_writel(PCI_INTR_VAL,PCI_INTR_OFF);
 

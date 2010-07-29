@@ -116,7 +116,7 @@ int signal_energy_nodc(int *input,unsigned int length) {
     mm1 = _m_psradi(mm1,shift);
     mm0 = _m_paddd(mm0,mm1);
     //    temp2 = mm0;
-    //    printf("%d %d\n",((int *)&temp2)[0],((int *)&temp2)[1]);
+    //    printf("%d %d\n",((int *)&in[i])[0],((int *)&in[i])[1]);
 
 
     //    printb = (short *)&mm2;

@@ -4,6 +4,7 @@
 #ifdef CBMIMO1
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #endif
 #ifdef PLATON
 #include "daq.h"
@@ -43,6 +44,7 @@ PHY_CONFIG *PHY_config;
 //float estimate_freq(short *);
 
 //unsigned int revbits(unsigned int x);
+int current_dlsch_cqi;
 
 //-----------------------------------------------------------------------------
 int main (int argc, char **argv) {
@@ -82,7 +84,8 @@ int main (int argc, char **argv) {
   char *chbch_pdu;
   int chbch_size;
 
- 
+  TX_VARS *TX_vars;
+
 #ifdef PLATON
   freq_t          freq;
 #endif 
@@ -105,14 +108,19 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 11 : TX SCCP/16QAM param 0/1 = 66 kHz frequency offset on/off\n");
     printf("[openair][INFO] Action 12 : TX I/Q impulses (delay test)\n");
     printf("[openair][INFO] Action 13 : TX real C/W fs/4 + offset with DC component - param 0/1 = 66 kHz frequency offset off/on\n");  
-    printf("[openair][INFO] Action 14 : SET RX RF Mode - param (CONFIG 0 (0-255), OPCNTL 0 (0-255), CONFIG 1 (0-255), OPCNTL 1 (0-255) )\n");
+    printf("[openair][INFO] Action 14 : SET RX RF Mode - param\n");
     printf("[openair][INFO] Action 15 : SET TCXO param (set > 255 to use calibrated value)\n");
     printf("[openair][INFO] Action 16 : SET CALIBRATED RX GAIN param (also turns off AGC)\n");
     printf("[openair][INFO] Action 22 : Update SoC firmware\n");
     printf("[openair][INFO] Action 25 : SET TIMING ADVANCE param\n");
     printf("[openair][INFO] Action 26 : SET FREQ OFFSET param\n");
     printf("[openair][INFO] Action 27 : Start Primary Clusterhead in cognitive mode - param 0/1 = frequency offset on/off - param NODE_ID\n");
-    printf("[openair][INFO] Action 39 : Send EMOS recording flag\n"); 
+    printf("[openair][INFO] Action 28 : Set UE DL MCS - param 0-31\n");
+    printf("[openair][INFO] Action 29 : Set UE UL MCS - param 0-31\n");
+    printf("[openair][INFO] Action 30 : Start UE UL NB RB 2-9\n");
+    printf("[openair][INFO] Action 31 : Start UE Rate Adaptation param 0/1\n");
+    printf("[openair][INFO] Action 32 : Set DLSCH Transmission Mode param 1-7\n");
+    printf("[openair][INFO] Action 33 : Set ULSCH Allocation Mode param 0-2\n");
     exit (-1);
   }
 
@@ -168,6 +176,18 @@ int main (int argc, char **argv) {
     printf("[openair][INFO][START] Action              is : SET_TIMING_ADVANCE\n");
   else if (action == 26) // Set freq offset
     printf("[openair][INFO][START] Action              is : SET_FREQ_OFFSET\n");
+  else if (action == 28) // 
+    printf("[openair][INFO][START] Action              is : SET_UE_DL_MCS\n");
+  else if (action == 29) // 
+    printf("[openair][INFO][START] Action              is : SET_UE_UL_MCS\n");
+  else if (action == 30) // 
+    printf("[openair][INFO][START] Action              is : SET_UE_UL_NB_RB\n");
+  else if (action == 31) // 
+    printf("[openair][INFO][START] Action              is : SET_DLSCH_RATE_ADAPTATION\n");
+  else if (action == 32) // 
+    printf("[openair][INFO][START] Action              is : SET_DLSCH_TRANSMISSION_MODE\n");
+  else if (action == 33) // 
+    printf("[openair][INFO][START] Action              is : SET_ULSCH_ALLOCATION_MODE\n");
   else if (action == 39) // Send EMOS Rec flag
     printf("[openair][INFO][START] Action              is : START_EMOS_NODEB\n");
   else {
@@ -197,6 +217,7 @@ int main (int argc, char **argv) {
   PHY_config = (PHY_CONFIG *)&PHY_config_mem;
   PHY_vars = malloc(sizeof(PHY_VARS));
   mac_xface = malloc(sizeof(MAC_xface));
+  TX_vars = malloc(sizeof(TX_VARS));
 
   reconfigure_MACPHY(scenario);
   printf("reconfigure_MACPHY() done.\n");
@@ -204,10 +225,12 @@ int main (int argc, char **argv) {
 #ifndef OPENAIR_LTE  
   phy_init(NB_ANTENNAS_TX);
 #else
+
   lte_frame_parms = &(PHY_config->lte_frame_parms);
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
+  lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->Ncp                = 1;
   lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
@@ -215,6 +238,7 @@ int main (int argc, char **argv) {
   lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = 6;
+  lte_frame_parms->mode1_flag  = 1; //default == SISO
   lte_frame_parms->Csrs = 2;
   lte_frame_parms->Bsrs = 0;
   lte_frame_parms->kTC = 0;
@@ -471,8 +495,8 @@ int main (int argc, char **argv) {
     break;
 
   case 9 :
-    printf("[openair][START][INFO] TX Test OFDM\n");
-
+    printf("[openair][START][INFO] TX Test OFDM, first_rb %d, nb_rb %d\n",atoi(argv[4]),atoi(argv[5]) );
+    /*
     if ((tx_frame_file = fopen("tx_frame.dat","w")) == NULL)
       {
 	printf("[openair][INFO] Cannot open tx_frame.dat data file\n");
@@ -480,18 +504,21 @@ int main (int argc, char **argv) {
       }
     
     //openair_generate_ofdm(1,0xffff,chbch_pdu);
-    openair_generate_ofdm(3,0,0);
+    openair_generate_ofdm(TX_vars,4,0,0);
 
-    printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
-    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)PHY_vars->tx_vars);
+    printf("[openair][START][INFO] TX_DMA_BUFFER = %p\n",TX_vars->TX_DMA_BUFFER[0]);
+    result=ioctl(openair_fd,openair_START_TX_SIG,(void *)TX_vars);
 #ifdef IFFT_FPGA
-    fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,1,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME,tx_frame_file);
+    fwrite(TX_vars->TX_DMA_BUFFER[0],1,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME,tx_frame_file);
 #else
-    fwrite(PHY_vars->tx_vars[0].TX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,tx_frame_file);
+    fwrite(TX_vars->TX_DMA_BUFFER[0],4,FRAME_LENGTH_COMPLEX_SAMPLES,tx_frame_file);
 #endif
     fclose(tx_frame_file);
+    */
 
-
+    fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) | (atoi(argv[4])<<7) | (atoi(argv[5])<<12);
+    result=ioctl(openair_fd,openair_START_OFDM_TEST,&fc);
+   
     break;
 
   case 10 :
@@ -680,12 +707,48 @@ case 24 :
     }
     break;
 
-	
-  case 39:
-    result=ioctl(openair_fd, openair_START_EMOS_NODEB);
-    if (result) printf("[openair][START][INFO][EMOS] NOK, ioctl failed\n");
+  case 28:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE DL MCS to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_DL_MCS, &fc);
     break;
 
+  case 29:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE UL MCS to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_UL_MCS, &fc);
+    break;
+
+  case 30:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET UE NB_RB to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_UE_UL_NB_RB, &fc);
+    break;
+
+  case 31:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET DLSCH Rate Adaptation to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_DLSCH_RATE_ADAPTATION, &fc);
+    break;
+
+  case 32:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET DLSCH Transmission Mode to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_DLSCH_TRANSMISSION_MODE, &fc);
+    break;
+
+  case 33:
+    
+    fc = atoi(argv[3]);
+    printf("[openair][START][INFO] SET ULSCH Allocation Mode to %d\n",fc);
+    result = ioctl(openair_fd,openair_SET_ULSCH_ALLOCATION_MODE, &fc);
+    break;
+	
   }
   
   close(openair_fd);

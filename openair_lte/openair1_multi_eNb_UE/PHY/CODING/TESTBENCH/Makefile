@@ -9,9 +9,17 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR                    = ../../..
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
+CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
 
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/INIT/lte_init.o $(TOP_DIR)/PHY/INIT/init_top.o $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dci.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o $(TOP_DIR)/PHY/CODING/lte_rate_matching.o $(TOP_DIR)/PHY/CODING/lte_segmentation.o $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o 
+
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
+
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
 
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/rate_matching.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi_lte.o $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o 
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o

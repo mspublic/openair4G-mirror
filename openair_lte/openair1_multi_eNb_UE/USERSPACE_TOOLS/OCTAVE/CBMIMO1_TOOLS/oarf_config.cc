@@ -123,6 +123,32 @@ DEFUN_DLD (oarf_config, args, nargout,"configure the openair interface - returns
   fclose(config);
 
   PHY_config->dual_tx = dual_tx;
+  PHY_config->tdd     = 0;
+
+  lte_frame_parms = &(PHY_config->lte_frame_parms);
+
+  lte_frame_parms->N_RB_DL            = 25;
+  lte_frame_parms->N_RB_UL            = 25;
+  lte_frame_parms->Ng_times6          = 1;
+  lte_frame_parms->Ncp                = 1;
+  lte_frame_parms->Nid_cell           = 0;
+  lte_frame_parms->nushift            = 0;
+  lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
+  lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = 6;
+  lte_frame_parms->mode1_flag  = 1; //default == SISO
+  lte_frame_parms->Csrs = 2;
+  lte_frame_parms->Bsrs = 0;
+  lte_frame_parms->kTC = 0;
+  lte_frame_parms->n_RRC = 0;
+  lte_frame_parms->symbols_per_tti = 12;
+  lte_frame_parms->ofdm_symbol_size = 512;
+  lte_frame_parms->log2_symbol_size = 9;
+  lte_frame_parms->samples_per_tti = 7680;
+  lte_frame_parms->first_carrier_offset = 362;
+  lte_frame_parms->nb_prefix_samples=128;
+  
 
   returnvalue=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)PHY_config);
 

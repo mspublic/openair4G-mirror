@@ -6,7 +6,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #endif
 
-void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
+void openair_generate_ofdm(TX_VARS *TX_vars,char format,unsigned short freq_alloc,char *pdu) {
 
   unsigned int i,l;
   unsigned char level;
@@ -33,8 +33,8 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     printf("Generate OFDM: CHSCH0 (symbols 0..63)\n");
     phy_generate_chbch(1,0,NB_ANTENNAS_TX,pdu);
     for (i=1;i<NUMBER_OF_SYMBOLS_PER_FRAME;i++) 
-      memcpy((void *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[i*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*2],
-	     (void *)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0],
+      memcpy((void *)&TX_vars->TX_DMA_BUFFER[i*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*2],
+	     (void *)&TX_vars->TX_DMA_BUFFER[0],
 	     OFDM_SYMBOL_SIZE_SAMPLES_NO_PREFIX*2);
     break;
 #else
@@ -49,7 +49,10 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     lte_eNB_ulsch_vars = &(PHY_vars->lte_eNB_ulsch_vars[0]);
     
     phy_init_top(NB_ANTENNAS_TX);
-    
+
+    TX_vars->TX_DMA_BUFFER[0] = (mod_sym_t *)TX_DMA_BUFFER[0][0];
+    TX_vars->TX_DMA_BUFFER[1] = (mod_sym_t *)TX_DMA_BUFFER[0][1];
+
     lte_frame_parms->twiddle_fft      = twiddle_fft;
     lte_frame_parms->twiddle_ifft     = twiddle_ifft;
     lte_frame_parms->rev              = rev;
@@ -110,67 +113,54 @@ void openair_generate_ofdm(char format,unsigned short freq_alloc,char *pdu) {
     //write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
 
-#ifdef BIT8_TXMUX
-    bit8_txmux(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,0);
-#endif //BIT8_TXMUX
-
-    write_output("pss.m","pss0", PHY_vars->tx_vars[0].TX_DMA_BUFFER,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,5);
+    write_output("pss.m","pss0", TX_vars->TX_DMA_BUFFER[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,5);
 
     free(txdataF[0]);
     free(txdataF[1]);
-#endif
+#endif  //IFFT_FPGA
     free(txdataF);
     break;
   case 4:
-    txdataF    = (mod_sym_t **)malloc16(2*sizeof(mod_sym_t*));
-    txdataF[0] = (mod_sym_t *) PHY_vars->tx_vars[0].TX_DMA_BUFFER;
-    txdataF[1] = (mod_sym_t *) PHY_vars->tx_vars[1].TX_DMA_BUFFER;
+    phy_init_top(2);
+    printf("TX_DMA_BUFFER[0] = %p, TX_DMA_BUFFER[1] = %p\n",
+	   TX_DMA_BUFFER[0][0],TX_DMA_BUFFER[0][1]);
+    TX_vars->TX_DMA_BUFFER[0] = (mod_sym_t *)TX_DMA_BUFFER[0][0];
+    TX_vars->TX_DMA_BUFFER[1] = (mod_sym_t *)TX_DMA_BUFFER[0][1];
 
     for (l=1;l<120;l++) {
       for (i=0;i<75;i+=3) {
 	rv = ptaus();
 	rv = rv & 0x03030303;
-	((char*)&rv)[0] = ((char*)&rv)[0]+1;
-	((char*)&rv)[1] = ((char*)&rv)[1]+1;
-	((char*)&rv)[2] = ((char*)&rv)[2]+1;
-	((char*)&rv)[3] = ((char*)&rv)[3]+1;
-	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i] = rv;
+	((unsigned char*)&rv)[0] = ((unsigned char*)&rv)[0]+1;
+	((unsigned char*)&rv)[1] = ((unsigned char*)&rv)[1]+1;
+	((unsigned char*)&rv)[2] = ((unsigned char*)&rv)[2]+1;
+	((unsigned char*)&rv)[3] = ((unsigned char*)&rv)[3]+1;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[0])[l*75+i] = rv;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[1])[l*75+i] = rv;
 	
 	rv = ptaus();
 	rv = rv & 0x03030303;
-	((char*)&rv)[0] = ((char*)&rv)[0]+1;
-	((char*)&rv)[1] = ((char*)&rv)[1]+1;
-	((char*)&rv)[2] = ((char*)&rv)[2]+1;
-	((char*)&rv)[3] = ((char*)&rv)[3]+1;
-	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i+1] = rv;
+	((unsigned char*)&rv)[0] = ((unsigned char*)&rv)[0]+1;
+	((unsigned char*)&rv)[1] = ((unsigned char*)&rv)[1]+1;
+	((unsigned char*)&rv)[2] = ((unsigned char*)&rv)[2]+1;
+	((unsigned char*)&rv)[3] = ((unsigned char*)&rv)[3]+1;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[0])[l*75+i+1] = rv;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[1])[l*75+i+1] = rv;
 
 	rv = ptaus();
 	rv = rv & 0x03030303;
-	((char*)&rv)[0] = ((char*)&rv)[0]+1;
-	((char*)&rv)[1] = ((char*)&rv)[1]+1;
-	((char*)&rv)[2] = ((char*)&rv)[2]+1;
-	((char*)&rv)[3] = ((char*)&rv)[3]+1;
-	((unsigned int *)PHY_vars->tx_vars[0].TX_DMA_BUFFER)[l*75+i+2] = rv;
+	((unsigned char*)&rv)[0] = ((unsigned char*)&rv)[0]+1;
+	((unsigned char*)&rv)[1] = ((unsigned char*)&rv)[1]+1;
+	((unsigned char*)&rv)[2] = ((unsigned char*)&rv)[2]+1;
+	((unsigned char*)&rv)[3] = ((unsigned char*)&rv)[3]+1;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[0])[l*75+i+2] = rv;
+	((unsigned int *)TX_vars->TX_DMA_BUFFER[1])[l*75+i+2] = rv;
 
-	/*
-	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i] = 0x01020304;	
-	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i+1] = 0x04030201;
-	((unsigned int *)PHY_vars->tx_vars[1].TX_DMA_BUFFER)[(l+1)*75+i+2] = 0x02030104;
-	*/
       }     
     }
 
-    /*
-    generate_pilots(txdataF,
-		    256,
-		    lte_frame_parms,
-		    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-    generate_pss(txdataF,
-		 256,
-		 lte_frame_parms,
-		 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
-    */
-#endif
+
+#endif // OPENAIR_LTE
 
   default:
     break;

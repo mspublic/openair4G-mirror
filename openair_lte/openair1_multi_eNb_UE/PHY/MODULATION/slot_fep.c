@@ -27,7 +27,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: offset %d, symbol %d, nb_prefix_samples %d\n",offset, symbol, nb_prefix_samples);
+  msg("slot_fep: symbol %d, nb_prefix_samples %d\n",symbol, nb_prefix_samples);
 #endif
   
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
@@ -49,7 +49,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
 	printf("Channel estimation eNb %d, aatx %d\n",eNb_id,aa);
 #endif
-	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[eNb_id],
+	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[0],
 				  ue_common_vars->rxdataF,
 				  eNb_id,
 				  frame_parms,

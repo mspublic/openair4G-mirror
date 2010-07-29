@@ -8,9 +8,11 @@ hold off
 
 gpib_card=0;      % first GPIB PCI card in the computer
 gpib_device=28;   % this is configured in the signal generator Utilities->System->GPIB->Address menu
-freqband=1;            % frequency band used by the openair card
+freqband=0;            % frequency band used by the openair card
 
-fc = 1902600e3+5e6*freqband;   % this has to be the same as in the config file
+%fc = 1902600e3+5e6*freqband-(1043.1e6);   % this has to be the same as in the config file
+fc = 1902600e3+5e6*freqband;
+
 fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;
@@ -27,12 +29,13 @@ gpib_send(gpib_card,gpib_device,'POW -90dBm');
 gpib_send(gpib_card,gpib_device,sprintf("FREQ %dHz",fref));
 
 oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
+#oarf_set_rx_rfmode(1);
 
 saturation_threshold =5;              % min number of samples (real+imaginary) equal to the max per frame to declare saturation
 
-ALL_power_dBm = [-85];
+ALL_power_dBm = [-95];
 ALL_rxrfmode = 0:2;
-ALL_gain2391 = 5:5:175;           % this is some strange scale
+ALL_gain2391 = 5:10:160;           % this is some strange scale
 ALL_gain9862 = 0; %:1:18;             % this in in dB
 
 %fprintf(fid, 'Tx Power (dBm), gain2391, gain9862, Signal strength Rx0, Signal Strength Rx1, Gain Rx0, Gain Rx1, Noise Rx0, Noise Rx1, SNR Rx0, SNR Rx1, NF Rx0, NF Rx1\n');
@@ -50,10 +53,11 @@ NF1 = zeros(length(ALL_power_dBm),length(ALL_gain2391));
 SNR0 = zeros(length(ALL_power_dBm),length(ALL_gain2391));
 SNR1 = zeros(length(ALL_power_dBm),length(ALL_gain2391));
 
-min_agc_level = 96;  %ceil(min(max(G0,[],1)));
+min_agc_level = 130; %min_agc_level = 90;  %ceil(min(max(G0,[],1)));
 max_agc_level = 150; %floor(max(max(G0,[],1)));
 
 oarf_set_calibrated_rx_gain(0); % turns off the AGC
+#oarf_set_rx_rfmode(2);
 
 idx_power = 1;
 for power_dBm=ALL_power_dBm
@@ -66,8 +70,9 @@ for power_dBm=ALL_power_dBm
     for gain2391= [0 0 0 ALL_gain2391] %the first 3 runs give strange results, so we run the loop 3 times more
  
        oarf_set_rx_gain(gain2391,gain2391,gain9862,gain9862);
+	   oarf_set_rx_rfmode(1);
        oarf_stop(freqband); %this actually writes the gain to the registers
-       sleep(1);
+       sleep(.5);
 
        if 1
        % signal measurement
@@ -120,8 +125,8 @@ for power_dBm=ALL_power_dBm
        S1(idx_power,idx_gain2391) = 10*log10(SpN1(idx_power,idx_gain2391)-N1(idx_power,idx_gain2391));
        G0(idx_power,idx_gain2391) = S0(idx_power,idx_gain2391) - power_dBm;
        G1(idx_power,idx_gain2391) = S1(idx_power,idx_gain2391) - power_dBm;
-       NF0(idx_power,idx_gain2391) = 10*log10(N0(idx_power,idx_gain2391)) - G0(idx_power,idx_gain2391) + 108;   % 108 is the thermal noise
-       NF1(idx_power,idx_gain2391) = 10*log10(N1(idx_power,idx_gain2391)) - G1(idx_power,idx_gain2391) + 108;
+       NF0(idx_power,idx_gain2391) = 10*log10(N0(idx_power,idx_gain2391)) - G0(idx_power,idx_gain2391) + 107;   % 108 is the thermal noise
+       NF1(idx_power,idx_gain2391) = 10*log10(N1(idx_power,idx_gain2391)) - G1(idx_power,idx_gain2391) + 107;
        SNR0(idx_power,idx_gain2391) = S0(idx_power,idx_gain2391)-10*log10(N0(idx_power,idx_gain2391));
        SNR1(idx_power,idx_gain2391) = S1(idx_power,idx_gain2391)-10*log10(N1(idx_power,idx_gain2391));
 

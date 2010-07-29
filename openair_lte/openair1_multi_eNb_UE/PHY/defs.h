@@ -27,8 +27,8 @@
 
 #define openair_sched_exit() exit(-1)
 
-#define max(a,b)  ((a>b) ? (a) : (b))
-#define min(a,b)  ((a<b) ? (a) : (b))
+#define max(a,b)  ((a)>(b) ? (a) : (b))
+#define min(a,b)  ((a)<(b) ? (a) : (b))
 
 #else // USER_MODE
 #include "ARCH/COMMON/defs.h"
@@ -118,24 +118,36 @@ typedef struct
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
-  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
+  //  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
+  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX][2];
-  LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  *dlsch_eNb_cntl;
-  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
+  LTE_eNb_DLSCH_t  **dlsch_eNb;
+  LTE_eNb_ULSCH_t  **ulsch_eNb;
+  LTE_eNb_DLSCH_t  *dlsch_eNb_cntl,*dlsch_eNb_1A,*dlsch_eNb_ra;
+  LTE_eNB_UE_stats eNB_UE_stats[1];
 
   char dlsch_eNb_active;
   char dlsch_eNb_cntl_active;
+  char dlsch_eNb_ra_active;
+  char dlsch_eNb_1A_active;
+  char eNb_generate_rar;
+  char eNb_generate_rag_ack;
+
+  int ulsch_errors[3],ulsch_consecutive_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
+  unsigned int max_peak_val; 
+
+  int max_eNb_id, max_sync_pos;
+  unsigned char first_run_timing_advance;
+  unsigned char first_run_I0_measurements;
 
   unsigned char    is_secondary_eNb; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   unsigned char    PeNb_id;          /// id of Primary eNb
   int              rx_offset;        /// Timing offset (used if is_secondary_eNb)
-  unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
 
   /// hold the precoder for NULL beam to the primary user
   int              **dl_precoder_SeNb[3];
@@ -144,8 +156,14 @@ typedef struct
 #ifdef USER_MODE
   double   const_ch[4][2]; // constant channel coefficient
 #endif
-
 } PHY_VARS_eNB;
+
+#ifndef USER_MODE
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
+#else
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) msg
+#endif
+
 
 /// Top-level PHY Data Structure for UE 
 typedef struct
@@ -153,26 +171,45 @@ typedef struct
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
+  unsigned int rx_total_gain_eNB_dB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];
-  //  LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH     *lte_ue_dlsch_vars_1A[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
-  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_cntl;
+  LTE_UE_DLSCH_t   **dlsch_ue;
+  LTE_UE_ULSCH_t   **ulsch_ue;
+  LTE_UE_DLSCH_t   *dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
+  UE_MODE_t        UE_mode;
 
   char dlsch_ue_active;
   char dlsch_ue_cntl_active;
-  int dlsch_errors, dlsch_cntl_errors, dci_errors, turbo_iterations, turbo_cntl_iterations;
+  char dlsch_ue_ra_active;
+  char dlsch_ue_1A_active;
+  char ulsch_no_allocation_counter;
+
+  char ulsch_ue_rag_active;
+  unsigned int  ulsch_ue_rag_frame;
+  unsigned char ulsch_ue_rag_subframe;
+  unsigned char rag_timer;
+  int dci_errors, turbo_iterations, turbo_cntl_iterations;
+  int dlsch_errors;
+  int dlsch_errors_last;
+  int dlsch_received;
+  int dlsch_received_last;
+  int dlsch_fer;
+  int dlsch_cntl_errors;
+  int dlsch_ra_errors;
+  int current_dlsch_cqi;
+  unsigned char first_run_timing_advance;
 
   unsigned char    is_secondary_ue; // primary by default
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
-  unsigned char    nb_virtual_tx;    /// Number of virtual tx antennas
 
   /// hold the precoder for NULL beam to the primary eNb
   int              **ul_precoder_S_UE;
@@ -183,7 +220,6 @@ typedef struct
 #endif
 
 } PHY_VARS_UE;
-
 
 #include "PHY/INIT/defs.h"
 

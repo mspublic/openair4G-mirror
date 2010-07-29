@@ -43,7 +43,9 @@ int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length, int
 int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      int eNb_id,
-		      int length);
+		      int length,
+		      int* peak_val,
+		      unsigned int* sync_corr_eNb);
 
 
 /*! \fn int lte_dl_channel_estimation(int **dl_ch_estimates,
@@ -131,6 +133,23 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char l,
 			      unsigned char Ns,
 			      unsigned int N_rb_alloc);
+
+int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
+			   LTE_eNB_COMMON *lte_eNb_common,
+			   unsigned int *eNb_id,
+			   unsigned char clear,
+			   unsigned char number_of_cards,
+			   short coef);
+
+void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
+			     unsigned char eNB_id,
+			     unsigned char clear);
+
+
+void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
+			      unsigned char eNB_id,
+			      unsigned char UE_id,
+			      unsigned char init_averaging);
 
 
 /** @} */ 

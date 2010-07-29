@@ -64,6 +64,10 @@ int add_vector16(short *x,
     z_128 +=4;
 
   }
+
+  _mm_empty();
+  _m_empty();
+
   return(0);
 }
 
@@ -107,6 +111,9 @@ int add_vector16_64(short *x,
     
 
   }
+
+  _mm_empty();
+  _m_empty();
   return(0);
 }
 
@@ -139,6 +146,8 @@ int add_cpx_vector32(short *x,
     z_128 +=4;
 
   }
+  _mm_empty();
+  _m_empty();
   return(0);
 }
 
@@ -170,6 +179,9 @@ int add_real_vector64(short *x,
     z_128+=4;
 
   }
+
+  _mm_empty();
+  _m_empty();
   return(0);
 }
 
@@ -201,6 +213,8 @@ int sub_real_vector64(short *x,
     z_128+=4;
 
   }
+  _mm_empty();
+  _m_empty();
   return(0);
 }
 

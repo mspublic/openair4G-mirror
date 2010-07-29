@@ -42,7 +42,7 @@ FD_lte_scope *form;
 //short channel_f[2048];
 //char demod_data[2048];
 
-short *channel[4],*channel_f[4],*rx_sig[4];
+short *channel[4],*channel_f[4],*rx_sig[4],**rx_sig_ptr;
 int *sync_corr;
 short *pbch_llr,*pbch_comp;
 short *dlsch_llr,*dlsch_comp;
@@ -181,7 +181,7 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->decoder_input,llr_time,llr,192,"","","");
-  fl_set_xyplot_ybounds(form->decoder_input,-50,50);
+  fl_set_xyplot_ybounds(form->decoder_input,-100,100);
 
   j=0;
   for(i=0;i<12*12;i++) {
@@ -197,8 +197,8 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot,I,Q,12*12,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot,-50,50);
-  fl_set_xyplot_ybounds(form->scatter_plot,-50,50);
+  fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+  fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
 
   for(i=0;i<12*12*7*2;i++) {
     llr[i] = (float) dlsch_llr[i];
@@ -207,7 +207,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,12*12*7*2,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-50,50);
+  fl_set_xyplot_ybounds(form->demod_out,-100,100);
 
   j=0;
   for (s=2;s<12;s++) {
@@ -225,10 +225,10 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-50,50);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-50,50);
+  fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
+  fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
 
-  usleep(100000);
+  usleep(500000);
 }
 //-----------------------------------------------------------------------------
 do_scope(){
@@ -254,6 +254,7 @@ int main(int argc, char *argv[]) {
 
   LTE_UE_DLSCH     *lte_ue_dlsch;
   LTE_UE_PBCH      *lte_ue_pbch;
+  unsigned int     bigphys_top;
 
   PHY_vars = malloc(sizeof(PHY_VARS));
 
@@ -273,8 +274,11 @@ int main(int argc, char *argv[]) {
 
   ioctl(openair_fd,openair_GET_CONFIG,PHY_config);
 
-  printf("PHY_vars->tx_vars[0].TX_DMA_BUFFER = %p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
-  printf("PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
+  ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
+
+  printf("Bigphys_top = %p\n",bigphys_top);
+  printf("TX_DMA_BUFFER = %p\n",PHY_vars->lte_ue_common_vars.txdataF);
+  printf("RX_DMA_BUFFER = %p\n",PHY_vars->lte_ue_common_vars.rxdata);
   printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars->lte_ue_common_vars.dl_ch_estimates[0]);
   //  printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars->lte_ue_common_vars.sync_corr);
   printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
@@ -299,47 +303,52 @@ int main(int argc, char *argv[]) {
   else
     msg("Could not map physical memory\n");
 
+  //  txdata0 = (int *)(mem_base + PHY_vars->lte_ue_common_vars.txdataF) - 
   for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
 
     channel_f[i] = (short*)(mem_base + 
 			    (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] + 
 			    nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			    i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
-			    (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+			    bigphys_top);
 
     channel[i] = (short*)(mem_base + 
 			  (unsigned int)PHY_vars->lte_ue_common_vars.dl_ch_estimates_time + 
 			  nb_ant_rx*nb_ant_tx*sizeof(int*) + 
 			  i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
-			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+			  bigphys_top);
 
-    rx_sig[i] = (short *)(mem_base + 
-			  (unsigned int)PHY_vars->rx_vars[i].RX_DMA_BUFFER-
-			  (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-
+    // fix this for visualizing more than 1 antenna!!!
+    rx_sig_ptr = (short **)(mem_base + 
+			(unsigned int)PHY_vars->lte_ue_common_vars.rxdata -
+			bigphys_top);
+    rx_sig[i] = (short *)(mem_base + (unsigned int)rx_sig_ptr[i] - bigphys_top); 
   }
 
-  /*
+  /*  
   sync_corr = (int*)(mem_base + 
-		     (unsigned int)PHY_vars->lte_ue_common_vars.sync_corr - 
-		     (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+		     (unsigned int)PHY_vars->lte_lte_ue_common_vars.sync_corr - 
+		     bigphys_top);
   printf("sync_corr = %p\n", sync_corr);
   */
 
   // only if UE
   lte_ue_pbch = (LTE_UE_PBCH *) (mem_base + 
 				 (unsigned int)PHY_vars->lte_ue_pbch_vars[0] - 
-				 (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
-  printf("lte_ue_pbch = %p\n",lte_ue_pbch);
+				 bigphys_top);
+
+  printf("lte_ue_pbch (kernel) = %p\n",PHY_vars->lte_ue_pbch_vars[0]);
+  printf("lte_ue_pbch (local)= %p\n",lte_ue_pbch);
+  printf("lte_ue_pbch->llr = %p\n",lte_ue_pbch->llr);
 
   pbch_comp = (short*)(mem_base + 
 		       (unsigned int)lte_ue_pbch->rxdataF_comp + 
 		       nb_ant_rx*nb_ant_tx*sizeof(int*) - 
-		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+		       bigphys_top);
   
   pbch_llr = (short*) (mem_base + 
 		       (unsigned int)lte_ue_pbch->llr - 
-		       (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+		       bigphys_top);
   
   printf("pbch_comp = %p\n",pbch_comp);
   printf("pbch_llr= %p\n",pbch_llr);
@@ -347,17 +356,19 @@ int main(int argc, char *argv[]) {
 
   lte_ue_dlsch = (LTE_UE_DLSCH *) (mem_base + 
 				   (unsigned int)PHY_vars->lte_ue_dlsch_vars[0] - 
-				   (unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+				   bigphys_top);
+
+  printf("lte_ue_dlsch (kernel)= %p\n",PHY_vars->lte_ue_dlsch_vars[0]);
   printf("lte_ue_dlsch = %p\n",lte_ue_dlsch);
 
   dlsch_comp = (short*)(mem_base + 
 			(unsigned int)lte_ue_dlsch->rxdataF_comp + 
 			nb_ant_rx*nb_ant_tx*sizeof(int*) - 
-			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+			bigphys_top);
   
   dlsch_llr = (short*) (mem_base + 
 			(unsigned int)lte_ue_dlsch->llr[0] - 
-			(unsigned int)&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0]);
+			bigphys_top);
 
   printf("dlsch_comp = %p\n",dlsch_comp);
   printf("dlsch_llr = %p\n",dlsch_llr);

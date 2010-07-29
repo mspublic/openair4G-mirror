@@ -17,6 +17,7 @@ The present clause specifies several numerical functions for testing of digital 
 */
 inline unsigned int taus();
 
+
 /* \fn void set_taus_seed(unsigned int seed_init)
 \brief Sets the seed for the Tausworthe generator.
 @param seed_init 0 means generate based on CPU time, otherwise provide the seed

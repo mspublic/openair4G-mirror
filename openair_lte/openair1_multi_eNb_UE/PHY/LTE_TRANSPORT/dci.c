@@ -9,8 +9,6 @@
 #include <string.h>
 #endif
 #include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
-#include "extern.h"
 #include "PHY/extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
@@ -28,11 +26,31 @@ __m128i zero2;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero2,(xmmy)))
 #endif
 
+extern unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
 
+unsigned int check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,unsigned int mprime) {
+
+  unsigned short i;
+  unsigned short Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
+
+  //  printf("Checking phich_reg %d\n",mprime);
+  if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
+    Ngroup_PHICH++;
+
+  if (frame_parms->Ncp == 1) {
+    Ngroup_PHICH<<=1;
+  }
+
+
+  for (i=0;i<Ngroup_PHICH;i++)
+    if (mprime == phich_reg_ext[i][1])
+      return(1);
+  return(0);
+}
 
 unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
 
-  unsigned short crc16,i,*dci16=(short*)dci;
+  unsigned short crc16,*dci16=(unsigned short*)dci;
   
   /*
   unsigned char crc;
@@ -60,6 +78,8 @@ unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
   return((unsigned short)crc16);
 
 }
+
+
 
 static unsigned char d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
 static unsigned char w[3*3*(MAX_DCI_SIZE_BITS+16)];
@@ -112,7 +132,7 @@ unsigned char *generate_dci0(unsigned char *dci,
 			     unsigned char aggregation_level,
 			     unsigned short rnti) {
   
-  unsigned short coded_bits,i;
+  unsigned short coded_bits;
 
   if (aggregation_level>3) {
     msg("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
@@ -220,6 +240,13 @@ void pdcch_demapping(unsigned short *llr,unsigned short *wbar,LTE_DL_FRAME_PARMS
 
       symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(1+lprime);
   
+
+      // if REG is allocated to PHICH, skip it
+      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
+	//	msg("generate_dci: skipping REG %d\n",kprime>>2);
+	kprime+=4;
+      }
+
       // Copy REG to TX buffer
       for (i=0;i<4;i++) {
 	
@@ -793,13 +820,13 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   _m_empty();
 
 }
-/*
+
 void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 		int **rxdataF_comp,
 		unsigned char l) {
 
 
-  unsigned char symbol_offset,second_pilot,rb,re,jj,ii;
+  unsigned char rb,re,jj,ii;
 
   jj=0;
   ii=0;
@@ -812,7 +839,7 @@ void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     }
   }
 }
-*/
+
 
 void pdcch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
 		    int **rxdataF_comp,
@@ -928,15 +955,14 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 
   
 
-    if (mimo_mode == SISO) {
-      //    pdcch_siso(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
-    }
+    if (mimo_mode == SISO) 
+      pdcch_siso(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
     else
       pdcch_alamouti(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
 
     pdcch_llr(frame_parms,
 	      lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,
-	      lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,
+	      (char *)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,
 	      s);
 
 
@@ -949,11 +975,10 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   pdcch_deinterleaving((unsigned short*)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->e_rx,
 		       lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->wbar,
 		       frame_parms->Nid_cell);
-
   if (is_secondary_ue) {
     frame_parms->nb_antennas_tx = 1;
   }  
-
+  return(0);
 }
 	     
 
@@ -981,6 +1006,9 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
   unsigned char qpsk_table_offset = 0; 
   unsigned char qpsk_table_offset2 = 0;
 #endif
+
+
+
 
   wbar[0] = &wbar0[0];
   wbar[1] = &wbar1[0];
@@ -1024,14 +1052,15 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
   // Now do modulation
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   e_ptr = e;
-  switch (frame_parms->nb_antennas_tx) {
+  if (frame_parms->mode1_flag) { //SISO
 
-  case 1:
 #ifndef IFFT_FPGA
     for (i=0;i<Msymb;i++) {
       ((short*)(&(y[0][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((short*)(&(y[1][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
       ((short*)(&(y[0][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((short*)(&(y[1][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
     }
 #else
@@ -1045,18 +1074,18 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
       e_ptr++;
       
       y[0][i] = (mod_sym_t) qpsk_table_offset;
+      y[1][i] = (mod_sym_t) qpsk_table_offset;
     }
 
 #endif
-    
-    break;
+  }
+  else { //ALAMOUTI    
 
-  case 2:
 #ifndef IFFT_FPGA
       for (i=0;i<Msymb;i+=2) {
 
 #ifdef DEBUG_DCI_ENCODING
-  msg("PDCCH Modulation: REG %d\n",i>>2);
+	msg("PDCCH Modulation: REG %d\n",i>>2);
 #endif
 	// first antenna position n -> x0
 	((short*)&y[0][i])[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
@@ -1120,12 +1149,6 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 	y[0][i+1] = (mod_sym_t) qpsk_table_offset2;  // x1
       }
 #endif    
-      break;
-  default:
-    msg("dci.c: generate_dci_top(), unsupported number of antennas %d\n",frame_parms->nb_antennas_tx);
-    return;
-    break;
-
   }
 
 
@@ -1155,7 +1178,13 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 #else
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(1+lprime+(sub_frame_offset*nsymb));
 #endif
-      // Copy REG to TX buffer
+
+      // if REG is allocated to PHICH, skip it
+      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
+	//	msg("decoding_dci: skipping REG %d\n",kprime>>2);
+	kprime+=4;
+      }
+      // Copy REG to TX buffer      
       for (i=0;i<4;i++) {
 	
 
@@ -1243,7 +1272,9 @@ void dci_decoding(unsigned char DCI_LENGTH,
   for (i=0;i<16+DCI_LENGTH;i++)
     msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 #endif  
+  //debug_msg("Doing DCI Viterbi \n");
   phy_viterbi_lte_sse2(d_rx+96,decoded_output,16+DCI_LENGTH);
+  //debug_msg("Done DCI Viterbi \n");
 }
 
 
@@ -1254,8 +1285,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      short eNb_id,
 				      LTE_DL_FRAME_PARMS *frame_parms,
 				      unsigned short si_rnti,
-				      unsigned short ra_rnti,
-				      unsigned short c_rnti) {
+				      unsigned short ra_rnti) {
   
   unsigned short crc,dci_cnt,first_found,second_found,dci_len;
   int i;
@@ -1274,14 +1304,14 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
 
-  /*    
+  /*      
   for (i=0;i<3+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
 
   msg("CRC 0/1A: %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  
   */
-
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1294,23 +1324,39 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("DCI Aggregation 8: Found DCI 1A (SI_RNTI) in first position\n");
 #endif
   }
-  else if (crc == c_rnti) {
+  else if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
-    dci_alloc[dci_cnt].rnti       = c_rnti;
+    dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
+
+    if (((DCI0_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type == 0) {
+      dci_alloc[dci_cnt].format     = format0;
+      //      printf("DCI Format 0\n");
+    }
+    else {
+      /*
+      printf("DCI cnt %d : Format 1A (type %d,mcs %d, rv %d,hpid %d)\n",dci_cnt,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->rv,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->mcs,
+	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->harq_pid);
+      */
+      dci_alloc[dci_cnt].format     = format1A;
+    }
+
+
     dci_cnt++;
     first_found=1;
 #ifdef DEBUG_DCI_DECODING
-    msg("DCI Aggregation 8: Found DCI 0 (C_RNTI) in first position\n");
+    msg("DCI Aggregation 8: Found DCI 0 (C_RNTI) in first position (format %d)\n",dci_alloc[dci_cnt].format);
 #endif
   }
   else if (crc == ra_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = ra_rnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
+    dci_alloc[dci_cnt].format     = format1A;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
     dci_cnt++;
     first_found=1;
@@ -1327,13 +1373,13 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	       dci_decoded_output);
   crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-  /*      
+  /*        
   for (i=0;i<dci_len/8;i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
+  
   */
-
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1346,12 +1392,20 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("DCI Aggregation 8: Found DCI 1A (SI_RNTI) in second position\n");
 #endif
   }
-  else if (crc == c_rnti) {
+  else if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
-    dci_alloc[dci_cnt].rnti       = c_rnti;
+    dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
+
+    if (((DCI0_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type == 0) {
+      //      printf("Format 0\n");
+      dci_alloc[dci_cnt].format     = format0;
+    }
+    else {
+      dci_alloc[dci_cnt].format     = format1A;
+      //      printf("Format 1A\n");
+    }
     dci_cnt++;
     second_found = 1;
 #ifdef DEBUG_DCI_DECODING
@@ -1362,7 +1416,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = ra_rnti;
     dci_alloc[dci_cnt].L          = 8;
-    dci_alloc[dci_cnt].format     = format0;
+    dci_alloc[dci_cnt].format     = format1A;
     memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI0_5MHz_TDD_1_6_t));
     dci_cnt++;
     second_found = 1;
@@ -1383,7 +1437,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
     crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-    /*    
+    /*        
   for (i=0;i<1+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
@@ -1391,9 +1445,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1425,9 +1479,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1451,17 +1505,17 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
 
     crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-    /*    
+    /*
   for (i=0;i<3+(dci_len/8);i++)
     msg("i %d : %x\n",i,dci_decoded_output[i]);
 
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    
     */
+    
 
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_M10PRB;;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
@@ -1492,9 +1546,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     msg("CRC : %x\n",crc);
     msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
     */
-    if (crc == c_rnti) {
+    if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
-      dci_alloc[dci_cnt].rnti       = c_rnti;
+      dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
       memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));

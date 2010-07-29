@@ -126,7 +126,7 @@ int mult_cpx_vector_norep2(short *x1,
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   unsigned short output_shift);
+			   int output_shift);
  
 int mult_cpx_vector_norep_conj(short *x1, 
 			       short *x2, 
@@ -492,6 +492,22 @@ int dot_product(short *x,
 		unsigned int N, //must be a multiple of 8
 		unsigned char output_shift);
 
+
+void dft24(int *x,int *y,unsigned char scale_flag);
+void dft36(int *x,int *y,unsigned char scale_flag);
+void dft48(int *x,int *y,unsigned char scale_flag);
+void dft60(int *x,int *y,unsigned char scale_flag);
+void dft72(int *x,int *y,unsigned char scale_flag);
+void dft96(int *x,int *y,unsigned char scale_flag);
+void dft108(int *x,int *y,unsigned char scale_flag);
+void dft120(int *x,int *y,unsigned char scale_flag);
+void dft144(int *x,int *y,unsigned char scale_flag);
+void dft180(int *x,int *y,unsigned char scale_flag);
+void dft192(int *x,int *y,unsigned char scale_flag);
+void dft216(int *x,int *y,unsigned char scale_flag);
+void dft240(int *x,int *y,unsigned char scale_flag);
+void dft288(int *x,int *y,unsigned char scale_flag);
+void dft300(int *x,int *y,unsigned char scale_flag);
 
 /** @} */ 
 

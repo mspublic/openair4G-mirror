@@ -75,6 +75,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 
 #ifdef EMOS
 #include "phy_procedures_emos.h"
+extern  fifo_dump_emos_UE emos_dump_UE;
 #endif
 
 /// Mutex for instance count on MACPHY scheduling 
@@ -118,8 +119,8 @@ extern pthread_cond_t dlsch_cond[8];
 #ifdef CBMIMO1
 #define NUMBER_OF_CHUNKS_PER_SLOT NUMBER_OF_OFDM_SYMBOLS_PER_SLOT
 #define NUMBER_OF_CHUNKS_PER_FRAME (NUMBER_OF_CHUNKS_PER_SLOT * SLOTS_PER_FRAME)
-#define SYNCH_WAIT_TIME 4096  // number of symbols between SYNCH retries
-#define SYNCH_WAIT_TIME_RUNNING 128  // number of symbols between SYNCH retries
+#define SYNCH_WAIT_TIME 4000  // number of symbols between SYNCH retries
+#define SYNCH_WAIT_TIME_RUNNING 100  // number of symbols between SYNCH retries
 #define DRIFT_OFFSET 300
 #define NS_PER_SLOT 500000
 #define MAX_DRIFT_COMP 3000
@@ -132,7 +133,10 @@ unsigned char first_sync_call;
 
 void openair1_restart(void) {
 
-  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+  int i;
+  
+  for (i=0;i<number_of_cards;i++)
+    openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
   //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
   mac_xface->frame = 0;
@@ -146,12 +150,10 @@ void openair1_restart(void) {
   }
   */
 
-#ifndef EMOS		
 #ifdef OPENAIR2
-  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
   mac_resynch();
 #endif //OPENAIR2
-#endif //EMOS
 
 }
 
@@ -168,7 +170,7 @@ static void * openair_thread(void *param) {
 
 
   u8           next_slot, last_slot;
-  unsigned int time_in,time_out;
+  unsigned int time_in,time_out,i;
   int diff;
 
 
@@ -186,21 +188,30 @@ static void * openair_thread(void *param) {
   
   msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
-  if (mac_xface->is_primary_cluster_head == 1)
+  if (mac_xface->is_primary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
-  else if (mac_xface->is_secondary_cluster_head == 1)
+  }
+  else if (mac_xface->is_secondary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
-  else
+  }
+  else {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
-  
+  }
   
   exit_openair = 0;
   
-
-  PHY_vars->rx_vars[0].rx_total_gain_dB = MIN_RF_GAIN;//138;
+  if (mac_xface->is_primary_cluster_head ==1) {
+    PHY_vars->rx_total_gain_dB = 138;
+    PHY_vars->rx_total_gain_eNB_dB = 138;
+  }
+  else {
+    PHY_vars->rx_total_gain_dB = MIN_RF_GAIN;
+    PHY_vars->rx_total_gain_eNB_dB = MIN_RF_GAIN;
+  }
 
 #ifdef CBMIMO1  
-  openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
+  for (i=0;i<number_of_cards;i++) 
+    openair_set_rx_gain_cal_openair(i,PHY_vars->rx_total_gain_dB);
 #endif
 	
   // turn off AGC by default
@@ -214,8 +225,9 @@ static void * openair_thread(void *param) {
   openair_daq_vars.sched_cnt = 0;
   openair_daq_vars.instance_cnt = -1;
 
-  Zero_Buffer(&PHY_vars->tx_vars[0].TX_DMA_BUFFER[0],
-  	      4*SLOT_LENGTH_BYTES_NO_PREFIX);
+  for (i=0;i<number_of_cards;i++) 
+    Zero_Buffer((void*)TX_DMA_BUFFER[i][0],
+		4*SLOT_LENGTH_BYTES_NO_PREFIX);
 
   while (exit_openair == 0){
     
@@ -242,9 +254,7 @@ static void * openair_thread(void *param) {
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
 
-#ifndef EMOS
-      mac_xface->macphy_scheduler(last_slot); 
-#endif
+      //      mac_xface->macphy_scheduler(last_slot); 
 
 #ifdef OPENAIR_LTE
       phy_procedures_lte(last_slot,next_slot);
@@ -262,7 +272,7 @@ static void * openair_thread(void *param) {
       time_out = openair_get_mbox();
       diff = ((int) time_out - (int) time_in) % ((int) (NUMBER_OF_SYMBOLS_PER_FRAME));
 
-      if (diff > NUMBER_OF_OFDM_SYMBOLS_PER_SLOT) { // we scheduled too late
+      if (diff > (NUMBER_OF_OFDM_SYMBOLS_PER_SLOT+4)) { // we scheduled too late
 	msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d, time_out %d, diff %d, scheduler_interval_ns %d\n", 
 	    mac_xface->frame, last_slot,
 	    time_in,time_out,
@@ -309,7 +319,7 @@ static void * openair_thread(void *param) {
 	if (time_in>6) {
 	  msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, macphy_scheduler time_in %d,time_out %d, scheduler_interval_ns %d\n", mac_xface->frame, last_slot,
 	      time_in,time_out,openair_daq_vars.scheduler_interval_ns);
-	  msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",mac_xface->frame, last_slot, pci_interface->ofdm_symbols_per_frame);
+	  msg("[SCHED][OPENAIR_THREAD] Frame %d: last_slot %d, NUMBER_OF_SYMBOLS_PER_FRAME = %d\n",mac_xface->frame, last_slot, pci_interface[0]->ofdm_symbols_per_frame);
 	  openair1_restart();
 	  //	  exit_openair = 1;
 	}
@@ -354,6 +364,7 @@ void openair_sync(void) {
   int l;
   int rx_power;
   unsigned int adac_cnt;
+  int pbch_decoded = 0;
 
   RTIME time;
 
@@ -361,10 +372,11 @@ void openair_sync(void) {
 
   //openair_set_lo_freq_openair(openair_daq_vars.freq,openair_daq_vars.freq);	
 
-  ret = setup_regs();
+  for (i=0;i<number_of_cards;i++) {
+    ret = setup_regs(i);
 
-  openair_get_frame(); //received frame is stored in PHY_vars->RX_DMA_BUFFER
-
+    openair_get_frame(i); //received frame is stored in PHY_vars->RX_DMA_BUFFER
+  }
   // sleep during acquisition of frame
 
   time = rt_get_cpu_time_ns();
@@ -383,12 +395,13 @@ void openair_sync(void) {
     status=rtf_reset(rx_sig_fifo);
     
     for (i=0;i<NB_ANTENNAS_RX;i++) {
-      length=rtf_put(rx_sig_fifo,PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
-      if (length < FRAME_LENGTH_BYTES)
+      length=rtf_put(rx_sig_fifo,(unsigned char*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_BYTES);
+      if (length < FRAME_LENGTH_BYTES) {
 	msg("[openair][sched][rx_sig_fifo_handler] Didn't put %d bytes for antenna %d (put %d)\n",FRAME_LENGTH_BYTES,i,length);
-      else
+      }
+      else {
 	msg("[openair][sched][rx_sig_fifo_handler] Worte %d bytes for antenna %d to fifo (put %d)\n",FRAME_LENGTH_BYTES,i,length);
-
+      }
     }    
 
     // signal that acquisition is done in control fifo
@@ -399,20 +412,21 @@ void openair_sync(void) {
   if (openair_daq_vars.one_shot_get_frame == 0)  { // we're in a real-time mode so do basic decoding
  
 
-    memcpy((void *)&PHY_vars->rx_vars[0].RX_DMA_BUFFER[FRAME_LENGTH_COMPLEX_SAMPLES],(void*)PHY_vars->rx_vars[0].RX_DMA_BUFFER,OFDM_SYMBOL_SIZE_BYTES);
-    memcpy((void *)&PHY_vars->rx_vars[1].RX_DMA_BUFFER[FRAME_LENGTH_COMPLEX_SAMPLES],(void*)PHY_vars->rx_vars[1].RX_DMA_BUFFER,OFDM_SYMBOL_SIZE_BYTES);
+    memcpy((void *)(RX_DMA_BUFFER[0][0]+FRAME_LENGTH_COMPLEX_SAMPLES),(void*)RX_DMA_BUFFER[0][0],OFDM_SYMBOL_SIZE_BYTES);
+    memcpy((void *)(RX_DMA_BUFFER[0][1]+FRAME_LENGTH_COMPLEX_SAMPLES),(void*)RX_DMA_BUFFER[0][1],OFDM_SYMBOL_SIZE_BYTES);
     
 #ifdef DEBUG_PHY
-    msg("[openair][SCHED][SYNC] freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
-	(pci_interface->freq_info>>1)&3,
-	(pci_interface->freq_info>>3)&3,
-	pci_interface->adc_head[0],
-	pci_interface->adc_head[1],
-	pci_interface->ofdm_symbols_per_frame,
-	pci_interface->rx_gain_val,
-	pci_interface->tx_rx_switch_point,
-	pci_interface->tcxo_dac,
-	pci_interface->node_id);        
+    for (i=0;i<number_of_cards;i++) 
+      msg("[openair][SCHED][SYNC] card %d freq %d:%d, RX_DMA ADR 0 %x, RX_DMA ADR 1 %x, OFDM_SPF %d, RX_GAIN_VAL %x, TX_RX_SW %d, TCXO %d, NODE_ID %d\n",
+	  (pci_interface[i]->freq_info>>1)&3,
+	  (pci_interface[i]->freq_info>>3)&3,
+	  pci_interface[i]->adc_head[0],
+	  pci_interface[i]->adc_head[1],
+	  pci_interface[i]->ofdm_symbols_per_frame,
+	  pci_interface[i]->rx_gain_val,
+	  pci_interface[i]->tx_rx_switch_point,
+	  pci_interface[i]->tcxo_dac,
+	  pci_interface[i]->node_id);        
 
 #endif
 
@@ -428,13 +442,13 @@ void openair_sync(void) {
       //sync_pos = 0;
 
       // this is only for visualization in the scope
-      lte_eNB_common_vars->sync_corr = sync_corr;
+      lte_ue_common_vars->sync_corr = sync_corr_ue;
       
       // the sync is in the 3rd (last_ symbol of the special subframe
       // so the position wrt to the start of the frame is 
-      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + CYCLIC_PREFIX_LENGTH + 10;
+      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
       
-      PHY_vars->rx_vars[0].offset = sync_pos - sync_pos_slot;
+      PHY_vars->rx_offset = sync_pos - sync_pos_slot;
       
       msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
       
@@ -462,30 +476,48 @@ void openair_sync(void) {
 
 	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
+	pbch_decoded = 0;
 	if (rx_pbch(lte_ue_common_vars,
 		    lte_ue_pbch_vars[0],
 		    lte_frame_parms,
 		    0,
 		    SISO)) {
 	  
-	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully!\n");
+	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for SISO!\n");
+	  pbch_decoded = 1;
+	}
+	else if (rx_pbch(lte_ue_common_vars,
+		    lte_ue_pbch_vars[0],
+		    lte_frame_parms,
+		    0,
+		    ALAMOUTI)) {
+
+	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for ALAMOUTI!\n");
+	  pbch_decoded = 1;
+	}
+
+	if (pbch_decoded) {
+
+	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[0]->decoded_output[4] == 1);
+	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[0]->decoded_output[4];
 
 	  if (openair_daq_vars.node_running == 1) {
       
-#ifndef NOCARD_TEST
-	    pci_interface->frame_offset = PHY_vars->rx_vars[0].offset;
-#endif //NOCARD_TEST
+	    pci_interface[0]->frame_offset = PHY_vars->rx_offset;
 	    
 	    openair_daq_vars.mode = openair_SYNCHED;
 	    mac_xface->frame = 0;
-#ifndef EMOS		
 #ifdef OPENAIR2
 	    msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
 	    mac_resynch();
 #endif //OPENAIR2
-#endif //EMOS
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
+
+	    UE_mode = PRACH;
+#ifdef OPENAIR2
+	    mac_xface->chbch_phy_sync_success(0,0);	    
+#endif
 	  }
 	  
 	}
@@ -499,22 +531,38 @@ void openair_sync(void) {
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
-      PHY_vars->PHY_measurements.wideband_cqi[0][i] = signal_energy(PHY_vars->rx_vars[i].RX_DMA_BUFFER, FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars->PHY_measurements.wideband_cqi[0][i] = signal_energy((int*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_COMPLEX_SAMPLES);
       PHY_vars->PHY_measurements.wideband_cqi_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.wideband_cqi[0][i]);
       rx_power += PHY_vars->PHY_measurements.wideband_cqi[0][i];
     }
     PHY_vars->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
-    PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_vars[0].rx_total_gain_dB;
-    
+    if (openair_daq_vars.rx_rf_mode == 0)
+      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB + 25;
+    else
+      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB;
+
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
 	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
 	PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
 	PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
 	PHY_vars->PHY_measurements.wideband_cqi[0][0],
 	PHY_vars->PHY_measurements.wideband_cqi[0][1],
-	PHY_vars->rx_vars[0].rx_total_gain_dB,
-	pci_interface->tdd,
-	pci_interface->dual_tx);
+	PHY_vars->rx_total_gain_dB,
+	pci_interface[0]->tdd,
+	pci_interface[0]->dual_tx);
+
+#ifdef EMOS
+    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
+    emos_dump_UE.timestamp = rt_get_time_ns();
+    emos_dump_UE.UE_mode = UE_mode;
+    emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
+
+    debug_msg("[SCHED_LTE] Writing EMOS data to FIFO\n");
+    if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {
+      msg("[SCHED_LTE] Problem writing EMOS data to FIFO\n");
+    }
+#endif
+
 
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
@@ -581,18 +629,21 @@ static void * top_level_scheduler(void *param) {
 	  openair_sync();
 #endif // CBMIMO1
 
+	msg("[openair][SCHED] adac_cnt = %d\n",adac_cnt);
+
 	if ( (openair_daq_vars.mode != openair_NOT_SYNCHED) &&
 	     (openair_daq_vars.node_running == 1) ){
 
 	  msg("[openair][SCHED] staring RT acquisition, adac_cnt = %d\n",adac_cnt);
 #ifdef CBMIMO1
-	  openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+	  for (i=0;i<number_of_cards;i++)
+	    openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 #endif //CBMIMO1
 	  openair_daq_vars.sync_state = 1;
 	  openair_daq_vars.sched_cnt = 0;
 	  /*
 	  for (i=0;i<NB_ANTENNAS_RX;i++){
-	    bzero((void *)PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
+	    bzero((void *)RX_DMA_BUFFER[0][0],FRAME_LENGTH_BYTES);
 	  }
 	  */
 
@@ -634,15 +685,14 @@ static void * top_level_scheduler(void *param) {
 	openair_daq_vars.sched_cnt = 0;
 	//openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
 
-	//PHY_vars->rx_vars[0].rx_total_gain_dB = 115;
-	//openair_set_rx_gain_cal_openair(PHY_vars->rx_vars[0].rx_total_gain_dB);
-
 	msg("[openair][sched][top_level_scheduler] Starting RT acquisition, ofdm_symbols_per_frame %d, log2_symbol_size %d\n",
 	    NUMBER_OF_SYMBOLS_PER_FRAME, LOG2_NUMBER_OF_OFDM_CARRIERS);
 
 #ifdef CBMIMO1
-	openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
-	pci_interface->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+	for (i=0;i<number_of_cards;i++) {
+	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+	  pci_interface[i]->tx_rx_switch_point = openair_daq_vars.tx_rx_switch_point;
+	}
 #endif //CBMIMO1
 
 	mac_xface->frame = 0;
@@ -689,7 +739,7 @@ static void * top_level_scheduler(void *param) {
       else if (openair_daq_vars.sync_state==2)                 /* acquisition running, track hardware.... */
 	{
 	  
-	  // if (mac_xface->frame % 100 == 0)
+	  // if (mac_xface->frame % 100 == 0) 
 	  //   msg("[openair][SCHED] frame %d: scheduler interval %d\n",mac_xface->frame,openair_daq_vars.scheduler_interval_ns);
 	  
 	  adac_offset=((int)adac_cnt-((int)openair_daq_vars.slot_count*NUMBER_OF_CHUNKS_PER_SLOT));
@@ -755,7 +805,7 @@ static void * top_level_scheduler(void *param) {
 	msg("[openair][SCHED][top_level_thread] Waiting for frame signal in fifo (instance cnt %d)\n",
 	    openair_daq_vars.instance_cnt);
 	rf_cntl_packet.frame = mac_xface->frame;
-	rf_cntl_packet.rx_offset = PHY_vars->rx_vars[0].offset;
+	rf_cntl_packet.rx_offset = PHY_vars->rx_offset;
 
 	rtf_put(rf_cntl_fifo,&rf_cntl_packet,sizeof(RF_CNTL_PACKET));
 
@@ -814,7 +864,7 @@ int rx_sig_fifo_handler(unsigned int fifo, int rw) {
   if (rw=='w') {
 
     for (i=0;i<NB_ANTENNAS_RX;i++) {
-      length=rtf_get(fifo,PHY_vars->rx_vars[i].RX_DMA_BUFFER,FRAME_LENGTH_BYTES);
+      length=rtf_get(fifo,(unsigned char*)RX_DMA_BUFFER[0][0],FRAME_LENGTH_BYTES);
       if (length < FRAME_LENGTH_BYTES)
 	msg("[openair][sched][rx_sig_fifo_handler] Didn't get %d bytes for antenna %d (got %d)\n",FRAME_LENGTH_BYTES,i,length);
     }    
@@ -862,6 +912,7 @@ int openair_sched_init(void) {
   }
 
   openair_daq_vars.mode = openair_NOT_SYNCHED;
+  UE_mode = NOT_SYNCHED;
   
   error_code = rtf_create(rx_sig_fifo, NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
   printk("[openair][SCHED][INIT] Created rx_sig_fifo (%d bytes), error_code %d\n",
@@ -993,6 +1044,8 @@ void openair_sched_exit(char *str) {
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
 }
+
+
 
 /*@}*/
 

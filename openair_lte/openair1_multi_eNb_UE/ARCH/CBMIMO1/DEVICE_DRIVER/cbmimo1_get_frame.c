@@ -15,8 +15,8 @@
 #include "from_grlib_softregs.h"
 
 
-void openair_get_frame() {
+void openair_get_frame(unsigned char card_id) {
 
 
-      openair_dma(FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GET_FRAME);
+  openair_dma(card_id,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GET_FRAME);
 }

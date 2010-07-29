@@ -34,7 +34,7 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,
 
   switch (fmt) {
 
-  case wideband_cqi:
+  case wideband_cqi: //and subband pmi
     if (rank == 0) {
       stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1;      
       stats->DL_pmi_single[UE_id] = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      

@@ -16,14 +16,17 @@
 #include "SCHED/extern.h"
 
 
-void openair_set_rx_rf_mode(unsigned int arg) {
+void openair_set_rx_rf_mode(unsigned char card_id,unsigned int arg) {
 
 #ifndef NOCARD_TEST
-  printk("[openair][RF_CNTL] Setting RX_RF MODE to %d\n",arg);
+  printk("[openair][RF_CNTL] Setting RX_RF MODE on card %d to %d\n",card_id,arg);
 
-  if (pci_interface)
-    pci_interface->rx_rf_mode = arg;
+  openair_daq_vars.rx_rf_mode = arg;
 
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->rx_rf_mode  = arg;
+  else
+    printk("[openair][RF_CNTL] rx_rf_mode not configured\n");
 
 
   //  openair_dma(SET_RX_RF_MODE);
@@ -35,7 +38,7 @@ void openair_set_rx_rf_mode(unsigned int arg) {
 
 
 
-void openair_set_tcxo_dac(unsigned int arg) {
+void openair_set_tcxo_dac(unsigned char card_id,unsigned int arg) {
 
 #ifndef NOCARD_TEST  
   printk("[openair][RF_CNTL] Setting TCXO_DAC to %d\n",arg);
@@ -48,16 +51,16 @@ void openair_set_tcxo_dac(unsigned int arg) {
 
 }
 
-void openair_set_tx_gain_openair(unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11) {
+void openair_set_tx_gain_openair(unsigned char card_id,unsigned char txgain00,unsigned char txgain10,unsigned char txgain01, unsigned char txgain11) {
 
 #ifndef NOCARD_TEST
   printk("[openair][RF_CNTL] Setting TX gains to %d,%d,%d,%d\n",txgain00,txgain10,txgain01,txgain11);
 
-  if (pci_interface) {
-    pci_interface->tx_gain00 = (unsigned int)txgain00;
-    pci_interface->tx_gain01 = (unsigned int)txgain01;
-    pci_interface->tx_gain10 = (unsigned int)txgain10;
-    pci_interface->tx_gain11 = (unsigned int)txgain11;
+  if (pci_interface[card_id]) {
+    pci_interface[card_id]->tx_gain00 = (unsigned int)txgain00;
+    pci_interface[card_id]->tx_gain01 = (unsigned int)txgain01;
+    pci_interface[card_id]->tx_gain10 = (unsigned int)txgain10;
+    pci_interface[card_id]->tx_gain11 = (unsigned int)txgain11;
   }
   //  openair_writel((unsigned int)txgain00,bar[0]+REG_BAR+0x4);
   //  openair_writel((unsigned int)txgain10,bar[0]+REG_BAR+0x8);
@@ -68,7 +71,7 @@ void openair_set_tx_gain_openair(unsigned char txgain00,unsigned char txgain10,u
 
 } 
  
-void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain01,unsigned char rxgain10,unsigned char rxgain11) {
+void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,unsigned char rxgain01,unsigned char rxgain10,unsigned char rxgain11) {
 
 #ifndef NOCARD_TEST
   unsigned int rxgain;
@@ -86,37 +89,37 @@ void openair_set_rx_gain_openair(unsigned char rxgain00,unsigned char rxgain01,u
 #endif
 }
 
-void openair_set_rx_gain_cal_openair(unsigned int gain_dB) {
+void openair_set_rx_gain_cal_openair(unsigned char card_id,unsigned int gain_dB) {
 
 #ifndef NOCARD_TEST
 
   //printk("[openair][RF_CNTL] Setting RX gains to %d dB \n",gain_dB);
   
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
-  if (pci_interface) 
-    pci_interface->rx_gain_cval  = gain_dB;
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->rx_gain_cval  = gain_dB;
   else
     printk("[openair][RF_CNTL] rxgainreg not configured\n");
 
 #endif
 }
 
-void openair_set_lo_freq_openair(char freq0,char freq1) {
+void openair_set_lo_freq_openair(unsigned char card_id,char freq0,char freq1) {
 #ifndef NOCARD_TEST
   printk("[openair][RF_CNTL] Setting LO frequencies to %d,%d\n",freq0,freq1);
   //  openair_writel(freq0,bar[0]+0x4);
   //  openair_writel(freq1,bar[0]+0x8);
   //  openair_dma(SET_LO_FREQ);
   openair_daq_vars.freq_info = 1 + (freq0<<1) + (freq1<<4);
-  pci_interface->freq_info = openair_daq_vars.freq_info;
+  pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
 #endif
 
 }
 
-int openair_set_freq_offset(int freq_offset) {
+int openair_set_freq_offset(unsigned char card_id,int freq_offset) {
   unsigned int val;
 
-  if (pci_interface) {
+  if (pci_interface[card_id]) {
       if (abs(freq_offset) > 7680000) {
 	printk("[openair][RF_CNTL] Frequency offset must be smaller than 7.68e6!\n");
 	return(-1);
@@ -127,8 +130,8 @@ int openair_set_freq_offset(int freq_offset) {
 	// bit21 = 0 negative freq offset at TX, positive freq offset at RX	    
 	// bit21 = 1 positive freq offset at TX, negative freq offset at RX
 
-	pci_interface->freq_offset = val;
-	printk("[openair][RF_CNTL] Setting frequency offset to %d Hz (%x)\n",freq_offset,val);
+	pci_interface[card_id]->freq_offset = val;
+	//	printk("[openair][RF_CNTL] Setting frequency offset to %d Hz (%x)\n",freq_offset,val);
 	//	printk("[openair][RF_CNTL] WARNING:  Setting frequency disabled!!!\n",freq_offset,val);
 	return(0);
       }

@@ -10,7 +10,7 @@ SACH_OBJS = sach_scope.o sach.o
 #CHBCH2_OBJS = chbch_2streams_scope.o chbch_2streams.o 
 CHBCH2_OBJS = chbch_scope.o chbch_2streams_ml.o 
 LTE_OBJS = lte_scope.o lte.o $(TOP_DIR)/PHY/TOOLS/file_output.o
-LTE_UL_OBJS = lte_scope.o lte_ul.o $(TOP_DIR)/PHY/TOOLS/file_output.o
+LTE_UL_OBJS = lte_scope_ul.o lte_ul.o $(TOP_DIR)/PHY/TOOLS/file_output.o
 
 ifdef EMOS
 CFLAGS += -DEMOS

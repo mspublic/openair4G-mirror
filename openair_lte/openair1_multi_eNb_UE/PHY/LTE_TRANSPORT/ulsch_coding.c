@@ -122,8 +122,8 @@ int ulsch_encoding(unsigned char *a,
   unsigned short offset;
   unsigned int crc=1;
   unsigned short iind;
-  unsigned short A=ulsch->harq_processes[harq_pid]->TBS;
-  unsigned char Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  unsigned short A;
+  unsigned char Q_m;
   unsigned int Kr,Kr_bytes,r,r_offset=0;
   unsigned char y[6*14*1200];
   unsigned char *columnset;
@@ -134,6 +134,31 @@ int ulsch_encoding(unsigned char *a,
   unsigned char ack_parity;
   unsigned int i,q,j,iprime;
   unsigned short o_RCC;
+
+  if (!ulsch) {
+    msg("ulsch_coding.c: Null ulsch ptr\n",ulsch);
+    return(-1);
+  }
+
+  if (harq_pid > 2) {
+    msg("ulsch_coding.c: Illegal harq_pid %d\n",harq_pid);
+    return(-1);
+  }
+    
+  if (ulsch->O_ACK > 2)
+    {
+    msg("ulsch_coding.c: Illegal O_ACK %d\n",ulsch->O_ACK);
+    return(-1);
+  }
+
+  if (ulsch->O_RI > 1)
+    {
+    msg("ulsch_coding.c: Illegal O_RI %d\n",ulsch->O_RI);
+    return(-1);
+  }
+
+  A=ulsch->harq_processes[harq_pid]->TBS;
+  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
 #ifdef DEBUG_ULSCH_CODING
   for (i=0;i<ulsch->O_ACK;i++)
@@ -229,11 +254,11 @@ int ulsch_encoding(unsigned char *a,
     
   }
 
-  // check for integrity
   if (ulsch->harq_processes[harq_pid]->C == 0) {
-	msg("ulsch_coding: Number of segments 0, when calling the encoder. Decoded scheduling wrongx!\n");    
+    msg("ulsch_coding.c : error, null segment\n");
     return(-1);
   }
+
   sumKr = 0;
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
     if (r<ulsch->harq_processes[harq_pid]->Cminus)
@@ -286,6 +311,9 @@ int ulsch_encoding(unsigned char *a,
   Qprime_CQI = Qprime;
 
   G = G - Q_RI - Q_CQI;
+  if ((int)G < 0) {
+    return(-1);
+  }
   H = G + Q_CQI;
   Hprime = H/Q_m;
 
@@ -479,7 +507,7 @@ int ulsch_encoding(unsigned char *a,
   Qprime_ACK = Q_ACK / Q_m;
   Qprime_CQI = Q_CQI / Q_m;
 
-
+  //  printf("Qprime_CQI = %d\n",Qprime_CQI);
   // RI BITS 
   r = Rmux_prime-1;
   memset(y,LTE_NULL,Q_m*Hpp);
@@ -505,13 +533,13 @@ int ulsch_encoding(unsigned char *a,
     if (i<Qprime_CQI) {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->q[q+(Q_m*i)];
-	//	printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
+	//		printf("cqi[%d] %d => y[%d]\n",q+(Q_m*i),ulsch->q[q+(Q_m*i)],q+(Q_m*j));
       }
     }
     else {
       for (q=0;q<Q_m;q++) {
 	y[q+(Q_m*j)] = ulsch->e[q+(Q_m*iprime)];
-	//	printf("e[%d] %d => y[%d]\n",q+(Q_m*iprime),ulsch->e[q+(Q_m*iprime)],q+(Q_m*j));
+	//		printf("e[%d] %d => y[%d]\n",q+(Q_m*iprime),ulsch->e[q+(Q_m*iprime)],q+(Q_m*j));
       }
     }
     j++;
@@ -529,7 +557,7 @@ int ulsch_encoding(unsigned char *a,
   for (i=0;i<Qprime_ACK;i++) {
     for (q=0;q<Q_m;q++) {
       y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[(q+(Q_m*i))%len_ACK];
-      //      printf("ACK %d => %d (%d,%d,%d)\n",q+(Q_m*i),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
+      //            printf("ACK %d => %d (%d,%d,%d)\n",q+(Q_m*i),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],q+(Q_m*((r*Cmux) + columnset[j])),r,columnset[j]);
     }
     j=(j+3)&3;
     r = Rmux_prime - 1 - (i>>2);
