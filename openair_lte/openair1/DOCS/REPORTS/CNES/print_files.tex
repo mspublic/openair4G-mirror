@@ -1,6 +1,7 @@
 \documentclass[a4paper,10pt]{article}
 
 \usepackage[pdftex,dvips]{graphicx}
+\usepackage{amsmath}
 \usepackage[T1]{fontenc}
 \usepackage{url}
 \usepackage[top=2cm, bottom=2cm, left=2cm, right=2cm]{geometry}
@@ -233,35 +234,47 @@ UE mode & meaning \\
 \subsection{Introduction}
 
 
-In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one downlink subframe of one PRB and total of 3600 REs for 25 PRBs. Out of these 144 REs of one PRB 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. But please note that these throughputs for both DL and UL are uncoded throughputs. 
+In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). An extended cyclic prefix is used making the resource elements(RE) equal to 144 in one downlink subframe of one PRB and total of 3600 REs for 25 PRBs. Out of these 144 REs of one PRB 36 are used for control signals and another 12 are used as cell specific reference signals so the effective REs for data transmission in one PRB in subframe are then, 144-36-12 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. 
 
 \subsubsection{Ideal Throughput Calculation}
-The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity is calculated using the following capacity formula of fixed constellation size $Q_{m}$,
+The channel estimation is done through 200 cell specific reference signals making 200/25 = 8 in each PRB in each subframe. So in each PRB 8 channel estimates are obtained and for these 8 channel estimates, capcity per resource element is calculated using the following capacity formula of fixed constellation size $Q_{m}$,
 
  
-\begin{equation} \label{eq:capacity}
-C(\underline{\textbf{h}},N) = \max_{Q_{m}=\{2,4,6\}} \sum_{i = 0}^{N_{RE}-1}\left[ Q_{m}-\frac{1}{Q_{m}}\sum_{m = 0}^{Q_{m}-1}\int_{-\inf}^{\inf} \! p(y_{i}/h_{i},m)\log_{2}\frac{p(y_{i}/h_{i},m)}{p(y_{i})} \, dy_i\right] 
-\end{equation}
+% \begin{equation} \label{eq:capacity}
+% C(\underline{\textbf{h}},N) = \max_{Q_{m}=\{2,4,6\}} \sum_{i = 0}^{N_{RE}-1}\left[ Q_{m}-\frac{1}{Q_{m}}\sum_{m = 0}^{Q_{m}-1}\int_{-\inf}^{\inf} \! p(y_{i}/h_{i},m)\log_{2}\frac{p(y_{i}/h_{i},m)}{p(y_{i})} \, dy_i\right] 
+% \end{equation}
 
+\begin{align}
+I\left(Y;X_{1}|h_{1}\right)
+&=\log M_{1}-\frac{1}{M_{1}N_{z}N_{H}}\sum_{x_{1}}\sum_{h_1}^{N_{h}}\sum_{z_{1}}^{N_{z}}\log\frac{\sum_{x^{'}_{1}}\exp\left[-\frac{1}{N_{0}}\left|y_{1}-h_{1}x^{'}_{1}\right|^2\right]}{\exp\left[-\frac{1}{N_{0}}\left|y_{1}-h_{1}x_{1}\right|^{2}\right]}\nonumber\\
+&=\log M_{1}-\frac{1}{M_{1}N_{z}N_{H}}\sum_{x_{1}}\sum_{h_1}^{N_{h}}\sum_{z_{1}}^{N_{z}}\log\frac{\sum_{x^{'}_{1}}\exp\left[-\frac{1}{N_{0}}\left|h_{1}x_{1} + z_1 - h_1x^{'}_{1}\right|^2\right]}{\exp\left[-\frac{1}{N_{0}}\left|z_{1}\right|^{2}\right]}\nonumber\\
+\label{eq:capacity}
+\end{align}
 
-The capacity formula in (\ref{eq:capacity}) is for the SISO case(Mode 1 in LTE). As we know that Alamouti Scheme(Mode 2 in LTE) and Precoding Scheme (Mode 6 in LTE) both give rise in the received SNR, so (\ref{eq:capacity}) still holds for the mode 2 and 6 with relatively higher SNR than mode 1. We calculate the SNR of mode 1,2 and 6 in the following ways:
+Where $y_1 = h_1x_1 + z_1$ is the received signal at the receiver. The capacity formula in (\ref{eq:capacity}) is for the transmission mode 1 in LTE. Since transmission mode 2 and 6 both give rise in the received SNR[references], so (\ref{eq:capacity}) still holds valid for the capacity calculation of transmission mode 2 and 6 with relatively higher SNR than mode 1. We calculate the SNR of transmission mode 1,2 and 6 in the following ways:
 
 \begin{equation} \label{eq:snrsiso}
-SNR_{siso_{2Rx}} = 10*{\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{i}}}\right\rbrace
+SNR_{mode1_{2Rx}} = 10*{\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + {h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace
 \end{equation}
 
+Since antenna configuration during measurement campaign is 2x2 on downlink and in transmission mode 1 the signal is replicated on both of the transmit antennas so superposition of both channels is considered at the each receive antenna and then Maximal Ratio Combining (MRC) is applied at receiver to reach \ref{eq:snrsiso}. 
+ 
 \begin{equation} \label{eq:snralam}
-SNR_{Alamouti_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{i}}}\right\rbrace. 
+SNR_{mode2_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} \, {\frac{ {\| \ {h_{1i}} \| \\}^2 +  {\| \ {h_{2i}} \| \\}^2 }{N_{0i}}}\right\rbrace. 
 \end{equation}
+
+In transmission mode 2 , two complex symbols (i.e. $s_1$ and $s_2$) are transmitted over two symbol times from two Tx antennas. In first symobl time $s_1$ and $s_2$ are transmitted through antenna 1 and antenna 2 respectively whereas in second symbol time $-{s_{2}^{*}}$ and ${s_{1}^{*}}$ is transmitted through antenna 1 and antenna 2 respectively. This gives diversity order of 2 at each of the receive antenna where both of the received channels are considered disticntively thus giving rise in received SNR. 
 
 \begin{equation} \label{eq:snrbmfr}
-SNR_{Precoding_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{i}}}\right\rbrace. 
+SNR_{mode6_{2Rx}} = 10* {\mathrm{log}}_{10} \left\lbrace {\sum_{i=1}^2} {\frac{{\| \ {h_{1i}} + q*{h_{2i}} \| \\}^2}{N_{0i}}}\right\rbrace. 
 \end{equation}
 
-In (\ref{eq:snrsiso}), (\ref{eq:snralam}) and (\ref{eq:snrbmfr}) the $N_{i}$, is the noise variance on each of the receive antennas with $ i = \left\lbrace 1,2\right\rbrace $. 
+And in transmission mode 6 high SNR is obtained by using precoder $q$ which focuses the transmit energy in specific direction only, so the joint precoded channel is considered in \ref{eq:snrbmfr}. In ideal capacity calculation for transmission mode 6, two methods of precoder calculation are considered. In first method the feedback from UE is utilized and sum capacity is calcualted, where as in the second method the optimal $q$ which maximizes the overall sum capacity is calculated. Please note that $q$ is selected on subband basis in each subframe.
 
-Using (\ref{eq:snrsiso}), (\ref{eq:snralam}), and (\ref{eq:snrbmfr}) Shannon capacity for each RE is calculated using the famous Shannon Capacity formula to see what modulation scheme be supported for this RE and using (\ref{eq:capacity}) the ideal capacity of each RE is calculated.
 
+% In (\ref{eq:snrsiso}), (\ref{eq:snralam}) and (\ref{eq:snrbmfr}) the $N_{i}$, is the noise variance on each of the receive antennas with $ i = \left\lbrace 1,2\right\rbrace $. 
+After calculating SNR for each of the transmission mode, Shannon capacity for each RE is calculated using the famous Shannon Capacity formula $C = \log_2(1 + SNR)$ to see what modulation scheme be supported for this RE. Then using this supported modulation scheme and (\ref{eq:capacity}) the ideal capacity for each RE is calculated.
+\newline
 Then capacity of rest of 96 REs is extrapolated by multiplying the sum capacity of 8 channel estimates by the factor of 12 which which gives us the sum capacity of one PRB for one subframe. The same procedure is done for the rest of 24 PRBs and at the end their cumulative sum is taken giving us the downlink throughput of one complete subframe. Since Uplink-downlink configuration 3 is used in which there are 6 downlink subframes in a frame so then the sum capacity of one subframe is multiplied by the factor of 6 to calculate the downlink throughput of one frame. 
 
 One frame in LTE is of 1ms duration. In order to get the downlink throughput per second, the downlink throughput of 100 frames is added together giving the throughput in bits per seconds.
