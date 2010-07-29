@@ -8,14 +8,14 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Mode2_update/';  
-d = dir(fullfile(root_path, '*mode*'));
+root_path = '/media/disk/PENNE/Mode1/';  
+d = dir(fullfile(root_path, '*VTP*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/EMOS/Mode2_update/results';
+pathname = '/media/disk/PENNE/Mode1/results';
 
-mm='cordes';
+mm='penne';
 decimation = 100;
 dim = zeros(1,length(dir_names));
 
@@ -34,7 +34,7 @@ for i=1:length(dir_names)
         end
             
         %results_UE = cat(1,results_UE,temp);
-        
+        fprintf('%d/%d\n',i,length(dir_names));
     end
 %    if exist(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'),'file')
 %        nomadic = load(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'));

@@ -1,11 +1,11 @@
 %% This file concatenates all the matlab results files from different folders and then saves the resulting file in root_path folder. 
 clear all;
 close all;
-clc
 
-root_path = '/extras/kaltenbe/CNES/emos_postprocessed_data/Mode2/';
+start_idx = 1;
+root_path = '/emos/EMOS/Mode2/';
 
-d = dir(fullfile(root_path, '*mode*'));
+d = dir(fullfile(root_path, '*mode2*'));
 dir_names = {d.name};
 
 for d_idx=1:length(dir_names)

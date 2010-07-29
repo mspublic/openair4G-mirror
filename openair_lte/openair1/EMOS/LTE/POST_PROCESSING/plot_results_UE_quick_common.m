@@ -10,7 +10,7 @@ if (nomadic_flag)
     nomadic.timebase = nomadic.gps_time_cat-gps_time_cat(1);
 end
 
-[dist, dist_traveled] = calc_dist(gps_lat_cat,gps_lon_cat);
+[dist, dist_traveled] = calc_dist(gps_lat_cat,gps_lon_cat,mm);
 
 %% Frame TX number over time
 h_fig = h_fig+1;
@@ -139,13 +139,15 @@ saveas(h_fig,fullfile(pathname,'UE_mode_gps.jpg'),'jpg')
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-dlsch_throughput = double((100-dlsch_fer_cat).*tbs_cat.*6);
+%dlsch_throughput = double((100-dlsch_fer_cat).*tbs_cat.*6);
+dlsch_throughput = double(100./(100+dlsch_fer_cat).*tbs_cat.*6.*100); %this assumes that DLSCH is received correctly in the second round
 good = (dlsch_fer_cat<=100 & dlsch_fer_cat>=0).';
 dlsch_throughput(~UE_connected | ~good) = 0;
 plot(timebase,dlsch_throughput,'x');
 if (nomadic_flag)
     hold on
-    nomadic.dlsch_throughput = (100-nomadic.dlsch_fer_cat).* nomadic.tbs_cat.*6;
+    %nomadic.dlsch_throughput = (100-nomadic.dlsch_fer_cat).* nomadic.tbs_cat.*6;
+    nomadic.dlsch_throughput = double(100./(100+nomadic.dlsch_fer_cat).* nomadic.tbs_cat.*6.*100);
     nomadic.good = (nomadic.dlsch_fer_cat<=100 & nomadic.dlsch_fer_cat>=0).';
     nomadic.dlsch_throughput(~nomadic.UE_connected | ~nomadic.good) = 0;
     plot(nomadic.timebase,nomadic.dlsch_throughput,'rx')

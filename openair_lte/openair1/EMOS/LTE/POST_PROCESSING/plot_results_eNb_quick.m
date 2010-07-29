@@ -1,11 +1,13 @@
 %% load data
 estimates_eNB = load(fullfile(pathname,'results_eNB.mat'));
 
+h_fig = 0;
+
 % calculate the indices where the ue and the eNB were connected (they might
 % not have set the flag in the same frame)
 eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]==3);
 timebase = estimates_eNB.gps_time_cat - min(estimates_eNB.gps_time_cat);
-[dist, dist_traveled] = calc_dist(estimates_eNB.gps_lat_cat,estimates_eNB.gps_lon_cat);
+[dist, dist_traveled] = calc_dist(estimates_eNB.gps_lat_cat,estimates_eNB.gps_lon_cat,mm);
 
 %% N0 over time
 h_fig = h_fig+1;
@@ -37,16 +39,17 @@ ylim([-110 -30]);
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm.eps'),'epsc2')
 
 %% UL RSSI on map
-UL_rssi_cat = zeros(length(estimates_eNB.eNb_UE_stats_cat),2);
+UL_UE_rssi_cat = zeros(length(estimates_eNB.eNb_UE_stats_cat),1);
+sector = [estimates_eNB.eNb_UE_stats_cat.sector];
 for i=1:length(estimates_eNB.eNb_UE_stats_cat)
-    UL_rssi_cat(i,:) = double(estimates_eNB.eNb_UE_stats_cat(i).UL_rssi);
+    UL_UE_rssi_cat(i) = UL_rssi_cat(i,sector(i)+1);
 end
-UL_rssi_cat(~eNB_connected,:) = -120;
+
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat, estimates_eNB.gps_lat_cat, ...
-        mean(UL_rssi_cat,2),[-110 -30]);
+        UL_UE_rssi_cat,[-110 -30]);
 title('UL RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'UL_RSSI_dBm_gps.jpg'),'jpg')
 

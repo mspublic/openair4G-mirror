@@ -1,11 +1,25 @@
-function [dist, dist_travelled] = calc_dist(MS_Lat, MS_Long)
+function [dist, dist_travelled] = calc_dist(MS_Lat, MS_Long,site)
 % [dist, dist_traveled] = calc_dist(MS_Lat, MS_Long)
 % Calculates distance from Base Station as well as distance travelled in km.
 % We take the reference of the BS in Cordes
 % Source http://itouchmap.com/latlong.html
 
-BS_Lat = 44.084015;
-BS_Long = 1.965765;
+if nargin<3
+    site = 'cordes';
+end
+
+switch(site)
+    case 'cordes'
+        BS_Lat = 44.084015;
+        BS_Long = 1.965765;
+    case 'penne'
+        BS_Lat = 44.079722;
+        BS_Long = 1.714722;
+    case 'ambialet'
+        BS_Lat = 43.945;
+        BS_Long = 2.373889;
+end
+
 
 dist = zeros(1,length(MS_Lat));
 for i = 1:length(MS_Lat)

@@ -1,11 +1,10 @@
 %plot_results_cat
 load(fullfile(pathname,'results_cat_UE.mat'));
 
-%%
-mm='cordes';
 in = 0;
 
-plotwrtdistanceCalc;
+%plotwrtdistanceCalc;
+[dist, dist_travelled] = calc_dist([gps_data_cat.latitude],[gps_data_cat.longitude]);
 speed = [gps_data_cat.speed];
 
 %% set throughput to 0 when UE was not synched
@@ -101,6 +100,11 @@ xlabel('Uncoded throughput [bps]')
 ylabel('P(x<abscissa)')
 grid on
 saveas(h_fig,fullfile(pathname,'uncoded_throughput_cdf_comparison.eps'),'epsc2');
+
+%% for all other comparisons set throughput to 0 when UE was not connected
+for n = 1:length(nn)
+    eval([nn{n} '(~UE_connected) = 0;']);
+end
 
 
 %% plot on map
