@@ -144,6 +144,8 @@ For the site of Cordes, a second mode 2 measurement, called mode2 update has bee
 
 For the site of Penne, a part of the measurements has been taken using OFDMA in the UL and some with SC-FDMA in the uplink.
 
+The data was recorded with a frequency of 100Hz, i.e., one measurement every 10ms (= 1 LTE frame). Since the For the plots in this report we have used a decimation factor of 100 to get one measurement point per second. 
+
 In the following subsections we give a general description of the post processing done. The structure of the subsections is maintained in the subsequent sections, which show the results for the different sites. 
 
 \subsection{Interference measurements}
@@ -153,7 +155,9 @@ After setting up the eNB and UE at a specific cell site, interference measuremen
 \subsection{RX RSSI}
 
 
-The received signal strength indicator (RSSI) of both UE and eNB measured during coverage runs and vehicular test procedures is plotted on the regional map of the specific cell as well as a function of time. We show the RSSI in dBm for the coverage run, the measurements in mode 1, 2, and 6 as well as the uplink RSSI. 
+The calculation of the received signal strength indicator (RSSI) depends on the UE mode. If the UE is not synched to the BS, the RSSI is just the average signal strength measured over a 10ms duration. The signal strenghts of the two receive antennas are summed up. If the UE is synched to the eNB, the RSSI calculation is based on the channel measurements. Again, the signal strenghts of the two receive antennas are summed up.
+
+The RSSI of both UE and eNB measured during coverage runs and vehicular test procedures is plotted on the regional map of the specific cell as well as a function of time. We show the RSSI in dBm for the coverage run, the measurements in mode 1, 2, and 6 as well as the uplink RSSI. 
 
 Further we show the UE RSSI measurements of all measurements as a function of the distance. The plot also shows a fitted simple path loss model $\mathrm{PL}(R) = \mathrm{PL}_0 + 10n\log_{10}(R)$ as well as the path loss according to the COST231-Hata model \cite{cost231}.
 
@@ -263,6 +267,17 @@ For the plots in this subsection we divide the measurements in bins according to
 
 For the plots in this subsection we divide the measurements in bins according to the UE speed. Each bin is 5m/s wide. For each bin we show the mean, the 50\%, the 90\%, and the 95\% percentile of the DLSCH throughput for mode 1, 2 and 6. 
 
+\subsubsection{Ricean factor}
+
+The plot in this subsection shows the throughput as a function of the Ricean factor.
+
+\subsubsection{Extrapolation to loaded cell}
+
+To emulate the extrapolation to a cell with 4 users we split the data set of one measurement into 4 and take each piece as it belonged to a different user. We further assume that the eNB employs a proportionally fair scheduler, that the throughput of every user $T_i$ is scaled by $T_i/T$, where $T=\sum_i T_i$. The sum rate of the eNB is thus
+\begin{equation}
+ T_{\mathrm{sum}} = \frac{\sum_i T_i^2}{\sum_i T_i}
+\end{equation}
+
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled}
@@ -285,33 +300,33 @@ We show the CDF of the uncoded throughput similar to section \ref{sec:cdf}.
 \subsection{Interference measurements}
 
 \printfile[Interference at eNb]{CORDES/Interference/results/RX_I0_dBm.pdf}
-\printfile[Interference at UE]{CORDES/Interference/results/RX_I0_dBm_gps.jpg}
+\printfile[Interference at UE]{CORDES/Interference/results/RX_RSSI_dBm_gps.jpg}
 
 
 \subsection{RX RSSI}
 
 
-% \subsubsection{Coverage}
-% \printfile{CORDES/Coverage/results/RX_RSSI_dBm_gps.jpg}
-% \printfile{CORDES/Coverage/results/RX_RSSI_dBm.pdf}
-% 
-% \printfile{CORDES/Coverage/results/UL_RSSI_dBm_gps.jpg}
-% \printfile{CORDES/Coverage/results/UL_RSSI_dBm.pdf}
+\subsubsection{Coverage}
+\printfile{CORDES/Coverage/results/RX_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Coverage/results/RX_RSSI_dBm.pdf}
+ 
+\printfile{CORDES/Coverage/results/UL_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Coverage/results/UL_RSSI_dBm.pdf}
 
 \subsubsection{Mode 1}
 \printfile{CORDES/Mode1/results/RX_RSSI_dBm_gps.jpg}
 \printfile{CORDES/Mode1/results/RX_RSSI_dBm.pdf}
 
-% \printfile{Mode1/results/UL_RSSI_dBm_gps.jpg}
-% \printfile{Mode1/results/UL_RSSI_dBm.pdf}
+\printfile{CORDES/Mode1/results/UL_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode1/results/UL_RSSI_dBm.pdf}
 
 \subsubsection{Mode2}
 
 \printfile{CORDES/Mode2/results/RX_RSSI_dBm_gps.jpg}
 \printfile{CORDES/Mode2/results/RX_RSSI_dBm.pdf}
 
-% \printfile{Mode2_update/results/UL_RSSI_dBm_gps.jpg}
-% \printfile{Mode2_update/results/UL_RSSI_dBm.pdf}
+\printfile{CORDES/Mode2_update/results/UL_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode2_update/results/UL_RSSI_dBm.pdf}
 
 \subsubsection{Mode6}
 \printfile{CORDES/Mode6/results/RX_RSSI_dBm_gps.jpg}
@@ -470,6 +485,14 @@ speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
 \caption{Service coverage for all three modes in percent.}
 \end{table}
 
+\subsubsection{Ricean factor}
+
+\printfile[Mode 2]{CORDES/results/throughput_vs_Kfactor.pdf}
+
+\subsubsection{Extrapolation to loaded cell}
+
+\printfile[Mode 2]{CORDES/results/pfair_throughput_4users.pdf}
+\printfile[Mode 2]{CORDES/results/pfair_throughput_cdf_4users.pdf}
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled_cordes}

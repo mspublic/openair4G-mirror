@@ -8,14 +8,14 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/media/disk/PENNE/Mode1/';  
-d = dir(fullfile(root_path, '*VTP*'));
+root_path = '/emos/EMOS/Coverage';  
+d = dir(fullfile(root_path, '*coverage*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/media/disk/PENNE/Mode1/results';
+pathname = '/emos/EMOS/Coverage/results';
 
-mm='penne';
+mm='cordes';
 decimation = 100;
 dim = zeros(1,length(dir_names));
 
