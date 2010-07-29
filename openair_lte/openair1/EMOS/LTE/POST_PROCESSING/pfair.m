@@ -12,7 +12,7 @@ plot(dlsch_throughput4.')
 hold on
 plot(dlsch_throughput_pfair,'k','Linewidth',2)
 ylabel('Throughput [bps]')
-ylabel('Time [sec]')
+xlabel('Time [sec]')
 saveas(h_fig,fullfile(pathname,'pfair_throughput_4users.eps'),'epsc2');
 
 
@@ -38,7 +38,9 @@ saveas(h_fig,fullfile(pathname,'pfair_throughput_cdf_4users.eps'),'epsc2');
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-plot(10*log10(mode2_ideal.K_fact_cat),mode2.throughput, 'x');
+K_fac_cat = mean(reshape(mode2_ideal.K_fac_cat,4,[]),1);
+K_fac_cat(~mode2.UE_synched) = nan;
+plot(10*log10(K_fac_cat),mode2.throughput, 'x');
 xlabel('Ricean K-factor [dB]')
 ylabel('Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'throughput_vs_Kfactor.eps'),'epsc2');
