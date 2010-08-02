@@ -66,8 +66,6 @@ phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind,PHY_VARS
     phy_vars_ue->rx_total_gain_dB = MIN_RF_GAIN;
   }
 
-  phy_vars_ue->rx_total_gain_eNB_dB = phy_vars_ue->rx_total_gain_dB;
-
 #ifndef USER_MODE
   for (i=0;i<number_of_cards;i++) {
     //openair_set_rx_rf_mode(i,openair_daq_vars.rx_rf_mode);

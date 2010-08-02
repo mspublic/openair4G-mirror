@@ -1,6 +1,6 @@
 #include "PHY/defs.h"
 #include "defs.h"
-//#define DEBUG_FEP
+#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,
@@ -31,11 +31,13 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 
-#ifdef DEBUG_PHY
+#ifdef DEBUG_FEP
     if ((Ns==5) && (eNb_id==0) && (aa==0)) 
-      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
-		   (frame_parms->ofdm_symbol_size*6),1,1);
+      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],((frame_parms->ofdm_symbol_size+nb_prefix_samples)*6),1,1);
 #endif
+    if ((Ns==7) && (eNb_id==0) && (symbol==11)) 
+      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],(frame_parms->ofdm_symbol_size),1,1);
+
     fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
 	(short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	frame_parms->twiddle_fft,
@@ -53,6 +55,9 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	  eNb_common_vars->srs,
 	  eNb_common_vars->srs_ch_estimates[eNb_id][aa]);
 #endif
+
+      //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
+      //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
       mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 			    (short*) eNb_common_vars->srs,

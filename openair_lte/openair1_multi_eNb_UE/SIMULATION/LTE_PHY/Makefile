@@ -13,7 +13,7 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DP
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DTBS_FIX #-DIFFT_FPGA #-O2
+CFLAGS += -DOPENAIR_LTE -DTBS_FIX #-DOFDMA_ULSCH #-DIFFT_FPGA #-DIFFT_FPGA_UE #-O2
 
 ifdef EMOS
 CFLAGS += -DEMOS

@@ -24,12 +24,12 @@ ________________________________________________________________*/
 
 #ifdef USER_MODE
 #ifndef PBS_SIM 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 #endif //PBS_SIM
 #define NULL_SHAPE_BF_ENABLED
 #endif //USER_MODE
 
-//#define DIAG_PHY
+#define DIAG_PHY
 
 
 //undef DEBUG_PHY and set debug_msg to option 1 to print only most necessary messages every 100 frames. 
@@ -123,7 +123,10 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 #ifdef DEBUG_PHY
     write_output("srs_ch_est_0_7.m","srs_ce_0_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);    
     write_output("srs_ch_est_1_7.m","srs_ce_1_7",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1); 
+    write_output("srs_rxF_0_7.m","srs_F_0_7",phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][0],2*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1); 
+    write_output("srs_rxF_1_7.m","srs_F_1_7",phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][1],2*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1); 
 #endif //DEBUG_PHY   
+
     for (aa=0; aa<phy_vars_eNb->lte_frame_parms.nb_antennas_rx; aa++) {
       zero_detections = 0;
       // first half (positive freq), samples on odd
@@ -235,9 +238,9 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
     }
 #ifdef DEBUG_PHY
     write_output("srs_ch_est_0.m","srs_ce_0",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
-    write_output("precoder_1.m","prec_1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
+    write_output("precoder_1.m","prec_1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
     write_output("srs_ch_est_1.m","srs_ce_1",phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,1,1);
-    write_output("precoder_0.m","prec_0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
+    write_output("precoder_0.m","prec_0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
 #endif //DEBUG_PHY
 
     phy_vars_eNb->has_valid_precoder = 1;
@@ -408,12 +411,12 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
       }
     }
 
-#ifdef DEBUG_PHY
+    //#ifdef DEBUG_PHY
     write_output("dl_ch_est_0.m","dl_ce_0",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("ul_precoder_1.m","ul_prec_1",phy_vars_ue->ul_precoder_S_UE[1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1,2,1);
     write_output("dl_ch_est_1.m","dl_ce_1",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("ul_precoder_0.m","ul_prec_0",phy_vars_ue->ul_precoder_S_UE[0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1,2,1);
-#endif //DEBUG_PHY
+    //#endif //DEBUG_PHY
     
     phy_vars_ue->has_valid_precoder = 1;
     phy_vars_ue->log2_maxp = 4 + (log2_approx(maxp)/2);

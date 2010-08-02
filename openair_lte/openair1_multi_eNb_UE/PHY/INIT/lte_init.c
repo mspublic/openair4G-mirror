@@ -679,8 +679,15 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+#ifndef USER_MODE
+      if (eNb_id == 0)
 	eNB_common_vars->rxdata[eNb_id][i] = RX_DMA_BUFFER[eNb_id][i];
-	//	bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+      else 
+#endif
+	{
+	  eNB_common_vars->rxdata[eNb_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+	  bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+	}
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->rxdata[eNb_id][i]);
 #endif

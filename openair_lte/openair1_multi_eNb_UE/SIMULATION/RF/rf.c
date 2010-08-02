@@ -39,7 +39,7 @@ void rf_rx(double **r_re,
   double IP3_lin     = pow(10.0,-.1*IP3_dBm);
   double p_noise     = 0.0;
   double tmp_re,tmp_im;
-  double N0W         = pow(10.0,.1*(-174.0 - 10*log10(s_time*1e-9)));
+  double N0W         = 0;//pow(10.0,.1*(-174.0 - 10*log10(s_time*1e-9)));
   //  printf("s_time=%f, N0W=%g\n",s_time,10*log10(N0W));
 
   // phase-noise filter coefficients (2nd order digital Butterworth)

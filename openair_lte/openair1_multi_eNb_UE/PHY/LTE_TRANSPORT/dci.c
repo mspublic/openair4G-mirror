@@ -889,40 +889,35 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   int avgs,s;
 
   for (s=1;s<1+n_pdcch_symbols;s++) {
-    if (frame_parms->nb_antennas_tx>1) {
-      pdcch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
-			     lte_ue_common_vars->dl_ch_estimates[eNb_id],
-			     lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
-			     lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
-			     s,
-			     frame_parms);
-    }
-    else {
       if (is_secondary_ue) {
 	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				 lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
-			       lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
-			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
-			       s,
-			       frame_parms);
+				 lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
+				 lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
+				 s,
+				 frame_parms);
 	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				 lte_ue_common_vars->dl_ch_estimates[eNb_id_i - 1],//subtract 1 to eNb_id_i to compensate for the non-shifted pilots from the PeNb
 				 &lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[2],//shift by two to simulate transmission from a second antenna
 				 &lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[2],//shift by two to simulate transmission from a second antenna
 				 s,
 				 frame_parms);
-      } else {
-	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+      } else if (frame_parms->nb_antennas_tx>1) {
+	pdcch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 			       lte_ue_common_vars->dl_ch_estimates[eNb_id],
 			       lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
 			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 			       s,
 			       frame_parms);
       }
-    }
-  }
-  if (is_secondary_ue) {
-    frame_parms->nb_antennas_tx = 2; //work around to keep call to the next function without changing it. nb_antennas_tx is now the added antennas from primary and secondary (one from secondary because of the B/F)
+      else {
+	  pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				   lte_ue_common_vars->dl_ch_estimates[eNb_id],
+				   lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
+				   lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
+				   s,
+				   frame_parms);
+      }
   }
   pdcch_channel_level(lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 		      frame_parms,
@@ -975,9 +970,6 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   pdcch_deinterleaving((unsigned short*)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->e_rx,
 		       lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->wbar,
 		       frame_parms->Nid_cell);
-  if (is_secondary_ue) {
-    frame_parms->nb_antennas_tx = 1;
-  }  
   return(0);
 }
 	     

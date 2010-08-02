@@ -117,7 +117,6 @@ typedef struct
   /// ACQ Mailbox for harware synch
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
-  unsigned int rx_total_gain_dB;
   unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   //  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
@@ -145,7 +144,7 @@ typedef struct
 
   unsigned char    is_secondary_eNb; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
-  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from, and this B/F vector is created.
   unsigned char    PeNb_id;          /// id of Primary eNb
   int              rx_offset;        /// Timing offset (used if is_secondary_eNb)
 
@@ -171,7 +170,6 @@ typedef struct
   unsigned int *mbox;    
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
-  unsigned int rx_total_gain_eNB_dB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
@@ -213,7 +211,7 @@ typedef struct
 
   /// hold the precoder for NULL beam to the primary eNb
   int              **ul_precoder_S_UE;
-  char             *log2_maxp; /// holds the maximum channel/precoder coefficient
+  char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
 #ifdef USER_MODE
   double   const_ch[4][2]; // constant channel coefficient

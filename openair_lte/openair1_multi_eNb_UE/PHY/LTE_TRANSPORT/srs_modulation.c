@@ -158,7 +158,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
     ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=0;
+      carrier_pos=1;
   }
 #else
 #ifndef RAW_IFFT
@@ -198,7 +198,7 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 #endif
 #endif
-  //  write_output("srs_tx.m","srstx",&txdataF[symbol_offset],512,1,1);
+  //  write_output("srs_txF.m","srstxF",&txdataF[symbol_offset],512,1,1);
   return(0);
 }
 
@@ -275,11 +275,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
     carrier_pos+=2;
     if (carrier_pos >= frame_parms->ofdm_symbol_size) 
-#ifdef OFDMA_ULSCH
       carrier_pos=1;
-#else
-      carrier_pos=0;
-#endif
   }
   /*
   for (k=0;k<Msc_RS;k++) {

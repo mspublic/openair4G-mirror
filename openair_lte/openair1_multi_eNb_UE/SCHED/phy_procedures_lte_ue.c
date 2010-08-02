@@ -164,13 +164,13 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue) {
     if ((!phy_vars_ue->is_secondary_ue && (((next_slot>>1)==2) || ((next_slot>>1)==3)))
 	|| (phy_vars_ue->is_secondary_ue && ((next_slot>>1)==4))) {
       if (phy_vars_ue->UE_mode != PRACH) {
-#ifdef DEBUG_PHY
+	//#ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
-#endif
+	//#endif
 	generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
-#ifdef DEBUG_PHY
+	//#ifdef DEBUG_PHY
 	write_output("UE_srs_tx.m","srs_tx",&phy_vars_ue->lte_ue_common_vars.txdataF[0][next_slot*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1) + phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti-1)],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
-#endif //DEBUG_PHY
+	//#endif //DEBUG_PHY
       }
     }
 
