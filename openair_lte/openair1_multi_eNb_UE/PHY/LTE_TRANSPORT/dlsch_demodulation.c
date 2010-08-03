@@ -1733,6 +1733,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   //  printf("rx_dlsch (eNb_id %d, dlsch_vars %p): symbol %d, rb_alloc[0] %x, pmi %x\n",eNb_id,lte_ue_dlsch_vars[eNb_id],symbol,dlsch_ue[0]->rb_alloc[0],pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc));
 
   if (frame_parms->nb_antennas_tx>1) {
+    if (!is_secondary_ue) {
+
     //debug_msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
 
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
@@ -1754,31 +1756,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				     dlsch_ue[0]->rb_alloc,
 				     symbol,
 				     frame_parms);
-  }
-  else {
-    if (!is_secondary_ue) {
-
-
-      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-				       lte_ue_common_vars->dl_ch_estimates[eNb_id],
-				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
-				       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
-				       dlsch_ue[0]->pmi_alloc,
-				       lte_ue_dlsch_vars[eNb_id]->pmi_ext,
-				       dlsch_ue[0]->rb_alloc,
-				       symbol,
-				       frame_parms);
-      if (dual_stream_UE == 1)
-	nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-					 lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
-					 lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
-					 lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,    
-					 dlsch_ue[0]->pmi_alloc,
-					 lte_ue_dlsch_vars[eNb_id]->pmi_ext,
-					 dlsch_ue[0]->rb_alloc,
-					 symbol,
-					 frame_parms);
-    } else { // is secondary ue
+  } else { // is secondary ue
       nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
 				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
@@ -1798,8 +1776,28 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				       symbol,
 				       frame_parms);
     }
-
   }
+  else {
+      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+				       lte_ue_common_vars->dl_ch_estimates[eNb_id],
+				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
+				       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+				       dlsch_ue[0]->pmi_alloc,
+				       lte_ue_dlsch_vars[eNb_id]->pmi_ext,
+				       dlsch_ue[0]->rb_alloc,
+				       symbol,
+				       frame_parms);
+      if (dual_stream_UE == 1)
+	nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
+					 lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
+					 lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
+					 lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,    
+					 dlsch_ue[0]->pmi_alloc,
+					 lte_ue_dlsch_vars[eNb_id]->pmi_ext,
+					 dlsch_ue[0]->rb_alloc,
+					 symbol,
+					 frame_parms);
+    } 
 
   //    printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
 

@@ -68,23 +68,24 @@ int main(int argc, char **argv) {
 #ifdef SECONDARY_SYSTEM
    int **txdata_ext, **rxdata_ext[2];
 #endif
-  double **s_re,**s_im,**r_re,**r_im;
-  //double amps[8] = {0.999,0.001,0.0,0.0,0.0,0.0,0.0,0.0};
-  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=0.03,ricean_factor=(1/(1 + pow(10,.1*KdB))); //0.0000005;
-  double forgetting_factor = 0;
-  int channel_length;
-  struct complex **ch;
-  unsigned char pbch_pdu[6];
-  int sync_pos, sync_pos_slot;
-  FILE *rx_frame_file;
-  int result;
-  int freq_offset;
-  int subframe_offset;
-  char fname[40], vname[40];
-  int trial, n_errors=0;
-  double SIRdBtarget = 0;
-  unsigned char plot_flag=0;
+   double **s_re,**s_im,**r_re,**r_im;
+   //double amps[8] = {0.999,0.001,0.0,0.0,0.0,0.0,0.0,0.0};
+   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+   double aoa=0; //if set to zero --> uniformly distributed random phase
+   double ricean_factor=(1/(1 + pow(10,.1*KdB))); //0.0000005;
+   double forgetting_factor = 0;
+   int channel_length;
+   struct complex **ch;
+   unsigned char pbch_pdu[6];
+   int sync_pos, sync_pos_slot;
+   FILE *rx_frame_file;
+   int result;
+   int freq_offset;
+   int subframe_offset;
+   char fname[40], vname[40];
+   int trial, n_errors=0;
+   double SIRdBtarget = 0;
+   unsigned char plot_flag=0;
 #ifdef PBS_SIM
   FILE *er_data_fd, *bler_fd, *dcier_fd, *turboIter_fd, *rate_fd, *sir_fd, *er_cause_fd;
   char er_data_fname[60], bler_fname[60], dcier_fname[60], turboIter_fname[60], rate_fname[60], sir_fname[60], er_cause_fname[60];
@@ -717,16 +718,16 @@ int main(int argc, char **argv) {
   openair_daq_vars.ue_ul_nb_rb = 2;
 
   PHY_vars_UE[0]->rx_total_gain_dB = 140;
-  PHY_vars_eNb[0]->rx_total_gain_eNB_dB = 150;
+  PHY_vars_eNb[0]->rx_total_gain_eNB_dB = 140;
   PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->crnti = 0xBEEF;
   PHY_vars_eNb[0]->eNB_UE_stats[eNb_id].UE_id[UE_id] = 0xBEEF;
 #ifdef SECONDARY_SYSTEM			
   PHY_vars_UE[1]->rx_total_gain_dB = 140;
-  PHY_vars_eNb[1]->rx_total_gain_eNB_dB = 150;
+  PHY_vars_eNb[1]->rx_total_gain_eNB_dB = 140;
   PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id_secsys]->crnti = 0xADDA;
   PHY_vars_eNb[1]->eNB_UE_stats[eNb_id_secsys].UE_id[UE_id_secsys] = 0xADDA;
   PHY_vars_UE[2]->rx_total_gain_dB = 140;
-  PHY_vars_eNb[2]->rx_total_gain_eNB_dB = 150;
+  PHY_vars_eNb[2]->rx_total_gain_eNB_dB = 140;
 #endif			
 
 
@@ -1115,16 +1116,19 @@ int main(int argc, char **argv) {
     rxdata_ext[1] = PHY_vars_eNb[2]->lte_eNB_common_vars.rxdata[eNb_id];
   }
   else {//it must be a special subframe
-    //which also means that SECONDARY system must listen, and synchronize as an UE, every x(=10) frame(s) or every frame on power up. PSS is located in the 3rd symbol in this slot.
-    if (PHY_vars_eNb[1]->is_init_sync && mac_xface->frame%10>0) {
+    //which also means that SECONDARY system must listen, and synchronize as an UE, every x(=100) frame(s) or every frame on power up. PSS is located in the 3rd symbol in this slot.
+    if (PHY_vars_eNb[1]->is_init_sync && mac_xface->frame%100>0) {
       if (next_slot%2==0) { //DL part
 	rxdata_ext[0] = PHY_vars_UE[1]->lte_ue_common_vars.rxdata;
+	//make sure SeNb rx_buffer is empty from the time when it listened and synchronized	
+	for (aa=0;aa<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx;aa++)
+	  memset(&PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys][aa][next_slot*((PHY_vars_eNb[1]->lte_frame_parms.nb_prefix_samples+PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size)*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1))],0,(PHY_vars_eNb[1]->lte_frame_parms.nb_prefix_samples+PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size)*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)*sizeof(mod_sym_t));
       }
       else {  //UL part
 	rxdata_ext[0] = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
       }
     } 
-    else { //Listen and synchronize
+    else { //Listen (in both SF slots) and synchronize 
       	rxdata_ext[0] = PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[eNb_id_secsys];
     }
     // virtual primary system applies regular configuration
@@ -1500,6 +1504,16 @@ int main(int argc, char **argv) {
 
 #endif //SECONDARY_SYSTEM 
       
+  if (next_slot==10) {    
+    write_output("UE1_rxs_pilot_cl_re.m","UE1_rxs_cl_p_r",r_re_crossLink[PeSu][0],640,1,7);
+    write_output("UE1_rxs_pilot_cl_im.m","UE1_rxs_cl_p_i",r_im_crossLink[PeSu][0],640,1,7);    
+    write_output("UE1_txs_pilot_re.m","UE1_txs_p_r",s_re_secsys[0],640,1,7);
+    write_output("UE1_txs_pilot_im.m","UE1_txs_p_i",s_im_secsys[0],640,1,7);    
+    write_output("UE1_rxs_pilot_re.m","UE1_rxs_p_r",r_re_ext[0][0],640,1,7);
+    write_output("UE1_rxs_pilot_im.m","UE1_rxs_p_i",r_im_ext[0][0],640,1,7);
+    write_output("eNb1_txF_pilot_a0.m","eNb_txF_p0",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+    write_output("eNb1_txF_pilot_a1.m","eNb_txF_p1",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+  }
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx;aa++) {
 	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
@@ -1547,12 +1561,12 @@ int main(int argc, char **argv) {
 	  }
 	} 
 	else if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)) { // DL
-	  for (aa=0;aa<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx;aa++) {
+	  for (aa=0;aa<PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx;aa++) {
 	    // from PeNb to S_UE
 	    r_re_ext[0][aa][i] += r_re_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]); 
 	    r_im_ext[0][aa][i] += r_im_crossLink[PeSu][aa][i]*sqrt(path_loss_ar[PeSu]);
 	  }
-	  for (aa=0;aa<PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx;aa++) {
+	  for (aa=0;aa<PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx;aa++) {
 	    // from SeNb to P_UE
 	    r_re[aa][i] += r_re_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]); 
 	    r_im[aa][i] += r_im_crossLink[SePu][aa][i]*sqrt(path_loss_ar[SePu]); 
@@ -1760,22 +1774,16 @@ int main(int argc, char **argv) {
 #endif //SKIP_RF_CHAIN
 
   //if ((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors) >dci_er[0]) {
-  /*
+  
   if (next_slot==10) {
-    write_output("r_real_a0.m","r_re_a0",r_re_ext[1][0],640,1,7);
-    write_output("r_imag_a0.m","r_im_a0",r_re_ext[1][0],640,1,7);
-    write_output("r_real_a1.m","r_re_a1",r_re_ext[1][1],640,1,7);
-    write_output("r_imag_a1.m","r_im_a1",r_re_ext[1][1],640,1,7);
-    write_output("r_real_a0.m","r_re_a0",r_re_crossLink[SePu][0],640,1,7);
-    write_output("r_imag_a0.m","r_im_a0",r_re_crossLink[SePu][0],640,1,7);
-    write_output("r_real_a1.m","r_re_a1",r_re_crossLink[SePu][1],640,1,7);
-    write_output("r_imag_a1.m","r_im_a1",r_re_crossLink[SePu][1],640,1,7);
-    write_output("r_real_a0.m","r_re_a0",r_re_ext[0][0],640,1,7);
-    write_output("r_imag_a0.m","r_im_a0",r_re_ext[0][0],640,1,7);
-    write_output("r_real_a1.m","r_re_a1",r_re_ext[0][1],640,1,7);
-    write_output("r_imag_a1.m","r_im_a1",r_re_ext[0][1],640,1,7);
+    
+    /*
+    // remember repeated format! Re0 Im0 Re0 Im0
+    write_output("UE_rxF_an0.m","UE_rxF_a0", &PHY_vars_UE[1]->lte_ue_common_vars.rxdataF[0][2*last_slot*lte_frame_parms->ofdm_symbol_size*6],2*lte_frame_parms->ofdm_symbol_size*4,2,1);
+    write_output("UE_rxF_an1.m","UE_rxF_a1", &PHY_vars_UE[1]->lte_ue_common_vars.rxdataF[1][2*last_slot*lte_frame_parms->ofdm_symbol_size*6],2*lte_frame_parms->ofdm_symbol_size*4,2,1);
+    */
   }
-  */
+  
   if (plot_flag) {
   //#ifndef PBS_SIM
   if (next_slot == 19) {

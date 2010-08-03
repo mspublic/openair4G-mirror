@@ -41,15 +41,21 @@ void multipath_channel(struct complex **ch,
   for (i=0;i<nb_antennas_rx;i++)      // RX Antenna loop
     for (j=0;j<nb_antennas_tx;j++) {  // TX Antenna loop
       
-      phase.r = cos(2.0*M_PI*(i-j)/aoa);
-      phase.i = sin(2.0*M_PI*(i-j)/aoa);
-      
       if (keep_channel) {
 	// do nothing - keep channel
       } else {
-      memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));
-      
-      random_channel(amps,Td, &a[channel_id][i][j][0],8,BW,ch[i + (j*nb_antennas_rx)],ricean_factor,&phase,forgetting_factor,clear);
+	if (aoa) {
+	  phase.r = cos(2.0*M_PI*(i-j)/aoa);
+	  phase.i = sin(2.0*M_PI*(i-j)/aoa);
+	} else { //random initial phase
+	  aoa = (double)rand()/RAND_MAX;
+	  phase.r = cos(2.0*M_PI*aoa);
+	  phase.i = sin(2.0*M_PI*aoa);
+	}
+	
+	memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));
+	
+	random_channel(amps,Td, &a[channel_id][i][j][0],8,BW,ch[i + (j*nb_antennas_rx)],ricean_factor,&phase,forgetting_factor,clear);
       }
       /*
       if ((i==0) && (j==0)) {

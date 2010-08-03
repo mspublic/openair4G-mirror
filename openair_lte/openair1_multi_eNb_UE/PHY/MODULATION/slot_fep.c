@@ -49,7 +49,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
 	printf("Channel estimation eNb %d, aatx %d\n",eNb_id,aa);
 #endif
-	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[0],
+	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[eNb_id],
 				  ue_common_vars->rxdataF,
 				  eNb_id,
 				  frame_parms,
