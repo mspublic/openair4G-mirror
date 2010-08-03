@@ -1,9 +1,9 @@
 close all
 clear all
 
-root_path = '/emos/EMOS/Mode2/';
+root_path = '/emos/EMOS/Coverage/';
 
-d = dir(fullfile(root_path, '*mode2*'));
+d = dir(fullfile(root_path, '*coverage*'));
 dir_names = {d.name};
 
 for d_idx=1:length(dir_names)

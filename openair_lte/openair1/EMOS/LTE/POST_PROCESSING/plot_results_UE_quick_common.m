@@ -3,11 +3,13 @@ h_fig = 0;
 %%
 UE_synched = (UE_mode_cat>0);
 UE_connected = (UE_mode_cat==3);
-timebase = gps_time_cat-gps_time_cat(find(~isnan(gps_time_cat),1));
+timebase = 1:length(UE_mode_cat);
+%timebase = gps_time_cat-gps_time_cat(find(~isnan(gps_time_cat),1));
 if (nomadic_flag)
     nomadic.UE_synched = (nomadic.UE_mode_cat>0);
     nomadic.UE_connected = (nomadic.UE_mode_cat==3);    
-    nomadic.timebase = nomadic.gps_time_cat-gps_time_cat(1);
+    %nomadic.timebase = nomadic.gps_time_cat-gps_time_cat(1);
+    nomadic.timebase = 1:length(nomadic.UE_mode_cat);
 end
 
 [dist, dist_traveled] = calc_dist(gps_lat_cat,gps_lon_cat,mm);
@@ -52,8 +54,11 @@ end
 title('RX RSSI [dBm]')
 xlabel('Time [sec]')
 ylabel('RX RSSI [dBm]')
-ylim([-110 -30]);
-ylim([-110 -30]);
+if ~isempty(strfind(lower(pathname),'interference'))
+    ylim([-110 -90]);
+else
+    ylim([-110 -30]);
+end
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 
 %%
@@ -224,7 +229,7 @@ h_fig = figure(h_fig);
 hold off
 dlsch_throughput(~UE_connected | ~good) = nan;
 %dist(~UE_connected | ~good)  = nan;
-[out,n,n2] = plot_in_bins(dist, dlsch_throughput,  0:17);
+[out,n,n2] = plot_in_bins(dist, dlsch_throughput,  0:ceil(max_dist));
 ylim([0 8.64e6]);
 title('DLSCH Throughput vs Dist');
 xlabel('Dist[km]');
@@ -237,18 +242,20 @@ csvwrite(fullfile(pathname,'DLSCH_throughput_dist.csv'),n2./n);
 N_samples = floor(length(dlsch_throughput)/4)*4;
 dlsch_throughput(~UE_connected) = 0;
 dlsch_throughput4 = reshape(dlsch_throughput(1:N_samples),4,[]);
-dlsch_throughput_pfair = sum(dlsch_throughput4.^2,1)./sum(dlsch_throughput4,1);
+dlsch_throughput4_pfair = (dlsch_throughput4.^2)./repmat(sum(dlsch_throughput4,1),4,1);
+dlsch_throughput_pfair = sum(dlsch_throughput4_pfair,1);
 
-%%
+%% over time
 h_fig = h_fig+1;
 h_fig = figure(h_fig);
 hold off
-plot(dlsch_throughput4.')
+plot(dlsch_throughput4_pfair.','x')
 hold on
 plot(dlsch_throughput_pfair,'k','Linewidth',2)
 ylim([0 8.64e6]);
 ylabel('Throughput [bps]')
 xlabel('Time [sec]')
+legend('User 1','User 2','User 3','User 4','Sum rate');
 saveas(h_fig,fullfile(pathname,'pfair_throughput_4users.eps'),'epsc2');
 
 
@@ -258,7 +265,7 @@ h_fig = figure(h_fig);
 hold off
 colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
 for n = 1:4
-    [f,x] = ecdf(dlsch_throughput4(n,:));
+    [f,x] = ecdf(dlsch_throughput4_pfair(n,:));
     plot(x,f,colors{n});
     hold on
 end
@@ -271,3 +278,25 @@ xlabel('Throughput [bps]')
 ylabel('P(x<abscissa)')
 grid on
 saveas(h_fig,fullfile(pathname,'pfair_throughput_cdf_4users.eps'),'epsc2');
+
+%% DLSCH throughput over GPS coordinates
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+plot_gps_coordinates(mm,gps_lon_cat(1:N_samples), gps_lat_cat(1:N_samples), dlsch_throughput4_pfair(:), [0 8.64e6]);
+title('DLSCH Throughput [bps]')
+saveas(h_fig,fullfile(pathname,'pfair_troughput_gps_4users.jpg'),'jpg')
+
+%% plot througput as a function of distance
+h_fig = h_fig+1;    
+h_fig = figure(h_fig);
+hold off
+[out,n,n2] = plot_in_bins(dist(1:N_samples), dlsch_throughput4_pfair(:),  0:ceil(max_dist));
+ylim([0 8.64e6]);
+title('DLSCH Throughput vs Dist');
+xlabel('Dist[km]');
+ylabel('Throughput[Bits/sec]');
+saveas(h_fig,fullfile(pathname,'pfair_throughput_dist_4users.eps'),'epsc2');
+
+
+

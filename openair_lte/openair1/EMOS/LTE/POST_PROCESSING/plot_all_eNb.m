@@ -8,14 +8,14 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Coverage/';
-d = dir(fullfile(root_path, '*coverage*'));
+root_path = '/emos/AMBIALET/Mode2/';
+d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/EMOS/Coverage/results';
+pathname = '/emos/AMBIALET/Mode2/results';
 
-mm='cordes';
+mm='ambialet';
 decimation = 100;
 
 for i=1:length(dir_names)
@@ -58,4 +58,4 @@ end
 save(fullfile(pathname,'results_eNB.mat'),nn{:});
 
 h_fig = 0;
-plot_results_eNB_quick
+plot_results_eNb_quick

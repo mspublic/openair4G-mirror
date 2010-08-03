@@ -8,6 +8,7 @@ h_fig = 0;
 eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]==3);
 timebase = estimates_eNB.gps_time_cat - min(estimates_eNB.gps_time_cat);
 [dist, dist_traveled] = calc_dist(estimates_eNB.gps_lat_cat,estimates_eNB.gps_lon_cat,mm);
+max_dist = ceil(max(dist));
 
 %% N0 over time
 h_fig = h_fig+1;
@@ -15,6 +16,7 @@ figure(h_fig);
 hold off
 %plot(timebase,estimates_eNB.rx_N0_dBm_cat,'x')
 plot(double(estimates_eNB.timestamp_cat)/1e9,estimates_eNB.rx_N0_dBm_cat,'x')
+ylim([-110 -90]); 
 title('UL I0 [dBm]')
 xlabel('Time [sec]')
 ylabel('UL I0 [dBm]')
@@ -86,6 +88,7 @@ hold on
 plot(timebase,ulsch_throughput_ideal_1Rx*100,'rx');
 hold on
 plot(timebase,ulsch_throughput_ideal_2Rx*100,'gx');
+ylim([0 4.86e6])
 legend('modem','ideal 1 rx antenna','ideal 2 rx antennas');
 title('UL Throughput [bps]')
 xlabel('Time [sec]')
@@ -97,7 +100,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat(good), estimates_eNB.gps_lat_cat(good), ...
-        ulsch_throughput(good));
+        ulsch_throughput(good),[0 4.86e6]);
 title('UL Throughput (modem) [bps]')
 saveas(h_fig,fullfile(pathname,'UL_throughput_gps.jpg'),'jpg')
 
@@ -106,7 +109,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat(good), estimates_eNB.gps_lat_cat(good), ...
-        ulsch_throughput_ideal_1Rx(good)*100);
+        ulsch_throughput_ideal_1Rx(good)*100,[0 4.86e6]);
 title('UL Throughput (ideal, 1Rx) [bps]')
 saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_gps.jpg'),'jpg')
 
@@ -115,7 +118,7 @@ h_fig = h_fig+1;
 figure(h_fig);
 hold off
 plot_gps_coordinates(mm,estimates_eNB.gps_lon_cat(good), estimates_eNB.gps_lat_cat(good), ...
-        ulsch_throughput_ideal_2Rx(good)*100);
+        ulsch_throughput_ideal_2Rx(good)*100,[0 4.86e6]);
 title('UL Throughput (ideal, 2Rx) [bps]')
 saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_gps.jpg'),'jpg')
 
@@ -131,6 +134,7 @@ hold on
 plot(x,f,'g','Linewidth',2)
 [f,x] = ecdf(ulsch_throughput_ideal_2Rx(good)*100);
 plot(x,f,'r','Linewidth',2)
+xlim([0 4.86e6])
 legend('modem','ideal 1 rx antenna','ideal 2 rx antennas','Location','SouthEast');
 title('UL Throughput CDF')
 xlabel('UL Throughput [bps]')
@@ -149,6 +153,7 @@ hold on
 plot(x,f,'g','Linewidth',2)
 [f,x] = ecdf(coded2uncoded(ulsch_throughput_ideal_2Rx(good)*100,'UL'));
 plot(x,f,'r','Linewidth',2)
+xlim([0 4.86e6])
 legend('modem','ideal 1 rx antenna','ideal 2 rx antennas','Location','SouthEast');
 title('UL Uncoded throughput CDF')
 xlabel('UL Throughput [bps]')
@@ -170,6 +175,7 @@ h_fig = h_fig+1;
 h_fig = figure(h_fig);
 hold off
 plot_in_bins(estimates_eNB.gps_speed_cat(good), ulsch_throughput(good),  0:5:40);
+ylim([0 4.86e6])
 title('UL Throughput vs Speed');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
@@ -179,6 +185,7 @@ h_fig = h_fig+1;
 h_fig = figure(h_fig);
 hold off
 plot_in_bins(estimates_eNB.gps_speed_cat(good), ulsch_throughput_ideal_1Rx(good)*100,  0:5:40);
+ylim([0 4.86e6])
 title('UL Throughput vs Speed, ideal, 1Rx');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
@@ -188,6 +195,7 @@ h_fig = h_fig+1;
 h_fig = figure(h_fig);
 hold off
 plot_in_bins(estimates_eNB.gps_speed_cat(good), ulsch_throughput_ideal_2Rx(good)*100,  0:5:40);
+ylim([0 4.86e6])
 title('UL Throughput vs Speed, ideal, 2Rx');
 xlabel('Speed[Meters/Second]');
 ylabel('Throughput[Bits/sec]');
@@ -197,7 +205,8 @@ saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_2Rx_speed.eps'),'epsc2');
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 hold off
-plot_in_bins(dist(good), ulsch_throughput(good),  0:15);
+plot_in_bins(dist(good), ulsch_throughput(good),  0:max_dist);
+ylim([0 4.86e6])
 title('UL Throughput vs Dist');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
@@ -206,7 +215,8 @@ saveas(h_fig,fullfile(pathname,'UL_throughput_dist.eps'),'epsc2');
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 hold off
-plot_in_bins(dist(good), ulsch_throughput_ideal_1Rx(good)*100,  0:15);
+plot_in_bins(dist(good), ulsch_throughput_ideal_1Rx(good)*100,  0:max_dist);
+ylim([0 4.86e6])
 title('UL Throughput vs Dist, ideal, 1Rx');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');
@@ -215,7 +225,8 @@ saveas(h_fig,fullfile(pathname,'UL_throughput_ideal_1Rx_dist.eps'),'epsc2');
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 hold off
-plot_in_bins(dist(good), ulsch_throughput_ideal_2Rx(good)*100,  0:15);
+plot_in_bins(dist(good), ulsch_throughput_ideal_2Rx(good)*100,  0:max_dist);
+ylim([0 4.86e6])
 title('UL Throughput vs Dist, ideal, 2Rx');
 xlabel('Dist[km]');
 ylabel('Throughput[Bits/sec]');

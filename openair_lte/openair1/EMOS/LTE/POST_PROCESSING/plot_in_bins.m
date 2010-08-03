@@ -13,18 +13,24 @@ y=y(:);
 
 [n, bin] = histc(x,edges);
 
-out = zeros(length(edges),4);
+out = zeros(length(edges),5);
 n2 = zeros(size(n));
 
 for k=1:length(edges)
     n2(k) = sum(bin==k  & ~isnan(y));
     out(k,1) = mean(y(bin==k & ~isnan(y)));
-    out(k,2:4) = prctile(y(bin==k & ~isnan(y)),[50 90 95]);
+    % we would like the percentiles where (95/85/50/5%) of the values are
+    % above. Matlab returns the percentiles of the values below. So we
+    % calculate 
+    out(k,2:5) = prctile(y(bin==k & ~isnan(y)),[5 15 50 95]);
 end
 
-plot(edges(1:end-1),out(1:end-1,:));
-% for i=1:length(edges)-1
-%     %text(edges(i),max(out(i,:)),sprintf('%d (%d %%)',n2(i),round(n2(i)/n(i))), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
-%     text(edges(i),0,sprintf('%d (%d %%)',n2(i),round(100*n2(i)/n(i))), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
-% end
-legend('Mean','50% prctile below','90% prctile below','95% prctile below','Location','Best');
+midpoints = (edges(1:end-1) + edges(2:end))/2;
+plot(midpoints,out(1:end-1,:));
+xlim([edges(1),edges(end)])
+yl = ylim;
+for i=1:length(midpoints)
+    %text(edges(i),max(out(i,:)),sprintf('%d (%d %%)',n2(i),round(n2(i)/n(i))), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
+    text(midpoints(i),min(0,yl(1)),sprintf(' %d',n2(i)), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
+end
+legend('Mean','95% prctile above','85% prctile above','50% prctile above','5% prctile above','Location','Best');
