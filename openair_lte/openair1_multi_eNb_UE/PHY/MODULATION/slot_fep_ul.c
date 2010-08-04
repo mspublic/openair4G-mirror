@@ -34,9 +34,9 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
     if ((Ns==5) && (eNb_id==0) && (aa==0)) 
       write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],((frame_parms->ofdm_symbol_size+nb_prefix_samples)*6),1,1);
-#endif
     if ((Ns==7) && (eNb_id==0) && (symbol==11)) 
       write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],(frame_parms->ofdm_symbol_size),1,1);
+#endif
 
     fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+offset],
 	(short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],

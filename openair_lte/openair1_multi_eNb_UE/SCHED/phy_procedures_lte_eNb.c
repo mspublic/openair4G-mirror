@@ -1065,7 +1065,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
       phy_vars_eNb->ulsch_consecutive_errors[harq_pid]++;
 
       // If we've dropped the UE, go back to PRACH mode for this UE
-      if (phy_vars_eNb->ulsch_consecutive_errors[harq_pid] == 20) {
+      if (0){//phy_vars_eNb->ulsch_consecutive_errors[harq_pid] == 20) {
 	phy_vars_eNb->eNB_UE_stats[0].mode[0] = PRACH;
 	phy_vars_eNb->ulsch_consecutive_errors[harq_pid]=0;
       }

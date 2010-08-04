@@ -477,7 +477,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   for (j=0,l=0;l<(nsymb-1);l++) {
     re_offset = re_offset0;
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    //printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {

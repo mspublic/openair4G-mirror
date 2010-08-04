@@ -457,9 +457,11 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
     
     if (phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq>20) {
       msg("[PHY_PROCEDURES_LTE] frame %d, slot %d, PBCH consecutive errors > 20, going out of sync!\n",mac_xface->frame, last_slot);
-      openair_daq_vars.mode = openair_NOT_SYNCHED;
-      phy_vars_ue->UE_mode = NOT_SYNCHED;
-      openair_daq_vars.sync_state=0;
+      if (0){//!phy_vars_ue->is_secondary_ue) { //currently secondary ue does not receive PBCH from secondary eNb, therefor it's kept in sync by other means and hence should not be marked as out of sync here.
+	openair_daq_vars.mode = openair_NOT_SYNCHED;
+	phy_vars_ue->UE_mode = NOT_SYNCHED;
+	openair_daq_vars.sync_state=0;
+      }
 #ifdef CBMIMO1
 
       openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
@@ -517,9 +519,12 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
 				   &phy_vars_ue->lte_frame_parms,
 				   SI_RNTI,RA_RNTI);
 
-  //  debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
-
   phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received += dci_cnt;
+    
+#ifdef DIAG_PHY
+  if (dci_cnt) 
+    debug_msg("[PHY_PROCEDURES_LTE][DIAG] Frame %d, slot %d: DCI found %i\n",mac_xface->frame,last_slot,dci_cnt);
+#endif
 
 #ifdef DIAG_PHY
   if (last_slot==18)
@@ -630,6 +635,7 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
 					    RA_RNTI,
 					    P_RNTI)==0) {
 	phy_vars_ue->dlsch_ue_cntl_active = 1;
+	phy_vars_ue->dlsch_cntl_received++;
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Generate UE DLSCH SI_RNTI format 1A\n");
 #endif
@@ -852,7 +858,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue[0],
 			       ((last_slot>>1)-1)%10);
-	  
+	  phy_vars_ue->turbo_iterations += ret;	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    phy_vars_ue->dlsch_errors++;
 #ifdef USER_MODE
@@ -924,6 +930,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue_cntl,
 			       ((last_slot>>1)-1)%10);
+	  phy_vars_ue->turbo_cntl_iterations += ret;
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    phy_vars_ue->dlsch_cntl_errors++;

@@ -194,10 +194,11 @@ typedef struct
   unsigned int  ulsch_ue_rag_frame;
   unsigned char ulsch_ue_rag_subframe;
   unsigned char rag_timer;
-  int dci_errors, turbo_iterations, turbo_cntl_iterations;
+  int turbo_iterations, turbo_cntl_iterations;
   int dlsch_errors;
   int dlsch_errors_last;
   int dlsch_received;
+  int dlsch_cntl_received;
   int dlsch_received_last;
   int dlsch_fer;
   int dlsch_cntl_errors;
@@ -214,7 +215,7 @@ typedef struct
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
 #ifdef USER_MODE
-  double   const_ch[4][2]; // constant channel coefficient
+  double   const_ch[4][2]; // constant channel coefficient (index: [channel][real/imag])
 #endif
 
 } PHY_VARS_UE;

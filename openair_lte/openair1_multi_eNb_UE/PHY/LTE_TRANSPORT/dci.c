@@ -1286,7 +1286,6 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif
     } 
     else {
-    
       pdcch_llr(frame_parms,
 		lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,
 		(char *)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,

@@ -44,13 +44,8 @@ void multipath_channel(struct complex **ch,
       if (keep_channel) {
 	// do nothing - keep channel
       } else {
-	if (aoa) {
-	  phase.r = cos(2.0*M_PI*(i-j)/aoa);
-	  phase.i = sin(2.0*M_PI*(i-j)/aoa);
-	} else { 
-	  phase.r = cos(2.0*M_PI*aoa);
-	  phase.i = sin(2.0*M_PI*aoa);
-	}
+	phase.r = cos(2.0*M_PI*(sin(i*aoa/2)-sin(j*aoa/2)));
+	phase.i = sin(2.0*M_PI*(sin(i*aoa/2)-sin(j*aoa/2)));
 	
 	memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));
 	
