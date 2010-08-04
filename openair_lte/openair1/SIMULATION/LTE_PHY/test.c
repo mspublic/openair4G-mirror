@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=1,Td=1.0;
   int channel_length;
+  int amp;
 
   unsigned char pbch_pdu[6];
   int sync_pos, sync_pos_slot;
@@ -49,14 +50,27 @@ int main(int argc, char **argv) {
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB, tx_pwr, rx_pwr;
-  int rx_pwr2;
-  struct complex **ch;
+  double rx_gain;
+  int rx_pwr2, target_rx_pwr_dB;
 
+  struct complex **ch;
   unsigned char first_call = 1;
-  int rx_gain;
 
   LTE_DL_FRAME_PARMS frame_parms;
   LTE_DL_FRAME_PARMS *lte_frame_parms = &frame_parms;
+
+  if (argc==2)
+    amp = atoi(argv[1]);
+  else 
+    amp = 1024;
+
+  // we normalize the tx power to 0dBm, assuming the amplitude of the signal is 1024
+  // the SNR is this given by the difference of the path loss and the thermal noise (~-105dBm)
+  // the rx_gain is adjusted automatically to achieve the target_rx_pwr_dB
+
+  path_loss_dB = -90;
+  path_loss    = pow(10,path_loss_dB/10);
+  target_rx_pwr_dB = 60;
 
   lte_frame_parms->N_RB_DL            = 25;
   lte_frame_parms->N_RB_UL            = 25;
@@ -121,8 +135,8 @@ int main(int argc, char **argv) {
 
   for (i=0;i<2;i++) {
     for (l=0;l<FRAME_LENGTH_COMPLEX_SAMPLES;l++) {
-      ((short*) txdata[i])[2*l]   = 1024 * cos(M_PI/2*l);
-      ((short*) txdata[i])[2*l+1] = 1024 * sin(M_PI/2*l);
+      ((short*) txdata[i])[2*l]   = amp * cos(M_PI/2*l);
+      ((short*) txdata[i])[2*l+1] = amp * sin(M_PI/2*l);
     }
   }
   tx_pwr = signal_energy(txdata[0],lte_frame_parms->samples_per_tti>>1);
@@ -146,7 +160,8 @@ int main(int argc, char **argv) {
 			      lte_frame_parms->nb_antennas_tx,
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
-			      0);
+			      18); //this should give 0dBm output level for input with amplitude 1024
+			      
       printf("tx_pwr (DAC out) %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 #else
 
@@ -173,14 +188,9 @@ int main(int argc, char **argv) {
 	first_call = 0;
 
 #ifdef RF
-      path_loss_dB = -100;
-      path_loss    = pow(10,path_loss_dB/10);
       
       //path_loss_dB = 0;
       //path_loss = 1;
-
-      rx_gain = -path_loss_dB;
-      
 
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
@@ -190,9 +200,12 @@ int main(int argc, char **argv) {
 	}
       }
       
+      rx_pwr = signal_energy_fp(r_re,r_im,lte_frame_parms->nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
+      printf("rx_pwr (RF in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
+      
+      rx_gain = target_rx_pwr_dB - 10*log10(rx_pwr);
       
       // RF model
-
       rf_rx(r_re,
 	    r_im,
 	    NULL,
@@ -204,7 +217,7 @@ int main(int argc, char **argv) {
 	    0.0,               // freq offset (Hz) (-20kHz..20kHz)
 	    0.0,               // drift (Hz) NOT YET IMPLEMENTED
 	    nf,                // noise_figure NOT YET IMPLEMENTED
-	    (double) rx_gain + 12.041,   // 12.041 = 20*log10(pow2(14-12)) = loss due to dac/adc
+	    rx_gain-66.227,    // rx gain (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 	    200,               // IP3_dBm (dBm)
 	    &ip,               // initial phase
 	    30.0e3,            // pn_cutoff (kHz)
