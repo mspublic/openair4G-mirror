@@ -1,6 +1,6 @@
 #include "PHY/defs.h"
 #include "defs.h"
-#define DEBUG_FEP
+//#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		LTE_eNB_COMMON *eNb_common_vars,

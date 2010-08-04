@@ -76,6 +76,7 @@ void print_ints(char *s,__m128i *x) {
 short *llr;
 
 
+
 #ifndef USER_MODE
 #define NOCYGWIN_STATIC static
 #else
@@ -1375,9 +1376,6 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	dl_ch128_2+=3;
 	rho128+=3;
 	
-	
-	
-	
       }	
       
       if (symbol == frame_parms->first_dlsch_symbol) {
@@ -1841,6 +1839,9 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       nb_rb,
 			       lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 			       phy_measurements); // log2_maxh+I0_shift
+#ifdef DEBUG_PHY
+	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+#endif
 
     if ((dual_stream_UE == 1) || is_secondary_ue) {
       // get MF output for interfering stream
@@ -1856,7 +1857,10 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				 nb_rb,
 				 lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 				 phy_measurements); // log2_maxh+I0_shift
-      
+#ifdef DEBUG_PHY
+	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);     
+#endif 
 
     // compute correlation between signal and interference channels
       dlsch_dual_stream_correlation(frame_parms,
@@ -1897,6 +1901,10 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			symbol,
 			nb_rb,
 			(is_secondary_ue) ? 1 : dual_stream_UE); // if is_secondary_ue, one can exploit the dual_stream_UE flag for this function. Even though this is not really safe programming, it will work for this purpose.
+#ifdef DEBUG_PHY
+	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
+#endif  
 
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {

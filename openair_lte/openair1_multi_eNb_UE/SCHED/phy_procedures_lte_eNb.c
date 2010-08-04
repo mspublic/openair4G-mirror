@@ -225,8 +225,8 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb)
       
 #ifdef USER_MODE
       
-      write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size+phy_vars_eNb->lte_frame_parms.nb_prefix_samples)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
       /*
+	write_output("eNb_sync_buffer0.m","eNb_sync_buf0",eNb_sync_buffer[0],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size+phy_vars_eNb->lte_frame_parms.nb_prefix_samples)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
 	write_output("eNb_sync_buffer1.m","eNb_sync_buf1",eNb_sync_buffer[1],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size+phy_vars_eNb->lte_frame_parms.nb_prefix_samples)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti/2-PSS_UL_SYMBOL),1,1);
       */
 #endif
@@ -242,13 +242,13 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb)
 				   phy_vars_eNb->lte_eNB_common_vars.sync_corr[eNb_id]);
 
 #ifdef USER_MODE
-      //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
       if (eNb_id==0)
 	write_output("sync_corr_eNb.m","synccorr",phy_vars_eNb->lte_eNB_common_vars.sync_corr[eNb_id],
 		     (phy_vars_eNb->lte_frame_parms.symbols_per_tti/2 - PSS_UL_SYMBOL) * 
 		     (phy_vars_eNb->lte_frame_parms.ofdm_symbol_size+phy_vars_eNb->lte_frame_parms.nb_prefix_samples),1,2);
       
-      //#endif //DEBUG_PHY    
+#endif //DEBUG_PHY    
 #endif //USER_MODE
 
       if ((sync_pos>=0) && (sync_val > phy_vars_eNb->max_peak_val)) {

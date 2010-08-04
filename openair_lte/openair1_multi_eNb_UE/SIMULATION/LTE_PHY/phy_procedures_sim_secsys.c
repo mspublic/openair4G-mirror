@@ -30,8 +30,8 @@
 //#define DISABLE_SECONDARY
 #define BW 7.68 //Fs in MHz
 #define Td 1
-#define N_TRIALS_MAX 4
-#define KdB 60 /// Ricean factor in dB
+#define N_TRIALS_MAX 10
+#define KdB 6 /// Ricean factor in dB
 
 //#define DEBUG_PHY
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
   int slot,last_slot, next_slot;
 
-  double path_loss_dB_def = -60;
+  double path_loss_dB_def = -50;
   unsigned int rx_gain[3];
   double rx_gain_lin;
 
@@ -795,9 +795,11 @@ int main(int argc, char **argv) {
     first_call = 1;
     first_call_secsys = 1;
 
+#ifndef PBS_SIM
 #ifdef SECONDARY_SYSTEM
   printf("SIR :      %f dB\n",SIRdBtarget);
 #endif
+#endif //PBS_SIM
 
 #ifdef SKIP_RF_CHAIN
   SIR = pow(10,.1*SIRdBtarget);
@@ -827,7 +829,7 @@ int main(int argc, char **argv) {
 	  path_loss_dB += (-20+(double)PHY_vars_UE[1]->ulsch_ue[0]->power_offset);
       }
 */
-      path_loss_ar_dB[SeSu] = path_loss_dB + 10;
+      path_loss_ar_dB[SeSu] = path_loss_dB;
       path_loss_ar[SeSu]    = pow(10,.1*path_loss_ar_dB[SeSu]);
       path_loss_ar_dB[PeSu] = path_loss_dB;
       path_loss_ar[PeSu]    = pow(10,.1*path_loss_ar_dB[PeSu]);
@@ -852,20 +854,26 @@ int main(int argc, char **argv) {
   path_loss_ar[SePu]    = pow(10,.1*path_loss_ar_dB[SePu]);
   path_loss_ar_dB[PePu] = path_loss_dB;
 #endif //SECONDARY_SYSTEM
+#ifndef PBS_SIM
   printf("path_losses, next_slot %d: \n",next_slot);
   for (i=1;i<6;i++) {
     printf("path_loss_ar_dB[%d]: %f\n",i,path_loss_ar_dB[i]);
   }
+#endif //PBS_SIM
 
   if ((next_slot > 2) && (next_slot < 10)) {
     for (i=0 ; i<3; i++) {
       rx_gain[i] = PHY_vars_eNb[i]->rx_total_gain_eNB_dB;
+#ifndef PBS_SIM
       printf("[RF RX] Slot: %d: rx_gain (eNB) %d\n",next_slot, rx_gain[i]);
+#endif //PBS_SIM
     }
   } else {
     for (i=0 ; i<3; i++) {
       rx_gain[i] = PHY_vars_UE[i]->rx_total_gain_dB;
+#ifndef PBS_SIM
       printf("[RF RX] Slot: %d: rx_gain (UE) %d\n",next_slot, rx_gain[i]);
+#endif //PBS_SIM
     }
   }
 
@@ -905,8 +913,6 @@ int main(int argc, char **argv) {
 #endif //DISABLE_SECONDARY
       mac_xface->is_cluster_head = 0;      
       phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE[0]);
-	if (next_slot==6)
-	  write_output("UE_txF_slot7.m","UE_s_7_txF",&PHY_vars_UE[0]->lte_ue_common_vars.txdataF[0][next_slot*(PHY_vars_UE[0]->lte_frame_parms.symbols_per_tti>>1)*PHY_vars_UE[0]->lte_frame_parms.ofdm_symbol_size],PHY_vars_UE[0]->lte_frame_parms.ofdm_symbol_size*PHY_vars_UE[0]->lte_frame_parms.symbols_per_tti,1,1);
 #ifndef DISABLE_SECONDARY
 #ifdef SECONDARY_SYSTEM
 #ifndef PBS_SIM
@@ -1142,7 +1148,7 @@ int main(int argc, char **argv) {
 
 
 #endif //SECONDARY_SYSTEM
-
+    
       /*-------------------------------------------------------------
 	                 TRANSMISSION SIMULATION
       ---------------------------------------------------------------*/
@@ -1238,7 +1244,7 @@ int main(int argc, char **argv) {
 #endif
 	}
       }
-
+    
 #else //SKIP_RF_CHAIN
 
       /*-------------------------------------------------------------
@@ -1322,7 +1328,7 @@ int main(int argc, char **argv) {
 	*/
 #endif //PBS_SIM
 #endif //SECONDARY_SYSTEM
-
+    
      
       /*-------------------------------------------------------------
 	                     CHANNEL MODEL 
@@ -1345,45 +1351,44 @@ int main(int argc, char **argv) {
 	    }
 	  }
 	}
-      
-//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
-#endif //PBS_SIM
-      multipath_channel(
+ 
+#endif //PBS_SIM    
+    
+	multipath_channel(
 #ifdef SECONDARY_SYSTEM
-			ch_ar[PePu],
+			  ch_ar[PePu],
 #else
-			ch,
+			  ch,
 #endif
-			s_re,s_im,r_re,r_im,
-			amps,Td,BW,ricean_factor,aoa,
-			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call == 1) ? 1 : 0),
+			  s_re,s_im,r_re,r_im,
+			  amps,Td,BW,ricean_factor,aoa,
+			  PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call == 1) ? 1 : 0),
 #ifdef SECONDARY_SYSTEM
-			(has_channel) ? 1 : 
+			  (has_channel) ? 1 : 
 #endif			
-			((next_slot==2 || first_call==1) ? 0 : 1),
+			  ((next_slot==2 || first_call==1) ? 0 : 1),
 #ifdef SECONDARY_SYSTEM
-			PePu
+			  PePu
 #else
-			0
-#endif			
-);
-      if (first_call == 1)
-	first_call = 0;
-
+			  0
+#endif	    
+			   );
+	if (first_call == 1)
+	  first_call = 0;
 
 #ifdef SECONDARY_SYSTEM 
 #ifndef PBS_SIM  
-//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
+	//      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 #endif //PBS_SIM
-      // SeNb to S_UE
-      multipath_channel(ch_ar[SeSu],s_re_secsys,s_im_secsys,
-			r_re_ext[0],r_im_ext[0],
+	// SeNb to S_UE
+	multipath_channel(ch_ar[SeSu],s_re_secsys,s_im_secsys,
+			  r_re_ext[0],r_im_ext[0],
 			amps,Td,BW,ricean_factor,aoa,
 			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
 			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
@@ -1395,7 +1400,7 @@ int main(int argc, char **argv) {
 			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
 			SeSu);
 #ifdef DEBUG_PHY
-      msg("ch_ar[%i][0][0].r = %lf\n",SeSu,ch_ar[SeSu][0][0].r);	SeSu);
+      msg("ch_ar[%i][0][0].r = %lf\n",SeSu,ch_ar[SeSu][0][0].r);
 #endif //DEBUG_PHY
 
       // channel models for interference paths
@@ -1500,10 +1505,10 @@ int main(int argc, char **argv) {
       }
       if (first_call_secsys == 1)
 	first_call_secsys = 0;
-     
 
 #endif //SECONDARY_SYSTEM 
-      
+    
+#ifdef DEBUG_PHY
   if (next_slot==10) {    
     write_output("UE1_rxs_pilot_cl_re.m","UE1_rxs_cl_p_r",r_re_crossLink[PeSu][0],640,1,7);
     write_output("UE1_rxs_pilot_cl_im.m","UE1_rxs_cl_p_i",r_im_crossLink[PeSu][0],640,1,7);    
@@ -1514,6 +1519,7 @@ int main(int argc, char **argv) {
     write_output("eNb1_txF_pilot_a0.m","eNb_txF_p0",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("eNb1_txF_pilot_a1.m","eNb_txF_p1",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
   }
+#endif //DEBUG_PHY
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
 	for (aa=0;aa<PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx;aa++) {
 	  r_re[aa][i]=r_re[aa][i]*sqrt(path_loss); 
@@ -1639,9 +1645,9 @@ int main(int argc, char **argv) {
       rx_pwr = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
  
 #ifndef PBS_SIM  
-      //if (next_slot==10) {
-      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);
-      //}
+      if (next_slot==10) {
+	printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);
+      }
 #endif //PBS_SIM
 
 #ifdef SECONDARY_SYSTEM
@@ -1701,16 +1707,15 @@ int main(int argc, char **argv) {
 	}
 	//printf("Frame[%i] sir_act: %lf\n",mac_xface->frame,sir_act);
       }
-	
 #endif //PBS_SIM
 
 #ifndef PBS_SIM 
-      //if (next_slot==10) {
+      if (next_slot==10) {
 	printf("rx_pwr_sec[%i] (ADC in) %f dB for slot %d (subframe %d)\n",j,10*log10(rx_pwr_sec[j]),next_slot,next_slot>>1);
-	//}
-#endif //PBS_SIM  
-#endif //SECONDARY_SYSTEM
+      }
+#endif //PBS_SIM
       } //loop over secondary transmission simulations
+#endif //SECONDARY_SYSTEM
 
       /*-------------------------------------------------------------
 	                     A/D CONVERSION
@@ -1730,9 +1735,9 @@ int main(int argc, char **argv) {
   rx_pwr2 = signal_energy(rxdata[0]+slot_offset_time,lte_frame_parms->samples_per_tti>>1);
   
 #ifndef PBS_SIM 
-  //if (next_slot==10) {
-  printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
-  //}
+  if (next_slot==10) {
+    printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
+  }
 #endif //PBS_SIM   
   
 #ifdef SECONDARY_SYSTEM
@@ -1750,42 +1755,15 @@ int main(int argc, char **argv) {
     
 #ifndef PBS_SIM
     if (next_slot==10) {
-    printf("rx_pwr_ext[%i] (ADC out) %f dB (%d) for slot %d (subframe %d)\n",j,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);
+      printf("rx_pwr_ext[%i] (ADC out) %f dB (%d) for slot %d (subframe %d)\n",j,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);
     }
-    //  if (next_slot==7) {
-    printf("rx_pwr_ext[%i] antenna 0 (ADC out) %f dB (%d) for slot %d (subframe %d)\n",j,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);
-    //  }
-    rx_pwr2 = signal_energy(rxdata_ext[0][1]+slot_offset_time,lte_frame_parms->samples_per_tti>>1);
-      if (next_slot==7) {
-    printf("rx_pwr_ext[%i] antenna 1 (ADC out) %f dB (%d) for slot %d (subframe %d)\n",j,10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);
-    //write_output("eNb1_rxdata_slot7_a0.m","eNb1_rxs_s7_a0",PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[0][0]+slot_offset_time,PHY_vars_eNb[1]->lte_frame_parms.samples_per_tti>>1,1,1);
-    //write_output("eNb1_rxdata_slot7_a1.m","eNb1_rxs_s7_a1",PHY_vars_eNb[1]->lte_eNB_common_vars.rxdata[0][1]+slot_offset_time,PHY_vars_eNb[1]->lte_frame_parms.samples_per_tti>>1,1,1);
-      }
-    /*
-	/if (next_slot==2) {
-	  write_output("rxdata_t0.m","rxs_t0",&rxdata_ext[j][0][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
-	  if ((PHY_vars_eNb[j+1]->lte_frame_parms.nb_antennas_rx) == 2)
-	  write_output("rxdata_t1.m","rxs_t1",&rxdata_ext[j][1][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
-	}
-    */
 #endif //PBS_SIM
   }
 #endif //SECONDARY_SYSTEM
 #endif //SKIP_RF_CHAIN
 
-  //if ((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors) >dci_er[0]) {
-  
-  if (next_slot==10) {
-    
-    /*
-    // remember repeated format! Re0 Im0 Re0 Im0
-    write_output("UE_rxF_an0.m","UE_rxF_a0", &PHY_vars_UE[1]->lte_ue_common_vars.rxdataF[0][2*last_slot*lte_frame_parms->ofdm_symbol_size*6],2*lte_frame_parms->ofdm_symbol_size*4,2,1);
-    write_output("UE_rxF_an1.m","UE_rxF_a1", &PHY_vars_UE[1]->lte_ue_common_vars.rxdataF[1][2*last_slot*lte_frame_parms->ofdm_symbol_size*6],2*lte_frame_parms->ofdm_symbol_size*4,2,1);
-    */
-  }
-  
   if (plot_flag) {
-  //#ifndef PBS_SIM
+#ifndef PBS_SIM
   if (next_slot == 19) {
     write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     if (PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx == 2)
@@ -1829,25 +1807,25 @@ if (next_slot == 19) {
       write_output("eNb_txsigF1.m","eNb_txsF1", PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id_secsys][1],lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti*10,1,1);
  }
 #endif //SECONDARY_SYSTEM
-//#endif //PBS_SIM 
+#endif //PBS_SIM 
   } // if(plot_flag)
-
+  
   /*
   // optional: read rx_frame from file
   if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
-    {
-      printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
-      exit(0);
-    }
-
+  {
+  printf("[openair][CHBCH_TEST][INFO] Cannot open rx_frame.m data file\n");
+  exit(0);
+  }
+  
   fclose(rx_frame_file);
   */
   } //for(slot...
   /*
-  if (PHY_vars_UE[0]->dlsch_errors>=30 && PHY_vars_UE[1]->dlsch_errors>=30) {
+    if (PHY_vars_UE[0]->dlsch_errors>=30 && PHY_vars_UE[1]->dlsch_errors>=30) {
     mac_xface->frame++;
     break;
-  }
+    }
   */
   
 #ifdef PBS_SIM

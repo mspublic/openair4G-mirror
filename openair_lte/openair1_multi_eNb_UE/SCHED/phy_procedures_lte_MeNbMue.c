@@ -411,12 +411,12 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
       }
     }
 
-    //#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
     write_output("dl_ch_est_0.m","dl_ce_0",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("ul_precoder_1.m","ul_prec_1",phy_vars_ue->ul_precoder_S_UE[1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1,2,1);
     write_output("dl_ch_est_1.m","dl_ce_1",phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
     write_output("ul_precoder_0.m","ul_prec_0",phy_vars_ue->ul_precoder_S_UE[0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1,2,1);
-    //#endif //DEBUG_PHY
+#endif //DEBUG_PHY
     
     phy_vars_ue->has_valid_precoder = 1;
     phy_vars_ue->log2_maxp = 4 + (log2_approx(maxp)/2);

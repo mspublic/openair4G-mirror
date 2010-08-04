@@ -111,7 +111,7 @@ typedef struct {
   int **dl_ch_mag;
   int **dl_ch_magb;
   int **rho;
-  int **rho_i;
+  int **rho_i;  //never used... always send dl_ch_rho_ext instead...
   short *llr[2];
   unsigned char log2_maxh;
   short **llr128;  // to be type casted locally
@@ -124,7 +124,10 @@ typedef struct {
   int **rxdataF_ext;
   int **rxdataF_comp;
   int **dl_ch_estimates_ext;
+  int **dl_ch_rho_ext;
+  int **rho;
   unsigned short *llr;
+  unsigned short *llr16;
   unsigned short *wbar;
   char *e_rx;
   unsigned short crnti;

@@ -47,8 +47,7 @@ void multipath_channel(struct complex **ch,
 	if (aoa) {
 	  phase.r = cos(2.0*M_PI*(i-j)/aoa);
 	  phase.i = sin(2.0*M_PI*(i-j)/aoa);
-	} else { //random initial phase
-	  aoa = (double)rand()/RAND_MAX;
+	} else { 
 	  phase.r = cos(2.0*M_PI*aoa);
 	  phase.i = sin(2.0*M_PI*aoa);
 	}

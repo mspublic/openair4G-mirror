@@ -1098,6 +1098,21 @@ void generate_16qam_table(void);
 
 unsigned short extract_crc(unsigned char *dci,unsigned char DCI_LENGTH);
 
+/*! \brief LLR from two stream.
+This function takes two stream (qpsk modulated) and calculates the LLR, considering one stream as interference.
+\param stream0_in pointer to first stream0
+\param stream1_in pointer to first stream1
+\param stream0_out pointer to output stream
+\param rho pointer to correlation matrix
+\param length
+*/ 
+void qpsk_qpsk(short *stream0_in,
+	       short *stream1_in,
+	       short *stream0_out,
+	       short *rho01,
+	       int length
+	       );
+
 void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char DCI_FMT,
 		  char *e,
