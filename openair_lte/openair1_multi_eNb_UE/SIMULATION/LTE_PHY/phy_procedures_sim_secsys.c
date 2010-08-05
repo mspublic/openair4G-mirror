@@ -31,7 +31,7 @@
 #define BW 7.68 //Fs in MHz
 #define Td 1
 #define N_TRIALS_MAX 1
-#define KdB 100 /// Ricean factor in dB
+#define KdB 10 /// Ricean factor in dB
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 //#define DEBUG_PHY
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
   char tempChar[100] = "";
 #endif //PBS_SIM
 #define N_SIR (int)((sir1-sir0+sirStepSize)/sirStepSize)
-#define N_SNR (int)((snr1-snr0)/snrStepSize)
+#define N_SNR (int)((snr1-snr0+snrStepSize)/snrStepSize)
   double sir0,sir1;
   double snr0,snr1;
   /******************************************************************
@@ -110,25 +110,29 @@ int main(int argc, char **argv) {
    *****************************************************************/
   unsigned char sir_ind = 0; ///index for SIR to be written out in loop
   unsigned char snr_ind = 0; ///index for SNR to be written out in loop
-  float snrStepSize = 1.0; //step size in dB  -- will be fixed
-  float sirStepSize = 1.5; //step size in dB -- will be fixed
+  float snrStepSize = 0.25; //step size in dB  -- will be fixed
+  float sirStepSize = 0.5; //step size in dB -- will be fixed
   n_frames = N_TRIALS_MAX; //maximum length of simulation in number of frames
-  sir0 = -10;
-  sir1 = 10; //set = sir0 to keep fixed
-  snr0 = 0;
-  snr1 = snr0; //set = sir0 to keep fixed
-  if (argc>1) {
+  sir0 = -2;
+  sir1 = 2; //set = sir0 to keep fixed
+  snr0 = 10;
+  snr1 = 11; //set = sir0 to keep fixed
+  if (argc==2) {
     snr0 = atoi(argv[1]);
     snr1 = snr0; //set = sir0 to keep fixed
   }
-  if (argc>2)
-    n_frames = atoi(argv[2]);
-  if (argc>3) {
-    rice_k = atoi(argv[3]);
+  if (argc>2) {
+    snr0 = atoi(argv[1]);
+    snr1 = atoi(argv[2]); //set = sir0 to keep fixed
+  }
+  if (argc>3)
+    n_frames = atoi(argv[3]);
+  if (argc>4){
+    rice_k = atoi(argv[4]);
     ricean_factor=(1/(1 + pow(10,.1*rice_k)));
   }
-  if (argc>4) {
-    sir0 = atoi(argv[4]);
+  if (argc>5) {
+    sir0 = atoi(argv[5]);
     sir1 = sir0; //set = sir0 to keep fixed
   }
   else {
@@ -749,22 +753,22 @@ int main(int argc, char **argv) {
 #ifdef PBS_SIM
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"er_data_%d_K%d.m");
-  sprintf(er_data_fname,tempChar,(int)(sir0*10 + 200),rice_k); // + 200 for offset to get positive integer
+  sprintf(er_data_fname,tempChar,(int)(sir0*10 + 200),111); // + 200 for offset to get positive integer
   er_data_fd = fopen(er_data_fname,"w");
 
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"turboIter_%d_K%d.m");
-  sprintf(turboIter_fname,tempChar,(int)(sir0*10 + 200),rice_k);
+  sprintf(turboIter_fname,tempChar,(int)(sir0*10 + 200),111);
   turboIter_fd = fopen(turboIter_fname,"w");
 
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"er_cause_%d_K%d.csv");
-  sprintf(er_cause_fname,tempChar,(int)(sir0*10 + 200),rice_k);
+  sprintf(er_cause_fname,tempChar,(int)(sir0*10 + 200),111);
   er_cause_fd = fopen(er_cause_fname,"w");
 
-  fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i);\n",N_SIR,2,8);
-  fprintf(turboIter_fd,"turboIter_fd = ones(%i,%i);\n",N_SIR,2);
-  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],sir_act/tx_pwr,log2(pmax)\n");
+  fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_SIR,N_SNR,2,9);
+  fprintf(turboIter_fd,"turboIter_fd = ones(%i,%i,%i);\n",N_SIR,N_SNR,2);
+  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,sir_ind,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],sir_act/tx_pwr,log2(pmax)\n");
 #endif //PBS_SIM
 
       /*-------------------------------------------------------------
@@ -774,7 +778,7 @@ int main(int argc, char **argv) {
     snr_ind++;
     path_loss_dB_def = -104 + SNR;
     printf("path_loss_dB_def _pwr: %f\n",path_loss_dB_def);
-
+    sir_ind=0;
   for (SIRdBtarget = sir0; SIRdBtarget<=sir1; SIRdBtarget+=sirStepSize) {
     sir_ind++; // initialized with 0, first index 1 (for MatLab/Octave)
     PHY_vars_UE[0]->dlsch_errors=0;
@@ -826,7 +830,7 @@ int main(int argc, char **argv) {
 
 #ifdef SECONDARY_SYSTEM
   printf("SIR :      %f dB\n",SIRdBtarget);
-  printf("SNR :dlsch_d %f dB\n",SNR);
+  printf("SNR :      %f dB\n",SNR);
 #endif
 
 #ifdef SKIP_RF_CHAIN
@@ -1865,27 +1869,27 @@ if (next_slot == 19) {
   fclose(rx_frame_file);
   */
   } //for(slot...
-  /*
+  
     if (PHY_vars_UE[0]->dlsch_errors>=30 && PHY_vars_UE[1]->dlsch_errors>=30) {
-    mac_xface->frame++;
-    break;
+      mac_xface->frame++;
+      break;
     }
-  */
+    
   
 #ifdef PBS_SIM
   if ((PHY_vars_UE[0]->dlsch_errors) >dl_er[0]) {
     dl_er[0] = (PHY_vars_UE[0]->dlsch_errors);
-    fprintf(er_cause_fd,"%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,0,sir_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act,PHY_vars_eNb[1]->log2_maxp);
+    fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,0,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act,PHY_vars_eNb[1]->log2_maxp);
   }
 #ifndef DISABLE_SECONDARY
   if ((PHY_vars_UE[1]->dlsch_errors) >dl_er[1]) {
     dl_er[1] = (PHY_vars_UE[1]->dlsch_errors);
-    fprintf(er_cause_fd,"%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,1,sir_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[1]),0.0,10*log10(SePu_pwr),10*log10(tx_pwr_post[0]),PHY_vars_eNb[1]->log2_maxp);
+    fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,1,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[1]),0.0,10*log10(SePu_pwr),10*log10(tx_pwr_post[0]),PHY_vars_eNb[1]->log2_maxp);
   }
 #endif //DISABLE_SECONDARY
   if ((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors) >dci_er[0]) {
     dci_er[0] = (PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors);
-    fprintf(er_cause_fd,"%i,%i,%i,%i,%f,%f,%f,%f\n",0,0,sir_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act);
+    fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f\n",0,0,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act);
     if (sir_act < 3) {
       //printf("TxSIRdB: %lf\n",10*log10(tx_pwr_post[0]/tx_pwr_post[1]));
       //plot_flag=1;
@@ -1901,7 +1905,7 @@ if (next_slot == 19) {
 #ifndef DISABLE_SECONDARY
   if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors) >dci_er[1]) {
     dci_er[1] = (PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors);
-    fprintf(er_cause_fd,"%i,%i,%i,%i,%f,%f,%f,%f\n",0,1,sir_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[1]),0.0,10*log10(SePu_pwr),tx_pwr_post[0]);
+    fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f\n",0,1,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[1]),0.0,10*log10(SePu_pwr),tx_pwr_post[0]);
   }
 #endif //DISABLE_SECONDARY
 
@@ -1947,8 +1951,8 @@ if (next_slot == 19) {
   
 #ifdef PBS_SIM
   for (j=0;j<2;j++) {
-    fprintf(er_data_fd,"er_data_fd(%i,%i,:) = [%i,%i,%i,%i,%i,%i,%i,%f];\n",sir_ind,j+1,PHY_vars_UE[j]->dlsch_errors, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_errors,PHY_vars_UE[j]->dlsch_cntl_errors, PHY_vars_UE[j]->dlsch_received, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_received, PHY_vars_UE[j]->dlsch_cntl_received, mac_xface->frame,SIRdBtarget);
-    fprintf(turboIter_fd,"turboIter_fd(%i,%i) = %i;\n",sir_ind,j+1,PHY_vars_UE[j]->turbo_iterations);
+    fprintf(er_data_fd,"er_data_fd(%i,%i,%i,:) = [%i,%i,%i,%i,%i,%i,%i,%f,%f];\n",sir_ind,snr_ind,j+1,PHY_vars_UE[j]->dlsch_errors, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_errors,PHY_vars_UE[j]->dlsch_cntl_errors, PHY_vars_UE[j]->dlsch_received, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_received, PHY_vars_UE[j]->dlsch_cntl_received, mac_xface->frame,SIRdBtarget,SNR);
+    fprintf(turboIter_fd,"turboIter_fd(%i,%i,%i) = %i;\n",sir_ind,snr_ind,j+1,PHY_vars_UE[j]->turbo_iterations);
   }
 
   // break if error rate is below threshold (if too early --> increase MCS)
