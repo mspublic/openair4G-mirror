@@ -138,6 +138,44 @@ legend(legend_str,'Interpreter','none','Location','SouthOutside');
 grid on
 saveas(h_fig,fullfile(pathname,'results','throughput_cdf_comparison.eps'),'epsc2')
 
+%% FDD
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
+legend_str = {};
+ni=1;
+for n = strmatch('rateps',nn).'
+    hold on
+    si = strfind(nn{n},'supportedQam');
+    if si
+        [f,x] = ecdf(mode2_ideal.(nn{n})*10/6);
+        plot(x,f,colors{ni},'Linewidth',2);
+        legend_tmp = nn{n};
+        legend_tmp(si:si+10) = [];
+        legend_str{ni} = legend_tmp;
+        ni=ni+1;
+    end
+end
+[f,x] = ecdf(mode1.throughput*10/6);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'TX mode 1';
+        ni=ni+1;
+[f,x] = ecdf(mode2.throughput*10/6);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 2';
+        ni=ni+1;
+[f,x] = ecdf(mode6.throughput*10/6);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 6';
+        ni=ni+1;
+
+title('DLSCH throughput CDF for FDD')
+xlabel('Throughput [bps]')
+ylabel('P(x<abscissa)')
+legend(legend_str,'Interpreter','none','Location','SouthOutside');
+grid on
+saveas(h_fig,fullfile(pathname,'throughput_cdf_comparison_fdd.eps'),'epsc2')
 
 %% Uncoded throughput CDF comparison (when connected)
 mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;

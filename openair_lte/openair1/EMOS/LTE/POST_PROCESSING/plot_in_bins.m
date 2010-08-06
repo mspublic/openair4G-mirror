@@ -1,9 +1,9 @@
 function [out,n,n2] = plot_in_bins(x,y,edges)
 %  [out] = plot_in_bins(data,bins)
-% This function puts the data y = y(x) in bins of x. For every bin it calculates average,
-% 50%, 90% and 95% percentiles. The output is a matrix with 4 columns
-% corresponding to the computed statistics and length(edges) row. See help
-% histc for treatment of edges.
+% This function puts the data y = y(x) in bins of x. For every bin it
+% calculates the average and the (95/85/50/5%) percentiles. The output is a 
+% matrix with 4 columns corresponding to the computed statistics and
+% length(edges) row. See help histc for treatment of edges.
 
 if (length(x) ~= length(y))
     error('x and y must be the same size!');

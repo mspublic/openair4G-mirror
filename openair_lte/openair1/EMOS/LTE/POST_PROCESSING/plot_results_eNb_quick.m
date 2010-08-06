@@ -142,6 +142,26 @@ ylabel('P(x<abscissa)')
 grid on
 saveas(h_fig,fullfile(pathname,'UL_throughput_cdf_comparison.eps'),'epsc2')
 
+%% FDD
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+[f,x] = ecdf(ulsch_throughput(good)*10/3);
+plot(x,f,'b','Linewidth',2)
+hold on
+[f,x] = ecdf(ulsch_throughput_ideal_1Rx(good)*100*10/3);
+plot(x,f,'g','Linewidth',2)
+[f,x] = ecdf(ulsch_throughput_ideal_2Rx(good)*100*10/3);
+plot(x,f,'r','Linewidth',2)
+xlim([0 4.86e6])
+legend('modem','ideal 1 rx antenna','ideal 2 rx antennas','Location','SouthEast');
+title('UL Throughput CDF for FDD')
+xlabel('UL Throughput [bps]')
+ylabel('P(x<abscissa)')
+grid on
+saveas(h_fig,fullfile(pathname,'UL_throughput_cdf_comparison_fdd.eps'),'epsc2')
+
+
 %% Unoded throughput CDF comparison
 h_fig = h_fig+1;
 figure(h_fig);
