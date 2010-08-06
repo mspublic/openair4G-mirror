@@ -3,11 +3,12 @@ clear all;
 close all;
 
 start_idx = 1;
-root_path = '/emos/EMOS/Mode2/';
+root_path = '/emos/AMBIALET/Mode2/';
 
-d = dir(fullfile(root_path, '*mode2*'));
+d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 
+%%
 for d_idx=1:length(dir_names)
     
     pathname = fullfile(root_path,dir_names{d_idx})

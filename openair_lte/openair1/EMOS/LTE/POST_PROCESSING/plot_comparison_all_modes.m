@@ -6,6 +6,8 @@ h_fig = 0;
 
 pathname = '/media/disk/PENNE/';
 mm = 'penne';
+%pathname = '/emos/AMBIALET/';
+%mm = 'ambialet';
 
 mode1 = load(fullfile(pathname,'Mode1/results/results_UE.mat'));
 mode1_ul = load(fullfile(pathname,'Mode1/results/results_eNB.mat'));
@@ -283,7 +285,7 @@ saveas(h_fig,fullfile(pathname,'results','DLSCH_uncoded_throughput_cdf_compariso
 
 %% fit path loss model for all measurements
 dist = [mode1.dist mode2.dist mode6.dist];
-dist_ok = ((dist>0) & (dist<100)).';
+dist_ok = ((dist>0.5) & (dist<100)).';
 rx_rssi_dBm_cat = [mode1.rx_rssi_dBm_cat; mode2.rx_rssi_dBm_cat; mode6.rx_rssi_dBm_cat];
 good = (rx_rssi_dBm_cat<40 & rx_rssi_dBm_cat>-120);
 
@@ -322,16 +324,32 @@ saveas(h_fig,fullfile(pathname,'results','RX_RSSI_dBm_dist_bars.eps'),'epsc2');
 
 %% distance travelled comparison
 % to select regions use the gps_link_brush.m tool
+close all
 
-load penne_zoom1.mat
-file_id = 1;
-plot_distance_travelled
+switch mm
+    case 'penne'
+        load penne_zoom1.mat
+        file_id = 1;
+        plot_distance_travelled
 
-load penne_zoom2.mat
-file_id = 2;
-plot_distance_travelled
+        load penne_zoom2.mat
+        file_id = 2;
+        plot_distance_travelled
 
-load penne_zoom3.mat
-file_id = 3;
-plot_distance_travelled
+        load penne_zoom3.mat
+        file_id = 3;
+        plot_distance_travelled
+    case 'ambialet'
+        load ambialet_zoom1.mat
+        file_id = 1;
+        plot_distance_travelled
 
+        load ambialet_zoom2.mat
+        file_id = 2;
+        plot_distance_travelled
+
+        load ambialet_zoom3.mat
+        file_id = 3;
+        plot_distance_travelled
+        
+end

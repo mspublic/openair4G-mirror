@@ -1,8 +1,8 @@
 close all
 clear all
 
-pathname = '/emos/EMOS/Coverage/';
-dd = dir(fullfile(pathname,'*coverage*'));
+pathname = '/emos/AMBIALET/Mode2/';
+dd = dir(fullfile(pathname,'*extended*'));
 
 % pathname = '/emos/EMOS/';
 % dd(1).name = '/Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/';

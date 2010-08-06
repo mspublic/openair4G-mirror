@@ -277,7 +277,7 @@ saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'e
 %[mode2.dist, mode2.dist_travelled] = calc_dist(mode2.gps_lat_cat,mode2.gps_lon_cat);
 %[mode6.dist, mode6.dist_travelled] = calc_dist(mode6.gps_lat_cat,mode6.gps_lon_cat);
 dist = [coverage.dist mode1.dist mode2.dist mode2_update.dist mode6.dist];
-dist_ok = (dist>0).';
+dist_ok = (dist>0.5).';
 rx_rssi_dBm_cat = [coverage.rx_rssi_dBm_cat; mode1.rx_rssi_dBm_cat; mode2.rx_rssi_dBm_cat; ...
     mode2_update.rx_rssi_dBm_cat; mode6.rx_rssi_dBm_cat;];
 good = (rx_rssi_dBm_cat<40 & rx_rssi_dBm_cat>-120);

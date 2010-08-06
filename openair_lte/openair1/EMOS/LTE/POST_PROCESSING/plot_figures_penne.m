@@ -29,7 +29,7 @@ plot_results_UE_quick
 plot_results_eNb_quick
 
 %%
-pathname = '/media/disk/PENNE/Mode2_OFDMA/20100617_VTP_MODE2_P1_S1-5+6(partly)/';
+pathname = '/media/disk/PENNE/Mode2_OFDMA/results/';
 plot_results_UE_quick
 plot_results_eNb_quick
 

@@ -73,6 +73,7 @@ plot(-mode6.dist_travelled(end_mode6)+mode6.dist_travelled(end_mode6:start_mode6
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('RX RSSI [dBm]')
+ylim([-110, -30]);
 saveas(h_fig,fullfile(pathname,'all_modes_comparison_rssi_dBm.eps'),'epsc2');
 
 
@@ -81,7 +82,7 @@ h_fig = figure(4);
 hold off
 plot_gps_coordinates(mm,mode1.gps_lon_cat(start_mode1:start_mode1+length_mode1), ...
     mode1.gps_lat_cat(start_mode1:start_mode1+length_mode1),...
-    double(mode1.rx_rssi_dBm_cat(start_mode1:start_mode1+length_mode1,1)));
+    double(mode1.rx_rssi_dBm_cat(start_mode1:start_mode1+length_mode1,1)),[-110,-30]);
 saveas(h_fig,fullfile(pathname,'all_modes_comparison_rssi_dBm.jpg'),'jpg');
 
 %%
@@ -94,8 +95,7 @@ plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_trave
     mode2.throughput(start_mode2:start_mode2+length_mode2),'r');
 plot(-mode6.dist_travelled(end_mode6)+mode6.dist_travelled(end_mode6:start_mode6), ...
     mode6.throughput(end_mode6:start_mode6,1),'g')
-
-
+ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
@@ -132,8 +132,7 @@ plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_trave
     mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(start_mode2:start_mode2+length_mode2),'b');
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
     mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(start_mode2:start_mode2+length_mode2),'k');
-
-
+ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6 opt','Mode6 feedback')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
@@ -159,6 +158,7 @@ plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)), ...
     mode2.rx_rssi_dBm_cat(select2b,1),'r')
 plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
     mode6.rx_rssi_dBm_cat(select6,1),'g')
+ylim([-110 -30]);
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('RX RSSI [dBm]')
@@ -170,7 +170,7 @@ h_fig = figure(4);
 hold off
 plot_gps_coordinates(mm,mode1.gps_lon_cat(select1), ...
     mode1.gps_lat_cat(select1),...
-    double(mode1.rx_rssi_dBm_cat(select1,1)));
+    double(mode1.rx_rssi_dBm_cat(select1,1)),[-110,-30]);
 saveas(h_fig,fullfile(pathname,'all_modes_comparison2_rssi_dBm.jpg'),'jpg');
 
 %%
@@ -183,8 +183,7 @@ plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
     mode2.throughput(select2b,1),'r');
 plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
     mode6.throughput(select6,1),'g')
-
-
+ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
@@ -221,7 +220,7 @@ plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
     mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(select2b),'b');
 plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
     mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(select2b),'k');
-
+ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6 opt','Mode6 feedback')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
@@ -248,6 +247,7 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
     mode2_update.rx_rssi_dBm_cat(select2_update,1),'r')
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.rx_rssi_dBm_cat(select6,1),'g')
+ylim([-110 -30]);
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('RX RSSI [dBm]')
@@ -259,7 +259,7 @@ h_fig = figure(4);
 hold off
 plot_gps_coordinates(mm,mode1.gps_lon_cat(select1), ...
     mode1.gps_lat_cat(select1),...
-    double(mode1.rx_rssi_dBm_cat(select1,1)));
+    double(mode1.rx_rssi_dBm_cat(select1,1)),[-110 -30]);
 saveas(h_fig,fullfile(pathname,'all_modes_comparison3_rssi_dBm.jpg'),'jpg');
 
 %%
@@ -272,8 +272,7 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
     mode2_update.throughput(select2_update,1),'r');
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.throughput(select6,1),'g')
-
-
+ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
@@ -282,10 +281,10 @@ saveas(h_fig,fullfile(pathname,'all_modes_comparison3_troughput_distance_travell
 %%
 h_fig = figure(6);
 hold off
-%mode1.pbch_fer_cat(mode1.pbch_fer_cat>100 | mode1.pbch_fer_cat<0) = nan;
-%mode2_update.pbch_fer_cat(mode2_update.pbch_fer_cat>100 | mode2_update.pbch_fer_cat<0) = nan;
-mode1.pbch_fer_cat(~mode1.UE_synched & ~mode1.good) = nan;
-mode2_update.pbch_fer_cat(~mode2_update.UE_synched & ~mode2_update.good) = nan;
+mode1.pbch_good = (mode1.pbch_fer_cat<=100 & mode1.pbch_fer_cat>=0).';
+mode2_update.pbch_good = (mode2_update.pbch_fer_cat<=100 & mode2_update.pbch_fer_cat>=0).';
+mode1.pbch_fer_cat(~mode1.UE_synched | ~mode1.pbch_good) = nan;
+mode2_update.pbch_fer_cat(~mode2_update.UE_synched | ~mode2_update.pbch_good) = nan;
 plot(mode1.dist_travelled(select1)-mode1.dist_travelled(select1(1)),...
     mode1.pbch_fer_cat(select1,1));
 hold on
@@ -293,14 +292,9 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
     mode2_update.pbch_fer_cat(select2_update,1),'r');
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.throughput(select6,1),'g')
-
-
 legend('Mode1','Mode2','Mode6')
 xlabel('Distance travelled [km]')
-ylabel('Throughput [bps]')
+ylabel('PBCH FER [bps]')
 saveas(h_fig,fullfile(pathname,'all_modes_comparison3_pbch_fer_distance_travelled.eps'),'epsc2');
-
-
-
 
 

@@ -1,10 +1,10 @@
 %plot_results_cat
-load(fullfile(pathname,'results_cat_UE.mat'));
+%load(fullfile(pathname,'results_cat_UE.mat'));
 
 in = 0;
 
 %plotwrtdistanceCalc;
-[dist, dist_travelled] = calc_dist([gps_data_cat.latitude],[gps_data_cat.longitude]);
+[dist, dist_travelled] = calc_dist([gps_data_cat.latitude],[gps_data_cat.longitude],mm);
 max_dist = ceil(max(dist));
 speed = [gps_data_cat.speed];
 

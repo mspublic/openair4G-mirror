@@ -7,15 +7,15 @@ addpath('CapCom')
 decimation = 100;
 struct_template;
 
-root_path = '/media/disk/PENNE/Mode2_OFDMA/';
+root_path = '/emos/AMBIALET/Mode2/';
 %root_path = '/media/Iomega_HDD/EMOS/data/20100702/';
 %root_path = '/extras/kaltenbe/CNES/emos_preprocessed_data_penne/';
 %root_path = '/media/Iomega_HDD-1/';
 %root_path = '/media/Iomega_HDD/EMOS/data/';
 
-mm='penne';
+mm='ambialet';
 
-d = dir(fullfile(root_path, '*Coverage*'));
+d = dir(fullfile(root_path, '*extended*'));
 dir_names = {d.name};
 %dir_names = {'20100616_Coverage_Runs'};
 
@@ -32,7 +32,7 @@ dir_names = {d.name};
 % 
 
  
-% post processing for vehicular measurements
+%% post processing for vehicular measurements
 for i=1:length(dir_names)
     pathname = fullfile(root_path,dir_names{i});
     post_processing_UE_quick
@@ -40,6 +40,7 @@ for i=1:length(dir_names)
     get_gps_coordinates_eNB
 end
 
+%% plot
 for i=1:length(dir_names)
     pathname = fullfile(root_path,dir_names{i});
     disp(pathname);

@@ -13,9 +13,16 @@ switch mm
         parcours1(frame_idx(1):frame_idx(2)) = true;
         parcours1(frame_idx(3):frame_idx(4)) = true;
     case 'penne'
+        % double check this - do we neglect the coverage roads here?
         idx = strmatch('data_term3_idx72_20100701T151158.EMOS',char(mode2.filenames));
         frame_idx = NFrames_cum(idx)/100;
         parcours1(1:frame_idx) = true;
+    case 'ambialet'
+        idx(1) = strmatch('data_term3_idx34_20100719T191120.EMOS',char(mode2.filenames)); %last file before parcours 1
+        idx(2) = strmatch('data_term3_idx07_20100721T180138.EMOS',char(mode2.filenames)); %last file of parcours 1
+
+        frame_idx = NFrames_cum(idx)/100;
+        parcours1(frame_idx(1)+1:frame_idx(2)) = true;
 end
 
 %%

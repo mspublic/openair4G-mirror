@@ -8,7 +8,7 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/AMBIALET/Mode2/';
+root_path = '/emos/AMBIALET/Mode2';
 d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 
@@ -18,6 +18,7 @@ pathname = '/emos/AMBIALET/Mode2/results';
 mm='ambialet';
 decimation = 100;
 
+%%
 for i=1:length(dir_names)
     if exist(fullfile(root_path,dir_names{i},'results_eNB.mat'),'file')
         temp = load(fullfile(root_path,dir_names{i},'results_eNB.mat'));
@@ -33,7 +34,7 @@ for i=1:length(dir_names)
         for n = 1:length(nn)
             eval([nn{n} '= cat(' num2str(dim(n)) ', ' nn{n} ', temp.' nn{n} ');']);
         end
-       
+        fprintf('%d/%d\n',i,length(dir_names));
     end
 %    if exist(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'),'file')
 %        nomadic = load(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'));

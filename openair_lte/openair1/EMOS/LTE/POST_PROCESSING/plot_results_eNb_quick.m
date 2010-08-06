@@ -6,7 +6,8 @@ h_fig = 0;
 % calculate the indices where the ue and the eNB were connected (they might
 % not have set the flag in the same frame)
 eNB_connected = ([estimates_eNB.eNb_UE_stats_cat(:).UE_mode]==3);
-timebase = estimates_eNB.gps_time_cat - min(estimates_eNB.gps_time_cat);
+%timebase = estimates_eNB.gps_time_cat - min(estimates_eNB.gps_time_cat);
+timebase = 1:length(estimates_eNB.gps_time_cat);
 [dist, dist_traveled] = calc_dist(estimates_eNB.gps_lat_cat,estimates_eNB.gps_lon_cat,mm);
 max_dist = ceil(max(dist));
 
@@ -14,8 +15,7 @@ max_dist = ceil(max(dist));
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-%plot(timebase,estimates_eNB.rx_N0_dBm_cat,'x')
-plot(double(estimates_eNB.timestamp_cat)/1e9,estimates_eNB.rx_N0_dBm_cat,'x')
+plot(timebase,estimates_eNB.rx_N0_dBm_cat,'x')
 ylim([-110 -90]); 
 title('UL I0 [dBm]')
 xlabel('Time [sec]')

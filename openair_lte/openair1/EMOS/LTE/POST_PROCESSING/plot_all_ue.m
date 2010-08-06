@@ -8,7 +8,7 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/AMBIALET/Mode2/';  
+root_path = '/emos/AMBIALET/Mode2';  
 d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 

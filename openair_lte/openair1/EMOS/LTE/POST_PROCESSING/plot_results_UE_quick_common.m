@@ -136,7 +136,7 @@ saveas(h_fig,fullfile(pathname,'PBCH_fer_gps.jpg'),'jpg')
 h_fig = h_fig+1;
 figure(h_fig);
 hold off
-plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,double(UE_mode_cat));
+plot_gps_coordinates(mm,gps_lon_cat, gps_lat_cat,double(UE_mode_cat),[0 3]);
 title('UE mode')
 saveas(h_fig,fullfile(pathname,'UE_mode_gps.jpg'),'jpg')
 

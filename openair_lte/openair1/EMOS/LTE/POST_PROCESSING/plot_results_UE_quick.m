@@ -11,6 +11,6 @@ else
     nomadic_flag = false;
 end
 
-plot_results_ue_quick_common
+plot_results_UE_quick_common
 
 
