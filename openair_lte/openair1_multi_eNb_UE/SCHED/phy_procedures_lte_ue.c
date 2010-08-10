@@ -461,32 +461,32 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
 	openair_daq_vars.mode = openair_NOT_SYNCHED;
 	phy_vars_ue->UE_mode = NOT_SYNCHED;
 	openair_daq_vars.sync_state=0;
-      }
 #ifdef CBMIMO1
 
-      openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 #endif //CBMIMO1
-      mac_xface->frame = -1;
-      openair_daq_vars.synch_wait_cnt=0;
-      openair_daq_vars.sched_cnt=-1;
-      
-      
-      phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
-      phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
-      
-      phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors = 0;
-      phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_missed = 0;
-      phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_false  = 0;    
-      phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received = 0;    
-      
-      phy_vars_ue->dlsch_errors = 0;
-      phy_vars_ue->dlsch_errors_last = 0;
-      phy_vars_ue->dlsch_received = 0;
-      phy_vars_ue->dlsch_received_last = 0;
-      phy_vars_ue->dlsch_fer = 0;
-      phy_vars_ue->dlsch_cntl_errors = 0;
-      phy_vars_ue->dlsch_ra_errors = 0;
+	mac_xface->frame = -1;
+	openair_daq_vars.synch_wait_cnt=0;
+	openair_daq_vars.sched_cnt=-1;
+	
+	
+	phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
+	phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
+	
+	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_errors = 0;
+	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_missed = 0;
+	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_false  = 0;    
+	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received = 0;    
+	
+	phy_vars_ue->dlsch_errors = 0;
+	phy_vars_ue->dlsch_errors_last = 0;
+	phy_vars_ue->dlsch_received = 0;
+	phy_vars_ue->dlsch_received_last = 0;
+	phy_vars_ue->dlsch_fer = 0;
+	phy_vars_ue->dlsch_cntl_errors = 0;
+	phy_vars_ue->dlsch_ra_errors = 0;
 
+      }
     }
   }
 }
@@ -780,8 +780,10 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
       phy_vars_ue->ulsch_no_allocation_counter++;
 
       if (phy_vars_ue->ulsch_no_allocation_counter == 10) {
+	/*
 	phy_vars_ue->UE_mode = PRACH;
 	phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->crnti = 0x1234; // not always 1234
+	*/
       }
        
       lte_ue_pbch_procedures(eNb_id,last_slot,phy_vars_ue);

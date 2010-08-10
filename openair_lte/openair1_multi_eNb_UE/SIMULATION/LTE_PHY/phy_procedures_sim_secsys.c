@@ -110,20 +110,20 @@ int main(int argc, char **argv) {
    *****************************************************************/
   unsigned char sir_ind = 0; ///index for SIR to be written out in loop
   unsigned char snr_ind = 0; ///index for SNR to be written out in loop
-  float snrStepSize = 0.25; //step size in dB  -- will be fixed
-  float sirStepSize = 0.5; //step size in dB -- will be fixed
+  float snrStepSize = 0.5; //step size in dB  -- will be fixed
+  float sirStepSize = 1; //step size in dB -- will be fixed
   n_frames = N_TRIALS_MAX; //maximum length of simulation in number of frames
-  sir0 = -2;
-  sir1 = 2; //set = sir0 to keep fixed
+  sir0 = -10;
+  sir1 = 10; //set = sir0 to keep fixed
   snr0 = 10;
   snr1 = 11; //set = sir0 to keep fixed
   if (argc==2) {
-    snr0 = atoi(argv[1]);
+    snr0 = atof(argv[1]);
     snr1 = snr0; //set = sir0 to keep fixed
   }
   if (argc>2) {
-    snr0 = atoi(argv[1]);
-    snr1 = atoi(argv[2]); //set = sir0 to keep fixed
+    snr0 = atof(argv[1]);
+    snr1 = atof(argv[2]); //set = sir0 to keep fixed
   }
   if (argc>3)
     n_frames = atoi(argv[3]);
@@ -132,8 +132,11 @@ int main(int argc, char **argv) {
     ricean_factor=(1/(1 + pow(10,.1*rice_k)));
   }
   if (argc>5) {
-    sir0 = atoi(argv[5]);
+    sir0 = atof(argv[5]);
     sir1 = sir0; //set = sir0 to keep fixed
+  }
+  if (argc>6) {
+    sir1 = atof(argv[6]);
   }
   else {
     SE = 1;
@@ -179,7 +182,7 @@ int main(int argc, char **argv) {
 #endif
   double path_loss_ar_dB[6], path_loss_ar[6];
   struct complex **ch_ar[6];
-  double tx_pwr_secsys, rx_pwr_sec[2], SIR, SePu_pwr, rx_pwr_pre[3], tx_pwr_post[2], tx_pwr_SRS;
+  double tx_pwr_secsys, rx_pwr_sec[2], SIR, SePu_pwr, rx_pwr_pre[3], tx_pwr_post[2], tx_pwr_SRS, rx_pwr_SRS;
   int SIRdB = 0;
   double **s_re_secsys,**s_im_secsys,**r_re_ext[2],**r_im_ext[2];
   double **r_re_crossLink[6],**r_im_crossLink[6]; /// indexed by enum CH_ID
@@ -738,13 +741,9 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE[0]->rx_total_gain_dB = 140;
   PHY_vars_eNb[0]->rx_total_gain_eNB_dB = 140;
-  PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->crnti = 0xBEEF;
-  PHY_vars_eNb[0]->eNB_UE_stats[eNb_id].UE_id[UE_id] = 0xBEEF;
 #ifdef SECONDARY_SYSTEM			
   PHY_vars_UE[1]->rx_total_gain_dB = 140;
   PHY_vars_eNb[1]->rx_total_gain_eNB_dB = 140;
-  PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id_secsys]->crnti = 0xADDA;
-  PHY_vars_eNb[1]->eNB_UE_stats[eNb_id_secsys].UE_id[UE_id_secsys] = 0xADDA;
   PHY_vars_UE[2]->rx_total_gain_dB = 140;
   PHY_vars_eNb[2]->rx_total_gain_eNB_dB = 140;
 #endif			
@@ -752,18 +751,18 @@ int main(int argc, char **argv) {
 
 #ifdef PBS_SIM
   strncpy(tempChar,pbs_output_dir,100);
-  strcat(tempChar,"er_data_%d_K%d.m");
-  sprintf(er_data_fname,tempChar,(int)(sir0*10 + 200),111); // + 200 for offset to get positive integer
+  strcat(tempChar,"er_data_%d_%d_K%d.m");
+  sprintf(er_data_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k); // + 200 for offset to get positive integer
   er_data_fd = fopen(er_data_fname,"w");
 
   strncpy(tempChar,pbs_output_dir,100);
-  strcat(tempChar,"turboIter_%d_K%d.m");
-  sprintf(turboIter_fname,tempChar,(int)(sir0*10 + 200),111);
+  strcat(tempChar,"turboIter_%d_%d_K%d.m");
+  sprintf(turboIter_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   turboIter_fd = fopen(turboIter_fname,"w");
 
   strncpy(tempChar,pbs_output_dir,100);
-  strcat(tempChar,"er_cause_%d_K%d.csv");
-  sprintf(er_cause_fname,tempChar,(int)(sir0*10 + 200),111);
+  strcat(tempChar,"er_cause_%d_%d_K%d.csv");
+  sprintf(er_cause_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   er_cause_fd = fopen(er_cause_fname,"w");
 
   fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_SIR,N_SNR,2,9);
@@ -776,7 +775,7 @@ int main(int argc, char **argv) {
       ---------------------------------------------------------------*/
   for (SNR = snr0; SNR<=snr1; SNR+=snrStepSize) {
     snr_ind++;
-    path_loss_dB_def = -104 + SNR;
+    path_loss_dB_def = -105 + SNR;
     printf("path_loss_dB_def _pwr: %f\n",path_loss_dB_def);
     sir_ind=0;
   for (SIRdBtarget = sir0; SIRdBtarget<=sir1; SIRdBtarget+=sirStepSize) {
@@ -801,6 +800,7 @@ int main(int argc, char **argv) {
     PHY_vars_UE[0]->turbo_iterations=0;
     PHY_vars_UE[0]->first_run_timing_advance=0;
 
+#ifdef SECONDARY_SYSTEM
     PHY_vars_UE[1]->dlsch_errors=0;
     PHY_vars_UE[1]->dlsch_errors_last=0;
     PHY_vars_UE[1]->dlsch_received=0;
@@ -820,17 +820,28 @@ int main(int argc, char **argv) {
     PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_fer=0;
     PHY_vars_UE[1]->turbo_iterations=0;
     PHY_vars_UE[1]->first_run_timing_advance=0;
+#endif
 
     dl_er[0] = 0;
-    dl_er[1] = 0;
     dci_er[0] = 0;
-    dci_er[1] = 0;
     first_call = 1;
-    first_call_secsys = 1;
 
 #ifdef SECONDARY_SYSTEM
-  printf("SIR :      %f dB\n",SIRdBtarget);
-  printf("SNR :      %f dB\n",SNR);
+    dl_er[1] = 0;
+    dci_er[1] = 0;
+    first_call_secsys = 1;
+#endif
+
+#ifdef SECONDARY_SYSTEM
+    PHY_vars_UE[0]->UE_mode = PUSCH;
+    PHY_vars_eNb[0]->eNB_UE_stats[0].mode[0] = PUSCH;
+    PHY_vars_eNb[0]->eNB_UE_stats[0].UE_id[0] = 0xBA82;
+    PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->crnti = 0xBA82;
+#endif
+
+#ifdef SECONDARY_SYSTEM
+  printf("SIR :DCI r %f dB\n",SIRdBtarget);
+  printf("SNR :DCI r %f dB\n",SNR);
 #endif
 
 #ifdef SKIP_RF_CHAIN
@@ -1300,15 +1311,33 @@ int main(int argc, char **argv) {
 			      PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
-			      18);
+			      23);
 	if (next_slot == 7) {
 	  tx_pwr_SRS = tx_pwr;
 	}
 #ifndef PBS_SIM
-#endif //PBS_SIM
-	if (next_slot==12) {
-	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+	if (next_slot == 12) {
+	  write_output("eNb0_txF_pilot_a0.m","eNb0txF_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size,1,1);
+	  write_output("eNb0_txs_pilot_a0.m","eNb0txs_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id][0][next_slot*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1,1);
+	  write_output("eNb1_txF_pilot_a0.m","eNb1txF_p0",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+	  write_output("eNb1_txF_pilot_a1.m","eNb1txF_p1",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*2);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*3);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*4);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*5);
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
 	}
+	if (next_slot==12) {
+	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+	}
+#endif //PBS_SIM
 
 #ifdef SECONDARY_SYSTEM
 	// convert to floating point
@@ -1319,17 +1348,12 @@ int main(int argc, char **argv) {
 				PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
 				lte_frame_parms->samples_per_tti>>1,
 				14,
-				18-3);
-	if (next_slot == 10) {
-	  //printf("tx pwr secondary eNB = %lf dB\n", 10*log10(tx_pwr_secsys)); //indicates the power of the B/F vector
-	  //printf("tx pwr ratio = %lf dB\n", 10*log10(tx_pwr/tx_pwr_secsys));
-	  if (!PHY_vars_eNb[1]->has_valid_precoder) {
-	    //printf("Does not have precoder, should not transmit");
-	  }
-	}
+				23);
+#ifndef PBS_SIM
+#endif //PBS_SIM
 	if (next_slot == 9) {
 	  //printf("tx pwr secondary UE  = %lf dB\n", 10*log10(tx_pwr_secsys)); //indicates the power of the B/F vector
-	tx_pwr = tx_pwr_SRS;
+	  tx_pwr = tx_pwr_SRS;
 	//printf("tx pwr ratio = %lf dB\n", 10*log10(tx_pwr/tx_pwr_secsys));
 	}
 	// for convenience call same function for power scaling, but only if there is data to send i.e. tx_pwr_secsys>0
@@ -1342,7 +1366,7 @@ int main(int argc, char **argv) {
 					   PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
 					   lte_frame_parms->samples_per_tti>>1,
 					   14,
-					   18-3-SIRdBtarget- ((tx_pwr) ? (10*log10(tx_pwr_secsys/tx_pwr)) : 0));
+					   23-SIRdBtarget- ((tx_pwr) ? (10*log10(tx_pwr_secsys/tx_pwr)) : 0));
 	  else
 	    tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
 					   s_im_secsys,
@@ -1351,14 +1375,14 @@ int main(int argc, char **argv) {
 					   PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
 					   lte_frame_parms->samples_per_tti>>1,
 					   14,
-					   18-3-SIRdBtarget+ ((tx_pwr_secsys) ? (10*log10(tx_pwr/tx_pwr_secsys)) : 0));
+					   23-SIRdBtarget+ ((tx_pwr_secsys) ? (10*log10(tx_pwr/tx_pwr_secsys)) : 0));
 	} //else if(next_slot==10 || next_slot==9) {
 	  //plot_flag = 1;
 	//}
 #ifndef PBS_SIM
-	//if (next_slot==10) {
-	printf("tx_pwr_secsys %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_secsys),next_slot,next_slot>>1);
-	//}
+	if (next_slot==12) {
+	  printf("tx_pwr_secsys %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_secsys),next_slot,next_slot>>1);
+	}
 	/*
 	if (next_slot==11) {
 	  write_output("txdata_t_a0.m","txs_t_a0",&txdata_ext[0][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
@@ -1657,6 +1681,11 @@ int main(int argc, char **argv) {
       rx_pwr_pre[0] = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
 #ifndef PBS_SIM
       printf("rx_pwr_pre[%d] (RF in) %f dB for slot %d (subframe %d)\n",0,10*log10(rx_pwr_pre[0]),next_slot,next_slot>>1);
+      if (next_slot==12) {
+	rx_pwr_SRS = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
+	printf("rx_pwr_SRS    (RF in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr_SRS),next_slot,next_slot>>1);
+	printf("rx_pwr_pre[%d] (RF in) %f dB for slot %d (subframe %d)\n",0,10*log10(rx_pwr_pre[0]),next_slot,next_slot>>1);
+      }
 #endif //PBS_SIM      
       rx_gain[0] = target_rx_pwr_dB - 10*log10(rx_pwr_pre[0]);
 
@@ -1693,14 +1722,14 @@ int main(int argc, char **argv) {
 
       rx_pwr = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,lte_frame_parms->samples_per_tti,0);
 #ifndef PBS_SIM
-      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr_pre[0]),next_slot,next_slot>>1);
-#endif //PBS_SIM
+      printf("rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);
       rx_pwr = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples),2*(lte_frame_parms->ofdm_symbol_size+lte_frame_parms->nb_prefix_samples));
       if (next_slot==12) {
 	printf("rx_pwr_ %f\n",10*log10(rx_pwr));
       } else if (next_slot==10) {
 	printf("noise_pwr_ %f\n",10*log10(rx_pwr));
       }
+#endif //PBS_SIM
 
 #ifdef SECONDARY_SYSTEM
       for (j=0; j<2; j++) {
@@ -1712,7 +1741,6 @@ int main(int argc, char **argv) {
 	if (j==0 && next_slot==7) {
 	  SePu_pwr = signal_energy_fp(r_re_ext[j],r_im_ext[j],PHY_vars_eNb[j+1]->lte_frame_parms.nb_antennas_rx,(lte_frame_parms->samples_per_tti>>1)/6,5*((lte_frame_parms->samples_per_tti>>1)/6));
 	}
-	rx_pwr_pre[0] = signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_rx,lte_frame_parms->samples_per_tti>>1,0);
 #ifndef PBS_SIM
 	printf("rx_pwr_pre[%d] (RF in) %f dB for slot %d (subframe %d)\n",j+1,10*log10(rx_pwr_pre[j+1]),next_slot,next_slot>>1);
 #endif //PBS_SIM      
@@ -1870,8 +1898,12 @@ if (next_slot == 19) {
   */
   } //for(slot...
   
-    if (PHY_vars_UE[0]->dlsch_errors>=30 && PHY_vars_UE[1]->dlsch_errors>=30) {
-      mac_xface->frame++;
+    if ((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received<2 || PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received<2) && (mac_xface->frame > 200)) {
+      mac_xface->frame++; // too bad, no need to continue
+      break;
+    }
+    if ((PHY_vars_UE[0]->dlsch_received>(mac_xface->frame-5) || PHY_vars_UE[1]->dlsch_received>(mac_xface->frame-5)) && (mac_xface->frame > 200)) {
+      mac_xface->frame++; // too good, no need to continue
       break;
     }
     
@@ -1917,33 +1949,10 @@ if (next_slot == 19) {
   }
   */
   //  fprintf(sir_fd,"sir_fd(%i,%i) = %f;\n",sir_ind,mac_xface->frame+1,sir_act);
-  /*
-  if (((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors))/(mac_xface->frame - 1)>=.5 || ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors))/(mac_xface->frame - 1)>=.5) {
-  
-    if (mac_xface->frame%25==0) {
-      printf("Reached frame       = %i \n",mac_xface->frame);
-      printf("Error rate primary  = %f \n",((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors))/(mac_xface->frame - 1));
-      printf("Error rate secondary= %f \n",((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors))/(mac_xface->frame - 1));
-      printf("\n");
-    }
-    
-    if (mac_xface->frame>200){
-      mac_xface->frame++;
-      break;
-    }
-  }
-  */
-  /*
-  else if(mac_xface->frame%50==0) {
-    printf("Reached frame       = %i \n",mac_xface->frame);
-    printf("Actual received SIR   = %f dB\n",sir_act);
-    printf("Received power        = %f dB\n",10*log10(rx_pwr));
-    printf("Power of interference = %f dB\n",10*log10(rx_pwr_sec[1]));
-    printf("\n");
-  }
-  */
+
   if (openair_daq_vars.mode==openair_NOT_SYNCHED) {
     fprintf(er_cause_fd,"%i,%i,not SYNCHED",sir_ind,mac_xface->frame);
+    mac_xface->frame++;
     break;
   }
 #endif //PBS_SIM
