@@ -8,14 +8,14 @@ Unit of measure: FL_COORD_PIXEL
 
 =============== FORM ===============
 Name: phy_procedures_sim
-Width: 820
-Height: 540
+Width: 640
+Height: 320
 Number of Objects: 4
 
 --------------------
 class: FL_BOX
 type: UP_BOX
-box: 0 0 820 540
+box: 0 0 640 320
 boxtype: FL_UP_BOX
 colors: FL_COL1 FL_COL1
 alignment: FL_ALIGN_CENTER
@@ -68,8 +68,8 @@ argument:
 
 --------------------
 class: FL_XYPLOT
-type: NORMAL_XYPLOT
-box: 50 260 540 190
+type: IMPULSE_XYPLOT
+box: 370 240 210 60
 boxtype: FL_FLAT_BOX
 colors: FL_BLACK FL_YELLOW
 alignment: FL_ALIGN_BOTTOM

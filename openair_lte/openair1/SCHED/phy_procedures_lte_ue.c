@@ -870,13 +870,13 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  dlsch_received_last = dlsch_received;
 	  
 	  // CQI adaptation when current MCS is odd, even is handled by eNb
-	  if ((dlsch_fer > 20) && (current_dlsch_cqi>0) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 0))
+	  if ((dlsch_fer > 40) && (current_dlsch_cqi>0) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 0))
 	    current_dlsch_cqi--;
 #ifndef USER_MODE
-	  if ((dlsch_fer < 8) && (current_dlsch_cqi<8) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
+	  if ((dlsch_fer < 16) && (current_dlsch_cqi<8) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    current_dlsch_cqi++;
 #else
-	  if ((dlsch_fer < 8) && (current_dlsch_cqi<16) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
+	  if ((dlsch_fer < 16) && (current_dlsch_cqi<14) && ((dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    current_dlsch_cqi++;
 #endif
 	  

@@ -158,7 +158,7 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
   }
 
   fl_set_xyplot_data(form->ch00,I3,Q3,ch_len,"","","");
-  fl_set_xyplot_ybounds(form->ch00,-50,10);
+  fl_set_xyplot_ybounds(form->ch00,-20,20);
 }
 
 
@@ -672,7 +672,7 @@ int main(int argc, char **argv) {
 #ifdef RF
       //      ulsch_ue[0]->power_offset = 0;
 
-      path_loss_dB = -50;
+      path_loss_dB = -70;
 
       if ((next_slot > 2) && (next_slot<10)) {
 #ifdef OFDMA_ULSCH

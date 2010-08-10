@@ -134,7 +134,14 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     
   Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
-  
+
+  /* 
+  printf("ulsch_coding: Ndi %d, RV %d, mcs %d\n",
+	 ulsch->harq_processes[harq_pid]->Ndi,
+	 ulsch->harq_processes[harq_pid]->rvidx,
+	 ulsch->harq_processes[harq_pid]->mcs);
+  */
+
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation
     ulsch->harq_processes[harq_pid]->B = A+24;
@@ -148,10 +155,6 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 		     &ulsch->harq_processes[harq_pid]->Kminus,		     
 		     &ulsch->harq_processes[harq_pid]->F);
     //  CLEAR LLR's HERE for first packet in process
-  }
-  else {
-    msg("ulsch_decoding.c: FATAL ERROR: Ndi 0 not checked yet\n");
-    return(-1);
   }
 
 

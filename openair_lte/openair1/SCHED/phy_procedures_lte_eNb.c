@@ -56,7 +56,9 @@ static char dlsch_eNb_1A_active = 0;
 static char eNb_generate_rar = 0;
 static char eNb_generate_rag_ack = 0;
 
-int ulsch_errors[3]={0,0,0},ulsch_consecutive_errors[3]={0,0,0},ulsch_decoding_attempts[3]={0,0,0},dlsch_NAK[8]={0,0,0,0,0,0,0,0},dlsch_l2_errors=0;
+int ulsch_errors[3]={0,0,0},ulsch_consecutive_errors[3]={0,0,0},ulsch_decoding_attempts[3][4]={0,0,0,0,0,0,0,0,0,0,0,0},dlsch_NAK[8]={0,0,0,0,0,0,0,0},dlsch_l2_errors=0,dlsch_trials[4]={0,0,0,0};
+int ulsch_round_errors[3][4]= {0,0,0,0,0,0,0,0,0,0,0,0};
+
 unsigned int max_peak_val; 
 char dlsch_mcs_offset=0;
 
@@ -646,6 +648,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       else {
 	DLSCH_alloc_pdu2.ndi1 = 0;
       }
+      
+      dlsch_trials[dlsch_eNb[0]->harq_processes[0]->round]++;
 
       DLSCH_alloc_pdu2.rv1 = dlsch_eNb[0]->harq_processes[0]->round&3;
 
@@ -687,7 +691,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot) {
       
       
       //if ((mac_xface->frame&1)==0) {
-      UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
+      if (UL_alloc_pdu.ndi == 1)
+	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
       UL_alloc_pdu.rballoc = computeRIV(lte_frame_parms->N_RB_UL,9,openair_daq_vars.ue_ul_nb_rb);
       memcpy(&dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
       dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
@@ -960,7 +965,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
   if ((eNB_UE_stats[0].mode[UE_id]!=PRACH) && (last_slot%2==1)) {
 
     for (eNb_id=0;eNb_id<number_of_cards;eNb_id++) {
-      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
+      debug_msg("srs meas eNb_id %d\n",eNb_id);
 
       lte_eNB_srs_measurements(lte_eNB_common_vars,
 			       lte_frame_parms,
@@ -969,7 +974,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			       eNb_id,
 			       UE_id,
 			       1);
-      debug_msg("srs meas eNb_id %d\n",l,eNb_id);
+      debug_msg("srs meas eNb_id %d\n",eNb_id);
     }
 
     eNb_id=0;
@@ -980,7 +985,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     */
 #endif
     
-    debug_msg("timing advance \n",l,eNb_id);
+    debug_msg("timing advance \n");
     sync_pos = lte_est_timing_advance(lte_frame_parms,
 				      lte_eNB_common_vars,
 				      &eNb_id,
@@ -988,7 +993,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 				      number_of_cards,
 				      24576);
 
-    debug_msg("timing advance \n",l,eNb_id);
+    debug_msg("timing advance \n");
     first_run = 0;
 
     eNB_UE_stats[0].UE_timing_offset[UE_id] = sync_pos - lte_frame_parms->nb_prefix_samples/8;
@@ -1067,7 +1072,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
 			 ulsch_eNb[0],
 			 last_slot>>1,
 			 rag_flag);    
-    ulsch_decoding_attempts[harq_pid]++;
+
+
+    ulsch_decoding_attempts[harq_pid][ulsch_eNb[0]->harq_processes[harq_pid]->round]++;
+    //    printf("Decoding harq_pid %d round %d attempt %d\n",harq_pid,ulsch_eNb[0]->harq_processes[harq_pid]->round,
+    //	   ulsch_decoding_attempts[harq_pid][ulsch_eNb[0]->harq_processes[harq_pid]->round]);
 
     ulsch_eNb[0]->harq_processes[harq_pid]->subframe_scheduling_flag=0;
 
@@ -1084,12 +1093,34 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
     if (ret == (1+MAX_TURBO_ITERATIONS)) {
       ulsch_eNb[0]->harq_processes[harq_pid]->phich_active = 1;
       ulsch_eNb[UE_id]->harq_processes[harq_pid]->phich_ACK = 0;
+      UL_alloc_pdu.ndi = 0;
+      if (UL_alloc_pdu.mcs == 31) {  // error in last round
+	UL_alloc_pdu.ndi=1;
+	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
+	ulsch_errors[harq_pid]++;
+	ulsch_consecutive_errors[harq_pid]++;
+	//	printf("Round 4 ULSCH error\n");
+      }
+      else {
+	if (UL_alloc_pdu.mcs < 29) {
+	  UL_alloc_pdu.mcs = 29;
+	  ulsch_round_errors[harq_pid][0]++;
+	  //	  printf("Round 0 ULSCH error %d\n",ulsch_round_errors[harq_pid][0]);
+	}
+	else {
+	  ulsch_round_errors[harq_pid][UL_alloc_pdu.mcs-28]++;
+	  //	  printf("Round %d ULSCH error\n",UL_alloc_pdu.mcs-28);
+	  UL_alloc_pdu.mcs++;  // increment for redundancy version information
+
+	}
+
+	//	printf("frame %d: subframe %d ULSCH error, rvidx %d\n",mac_xface->frame,last_slot>>1,UL_alloc_pdu.mcs-29);
+      }
+
       if (rag_flag == 1) {
 	eNb_generate_rag_ack = 0;
 	eNB_UE_stats[0].mode[0] = PRACH;
       }
-      ulsch_errors[harq_pid]++;
-      ulsch_consecutive_errors[harq_pid]++;
 
       // If we've dropped the UE, go back to PRACH mode for this UE
       if (ulsch_consecutive_errors[harq_pid] == 20) {
@@ -1107,6 +1138,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
       ulsch_eNb[0]->harq_processes[harq_pid]->phich_active = 1;
       ulsch_eNb[0]->harq_processes[harq_pid]->phich_ACK = 1;
       ulsch_consecutive_errors[harq_pid] = 0;
+      UL_alloc_pdu.ndi     = 1;
+      UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
 
       if (rag_flag == 1) {
 	eNb_generate_rag_ack = 1;
@@ -1123,7 +1156,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot) {
       msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH (RAG) for UE %d, ret = %d, CQI CRC Status %d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, UE_id, ret, ulsch_eNb[0]->cqi_crc_status);  
     }
     else {
-      debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, harq_pid, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors[harq_pid],ulsch_decoding_attempts[harq_pid]);  
+      debug_msg("[PHY PROCEDURES LTE] frame %d, slot %d, subframe %d, eNB %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, eNb_id, harq_pid, UE_id, ret, ulsch_eNb[0]->cqi_crc_status,ulsch_errors[harq_pid],ulsch_decoding_attempts[harq_pid][0]);
 
       // process HARQ feedback
       dl_harq_pid = dlsch_eNb[0]->harq_ids[ul_ACK_subframe2_dl_subframe(lte_frame_parms->tdd_config,

@@ -924,6 +924,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round = 0;
     }
     else {
+      //      printf("Ndi = 0 : Setting RVidx from mcs %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
       if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs >= 28)
 	ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
       else

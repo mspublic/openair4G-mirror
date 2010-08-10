@@ -9,7 +9,9 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "MAC_INTERFACE/extern.h"
 
-extern int ulsch_errors[3],ulsch_decoding_attempts[3],dlsch_NAK[8];
+extern int ulsch_errors[3],ulsch_decoding_attempts[3][4],dlsch_NAK[8],dlsch_trials[4];
+extern int ulsch_round_errors[3][4];
+extern int dlsch_l2_errors;
 
 #ifndef USER_MODE
 static struct proc_dir_entry *proc_openair1_root;
@@ -235,14 +237,19 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
 		   mode_string[eNB_UE_stats[0].mode[0]],
 		   eNB_UE_stats[0].mode[0]);
     if (eNB_UE_stats[0].mode[0] == PUSCH) {
-      len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d,%d/%d,%d/%d), DLSCH NAK (%d,%d,%d,%d)\n",
-		     ulsch_errors[0],ulsch_decoding_attempts[0],
-		     ulsch_errors[1],ulsch_decoding_attempts[1],
-		     ulsch_errors[2],ulsch_decoding_attempts[2],
-		     dlsch_NAK[0],
-		     dlsch_NAK[1],
-		     dlsch_NAK[2],
-		     dlsch_NAK[3]);
+      len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) : %d/%d(%d,%d,%d,%d) \n",
+		     ulsch_errors[0],ulsch_decoding_attempts[0][0],
+		     ulsch_round_errors[0][0],ulsch_round_errors[0][1],ulsch_round_errors[0][2],ulsch_round_errors[0][3],
+		     ulsch_errors[1],ulsch_decoding_attempts[1][0],
+		     ulsch_round_errors[1][0],ulsch_round_errors[1][1],ulsch_round_errors[1][2],ulsch_round_errors[1][3],
+		     ulsch_errors[2],ulsch_decoding_attempts[2][0],
+		     ulsch_round_errors[2][0],ulsch_round_errors[2][1],ulsch_round_errors[2][2],ulsch_round_errors[2][3]);
+      len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors %d/%d (%d/%d,%d/%d,%d/%d,%d/%d)\n",
+		     dlsch_l2_errors,dlsch_trials[0],
+		     dlsch_NAK[0],dlsch_trials[0],
+		     dlsch_NAK[1],dlsch_trials[1],
+		     dlsch_NAK[2],dlsch_trials[2],
+		     dlsch_NAK[3],dlsch_trials[3]);
 
     }
   }
