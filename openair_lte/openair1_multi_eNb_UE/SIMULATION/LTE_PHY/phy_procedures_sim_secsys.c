@@ -110,8 +110,12 @@ int main(int argc, char **argv) {
    *****************************************************************/
   unsigned char sir_ind = 0; ///index for SIR to be written out in loop
   unsigned char snr_ind = 0; ///index for SNR to be written out in loop
-  float snrStepSize = 0.5; //step size in dB  -- will be fixed
-  float sirStepSize = 1; //step size in dB -- will be fixed
+/*
+  float snrStepSize = 0.25; //step size in dB  -- will be fixed
+  float sirStepSize = 0.5; //step size in dB -- will be fixed
+  */
+  float snrStepSize = 0.5; //step size in dB
+  float sirStepSize = 1; //step size in dB
   n_frames = N_TRIALS_MAX; //maximum length of simulation in number of frames
   sir0 = -10;
   sir1 = 10; //set = sir0 to keep fixed
@@ -760,11 +764,20 @@ int main(int argc, char **argv) {
   strcat(tempChar,"er_data_%d_%d_K%d.m");
   sprintf(er_data_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k); // + 200 for offset to get positive integer
   er_data_fd = fopen(er_data_fname,"w");
-
+if (er_data_fd) {
+	printf("Opened er_data_fd file successfully\n");
+} else {
+	printf("Could not open er_data_fd file\n");
+}
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"turboIter_%d_%d_K%d.m");
   sprintf(turboIter_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   turboIter_fd = fopen(turboIter_fname,"w");
+if (turboIter_fd) {
+	printf("Opened turboIter_fd file successfully\n");
+} else {
+	printf("Could not open turboIter_fd file\n");
+}
   /*
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"er_cause_%d_%d_K%d.csv");
@@ -1908,18 +1921,20 @@ if (next_slot == 19) {
   */
   } //for(slot...
   
-    if ((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received<2 || PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received<2) && (mac_xface->frame > 200)) {
+    if ((((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(mac_xface->frame*3*.05)) && ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(mac_xface->frame*3*.05))) || (mac_xface->frame > 200)) {
       mac_xface->frame++; // too bad, no need to continue
+      printf("Breaking (bad) before dumping, Frame %d, SIR %f, SNR %f\n", mac_xface->frame,SIRdBtarget,SNR);
       break;
     }
     if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)>(mac_xface->frame*.99) && (PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)>(mac_xface->frame*.99)) && (mac_xface->frame > 200)) {
       mac_xface->frame++; // too good, no need to continue
+      printf("Breaking (good) before dumping, Frame %d, SIR %f, SNR %f\n", mac_xface->frame,SIRdBtarget,SNR);
       break;
     }
     
   
 #ifdef PBS_SIM
-    /*
+/*
   if ((PHY_vars_UE[0]->dlsch_errors) >dl_er[0]) {
     dl_er[0] = (PHY_vars_UE[0]->dlsch_errors);
     fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,0,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act,PHY_vars_eNb[1]->log2_maxp);
@@ -1952,6 +1967,7 @@ if (next_slot == 19) {
   }
 #endif //DISABLE_SECONDARY
 
+
   
   if (((double)PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors/(mac_xface->frame - 1))<5e-3 && ((double)PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors/(mac_xface->frame - 1))<5e-3 && (mac_xface->frame >= 300)) {
     mac_xface->frame++;
@@ -1972,6 +1988,7 @@ if (next_slot == 19) {
   
 #ifdef PBS_SIM
   for (j=0;j<2;j++) {
+    printf("Dumping data, Frame %d, SIR %f, SNR %f\n", mac_xface->frame,SIRdBtarget,SNR);
     fprintf(er_data_fd,"er_data_fd(%i,%i,%i,:) = [%i,%i,%i,%i,%i,%i,%i,%f,%f];\n",sir_ind,snr_ind,j+1,PHY_vars_UE[j]->dlsch_errors, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_errors,PHY_vars_UE[j]->dlsch_cntl_errors, PHY_vars_UE[j]->dlsch_received, PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_received, PHY_vars_UE[j]->dlsch_cntl_received, mac_xface->frame,SIRdBtarget,SNR);
     fprintf(turboIter_fd,"turboIter_fd(%i,%i,%i) = %i;\n",sir_ind,snr_ind,j+1,PHY_vars_UE[j]->turbo_iterations);
   }
