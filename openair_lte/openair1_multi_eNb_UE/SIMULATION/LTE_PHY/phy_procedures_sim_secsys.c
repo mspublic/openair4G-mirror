@@ -91,8 +91,8 @@ int main(int argc, char **argv) {
    double SNR = 0;
    unsigned char plot_flag=0;
 #ifdef PBS_SIM
-  FILE *er_data_fd, *turboIter_fd, *er_cause_fd;
-  char er_data_fname[60], turboIter_fname[60], er_cause_fname[60];
+   FILE *er_data_fd, *turboIter_fd;//, *er_cause_fd;
+   char er_data_fname[60], turboIter_fname[60];//, er_cause_fname[60];
   // for file output
   char pbs_output_dir[100] = "";
   unsigned char pbs_output_dir_length = 0;
@@ -137,6 +137,12 @@ int main(int argc, char **argv) {
   }
   if (argc>6) {
     sir1 = atof(argv[6]);
+  }
+  if (argc>7) {
+    snrStepSize = atof(argv[7]);
+  }
+  if (argc>8) {
+    sirStepSize = atof(argv[8]);
   }
   else {
     SE = 1;
@@ -759,15 +765,15 @@ int main(int argc, char **argv) {
   strcat(tempChar,"turboIter_%d_%d_K%d.m");
   sprintf(turboIter_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   turboIter_fd = fopen(turboIter_fname,"w");
-
+  /*
   strncpy(tempChar,pbs_output_dir,100);
   strcat(tempChar,"er_cause_%d_%d_K%d.csv");
   sprintf(er_cause_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   er_cause_fd = fopen(er_cause_fname,"w");
-
+  */
   fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_SIR,N_SNR,2,9);
   fprintf(turboIter_fd,"turboIter_fd = ones(%i,%i,%i);\n",N_SIR,N_SNR,2);
-  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,sir_ind,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],sir_act/tx_pwr,log2(pmax)\n");
+  //  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,sir_ind,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],sir_act/tx_pwr,log2(pmax)\n");
 #endif //PBS_SIM
 
       /*-------------------------------------------------------------
@@ -832,16 +838,20 @@ int main(int argc, char **argv) {
     first_call_secsys = 1;
 #endif
 
-#ifdef SECONDARY_SYSTEM
     PHY_vars_UE[0]->UE_mode = PUSCH;
     PHY_vars_eNb[0]->eNB_UE_stats[0].mode[0] = PUSCH;
     PHY_vars_eNb[0]->eNB_UE_stats[0].UE_id[0] = 0xBA82;
     PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->crnti = 0xBA82;
+#ifdef SECONDARY_SYSTEM
+    PHY_vars_UE[1]->UE_mode = PUSCH;
+    PHY_vars_eNb[1]->eNB_UE_stats[0].mode[0] = PUSCH;
+    PHY_vars_eNb[1]->eNB_UE_stats[0].UE_id[0] = 0xBD17;
+    PHY_vars_UE[1]->lte_ue_pdcch_vars[0]->crnti = 0xBD17;
 #endif
 
 #ifdef SECONDARY_SYSTEM
-  printf("SIR :DCI r %f dB\n",SIRdBtarget);
-  printf("SNR :DCI r %f dB\n",SNR);
+  printf("SIR ::  %f dB\n",SIRdBtarget);
+  printf("SNR ::  %f dB\n",SNR);
 #endif
 
 #ifdef SKIP_RF_CHAIN
@@ -1902,13 +1912,14 @@ if (next_slot == 19) {
       mac_xface->frame++; // too bad, no need to continue
       break;
     }
-    if ((PHY_vars_UE[0]->dlsch_received>(mac_xface->frame-5) || PHY_vars_UE[1]->dlsch_received>(mac_xface->frame-5)) && (mac_xface->frame > 200)) {
+    if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)>(mac_xface->frame*.99) && (PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)>(mac_xface->frame*.99)) && (mac_xface->frame > 200)) {
       mac_xface->frame++; // too good, no need to continue
       break;
     }
     
   
 #ifdef PBS_SIM
+    /*
   if ((PHY_vars_UE[0]->dlsch_errors) >dl_er[0]) {
     dl_er[0] = (PHY_vars_UE[0]->dlsch_errors);
     fprintf(er_cause_fd,"%i,%i,%i,%i,%i,%f,%f,%f,%f,%d\n",1,0,sir_ind,snr_ind,mac_xface->frame+1,10*log10(rx_pwr_pre[0]),10*log10(rx_pwr_pre[2]),10*log10(SePu_pwr),sir_act,PHY_vars_eNb[1]->log2_maxp);
@@ -1927,10 +1938,10 @@ if (next_slot == 19) {
       //plot_flag=1;
       
     } else {
-      /*
+      
       printf("TxSIRdB: %lf\n",10*log10(tx_pwr_post[0]/tx_pwr_post[1]));
       printf("Fading caused error in. rx_pwr: %lf, sir_act: %lf\n",10*log10(rx_pwr_pre[0]),sir_act);
-      */
+      
     }
     //plot_flag=1;
   }
@@ -1941,13 +1952,13 @@ if (next_slot == 19) {
   }
 #endif //DISABLE_SECONDARY
 
-  /*
+  
   if (((double)PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors/(mac_xface->frame - 1))<5e-3 && ((double)PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors/(mac_xface->frame - 1))<5e-3 && (mac_xface->frame >= 300)) {
     mac_xface->frame++;
     printf("Broke at frame: %d\n", mac_xface->frame);
     break;
   }
-  */
+  
   //  fprintf(sir_fd,"sir_fd(%i,%i) = %f;\n",sir_ind,mac_xface->frame+1,sir_act);
 
   if (openair_daq_vars.mode==openair_NOT_SYNCHED) {
@@ -1955,6 +1966,7 @@ if (next_slot == 19) {
     mac_xface->frame++;
     break;
   }
+*/
 #endif //PBS_SIM
 } //for(mac_xface->frame...
   
@@ -1993,7 +2005,7 @@ if (next_slot == 19) {
 #ifdef PBS_SIM
   fclose(turboIter_fd);
   fclose(er_data_fd);
-  fclose(er_cause_fd);
+  //  fclose(er_cause_fd);
 #endif //PBS_SIM
 
 #ifdef IFFT_FPGA

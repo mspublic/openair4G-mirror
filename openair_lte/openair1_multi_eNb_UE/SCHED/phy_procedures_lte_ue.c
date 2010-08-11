@@ -865,7 +865,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	    phy_vars_ue->dlsch_errors++;
 #ifdef USER_MODE
 	    if (mac_xface->frame > 10) {
-	      printf("DLSCH in error, dumping\n");
+	      //printf("DLSCH in error, dumping\n");
 	      //	      dump_dlsch();
 	      //	      exit(-1);
 	    }
