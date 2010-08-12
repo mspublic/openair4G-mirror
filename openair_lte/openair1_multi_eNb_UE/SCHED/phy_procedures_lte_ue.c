@@ -434,8 +434,8 @@ void lte_ue_pbch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
     emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4];
     //phy_vars_ue->PHY_measurements.frame_tx = *((unsigned int*) phy_vars_ue->lte_ue_pbch_vars->decoded_output);
 #endif
-    phy_vars_ue->lte_frame_parms.mode1_flag = (phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
-    openair_daq_vars.dlsch_transmission_mode = phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4];
+    //phy_vars_ue->lte_frame_parms.mode1_flag = (phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4] == 1);
+    //openair_daq_vars.dlsch_transmission_mode = phy_vars_ue->lte_ue_pbch_vars[eNb_id]->decoded_output[4];
   }
   else {
     phy_vars_ue->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq++;
