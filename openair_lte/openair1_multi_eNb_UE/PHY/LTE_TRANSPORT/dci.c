@@ -1176,12 +1176,14 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 				 lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 				 s,
 				 frame_parms);
+#ifdef MU_RECEIVER
 	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				 lte_ue_common_vars->dl_ch_estimates[eNb_id_i - 1],//subtract 1 to eNb_id_i to compensate for the non-shifted pilots from the PeNb
 				 lte_ue_pdcch_vars[eNb_id_i]->rxdataF_ext,//shift by two to simulate transmission from a second antenna
 				 lte_ue_pdcch_vars[eNb_id_i]->dl_ch_estimates_ext,//shift by two to simulate transmission from a second antenna
 				 s,
 				 frame_parms);
+#endif //MU_RECEIVER
       } else if (frame_parms->nb_antennas_tx>1) {
 	pdcch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 			       lte_ue_common_vars->dl_ch_estimates[eNb_id],
@@ -1226,6 +1228,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
 
+#ifdef MU_RECEIVER
     if (is_secondary_ue) {
       //get MF output for interfering stream
       pdcch_channel_compensation(lte_ue_pdcch_vars[eNb_id_i]->rxdataF_ext,
@@ -1245,10 +1248,12 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 				    lte_ue_pdcch_vars[eNb_id]->dl_ch_rho_ext,
 				    log2_maxh);
     }
+#endif //MU_RECEIVER
     
 
     if (frame_parms->nb_antennas_rx > 1)
       if (is_secondary_ue) {
+#ifdef MU_RECEIVER
 	pdcch_detection_mrc_i(frame_parms,
 			      lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
 			      lte_ue_pdcch_vars[eNb_id_i]->rxdataF_comp,
@@ -1259,6 +1264,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_pdcch_vars[eNb_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
+#endif //MU_RECEIVER
       } else {
 	pdcch_detection_mrc(frame_parms,
 			    lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
@@ -1272,6 +1278,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     else
       pdcch_alamouti(frame_parms,lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,s);
     
+#ifdef MU_RECEIVER
     if (is_secondary_ue) {
       pdcch_qpsk_qpsk_llr(frame_parms,
 			  lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
@@ -1286,6 +1293,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif
     } 
     else {
+#endif //MU_RECEIVER
       pdcch_llr(frame_parms,
 		lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->rxdataF_comp,
 		(char *)lte_ue_pdcch_vars[frame_parms->Nid_cell % 3]->llr,
@@ -1293,7 +1301,9 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 #ifdef DEBUG_PHY
       write_output("llr8_seq.m","llr8",&lte_ue_pdcch_vars[eNb_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
 #endif
+#ifdef MU_RECEIVER
     }
+#endif //MU_RECEIVER
 
   }
 

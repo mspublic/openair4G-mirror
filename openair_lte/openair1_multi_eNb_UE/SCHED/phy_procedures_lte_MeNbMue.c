@@ -26,7 +26,7 @@ ________________________________________________________________*/
 #ifndef PBS_SIM 
 //#define DEBUG_PHY
 #endif //PBS_SIM
-#define NULL_SHAPE_BF_ENABLED
+//#define NULL_SHAPE_BF_ENABLED
 #endif //USER_MODE
 
 #define DIAG_PHY
@@ -156,12 +156,13 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	  phy_vars_eNb->has_valid_precoder = 0;
 	  return(-1);
 	}
-	/*
+#ifdef RANDOM_BF	
 	re_last = phy_vars_eNb->const_ch[aa][0];
 	im_last = phy_vars_eNb->const_ch[aa][1];
 	re_next = phy_vars_eNb->const_ch[aa][0];
 	im_next = phy_vars_eNb->const_ch[aa][1];
-	*/
+#endif //RANDOM_BF
+	
 	// rearrange according to create NULL-beam
 	/*
 	 * [h1 h2] ==> [-h2 h1]
@@ -195,12 +196,13 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	  maxp = re_next + im_next;
 	  ind_of_maxp = i;
 	}
-	/*
+#ifdef RANDOM_BF
 	re_last = phy_vars_eNb->const_ch[aa][0];
 	im_last = phy_vars_eNb->const_ch[aa][1];
 	re_next = phy_vars_eNb->const_ch[aa][0];
 	im_next = phy_vars_eNb->const_ch[aa][1];
-	*/
+#endif //RANDOM_BF
+	
 	// rearrange according to create NULL-beam
 	/*
 	 * [h1 h2] ==> [-h2 h1]
@@ -382,12 +384,14 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
 	  ind_of_maxp = i;
 	}
-	/*
+	
+#ifdef RANDOM_BF
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
-	*/
+#endif //RANDOM_BF
+	
       //negative frequencies
 	
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
@@ -402,12 +406,14 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
 	  ind_of_maxp = i;
 	}
-	/*
+	
+#ifdef RANDOM_BF
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
-	*/
+#endif //RANDOM_BF
+	
       }
     }
 

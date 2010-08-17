@@ -522,8 +522,12 @@ int lte_ue_pdcch_procedures(int eNb_id,unsigned char last_slot, PHY_VARS_UE *phy
   phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_received += dci_cnt;
     
 #ifdef DIAG_PHY
-  if (dci_cnt) 
+  if (dci_cnt) {
     debug_msg("[PHY_PROCEDURES_LTE][DIAG] Frame %d, slot %d: DCI found %i\n",mac_xface->frame,last_slot,dci_cnt);
+  } else if ((last_slot==0) ||(last_slot==12) ||(last_slot==18)) {
+    debug_msg("[PHY_PROCEDURES_LTE][DIAG] Frame %d, slot %d: DCI missed\n",mac_xface->frame,last_slot);
+    phy_vars_ue->lte_ue_pdcch_vars[eNb_id]->dci_missed++;
+  }
 #endif
 
 #ifdef DIAG_PHY

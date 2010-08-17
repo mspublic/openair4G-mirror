@@ -30,6 +30,18 @@ ifdef MeNBMUE
 CFLAGS += -DMeNBMUE
 endif
 
+ifdef MU_RECEIVER
+CFLAGS += -DMU_RECEIVER
+endif
+
+ifdef ZBF_ENABLED
+CFLAGS += -DNULL_SHAPE_BF_ENABLED
+endif
+
+ifdef RANDOM_BF
+CFLAGS += -DRANDOM_BF
+endif
+
 ifdef PBS_SIM
 CFLAGS += -DPBS_SIM
 endif

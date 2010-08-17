@@ -1858,8 +1858,10 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				 lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 				 phy_measurements); // log2_maxh+I0_shift
 #ifdef DEBUG_PHY
+      if (symbol == 5) {
 	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);     
+      }
 #endif 
 
     // compute correlation between signal and interference channels
@@ -1922,7 +1924,11 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     }
     switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
+#ifdef MU_RECEIVER
       if ((dual_stream_UE == 0) && (!is_secondary_ue))
+#else
+      if ((dual_stream_UE == 0))
+#endif //MU_RECEIVER
 	dlsch_qpsk_llr(frame_parms,
 		       lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
 		       lte_ue_dlsch_vars[eNb_id]->llr[0],
