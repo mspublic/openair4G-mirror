@@ -777,200 +777,200 @@ int main(int argc, char **argv) {
     printf("Could not open turboIter_fd file\n");
   }
   /*
-  strncpy(tempChar,pbs_output_dir,100);
-  strcat(tempChar,"er_cause_%d_%d_K%d.csv");
-  sprintf(er_cause_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
-  er_cause_fd = fopen(er_cause_fname,"w");
+    strncpy(tempChar,pbs_output_dir,100);
+    strcat(tempChar,"er_cause_%d_%d_K%d.csv");
+    sprintf(er_cause_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
+    er_cause_fd = fopen(er_cause_fname,"w");
   */
   fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_STxG,N_SNR,2,9);
   fprintf(turboIter_fd,"turboIter_fd = ones(%i,%i,%i);\n",N_STxG,N_SNR,2);
   //  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,stxg_ind,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],stxg_act/tx_pwr,log2(pmax)\n");
 #endif //PBS_SIM
-
-      /*-------------------------------------------------------------
-	                    SIMULATION START
-      ---------------------------------------------------------------*/
+  
+  /*-------------------------------------------------------------
+    SIMULATION START
+    ---------------------------------------------------------------*/
   for (SNR = snr0; SNR<=snr1; SNR+=snrStepSize) {
     snr_ind++;
     path_loss_dB_def = -105 + SNR;
     printf("path_loss_dB_def _pwr: %f\n",path_loss_dB_def);
     stxg_ind=0;
-  for (STxGain = stxg0; STxGain<=stxg1; STxGain+=stxgStepSize) {
-    stxg_ind++; // initialized with 0, first index 1 (for MatLab/Octave)
-    PHY_vars_UE[0]->dlsch_errors=0;
-    PHY_vars_UE[0]->dlsch_errors_last=0;
-    PHY_vars_UE[0]->dlsch_received=0;
-    PHY_vars_UE[0]->dlsch_received_last=0;
-    PHY_vars_UE[0]->dlsch_fer=0;
-    PHY_vars_UE[0]->dlsch_cntl_errors=0;
-    PHY_vars_UE[0]->dlsch_cntl_received=0;
-    PHY_vars_UE[0]->dlsch_ra_errors=0;
-    PHY_vars_UE[0]->current_dlsch_cqi=0;
-    PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors=0;
-    PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received=0;
-    PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_false=0;
-    PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_missed=0;
-    PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
-    PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors_last=0;
-    PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
-    PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_fer=0;
-    PHY_vars_UE[0]->turbo_iterations=0;
-    PHY_vars_UE[0]->first_run_timing_advance=0;
-
+    for (STxGain = stxg0; STxGain<=stxg1; STxGain+=stxgStepSize) {
+      stxg_ind++; // initialized with 0, first index 1 (for MatLab/Octave)
+      PHY_vars_UE[0]->dlsch_errors=0;
+      PHY_vars_UE[0]->dlsch_errors_last=0;
+      PHY_vars_UE[0]->dlsch_received=0;
+      PHY_vars_UE[0]->dlsch_received_last=0;
+      PHY_vars_UE[0]->dlsch_fer=0;
+      PHY_vars_UE[0]->dlsch_cntl_errors=0;
+      PHY_vars_UE[0]->dlsch_cntl_received=0;
+      PHY_vars_UE[0]->dlsch_ra_errors=0;
+      PHY_vars_UE[0]->current_dlsch_cqi=0;
+      PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors=0;
+      PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received=0;
+      PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_false=0;
+      PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_missed=0;
+      PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
+      PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors_last=0;
+      PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
+      PHY_vars_UE[0]->lte_ue_pbch_vars[eNb_id]->pdu_fer=0;
+      PHY_vars_UE[0]->turbo_iterations=0;
+      PHY_vars_UE[0]->first_run_timing_advance=0;
+      
 #ifdef SECONDARY_SYSTEM
-    PHY_vars_UE[1]->dlsch_errors=0;
-    PHY_vars_UE[1]->dlsch_errors_last=0;
-    PHY_vars_UE[1]->dlsch_received=0;
-    PHY_vars_UE[1]->dlsch_received_last=0;
-    PHY_vars_UE[1]->dlsch_fer=0;
-    PHY_vars_UE[1]->dlsch_cntl_errors=0;
-    PHY_vars_UE[1]->dlsch_cntl_received=0;
-    PHY_vars_UE[1]->dlsch_ra_errors=0;
-    PHY_vars_UE[1]->current_dlsch_cqi=0;
-    PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors=0;
-    PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received=0;
-    PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_false=0;
-    PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_missed=0;
-    PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
-    PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors_last=0;
-    PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
-    PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_fer=0;
-    PHY_vars_UE[1]->turbo_iterations=0;
-    PHY_vars_UE[1]->first_run_timing_advance=0;
+      PHY_vars_UE[1]->dlsch_errors=0;
+      PHY_vars_UE[1]->dlsch_errors_last=0;
+      PHY_vars_UE[1]->dlsch_received=0;
+      PHY_vars_UE[1]->dlsch_received_last=0;
+      PHY_vars_UE[1]->dlsch_fer=0;
+      PHY_vars_UE[1]->dlsch_cntl_errors=0;
+      PHY_vars_UE[1]->dlsch_cntl_received=0;
+      PHY_vars_UE[1]->dlsch_ra_errors=0;
+      PHY_vars_UE[1]->current_dlsch_cqi=0;
+      PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors=0;
+      PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received=0;
+      PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_false=0;
+      PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_missed=0;
+      PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors=0;
+      PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors_last=0;
+      PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_errors_conseq=0;
+      PHY_vars_UE[1]->lte_ue_pbch_vars[eNb_id]->pdu_fer=0;
+      PHY_vars_UE[1]->turbo_iterations=0;
+      PHY_vars_UE[1]->first_run_timing_advance=0;
 #endif
 
-    dl_er[0] = 0;
-    dci_er[0] = 0;
-    first_call = 1;
-
+      dl_er[0] = 0;
+      dci_er[0] = 0;
+      first_call = 1;
+      
 #ifdef SECONDARY_SYSTEM
-    dl_er[1] = 0;
-    dci_er[1] = 0;
-    first_call_secsys = 1;
+      dl_er[1] = 0;
+      dci_er[1] = 0;
+      first_call_secsys = 1;
 #endif
-
-    PHY_vars_UE[0]->UE_mode = PUSCH;
-    PHY_vars_eNb[0]->eNB_UE_stats[0].mode[0] = PUSCH;
-    PHY_vars_eNb[0]->eNB_UE_stats[0].UE_id[0] = 0xBA82;
-    PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->crnti = 0xBA82;
+      
+      PHY_vars_UE[0]->UE_mode = PUSCH;
+      PHY_vars_eNb[0]->eNB_UE_stats[0].mode[0] = PUSCH;
+      PHY_vars_eNb[0]->eNB_UE_stats[0].UE_id[0] = 0xBA82;
+      PHY_vars_UE[0]->lte_ue_pdcch_vars[0]->crnti = 0xBA82;
 #ifdef SECONDARY_SYSTEM
-    PHY_vars_UE[1]->UE_mode = PUSCH;
-    PHY_vars_eNb[1]->eNB_UE_stats[0].mode[0] = PUSCH;
-    PHY_vars_eNb[1]->eNB_UE_stats[0].UE_id[0] = 0xBD17;
-    PHY_vars_UE[1]->lte_ue_pdcch_vars[0]->crnti = 0xBD17;
+      PHY_vars_UE[1]->UE_mode = PUSCH;
+      PHY_vars_eNb[1]->eNB_UE_stats[0].mode[0] = PUSCH;
+      PHY_vars_eNb[1]->eNB_UE_stats[0].UE_id[0] = 0xBD17;
+      PHY_vars_UE[1]->lte_ue_pdcch_vars[0]->crnti = 0xBD17;
 #endif
-
+      
 #ifdef SECONDARY_SYSTEM
-  printf("STxGain ::  %f dB\n",STxGain);
-  printf("SNR     ::  %f dB\n",SNR);
+      printf("STxGain ::  %f dB\n",STxGain);
+      printf("SNR     ::  %f dB\n",SNR);
 #endif
-
+      
 #ifdef SKIP_RF_CHAIN
-  STxG = pow(10,.1*STxGain);
+      STxG = pow(10,.1*STxGain);
 #endif //SKIP_RF_CHAIN
-
-  for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-
-    //#ifndef PBS_SIM
-    if (mac_xface->frame==2)
-      plot_flag = 1;
-    else 
-      plot_flag = 0;
-    //#endif //PBS_SIM   
+      
+      for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
+	
+#ifndef PBS_SIM
+	if (mac_xface->frame==2)
+	  plot_flag = 1;
+	else 
+	  plot_flag = 0;
+#endif //PBS_SIM   
 #ifdef RANDOM_BF
-    for (i=0; i<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; i++) {
-      PHY_vars_eNb[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
-      PHY_vars_eNb[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
-      PHY_vars_UE[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
-      PHY_vars_UE[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
-    }
-    norm_const = pow(
-		     pow(PHY_vars_eNb[1]->const_ch[0][0],2) 
-		     + pow(PHY_vars_eNb[1]->const_ch[0][1],2) +
-		     pow(PHY_vars_eNb[1]->const_ch[1][0],2)
-		     + pow(PHY_vars_eNb[1]->const_ch[1][1],2)
-		     ,.5);
-    PHY_vars_eNb[1]->const_ch[0][0] = (short)((PHY_vars_eNb[1]->const_ch[0][0]/norm_const)*pow(2,12));
-    PHY_vars_eNb[1]->const_ch[0][1] = (short)((PHY_vars_eNb[1]->const_ch[0][1]/norm_const)*pow(2,12));
-    norm_const = pow(
-		     pow(PHY_vars_UE[1]->const_ch[0][0],2) 
-		     + pow(PHY_vars_UE[1]->const_ch[0][1],2) +
-		     pow(PHY_vars_UE[1]->const_ch[1][0],2)
-		     + pow(PHY_vars_UE[1]->const_ch[1][1],2)
-		     ,.5);
-    PHY_vars_UE[1]->const_ch[0][0] = (short)((PHY_vars_UE[1]->const_ch[0][0]/norm_const)*pow(2,12));
-    PHY_vars_UE[1]->const_ch[0][1] = (short)((PHY_vars_UE[1]->const_ch[0][1]/norm_const)*pow(2,12));
+	  for (i=0; i<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; i++) {
+	    PHY_vars_eNb[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
+	    PHY_vars_eNb[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
+	    PHY_vars_UE[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
+	    PHY_vars_UE[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
+	  }
+	  norm_const = pow(
+			   pow(PHY_vars_eNb[1]->const_ch[0][0],2) 
+			   + pow(PHY_vars_eNb[1]->const_ch[0][1],2) +
+			   pow(PHY_vars_eNb[1]->const_ch[1][0],2)
+			   + pow(PHY_vars_eNb[1]->const_ch[1][1],2)
+			   ,.5);
+	  PHY_vars_eNb[1]->const_ch[0][0] = (short)((PHY_vars_eNb[1]->const_ch[0][0]/norm_const)*pow(2,12));
+	  PHY_vars_eNb[1]->const_ch[0][1] = (short)((PHY_vars_eNb[1]->const_ch[0][1]/norm_const)*pow(2,12));
+	  norm_const = pow(
+			   pow(PHY_vars_UE[1]->const_ch[0][0],2) 
+			   + pow(PHY_vars_UE[1]->const_ch[0][1],2) +
+			   pow(PHY_vars_UE[1]->const_ch[1][0],2)
+			   + pow(PHY_vars_UE[1]->const_ch[1][1],2)
+			   ,.5);
+	  PHY_vars_UE[1]->const_ch[0][0] = (short)((PHY_vars_UE[1]->const_ch[0][0]/norm_const)*pow(2,12));
+	  PHY_vars_UE[1]->const_ch[0][1] = (short)((PHY_vars_UE[1]->const_ch[0][1]/norm_const)*pow(2,12));
 #endif //RANDOM_BF
-
-    for (slot=0 ; slot<20 ; slot++) {
-      last_slot = (slot - 1)%20;
-      if (last_slot <0)
-	last_slot+=20;
-      next_slot = (slot + 1)%20;
-      
+	  
+	  for (slot=0 ; slot<20 ; slot++) {
+	    last_slot = (slot - 1)%20;
+	    if (last_slot <0)
+	      last_slot+=20;
+	    next_slot = (slot + 1)%20;
+	    
 #ifdef SECONDARY_SYSTEM
-      path_loss_dB = path_loss_dB_def;
-      path_loss    = pow(10,.1*path_loss_dB);
-	/*
-      if ((next_slot > 2) && (next_slot < 10)) {
-	if (PHY_vars_UE[1]->UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB += (-20+6.2);  // UE
-	else
-	  path_loss_dB += (-20+(double)PHY_vars_UE[1]->ulsch_ue[0]->power_offset);
-	  }*/
-      path_loss_ar_dB[SeSu] = path_loss_dB;
-      path_loss_ar[SeSu]    = pow(10,.1*path_loss_ar_dB[SeSu]);
-      path_loss_ar_dB[PeSu] = path_loss_dB;
-      path_loss_ar[PeSu]    = pow(10,.1*path_loss_ar_dB[PeSu]);
+	    path_loss_dB = path_loss_dB_def;
+	    path_loss    = pow(10,.1*path_loss_dB);
+	    /*
+	      if ((next_slot > 2) && (next_slot < 10)) {
+	      if (PHY_vars_UE[1]->UE_mode == PRACH) // 6 RBs, 23 dBm
+	      path_loss_dB += (-20+6.2);  // UE
+	      else
+	      path_loss_dB += (-20+(double)PHY_vars_UE[1]->ulsch_ue[0]->power_offset);
+	      }*/
+	    path_loss_ar_dB[SeSu] = path_loss_dB;
+	    path_loss_ar[SeSu]    = pow(10,.1*path_loss_ar_dB[SeSu]);
+	    path_loss_ar_dB[PeSu] = path_loss_dB;
+	    path_loss_ar[PeSu]    = pow(10,.1*path_loss_ar_dB[PeSu]);
 #endif //SECONDARY_SYSTEM
-      
-      path_loss_dB = path_loss_dB_def;
-      path_loss    = pow(10,.1*path_loss_dB);
+	    
+	    path_loss_dB = path_loss_dB_def;
+	    path_loss    = pow(10,.1*path_loss_dB);
 #ifdef SECONDARY_SYSTEM
-      path_loss_ar_dB[PeSe] = path_loss_dB;
-      path_loss_ar[PeSe]    = pow(10,.1*path_loss_ar_dB[PeSe]);
+	    path_loss_ar_dB[PeSe] = path_loss_dB;
+	    path_loss_ar[PeSe]    = pow(10,.1*path_loss_ar_dB[PeSe]);
 #endif //SECONDARY_SYSTEM
-      
-	/* 
-	if (PHY_vars_UE[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB += (-20+6.2);  // UE
-	else
-	  path_loss_dB += (-20+(double)PHY_vars_UE[0]->ulsch_ue[0]->power_offset);
-	*/
+	    
+	    /* 
+	       if (PHY_vars_UE[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
+	       path_loss_dB += (-20+6.2);  // UE
+	       else
+	       path_loss_dB += (-20+(double)PHY_vars_UE[0]->ulsch_ue[0]->power_offset);
+	    */
 #ifdef SECONDARY_SYSTEM
-	path_loss_ar_dB[SePu] = path_loss_dB;
-	path_loss_ar[SePu]    = pow(10,.1*path_loss_ar_dB[SePu]);
-	path_loss_ar_dB[PePu] = path_loss_dB;
+	    path_loss_ar_dB[SePu] = path_loss_dB;
+	    path_loss_ar[SePu]    = pow(10,.1*path_loss_ar_dB[SePu]);
+	    path_loss_ar_dB[PePu] = path_loss_dB;
 #endif //SECONDARY_SYSTEM
 #ifndef PBS_SIM
-  printf("path_losses, next_slot %d: \n",next_slot);
-  for (i=1;i<6;i++) {
-    printf("path_loss_ar_dB[%d]: %f\n",i,path_loss_ar_dB[i]);
-  
+	    printf("path_losses, next_slot %d: \n",next_slot);
+	    for (i=1;i<6;i++) {
+	      printf("path_loss_ar_dB[%d]: %f\n",i,path_loss_ar_dB[i]);
+	    }
 #endif //PBS_SIM
-  /*
-  if ((next_slot > 2) && (next_slot < 10)) { //UL
-    PHY_vars_eNb[0]->rx_total_gain_eNB_dB = - (MIN(path_loss_ar_dB[PePu],path_loss_ar_dB[PeSu]));
-    PHY_vars_eNb[1]->rx_total_gain_eNB_dB = - (MIN(path_loss_ar_dB[SePu],path_loss_ar_dB[SeSu]));
-    PHY_vars_eNb[2]->rx_total_gain_eNB_dB = PHY_vars_eNb[0]->rx_total_gain_eNB_dB;
-    for (i=0 ; i<3; i++) {
-      rx_gain[i] = PHY_vars_eNb[i]->rx_total_gain_eNB_dB;
-#ifndef PBS_SIM
-      printf("[RF RX] Slot: %d: rx_gain (eNB) %d\n",next_slot, rx_gain[i])
-#endif //PBS_SIM
-    }
-  } else { //D
-    PHY_vars_UE[0]->rx_total_gain_dB = - (MIN(path_loss_ar_dB[PePu],path_loss_ar_dB[SePu]));
-    PHY_vars_UE[1]->rx_total_gain_dB = - (MIN(path_loss_ar_dB[SeSu],path_loss_ar_dB[PeSu]));
-    PHY_vars_UE[2]->rx_total_gain_dB = PHY_vars_UE[0]->rx_total_gain_dB;
-    for (i=0 ; i<3; i++) 
-      rx_gain[i] = PHY_vars_UE[i]->rx_total_gain_dB;
-#ifndef PBS_SIM
-      printf("[RF RX] Slot: %d: rx_gain (UE) %d\n",next_slot, rx_gain[i]);
-#endif //PBS_SIM
-    }
-  }
-  */
+	      /*
+		if ((next_slot > 2) && (next_slot < 10)) { //UL
+		PHY_vars_eNb[0]->rx_total_gain_eNB_dB = - (MIN(path_loss_ar_dB[PePu],path_loss_ar_dB[PeSu]));
+		PHY_vars_eNb[1]->rx_total_gain_eNB_dB = - (MIN(path_loss_ar_dB[SePu],path_loss_ar_dB[SeSu]));
+		PHY_vars_eNb[2]->rx_total_gain_eNB_dB = PHY_vars_eNb[0]->rx_total_gain_eNB_dB;
+		for (i=0 ; i<3; i++) {
+		rx_gain[i] = PHY_vars_eNb[i]->rx_total_gain_eNB_dB;
+		#ifndef PBS_SIM
+		printf("[RF RX] Slot: %d: rx_gain (eNB) %d\n",next_slot, rx_gain[i])
+		#endif //PBS_SIM
+		}
+		} else { //D
+		PHY_vars_UE[0]->rx_total_gain_dB = - (MIN(path_loss_ar_dB[PePu],path_loss_ar_dB[SePu]));
+		PHY_vars_UE[1]->rx_total_gain_dB = - (MIN(path_loss_ar_dB[SeSu],path_loss_ar_dB[PeSu]));
+		PHY_vars_UE[2]->rx_total_gain_dB = PHY_vars_UE[0]->rx_total_gain_dB;
+		for (i=0 ; i<3; i++) 
+		rx_gain[i] = PHY_vars_UE[i]->rx_total_gain_dB;
+		#ifndef PBS_SIM
+		printf("[RF RX] Slot: %d: rx_gain (UE) %d\n",next_slot, rx_gain[i]);
+		#endif //PBS_SIM
+		}
+		}
+	      */
 
       /*-------------------------------------------------------------
 	                   ALL LTE PROCESSING
@@ -1155,14 +1155,14 @@ int main(int argc, char **argv) {
 		     CYCLIC_PREFIX);
       }
 #ifndef PBS_SIM
-	if (next_slot==7) {
-	  write_output("txdata_f0.m","txs_f0",&txdataF[0][slot_offset],(lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti>>1),1,1);
-	  if (PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx == 2)
-	    write_output("txdata_f1.m","txs_f1",&txdataF[1][slot_offset],(lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti>>1),1,1)
-	  write_output("txdata_t0.m","txs_t0",&txdata[0][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
-	  if (PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx == 2)
+      if (next_slot==7) {
+	write_output("txdata_f0.m","txs_f0",&txdataF[0][slot_offset],(lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti>>1),1,1);
+	if (PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx == 2)
+	  write_output("txdata_f1.m","txs_f1",&txdataF[1][slot_offset],(lte_frame_parms->ofdm_symbol_size*lte_frame_parms->symbols_per_tti>>1),1,1);
+	write_output("txdata_t0.m","txs_t0",&txdata[0][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
+	if (PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx == 2)
 	  write_output("txdata_t1.m","txs_t1",&txdata[1][slot_offset_time],lte_frame_parms->samples_per_tti>>1,1,1);
-	}
+      }
 #endif //PBS_SIM
  
 #ifdef SECONDARY_SYSTEM
@@ -1447,7 +1447,7 @@ int main(int argc, char **argv) {
 	    for (aatx=0; aatx<PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx; aatx++) {
 	      sprintf(fname,"dl_ch_estimate_prim_%i%i.m",aatx,aarx);
 	      sprintf(vname,"dl_ch_est_p_%i%i",aatx,aarx);
-	      write_output(fname,vname,PHY_vars_UE[1]->lte_ue_common_vars.dl_ch_estimates[0][(2*aatx)+aarx],PHY_vars_UE[1]->lte_frame_parms.ofdm_symbol_size*PHY_vars_UE[1]->lte_frame_parms.symbols_per_tti,1,1)
+	      write_output(fname,vname,PHY_vars_UE[1]->lte_ue_common_vars.dl_ch_estimates[0][(2*aatx)+aarx],PHY_vars_UE[1]->lte_frame_parms.ofdm_symbol_size*PHY_vars_UE[1]->lte_frame_parms.symbols_per_tti,1,1);
 	    }
 	  }
 	  for (aarx=0; aarx<PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx; aarx++) {
