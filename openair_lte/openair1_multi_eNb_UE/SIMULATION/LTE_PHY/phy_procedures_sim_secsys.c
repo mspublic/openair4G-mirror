@@ -77,6 +77,7 @@ int main(int argc, char **argv) {
    double ricean_factor=(1/(1 + pow(10,.1*rice_k))); //0.0000005;
    double forgetting_factor = 0; // high forgetting factor -> slow temporal variation 
    int channel_length;
+   int meas_length, meas_offset;
    struct complex **ch;
    unsigned char pbch_pdu[6];
    int sync_pos, sync_pos_slot;
@@ -1353,75 +1354,82 @@ int main(int argc, char **argv) {
 			      PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
-			      23);
-	if (next_slot == 7) {
-	  tx_pwr_SRS = tx_pwr;
-	}
-#ifndef PBS_SIM
-	if (next_slot == 12) {
-	  write_output("eNb0_txF_pilot_a0.m","eNb0txF_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size,1,1);
-	  write_output("eNb0_txs_pilot_a0.m","eNb0txs_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id][0][next_slot*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1,1);
-	  write_output("eNb1_txF_pilot_a0.m","eNb1txF_p0",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
-	  write_output("eNb1_txF_pilot_a1.m","eNb1txF_p1",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*2);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*3);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*4);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	  tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*5);
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	}
-	if (next_slot==12) {
-	  printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
-	}
-#endif //PBS_SIM
+			      18+5); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm
+      printf("tx_pwr Primary   %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 
-#ifdef SECONDARY_SYSTEM
-	// convert to floating point
-	tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
-				s_im_secsys,
-				txdata_ext,
-				slot_offset_time,
-				PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
-				lte_frame_parms->samples_per_tti>>1,
-				14,
-				23);
+      if (next_slot == 7) {
+	tx_pwr_SRS = tx_pwr;
+      }
 #ifndef PBS_SIM
+      if (next_slot == 12) {
+	write_output("eNb0_txF_pilot_a0.m","eNb0txF_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[0]->lte_frame_parms.ofdm_symbol_size,1,1);
+	write_output("eNb0_txs_pilot_a0.m","eNb0txs_p0",&PHY_vars_eNb[0]->lte_eNB_common_vars.txdata[eNb_id][0][next_slot*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(PHY_vars_eNb[0]->lte_frame_parms.symbols_per_tti>>1)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1,1);
+	write_output("eNb1_txF_pilot_a0.m","eNb1txF_p0",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+	write_output("eNb1_txF_pilot_a1.m","eNb1txF_p1",&PHY_vars_eNb[1]->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size*(PHY_vars_eNb[1]->lte_frame_parms.symbols_per_tti>>1)],PHY_vars_eNb[1]->lte_frame_parms.ofdm_symbol_size,1,1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*2);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*3);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*4);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*5);
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
+      }
+      if (next_slot==12) {
+	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+      }
 #endif //PBS_SIM
-	if (next_slot == 9) {
-	  //printf("tx pwr secondary UE  = %lf dB\n", 10*log10(tx_pwr_secsys)); //indicates the power of the B/F vector
-	  tx_pwr = tx_pwr_SRS;
+      
+#ifdef SECONDARY_SYSTEM
+      // convert to floating point
+      dac_fixed_gain(s_re_secsys,
+		     s_im_secsys,
+		     txdata_ext,
+		     slot_offset_time,
+		     PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+		     lte_frame_parms->samples_per_tti>>1,
+		     14,
+		     18+5); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm
+      tx_pwr_secsys = signal_energy_fp(s_re_secsys,s_im_secsys,PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,lte_frame_parms->samples_per_tti>>1,0);
+      //tx_pwr_secsys += signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,lte_frame_parms->samples_per_tti>>1,0);
+      printf("tx_pwr Secondary %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_secsys*PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx),next_slot,next_slot>>1);
+      
+      if (next_slot == 9) {
+	//printf("tx pwr secondary UE  = %lf dB\n", 10*log10(tx_pwr_secsys)); //indicates the power of the B/F vector
+	tx_pwr = tx_pwr_SRS;
 	//printf("tx pwr ratio = %lf dB\n", 10*log10(tx_pwr/tx_pwr_secsys));
-	}
-	// for convenience call same function for power scaling, but only if there is data to send i.e. tx_pwr_secsys>0
-	if (tx_pwr_secsys>0) {
-	  if (tx_pwr_secsys > tx_pwr)
-	    tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
-					   s_im_secsys,
-					   txdata_ext,
-					   slot_offset_time,
-					   PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
-					   lte_frame_parms->samples_per_tti>>1,
-					   14,
-					   23+STxGain- ((tx_pwr) ? (10*log10(tx_pwr_secsys/tx_pwr)) : 0));
-	  else
-	    tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
-					   s_im_secsys,
-					   txdata_ext,
-					   slot_offset_time,
-					   PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
-					   lte_frame_parms->samples_per_tti>>1,
-					   14,
-					   23+STxGain+ ((tx_pwr_secsys) ? (10*log10(tx_pwr/tx_pwr_secsys)) : 0));
-	} //else if(next_slot==10 || next_slot==9) {
-	  //plot_flag = 1;
-	//}
+      }
+      // for convenience call same function for power scaling, but only if there is data to send i.e. tx_pwr_secsys>0
+      if (tx_pwr_secsys>0) {
+	if (tx_pwr_secsys > tx_pwr)
+	  tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
+					 s_im_secsys,
+					 txdata_ext,
+					 slot_offset_time,
+					 PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+					 lte_frame_parms->samples_per_tti>>1,
+					 14,
+					 18+5-3+STxGain- ((tx_pwr) ? (10*log10(tx_pwr_secsys/tx_pwr)) : 0)); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm, -3 because of two tx antennas
+	else
+	  tx_pwr_secsys = dac_fixed_gain(s_re_secsys,
+					 s_im_secsys,
+					 txdata_ext,
+					 slot_offset_time,
+					 PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+					 lte_frame_parms->samples_per_tti>>1,
+					 14,
+					 18+5-3+STxGain+ ((tx_pwr_secsys) ? (10*log10(tx_pwr/tx_pwr_secsys)) : 0)); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm, -3 because of two tx antennas
+      } //else if(next_slot==10 || next_slot==9) {
+      //plot_flag = 1;
+      //}
+      
 #ifndef PBS_SIM
+      tx_pwr_secsys = signal_energy_fp(s_re_secsys,s_im_secsys,1,lte_frame_parms->samples_per_tti>>1,0);
+      tx_pwr_secsys += signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,lte_frame_parms->samples_per_tti>>1,0);
 	if (next_slot==12) {
 	  printf("tx_pwr_secsys %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_secsys),next_slot,next_slot>>1);
 	}
@@ -1952,16 +1960,16 @@ if (next_slot == 19) {
   */
   } //for(slot...
   
-    if ((mac_xface->frame%25 == 0) && (mac_xface->frame>=24)) {
+    if ((mac_xface->frame%100 == 0) && (mac_xface->frame>=200)) {
       printf("Primary rate:   %f (at frame %d), %f (DCI), %f (CNTL)\n",
 	     ((double)(PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
-	     ((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*3)),
+	     ((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*2)),
 	     ((double)(PHY_vars_UE[0]->dlsch_cntl_received - PHY_vars_UE[0]->dlsch_cntl_errors)/(mac_xface->frame+1)));
       printf("Secondary rate: %f (at frame %d), %f (DCI), %f (CNTL)\n",
 	     ((double)(PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
-	     ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*3)),
+	     ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*2)),
 	     ((double)(PHY_vars_UE[1]->dlsch_cntl_received - PHY_vars_UE[1]->dlsch_cntl_errors)/(mac_xface->frame+1)));
     }
     /*
@@ -1971,9 +1979,9 @@ if (next_slot == 19) {
       break;
     }
     */
-    if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)>(mac_xface->frame*.99) && (mac_xface->frame > 200))) {
+    if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)>(mac_xface->frame*.999) && (mac_xface->frame > 200))) {
 #ifndef DISABLE_SECONDARY
-      if ((PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)>(mac_xface->frame*.99))
+      if ((PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)>(mac_xface->frame*.999))
 #endif //DISABLE_SECONDARY
 	{
 	  mac_xface->frame++; // too good, no need to continu
