@@ -51,7 +51,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 int main(int argc, char **argv) {
 
   int i,j,l,aa,sector,i_max,l_max,aa_max,aatx,aarx;
-  double SE,target_rx_pwr_dB = 40;
+  double SE,target_rx_pwr_dB = 30;
   double sigma2, sigma2_dB=0;
   int n_frames = 2;
   number_of_cards = 1;
@@ -872,6 +872,16 @@ int main(int argc, char **argv) {
       
       for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 	
+      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run empty first subframe, assume received
+	PHY_vars_UE[0]->dlsch_cntl_received=1;
+      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run empty first subframe, assume received
+	PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received=1;
+#ifdef SECONDARY_SYSTEM
+      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run empty first subframe, assume received
+	PHY_vars_UE[1]->dlsch_cntl_received=1;
+      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run empty first subframe, assume received
+	PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received=1;
+#endif //SECONDARY_SYSTEM
 #ifndef PBS_SIM
 	if (mac_xface->frame==2)
 	  plot_flag = 1;
@@ -1797,7 +1807,7 @@ int main(int argc, char **argv) {
 #ifndef PBS_SIM
 	printf("rx_pwr_pre[%d] (RF in) %f dB for slot %d (subframe %d)\n",j+1,10*log10(rx_pwr_pre[j+1]),next_slot,next_slot>>1);
 #endif //PBS_SIM      
-	rx_gain[j+1] = target_rx_pwr_dB - 10*log10(rx_pwr_pre[j+1]);
+	rx_gain[j+1] = target_rx_pwr_dB + 30 - 10*log10(rx_pwr_pre[j+1]);
 	// RF model
 #ifndef SKIP_RF_RX
 	rf_rx(r_re_ext[j],
@@ -1960,7 +1970,7 @@ if (next_slot == 19) {
   */
   } //for(slot...
   
-    if ((mac_xface->frame%100 == 0) && (mac_xface->frame>=200)) {
+    if ((mac_xface->frame%25 == 0) && (mac_xface->frame>=25)) {
       printf("Primary rate:   %f (at frame %d), %f (DCI), %f (CNTL)\n",
 	     ((double)(PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
