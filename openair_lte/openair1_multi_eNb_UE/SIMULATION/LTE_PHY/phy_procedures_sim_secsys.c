@@ -1970,6 +1970,7 @@ if (next_slot == 19) {
   */
   } //for(slot...
   
+#ifndef PBS_SIM
     if ((mac_xface->frame%25 == 0) && (mac_xface->frame>=25)) {
       printf("Primary rate:   %f (at frame %d), %f (DCI), %f (CNTL)\n",
 	     ((double)(PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)/(mac_xface->frame+1)),
@@ -1982,13 +1983,21 @@ if (next_slot == 19) {
 	     ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*2)),
 	     ((double)(PHY_vars_UE[1]->dlsch_cntl_received - PHY_vars_UE[1]->dlsch_cntl_errors)/(mac_xface->frame+1)));
     }
-    /*
-    if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)<(mac_xface->frame*.01) && (PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)<(mac_xface->frame*.01)) && (mac_xface->frame > 200)) {
-      mac_xface->frame++; // too bad, no need to continue
+#endif //PBS_SIM
+    
+    if (((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.005) && (mac_xface->frame > 200))) {
+      mac_xface->frame++; // too bad, no need to try more frames
       printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
       break;
     }
-    */
+#ifndef DISABLE_SECONDARY
+    if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.005 && (mac_xface->frame > 200))) {
+      mac_xface->frame++; // too bad, no need to try more frames
+      printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
+      break;
+    }
+#endif //DISABLE_SECONDARY
+    
     if (((PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)>(mac_xface->frame*.999) && (mac_xface->frame > 200))) {
 #ifndef DISABLE_SECONDARY
       if ((PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)>(mac_xface->frame*.999))
