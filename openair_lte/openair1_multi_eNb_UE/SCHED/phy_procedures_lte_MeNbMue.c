@@ -246,7 +246,7 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 #endif //DEBUG_PHY
 
     phy_vars_eNb->has_valid_precoder = 1;
-    phy_vars_eNb->log2_maxp = 4 + (log2_approx(maxp)/2);
+    phy_vars_eNb->log2_maxp = (log2_approx(maxp));
 #ifdef DEBUG_PHY
     printf("index of max precoder coefficient, %d\n", ind_of_maxp);
 #endif
@@ -267,7 +267,7 @@ void phy_precode_nullBeam_apply(unsigned char next_slot,PHY_VARS_eNB *phy_vars_e
       //printf("sigenergy %d, output_norm %d\n",signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size) + signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size), output_norm);
     }
 #ifdef DEBUG_PHY
-    if (next_slot==11) {
+    if (next_slot==12) {
       write_output("precoder_a0.m","prec_a0",phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
       write_output("precoder_a1.m","prec_a1",phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size<<1,2,1);
       write_output("txdataF_a0_before.m","txF_a0_b",&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],(phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1),1,1);
@@ -425,7 +425,7 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 #endif //DEBUG_PHY
     
     phy_vars_ue->has_valid_precoder = 1;
-    phy_vars_ue->log2_maxp = 4 + (log2_approx(maxp)/2);
+    phy_vars_ue->log2_maxp = (log2_approx(maxp));
 #ifdef DEBUG_PHY
     printf("index of max precoder coefficient, %d\n", ind_of_maxp);
 #endif
