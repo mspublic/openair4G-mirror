@@ -93,6 +93,9 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   lte_gold(lte_frame_parms);
   lte_sync_time_init(lte_frame_parms);
   
+  generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
+
   generate_64qam_table();
   generate_16qam_table();
   generate_RIV_tables();
@@ -100,7 +103,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   generate_pcfich_reg_mapping(lte_frame_parms);
   generate_phich_reg_mapping_ext(lte_frame_parms);
   
-  set_taus_seed(1328);
+  //set_taus_seed(1328);
   
 }
 
@@ -122,20 +125,15 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef IFFT_FPGA
 #ifdef USER_MODE
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
-    bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
+    ue_common_vars->txdataF[i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+    bzero(ue_common_vars->txdataF[i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
   }
 #else //USER_MODE
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdataF[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-  }
-  /* merge indicated the following instead
-  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdataF[i] = TX_DMA_BUFFER[0][i];
   }
-  */
+#endif //USER_MODE
   ue_common_vars->txdata = NULL;
-#endif
 #else //IFFT_FPGA
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdataF[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
@@ -144,18 +142,13 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   ue_common_vars->txdata = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 #ifdef USER_MODE
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdata[i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    ue_common_vars->txdata[i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
     bzero(ue_common_vars->txdata[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
   }
-#else
-  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    ue_common_vars->txdata[i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-  }
-  /* merge indicated the following instead
+#else //USER_MODE
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
     ue_common_vars->txdata[i] = TX_DMA_BUFFER[0][i];
   }
-  */
 #endif //USER_MODE
 #endif //IFFT_FPGA
 
@@ -171,16 +164,12 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
+  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 #ifndef USER_MODE
-  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     ue_common_vars->rxdata[i] = RX_DMA_BUFFER[0][i];
-#ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] = %p\n",i,ue_common_vars->rxdata[i]);
-#endif
-  }
 #else //USER_MODE
-  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     ue_common_vars->rxdata[i] = (int*) malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+#endif //USER_MODE
     if (ue_common_vars->rxdata[i]) {
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdata[%d] allocated at %p\n",i,ue_common_vars->rxdata[i]);
@@ -191,7 +180,6 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
       return(-1);
     }
   }
-#endif //USER_MODE
 
   ue_common_vars->rxdataF = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
   if (ue_common_vars->rxdataF) {
@@ -539,12 +527,13 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   } 
 
   // Initialize Gold sequence table
-  // lte_gold(frame_parms); --> moved to cbmimo1_fileops
+  // lte_gold(frame_parms); --> moved to phy_init_lte_top
   
   // Initialize Sync
-  // lte_sync_time_init(frame_parms); --> moved to cbmimo1_fileops
+  // lte_sync_time_init(frame_parms); --> moved to phy_init_lte_top
+
 #ifndef NO_UL_REF 
-  generate_ul_ref_sigs();
+  // generate_ul_ref_sigs(); --> moved to phy_init_lte_top
 #endif
 
 
@@ -609,27 +598,19 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifndef USER_MODE
-      if (eNb_id == 0)
-	eNB_common_vars->txdata[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-      else
-#endif
-	{
-	  eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-	  bzero(eNB_common_vars->txdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-	}
+      eNB_common_vars->txdata[eNb_id][i] = TX_DMA_BUFFER[eNb_id][i];
+#else // USER_MODE
+      eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+      bzero(eNB_common_vars->txdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+#endif // USER_MODE
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdata[eNb_id][i]);
 #endif
     }
 #else // IFFT_FPGA
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      eNB_common_vars->txdata[eNb_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-#ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->txdata[eNb_id][i]);
-#endif
-    }
-#endif
-  
+    eNB_common_vars->txdata[eNb_id] = NULL;
+#endif // IFFT_FPGA
+
 
     eNB_common_vars->txdataF[eNb_id] = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
     if (eNB_common_vars->txdataF[eNb_id]) {
@@ -642,19 +623,15 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d] not allocated\n",eNb_id);
       return(-1);
     }
+
 #ifdef IFFT_FPGA
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifndef USER_MODE
-      if (eNb_id == 0)
-	eNB_common_vars->txdataF[eNb_id][i] = PHY_vars->tx_vars[i].TX_DMA_BUFFER;
-      else
-#endif
-	{
-	  eNB_common_vars->txdataF[eNb_id][i] = (mod_sym_t **)malloc16(NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t*));
-	    bzero(eNB_common_vars->txdataF[eNb_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
-	}
-      
-
+      eNB_common_vars->txdataF[eNb_id][i] = TX_DMA_BUFFER[eNb_id][i];
+#else //USER_MODE
+      eNB_common_vars->txdataF[eNb_id][i] = (mod_sym_t *)malloc16(NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
+      bzero(eNB_common_vars->txdataF[eNb_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
+#endif //USER_MODE
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p, length = %d\n",
 	  eNb_id,i,eNB_common_vars->txdataF[eNb_id][i],
@@ -669,7 +646,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p, length = %d\n",eNb_id,i,eNB_common_vars->txdataF[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int));
 #endif
     }
-#endif  
+#endif //IFFT_FPGA 
     
     //RX vars
     eNB_common_vars->rxdata[eNb_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
@@ -686,14 +663,11 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 #ifndef USER_MODE
-      if (eNb_id == 0)
-	eNB_common_vars->rxdata[eNb_id][i] = RX_DMA_BUFFER[eNb_id][i];
-      else 
-#endif
-	{
-	  eNB_common_vars->rxdata[eNb_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
-	  bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
-	}
+      eNB_common_vars->rxdata[eNb_id][i] = RX_DMA_BUFFER[eNb_id][i];
+#else //USER_MODE
+      eNB_common_vars->rxdata[eNb_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+      bzero(eNB_common_vars->rxdata[eNb_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
+#endif //USER_MODE
 #ifdef DEBUG_PHY
       msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->rxdata[%d][%d] = %p\n",eNb_id,i,eNB_common_vars->rxdata[eNb_id][i]);
 #endif

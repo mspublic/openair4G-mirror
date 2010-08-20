@@ -155,7 +155,9 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
 #endif // USER_MODE 
 #endif // CBMIMO1
 }
+#endif // USER_MODE
 
+/*
 #else  // USER_MODE
 int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
 
@@ -212,6 +214,7 @@ int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
   }
 }
 #endif //USER_MODE
+*/
 
 int phy_init_top(unsigned char nb_antennas_tx) {
 
@@ -242,7 +245,9 @@ int phy_init_top(unsigned char nb_antennas_tx) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
+#ifndef USER_MODE
   init_signal_buffers(number_of_cards,1);
+#endif
   
 #ifdef DEBUG_PHY    
   msg("[openair][PHY][INIT] Initializing FFT engine\n");
