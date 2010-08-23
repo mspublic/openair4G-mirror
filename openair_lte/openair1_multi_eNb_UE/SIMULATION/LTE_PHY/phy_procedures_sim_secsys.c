@@ -752,11 +752,15 @@ int main(int argc, char **argv) {
 
 #ifdef PBS_SIM
   strncpy(tempChar,pbs_output_dir,100);
+#ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
   strcat(tempChar,"er_data_%d_%d_K%d.m");
 #else
   strcat(tempChar,"er_data_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
+#else
+  strcat(tempChar,"er_data_%d_%d_K%d_noIC.m");
+#endif //MU_RECEIVER
   sprintf(er_data_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k); // + 200 for offset to get positive integer
   er_data_fd = fopen(er_data_fname,"w");
   if (er_data_fd) {
@@ -765,11 +769,15 @@ int main(int argc, char **argv) {
     printf("Could not open er_data_fd file\n");
   }
   strncpy(tempChar,pbs_output_dir,100);
+#ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
   strcat(tempChar,"turboIter_%d_%d_K%d.m");
 #else
   strcat(tempChar,"turboIter_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
+#else
+  strcat(tempChar,"turboIter_%d_%d_K%d_noIC.m");
+#endif //MU_RECEIVER
   sprintf(turboIter_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
   turboIter_fd = fopen(turboIter_fname,"w");
   if (turboIter_fd) {
