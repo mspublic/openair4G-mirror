@@ -25,18 +25,18 @@ plot_image = 1;
 switch map
     case 'cordes'
         if isempty(mm)
-            mm=imread('cordes.png');
-            load('gps_calib_cordes.mat')
+            mm=imread('cordes_merged_routes_wp.png');
+            load('gps_calib_cordes_new.mat')
         end
     case 'penne'
         if  isempty(mm)
-            mm=imread('Penne1.PNG');
-            load('gps_calib_penne.mat')
+            mm=imread('penne3.png');
+            load('gps_calib_penne_new.mat')
         end
      case 'ambialet'
         if  isempty(mm)
-            mm=imread('ambialet3.png');
-            load('gps_calib_ambialet3.mat')
+            mm=imread('ambialet2.png');
+            load('gps_calib_ambialet_new.mat')
         end
      otherwise
         plot_image = 0;
