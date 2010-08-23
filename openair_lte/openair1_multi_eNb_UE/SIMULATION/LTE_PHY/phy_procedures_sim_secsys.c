@@ -27,10 +27,10 @@
 //#define CHANNEL_FROM_FILE   //--Unstable, doesn't work properly. Possibly how the channel is written to file.
 //#define FLAT_CHANNEL
 //#define SKIP_RF_RX
-#define DISABLE_SECONDARY
+//#define DISABLE_SECONDARY
 #define BW 7.68 //Fs in MHz
 #define Td 1
-#define N_TRIALS_MAX 1
+#define N_TRIALS_MAX 2
 #define KdB 10 /// Ricean factor in dB
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
@@ -783,7 +783,7 @@ int main(int argc, char **argv) {
     sprintf(er_cause_fname,tempChar,(int)(snr0*10 + 200),(int)(snr1*10 + 200),(int)rice_k);
     er_cause_fd = fopen(er_cause_fname,"w");
   */
-  fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_STxG,N_SNR,2,9);
+  fprintf(er_data_fd,"er_data_fd = zeros(%i,%i,%i,%i);\n",N_STxG,N_SNR,2,7);
   fprintf(turboIter_fd,"turboIter_fd = ones(%i,%i,%i);\n",N_STxG,N_SNR,2);
   //  fprintf(er_cause_fd,"dci/dlsch,Pri/Sec,stxg_ind,snr_ind,frame,rx_pwr,int_pwr,E[|ch_SePu|^2],stxg_act/tx_pwr,log2(pmax)\n");
 #endif //PBS_SIM
@@ -1368,7 +1368,7 @@ int main(int argc, char **argv) {
 			      14,
 			      18+5); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
-	tx_pwr = 3*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on every third --> *3
+	tx_pwr = 6*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on every sixth --> *6
       } else { // UL
 	if (next_slot%2==0)
 	  tx_pwr = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640*2,640*3);
@@ -1383,21 +1383,21 @@ int main(int argc, char **argv) {
 	tx_pwr_SRS = tx_pwr;
       }
 #ifndef PBS_SIM
-      if (next_slot == 12) {
-	tx_pwr_SRS = 3*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
+      if (next_slot>>1 == 6 || next_slot>>1 == 0) {
+	tx_pwr_SRS = 6*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
 	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
 	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*2);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
-	tx_pwr_SRS = 3*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*3);
+	tx_pwr_SRS = 6*signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*3);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
 	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*4);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
 	tx_pwr_SRS = signal_energy_fp(s_re,s_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,640*5);
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr_SRS),next_slot,next_slot>>1);
       }
-      if (next_slot==12) {
+      if (next_slot>>1 == 6 || next_slot>>1 == 0) {
 	printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
       }
 #endif //PBS_SIM
@@ -1413,8 +1413,8 @@ int main(int argc, char **argv) {
 		     14,
 		     18+5-3); // -(20log10(1024)-20log10(2^13)) ~= 18, +5 to adjust DCI to have ~0dBm
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
-      tx_pwr_secsys = 3*signal_energy_fp(s_re_secsys,s_im_secsys,1,640,0); // RSs only on every third --> *3
-      tx_pwr_secsys += 3*signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,640,0); // RSs only on every third --> *3
+      tx_pwr_secsys = 6*signal_energy_fp(s_re_secsys,s_im_secsys,1,640,0); // RSs only on every sixth --> *6
+      tx_pwr_secsys += 6*signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,640,0); // RSs only on every sixth --> *6
       } else { // UL
 	if (next_slot%2==0) {
 	  tx_pwr_secsys = signal_energy_fp(s_re_secsys,s_im_secsys,1,640*2,640*3);
@@ -1459,8 +1459,8 @@ int main(int argc, char **argv) {
       //}
 #ifndef PBS_SIM
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
-      tx_pwr_secsys = 3*signal_energy_fp(s_re_secsys,s_im_secsys,1,640,0); // RSs only on every third --> *3
-      tx_pwr_secsys += 3*signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,640,0); // RSs only on every third --> *3
+      tx_pwr_secsys = 6*signal_energy_fp(s_re_secsys,s_im_secsys,1,640,0); // RSs only on every sixth --> *6
+      tx_pwr_secsys += 6*signal_energy_fp(&s_re_secsys[1],&s_im_secsys[1],1,640,0); // RSs only on every sixth --> *6
       } else { // UL
 	if (next_slot%2==0) {
 	  tx_pwr_secsys = signal_energy_fp(s_re_secsys,s_im_secsys,1,640*2,640*3);
@@ -1771,9 +1771,9 @@ int main(int argc, char **argv) {
 
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
 #ifdef DISABLE_SECONDARY
-	rx_pwr_pre[0] = 3*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on one of three when Secondary is disabled --> *3
+	rx_pwr_pre[0] = 6*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on one of three when Secondary is disabled --> *3
 #else //DISABLE_SECONDARY
-	rx_pwr_pre[0] = (3/2)*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on two of three when Secondary is enabled --> *3/2   (This would be based on the ZBF not working...)
+	rx_pwr_pre[0] = (6/2)*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on two of three when Secondary is enabled --> *3/2   (This would be based on the ZBF not working...)
 #endif //DISABLE_SECONDARY
 	rx_gain[0] = target_rx_pwr_dB - 10*log10(rx_pwr_pre[0]);
 	PHY_vars_UE[0]->rx_total_gain_dB = rx_gain[0];
@@ -1823,10 +1823,10 @@ int main(int argc, char **argv) {
 
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
 #ifdef DISABLE_SECONDARY	
-	rx_pwr = 3*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on one of three when Secondary is disabled --> *3
+	rx_pwr = 6*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0); // RSs only on one of six when Secondary is disabled --> *6
 #else //DISABLE_SECONDARY	
-	rx_pwr = (3/2)*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
-	 // RSs only on two of three when Secondary is enabled --> *3/2  (This would be based on the ZBF not working...)
+	rx_pwr = (6/2)*signal_energy_fp(r_re,r_im,PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,640,0);
+	 // RSs only on two of six when Secondary is enabled --> *6/2  (This would be based on the ZBF not working...)
 #endif //DISABLE_SECONDARY
       } else { // UL
 	if (next_slot%2==0)
@@ -1842,9 +1842,9 @@ int main(int argc, char **argv) {
 #ifdef SECONDARY_SYSTEM
       for (j=0; j<2; j++) {
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
-	rx_pwr_pre[j+1] = (3/2)*signal_energy_fp(r_re_ext[j],r_im_ext[j],1,640,0); // RSs only on every third --> *3
+	rx_pwr_pre[j+1] = (6/2)*signal_energy_fp(r_re_ext[j],r_im_ext[j],1,640,0); // RSs only on every sixth --> *6
 	if (j==0)
-	  rx_pwr_pre[j+1] += (3/2)*signal_energy_fp(&r_re_ext[j][1],&r_im_ext[j][1],1,640,0); // RSs only on every third --> *3
+	  rx_pwr_pre[j+1] += (6/2)*signal_energy_fp(&r_re_ext[j][1],&r_im_ext[j][1],1,640,0); // RSs only on every third --> *6
 	rx_gain[j+1] = target_rx_pwr_dB - 10*log10(rx_pwr_pre[j+1]) + 3 + 10; // gain should be per antenna, compensate by 3dB
 	PHY_vars_UE[j+1]->rx_total_gain_dB = rx_gain[j+1];
       } else { // UL
@@ -1904,9 +1904,9 @@ int main(int argc, char **argv) {
 #endif //PBS_SIM
 
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
-	rx_pwr_sec[j] = (3/2)*signal_energy_fp(r_re_ext[j],r_im_ext[j],1,640,0); // RSs only on every third --> *3
+	rx_pwr_sec[j] = (6/2)*signal_energy_fp(r_re_ext[j],r_im_ext[j],1,640,0); // RSs only on every sixth --> *6
 	if (j==0)
-	  rx_pwr_sec[j] += (3/2)*signal_energy_fp(&r_re_ext[j][1],&r_im_ext[j][1],1,640,0); // RSs only on every third --> *3
+	  rx_pwr_sec[j] += (6/2)*signal_energy_fp(&r_re_ext[j][1],&r_im_ext[j][1],1,640,0); // RSs only on every sixth --> *6
       } else { // UL
 	if (next_slot%2==0) {
 	  rx_pwr_sec[j] = signal_energy_fp(r_re_ext[j],r_im_ext[j],1,640*2,640*3);
@@ -1942,9 +1942,9 @@ int main(int argc, char **argv) {
   
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
 #ifdef DISABLE_SECONDARY	
-	rx_pwr2 = 3*signal_energy(rxdata[0]+slot_offset_time,640); // RSs only on one of three when Secondary is disabled --> *3
+	rx_pwr2 = 6*signal_energy(rxdata[0]+slot_offset_time,640); // RSs only on one of three when Secondary is disabled --> *3
 #else //DISABLE_SECONDARY	
-	rx_pwr2 = (3/2)*signal_energy(rxdata[0]+slot_offset_time,640);
+	rx_pwr2 = (6/2)*signal_energy(rxdata[0]+slot_offset_time,640);
 	 // RSs only on two of three when Secondary is enabled --> *3/2  (This would be based on the ZBF not working...)
 #endif //DISABLE_SECONDARY
       } else { // UL
@@ -1969,7 +1969,7 @@ int main(int argc, char **argv) {
 	12);
     
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL	
-	rx_pwr2 = (3/2)*signal_energy(rxdata[0]+slot_offset_time,640);
+	rx_pwr2 = (6/2)*signal_energy(rxdata_ext[j][0]+slot_offset_time,640);
       } else { // UL
 	if (next_slot%2==0)
 	  rx_pwr2 = signal_energy(rxdata_ext[j][0]+slot_offset_time+640*3,640*2);
@@ -2044,26 +2044,24 @@ if (next_slot == 19) {
   
 	  //#ifndef PBS_SIM
     if ((mac_xface->frame%50 == 0) && (mac_xface->frame>=150)) {
-      printf("Primary rate:   %f (at frame %d), %f (DCI), %f (CNTL)\n",
+      printf("Primary rate:   %f (at frame %d), %f (DCI)\n",
 	     ((double)(PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
-	     ((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*2)),
-	     ((double)(PHY_vars_UE[0]->dlsch_cntl_received - PHY_vars_UE[0]->dlsch_cntl_errors)/(mac_xface->frame+1)));
-      printf("Secondary rate: %f (at frame %d), %f (DCI), %f (CNTL)\n",
+	     ((double)(PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1))));
+      printf("Secondary rate: %f (at frame %d), %f (DCI)\n",
 	     ((double)(PHY_vars_UE[1]->dlsch_received - PHY_vars_UE[1]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
-	     ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1)*2)),
-	     ((double)(PHY_vars_UE[1]->dlsch_cntl_received - PHY_vars_UE[1]->dlsch_cntl_errors)/(mac_xface->frame+1)));
+	     ((double)(PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)/((mac_xface->frame+1))));
     }
     //#endif //PBS_SIM
     
-    if (((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.005) && (mac_xface->frame > 200))) {
+    if (((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.002) && (mac_xface->frame > 400))) {
       mac_xface->frame++; // too bad, no need to try more frames
       printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
       break;
     }
 #ifndef DISABLE_SECONDARY
-    if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.005 && (mac_xface->frame > 200))) {
+    if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.002 && (mac_xface->frame > 400))) {
       mac_xface->frame++; // too bad, no need to try more frames
       printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
       break;
@@ -2086,13 +2084,11 @@ if (next_slot == 19) {
 #ifdef PBS_SIM
   for (j=0;j<2;j++) {
     printf("Dumping data, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
-    fprintf(er_data_fd,"er_data_fd(%i,%i,%i,:) = [%i,%i,%i,%i,%i,%i,%i,%f,%f];\n",stxg_ind,snr_ind,j+1,
+    fprintf(er_data_fd,"er_data_fd(%i,%i,%i,:) = [%i,%i,%i,%i,%i,%f,%f];\n",stxg_ind,snr_ind,j+1,
 	    PHY_vars_UE[j]->dlsch_errors, 
 	    PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_errors,
-	    PHY_vars_UE[j]->dlsch_cntl_errors, 
 	    PHY_vars_UE[j]->dlsch_received, 
-	    PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_received, 
-	    PHY_vars_UE[j]->dlsch_cntl_received, 
+	    PHY_vars_UE[j]->lte_ue_pdcch_vars[eNb_id]->dci_received,
 	    mac_xface->frame,STxGain,SNR);
     fprintf(turboIter_fd,"turboIter_fd(%i,%i,%i) = %i;\n",stxg_ind,snr_ind,j+1,PHY_vars_UE[j]->turbo_iterations);
   }

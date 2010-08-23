@@ -135,15 +135,23 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1) + 1];
-	if ((re_last + im_last) >= maxp) {
-	  maxp = re_last + im_last;
+	if (re_last >= maxp) {
+	  maxp = re_last;
+	  ind_of_maxp = i;
+	}
+	if (im_last >= maxp) {
+	  maxp = im_last;
 	  ind_of_maxp = i;
 	}
 
 	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1)];
 	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1) + 1];
-        if ((re_next + im_next) >= maxp) {
-	  maxp = re_next + im_next;
+        if (re_next >= maxp) {
+	  maxp = re_next;
+	  ind_of_maxp = i;
+	}
+        if (re_next >= maxp) {
+	  maxp = im_next;
 	  ind_of_maxp = i;
 	}
 	
@@ -185,15 +193,23 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1) + 1];
-	if ((re_last + im_last) > maxp) {
-	  maxp = re_last+ im_last;
+	if (re_last >= maxp) {
+	  maxp = re_last;
+	  ind_of_maxp = i;
+	}
+	if (im_last >= maxp) {
+	  maxp = im_last;
 	  ind_of_maxp = i;
 	}
 
 	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1)];
 	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1) + 1];
-	if ((re_next + im_next) > maxp) {
-	  maxp = re_next + im_next;
+        if (re_next >= maxp) {
+	  maxp = re_next;
+	  ind_of_maxp = i;
+	}
+        if (re_next >= maxp) {
+	  maxp = im_next;
 	  ind_of_maxp = i;
 	}
 #ifdef RANDOM_BF
@@ -376,12 +392,21 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	  return(-1);
 	}
 
-	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]  + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]) > maxp) {
-	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]  + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]);
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2];
+	  ind_of_maxp = i;
+	} 
+	
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1];
 	  ind_of_maxp = i;
 	}
-	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]) > maxp) {
-	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2];
+	  ind_of_maxp = i;
+	} 
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3];
 	  ind_of_maxp = i;
 	}
 	
@@ -397,13 +422,21 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)+1] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
 	
-	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]) > maxp) {
-	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]);
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2];
+	  ind_of_maxp = i;
+	} 
+	
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1];
 	  ind_of_maxp = i;
 	}
-
-	if ((((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]) > maxp) {
-	  maxp = (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] + ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2];
+	  ind_of_maxp = i;
+	} 
+	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3] > maxp) {
+	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3];
 	  ind_of_maxp = i;
 	}
 	

@@ -1191,8 +1191,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 			       s,
 			       frame_parms);
-      }
-      else {
+      } else {
 	  pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				   lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				   lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
