@@ -75,6 +75,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     rx_power[eNB_id] = 0;
   }
 
+  // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
     rx_power_correction = 2;

@@ -11,14 +11,16 @@ TOP_DIR = ../..
 OPENAIR2_DIR = ../../../openair2
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS)
+#CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS)
 
-#CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DMeNBMUE -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DTBS_FIX -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE 
 
+ifdef OPENAIR2
+CFLAGS += -DOPENAIR2 
+endif
 
-CFLAGS += -DOPENAIR2 -DTBS_FIX
 ifdef EMOS
 CFLAGS += -DEMOS
 endif
@@ -49,6 +51,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_decoding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/rar_tools.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_transport_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
@@ -101,13 +104,15 @@ TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cadd_vv.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/invSqrt.o
+TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/sqrt.o
 
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o
+SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_MeNbMue.o
 
-STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
-
+#STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
 COMMON_DIR = $(OPENAIR2_DIR)/COMMON
 L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
@@ -131,6 +136,7 @@ MAC_DIR = $(OPENAIR2_DIR)/LAYER2/MAC
 DEVICE_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/DEVICE_DRIVER
 RRC_CELL_DIR = $(OPENAIR2_DIR)/RRC/CELLULAR
 
+ifdef OPENAIR2
 SOURCES_L2 +=  $(LIST_DIR)/list.c
 SOURCES_L2 +=  $(LIST_DIR)/list2.c
 
@@ -138,7 +144,6 @@ SOURCES_L2 +=  $(TIMER_DIR)/umts_timer.c
 
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp.c
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp_fifo.c
-
 
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
@@ -186,11 +191,12 @@ MAC_OBJS = $(MAC_DIR)/openair2_proc.o $(MAC_DIR)/layer2_scheduler.o $(MAC_DIR)/n
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
-
 L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS)
+else
+L2_OBJS=$(MAC_DIR)/rar_tools.o
+endif
 
 L2_incl = -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH -I$(OPENAIR3)/MESH/RRM  -DNO_RRM
-
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS)
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
