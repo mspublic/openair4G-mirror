@@ -1169,7 +1169,7 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   int avgs,s;
 
   for (s=1;s<1+n_pdcch_symbols;s++) {
-      if (is_secondary_ue) {
+      if (is_secondary_ue == 1) {
 	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				 lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
 				 lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,

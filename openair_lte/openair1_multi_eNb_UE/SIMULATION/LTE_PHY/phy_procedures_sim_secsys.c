@@ -33,6 +33,7 @@
 #define N_TRIALS_MAX 2
 #define KdB 10 /// Ricean factor in dB
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 //#define DEBUG_PHY
 
@@ -151,6 +152,7 @@ int main(int argc, char **argv) {
   else {
     SE = 1;
   }
+  int ch_min =400, ch_max=0;
   double stxg_act=0;
   int dl_er[2], dci_er[2];
   unsigned int nb_rb = 25;
@@ -801,6 +803,12 @@ int main(int argc, char **argv) {
     ---------------------------------------------------------------*/
   for (SNR = snr0; SNR<=snr1; SNR+=snrStepSize) {
     snr_ind++;
+    if ((SNR > 5) && (snrStepSize < 1)) {
+      snrStepSize = 1;
+    }
+    if ((SNR > 10) && (snrStepSize < 2)) {
+      snrStepSize = 2;
+    }
     path_loss_dB_def = -105 + SNR;
 #ifndef PBS_SIM
     printf("path_loss_dB_def _pwr: %f\n",path_loss_dB_def);
@@ -899,11 +907,29 @@ int main(int argc, char **argv) {
 	  plot_flag = 0;
 #endif //PBS_SIM   
 #ifdef RANDOM_BF
-	  for (i=0; i<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; i++) {
-	    PHY_vars_eNb[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
-	    PHY_vars_eNb[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
-	    PHY_vars_UE[1]->const_ch[i][0] = gaussdouble(0.0,1.0);
-	    PHY_vars_UE[1]->const_ch[i][1] = gaussdouble(0.0,1.0);
+	//	if (mac_xface->frame%20==0) {
+	  for (aa=0; aa<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; aa++) {
+	    for (j=0; j<2; j++) {
+	      PHY_vars_eNb[1]->const_ch[aa][j] = gaussdouble(0.0,1.0);
+	      if ((PHY_vars_eNb[1]->const_ch[aa][j] < 0.2) && (PHY_vars_eNb[1]->const_ch[aa][j] >= 0)) 
+		PHY_vars_eNb[1]->const_ch[aa][j] = 0.2;
+	      if (PHY_vars_eNb[1]->const_ch[aa][j] > .5) 
+		PHY_vars_eNb[1]->const_ch[aa][j] = .5;
+	      if (PHY_vars_eNb[1]->const_ch[aa][j] < -.5) 
+		PHY_vars_eNb[1]->const_ch[aa][j] = -.5;
+	      if ((PHY_vars_eNb[1]->const_ch[aa][j] > -0.2) && (PHY_vars_eNb[1]->const_ch[aa][j] <= 0)) 
+		PHY_vars_eNb[1]->const_ch[aa][j] = -0.2;
+
+	      PHY_vars_UE[1]->const_ch[aa][j] = gaussdouble(0.0,1.0);
+	      if ((PHY_vars_UE[1]->const_ch[aa][j] < 0.2) && (PHY_vars_UE[1]->const_ch[aa][j] >= 0)) 
+		PHY_vars_UE[1]->const_ch[aa][j] = 0.2;
+	      if (PHY_vars_UE[1]->const_ch[aa][j] > .5) 
+		PHY_vars_UE[1]->const_ch[aa][j] = .5;
+	      if (PHY_vars_UE[1]->const_ch[aa][j] < -.5) 
+		PHY_vars_UE[1]->const_ch[aa][j] = -.5;
+	      if ((PHY_vars_UE[1]->const_ch[aa][j] > -0.2) && (PHY_vars_UE[1]->const_ch[aa][j] <= 0)) 
+		PHY_vars_UE[1]->const_ch[aa][j] = -0.2;
+	    }
 	  }
 	  norm_const = pow(
 			   pow(PHY_vars_eNb[1]->const_ch[0][0],2) 
@@ -911,16 +937,29 @@ int main(int argc, char **argv) {
 			   pow(PHY_vars_eNb[1]->const_ch[1][0],2)
 			   + pow(PHY_vars_eNb[1]->const_ch[1][1],2)
 			   ,.5);
-	  PHY_vars_eNb[1]->const_ch[0][0] = (short)((PHY_vars_eNb[1]->const_ch[0][0]/norm_const)*pow(2,12));
-	  PHY_vars_eNb[1]->const_ch[0][1] = (short)((PHY_vars_eNb[1]->const_ch[0][1]/norm_const)*pow(2,12));
+	  PHY_vars_eNb[1]->const_ch[0][0] = (short)((PHY_vars_eNb[1]->const_ch[0][0]/norm_const)*pow(2,10));//512;//
+	  ch_min = MIN(abs(ch_min),abs(PHY_vars_eNb[1]->const_ch[0][0]));
+	  ch_max = MAX(abs(ch_max),abs(PHY_vars_eNb[1]->const_ch[0][0]));
+	  PHY_vars_eNb[1]->const_ch[0][1] = (short)((PHY_vars_eNb[1]->const_ch[0][1]/norm_const)*pow(2,10));//238;//
+	  ch_min = MIN(abs(ch_min),abs(PHY_vars_eNb[1]->const_ch[0][1]));
+	  ch_max = MAX(abs(ch_max),abs(PHY_vars_eNb[1]->const_ch[0][1]));
+	  PHY_vars_eNb[1]->const_ch[1][0] = (short)((PHY_vars_eNb[1]->const_ch[1][0]/norm_const)*pow(2,10));//-102;//
+	  ch_min = MIN(abs(ch_min),abs(PHY_vars_eNb[1]->const_ch[1][0]));
+	  ch_max = MAX(abs(ch_max),abs(PHY_vars_eNb[1]->const_ch[1][0]));
+	  PHY_vars_eNb[1]->const_ch[1][1] = (short)((PHY_vars_eNb[1]->const_ch[1][1]/norm_const)*pow(2,10));//512;//
+	  ch_min = MIN(abs(ch_min),abs(PHY_vars_eNb[1]->const_ch[1][1]));
+	  ch_max = MAX(abs(ch_max),abs(PHY_vars_eNb[1]->const_ch[1][1]));
 	  norm_const = pow(
 			   pow(PHY_vars_UE[1]->const_ch[0][0],2) 
 			   + pow(PHY_vars_UE[1]->const_ch[0][1],2) +
 			   pow(PHY_vars_UE[1]->const_ch[1][0],2)
 			   + pow(PHY_vars_UE[1]->const_ch[1][1],2)
 			   ,.5);
-	  PHY_vars_UE[1]->const_ch[0][0] = (short)((PHY_vars_UE[1]->const_ch[0][0]/norm_const)*pow(2,12));
-	  PHY_vars_UE[1]->const_ch[0][1] = (short)((PHY_vars_UE[1]->const_ch[0][1]/norm_const)*pow(2,12));
+	  PHY_vars_UE[1]->const_ch[0][0] = (short)((PHY_vars_UE[1]->const_ch[0][0]/norm_const)*pow(2,10));
+	  PHY_vars_UE[1]->const_ch[0][1] = (short)((PHY_vars_UE[1]->const_ch[0][1]/norm_const)*pow(2,10));
+	  PHY_vars_UE[1]->const_ch[1][0] = (short)((PHY_vars_UE[1]->const_ch[1][0]/norm_const)*pow(2,10));
+	  PHY_vars_UE[1]->const_ch[1][1] = (short)((PHY_vars_UE[1]->const_ch[1][1]/norm_const)*pow(2,10));
+	  //	}
 #endif //RANDOM_BF
 	  
 	  for (slot=0 ; slot<20 ; slot++) {
@@ -1547,10 +1586,8 @@ int main(int argc, char **argv) {
 			  0
 #endif	    
 			   );
-	/*
 	if (first_call == 1)
 	  first_call = 0;
-	*/
 
 #ifdef SECONDARY_SYSTEM 
 #ifndef PBS_SIM  

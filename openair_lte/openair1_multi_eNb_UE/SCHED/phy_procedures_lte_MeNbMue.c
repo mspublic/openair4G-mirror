@@ -135,6 +135,17 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i-1)<<1) + 1];
+
+	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1)];
+	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1) + 1];
+
+#ifdef RANDOM_BF	
+	re_last = phy_vars_eNb->const_ch[aa][0];
+	im_last = phy_vars_eNb->const_ch[aa][1];
+	re_next = phy_vars_eNb->const_ch[aa][0];
+	im_next = phy_vars_eNb->const_ch[aa][1];
+#endif //RANDOM_BF
+
 	if (re_last >= maxp) {
 	  maxp = re_last;
 	  ind_of_maxp = i;
@@ -143,14 +154,11 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	  maxp = im_last;
 	  ind_of_maxp = i;
 	}
-
-	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1)];
-	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[PeNb_id][aa]))[((i+1)<<1) + 1];
         if (re_next >= maxp) {
 	  maxp = re_next;
 	  ind_of_maxp = i;
 	}
-        if (re_next >= maxp) {
+        if (im_next >= maxp) {
 	  maxp = im_next;
 	  ind_of_maxp = i;
 	}
@@ -164,12 +172,6 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	  phy_vars_eNb->has_valid_precoder = 0;
 	  return(-1);
 	}
-#ifdef RANDOM_BF	
-	re_last = phy_vars_eNb->const_ch[aa][0];
-	im_last = phy_vars_eNb->const_ch[aa][1];
-	re_next = phy_vars_eNb->const_ch[aa][0];
-	im_next = phy_vars_eNb->const_ch[aa][1];
-#endif //RANDOM_BF
 	
 	// rearrange according to create NULL-beam
 	/*
@@ -193,31 +195,33 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	// interpolate last SRS_ch_estimates in freq (from slot 5)
 	re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1)];
 	im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i-1)<<1) + 1];
-	if (re_last >= maxp) {
-	  maxp = re_last;
-	  ind_of_maxp = i;
-	}
-	if (im_last >= maxp) {
-	  maxp = im_last;
-	  ind_of_maxp = i;
-	}
 
 	re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1)];
 	im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((i+1)<<1) + 1];
-        if (re_next >= maxp) {
-	  maxp = re_next;
-	  ind_of_maxp = i;
-	}
-        if (re_next >= maxp) {
-	  maxp = im_next;
-	  ind_of_maxp = i;
-	}
+
 #ifdef RANDOM_BF
 	re_last = phy_vars_eNb->const_ch[aa][0];
 	im_last = phy_vars_eNb->const_ch[aa][1];
 	re_next = phy_vars_eNb->const_ch[aa][0];
 	im_next = phy_vars_eNb->const_ch[aa][1];
 #endif //RANDOM_BF
+
+	if (abs(re_last) >= maxp) {
+	  maxp = abs(re_last);
+	  ind_of_maxp = i;
+	}
+	if (abs(im_last) >= maxp) {
+	  maxp = abs(im_last);
+	  ind_of_maxp = i;
+	}
+        if (abs(re_next) >= maxp) {
+	  maxp = abs(re_next);
+	  ind_of_maxp = i;
+	}
+        if (abs(im_next) >= maxp) {
+	  maxp = abs(im_next);
+	  ind_of_maxp = i;
+	}
 	
 	// rearrange according to create NULL-beam
 	/*
@@ -238,11 +242,30 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
       // interpolate first positive and last negative frequency
       re_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size-1)<<1)];
       im_last = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[((phy_vars_eNb->lte_frame_parms.ofdm_symbol_size-1)<<1) + 1];
-      if ((re_last + im_last) > maxp) maxp = re_last+ im_last;
-
       re_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[2];
       im_next = ((short *)(phy_vars_eNb->lte_eNB_common_vars.srs_ch_estimates[eNb_id][aa]))[3];
-      if ((re_next + im_next) > maxp) maxp = re_next + im_next;
+#ifdef RANDOM_BF
+      re_last = phy_vars_eNb->const_ch[aa][0];
+      im_last = phy_vars_eNb->const_ch[aa][1];
+      re_next = phy_vars_eNb->const_ch[aa][0];
+      im_next = phy_vars_eNb->const_ch[aa][1];
+#endif //RANDOM_BF
+      if (abs(re_last) >= maxp) {
+	maxp = abs(re_last);
+	ind_of_maxp = i;
+      }
+      if (abs(im_last) >= maxp) {
+	maxp = abs(im_last);
+	ind_of_maxp = i;
+      }
+      if (abs(re_next) >= maxp) {
+	maxp = abs(re_next);
+	ind_of_maxp = i;
+      }
+      if (abs(im_next) >= maxp) {
+	maxp = abs(im_next);
+	ind_of_maxp = i;
+      }
 	
 	// rearrange according to create NULL-beam
 	/*
@@ -262,7 +285,7 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 #endif //DEBUG_PHY
 
     phy_vars_eNb->has_valid_precoder = 1;
-    phy_vars_eNb->log2_maxp = (log2_approx(maxp));
+    phy_vars_eNb->log2_maxp = 1 + (log2_approx(maxp));
 #ifdef DEBUG_PHY
     printf("index of max precoder coefficient, %d\n", ind_of_maxp);
 #endif
@@ -278,8 +301,10 @@ void phy_precode_nullBeam_apply(unsigned char next_slot,PHY_VARS_eNB *phy_vars_e
   
   if (((next_slot < 3) || (next_slot > 9)) && phy_vars_eNb->has_valid_precoder) {
     output_norm = log2_approx(iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)) + iSqrt(signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size)));
-
-    if (next_slot==10) {
+    if (output_norm > phy_vars_eNb->log2_maxp) {
+      phy_vars_eNb->log2_maxp = output_norm;
+    }
+    if (next_slot==12) {
       //printf("sigenergy %d, output_norm %d\n",signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][0],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size) + signal_energy_nodc(phy_vars_eNb->dl_precoder_SeNb[eNb_id][1],phy_vars_eNb->lte_frame_parms.ofdm_symbol_size), output_norm);
     }
 #ifdef DEBUG_PHY
@@ -335,6 +360,9 @@ void phy_precode_nullBeam_apply_ue(unsigned char next_slot,PHY_VARS_UE *phy_vars
 
   if (((next_slot < 10) && (next_slot > 3)) && phy_vars_ue->has_valid_precoder) {
     output_norm = log2_approx(iSqrt(signal_energy_nodc(phy_vars_ue->ul_precoder_S_UE[0],phy_vars_ue->lte_frame_parms.ofdm_symbol_size)) + iSqrt(signal_energy_nodc(phy_vars_ue->ul_precoder_S_UE[1],phy_vars_ue->lte_frame_parms.ofdm_symbol_size)));
+    if (output_norm > phy_vars_ue->log2_maxp) {
+      phy_vars_ue->log2_maxp = output_norm;
+    }
 
 
     for (l=0; l<phy_vars_ue->lte_frame_parms.symbols_per_tti>>1; l++) {
@@ -392,53 +420,36 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	  return(-1);
 	}
 
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2];
-	  ind_of_maxp = i;
-	} 
-	
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1];
-	  ind_of_maxp = i;
-	}
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2];
-	  ind_of_maxp = i;
-	} 
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3];
-	  ind_of_maxp = i;
-	}
-	
 #ifdef RANDOM_BF
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
 #endif //RANDOM_BF
+
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[i<<2]);
+	  ind_of_maxp = i;
+	} 
+	
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+1]);
+	  ind_of_maxp = i;
+	}
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+2]);
+	  ind_of_maxp = i;
+	} 
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i<<2)+3]);
+	  ind_of_maxp = i;
+	}
+	
 	
       //negative frequencies
 	
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
 	phy_vars_ue->ul_precoder_S_UE[1-aa][((i+symb_offset)<<1)+1] = (1-2*aa)*phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[PeNb_id][aa][i]; //Re0Im0
-	
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2];
-	  ind_of_maxp = i;
-	} 
-	
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1];
-	  ind_of_maxp = i;
-	}
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2];
-	  ind_of_maxp = i;
-	} 
-	if (((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3] > maxp) {
-	  maxp = ((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3];
-	  ind_of_maxp = i;
-	}
 	
 #ifdef RANDOM_BF
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
@@ -446,6 +457,25 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2] = (1-2*aa)*phy_vars_ue->const_ch[aa][0]; //Re0
 	((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3] = (1-2*aa)*phy_vars_ue->const_ch[aa][1]; //Im0
 #endif //RANDOM_BF
+
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[(i+symb_offset)<<2]);
+	  ind_of_maxp = i;
+	} 
+	
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+1]);
+	  ind_of_maxp = i;
+	}
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+2]);
+	  ind_of_maxp = i;
+	} 
+	if (abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3]) > maxp) {
+	  maxp = abs(((short *)(phy_vars_ue->ul_precoder_S_UE[1-aa]))[((i+symb_offset)<<2)+3]);
+	  ind_of_maxp = i;
+	}
+	
 	
       }
     }
@@ -458,7 +488,7 @@ int phy_precode_nullBeam_create_ue(unsigned char last_slot,PHY_VARS_UE *phy_vars
 #endif //DEBUG_PHY
     
     phy_vars_ue->has_valid_precoder = 1;
-    phy_vars_ue->log2_maxp = (log2_approx(maxp));
+    phy_vars_ue->log2_maxp = 1 + (log2_approx(maxp));
 #ifdef DEBUG_PHY
     printf("index of max precoder coefficient, %d\n", ind_of_maxp);
 #endif
