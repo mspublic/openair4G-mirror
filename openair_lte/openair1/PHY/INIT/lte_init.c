@@ -271,7 +271,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       for (j=0; j<frame_parms->nb_antennas_tx; j++)
 	ue_dlsch_vars[eNb_id]->rxdataF_comp[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
-    printf("rxdataF_comp[0] %p\n",ue_dlsch_vars[eNb_id]->rxdataF_comp[0]);
+//    printf("rxdataF_comp[0] %p\n",ue_dlsch_vars[eNb_id]->rxdataF_comp[0]);
 
     ue_pdcch_vars[eNb_id]->rxdataF_comp    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)

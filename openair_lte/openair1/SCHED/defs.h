@@ -123,6 +123,7 @@ void get_rag_alloc(unsigned char tdd_config,
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK);
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe);
+unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index);
 void phy_procedures_UE_TX(unsigned char next_slot);
 int phy_procedures_UE_RX(unsigned char last_slot);
 void phy_procedures_UE_S_TX(unsigned char next_slot);
