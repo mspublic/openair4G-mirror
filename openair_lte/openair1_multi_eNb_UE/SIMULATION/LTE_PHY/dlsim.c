@@ -14,6 +14,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
+#define AWGN
 #define BW 7.68
 #define Td 1.0
 
@@ -112,6 +113,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+//#define DLSCH_RB_ALLOC 0x1f0f // igore DC component,RB13
 
 
 int main(int argc, char **argv) {
@@ -163,15 +165,18 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(2,2,2);
+  lte_param_init(1,1,1);
 
   num_layers = 1;
-
+  //int cont=0;
   // default parameters
-  mcs = 0;
-  n_frames = 100;
-  snr0 = 0;
+  //for (cont =0;cont<29;cont++){
 
+  mcs = 0;
+  n_frames = 1000;
+  snr0 = 0;
+  //if(snr0>0)
+  // snr0 = 0;
   while ((c = getopt (argc, argv, "hm:n:s:")) != -1)
     {
       switch (c)
@@ -194,12 +199,18 @@ int main(int argc, char **argv) {
 	  break;
 	}
     }
-
+  
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
-  
-  snr1 = snr0+10.0;
+
+  /*  
+  snr0 = -8 + mcs;
+  if(snr0>0)
+    snr0 = 7;
+  */
+
+  snr1 = snr0+25.0;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
   /*
@@ -240,7 +251,7 @@ int main(int argc, char **argv) {
   nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
 
   coded_bits_per_codeword = NB_RB * (12 * get_Qm(mcs)) * (lte_frame_parms->num_dlsch_symbols);
-  printf("Rate = %f (mod %d)\n",(double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/coded_bits_per_codeword,
+  printf("Rate = %f (mod %d)\n",(((double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1])*3/4)/coded_bits_per_codeword,
 	 get_Qm(mcs));
   sprintf(bler_fname,"bler_%d.m",mcs);
   bler_fd = fopen(bler_fname,"w");
@@ -498,8 +509,8 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
 
 #ifdef OUTPUT_DEBUG  
-  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[0][0],300*120,1,4);
-  write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[0][1],300*120,1,4);
+  write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[0][0],300*120,1,4);
+  write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[0][1],300*120,1,4);
 #endif
 
   // do talbe lookup and write results to txdataF2
@@ -538,7 +549,7 @@ int main(int argc, char **argv) {
 
 #ifdef OUTPUT_DEBUG  
   write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
-  write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
+  //write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX/5,1,1);
 #endif
   
   tx_lev = 0;
@@ -588,6 +599,17 @@ int main(int argc, char **argv) {
     dci_errors=0;
     printf("Channel attenuation %f\n",(double)tx_lev_dB - (SNR+sigma2_dB));
     for (trials = 0;trials<n_frames;trials++) {
+
+      // printf("%d\n",trials);
+
+#ifdef AWGN // copy s_re and s_im to r_re and r_im
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+      r_re[aa][i] = s_re[aa][i];
+      r_im[aa][i] = s_im[aa][i];
+    }
+  }
+#else
       multipath_channel(ch,s_re,s_im,r_re,r_im,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
@@ -596,6 +618,8 @@ int main(int argc, char **argv) {
 			channel_length,0,
 			1,1,0,0);
 			//(double)tx_lev_dB - (SNR+sigma2_dB));
+#endif 
+
 #ifdef OUTPUT_DEBUG
       write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #endif
@@ -629,13 +653,10 @@ int main(int argc, char **argv) {
 	*/
 
 #ifdef OUTPUT_DEBUG
-	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
-	printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
-	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
+	printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
+	printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(13*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 #endif
-	SNRmeas = 10*log10((signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))/signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(1*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))) - 1);
-	printf("SNRmeas %f\n",SNRmeas);
+
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {
@@ -849,17 +870,17 @@ int main(int argc, char **argv) {
 	  }
 	  exit(-1);
 #endif
-	  if (errs==100)
+	  if (errs==1000)
 	    break;
 	}
     }   //trials
     printf("Errors %d/%d, Pe = %e, dci_errors %d/%d, Pe = %e\n",errs,1+trials,(double)errs/(trials+1),dci_errors,1+trials,(double)dci_errors/(trials+1));
-    fprintf(bler_fd,"%f,%e,\n",SNR,(double)errs/(trials+1));
+    fprintf(bler_fd,"%f,%e;\n",SNR,(double)errs/(trials+1));
     
     if (((double)errs/(trials+1))<1e-2)
       break;
   } // SNR
-  
+  // fprintf(bler_fd,"]")
   fclose(bler_fd);
   
   printf("Freeing dlsch structures\n");
@@ -892,7 +913,7 @@ int main(int argc, char **argv) {
   free(s_im);
   free(r_re);
   free(r_im);
-  
+  // }
   //  lte_sync_time_free();
 
   return(0);
