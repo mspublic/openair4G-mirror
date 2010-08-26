@@ -537,6 +537,10 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
 	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_apply(%d)\n",mac_xface->frame, next_slot);
 #endif
 	phy_precode_nullBeam_apply(next_slot,phy_vars_eNb);
+#else //Copy SISO stream to the other antenna
+	  memcpy(&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 &phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 (phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));	
 #endif //NULL_SHAPE_BF_ENABLED
       }
       else { //make sure tx-buffer is cleared, in case no transmission.
@@ -558,7 +562,7 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
   if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
     if (phy_vars_eNb->is_secondary_eNb && next_slot%2==0) {
       if ( mac_xface->frame%100 && phy_vars_eNb->has_valid_precoder) {
-#ifdef DEBUG_PHY
+#ifdef DEBUG_PHYgg
 	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
 	phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
@@ -567,6 +571,10 @@ void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY
 	msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_precode_nullBeam_apply(%d)\n",mac_xface->frame, next_slot);
 #endif //DEBUG_PHY
 	phy_precode_nullBeam_apply(next_slot,phy_vars_eNb);
+#else //Copy SISO stream to the other antenna
+	  memcpy(&phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 &phy_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)],
+		 (phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));	
 #endif //NULL_SHAPE_BF_ENABLED
       } 
       else { //make sure tx-buffer is cleared, in case no transmission.
@@ -621,6 +629,10 @@ void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY
 	phy_procedures_UE_S_TX(next_slot, phy_vars_ue);
 #ifdef NULL_SHAPE_BF_ENABLED
 	phy_precode_nullBeam_apply_ue(next_slot,phy_vars_ue);
+#else //Copy SISO stream to the other antenna
+	  memcpy(&phy_vars_ue->lte_ue_common_vars.txdataF[1][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 &phy_vars_ue->lte_ue_common_vars.txdataF[0][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 (phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));	
 #endif //NULL_SHAPE_BF_ENABLED
       }
       else { //make sure tx-buffer is cleared, in case no transmission.
@@ -648,6 +660,10 @@ void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY
 	phy_procedures_UE_TX(next_slot, phy_vars_ue);
 #ifdef NULL_SHAPE_BF_ENABLED
 	phy_precode_nullBeam_apply_ue(next_slot,phy_vars_ue);
+#else //Copy SISO stream to the other antenna
+	  memcpy(&phy_vars_ue->lte_ue_common_vars.txdataF[1][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 &phy_vars_ue->lte_ue_common_vars.txdataF[0][next_slot*(phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1)],
+		 (phy_vars_ue->lte_frame_parms.N_RB_DL*12)*(phy_vars_ue->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
 #endif //NULL_SHAPE_BF_ENABLED
       }
       else { //make sure tx-buffer is cleared, in case no transmission.
