@@ -796,7 +796,7 @@ TARGET = test
 CFLAGS += -I. -g -ggdb -DEMIT_ASN_DEBUG=1 -Wall
 OBJS=${ASN_MODULE_SOURCES:.c=.o} ${ASN_CONVERTER_SOURCES:.c=.o}
 
-CC = gcc-4 
+CC = gcc 
 
 all: $(TARGET)
 
