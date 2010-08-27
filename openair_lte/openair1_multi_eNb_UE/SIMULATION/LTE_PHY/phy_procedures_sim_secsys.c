@@ -27,7 +27,7 @@
 //#define CHANNEL_FROM_FILE   //--Unstable, doesn't work properly. Possibly how the channel is written to file.
 //#define FLAT_CHANNEL
 //#define SKIP_RF_RX
-//#define DISABLE_SECONDARY
+#define DISABLE_SECONDARY
 #define BW 7.68 //Fs in MHz
 #define Td 1
 #define N_TRIALS_MAX 2
@@ -52,7 +52,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 int main(int argc, char **argv) {
 
   int i,j,l,aa,sector,i_max,l_max,aa_max,aatx,aarx;
-  double SE,target_rx_pwr_dB = 30;
+  double SE,target_rx_pwr_dB = 35;
   double sigma2, sigma2_dB=0;
   int n_frames = 2;
   number_of_cards = 1;
@@ -756,7 +756,7 @@ int main(int argc, char **argv) {
   strncpy(tempChar,pbs_output_dir,100);
 #ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
-  strcat(tempChar,"er_data_%d_%d_K%d.m");
+  strcat(tempChar,"er_data_%d_%d_K%d_noZBF.m");
 #else
   strcat(tempChar,"er_data_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
@@ -773,7 +773,7 @@ int main(int argc, char **argv) {
   strncpy(tempChar,pbs_output_dir,100);
 #ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
-  strcat(tempChar,"turboIter_%d_%d_K%d.m");
+  strcat(tempChar,"turboIter_%d_%d_K%d_noZBF.m");
 #else
   strcat(tempChar,"turboIter_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
@@ -803,10 +803,10 @@ int main(int argc, char **argv) {
     ---------------------------------------------------------------*/
   for (SNR = snr0; SNR<=snr1; SNR+=snrStepSize) {
     snr_ind++;
-    if ((SNR > 5) && (snrStepSize < 1)) {
+    if ((SNR >= 5) && (snrStepSize < 1)) {
       snrStepSize = 1;
     }
-    if ((SNR > 10) && (snrStepSize < 2)) {
+    if ((SNR >= 10) && (snrStepSize < 2)) {
       snrStepSize = 2;
     }
     path_loss_dB_def = -105 + SNR;
@@ -2001,6 +2001,8 @@ int main(int argc, char **argv) {
 #ifndef PBS_SIM 
     printf("rx_pwr Primary   (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
 #endif //PBS_SIM   
+    if (next_slot == 12)
+      printf("rx_pwr Primary   (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1); 
   
 #ifdef SECONDARY_SYSTEM
   for (j=0; j<2; j++) {
@@ -2088,7 +2090,7 @@ if (next_slot == 19) {
   } //for(slot...
   
 	  //#ifndef PBS_SIM
-    if ((mac_xface->frame%50 == 0) && (mac_xface->frame>=150)) {
+    if ((mac_xface->frame%200 == 0) && (mac_xface->frame>=200)) {
       printf("Primary rate:   %f (at frame %d), %f (DCI)\n",
 	     ((double)(PHY_vars_UE[0]->dlsch_received - PHY_vars_UE[0]->dlsch_errors)/(mac_xface->frame+1)),
 	     mac_xface->frame,
@@ -2100,13 +2102,13 @@ if (next_slot == 19) {
     }
     //#endif //PBS_SIM
     
-    if (((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.002) && (mac_xface->frame > 400))) {
+    if (((PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(mac_xface->frame*.0025) && (mac_xface->frame > 400))) {
       mac_xface->frame++; // too bad, no need to try more frames
       printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
       break;
     }
 #ifndef DISABLE_SECONDARY
-    if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(2*mac_xface->frame*.002 && (mac_xface->frame > 400))) {
+    if ((PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received - PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_errors)<(mac_xface->frame*.0025 && (mac_xface->frame > 400))) {
       mac_xface->frame++; // too bad, no need to try more frames
       printf("Breaking (bad) before dumping, Frame %d, STxG %f, SNR %f\n", mac_xface->frame,STxGain,SNR);
       break;
