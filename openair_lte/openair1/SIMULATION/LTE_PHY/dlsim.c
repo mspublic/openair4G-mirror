@@ -14,10 +14,10 @@
 #include "SCHED/vars.h"
 
 #define BW 7.68
-
+#define AWGN
 
 //#define OUTPUT_DEBUG 1
-#define N_TRIALS 10000
+#define N_TRIALS 1000
 
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0
@@ -87,7 +87,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   generate_pcfich_reg_mapping(lte_frame_parms);
   generate_phich_reg_mapping_ext(lte_frame_parms);
 
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);
   phy_init_lte_eNB(lte_frame_parms,lte_eNB_common_vars,lte_eNB_ulsch_vars);
 
   
@@ -153,10 +153,9 @@ int main(int argc, char **argv) {
 
   channel_length = (int) 11+2*BW*Td;
 
-  lte_param_init(2,2,2);
+  lte_param_init(1,1,1);
 
   num_layers = 1;
-
 
   printf("argc %d\n",argc);
   if (argc<2) {
@@ -207,8 +206,8 @@ int main(int argc, char **argv) {
 
   if (argc>=3) {
     snr0 = atof(argv[2]);
-    snr1 = snr0+10.0;
   }
+  snr1 = snr0+10.0;
 
 
   if (argc>=4) {
@@ -529,7 +528,7 @@ int main(int argc, char **argv) {
 #endif //IFFT_FPGA
 	
 	
-	//	printf("tx_lev = %d\n",tx_lev);
+	//printf("tx_lev = %d\n",tx_lev);
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	
 	
@@ -547,6 +546,14 @@ int main(int argc, char **argv) {
 	  }
 	}
 	
+#ifdef AWGN // copy s_re and s_im to r_re and r_im
+  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+      r_re[aa][i] = s_re[aa][i];
+      r_im[aa][i] = s_im[aa][i];
+    }
+  }
+#else
 	multipath_channel(ch,s_re,s_im,r_re,r_im,
 			  amps,Td,BW,ricean_factor,aoa,
 			  lte_frame_parms->nb_antennas_tx,
@@ -554,7 +561,8 @@ int main(int argc, char **argv) {
 			  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,//FRAME_LENGTH_COMPLEX_SAMPLES,
 			  channel_length,0,
 			  1,1);
-	//(double)tx_lev_dB - (SNR+sigma2_dB));
+#endif
+
 #ifdef OUTPUT_DEBUG
 	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #endif
@@ -637,39 +645,41 @@ int main(int argc, char **argv) {
 		dlsch_active = 0;
 		if (round==0) {
 		  dci_errors++;
+#ifdef OUTPUT_DEBUG
 		  printf("DCI error trial %d errs[0] %d\n",trials,errs[0]);
+#endif
                 }
 		for (i=1;i<=round;i++)
 		  round_trials[i]--;
 		round=0;
 	      }
 		
-	      for (i=0;i<dci_cnt;i++)
-		if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
-		  generate_ue_dlsch_params_from_dci(0,
-						    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
-						    C_RNTI,
-						    format2_2A_M10PRB,
-						    dlsch_ue,
-						    lte_frame_parms,
-						    SI_RNTI,
-						    RA_RNTI,
-						    P_RNTI);
-
-
+	      for (i=0;i<dci_cnt;i++) {
+		if ((dci_alloc_rx[i].rnti == C_RNTI) && (dci_alloc_rx[i].format == format2_2A_M10PRB) &&
+		    (generate_ue_dlsch_params_from_dci(0,
+						       (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
+						       C_RNTI,
+						       format2_2A_M10PRB,
+						       dlsch_ue,
+						       lte_frame_parms,
+						       SI_RNTI,
+						       RA_RNTI,
+						       P_RNTI)==0)) {
 		  dlsch_active = 1;
 		}
 		else {
 		  dlsch_active = 0;
 		  if (round==0) {
 		     dci_errors++;
+#ifdef OUTPUT_DEBUG
 	 	     printf("DCI misdetection trial %d\n",trials);
+#endif
                   }
 		  for (i=1;i<=round;i++)
 		    round_trials[i]--;
 		  round=0;
 		}
-	      
+	      }
 
 	      /*
 		else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A))
