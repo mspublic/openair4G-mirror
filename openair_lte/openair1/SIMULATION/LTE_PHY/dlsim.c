@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
   printf("Rate = %f (mod %d,code %f)\n",rate*get_Qm(mcs),get_Qm(mcs),rate);
   rate *= get_Qm(mcs);
 
-  sprintf(bler_fname,"bler_%d.m",mcs);
+  sprintf(bler_fname,"BLER_SIMULATIONS/AWGN_SISO_HARQ/bler_%d.m",mcs);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"bler = [");
 
@@ -375,7 +375,6 @@ int main(int argc, char **argv) {
 
 
 
-  printf("tx_lev_dB = %d\n",tx_lev_dB);
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
     errs[0]=0;
     errs[1]=0;
@@ -536,9 +535,6 @@ int main(int argc, char **argv) {
 	write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif
 	
-	// multipath channel
-	
-	
 	for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
 	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
 	    s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
@@ -546,6 +542,7 @@ int main(int argc, char **argv) {
 	  }
 	}
 	
+	// multipath channel
 #ifdef AWGN // copy s_re and s_im to r_re and r_im
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -567,7 +564,7 @@ int main(int argc, char **argv) {
 	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #endif
 
-	sigma2_dB = tx_lev_dB +10*log10(25/NB_RB) - SNR;
+	sigma2_dB = tx_lev_dB +10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)) - SNR;
 
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
@@ -604,8 +601,7 @@ int main(int argc, char **argv) {
 	printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 #endif
-	SNRmeas = 10*log10((signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))/signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(1*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))) - 1);
-	//	printf("SNRmeas %f\n",SNRmeas);
+	
 	// Inner receiver scheduling for 3 slots
 	for (Ns=0;Ns<3;Ns++) {
 	  for (l=0;l<6;l++) {
@@ -845,7 +841,7 @@ int main(int argc, char **argv) {
     }   //trials
     printf("**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
 	   SNR,
-	   (double)tx_lev_dB+10*log10(25/NB_RB),
+	   (double)tx_lev_dB+10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)),
 	   sigma2_dB);
 
     printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f (%f), normalized delay %f (%f)\n",

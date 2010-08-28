@@ -74,7 +74,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
   unsigned short nb_rb;
   unsigned char harq_pid;
-  unsigned int A;
+  unsigned int A,E;
   unsigned char mod_order;
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret,offset;
@@ -197,20 +197,26 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 	   dlsch->harq_processes[harq_pid]->Nl);
 #endif    
 
-    r_offset += lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
-					   coded_bits_per_codeword,
-			 		   dlsch->harq_processes[harq_pid]->w[r],
-					   dummy_w[r],
-					   dlsch_llr,
-					   dlsch->harq_processes[harq_pid]->C,
-					   NSOFT,
-					   dlsch->Mdlharq,
-					   dlsch->Kmimo,
-					   dlsch->harq_processes[harq_pid]->rvidx,
-					   dlsch->harq_processes[harq_pid]->Ndi,
-					   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
-					   dlsch->harq_processes[harq_pid]->Nl,
-					   r);
+    if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
+				   coded_bits_per_codeword,
+				   dlsch->harq_processes[harq_pid]->w[r],
+				   dummy_w[r],
+				   dlsch_llr,
+				   dlsch->harq_processes[harq_pid]->C,
+				   NSOFT,
+				   dlsch->Mdlharq,
+				   dlsch->Kmimo,
+				   dlsch->harq_processes[harq_pid]->rvidx,
+				   dlsch->harq_processes[harq_pid]->Ndi,
+				   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+				   dlsch->harq_processes[harq_pid]->Nl,
+				   r,
+				   &E)==-1) {
+      msg("dlsch_decoding.c: Problem in rate_matching\n");
+      return(MAX_TURBO_ITERATIONS);
+    }
+    r_offset += E;
+
     /*
     msg("Subblock deinterleaving, d %p w %p\n",
 	   dlsch->harq_processes[harq_pid]->d[r],

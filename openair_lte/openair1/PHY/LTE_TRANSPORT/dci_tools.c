@@ -412,8 +412,8 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
   case format2_2A_M10PRB:
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
-    if (harq_pid>8) {
-      msg("dci_tools.c: ERROR: harq_pid > 8\n");
+    if (harq_pid>=8) {
+      msg("dci_tools.c: ERROR: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
