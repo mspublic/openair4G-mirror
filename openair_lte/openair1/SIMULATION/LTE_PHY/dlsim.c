@@ -15,6 +15,7 @@
 
 #define BW 7.68
 #define AWGN
+#define NO_DCI
 
 //#define OUTPUT_DEBUG 1
 #define N_TRIALS 1000
@@ -625,7 +626,8 @@ int main(int argc, char **argv) {
 				0);
 	    //	printf("rx_avg_power_dB %d\n",PHY_vars->PHY_measurements.rx_avg_power_dB[0]);
 	    //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
-	
+
+#ifndef NO_DCI	
 	    if ((Ns==0) && (l==3)) {// process symbols 0,1,2
 
 	      rx_pdcch(lte_ue_common_vars,
@@ -696,6 +698,19 @@ int main(int argc, char **argv) {
 	      //	      msg("dci_cnt = %d\n",dci_cnt);
 
 	    }
+#else
+	      generate_ue_dlsch_params_from_dci(0,
+						&DLSCH_alloc_pdu2,
+						C_RNTI,
+						format2_2A_M10PRB,
+						dlsch_ue,
+						lte_frame_parms,
+						SI_RNTI,
+						RA_RNTI,
+						P_RNTI);
+	      dlsch_active = 1;
+#endif
+
 	    /*
 	      for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
 	      rx_dlsch(lte_ue_common_vars,
@@ -709,6 +724,7 @@ int main(int argc, char **argv) {
 	      mimo_mode,
 	      dual_stream_UE);
 	    */
+
 	    if (dlsch_active == 1) {
 	      if ((Ns==1) && (l==0)) // process symbols 3,4,5
 		for (m=4;m<6;m++)
