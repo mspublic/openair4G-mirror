@@ -236,13 +236,13 @@ int main(int argc, char **argv) {
   printf("Rate = %f (mod %d,code %f)\n",rate*get_Qm(mcs),get_Qm(mcs),rate);
   rate *= get_Qm(mcs);
 
-  sprintf(bler_fname,"BLER_SIMULATIONS/AWGN_SISO_HARQ/bler_%d.m",mcs);
+  sprintf(bler_fname,"BLER_SIMULATIONS/AWGN_SISO_HARQ/bler_%d.csv",mcs);
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd == NULL) {
     printf("Error opening file %s\n",bler_fname);
     exit(-1);
   }
-  fprintf(bler_fd,"bler = [");
+  fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trial1; err2; trial2; err3; trial3; dci_err\n");
 
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -627,9 +627,8 @@ int main(int argc, char **argv) {
 	    //	printf("rx_avg_power_dB %d\n",PHY_vars->PHY_measurements.rx_avg_power_dB[0]);
 	    //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
 
-#ifndef NO_DCI	
 	    if ((Ns==0) && (l==3)) {// process symbols 0,1,2
-
+#ifndef NO_DCI	
 	      rx_pdcch(lte_ue_common_vars,
 		       lte_ue_pdcch_vars,
 		       lte_frame_parms,
@@ -697,7 +696,6 @@ int main(int argc, char **argv) {
 	      */
 	      //	      msg("dci_cnt = %d\n",dci_cnt);
 
-	    }
 #else
 	      generate_ue_dlsch_params_from_dci(0,
 						&DLSCH_alloc_pdu2,
@@ -710,6 +708,7 @@ int main(int argc, char **argv) {
 						P_RNTI);
 	      dlsch_active = 1;
 #endif
+	    }
 
 	    /*
 	      for (m=lte_frame_parms->first_dlsch_symbol;m<3;m++)
@@ -728,15 +727,17 @@ int main(int argc, char **argv) {
 	    if (dlsch_active == 1) {
 	      if ((Ns==1) && (l==0)) // process symbols 3,4,5
 		for (m=4;m<6;m++)
-		  rx_dlsch(lte_ue_common_vars,
-			   lte_ue_dlsch_vars,
-			   lte_frame_parms,
-			   eNb_id,
-			   eNb_id_i,
-			   dlsch_ue,
-			   m,
-			   dual_stream_UE);
-	      
+		  if (rx_dlsch(lte_ue_common_vars,
+			       lte_ue_dlsch_vars,
+			       lte_frame_parms,
+			       eNb_id,
+			       eNb_id_i,
+			       dlsch_ue,
+			       m,
+			       dual_stream_UE)==-1) {
+		    dlsch_active = 0;
+		    break;
+		  }	      
 	      if ((Ns==1) && (l==3)) {// process symbols 6,7,8
 		/*
 		  if (rx_pbch(lte_ue_common_vars,
@@ -751,27 +752,32 @@ int main(int argc, char **argv) {
 		  }
 		*/
 		for (m=7;m<9;m++)
-		  rx_dlsch(lte_ue_common_vars,
-			   lte_ue_dlsch_vars,
-			   lte_frame_parms,
-			   eNb_id,
-			   eNb_id_i,
-			   dlsch_ue,
-			   m,
-			   dual_stream_UE);
+		  if (rx_dlsch(lte_ue_common_vars,
+			       lte_ue_dlsch_vars,
+			       lte_frame_parms,
+			       eNb_id,
+			       eNb_id_i,
+			       dlsch_ue,
+			       m,
+			       dual_stream_UE)==-1) {
+		    dlsch_active=0;
+		    break;
+		  }
 	      }
 	      
 	      if ((Ns==2) && (l==0))  // process symbols 10,11, do deinterleaving for TTI
 		for (m=10;m<12;m++)
-		  rx_dlsch(lte_ue_common_vars,
-			   lte_ue_dlsch_vars,
-			   lte_frame_parms,
-			   eNb_id,
-			   eNb_id_i,
-			   dlsch_ue,
-			   m,
-			   dual_stream_UE);
-	      
+		  if (rx_dlsch(lte_ue_common_vars,
+			       lte_ue_dlsch_vars,
+			       lte_frame_parms,
+			       eNb_id,
+			       eNb_id_i,
+			       dlsch_ue,
+			       m,
+			       dual_stream_UE)==-1) {
+		    dlsch_active=0;
+		    break;
+		  }
 	    }
 	  }
 	}
@@ -885,14 +891,25 @@ int main(int argc, char **argv) {
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)dlsch_eNb[0]->harq_processes[0]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
-
-    fprintf(bler_fd,"%f,%e,\n",SNR,(double)errs[0]/(trials));
+    fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+	    SNR,
+	    mcs,
+	    dlsch_eNb[0]->harq_processes[0]->TBS,
+	    rate,
+	    errs[0],
+	    round_trials[0],
+	    errs[1],
+	    round_trials[1],
+	    errs[2],
+	    round_trials[2],
+	    errs[3],
+	    round_trials[3],
+	    dci_errors);
     
-    if (((double)errs[0]/(trials))<1e-2)
+    if (((double)errs[0]/(round_trials[0]))<1e-2) 
       break;
   } // SNR
   
-  fprintf(bler_fd,"];");
   fclose(bler_fd);
   
   printf("Freeing dlsch structures\n");

@@ -6,9 +6,12 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
+
+#ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#endif
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 
@@ -37,12 +40,17 @@
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
 
+#ifdef OPENAIR2
 unsigned short NODE_ID[1];
 unsigned char NB_INST=2;
+#endif
 
+#ifdef XFORMS
 #include "forms.h"
 #include "phy_procedures_sim_form.h"
+#endif
 
+#ifdef OPENAIR2
 void l2_init() {
 
   int ret;
@@ -97,9 +105,11 @@ void l2_init() {
     Mac_rlc_xface->Is_cluster_head[1] = 0;
   }
 }
+#endif
 
 struct complex **ch;
 
+#ifdef XFORMS
 FD_phy_procedures_sim *form;
 
 float I[3600],Q[3600],I2[3600],Q2[3600],I3[100],Q3[100];
@@ -160,7 +170,7 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
   fl_set_xyplot_data(form->ch00,I3,Q3,ch_len,"","","");
   fl_set_xyplot_ybounds(form->ch00,-20,20);
 }
-
+#endif
 
 
 
@@ -281,7 +291,7 @@ int main(int argc, char **argv) {
   lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
-  number_of_cards = 3;
+  number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
   init_frame_parms(lte_frame_parms);
   
@@ -450,9 +460,10 @@ int main(int argc, char **argv) {
   PHY_vars->rx_total_gain_dB=140;
   PHY_vars->rx_total_gain_eNB_dB=150;
 
-  UE_mode = PRACH;
-  eNB_UE_stats[0].mode[0] = PRACH;
-  lte_ue_pdcch_vars[0]->crnti = 0x1234;
+  UE_mode = PUSCH;
+  eNB_UE_stats[0].mode[0] = PUSCH;
+  eNB_UE_stats[0].UE_id[0] = 0xBEEF;
+  lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
 
   if ((transmission_mode != 1) && (transmission_mode != 6))
     openair_daq_vars.dlsch_transmission_mode = 2;
@@ -466,15 +477,19 @@ int main(int argc, char **argv) {
 
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-
+#ifdef OPENAIR2
   l2_init();
-
-  fl_initialize(&argc, argv, NULL, 0, 0);    
-  form = create_form_phy_procedures_sim();                 
-  fl_show_form(form->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,"LTE SIM");   
 
   mac_xface->mrbch_phy_sync_failure(0,0);
   mac_xface->chbch_phy_sync_success(1,0);
+#endif
+
+#ifdef XFORMS
+  fl_initialize(&argc, argv, NULL, 0, 0);    
+  form = create_form_phy_procedures_sim();                 
+  fl_show_form(form->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,"LTE SIM");   
+#endif
+
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
     for (slot=0 ; slot<20 ; slot++) {
@@ -499,8 +514,10 @@ int main(int argc, char **argv) {
 
       phy_procedures_lte(last_slot,next_slot);
 
+#ifdef XFORMS
       if (last_slot == 14) 
 	do_forms(lte_ue_dlsch_vars,lte_eNB_ulsch_vars,ch,channel_length);
+#endif
 
       if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
 	len = chbch_stats_read(stats_buffer,NULL,0,4096);
@@ -640,11 +657,11 @@ int main(int argc, char **argv) {
       tx_pwr = dac_fixed_gain(s_re,
 			      s_im,
 			      txdata,
-			      2,
+			      lte_frame_parms->nb_antennas_tx,
 			      lte_frame_parms->samples_per_tti>>1,
 			      14,
 			      0);
-      //        printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+      printf("tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
 #else
 
       for (i=0;i<(lte_frame_parms->samples_per_tti>>1);i++) {
@@ -687,11 +704,11 @@ int main(int argc, char **argv) {
 
       if ((next_slot>2) && (next_slot<10)) {
 	rx_gain = PHY_vars->rx_total_gain_eNB_dB;
-	//	printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
+	printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
       }
       else {
 	rx_gain = PHY_vars->rx_total_gain_dB;
-	//	printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
+	printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
       }
 
       path_loss    = pow(10,path_loss_dB/10);
@@ -723,7 +740,7 @@ int main(int argc, char **argv) {
 	    0.0,               // freq offset (Hz) (-20kHz..20kHz)
 	    0.0,               // drift (Hz) NOT YET IMPLEMENTED
 	    nf,                // noise_figure NOT YET IMPLEMENTED
-	    (double)rx_gain - 72.247,   // rx_gain (dB)
+	    (double)rx_gain - 66.227,   // rx_gain (dB)
 	    200,               // IP3_dBm (dBm)
 	    &ip,               // initial phase
 	    30.0e3,            // pn_cutoff (kHz)
@@ -759,13 +776,13 @@ int main(int argc, char **argv) {
 	  0,
 	  slot_offset,
 	  rxdata,
-	  2,
+	  lte_frame_parms->nb_antennas_rx,
 	  lte_frame_parms->samples_per_tti>>1,
 	  12);
   
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,lte_frame_parms->samples_per_tti>>1);
   
-      //      printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+      printf("rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
 
 #else
       for (i=0; i<(lte_frame_parms->samples_per_tti>>1); i++) {

@@ -1221,14 +1221,15 @@ void init_transport_channels(unsigned char);
 void generate_RIV_tables(void);
 
 
-int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+int rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	     LTE_eNB_ULSCH *eNB_ulsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned int subframe,
 	     unsigned char eNb_id,  // this is the effective sector id
 	     unsigned char UE_id,   // this is the UE instance to act upon
 	     LTE_eNb_ULSCH_t **ulsch,
-	     unsigned char rag_flag);
+	     unsigned char rag_flag,
+	     int* ulsch_power);
 
 int ulsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,

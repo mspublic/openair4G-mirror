@@ -38,8 +38,12 @@ void multipath_channel(struct complex **ch,
   for (i=0;i<nb_antennas_rx;i++)      // RX Antenna loop
     for (j=0;j<nb_antennas_tx;j++) {  // TX Antenna loop
       
-      phase.r = cos(2.0*M_PI*(i-j)/aoa);
-      phase.i = sin(2.0*M_PI*(i-j)/aoa);
+
+      // this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. 
+      // Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so 
+      // that we can safely assume plane wave propagation.
+      phase.r = cos(M_PI*(sin(i*aoa)-sin(j*aoa)));
+      phase.i = sin(M_PI*(sin(i*aoa)-sin(j*aoa)));
       
 
       memset(ch[i + (j*nb_antennas_rx)], 0,channel_length * sizeof(struct complex));

@@ -3,7 +3,7 @@ CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; f
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 -msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32  #-mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
@@ -11,14 +11,16 @@ TOP_DIR = ../..
 OPENAIR2_DIR = ../../../openair2
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 -Wno-packed-bitfield-compat
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DTBS_FIX #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 
+ifdef OPENAIR2
+CFLAGS += -DOPENAIR2 
+endif
 
-CFLAGS += -DOPENAIR2 -DTBS_FIX
 ifdef EMOS
 CFLAGS += -DEMOS
 endif
@@ -109,7 +111,6 @@ SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
-
 COMMON_DIR = $(OPENAIR2_DIR)/COMMON
 L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
 RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE
@@ -132,6 +133,7 @@ MAC_DIR = $(OPENAIR2_DIR)/LAYER2/MAC
 DEVICE_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/DEVICE_DRIVER
 RRC_CELL_DIR = $(OPENAIR2_DIR)/RRC/CELLULAR
 
+ifdef OPENAIR2
 SOURCES_L2 +=  $(LIST_DIR)/list.c
 SOURCES_L2 +=  $(LIST_DIR)/list2.c
 
@@ -139,7 +141,6 @@ SOURCES_L2 +=  $(TIMER_DIR)/umts_timer.c
 
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp.c
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp_fifo.c
-
 
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
@@ -187,19 +188,20 @@ MAC_OBJS = $(MAC_DIR)/openair2_proc.o $(MAC_DIR)/layer2_scheduler.o $(MAC_DIR)/n
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
-
 L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS)
+else
+L2_OBJS=$(MAC_DIR)/rar_tools.o
+endif
 
 L2_incl = -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH -I$(OPENAIR3)/MESH/RRM  -DNO_RRM
-
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS)
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 
 all: physim
 
-test:
-	echo $(CFLAGS)
+#test:
+#	echo $(CFLAGS)
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
@@ -209,6 +211,9 @@ $(L2_OBJS) : %.o : %.c
 
 physim : $(OBJ) $(L2_OBJS) phy_procedures_sim.c phy_procedures_sim_form.c 
 	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm
+
+test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
+	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
 clean:
 	rm -f physim

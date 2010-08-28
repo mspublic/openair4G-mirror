@@ -222,33 +222,42 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
-      y[1][re_offset]   += d[0];
       y[0][re_offset+1] += d[1];
-      y[1][re_offset+1] += d[1];
+      if (frame_parms->nb_antennas_tx>1) {
+	y[1][re_offset]   += d[0];
+	y[1][re_offset+1] += d[1];
+      }
 
       re_offset+=2;
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[2];
-      y[1][re_offset]   += d[2];
       y[0][re_offset+1] += d[3];
-      y[1][re_offset+1] += d[3];
+      if (frame_parms->nb_antennas_tx>1) {
+	y[1][re_offset]   += d[2];
+	y[1][re_offset+1] += d[3];
+      }
 
       // Symbol 2
       re_offset = frame_parms->N_RB_DL*30 + (phich_reg_ext[ngroup_PHICH][2]<<2);
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
-      y[1][re_offset]   += d[0];
       y[0][re_offset+1] += d[1];
-      y[1][re_offset+1] += d[1];
+      if (frame_parms->nb_antennas_tx>1) {
+	y[1][re_offset]   += d[0];
+	y[1][re_offset+1] += d[1];
+      }
+
       re_offset+=2;
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[2];
-      y[1][re_offset]   += d[2];
       y[0][re_offset+1] += d[3];
-      y[1][re_offset+1] += d[3];
+      if (frame_parms->nb_antennas_tx>1) {
+	y[1][re_offset]   += d[2];
+	y[1][re_offset+1] += d[3];
+      }
     } // mode1_flag
   }// normal/extended
 }  
