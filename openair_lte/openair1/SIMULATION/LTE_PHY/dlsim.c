@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
   unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
   int re_allocated;
   FILE *bler_fd;
-  char bler_fname[20];
+  char bler_fname[256];
 
   unsigned char pbch_pdu[6];
 
@@ -237,6 +237,10 @@ int main(int argc, char **argv) {
 
   sprintf(bler_fname,"BLER_SIMULATIONS/AWGN_SISO_HARQ/bler_%d.m",mcs);
   bler_fd = fopen(bler_fname,"w");
+  if (bler_fd == NULL) {
+    printf("Error opening file %s\n",bler_fname);
+    exit(-1);
+  }
   fprintf(bler_fd,"bler = [");
 
   for (i=0;i<2;i++) {
@@ -872,6 +876,7 @@ int main(int argc, char **argv) {
       break;
   } // SNR
   
+  fprintf(bler_fd,"];");
   fclose(bler_fd);
   
   printf("Freeing dlsch structures\n");
