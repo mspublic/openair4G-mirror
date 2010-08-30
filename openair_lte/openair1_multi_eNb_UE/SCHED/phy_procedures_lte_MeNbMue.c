@@ -146,20 +146,20 @@ void phy_precode_nullBeam_create(unsigned char last_slot,PHY_VARS_eNB *phy_vars_
 	im_next = phy_vars_eNb->const_ch[aa][1];
 #endif //RANDOM_BF
 
-	if (re_last >= maxp) {
-	  maxp = re_last;
+	if (abs(re_last) >= maxp) {
+	  maxp = abs(re_last);
 	  ind_of_maxp = i;
 	}
-	if (im_last >= maxp) {
-	  maxp = im_last;
+	if (abs(im_last) >= maxp) {
+	  maxp = abs(im_last);
 	  ind_of_maxp = i;
 	}
-        if (re_next >= maxp) {
-	  maxp = re_next;
+	if (abs(re_next) >= maxp) {
+	  maxp = abs(re_next);
 	  ind_of_maxp = i;
 	}
-        if (im_next >= maxp) {
-	  maxp = im_next;
+	if (abs(im_next) >= maxp) {
+	  maxp = abs(im_next);
 	  ind_of_maxp = i;
 	}
 	

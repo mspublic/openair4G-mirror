@@ -27,7 +27,7 @@
 //#define CHANNEL_FROM_FILE   //--Unstable, doesn't work properly. Possibly how the channel is written to file.
 //#define FLAT_CHANNEL
 //#define SKIP_RF_RX
-#define DISABLE_SECONDARY
+//#define DISABLE_SECONDARY
 #define BW 7.68 //Fs in MHz
 #define Td 1
 #define N_TRIALS_MAX 2
@@ -190,7 +190,8 @@ int main(int argc, char **argv) {
     SeSu     /// SeNb <--> S_UE
   };
 #ifdef SECONDARY_SYSTEM
-   double aoa_ar[6]={M_PI*1.2,M_PI/2,M_PI/2,M_PI*1.1,0,0};
+  //   double aoa_ar[6]={M_PI*1.2,M_PI/2,M_PI/2,M_PI*1.1,0,0}; with the old equation
+  double aoa_ar[6]={(M_PI/2)*1.05,(M_PI/4)*.95,(M_PI/4)*1.05,(M_PI/2)*.95,0,0.05*(M_PI/4)};
 #endif
   double path_loss_ar_dB[6], path_loss_ar[6];
   struct complex **ch_ar[6];
@@ -756,7 +757,7 @@ int main(int argc, char **argv) {
   strncpy(tempChar,pbs_output_dir,100);
 #ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
-  strcat(tempChar,"er_data_%d_%d_K%d_noZBF.m");
+  strcat(tempChar,"er_data_%d_%d_K%d.m");
 #else
   strcat(tempChar,"er_data_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
@@ -773,7 +774,7 @@ int main(int argc, char **argv) {
   strncpy(tempChar,pbs_output_dir,100);
 #ifdef MU_RECEIVER
 #ifndef DISABLE_SECONDARY
-  strcat(tempChar,"turboIter_%d_%d_K%d_noZBF.m");
+  strcat(tempChar,"turboIter_%d_%d_K%d.m");
 #else
   strcat(tempChar,"turboIter_%d_%d_K%d_UB.m");
 #endif //DISABLE_SECONDARY
@@ -889,17 +890,7 @@ int main(int argc, char **argv) {
 #endif //SKIP_RF_CHAIN
       
       for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-	
-      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run has empty first subframe, assume received
-	PHY_vars_UE[0]->dlsch_cntl_received=1;
-      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run has empty first subframe, assume received
-	PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->dci_received=1;
-#ifdef SECONDARY_SYSTEM
-      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run has empty first subframe, assume received
-	PHY_vars_UE[1]->dlsch_cntl_received=1;
-      if ((stxg_ind==1) && (snr_ind==1) && (mac_xface->frame==0)) // first run has empty first subframe, assume received
-	PHY_vars_UE[1]->lte_ue_pdcch_vars[eNb_id]->dci_received=1;
-#endif //SECONDARY_SYSTEM
+
 #ifndef PBS_SIM
 	if (mac_xface->frame==2)
 	  plot_flag = 1;
@@ -909,8 +900,9 @@ int main(int argc, char **argv) {
 #ifdef RANDOM_BF
 	//	if (mac_xface->frame%20==0) {
 	  for (aa=0; aa<PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx; aa++) {
-	    for (j=0; j<2; j++) {
+	    for (j=0; j<2; j++) { //loop over real/imaginary
 	      PHY_vars_eNb[1]->const_ch[aa][j] = gaussdouble(0.0,1.0);
+	      /*
 	      if ((PHY_vars_eNb[1]->const_ch[aa][j] < 0.2) && (PHY_vars_eNb[1]->const_ch[aa][j] >= 0)) 
 		PHY_vars_eNb[1]->const_ch[aa][j] = 0.2;
 	      if (PHY_vars_eNb[1]->const_ch[aa][j] > .5) 
@@ -919,8 +911,10 @@ int main(int argc, char **argv) {
 		PHY_vars_eNb[1]->const_ch[aa][j] = -.5;
 	      if ((PHY_vars_eNb[1]->const_ch[aa][j] > -0.2) && (PHY_vars_eNb[1]->const_ch[aa][j] <= 0)) 
 		PHY_vars_eNb[1]->const_ch[aa][j] = -0.2;
+	      */
 
 	      PHY_vars_UE[1]->const_ch[aa][j] = gaussdouble(0.0,1.0);
+	      /*
 	      if ((PHY_vars_UE[1]->const_ch[aa][j] < 0.2) && (PHY_vars_UE[1]->const_ch[aa][j] >= 0)) 
 		PHY_vars_UE[1]->const_ch[aa][j] = 0.2;
 	      if (PHY_vars_UE[1]->const_ch[aa][j] > .5) 
@@ -929,6 +923,7 @@ int main(int argc, char **argv) {
 		PHY_vars_UE[1]->const_ch[aa][j] = -.5;
 	      if ((PHY_vars_UE[1]->const_ch[aa][j] > -0.2) && (PHY_vars_UE[1]->const_ch[aa][j] <= 0)) 
 		PHY_vars_UE[1]->const_ch[aa][j] = -0.2;
+	      */
 	    }
 	  }
 	  norm_const = pow(
