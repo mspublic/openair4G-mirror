@@ -82,7 +82,7 @@ if nargin <= 6
     color = 'blue';
 end
 if nargin <= 7
-    style = {'Marker','x'};
+    style = {'Marker','x','Line','none'};
 else
     style = varargin;
 end
@@ -127,10 +127,11 @@ if (~isempty(rx_rssi))
     set(hcb,'YTick',1:8:length(m));
     yt = round(linspace(cmin,cmax,64));
     yt = yt(1:8:length(m));
+    clabel = cell(size(yt));
     for j=1:length(yt)
-        label{j} = sprintf('%4.3g', yt(j));
+        clabel{j} = sprintf('%4.3g', yt(j));
     end
-    set(hcb,'YTickLabel',label);
+    set(hcb,'YTickLabel',clabel);
 else
     plot(gps_x,gps_y,'color',color,style{:});
 end

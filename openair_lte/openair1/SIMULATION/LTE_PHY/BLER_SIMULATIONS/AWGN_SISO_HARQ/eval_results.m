@@ -1,8 +1,8 @@
 set(0, 'DefaultLineMarkerSize', 10);
 set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
-set(0, 'DefaultAxesFontName', 'Courier');
-set(0, 'DefaultTextFontName', 'Courier');
+set(0, 'DefaultAxesFontName', 'Helvetica');
+set(0, 'DefaultTextFontName', 'Helvetica');
 
 %%
 load SISO.mat
@@ -28,9 +28,10 @@ hold off
 for mcs=0:27
     data = dlmread(sprintf('bler_%d.csv',mcs),';',1,0);
     snr = data(:,1);
-    bler = data(:,5)./data(:,6); % round 1
+    bler = data(:,11)./data(:,6); % round 4
     harq_adjust = data(:,6)./sum(data(:,6:2:12),2);
     throughput_all(:,mcs+1) = interp1(snr, (1-bler).*harq_adjust.*get_tbs(mcs,25)*6*100,snr_all,'nearest','extrap');
+    throughput_all(1:find(snr_all==snr(1)),mcs+1) = 0;
     semilogy(snr,bler(:,1),plot_style{mcs+1});
     hold on
 end
@@ -46,9 +47,23 @@ ylabel 'BLER'
 xlabel 'SNR'
 grid on
 
-figure(2);
+%%
+h_fig = figure(2);
 hold off
-plot(snr_all,max(throughput_all,[],2))
+plot(snr_all,smooth(max(throughput_all,[],2),5))
+%plot(snr_all,throughput_all)
 hold on
 plot(SNR,max(bps_siso),'r--');
+legend('simulation','mutual information','location','northwest');
+xlabel('SNR [dB]')
+ylabel('Throughput [bps]')
+grid on
 
+saveas(h_fig,'implementation_loss.eps','epsc2');
+
+%%
+tp_sim = max(throughput_all,[],2);
+tp_mi = max(bps_siso);
+snr_sim = snr_all;
+snr_mi = SNR;
+save SISO_scaling.mat tp_sim tp_mi snr_sim snr_mi

@@ -136,12 +136,12 @@ for est=1:length(estimates_UE)
     C3 = mean(MI);
     
     
-    if C1 <2
+    if C1 <=2
         for c=1:z
         chcap_siso_single_stream_supportedQam_1stRx(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB_1stRx(1, c, est))));
         end
     else
-        if C1 >2 && C1 < 4
+        if C1 >2 && C1 <= 4
             for c=1:z
             chcap_siso_single_stream_supportedQam_1stRx(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB_1stRx(1, c, est))));
             end
@@ -153,12 +153,12 @@ for est=1:length(estimates_UE)
         end
     end
     
-    if C2 <2
+    if C2 <=2
         for c=1:z
         chcap_siso_single_stream_supportedQam_2ndRx(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB_2ndRx(1, c, est))));
         end
     else
-        if C2 >2 && C2 < 4
+        if C2 >2 && C2 <= 4
             for c=1:z
             chcap_siso_single_stream_supportedQam_2ndRx(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB_2ndRx(1, c, est))));
             end
@@ -169,12 +169,12 @@ for est=1:length(estimates_UE)
         end
     end
     
-    if C3 <2
+    if C3 <=2
         for c=1:z
         chcap_siso_single_stream_supportedQam_2Rx(1, c, est) = c_siso_4Qam(find(SNR == round(SNR_eNB_2Rx(1, c, est))));
         end
     else
-        if C3 >2 && C3 < 4
+        if C3 >2 && C3 <= 4
             for c=1:z
             chcap_siso_single_stream_supportedQam_2Rx(1, c, est) = c_siso_16Qam(find(SNR == round(SNR_eNB_2Rx(1, c, est))));
             end

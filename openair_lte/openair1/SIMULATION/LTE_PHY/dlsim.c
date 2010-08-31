@@ -18,7 +18,7 @@
 #define NO_DCI
 
 //#define OUTPUT_DEBUG 1
-#define N_TRIALS 1000
+#define N_TRIALS 10000
 
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0

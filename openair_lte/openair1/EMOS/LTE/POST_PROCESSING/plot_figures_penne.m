@@ -12,6 +12,11 @@ mm='penne';
 
 h_fig = 0;
 
+%% results from quick post processing (modem throughput)
+pathname = '/media/disk/PENNE/Interference/results';
+plot_results_UE_quick
+plot_results_eNb_quick
+
 %% results from raw channel estimates (ideal throughput)
 pathname = '/media/disk/PENNE/Mode2/results/';
 %pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/Mode2/results';

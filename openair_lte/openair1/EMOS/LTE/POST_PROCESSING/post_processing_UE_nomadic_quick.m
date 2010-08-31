@@ -5,7 +5,10 @@ end
 d = dir(fullfile(pathname, 'data_term3*.EMOS'));
 filenames = {d.name};
 filedates = {d.date};
-[filedates,idx] = sort(filedates);
+tmp = char(filenames.');
+tmp(:,1:17) = [];
+tmp2 = cellstr(tmp).';
+[tmp3,idx] = sort(tmp2);
 filenames = filenames(idx);
 
 % NFrames = floor([d.bytes]/CHANNEL_BUFFER_SIZE)*NO_ESTIMATES_DISK;
