@@ -19,7 +19,7 @@
 #include "rlc_am_discard_tx_proto_extern.h"
 #include "rlc_am_proto_extern.h"
 #include "LAYER2/MAC/extern.h"
-//#define DEBUG_MUX
+#define DEBUG_MUX
 //#define DEBUG_RLC_AM_POLL
 
 #ifdef NODE_MT

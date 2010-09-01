@@ -11,7 +11,7 @@
 #include "rtos_header.h"
 #include "rlc.h"
 
-//#define DEBUG_MAC_INTERFACE
+#define DEBUG_MAC_INTERFACE
 
 // tb_size_t in bytes
 //-----------------------------------------------------------------------------
@@ -32,7 +32,8 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
         if (tb != NULL) {
             ((struct mac_tb_ind *) (tb->data))->first_bit = 0;
             ((struct mac_tb_ind *) (tb->data))->data_ptr = &tb->data[sizeof (mac_rlc_max_rx_header_size_t)];
-            ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
+            if (crcsP)
+	      ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
 
             memcpy(((struct mac_tb_ind *) (tb->data))->data_ptr, &bufferP[tbs_size], tb_sizeP);
 
@@ -131,9 +132,10 @@ void mac_rlc_data_ind     (module_id_t module_idP, chan_id_t rb_idP, char* buffe
 
                     case RLC_AM:
 #ifdef DEBUG_MAC_INTERFACE
-		      msg("MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
+		      msg("MAC DATA IND TO RLC_AM MOD_ID %d RB_INDEX %d (%d) MOD_ID_RLC %d\n", module_idP, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index, rb_idP, rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].module_id);
 #endif 
-                        rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], data_ind);
+		      
+		      rlc_am_mac_data_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], data_ind);
                         break;
 
                     case RLC_UM:

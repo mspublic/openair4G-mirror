@@ -95,7 +95,8 @@ typedef struct{
 unsigned char Status;
 unsigned char Nb_ue;
 //unsigned short UE_index_list[NB_CNX_CH];
-L2_ID UE_list[NB_CNX_CH];
+//L2_ID UE_list[NB_CNX_CH];
+unsigned char UE_list[NB_CNX_CH][5];
 DTCH_BD_CONFIG Dtch_bd_config[NB_CNX_CH];
 }__attribute__ ((__packed__)) CH_RRC_INFO;
 
@@ -217,7 +218,7 @@ typedef struct{
   RB_INFO_TABLE_ENTRY  Rab_dil[NB_RAB_MAX][NB_CNX_CH+1][NB_CNX_CH-1];
   MAC_MEAS_REQ_ENTRY  Rab_dil_meas[NB_RAB_MAX][NB_CNX_CH+1][NB_CNX_CH-1];
   SRB_INFO Srb0;
-  SRB_INFO Srb1;
+  SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_CH+1];
    SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_CH+1];
    MAC_MEAS_REQ_ENTRY  Srb2_meas[NB_CNX_CH+1];
    DEFAULT_CH_MEAS *Def_meas[NB_CNX_CH+1];	
@@ -241,7 +242,7 @@ typedef struct{
   RB_INFO_TABLE_ENTRY  Rab[NB_RAB_MAX][NB_CNX_UE];
   RB_INFO_TABLE_ENTRY  Rab_dil[NB_RAB_MAX][NB_SIG_CNX_UE][NB_CNX_CH-1];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
-  SRB_INFO Srb1[NB_SIG_CNX_UE];
+  SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_UE];
   DEFAULT_UE_MEAS *Def_meas[NB_CNX_UE];
   char Rrc_dummy_pdu[TB_SIZE_MAX];
@@ -267,10 +268,11 @@ void ch_rrc_generate_bcch_header(u8 Mod_id);
 void ue_rrc_decode_bcch(u8 Mod_id);
 void ue_rrc_decode_bcch_header(u8 Mod_id , u8 Idx);
 void ue_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info,u8);
-void rrc_mac_association_req_tx(u8 Mod_id, unsigned char Idx);
+void rrc_mac_connection_req_tx(u8 Mod_id, unsigned char Idx);
 unsigned char rrc_read_ccch_config_req(u8 Mod_id, SRB_INFO *Srb_info,u8);
 void ch_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
-void ch_rrc_decode_dcch(u8 , char*);
+//void ch_rrc_decode_dcch(u8 , char*);
+void ch_rrc_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
 void ue_rrc_decode_dcch(u8 , char*,u8);
 void ch_rrc_generate_bcch(u8 Mod_id);
 char ch_rrc_generate_ccch(u8 Mod_id);
@@ -278,13 +280,17 @@ void mac_rrc_radio_meas_resp(MAC_MEAS_T *Mac_meas, MAC_MEAS_REQ_ENTRY * Meas_req
 void  rrc_process_radio_meas(u8 Mod_id,MAC_MEAS_IND Mac_meas_ind,MAC_MEAS_REQ_ENTRY * Meas_entry);
 void ch_disconnect_ue(unsigned char Mod_id,unsigned char UE_index);
 
+void ch_rrc_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
+void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index);
+s32 rrc_ue_establish_srb1(u8 Mod_id,u8 CH_index);
+
 //L2_interface.c
 unsigned short rrc_fill_buffer(RRC_BUFFER *Rx_buffer, char *Data, unsigned short Size);
 unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8);
-unsigned char mac_rrc_mesh_data_ind( unsigned char Mod_id,  unsigned short Srb_id, char *Sdu, unsigned char Mui);
+unsigned char mac_rrc_mesh_data_ind( unsigned char Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,unsigned char Mui);
 void mac_mesh_sync_ind( unsigned char Mod_id, unsigned char status);
 void mac_rrc_mesh_meas_ind(u8,MAC_MEAS_REQ_ENTRY*);
-void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Rb_id, u32 sdu_size,char *Buffer);
+void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_mesh_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index);
 void def_meas_ind(u8 Mod_id,u8 CH_index);
 //utils.c

@@ -5,7 +5,7 @@
 #include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 
-
+ 
 //#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];

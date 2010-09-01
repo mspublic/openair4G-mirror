@@ -11,7 +11,7 @@ ________________________________________________________________*/
 #include "COMMON/mac_rrc_primitives.h"
  
 unsigned char mac_rrc_data_req( unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8);
-unsigned char mac_rrc_data_ind( unsigned char Mod_id,  unsigned short Srb_id, char *Sdu, unsigned char Mui);
+unsigned char mac_rrc_data_ind( unsigned char Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,unsigned char Mui);
 void mac_sync_ind( unsigned char Mod_id, unsigned char status);
 void mac_rrc_meas_ind(unsigned char,MAC_MEAS_REQ_ENTRY*);
 void rlcrrc_data_ind( unsigned char Mod_id, unsigned int Rb_id, unsigned int sdu_size,char *Buffer);

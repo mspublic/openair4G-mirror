@@ -19,9 +19,9 @@
 #include "LAYER2/MAC/extern.h"
 
 
-//#define DEBUG_RLC_UM_DATA_REQUEST
-//#define DEBUG_RLC_UM_MAC_DATA_REQUEST
-//#define DEBUG_RLC_UM_MAC_DATA_INDICATION
+#define DEBUG_RLC_UM_DATA_REQUEST
+#define DEBUG_RLC_UM_MAC_DATA_REQUEST
+#define DEBUG_RLC_UM_MAC_DATA_INDICATION
 #define DEBUG_RLC_UM_DISCARD_SDU
 //-----------------------------------------------------------------------------
 u32_t             rlc_um_get_buffer_occupancy (struct rlc_um_entity *rlcP);

@@ -247,6 +247,7 @@ rlc_am_alloc_buffers_after_establishment (struct rlc_am_entity *rlcP)
   }
   rlcP->receiver_buffer_alloc = get_free_mem_block (rlcP->recomputed_configured_rx_window_size * sizeof (mem_block_t *));
   rlcP->receiver_buffer = (mem_block_t **) (rlcP->receiver_buffer_alloc->data);
+  msg("[RLC AM][RB %d] Window size %d\n",rlcP->rb_id,rlcP->recomputed_configured_rx_window_size);
   //memset (rlcP->receiver_buffer, 0, rlcP->recomputed_configured_rx_window_size * sizeof (mem_block_t *));
 
   rlcP->holes_alloc = get_free_mem_block ((rlcP->recomputed_configured_rx_window_size * sizeof (struct rlc_am_hole)) >> 1);

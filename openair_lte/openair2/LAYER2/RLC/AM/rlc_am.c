@@ -27,9 +27,10 @@
 #include "rlc_am_util_proto_extern.h"
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
-//#define DEBUG_RLC_AM_DATA_REQUEST
-//#define DEBUG_RLC_AM_TX
-//#define DEBUG_RLC_AM_BO
+#define DEBUG_RLC_AM_DATA_REQUEST
+#define DEBUG_RLC_AM_TX
+#define DEBUG_RLC_AM_RX
+#define DEBUG_RLC_AM_BO
 //-----------------------------------------------------------------------------
 void            display_protocol_vars_rlc_am (struct rlc_am_entity *rlcP);
 u32_t             rlc_am_get_buffer_occupancy_in_pdus_for_ch1 (struct rlc_am_entity *rlcP);
@@ -238,6 +239,10 @@ rlc_am_rx (void *argP, struct mac_data_ind data_indP)
 //-----------------------------------------------------------------------------
 
   struct rlc_am_entity *rlc = (struct rlc_am_entity *) argP;
+
+#ifdef DEBUG_RLC_AM_RX
+  msg("[RLC][AM] In rlc_am_rx\n");
+#endif
 
   switch (rlc->protocol_state) {
 

@@ -18,9 +18,9 @@
 #include "rlc_am_constants.h"
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
-//#define DEBUG_RLC_AM_SEND_SDU
-//#define DEBUG_REASSEMBLY
-//#define DEBUG_RLC_AM_DISPLAY_ASCII_DATA
+#define DEBUG_RLC_AM_SEND_SDU
+#define DEBUG_REASSEMBLY
+#define DEBUG_RLC_AM_DISPLAY_ASCII_DATA
 
 //-----------------------------------------------------------------------------
 void

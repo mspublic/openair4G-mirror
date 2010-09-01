@@ -194,8 +194,8 @@ void macphy_data_ind(unsigned char Mod_id,unsigned char Pdu_type,void *pdu,unsig
       msg("[MAC][UE][MAC_PHY] TTI %d Inst %d\n",mac_xface->frame,Mod_id);
 #endif
 
-      ue_decode_dlsch(Mod_id-NB_CH_INST,
-		      (DLSCH_PDU *)pdu,rnti);
+//      ue_decode_dlsch(Mod_id-NB_CH_INST,
+//		      (DLSCH_PDU *)pdu,rnti);
 
       break;
       

@@ -19,7 +19,7 @@ ________________________________________________________________*/
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
-#define DEBUG_SCHEDULER 1
+//#define DEBUG_SCHEDULER 1
 
 void macphy_scheduler(unsigned char last_slot) {
   u8 i,j;
@@ -71,14 +71,14 @@ void macphy_scheduler(unsigned char last_slot) {
 #ifdef DEBUG_SCHEDULER
 	  msg("[OPENAIR2]/******************************MACPHY_SCHEDULER:Frame %d,  CALLING Nodeb_TX INST %d last_slot %d***********************/\n",Mac_rlc_xface->frame,i,last_slot);
 #endif
-	  nodeb_mac_scheduler_tx(i,((last_slot+2)%20)>>1);      
+	  //nodeb_mac_scheduler_tx(i,((last_slot+2)%20)>>1);      
 	}
 	else{ //This is an UE
 #ifdef DEBUG_SCHEDULER
 	  msg("[MAC][UE] Frame %d, last_slot %d: CALLING SCHEDULER\n", Mac_rlc_xface->frame,last_slot+2);
 	  msg("/******************************MACPHY_SCHEDULER: CALLING UE TX/RX INST %d***********************/\n",i);
 #endif
-	  ue_mac_scheduler_tx(i-NB_CH_INST); // ue_mac_scheduler_tx
+	  //ue_mac_scheduler_tx(i-NB_CH_INST); // ue_mac_scheduler_tx
 	  
 	}
       }
@@ -95,11 +95,11 @@ void macphy_scheduler(unsigned char last_slot) {
 #ifdef DEBUG_SCHEDULER
 	  //msg("[][MAC] Frame %d, last_slot %d: CALLING SCHEDULER\n", Mac_rlc_xface->frame,last_slot);
 #endif	
-	  nodeb_mac_scheduler_rx(i);      
+	  //nodeb_mac_scheduler_rx(i);      
 	  
 	}
 	else{
-	  ue_mac_scheduler_rx(i-NB_CH_INST); // ue_mac_scheduler_rx
+	  //ue_mac_scheduler_rx(i-NB_CH_INST); // ue_mac_scheduler_rx
 	  
 	}
       }

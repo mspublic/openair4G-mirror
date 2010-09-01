@@ -309,13 +309,14 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
   unsigned char  CH_id[NB_MODULES_MAX][NB_CNX_UE];
 #ifndef CELLULAR
-  L2_ID UE_id[NB_MODULES_MAX][NB_CNX_CH];
+  //  L2_ID UE_id[NB_MODULES_MAX][NB_CNX_CH];
+  unsigned char UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
 #endif
   void (*openair_rrc_top_init)(void); 
   char (*openair_rrc_ch_init)(unsigned char ); 
   char (*openair_rrc_mr_init)(unsigned char, unsigned char); 
   void (*rrc_rx_tx)(unsigned char ); 
-  unsigned char (*mac_rrc_data_ind)(unsigned char,unsigned short,char *,unsigned char);
+  unsigned char (*mac_rrc_data_ind)(unsigned char,unsigned short,char *,unsigned short,unsigned char);
   unsigned char (*mac_rrc_data_req)(unsigned char,unsigned short,unsigned char,char *,unsigned char);
   void (*mac_rrc_meas_ind)(unsigned char,MAC_MEAS_REQ_ENTRY*);
   void  (*def_meas_ind)(unsigned char, unsigned char);

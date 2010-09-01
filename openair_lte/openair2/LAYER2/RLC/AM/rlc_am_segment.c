@@ -14,9 +14,9 @@
 #include "rlc_primitives.h"
 #include "mem_block.h"
 
-//#define DEBUG_RLC_AM_SEGMENT
-//#define DEBUG_RLC_AM_SEGMENT_FILL_DATA
-//#define DEBUG_MEM_MNGT
+#define DEBUG_RLC_AM_SEGMENT
+#define DEBUG_RLC_AM_SEGMENT_FILL_DATA
+#define DEBUG_MEM_MNGT
 //-----------------------------------------------------------------------------
 mem_block_t      *rlc_am_segment_15 (struct rlc_am_entity *rlcP);
 mem_block_t      *rlc_am_segment_7  (struct rlc_am_entity *rlcP);
@@ -196,7 +196,7 @@ rlc_am_segment_15 (struct rlc_am_entity *rlcP)
       if (!(pdu)) {
         if (!(pdu = get_free_mem_block (rlcP->pdu_size + sizeof (struct rlc_am_tx_data_pdu_allocation) + GUARD_CRC_LIH_SIZE))) {
 #ifdef DEBUG_MEM_MNGT
-          msg ("[RLC_AM][RB %d][SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n", rlc->rb_id);
+          msg ("[RLC_AM][RB %d][SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n", rlcP->rb_id);
 #endif
           return NULL;
         }
@@ -416,7 +416,7 @@ rlc_am_segment_7 (struct rlc_am_entity * rlcP)
         // pdu management
         if (!(pdu = get_free_mem_block  (rlcP->pdu_size + sizeof (struct rlc_am_tx_data_pdu_allocation) + GUARD_CRC_LIH_SIZE))) {
 #ifdef DEBUG_MEM_MNGT
-          msg ("[RLC_AM][RB %d][SEGMENT7] ERROR COULD NOT GET NEW PDU, EXIT\n", rlc->rb_id);
+          msg ("[RLC_AM][RB %d][SEGMENT7] ERROR COULD NOT GET NEW PDU, EXIT\n", rlcP->rb_id);
 #endif
           return NULL;
         }
@@ -437,7 +437,7 @@ rlc_am_segment_7 (struct rlc_am_entity * rlcP)
       }
 
       if (sdu_mngt->sdu_remaining_size > 0) {
-
+	msg("sdu_mngt->sdu_remaining_size %d\n",sdu_mngt->sdu_remaining_size);
         if ((pdu_remaining_size - sdu_mngt->sdu_remaining_size) < 0) {
           pdu_mngt->data_size += pdu_remaining_size;
           rlcP->buffer_occupancy -= pdu_remaining_size;

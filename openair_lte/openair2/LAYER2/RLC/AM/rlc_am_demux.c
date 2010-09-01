@@ -27,6 +27,8 @@
 
 
 #define DEBUG_DEMUX_RESET
+#define DEBUG_DEMUX
+
 //-----------------------------------------------------------------------------
 void
 rlc_am_demux_routing (struct rlc_am_entity *rlcP, unsigned int traffic_typeP, struct mac_data_ind data_indP)
@@ -73,13 +75,13 @@ rlc_am_demux_routing (struct rlc_am_entity *rlcP, unsigned int traffic_typeP, st
       if ((data->byte1 & RLC_DC_MASK) == RLC_DC_DATA_PDU) {
 #ifdef DEBUG_DEMUX
         msg ("[RLC_AM][RB %d][DEMUX] RX AMD PDU  Frame %d\n", rlcP->rb_id, Mac_rlc_xface->frame);
-     for (index=0; index < rlcP->pdu_size ; index++) {
-        msg("%02X.",first_byte[index]);
-     }
-     msg("\n");
+	for (index=0; index < rlcP->pdu_size ; index++) {
+	  msg("%02X.",first_byte[index]);
+	}
+	msg("\n");
 #endif
 
-       rlcP->stat_rx_data_pdu += 1;
+	rlcP->stat_rx_data_pdu += 1;
        
         if (traffic_typeP & RLC_AM_TRAFFIC_ALLOWED_FOR_DATA) {
           ((struct rlc_am_rx_pdu_management *) (tb->data))->piggybacked_processed = 0;
@@ -128,7 +130,7 @@ rlc_info_t Rlc_info_am_config1;
   Rlc_info_am_config1.rlc.rlc_am_info.max_rst               = 500;//500
   Rlc_info_am_config1.rlc.rlc_am_info.timer_mrw             = 0;
   
-  Rlc_info_am_config1.rlc.rlc_am_info.pdu_size              = 416; // in bits
+  Rlc_info_am_config1.rlc.rlc_am_info.pdu_size              = 32//416; // in bits
   //Rlc_info_am.rlc.rlc_am_info.in_sequence_delivery  = 1;//boolean
   Rlc_info_am_config1.rlc.rlc_am_info.max_dat               = 32;//127;
   
@@ -169,8 +171,14 @@ rlc_info_t Rlc_info_am_config1;
   if ((data_received)) {        //avoid call
     if (traffic_typeP & RLC_AM_TRAFFIC_ALLOWED_FOR_DATA) {
       if (rlcP->pdu_size <= 126) {
+#ifdef DEBUG_DEMUX
+	msg("[RLC_AM][RB %d] Calling process_receiver_buffer_7\n",rlcP->rb_id);
+#endif
         process_receiver_buffer_7 (rlcP);
       } else {
+#ifdef DEBUG_DEMUX
+	msg("[RLC_AM][RB %d] Calling process_receiver_buffer_15\n",rlcP->rb_id);
+#endif
         process_receiver_buffer_15 (rlcP);
       }
     }

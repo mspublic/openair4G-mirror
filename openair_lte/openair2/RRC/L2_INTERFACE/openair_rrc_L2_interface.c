@@ -66,12 +66,12 @@ unsigned char mac_rrc_data_req(unsigned char Mod_id, unsigned short Srb_id, unsi
 }
 
 /********************************************************************************************************************/
-unsigned char mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned char CH_index ){ 
+unsigned char mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,unsigned char CH_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_mac_data_ind_rx();
 #else 
-  mac_rrc_mesh_data_ind(Mod_id,Srb_id,Sdu,CH_index);
+  mac_rrc_mesh_data_ind(Mod_id,Srb_id,Sdu,Sdu_len,CH_index);
 #endif //CELLULAR
 }
 

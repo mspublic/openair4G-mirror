@@ -17,8 +17,9 @@
 //#include "../PDCP/pdcp_proto_extern.h"
 extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP);
 
-//#define DEBUG_RLC_PDCP_INTERFACE
+#define DEBUG_RLC_PDCP_INTERFACE
 
+#define DEBUG_RLC_DATA_REQ 1
 
 //-----------------------------------------------------------------------------
 rlc_op_status_t rlc_stat_req     (module_id_t module_idP, 
@@ -140,11 +141,16 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
 //-----------------------------------------------------------------------------
   mem_block_t* new_sdu;
 
-
+#ifdef DEBUG_RLC_DATA_REQ
+  msg("rlc_data_req: module_idP %d, rb_idP %d, muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,rb_idP,muiP,confirmP,sdu_sizeP,sduP);
+#endif
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
           if (sduP != NULL) {
               if (sdu_sizeP > 0) {
+#ifdef DEBUG_RLC_DATA_REQ
+		msg("RLC_TYPE : %d\n",rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type);
+#endif
                   switch (rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type) {
                     case RLC_NONE:
                     free_mem_block(sduP);
@@ -153,6 +159,9 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
                         break;
 
                     case RLC_AM:
+#ifdef DEBUG_RLC_DATA_REQ
+		      msg("RLC_AM\n");
+#endif
                         new_sdu = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc));
 
                         if (new_sdu != NULL) {

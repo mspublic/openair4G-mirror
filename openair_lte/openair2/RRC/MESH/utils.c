@@ -50,7 +50,11 @@ u8 rrc_find_free_ue_index(u8 Mod_id){
 //-------------------------------------------------------------------------------------------//
   u16 i;
   for(i=1;i<=NB_CNX_CH;i++)
-    if(CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0] == 0xff)
+    if ( (CH_rrc_inst[Mod_id].Info.UE_list[i][0] == 0) &&
+	 (CH_rrc_inst[Mod_id].Info.UE_list[i][1] == 0) &&	
+	 (CH_rrc_inst[Mod_id].Info.UE_list[i][2] == 0) &&
+	 (CH_rrc_inst[Mod_id].Info.UE_list[i][3] == 0) &&
+	 (CH_rrc_inst[Mod_id].Info.UE_list[i][4] == 0))
       return i;
   return 0xff;  
 }
@@ -60,11 +64,12 @@ u8 rrc_find_free_ue_index(u8 Mod_id){
 unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id){
 //-------------------------------------------------------------------------------------------//
   unsigned char i; 
+  /*
   for(i=0;i<=NB_CNX_CH;i++)
     if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id,sizeof(L2_ID))==0)
       return i;
   return i;
-
+  */
 }
 //-------------------------------------------------------------------------------------------//
 u8 rrc_is_node_isolated(u8 Mod_id){
@@ -147,14 +152,17 @@ RB_INFO* rrc_find_rb_info(u8 Mod_id,u16 Rb_id){
   return(RB_INFO*)0; 
 }
 */
+
 /*------------------------------------------------------------------------------*/
 unsigned char rrc_is_mobile_already_associated(u8 Mod_id, L2_ID Mac_id){
   /*------------------------------------------------------------------------------*/
+  /*
   unsigned char i; 
   for(i=0;i<NB_CNX_CH;i++)
     if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id,sizeof(L2_ID))==0)
       return 1;
   return 0;
+  */
 }
 
 

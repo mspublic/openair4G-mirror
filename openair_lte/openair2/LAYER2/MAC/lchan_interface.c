@@ -17,18 +17,11 @@
 
 int clear_lchan_stats(LCHAN_INFO_TABLE_ENTRY *Lchan_entry) {
 
-  int kk;
 
-  Lchan_entry->Active = 0;
+    Lchan_entry->Active = 0;
   Lchan_entry->Lchan_info.W_idx=0;
-  Lchan_entry->Lchan_info.Bw_req_active=1;
   Lchan_entry->Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=0;
   Lchan_entry->Lchan_info.Meas_entry.Status=IDLE;
-  Lchan_entry->Lchan_info.Nb_sched_tb_ul=0;
-  Lchan_entry->Lchan_info.Nb_sched_tb_dl=0;
-  Lchan_entry->Lchan_info.Nb_sched_tb_ul_temp=0;
-  Lchan_entry->Lchan_info.Nb_sched_tb_dl_temp=0;
-
 
   Lchan_entry->Lchan_info.NB_TX=0;
   Lchan_entry->Lchan_info.NB_TX_LAST=0;
@@ -36,20 +29,12 @@ int clear_lchan_stats(LCHAN_INFO_TABLE_ENTRY *Lchan_entry) {
   Lchan_entry->Lchan_info.NB_BW_REQ_RX=0;
   Lchan_entry->Lchan_info.output_rate=0;
   Lchan_entry->Lchan_info.NB_RX=0;
-  Lchan_entry->Lchan_info.NB_RX_ERRORS=0;
-  Lchan_entry->Lchan_info.NB_RX_SACH_ERRORS=0;
-  Lchan_entry->Lchan_info.NB_RX_SACCH_ERRORS=0;
-  Lchan_entry->Lchan_info.NB_RX_SACH_MISSING=0;
   //  Lchan_entry->Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
   Lchan_entry->Lchan_info.Lchan_status_tx=IDLE;
   Lchan_entry->Lchan_info.Lchan_status_rx=IDLE;
 
 
 
-  Lchan_entry->Lchan_info.Nb_tx_last_tti=0;
-  Lchan_entry->Lchan_info.Nb_rx_last_tti=0;
-  Lchan_entry->Lchan_info.Last_sched_tti=0;
-  Lchan_entry->Lchan_info.Last_feedback_tti=0;
   Lchan_entry->Lchan_info.Tx_rate=0;
   Lchan_entry->Lchan_info.Rx_rate=0;
   Lchan_entry->Lchan_info.Rx_rate_temp=0;
@@ -58,33 +43,21 @@ int clear_lchan_stats(LCHAN_INFO_TABLE_ENTRY *Lchan_entry) {
   Lchan_entry->Lchan_info.Req_rate=0;
   Lchan_entry->Lchan_info.Spec_eff=0;
 
-  for (kk=0;kk<MAX_NUMBER_TB_PER_LCHAN;kk++) {
-    Lchan_entry->Lchan_info.NB_TX_TB[kk]=0;    
-    Lchan_entry->Lchan_info.NB_RX_TB[kk]=0;    
-    Lchan_entry->Lchan_info.NB_RX_ERRORS_TB[kk]=0;  
-  }
-
 
 }
 
 //------------------------------------------------------------------------------------------------------------------//
 int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim) {
   //------------------------------------------------------------------------------------------------------------------//
-  unsigned char i,kk;
+  unsigned char i;
   if (Table) {
     for (i=0;i<Dim;i++){
       Table[i].Active = 0;
 
       Table[i].Lchan_info.W_idx = 0;
-      Table[i].Lchan_info.Bw_req_active=1;
       Table[i].Lchan_info.Meas_entry.Mac_meas_req.Mac_meas.Qdepth=0;
 
       Table[i].Lchan_info.Meas_entry.Status=IDLE;
-      Table[i].Lchan_info.Nb_sched_tb_ul=0;
-      Table[i].Lchan_info.Nb_sched_tb_dl=0;
-      Table[i].Lchan_info.Nb_sched_tb_ul_temp=0;
-      Table[i].Lchan_info.Nb_sched_tb_dl_temp=0;
-
       Table[i].Lchan_info.NB_TX=0;
       Table[i].Lchan_info.NB_TX_LAST=0;
       Table[i].Lchan_info.NB_BW_REQ_TX=0;
@@ -92,20 +65,12 @@ int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim) {
       Table[i].Lchan_info.output_rate=0;
       Table[i].Lchan_info.NB_RX=0;
 
-      Table[i].Lchan_info.NB_RX_ERRORS=0;
-      Table[i].Lchan_info.NB_RX_SACH_ERRORS=0;
-      Table[i].Lchan_info.NB_RX_SACCH_ERRORS=0;
-      Table[i].Lchan_info.NB_RX_SACH_MISSING=0;
       //      Table[i].Lchan_info.Phy_resources_rx_sched.Freq_alloc=0;
 
 
       Table[i].Lchan_info.Lchan_status_tx=IDLE;
       Table[i].Lchan_info.Lchan_status_rx=IDLE;
 
-      Table[i].Lchan_info.Nb_tx_last_tti=0;
-      Table[i].Lchan_info.Nb_rx_last_tti=0;
-      Table[i].Lchan_info.Last_sched_tti=0;
-      Table[i].Lchan_info.Last_feedback_tti=0;
       Table[i].Lchan_info.Tx_rate=0;
       Table[i].Lchan_info.Rx_rate=0;
       Table[i].Lchan_info.Rx_rate_temp=0;
@@ -114,11 +79,6 @@ int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim) {
       Table[i].Lchan_info.Req_rate=0;
       Table[i].Lchan_info.Spec_eff=0;
 
-      for (kk=0;kk<16;kk++) {
-	Table[i].Lchan_info.NB_TX_TB[kk]=0;    
-	Table[i].Lchan_info.NB_RX_TB[kk]=0;    
-	Table[i].Lchan_info.NB_RX_ERRORS_TB[kk]=0;  
-      }  
     }
   }
   else {
@@ -157,7 +117,6 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
     Lchan_entry=&CH_mac_inst[Mod_id].Ccch_lchan;
     break;
   case DCCH: 
-    Lchan_entry=&CH_mac_inst[Mod_id].Dcch_lchan[Req->UE_CH_index];
     Lchan_entry->Next_sched_limit=Mac_rlc_xface->frame + DCCH_SCHED_PERIOD;
     //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
     //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
@@ -171,7 +130,6 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
   case DTCH_BD:
     i=(Req->Lchan_id.Index & RAB_OFFSET) - DTCH_BD;
     Lchan_entry=&CH_mac_inst[Mod_id].Dtch_lchan[i][Req->UE_CH_index];
-    Lchan_entry->Lchan_info.Last_feedback_tti=Mac_rlc_xface->frame;
     //    Lchan_entry->Lchan_info.Phy_resources_tx.Time_alloc=DL_TIME_ALLOC;
     //    Lchan_entry->Lchan_info.Phy_resources_rx.Time_alloc=UL_TIME_ALLOC;
     msg("\n[LCHAN XFACE][CH %d] TTI %d: DTCH %d, UE_INDEX=%d,\n",
@@ -210,7 +168,6 @@ u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
     Lchan_entry->Lchan_info.Lchan_id.Index=Req->Lchan_id.Index;  
     Lchan_entry->Lchan_info.Lchan_status_tx = LCHAN_IDLE;
     Lchan_entry->Lchan_info.Lchan_status_rx = LCHAN_IDLE;
-    Lchan_entry->Lchan_info.UE_CH_index = Req->UE_CH_index;
     Lchan_entry->Lchan_info.Lchan_type = Req->Lchan_type;
     memcpy(&Lchan_entry->Lchan_info.Lchan_desc[0],(LCHAN_DESC*)&Req->Lchan_desc[0],LCHAN_DESC_SIZE);
     memcpy(&Lchan_entry->Lchan_info.Lchan_desc[1],(LCHAN_DESC*)&Req->Lchan_desc[1],LCHAN_DESC_SIZE);
@@ -295,7 +252,6 @@ u16 ue_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req){
     Lchan_entry->Lchan_info.Lchan_id.Index=Req->Lchan_id.Index;  
     Lchan_entry->Lchan_info.Lchan_status_tx = LCHAN_IDLE;
     Lchan_entry->Lchan_info.Lchan_status_rx = LCHAN_IDLE;
-    Lchan_entry->Lchan_info.UE_CH_index = Req->UE_CH_index;
     Lchan_entry->Lchan_info.Lchan_type = Req->Lchan_type;
     memcpy(&Lchan_entry->Lchan_info.Lchan_desc[0],(LCHAN_DESC*)&Req->Lchan_desc[0],LCHAN_DESC_SIZE);
     memcpy(&Lchan_entry->Lchan_info.Lchan_desc[1],(LCHAN_DESC*)&Req->Lchan_desc[1],LCHAN_DESC_SIZE);

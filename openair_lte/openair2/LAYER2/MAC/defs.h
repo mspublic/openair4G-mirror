@@ -168,10 +168,10 @@ ________________________________________________________________*/
  
 //#define NB_NODE_MAX 50
 
-#define BCCH 0
-#define CCCH 1
-#define DCCH 2
-#define DTCH_BD 3
+#define BCCH 3
+#define CCCH 0
+#define DCCH 1
+#define DTCH_BD 2
 #define DTCH    4
 #define DTCH_OFFSET DTCH+NB_RAB_MAX 
 //#ifdef MESH
@@ -224,102 +224,108 @@ ________________________________________________________________*/
 #define SINR_THRES1 (0)
 #define SINR_THRES2 (3)
 
+#define MAX_NUM_RB 11
+#define MAX_NUM_CE 5
 
 /*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
 #define NUM_DCI_MAX 32
 
 typedef struct {
-  unsigned char E:1;
-  unsigned char T:1;
-  unsigned char RAPID:6;
+  u8 E:1;
+  u8 T:1;
+  u8 RAPID:6;
 } __attribute__((__packed__))RA_HEADER_RAPID;
 
 typedef struct {
-  unsigned char E:1;
-  unsigned char T:1;
-  unsigned char R:2;
-  unsigned char BI:4;
+  u8 E:1;
+  u8 T:1;
+  u8 R:2;
+  u8 BI:4;
 } __attribute__((__packed__))RA_HEADER_BI;
 
 typedef struct {
-  unsigned char R:1;
-  unsigned short Timing_Advance_Command:11;
-  unsigned char hopping_flag:1;
-  unsigned short rb_alloc:10;
-  unsigned char mcs:4;
-  unsigned char TPC:3;
-  unsigned char UL_delay:1;
-  unsigned char cqi_req:1;
-  unsigned short t_crnti;
+  u8 R:1;
+  u16 Timing_Advance_Command:11;
+  u8 hopping_flag:1;
+  u16 rb_alloc:10;
+  u8 mcs:4;
+  u8 TPC:3;
+  u8 UL_delay:1;
+  u8 cqi_req:1;
+  u16 t_crnti;
 } __attribute__((__packed__))RAR_PDU;
 
 typedef struct {
-  unsigned char R:2;
-  unsigned char E:1;
-  unsigned char LCID:5;
-  unsigned char F:1;
-  unsigned char L:7;
+  u8 LCID:5;
+  u8 E:1;
+  u8 R:2;
+  u8 L:7;
+  u8 F:1;
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
-  unsigned char R:2;
-  unsigned char E:1;
-  unsigned char LCID:5;
-  unsigned char F:1;
-  unsigned short L:15;
+  u8 LCID:5;
+  u8 E:1;
+  u8 R:2;
+  u16 L:7;
+  u8 F:1;
+  u8 L2:8;
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
 
 typedef struct {
-  unsigned char R:2;
-  unsigned char E:1;
-  unsigned char LCID:5;
+  u8 LCID:5;
+  u8 E:1;
+  u8 R:2;
 } __attribute__((__packed__))SCH_SUBHEADER_FIXED;
 
 typedef struct {
-  unsigned char LCGID:2;
-  unsigned char Buffer_size:6;
+  u8 Buffer_size:6;
+  u8 LCGID:2;
 } __attribute__((__packed__))BSR_SHORT;
 
+typedef BSR_SHORT BSR_TRUNCATED;
+
 typedef struct {
-  unsigned char Buffer_size0:6;
-  unsigned char Buffer_size1:6;
-  unsigned char Buffer_size2:6;
-  unsigned char Buffer_size3:6;
+  u8 Buffer_size0:6;
+  u8 Buffer_size1:6;
+  u8 Buffer_size2:6;
+  u8 Buffer_size3:6;
 } __attribute__((__packed__))BSR_LONG;
 
 typedef struct {
-  unsigned char R:2;
-  unsigned char TA:6;
+  u8 TA:6;
+  u8 R:2;
 } __attribute__((__packed__))TIMING_ADVANCE_CMD;
 
 typedef struct {
-  unsigned char R:2;
-  unsigned char PH:6;
+  u8 PH:6;
+  u8 R:2;
 } __attribute__((__packed__))POWER_HEADROOM_CMD;
+
 
 typedef struct {
 
-  unsigned char Num_ue_spec_dci ; /*!< \brief Number of SACH in the current DL_SACCH payload */ 
-  unsigned char Num_common_dci  ; /*!< \brief Number of SACH available in the UL_SACH period */
+  u8 Num_ue_spec_dci ; /*!< \brief Number of SACH in the current DL_SACCH payload */ 
+  u8 Num_common_dci  ; /*!< \brief Number of SACH available in the UL_SACH period */
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;/*!< \brief Collection of DL_SACCH PDUs */
 } __attribute__((__packed__))DCI_PDU;
 
 typedef struct {
-  char Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+  s8 Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))CCCH_PDU;
 
 typedef struct {
 
-  unsigned char Num_bytes_bcch ; /*!< \brief Number of bytes contained in the current BCCH payload */
-  char Bcch_payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+  u8 Num_bytes_bcch ; /*!< \brief Number of bytes contained in the current BCCH payload */
+  s8 Bcch_payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))BCCH_PDU;
 
 // DLSCH LCHAN IDs
 #define CCCH_LCHANID 0
 #define UE_CONT_RES 28
-#define TIMING_ADVANCE 29
-#define DRX 30
-#define PADDING 31
+#define TIMING_ADV_CMD 29
+#define DRX_CMD 30
+#define SHORT_PADDING 31
 
 // ULSCH LCHAN IDs
 #define POWER_HEADROOM 26
@@ -331,20 +337,15 @@ typedef struct {
 /*! \brief Downlink SCH PDU Structure
  */
 typedef struct {
-#ifdef PHY_EMUL
-  // unsigned char CH_id;
-  //LCHAN_ID Lchan_id;   //H.A
-  unsigned short Pdu_size[2];
-#endif //PHY_EMUL
-  char payload[2][SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
-  unsigned short Pdu_size;
+  s8 payload[8][SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  u16 Pdu_size[8];
 } __attribute__ ((__packed__)) DLSCH_PDU;
 
 /*! \brief Uplink SCH PDU Structure
  */
 typedef struct {
-  char payload[SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
-  unsigned short Pdu_size;
+  s8 payload[SCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  u16 Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
 #ifdef PHY_EMUL
@@ -356,105 +357,57 @@ typedef struct {
 
 typedef struct{
   LCHAN_ID   Lchan_id; //only the LChan_id.Index is needed to identify LC in the CH side
-
-  unsigned short UE_CH_index; //ID of CH who configued the LC (Need this to identify LC in the UE side)
-  unsigned char Lchan_type; 
-  
-  unsigned char Qdepth;  
-  unsigned char Qdepth_temp; 
-  unsigned short W_idx; 
-  //unsigned char Qdepth;  //==> Rx arrival rate  //
-  
-/*  unsigned int NB_txmited;
-  unsigned int NB_rxmited;
-  unsigned int Tx_start_frame;
-  unsigned int Rx_start_frame;
-*/
+  u8 Lchan_type; 
+  u16 W_idx; 
   MAC_MEAS_REQ_ENTRY Meas_entry;
-
   LCHAN_DESC Lchan_desc[2]; //TX/RX LCHAN DESCRIPTOR
-  unsigned char Nb_tb_tx;//active (in Mac buffers)
-  unsigned char Nb_tb_rx;//active
-  char Current_payload_tx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
-  char Current_payload_rx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
-
-  unsigned char Lchan_status_tx,Lchan_status_rx;//???
-  PHY_RESOURCES Phy_resources_tx,Phy_resources_rx,Phy_resources_rx_sched;
-  unsigned char Target_spec_eff_rx;
-  unsigned char Dual_stream_flag_rx;
-  unsigned char Target_spec_eff_tx;
-  unsigned char Dual_stream_flag_tx;
-  // HARQ control
-  unsigned char Num_scheduled_tb[2];                            // Number of scheduled TBs in even/odd TTI
-  unsigned short Rx_ack_map[2];                                 // Received ACKs from opposite link in even/odd TTI
-  unsigned short Active_process_map_tx[2];                      // Active HARQ process map (TX) in even/odd TTI
-  unsigned short New_process_map_tx[2];                      // New HARQ process map (TX) in even/odd TTI
-  unsigned char Round_indices_tx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
-  unsigned char Round_indices_rx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
-  unsigned int NB_TX;
-  unsigned int NB_TX_LAST;
-  unsigned int NB_BW_REQ_TX;
-  unsigned int NB_BW_REQ_RX;
-  unsigned int output_rate;
-  unsigned int NB_RX;
-  unsigned int NB_RX_ERRORS;
-  unsigned int NB_RX_SACCH_ERRORS;
-  unsigned int NB_RX_SACH_ERRORS;
-  unsigned int NB_RX_SACH_MISSING;
-  unsigned char  Nb_sched_tb_ul;
-  unsigned char  Nb_sched_tb_ul_temp;
-  unsigned char  Nb_sched_tb_dl;
-  unsigned char  Nb_sched_tb_dl_temp;
-  unsigned int NB_TX_TB[64];
-  unsigned int NB_RX_TB[64];
-  unsigned int NB_RX_ERRORS_TB[64];
-  char Sch_index;                                              //UL_SCH_PILOT Time index
-  unsigned int Nb_tx_last_tti;
-  unsigned int Nb_rx_last_tti;
-  unsigned int Tx_rate;
-  unsigned int Rx_rate;
-  unsigned int Rx_rate_temp;
-  unsigned int Tx_rate_temp;
-  unsigned int Arrival_rate;
-  unsigned int Req_rate;
-  unsigned char Sched_flag;
-  unsigned int Last_sched_tti;
-  unsigned int Last_feedback_tti;
-  unsigned int Spec_eff;
-  unsigned char Bw_req_active;
-  //  unsigned char Target_spec_eff_tx;
-  //unsigned char Target_spec_eff_rx;
-  //unsigned char Dual_stream_flag;
-  //  unsigned char Direction;
+  u8 Current_payload_tx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
+  u8 Current_payload_rx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
+  u8 Lchan_status_tx,Lchan_status_rx;//???
+  u32 NB_TX;
+  u32 NB_TX_LAST;
+  u32 NB_BW_REQ_TX;
+  u32 NB_BW_REQ_RX;
+  u32 output_rate;
+  u32 NB_RX;
+  u32 Tx_rate;
+  u32 Rx_rate;
+  u32 Rx_rate_temp;
+  u32 Tx_rate_temp;
+  u32 Arrival_rate;
+  u32 Req_rate;
+  u32 Spec_eff;
 }LCHAN_INFO;
 #define LCHAN_INFO_SIZE sizeof(LCHAN_INFO)
 
+
 typedef struct{
   LCHAN_ID   Lchan_id; //UNIDIRECTIONEL, 
-  unsigned char Lchan_type; 
-  unsigned char Qdepth;  //==> Tx arrival rate  //==> which rate to achive target rate over SINR :PFS 
-  unsigned char Rate;
+  u8 Lchan_type; 
+  u8 Qdepth;  //==> Tx arrival rate  //==> which rate to achive target rate over SINR :PFS 
+  u8 Rate;
   MAC_MEAS_REQ_ENTRY Meas_entry;
   LCHAN_DESC Lchan_desc; //TX/RX LCHAN DESCRIPTOR
-  unsigned char Nb_tb;
-  unsigned char Lchan_status;//???
+  u8 Nb_tb;
+  u8 Lchan_status;//???
   PHY_RESOURCES Phy_resources;
   // HARQ control
-  unsigned char Num_scheduled_tb[2];                            // Number of scheduled TBs in even/odd TTI
-  unsigned short Rx_ack_map[2];                                 // Received ACKs from opposite link in even/odd TTI
-  unsigned short Active_process_map_tx[2];                      // Active HARQ process map (TX) in even/odd TTI
-  unsigned short New_process_map_tx[2];                      // New HARQ process map (TX) in even/odd TTI
-  unsigned char Round_indices_tx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
-  unsigned char Round_indices_rx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
+  u8 Num_scheduled_tb[2];                            // Number of scheduled TBs in even/odd TTI
+  u16 Rx_ack_map[2];                                 // Received ACKs from opposite link in even/odd TTI
+  u16 Active_process_map_tx[2];                      // Active HARQ process map (TX) in even/odd TTI
+  u16 New_process_map_tx[2];                      // New HARQ process map (TX) in even/odd TTI
+  u8 Round_indices_tx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
+  u8 Round_indices_rx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
 }LCHAN_INFO_DIL;
 
 #define LCHAN_INFO_DIL_SIZE sizeof(LCHAN_INFO_DIL)
 
+
 typedef struct LCHAN_INFO_TABLE_ENTRY{
   LCHAN_INFO Lchan_info;
-  unsigned char Active;
-  //unsigned char Config_status;
-  unsigned int Next_sched_limit;
+  u8 Active;
+  //u8 Config_status;
+  u32 Next_sched_limit;
   //  struct LCHAN_INFO_TABLE_ENTRY *Next_entry;
   //struct LCHAN_INFO_TABLE_ENTRY *Prev_entry;
 }LCHAN_INFO_TABLE_ENTRY;
@@ -462,9 +415,9 @@ typedef struct LCHAN_INFO_TABLE_ENTRY{
 
 typedef struct LCHAN_INFO_DIL_TABLE_ENTRY{
   LCHAN_INFO_DIL Lchan_info_dil;
-  unsigned char Active;
-  //unsigned char Config_status;
-  unsigned int Next_sched_limit;
+  u8 Active;
+  //u8 Config_status;
+  u32 Next_sched_limit;
   //  struct LCHAN_INFO_TABLE_ENTRY *Next_entry;
   //struct LCHAN_INFO_TABLE_ENTRY *Prev_entry;
 }LCHAN_INFO_DIL_TABLE_ENTRY;
@@ -474,20 +427,20 @@ typedef struct LCHAN_INFO_DIL_TABLE_ENTRY{
 typedef struct {
   LCHAN_ID Lchan_id;
   PHY_RESOURCES Phy_resources;
-  unsigned char Nb_tb;
+  u8 Nb_tb;
 } RX_SCHED;
 
 typedef struct{
   LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
   //  UL_ALLOC_PDU UL_alloc_pdu;
-  //  char Activation_tti;
+  //  s8 Activation_tti;
 } TX_OPS;
 
 
 typedef struct{
-  unsigned short Node_id;
-  unsigned char Num_dlsch;
-  unsigned char Num_ulsch;
+  u16 Node_id;
+  u8 Num_dlsch;
+  u8 Num_ulsch;
   DCI_PDU DCI_pdu;
   BCCH_PDU BCCH_pdu;
   CCCH_PDU CCCH_pdu;
@@ -498,23 +451,24 @@ typedef struct{
   LCHAN_INFO_DIL_TABLE_ENTRY Dtch_dil_lchan[NB_RAB_MAX][NB_CNX_CH+1][NB_CNX_CH-1];
   //MEAS_REQ_TABLE Meas_table;
   DEFAULT_CH_MEAS Def_meas[NB_CNX_CH+1];
+  DLSCH_PDU DLSCH_pdu[NB_CNX_CH+1][2];
   ULSCH_PDU RX_UL_sach_pdu;
   //DL_MEAS DL_meas;
   RX_SCHED Rx_sched[3][NUMBER_UL_SACH_MAX]; 
-  unsigned char Nb_rx_sched[3];
-  char Sinr_sorted_table[NB_CNX_CH+1][MAX_NB_SCHED]; 
-  char Sinr_sorted_index[NB_CNX_CH+1][MAX_NB_SCHED]; 
-  unsigned char Nb_sched;
-  //  unsigned char Sched_user[NB_CNX_CH+1];
-  //  unsigned short UL_MAP_USE;
-  //unsigned short DL_MAP_USE;
+  u8 Nb_rx_sched[3];
+  s8 Sinr_sorted_table[NB_CNX_CH+1][MAX_NB_SCHED]; 
+  s8 Sinr_sorted_index[NB_CNX_CH+1][MAX_NB_SCHED]; 
+  u8 Nb_sched;
+  //  u8 Sched_user[NB_CNX_CH+1];
+  //  u16 UL_MAP_USE;
+  //u16 DL_MAP_USE;
 }CH_MAC_INST;
 
 
 
 
 typedef struct{
-  unsigned short Node_id;
+  u16 Node_id;
   LCHAN_INFO_TABLE_ENTRY Bcch_lchan[NB_SIG_CNX_UE];
   LCHAN_INFO_TABLE_ENTRY Ccch_lchan[NB_SIG_CNX_UE];
   LCHAN_INFO_TABLE_ENTRY Dcch_lchan[NB_CNX_UE];
@@ -523,15 +477,15 @@ typedef struct{
   //MEAS_REQ_TABLE Meas_table;
   DEFAULT_UE_MEAS Def_meas[NB_SIG_CNX_UE];
   //  DCI_PDU RXDCI_pdu[NB_CNX_UE];
-  DLSCH_PDU RX_DLSCH_pdu[NB_CNX_UE];
+  DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
   //  UL_MEAS UL_meas[];
   //  DL_MEAS DL_meas[NB_CNX_UE];
   RX_SCHED Rx_sched[NB_CNX_UE][3][NUMBER_UL_SACH_MAX]; 
-  unsigned char Nb_rx_sched[NB_CNX_UE][3];
+  u8 Nb_rx_sched[NB_CNX_UE][3];
   TX_OPS Tx_ops[NB_CNX_UE][3][NUMBER_UL_SACH_MAX];
-  unsigned char Nb_tx_ops[NB_CNX_UE][3];
-  unsigned short CH_ul_freq_map[NB_SIG_CNX_UE];
-  unsigned char NB_decoded_chbch;
+  u8 Nb_tx_ops[NB_CNX_UE][3];
+  u16 CH_ul_freq_map[NB_SIG_CNX_UE];
+  u8 NB_decoded_chbch;
 }UE_MAC_INST;
 
 
@@ -546,79 +500,79 @@ typedef struct{
 
 //main.c
 
-void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index);
-void mrbch_phy_sync_failure(unsigned char Mod_id,unsigned char Free_ch_index);
+void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 int mac_top_init(void);
-char layer2_init_mr(unsigned char Mod_id);
-char layer2_init_ch(unsigned char Mod_id, unsigned char Free_ch_index);
-void mac_switch_node_function(unsigned char Mod_id);
+s8 layer2_init_mr(u8 Mod_id);
+s8 layer2_init_ch(u8 Mod_id, u8 Free_ch_index);
+void mac_switch_node_function(u8 Mod_id);
 int mac_init_global_param(void);
-void mac_top_cleanup(unsigned char Mod_id);
-void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index);
+void mac_top_cleanup(u8 Mod_id);
+void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 //nodeb_scheduler.c
-void nodeb_mac_scheduler_tx(unsigned char Mod_id,unsigned char subframe) ;
-void nodeb_mac_scheduler_rx(unsigned char Mod_id) ;
+void nodeb_mac_scheduler_tx(u8 Mod_id,u8 subframe) ;
+void nodeb_mac_scheduler_rx(u8 Mod_id) ;
 
 //ue_scheduler.c
-void ue_mac_scheduler_tx(unsigned char Mod_id) ;
-void ue_mac_scheduler_rx(unsigned char Mod_id) ;
+void ue_mac_scheduler_tx(u8 Mod_id) ;
+void ue_mac_scheduler_rx(u8 Mod_id) ;
 
 //nodeb_control_plane_procedures.c
 
-/*!\fn void nodeb_generate_dci(unsigned char Mod_id)
+/*!\fn void nodeb_generate_dci(u8 Mod_id)
 \brief This routine first retrieves the BCCH and CCCH logical channels from RRC.  It then fills the UL and DL allocation
 maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the 
 PHY CHBCH transmitter.
 @param Mod_id The MAC instance on which to act.
 */
-void nodeb_generate_dci(unsigned char);
+void nodeb_generate_dci(u8);
 
-/*!\fn void ch_fill_dil_map(unsigned char Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry)
+/*!\fn void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry)
 \brief This routine fills the DCI_PDU entries corresponding to a particular direct link logical channel
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
 */
-void ch_fill_dil_map(unsigned char Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry);
+void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry);
 
-/*!\fn void ch_fill_dl_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
+/*!\fn void ch_fill_dl_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
 \brief This routine fills the DCI_PDU entries corresponding to a particular downlink logical channel
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
 */
-void ch_fill_dl_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
+void ch_fill_dl_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
 
-/*!\fn void ch_fill_ul_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
+/*!\fn void ch_fill_ul_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
 \brief This routine fills the DCI_PDU entries corresponding to a particular uplink logical channel.  It operates in TTI \f$N-1\f$
 and prepares a DCI_PDU which will be on-air in TTI \f$N\f$.  Furthermore, the UL_MAP is used to schedule the RX resources (UL-SACH)
 for TTI \f$N+1\f$.
 @param Mod_id       The MAC instance on which to act
 @param *Lchan_entry Pointer to the logical channel physical channel allocations
 */
-void ch_fill_ul_map(unsigned char Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
+void ch_fill_ul_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
 
-/*!\fn void nodeb_scheduler(unsigned char Mod_id)
+/*!\fn void nodeb_scheduler(u8 Mod_id)
 \brief This routine is the top-level entry point for NodeB physical resource scheduling.  It performs downlink, uplink and direct link
 scheduling for the next TTI based on measurement feedback (RF and traffic) from nodes and local measurements. 
 @param Mod_id       The MAC instance on which to act
 */
-void nodeb_scheduler(unsigned char Mod_id);
+void nodeb_scheduler(u8 Mod_id);
 
-/*!\fn void nodeb_decode_ulsch(unsigned char Mod_id,ULSCH_PDU* ulsch_pdu,int *crc_status)
+/*!\fn void nodeb_decode_ulsch(u8 Mod_id,ULSCH_PDU* ulsch_pdu,int *crc_status)
 \brief This routine extracts the UL_SCH information.  
 @param Mod_id         The MAC instance on which to act
 @param *Sch_pdu      Pointer to an ULSCH_PDU structure containing PHY transport blocks
 @param *crc_status    Vector containing crc status of each transport block
 */
-void nodeb_decode_ulsch(unsigned char Mod_id,ULSCH_PDU* ulsch_pdu,unsigned short rnti);
+void nodeb_decode_ulsch(u8 Mod_id,ULSCH_PDU* ulsch_pdu,u16 rnti);
 
-/*!\fn void nodeb_generate_sch(unsigned char Mod_id)
+/*!\fn void nodeb_generate_sch(u8 Mod_id)
 \brief This routine first retrieves the maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the PHY DLSCH transmitter.
 @param Mod_id The MAC instance on which to act.
 */
-void nodeb_generate_dlsch(unsigned char Mod_id);
+void nodeb_generate_dlsch(u8 Mod_id);
 
-/*!\fn void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_alloc_map,unsigned char *User_alloc_map,unsigned short rb_map)
+/*!\fn void schedule_dcch(u8 Mod_id,u8 User,u16 *Freq_alloc_map,u8 *User_alloc_map,u16 rb_map)
 \brief This routine is used by the NodeB scheduler to allocate resources for dcch channels.
 @param Mod_id The MAC instance on which to act
 @param User User index
@@ -632,45 +586,45 @@ void nodeb_generate_bcch(u8 Mod_id);
 void nodeb_generate_ccch(u8 Mod_id);
 
 
-void schedule_dcch(unsigned char Mod_id,unsigned char User,unsigned short *Freq_alloc_map,unsigned char *User_alloc_map,unsigned short rb_map);
+void schedule_dcch(u8 Mod_id,u8 User,u16 *Freq_alloc_map,u8 *User_alloc_map,u16 rb_map);
 
-unsigned short fill_rar(unsigned char *dlsch_buffer,
-	      unsigned short N_RB_UL,
-	      unsigned char input_buffer_length,
-	      unsigned short timing_advance_cmd);
+u16 fill_rar(u8 *dlsch_buffer,
+	      u16 N_RB_UL,
+	      u8 input_buffer_length,
+	      u16 timing_advance_cmd);
 
-unsigned short process_rar(unsigned char *dlsch_buffer,unsigned short *);
+u16 process_rar(u8 *dlsch_buffer,u16 *);
 
 
 //ue_control_plane_procedures
 
 
 
-void ue_complete_dl_data_req(unsigned char Mod_id);
+void ue_complete_dl_data_req(u8 Mod_id);
 void ue_get_dil_sach(u8 Mod_id);
-void mac_check_rlc_queues_status(unsigned char, unsigned char,unsigned short *);//, UL_SACCH_FB *);
-void ue_fill_macphy_data_req(unsigned char ,LCHAN_INFO_TABLE_ENTRY *,unsigned char);
-//void ue_decode_sch(unsigned char Mod_id, UL_MEAS *UL_meas,unsigned short Index);
-void ue_decode_dlsch(unsigned char,DLSCH_PDU *,unsigned short);
-void ue_generate_rach(unsigned char,unsigned char);
-void ue_generate_sch(unsigned char);
-void ue_scheduler(unsigned char, unsigned char);
+void mac_check_rlc_queues_status(u8, u8,u16 *);//, UL_SACCH_FB *);
+void ue_fill_macphy_data_req(u8 ,LCHAN_INFO_TABLE_ENTRY *,u8);
+//void ue_decode_sch(u8 Mod_id, UL_MEAS *UL_meas,u16 Index);
+void ue_decode_dlsch(u8,DLSCH_PDU *,u16);
+void ue_generate_rach(u8,u8);
+void ue_generate_sch(u8);
+void ue_scheduler(u8, u8);
 
 void ue_get_chbch(u8 Mod_id, u8 CH_index);
 
-int is_lchan_ul_scheduled(unsigned char Mod_id, unsigned char CH_index, unsigned short Lchan_index);
+int is_lchan_ul_scheduled(u8 Mod_id, u8 CH_index, u16 Lchan_index);
 
 //lchan_interface.h
-int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, unsigned char Dim);
-unsigned short mac_config_req(unsigned char Mod_id,unsigned char Action,MAC_CONFIG_REQ *Req);
-unsigned short ch_mac_config_req(unsigned char Mod_id,unsigned char Action,MAC_CONFIG_REQ *Req);
-unsigned short ue_mac_config_req(unsigned char Mod_id,unsigned char Action,MAC_CONFIG_REQ *Req);
-MAC_MEAS_REQ_ENTRY* mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
-MAC_MEAS_REQ_ENTRY* ch_mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
-MAC_MEAS_REQ_ENTRY* ue_mac_meas_req(unsigned char Mod_id,MAC_MEAS_REQ *Meas_req);
-//void mac_update_meas(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas);
-unsigned char mac_check_meas_trigger(MAC_MEAS_REQ *Meas_req);
-unsigned char mac_check_meas_ind(MAC_MEAS_REQ_ENTRY *Meas_entry);
+int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim);
+u16 mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
+u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
+u16 ue_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
+MAC_MEAS_REQ_ENTRY* mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
+MAC_MEAS_REQ_ENTRY* ch_mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
+MAC_MEAS_REQ_ENTRY* ue_mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
+//void mac_update_meas(u8 Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas);
+u8 mac_check_meas_trigger(MAC_MEAS_REQ *Meas_req);
+u8 mac_check_meas_ind(MAC_MEAS_REQ_ENTRY *Meas_entry);
 
 //openair2_proc.c
 /*!\fn int add_openair2_stats()
@@ -679,7 +633,7 @@ unsigned char mac_check_meas_ind(MAC_MEAS_REQ_ENTRY *Meas_entry);
 */
 int add_openair2_stats(void);
 
-/*!\fn int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
+/*!\fn int openair2_stats_read(s8 *buffer, s8 **my_buffer, off_t off, int length)
 \brief This routine initialized the openair2 /proc/openair2 entry.
 @param buffer Pointer to string
 @param my_buffer 
@@ -688,17 +642,17 @@ int add_openair2_stats(void);
 @returns length of string in bytes
 */
 #ifdef USER_MODE
-int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length);
+int openair2_stats_read(s8 *buffer, s8 **my_buffer, off_t off, int length);
 #endif
 //utils.h
-/*!\fn char *print_cqi(unsigned int cqi)
+/*!\fn s8 *print_cqi(u32 cqi)
 \brief This routine prints the CQI information.
 @param cqi 32-bit CQI value
 @returns A pointer to a string containing the CQI information
 */
-char *print_cqi(unsigned int cqi);
+s8 *print_cqi(u32 cqi);
 
-/*!\fn unsigned char conv_alloc_to_tb2(unsigned char node_type,unsigned char time_alloc,unsigned short freq_alloc,unsigned char target_spec_eff,unsigned char dual_stream_flag,unsigned char nb_tb_max,unsigned char *coding_fmt,unsigned char *num_tb,unsigned short tb_size_bytes)
+/*!\fn u8 conv_alloc_to_tb2(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 target_spec_eff,u8 dual_stream_flag,u8 nb_tb_max,u8 *coding_fmt,u8 *num_tb,u16 tb_size_bytes)
 @param node_type Type of node (0 CH, 1 UE)
 @param time_alloc Allocated time map
 @param freq_alloc Allocated frequency map
@@ -711,33 +665,33 @@ char *print_cqi(unsigned int cqi);
 */
 
 #ifdef PHY_EMUL
-unsigned char conv_alloc_to_tb2(unsigned char node_type,unsigned char time_alloc,unsigned short freq_alloc,unsigned char target_spec_eff,unsigned char dual_stream_flag,unsigned char num_tb_max,unsigned char *coding_fmt,unsigned char *num_tb,unsigned short tb_size_bytes);
+u8 conv_alloc_to_tb2(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 target_spec_eff,u8 dual_stream_flag,u8 num_tb_max,u8 *coding_fmt,u8 *num_tb,u16 tb_size_bytes);
 
-char conv_alloc_to_coding_fmt(unsigned char node_type,
-				       unsigned char time_alloc,
-				       unsigned short freq_alloc,
-				       unsigned char target_spec_eff,
-				       unsigned char dual_stream_flag,
-			      // unsigned char num_tb_max,
-				       unsigned char *coding_fmt,
-				       unsigned char *num_tb,
-				       unsigned short tb_size_bytes);
+s8 conv_alloc_to_coding_fmt(u8 node_type,
+				       u8 time_alloc,
+				       u16 freq_alloc,
+				       u8 target_spec_eff,
+				       u8 dual_stream_flag,
+			      // u8 num_tb_max,
+				       u8 *coding_fmt,
+				       u8 *num_tb,
+				       u16 tb_size_bytes);
 
 
-unsigned char conv_alloc_to_tb(unsigned char node_type,unsigned char time_alloc,unsigned short freq_alloc,unsigned char coding_fmt,unsigned short tb_size_bytes);
+u8 conv_alloc_to_tb(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 coding_fmt,u16 tb_size_bytes);
 #endif
 
 
-void emul_phy_sync(unsigned char Mod_id, unsigned char Chbch_index);
+void emul_phy_sync(u8 Mod_id, u8 Chbch_index);
 
 void copy_phy_resources(PHY_RESOURCES *To,PHY_RESOURCES *From);
 
 //scheduler
-void macphy_scheduler(unsigned char last_slot) ;
-void swap_oai(char *Array,char a, char b);
-char partition( char *a, char *,char low, char high );
-void quicksort( char *a, char *b, char low, char high );
-void q_sort(char low, char high );
+void macphy_scheduler(u8 last_slot) ;
+void swap_oai(s8 *Array,s8 a, s8 b);
+s8 partition( s8 *a, s8 *,s8 low, s8 high );
+void quicksort( s8 *a, s8 *b, s8 low, s8 high );
+void q_sort(s8 low, s8 high );
 //int SplitArray(int* array, int *indices, int pivot, int startIndex, int endIndex);
 //void quicksort(int* array, int * indices, int startIndex, int endIndex);
 

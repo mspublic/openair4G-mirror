@@ -79,8 +79,6 @@ char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
   CH_mac_inst[Mod_id].Nb_rx_sched[0]=0;
   CH_mac_inst[Mod_id].Nb_rx_sched[1]=0;
   CH_mac_inst[Mod_id].Nb_rx_sched[2]=0;
-  memcpy(&CH_mac_inst[Mod_id].Bcch_lchan.Lchan_info.Phy_resources_tx,
-	 (PHY_RESOURCES*)&CHBCH_PHY_RESOURCES[CH_index],sizeof(PHY_RESOURCES));
   //  CH_mac_inst[Mod_id].RX_rach_pdu.Rach_payload=(char*)malloc16(RACH_PAYLOAD_SIZE_MAX);
   CH_mac_inst[Mod_id].Node_id=NODE_ID[Mod_id];
   for(i=0;i<(NB_CNX_CH+1);i++){
@@ -122,8 +120,6 @@ char layer2_init_mr(unsigned char Mod_id){
     for(j=0;j<3;j++){
       UE_mac_inst[Nb_mod].Nb_tx_ops[CH_index][j]=0;
     }
-    memcpy(&UE_mac_inst[Nb_mod].Bcch_lchan[CH_index].Lchan_info.Phy_resources_rx,
-	   (PHY_RESOURCES*)&CHBCH_PHY_RESOURCES[CH_index],sizeof(PHY_RESOURCES));
     UE_mac_inst[Nb_mod].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=(CH_index << RAB_SHIFT2)+BCCH;
     UE_mac_inst[Nb_mod].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=(CH_index << RAB_SHIFT2)+CCCH;
     UE_mac_inst[Nb_mod].Node_id=NODE_ID[Nb_mod];
@@ -239,7 +235,7 @@ int mac_init_global_param(){
 
   msg("[MAC] malloc16 OK, mac_rlc_xface @ %p\n",(void *)Mac_rlc_xface);  
 
-  mac_xface->macphy_data_ind=macphy_data_ind;
+  //  mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   mac_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
@@ -260,8 +256,6 @@ int mac_init_global_param(){
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   
-  msg("[MAC] Init CHBCH_PHY_RESOURCES\n");
-
   /*  
   CHBCH_PHY_RESOURCES[0].Time_alloc=CHBCH_TIME_ALLOC;
   CHBCH_PHY_RESOURCES[0].Freq_alloc=0x0f0f;
