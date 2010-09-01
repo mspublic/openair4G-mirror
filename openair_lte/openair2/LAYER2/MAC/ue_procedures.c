@@ -1,0 +1,434 @@
+/*________________________ue_control_plane_procedures.c________________________
+
+  Authors : Hicham Anouar, Raymond Knopp
+  Company : EURECOM
+  Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
+  ________________________________________________________________*/
+
+#include "extern.h"
+#include "defs.h"
+#ifdef PHY_EMUL
+#include "SIMULATION/PHY_EMULATION/impl_defs.h"
+#else
+#include "PHY/impl_defs.h"
+#endif
+#include "PHY_INTERFACE/defs.h"
+#include "PHY_INTERFACE/extern.h"
+#include "COMMON/mac_rrc_primitives.h"
+#include "RRC/MESH/extern.h"
+#ifdef PHY_EMUL
+#include "SIMULATION/simulation_defs.h"
+#endif
+
+//#define DEBUG_UE_MAC_CTRL
+//#define DEBUG_UE_MAC_RLC
+//#define DEBUG_MAC_REPORT
+//#define DEBUG_MAC_SCHEDULING
+
+#define DEBUG_RACH_MAC
+#define DEBUG_RACH_RRC
+#define DEBUG_SI_RRC
+#define DEBUG_HEADER_PARSING
+
+unsigned char *parse_header(unsigned char *mac_header,
+			    unsigned char *num_ce,
+			    unsigned char *num_sdu,
+			    unsigned char *rx_ces,
+			    unsigned char *rx_lcids,
+			    unsigned short *rx_lengths) {
+
+  unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
+  unsigned char *mac_header_ptr = mac_header;
+  unsigned short length;
+
+  while (not_done==1) {
+
+    if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0)
+      not_done = 0;
+
+    lcid = ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID;
+    if (lcid < UE_CONT_RES) {
+
+      if (((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F == 0) {
+	length = ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L;
+	mac_header_ptr += sizeof(SCH_SUBHEADER_SHORT);
+      }
+      else {
+	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L + ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2)<<7);
+	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
+      }
+#ifdef DEBUG_HEADER_PARSING
+      msg("sdu %d lcid %d length %d\n",num_sdus,lcid,length);
+#endif
+      rx_lcids[num_sdus] = lcid;
+      rx_lengths[num_sdus] = length;
+      num_sdus++;
+    }
+    else {  // This is a control element subheader
+      rx_ces[num_ces] = lcid;
+      num_ces++;
+#ifdef DEBUG_HEADER_PARSING
+      msg("ce %d lcid %d\n",num_ces,lcid);
+#endif
+
+
+      mac_header_ptr += sizeof(SCH_SUBHEADER_FIXED);
+    }
+  }
+  *num_ce = num_ces;
+  *num_sdu = num_sdus;
+
+  return(mac_header_ptr);
+}
+
+
+
+
+
+void dlsch_rx(u8 Mod_id,unsigned char *sdu,unsigned int frame,unsigned short subframe,u8 CH_index) {
+
+  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
+  unsigned char rx_lcids[MAX_NUM_RB];
+  unsigned short rx_lengths[MAX_NUM_RB];
+
+#ifdef DEBUG_HEADER_PARSING
+  msg("[MAC][UE RX] Frame %d, subframe %d: Received dlsch sdu from L1, parsing header\n",
+      frame,subframe);
+#endif
+  payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
+
+#ifdef DEBUG_HEADER_PARSING
+  msg("Num CE %d, Num SDU %d\n",num_ce,num_sdu);
+#endif
+
+  for (i=0;i<num_ce;i++) {
+
+      switch (rx_ces[i]) {
+      case UE_CONT_RES:
+	//#ifdef DEBUG_HEADER_PARSING
+	msg("[MAC][UE] CE %d : UE contention resolution for RRC :",i);
+	msg("%x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
+	// Send to RRC here
+	//#endif
+	payload_ptr+=6;
+	break;
+      case TIMING_ADV_CMD: 
+#ifdef DEBUG_HEADER_PARSING
+	msg("CE %d : UE Timing Advance :",i);
+	msg("%d\n",payload_ptr[0]);
+#endif
+	process_timing_advance(payload_ptr[0]);
+	payload_ptr++;
+	break;
+      case DRX_CMD:
+#ifdef DEBUG_HEADER_PARSING
+	msg("CE %d : UE DRX :",i);
+#endif
+	payload_ptr++;
+	break;
+      case SHORT_PADDING:
+#ifdef DEBUG_HEADER_PARSING
+	msg("CE %d : UE 1 byte Padding :",i);
+#endif
+	payload_ptr++;
+	break;
+      }
+  }
+  for (i=0;i<num_sdu;i++) {
+#ifdef DEBUG_HEADER_PARSING
+    msg("SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
+#endif
+    if (rx_lcids[i] == CCCH) {
+      if(UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Active==1){
+	msg("offset: %d\n",(u8)((u8*)payload_ptr-sdu));
+	Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
+				    CCCH,
+				    (char *)payload_ptr,rx_lengths[i],CH_index);
+      }
+    }
+    else if (rx_lcids[i] == DCCH) {
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+				      DCCH,
+				      (u8 *)payload_ptr,
+				      DCCH_LCHAN_DESC.transport_block_size,
+				      rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
+				      NULL);
+    }
+    payload_ptr+=rx_lengths[i];
+  }
+  /*
+
+
+	*/
+}
+
+void ue_decode_si(u8 Mod_id, unsigned char CH_index, void *pdu,unsigned short len) {
+
+#ifdef DEBUG_SI_RRC
+  msg("[MAC][UE] Sending SI to RRC (Lchan Id %d)\n",UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index);
+#endif
+  if(UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Active==1){
+    Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index,(char *)pdu,len,0);//CH_index);
+  }
+}
+
+unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
+
+
+  u8 Size=0,W_idx=2,j;
+  MACPHY_DATA_REQ *Macphy_data_req;
+
+  if (Is_rrc_registered == 1) {
+    Size = Rrc_xface->mac_rrc_data_req(Mod_id+NB_CH_INST,
+				       UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index,1,
+				       &UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0],
+				       CH_index);
+    if (Size>0)
+      return((char*)&UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0]);
+  }
+  return(NULL);
+ 
+}
+
+unsigned char generate_ulsch_header(u8 *mac_header,
+				    u8 num_sdus,
+				    u8 short_padding,
+				    u16 *sdu_lengths,
+				    u8 *sdu_lcids,
+				    POWER_HEADROOM_CMD *power_headroom,
+				    u16 *crnti,
+				    BSR_SHORT *truncated_bsr,
+				    BSR_SHORT *short_bsr,
+				    BSR_LONG *long_bsr) {
+
+  SCH_SUBHEADER_FIXED *mac_header_ptr = (SCH_SUBHEADER_FIXED *)mac_header;
+  unsigned char first_element=0,last_size=0,i;
+  unsigned char mac_header_control_elements[16],*ce_ptr;
+
+  ce_ptr = &mac_header_control_elements[0];
+
+  if ((short_padding == 1) || (short_padding == 2)) {
+    mac_header_ptr->R    = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    first_element=1;
+    last_size=1;
+  }
+  if (short_padding == 2) {
+    mac_header_ptr->E = 1;
+    mac_header_ptr++;
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_PADDING;
+    last_size=1;
+  }
+
+  if (power_headroom) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = POWER_HEADROOM;
+    last_size=1;
+    *((POWER_HEADROOM_CMD *)ce_ptr)=(*power_headroom);
+    ce_ptr+=sizeof(POWER_HEADROOM_CMD);
+
+  }
+
+  if (crnti) {
+    //    printf("Timing advance : %d (first_element %d)\n",timing_advance_cmd,first_element);
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = CRNTI;
+    last_size=1;
+    *((u16 *)ce_ptr)=(*crnti);
+    ce_ptr+=sizeof(u16);
+    //    printf("offset %d\n",ce_ptr-mac_header_control_elements);
+  }
+ 
+  if (truncated_bsr) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      /*
+      printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      */
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    msg("[MAC][UE Scheduler] Truncated BSR Header\n");
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = TRUNCATED_BSR;
+    last_size=1;
+    *((BSR_TRUNCATED *)ce_ptr)=(*truncated_bsr);
+    ce_ptr+=sizeof(BSR_TRUNCATED);
+
+    //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
+  }
+  else if (short_bsr) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      /*
+      printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      */
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    msg("[MAC][UE Scheduler] SHORT BSR Header\n");
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = SHORT_BSR;
+    last_size=1;
+    *((BSR_SHORT *)ce_ptr)=(*short_bsr);
+    ce_ptr+=sizeof(BSR_SHORT);
+
+    //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
+  }
+  else if (long_bsr) {
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      /*
+      printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      */
+      mac_header_ptr++;
+    }
+    else {
+      first_element=1;
+    }
+    msg("[MAC][UE Scheduler] Long BSR Header\n");
+    mac_header_ptr->R = 0;
+    mac_header_ptr->E    = 0;
+    mac_header_ptr->LCID = LONG_BSR;
+    last_size=1;
+    *((BSR_LONG *)ce_ptr)=(*long_bsr);
+    ce_ptr+=sizeof(BSR_LONG);
+
+    //    printf("(cont_res) : offset %d\n",ce_ptr-mac_header_control_elements);
+  }
+  //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+
+  for (i=0;i<num_sdus;i++) {
+    printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+
+    if (first_element>0) {
+      mac_header_ptr->E = 1;
+      //      printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+      mac_header_ptr+=last_size;
+      //      printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
+    }
+    else {
+      first_element=1;
+    }
+    if (sdu_lengths[i] < 128) {
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0; 
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;     
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
+      last_size=2;
+      printf("short sdu\n");
+    }
+    else {
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0; 
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;     
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7f;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2   = (sdu_lengths[i]>>7)&0xff;
+
+      last_size=3;
+      printf("long sdu\n");
+    }
+  }
+
+  mac_header_ptr+=last_size;
+  memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
+  mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
+
+  return((unsigned char*)mac_header_ptr - mac_header);
+
+}
+
+void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
+
+  mac_rlc_status_resp_t rlc_status;
+  u8 header_len;
+  u16 sdu_size_dcch,sdu_lengths[8],i;
+  u8 dcch_buffer[32],sdu_lcids[8],payload_offset=0,num_sdus=0;
+  u8 DCCH_not_empty;
+
+  // Compute header length
+  // check for UL bandwidth requests and add SR control element
+  header_len = 2;
+  
+  
+  // Check for DCCH first
+  DCCH_not_empty=1;
+  sdu_lengths[0]=0;
+  while (DCCH_not_empty==1) {
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,DCCH,
+				    (buflen-header_len)/DCCH_LCHAN_DESC.transport_block_size,
+				    DCCH_LCHAN_DESC.transport_block_size);
+    if (rlc_status.bytes_in_buffer>0) {
+      msg("[MAC][UE] DCCH has %d bytes to send (buffer %d, header %d)\n",rlc_status.bytes_in_buffer,buflen,header_len);
+      
+      sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
+							DCCH,
+							&dcch_buffer[sdu_lengths[0]]);
+      sdu_lcids[0] = DCCH;
+      msg("[MAC][UE] Got %d bytes for DCCH :",sdu_lengths[0]);
+      num_sdus = 1;
+    }
+    else
+      DCCH_not_empty=0;
+  }
+  
+// now check for other logical channels
+
+  // Generate header
+  if (num_sdus>0) {
+    payload_offset = generate_ulsch_header(ulsch_buffer,
+					   num_sdus,
+					   0,
+					   sdu_lengths,
+					   sdu_lcids,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL,
+					   NULL);
+    msg("[MAC][UE] Payload offset %d\n",payload_offset);
+
+    // cycle through SDUs and place in ulsch_buffer
+    memcpy(&ulsch_buffer[payload_offset],dcch_buffer,sdu_lengths[0]);
+  }
+}
+
