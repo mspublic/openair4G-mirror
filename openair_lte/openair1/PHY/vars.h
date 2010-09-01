@@ -60,7 +60,7 @@ LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_1A,*dlsch_eNb_cntl,*dlsch_eNb_ra;
 LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
 LTE_eNb_ULSCH_t **ulsch_eNb;
 LTE_UE_ULSCH_t **ulsch_ue;
-LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
+LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
 
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;

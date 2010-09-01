@@ -30,7 +30,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   DLSCH_alloc_pdu1A.rballoc            = CCCH_RB_ALLOC;
   DLSCH_alloc_pdu1A.ndi      = 1;
   DLSCH_alloc_pdu1A.rv       = 1;
-  DLSCH_alloc_pdu1A.mcs      = 0;
+  DLSCH_alloc_pdu1A.mcs      = 2;
   DLSCH_alloc_pdu1A.harq_pid = 0;
   DLSCH_alloc_pdu1A.TPC      = 1;   // set to 3 PRB
 

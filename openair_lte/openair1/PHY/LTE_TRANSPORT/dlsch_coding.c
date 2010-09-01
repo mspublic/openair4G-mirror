@@ -97,10 +97,12 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
     }
 
     if (exit_flag==0) {
-      for (i=0;i<Mdlharq;i++)
+      for (i=0;i<Mdlharq;i++) {
 	for (j=0;j<96;j++)
 	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
 	    dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
+	dlsch->harq_processes[i]->round=0;
+      }
       return(dlsch);
     }
   }
@@ -116,7 +118,7 @@ int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_eNb_DLSCH_t *dlsch) {
   
-  unsigned short offset;
+  unsigned short offset,i;
   unsigned int coded_bits_per_codeword;
   unsigned int crc=1;
   unsigned short iind;
@@ -130,6 +132,7 @@ int dlsch_encoding(unsigned char *a,
 
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
+  //  printf("dlsch_coding: TBS %d, mcs %d\n",dlsch->harq_processes[harq_pid]->TBS,dlsch->harq_processes[harq_pid]->mcs);
   // This has to be updated for presence of PBCH/PSCH
   // This assumes no data in pilot symbols (i.e. for multi-cell orthogonality, to be updated for strict LTE compliance
   /*
@@ -140,7 +143,13 @@ int dlsch_encoding(unsigned char *a,
   coded_bits_per_codeword = ( nb_rb * (12 * mod_order) * (frame_parms->num_dlsch_symbols));
 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
-    
+
+    /*
+    printf("dlsch (tx): \n");
+    for (i=0;i<4;i++)
+      printf("%x ",a[i]);
+    printf("\n");
+    */
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
 		 A)>>8;

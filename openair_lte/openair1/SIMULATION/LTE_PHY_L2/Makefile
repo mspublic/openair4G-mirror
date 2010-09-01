@@ -11,7 +11,7 @@ TOP_DIR = ../..
 OPENAIR2_DIR = ../../../openair2
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 -Wno-packed-bitfield-compat
+CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
@@ -182,9 +182,11 @@ SOURCES_L2 +=  $(MEM_DIR)/mem_block.c
 
 RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o $(RRC_DIR)/utils.o 
 
-PHY_INTERFACE_OBJS = $(PHY_INTERFACE_DIR)/mac_phy_primitives.o
+#PHY_INTERFACE_OBJS = $(PHY_INTERFACE_DIR)/mac_phy_primitives.o
 
-MAC_OBJS = $(MAC_DIR)/openair2_proc.o $(MAC_DIR)/layer2_scheduler.o $(MAC_DIR)/nodeb_scheduler.o $(MAC_DIR)/ue_scheduler.o $(MAC_DIR)/main.o $(MAC_DIR)/ue_control_plane_procedures.o $(MAC_DIR)/nodeb_control_plane_procedures.o $(MAC_DIR)/lchan_interface.o $(MAC_DIR)/rar_tools.o
+MAC_OBJS = $(MAC_DIR)/layer2_scheduler.o $(MAC_DIR)/main.o $(MAC_DIR)/lchan_interface.o $(MAC_DIR)/ue_procedures.o $(MAC_DIR)/rar_tools.o $(MAC_DIR)/eNB_scheduler.o
+
+#MAC_OBJS += $(MAC_DIR)/openair2_proc.o
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 

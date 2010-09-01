@@ -120,12 +120,12 @@ int main(int argc, char **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.5,Td=1.0,iqimb = 0;
+  double aoa=.03,ricean_factor=0.0005,Td=0.8,iqimb = 0;
   int channel_length;
   struct complex **ch;
 
   int eNb_id = 0, eNb_id_i = 1;
-  unsigned char mcs,dual_stream_UE = 0;
+  unsigned char mcs,dual_stream_UE = 0,awgn_flag=0;
   unsigned short NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
   unsigned char Ns,l,m;
 
@@ -159,13 +159,18 @@ int main(int argc, char **argv) {
   num_layers = 1;
 
   printf("argc %d\n",argc);
+
   if (argc<2) {
-    mcs = 0;
-    printf("Setting mcs = %d\n",mcs);
+    awgn_flag = 1; 
+    mcs=0;
   }
   else if (argc>=2){
-    mcs = atoi(argv[1]);
-    printf("Setting mcs to %d\n",mcs);
+    awgn_flag = atoi(argv[1]);
+    printf("Setting awgn_flag to %d\n",awgn_flag);
+  }
+
+  if (argc>=3) {
+    mcs=atoi(argv[2]);
   }
 
   printf("NPRB = %d\n",NB_RB);
@@ -205,18 +210,18 @@ int main(int argc, char **argv) {
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
 
-  if (argc>=3) {
-    snr0 = atof(argv[2]);
+  if (argc>=4) {
+    snr0 = atof(argv[3]);
   }
   snr1 = snr0+10.0;
 
 
-  if (argc>=4) {
-    ricean_factor = atof(argv[3]);
+  if (argc>=5) {
+    ricean_factor = atof(argv[4]);
   }
 
-  if (argc>5) {
-    Td = atof(argv[4]);
+  if (argc>6) {
+    Td = atof(argv[5]);
   }
 
   printf("Target mcs %d\n",mcs);
@@ -309,7 +314,7 @@ int main(int argc, char **argv) {
   if (DLSCH_alloc_pdu2.tpmi == 5) {
     dlsch_eNb[0]->pmi_alloc = (unsigned short)(taus()&0xffff);
     dlsch_ue[0]->pmi_alloc = dlsch_eNb[0]->pmi_alloc;
-    eNB_UE_stats[0].DL_pmi_single[0] = dlsch_eNb[0]->pmi_alloc;
+    eNB_UE_stats[0][0].DL_pmi_single = dlsch_eNb[0]->pmi_alloc;
   }
   
   generate_eNb_dlsch_params_from_dci(0,
@@ -394,10 +399,11 @@ int main(int argc, char **argv) {
 
     round=0;
     for (trials = 0;trials<N_TRIALS;trials++) {
-      //      printf("Trial %d\n",trials);
+      printf("*",trials);
+      fflush(stdout);
       round=0;
       while (round < 4) {
-	//	printf("Trial %d : Round %d",trials,round);
+	//	printf("Trial %d : Round %d ",trials,round);
 	round_trials[round]++;
 	if (round == 0) {
 	  dlsch_eNb[0]->harq_processes[0]->Ndi = 1;
@@ -542,29 +548,27 @@ int main(int argc, char **argv) {
 	
 	for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
 	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-	    s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+	    if (awgn_flag == 0) {
+               s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+	       s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+            }
+            else {
+               r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+               r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+            }
 	  }
 	}
-	
-	// multipath channel
-#ifdef AWGN // copy s_re and s_im to r_re and r_im
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-      r_re[aa][i] = s_re[aa][i];
-      r_im[aa][i] = s_im[aa][i];
-    }
-  }
-#else
-	multipath_channel(ch,s_re,s_im,r_re,r_im,
-			  amps,Td,BW,ricean_factor,aoa,
+<<<<<<< .mine
+        if (awgn_flag == 0) {	
+	  multipath_channel(ch,s_re,s_im,r_re,r_im,
+	    		  amps,Td,BW,ricean_factor,aoa,
 			  lte_frame_parms->nb_antennas_tx,
 			  lte_frame_parms->nb_antennas_rx,
 			  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,//FRAME_LENGTH_COMPLEX_SAMPLES,
 			  channel_length,0,
 			  1,1);
-#endif
-
+        }
+	//(double)tx_lev_dB - (SNR+sigma2_dB));
 #ifdef OUTPUT_DEBUG
 	write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 #endif
@@ -646,13 +650,15 @@ int main(int argc, char **argv) {
 		dlsch_active = 0;
 		if (round==0) {
 		  dci_errors++;
-#ifdef OUTPUT_DEBUG
-		  printf("DCI error trial %d errs[0] %d\n",trials,errs[0]);
+		  round=5;
+		  errs[0]++;
+		  round_trials[0]++;
+		  //		  printf("DCI error trial %d errs[0] %d\n",trials,errs[0]);
 #endif
                 }
-		for (i=1;i<=round;i++)
-		  round_trials[i]--;
-		round=0;
+		//		for (i=1;i<=round;i++)
+		//		  round_trials[i]--;
+		//		round=5;
 	      }
 		
 	      for (i=0;i<dci_cnt;i++) {
@@ -672,13 +678,16 @@ int main(int argc, char **argv) {
 		  dlsch_active = 0;
 		  if (round==0) {
 		     dci_errors++;
+		     errs[0]++;
+		     round_trials[0]++;
 #ifdef OUTPUT_DEBUG
 	 	     printf("DCI misdetection trial %d\n",trials);
+		     round=5;
 #endif
                   }
-		  for (i=1;i<=round;i++)
-		    round_trials[i]--;
-		  round=0;
+		  //		  for (i=1;i<=round;i++)
+		  //		    round_trials[i]--;
+		  //		  round=5;
 		}
 	      }
 
@@ -865,7 +874,7 @@ int main(int argc, char **argv) {
 	break;
 
     }   //trials
-    printf("**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
+    printf("\n**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
 	   SNR,
 	   (double)tx_lev_dB+10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)),
 	   sigma2_dB);
@@ -886,7 +895,7 @@ int main(int argc, char **argv) {
 	   dci_errors,
 	   round_trials[0],
 	   (double)dci_errors/(round_trials[0]),
-	   rate*((double)round_trials[0]/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
+	   rate*((double)(round_trials[0]-dci_errors)/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])),
 	   rate,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)dlsch_eNb[0]->harq_processes[0]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));

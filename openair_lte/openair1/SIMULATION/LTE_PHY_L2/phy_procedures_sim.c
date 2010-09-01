@@ -82,7 +82,7 @@ void l2_init() {
     
     msg("ALL INIT OK\n");
     
-    
+    /*  
     //Allocate memory for MAC/PHY communication primitives
     //NB_REQ_MAX = 16;
     for(i=0;i<NB_INST;i++){
@@ -91,7 +91,7 @@ void l2_init() {
       clear_macphy_data_req(i);
       
     }
-
+    */
     
     mac_xface->macphy_exit=exit;
     
@@ -106,6 +106,7 @@ void l2_init() {
   }
 }
 #endif
+
 
 struct complex **ch;
 
@@ -216,7 +217,7 @@ int main(int argc, char **argv) {
   char stats_buffer[4096];
   int len;
   unsigned char target_dl_mcs=4;
-  unsigned char target_ul_mcs=10;
+  unsigned char target_ul_mcs=5;
 
   unsigned int rx_gain;
 
@@ -384,7 +385,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu1A.rballoc            = CCCH_RB_ALLOC;
   DLSCH_alloc_pdu1A.ndi      = 1;
   DLSCH_alloc_pdu1A.rv       = 1;
-  DLSCH_alloc_pdu1A.mcs      = 0;
+  DLSCH_alloc_pdu1A.mcs      = 2;
   DLSCH_alloc_pdu1A.harq_pid = 0;
   DLSCH_alloc_pdu1A.TPC      = 1;   // set to 3 PRB
 
@@ -460,9 +461,8 @@ int main(int argc, char **argv) {
   PHY_vars->rx_total_gain_dB=140;
   PHY_vars->rx_total_gain_eNB_dB=150;
 
-  UE_mode = PUSCH;
-  eNB_UE_stats[0].mode[0] = PUSCH;
-  eNB_UE_stats[0].UE_id[0] = 0xBEEF;
+  UE_mode = PRACH;
+  eNB_UE_stats[0][0].mode = PRACH;
   lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
 
   if ((transmission_mode != 1) && (transmission_mode != 6))
@@ -479,9 +479,6 @@ int main(int argc, char **argv) {
 
 #ifdef OPENAIR2
   l2_init();
-
-  mac_xface->mrbch_phy_sync_failure(0,0);
-  mac_xface->chbch_phy_sync_success(1,0);
 #endif
 
 #ifdef XFORMS
@@ -490,6 +487,12 @@ int main(int argc, char **argv) {
   fl_show_form(form->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,"LTE SIM");   
 #endif
 
+#ifdef OPENAIR2
+  mac_xface->mrbch_phy_sync_failure(0,0);
+  printf("Synching to eNB\n");
+  mac_xface->chbch_phy_sync_success(1,0);
+#endif 
+ 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
     for (slot=0 ; slot<20 ; slot++) {
@@ -502,11 +505,12 @@ int main(int argc, char **argv) {
       mac_xface->is_cluster_head = 1;
 
       if (((mac_xface->frame % 10) == 0) && (slot==19)) {
-	printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,eNB_UE_stats[0].UE_id[0]);
+	printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,eNB_UE_stats[0][0].UE_id);
 	len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
 	stats_buffer[len] = '\0';
 	puts(stats_buffer);
       }
+      mac_xface->macphy_scheduler(last_slot); 
 
       phy_procedures_lte(last_slot,next_slot);
 

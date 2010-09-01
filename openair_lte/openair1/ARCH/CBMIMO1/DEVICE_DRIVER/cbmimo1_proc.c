@@ -9,9 +9,9 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "MAC_INTERFACE/extern.h"
 
-extern int ulsch_errors[3],ulsch_decoding_attempts[3][4],dlsch_NAK[8],dlsch_trials[4];
-extern int ulsch_round_errors[3][4];
-extern int dlsch_l2_errors;
+//extern int ulsch_errors[3],ulsch_decoding_attempts[3][4],dlsch_NAK[8],dlsch_trials[4];
+//extern int ulsch_round_errors[3][4];
+//extern int dlsch_l2_errors;
 
 #ifndef USER_MODE
 static struct proc_dir_entry *proc_openair1_root;
@@ -215,41 +215,41 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
     }
 
     len += sprintf(&buffer[len],"[eNB PROC] UE 0 (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, DLSCH Rate adaptation %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
-		   eNB_UE_stats[0].UE_id[0],
-		   eNB_UE_stats[0].UL_rssi[0][0],
-		   eNB_UE_stats[0].UL_rssi[0][1],
-		   eNB_UE_stats[0].sector[0],
+		   eNB_UE_stats[0][0].UE_id,
+		   eNB_UE_stats[0][0].UL_rssi[0],
+		   eNB_UE_stats[0][0].UL_rssi[1],
+		   eNB_UE_stats[0][0].sector,
 		   openair_daq_vars.dlsch_transmission_mode,
 		   openair_daq_vars.dlsch_rate_adaptation,
 		   openair_daq_vars.ulsch_allocation_mode,
-		   (openair_daq_vars.dlsch_rate_adaptation == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0].DL_cqi[0][0]<<1)),
+		   (openair_daq_vars.dlsch_rate_adaptation == 0) ? openair_daq_vars.target_ue_dl_mcs : ((eNB_UE_stats[0][0].DL_cqi[0]<<1)),
 		   openair_daq_vars.target_ue_ul_mcs,
 		   openair_daq_vars.ue_ul_nb_rb
 		   );
       
     len += sprintf(&buffer[len],"[eNB PROC] DL_cqi %d, DL_pmi_single %x\n",
-		   eNB_UE_stats[0].DL_cqi[0][0],
-		   pmi2hex_2Ar1(eNB_UE_stats[0].DL_pmi_single[0]));
+		   eNB_UE_stats[0][0].DL_cqi[0],
+		   pmi2hex_2Ar1(eNB_UE_stats[0][0].DL_pmi_single));
     len += sprintf(&buffer[len],"[eNB PROC] Timing advance %d samples (%d 16Ts)\n",
-		   eNB_UE_stats[0].UE_timing_offset[0],
-		   eNB_UE_stats[0].UE_timing_offset[0]>>2);
+		   eNB_UE_stats[0][0].UE_timing_offset,
+		   eNB_UE_stats[0][0].UE_timing_offset>>2);
     len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
-		   mode_string[eNB_UE_stats[0].mode[0]],
-		   eNB_UE_stats[0].mode[0]);
-    if (eNB_UE_stats[0].mode[0] == PUSCH) {
+		   mode_string[eNB_UE_stats[0][0].mode],
+		   eNB_UE_stats[0][0].mode);
+    if (eNB_UE_stats[0][0].mode == PUSCH) {
       len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) : %d/%d(%d,%d,%d,%d) \n",
-		     ulsch_errors[0],ulsch_decoding_attempts[0][0],
-		     ulsch_round_errors[0][0],ulsch_round_errors[0][1],ulsch_round_errors[0][2],ulsch_round_errors[0][3],
-		     ulsch_errors[1],ulsch_decoding_attempts[1][0],
-		     ulsch_round_errors[1][0],ulsch_round_errors[1][1],ulsch_round_errors[1][2],ulsch_round_errors[1][3],
-		     ulsch_errors[2],ulsch_decoding_attempts[2][0],
-		     ulsch_round_errors[2][0],ulsch_round_errors[2][1],ulsch_round_errors[2][2],ulsch_round_errors[2][3]);
+		     eNB_UE_stats[0][0].ulsch_errors[0],eNB_UE_stats[0][0].ulsch_decoding_attempts[0][0],
+		     eNB_UE_stats[0][0].ulsch_round_errors[0][0],eNB_UE_stats[0][0].ulsch_round_errors[0][1],eNB_UE_stats[0][0].ulsch_round_errors[0][2],eNB_UE_stats[0][0].ulsch_round_errors[0][3],
+		     eNB_UE_stats[0][0].ulsch_errors[1],eNB_UE_stats[0][0].ulsch_decoding_attempts[1][0],
+		     eNB_UE_stats[0][0].ulsch_round_errors[1][0],eNB_UE_stats[0][0].ulsch_round_errors[1][1],eNB_UE_stats[0][0].ulsch_round_errors[1][2],eNB_UE_stats[0][0].ulsch_round_errors[1][3],
+		     eNB_UE_stats[0][0].ulsch_errors[2],eNB_UE_stats[0][0].ulsch_decoding_attempts[2][0],
+		     eNB_UE_stats[0][0].ulsch_round_errors[2][0],eNB_UE_stats[0][0].ulsch_round_errors[2][1],eNB_UE_stats[0][0].ulsch_round_errors[2][2],eNB_UE_stats[0][0].ulsch_round_errors[2][3]);
       len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors %d/%d (%d/%d,%d/%d,%d/%d,%d/%d)\n",
-		     dlsch_l2_errors,dlsch_trials[0],
-		     dlsch_NAK[0],dlsch_trials[0],
-		     dlsch_NAK[1],dlsch_trials[1],
-		     dlsch_NAK[2],dlsch_trials[2],
-		     dlsch_NAK[3],dlsch_trials[3]);
+		     eNB_UE_stats[0][0].dlsch_l2_errors,eNB_UE_stats[0][0].dlsch_trials[0],
+		     eNB_UE_stats[0][0].dlsch_NAK[0],eNB_UE_stats[0][0].dlsch_trials[0],
+		     eNB_UE_stats[0][0].dlsch_NAK[1],eNB_UE_stats[0][0].dlsch_trials[1],
+		     eNB_UE_stats[0][0].dlsch_NAK[2],eNB_UE_stats[0][0].dlsch_trials[2],
+		     eNB_UE_stats[0][0].dlsch_NAK[3],eNB_UE_stats[0][0].dlsch_trials[3]);
 
     }
   }

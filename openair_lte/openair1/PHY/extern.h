@@ -55,7 +55,7 @@ extern LTE_eNB_ULSCH **lte_eNB_ulsch_vars;
 extern LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
 extern LTE_eNb_ULSCH_t **ulsch_eNb;
 extern LTE_UE_ULSCH_t **ulsch_ue;
-extern LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
+extern LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;

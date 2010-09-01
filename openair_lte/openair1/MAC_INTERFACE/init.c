@@ -46,12 +46,15 @@ int mac_init(void)
   int i;
 
 
+  /*
     //Allocate memory for MAC/PHY communication primitives
+
 #ifdef OPENAIR2
   Macphy_req_table[0].Macphy_req_table_entry
     = (MACPHY_DATA_REQ_TABLE_ENTRY *)malloc16(NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
   clear_macphy_data_req(0);
 #endif 
+  */
 
   mac_xface->slots_per_frame = SLOTS_PER_FRAME;
   
@@ -83,7 +86,7 @@ void mac_cleanup(void)
 #ifdef OPENAIR2
 void mac_resynch(void) {
 
-  clear_macphy_data_req(0);
+  //  clear_macphy_data_req(0);
   
 }
 #endif //OPENAIR2

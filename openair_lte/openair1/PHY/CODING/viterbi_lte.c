@@ -139,7 +139,6 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   metrics16_31 = _mm_xor_si128(metrics16_31,metrics16_31);
   metrics32_47 = _mm_xor_si128(metrics32_47,metrics32_47);
   metrics48_63 = _mm_xor_si128(metrics32_47,metrics32_47);
-
 #ifndef USER_MODE
   debug_msg("Doing viterbi 2\n");
 #endif

@@ -164,7 +164,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       }
       rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
       if (rballoc>RIV_max) {
-	msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+	msg("dci_tools.c: ERROR: rb_alloc (%x) > RIV_max (%x)\n",rballoc,RIV_max);
+	exit(-1);
 	return(-1);
       }
       NPRB      = RIV2nb_rb_LUT25[rballoc];
@@ -275,7 +276,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
 
-      dlsch0->pmi_alloc                             = eNB_UE_stats[0].DL_pmi_single[0];
+      dlsch0->pmi_alloc                             = eNB_UE_stats[0][0].DL_pmi_single;
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
@@ -376,7 +377,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     if (NPRB==0)
       return(-1);
 
-    if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 1) {
+    if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 2) {
       msg("dci_tools.c: ERROR: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
       return(-1);       
     }

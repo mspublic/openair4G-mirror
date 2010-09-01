@@ -133,6 +133,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot);
 void phy_procedures_eNB_S_TX(unsigned char next_slot);
 void phy_procedures_eNB_S_RX(unsigned char last_slot);
 
+void process_timing_advance(unsigned char timing_advance);
+void process_timing_advance_rar(unsigned short timing_advance);
+
 #else
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);

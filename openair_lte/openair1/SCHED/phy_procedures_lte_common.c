@@ -6,11 +6,11 @@
 #include "SCHED/extern.h"
 
 
-void get_rag_alloc(unsigned char tdd_config,
-		   unsigned char current_subframe, 
-		   unsigned int current_frame,
-		   unsigned int *frame,
-		   unsigned char *subframe) {
+void get_RRCConnReq_alloc(unsigned char tdd_config,
+			  unsigned char current_subframe, 
+			  unsigned int current_frame,
+			  unsigned int *frame,
+			  unsigned char *subframe) {
 
   if (tdd_config == 3) {
     switch (current_subframe) {
@@ -169,6 +169,7 @@ void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
 
     //    if ((mac_xface->frame % 1000) == 0)
     //      ulsch_errors = 0;
+    msg("[PHY][eNB] next_slot %d Current dlsch round %d\n",next_slot,dlsch_eNb[0]->harq_processes[0]->round);
 
     if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY

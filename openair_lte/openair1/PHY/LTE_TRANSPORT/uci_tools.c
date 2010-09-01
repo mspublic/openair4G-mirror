@@ -24,7 +24,7 @@ unsigned int cqi2hex(unsigned short cqi) {
           (((cqi>>8)&3)<<16) + (((cqi>>10)&3)<<20) + (((cqi>>12)&3)<<24));
 }
 
-void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,LTE_eNB_UE_stats *stats) {
+void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,LTE_eNB_UE_stats *stats) {
 
   unsigned char rank;
 
@@ -35,39 +35,39 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,
 
   case wideband_cqi: //and subband pmi
     if (rank == 0) {
-      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1;
-      if (stats->DL_cqi[UE_id][0] > 28)
-	stats->DL_cqi[UE_id][0] = 28;
-      stats->DL_pmi_single[UE_id] = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      
+      stats->DL_cqi[0]     = ((wideband_cqi_rank1_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;
+      stats->DL_pmi_single = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[UE_id][0]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1;
-      if (stats->DL_cqi[UE_id][0] > 28)
-	stats->DL_cqi[UE_id][0] = 28;      
-      stats->DL_cqi[UE_id][1]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2;
-      if (stats->DL_cqi[UE_id][1] > 28)
-	stats->DL_cqi[UE_id][1] = 28;      
-      stats->DL_pmi_dual[UE_id]   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;      
+      stats->DL_cqi[0]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_cqi[1]     = ((wideband_cqi_rank2_2A_5MHz *)o)->cqi2;
+      if (stats->DL_cqi[1] > 28)
+	stats->DL_cqi[1] = 28;      
+      stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;      
     }
     break;
   case hlc_cqi:
     if (rank == 0) {
-      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1;
-      if (stats->DL_cqi[UE_id][0] > 28)
-	stats->DL_cqi[UE_id][0] = 28;      
-      stats->DL_diffcqi[UE_id][0] = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1;      
-      stats->DL_pmi_single[UE_id] = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
+      stats->DL_cqi[0]     = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_diffcqi[0] = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1;      
+      stats->DL_pmi_single = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[UE_id][0]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1;
-      if (stats->DL_cqi[UE_id][0] > 28)
-	stats->DL_cqi[UE_id][0] = 28;      
-      stats->DL_cqi[UE_id][1]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2;
-      if (stats->DL_cqi[UE_id][1] > 28)
-	stats->DL_cqi[UE_id][1] = 28;      
-      stats->DL_diffcqi[UE_id][0] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1;      
-      stats->DL_diffcqi[UE_id][1] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2;      
-      stats->DL_pmi_dual[UE_id]   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;      
+      stats->DL_cqi[0]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_cqi[1]     = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2;
+      if (stats->DL_cqi[1] > 28)
+	stats->DL_cqi[1] = 28;      
+      stats->DL_diffcqi[0] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1;      
+      stats->DL_diffcqi[1] = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2;      
+      stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;      
     }
     break;
   default:
