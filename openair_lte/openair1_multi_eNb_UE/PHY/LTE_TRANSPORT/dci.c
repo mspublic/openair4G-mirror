@@ -243,7 +243,7 @@ void pdcch_demapping(unsigned short *llr,unsigned short *wbar,LTE_DL_FRAME_PARMS
 
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime>>2) == 1) {
-	//	msg("generate_dci: skipping REG %d\n",kprime>>2);
+	//	msg("dci_demapping: skipping REG %d\n",kprime>>2);
 	kprime+=4;
       }
 
@@ -290,7 +290,7 @@ void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short
     wptr[1] = wptr2[1];
     wptr[2] = wptr2[2];
     wptr[3] = wptr2[3];
-    /*
+    /*    
     msg("pdcch_deinterleaving (%p,%p): quad %d -> (%d,%d %d,%d %d,%d %d,%d)\n",wptr,wptr2,i,
 	((char*)wptr2)[0],
 	((char*)wptr2)[1],
@@ -406,6 +406,7 @@ int pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
   //  msg("pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
 
   for (i=0;i<(frame_parms->N_RB_DL*24);i++) {
+
     if (*rxF>7)
       *pdcch_llr8=7;
     else if (*rxF<-8)
@@ -413,6 +414,7 @@ int pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
     else
       *pdcch_llr8 = (char)(*rxF);
 
+    //    printf("%d %d => %d\n",i,*rxF,*pdcch_llr8);
     rxF++;
     pdcch_llr8++;
   }
@@ -1516,7 +1518,7 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime>>2) == 1) {
-	//	msg("decoding_dci: skipping REG %d\n",kprime>>2);
+	//	msg("generate_dci: skipping REG %d\n",kprime>>2);
 	kprime+=4;
       }
       // Copy REG to TX buffer      
@@ -1556,7 +1558,7 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 }
 
 static unsigned char dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
-static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*MAX_DCI_SIZE_BITS+16)];
+static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
  
 void dci_decoding(unsigned char DCI_LENGTH,
 		  unsigned char aggregation_level,
@@ -1599,10 +1601,16 @@ void dci_decoding(unsigned char DCI_LENGTH,
 			      &d_rx[96], 
 			      &w_rx[0]); 
  
+#ifdef DEBUG_DCI_DECODING
+  msg("Before memset\n");
+
+  for (i=0;i<16+DCI_LENGTH;i++)
+    msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
+#endif  
   memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
   
 #ifdef DEBUG_DCI_DECODING
-  msg("Doing DCI Viterbi %d\n");
+  msg("Before Viterbi\n");
 
   for (i=0;i<16+DCI_LENGTH;i++)
     msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
@@ -1613,7 +1621,7 @@ void dci_decoding(unsigned char DCI_LENGTH,
 }
 
 
-static unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+32)/8];
+static unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+64)/8];
 
 unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      DCI_ALLOC_t *dci_alloc,

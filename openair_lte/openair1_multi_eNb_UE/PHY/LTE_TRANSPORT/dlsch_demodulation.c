@@ -1178,6 +1178,8 @@ void dlsch_channel_compensation(int **rxdataF_ext,
       QAM_amp128  = _mm_set1_epi16(QAM64_n1);
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
     }
+    //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
+
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
       dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*frame_parms->N_RB_DL*12];
@@ -1826,7 +1828,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
-    //    printf("channel compensation, no precoding\n");
+    //    printf("channel compensation, no precoding, eNb_id %d, lte_ue_dlsch_vars %p, lte_ue_dlsch_vars[eNb_id] %p\n",eNb_id,lte_ue_dlsch_vars,lte_ue_dlsch_vars[eNb_id]);
     dlsch_channel_compensation(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 			       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
 			       lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,

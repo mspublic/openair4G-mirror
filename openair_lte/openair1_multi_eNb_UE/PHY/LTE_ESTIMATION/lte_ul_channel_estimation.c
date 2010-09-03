@@ -54,6 +54,11 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			     Msc_RS,
 			     15);
 
+
+    }
+
+
+    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       if (Ns&1) {//we are in the second slot of the sub-frame, so do the interpolation
 
 	ul_ch1 = &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*pilot_pos1];

@@ -24,6 +24,8 @@
 
 #define sgn(a) (((a)<0) ? 0 : 1)
 
+int current_dlsch_cqi;
+
 void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 
   printf("Start lte_param_init\n");

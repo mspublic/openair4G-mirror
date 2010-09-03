@@ -37,6 +37,31 @@ void get_rag_alloc(unsigned char tdd_config,
   }
 }
 
+unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index) {
+
+  switch (tdd_config) {
+  case 3:
+    if (subframe == 2) {  // ACK subframes 5 and 6
+      return(5+ACK_index);
+    }
+    else if (subframe == 3) {   // ACK subframes 7 and 8
+      return(6+ACK_index);
+      //      return(7+ACK_index);  // To be updated
+    }
+    else if (subframe == 4) {  // ACK subframes 9 and 0
+      return((9+ACK_index)%10);
+    }
+    else {
+      msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	  subframe,tdd_config);
+      return(0);
+    }
+    break;
+    
+  }
+  return(0);
+}
+
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
 
   switch (tdd_config) {
@@ -109,67 +134,61 @@ unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) 
   return(0);
 }
 
-//#define DEBUG_PHY 1
 #ifndef MeNBMUE
-void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot) {
+void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY_VARS_UE *phy_vars_ue) {
 
-  //#undef DEBUG_PHY
-  if (mac_xface->is_cluster_head == 0) {
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_UL) {
+  if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,next_slot>>1)==SF_UL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_UE_TX(next_slot);
+      phy_procedures_UE_TX(next_slot,phy_vars_ue);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_DL) {
+    if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
-      phy_procedures_UE_RX(last_slot);
+      phy_procedures_UE_RX(last_slot,phy_vars_ue);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_S) {
+    if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_UE_S_TX(next_slot);
+      phy_procedures_UE_S_TX(next_slot,phy_vars_ue);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
+    if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_UE_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
-      phy_procedures_UE_RX(last_slot);
+      phy_procedures_UE_RX(last_slot,phy_vars_ue);
     }
-  }
-  else { //eNB
+}
 
-    //    if ((mac_xface->frame % 1000) == 0)
-    //      ulsch_errors = 0;
+void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_DL) {
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_DL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_eNB_TX(next_slot);
+      phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_UL) {
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_UL) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
-      phy_procedures_eNB_RX(last_slot);
+      phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1)==SF_S) {
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
 #endif
-      phy_procedures_eNB_S_TX(next_slot);
+      phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
     }
-    if (subframe_select_tdd(lte_frame_parms->tdd_config,last_slot>>1)==SF_S) {
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
 #endif
-      phy_procedures_eNB_S_RX(last_slot);
+      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
     }
-  }
 }
 
 #endif //MeNBMUE

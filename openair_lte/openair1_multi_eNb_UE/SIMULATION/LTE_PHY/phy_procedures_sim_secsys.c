@@ -21,7 +21,7 @@
 //#define PBS_SIM
 #endif //PBS_SIM
 #ifdef PBS_SIM
-#define PBS_OUTPUT_DIR "/homes/sorby/Devel/simDataOutput/" //"/home/Local_Data/sorby_dl_sim_secsys/"
+#define PBS_OUTPUT_DIR "." //"/homes/sorby/Devel/simDataOutput/" //"/home/Local_Data/sorby_dl_sim_secsys/"
 #endif
 //#define SKIP_RF_CHAIN
 //#define CHANNEL_FROM_FILE   //--Unstable, doesn't work properly. Possibly how the channel is written to file.
@@ -118,8 +118,8 @@ int main(int argc, char **argv) {
   float snrStepSize = 0.5; //step size in dB
   float stxgStepSize = 1; //step size in dB
   n_frames = N_TRIALS_MAX; //maximum length of simulation in number of frames
-  stxg0 = -10;
-  stxg1 = 10; //set = stxg0 to keep fixed
+  stxg0 = 0;
+  stxg1 = 0; //set = stxg0 to keep fixed
   snr0 = 10;
   snr1 = 11; //set = stxg0 to keep fixed
   if (argc==2) {
@@ -563,7 +563,7 @@ int main(int argc, char **argv) {
   bzero(rxdata[1],FRAME_LENGTH_BYTES);
   txdataF2    = (int **)malloc16(2*sizeof(int*));
   txdataF2[0] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
-  txdataF2[1] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX)
+  txdataF2[1] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
 
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
@@ -1185,7 +1185,7 @@ int main(int argc, char **argv) {
 		     txdata_ext[aa],         // output
 		     lte_frame_parms->log2_symbol_size,
 		     (lte_frame_parms->Ncp==1) ? 6 : 7,
-		     lte_frame_parms->nb_prefix_samples
+		     lte_frame_parms->nb_prefix_samples,
 		     lte_frame_parms->twiddle_ifft,
 		     lte_frame_parms->rev,
 		     CYCLIC_PREFIX);

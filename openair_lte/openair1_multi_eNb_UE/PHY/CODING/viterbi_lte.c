@@ -138,7 +138,6 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
   metrics32_47 = _mm_xor_si128(metrics32_47,metrics32_47);
   metrics48_63 = _mm_xor_si128(metrics32_47,metrics32_47);
 
-  rescale = _mm_cvtsi32_si128(RESCALE);
   //debug_msg("Doing viterbi 2\n");
   /*
   print_bytes(metrics0_15,"metrics0_15");

@@ -116,10 +116,8 @@ typedef struct
 {
   /// ACQ Mailbox for harware synch
   unsigned int *mbox;    
-  unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
-  //  PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
@@ -135,10 +133,15 @@ typedef struct
   char eNb_generate_rar;
   char eNb_generate_rag_ack;
 
-  int ulsch_errors[3],ulsch_consecutive_errors[3],ulsch_decoding_attempts[3],dlsch_NAK;
-  unsigned int max_peak_val; 
+  int ulsch_errors[3],ulsch_consecutive_errors[3],ulsch_decoding_attempts[3][4],ulsch_round_errors[3][4],dlsch_NAK[8];
 
+  unsigned int max_peak_val; 
   int max_eNb_id, max_sync_pos;
+
+  char dlsch_mcs_offset;
+  int dlsch_l2_errors;
+  int dlsch_trials[4];
+
   unsigned char first_run_timing_advance;
   unsigned char first_run_I0_measurements;
 
@@ -152,9 +155,6 @@ typedef struct
   int              **dl_precoder_SeNb[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
-#ifdef USER_MODE
-  double   const_ch[4][2]; // constant channel coefficient
-#endif
 } PHY_VARS_eNB;
 
 #ifndef USER_MODE
@@ -213,10 +213,6 @@ typedef struct
   /// hold the precoder for NULL beam to the primary eNb
   int              **ul_precoder_S_UE;
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
-
-#ifdef USER_MODE
-  double   const_ch[4][2]; // constant channel coefficient (index: [channel][real/imag])
-#endif
 
 } PHY_VARS_UE;
 

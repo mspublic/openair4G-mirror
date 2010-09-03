@@ -64,7 +64,7 @@ int dlsch_received_last = 0;
 int dlsch_fer = 0;
 int dlsch_cntl_errors = 0;
 int dlsch_ra_errors = 0;
-int current_dlsch_cqi = 0;
+int current_dlsch_cqi = 5;
 
 unsigned char  ulsch_ue_rag_active;
 unsigned int  ulsch_ue_rag_frame;
@@ -81,9 +81,6 @@ DCI_ALLOC_t dci_alloc_rx[8];
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
 #endif
-
-unsigned int ue_rag_frame;
-unsigned char ue_rag_subframe;
 
 #ifdef USER_MODE
 
@@ -167,11 +164,16 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue) {
 	//#ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: Generating SRS\n",mac_xface->frame,next_slot);
 	//#endif
-	generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
 #ifdef DEBUG_PHY
 	write_output("UE_srs_tx.m","srs_tx",&phy_vars_ue->lte_ue_common_vars.txdataF[0][next_slot*phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti>>1) + phy_vars_ue->lte_frame_parms.ofdm_symbol_size*(phy_vars_ue->lte_frame_parms.symbols_per_tti-1)],phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
 #endif //DEBUG_PHY
       }
+
+#ifdef OFDMA_ULSCH
+      generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
+#else
+      generate_srs_tx(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[12],next_slot>>1);
+#endif
     }
 
     if ((phy_vars_ue->ulsch_ue_rag_active == 1) && (phy_vars_ue->ulsch_ue_rag_frame == mac_xface->frame) && (phy_vars_ue->ulsch_ue_rag_subframe == (next_slot>>1))) {
@@ -207,9 +209,12 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue) {
 
       first_rb = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->first_rb;
       nb_rb = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->nb_rb;
-      
+
+#ifdef OFDMA_ULSCH      
       generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb);
-      
+#else
+      generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb);
+#endif      
       input_buffer_length = phy_vars_ue->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
       
       for (i=0;i<input_buffer_length;i++) {
@@ -221,9 +226,14 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue) {
 
       if (rag_flag == 1)
 	msg("[PHY_PROCEDURES][UE] Frame %d, Subframe %d Generating RAG (nb_rb %d, first_rb %d)\n",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[0]->harq_processes[0]->nb_rb,phy_vars_ue->ulsch_ue[0]->harq_processes[0]->first_rb);
-      ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[0],harq_pid);
-      ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,AMP,(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[0],rag_flag);
 
+      ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[0],harq_pid);
+
+#ifdef OFDMA_ULSCH
+      ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,AMP,(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[0],rag_flag);
+#else
+      ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[0],rag_flag);
+#endif
     }
   }
 }
@@ -806,6 +816,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	
     // process last DLSCH symbols + invoke decoding
     if (((last_slot%2)==0) && (l==0)) {
+      //      printf("phy_procedures: lte_ue_dlsch_vars %p lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars,lte_ue_dlsch_vars[0]);
 
       if ( (phy_vars_ue->dlsch_ue_active == 1) && (phy_vars_ue->dlsch_ue_cntl_active == 1))
 	msg("[PHY_PROCEDURES_LTE] WARNING: dlsch_ue and dlsch_ue_cntl active, but data structures can only handle one at a time\n");
@@ -869,7 +880,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	    phy_vars_ue->dlsch_errors++;
 #ifdef USER_MODE
 	    if (mac_xface->frame > 10) {
-	      //printf("DLSCH in error, dumping\n");
+	      printf("DLSCH (rv %d,mcs %d) in error\n",phy_vars_ue->dlsch_ue[0]->harq_processes[harq_pid]->rvidx,
+		     phy_vars_ue->dlsch_ue[0]->harq_processes[harq_pid]->mcs);
 	      //	      dump_dlsch();
 	      //	      exit(-1);
 	    }
@@ -877,20 +889,23 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 	  }
 	}
 
-	if (mac_xface->frame % 100 == 0) {
+	if (mac_xface->frame % 200 == 0) {
 	  if ((phy_vars_ue->dlsch_received - phy_vars_ue->dlsch_received_last) != 0) 
 	    phy_vars_ue->dlsch_fer = (100*(phy_vars_ue->dlsch_errors - phy_vars_ue->dlsch_errors_last))/(phy_vars_ue->dlsch_received - phy_vars_ue->dlsch_received_last);
 	  phy_vars_ue->dlsch_errors_last = phy_vars_ue->dlsch_errors;
 	  phy_vars_ue->dlsch_received_last = phy_vars_ue->dlsch_received;
-	  if ((phy_vars_ue->dlsch_fer > 10) && (phy_vars_ue->current_dlsch_cqi>0))
+	  
+	  // CQI adaptation when current MCS is odd, even is handled by eNb
+	  if ((phy_vars_ue->dlsch_fer > 40) && (phy_vars_ue->current_dlsch_cqi>0) && ((phy_vars_ue->dlsch_ue[0]->harq_processes[0]->mcs%2) == 0))
 	    phy_vars_ue->current_dlsch_cqi--;
 #ifndef USER_MODE
-	  if ((phy_vars_ue->dlsch_fer < 4) && (phy_vars_ue->current_dlsch_cqi<8))
+	  if ((phy_vars_ue->dlsch_fer < 16) && (phy_vars_ue->current_dlsch_cqi<8) && ((phy_vars_ue->dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    phy_vars_ue->current_dlsch_cqi++;
 #else
-	  if ((phy_vars_ue->dlsch_fer < 4) && (phy_vars_ue->current_dlsch_cqi<16))
+	  if ((phy_vars_ue->dlsch_fer < 16) && (phy_vars_ue->current_dlsch_cqi<14) && ((phy_vars_ue->dlsch_ue[0]->harq_processes[0]->mcs%2) == 1))
 	    phy_vars_ue->current_dlsch_cqi++;
 #endif
+	  
 	}
 
 	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, slot %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",

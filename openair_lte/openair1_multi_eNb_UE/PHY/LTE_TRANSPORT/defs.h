@@ -1311,6 +1311,7 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,
 void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id, int current_dlsch_cqi);
 
 unsigned short quantize_subband_pmi(PHY_MEASUREMENTS *meas,unsigned char eNb_id);
+unsigned short quantize_subband_pmi2(PHY_MEASUREMENTS *meas,unsigned char eNb_id,unsigned char a_id);
 
 unsigned int pmi2hex_2Ar1(unsigned short pmi);
 

@@ -21,22 +21,25 @@ function [gps_x, gps_y] = plot_gps_coordinates(map, longitude, latitude, rx_rssi
 
 persistent mm image_points gps_points_num;
 
+plot_image = 1;
 switch map
     case 'cordes'
         if isempty(mm)
-            mm=imread('cordes.png');
-            load('gps_calib_cordes.mat')
+            mm=imread('cordes_merged_routes_wp.png');
+            load('gps_calib_cordes_new.mat')
         end
     case 'penne'
         if  isempty(mm)
-            mm=imread('Penne1.PNG');
-            load('gps_calib_penne.mat')
+            mm=imread('penne3.png');
+            load('gps_calib_penne_new.mat')
         end
-    case 'ambialet'
-        error('map not yet availiable');
-    otherwise
-        mm=[];
-        load('gps_calib_cordes.mat')
+     case 'ambialet'
+        if  isempty(mm)
+            mm=imread('ambialet2.png');
+            load('gps_calib_ambialet_new.mat')
+        end
+     otherwise
+        plot_image = 0;
 end
 
 if nargin<=3
@@ -57,9 +60,9 @@ if nargin<=4
 %         end
     end
 else
-    if isempty(rx_rssi)
-        error('rx_rssi cannot be empty if limits is provided');
-    end
+%    if isempty(rx_rssi)
+%        error('rx_rssi cannot be empty if limits is provided');
+%    end
     if (~isempty(limits))
         m = colormap;
         cmin = limits(1);
@@ -107,7 +110,7 @@ scalex = mean(scalex);
 gps_y = (latitude-lat(1))*mean(scaley) + y(1);     % gps_x is the north-south direction
 gps_x = (longitude-lon(1))*mean(scalex) + x(1);     % gps_y is the east-west direction
 
-if ~isempty(mm)
+if plot_image
     image(mm);  % plots the image itself
     hold on
 end
@@ -129,7 +132,7 @@ if (~isempty(rx_rssi))
     end
     set(hcb,'YTickLabel',label);
 else
-    plot(gps_x,gps_y,'x','Color',color);
+    plot(gps_x,gps_y,'color',color,style{:});
 end
 if nargin >= 6
     h = text(mean(gps_x),mean(gps_y),label);

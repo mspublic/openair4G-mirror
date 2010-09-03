@@ -38,5 +38,7 @@ for f = 1:length(filenames)
     
     %K_fac_cat = cat(2,K_fac_cat,K_fac);
     
+    save(fullfile(pathname,'results_cat_eNB.mat'),'*_cat');
+
 end
 

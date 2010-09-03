@@ -1,14 +1,16 @@
 close all
 clear all
 
-root_path = '/media/Expansion_Drive/Mode2/';
+root_path = '/emos/AMBIALET/Mode2/';
 
-d = dir(fullfile(root_path, '*mode2*'));
+d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 
 for d_idx=1:length(dir_names)
-    Cat_UE
-    Cat_eNb
+    pathname = fullfile(root_path,dir_names{d_idx});
+    disp(pathname)
+    Concatenate_results_UE_quick
+    %Concatenate_results_eNb_quick
     
 end
 

@@ -366,6 +366,7 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
       ul_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0[i],1),_mm_srai_epi16(ul_ch_mag128_1[i],1));
       ul_ch_mag128_0b[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0b[i],1),_mm_srai_epi16(ul_ch_mag128_1b[i],1));
+      //      printf("mrc: symbol %d rb %d => %d\n",symbol,i/3,*((short*)&ul_ch_mag128_0[i]));	
     }
   }
 
@@ -406,13 +407,21 @@ void ulsch_extract_rbs_single(int **rxdataF,
       rxF_ext += nb_rb1*12;
     
       if (nb_rb2)  {
+#ifdef OFDMA_ULSCH
 	rxF = &rxdataF[aarx][(1 + symbol*frame_parms->ofdm_symbol_size)*2];
+#else
+	rxF = &rxdataF[aarx][(symbol*frame_parms->ofdm_symbol_size)*2];
+#endif
 	memcpy(rxF_ext, rxF, nb_rb2*12*sizeof(int));
 	rxF_ext += nb_rb2*12;
       } 
     }
     else { //there is only data in the second half
+#ifdef OFDMA_ULSCH
       rxF = &rxdataF[aarx][(1 + 6*(2*first_rb - frame_parms->N_RB_UL) + symbol*frame_parms->ofdm_symbol_size)*2];
+#else
+      rxF = &rxdataF[aarx][(6*(2*first_rb - frame_parms->N_RB_UL) + symbol*frame_parms->ofdm_symbol_size)*2];
+#endif
       memcpy(rxF_ext, rxF, nb_rb2*12*sizeof(int));
       rxF_ext += nb_rb2*12;
     }
@@ -485,6 +494,7 @@ void ulsch_channel_compensation(int **rxdataF_ext,
 
     for (rb=0;rb<nb_rb;rb++) {
       //      printf("comp: symbol %d rb %d\n",symbol,rb);
+#ifdef OFDMA_ULSCH
       if (Qm>2) {  
 	  // get channel amplitude if not QPSK
 
@@ -527,7 +537,26 @@ void ulsch_channel_compensation(int **rxdataF_ext,
 	ul_ch_mag128b[2] = _mm_slli_epi16(ul_ch_mag128b[2],2);// 2 to compensate the scale channel estimate	   
 	
       }
-      
+#else
+
+	mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
+	
+	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift-1);
+	
+	mmtmpU1 = _mm_madd_epi16(ul_ch128[1],ul_ch128[1]);
+	mmtmpU1 = _mm_srai_epi32(mmtmpU1,output_shift-1);
+	mmtmpU0 = _mm_packs_epi32(mmtmpU0,mmtmpU1);
+	
+	ul_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpU0,mmtmpU0);
+	ul_ch_mag128[1] = _mm_unpackhi_epi16(mmtmpU0,mmtmpU0);
+	
+	mmtmpU0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
+	mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift-1);
+	mmtmpU1 = _mm_packs_epi32(mmtmpU0,mmtmpU0);
+	ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpU1,mmtmpU1);
+
+	//	printf("comp: symbol %d rb %d => %d,%d,%d\n",symbol,rb,*((short*)&ul_ch_mag128[0]),*((short*)&ul_ch_mag128[1]),*((short*)&ul_ch_mag128[2]));	
+#endif      
       // multiply by conjugated channel
       mmtmpU0 = _mm_madd_epi16(ul_ch128[0],rxdataF128[0]);
       //	print_ints("re",&mmtmpU0);
@@ -683,7 +712,6 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
           
-        
 #ifdef DEBUG_ULSCH
     msg("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",rag_flag,l,
 	ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
@@ -691,8 +719,6 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	eNB_common_vars->rxdataF,
     	eNB_ulsch_vars->rxdataF_ext);
 #endif //DEBUG_ULSCH
-   
-    
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
@@ -708,6 +734,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
 			      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+
 
 
 
@@ -765,14 +792,24 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			  eNB_ulsch_vars->ul_ch_magb[eNb_id],
 			  l,
 			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+
+#ifndef OFDMA_ULSCH
+    freq_equalization(frame_parms,
+		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
+		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
+		      eNB_ulsch_vars->ul_ch_magb[eNb_id],
+		      l,
+		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
+		      Qm);
+		      
+#endif
   }
 
 #ifndef OFDMA_ULSCH
-    // Equalization on MRC here
         
 #ifdef DEBUG_ULSCH
     // Inverse-Transform equalized outputs
-  msg("Doing IDFTs\n");
+  //  msg("Doing IDFTs\n");
   lte_idft(frame_parms,
 	   eNB_ulsch_vars->rxdataF_comp[eNb_id][0],
 	   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);

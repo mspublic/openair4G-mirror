@@ -113,13 +113,8 @@ void openair1_restart(void);
 
 #ifdef OPENAIR_LTE
 
-#ifndef MeNBMUE
-void phy_procedures_lte(unsigned char last_slot, unsigned char next_slot);
-
-#else //MeNBMUE
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue);
-#endif //MeNBMUE
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
@@ -140,6 +135,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb)
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK);
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);
+unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index);
 
 #else
 #ifdef EMOS

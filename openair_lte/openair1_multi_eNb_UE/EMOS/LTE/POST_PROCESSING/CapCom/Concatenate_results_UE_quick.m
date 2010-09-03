@@ -1,7 +1,11 @@
 %pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/20100510_mode2_parcours1_part1/';
 
 d = dir(fullfile(pathname, 'data_term3*.mat'));
+d1 = dir(fullfile(pathname, 'data_term3*.EMOS'));
 filenames = {d.name};
+filedates = {d1.date};
+[filedates,idx] = sort(filedates);
+filenames = filenames(idx);
 
 gps_data_cat = [];
 
@@ -43,44 +47,8 @@ for f = 1:length(filenames)
     
     K_fac_cat = cat(2,K_fac_cat,K_fac);
     
+    save(fullfile(pathname,'results_cat_UE.mat'),'*_cat');
+    
 end
 
-% save 'results_UE.mat'
-% 
-% mkdir('/homes/latif/devel/openair_lte/openair1/EMOS/LTE/POST_PROCESSING/SIM_Results', s);
-% 
-% in = 0;
-% plotwrtdistanceCalc;
-% in = in+1;    
-% h_fig = figure(in);
-% title([s '__SISO']);
-% xlabel('Time[Seconds]');
-% ylabel('Throughput');
-% hold on;
-% plot(throughput.rateps_SISO_4Qam_eNB1,'b-o');
-% plot(throughput.rateps_SISO_16Qam_eNB1,'g-o');
-% plot(throughput.rateps_SISO_64Qam_eNB1,'r-o');
-% hold off;
-% 
-% in = in+1;
-% h_fig = figure(in);
-% hold on;
-% title('Throughput SISO _ distance from BS ');
-% xlabel('Distance from BS [Km]');
-% ylabel('Throughput [Bits/sec]');
-% %dist(1:end);
-% plot(dist, throughput.rateps_SISO_4Qam_eNB1,'b-o');
-% plot(dist, throughput.rateps_SISO_16Qam_eNB1,'g-o');
-% plot(dist, throughput.rateps_SISO_64Qam_eNB1,'r-o');
-% hold off;
-%  
-% in = in+1;
-% h_fig = figure(in);
-% plot(dist_travelled, throughput.rateps_SISO_4Qam_eNB1,'b-o');
-% plot(dist_travelled, throughput.rateps_SISO_16Qam_eNB1,'g-o' );
-% plot(dist_travelled, throughput.rateps_SISO_64Qam_eNB1,'r-o');
-% title('Throughput SISO _ distance Travelled ')
-% xlabel('Distance travelled [Km]')
-% ylabel('Throughput [Bits/sec]')
-% 
-% end
+ 

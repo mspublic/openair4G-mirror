@@ -199,7 +199,7 @@ void sub_block_deinterleaving_cc(unsigned int D,char *d,char *w) {
       d[index3-ND3+1] = w[Kpi+k];  
       d[index3-ND3+2] = w[(Kpi<<1)+k];  
 #ifdef RM_DEBUG2
-      printf("row %d, index %d k %d w(%d,%d,%d)\n",row,index,k,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
+      printf("row %d, index %d k %d index3-ND3 %d w(%d,%d,%d)\n",row,index,k,index3-ND3,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
 #endif
       index3+=96;
       index+=32;
@@ -457,7 +457,7 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 
 #ifdef RM_DEBUG_CC
       nulled++;
-      printf("RM_tx : ind %d, NULL\n",ind);
+      printf("RM_TX_CC : ind %d, NULL\n",ind);
 #endif
       ind++;
       if (ind==Kw)
@@ -467,8 +467,8 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 
     e[k] = w[ind];
 #ifdef RM_DEBUG_CC
-    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
-    printf("RM_TX %d Ind: %d (%d)\n",k,ind,e[k]);
+//    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
+    printf("RM_TX_CC %d Ind: %d (%d)\n",k,ind,e[k]);
 #endif
     ind++;
     if (ind==Kw)

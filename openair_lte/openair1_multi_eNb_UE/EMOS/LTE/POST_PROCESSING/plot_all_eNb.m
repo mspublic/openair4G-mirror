@@ -8,23 +8,24 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/EMOS/Mode6';
-d = dir(fullfile(root_path, '*PUSCH*'));
+root_path = '/emos/AMBIALET/Mode2';
+d = dir(fullfile(root_path, '*MODE2*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/EMOS/Mode6/results';
+pathname = '/emos/AMBIALET/Mode2/results';
 
-mm='cordes';
+mm='ambialet';
 decimation = 100;
 
+%%
 for i=1:length(dir_names)
     if exist(fullfile(root_path,dir_names{i},'results_eNB.mat'),'file')
         temp = load(fullfile(root_path,dir_names{i},'results_eNB.mat'));
         %results_eNB = cat(1,results_eNB,temp);
         
-        nn = fieldnames(temp);
         if (i==1)
+            nn = fieldnames(temp);
             for n = 1:length(nn)
                 eval([nn{n} '= [];']);
                 [dummy, dim(n)] = eval(['max(size(temp.' nn{n} '))']); 
@@ -33,7 +34,7 @@ for i=1:length(dir_names)
         for n = 1:length(nn)
             eval([nn{n} '= cat(' num2str(dim(n)) ', ' nn{n} ', temp.' nn{n} ');']);
         end
-       
+        fprintf('%d/%d\n',i,length(dir_names));
     end
 %    if exist(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'),'file')
 %        nomadic = load(fullfile(root_path,dir_names{i},'nomadic','results_UE_new.mat'));
@@ -58,4 +59,4 @@ end
 save(fullfile(pathname,'results_eNB.mat'),nn{:});
 
 h_fig = 0;
-plot_results_eNB_quick
+plot_results_eNb_quick

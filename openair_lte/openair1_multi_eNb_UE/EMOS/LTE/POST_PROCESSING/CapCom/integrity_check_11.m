@@ -1,8 +1,8 @@
 close all
 clear all
-clc;
-pathname = '/media/Expansion_Drive/Mode2/';
-dd = dir(fullfile(pathname,'*mode*'));
+
+pathname = '/emos/AMBIALET/Mode2/';
+dd = dir(fullfile(pathname,'*extended*'));
 
 % pathname = '/emos/EMOS/';
 % dd(1).name = '/Mode6/20100610_VTP_MODE6_ZONES_PUSCH_UPDATE.2/';
@@ -40,7 +40,6 @@ for dir_idx=1:1:length(dd)
             version = 0;
         end
         
-        
         if file(10)=='1'
             is_eNb=1;
             mat_file = [file '_results_eNB.mat'];
@@ -49,30 +48,23 @@ for dir_idx=1:1:length(dd)
             mat_file = [file '_results_UE.mat'];
         end
         
-%         if (exist(fullfile(fpath,mat_file),'file'))
-%             continue
-%         end
-        
-        try
-            [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR, K_fac] = load_estimates_lte_1(fullfile(fpath,filenames{file_idx}),NFrames_max,decimation,is_eNb,version);
-            
-            
-            if is_eNb
-                save(regexprep((fullfile(fpath,filenames{file_idx},'results_eNB.mat')), '.EMOS/results_eNB.mat', '_results_eNB.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx');
-            else
-                save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx', 'K_fac');
-                %save(regexprep((fullfile(fpath,filenames{file_idx},'K_factor.mat')), '.EMOS/K_factor.mat', '_K_factor.mat'), 'gps_data', 'K_fac');
-            end
-            
-        catch exception
-            disp(exception.getReport)
-            disp(sprintf('Detected error in file %s, skipping it',fullfile(fpath,filenames{file_idx})));
+        if (exist(fullfile(fpath,mat_file),'file'))
             continue
         end
         
-        
-        % We need to call the concatenate script here
-        
+        [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR, K_fac] = load_estimates_lte_1(fullfile(fpath,filenames{file_idx}),NFrames_max,decimation,is_eNb,version);
+            
+        if is_eNb
+            save(regexprep((fullfile(fpath,filenames{file_idx},'results_eNB.mat')), '.EMOS/results_eNB.mat', '_results_eNB.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx');
+        else
+            save(regexprep((fullfile(fpath,filenames{file_idx},'results_UE.mat')), '.EMOS/results_UE.mat', '_results_UE.mat'), 'gps_data', 'NFrames', 'SNR', 'throughput', 'minestimates', 'file_idx', 'K_fac');
+            %save(regexprep((fullfile(fpath,filenames{file_idx},'K_factor.mat')), '.EMOS/K_factor.mat', '_K_factor.mat'), 'gps_data', 'K_fac');
+        end
+            
     end
+    % We need to call the concatenate script here
+    %Concatenate_results_UE_quick
+    %Concatenate_results_eNB_quick
+        
 end
 

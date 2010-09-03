@@ -1,3 +1,4 @@
+sh /opt/XIO2000/xio_script.sh
 gpsd /dev/ttyUSB0
 cd USERSPACE_TOOLS/OPENAIR_RF
 

@@ -1,5 +1,5 @@
 CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
-#CC = gcc
+#CC = gcc-4
 
 CFLAGS += -DCELLULAR
 
@@ -15,7 +15,7 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DP
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -O #-DOFDMA_ULSCH #-DIFFT_FPGA #-O2
+CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
 CFLAGS += -DTBS_FIX
 
 ifdef EMOS
@@ -50,7 +50,7 @@ ifdef OPENAIR2
 CFLAGS += -DOPENAIR2 
 endif
 
-CFLAGS += -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/UTIL/TIMER
+CFLAGS += -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/UTIL/TIMER -I/usr/include/X11 -I/usr/X11R6/include
 
 
 
@@ -81,6 +81,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.o
+PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/freq_equalization.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_eNB_measurements.o
@@ -149,8 +150,8 @@ OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 
 all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys
 
-test:
-	echo $(OPENAIR2_DIR) $(LAYER2_OBJ)
+test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
+	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
@@ -163,8 +164,8 @@ dlsim2 : $(OBJ2) dlsim2.c
 dlsim_secsys : $(OBJ2) dlsim_secsys.c
 	$(CC) dlsim_secsys.c -I$(TOP_DIR) -o dlsim_secsys $(CFLAGS) $(OBJ2) -lm
 
-ulsim : $(OBJ2) ulsim.c
-	$(CC) ulsim.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ2) -lm
+ulsim : $(OBJ2) ulsim.c ulsim_form.c
+	$(CC) ulsim.c ulsim_form.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ2) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm
 
 ulsim2 : $(OBJ2) ulsim2.c
 	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ2) -lm
