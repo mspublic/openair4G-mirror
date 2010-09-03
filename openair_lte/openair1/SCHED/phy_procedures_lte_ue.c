@@ -925,12 +925,12 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  } 
 	  else {
 	    	    
-	    printf("dlsch harq_pid %d (rx): \n",harq_pid);
-	    for (j=0;j<dlsch_ue[0]->harq_processes[harq_pid]->TBS>>3;j++)
-	      printf("%x ",dlsch_ue[0]->harq_processes[harq_pid]->b[j]);
+	    printf("dlsch harq_pid %d (rx): \n",dlsch_ue[0]->current_harq_pid);
+	    for (j=0;j<dlsch_ue[0]->harq_processes[dlsch_ue[0]->current_harq_pid]->TBS>>3;j++)
+	      printf("%x ",dlsch_ue[0]->harq_processes[dlsch_ue[0]->current_harq_pid]->b[j]);
 	    printf("\n");
 	    
-	    dlsch_rx(0,dlsch_ue[0]->harq_processes[harq_pid]->b,mac_xface->frame,(last_slot>>1),0);
+	    dlsch_rx(0,dlsch_ue[0]->harq_processes[dlsch_ue[0]->current_harq_pid]->b,mac_xface->frame,(last_slot>>1),0);
 	  }
 	}
 
@@ -1001,10 +1001,10 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	  }
 	  else {
 
-	    timing_advance = process_rar(dlsch_ue_cntl->harq_processes[0]->b,&dummy);
-	    process_timing_advance(timing_advance);
+	    //	    timing_advance = process_rar(dlsch_ue_cntl->harq_processes[0]->b,&dummy);
+	    //	    process_timing_advance(timing_advance);
 
-	    debug_msg("[PHY_PROCEDURES_UE] Frame %d, subframe %d, received (from cntl) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance, openair_daq_vars.timing_advance);
+	    ///	    debug_msg("[PHY_PROCEDURES_UE] Frame %d, subframe %d, received (from cntl) timing_advance = %d (%d)\n",mac_xface->frame,((last_slot>>1)-1)%10, timing_advance, openair_daq_vars.timing_advance);
 	    dlsch_buffer_length = dlsch_ue_cntl->harq_processes[0]->TBS/8;
 	    debug_msg("[PHY_PROCEDURES_UE] Frame %d, subframe %d, received (from cntl) DLSCH PMI %x (saved %x)\n",mac_xface->frame,((last_slot>>1)-1)%10,
 		      pmi2hex_2Ar1(*((unsigned short*)&dlsch_ue_cntl->harq_processes[0]->b[dlsch_buffer_length-2])),
