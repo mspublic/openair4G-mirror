@@ -172,7 +172,7 @@ void phy_procedures_emos_UE_TX(unsigned char next_slot) {
     else {
       emos_dump_UE.uci_cnt[next_slot>>1] = 0;
     }
-  }
+      }
 }
 #endif
 
@@ -1117,9 +1117,9 @@ int phy_procedures_UE_RX(unsigned char last_slot) {
 	    UE_mode = PUSCH;
 	    printf("Received DLSCH 1A: ");
 	    for (i=0;i<18;i++)
-	      printf("%x ",dlsch_ue_1A->harq_processes[harq_pid]->b[i]);
+	      printf("%x ",dlsch_ue_1A->harq_processes[dlsch_ue_1A->current_harq_pid]->b[i]);
 	    printf("\n");
-	    dlsch_rx(0,dlsch_ue_1A->harq_processes[harq_pid]->b,mac_xface->frame,(last_slot>>1),0);
+	    dlsch_rx(0,dlsch_ue_1A->harq_processes[dlsch_ue_1A->current_harq_pid]->b,mac_xface->frame,(last_slot>>1),0);
 #ifdef DEBUG_PHY
 	    debug_msg("[PHY_PROCEDURES_UE] Frame %d, slot %d: Decoded DLSCH (format 1A) Setting UE mode to ULSCH (%d) RAR (%d) NOT_SYNCHED %d)\n",mac_xface->frame,last_slot,PUSCH,RA_RESPONSE,NOT_SYNCHED);
 #endif
