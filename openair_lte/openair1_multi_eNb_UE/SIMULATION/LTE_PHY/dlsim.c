@@ -15,6 +15,8 @@
 #include "SCHED/vars.h"
 
 #define AWGN
+//#define NO_DCI
+
 #define BW 7.68
 #define Td 1.0
 
@@ -265,7 +267,7 @@ int main(int argc, char **argv) {
   }
 
 
-  PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 
   // Fill in UL_alloc
   UL_alloc_pdu.type    = 0;
@@ -427,7 +429,7 @@ int main(int argc, char **argv) {
   }
 
   else {  // PBCH + DLSCH CNTL
-    input_buffer_length = PHY_vars_eNb->dlsch_eNb_cntl->harq_processes[0]->TBS/8;
+   input_buffer_length = PHY_vars_eNb->dlsch_eNb_cntl->harq_processes[0]->TBS/8;
     printf("Input buffer size %d bytes\n",input_buffer_length);
     
     input_buffer = (unsigned char *)malloc(input_buffer_length+4);
@@ -590,7 +592,7 @@ int main(int argc, char **argv) {
 
   printf("tx_lev_dB = %d\n",tx_lev_dB);
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
-    sigma2_dB = tx_lev_dB +10*log10(25/NB_RB) - SNR;
+    sigma2_dB = tx_lev_dB +10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)) - SNR;
     printf("**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
 	   SNR,
 	   (double)tx_lev_dB+10*log10(25/NB_RB),
@@ -626,6 +628,7 @@ int main(int argc, char **argv) {
     
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
+
 	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
@@ -678,60 +681,69 @@ int main(int argc, char **argv) {
 	
 	    if ((Ns==0) && (l==3)) {// process symbols 0,1,2
 
-	      rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
-		       PHY_vars_UE->lte_ue_pdcch_vars,
-		       &PHY_vars_UE->lte_frame_parms,
-		       eNb_id,
-		       2,
-		       (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
+
+#ifndef NO_DCI  
+              rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
+                       PHY_vars_UE->lte_ue_pdcch_vars,
+                       &PHY_vars_UE->lte_frame_parms,
+                       eNb_id,
+                       2,
+                       (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 		       0);
 
-	      dci_cnt = dci_decoding_procedure(PHY_vars_UE->lte_ue_pdcch_vars,
-					       dci_alloc_rx,
-					       eNb_id,
-					       &PHY_vars_UE->lte_frame_parms,
-					       SI_RNTI,
-					       RA_RNTI);
-	      //	      printf("dci_cnt %d\n",dci_cnt);
-	      //	      write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-	      //	      exit(-1);
+              dci_cnt = dci_decoding_procedure(PHY_vars_UE->lte_ue_pdcch_vars,dci_alloc_rx,eNb_id,&PHY_vars_UE->lte_frame_parms,SI_RNTI,RA_RNTI);
+              //              printf("dci_cnt %d\n",dci_cnt);
+              //              write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][0][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+              //              exit(-1);
 
 
-	      for (i=0;i<dci_cnt;i++)
-		if ((dci_alloc_rx[i].rnti == 0x1234) && (dci_alloc_rx[i].format == format2_2A_M10PRB)) {
-	          generate_ue_dlsch_params_from_dci(0,
-                                                    (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
-						    0x1234,
-						    format2_2A_M10PRB,
-						    PHY_vars_UE->dlsch_ue,
-						    &PHY_vars_UE->lte_frame_parms,
-						    SI_RNTI,
-						    RA_RNTI,
-						    P_RNTI);
-
-
-		  dlsch_active = 1;
-		}
-		else {
-		  dlsch_active = 0;
+              for (i=0;i<dci_cnt;i++) {
+                if ((dci_alloc_rx[i].rnti == 0x1234) && (dci_alloc_rx[i].format == format2_2A_M10PRB) &&
+                    (generate_ue_dlsch_params_from_dci(0,
+                                                       (DCI2_5MHz_2A_M10PRB_TDD_t *)&dci_alloc_rx[i].dci_pdu,
+                                                       0x1234,
+                                                       format2_2A_M10PRB,
+                                                       PHY_vars_UE->dlsch_ue,
+                                                       &PHY_vars_UE->lte_frame_parms,
+                                                       SI_RNTI,
+                                                       RA_RNTI,
+                                                       P_RNTI)==0)) {
+                  dlsch_active = 1;
+                }
+                else {
+                  dlsch_active = 0;
 		  dci_errors++;
 		  errs++;
-		}
-	      
+                }
+              }
 
-	      /*
-		else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A))
-	          generate_ue_dlsch_params_from_dci(0,
-                                                    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
-						    SI_RNTI,
-						    format1A,
-						    &dlsch_ue_cntl, 
-						    lte_frame_parms,
-						    SI_RNTI,
-						    RA_RNTI,
-						    P_RNTI);
-	      */
-	      //	      msg("dci_cnt = %d\n",dci_cnt);
+              /*
+                else if ((dci_alloc_rx[i].rnti == SI_RNTI) && (dci_alloc_rx[i].format == format1A))
+                generate_ue_dlsch_params_from_dci(0,
+                (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+                SI_RNTI,
+                format1A,
+                &dlsch_ue_cntl, 
+                lte_frame_parms,
+                SI_RNTI,
+                RA_RNTI,
+                P_RNTI);
+              */
+              //              msg("dci_cnt = %d\n",dci_cnt);
+
+
+#else
+              generate_ue_dlsch_params_from_dci(0,
+                                                &DLSCH_alloc_pdu2,
+                                                0x1234,
+                                                format2_2A_M10PRB,
+                                                PHY_vars_UE->dlsch_ue,
+                                                &PHY_vars_UE->lte_frame_parms,
+                                                SI_RNTI,
+                                                RA_RNTI,
+                                                P_RNTI);
+              dlsch_active = 1;
+#endif
 
 	    }
 /*
@@ -808,11 +820,10 @@ int main(int argc, char **argv) {
 #ifdef OUTPUT_DEBUG      
 	  write_output("rxsig0.m","rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	  write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-	  
 	  /*
-	    write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][1][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-	    write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][2][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-	    write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+	    write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][1][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+	    write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][2][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+	    write_output("dlsch11_ch0.m","dl11_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
 	  */
 	  write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,2,1);
 	  write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
