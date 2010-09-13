@@ -32,9 +32,8 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
+#define N_TRIALS 10000
 
-
-#define N_TRIALS_UL 10000
 
 
 #define RBmask0 0x00fc00fc
@@ -68,23 +67,24 @@ int main(int argc, char **argv)
   int result,ii;
   int sync_pos, sync_pos_slot;
   int freq_offset,subframe_offset,subframe;
-  int j=0;
+  int j=0,first_call0_0 = 1,first_call1_0 = 1;
 #ifdef COLLABRATIVE_SCHEME
+  int first_call0_1 = 1,first_call1_1 = 1;
   int channel_offset=0;// Channel_offset for Delay Diversity Scheme
 #endif
   int re_allocated;
   
   
-  unsigned int dci_cnt_0,dlsch_active_0 = 0,decode_error_0=1;
+  unsigned int dci_cnt_0,dlsch_active_0 = 0,decode_error_0 = 1,dci_errors_0 = 0,n_errors_dl_0 = 0;
 #ifdef COLLABRATIVE_SCHEME
-  unsigned int dci_cnt_1,dlsch_active_1 = 0,decode_error_1=1;
+  unsigned int dci_cnt_1,dlsch_active_1 = 0,decode_error_1 = 1,dci_errors_1 = 0,n_errors_dl_1 = 0;
 #endif
   unsigned int ret_0,ret_ul;
 #ifdef COLLABRATIVE_SCHEME
   unsigned int ret_1;
 #endif
   unsigned int coded_bits_per_codeword_dl,nsymb;
-  unsigned int trials_ul,n_errors_ul=0;
+  unsigned int n_errors_overall=0,trials,trials_ul,n_errors_ul = 0;
   unsigned int tx_lev_dl,tx_lev_ul,tx_lev_dl_dB,tx_lev_ul_dB,num_layers;
 
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
   
 
 
-  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=8.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
+  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
   double **s_re,**s_im,**r_re0_0,**r_im0_0;
   double **s_re_0,**s_im_0,**r_re1_0,**r_im1_0;
 #ifdef COLLABRATIVE_SCHEME
@@ -100,13 +100,13 @@ int main(int argc, char **argv)
   double **s_re_1,**s_im_1,**r_re1_1,**r_im1_1;
 #endif
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=0.05,ricean_factor=0.09;
+  double aoa=.1,ricean_factor=0.09;
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0,rate_dl;
   double N0W, path_loss, path_loss_dB;
   
   
-  char fname[40], vname[40],bler_fname_ul[20];
+  char fname[40], vname[40],bler_fname_overall[20],bler_fname_dl_0[20],bler_fname_dl_1[20],bler_fname_ul[20];
 
   
   
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
   MIMO_mode_t mimo_mode;
   
   
-  FILE *rx_frame_file,*bler_fd_ul;
+  FILE *rx_frame_file,*bler_fd_overall,*bler_fd_dl_0,*bler_fd_dl_1,*bler_fd_ul;
 
   
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx_0[8];
@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 #endif
    
   
-  
+ 
   snr1_ul = snr0_ul+25;
 
   
@@ -429,11 +429,29 @@ int main(int argc, char **argv)
 
 
 
+  //printf("Rate = %f (mod %d)\n",(double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/coded_bits_per_codeword,get_Qm(mcs));
+  //rate_dl *= get_Qm(mcs_dl);
   
-  sprintf(bler_fname_ul,"bler_ul_%e.m",ricean_factor);
+
+  sprintf(bler_fname_overall,"bler_overall_%d_%ek.m",diversity_scheme,ricean_factor);
+  bler_fd_overall = fopen(bler_fname_overall,"w");
+  fprintf(bler_fd_overall,"bler_overall =[ ");
+
+
+  sprintf(bler_fname_dl_0,"bler_dl_0_%d_%ek.m",diversity_scheme,ricean_factor);
+  bler_fd_dl_0 = fopen(bler_fname_dl_0,"w");
+  fprintf(bler_fd_dl_0,"bler_dl_0 =[ ");
+
+
+#ifdef COLLABRATIVE_SCHEME
+  sprintf(bler_fname_dl_1,"bler_dl_1_%d_%ek.m",diversity_scheme,ricean_factor);
+  bler_fd_dl_1 = fopen(bler_fname_dl_1,"w");
+  fprintf(bler_fd_dl_1,"bler_dl_1 =[ ");
+#endif
+
+  sprintf(bler_fname_ul,"bler_ul_%d_%ek.m",diversity_scheme,ricean_factor);
   bler_fd_ul = fopen(bler_fname_ul,"w");
   fprintf(bler_fd_ul,"bler_ul =[ ");
-
 
   
   
@@ -829,8 +847,8 @@ int main(int argc, char **argv)
 
 #ifdef COLLABRATIVE_SCHEME
   if((relay_flag == 2)&&(diversity_scheme == 1))
-    channel_offset = lte_frame_parms->nb_prefix_samples/2;
-  // printf("channel offset %d",channel_offset);
+    channel_offset = lte_frame_parms->nb_prefix_samples>>=1;
+  //printf("channel offset %d",channel_offset);
 #endif
   
 
@@ -927,7 +945,8 @@ int main(int argc, char **argv)
 #endif
   
 
- 
+  // multipath channel
+
 
   
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
@@ -937,26 +956,45 @@ int main(int argc, char **argv)
     }
   }
   
-
+  //printf("tx_lev_dl_dB = %d\n",tx_lev_dl_dB);
+  
   
  
-    
-    sigma2_dB_dl = tx_lev_dl_dB +10*log10(25/NB_RB_dl) - SNR_dl;
-    // printf("**********************SNR_dl = %f dB (tx_lev_dl %f, sigma2_dB_dl %f)**************************\n",
-    // SNR_dl,
-    //   (double)tx_lev_dl_dB+10*log10(25/NB_RB),
-    //   sigma2_dB_dl);
+  sigma2_dB_dl = tx_lev_dl_dB +10*log10(25/NB_RB_dl) - SNR_dl;
+  // printf("**********************SNR_dl = %f dB (tx_lev_dl %f, sigma2_dB_dl %f)**************************\n",
+  // SNR_dl,
+  //   (double)tx_lev_dl_dB+10*log10(25/NB_RB),
+  //   sigma2_dB_dl);
+
+
+
+  // Loop overUplink  SNR
+  
+
+
+  for (SNR_ul=snr0_ul;SNR_ul<=snr1_ul;SNR_ul+=0.25) {
     
 
-    //printf("Channel attenuation downlink %f\n",(double)tx_lev_dl_dB - (SNR_dl+sigma2_dB_dl));
+    n_errors_overall = 0;
+
+    dci_errors_0 = 0,n_errors_dl_0 = 0,n_errors_ul = 0,decode_error_0 = 1;
+
+    trials_ul = 0;
+
+#ifdef COLLABRATIVE_SCHEME
+    dci_errors_1 = 0,n_errors_dl_1 = 0;decode_error_1 = 1;
+#endif
+
     
     
     
-     
+    // Number of trials 
+    for (trials = 0;trials<N_TRIALS;trials++) {
       
       
-    //eNB0 to UE0
-    multipath_channel(ch[SeFu],s_re,s_im,r_re0_0,r_im0_0,
+      
+      //eNB0 to UE0
+      multipath_channel(ch[SeFu],s_re,s_im,r_re0_0,r_im0_0,
 			amps,Td,BW,ricean_factor,aoa,
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
@@ -964,7 +1002,8 @@ int main(int argc, char **argv)
 			channel_length,
 			0,1//forgetting factor
 			,1,0,SeFu,0);
-    
+
+     
       
       
       
@@ -986,7 +1025,13 @@ int main(int argc, char **argv)
       }    
       
       
-       
+      //UE 0
+      //    lte_sync_time_init(lte_frame_parms,PHY_vars_ue[0]->lte_ue_common_vars);
+      //    lte_sync_time(PHY_vars_ue[0]->lte_ue_common_vars.rxdata, lte_frame_parms);
+      //    lte_sync_time_free();
+      
+
+      
       
       
       
@@ -1050,6 +1095,7 @@ int main(int argc, char **argv)
 	    if(dci_cnt_0 == 0)
 	      {
 		dlsch_active_0 = 0;
+		dci_errors_0++;
 	      }
 	    
 	    for (i=0;i<dci_cnt_0;i++)
@@ -1069,6 +1115,7 @@ int main(int argc, char **argv)
 		}
 	      else {
 		dlsch_active_0 = 0;
+		dci_errors_0++;
 	      }
 	    
 	    /*
@@ -1234,6 +1281,7 @@ int main(int argc, char **argv)
 	  }	
 	  else {
 	    decode_error_0 = 1;
+	    n_errors_dl_0++;
 #ifdef OUTPUT_DEBUG  
 	    printf("DLSCH in error for UE0\n");
 #endif
@@ -1277,7 +1325,8 @@ int main(int argc, char **argv)
 			channel_length,
 			0,1//forgetting factor
 			,1,0,SeSu,0);
-       
+      
+      
 
 #ifdef OUTPUT_DEBUG
       write_output("channel0_dl1.m","chan0_dl1",ch[SeSu][0],channel_length,1,8);//UE 1 
@@ -1297,7 +1346,10 @@ int main(int argc, char **argv)
       }    
 
 
- 
+      //UE 1
+      //    lte_sync_time_init(lte_frame_parms,PHY_vars_ue[0]->lte_ue_common_vars);
+      //    lte_sync_time(PHY_vars_ue[0]->lte_ue_common_vars.rxdata, lte_frame_parms);
+      //    lte_sync_time_free();
       
 
 
@@ -1360,6 +1412,7 @@ int main(int argc, char **argv)
 	    if (dci_cnt_1 == 0)
 	      {
 		dlsch_active_1 = 0;
+		dci_errors_1++;
 	      }
 
 
@@ -1379,6 +1432,7 @@ int main(int argc, char **argv)
 		}
 	      else {
 		dlsch_active_1 = 0;
+		dci_errors_1++;
 	      }
 	    
 	    /*	else if ((dci_alloc_rx_1[i].rnti == SI_RNTI) && (dci_alloc_rx_1[i].format == format1A))
@@ -1539,6 +1593,7 @@ int main(int argc, char **argv)
 	  }	
 	  else {
 	    decode_error_1 = 1;
+	    n_errors_dl_1++;
 #ifdef OUTPUT_DEBUG  
 	    printf("UE1 DLSCH in error\n");
 #endif
@@ -1570,39 +1625,39 @@ int main(int argc, char **argv)
 #endif
       
 
+  
+  
+
+      /*********************************UE0 will transmit only correctly decoded signal*********************************************/
+      if((dlsch_active_0 ==1) && (decode_error_0 == 0))
+	{
+
+	  // UE0 ULSCH params
+	  generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
+					    C_RNTI,
+					    8,
+					    format0,
+					    PHY_vars_ue[0]->ulsch_ue[0],
+					    PHY_vars_ue[0]->dlsch_ue,
+					    &PHY_vars_ue[0]->PHY_measurements,
+					    lte_frame_parms,
+					    SI_RNTI,
+					    RA_RNTI,
+					    P_RNTI,
+					    1,
+					    0);//current_dlsch_cqi);
 
 
-
-    /*********************************UE0 will transmit only correctly decoded signal*********************************************/
-    if((dlsch_active_0 ==1) && (decode_error_0 == 0))
-      {
-
-	// UE0 ULSCH params
-	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
-					  C_RNTI,
-					  8,
-					  format0,
-					  PHY_vars_ue[0]->ulsch_ue[0],
-					  PHY_vars_ue[0]->dlsch_ue,
-					  &PHY_vars_ue[0]->PHY_measurements,
-					  lte_frame_parms,
-					  SI_RNTI,
-					  RA_RNTI,
-					  P_RNTI,
-					  1,
-					  0);//current_dlsch_cqi);
-
-
-	//UE0 to eNB1: eNB1 ULSCH params
-	generate_eNb_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
-					   SI_RNTI,
-					   8,
-					   format0,
-					   PHY_vars_eNB[1]->ulsch_eNb[0],
-					   lte_frame_parms,
-					   SI_RNTI,
-					   RA_RNTI,
-					   P_RNTI);
+	  //UE0 to eNB1: eNB1 ULSCH params
+	  generate_eNb_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
+					     SI_RNTI,
+					     8,
+					     format0,
+					     PHY_vars_eNB[1]->ulsch_eNb[0],
+					     lte_frame_parms,
+					     SI_RNTI,
+					     RA_RNTI,
+					     P_RNTI);
 	  	  
 
 
@@ -1611,172 +1666,172 @@ int main(int argc, char **argv)
 
 	  
 	  
-	// UL SImulation for UE0 to destination eNB
+	  // UL SImulation for UE0 to destination eNB
 	  
 	  
 	 
-	subframe = 2;
+	  subframe = 2;
 
 	  
-	generate_srs_tx(lte_frame_parms,
-			PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],
-			AMP,subframe);
+	  generate_srs_tx(lte_frame_parms,
+			  PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],
+			  AMP,subframe);
 
 
-	// 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
-	generate_drs_pusch(lte_frame_parms,
-			   PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],
-			   AMP,subframe,
-			   PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[0]->first_rb,
-			   PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[0]->nb_rb,
-			   0,relay_flag,diversity_scheme);
+	  // 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
+	  generate_drs_pusch(lte_frame_parms,
+			     PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],
+			     AMP,subframe,
+			     PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[0]->first_rb,
+			     PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[0]->nb_rb,
+			     0,relay_flag,diversity_scheme);
 	  
 
 
 
-	harq_pid_ul = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,subframe);
-	input_buffer_length_UE0 = PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[harq_pid_ul]->TBS/8;
-	//	printf("Input buffer size UE0 %d bytes\n",input_buffer_length_UE0);
+	  harq_pid_ul = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,subframe);
+	  input_buffer_length_UE0 = PHY_vars_ue[0]->ulsch_ue[0]->harq_processes[harq_pid_ul]->TBS/8;
+	  //	printf("Input buffer size UE0 %d bytes\n",input_buffer_length_UE0);
 
-	input_buffer_UE0 = (unsigned char *)malloc(input_buffer_length_UE0+4);
+	  input_buffer_UE0 = (unsigned char *)malloc(input_buffer_length_UE0+4);
 
-	for (i=0;i<input_buffer_length_UE0;i++) {
-	  //input_buffer_UE0[i]= (unsigned char)(taus()&0xff);
-	  input_buffer_UE0[i] = input_buffer_UE0_temp[i];
-	  // printf("input UE0%d : %x\n",i,input_buffer_UE0[i]);
-	}
+	  for (i=0;i<input_buffer_length_UE0;i++) {
+	    //input_buffer_UE0[i]= (unsigned char)(taus()&0xff);
+	    input_buffer_UE0[i] = input_buffer_UE0_temp[i];
+	    // printf("input UE0%d : %x\n",i,input_buffer_UE0[i]);
+	  }
 	  
 	
 
 	  
-	ulsch_encoding(input_buffer_UE0,
-		       lte_frame_parms,
-		       PHY_vars_ue[0]->ulsch_ue[0],
-		       harq_pid_ul);
-	  
-
-	// 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
-	ulsch_modulation(PHY_vars_ue[0]->lte_ue_common_vars.txdataF,
-			 AMP,subframe,
+	  ulsch_encoding(input_buffer_UE0,
 			 lte_frame_parms,
 			 PHY_vars_ue[0]->ulsch_ue[0],
-			 0,relay_flag,diversity_scheme,0);
+			 harq_pid_ul);
+	  
+
+	  // 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
+	  ulsch_modulation(PHY_vars_ue[0]->lte_ue_common_vars.txdataF,
+			   AMP,subframe,
+			   lte_frame_parms,
+			   PHY_vars_ue[0]->ulsch_ue[0],
+			   0,relay_flag,diversity_scheme,0);
 	  
 	  
 #ifdef IFFT_FPGA
 	  
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE0_txsigF0.m","UE0_txsF0",PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],300*12,1,4);
+	  write_output("UE0_txsigF0.m","UE0_txsF0",PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],300*12,1,4);
 #endif
 	  
 	  
 	  
-	// do talbe lookup and write results to txdataF2
+	  // do talbe lookup and write results to txdataF2
 	  
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
-	  {
-	    l = 0;
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++)
-	      {
-		if ((i%512>=1) && (i%512<=150))
-		  txdataF2_UE0[aa][i] = ((int*)mod_table)[PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa][l++]];
-		else if (i%512>=362)
-		  txdataF2_UE0[aa][i] = ((int*)mod_table)[PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa][l++]];
-		else 
-		  txdataF2_UE0[aa][i] = 0;
-		printf("l=%d\n",l);
-	      }
+	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
+	    {
+	      l = 0;
+	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++)
+		{
+		  if ((i%512>=1) && (i%512<=150))
+		    txdataF2_UE0[aa][i] = ((int*)mod_table)[PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa][l++]];
+		  else if (i%512>=362)
+		    txdataF2_UE0[aa][i] = ((int*)mod_table)[PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa][l++]];
+		  else 
+		    txdataF2_UE0[aa][i] = 0;
+		  printf("l=%d\n",l);
+		}
+	    }
+	  
+#ifdef OUTPUT_DEBUG
+	  write_output("UE0_txsigF20.m","UE0_txsF20", txdataF2_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+#endif
+	  
+	  tx_lev_ul = 0;
+	  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	    PHY_ofdm_mod(txdataF2_UE0[aa],        // input
+			 txdata_UE0[aa],         // output
+			 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+			 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+			 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+			 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+			 lte_frame_parms->rev,           // bit-reversal permutation
+			 CYCLIC_PREFIX);
+	    tx_lev_ul += signal_energy(&txdata_UE0[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
+				       OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	  }
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE0_txsigF20.m","UE0_txsF20", txdataF2_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-#endif
-	  
-	tx_lev_ul = 0;
-	for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-	  PHY_ofdm_mod(txdataF2_UE0[aa],        // input
-		       txdata_UE0[aa],         // output
-		       lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		       12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		       lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		       lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		       lte_frame_parms->rev,           // bit-reversal permutation
-		       CYCLIC_PREFIX);
-	  tx_lev_ul += signal_energy(&txdata_UE0[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
-				     OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	}
-	  
-#ifdef OUTPUT_DEBUG
-	write_output("UE0_txsig0.m","UE0_txs0", txdata_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	  write_output("UE0_txsig0.m","UE0_txs0", txdata_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif     
 	  
 	  
 #else //IFFT_FPGA
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE0_txsigF0.m","UE0_txsF0", PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	  write_output("UE0_txsigF0.m","UE0_txsF0", PHY_vars_ue[0]->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 #endif
 	  
 	  
-	tx_lev_ul = 0;
-	for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-	  PHY_ofdm_mod(PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa],        // input
-		       txdata_UE0[aa],         // output
-		       lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		       12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		       lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		       lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		       lte_frame_parms->rev,           // bit-reversal permutation
-		       CYCLIC_PREFIX);
-	  tx_lev_ul += signal_energy(&txdata_UE0[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*subframe*12],
-				     OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	}
+	  tx_lev_ul = 0;
+	  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	    PHY_ofdm_mod(PHY_vars_ue[0]->lte_ue_common_vars.txdataF[aa],        // input
+			 txdata_UE0[aa],         // output
+			 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+			 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+			 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+			 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+			 lte_frame_parms->rev,           // bit-reversal permutation
+			 CYCLIC_PREFIX);
+	    tx_lev_ul += signal_energy(&txdata_UE0[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*subframe*12],
+				       OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	  }
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE0_txsig0.m","UE0_txs0", txdata_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);  
+	  write_output("UE0_txsig0.m","UE0_txs0", txdata_UE0[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);  
 #endif     
 #endif
 
-	// printf("tx_lev_ul = %d\n",tx_lev_ul);
-	tx_lev_ul_dB = (unsigned int) dB_fixed(tx_lev_ul);
+	  // printf("tx_lev_ul = %d\n",tx_lev_ul);
+	  tx_lev_ul_dB = (unsigned int) dB_fixed(tx_lev_ul);
 	  
-      }//dlsch_active_0==1 && decode_error_0 == 0
+	}//dlsch_active_0==1 && decode_error_0 == 0
 
 
 #ifdef COLLABRATIVE_SCHEME
 
 
-    /*********************************UE1 will transmit only correctly decoded signal*********************************************/
-    if((dlsch_active_1 ==1) && (decode_error_1 == 0))
-      {
+      /*********************************UE1 will transmit only correctly decoded signal*********************************************/
+      if((dlsch_active_1 ==1) && (decode_error_1 == 0))
+	{
 
-	// UE1 ULSCH params
-	generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
-					  C_RNTI,
-					  8,
-					  format0,
-					  PHY_vars_ue[1]->ulsch_ue[0],
-					  PHY_vars_ue[1]->dlsch_ue,
-					  &PHY_vars_ue[1]->PHY_measurements,
-					  lte_frame_parms,
-					  SI_RNTI,
-					  RA_RNTI,
-					  P_RNTI,
-					  1,
-					  current_dlsch_cqi);
+	  // UE1 ULSCH params
+	  generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
+					    C_RNTI,
+					    8,
+					    format0,
+					    PHY_vars_ue[1]->ulsch_ue[0],
+					    PHY_vars_ue[1]->dlsch_ue,
+					    &PHY_vars_ue[1]->PHY_measurements,
+					    lte_frame_parms,
+					    SI_RNTI,
+					    RA_RNTI,
+					    P_RNTI,
+					    1,
+					    current_dlsch_cqi);
 
 
-	//UE1 to eNB1: eNB1 ULSCH params
-	generate_eNb_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
-					   SI_RNTI,
-					   8,
-					   format0,
-					   PHY_vars_eNB[1]->ulsch_eNb[0],
-					   lte_frame_parms,
-					   SI_RNTI,
-					   RA_RNTI,
-					   P_RNTI);
+	  //UE1 to eNB1: eNB1 ULSCH params
+	  generate_eNb_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
+					     SI_RNTI,
+					     8,
+					     format0,
+					     PHY_vars_eNB[1]->ulsch_eNb[0],
+					     lte_frame_parms,
+					     SI_RNTI,
+					     RA_RNTI,
+					     P_RNTI);
 	  	  
 
 
@@ -1785,249 +1840,245 @@ int main(int argc, char **argv)
 
 	  
 	  
-	// UL SImulation for UE1 to destination eNB
+	  // UL SImulation for UE1 to destination eNB
 	  
 	  
 	 
-	subframe = 2;
+	  subframe = 2;
 
 	  
-	generate_srs_tx(lte_frame_parms,
-			PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],
-			AMP,subframe);
+	  generate_srs_tx(lte_frame_parms,
+			  PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],
+			  AMP,subframe);
 
 
-	// 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
-	generate_drs_pusch(lte_frame_parms,
-			   PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],
-			   AMP,subframe,
-			   PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[0]->first_rb,
-			   PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[0]->nb_rb,
-			   1,relay_flag,diversity_scheme);
+	  // 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
+	  generate_drs_pusch(lte_frame_parms,
+			     PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],
+			     AMP,subframe,
+			     PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[0]->first_rb,
+			     PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[0]->nb_rb,
+			     1,relay_flag,diversity_scheme);
 	  
 
 
 
-	harq_pid_ul = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,subframe);
-	input_buffer_length_UE1 = PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[harq_pid_ul]->TBS/8;
-	//	printf("Input buffer size UE1 %d bytes\n",input_buffer_length_UE1);
+	  harq_pid_ul = subframe2harq_pid_tdd(lte_frame_parms->tdd_config,subframe);
+	  input_buffer_length_UE1 = PHY_vars_ue[1]->ulsch_ue[0]->harq_processes[harq_pid_ul]->TBS/8;
+	  //	printf("Input buffer size UE1 %d bytes\n",input_buffer_length_UE1);
 
-	input_buffer_UE1 = (unsigned char *)malloc(input_buffer_length_UE1+4);
+	  input_buffer_UE1 = (unsigned char *)malloc(input_buffer_length_UE1+4);
 
 
-	for (i=0;i<input_buffer_length_UE1;i++) {
-	  //input_buffer_UE1[i]= (unsigned char)(taus()&0xff);
-	  input_buffer_UE1[i] = input_buffer_UE1_temp[i];
-	  //printf("input UE1 %d : %x\n",i,input_buffer_UE1[i]);
-	} 
+	  for (i=0;i<input_buffer_length_UE1;i++) {
+	    //input_buffer_UE1[i]= (unsigned char)(taus()&0xff);
+	    input_buffer_UE1[i] = input_buffer_UE1_temp[i];
+	    //printf("input UE1 %d : %x\n",i,input_buffer_UE1[i]);
+	  } 
 	
 	  
-	ulsch_encoding(input_buffer_UE1,
-		       lte_frame_parms,
-		       PHY_vars_ue[1]->ulsch_ue[0],
-		       harq_pid_ul);
-	  
-
-	// 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
-	ulsch_modulation(PHY_vars_ue[1]->lte_ue_common_vars.txdataF,
-			 AMP,subframe,
+	  ulsch_encoding(input_buffer_UE1,
 			 lte_frame_parms,
 			 PHY_vars_ue[1]->ulsch_ue[0],
-			 0,relay_flag,diversity_scheme,1);
+			 harq_pid_ul);
+	  
+
+	  // 3 Additional Flags are used: Indicating the UE ID, Relay Flag & Diversity Scheme
+	  ulsch_modulation(PHY_vars_ue[1]->lte_ue_common_vars.txdataF,
+			   AMP,subframe,
+			   lte_frame_parms,
+			   PHY_vars_ue[1]->ulsch_ue[0],
+			   0,relay_flag,diversity_scheme,1);
 	  
 	  
 #ifdef IFFT_FPGA
 	  
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE1_txsigF0.m","UE1_txsF0",PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],300*12,1,4);
+	  write_output("UE1_txsigF0.m","UE1_txsF0",PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],300*12,1,4);
 #endif
 	  
 	  
 	  
-	// do talbe lookup and write results to txdataF2
+	  // do talbe lookup and write results to txdataF2
 	  
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
-	  {
-	    l = 0;
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++)
-	      {
-		if ((i%512>=1) && (i%512<=150))
-		  txdataF2_UE1[aa][i] = ((int*)mod_table)[PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa][l++]];
-		else if (i%512>=362)
-		  txdataF2_UE1[aa][i] = ((int*)mod_table)[PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa][l++]];
-		else 
-		  txdataF2_UE1[aa][i] = 0;
-		printf("l=%d\n",l);
-	      }
+	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++)
+	    {
+	      l = 0;
+	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++)
+		{
+		  if ((i%512>=1) && (i%512<=150))
+		    txdataF2_UE1[aa][i] = ((int*)mod_table)[PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa][l++]];
+		  else if (i%512>=362)
+		    txdataF2_UE1[aa][i] = ((int*)mod_table)[PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa][l++]];
+		  else 
+		    txdataF2_UE1[aa][i] = 0;
+		  printf("l=%d\n",l);
+		}
+	    }
+	  
+#ifdef OUTPUT_DEBUG
+	  write_output("UE1_txsigF20.m","UE1_txsF20", txdataF2_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+#endif
+	  
+	  tx_lev_ul = 0;
+	  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	    PHY_ofdm_mod(txdataF2_UE1[aa],        // input
+			 txdata_UE1[aa],         // output
+			 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+			 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+			 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+			 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+			 lte_frame_parms->rev,           // bit-reversal permutation
+			 CYCLIC_PREFIX);
+	    tx_lev_ul += signal_energy(&txdata_UE1[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
+				       OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	  }
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE1_txsigF20.m","UE1_txsF20", txdataF2_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-#endif
-	  
-	tx_lev_ul = 0;
-	for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-	  PHY_ofdm_mod(txdataF2_UE1[aa],        // input
-		       txdata_UE1[aa],         // output
-		       lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		       12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		       lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		       lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		       lte_frame_parms->rev,           // bit-reversal permutation
-		       CYCLIC_PREFIX);
-	  tx_lev_ul += signal_energy(&txdata_UE1[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
-				     OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	}
-	  
-#ifdef OUTPUT_DEBUG
-	write_output("UE1_txsig0.m","UE1_txs0", txdata_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	  write_output("UE1_txsig0.m","UE1_txs0", txdata_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif     
 	  
 	  
 #else //IFFT_FPGA
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE1_txsigF0.m","UE1_txsF0", PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	  write_output("UE1_txsigF0.m","UE1_txsF0", PHY_vars_ue[1]->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 #endif
 	  
 	  
-	tx_lev_ul = 0;
-	for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
-	  PHY_ofdm_mod(PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa],        // input
-		       txdata_UE1[aa],         // output
-		       lte_frame_parms->log2_symbol_size,                // log2_fft_size
-		       12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
-		       lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		       lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		       lte_frame_parms->rev,           // bit-reversal permutation
-		       CYCLIC_PREFIX);
-	  tx_lev_ul += signal_energy(&txdata_UE1[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*subframe*12],
-				     OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	}
+	  tx_lev_ul = 0;
+	  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	    PHY_ofdm_mod(PHY_vars_ue[1]->lte_ue_common_vars.txdataF[aa],        // input
+			 txdata_UE1[aa],         // output
+			 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+			 12*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,                 // number of symbols
+			 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
+			 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
+			 lte_frame_parms->rev,           // bit-reversal permutation
+			 CYCLIC_PREFIX);
+	    tx_lev_ul += signal_energy(&txdata_UE1[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*subframe*12],
+				       OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	  }
 	  
 #ifdef OUTPUT_DEBUG
-	write_output("UE1_txsig0.m","UE1_txs0", txdata_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);  
+	  write_output("UE1_txsig0.m","UE1_txs0", txdata_UE1[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);  
 #endif     
 #endif
 
-	// printf("tx_lev_ul = %d\n",tx_lev_ul);
-	tx_lev_ul_dB = (unsigned int) dB_fixed(tx_lev_ul);
+	  // printf("tx_lev_ul = %d\n",tx_lev_ul);
+	  tx_lev_ul_dB = (unsigned int) dB_fixed(tx_lev_ul);
 	  
-      }//dlsch_active_1==1 && decode_error_1 == 0
+	}//dlsch_active_1==1 && decode_error_1 == 0
 #endif
 
    
 #ifdef COLLABRATIVE_SCHEME
-    if(((dlsch_active_0 == 1)&& (decode_error_0 == 0)) && ((dlsch_active_1 == 1)&& (decode_error_1 == 0)))// When both the relays transmit
-      {
+      if(((dlsch_active_0 == 1)&& (decode_error_0 == 0)) && ((dlsch_active_1 == 1)&& (decode_error_1 == 0)))// When both the relays transmit
+	{
 
-	//randominit(0);
+	  trials_ul++;
 
-	//UE0
-	for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
-	    s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
+	  //UE0
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	      s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
+	      s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
+	    }
 	  }
-	}
 	  
-	//UE1
-	for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)]);
-	    s_im_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)+1]);
-	    
-	  }
-	}
-
-	for(SNR_ul=snr0_ul;SNR_ul<snr1_ul;SNR_ul+=0.25){
-	  n_errors_ul = 0;
-
-
-	  for(trials_ul = 0;trials_ul<N_TRIALS_UL;trials_ul++){
-
-	    // multipath channel
-
-	  
-	  
-	    // UE 0
-	    multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
-			      amps,Td,BW,ricean_factor,aoa,
-			      lte_frame_parms->nb_antennas_tx,
-			      lte_frame_parms->nb_antennas_rx,
-			      FRAME_LENGTH_COMPLEX_SAMPLES,
-			      channel_length,
-			      0,1//forgetting factor
-			      ,1,0,FuDe,0);
-	 
-	    
-	    
-	    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
-	    
-	    // scale by path_loss = NOW - P_noise
-	    //sigma2_ul       = pow(10,sigma2_dB_ul/10);
-	    //N0W          = -95.87;
-	    //path_loss_dB = N0W - sigma2_ul;
-	    //path_loss    = pow(10,path_loss_dB/10);
-	    path_loss_dB = 0;
-	    path_loss = 1;
-	    
-	    
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
-		r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
+	  //UE1
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	      s_re_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)]);
+	      s_im_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)+1]);
 	      }
 	    }
+	  
+
+	
+	  // multipath channel
+
+	  
+	  
+	  // UE 0
+	  multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
+			    amps,Td,BW,ricean_factor,aoa,
+			    lte_frame_parms->nb_antennas_tx,
+			    lte_frame_parms->nb_antennas_rx,
+			    FRAME_LENGTH_COMPLEX_SAMPLES,
+			    channel_length,
+			    0,1//forgetting factor
+			    ,1,0,FuDe,0);
+	  
+	    
+	    
+	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+	    
+	  // scale by path_loss = NOW - P_noise
+	  //sigma2_ul       = pow(10,sigma2_dB_ul/10);
+	  //N0W          = -95.87;
+	  //path_loss_dB = N0W - sigma2_ul;
+	  //path_loss    = pow(10,path_loss_dB/10);
+	  path_loss_dB = 0;
+	  path_loss = 1;
+	    
+	    
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
+	      r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
+	    }
+	  }
 	    
 	    
 
-	    //UE 1
-	    multipath_channel(ch[SuDe],s_re_1,s_im_1,r_re1_1,r_im1_1,
-			      amps,Td,BW,ricean_factor,aoa,
-			      lte_frame_parms->nb_antennas_tx,
-			      lte_frame_parms->nb_antennas_rx,
-			      FRAME_LENGTH_COMPLEX_SAMPLES,
-			      channel_length,
-			      0,1//forgetting factor
-			      ,1,0,SuDe,channel_offset);
-	   
+	  //UE 1
+	  multipath_channel(ch[SuDe],s_re_1,s_im_1,r_re1_1,r_im1_1,
+			    amps,Td,BW,ricean_factor,aoa,
+			    lte_frame_parms->nb_antennas_tx,
+			    lte_frame_parms->nb_antennas_rx,
+			    FRAME_LENGTH_COMPLEX_SAMPLES,
+			    channel_length,
+			    0,1//forgetting factor
+			    ,1,0,SuDe,channel_offset);
+	  if(first_call1_1 ==1)
+	    first_call1_1 = 0;
 	    
 	    
-	    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
 	    
-	    // scale by path_loss = NOW - P_noise
-	    //sigma2_ul       = pow(10,sigma2_dB_ul/10);
-	    //N0W          = -95.87;
-	    //path_loss_dB = N0W - sigma2_ul;
-	    //path_loss    = pow(10,path_loss_dB/10);
-	    path_loss_dB = 0;
-	    path_loss = 1;
+	  // scale by path_loss = NOW - P_noise
+	  //sigma2_ul       = pow(10,sigma2_dB_ul/10);
+	  //N0W          = -95.87;
+	  //path_loss_dB = N0W - sigma2_ul;
+	  //path_loss    = pow(10,path_loss_dB/10);
+	  path_loss_dB = 0;
+	  path_loss = 1;
 	    
 	    
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
-		r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
-	      }
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
+	      r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
 	    }
+	  }
 	    
    
 	    
-	    //AWGN
+	  //AWGN
 
-	    sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
-	    // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
-	    sigma2_ul = pow(10,sigma2_dB_ul/10);
-	    //printf("sigma2_ul = %g\n",sigma2_ul);
-	    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		// For 2 UEs 
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
-	      }
+	  sigma2_dB_ul = tx_lev_ul_dB  - SNR_ul;
+	  // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
+	  sigma2_ul = pow(10,sigma2_dB_ul/10);
+	  //printf("sigma2_ul = %g\n",sigma2_ul);
+	  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      // For 2 UEs 
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 	    }
+	  }
 	  
       
       
@@ -2035,254 +2086,219 @@ int main(int argc, char **argv)
 	    
 
 
-	    for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
-	      {
+	  for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
+	    {
 		
-		slot_fep_ul(lte_frame_parms,
-			    &PHY_vars_eNB[1]->lte_eNB_common_vars,
-			    l%(lte_frame_parms->symbols_per_tti/2),
-			    l/(lte_frame_parms->symbols_per_tti/2),
-			    1,
-			    0);
-	      }
-
-
-
-	    rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
-		     PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
-		     lte_frame_parms,
-		     subframe,
-		     1,  
-		     0, 
-		     PHY_vars_eNB[1]->ulsch_eNb,
-		     0,
-		     relay_flag,
-		     diversity_scheme);
-		
-		
-		
-	    ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
-				    lte_frame_parms,
-				    PHY_vars_eNB[1]->ulsch_eNb[0],
-				    subframe,
-				    0);
-
-
-	    if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-	      n_errors_ul++;
-	   
+	      slot_fep_ul(lte_frame_parms,
+			  &PHY_vars_eNB[1]->lte_eNB_common_vars,
+			  l%(lte_frame_parms->symbols_per_tti/2),
+			  l/(lte_frame_parms->symbols_per_tti/2),
+			  1,
+			  0);
 	    }
-	    if (((n_errors_ul>=1000) || ((double)n_errors_ul/(1+trials_ul) < 1e-3))&&(trials_ul>1000))
-	      break;
-	  }//trials_ul
 
 
-	  fprintf(bler_fd_ul,"%f,%f,%e;\n",SNR_dl,SNR_ul,(double)n_errors_ul/(trials_ul+1));
 
-	  if ((double)n_errors_ul/(1+trials_ul) < 1e-3)
-	    break;
+	  rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
+		   PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
+		   lte_frame_parms,
+		   subframe,
+		   1,  
+		   0, 
+		   PHY_vars_eNB[1]->ulsch_eNb,
+		   0,
+		   relay_flag,
+		   diversity_scheme);
+		
+		
+		
+	  ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
+				  lte_frame_parms,
+				  PHY_vars_eNB[1]->ulsch_eNb[0],
+				  subframe,
+				  0);
 
-	}//SNR_ul
-      }// When both relays forward
+    
+	  if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
+	    n_errors_overall++;
+	    n_errors_ul++;
+	   
+	  }
+	   
+	}   // When both relays forward
     else if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
-      {
+	{
 
-	//randominit(0);
-
-	//UE0
-	for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
-	    s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
-	  }
-	}
-
-
-	for(SNR_ul=snr0_ul;SNR_ul<snr1_ul;SNR_ul+=0.25){
-	  n_errors_ul = 0;
-
-
-	  for(trials_ul = 0;trials_ul<N_TRIALS_UL;trials_ul++){
-
-	    // multipath channel
-
-	  
-
-	  
-	    // UE 0
-	    multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
-			      amps,Td,BW,ricean_factor,aoa,
-			      lte_frame_parms->nb_antennas_tx,
-			      lte_frame_parms->nb_antennas_rx,
-			      FRAME_LENGTH_COMPLEX_SAMPLES,
-			      channel_length,
-			      0,1//forgetting factor
-			      ,1,0,FuDe,0);
-
-	    
-	    
-	    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
-	    
-	    // scale by path_loss = NOW - P_noise
-	    //sigma2_ul       = pow(10,sigma2_dB_ul/10);
-	    //N0W          = -95.87;
-	    //path_loss_dB = N0W - sigma2_ul;
-	    //path_loss    = pow(10,path_loss_dB/10);
-	    path_loss_dB = 0;
-	    path_loss = 1;
-	    
-	    
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
-		r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
-	      }
+	  trials_ul++;
+	  //UE0
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	      s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
+	      s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
 	    }
-	    
-	    
+	  }
 
-   
-	    
-	    //AWGN
 
-	    sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
-	    // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
-	    sigma2_ul = pow(10,sigma2_dB_ul/10);
-	    //printf("sigma2_ul = %g\n",sigma2_ul);
-	    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	  // multipath channel
 	
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-	      }
-	    }
-	  
-      
-      
-      
+	
+	
+	
+	  // UE 0
+	  multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
+			    amps,Td,BW,ricean_factor,aoa,
+			    lte_frame_parms->nb_antennas_tx,
+			    lte_frame_parms->nb_antennas_rx,
+			    FRAME_LENGTH_COMPLEX_SAMPLES,
+			    channel_length,
+			    0,1//forgetting factor
+			    ,1,0,FuDe,0);
+	  if(first_call1_0==1)
+	    first_call1_0 = 0;
 	    
-
-
-	    for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
-	      {
-		
-		slot_fep_ul(lte_frame_parms,
-			    &PHY_vars_eNB[1]->lte_eNB_common_vars,
-			    l%(lte_frame_parms->symbols_per_tti/2),
-			    l/(lte_frame_parms->symbols_per_tti/2),
-			    1,
-			    0);
-	      }
-
-
-
-	    rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
-		     PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
-		     lte_frame_parms,
-		     subframe,
-		     1,  
-		     0, 
-		     PHY_vars_eNB[1]->ulsch_eNb,
-		     0,
-		     relay_flag,
-		     diversity_scheme);
-		
-		
-		
-	    ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
-				    lte_frame_parms,
-				    PHY_vars_eNB[1]->ulsch_eNb[0],
-				    subframe,
-				    0);
-
-
-	    if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-	      n_errors_ul++;
-	   
+	    
+	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+	    
+	  // scale by path_loss = NOW - P_noise
+	  //sigma2_ul       = pow(10,sigma2_dB_ul/10);
+	  //N0W          = -95.87;
+	  //path_loss_dB = N0W - sigma2_ul;
+	  //path_loss    = pow(10,path_loss_dB/10);
+	  path_loss_dB = 0;
+	  path_loss = 1;
+	    
+	    
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
+	      r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
 	    }
-	    if (((n_errors_ul>=1000) || ((double)n_errors_ul/(1+trials_ul) < 1e-3))&&(trials_ul>1000))
-	      break;
-	  }//trials_ul
-
-
-	  fprintf(bler_fd_ul,"%f,%f,%e;\n",SNR_dl,SNR_ul,(double)n_errors_ul/(trials_ul+1));
-
-	  if ((double)n_errors_ul/(1+trials_ul) < 1e-3)
-	    break;
-
-	}//SNR_ul
-      }// When only relay 0 (UE0) transmits
-    else if ((dlsch_active_1 == 1) && (decode_error_1 == 0))// When only relay 1 (UE1) transmits
-      {
-	  
-	//randominit(0);	  
-
-	//UE1
-	for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)]);
-	    s_im_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)+1]);
 	  }
-	}
-
-
-	for(SNR_ul=snr0_ul;SNR_ul<snr1_ul;SNR_ul+=0.25){
-	  n_errors_ul = 0;
-
-
-	  for(trials_ul = 0;trials_ul<N_TRIALS_UL;trials_ul++){
-
-	    // multipath channel
-
-
-
-
-	  
-
-	    //UE 1
-	    multipath_channel(ch[SuDe],s_re_1,s_im_1,r_re1_1,r_im1_1,
-			      amps,Td,BW,ricean_factor,aoa,
-			      lte_frame_parms->nb_antennas_tx,
-			      lte_frame_parms->nb_antennas_rx,
-			      FRAME_LENGTH_COMPLEX_SAMPLES,
-			      channel_length,
-			      0,1//forgetting factor
-			      ,1,0,SuDe,0);
-
 	    
 	    
-	    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+
+   
 	    
-	    // scale by path_loss = NOW - P_noise
-	    //sigma2_ul       = pow(10,sigma2_dB_ul/10);
-	    //N0W          = -95.87;
-	    //path_loss_dB = N0W - sigma2_ul;
-	    //path_loss    = pow(10,path_loss_dB/10);
-	    path_loss_dB = 0;
-	    path_loss = 1;
-	    
-	    
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
-		r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
-	      }
+	  //AWGN
+
+	  sigma2_dB_ul = tx_lev_ul_dB  - SNR_ul;
+	  // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
+	  sigma2_ul = pow(10,sigma2_dB_ul/10);
+	  //printf("sigma2_ul = %g\n",sigma2_ul);
+	  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 	    }
+	  }
+	  
+      
+      
+      
+	    
+
+
+	  for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
+	    {
+		
+	      slot_fep_ul(lte_frame_parms,
+			  &PHY_vars_eNB[1]->lte_eNB_common_vars,
+			  l%(lte_frame_parms->symbols_per_tti/2),
+			  l/(lte_frame_parms->symbols_per_tti/2),
+			  1,
+			  0);
+	    }
+
+
+
+	  rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
+		   PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
+		   lte_frame_parms,
+		   subframe,
+		   1,  
+		   0, 
+		   PHY_vars_eNB[1]->ulsch_eNb,
+		   0,
+		   relay_flag,
+		   diversity_scheme);
+		
+		
+		
+	  ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
+				  lte_frame_parms,
+				  PHY_vars_eNB[1]->ulsch_eNb[0],
+				  subframe,
+				  0);
+
+
+	  if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
+	    n_errors_overall++;
+	    n_errors_ul++;
+	   
+	  }
+	}// When only relay 0 (UE0) transmits
+      else if ((dlsch_active_1 == 1) && (decode_error_1 == 0))// When only relay 1 (UE1) transmits
+	{
+	  
+	  trials_ul++;
+	  //UE1
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	      s_re_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)]);
+	      s_im_1[aa][i] = ((double)(((short *)txdata_UE1[aa]))[(i<<1)+1]);
+	    }
+	  }
+
+
+	  // multipath channel
+
+
+	  //UE 1
+	  multipath_channel(ch[SuDe],s_re_1,s_im_1,r_re1_1,r_im1_1,
+			    amps,Td,BW,ricean_factor,aoa,
+			    lte_frame_parms->nb_antennas_tx,
+			    lte_frame_parms->nb_antennas_rx,
+			    FRAME_LENGTH_COMPLEX_SAMPLES,
+			    channel_length,
+			    0,1//forgetting factor
+			    ,1,0,SuDe,0);
+	  if(first_call1_1 ==1)
+	    first_call1_1 = 0;
+	    
+	    
+	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+	    
+	  // scale by path_loss = NOW - P_noise
+	  //sigma2_ul       = pow(10,sigma2_dB_ul/10);
+	  //N0W          = -95.87;
+	  //path_loss_dB = N0W - sigma2_ul;
+	  //path_loss    = pow(10,path_loss_dB/10);
+	  path_loss_dB = 0;
+	  path_loss = 1;
+	    
+	    
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
+	      r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
+	    }
+	  }
 	    
    
 	    
-	    //AWGN
+	  //AWGN
 
-	    sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
-	    // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
-	    sigma2_ul = pow(10,sigma2_dB_ul/10);
-	    //printf("sigma2_ul = %g\n",sigma2_ul);
-	    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
-	      }
+	  sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
+	  // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
+	  sigma2_ul = pow(10,sigma2_dB_ul/10);
+	  //printf("sigma2_ul = %g\n",sigma2_ul);
+	  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 	    }
+	  }
 	  
       
       
@@ -2290,131 +2306,114 @@ int main(int argc, char **argv)
 	    
 
 
-	    for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
-	      {
+	  for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
+	    {
 		
-		slot_fep_ul(lte_frame_parms,
-			    &PHY_vars_eNB[1]->lte_eNB_common_vars,
-			    l%(lte_frame_parms->symbols_per_tti/2),
-			    l/(lte_frame_parms->symbols_per_tti/2),
-			    1,
-			    0);
-	      }
-
-
-
-	    rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
-		     PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1],
-		     lte_frame_parms,
-		     subframe,
-		     1,  
-		     0, 
-		     PHY_vars_eNB[1]->ulsch_eNb,
-		     0,
-		     relay_flag,
-		     diversity_scheme);
-		
-		
-		
-	    ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1]->llr,
-				    lte_frame_parms,
-				    PHY_vars_eNB[1]->ulsch_eNb[0],
-				    subframe,
-				    0);
-
-
-	    if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-	      n_errors_ul++;
-	   
+	      slot_fep_ul(lte_frame_parms,
+			  &PHY_vars_eNB[1]->lte_eNB_common_vars,
+			  l%(lte_frame_parms->symbols_per_tti/2),
+			  l/(lte_frame_parms->symbols_per_tti/2),
+			  1,
+			  0);
 	    }
-	    if (((n_errors_ul>=1000) || ((double)n_errors_ul/(1+trials_ul) < 1e-3))&&(trials_ul>1000))
-	      break;
-	  }//trials_ul
 
 
-	  fprintf(bler_fd_ul,"%f,%f,%e;\n",SNR_dl,SNR_ul,(double)n_errors_ul/(trials_ul+1));
 
-	  if ((double)n_errors_ul/(1+trials_ul) < 1e-3)
-	    break;
+	  rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
+		   PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1],
+		   lte_frame_parms,
+		   subframe,
+		   1,  
+		   0, 
+		   PHY_vars_eNB[1]->ulsch_eNb,
+		   0,
+		   relay_flag,
+		   diversity_scheme);
+		
+		
+		
+	  ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1]->llr,
+				  lte_frame_parms,
+				  PHY_vars_eNB[1]->ulsch_eNb[0],
+				  subframe,
+				  0);
 
-	}//SNR_ul
-      }// when only UE1 transmits
+
+	  if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
+	    n_errors_overall++;
+	    n_errors_ul++;
+	   
+	  }
+	}// when only UE1 transmits
+      else
+	n_errors_overall++;
 #else
-    if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
-      {
+      if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
+	{
 
-	//randominit(0);
-	//UE0
-	for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
-	    s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
-	    s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
-	  }
-	}
-
-
-	for(SNR_ul=snr0_ul;SNR_ul<snr1_ul;SNR_ul+=0.25){
-	  n_errors_ul = 0;
-
-
-	  for(trials_ul = 0;trials_ul<N_TRIALS_UL;trials_ul++){
-
-	    //printf("trial_ul %d\n",trials_ul);
-
-	    // multipath channel
-
-	  
-
-
-
-	  
-	    // UE 0
-	    multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
-			      amps,Td,BW,ricean_factor,aoa,
-			      lte_frame_parms->nb_antennas_tx,
-			      lte_frame_parms->nb_antennas_rx,
-			      FRAME_LENGTH_COMPLEX_SAMPLES,
-			      channel_length,
-			      0,1//forgetting factor
-			      ,1,0,FuDe,0);
-
-	    
-	    
-	    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
-	    
-	    // scale by path_loss = NOW - P_noise
-	    //sigma2_ul       = pow(10,sigma2_dB_ul/10);
-	    //N0W          = -95.87;
-	    //path_loss_dB = N0W - sigma2_ul;
-	    //path_loss    = pow(10,path_loss_dB/10);
-	    path_loss_dB = 0;
-	    path_loss = 1;
-	    
-	    
-	    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
-		r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
-	      }
+	  trials_ul++;
+	  //UE0
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	      s_re_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)]);
+	      s_im_0[aa][i] = ((double)(((short *)txdata_UE0[aa]))[(i<<1)+1]);
 	    }
+	  }
+
+
+	
+
+	  // multipath channel
+
+  
+	  // UE 0
+	  multipath_channel(ch[FuDe],s_re_0,s_im_0,r_re1_0,r_im1_0,
+			    amps,Td,BW,ricean_factor,aoa,
+			    lte_frame_parms->nb_antennas_tx,
+			    lte_frame_parms->nb_antennas_rx,
+			    FRAME_LENGTH_COMPLEX_SAMPLES,
+			    channel_length,
+			    0,1//forgetting factor
+			    ,1,0,FuDe,0);
+	  if(first_call1_0==1)
+	    first_call1_0 = 0;
+	    
+	    
+	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+	    
+	  // scale by path_loss = NOW - P_noise
+	  //sigma2_ul       = pow(10,sigma2_dB_ul/10);
+	  //N0W          = -95.87;
+	  //path_loss_dB = N0W - sigma2_ul;
+	  //path_loss    = pow(10,path_loss_dB/10);
+	  path_loss_dB = 0;
+	  path_loss = 1;
+	    
+	    
+	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	      r_re1_0[aa][i]=r_re1_0[aa][i]*sqrt(path_loss); 
+	      r_im1_0[aa][i]=r_im1_0[aa][i]*sqrt(path_loss); 
+	    }
+	  }
 	    
 	    
 
    
 	    
-	    //AWGN
+	  //AWGN
 
-	    sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
-	    // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
-	    sigma2_ul = pow(10,sigma2_dB_ul/10);
-	    //printf("sigma2_ul = %g\n",sigma2_ul);
-	    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
-	      for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	  sigma2_dB_ul = tx_lev_ul_dB - SNR_ul;
+	  // printf("**********************SNR_ul = %f dB (tx_lev_ul_dB %f, sigma2_dB_ul %f)**************************\n",SNR_ul,(double)tx_lev_ul_dB+10*log10(25/NB_RB),sigma2_dB_ul);
+	  sigma2_ul = pow(10,sigma2_dB_ul/10);
+	  //printf("sigma2_ul = %g\n",sigma2_ul);
+	  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-	      }
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+	      ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 	    }
+	  }
 	  
       
       
@@ -2422,66 +2421,86 @@ int main(int argc, char **argv)
 	    
 
 
-	    for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
-	      {
+	  for (l=subframe*lte_frame_parms->symbols_per_tti;l<((1+subframe)*lte_frame_parms->symbols_per_tti);l++)
+	    {
 		
-		slot_fep_ul(lte_frame_parms,
-			    &PHY_vars_eNB[1]->lte_eNB_common_vars,
-			    l%(lte_frame_parms->symbols_per_tti/2),
-			    l/(lte_frame_parms->symbols_per_tti/2),
-			    1,
-			    0);
-	      }
-
-
-
-	    rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
-		     PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
-		     lte_frame_parms,
-		     subframe,
-		     1,  
-		     0, 
-		     PHY_vars_eNB[1]->ulsch_eNb,
-		     0,
-		     relay_flag,
-		     diversity_scheme);
-		
-		
-		
-	    ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
-				    lte_frame_parms,
-				    PHY_vars_eNB[1]->ulsch_eNb[0],
-				    subframe,
-				    0);
-
-
-	    if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-	      n_errors_ul++;
-	   
+	      slot_fep_ul(lte_frame_parms,
+			  &PHY_vars_eNB[1]->lte_eNB_common_vars,
+			  l%(lte_frame_parms->symbols_per_tti/2),
+			  l/(lte_frame_parms->symbols_per_tti/2),
+			  1,
+			  0);
 	    }
-	    if (((n_errors_ul>=1000) || ((double)n_errors_ul/(1+trials_ul) < 1e-3))&&(trials_ul>1000))
-	      break;
-	  }//trials_ul
 
 
-	  fprintf(bler_fd_ul,"%f,%f,%e;\n",SNR_dl,SNR_ul,(double)n_errors_ul/(trials_ul+1));
 
-	  if ((double)n_errors_ul/(1+trials_ul) < 1e-3)
-	    break;
+	  rx_ulsch(&PHY_vars_eNB[1]->lte_eNB_common_vars,
+		   PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
+		   lte_frame_parms,
+		   subframe,
+		   1,  
+		   0, 
+		   PHY_vars_eNB[1]->ulsch_eNb,
+		   0,
+		   relay_flag,
+		   diversity_scheme);
+		
+		
+		
+	  ret_ul = ulsch_decoding(PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0]->llr,
+				  lte_frame_parms,
+				  PHY_vars_eNB[1]->ulsch_eNb[0],
+				  subframe,
+				  0);
 
-	}//SNR_ul
-      }// When only relay 0 (UE0) transmits
+
+	  if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
+	    n_errors_overall++;
+	    n_errors_ul++;
+	  }
+	}// When only relay 0 (UE0) transmits
+      else
+	n_errors_overall++;
 #endif
 
-	  
-	  
+      if(trials_ul>=1){
+      if((((n_errors_ul)>1000)||((double)(n_errors_ul)/(trials_ul)<1e-3))&& (trials_ul>1000))
+	break;}
 
+    }//trials
 
+    //Overall BLER
+    fprintf(bler_fd_overall,"%f,%e;\n",SNR_ul,(double)(n_errors_overall)/(1+trials));
 
+    //BLER for DL 0
+    fprintf(bler_fd_dl_0,"%f,%e;\n",SNR_ul,(double)(n_errors_dl_0+dci_errors_0)/(1+trials));
 
+    //BLER for Uplink
+    if(trials_ul>=1)
+    fprintf(bler_fd_ul,"%f,%e;\n",SNR_ul,(double)(n_errors_ul)/(trials_ul));
 
-  fprintf(bler_fd_ul," ];");
-  fclose(bler_fd_ul);//Uplink
+#ifdef COLLABRATIVE_SCHEME
+    //BLER for DL 1
+    fprintf(bler_fd_dl_1,"%f,%e;\n",SNR_ul,(double)(n_errors_dl_1+dci_errors_1)/(1+trials));
+#endif
+
+    if(trials_ul>=1){
+    if((double)(n_errors_ul)/(trials_ul)<1e-3)
+      break;}
+  }//SNR_ul
+    
+      
+
+  fprintf(bler_fd_overall,"];");
+  fclose(bler_fd_overall);
+  fprintf(bler_fd_dl_0,"];");
+  fclose(bler_fd_dl_0);
+#ifdef COLLABRATIVE_SCHEME
+  fprintf(bler_fd_dl_1,"];");
+  fclose(bler_fd_dl_1);
+#endif
+  fprintf(bler_fd_ul,"];");
+  fclose(bler_fd_ul);
 
 
   

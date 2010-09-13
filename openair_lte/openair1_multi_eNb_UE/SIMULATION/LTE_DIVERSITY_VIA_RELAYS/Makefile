@@ -133,7 +133,7 @@ LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(LAYER2_OBJ)	
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
-all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim
+all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim_ul relays_sim_dl relays_sim_overall
 
 test:
 	echo $(OPENAIR2_DIR) $(LAYER2_OBJ)
@@ -162,29 +162,14 @@ physim : $(OBJ) phy_procedures_sim.c
 physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
 	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
-relays_sim : $(OBJ2) relays_sim.c
-	$(CC)  relays_sim.c -I$(TOP_DIR) -o relaysim $(CFLAGS) $(OBJ2) -lm
+relays_sim_ul : $(OBJ2) relays_sim_ul.c
+	$(CC)  relays_sim_ul.c -I$(TOP_DIR) -o relaysim_ul $(CFLAGS) $(OBJ2) -lm
 
-relays_sim_0_8dB : $(OBJ2) relays_sim_0_8dB.c
-	$(CC)  relays_sim_0_8dB.c -I$(TOP_DIR) -o relaysim_0_8dB $(CFLAGS) $(OBJ2) -lm
+relays_sim_dl : $(OBJ2) relays_sim_dl.c
+	$(CC)  relays_sim_dl.c -I$(TOP_DIR) -o relaysim_dl $(CFLAGS) $(OBJ2) -lm
 
-relays_sim_1_8dB : $(OBJ2) relays_sim_1_8dB.c
-	$(CC)  relays_sim_1_8dB.c -I$(TOP_DIR) -o relaysim_1_8dB $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_2_8dB : $(OBJ2) relays_sim_2_8dB.c
-	$(CC)  relays_sim_2_8dB.c -I$(TOP_DIR) -o relaysim_2_8dB $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_dl_0.5k : $(OBJ2) relays_sim_dl_0.5k.c
-	$(CC)  relays_sim_dl_0.5k.c -I$(TOP_DIR) -o relaysim_dl_0.5k $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_overall_0 : $(OBJ2) relays_sim_overall_0.c
-	$(CC)  relays_sim_overall_0.c -I$(TOP_DIR) -o relaysim_overall_0 $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_overall_1 : $(OBJ2) relays_sim_overall_1.c
-	$(CC)  relays_sim_overall_1.c -I$(TOP_DIR) -o relaysim_overall_1 $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_overall_2 : $(OBJ2) relays_sim_overall_2.c
-	$(CC)  relays_sim_overall_2.c -I$(TOP_DIR) -o relaysim_overall_2 $(CFLAGS) $(OBJ2) -lm
+relays_sim_overall : $(OBJ2) relays_sim_overall.c
+	$(CC)  relays_sim_overall.c -I$(TOP_DIR) -o relaysim_overall $(CFLAGS) $(OBJ2) -lm
 
 clean:
 	rm -f dlsim dlsim2 dlsim_secsys
