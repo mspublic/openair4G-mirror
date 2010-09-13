@@ -127,12 +127,17 @@ void phy_adjust_gain (unsigned char clear,
 		      unsigned char chsch_ind,
 		      PHY_VARS_UE *phy_vars_ue);
 
+
 int lte_ul_channel_estimation(int **ul_ch_estimates,
+			      int **ul_ch_estimates_0,
+			      int **ul_ch_estimates_1,
 			      int **rxdataF_ext,
 			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char l,
 			      unsigned char Ns,
-			      unsigned int N_rb_alloc);
+			      unsigned int N_rb_alloc,
+			      unsigned char relay_flag,
+			      unsigned char diversity_scheme);
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 			   LTE_eNB_COMMON *lte_eNb_common,

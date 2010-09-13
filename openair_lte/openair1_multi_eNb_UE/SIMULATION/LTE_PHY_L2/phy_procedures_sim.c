@@ -330,7 +330,9 @@ int main(int argc, char **argv) {
 		   &PHY_vars_eNb->lte_eNB_common_vars,
 		   PHY_vars_eNb->lte_eNB_ulsch_vars,
 		   0,
-		   PHY_vars_eNb);
+		   PHY_vars_eNb,
+		   0,
+		   0);
 
   PHY_vars_eNb->dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
   PHY_vars_UE->dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
@@ -654,7 +656,7 @@ int main(int argc, char **argv) {
 			lte_frame_parms->nb_antennas_tx,
 			lte_frame_parms->nb_antennas_rx,
 			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,0,.1,first_call,0,0);
+			channel_length,0,.1,first_call,0,0,0);
       
       if (first_call == 1)
 	first_call = 0;

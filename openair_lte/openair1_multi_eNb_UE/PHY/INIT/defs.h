@@ -51,7 +51,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_COMMON *eNB_common,
 		     LTE_eNB_ULSCH **eNB_ulsch,
 		     unsigned char is_secondary_eNb,
-		     PHY_VARS_eNB *phy_vars_eNb);
+		     PHY_VARS_eNB *phy_vars_eNb,
+		     unsigned char relay_flag,
+		     unsigned char diversity_scheme);
 /*
   \fn int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb)
 \brief Allocate and Initialize the PHY variables relevant to the LTE implementation

@@ -99,7 +99,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   &PHY_vars_eNb->lte_eNB_common_vars,
 		   PHY_vars_eNb->lte_eNB_ulsch_vars,
 		   0,
-		   PHY_vars_eNb);
+		   PHY_vars_eNb,
+		   0,
+		   0);
 
   
   printf("Done lte_param_init\n");

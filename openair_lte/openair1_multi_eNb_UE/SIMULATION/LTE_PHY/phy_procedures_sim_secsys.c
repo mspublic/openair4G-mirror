@@ -332,7 +332,9 @@ int main(int argc, char **argv) {
 		   &PHY_vars_eNb[0]->lte_eNB_common_vars,
 		   PHY_vars_eNb[0]->lte_eNB_ulsch_vars,
 		   PHY_vars_eNb[0]->is_secondary_eNb,
-		   PHY_vars_eNb[1]);
+		   PHY_vars_eNb[1],
+		   0,
+		   0);
   PHY_vars_eNb[0]->is_init_sync = 0; // not used for primary eNb
   PHY_vars_eNb[0]->dlsch_eNb_active = 0;
   PHY_vars_eNb[0]->dlsch_eNb_cntl_active = 0;
@@ -378,7 +380,9 @@ int main(int argc, char **argv) {
 		   &PHY_vars_eNb[1]->lte_eNB_common_vars,
 		   PHY_vars_eNb[1]->lte_eNB_ulsch_vars,
 		   PHY_vars_eNb[1]->is_secondary_eNb,
-		   PHY_vars_eNb[1]);
+		   PHY_vars_eNb[1],
+		   0,
+		   0);
   PHY_vars_eNb[1]->is_init_sync = 1; //synchronization is not simulated yet, hence synch is assumed
   PHY_vars_eNb[1]->has_valid_precoder = 0;
   PHY_vars_eNb[1]->dlsch_eNb_active = 0;
@@ -389,7 +393,9 @@ int main(int argc, char **argv) {
 		   &PHY_vars_eNb[2]->lte_eNB_common_vars,
 		   PHY_vars_eNb[2]->lte_eNB_ulsch_vars,
 		   PHY_vars_eNb[2]->is_secondary_eNb,
-		   PHY_vars_eNb[2]);
+		   PHY_vars_eNb[2],
+		   0,
+		   0);
   PHY_vars_eNb[2]->is_init_sync = 0;
   PHY_vars_eNb[2]->has_valid_precoder = 0;
   PHY_vars_eNb[2]->dlsch_eNb_active = 0;
@@ -1576,11 +1582,11 @@ int main(int argc, char **argv) {
 #endif			
 			  ((next_slot==2 || first_call==1) ? 0 : 1),
 #ifdef SECONDARY_SYSTEM
-			  PePu
+			  PePu,
 #else
-			  0
+			  0,
 #endif	    
-			   );
+			  0);
 	if (first_call == 1)
 	  first_call = 0;
 
@@ -1591,16 +1597,16 @@ int main(int argc, char **argv) {
 	// SeNb to S_UE
 	multipath_channel(ch_ar[SeSu],s_re_secsys,s_im_secsys,
 			  r_re_ext[0],r_im_ext[0],
-			amps,Td,BW,ricean_factor,aoa_ar[SeSu],
-			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0),
-			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			SeSu);
+			  amps,Td,BW,ricean_factor,aoa_ar[SeSu],
+			  PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call_secsys == 1) ? 1 : 0),
+			  (has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
+			  SeSu,0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",SeSu,ch_ar[SeSu][0][0].r);
 #endif //DEBUG_PHY
@@ -1609,66 +1615,70 @@ int main(int argc, char **argv) {
       if ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) || ((subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_S) && (next_slot%2==0))) { // DL
 	// from PeNb to SeNb
 	multipath_channel(ch_ar[PeSe],s_re,s_im,
-			r_re_crossLink[PeSe],r_im_crossLink[PeSe],
-			amps,Td,BW,ricean_factor,aoa_ar[PeSe],
-			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0),
-			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			PeSe);
+			  r_re_crossLink[PeSe],r_im_crossLink[PeSe],
+			  amps,Td,BW,ricean_factor,aoa_ar[PeSe],
+			  PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call_secsys == 1) ? 1 : 0),
+			  (has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
+			  PeSe,
+			  0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",PeSe,ch_ar[PeSe][0][0].r);
 #endif //DEBUG_PHY
 	// from PeNb to S_UE
 	multipath_channel(ch_ar[PeSu],s_re,s_im,
-			r_re_crossLink[PeSu],r_im_crossLink[PeSu],
-			amps,Td,BW,ricean_factor,aoa_ar[PeSu],
-			PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0),
-			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			PeSu);
+			  r_re_crossLink[PeSu],r_im_crossLink[PeSu],
+			  amps,Td,BW,ricean_factor,aoa_ar[PeSu],
+			  PHY_vars_eNb[0]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_UE[1]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call_secsys == 1) ? 1 : 0),
+			  (has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
+			  PeSu,
+			  0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",PeSu,ch_ar[PeSu][0][0].r);
 #endif //DEBUG_PHY
 	// from SeNb to P_UE
 	multipath_channel(ch_ar[SePu],s_re_secsys,s_im_secsys,
-			r_re_crossLink[SePu],r_im_crossLink[SePu],
-			amps,Td,BW,ricean_factor,aoa_ar[SePu],
-			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0),
-			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			SePu);
+			  r_re_crossLink[SePu],r_im_crossLink[SePu],
+			  amps,Td,BW,ricean_factor,aoa_ar[SePu],
+			  PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call_secsys == 1) ? 1 : 0),
+			  (has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
+			  SePu,
+			  0);
 #ifdef DEBUG_PHY
       msg("ch_ar[i][0][0].r = %lf\n",SePu,ch_ar[SePu][0][0].r);
 #endif //DEBUG_PHY
       } else { //UL
 	// from P_UE to SeNb
 	multipath_channel(ch_ar[SePu],s_re,s_im,
-			r_re_crossLink[SePu],r_im_crossLink[SePu],
-			amps,Td,BW,ricean_factor,aoa_ar[SePu],
-			PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx,
-			PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
-			OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
-			channel_length,
-			0,
-			forgetting_factor, //forgetting factor (temporal variation, block stationary)
-			((first_call_secsys == 1) ? 1 : 0),
-			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			SePu);
+			  r_re_crossLink[SePu],r_im_crossLink[SePu],
+			  amps,Td,BW,ricean_factor,aoa_ar[SePu],
+			  PHY_vars_UE[0]->lte_frame_parms.nb_antennas_tx,
+			  PHY_vars_eNb[1]->lte_frame_parms.nb_antennas_rx,
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-lte_frame_parms->Ncp),
+			  channel_length,
+			  0,
+			  forgetting_factor, //forgetting factor (temporal variation, block stationary)
+			  ((first_call_secsys == 1) ? 1 : 0),
+			  (has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
+			  SePu,
+			  0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",SePu,ch_ar[SePu][0][0].r);
 #endif //DEBUG_PHY
@@ -1684,7 +1694,8 @@ int main(int argc, char **argv) {
 			forgetting_factor, //forgetting factor (temporal variation, block stationary)
 			((first_call_secsys == 1) ? 1 : 0),
 			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			PuSu);
+			PuSu,
+			0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",PuSu,ch_ar[PuSu][0][0].r);
 #endif //DEBUG_PHY
@@ -1700,7 +1711,8 @@ int main(int argc, char **argv) {
 			forgetting_factor, //forgetting factor (temporal variation, block stationary)
 			((first_call_secsys == 1) ? 1 : 0),
 			(has_channel) ? 1 : ((next_slot==2 || first_call_secsys==1) ? 0 : 1),
-			PeSu);
+			PeSu,
+			0);
 #ifdef DEBUG_PHY
       msg("ch_ar[%i][0][0].r = %lf\n",PeSu,ch_ar[PeSu][0][0].r);
 #endif //DEBUG_PHY

@@ -159,6 +159,7 @@ void random_channel(double *amps,
 @param clear Set to 1 to initialize first random channel
 @param keep_channel Set to 1 to keep channel constant for null-B/F
 @param channel_id see Enum CH_ID in phy_procedures_sim_secsys.c
+@param channel_offset is used to indicate the delay introduced in delay diversity scheme
 */
 void multipath_channel(struct complex **ch,
 		       double **tx_sig_re, 
@@ -178,5 +179,6 @@ void multipath_channel(struct complex **ch,
 		       double forgetting_factor,
 		       unsigned char clear,
 		       unsigned char keep_channel,
-		       unsigned char channel_id);
+		       unsigned char channel_id,
+		       int channel_offset);
 /* *@} */

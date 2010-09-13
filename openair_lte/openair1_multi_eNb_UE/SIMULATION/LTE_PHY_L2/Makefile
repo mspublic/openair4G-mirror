@@ -15,7 +15,7 @@ OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -ggdb $(CPUFLAGS)
 
-CFLAGS += -DOPENAIR_LTE -DTBS_FIX -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DTBS_FIX -DXFORMS -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 
 ifdef OPENAIR2
 CFLAGS += -DOPENAIR2 
@@ -216,7 +216,7 @@ $(L2_OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
 
 physim : $(OBJ) $(L2_OBJS) phy_procedures_sim.c phy_procedures_sim_form.c 
-	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm
+	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) -I/usr/include/X11 $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm
 
 clean:
 	rm -f physim

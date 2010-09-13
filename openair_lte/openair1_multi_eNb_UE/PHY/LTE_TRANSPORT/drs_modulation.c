@@ -9,7 +9,10 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 		       short amp,
 		       unsigned int sub_frame_number,
 		       unsigned int first_rb,
-		       unsigned int nb_rb) {
+		       unsigned int nb_rb,
+		       unsigned char n_ue,
+		       unsigned char relay_flag,
+		       unsigned char diversity_scheme) {
 
   unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
   unsigned short * Msc_idx_ptr;
@@ -59,30 +62,64 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef IFFT_FPGA_UE
-	for (k=0;k<12;k++) {
-	  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-	  
-	  re_offset++;
-	  drs_offset++;
-	  if (re_offset >= frame_parms->N_RB_UL*12)
-	    re_offset=0;
+	if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1)) // To implment cyclic pilot shift for Distributed Alamouti
+	  {
+	    for (k=0;k<12;k++) {
+	      if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->N_RB_UL*12)
+		re_offset=0;
 	}
+	  }
+	  else
+	    {
+	      for (k=0;k<12;k++) {
+		if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+		
+		re_offset++;
+		drs_offset++;
+		if (re_offset >= frame_parms->N_RB_UL*12)
+		  re_offset=0;
+	      }
+	    }
 #else
-	for (k=0;k<12;k++) {
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
-	  re_offset++;
-	  drs_offset++;
-	  if (re_offset >= frame_parms->ofdm_symbol_size)
-	    re_offset = 0;
-	}
+	if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1)) // To implment cyclic pilot shift for Distributed Alamouti
+	  {
+	    for (k=0;k<12;k++) {
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = pow(-1,k+1)*(short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = pow(-1,k+1)*(short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->ofdm_symbol_size)
+		re_offset = 0;
+	    }
+	  }
+	else
+	  {
+	    for (k=0;k<12;k++) {
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->ofdm_symbol_size)
+		re_offset = 0;
+	    }
+	  }
 #endif
       } 
       else {

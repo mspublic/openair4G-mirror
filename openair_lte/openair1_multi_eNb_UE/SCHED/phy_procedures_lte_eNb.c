@@ -925,7 +925,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
   unsigned int l, ret,i;
   unsigned int eNb_id=0,UE_id=0;
   int *ulsch_power;
-  unsigned char harq_pid,rag_flag;
+  unsigned char harq_pid,rag_flag,relay_flag=0,diversity_scheme=0;
   int sync_pos;
   unsigned char dl_harq_pid;
 
@@ -1024,7 +1024,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 			   eNb_id,  // this is the effective sector id
 			   UE_id,   // this is the UE instance to act upon
 			   phy_vars_eNb->ulsch_eNb,
-			   rag_flag);
+			   rag_flag,
+			   relay_flag,
+			   diversity_scheme);
 
 
     for (i=0;i<NB_ANTENNAS_RX;i++)

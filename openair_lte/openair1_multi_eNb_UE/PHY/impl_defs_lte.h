@@ -83,10 +83,18 @@ typedef struct{
   int **rxdataF_ext[3];       
   int **rxdataF_ext2[3];       
   /// hold the channel estimates in frequency domain based on DRS   
-  int **drs_ch_estimates[3];  
+  int **drs_ch_estimates[3]; 
+  int **drs_ch_estimates_0[3];// hold the channel estimates for UE0 in case of Distributed Alamouti Scheme
+  int **drs_ch_estimates_1[3];// hold the channel estimates for UE1 in case of Distributed Almouti Scheme 
   int **rxdataF_comp[3];
+  int **rxdataF_comp_0[3];// hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme
+  int **rxdataF_comp_1[3];// hold the compensated data (y*)*(h1) in case of Distributed Alamouti Scheme
   int **ul_ch_mag[3];
   int **ul_ch_magb[3];
+  int **ul_ch_mag_0[3];   // hold the channel mag for UE0 in case of Distributed Alamouti Scheme
+  int **ul_ch_magb_0[3];  // hold the channel magb for UE0 in case of Distributed Alamouti Scheme
+  int **ul_ch_mag_1[3];   // hold the channel mag for UE1 in case of Distributed Alamouti Scheme
+  int **ul_ch_magb_1[3];  // hold the channel magb for UE1 in case of Distributed Alamouti Scheme
   short *llr;
 } LTE_eNB_ULSCH;
 

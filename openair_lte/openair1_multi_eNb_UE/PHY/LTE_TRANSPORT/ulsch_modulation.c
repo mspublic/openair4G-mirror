@@ -173,7 +173,10 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
-		      unsigned char rag_flag) {
+		      unsigned char rag_flag,
+		      unsigned char relay_flag,
+		      unsigned char diversity_scheme,
+		      unsigned char n_ue) {
 
 #ifdef IFFT_FPGA_UE
   unsigned char qam64_table_offset = 0;
@@ -242,126 +245,368 @@ void ulsch_modulation(mod_sym_t **txdataF,
   // Modulation
 
   Msymb = G/Q_m;
-  for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
+  if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1))// For Distributed Alamouti Scheme in Collabrative Communication
+    {
+      for (i=0,j=Q_m;i<Msymb;i+=2,j+=2*Q_m) {
 
-    switch (Q_m) {
+	switch (Q_m) {
 
-    case 2:
+	case 2:
 
 #ifndef IFFT_FPGA_UE
-      ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-      ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
-      //      if (i<Msc_PUSCH)
-      //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+	  //UE1, -x1*
+	  ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  //      if (i<Msc_PUSCH)
+	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+
+	  // UE1, x0*
+	  ((short*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 0)? (gain_lin_QPSK) : -gain_lin_QPSK;
 #else
-      qpsk_table_offset = 1;
-      if (ulsch->b_tilde[j] == 1)
-	qpsk_table_offset+=1;
-      if (ulsch->b_tilde[j+1] == 1) 
-	qpsk_table_offset+=2;
+	  qpsk_table_offset = 1;// UE1, -x1*
+	  if (ulsch->b_tilde[j] == 1)
+	    {}
+	  else
+	    qpsk_table_offset+=1;
+
+	  if (ulsch->b_tilde[j+1] == 1) 
+	    qpsk_table_offset+=2;
       
-      ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
+	  ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
+
+	  qpsk_table_offset = 1;//UE1,x0*
+
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qpsk_table_offset+=1;
+
+	  if(ulsch->b_tilde[j-1] == 1)
+	    {}
+	  else
+	    qpsk_table_offset+=2;
+
+	  ulsch->d[i+1] = (mod_sym_t) qpsk_table_offset;
 #endif    
 
-      break;
+	  break;
 
-    case 4:
+	case 4:
 #ifndef IFFT_FPGA_UE
-      qam16_table_offset_re = 0;
-      if (ulsch->b_tilde[j] == 1)
-	qam16_table_offset_re+=2;
 
-      if (ulsch->b_tilde[j+1] == 1)
-	qam16_table_offset_re+=1;
+	  //UE1,-x1*
+	  qam16_table_offset_re = 0;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam16_table_offset_re+=2;
+
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam16_table_offset_re+=1;
       
       
-      qam16_table_offset_im = 0;
-      if (ulsch->b_tilde[j+2] == 1)
-	qam16_table_offset_im+=2;
+	  qam16_table_offset_im = 0;
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset_im+=2;
 
-      if (ulsch->b_tilde[j+3] == 1)
-	qam16_table_offset_im+=1;
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam16_table_offset_im+=1;
 
       
-      ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-      ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
-      //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+	  ((short*)&ulsch->d[i])[0]=-(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+
+	  //UE1,x0*
+	  qam16_table_offset_re = 0;
+	  if (ulsch->b_tilde[j-4] == 1)
+	    qam16_table_offset_re+=2;
+
+	  if (ulsch->b_tilde[j-3] == 1)
+	    qam16_table_offset_re+=1;
+      
+      
+	  qam16_table_offset_im = 0;
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qam16_table_offset_im+=2;
+
+	  if (ulsch->b_tilde[j-1] == 1)
+	    qam16_table_offset_im+=1;
+
+      
+	  ((short*)&ulsch->d[i+1])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i+1])[1]=-(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+
 #else
-      qam16_table_offset = 5;
-      if (ulsch->b_tilde[j] == 1)
-	qam16_table_offset+=2;
+	  qam16_table_offset = 5;//UE1,-x1*
+	  if (ulsch->b_tilde[j] == 1)
+	    {}
+	  else
+	    qam16_table_offset+=2;
 
-      if (ulsch->b_tilde[j+1] == 1)
-	qam16_table_offset+=1;
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam16_table_offset+=1;
 
-      if (ulsch->b_tilde[j+2] == 1)
-	qam16_table_offset+=8;
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset+=8;
 
-      if (ulsch->b_tilde[j+3] == 1)
-	qam16_table_offset+=4;
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam16_table_offset+=4;
 
       
-      ulsch->d[i] = (mod_sym_t) qam16_table_offset;
+	  ulsch->d[i] = (mod_sym_t) qam16_table_offset;
+      
+	  qam16_table_offset = 5;//UE1,x0*
+	  if (ulsch->b_tilde[j-4] == 1)
+	    qam16_table_offset+=2;
+
+	  if (ulsch->b_tilde[j-3] == 1)
+	    qam16_table_offset+=1;
+
+	  if (ulsch->b_tilde[j-2] == 1)
+	    {}
+	  else
+	    qam16_table_offset+=8;
+
+	  if (ulsch->b_tilde[j-1] == 1)
+	    qam16_table_offset+=4;
+
+      
+	  ulsch->d[i+1] = (mod_sym_t) qam16_table_offset;     
 #endif
       
-      break;
+	  break;
      
-    case 6:
+	case 6:
 
 #ifndef IFFT_FPGA_UE
-      qam64_table_offset_re = 0;
-      if (ulsch->b_tilde[j] == 1)
-	qam64_table_offset_re+=4;
+
+	  //UE1,-x1*FPGA_UE
+	  qam64_table_offset_re = 0;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam64_table_offset_re+=4;
       
-      if (ulsch->b_tilde[j+1] == 1)
-	qam64_table_offset_re+=2;
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam64_table_offset_re+=2;
       
-      if (ulsch->b_tilde[j+2] == 1)
-	qam64_table_offset_re+=1;
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset_re+=1;
       
-      qam64_table_offset_im = 0;
-      if (ulsch->b_tilde[j+3] == 1)
-	qam64_table_offset_im+=4;
+	  qam64_table_offset_im = 0;
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam64_table_offset_im+=4;
       
-      if (ulsch->b_tilde[j+4] == 1)
-	qam64_table_offset_im+=2;
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset_im+=2;
       
-      if (ulsch->b_tilde[j+5] == 1)
-	qam64_table_offset_im+=1;
+	  if (ulsch->b_tilde[j+5] == 1)
+	    qam64_table_offset_im+=1;
       
       
-      ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-      ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((short*)&ulsch->d[i])[0]=-(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+
+	  //UE1,x0*
+	  qam64_table_offset_re = 0;
+	  if (ulsch->b_tilde[j-6] == 1)
+	    qam64_table_offset_re+=4;
+      
+	  if (ulsch->b_tilde[j-5] == 1)
+	    qam64_table_offset_re+=2;
+      
+	  if (ulsch->b_tilde[j-4] == 1)
+	    qam64_table_offset_re+=1;
+      
+	  qam64_table_offset_im = 0;
+	  if (ulsch->b_tilde[j-3] == 1)
+	    qam64_table_offset_im+=4;
+      
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qam64_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j-1] == 1)
+	    qam64_table_offset_im+=1;
+      
+      
+	  ((short*)&ulsch->d[i+1])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i+1])[1]=-(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 
 #else
-      qam64_table_offset = 21;
-      if (ulsch->b_tilde[j] == 1)
-	qam64_table_offset+=4;
+	  qam64_table_offset = 21; //UE1,-x1*
+	  if (ulsch->b_tilde[j] == 1)
+	    {}
+	  else
+	    qam64_table_offset+=4;
       
-      if (ulsch->b_tilde[j+1] == 1)
-	qam64_table_offset+=2;
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam64_table_offset+=2;
       
-      if (ulsch->b_tilde[j+2] == 1)
-	qam64_table_offset+=1;
-      
-      
-      
-      if (ulsch->b_tilde[j+3] == 1)
-	qam64_table_offset+=32;
-      
-      if (ulsch->b_tilde[j+4] == 1)
-	qam64_table_offset+=16;
-      
-      if (ulsch->b_tilde[j+5] == 1)
-	qam64_table_offset+=8;
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset+=1;
       
       
-      ulsch->d[i] = (mod_sym_t) qam64_table_offset;
-#endif //IFFT_FPGA_UE
-      break;
+      
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam64_table_offset+=32;
+      
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset+=16;
+      
+	  if (ulsch->b_tilde[j+5] == 1)
+	    qam64_table_offset+=8;
+      
+      
+	  ulsch->d[i] = (mod_sym_t) qam64_table_offset;
 
-    }
-  }
+	  qam64_table_offset = 21; //UE1,x0*
+	  if (ulsch->b_tilde[j-6] == 1)
+	    qam64_table_offset+=4;
+      
+	  if (ulsch->b_tilde[j-5] == 1)
+	    qam64_table_offset+=2;
+      
+	  if (ulsch->b_tilde[j-4] == 1)
+	    qam64_table_offset+=1;
+      
+      
+	  if (ulsch->b_tilde[j-3] == 1)
+	    {}
+	  else
+	    qam64_table_offset+=32;
+      
+	  if (ulsch->b_tilde[j-2] == 1)
+	    qam64_table_offset+=16;
+      
+	  if (ulsch->b_tilde[j-1] == 1)
+	    qam64_table_offset+=8;
+      
+      
+	  ulsch->d[i+1] = (mod_sym_t) qam64_table_offset;
+#endif //IFFT_FPGA_UE
+	  break;
+
+	}//switch
+      }//for
+	      }//if
+  else
+    {
+      for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
+
+	switch (Q_m) {
+
+	case 2:
+
+#ifndef IFFT_FPGA_UE
+	  ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  //      if (i<Msc_PUSCH)
+	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+#else
+	  qpsk_table_offset = 1;
+	  if (ulsch->b_tilde[j] == 1)
+	    qpsk_table_offset+=1;
+	  if (ulsch->b_tilde[j+1] == 1) 
+	    qpsk_table_offset+=2;
+      
+	  ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
+#endif    
+
+	  break;
+
+	case 4:
+#ifndef IFFT_FPGA_UE
+	  qam16_table_offset_re = 0;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam16_table_offset_re+=2;
+
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam16_table_offset_re+=1;
+      
+      
+	  qam16_table_offset_im = 0;
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset_im+=2;
+
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam16_table_offset_im+=1;
+
+      
+	  ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	  //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
+#else
+	  qam16_table_offset = 5;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam16_table_offset+=2;
+
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam16_table_offset+=1;
+
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset+=8;
+
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam16_table_offset+=4;
+
+      
+	  ulsch->d[i] = (mod_sym_t) qam16_table_offset;
+#endif
+      
+	  break;
+     
+	case 6:
+
+#ifndef IFFT_FPGA_UE
+	  qam64_table_offset_re = 0;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam64_table_offset_re+=4;
+      
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam64_table_offset_re+=2;
+      
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset_re+=1;
+      
+	  qam64_table_offset_im = 0;
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam64_table_offset_im+=4;
+      
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j+5] == 1)
+	    qam64_table_offset_im+=1;
+      
+      
+	  ((short*)&ulsch->d[i])[0]=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+
+#else
+	  qam64_table_offset = 21;
+	  if (ulsch->b_tilde[j] == 1)
+	    qam64_table_offset+=4;
+      
+	  if (ulsch->b_tilde[j+1] == 1)
+	    qam64_table_offset+=2;
+      
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset+=1;
+      
+      
+      
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam64_table_offset+=32;
+      
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset+=16;
+      
+	  if (ulsch->b_tilde[j+5] == 1)
+	    qam64_table_offset+=8;
+      
+      
+	  ulsch->d[i] = (mod_sym_t) qam64_table_offset;
+#endif //IFFT_FPGA_UE
+	  break;
+
+	}
+      }
+    }// normal symbols 
 
 
   // Transform Precoding
@@ -398,11 +643,39 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
-#else
-#warning Raw IFFT signals for ULSCH not implemented
-#endif 
+# else
+  re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
+  if (re_offset0>frame_parms->ofdm_symbol_size) {
+    re_offset0 -= frame_parms->ofdm_symbol_size;
+    re_offset0++;
+  }
+  //  printf("re_offset0 %d\n",re_offset0);
+  for (j=0,l=0;l<(nsymb-1);l++) {
+    re_offset = re_offset0;
+    symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
+    //    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    txptr = &txdataF[0][symbol_offset];
+    if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
+	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
+    }
+    // Skip reference symbols
+    else {
 
-#else  //OFDMA_ULSCH
+      //      printf("copying %d REs\n",Msc_PUSCH);
+      for (i=0;i<Msc_PUSCH;i++,j++) {
+	//	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
+	txptr[re_offset++] = ulsch->z[j];
+	if (re_offset==frame_parms->ofdm_symbol_size)
+	  re_offset = 0;                                 
+      }
+    }
+  }
+
+
+#endif 
+#endif
+
+#ifndef OFDMA_ULSCH
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
