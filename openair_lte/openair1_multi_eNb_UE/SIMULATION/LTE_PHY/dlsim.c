@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 	  dci_flag = 1;
 	  break;
 	case 'h':
-	  printf("%s -h(elp) -m mcs -n n_frames -s snr0\n",argv[0]);
+	  printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -m mcs -n n_frames -s snr0\n",argv[0]);
 	  exit(1);
 	case 'm':
 	  mcs = atoi(optarg);
