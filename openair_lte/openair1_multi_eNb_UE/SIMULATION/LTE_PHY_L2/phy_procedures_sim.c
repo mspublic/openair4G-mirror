@@ -81,7 +81,7 @@ void l2_init() {
     
     msg("ALL INIT OK\n");
     
-    
+    /*  
     //Allocate memory for MAC/PHY communication primitives
     //NB_REQ_MAX = 16;
     for(i=0;i<NB_INST;i++){
@@ -90,7 +90,7 @@ void l2_init() {
       clear_macphy_data_req(i);
       
     }
-
+    */
     
     mac_xface->macphy_exit=exit;
     
@@ -379,7 +379,6 @@ int main(int argc, char **argv) {
 
   init_transport_channels(transmission_mode);
 
-
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));
   txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
@@ -452,9 +451,10 @@ int main(int argc, char **argv) {
   l2_init();
 
   mac_xface->mrbch_phy_sync_failure(0,0);
+  printf("Synching to eNB\n");
   mac_xface->chbch_phy_sync_success(1,0);
-#endif
-
+#endif 
+ 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
 
     for (slot=0 ; slot<20 ; slot++) {
@@ -474,6 +474,7 @@ int main(int argc, char **argv) {
 	printf("%s\n\n",stats_buffer);
 	*/
       }
+      mac_xface->macphy_scheduler(last_slot); 
 
       mac_xface->is_cluster_head = 0;
       phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE);
