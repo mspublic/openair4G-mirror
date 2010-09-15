@@ -197,23 +197,25 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
-\returns \f$E\f$, the number of coded bits per segment 
+\param \f$E\f$, the number of coded bits per segment 
+\returns 0 on success, -1 on failure
 */
 
-unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
-					unsigned int G, 
-					short *w,
-					unsigned char *dummy_w,
-					short *soft_input, 
-					unsigned char C, 
-					unsigned int Nsoft, 
-					unsigned char Mdlharq,
-					unsigned char Kmimo,
-					unsigned char rvidx,
-					unsigned char clear,
-					unsigned char Qm, 
-					unsigned char Nl, 
-					unsigned char r);
+int lte_rate_matching_turbo_rx(unsigned int RTC,
+			       unsigned int G, 
+			       short *w,
+			       unsigned char *dummy_w,
+			       short *soft_input, 
+			       unsigned char C, 
+			       unsigned int Nsoft, 
+			       unsigned char Mdlharq,
+			       unsigned char Kmimo,
+			       unsigned char rvidx,
+			       unsigned char clear,
+			       unsigned char Qm, 
+			       unsigned char Nl, 
+			       unsigned char r,
+			       unsigned int *E);
 /** \fn unsigned int lte_rate_matching_cc_rx(unsigned int RCC,
     unsigned int E, 
     char *w,

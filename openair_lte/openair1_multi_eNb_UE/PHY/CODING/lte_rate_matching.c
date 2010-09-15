@@ -481,24 +481,30 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 }
 
 
-unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
-					unsigned int G, 
-					short *w,
-					unsigned char *dummy_w,
-					short *soft_input, 
-					unsigned char C, 
-					unsigned int Nsoft, 
-					unsigned char Mdlharq,
-					unsigned char Kmimo,
-					unsigned char rvidx,
-					unsigned char clear,
-					unsigned char Qm, 
-					unsigned char Nl, 
-					unsigned char r) {
+int lte_rate_matching_turbo_rx(unsigned int RTC,
+			       unsigned int G, 
+			       short *w,
+			       unsigned char *dummy_w,
+			       short *soft_input, 
+			       unsigned char C, 
+			       unsigned int Nsoft, 
+			       unsigned char Mdlharq,
+			       unsigned char Kmimo,
+			       unsigned char rvidx,
+			       unsigned char clear,
+			       unsigned char Qm, 
+			       unsigned char Nl, 
+			       unsigned char r,
+			       unsigned int *E_out) {
   
   
   unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   unsigned short *soft_input2;
+
+  if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
+    msg("lte_rate_matching.c: invalid paramters\n");
+    return(-1);
+  }
 
   Nir = Nsoft/Kmimo/min(8,Mdlharq);
   Ncb = min(Nir/C,3*(RTC<<5));
@@ -551,7 +557,9 @@ unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
     if (ind==Ncb)
       ind=0;
   }
-  return(E);
+
+  *E_out = E;
+  return(0);
 
 }
 
