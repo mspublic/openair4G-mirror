@@ -42,7 +42,7 @@ unsigned int mac_registered;
 //#endif
 
 #ifdef OPENAIR2
-MACPHY_DATA_REQ_TABLE Macphy_req_table[1];
+MACPHY_DATA_REQ_TABLE Macphy_req_table[MAX_MODULES];
 #endif //OPENAIR2
 
 
