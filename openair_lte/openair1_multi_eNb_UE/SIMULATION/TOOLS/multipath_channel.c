@@ -47,6 +47,10 @@ void multipath_channel(struct complex **ch,
       if (keep_channel) {
 	// do nothing - keep channel
       } else {
+
+	// this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. 
+	// Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so 
+	// that we can safely assume plane wave propagation.
 	phase.r = cos(M_PI*((i-j)*sin(aoa)));
 	phase.i = sin(M_PI*((i-j)*sin(aoa)));
 	
@@ -54,14 +58,6 @@ void multipath_channel(struct complex **ch,
 	
 	random_channel(amps,Td, &a[channel_id][i][j][0],8,BW,ch[i + (j*nb_antennas_rx)],ricean_factor,&phase,forgetting_factor,clear);
       }
-      /*
-	if ((i==0) && (j==0)) {
-	printf("Forgetting factor %f, Ricean factor %f\n",forgetting_factor,ricean_factor);
-	for (n=0;n<channel_length;n++)
-	printf("%f ",pow(ch[i+(j*nb_antennas_rx)][n].r,2.0) + pow(ch[i+(j*nb_antennas_rx)][n].i,2.0));
-	printf("\n");
-	}
-      */
       //ch[i + (j*nb_antennas_rx)][0].r=1;
       //ch[i + (j*nb_antennas_rx)][0].i=0;
 

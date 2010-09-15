@@ -16,7 +16,7 @@
 \param channel_length Number of taps.
 \param bw Channel bandwidth in MHz.
 \param ch Returned channel (length(ch)=(int)11+2*bw*t_max).
-\param ricean_factor Ricean factor applied to all taps.
+\param ricean_factor Ricean factor applied to first tap (0..1, where 0 means AWGN and 1 means Rayleigh channel).
 \param phase Phase of the first tap.
 \param forgetting_factor (0..1) controls temporal variation of the channel (block stationary)
 \param clear Intialize channel memory to 0 
