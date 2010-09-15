@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
   //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.0005,Td=0.8,iqimb = 0;
+  double aoa=.03,ricean_factor=0.0005,Td=0.8,iqim = 0;
   int channel_length;
   struct complex **ch;
 
@@ -558,7 +558,7 @@ int main(int argc, char **argv) {
             }
 	  }
 	}
-<<<<<<< .mine
+
         if (awgn_flag == 0) {	
 	  multipath_channel(ch,s_re,s_im,r_re,r_im,
 	    		  amps,Td,BW,ricean_factor,aoa,
