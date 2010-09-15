@@ -193,7 +193,7 @@ For the interference measurements at the eNB, the eNB was put in normal transmis
 
 \subsection{RX RSSI}
 
-The calculation of the received signal strength indicator (RSSI) depends on the UE mode. If the UE is not synched to the BS, the RSSI is calculated the same way as it was done in the interference measurement. The signal strenghts of the two receive antennas are summed up. If the UE is synched to the eNB, the RSSI calculation is based on the channel measurements. Again, the signal strenghts of the two receive antennas are summed up. For the visuzlization we apply a decimation factor of 100, i.e., we plot one RX RSSI measurement every 5 secods or every second, depending on the UE mode.
+The calculation of the received signal strength indicator (RSSI) depends on the UE mode. If the UE is not synched to the BS, the RSSI is calculated the same way as it was done in the interference measurement. The signal strenghts of the two receive antennas are summed up. If the UE is synched to the eNB, the RSSI calculation is based on the channel measurements. Again, the signal strenghts of the two receive antennas are summed up. For the visualization we apply a decimation factor of 100, i.e., we plot one RX RSSI measurement every 5 secods or every second, depending on the UE mode.
 
 The RSSI of both UE and eNB measured is plotted on the regional map of the specific cell as well as a function of time. We show the RSSI in dBm for the coverage run, the measurements in mode 1, 2, and 6 as well as the uplink RSSI. 
 
@@ -226,11 +226,12 @@ UE mode & meaning \\
 In the LTE specification of 5MHz there are 25 Physical Resource Blocks (PRB). In the extended cyclic prefix configuration each PRB consists of 144 resource elements (RE), giving a total of 3600 REs for 25 PRBs. On the downlink, out of the 144 REs of one PRB 32 are used for control signals and another 16 are used as cell specific reference signals (in the two transmit antenna configuration) so the effective REs for data transmission in one PRB are 144-32-16 = 96. Since there are 25 PRBs so the total number of available downlink REs for DLSCH in one subframe become then 25 * 96 = 2400. This results in a maximum downlink throughput of 2.88 Mbps using QPSK, 5.76 Mbps using 16Qam and 8.64 Mbps using 64Qam. Similarly each uplink subframe has 3600 RE, out of which 600 are used for pilots and 300 for the SRS, leaving 2700 REs for the ULSCH. This results in maximum uplink throughput of 1.62 Mbps using QPSK, 3.24 Mbps using 16Qam and 4.86 Mbps using 64Qam. Please note that these throughputs for both DL and UL are uncoded throughputs. 
 
 \subsubsection{Ideal Throughput Calculation}
-For the ideal curves we use the channel measurements from mode 2. The channel estimation results in 200 channel estimates $h_{j,i}$ for each subframe and each transmit-receive antenna pair $(j,i)$. To calculate the ideal throughput for such a subframe we apply the following 3 steps.
+The calculation of the ideal throughput follows loosely the method described in \cite{IEEE802.16m_EMD}. For the ideal curves we use the channel measurements from mode 2. The channel estimation results in 200 channel estimates $h_{j,i}$ for each subframe and each transmit-receive antenna pair $(j,i)$. To calculate the ideal throughput for such a subframe we apply the following 3 steps.
 \begin{enumerate}
- \item Calculate the effective SNR based on the transmission mode and the feedback
+ \item Calculate the effective SNR based on the transmission mode and the feedback for each channel estimate in a subframe
  \item Calculate the best supported modulation scheme for this subframe
- \item Calculate the capacity under the constraint of the supported modulation scheme
+ \item Calculate the mutual information of the subframe under the constraint of the supported modulation scheme
+ \item Scale the results down to include  the effects of channel estimation, decoding performance, etc. 
 \end{enumerate}
 
 \paragraph{Calculation of the effective SNR.}
@@ -274,15 +275,23 @@ Where $y_1 = h_1x_1 + z_1$ is the received signal at the receiver, $h_1$ is a ra
 
 Then capacity of rest of 96 REs is extrapolated by multiplying the sum capacity of 8 channel estimates per receive antenna by the factor of 12 which which gives us the sum capacity of one PRB for one subframe. The same procedure is done for the rest of 24 PRBs and at the end their cumulative sum is taken giving us the downlink throughput of one complete subframe. Since Uplink-downlink configuration 3 is used in which there are 6 downlink subframes in a frame so then the sum capacity of one subframe is multiplied by the factor of 6 to calculate the downlink throughput of one frame. One frame in LTE is of 1ms duration. In order to get the downlink throughput per second, the downlink throughput of 100 frames is added together giving the throughput in bits per seconds.
 
-\paragraph{Notes.}
+\paragraph{Scaling.}
 The ideal throughput curves are really an upper bound to what the most advanced implementation of an LTE modem can achieve. In the above formulas the following effects are completely neglected:
 \begin{itemize}
  \item Channel estimation and interpolation in time and frequency
+ \item Decoding performance
  \item All effects of the RF front end.
  \item The formulas assume a perfect rate adaptation and a perfect feedback loop
 \end{itemize}
 
+In order to compensate for some of the effects we have carried out simulations with our modem implementation in an AWGN channel. The simulations include channel estimation as well as decoding performance.  Figure \ref{fig:imp_loss} shows the throughput based in mutual information (MI) as well as on simulation results for different SNR values in an AWGN channel. The difference between the MI and the simulated results is called the implementation loss. This implementation loss in applied to all the ideal curves.
 
+\begin{figure}
+ \centering
+ \includegraphics[width=8cm]{implementation_loss}
+ \caption{Throughput based in mutual information (MI) as well as on simulation results for different SNR values in an AWGN channel. The difference between the MI and the simulated results is called the implementation loss.}
+ \label{fig:imp_loss}
+\end{figure} 
 
 \subsubsection{Modem Throughput Calculation}
 To calculate the throughput of the MODEM we sum up the lengths of the successfully received packets within one second. 
@@ -352,6 +361,12 @@ The last subset (Subset 3) has been chosen on the cell edge to allow a compariso
 
 We show the CDF of the uncoded throughput similar to section \ref{sec:cdf}.
 
+\subsection{Nomadic Measurements}
+
+Nomadic measurements were carried out in addition to the vehicular measurements. Each nomadic measurement was taken once with the vehicular antennas and once with the nomadic antennas (reference to datasheet!). In total there were 15 measurement points in Cordes, 10 in Penne and 21 in Ambialet, resulting in a total number of points of 46.
+
+All the results can be found in \cite{nomadic}. In summary it can be seen that the nomadic antennas have a loss of about 4.7dB both in the UL and in the DL. This difference is reflected also in the throughput, where the loss in throughput is 40.996bps for mode 1, 77927 bps for mode 2, 204664bps for mode 6 and 6449 bps for the UL.
+
 
 \section{Cordes}
 \label{sec:cordes}
@@ -381,8 +396,8 @@ We show the CDF of the uncoded throughput similar to section \ref{sec:cdf}.
 
 \subsubsection{Mode2}
 
-\printfile{CORDES/Mode2/results_with_coverage/RX_RSSI_dBm_gps.jpg}
-\printfile{CORDES/Mode2/results_with_coverage/RX_RSSI_dBm.pdf}
+\printfile{CORDES/Mode2/results/RX_RSSI_dBm_gps.jpg}
+\printfile{CORDES/Mode2/results/RX_RSSI_dBm.pdf}
 
 \printfile{CORDES/Mode2_update/results/UL_RSSI_dBm_gps.jpg}
 \printfile{CORDES/Mode2_update/results/UL_RSSI_dBm.pdf}
@@ -410,12 +425,12 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 
 \subsection{Rice Factor}
 
-\printfile{CORDES/Mode2/results_with_coverage/K_factor_gps.jpg}
+\printfile{CORDES/Mode2/results/K_factor_gps.jpg}
 
 \subsection{UE mode comparison}
 
 \printfile{CORDES/Mode1/results/UE_mode_gps.jpg}
-\printfile{CORDES/Mode2/results_with_coverage/UE_mode_gps.jpg}
+\printfile{CORDES/Mode2/results/UE_mode_gps.jpg}
 
 \printfile{CORDES/Mode2_update/results/UE_mode_gps.jpg}
 \printfile{CORDES/Mode6/results/UE_mode_gps.jpg}
@@ -432,20 +447,21 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{CORDES/results/throughput_cdf_comparison.pdf}
 \printfile{CORDES/results/throughput_connected_cdf_comparison.pdf}
 
+\printfile{CORDES/results/throughput_cdf_comparison_fdd.pdf}
 
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_cdf_comparison.pdf}
-\printfile{CORDES/Mode6/results/UL_throughput_cdf_comparison.pdf}
+\printfile{CORDES/results/UL_throughput_cdf_comparison.pdf}
+\printfile{CORDES/results/UL_throughput_cdf_comparison_fdd.pdf}
 
 \subsubsection{Time}
 
 \printfile{CORDES/Mode1/results/DLSCH_throughput.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/DLSCH_throughput.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput.pdf}
 
 \printfile{CORDES/Mode6/results/DLSCH_throughput.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_time_1stRx.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_1stRx.pdf}
 
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_time_2ndRx.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_time_2Rx.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_2ndRx.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_2Rx.pdf}
 
 \printfile{CORDES/Mode6/results/UL_throughput.pdf}
 
@@ -453,16 +469,16 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \subsubsection{Map}
 
 \printfile{CORDES/Mode1/results/DLSCH_troughput_gps.jpg}
-\printfile{CORDES/Mode2/results_with_coverage/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode2/results/DLSCH_troughput_gps.jpg}
 
 \printfile{CORDES/Mode6/results/DLSCH_troughput_gps.jpg}
 \printfile{CORDES/Mode6/results/UL_throughput_gps.jpg}
 
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_Alamouti_gps_2Rx.jpg}
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_SISO_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
 
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
-\printfile{CORDES/Mode2/results_with_coverage/coded_throughput_optBeamforming_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
 
 \printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
 \printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
@@ -470,7 +486,7 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \subsubsection{Distance}
 
 \printfile{CORDES/Mode1/results/DLSCH_throughput_dist.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/DLSCH_throughput_dist.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput_dist.pdf}
 
 \printfile{CORDES/Mode6/results/DLSCH_throughput_dist.pdf}
 \printfile{CORDES/Mode6/results/UL_throughput_dist.pdf}
@@ -478,71 +494,71 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 %\printfile{Mode2/results/ideal_throughput_dist_mode1_1stRx.pdf}
 %\printfile{Mode2/results/ideal_throughput_dist_mode1_2ndRx.pdf}
 
-\printfile{CORDES/Mode2/results_with_coverage/ideal_throughput_dist_mode1_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode1_2Rx.pdf}
 %\printfile{Mode2/results/ideal_throughput_dist_mode2_1stRx.pdf}
 %
 %\printfile{Mode2/results/ideal_throughput_dist_mode2_2ndRx.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/ideal_throughput_dist_mode2_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode2_2Rx.pdf}
 
 %\printfile{Mode2/results/ideal_throughput_dist_mode6_feedbackq_1stRx.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode6_feedbackq_2Rx.pdf}
 %
 %\printfile{Mode2/results/ideal_throughput_dist_mode6_maxq_1stRx.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/ideal_throughput_dist_mode6_maxq_2Rx.pdf}
 
 \printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_dist.pdf}
 \printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_dist.pdf}
 
-\begin{table}
-\centering
-\begin{tabular}{l|l|l|l}
-Dist (km) & Mode 1 & Mode 2 & Mode 6\\
-\hline
-0--1 &   0.9383 &   0.6966 &   0.9771\\
-1--2 &   0.9827 &   0.9318 &   0.9701\\
-2--3 &   0.8842 &   0.7704 &   0.8900\\
-3--4 &   0.7433 &   0.6468 &   0.6591\\
-4--5 &   0.7743 &   0.7886 &   0.7733\\
-5--6 &   0.5794 &   0.5523 &   0.5955\\
-6--7 &   0.3655 &   0.4885 &   0.5915\\
-7--8 &   0.5126 &   0.5354 &   0.7587\\
-8--9 &   0.5105 &   0.5339 &   0.5628\\
-9--10 &    0.3728 &   0.3897 &   0.2421\\
-10--11 &   0.4400 &   0.3487 &   0.4488\\
-11--12 &   0.4279 &   0.4098 &   0.4582\\
-12--13 &   0.2374 &   0.2106 &   0.2939\\
-13--14 &   0.1625 &   0.2037 &   0.1122\\
-14--15 &   0.2809 &   0.1788 &   0.2536\\
-15--16 &   0.1053 &   0.1839 &   0.0649\\
-16--17 &   0.3062 &   0.2259 &   0.4022\\
-\end{tabular}
-\caption{Service coverage for all three modes in percent.}
-\end{table}
+% \begin{table}
+% \centering
+% \begin{tabular}{l|l|l|l}
+% Dist (km) & Mode 1 & Mode 2 & Mode 6\\
+% \hline
+% 0--1 &   0.9383 &   0.6966 &   0.9771\\
+% 1--2 &   0.9827 &   0.9318 &   0.9701\\
+% 2--3 &   0.8842 &   0.7704 &   0.8900\\
+% 3--4 &   0.7433 &   0.6468 &   0.6591\\
+% 4--5 &   0.7743 &   0.7886 &   0.7733\\
+% 5--6 &   0.5794 &   0.5523 &   0.5955\\
+% 6--7 &   0.3655 &   0.4885 &   0.5915\\
+% 7--8 &   0.5126 &   0.5354 &   0.7587\\
+% 8--9 &   0.5105 &   0.5339 &   0.5628\\
+% 9--10 &    0.3728 &   0.3897 &   0.2421\\
+% 10--11 &   0.4400 &   0.3487 &   0.4488\\
+% 11--12 &   0.4279 &   0.4098 &   0.4582\\
+% 12--13 &   0.2374 &   0.2106 &   0.2939\\
+% 13--14 &   0.1625 &   0.2037 &   0.1122\\
+% 14--15 &   0.2809 &   0.1788 &   0.2536\\
+% 15--16 &   0.1053 &   0.1839 &   0.0649\\
+% 16--17 &   0.3062 &   0.2259 &   0.4022\\
+% \end{tabular}
+% \caption{Service coverage for all three modes in percent.}
+% \end{table}
 
 \subsubsection{Speed}
 
 \printfile{CORDES/Mode1/results/DLSCH_throughput_speed.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/DLSCH_throughput_speed.pdf}
+\printfile{CORDES/Mode2/results/DLSCH_throughput_speed.pdf}
 
 \printfile{CORDES/Mode6/results/DLSCH_throughput_speed.pdf}
 \printfile{CORDES/Mode6/results/UL_throughput_speed.pdf}
 
-\begin{table}
-\centering
-\begin{tabular}{l|l|l|l}
-speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
-\hline
-0--5   &   0.3876  &  0.5360 &   0.8385\\
-5--10  &   0.6776  &  0.4844 &   0.6915\\
-10--15 &   0.5553  &  0.5015 &   0.6192\\
-15--20 &   0.5694  &  0.5402 &   0.6677\\
-20--25 &   0.5133  &  0.5376 &   0.5087\\
-25--30 &   0.5364  &  0.5480 &   0.6111\\
-30--35 &   0.0909  &     NaN &      NaN\\
-35--40 &      NaN  &     NaN &      NaN\\
-\end{tabular}
-\caption{Service coverage for all three modes in percent.}
-\end{table}
+% \begin{table}
+% \centering
+% \begin{tabular}{l|l|l|l}
+% speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
+% \hline
+% 0--5   &   0.3876  &  0.5360 &   0.8385\\
+% 5--10  &   0.6776  &  0.4844 &   0.6915\\
+% 10--15 &   0.5553  &  0.5015 &   0.6192\\
+% 15--20 &   0.5694  &  0.5402 &   0.6677\\
+% 20--25 &   0.5133  &  0.5376 &   0.5087\\
+% 25--30 &   0.5364  &  0.5480 &   0.6111\\
+% 30--35 &   0.0909  &     NaN &      NaN\\
+% 35--40 &      NaN  &     NaN &      NaN\\
+% \end{tabular}
+% \caption{Service coverage for all three modes in percent.}
+% \end{table}
 
 \subsubsection{Ricean factor}
 
@@ -550,30 +566,49 @@ speed (m/s) & Mode 1 & Mode 2 & Mode 6\\
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile{CORDES/Mode1/results/pfair_throughput_4users.pdf}
-\printfile{CORDES/Mode1/results/pfair_throughput_cdf_4users.pdf}
+\printfile{CORDES/Mode1/results/pfair_throughput_4users_.pdf}
+\printfile{CORDES/Mode1/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{CORDES/Mode1/results/pfair_throughput_dist_4users.pdf}
-\printfile{CORDES/Mode1/results/pfair_troughput_gps_4users}
+\printfile{CORDES/Mode1/results/pfair_throughput_dist_4users_.pdf}
+\printfile{CORDES/Mode1/results/pfair_troughput_gps_4users_}
 
-\printfile{CORDES/Mode2/results_with_coverage/pfair_throughput_4users.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/pfair_throughput_cdf_4users.pdf}
+\printfile{CORDES/Mode2/results/pfair_throughput_4users_.pdf}
+\printfile{CORDES/Mode2/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{CORDES/Mode2/results_with_coverage/pfair_throughput_dist_4users.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/pfair_troughput_gps_4users}
+\printfile{CORDES/Mode2/results/pfair_throughput_dist_4users_.pdf}
+\printfile{CORDES/Mode2/results/pfair_troughput_gps_4users_}
 
-\printfile{CORDES/Mode6/results/pfair_throughput_4users.pdf}
-\printfile{CORDES/Mode6/results/pfair_throughput_cdf_4users.pdf}
+\printfile{CORDES/Mode6/results/pfair_throughput_4users_.pdf}
+\printfile{CORDES/Mode6/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{CORDES/Mode6/results/pfair_throughput_dist_4users.pdf}
-\printfile{CORDES/Mode6/results/pfair_troughput_gps_4users.jpg}
+\printfile{CORDES/Mode6/results/pfair_throughput_dist_4users_.pdf}
+\printfile{CORDES/Mode6/results/pfair_troughput_gps_4users_.jpg}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile{CORDES/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{CORDES/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
+
 
 \subsubsection{Service Coverage}
 
-\printfile{CORDES/Mode2/results_with_coverage/service_coverage_dl.pdf}
-\printfile{CORDES/Mode2/results_with_coverage/service_coverage_ul.pdf}
+\printfile{CORDES/Mode2/results/service_coverage_dl.pdf}
+\printfile{CORDES/Mode2/results/service_coverage_ul.pdf}
 
-\printfile{CORDES/Mode2/results_with_coverage/service_coverage_dl_rx_rssi.pdf}
+\printfile{CORDES/Mode2/results/service_coverage_dl_rx_rssi.pdf}
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled_cordes}
@@ -694,8 +729,10 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{PENNE/results/throughput_cdf_comparison.pdf}
 \printfile{PENNE/results/throughput_connected_cdf_comparison.pdf}
 
-\printfile{PENNE/Mode2/results/coded_throughput_cdf_comparison.pdf}
-\printfile{PENNE/Mode2/results/UL_throughput_cdf_comparison.pdf}
+\printfile{PENNE/results/throughput_cdf_comparison_fdd.pdf}
+
+\printfile{PENNE/results/UL_throughput_cdf_comparison.pdf}
+\printfile{PENNE/results/UL_throughput_cdf_comparison_fdd.pdf}
 
 \subsubsection{Time}
 
@@ -764,23 +801,42 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile{PENNE/Mode1/results/pfair_throughput_4users.pdf}
-\printfile{PENNE/Mode1/results/pfair_throughput_cdf_4users.pdf}
+\printfile{PENNE/Mode1/results/pfair_throughput_4users_.pdf}
+\printfile{PENNE/Mode1/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{PENNE/Mode1/results/pfair_throughput_dist_4users.pdf}
-\printfile{PENNE/Mode1/results/pfair_troughput_gps_4users}
+\printfile{PENNE/Mode1/results/pfair_throughput_dist_4users_.pdf}
+\printfile{PENNE/Mode1/results/pfair_troughput_gps_4users_}
 
-\printfile{PENNE/Mode2/results/pfair_throughput_4users.pdf}
-\printfile{PENNE/Mode2/results/pfair_throughput_cdf_4users.pdf}
+\printfile{PENNE/Mode2/results/pfair_throughput_4users_.pdf}
+\printfile{PENNE/Mode2/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{PENNE/Mode2/results/pfair_throughput_dist_4users.pdf}
-\printfile{PENNE/Mode2/results/pfair_troughput_gps_4users}
+\printfile{PENNE/Mode2/results/pfair_throughput_dist_4users_.pdf}
+\printfile{PENNE/Mode2/results/pfair_troughput_gps_4users_}
 
-\printfile{PENNE/Mode6/results/pfair_throughput_4users.pdf}
-\printfile{PENNE/Mode6/results/pfair_throughput_cdf_4users.pdf}
+\printfile{PENNE/Mode6/results/pfair_throughput_4users_.pdf}
+\printfile{PENNE/Mode6/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{PENNE/Mode6/results/pfair_throughput_dist_4users.pdf}
-\printfile{PENNE/Mode6/results/pfair_troughput_gps_4users.jpg}
+\printfile{PENNE/Mode6/results/pfair_throughput_dist_4users_.pdf}
+\printfile{PENNE/Mode6/results/pfair_troughput_gps_4users_.jpg}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile{PENNE/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{PENNE/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
+
 
 \subsubsection{Service Coverage}
 
@@ -869,8 +925,8 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 
 \subsubsection{Path loss}
 
-\printfile{AMBIALET/Mode2/results/RX_RSSI_dBm_dist_bars.pdf}
-\printfile{AMBIALET/Mode2/results/RX_RSSI_dBm_dist_with_PL.pdf}
+\printfile{AMBIALET/results/RX_RSSI_dBm_dist_bars.pdf}
+\printfile{AMBIALET/results/RX_RSSI_dBm_dist_with_PL.pdf}
 
 
 \subsection{PBCH comparison}
@@ -905,8 +961,10 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{AMBIALET/results/throughput_cdf_comparison.pdf}
 \printfile{AMBIALET/results/throughput_connected_cdf_comparison.pdf}
 
-\printfile{AMBIALET/Mode2/results/coded_throughput_cdf_comparison.pdf}
-\printfile{AMBIALET/Mode2/results/UL_throughput_cdf_comparison.pdf}
+\printfile{AMBIALET/results/throughput_cdf_comparison_fdd.pdf}
+
+\printfile{AMBIALET/results/UL_throughput_cdf_comparison.pdf}
+\printfile{AMBIALET/results/UL_throughput_cdf_comparison_fdd.pdf}
 
 \subsubsection{Time}
 
@@ -966,23 +1024,41 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile{AMBIALET/Mode1/results/pfair_throughput_4users.pdf}
-\printfile{AMBIALET/Mode1/results/pfair_throughput_cdf_4users.pdf}
+\printfile{AMBIALET/Mode1/results/pfair_throughput_4users_.pdf}
+\printfile{AMBIALET/Mode1/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{AMBIALET/Mode1/results/pfair_throughput_dist_4users.pdf}
-\printfile{AMBIALET/Mode1/results/pfair_troughput_gps_4users}
+\printfile{AMBIALET/Mode1/results/pfair_throughput_dist_4users_.pdf}
+\printfile{AMBIALET/Mode1/results/pfair_troughput_gps_4users_}
 
-\printfile{AMBIALET/Mode2/results/pfair_throughput_4users.pdf}
-\printfile{AMBIALET/Mode2/results/pfair_throughput_cdf_4users.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_4users_.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{AMBIALET/Mode2/results/pfair_throughput_dist_4users.pdf}
-\printfile{AMBIALET/Mode2/results/pfair_troughput_gps_4users}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_dist_4users_.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_troughput_gps_4users_}
 
-\printfile{AMBIALET/Mode6/results/pfair_throughput_4users.pdf}
-\printfile{AMBIALET/Mode6/results/pfair_throughput_cdf_4users.pdf}
+\printfile{AMBIALET/Mode6/results/pfair_throughput_4users_.pdf}
+\printfile{AMBIALET/Mode6/results/pfair_throughput_cdf_4users_.pdf}
 
-\printfile{AMBIALET/Mode6/results/pfair_throughput_dist_4users.pdf}
-\printfile{AMBIALET/Mode6/results/pfair_troughput_gps_4users.jpg}
+\printfile{AMBIALET/Mode6/results/pfair_throughput_dist_4users_.pdf}
+\printfile{AMBIALET/Mode6/results/pfair_troughput_gps_4users_.jpg}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
+\printfile{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
 
 \subsubsection{Service Coverage}
 

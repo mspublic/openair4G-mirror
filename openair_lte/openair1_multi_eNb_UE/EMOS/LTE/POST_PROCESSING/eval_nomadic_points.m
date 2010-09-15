@@ -29,10 +29,6 @@ load(fullfile(pathname,'results_eNB_new.mat'));
 results_eNB_nomadic=minestimates;
 
 %%
-addpath('maps')
-mm='cordes';
-
-%%
 h_fig = figure(1);
 hold off
 %plot_gps_coordinates(mm,[results_UE.gps_lon_cat], [results_UE.gps_lat_cat], double([results_UE.UE_mode_cat]));
@@ -69,7 +65,18 @@ saveas(h_fig,fullfile(pathname,'RX_RSSI_nomadic.jpg'),'jpg');
 fid = fopen(fullfile(pathname,'nomadic_results.csv'),'w');
 for i=1:length(results_UE_nomadic)
     rx_rssi_dBm_mean(i) = mean(results_UE_nomadic(i).rx_rssi_dBm(:,1));
-    ul_rssi_dBm_mean(i) = mean(mean([results_eNB_nomadic(i).eNb_UE_stats.UL_rssi]));
+
+    ul_rssi_all_sectors = zeros(size(results_eNB_nomadic(i).phy_measurements));
+    for j=1:length(results_eNB_nomadic(i).phy_measurements)
+        ul_rssi_all_sectors(j,:) = double([results_eNB_nomadic(i).phy_measurements(j,:).rx_rssi_dBm]);
+    end
+    ul_rssi_dBm = zeros(length(results_eNB_nomadic(i).eNb_UE_stats),1);
+    sector = [results_eNB_nomadic(i).eNb_UE_stats.sector];
+    for j=1:length(results_eNB_nomadic(i).eNb_UE_stats)
+        ul_rssi_dBm(j) = ul_rssi_all_sectors(j,sector(j)+1);
+    end
+    ul_rssi_dBm_mean(i) = mean(ul_rssi_dBm);
+    
 
     UE_synched = (results_UE_nomadic(i).UE_mode_cat>0);
     UE_connected = (results_UE_nomadic(i).UE_mode_cat==3);
@@ -87,20 +94,21 @@ for i=1:length(results_UE_nomadic)
        
     lat = [results_UE_nomadic(i).gps_data.latitude];
     lon = [results_UE_nomadic(i).gps_data.longitude];
-    idx = 1;
-    for m=[1,2,6]
-%        throughput_mean(i,idx) = mean((100-results_UE_nomadic(i).dlsch_fer(UE_connected & good & UE_mimo_mode==m)).*...
-%            results_UE_nomadic(i).tbs_cat(UE_connected & good & UE_mimo_mode==m)*6);
-        fprintf(fid,'%d; %d; %s; %s; %f; %f; %f; %f; %d; %d; %f; %f\n',i, m, ...
-            results_UE_nomadic(i).filename, results_eNB_nomadic(i).filename, ...
-            rx_rssi_dBm_mean(i), ul_rssi_dBm_mean(i), ...
-            mean(dlsch_throughput(UE_connected & good & UE_mimo_mode==m)), ...
-            mean(ulsch_throughput(eNB_connected)), ...
-            sum(UE_connected & good & UE_mimo_mode==m), ...
-            sum(eNB_connected), ...
-            mean(lat(lat~=0)),mean(lon(lon~=0)));
-        idx=idx+1;
+    if (i==1)
+        fprintf(fid,'index; DL name; UL name; DL RSSI; UL RSSI; Mode1 TP; Mode2 TP; Mode6 TP; UL TP; Mode1 points; Mode2 points; Mode6 points; UL points; Lat; Lon\n');
     end
+    fprintf(fid,'%d; %s; %s; %f; %f; %f; %f; %f; %f; %d; %d; %d; %d; %f; %f\n',i, ...
+        results_UE_nomadic(i).filename, results_eNB_nomadic(i).filename, ...
+        rx_rssi_dBm_mean(i), ul_rssi_dBm_mean(i), ...
+        mean(dlsch_throughput(UE_connected & good & UE_mimo_mode==1)), ...
+        mean(dlsch_throughput(UE_connected & good & UE_mimo_mode==2)), ...
+        mean(dlsch_throughput(UE_connected & good & UE_mimo_mode==6)), ...
+        mean(ulsch_throughput(eNB_connected)), ...
+        sum(UE_connected & good & UE_mimo_mode==1), ...
+        sum(UE_connected & good & UE_mimo_mode==2), ...
+        sum(UE_connected & good & UE_mimo_mode==6), ...
+        sum(eNB_connected), ...
+        mean(lat(lat~=0)),mean(lon(lon~=0)));
 end
 fclose(fid);
 

@@ -5,9 +5,9 @@ pathname='/emos/EMOS/results/';
 
 coverage     = load('/emos/EMOS/Coverage/results/results_UE.mat');
 mode1        = load('/emos/EMOS/Mode1/results/results_UE.mat');
-mode2        = load('/emos/EMOS/Mode2/results/results_UE.mat');
+mode2        = load('/emos/EMOS/Mode2/results_wo_coverage/results_UE.mat');
 mode2_update = load('/emos/EMOS/Mode2_update/results/results_UE.mat');
-mode2_ideal  = load('/emos/EMOS/Mode2/results/results_cat_UE.mat');
+mode2_ideal  = load('/emos/EMOS/Mode2/results_wo_coverage/results_cat_UE.mat');
 mode6        = load('/emos/EMOS/Mode6/results/results_UE.mat');
 
 mm='cordes';
@@ -124,14 +124,14 @@ saveas(h_fig,fullfile(pathname,'all_modes_comparison_cqi_distance_travelled.eps'
 h_fig = figure(7);
 hold off
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
-    mode2_ideal.rateps_SISO_supportedQam_eNB1_2Rx_cat(start_mode2:start_mode2+length_mode2),'r');
+    scale_ideal_tp(mode2_ideal.rateps_SISO_supportedQam_eNB1_2Rx_cat(start_mode2:start_mode2+length_mode2)),'r');
 hold on
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
-    mode2_ideal.rateps_alamouti_supportedQam_eNB1_2Rx_cat(start_mode2:start_mode2+length_mode2),'g');
+    scale_ideal_tp(mode2_ideal.rateps_alamouti_supportedQam_eNB1_2Rx_cat(start_mode2:start_mode2+length_mode2)),'g');
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
-    mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(start_mode2:start_mode2+length_mode2),'b');
+    scale_ideal_tp(mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(start_mode2:start_mode2+length_mode2)),'b');
 plot(mode2.dist_travelled(start_mode2:start_mode2+length_mode2)-mode2.dist_travelled(start_mode2),...
-    mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(start_mode2:start_mode2+length_mode2),'k');
+    scale_ideal_tp(mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(start_mode2:start_mode2+length_mode2)),'k');
 ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6 opt','Mode6 feedback')
 xlabel('Distance travelled [km]')
@@ -212,14 +212,14 @@ saveas(h_fig,fullfile(pathname,'all_modes_comparison2_cqi_distance_travelled.eps
 h_fig = figure(7);
 hold off
 plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
-    mode2_ideal.rateps_SISO_supportedQam_eNB1_2Rx_cat(select2b),'r');
+    scale_ideal_tp(mode2_ideal.rateps_SISO_supportedQam_eNB1_2Rx_cat(select2b)),'r');
 hold on
 plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
-    mode2_ideal.rateps_alamouti_supportedQam_eNB1_2Rx_cat(select2b),'g');
+    scale_ideal_tp(mode2_ideal.rateps_alamouti_supportedQam_eNB1_2Rx_cat(select2b)),'g');
 plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
-    mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(select2b),'b');
+    scale_ideal_tp(mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_maxq_cat(select2b)),'b');
 plot(mode2.dist_travelled(select2b)-mode2.dist_travelled(select2b(1)),...
-    mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(select2b),'k');
+    scale_ideal_tp(mode2_ideal.rateps_beamforming_supportedQam_eNB1_2Rx_feedbackq_cat(select2b)),'k');
 ylim([0 8.64e6]);
 legend('Mode1','Mode2','Mode6 opt','Mode6 feedback')
 xlabel('Distance travelled [km]')

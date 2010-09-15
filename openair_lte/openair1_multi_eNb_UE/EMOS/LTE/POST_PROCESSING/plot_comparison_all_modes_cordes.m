@@ -1,4 +1,5 @@
-% file: plot_comparison_all_modes
+% file: plot_comparison_all_modes_cordes
+% script not used anymore. use plot_comparison_all_modes instead
 
 close all
 %clear all
@@ -8,7 +9,7 @@ h_fig = 0;
 %mode1 = load('/emos/EMOS/Mode1/results/results_UE.mat');
 %mode2 = load('/emos/EMOS/Mode2/results/results_UE.mat');
 %mode6 = load('/emos/EMOS/Mode6/results/results_UE.mat');
-ul    = load('/emos/EMOS/Mode6/results/results_eNB.mat');
+%ul    = load('/emos/EMOS/Mode6/results/results_eNB.mat');
 %mode2_ideal = load('/emos/EMOS/Mode2/results/results_cat_UE.mat');
 
 %%
@@ -29,55 +30,7 @@ ul    = load('/emos/EMOS/Mode6/results/results_eNB.mat');
 
 %% set throughput to 0 when UE was not connected
 mode2_ideal.UE_connected = (mode2_ideal.UE_mode_cat(1:100:end)==3);
-
-
-%% Coded throughput CDF comparison (when connected)
-mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;
-mode2.throughput(~mode2.UE_connected | ~mode2.good) = nan;
-mode6.throughput(~mode6.UE_connected | ~mode6.good) = nan;
-nn = fieldnames(mode2_ideal);
-for n = strmatch('rateps',nn).'
-    mode2_ideal.(nn{n})(~mode2_ideal.UE_connected) = nan;
-end
-
-%%
-h_fig = h_fig+1;
-figure(h_fig);
-hold off
-colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
-legend_str = {};
-ni=1;
-for n = strmatch('rateps',nn).'
-    hold on
-    si = strfind(nn{n},'supportedQam');
-    if si
-        [f,x] = ecdf(mode2_ideal.(nn{n}));
-        plot(x,f,colors{ni},'Linewidth',2);
-        legend_tmp = nn{n};
-        legend_tmp(si:si+10) = [];
-        legend_str{ni} = legend_tmp;
-        ni=ni+1;
-    end
-end
-[f,x] = ecdf(mode1.throughput);
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'TX mode 1';
-        ni=ni+1;
-[f,x] = ecdf(mode2.throughput);
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'Tx mode 2';
-        ni=ni+1;
-[f,x] = ecdf(mode6.throughput);
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'Tx mode 6';
-        ni=ni+1;
-
-title('DLSCH throughput CDF (when connected)')
-xlabel('Throughput [bps]')
-ylabel('P(x<abscissa)')
-legend(legend_str,'Interpreter','none','Location','SouthOutside');
-grid on
-saveas(h_fig,fullfile(pathname,'throughput_connected_cdf_comparison.eps'),'epsc2')
+mode2_ideal.UE_synched = (mode2_ideal.UE_mode_cat(1:100:end)>0);
 
 %% Coded throughput CDF comparison 
 mode1.throughput(~mode1.UE_connected | ~mode1.good) = 0;
@@ -85,7 +38,7 @@ mode2.throughput(~mode2.UE_connected | ~mode2.good) = 0;
 mode6.throughput(~mode6.UE_connected | ~mode6.good) = 0;
 nn = fieldnames(mode2_ideal);
 for n = strmatch('rateps',nn).'
-    mode2_ideal.(nn{n})(~mode2_ideal.UE_connected) = 0;
+    mode2_ideal.(nn{n})(~mode2_ideal.UE_synched) = 0;
 end
 
 %%
@@ -99,7 +52,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(mode2_ideal.(nn{n}));
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -138,7 +91,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(mode2_ideal.(nn{n})*10/6);
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n}))*10/6);
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -166,7 +119,46 @@ legend(legend_str,'Interpreter','none','Location','SouthOutside');
 grid on
 saveas(h_fig,fullfile(pathname,'throughput_cdf_comparison_fdd.eps'),'epsc2')
 
-%% Uncoded throughput CDF comparison (when connected)
+%% Uncoded throughput CDF comparison 
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
+legend_str = {};
+ni=1;
+for n = strmatch('rateps',nn).'
+    hold on
+    si = strfind(nn{n},'supportedQam');
+    if si
+        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})),'DL'));
+        plot(x,f,colors{ni},'Linewidth',2);
+        legend_tmp = nn{n};
+        legend_tmp(si:si+10) = [];
+        legend_str{ni} = legend_tmp;
+        ni=ni+1;
+    end
+end
+[f,x] = ecdf(coded2uncoded(mode1.throughput,'DL'));
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'TX mode 1';
+        ni=ni+1;
+[f,x] = ecdf(coded2uncoded(mode2.throughput,'DL'));
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 2';
+        ni=ni+1;
+[f,x] = ecdf(coded2uncoded(mode6.throughput,'DL'));
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 6';
+        ni=ni+1;
+
+title('DLSCH uncoded throughput CDF')
+xlabel('Throughput [bps]')
+ylabel('P(x<abscissa)')
+legend(legend_str,'Interpreter','none','Location','SouthOutside');
+grid on
+saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'epsc2')
+
+%% Coded throughput CDF comparison (when connected)
 mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;
 mode2.throughput(~mode2.UE_connected | ~mode2.good) = nan;
 mode6.throughput(~mode6.UE_connected | ~mode6.good) = nan;
@@ -186,7 +178,46 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(coded2uncoded(mode2_ideal.(nn{n}),'DL'));
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})));
+        plot(x,f,colors{ni},'Linewidth',2);
+        legend_tmp = nn{n};
+        legend_tmp(si:si+10) = [];
+        legend_str{ni} = legend_tmp;
+        ni=ni+1;
+    end
+end
+[f,x] = ecdf(mode1.throughput);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'TX mode 1';
+        ni=ni+1;
+[f,x] = ecdf(mode2.throughput);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 2';
+        ni=ni+1;
+[f,x] = ecdf(mode6.throughput);
+plot(x,f,colors{ni},'Linewidth',2)
+        legend_str{ni} = 'Tx mode 6';
+        ni=ni+1;
+
+title('DLSCH throughput CDF (when connected)')
+xlabel('Throughput [bps]')
+ylabel('P(x<abscissa)')
+legend(legend_str,'Interpreter','none','Location','SouthOutside');
+grid on
+saveas(h_fig,fullfile(pathname,'throughput_connected_cdf_comparison.eps'),'epsc2')
+
+%% Uncoded throughput CDF comparison (when connected)
+h_fig = h_fig+1;
+figure(h_fig);
+hold off
+colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
+legend_str = {};
+ni=1;
+for n = strmatch('rateps',nn).'
+    hold on
+    si = strfind(nn{n},'supportedQam');
+    if si
+        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})),'DL'));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -214,53 +245,6 @@ legend(legend_str,'Interpreter','none','Location','SouthOutside');
 grid on
 saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_connected_cdf_comparison.eps'),'epsc2')
 
-%% Uncoded throughput CDF comparison 
-mode1.throughput(~mode1.UE_connected | ~mode1.good) = 0;
-mode2.throughput(~mode2.UE_connected | ~mode2.good) = 0;
-mode6.throughput(~mode6.UE_connected | ~mode6.good) = 0;
-nn = fieldnames(mode2_ideal);
-for n = strmatch('rateps',nn).'
-    mode2_ideal.(nn{n})(~mode2_ideal.UE_connected) = 0;
-end
-
-%%
-h_fig = h_fig+1;
-figure(h_fig);
-hold off
-colors = {'b','g','r','c','m','y','k','b--','g--','r--','c--','m--','y--','k--'};
-legend_str = {};
-ni=1;
-for n = strmatch('rateps',nn).'
-    hold on
-    si = strfind(nn{n},'supportedQam');
-    if si
-        [f,x] = ecdf(coded2uncoded(mode2_ideal.(nn{n}),'DL'));
-        plot(x,f,colors{ni},'Linewidth',2);
-        legend_tmp = nn{n};
-        legend_tmp(si:si+10) = [];
-        legend_str{ni} = legend_tmp;
-        ni=ni+1;
-    end
-end
-[f,x] = ecdf(coded2uncoded(mode1.throughput,'DL'));
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'TX mode 1';
-        ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode2.throughput,'DL'));
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'Tx mode 2';
-        ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode6.throughput,'DL'));
-plot(x,f,colors{ni},'Linewidth',2)
-        legend_str{ni} = 'Tx mode 6';
-        ni=ni+1;
-
-title('DLSCH uncoded throughput CDF')
-xlabel('Throughput [bps]')
-ylabel('P(x<abscissa)')
-legend(legend_str,'Interpreter','none','Location','SouthOutside');
-grid on
-saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'epsc2')
 
 % %% Unoded throughput CDF comparison (when connected)
 % h_fig = h_fig+1;
