@@ -1045,14 +1045,10 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
   _m_empty();
 
 }
+
 int avgU[2];
-
-
 int avgU_0[2],avgU_1[2]; // For the Distributed Alamouti Scheme
-
-
 int ulsch_power[2];
-
 int ulsch_power_0[2],ulsch_power_1[2];// For the distributed Alamouti Scheme
 
 int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
@@ -1065,9 +1061,6 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      unsigned char rag_flag,
 	      unsigned char relay_flag,
 	      unsigned char diversity_scheme) {
-
-
-
 
   unsigned int l,i;
   int avgs;
@@ -1094,7 +1087,6 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
   for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
           
-        
 #ifdef DEBUG_ULSCH
     msg("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",rag_flag,l,
 	ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
@@ -1130,7 +1122,6 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      lte_frame_parms,
 		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);  
     
-
     if((relay_flag == 2) && (diversity_scheme == 2))
       {
 	for (i=0;i<lte_frame_parms->nb_antennas_rx;i++){

@@ -333,12 +333,12 @@ typedef struct {
   unsigned char beta_offset_ri_times8;
   /// beta_offset_harqack times 8
   unsigned char beta_offset_harqack_times8;
-  /// Flag to indicate that eNB awaits UE RAG 
-  unsigned char RAG_active;
-  /// Subframe for RAG
-  unsigned char RAG_subframe;
-  /// Frame for RAG
-  unsigned int RAG_frame;
+  /// Flag to indicate that eNB awaits UE RRCConnRequest 
+  unsigned char RRCConnRequest_active;
+  /// Subframe for RRCConnRequest
+  unsigned char RRCConnRequest_subframe;
+  /// Frame for RRCConnRequest
+  unsigned int RRCConnRequest_frame;
 } LTE_eNb_ULSCH_t;
 
 typedef struct {
@@ -385,16 +385,25 @@ typedef struct {
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
-  int UL_rssi[NUMBER_OF_UE_MAX][NB_ANTENNAS_RX];
-  unsigned char DL_cqi[NUMBER_OF_UE_MAX][2];
-  unsigned char DL_diffcqi[NUMBER_OF_UE_MAX][2];
-  unsigned short DL_pmi_single[NUMBER_OF_UE_MAX];
-  unsigned short DL_pmi_dual[NUMBER_OF_UE_MAX];
-  unsigned char rank[NUMBER_OF_UE_MAX];
-  unsigned short UE_id[NUMBER_OF_UE_MAX]; ///user id (rnti) of connected UEs
-  int UE_timing_offset[NUMBER_OF_UE_MAX]; ///timing offset of connected UEs (for timing advance signalling)
-  UE_MODE_t mode[NUMBER_OF_UE_MAX];
-  unsigned char sector[NUMBER_OF_UE_MAX];
+  int UL_rssi[NB_ANTENNAS_RX];
+  unsigned char DL_cqi[2];
+  unsigned char DL_diffcqi[2];
+  unsigned short DL_pmi_single;
+  unsigned short DL_pmi_dual;
+  unsigned char rank;
+  unsigned short UE_id; ///user id (rnti) of connected UEs
+  int UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
+  UE_MODE_t mode;
+  unsigned char sector;
+  int dlsch_NAK[8];
+  int dlsch_l2_errors;
+  int dlsch_trials[4];
+  int ulsch_errors[3];
+  int ulsch_consecutive_errors[3];
+  int ulsch_decoding_attempts[3][4];
+  int ulsch_round_errors[3][4];
+  char dlsch_mcs_offset;
+  char cont_res_id[6];
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -1314,7 +1323,7 @@ void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 
 void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id);
 
-void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char UE_id,LTE_eNB_UE_stats *stats);
+void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,LTE_eNB_UE_stats *stats);
 
 void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,unsigned char eNb_id, int current_dlsch_cqi);
 

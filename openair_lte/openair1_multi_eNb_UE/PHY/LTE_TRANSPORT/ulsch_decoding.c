@@ -97,7 +97,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 
   unsigned char harq_pid;
   unsigned short nb_rb;
-  unsigned int A;
+  unsigned int A,E;
   unsigned char Q_m;
   unsigned int i,q,j;
   int iprime;
@@ -525,20 +525,25 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
 	   ulsch->harq_processes[harq_pid]->Nl);
 #endif    
 
-    r_offset += lte_rate_matching_turbo_rx(ulsch->harq_processes[harq_pid]->RTC[r],
-					   G,
-			 		   ulsch->harq_processes[harq_pid]->w[r],
-					   dummy_w[r],
-					   ulsch->e,
-					   ulsch->harq_processes[harq_pid]->C,
-					   NSOFT,
-					   ulsch->Mdlharq,
-					   1,
-					   ulsch->harq_processes[harq_pid]->rvidx,
-					   ulsch->harq_processes[harq_pid]->Ndi,
-					   get_Qm(ulsch->harq_processes[harq_pid]->mcs),
-					   1,
-					   r);
+    if (lte_rate_matching_turbo_rx(ulsch->harq_processes[harq_pid]->RTC[r],
+				   G,
+				   ulsch->harq_processes[harq_pid]->w[r],
+				   dummy_w[r],
+				   ulsch->e,
+				   ulsch->harq_processes[harq_pid]->C,
+				   NSOFT,
+				   ulsch->Mdlharq,
+				   1,
+				   ulsch->harq_processes[harq_pid]->rvidx,
+				   ulsch->harq_processes[harq_pid]->Ndi,
+				   get_Qm(ulsch->harq_processes[harq_pid]->mcs),
+				   1,
+				   r,
+				   &E)==-1) {
+      msg("ulsch_decoding.c: Problem in rate matching\n");
+      return(-1);
+    }
+    r_offset += E;
     /*
     msg("Subblock deinterleaving, d %p w %p\n",
 	   ulsch->harq_processes[harq_pid]->d[r],

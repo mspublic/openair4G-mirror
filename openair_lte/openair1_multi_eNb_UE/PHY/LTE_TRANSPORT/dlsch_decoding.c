@@ -74,7 +74,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
   unsigned short nb_rb;
   unsigned char harq_pid;
-  unsigned int A;
+  unsigned int A,E;
   unsigned char mod_order;
   unsigned int coded_bits_per_codeword,i;
   unsigned int ret,offset;
@@ -134,6 +134,8 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
   // This has to be updated for presence of PDCCH and PBCH
   coded_bits_per_codeword =( nb_rb * (12 * mod_order) * (lte_frame_parms->num_dlsch_symbols));
+
+  //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,dlsch->harq_processes[harq_pid]->Ndi);
 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation
@@ -197,20 +199,26 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 	   dlsch->harq_processes[harq_pid]->Nl);
 #endif    
 
-    r_offset += lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
-					   coded_bits_per_codeword,
-			 		   dlsch->harq_processes[harq_pid]->w[r],
-					   dummy_w[r],
-					   dlsch_llr,
-					   dlsch->harq_processes[harq_pid]->C,
-					   NSOFT,
-					   dlsch->Mdlharq,
-					   dlsch->Kmimo,
-					   dlsch->harq_processes[harq_pid]->rvidx,
-					   dlsch->harq_processes[harq_pid]->Ndi,
-					   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
-					   dlsch->harq_processes[harq_pid]->Nl,
-					   r);
+    if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
+				   coded_bits_per_codeword,
+				   dlsch->harq_processes[harq_pid]->w[r],
+				   dummy_w[r],
+				   dlsch_llr,
+				   dlsch->harq_processes[harq_pid]->C,
+				   NSOFT,
+				   dlsch->Mdlharq,
+				   dlsch->Kmimo,
+				   dlsch->harq_processes[harq_pid]->rvidx,
+				   dlsch->harq_processes[harq_pid]->Ndi,
+				   get_Qm(dlsch->harq_processes[harq_pid]->mcs),
+				   dlsch->harq_processes[harq_pid]->Nl,
+				   r,
+				   &E)==-1) {
+      msg("dlsch_decoding.c: Problem in rate_matching\n");
+      return(MAX_TURBO_ITERATIONS);
+    }
+    r_offset += E;
+
     /*
     msg("Subblock deinterleaving, d %p w %p\n",
 	   dlsch->harq_processes[harq_pid]->d[r],
@@ -266,7 +274,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     }
 
     if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
-      //    msg("CRC failed\n");
+      //      msg("CRC failed\n");
       err_flag = 1;
     }
 
@@ -275,7 +283,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   if (err_flag == 1) {
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
-    //      msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
+    //    msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
     if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
       dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
     }
@@ -291,8 +299,11 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   }
   // Reassembly of Transport block here
   offset = 0;
-  //  msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
-  
+  /*
+  msg("harq_pid %d\n",harq_pid);
+  msg("F %d, Fbytes %d\n",dlsch->harq_processes[harq_pid]->F,dlsch->harq_processes[harq_pid]->F>>3);
+  msg("C %d\n",dlsch->harq_processes[harq_pid]->C);
+  */
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
     if (r<dlsch->harq_processes[harq_pid]->Cminus)
       Kr = dlsch->harq_processes[harq_pid]->Kminus;
@@ -306,13 +317,12 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 	     &dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)],
 	     Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
       offset = Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3);
-      //      msg("copied %d bytes to b sequence\n",
-      //	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3));
+      //      msg("copied %d bytes to b sequence (harq_pid %d)\n",
+      //	  Kr_bytes - (dlsch->harq_processes[harq_pid]->F>>3),harq_pid); 
     //      msg("b[0] = %x,c[%d] = %x\n",
       //	  dlsch->harq_processes[harq_pid]->b[0],
       //	  dlsch->harq_processes[harq_pid]->F>>3,
       //	  dlsch->harq_processes[harq_pid]->c[0][(dlsch->harq_processes[harq_pid]->F>>3)]);
-
     }
     else {
       memcpy(dlsch->harq_processes[harq_pid]->b+offset,

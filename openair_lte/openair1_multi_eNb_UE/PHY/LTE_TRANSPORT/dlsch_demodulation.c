@@ -1778,6 +1778,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     }
   }
   else {
+
       nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				       lte_ue_common_vars->dl_ch_estimates[eNb_id],
 				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
@@ -1800,6 +1801,11 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     } 
 
   //    printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
+  if (nb_rb==0) {
+    msg("dlsch_modulation.c: nb_rb=0\n");
+    return(-1);
+  }
+
 
   if (symbol==frame_parms->first_dlsch_symbol) {
     if (nb_rb) {
