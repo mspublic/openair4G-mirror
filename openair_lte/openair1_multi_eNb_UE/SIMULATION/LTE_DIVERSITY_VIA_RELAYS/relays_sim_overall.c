@@ -977,12 +977,17 @@ int main(int argc, char **argv)
 
     n_errors_overall = 0;
 
-    dci_errors_0 = 0,n_errors_dl_0 = 0,n_errors_ul = 0,decode_error_0 = 1;
+    dci_errors_0 = 0;
+    n_errors_dl_0 = 0;
+    n_errors_ul = 0;
+    decode_error_0 = 1;
 
     trials_ul = 0;
 
 #ifdef COLLABRATIVE_SCHEME
-    dci_errors_1 = 0,n_errors_dl_1 = 0;decode_error_1 = 1;
+    dci_errors_1 = 0;
+    n_errors_dl_1 = 0;
+    decode_error_1 = 1;
 #endif
 
     
@@ -991,7 +996,11 @@ int main(int argc, char **argv)
     // Number of trials 
     for (trials = 0;trials<N_TRIALS;trials++) {
       
+      decode_error_0 = 1;
       
+#ifdef COLLABRATIVE_SCHEME
+      decode_error_1 = 1;
+#endif
       
       //eNB0 to UE0
       multipath_channel(ch[SeFu],s_re,s_im,r_re0_0,r_im0_0,
@@ -2042,8 +2051,7 @@ int main(int argc, char **argv)
 			    channel_length,
 			    0,1//forgetting factor
 			    ,1,0,SuDe,channel_offset);
-	  if(first_call1_1 ==1)
-	    first_call1_1 = 0;
+
 	    
 	    
 	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
@@ -2153,8 +2161,7 @@ int main(int argc, char **argv)
 			    channel_length,
 			    0,1//forgetting factor
 			    ,1,0,FuDe,0);
-	  if(first_call1_0==1)
-	    first_call1_0 = 0;
+
 	    
 	    
 	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
@@ -2263,8 +2270,7 @@ int main(int argc, char **argv)
 			    channel_length,
 			    0,1//forgetting factor
 			    ,1,0,SuDe,0);
-	  if(first_call1_1 ==1)
-	    first_call1_1 = 0;
+
 	    
 	    
 	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
@@ -2345,8 +2351,10 @@ int main(int argc, char **argv)
 	   
 	  }
 	}// when only UE1 transmits
-      else
-	n_errors_overall++;
+      else if((dlsch_active_0 == 0) && (dlsch_active_1 == 0)){
+	n_errors_overall++;}
+      else if(((dlsch_active_0 == 1) && (decode_error_0 == 1)) && ((dlsch_active_1 == 1) && (decode_error_1 == 1))){
+	n_errors_overall++;}
 #else
       if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
 	{
@@ -2375,8 +2383,7 @@ int main(int argc, char **argv)
 			    channel_length,
 			    0,1//forgetting factor
 			    ,1,0,FuDe,0);
-	  if(first_call1_0==1)
-	    first_call1_0 = 0;
+
 	    
 	    
 	  //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
@@ -2459,8 +2466,10 @@ int main(int argc, char **argv)
 	    n_errors_ul++;
 	  }
 	}// When only relay 0 (UE0) transmits
-      else
-	n_errors_overall++;
+      else if(dlsch_active_0 == 0){
+	n_errors_overall++;}
+      else if((dlsch_active_0 == 1) && (decode_error_0 == 1)){
+	n_errors_overall++;}
 #endif
 
       if(trials_ul>=1){

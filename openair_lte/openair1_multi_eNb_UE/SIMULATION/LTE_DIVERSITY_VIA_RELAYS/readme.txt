@@ -6,6 +6,8 @@ This file contains the details of the simulators used for BLER measurements for 
 
 3. relays_sim_overall: To plot the overall BLER vs Uplink SNR, uplink BLER vs Uplink SNR for a fixed value of downlink SNR. The number of trils run over entire system i.e. downlink and uplink rather than over individual phase. 
 
+4. relays_sim_harq: BLER vs SNR with HARQ for Cooperative Schemes.
+
 
 Flags to change: 1. COLLABRATIVE_SCHEME: If not set, then the simulator is for a single relay case. If set, then it performs cooperative schemes
                  2. relay_flag: If 1, then only one relay. If 2, then 2 relays   
