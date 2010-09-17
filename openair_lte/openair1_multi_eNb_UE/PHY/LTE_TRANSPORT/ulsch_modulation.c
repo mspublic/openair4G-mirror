@@ -173,7 +173,6 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
-		      unsigned char rag_flag,
 		      unsigned char relay_flag,
 		      unsigned char diversity_scheme,
 		      unsigned char n_ue) {
@@ -191,7 +190,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
 #endif
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
-  unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  //  unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   unsigned char Q_m;
   mod_sym_t *txptr;
   unsigned int symbol_offset;

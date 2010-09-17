@@ -40,9 +40,8 @@ int phy_init_top(unsigned char nb_antennas_tx);
 int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_UE_COMMON *lte_ue_common_vars,
 		    LTE_UE_DLSCH **lte_ue_dlsch_vars,
-		    LTE_UE_DLSCH **lte_ue_dlsch_vars_cntl,
+		    LTE_UE_DLSCH **lte_ue_dlsch_vars_SI,
 		    LTE_UE_DLSCH **lte_ue_dlsch_vars_ra,
-		    LTE_UE_DLSCH **lte_ue_dlsch_vars_1A,
 		    LTE_UE_PBCH **lte_ue_pbch_vars,
 		    LTE_UE_PDCCH **ue_pdcch_vars,
 		    PHY_VARS_UE *phy_vars_ue);

@@ -114,29 +114,30 @@ void openair1_restart(void);
 #ifdef OPENAIR_LTE
 
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
-void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue);
+void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id);
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
-void get_rag_alloc(unsigned char tdd_config,
+void get_RRCConnReq_alloc(unsigned char tdd_config,
 		   unsigned char current_subframe, 
 		   unsigned int current_frame,
 		   unsigned int *frame,
 		   unsigned char *subframe);
 unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe);
-void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue);
-int phy_procedures_UE_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue);
-void phy_procedures_UE_S_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue);
-void phy_procedures_UE_S_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue);
+void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
+int phy_procedures_UE_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
+void phy_procedures_UE_S_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
+void phy_procedures_UE_S_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
 void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
+u8 get_ue_harq_round(u8 Mod_id,u16 rnti,u8 harq_pid);
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK);
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index);
-
+u8 get_RRCConnReq_harq_pid(unsigned char tdd_config,unsigned char current_subframe);
 #else
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);

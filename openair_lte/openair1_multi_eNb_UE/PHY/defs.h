@@ -114,33 +114,24 @@
 /// Top-level PHY Data Structure for eNB 
 typedef struct
 {
-  /// ACQ Mailbox for harware synch
-  unsigned int *mbox;    
+  /// Module ID indicator for this instance
+  u8 Mod_id;
   unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  **dlsch_eNb;
-  LTE_eNb_ULSCH_t  **ulsch_eNb;
-  LTE_eNb_DLSCH_t  *dlsch_eNb_cntl,*dlsch_eNb_1A,*dlsch_eNb_ra;
-  LTE_eNB_UE_stats eNB_UE_stats[1];
+  LTE_eNb_DLSCH_t  **dlsch_eNb[2];   // Nusers times two spatial streams
+  LTE_eNb_ULSCH_t  **ulsch_eNb;   // Nusers + number of RA
+  LTE_eNb_DLSCH_t  *dlsch_eNb_SI,*dlsch_eNb_ra;
+  LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
-  char dlsch_eNb_active;
-  char dlsch_eNb_cntl_active;
-  char dlsch_eNb_ra_active;
-  char dlsch_eNb_1A_active;
   char eNb_generate_rar;
   char eNb_generate_rag_ack;
-
-  int ulsch_errors[3],ulsch_consecutive_errors[3],ulsch_decoding_attempts[3][4],ulsch_round_errors[3][4],dlsch_NAK[8];
 
   unsigned int max_peak_val; 
   int max_eNb_id, max_sync_pos;
 
-  char dlsch_mcs_offset;
-  int dlsch_l2_errors;
-  int dlsch_trials[4];
 
   unsigned char first_run_timing_advance;
   unsigned char first_run_I0_measurements;
@@ -167,44 +158,41 @@ typedef struct
 /// Top-level PHY Data Structure for UE 
 typedef struct
 {
-  unsigned int *mbox;    
+  /// Module ID indicator for this instance
+  u8 Mod_id;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
   LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH     *lte_ue_dlsch_vars_cntl[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH     *lte_ue_dlsch_vars_SI[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH     *lte_ue_dlsch_vars_1A[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   **dlsch_ue;
+  LTE_UE_DLSCH_t   **dlsch_ue[2];
   LTE_UE_ULSCH_t   **ulsch_ue;
-  LTE_UE_DLSCH_t   *dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
-  UE_MODE_t        UE_mode;
+  LTE_UE_DLSCH_t   **dlsch_ue_SI,**dlsch_ue_ra;
+  UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
 
-  char dlsch_ue_active;
-  char dlsch_ue_cntl_active;
-  char dlsch_ue_ra_active;
-  char dlsch_ue_1A_active;
-  char ulsch_no_allocation_counter;
+  char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
 
-  char ulsch_ue_rag_active;
-  unsigned int  ulsch_ue_rag_frame;
-  unsigned char ulsch_ue_rag_subframe;
-  unsigned char rag_timer;
+  unsigned char ulsch_ue_RRCConnReq_active[NUMBER_OF_eNB_MAX];
+  unsigned int  ulsch_ue_RRCConnReq_frame[NUMBER_OF_eNB_MAX];
+  unsigned char ulsch_ue_RRCConnReq_subframe[NUMBER_OF_eNB_MAX];
+  unsigned char RRCConnReq_timer[NUMBER_OF_eNB_MAX];
+  unsigned char *RRCConnectionRequest_ptr[NUMBER_OF_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
-  int dlsch_errors;
-  int dlsch_errors_last;
-  int dlsch_received;
-  int dlsch_cntl_received;
-  int dlsch_received_last;
-  int dlsch_fer;
-  int dlsch_cntl_errors;
-  int dlsch_ra_errors;
-  int current_dlsch_cqi;
-  unsigned char first_run_timing_advance;
+  int dlsch_errors[NUMBER_OF_eNB_MAX];
+  int dlsch_errors_last[NUMBER_OF_eNB_MAX];
+  int dlsch_received[NUMBER_OF_eNB_MAX];
+  int dlsch_SI_received[NUMBER_OF_eNB_MAX];
+  int dlsch_received_last[NUMBER_OF_eNB_MAX];
+  int dlsch_fer[NUMBER_OF_eNB_MAX];
+  int dlsch_SI_errors[NUMBER_OF_eNB_MAX];
+  int dlsch_ra_errors[NUMBER_OF_eNB_MAX];
+  int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
+  unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
 
   unsigned char    is_secondary_ue; // primary by default
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.

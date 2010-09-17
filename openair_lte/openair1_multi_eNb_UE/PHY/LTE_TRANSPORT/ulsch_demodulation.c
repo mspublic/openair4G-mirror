@@ -26,10 +26,10 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,int *z, unsigned short Msc_PUSCH) 
   int *idft_in0=(int*)idft_in128[0],*idft_out0=(int*)idft_out128[0];
   int *idft_in1=(int*)idft_in128[1],*idft_out1=(int*)idft_out128[1];
   int *idft_in2=(int*)idft_in128[2],*idft_out2=(int*)idft_out128[2];
-  int *idft_in3=(int*)idft_in128[3],*idft_out3=(int*)idft_out128[3];
+  //  int *idft_in3=(int*)idft_in128[3],*idft_out3=(int*)idft_out128[3];
 
   int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11,*z12;
-  int i,ip,l;
+  int i,ip;
 
   //  printf("Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
@@ -1056,9 +1056,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned int subframe,
 	      unsigned char eNb_id,  // this is the effective sector id
-	      unsigned char UE_id,   // this is the UE instance to act upon
-	      LTE_eNb_ULSCH_t **ulsch,
-	      unsigned char rag_flag,
+	      LTE_eNb_ULSCH_t *ulsch,
 	      unsigned char relay_flag,
 	      unsigned char diversity_scheme) {
 
@@ -1071,12 +1069,13 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned log2_maxh_0,log2_maxh_1;
   
 
-  unsigned char harq_pid = (rag_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
-  unsigned char Qm = get_Qm(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
+  //  unsigned char harq_pid = ( ulsch->RRCConnRequest_flag== 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
+  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned char Qm = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   unsigned short rx_power_correction;
 
 #ifdef DEBUG_ULSCH
-  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb);
 #endif //DEBUG_ULSCH
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
@@ -1085,32 +1084,32 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   else
     rx_power_correction = 1;
 
-  for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
+  for (l=0;l<frame_parms->symbols_per_tti-1;l++) {
           
 #ifdef DEBUG_ULSCH
-    msg("rx_ulsch (rag %d): symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",rag_flag,l,
-	ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
-	ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+    msg("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
+	ulsch->harq_processes[harq_pid]->first_rb,
+	ulsch->harq_processes[harq_pid]->nb_rb,
 	eNB_common_vars->rxdataF,
     	eNB_ulsch_vars->rxdataF_ext);
 #endif //DEBUG_ULSCH
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],
 			     eNB_ulsch_vars->rxdataF_ext[eNb_id],
-			     ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
-			     ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
-			     l%(lte_frame_parms->symbols_per_tti/2),
-			     l/(lte_frame_parms->symbols_per_tti/2),
-			     lte_frame_parms);
+			     ulsch->harq_processes[harq_pid]->first_rb,
+			     ulsch->harq_processes[harq_pid]->nb_rb,
+			     l%(frame_parms->symbols_per_tti/2),
+			     l/(frame_parms->symbols_per_tti/2),
+			     frame_parms);
     
     lte_ul_channel_estimation(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
 			      eNB_ulsch_vars->drs_ch_estimates_0[eNb_id],
 			      eNB_ulsch_vars->drs_ch_estimates_1[eNb_id],
 			      eNB_ulsch_vars->rxdataF_ext[eNb_id],
-			      lte_frame_parms,
-			      l%(lte_frame_parms->symbols_per_tti/2),
-			      l/(lte_frame_parms->symbols_per_tti/2),
-			      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+			      frame_parms,
+			      l%(frame_parms->symbols_per_tti/2),
+			      l/(frame_parms->symbols_per_tti/2),
+			      ulsch->harq_processes[harq_pid]->nb_rb,
 			      relay_flag,
 			      diversity_scheme);
 
@@ -1119,23 +1118,23 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     ulsch_correct_ext(eNB_ulsch_vars->rxdataF_ext[eNb_id],
 		      eNB_ulsch_vars->rxdataF_ext2[eNb_id],
 		      l,
-		      lte_frame_parms,
-		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);  
+		      frame_parms,
+		      ulsch->harq_processes[harq_pid]->nb_rb);  
     
     if((relay_flag == 2) && (diversity_scheme == 2))
       {
-	for (i=0;i<lte_frame_parms->nb_antennas_rx;i++){
+	for (i=0;i<frame_parms->nb_antennas_rx;i++){
 	  ulsch_power_0[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_0[eNb_id][i],
-						ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
+						ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
 	  ulsch_power_1[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_1[eNb_id][i],
-						ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
+						ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
 	}
       }
     else
       {
-	for (i=0;i<lte_frame_parms->nb_antennas_rx;i++)
+	for (i=0;i<frame_parms->nb_antennas_rx;i++)
 	  ulsch_power[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNb_id][i],
-					      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
+					      ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
       }
   }
 
@@ -1145,7 +1144,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates_0[eNb_id],
 			  frame_parms,
 			  avgU_0,
-			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+			  ulsch->harq_processes[harq_pid]->nb_rb);
     
       //  msg("[ULSCH] avg_0[0] %d\n",avgU_0[0]);
   
@@ -1162,7 +1161,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates_1[eNb_id],
 			  frame_parms,
 			  avgU_1,
-			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+			  ulsch->harq_processes[harq_pid]->nb_rb);
     
       //  msg("[ULSCH] avg_1[0] %d\n",avgU_1[0]);
   
@@ -1181,7 +1180,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates[eNb_id],
 			  frame_parms,
 			  avgU,
-			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+			  ulsch->harq_processes[harq_pid]->nb_rb);
     
       //  msg("[ULSCH] avg[0] %d\n",avgU[0]);
   
@@ -1196,7 +1195,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 #endif
     }
 
-  for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
+  for (l=0;l<frame_parms->symbols_per_tti-1;l++) {
 
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||   // skip pilots
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -1218,7 +1217,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 					    frame_parms,
 					    l,
 					    Qm,
-					    ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+					    ulsch->harq_processes[harq_pid]->nb_rb,
 					    log2_maxh_0,
 					    log2_maxh_1); // log2_maxh+I0_shift
 
@@ -1233,7 +1232,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		       eNB_ulsch_vars->ul_ch_mag_1[eNb_id],
 		       eNB_ulsch_vars->ul_ch_magb_1[eNb_id],
 		       l,
-		       ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+		       ulsch->harq_processes[harq_pid]->nb_rb);
       }
     else
       {
@@ -1245,7 +1244,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 				   frame_parms,
 				   l,
 				   Qm,
-				   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
+				   ulsch->harq_processes[harq_pid]->nb_rb,
 				   log2_maxh); // log2_maxh+I0_shift
       }
     if (frame_parms->nb_antennas_rx > 1)
@@ -1254,14 +1253,14 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			  eNB_ulsch_vars->ul_ch_mag[eNb_id],
 			  eNB_ulsch_vars->ul_ch_magb[eNb_id],
 			  l,
-			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+			  ulsch->harq_processes[harq_pid]->nb_rb);
 #ifndef OFDMA_ULSCH
     freq_equalization(frame_parms,
 		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
 		      eNB_ulsch_vars->ul_ch_magb[eNb_id],
 		      l,
-		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12,
+		      ulsch->harq_processes[harq_pid]->nb_rb*12,
 		      Qm);
 		      
 #endif
@@ -1269,18 +1268,18 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
 #ifndef OFDMA_ULSCH
         
-#ifdef DEBUG_ULSCH
+  //#ifdef DEBUG_ULSCH
   // Inverse-Transform equalized outputs
   msg("Doing IDFTs\n");
   lte_idft(frame_parms,
 	   eNB_ulsch_vars->rxdataF_comp[eNb_id][0],
-	   ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
+	   ulsch->harq_processes[harq_pid]->nb_rb*12);
   msg("Done\n"); 
-#endif //DEBUG_ULSCH
+  //#endif //DEBUG_ULSCH
 
 #endif
 
-  for (l=0;l<lte_frame_parms->symbols_per_tti-1;l++) {
+  for (l=0;l<frame_parms->symbols_per_tti-1;l++) {
     
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||   // skip pilots
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -1293,14 +1292,14 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		     eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		     eNB_ulsch_vars->llr,
 		     l,
-		     ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+		     ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     case 4 :
       ulsch_16qam_llr(frame_parms,
 		      eNB_ulsch_vars->rxdataF_comp[eNb_id],
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
-		      l,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+		      l,ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     case 6 :
       ulsch_64qam_llr(frame_parms,
@@ -1308,7 +1307,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      eNB_ulsch_vars->llr,
 		      eNB_ulsch_vars->ul_ch_mag[eNb_id],
 		      eNB_ulsch_vars->ul_ch_magb[eNb_id],
-		      l,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
+		      l,ulsch->harq_processes[harq_pid]->nb_rb);
       break;
     default:
 #ifdef DEBUG_ULSCH

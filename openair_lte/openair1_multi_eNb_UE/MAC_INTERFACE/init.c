@@ -46,17 +46,6 @@ int mac_init(void)
   int i;
 
 
-  /*
-    //Allocate memory for MAC/PHY communication primitives
-
-#ifdef OPENAIR2
-  Macphy_req_table[0].Macphy_req_table_entry
-    = (MACPHY_DATA_REQ_TABLE_ENTRY *)malloc16(NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
-  clear_macphy_data_req(0);
-#endif 
-  */
-
-  mac_xface->slots_per_frame = SLOTS_PER_FRAME;
   
 #ifndef USER_MODE
   // mac_xface->macphy_init();
@@ -77,27 +66,15 @@ int mac_init(void)
 void mac_cleanup(void)
 {
 
-#ifdef OPENAIR2
-  free16(Macphy_req_table[0].Macphy_req_table_entry,NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
-#endif //OPENAIR2
-
 }
 
 #ifdef OPENAIR2
 void mac_resynch(void) {
 
-  //  clear_macphy_data_req(0);
-  
 }
 #endif //OPENAIR2
 
 #ifdef OPENAIR2
-//EXPORT_SYMBOL(NB_REQ_MAX);
-EXPORT_SYMBOL(Macphy_req_table);
-//EXPORT_SYMBOL(NODE_ID);
-//EXPORT_SYMBOL(NB_UE);
-//EXPORT_SYMBOL(NB_INST);
-//EXPORT_SYMBOL(UL_meas);
 EXPORT_SYMBOL(frame);
 
 #endif //OPENAIR2

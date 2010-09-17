@@ -62,10 +62,5 @@ extern MAC_xface *mac_xface;
 
 
 
-#ifdef OPENAIR2
-extern MACPHY_DATA_REQ_TABLE Macphy_req_table[1];
-#endif
-
-
 
 #endif /*__MAC_INTERFACE_EXTERN_H__ */

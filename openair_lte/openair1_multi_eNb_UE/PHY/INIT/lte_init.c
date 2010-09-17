@@ -112,7 +112,6 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_UE_DLSCH **ue_dlsch_vars,
 		    LTE_UE_DLSCH **ue_dlsch_vars_cntl,
 		    LTE_UE_DLSCH **ue_dlsch_vars_ra,
-		    LTE_UE_DLSCH **ue_dlsch_vars_1A,
 		    LTE_UE_PBCH **ue_pbch_vars,
 		    LTE_UE_PDCCH **ue_pdcch_vars,
 		    PHY_VARS_UE *phy_vars_ue) {
@@ -280,13 +279,11 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     ue_dlsch_vars[eNb_id] = (LTE_UE_DLSCH *)malloc16(sizeof(LTE_UE_DLSCH));
     ue_dlsch_vars_cntl[eNb_id] = (LTE_UE_DLSCH *)malloc16(sizeof(LTE_UE_DLSCH));
     ue_dlsch_vars_ra[eNb_id] = (LTE_UE_DLSCH *)malloc16(sizeof(LTE_UE_DLSCH));
-    ue_dlsch_vars_1A[eNb_id] = (LTE_UE_DLSCH *)malloc16(sizeof(LTE_UE_DLSCH));
     ue_pdcch_vars[eNb_id] = (LTE_UE_PDCCH *)malloc16(sizeof(LTE_UE_PDCCH));
 #ifdef DEBUG_PHY
     msg("[OPENAIR][LTE PHY][INIT] ue_dlsch_vars[%d] = %p\n",eNb_id,ue_dlsch_vars[eNb_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_dlsch_vars_cntl[%d] = %p\n",eNb_id,ue_dlsch_vars_cntl[eNb_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_dlsch_vars_ra[%d] = %p\n",eNb_id,ue_dlsch_vars_ra[eNb_id]);
-    msg("[OPENAIR][LTE PHY][INIT] ue_dlsch_vars_1A[%d] = %p\n",eNb_id,ue_dlsch_vars_1A[eNb_id]);
     msg("[OPENAIR][LTE PHY][INIT] ue_pdcch_vars[%d] = %p\n",eNb_id,ue_pdcch_vars[eNb_id]);
 #endif
 
@@ -389,25 +386,6 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 
     /***/
 
-    ue_dlsch_vars_1A[eNb_id]->rxdataF_ext    = (int **)malloc16(4*sizeof(int*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++)
-	ue_dlsch_vars_1A[eNb_id]->rxdataF_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
-    
-    ue_dlsch_vars_1A[eNb_id]->rxdataF_comp    = (int **)malloc16(4*sizeof(int*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++)
-	ue_dlsch_vars_1A[eNb_id]->rxdataF_comp[(j<<1)+i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*14));
-
-    ue_dlsch_vars_1A[eNb_id]->rho = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
-    for (i=0;i<frame_parms->nb_antennas_rx;i++)
-      ue_dlsch_vars_1A[eNb_id]->rho[i] = (int *)malloc16(sizeof(int)*(frame_parms->N_RB_DL*12*7*2));
-    
-    ue_dlsch_vars_1A[eNb_id]->pmi_ext = (unsigned char *)malloc16(frame_parms->N_RB_DL);
-
-    ue_dlsch_vars_1A[eNb_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-
-    /***/
 
     ue_pdcch_vars[eNb_id]->rxdataF_comp    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
@@ -463,29 +441,6 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     ue_dlsch_vars_ra[eNb_id]->llr128 = (short **)malloc16(sizeof(short **));
     /***/
   
-    ue_dlsch_vars_1A[eNb_id]->dl_ch_estimates_ext = (int **)malloc16(4*sizeof(short*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++)
-	ue_dlsch_vars_1A[eNb_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-
-    ue_dlsch_vars_1A[eNb_id]->dl_ch_rho_ext = (int **)malloc16(4*sizeof(short*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++)
-	ue_dlsch_vars_1A[eNb_id]->dl_ch_rho_ext[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-    
-    ue_dlsch_vars_1A[eNb_id]->dl_ch_mag = (int **)malloc16(4*sizeof(short*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++) 
-	ue_dlsch_vars_1A[eNb_id]->dl_ch_mag[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-    ue_dlsch_vars_1A[eNb_id]->dl_ch_magb = (int **)malloc16(4*sizeof(short*));
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++)
-	ue_dlsch_vars_1A[eNb_id]->dl_ch_magb[(j<<1)+i] = (int *)malloc16(7*2*sizeof(int)*(frame_parms->N_RB_DL*12));
-    //    ue_dlsch_vars_1A[eNb_id]->llr[0] = (short *)malloc16((8*((3*8*6144)+12))*sizeof(short));
-
-    ue_dlsch_vars_1A[eNb_id]->llr128 = (short **)malloc16(sizeof(short **));
-    /***/  
-
    ue_pdcch_vars[eNb_id]->rxdataF_ext    = (int **)malloc16(4*sizeof(int*));
     for (i=0; i<frame_parms->nb_antennas_rx; i++)
       for (j=0; j<frame_parms->nb_antennas_tx; j++)

@@ -1397,8 +1397,6 @@ static __m128i  one_over_sqrt2;
  	 
 void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
   
-  __m128i one_over_sqrt2 = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
-
   switch (pmi) {
  
   case 0 :   // +1 +1
@@ -1453,7 +1451,7 @@ void dlsch_channel_compensation_prec(int **rxdataF_ext,
   
   unsigned short rb;
   __m128i *dl_ch128_0,*dl_ch128_1,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
-  unsigned char aatx=0,aarx=0,symbol_mod;
+  unsigned char aarx=0,symbol_mod;
   int precoded_signal_strength=0,rx_power_correction;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -1724,7 +1722,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     return(-1);
   }
 
-  if (!lte_frame_parms) {
+  if (!frame_parms) {
     msg("dlsch_demodulation.c: Null lte_frame_parms\n");
     return(-1);
   }

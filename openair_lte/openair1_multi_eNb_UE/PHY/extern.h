@@ -25,7 +25,9 @@ extern unsigned int sync_pos;
 extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
-extern PHY_VARS *PHY_vars;
+//extern PHY_VARS *PHY_vars;
+extern PHY_VARS_UE **PHY_vars_ue_g;
+extern PHY_VARS_eNB **PHY_vars_eNb_g;
 
 //extern PHY_LINKS *PHY_links;
 
@@ -44,19 +46,6 @@ extern int *primary_synch1_time;
 extern int *primary_synch2_time;
 extern int *sync_corr_ue;
 
-extern LTE_DL_FRAME_PARMS *lte_frame_parms;
-extern LTE_UE_COMMON *lte_ue_common_vars;
-extern LTE_UE_DLSCH **lte_ue_dlsch_vars,**lte_ue_dlsch_vars_cntl,**lte_ue_dlsch_vars_ra,**lte_ue_dlsch_vars_1A;
-extern LTE_UE_PDCCH **lte_ue_pdcch_vars;
-extern LTE_UE_PBCH **lte_ue_pbch_vars;
-extern LTE_eNB_COMMON *lte_eNB_common_vars;
-extern LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_cntl,*dlsch_eNb_ra,*dlsch_eNb_1A;
-extern LTE_eNB_ULSCH **lte_eNB_ulsch_vars;
-extern LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
-extern LTE_eNb_ULSCH_t **ulsch_eNb;
-extern LTE_UE_ULSCH_t **ulsch_ue;
-extern LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
-
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
@@ -67,10 +56,8 @@ extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 extern short **txdataF_rep_tmp;
 
-extern UE_MODE_t UE_mode;
 extern char mode_string[4][20];
 
-extern unsigned short t_crnti;
 #include "PHY/LTE_TRANSPORT/extern.h"
 
 #endif

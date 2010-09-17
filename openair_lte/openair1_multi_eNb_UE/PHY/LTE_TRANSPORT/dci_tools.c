@@ -144,7 +144,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
     return(-1);
     break;
-  case format1A:  // This is DLSCH SACH allocation for control traffic
+  case format1A:  // This is DLSCH allocation for control traffic
 
     // harq_pid field is reserved
     if ((rnti==si_rnti) || (rnti==ra_rnti) || (rnti==p_rnti)){  // 
@@ -185,7 +185,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->harq_processes[harq_pid]->Nl          = 1;
     dlsch[0]->layer_index = 0;
-    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (lte_frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    dlsch[0]->harq_processes[harq_pid]->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
     dlsch[0]->harq_processes[harq_pid]->Ndi         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
     dlsch[0]->harq_processes[harq_pid]->mcs         = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
 
@@ -193,7 +193,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->current_harq_pid = harq_pid;
 
+    dlsch[0]->active = 1;
     dlsch0 = dlsch[0];
+    
     break;
   case format2_2A_L10PRB:
 
@@ -286,7 +288,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     //    printf("Set pmi %x (tpmi %d)\n",dlsch0->pmi_alloc,tpmi);
 
 
-    if (lte_frame_parms->mode1_flag == 1)
+    if (frame_parms->mode1_flag == 1)
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
 
     dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
@@ -304,6 +306,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     else {
       dlsch0->harq_processes[harq_pid]->TBS = 0;
     }
+
+    dlsch0->active = 1;
+
     break;
   default:
     return(-1);
@@ -501,7 +506,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
 
     
-    if (lte_frame_parms->mode1_flag == 1)
+    if (frame_parms->mode1_flag == 1)
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
 
     dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
@@ -556,6 +561,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     msg("dlsch0 UE: mcs      %d\n",dlsch[0]->harq_processes[harq_pid]->mcs);
   }
 #endif
+  dlsch[0]->active=1;
   return(0);
 }
 
@@ -971,7 +977,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
     harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
     rb_alloc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
     if (rb_alloc>RIV_max) {
-      msg("rar_tools.c: ERROR: rb_alloc > RIV_max\n");
+      msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
       return(-1);
     }
 

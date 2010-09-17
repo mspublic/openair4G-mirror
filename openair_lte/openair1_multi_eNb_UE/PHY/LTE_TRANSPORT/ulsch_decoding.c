@@ -92,8 +92,8 @@ char ytag[14*1200];
 unsigned int  ulsch_decoding(short *ulsch_llr,
 			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_eNb_ULSCH_t *ulsch,
-			     unsigned char subframe,
-			     unsigned char rag_flag){
+			     unsigned char subframe) {
+
 
   unsigned char harq_pid;
   unsigned short nb_rb;
@@ -113,7 +113,9 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK,len_RI;
   int metric,metric_new;
 
-  harq_pid = (rag_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
+  //  harq_pid = (ulsch->RRCConnRequest_flag == 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
+  harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+
   if (harq_pid==255) {
     msg("ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
     return(-1);
