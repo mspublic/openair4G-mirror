@@ -32,7 +32,7 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
-#define N_TRIALS 1000
+#define N_TRIALS 10
 
 
 
@@ -593,7 +593,7 @@ int main(int argc, char **argv)
   }
   
   
-  
+  /*  
   if (DLSCH_alloc_pdu2.tpmi == 5) {
     PHY_vars_eNB[0]->dlsch_eNb[0]->pmi_alloc = (unsigned short)(taus()&0xffff);
     PHY_vars_ue[0]->dlsch_ue[0]->pmi_alloc = PHY_vars_eNB[0]->dlsch_eNb[0]->pmi_alloc;
@@ -604,7 +604,7 @@ int main(int argc, char **argv)
 #endif
   }
   
-  
+  */
   
 
 
@@ -2805,8 +2805,8 @@ int main(int argc, char **argv)
 
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-		n_errors_overall[round_dl][round_dl]++;
-		n_errors_ul[round_ul]++;
+		//	n_errors_overall[round_dl][round_dl]++;
+		n_errors_ul[round_dl][round_ul]++;
 		round_ul++;
 		if(round_ul == 4)
 		  round_dl++;
