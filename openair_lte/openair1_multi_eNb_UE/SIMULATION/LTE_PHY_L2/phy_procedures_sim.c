@@ -9,6 +9,7 @@
 #include "MAC_INTERFACE/vars.h"
 
 #ifdef OPENAIR2
+#include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
@@ -50,19 +51,15 @@
 unsigned short NODE_ID[1];
 unsigned char NB_INST=2;
 
-void l2_init() {
+void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
 
   int ret;
-  int i,j;
+  int i;
 
 
   msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
   //    NB_NODE=2; 
   //    NB_INST=2;
-
-  NB_CH_INST=1;
-  //    NODE_ID[0]=0;
-  NB_UE_INST=1;
 
 
   mac_init_global_param(); 
@@ -73,30 +70,38 @@ void l2_init() {
   ret = mac_init();
   
   if (ret >= 0) {
-    printf("Initialized MAC variables\n");
+
+    //eNB MAC functions    
+    mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
+    mac_xface->get_dci_sdu               = get_dci_sdu;
+    mac_xface->fill_rar                  = fill_rar;
+    mac_xface->terminate_ra_proc         = terminate_ra_proc;
+    mac_xface->initiate_ra_proc          = initiate_ra_proc;
+    mac_xface->rx_sdu                    = rx_sdu;
+    mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
+
+    //UE MAC functions    
+    mac_xface->ue_decode_si              = ue_decode_si;
+    mac_xface->ue_send_sdu               = ue_send_sdu;
+    mac_xface->ue_get_sdu                = ue_get_sdu;
+    mac_xface->ue_get_rach               = ue_get_rach;
+    mac_xface->ue_process_rar            = ue_process_rar;
+
+    mac_xface->eNB_UE_stats    = (LTE_eNB_UE_stats **)malloc(NB_CH_INST*sizeof(LTE_eNB_UE_stats*));
+    mac_xface->eNB_UE_stats[0] = &phy_vars_eNb->eNB_UE_stats[0];
     
-    //    last_slot = SLOTS_PER_FRAME-1;
-    mac_xface->macphy_scheduler = macphy_scheduler;
-    printf("Initialized MAC SCHEDULER\n");
-    
+    mac_xface->get_ue_harq_round = get_ue_harq_round;
+
+    mac_xface->computeRIV = computeRIV;
+
+    mac_xface->lte_frame_parms = &phy_vars_eNb->lte_frame_parms;
+
     msg("ALL INIT OK\n");
-    
-    /*  
-    //Allocate memory for MAC/PHY communication primitives
-    //NB_REQ_MAX = 16;
-    for(i=0;i<NB_INST;i++){
-      Macphy_req_table[i].Macphy_req_table_entry
-	= (MACPHY_DATA_REQ_TABLE_ENTRY *)malloc16(NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
-      clear_macphy_data_req(i);
-      
-    }
-    */
     
     mac_xface->macphy_exit=exit;
     
     
     
-    mac_xface->slots_per_frame = 20;//SLOTS_PER_FRAME;
     mac_xface->frame=0;
     
     mac_xface->macphy_init();
@@ -180,7 +185,7 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
 int main(int argc, char **argv) {
 
   char c;
-  int i,l,aa,sector;
+  int i,j,l,aa,sector;
   double sigma2, sigma2_dB=0;
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -229,13 +234,18 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
+
+  NB_CH_INST=1;
+  //    NODE_ID[0]=0;
+  NB_UE_INST=1;
+
   
   //default parameters
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
   n_frames = 100;
-  snr_dB = 20;
+  snr_dB = 30;
 
   while ((c = getopt (argc, argv, "ht:m:rn:s:")) != -1)
     {
@@ -279,10 +289,17 @@ int main(int argc, char **argv) {
   channel_length = (int) 11+2*BW*Td;
 
   //PHY_vars = malloc(sizeof(PHY_VARS));
-  PHY_VARS_eNB *PHY_vars_eNb; 
-  PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
-  PHY_VARS_UE *PHY_vars_UE; 
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+  //  PHY_VARS_eNB *PHY_vars_eNb; 
+
+  PHY_vars_eNb_g = malloc(sizeof(PHY_VARS_eNB*));
+  PHY_vars_eNb_g[0] = malloc(sizeof(PHY_VARS_eNB));
+  PHY_vars_eNb_g[0]->Mod_id=0;
+
+  //  PHY_VARS_UE *PHY_vars_UE; 
+  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
+  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE));
+  PHY_vars_eNb_g[0]->Mod_id=0;
+
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -311,73 +328,87 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
-  memcpy(&(PHY_vars_eNb->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  memcpy(&(PHY_vars_UE->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  memcpy(&(PHY_vars_eNb_g[0]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  memcpy(&(PHY_vars_UE_g[0]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
 
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
-		  &PHY_vars_UE->lte_ue_common_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars,
-		  PHY_vars_UE->lte_ue_dlsch_vars_cntl,
-		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
-		  PHY_vars_UE->lte_ue_dlsch_vars_1A,
-		  PHY_vars_UE->lte_ue_pbch_vars,
-		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE);
+  phy_init_lte_ue(&PHY_vars_UE_g[0]->lte_frame_parms,
+		  &PHY_vars_UE_g[0]->lte_ue_common_vars,
+		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars,
+		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE_g[0]->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE_g[0]->lte_ue_pbch_vars,
+		  PHY_vars_UE_g[0]->lte_ue_pdcch_vars,
+		  PHY_vars_UE_g[0]);
 
-  phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
-		   &PHY_vars_eNb->lte_eNB_common_vars,
-		   PHY_vars_eNb->lte_eNB_ulsch_vars,
+  phy_init_lte_eNB(&PHY_vars_eNb_g[0]->lte_frame_parms,
+		   &PHY_vars_eNb_g[0]->lte_eNB_common_vars,
+		   PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,
 		   0,
-		   PHY_vars_eNb,
+		   PHY_vars_eNb_g[0],
 		   0,
 		   0);
 
-  PHY_vars_eNb->dlsch_eNb = (LTE_eNb_DLSCH_t**) malloc16(2*sizeof(LTE_eNb_DLSCH_t*));
-  PHY_vars_UE->dlsch_ue = (LTE_UE_DLSCH_t**) malloc16(2*sizeof(LTE_UE_DLSCH_t*));
+  PHY_vars_eNb_g[0]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
+  PHY_vars_UE_g[0]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+  PHY_vars_eNb_g[0]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
+  PHY_vars_UE_g[0]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
 
-  PHY_vars_eNb->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(2*sizeof(LTE_eNb_ULSCH_t*));
-  PHY_vars_UE->ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(2*sizeof(LTE_UE_ULSCH_t*));
+  PHY_vars_eNb_g[0]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_ULSCH_t*));
+  PHY_vars_UE_g[0]->ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_ULSCH_t*));
 
-  for (i=0;i<2;i++) {
-    PHY_vars_eNb->dlsch_eNb[i] = new_eNb_dlsch(1,8);
-    if (!PHY_vars_eNb->dlsch_eNb[i]) {
-      msg("Can't get eNb dlsch structures\n");
+  PHY_vars_UE_g[0]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+  PHY_vars_UE_g[0]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+
+  for (i=0;i<NB_UE_INST;i++) {
+    for (j=0;j<2;j++) {
+      PHY_vars_eNb_g[0]->dlsch_eNb[i][j] = new_eNb_dlsch(1,8);
+      if (!PHY_vars_eNb_g[0]->dlsch_eNb[i][j]) {
+	msg("Can't get eNb dlsch structures\n");
+	exit(-1);
+      }
+      else {
+	msg("dlsch_eNb[%d][%d] => %p\n",i,j,PHY_vars_eNb_g[0]->dlsch_eNb[i][j]);
+	PHY_vars_eNb_g[0]->dlsch_eNb[i][j]->rnti=0;
+      }
+    }
+    PHY_vars_eNb_g[0]->ulsch_eNb[i] = new_eNb_ulsch(3);
+    if (!PHY_vars_eNb_g[0]->ulsch_eNb[i]) {
+      msg("Can't get eNb ulsch structures\n");
       exit(-1);
     }
-    else
-      msg("dlsch_eNb[%d] => %p\n",i,PHY_vars_eNb->dlsch_eNb[i]);
+  }
 
-    PHY_vars_UE->dlsch_ue[i]  = new_ue_dlsch(1,8);
-    if (!PHY_vars_UE->dlsch_ue) {
-      msg("Can't get ue dlsch structures\n");
-      exit(-1);
+  PHY_vars_eNb_g[0]->dlsch_eNb_SI  = new_eNb_dlsch(1,1);
+  PHY_vars_eNb_g[0]->dlsch_eNb_ra  = new_eNb_dlsch(1,1);
+
+  for (i=0;i<NB_CH_INST;i++) {
+    for (j=0;j<2;j++) {
+      PHY_vars_UE_g[0]->dlsch_ue[i][j]  = new_ue_dlsch(1,8);
+      if (!PHY_vars_UE_g[0]->dlsch_ue[i][j]) {
+	msg("Can't get ue dlsch structures\n");
+	exit(-1);
+      }
+      else
+	msg("dlsch_ue[%d] => %p\n",i,PHY_vars_UE_g[0]->dlsch_ue[i][j]);
     }
-    else
-      msg("dlsch_ue[%d] => %p\n",i,PHY_vars_UE->dlsch_ue[i]);
-  }
-  PHY_vars_eNb->ulsch_eNb[0] = new_eNb_ulsch(3);
-  if (!PHY_vars_eNb->ulsch_eNb[0]) {
-    msg("Can't get eNb ulsch structures\n");
-    exit(-1);
-  }
-  PHY_vars_UE->ulsch_ue[0]  = new_ue_ulsch(3);
-  if (!PHY_vars_UE->ulsch_ue[0]) {
-    msg("Can't get ue ulsch structures\n");
-    exit(-1);
-  }
   
-  PHY_vars_eNb->dlsch_eNb_cntl = new_eNb_dlsch(1,1);
-  PHY_vars_UE->dlsch_ue_cntl  = new_ue_dlsch(1,1);
 
-  PHY_vars_eNb->dlsch_eNb_1A = new_eNb_dlsch(1,1);
-  PHY_vars_UE->dlsch_ue_1A  = new_ue_dlsch(1,1);
+    PHY_vars_UE_g[0]->ulsch_ue[i]  = new_ue_ulsch(3);
+    if (!PHY_vars_UE_g[0]->ulsch_ue[i]) {
+      msg("Can't get ue ulsch structures\n");
+      exit(-1);
+    }
+  
 
-  PHY_vars_eNb->dlsch_eNb_ra = new_eNb_dlsch(1,1);
-  PHY_vars_UE->dlsch_ue_ra  = new_ue_dlsch(1,1);
 
-  init_transport_channels(transmission_mode);
+    PHY_vars_UE_g[0]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1);
+    
+
+    PHY_vars_UE_g[0]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1);
+  }
+  //  init_transport_channels(transmission_mode);
 
 #ifdef IFFT_FPGA
   txdata    = (int **)malloc16(2*sizeof(int*));
@@ -433,13 +464,13 @@ int main(int argc, char **argv) {
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-  PHY_vars_UE->rx_total_gain_dB=140;
-  PHY_vars_eNb->rx_total_gain_eNB_dB=150;
+  PHY_vars_UE_g[0]->rx_total_gain_dB=140;
+  PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB=150;
 
-  PHY_vars_UE->UE_mode = PUSCH;
-  PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
-  PHY_vars_eNb->eNB_UE_stats[0].mode[0] = PUSCH;
-  PHY_vars_eNb->eNB_UE_stats[0].UE_id[0] = 0xBEEF;
+  PHY_vars_UE_g[0]->UE_mode[0] = PRACH;
+  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
+  PHY_vars_eNb_g[0]->eNB_UE_stats[0].mode = PRACH;
+  PHY_vars_eNb_g[0]->eNB_UE_stats[0].crnti = 0xBEEF;
 
 #ifdef XFORMS
   fl_initialize(&argc, argv, NULL, 0, 0);    
@@ -448,7 +479,7 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef OPENAIR2
-  l2_init();
+  l2_init(PHY_vars_eNb_g[0]);
 
   mac_xface->mrbch_phy_sync_failure(0,0);
   printf("Synching to eNB\n");
@@ -464,32 +495,30 @@ int main(int argc, char **argv) {
       next_slot = (slot + 1)%20;
 
 
-      mac_xface->is_cluster_head = 1;
-      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb);
+      //      mac_xface->is_cluster_head = 1;
+      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[0]);
 
       if (((mac_xface->frame % 10) == 0) && (slot==19)) {
-	printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,PHY_vars_eNb->eNB_UE_stats[0].UE_id[0]);
+	printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,PHY_vars_eNb_g[0]->eNB_UE_stats[0].crnti);
 	/*
 	len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
 	printf("%s\n\n",stats_buffer);
 	*/
       }
-      mac_xface->macphy_scheduler(last_slot); 
-
-      mac_xface->is_cluster_head = 0;
-      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE);
+      //      mac_xface->is_cluster_head = 0;
+      phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[0],0);
 
 #ifdef XFORMS
       if (last_slot == 14) 
-	do_forms(PHY_vars_UE->lte_ue_dlsch_vars,PHY_vars_eNb->lte_eNB_ulsch_vars,ch,channel_length);
+	do_forms(PHY_vars_UE_g[0]->lte_ue_dlsch_vars,PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,ch,channel_length);
 #endif
 
       if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
 	printf("Frame %d, slot %d : UE procedures (Power offset %d, Mode %s, t_CRNTI %x)\n",
 	       mac_xface->frame,slot,
-	       PHY_vars_UE->ulsch_ue[0]->power_offset,
-	       mode_string[PHY_vars_UE->UE_mode],
-	       PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti);
+	       PHY_vars_UE_g[0]->ulsch_ue[0]->power_offset,
+	       mode_string[PHY_vars_UE_g[0]->UE_mode[0]],
+	       PHY_vars_UE_g[0]->lte_ue_pdcch_vars[0]->crnti);
 	/*
 	len = chbch_stats_read(stats_buffer,NULL,0,4096);
 	printf("%s\n\n",stats_buffer);
@@ -501,28 +530,28 @@ int main(int argc, char **argv) {
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
-	txdataF = PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id];
+	txdataF = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[eNb_id];
 #ifndef IFFT_FPGA
-	txdata = PHY_vars_eNb->lte_eNB_common_vars.txdata[eNb_id];
+	txdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdata[eNb_id];
 #endif
       }
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	txdataF = PHY_vars_UE->lte_ue_common_vars.txdataF;
+	txdataF = PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
-	txdata = PHY_vars_UE->lte_ue_common_vars.txdata;
+	txdata = PHY_vars_UE_g[0]->lte_ue_common_vars.txdata;
 #endif
       }
       else //it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	  txdataF = PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id];
+	  txdataF = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[eNb_id];
 #ifndef IFFT_FPGA
-	  txdata = PHY_vars_eNb->lte_eNB_common_vars.txdata[eNb_id];
+	  txdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdata[eNb_id];
 #endif
 	}
 	else {// UL part
-	  txdataF = PHY_vars_UE->lte_ue_common_vars.txdataF;
+	  txdataF = PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
-	  txdata = PHY_vars_UE->lte_ue_common_vars.txdata;
+	  txdata = PHY_vars_UE_g[0]->lte_ue_common_vars.txdata;
 #endif
 	}
 
@@ -669,21 +698,21 @@ int main(int argc, char **argv) {
 
       if ((next_slot > 2) && (next_slot<10)) {
 #ifdef OFDMA_ULSCH
-	if (PHY_vars_UE->UE_mode == PRACH) // 6 RBs, 23 dBm
+	if (PHY_vars_UE_g[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
 	  path_loss_dB += (-20+6.2);  // UE
 	else
-	  path_loss_dB += (-20.0+(double)PHY_vars_UE->ulsch_ue[0]->power_offset);
+	  path_loss_dB += (-20.0+(double)PHY_vars_UE_g[0]->ulsch_ue[0]->power_offset);
 #else
 	path_loss_dB += (-20);
 #endif
       }
 
       if ((next_slot>2) && (next_slot<10)) {
-	rx_gain = PHY_vars_eNb->rx_total_gain_eNB_dB;
+	rx_gain = PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB;
 	//printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
       }
       else {
-	rx_gain = PHY_vars_UE->rx_total_gain_dB;
+	rx_gain = PHY_vars_UE_g[0]->rx_total_gain_dB;
 	//printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
       }
 
@@ -730,16 +759,16 @@ int main(int argc, char **argv) {
 
       sample_offset = 0;
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
-	rxdata = PHY_vars_UE->lte_ue_common_vars.rxdata;
+	rxdata = PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata;
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	rxdata = PHY_vars_eNb->lte_eNB_common_vars.rxdata[eNb_id];
+	rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id];
 	sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
       }
       else //it must be a special subframe
 	if (next_slot%2==0) //DL part
-	  rxdata = PHY_vars_UE->lte_ue_common_vars.rxdata;
+	  rxdata = PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata;
 	else {// UL part
-	  rxdata = PHY_vars_eNb->lte_eNB_common_vars.rxdata[eNb_id];
+	  rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id];
 	  sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
 	}
 
@@ -788,10 +817,10 @@ int main(int argc, char **argv) {
 	}
       */
       if ((last_slot == 18) && (mac_xface->frame == 1)) {
-	write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb->lte_eNB_common_vars.rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig1.m","eNb_rxs1", PHY_vars_eNb->lte_eNB_common_vars.rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("eNb_rxsig1.m","eNb_rxs1", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       }
 #endif
 
