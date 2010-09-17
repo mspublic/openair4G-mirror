@@ -381,9 +381,9 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
   u8_t             *data_pdu;
   u8_t              li[RLC_AM_SEGMENT_NB_MAX_LI_PER_PDU];
   u16_t             remaining_data_size;
-  u8_t              nb_li;
-  u8_t              li_index;
-  u8_t              li_start_index;
+  s8_t              nb_li;
+  s8_t              li_index;
+  s8_t              li_start_index;
   u8_t              reassembly_after_discard;
   u8_t              sdu_sent=0;
 
@@ -428,15 +428,16 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
 
       remaining_data_size = rlcP->pdu_size - 2 - (nb_li);
       data_pdu = (u8_t *) (&rlc_header->li_data_7[nb_li]);
-
+ 
       while (li_index < nb_li) {
         switch (li[li_index]) {
             case (u8_t) RLC_LI_LAST_PDU_EXACTLY_FILLED:
 #ifdef DEBUG_REASSEMBLY
-              msg ("[RLC_AM][RB %d][REASSEMBLY] PDU SN 0x%04X GET LI RLC_LI_LAST_PDU_EXACTLY_FILLED REMAINING DATA SIZE %d\n", rlcP->rb_id, working_sn, remaining_data_size);
+              msg ("[RLC_AM][RB %d][REASSEMBLY] PDU SN 0x%04X GET LI RLC_LI_LAST_PDU_EXACTLY_FILLED REMAINING DATA SIZE %d, li_index %d, li_start_index %d\n", rlcP->rb_id, working_sn, remaining_data_size, li_index, li_start_index);
 #endif
               if (li_index >= li_start_index) {
                 send_sdu (rlcP);
+		sdu_sent=1;
               }
               break;
             case (u8_t) RLC_LI_PDU_PIGGY_BACKED_STATUS:  // ignore
@@ -454,6 +455,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
               if (li_index >= li_start_index) {
                 reassembly (data_pdu, (li[li_index] >> 1), rlcP);
                 send_sdu (rlcP);
+		sdu_sent=1;
               }
               data_pdu = (u8_t *) ((u32_t) data_pdu + (li[li_index] >> 1));
         }
@@ -500,17 +502,17 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
 
         remaining_data_size = rlcP->pdu_size - 2 - nb_li;
         data_pdu = (u8_t *) (&rlc_header->li_data_7[nb_li]);
-
+ 
         while (li_index < nb_li) {
 
           switch (li[li_index]) {
               case (u8_t) RLC_LI_LAST_PDU_EXACTLY_FILLED:
 #ifdef DEBUG_REASSEMBLY
-                msg ("[RLC_AM][RB %d][REASSEMBLY] PDU SN 0x%04X GET LI RLC_LI_LAST_PDU_EXACTLY_FILLED\n", rlcP->rb_id, working_sn);
+                msg ("[RLC_AM][RB %d][REASSEMBLY] PDU SN 0x%04X GET LI RLC_LI_LAST_PDU_EXACTLY_FILLED NUM LI %d\n", rlcP->rb_id, working_sn,nb_li);
 #endif
                 send_sdu (rlcP);
 		
-		//		sdu_sent=1;
+		sdu_sent=1;
                 break;
               case (u8_t) RLC_LI_PDU_PIGGY_BACKED_STATUS:        // ignore
               case (u8_t) RLC_LI_PDU_PADDING:
@@ -528,7 +530,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
                 reassembly (data_pdu, (li[li_index] >> 1), rlcP);
                 data_pdu = (u8_t *) ((u32_t) data_pdu + (li[li_index] >> 1));
                 send_sdu (rlcP);
-		//		sdu_sent=1;
+		sdu_sent=1;
           }
           li_index++;
         }
@@ -559,6 +561,8 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
     }
     msg("receiver_buffer[%d] %p (sdu_sent %d)\n",working_sn_index,rlcP->receiver_buffer[working_sn_index],sdu_sent);
   }
-  if (sdu_sent == 0)
+  if (sdu_sent == 0) {
+    msg("[RLC_AM][RB %d][REASSEMBLY] Forcing send_sdu (sent_sdu == 0)\n",rlcP->rb_id); 
     send_sdu(rlcP);
+  }
 }

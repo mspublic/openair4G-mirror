@@ -19,19 +19,10 @@ unsigned int mac_debug;
 
 unsigned int mac_registered;
 
-MACPHY_DATA_REQ_TABLE Macphy_req_table[NB_MODULES_MAX];
 
 #endif
 
 #ifndef USER_MODE
 EXPORT_SYMBOL(mac_xface);
-#ifdef PHY_EMUL
-EXPORT_SYMBOL(Emul_vars);
-EXPORT_SYMBOL(Macphy_req_table);
 #endif //PHY_EMUL
 
-//EXPORT_SYMBOL(NB_INST);
-//EXPORT_SYMBOL(NB_UE_INST);
-//EXPORT_SYMBOL(NB_CH_INST);
-//EXPORT_SYMBOL(NODE_ID); 
-#endif //USER_MODE

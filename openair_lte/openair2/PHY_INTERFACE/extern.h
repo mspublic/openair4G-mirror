@@ -19,6 +19,5 @@ extern MAC_xface *mac_xface;
 
 extern unsigned int mac_registered;
 
-extern MACPHY_DATA_REQ_TABLE Macphy_req_table[NB_MODULES_MAX];
 
 #endif

@@ -6,7 +6,7 @@
 #include "SIMULATION/TOOLS/defs.h"
 
  
-//#define DEBUG_RAR
+#define DEBUG_RAR
 
 extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];
@@ -15,10 +15,11 @@ extern unsigned short RIV2first_rb_LUT25[512];
 
 extern inline unsigned int taus(void);
 
-unsigned short fill_rar(unsigned char *dlsch_buffer,
-			unsigned short N_RB_UL,
-			unsigned char input_buffer_length,
-			unsigned short timing_advance_cmd) {
+unsigned short fill_rar(u8 Mod_id,
+			u8 *dlsch_buffer,
+			u16 N_RB_UL,
+			u8  input_buffer_length,
+			u16 timing_advance_cmd) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
 
@@ -44,7 +45,7 @@ unsigned short fill_rar(unsigned char *dlsch_buffer,
   return(rar->t_crnti);
 }
 
-unsigned short process_rar(unsigned char *dlsch_buffer,unsigned short *t_crnti) {
+u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);

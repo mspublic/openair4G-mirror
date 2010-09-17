@@ -354,8 +354,6 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
  
   unsigned short i,Role,Nb_sig;
   u16 Index;
-  MAC_CONFIG_REQ Mac_config_req;
-  MAC_MEAS_REQ Mac_meas_req;  
 
   msg("OPENAIR RRC IN....\n");
 
@@ -365,37 +363,13 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
     for(i=0;i<NB_SIG_CNX_CH;i++){  
 
                 
-      Mac_config_req.Lchan_type = BCCH;
-      memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      Mac_config_req.UE_CH_index=i;
-      Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + BCCH;
-      msg("Calling Lchan_config\n");
-      Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",CH_rrc_inst[Mod_id].Node_id,Index);
-      
-
-      CH_rrc_inst[Mod_id].Srb0.Srb_id = CCCH;
-      memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[0],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-      memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-      rrc_config_buffer(&CH_rrc_inst[Mod_id].Srb0,BCCH,0);
-
       msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH for TB_size %d\n",NODE_ID[Mod_id],
 	     CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1].transport_block_size);
       CH_rrc_inst[Mod_id].Srb0.Active=1;
-      CH_rrc_inst[Mod_id].Srb0.Tx_buffer.generate_fun=ch_rrc_generate_bcch;
+
       
 
       
-      Mac_config_req.Lchan_type = CCCH;
-      memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      Mac_config_req.UE_CH_index=i;
-      Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + CCCH;
-      Index=Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      //msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config BCCH %d done\n",NODE_ID[Mod_id],Index);
-      
-      CH_rrc_inst[Mod_id].Srb0.Srb_id = CCCH;
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb0.Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       rrc_config_buffer(&CH_rrc_inst[Mod_id].Srb0,CCCH,1);
@@ -405,25 +379,6 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       CH_rrc_inst[Mod_id].Srb0.Active=1;
 
 
-      /*  
-      Mac_config_req.Lchan_type = DTCH_BD;//DEFAULT BROADCAST DTCH for IP SIGNALLING// (only tx, no orrsponding RABs for rx) 
-      Mac_config_req.UE_CH_index = 0;
-      Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2)+DTCH_BD ;
-      memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&DTCH_DL_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      Index = Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
-      msg("[OPENAIR][RRC][RRC_ON] NODE %d, Config DTCH BROADCAST %d done\n",NODE_ID[Mod_id],Index);
-      CH_rrc_inst[Mod_id].Rab[0][i].Active = 1;
-      CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Rb_id = Index;//(i << RAB_SHIFT)+DTCH ;
-      memcpy(&CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Lchan_desc[0],&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE);
-      memcpy(&CH_rrc_inst[Mod_id].Rab[0][i].Rb_info.Lchan_desc[1],&DTCH_UL_LCHAN_DESC,LCHAN_DESC_SIZE);
-      CH_rrc_inst[Mod_id].Rab[0][i].Status=RADIO_CONFIG_OK;
-      msg("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Index);
-      Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Index,RADIO_ACCESS_BEARER,Rlc_info_um);
-     
-      //      CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id[0]=i;	
-      memset(CH_rrc_inst[Mod_id].Info.UE_list[i],0,5);	
-      */
     }
   }
   
@@ -433,41 +388,6 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
     for(i=0;i<NB_SIG_CNX_UE;i++){  
 
                   
-      Mac_config_req.Lchan_type = BCCH;
-      memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      Mac_config_req.UE_CH_index=i;
-      Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + BCCH;
-      Index=Mac_rlc_xface->mac_config_req(Mod_id+NB_CH_INST,ADD_LC,&Mac_config_req);
-      
-      
-      UE_rrc_inst[Mod_id].Srb0[i].Srb_id = Index;
-      memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-      memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
-      rrc_config_buffer(&UE_rrc_inst[Mod_id].Srb0[i],BCCH,0);
-
-      UE_rrc_inst[Mod_id].Srb0[i].Active=1;
-
-      Mac_meas_req.Lchan_id.Index = Index;
-      Mac_meas_req.UE_CH_index = i;
-      Mac_meas_req.Meas_trigger = BCCH_MEAS_TRIGGER;
-      Mac_meas_req.Mac_avg = BCCH_MEAS_AVG;
-      Mac_meas_req.Rep_amount = 0;
-      Mac_meas_req.Rep_interval = 1000;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry=Mac_rlc_xface->mac_meas_req(Mod_id+NB_CH_INST,&Mac_meas_req);
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Status=RADIO_CONFIG_OK;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Last_report_frame=Rrc_xface->Frame_index;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Next_check_frame=Rrc_xface->Frame_index+1000;
-      
-
-      Mac_config_req.Lchan_type = CCCH;
-      memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-      Mac_config_req.UE_CH_index=i;
-      Mac_config_req.Lchan_id.Index=(i << RAB_SHIFT2) + CCCH;
-      Index=Mac_rlc_xface->mac_config_req(Mod_id+NB_CH_INST,ADD_LC,&Mac_config_req);
-      
-
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -475,17 +395,6 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
       ((CH_CCCH_HEADER*)(&UE_rrc_inst[Mod_id].Srb0[i].Rx_buffer.Header[0]))->Rv_tb_idx=0;
       UE_rrc_inst[Mod_id].Srb0[i].Active=1;
 
-      /*
-      Mac_meas_req.Lchan_id.Index = Index;
-      Mac_meas_req.Meas_trigger = CCCH_MEAS_TRIGGER;
-      Mac_meas_req.Mac_avg = CCCH_MEAS_AVG;
-      Mac_meas_req.Rep_amount = 0;
-      Mac_meas_req.Rep_interval = 1000;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry=Mac_rlc_xface->mac_meas_req(Mod_id+NB_CH_INST,&Mac_meas_req);
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Status=RADIO_CONFIG_OK;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Last_report_frame=Rrc_xface->Frame_index;
-      UE_rrc_inst[Mod_id].Srb0[i].Meas_entry->Next_check_frame=Rrc_xface->Frame_index+1000;
-      */
     }
   }
   

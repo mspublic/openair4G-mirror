@@ -85,20 +85,16 @@ unsigned char *parse_header(unsigned char *mac_header,
 
 
 
-void dlsch_rx(u8 Mod_id,unsigned char *sdu,unsigned int frame,unsigned short subframe,u8 CH_index) {
+void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
 
-#ifdef DEBUG_HEADER_PARSING
-  msg("[MAC][UE RX] Frame %d, subframe %d: Received dlsch sdu from L1, parsing header\n",
-      frame,subframe);
-#endif
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("Num CE %d, Num SDU %d\n",num_ce,num_sdu);
+  msg("[MAC][UE] ue_send_sdu : Mod_id %d, CH_index %d : num_ce %d num_sdu %d\n",Mod_id,CH_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -139,8 +135,9 @@ void dlsch_rx(u8 Mod_id,unsigned char *sdu,unsigned int frame,unsigned short sub
     msg("SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
 #endif
     if (rx_lcids[i] == CCCH) {
+
       if(UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Active==1){
-	msg("offset: %d\n",(u8)((u8*)payload_ptr-sdu));
+	msg("CCCH -> RRC\n");
 	Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
 				    CCCH,
 				    (char *)payload_ptr,rx_lengths[i],CH_index);
@@ -162,7 +159,7 @@ void dlsch_rx(u8 Mod_id,unsigned char *sdu,unsigned int frame,unsigned short sub
 	*/
 }
 
-void ue_decode_si(u8 Mod_id, unsigned char CH_index, void *pdu,unsigned short len) {
+void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
   msg("[MAC][UE] Sending SI to RRC (Lchan Id %d)\n",UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index);
@@ -176,13 +173,13 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 
 
   u8 Size=0,W_idx=2,j;
-  MACPHY_DATA_REQ *Macphy_data_req;
 
   if (Is_rrc_registered == 1) {
     Size = Rrc_xface->mac_rrc_data_req(Mod_id+NB_CH_INST,
 				       UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index,1,
 				       &UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0],
 				       CH_index);
+    msg("[MAC][UE] Requested RRCConnectionRequest, got %d bytes\n",Size);
     if (Size>0)
       return((char*)&UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0]);
   }

@@ -305,10 +305,10 @@ typedef struct {
 
 typedef struct {
 
-  u8 Num_ue_spec_dci ; /*!< \brief Number of SACH in the current DL_SACCH payload */ 
-  u8 Num_common_dci  ; /*!< \brief Number of SACH available in the UL_SACH period */
-  DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;/*!< \brief Collection of DL_SACCH PDUs */
-} __attribute__((__packed__))DCI_PDU;
+  u8 Num_ue_spec_dci ; 
+  u8 Num_common_dci  ; 
+  DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
+} DCI_PDU;
 
 typedef struct {
   s8 Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
@@ -510,196 +510,24 @@ int mac_init_global_param(void);
 void mac_top_cleanup(u8 Mod_id);
 void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
-//nodeb_scheduler.c
-void nodeb_mac_scheduler_tx(u8 Mod_id,u8 subframe) ;
-void nodeb_mac_scheduler_rx(u8 Mod_id) ;
 
-//ue_scheduler.c
-void ue_mac_scheduler_tx(u8 Mod_id) ;
-void ue_mac_scheduler_rx(u8 Mod_id) ;
+// eNB functions
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8); 
+u16  fill_rar(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length,u16 timing_advance_cmd);
+void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
+void initiate_ra_proc(u8 Mod_id,u16 preamble);
+void rx_sdu(u8 Mod_id,u16 UE_id, u8 *sdu);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
+DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
+u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
 
-//nodeb_control_plane_procedures.c
-
-/*!\fn void nodeb_generate_dci(u8 Mod_id)
-\brief This routine first retrieves the BCCH and CCCH logical channels from RRC.  It then fills the UL and DL allocation
-maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the 
-PHY CHBCH transmitter.
-@param Mod_id The MAC instance on which to act.
-*/
-void nodeb_generate_dci(u8);
-
-/*!\fn void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the DCI_PDU entries corresponding to a particular direct link logical channel
-@param Mod_id       The MAC instance on which to act
-@param *Lchan_entry Pointer to the logical channel physical channel allocations
-*/
-void ch_fill_dil_map(u8 Mod_id,LCHAN_INFO_DIL_TABLE_ENTRY *Lchan_entry);
-
-/*!\fn void ch_fill_dl_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the DCI_PDU entries corresponding to a particular downlink logical channel
-@param Mod_id       The MAC instance on which to act
-@param *Lchan_entry Pointer to the logical channel physical channel allocations
-*/
-void ch_fill_dl_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
-
-/*!\fn void ch_fill_ul_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry)
-\brief This routine fills the DCI_PDU entries corresponding to a particular uplink logical channel.  It operates in TTI \f$N-1\f$
-and prepares a DCI_PDU which will be on-air in TTI \f$N\f$.  Furthermore, the UL_MAP is used to schedule the RX resources (UL-SACH)
-for TTI \f$N+1\f$.
-@param Mod_id       The MAC instance on which to act
-@param *Lchan_entry Pointer to the logical channel physical channel allocations
-*/
-void ch_fill_ul_map(u8 Mod_id,LCHAN_INFO_TABLE_ENTRY *Lchan_entry);
-
-/*!\fn void nodeb_scheduler(u8 Mod_id)
-\brief This routine is the top-level entry point for NodeB physical resource scheduling.  It performs downlink, uplink and direct link
-scheduling for the next TTI based on measurement feedback (RF and traffic) from nodes and local measurements. 
-@param Mod_id       The MAC instance on which to act
-*/
-void nodeb_scheduler(u8 Mod_id);
-
-/*!\fn void nodeb_decode_ulsch(u8 Mod_id,ULSCH_PDU* ulsch_pdu,int *crc_status)
-\brief This routine extracts the UL_SCH information.  
-@param Mod_id         The MAC instance on which to act
-@param *Sch_pdu      Pointer to an ULSCH_PDU structure containing PHY transport blocks
-@param *crc_status    Vector containing crc status of each transport block
-*/
-void nodeb_decode_ulsch(u8 Mod_id,ULSCH_PDU* ulsch_pdu,u16 rnti);
-
-/*!\fn void nodeb_generate_sch(u8 Mod_id)
-\brief This routine first retrieves the maps as well as feedback channels in a DCI_PDU structure.  Finally it generates a MACPHY_DATA_REQ for the PHY DLSCH transmitter.
-@param Mod_id The MAC instance on which to act.
-*/
-void nodeb_generate_dlsch(u8 Mod_id);
-
-/*!\fn void schedule_dcch(u8 Mod_id,u8 User,u16 *Freq_alloc_map,u8 *User_alloc_map,u16 rb_map)
-\brief This routine is used by the NodeB scheduler to allocate resources for dcch channels.
-@param Mod_id The MAC instance on which to act
-@param User User index
-@param Freq_alloc_map Current Frequency Allocation 
-@param *User_alloc_map Allocation of users to frequency groups (rbs)
-@param *rb_map Frequency map pattern. Bitmap depending on number of rb to be allocated.  Actual bitmaps are shifted based on CQI information
-*/
-
-void nodeb_generate_bcch(u8 Mod_id);
-
-void nodeb_generate_ccch(u8 Mod_id);
-
-
-void schedule_dcch(u8 Mod_id,u8 User,u16 *Freq_alloc_map,u8 *User_alloc_map,u16 rb_map);
-
-u16 fill_rar(u8 *dlsch_buffer,
-	      u16 N_RB_UL,
-	      u8 input_buffer_length,
-	      u16 timing_advance_cmd);
-
-u16 process_rar(u8 *dlsch_buffer,u16 *);
-
-
-//ue_control_plane_procedures
-
-
-
-void ue_complete_dl_data_req(u8 Mod_id);
-void ue_get_dil_sach(u8 Mod_id);
-void mac_check_rlc_queues_status(u8, u8,u16 *);//, UL_SACCH_FB *);
-void ue_fill_macphy_data_req(u8 ,LCHAN_INFO_TABLE_ENTRY *,u8);
-//void ue_decode_sch(u8 Mod_id, UL_MEAS *UL_meas,u16 Index);
-void ue_decode_dlsch(u8,DLSCH_PDU *,u16);
-void ue_generate_rach(u8,u8);
-void ue_generate_sch(u8);
-void ue_scheduler(u8, u8);
-
-void ue_get_chbch(u8 Mod_id, u8 CH_index);
-
-int is_lchan_ul_scheduled(u8 Mod_id, u8 CH_index, u16 Lchan_index);
-
-//lchan_interface.h
-int clear_lchan_table(LCHAN_INFO_TABLE_ENTRY *Table, u8 Dim);
-u16 mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
-u16 ch_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
-u16 ue_mac_config_req(u8 Mod_id,u8 Action,MAC_CONFIG_REQ *Req);
-MAC_MEAS_REQ_ENTRY* mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
-MAC_MEAS_REQ_ENTRY* ch_mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
-MAC_MEAS_REQ_ENTRY* ue_mac_meas_req(u8 Mod_id,MAC_MEAS_REQ *Meas_req);
-//void mac_update_meas(u8 Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry, UL_MEAS *UL_meas);
-u8 mac_check_meas_trigger(MAC_MEAS_REQ *Meas_req);
-u8 mac_check_meas_ind(MAC_MEAS_REQ_ENTRY *Meas_entry);
-
-//openair2_proc.c
-/*!\fn int add_openair2_stats()
-\brief This routine initialized the openair2 /proc/openair2 entry.
-@returns 0 on success
-*/
-int add_openair2_stats(void);
-
-/*!\fn int openair2_stats_read(s8 *buffer, s8 **my_buffer, off_t off, int length)
-\brief This routine initialized the openair2 /proc/openair2 entry.
-@param buffer Pointer to string
-@param my_buffer 
-@param off Offset in buffer
-@param length Maximum length of buffer
-@returns length of string in bytes
-*/
-#ifdef USER_MODE
-int openair2_stats_read(s8 *buffer, s8 **my_buffer, off_t off, int length);
-#endif
-//utils.h
-/*!\fn s8 *print_cqi(u32 cqi)
-\brief This routine prints the CQI information.
-@param cqi 32-bit CQI value
-@returns A pointer to a string containing the CQI information
-*/
-s8 *print_cqi(u32 cqi);
-
-/*!\fn u8 conv_alloc_to_tb2(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 target_spec_eff,u8 dual_stream_flag,u8 nb_tb_max,u8 *coding_fmt,u8 *num_tb,u16 tb_size_bytes)
-@param node_type Type of node (0 CH, 1 UE)
-@param time_alloc Allocated time map
-@param freq_alloc Allocated frequency map
-@param target_spec_eff Target spectral efficiency for TB allocation
-@param dual_stream_flag Flag to indicate dual-stream transmission
-@param num_tb_max Number of TB max available in MAC buffer
-@param *coding_fmt Pointer to chosen Modulation/Coding format
-@param *num_tb Pointer to chosen number of TBs
-@param tb_size_bytes  Size of TB in bytes
-*/
-
-#ifdef PHY_EMUL
-u8 conv_alloc_to_tb2(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 target_spec_eff,u8 dual_stream_flag,u8 num_tb_max,u8 *coding_fmt,u8 *num_tb,u16 tb_size_bytes);
-
-s8 conv_alloc_to_coding_fmt(u8 node_type,
-				       u8 time_alloc,
-				       u16 freq_alloc,
-				       u8 target_spec_eff,
-				       u8 dual_stream_flag,
-			      // u8 num_tb_max,
-				       u8 *coding_fmt,
-				       u8 *num_tb,
-				       u16 tb_size_bytes);
-
-
-u8 conv_alloc_to_tb(u8 node_type,u8 time_alloc,u16 freq_alloc,u8 coding_fmt,u16 tb_size_bytes);
-#endif
-
-
-void emul_phy_sync(u8 Mod_id, u8 Chbch_index);
-
-void copy_phy_resources(PHY_RESOURCES *To,PHY_RESOURCES *From);
-
-//scheduler
-void macphy_scheduler(u8 last_slot) ;
-void swap_oai(s8 *Array,s8 a, s8 b);
-s8 partition( s8 *a, s8 *,s8 low, s8 high );
-void quicksort( s8 *a, s8 *b, s8 low, s8 high );
-void q_sort(s8 low, s8 high );
-//int SplitArray(int* array, int *indices, int pivot, int startIndex, int endIndex);
-//void quicksort(int* array, int * indices, int startIndex, int endIndex);
-
-/*
-#ifndef USER_MODE
-#define msg debug_msg
-#endif
-*/
+// UE functions
+void out_of_sync_ind(u8 Mod_id,u16);
+void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
+void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
+void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+u8* ue_get_rach(u8 Mod_id,u8 CH_index);
+u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

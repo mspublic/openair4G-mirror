@@ -43,7 +43,11 @@ void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index){  //ini
   msg("[MAC]Node %d, PHY SYNC to CH_index %d\n",NODE_ID[Mod_id],CH_index);
   if( (layer2_init_mr(Mod_id)==-1) || (Rrc_xface->openair_rrc_mr_init(Mod_id,CH_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
-  
+
+  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Active=1;
+  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=BCCH;
+  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Active=1;  
+  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=CCCH;
 }
 
 /***********************************************************************/
@@ -61,31 +65,10 @@ char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
   unsigned char  i,j,k,Nb_mod;
   Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
   
-  if (clear_lchan_table(&CH_mac_inst[Mod_id].Bcch_lchan,NB_SIG_CNX_CH) == -1)
-    return(-1);
-  if (clear_lchan_table(&CH_mac_inst[Mod_id].Ccch_lchan,NB_SIG_CNX_CH) == -1)
-    return(-1);
-  if (clear_lchan_table(CH_mac_inst[Mod_id].Dcch_lchan,NB_CNX_CH+1) == -1)
-    return(-1);
-  for(i=0;i<NB_RAB_MAX;i++){ 
-    if (clear_lchan_table(CH_mac_inst[Mod_id].Dtch_lchan[i],NB_CNX_CH+1) == -1)
-      return(-1);
-    for(j=0;j<(NB_CNX_CH+1);j++)
-      for(k=0;k<(NB_CNX_CH-1);k++){
-	CH_mac_inst[Mod_id].Dtch_dil_lchan[i][j][k].Active = 0;
-	CH_mac_inst[Mod_id].Dtch_dil_lchan[i][j][k].Lchan_info_dil.Meas_entry.Status=IDLE;
-      }
-  }
-  CH_mac_inst[Mod_id].Nb_rx_sched[0]=0;
-  CH_mac_inst[Mod_id].Nb_rx_sched[1]=0;
-  CH_mac_inst[Mod_id].Nb_rx_sched[2]=0;
-  //  CH_mac_inst[Mod_id].RX_rach_pdu.Rach_payload=(char*)malloc16(RACH_PAYLOAD_SIZE_MAX);
-  CH_mac_inst[Mod_id].Node_id=NODE_ID[Mod_id];
-  for(i=0;i<(NB_CNX_CH+1);i++){
-    CH_mac_inst[Mod_id].Def_meas[i].Status=IDLE;
-	CH_mac_inst[Mod_id].Def_meas[i].Active=0;
-  }
   msg("\nMAC: INIT CH %d Successful \n\n",NODE_ID[Mod_id]);
+
+  init_transport_channels(2);
+
   return 0;
   
 }
@@ -97,35 +80,6 @@ char layer2_init_mr(unsigned char Mod_id){
   Nb_mod=Mod_id-NB_CH_INST;
   Mac_rlc_xface->Is_cluster_head[Mod_id]=0;
   
-  for(CH_index =0; CH_index < NB_CNX_UE;CH_index++){
-    if (clear_lchan_table(&UE_mac_inst[Nb_mod].Bcch_lchan[CH_index],1) == -1)
-      return(-1);
-    if (clear_lchan_table(&UE_mac_inst[Nb_mod].Ccch_lchan[CH_index],1) == -1)
-      return(-1);
-    if (clear_lchan_table(&UE_mac_inst[Nb_mod].Dcch_lchan[CH_index],1) == -1)
-      return(-1);
-    
-    for(i=0;i<NB_RAB_MAX;i++){ 
-      if ( clear_lchan_table(&UE_mac_inst[Nb_mod].Dtch_lchan[i][CH_index],1) == -1)
-	return(-1);
-      for(k=0;k<(NB_CNX_CH-1);k++){
-	UE_mac_inst[Nb_mod].Dtch_dil_lchan[i][CH_index][k].Active = 0;
-	UE_mac_inst[Nb_mod].Dtch_dil_lchan[i][CH_index][k].Lchan_info.Meas_entry.Status=IDLE;
-      }
-    }
-    UE_mac_inst[Nb_mod].Nb_rx_sched[CH_index][0]=0;
-    UE_mac_inst[Nb_mod].Nb_rx_sched[CH_index][1]=0;
-    UE_mac_inst[Nb_mod].NB_decoded_chbch =0;
-    UE_mac_inst[Nb_mod].CH_ul_freq_map[CH_index]=0;
-    for(j=0;j<3;j++){
-      UE_mac_inst[Nb_mod].Nb_tx_ops[CH_index][j]=0;
-    }
-    UE_mac_inst[Nb_mod].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=(CH_index << RAB_SHIFT2)+BCCH;
-    UE_mac_inst[Nb_mod].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=(CH_index << RAB_SHIFT2)+CCCH;
-    UE_mac_inst[Nb_mod].Node_id=NODE_ID[Nb_mod];
-    UE_mac_inst[Nb_mod].Def_meas[CH_index].Status=IDLE;
-    UE_mac_inst[Nb_mod].Def_meas[CH_index].Active=0;
-  }
   return 0;
 }
 
@@ -240,8 +194,8 @@ int mac_init_global_param(){
   mac_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
   Mac_rlc_xface->frame = -1;
-  Mac_rlc_xface->mac_config_req=mac_config_req;
-  Mac_rlc_xface->mac_meas_req=mac_meas_req;
+  //  Mac_rlc_xface->mac_config_req=mac_config_req;
+  //  Mac_rlc_xface->mac_meas_req=mac_meas_req;
   Mac_rlc_xface->rrc_rlc_config_req=rrc_rlc_config_req;
   Mac_rlc_xface->rrc_rlc_data_req=rrc_rlc_data_req;
   Mac_rlc_xface->rrc_rlc_register_rrc=rrc_rlc_register_rrc;
