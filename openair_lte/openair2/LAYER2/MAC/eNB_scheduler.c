@@ -323,9 +323,11 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   u8 cont_res_id[6];
   u8 dcch_buffer[32];
   u8 current_harq_round;
+  
+  DCI_PDU *DCI_pdu= &CH_mac_inst[Mod_id].DCI_pdu;
 
-  CH_mac_inst[0].DCI_pdu.Num_common_dci  = 0;	
-  CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci = 0;
+  DCI_pdu->Num_common_dci  = 0;	
+  DCI_pdu->Num_ue_spec_dci = 0;
 
 	
   for (i=0;i<1;i++) {
@@ -334,16 +336,16 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
     switch (subframe) {
     case 0:
       // Schedule DL control 
-      memcpy(&CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],
+      memcpy(&DCI_pdu->dci_alloc[0].dci_pdu[0],
 	     &CCCH_alloc_pdu,
 	     sizeof(DCI1A_5MHz_TDD_1_6_t));
       
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].L          = 3;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].format     = format1A;
+      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      DCI_pdu->dci_alloc[0].L          = 3;
+      DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
+      DCI_pdu->dci_alloc[0].format     = format1A;
       
-      CH_mac_inst[0].DCI_pdu.Num_common_dci  = 1;	
+      DCI_pdu->Num_common_dci  = 1;	
       
 #ifdef DEBUG_eNB_SCHEDULER
       debug_msg("[MAC] Frame %d, subframe %d: Generated CCCH DCI, format 1A\n",mac_xface->frame, subframe);
@@ -417,23 +419,18 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("DLSCH_pdu (rballoc %x,mcs %d, ndi %d, rv %d)\n",DLSCH_alloc_pdu2.rballoc,DLSCH_alloc_pdu2.mcs1,DLSCH_alloc_pdu2.ndi1,DLSCH_alloc_pdu2.rv1);
 #endif
-	memcpy(&CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].L          = 3;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].format     = format2_2A_M10PRB;
-	CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci = 1;	
+	memcpy(&DCI_pdu->dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+	DCI_pdu->dci_alloc[0].L          = 3;
+	DCI_pdu->dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
+	DCI_pdu->dci_alloc[0].format     = format2_2A_M10PRB;
+	DCI_pdu->Num_ue_spec_dci = 1;	
 	
 	debug_msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame,subframe);
  
 	// copy MAC header and SDU
-#ifdef TBS_FIX
-	TBS = 3*dlsch_tbs25[get_I_TBS(DLSCH_alloc_pdu2.mcs1)][nb_rb-1]/4;
-	TBS = TBS>>3;
-#else
-	TBS = dlsch_tbs25[get_I_TBS(DLSCH_alloc_pdu2.mcs1)][nb_rb-1];
-	TBS = TBS>>3;
-#endif
+
+	TBS = mac_xface->get_TBS(DLSCH_alloc_pdu2.mcs1,nb_rb);
 
 	// check first for RLC data on DCCH
 	header_len = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command 
@@ -441,17 +438,24 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 					(TBS-header_len)/DCCH_LCHAN_DESC.transport_block_size,
 					DCCH_LCHAN_DESC.transport_block_size);
 
-	if (rlc_status.bytes_in_buffer>0) {
+	sdu_lengths[0]=0;
+	while (rlc_status.bytes_in_buffer>0) {
 	  msg("[MAC][eNB] DCCH has %d bytes to send (buffer %d, header %d)\n",rlc_status.bytes_in_buffer,sdu_lengths[0],header_len);
-
-	  sdu_lengths[0] = Mac_rlc_xface->mac_rlc_data_req(0,
-							   DCCH,
-							   dcch_buffer);
+	  
+	  sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(0,
+							    DCCH,
+							    &dcch_buffer[sdu_lengths[0]]);
+	  
+	  rlc_status = mac_rlc_status_ind(0,DCCH,
+					  (TBS-header_len)/DCCH_LCHAN_DESC.transport_block_size,
+					  DCCH_LCHAN_DESC.transport_block_size);
+	}
+	if (sdu_lengths[0]>0) {
 	  sdu_lcids[0] = DCCH;
 	  msg("[MAC][eNB] Got %d bytes for DCCH :",sdu_lengths[0]);
-
+	  
 	  num_sdus = 1;
-
+	  
 	  for (j=0;j<sdu_lengths[0];j++)
 	    msg("%x ",dcch_buffer[j]);
 	  msg("\n");
@@ -491,15 +495,15 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 	msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated RAR DCI, format 1A\n",mac_xface->frame, subframe); 
 	
 	// Schedule Random-Access Response 
-	memcpy(&CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].L          = 3;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti       = RA_RNTI;
-	CH_mac_inst[0].DCI_pdu.dci_alloc[0].format     = format1A;
+	memcpy(&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	DCI_pdu->dci_alloc[0].L          = 3;
+	DCI_pdu->dci_alloc[0].rnti       = RA_RNTI;
+	DCI_pdu->dci_alloc[0].format     = format1A;
 
 
-	CH_mac_inst[0].DCI_pdu.Num_common_dci = 1;	
-	CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci = 0;	
+	DCI_pdu->Num_common_dci = 1;	
+	DCI_pdu->Num_ue_spec_dci = 0;	
 	eNB_generate_rar=0;
       }
 
@@ -522,14 +526,14 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 	  msg("[MAC][eNB] Frame %d, subframe %d: Generated DLSCH (RRCConnectionSetup) DCI, format 1A\n",mac_xface->frame, subframe); 
 	  
 	  // Schedule Reflection of Connection request 
-	  memcpy(&CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-	  CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-	  CH_mac_inst[0].DCI_pdu.dci_alloc[0].L          = 3;
-	  CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
-	  CH_mac_inst[0].DCI_pdu.dci_alloc[0].format     = format1A;
+	  memcpy(&DCI_pdu->dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+	  DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	  DCI_pdu->dci_alloc[0].L          = 3;
+	  DCI_pdu->dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
+	  DCI_pdu->dci_alloc[0].format     = format1A;
 	  //	dlsch_eNb_1A_active = 1;
 	  //	nb_dci_ue_spec++;
-	  CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci = 1;	
+	  DCI_pdu->Num_ue_spec_dci = 1;	
 	  
 	  
 	  eNB_generate_rrcconnsetup=0;
@@ -563,14 +567,14 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
       if (UL_alloc_pdu.ndi == 1)
 	UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
       UL_alloc_pdu.rballoc = computeRIV(mac_xface->lte_frame_parms->N_RB_UL,9,openair_daq_vars.ue_ul_nb_rb);
-      memcpy(&CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].L          = 3;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
-      CH_mac_inst[0].DCI_pdu.dci_alloc[0].format     = format0;
+      memcpy(&DCI_pdu->dci_alloc[0].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
+      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
+      DCI_pdu->dci_alloc[0].L          = 3;
+      DCI_pdu->dci_alloc[0].rnti       = mac_xface->eNB_UE_stats[0][0].crnti;
+      DCI_pdu->dci_alloc[0].format     = format0;
 
-      CH_mac_inst[0].DCI_pdu.Num_ue_spec_dci = 1;
-      CH_mac_inst[0].DCI_pdu.Num_common_dci  = 0;	
+      DCI_pdu->Num_ue_spec_dci = 1;
+      DCI_pdu->Num_common_dci  = 0;	
       
 #ifdef DEBUG_eNB_SCHEDULER
       debug_msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated ULSCH DCI, format 0\n",mac_xface->frame,subframe);

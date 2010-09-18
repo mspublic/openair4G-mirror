@@ -441,9 +441,9 @@ mui_t rrc_mui=0;
 
 void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index) {
 
-  u8 RRCConnectionSetupComplete[32], size=8,i;
+  u8 RRCConnectionSetupComplete[32], size=5,i;
 
-  msg("[RRC] Generating RRCConnectionSetupComplete : 0 ");
+  msg("[RRC][UE] Generating RRCConnectionSetupComplete : 0 ");
   RRCConnectionSetupComplete[0]=0;
   for (i=1;i<size;i++) {
     RRCConnectionSetupComplete[i] = (u8)(taus()&0xff);
@@ -456,9 +456,9 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index) {
 
 void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 CH_index) {
 
-  u8 RRCConnectionReconfigurationComplete[32], size=8,i;
+  u8 RRCConnectionReconfigurationComplete[32], size=5,i;
 
-  msg("[RRC] Generating RRCConnectionReconfigurationComplete : 1 ");
+  msg("[RRC][UE] Generating RRCConnectionReconfigurationComplete : 1 ");
   RRCConnectionReconfigurationComplete[0]=1;
   for (i=1;i<size;i++) {
     RRCConnectionReconfigurationComplete[i] = (u8)(taus()&0xff);
@@ -780,9 +780,10 @@ void ch_rrc_process_connectionsetupcomplete(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, 
 void ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,sdu_size){
 
     //Establish DRB (DTCH)
-    Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
-				      (UE_index << RAB_SHIFT2) + DTCH,
-				      RADIO_ACCESS_BEARER,Rlc_info_um);
+  msg("[RRC][eNB] Received RRCConnectionReconfigurationComplete, configuring DRB\n");
+  Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
+				    (UE_index << RAB_SHIFT2) + DTCH,
+				    RADIO_ACCESS_BEARER,Rlc_info_um);
 
 }
 
@@ -794,11 +795,11 @@ void ch_rrc_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size){
   // check sdu_type
   switch (Rx_sdu[0]) {
   case 0 : // ConnectionSetupComplete
-    msg("[RRC] Processing RRCConnectionSetupComplete message\n");
+    msg("[RRC][eNB] Processing RRCConnectionSetupComplete message\n");
     ch_rrc_process_connectionsetupcomplete(Mod_id,UE_index,Rx_sdu,sdu_size);
     break;
   case 1 : // RRCConnectionReconfigurationComplete
-    msg("[RRC] Processing RRCConnectionReconfigurationComplete message\n");
+    msg("[RRC][eNB] Processing RRCConnectionReconfigurationComplete message\n");
     ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,sdu_size);
     break;
   case 2 : // RRCConnectionRestablishmentComplete

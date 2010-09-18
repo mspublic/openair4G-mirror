@@ -11,7 +11,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
-  UL_alloc_pdu.mcs     = 1;
+  UL_alloc_pdu.mcs     = 2;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;

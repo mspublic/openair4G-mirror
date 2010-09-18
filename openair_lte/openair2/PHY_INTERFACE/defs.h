@@ -32,6 +32,9 @@ typedef struct
 
     /// Pointer function that stops the low-level scheduler due an exit condition        
     void (*macphy_exit)(const char *);          
+    
+    /// Frame counter
+    unsigned int frame;
 
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
@@ -58,8 +61,6 @@ typedef struct
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u8 Free_ch_index);
 
-    /// Function to retrieve the HARQ round index for a particular UE/DLSCH and harq_pid
-    u8 (*get_ue_harq_round)(u8 Mod_id, u8 UE_id, u8 harq_pid);
 
     // UE functions
 
@@ -84,18 +85,29 @@ typedef struct
     /// Indicate synchronization with valid PBCH
     void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);
 
+    // PHY Helper Functions
+
     /// RIV computation from PHY
     u16 (*computeRIV)(u16 N_RB_DL,u16 RBstart,u16 Lcrbs);
 
-    unsigned int frame;
+    /// TBS table lookup from PHY
+    u16 (*get_TBS)(u8 mcs, u16 nb_rb);
+
+    /// Function to retrieve the HARQ round index for a particular UE/DLSCH and harq_pid
+    u8 (*get_ue_harq_round)(u8 Mod_id, u8 UE_id, u8 harq_pid);
+
+
     //    unsigned char is_cluster_head;
     //    unsigned char is_primary_cluster_head;
     //    unsigned char is_secondary_cluster_head;
     //    unsigned char cluster_head_index;
 
     // PHY variables/functions
-
+    
+    /// PHY Measurements
     LTE_eNB_UE_stats **eNB_UE_stats;
+
+    /// PHY Frame Configuration
     LTE_DL_FRAME_PARMS *lte_frame_parms;
 
     

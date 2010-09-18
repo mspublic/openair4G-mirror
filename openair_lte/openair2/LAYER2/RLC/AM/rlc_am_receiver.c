@@ -561,8 +561,8 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
     }
     msg("receiver_buffer[%d] %p (sdu_sent %d)\n",working_sn_index,rlcP->receiver_buffer[working_sn_index],sdu_sent);
   }
-  if (sdu_sent == 0) {
-    msg("[RLC_AM][RB %d][REASSEMBLY] Forcing send_sdu (sent_sdu == 0)\n",rlcP->rb_id); 
-    send_sdu(rlcP);
-  }
+  //  if (sdu_sent == 0) {
+  //    msg("[RLC_AM][RB %d][REASSEMBLY] Forcing send_sdu (sent_sdu == 0)\n",rlcP->rb_id); 
+  //    send_sdu(rlcP);
+  //  }
 }
