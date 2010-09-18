@@ -87,14 +87,17 @@ void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
     mac_xface->ue_get_rach               = ue_get_rach;
     mac_xface->ue_process_rar            = ue_process_rar;
 
+    // PHY measurement structure
     mac_xface->eNB_UE_stats    = (LTE_eNB_UE_stats **)malloc(NB_CH_INST*sizeof(LTE_eNB_UE_stats*));
     mac_xface->eNB_UE_stats[0] = &phy_vars_eNb->eNB_UE_stats[0];
-    
-    mac_xface->get_ue_harq_round = get_ue_harq_round;
 
-    mac_xface->computeRIV = computeRIV;
-
+    // PHY Frame configuration
     mac_xface->lte_frame_parms = &phy_vars_eNb->lte_frame_parms;
+    
+    // PHY Helper functions
+    mac_xface->get_ue_harq_round = get_ue_harq_round;
+    mac_xface->computeRIV = computeRIV;
+    mac_xface->get_TBS = get_TBS;
 
     msg("ALL INIT OK\n");
     
@@ -227,7 +230,7 @@ int main(int argc, char **argv) {
   unsigned int rx_gain;
 
   unsigned char target_dl_mcs=4;
-  unsigned char target_ul_mcs=1;
+  unsigned char target_ul_mcs=2;
   unsigned char rate_adaptation_flag;
   unsigned char transmission_mode;
 

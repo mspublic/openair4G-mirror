@@ -1148,6 +1148,8 @@ u8 get_Qm(u8 I_MCS);
 
 u8 get_I_TBS(u8 I_MCS);
 
+u16 get_TBS(u8 mcs,u16 nb_rb);
+
 #ifndef modOrder
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 #endif

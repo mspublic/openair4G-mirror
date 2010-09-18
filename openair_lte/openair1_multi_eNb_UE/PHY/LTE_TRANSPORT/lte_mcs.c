@@ -1,3 +1,6 @@
+#include "PHY/defs.h"
+#include "PHY/extern.h"
+
 unsigned char get_Qm(unsigned char I_MCS) {
 
   if (I_MCS < 10)
@@ -37,6 +40,25 @@ unsigned char I_TBS2I_MCS(unsigned char I_TBS) {
   if (I_MCS == 0xFF) getchar();
 #endif
   return I_MCS;
+}
+
+u16 get_TBS(u8 mcs,u16 nb_rb) {
+
+  u16 TBS;
+
+  if ((nb_rb > 0) && (mcs < 28)) {
+#ifdef TBS_FIX
+    TBS = 3*dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/4;
+    TBS = TBS>>3;
+#else
+    TBS = dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1];
+    TBS = TBS>>3;
+#endif
+    return(TBS);
+  }
+  else {
+    return(0);
+  }
 }
 
 // following function requires dlsch_tbs_full.h

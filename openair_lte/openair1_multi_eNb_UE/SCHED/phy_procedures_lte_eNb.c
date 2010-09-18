@@ -870,13 +870,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
 #endif
 
     
-      /*
-	printf("ulsch (ue): NBRB     %d\n",ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
-	printf("ulsch (ue): first_rb %x\n",ulsch_ue[0]->harq_processes[harq_pid]->first_rb);
-	printf("ulsch (ue): nb_rb    %d\n",ulsch_ue[0]->harq_processes[harq_pid]->nb_rb);
-	printf("ulsch (ue): Ndi      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->Ndi);  
-	printf("ulsch (ue): TBS      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->TBS);
-	printf("ulsch (ue): mcs      %d\n",ulsch_ue[0]->harq_processes[harq_pid]->mcs);
+      
+	printf("ulsch (eNB): NBRB     %d\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->nb_rb);
+	printf("ulsch (eNB): first_rb %x\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->first_rb);
+	printf("ulsch (eNB): nb_rb    %d\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->nb_rb);
+	printf("ulsch (eNB): Ndi      %d\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->Ndi);  
+	printf("ulsch (eNB): TBS      %d\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->TBS);
+	printf("ulsch (eNB): mcs      %d\n",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->mcs);
+	/*
 	//write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
 	write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
 	write_output("ulsch_rxF_llr.m","ulsch_llr",lte_eNB_ulsch_vars[0]->llr,ulsch_ue[0]->harq_processes[harq_pid]->nb_rb*12*2*9,1,0);      
