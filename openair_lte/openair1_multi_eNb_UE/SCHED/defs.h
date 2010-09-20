@@ -132,7 +132,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
-u8 get_ue_harq_round(u8 Mod_id,u16 rnti,u8 harq_pid);
+void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round);
+s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNb);
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK);
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);

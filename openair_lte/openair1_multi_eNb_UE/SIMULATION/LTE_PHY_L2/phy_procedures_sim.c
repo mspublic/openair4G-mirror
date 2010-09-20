@@ -95,7 +95,7 @@ void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
     mac_xface->lte_frame_parms = &phy_vars_eNb->lte_frame_parms;
     
     // PHY Helper functions
-    mac_xface->get_ue_harq_round = get_ue_harq_round;
+    mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
     mac_xface->computeRIV = computeRIV;
     mac_xface->get_TBS = get_TBS;
 
@@ -496,7 +496,6 @@ int main(int argc, char **argv) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-
 
       //      mac_xface->is_cluster_head = 1;
       phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[0]);

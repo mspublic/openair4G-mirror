@@ -152,14 +152,14 @@ typedef struct {
   u16 rnti; 
   /// Active flag for baseband transmitter processing
   u8 active;
-  /// Target MCS
-  u8 target_mcs; 
-  /// Transmission mode
-  u8 mode;
   /// Current HARQ process id
   u8 current_harq_pid;
-  /// Process ID's per subframe
+  /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
   u8 harq_ids[10];
+  /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
+  u8 ra_window_size;
+  /// First-round error threshold for fine-grain rate adaptation
+  u8 error_threshold;
   /// Current RB allocation
   u32 rb_alloc[4];
   /// Current subband PMI allocation
@@ -403,15 +403,15 @@ typedef struct {
   s32 UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
   UE_MODE_t mode;
   u8 sector;
-  s32 dlsch_NAK[8];
-  s32 dlsch_l2_errors;
-  s32 dlsch_trials[4];
-  s32 ulsch_errors[3];
-  s32 ulsch_consecutive_errors[3];
-  s32 ulsch_decoding_attempts[3][4];
-  s32 ulsch_round_errors[3][4];
+  u32 dlsch_sliding_cnt;
+  u32 dlsch_NAK[8];
+  u32 dlsch_l2_errors;
+  u32 dlsch_trials[4];
+  u32 ulsch_errors[3];
+  u32 ulsch_consecutive_errors[3];
+  u32 ulsch_decoding_attempts[3][4];
+  u32 ulsch_round_errors[3][4];
   s8 dlsch_mcs_offset;
-  s8 cont_res_id[6];
 } LTE_eNB_UE_stats;
 
 typedef struct {

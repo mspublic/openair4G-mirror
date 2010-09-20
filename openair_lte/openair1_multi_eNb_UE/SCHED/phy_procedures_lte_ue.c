@@ -772,6 +772,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
+    //    msg("Processing symbol %d\n",l);
+
     slot_fep(&phy_vars_ue->lte_frame_parms,
 	     &phy_vars_ue->lte_ue_common_vars,
 	     l,
@@ -1121,7 +1123,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_UE] Frame %d, slot %d: DLSCH demod symbols 3,4,5\n",mac_xface->frame,last_slot);
 #endif
-	
+
 	// process symbols 3,4,5
 	for (m=4-phy_vars_ue->lte_frame_parms.Ncp+1;m<(phy_vars_ue->lte_frame_parms.symbols_per_tti/2);m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
@@ -1175,7 +1177,6 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
     }
 
     if (((last_slot%2)==1) && (l==(4-phy_vars_ue->lte_frame_parms.Ncp))) {
-	
       if(phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 #ifdef DEBUG_PHY
 	debug_msg("[PHY_PROCEDURES_UE] Frame %d, slot %d: DLSCH demod symbols 6,7,8\n",mac_xface->frame,last_slot);

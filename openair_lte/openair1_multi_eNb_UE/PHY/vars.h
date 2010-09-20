@@ -77,15 +77,6 @@ LTE_eNb_DLSCH_t *dlsch_eNb_cntl;
 LTE_UE_DLSCH_t *dlsch_ue_cntl;
 LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
 */
-DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
-
-DCI0_5MHz_TDD0_t          UL_alloc_pdu;
-DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
-DCI1A_5MHz_TDD_1_6_t      DLSCH_alloc_pdu1A;
-DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
-
-DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
-DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 //UE_MODE_t UE_mode;
 

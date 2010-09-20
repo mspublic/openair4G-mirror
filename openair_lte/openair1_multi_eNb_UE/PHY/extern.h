@@ -26,7 +26,7 @@ extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
 //extern PHY_VARS *PHY_vars;
-extern PHY_VARS_UE **PHY_vars_ue_g;
+extern PHY_VARS_UE **PHY_vars_UE_g;
 extern PHY_VARS_eNB **PHY_vars_eNb_g;
 
 //extern PHY_LINKS *PHY_links;
@@ -46,13 +46,6 @@ extern int *primary_synch1_time;
 extern int *primary_synch2_time;
 extern int *sync_corr_ue;
 
-extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
-extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
-extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
-extern DCI1A_5MHz_TDD_1_6_t      DLSCH_alloc_pdu1A;
-extern DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
-extern DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
-extern DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 extern short **txdataF_rep_tmp;
 

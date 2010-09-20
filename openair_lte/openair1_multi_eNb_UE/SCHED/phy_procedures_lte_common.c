@@ -72,8 +72,7 @@ unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned cha
       return(5+ACK_index);
     }
     else if (subframe == 3) {   // ACK subframes 7 and 8
-      return(6+ACK_index);
-      //      return(7+ACK_index);  // To be updated
+      return(7+ACK_index);  // To be updated
     }
     else if (subframe == 4) {  // ACK subframes 9 and 0
       return((9+ACK_index)%10);

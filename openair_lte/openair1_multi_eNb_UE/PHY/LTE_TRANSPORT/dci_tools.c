@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -981,7 +981,9 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       return(-1);
     }
 
-    //    msg("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
+#ifdef DEBUG_DCI
+    msg("generate_eNb_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d\n",subframe,rnti,harq_pid);
+#endif
 
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];

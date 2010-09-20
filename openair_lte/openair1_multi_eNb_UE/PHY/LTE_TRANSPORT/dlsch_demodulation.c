@@ -599,7 +599,9 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   int i;
 
   if (frame_parms->nb_antennas_rx>1) {
+
     for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
       dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
@@ -614,6 +616,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 	dl_ch_mag128_0b[i]    = _mm_adds_epi16(_mm_srai_epi16(dl_ch_mag128_0b[i],1),_mm_srai_epi16(dl_ch_mag128_1b[i],1));
       }
     }
+
     if (rho) {
       rho128_0 = (__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
       rho128_1 = (__m128i *) &rho[1][symbol*frame_parms->N_RB_DL*12];
@@ -621,6 +624,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 	rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
       }
     }
+
     if (dual_stream_UE == 1) {
       rho128_i0 = (__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
       rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
@@ -841,7 +845,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
   unsigned char i,aarx;
   int *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
   unsigned char symbol_mod;
-  unsigned char *pmi_loc = pmi_ext;
+  unsigned char *pmi_loc;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   //  printf("extract_rbs: symbol_mod %d\n",symbol_mod);
@@ -851,6 +855,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
     dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
     dl_ch1     = &dl_ch_estimates[2+aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
     dl_ch1_ext = &dl_ch_estimates_ext[2+aarx][symbol_mod*(frame_parms->N_RB_DL*12)];
+    pmi_loc = pmi_ext;
 
     rxF_ext   = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     
@@ -915,7 +920,6 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       }
     else {  // Odd number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
-	
 	if (rb < 32)
 	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
 	else if (rb < 64)
@@ -929,7 +933,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	
 	if (rb_alloc_ind==1) {
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //	  printf("rb %d, sb %d, pmi %d\n",rb,rb>>2,*pmi_loc);
+	  //	printf("rb %d, sb %d, pmi %d (pmi_loc %p,rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF_ext,dl_ch0_ext,dl_ch1_ext);
 	  pmi_loc++;
 	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 	  memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
@@ -960,7 +964,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       if (rb_alloc_ind==1) {
 
 	*pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	//	printf("rb %d, sb %d, pmi %d\n",rb,rb>>2,*pmi_loc);
+	//	printf("rb %d, sb %d, pmi %d (pmi_loc %p,rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF_ext,dl_ch0_ext,dl_ch1_ext);
 	pmi_loc++;
 
 	for (i=0;i<6;i++) {
@@ -999,7 +1003,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
       rb++;
 
       for (;rb<frame_parms->N_RB_DL;rb++) {
-	  
+
 	if (rb < 32)
 	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
 	else if (rb < 64)
@@ -1014,7 +1018,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	if (rb_alloc_ind==1) {
 
 	  *pmi_loc = (pmi>>((rb>>2)<<1))&3;
-	  //	  printf("rb %d, sb %d, pmi %d\n",rb,rb>>2,*pmi_loc);
+	  //	  printf("rb %d, sb %d, pmi %d (pmi_loc %p, rxF_ext %p, dl_ch0_ext %p, dl_ch1_ext %p)\n",rb,rb>>2,*pmi_loc,pmi_loc,rxF_ext,dl_ch0_ext,dl_ch1_ext);
 	  pmi_loc++;
 
 	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
@@ -1393,7 +1397,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 }     
 
-static __m128i  one_over_sqrt2;
+//static __m128i  one_over_sqrt2;
  	 
 void prec2A_128(unsigned char pmi,__m128i *ch0,__m128i *ch1) {
   
@@ -1728,7 +1732,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   }
 
   harq_pid0 = dlsch_ue[0]->current_harq_pid;
-  //  printf("rx_dlsch (eNb_id %d, dlsch_vars %p): symbol %d, rb_alloc[0] %x, pmi %x\n",eNb_id,lte_ue_dlsch_vars[eNb_id],symbol,dlsch_ue[0]->rb_alloc[0],pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc));
 
   if (frame_parms->nb_antennas_tx>1) {
     if (!is_secondary_ue) {
@@ -1744,6 +1747,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				   dlsch_ue[0]->rb_alloc,
 				   symbol,
 				   frame_parms);
+
     if (dual_stream_UE == 1)
       nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				     lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
@@ -1798,7 +1802,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 					 frame_parms);
     } 
 
-  //    printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
+  //  printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
   if (nb_rb==0) {
     msg("dlsch_modulation.c: nb_rb=0\n");
     return(-1);
@@ -1828,7 +1832,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   }
   aatx = frame_parms->nb_antennas_tx;
   aarx = frame_parms->nb_antennas_rx;
-
 
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
@@ -1898,6 +1901,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
     //    printf("Channel compensation for precoding done\n");
   }
+
+  //  printf("MRC\n");
   if (frame_parms->nb_antennas_rx > 1)
     dlsch_detection_mrc(frame_parms,
 			lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
@@ -1910,10 +1915,11 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			nb_rb,
 			(is_secondary_ue) ? 1 : dual_stream_UE); // if is_secondary_ue, one can exploit the dual_stream_UE flag for this function. Even though this is not really safe programming, it will work for this purpose.
 #ifdef DEBUG_PHY
-	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
+  write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+  write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
 #endif  
 
+  //  printf("Combining");
   // Single-layer transmission formats
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {
     if ((dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode == SISO) ||
@@ -1928,6 +1934,9 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       msg("dlsch_rx: Unknown MIMO mode\n");
       return (-1);
     }
+
+    //    printf("LLR");
+
     switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
 #ifdef MU_RECEIVER
@@ -1975,5 +1984,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       msg("rx_dlsch.c : Dualstream not yet implemented\n");
       return(-1);
   }
+
   return(0);    
 }

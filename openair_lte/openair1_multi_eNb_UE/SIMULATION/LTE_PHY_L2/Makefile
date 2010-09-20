@@ -181,7 +181,12 @@ RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o $(RRC_DIR)/utils.o
 
 #PHY_INTERFACE_OBJS = $(PHY_INTERFACE_DIR)/mac_phy_primitives.o
 
-MAC_OBJS = $(MAC_DIR)/lte_transport_init.o $(MAC_DIR)/layer2_scheduler.o $(MAC_DIR)/main.o $(MAC_DIR)/ue_procedures.o $(MAC_DIR)/rar_tools.o $(MAC_DIR)/eNB_scheduler.o
+MAC_OBJS =  $(MAC_DIR)/lte_transport_init.o 
+#MAC_OBJS += $(MAC_DIR)/layer2_scheduler.o 
+MAC_OBJS += $(MAC_DIR)/main.o 
+MAC_OBJS += $(MAC_DIR)/ue_procedures.o 
+MAC_OBJS += $(MAC_DIR)/rar_tools.o 
+MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 
 #MAC_OBJS += $(MAC_DIR)/openair2_proc.o
 
