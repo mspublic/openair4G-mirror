@@ -26,6 +26,7 @@ ________________________________________________________________*/
 #include "extern.h"
 #include "PHY_INTERFACE/extern.h"
 #include "PHY_INTERFACE/defs.h"
+#include "PHY/defs.h"
 #include "LAYER2/PDCP/pdcp.h"
 #include "RRC/MESH/defs.h"
 #ifdef PHY_EMUL
@@ -44,10 +45,10 @@ void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index){  //ini
   if( (layer2_init_mr(Mod_id)==-1) || (Rrc_xface->openair_rrc_mr_init(Mod_id,CH_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
-  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Active=1;
-  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=BCCH;
-  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Active=1;  
-  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=CCCH;
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Active=1;
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=BCCH;
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Active=1;  
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=CCCH;
 }
 
 /***********************************************************************/
@@ -66,8 +67,6 @@ char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
   Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
   
   msg("\nMAC: INIT CH %d Successful \n\n",NODE_ID[Mod_id]);
-
-  init_transport_channels(2);
 
   return 0;
   
@@ -89,15 +88,7 @@ void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
 
   unsigned char j;
   Mod_id-=NB_CH_INST;
-  UE_mac_inst[Mod_id].Nb_rx_sched[CH_index][0]=0;
-  UE_mac_inst[Mod_id].Nb_rx_sched[CH_index][1]=0;
-  UE_mac_inst[Mod_id].NB_decoded_chbch =0;
-  UE_mac_inst[Mod_id].CH_ul_freq_map[CH_index]=0;
-  for(j=0;j<3;j++){
-    UE_mac_inst[Mod_id].Nb_tx_ops[CH_index][j]=0;
-  }
-  UE_mac_inst[Mod_id].Def_meas[CH_index].Status=IDLE;
-  UE_mac_inst[Mod_id].Def_meas[CH_index].Active=0;
+
   Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,CH_index);
 }
  
@@ -105,7 +96,10 @@ void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
 /***********************************************************************/
 int mac_top_init(){
 /***********************************************************************/
-  unsigned char  Mod_id,i;  
+  unsigned char  Mod_id,i,j;  
+  RA_TEMPLATE *RA_template;
+  UE_TEMPLATE *UE_template;
+
   msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d\n",NB_INST);
 #if ((PHY_EMUL==1)||(PHYSIM==1))
   msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
@@ -152,6 +146,29 @@ int mac_top_init(){
 ////  add_openair2_stats();
 #endif
 #endif  
+
+  init_transport_channels(2);
+
+  // Set up DCIs for TDD 5MHz Config 1..6
+  for (i=0;i<NB_CH_INST;i++) {
+    RA_template = (RA_TEMPLATE *)&CH_mac_inst[i].RA_template[0];
+    for (j=0;j<NB_RA_PROC_MAX;j++) {
+      memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
+      memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
+      RA_template[i].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[i].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[i].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[i].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[i].RA_dci_fmt1        = format1A;
+      RA_template[i].RA_dci_fmt2        = format1A;
+    }
+
+
+    UE_template = (UE_TEMPLATE *)&CH_mac_inst[i].UE_template[0];
+    for (j=0;j<NB_CNX_CH;j++) {
+      UE_template->rnti=0;
+    }    
+  }
   msg("[OPENAIR][MAC][INIT] Init function finished\n");
   
   return(0);
@@ -210,27 +227,11 @@ int mac_init_global_param(){
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   
-  /*  
-  CHBCH_PHY_RESOURCES[0].Time_alloc=CHBCH_TIME_ALLOC;
-  CHBCH_PHY_RESOURCES[0].Freq_alloc=0x0f0f;
-  CHBCH_PHY_RESOURCES[0].Antenna_alloc=0;
-  CHBCH_PHY_RESOURCES[0].Coding_fmt=0;
-  CHBCH_PHY_RESOURCES[1].Time_alloc=CHBCH_TIME_ALLOC;;
-  CHBCH_PHY_RESOURCES[1].Freq_alloc=0xf0f0;
-  CHBCH_PHY_RESOURCES[1].Antenna_alloc=5;
-  CHBCH_PHY_RESOURCES[1].Coding_fmt=5;
-  */
 
-  for(i=0;i<MAX_NB_SCHED;i++)
-    Sorted_index_table[i]=i; 
-
-
-
-//#ifdef USER_MODE
   msg("[MAC][GLOBAL_INIT] RRC_INIT_GLOBAL\n");
   rrc_init_global_param();
   Is_rrc_registered=1;
-//#endif //USER_MODE
+
  
   mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;  
   msg("[MAC] Init Global Param Done\n");
@@ -242,41 +243,6 @@ int mac_init_global_param(){
 /***********************************************************************/
 void mac_top_cleanup(u8 Mod_id){
 /***********************************************************************/
-  /*
-  free16(Phy_resources_table,NB_PHY_RESOURCES_MAX*sizeof(PHY_RESOURCES_TABLE_ENTRY));
-  free16(Macphy_req_table,NB_REQ_MAX*sizeof(MACPHY_DATA_REQ_TABLE_ENTRY));
-  free16(Macphy_ind_table,NB_IND_MAX*sizeof(MACPHY_DATA_IND_TABLE_ENTRY));
-  */
+
 }
-
-/***********************************************************************/
-void emul_phy_sync(unsigned char Mod_id, unsigned char Chbch_index){
-/***********************************************************************/
-
-// MACPHY_DATA_REQ *Macphy_data_req_sch;
-/*
- if ((Macphy_data_req_sch = new_macphy_data_req(Mod_id))==NULL)
-   mac_xface->macphy_exit("[get_chbch_sch] new_macphy_data_req fails\n");
- Macphy_data_req_sch->Pdu_type = CHBCH_SCH;  
- Macphy_data_req_sch->Direction = RX;  
- Macphy_data_req_sch->Lchan_id.Index = Chbch_index;
- Macphy_data_req_sch->CH_index = Chbch_index;
- Macphy_data_req_sch->Phy_resources = &CHBCH_PHY_RESOURCES[Chbch_index];
- Macphy_data_req_sch->num_tb=1;
-#ifdef DEBUG_INITIAL_SYNC
-     msg("[EMUL_PHY_SYNC]: Node %d to CH index %d, Freq_alloc %x\n",NODE_ID[Mod_id],
-	 Chbch_index,Macphy_data_req_sch->Phy_resources->Freq_alloc); 
-#endif //DEBUG_INITIAL_SYNC
-*/
-}
-
-
-#ifndef USER_MODE
-EXPORT_SYMBOL(CH_mac_inst);
-EXPORT_SYMBOL(UE_mac_inst);
-#ifndef PHY_EMUL
-EXPORT_SYMBOL(NB_UE_INST);
-EXPORT_SYMBOL(NB_CH_INST);
-#endif //PHY_EMUL
-#endif //USER_MODE
 

@@ -1,9 +1,9 @@
 #define UL_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,24)
-#define CCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,3)
+#define BCCH_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,3)
 #define RA_RB_ALLOC mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
-#include "PHY/extern.h"
-#include "PHY/LTE_TRANSPORT/extern.h"
+#include "extern.h"
+
 
 void init_transport_channels(unsigned char transmission_mode) {
 
@@ -16,18 +16,18 @@ void init_transport_channels(unsigned char transmission_mode) {
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
 
-  CCCH_alloc_pdu.type               = 1;
-  CCCH_alloc_pdu.vrb_type           = 0;
-  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.ndi      = 1;
-  CCCH_alloc_pdu.rv       = 1;
-  CCCH_alloc_pdu.mcs      = 1;
-  CCCH_alloc_pdu.harq_pid = 0;
-  CCCH_alloc_pdu.TPC      = 1;      // set to 3 PRB
+  BCCH_alloc_pdu.type               = 1;
+  BCCH_alloc_pdu.vrb_type           = 0;
+  BCCH_alloc_pdu.rballoc            = BCCH_RB_ALLOC;
+  BCCH_alloc_pdu.ndi      = 1;
+  BCCH_alloc_pdu.rv       = 1;
+  BCCH_alloc_pdu.mcs      = 1;
+  BCCH_alloc_pdu.harq_pid = 0;
+  BCCH_alloc_pdu.TPC      = 1;      // set to 3 PRB
 
   DLSCH_alloc_pdu1A.type               = 1;
   DLSCH_alloc_pdu1A.vrb_type           = 0;
-  DLSCH_alloc_pdu1A.rballoc            = CCCH_RB_ALLOC;
+  DLSCH_alloc_pdu1A.rballoc            = BCCH_RB_ALLOC;
   DLSCH_alloc_pdu1A.ndi      = 1;
   DLSCH_alloc_pdu1A.rv       = 1;
   DLSCH_alloc_pdu1A.mcs      = 2;

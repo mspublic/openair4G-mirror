@@ -136,12 +136,11 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 #endif
     if (rx_lcids[i] == CCCH) {
 
-      if(UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Active==1){
-	msg("CCCH -> RRC\n");
-	Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
-				    CCCH,
-				    (char *)payload_ptr,rx_lengths[i],CH_index);
-      }
+      msg("CCCH -> RRC\n");
+      Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
+				  CCCH,
+				  (char *)payload_ptr,rx_lengths[i],CH_index);
+      
     }
     else if (rx_lcids[i] == DCCH) {
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
@@ -162,11 +161,11 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
-  msg("[MAC][UE] Sending SI to RRC (Lchan Id %d)\n",UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index);
+  msg("[MAC][UE] Sending SI to RRC (Lchan Id %d)\n",BCCH);
 #endif
-  if(UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Active==1){
-    Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,UE_mac_inst[Mod_id].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index,(char *)pdu,len,0);//CH_index);
-  }
+
+  Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,BCCH,(char *)pdu,len,0);//CH_index);
+
 }
 
 unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
@@ -176,12 +175,12 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 
   if (Is_rrc_registered == 1) {
     Size = Rrc_xface->mac_rrc_data_req(Mod_id+NB_CH_INST,
-				       UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index,1,
-				       &UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0],
+				       CCCH,1,
+				       &UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
 				       CH_index);
     msg("[MAC][UE] Requested RRCConnectionRequest, got %d bytes\n",Size);
     if (Size>0)
-      return((char*)&UE_mac_inst[Mod_id].Ccch_lchan[CH_index].Lchan_info.Current_payload_tx[0]);
+      return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
   }
   return(NULL);
  

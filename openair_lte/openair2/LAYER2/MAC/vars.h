@@ -18,13 +18,6 @@ ________________________________________________________________*/
 
 
 
-PHY_RESOURCES CHBCH_PHY_RESOURCES[2];
-PHY_RESOURCES DL_SCH_PHY_RESOURCES[2];
-PHY_RESOURCES UL_SCH_PHY_RESOURCES[NB_UL_SCHED_MAX];
-
-PHY_RESOURCES SACCH_PHY_RESOURCES;
-MAC_MEAS_T MEAS_Trigger;
-
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX]; 
 CH_MAC_INST *CH_mac_inst; //[NB_MODULE_MAX]; 
 MAC_RLC_XFACE *Mac_rlc_xface;
@@ -37,23 +30,23 @@ MAC_xface *mac_xface;
 #include "RRC/MESH/extern.h"
 #endif
 
-//u8 CH_ID[NB_MODULES_MAX][NB_CNX];
- 
-//u8 Nb_inst;
 u8 Is_rrc_registered;
-char Mac_dummy_buffer[50]; 
-//char crc[MAX];
-char Sorted_index_table[MAX_NB_SCHED]; 
-
-//unsigned char *Sched_rssi_meas_matrix[NB_CNX_CH+1][NB_CNX_CH+1][NUMBER_OF_FREQUENCY_GROUPS][NB_TIME_ALLOC];//NB_of_CH per machine
-//unsigned int *Last_sched_frame[NUMBER_OF_FREQUENCY_GROUPS][NB_TIME_ALLOC];//NB_of_CH per machine
-//MEAS_INFO Meas_info_matrix[NB_MODULES_MAX][NUMBER_OF_FREQUENCY_GROUPS][NB_TIME_ALLOC];
-
 
 #ifndef PHY_EMUL
 unsigned char NB_CH_INST;
 unsigned char NB_UE_INST;
 #endif
+
+DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
+
+DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      DLSCH_alloc_pdu1A;
+DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
+
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
 #endif
 
 

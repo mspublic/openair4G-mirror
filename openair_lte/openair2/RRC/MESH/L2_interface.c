@@ -141,7 +141,7 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
       if ((UE_rrc_inst[Mod_id].Info[0].Status == RRC_IDLE) || (UE_rrc_inst[Mod_id].Info[0].Status == RRC_PRE_SYNCHRO)) {
 	msg("[RRC] Received System Info Switching to RRC_PRE_SYNCHRO\n");
 	UE_rrc_inst[Mod_id].Info[0].Status = RRC_PRE_SYNCHRO;
-	rrc_mac_connection_req_tx(Mod_id,0);
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,0);
       }
       
 

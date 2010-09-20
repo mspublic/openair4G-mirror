@@ -253,11 +253,11 @@ char openair_rrc_ch_init(u8 Mod_id){
 	CH_rrc_inst[Mod_id].Rab_dil_meas[j][i][k].Status=IDLE;
       }
   
-  CH_rrc_inst[Mod_id].Def_meas[0]= &CH_mac_inst[Mod_id].Def_meas[0];
-  CH_rrc_inst[Mod_id].Def_meas[0]->Status = RADIO_CONFIG_OK;
-  CH_rrc_inst[Mod_id].Def_meas[0]->Forg_fact=1;
-  CH_rrc_inst[Mod_id].Def_meas[0]->Rep_interval=50;
-  CH_rrc_inst[Mod_id].Def_meas[0]->Last_report_frame=Rrc_xface->Frame_index;
+  //  CH_rrc_inst[Mod_id].Def_meas[0]= &CH_mac_inst[Mod_id].Def_meas[0];
+  //  CH_rrc_inst[Mod_id].Def_meas[0]->Status = RADIO_CONFIG_OK;
+  //  CH_rrc_inst[Mod_id].Def_meas[0]->Forg_fact=1;
+  //  CH_rrc_inst[Mod_id].Def_meas[0]->Rep_interval=50;
+  //  CH_rrc_inst[Mod_id].Def_meas[0]->Last_report_frame=Rrc_xface->Frame_index;
     
   for(i=1;i<(NB_CNX_CH+1);i++){
     CH_rrc_inst[Mod_id].Def_meas[i]=NULL;
@@ -409,16 +409,11 @@ void ue_rrc_decode_bcch(u8 Mod_id){
 }
 
 /*------------------------------------------------------------------------------*/
-void rrc_mac_connection_req_tx(u8 Mod_id, unsigned char Idx){ 
+void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, unsigned char Idx){ 
   /*------------------------------------------------------------------------------*/
 
   u8 i=0;
-  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = RRC_RACH_ASS_REQ;
-  memcpy(&UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i],(char*)&UE_rrc_inst[Mod_id].Mac_id.L2_id[0],sizeof(L2_ID));
-  i+=sizeof(L2_ID);
-  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].CH_id;
-  //  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_time_alloc;
-  //  UE_rrc_inst[Mod_id].Rrc_dummy_pdu[i++] = UE_rrc_inst[Mod_id].Info[Idx].Rach_freq_alloc;
+
   if(UE_rrc_inst[Mod_id].Srb0[Idx].Tx_buffer.W_idx ==0){
 
     // Get RRCConnectionRequest, fill random for now
@@ -427,13 +422,6 @@ void rrc_mac_connection_req_tx(u8 Mod_id, unsigned char Idx){
 
     UE_rrc_inst[Mod_id].Srb0[Idx].Tx_buffer.W_idx =i;
    
-    /*    msg("[OPENAIR][RRC]NODE %d, UE: Association Req TX from L2_id %d to CH_index %d (%d), W_idx %d done\n",
-	NODE_ID[Mod_id+NB_CH_INST],
-	UE_rrc_inst[Mod_id].Mac_id.L2_id[0],
-	UE_rrc_inst[Mod_id].Info[Idx].CH_id,  
-	Idx,
-	UE_rrc_inst[Mod_id].Srb0[Idx].Tx_buffer.W_idx);
-    */
   }
 }
 
@@ -864,10 +852,10 @@ void ch_disconnect_ue(u8 Mod_id,u8 UE_index){
   
   CH_rrc_inst[Mod_id].Info.Nb_ue--;
 
-  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Active = 0;
-  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Status = IDLE;
-  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Last_report_frame=0;
-  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Next_check_frame=0;
+  //  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Active = 0;
+  //  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Status = IDLE;
+  //  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Last_report_frame=0;
+  //  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Next_check_frame=0;
 
   memset(CH_rrc_inst[Mod_id].Info.UE_list[UE_index],0,5);
   CH_rrc_inst[Mod_id].Srb2[UE_index].Active = 0;
@@ -875,7 +863,7 @@ void ch_disconnect_ue(u8 Mod_id,u8 UE_index){
   CH_rrc_inst[Mod_id].Srb2[UE_index].Next_check_frame = 0;
   CH_rrc_inst[Mod_id].Srb2_meas[UE_index].Status = IDLE;
   CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Meas_entry->Status = IDLE;
-  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Status = IDLE;
+  //  CH_rrc_inst[Mod_id].Def_meas[UE_index]->Status = IDLE;
   Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_REMOVE,CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id,SIGNALLING_RADIO_BEARER,Rlc_info_um);
   Mac_config_req.Lchan_id.Index=CH_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id;
   Mac_config_req.Lchan_type=DCCH;

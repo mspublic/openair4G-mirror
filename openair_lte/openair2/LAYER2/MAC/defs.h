@@ -131,104 +131,29 @@ ________________________________________________________________*/
  * @{
  */
 
-#define TB_SIZE_MAX 52
-#define NB_TB_BUFF_MAX  32
-
-
-#define NUMBER_DL_SACH_MAX 6
-#define NUMBER_UL_SACH_MAX 6
-
-#define BCCH_PAYLOAD_SIZE_MAX 20  // BCCH Fragments
-#define CCCH_PAYLOAD_SIZE_MAX 28    // CCCH Fragments
-
-#define NB_DL_SCHED_MAX NUMBER_DL_SACH_MAX
-#define NB_UL_SCHED_MAX NUMBER_UL_SACH_MAX 
-
-
-#define SCH_PAYLOAD_SIZE_MAX (TB_SIZE_MAX * NB_TB_BUFF_MAX) //1600
-#define RACH_PAYLOAD_SIZE_MAX 20//until solving pb of fifos (24)
-#define MRBCH_PAYLOAD_SIZE_MAX 20//until solving pb of fifos (24)
-#define NB_RACH_MAX 2
-
-#define DUMMY_BCCH_SIZE_BYTES 40
-#define DUMMY_CCCH_SIZE_BYTES 40
-#define DUMMY_RACH_SIZE_BYTES 16
-
-
-
-#define SCHED_LONG_MAW 32 
-#define SCHED_SHORT_MAW 8 
-#define DCCH_SCHED_PERIOD 33
-
-
-
-//#define UL_FREQ_ALLOC 0x0001; // 2 freq group minimum allocation
-//#define DL_FREQ_ALLOC 0x0001; // 2 freq group minimum allocation
-
- 
-//#define NB_NODE_MAX 50
-
+#define BCCH_PAYLOAD_SIZE_MAX 128  
+#define CCCH_PAYLOAD_SIZE_MAX 16    
+#define SCH_PAYLOAD_SIZE_MAX 1024
+/// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311)
 #define BCCH 3
 #define CCCH 0
 #define DCCH 1
 #define DTCH_BD 2
 #define DTCH    4
 #define DTCH_OFFSET DTCH+NB_RAB_MAX 
-//#ifdef MESH
-#define DTCH_DIL 5
-//#endif //MESH
-#define RX 0
-#define TX 1
-#define NB_CH_MAX 8
 
-#define LCHAN_IDLE 0
-#define MAC_SCHED_TX 1
-#define MAC_TX_READY 2
-#define MAC_TX_DONE 3
-#define MAC_TX_OK 4
-
-#define MAC_SCHED_RX_REQ 5
-#define MAC_SCHED_RX_READY 6
-#define MAC_SCHED_RX_OK 7
-#define MAC_RX_READY 8
-#define MAC_RX_OK 9
-
-#define NUMBER_HARQ_PROCESS_MAX 32
-#define MAX_NUMBER_TB_PER_LCHAN 32//NUMBER_HARQ_PROCESS_MAX
-#define NUMBER_OF_MEASUREMENT_SUBBANDS 16//NUMBER_OF_FREQUENCY_GROUPS 
-#define MAX_NB_SCHED 25//NUMBER_OF_FREQUENCY_GROUPS 
-
-
-
-#define USEFUL_CARRIER_OFFSET_dB 2
 #ifdef USER_MODE
 #define printk printf
 #endif //USER_MODE
-#define w3g4free_mac_print(level,fmt,args) {if (level > DEBUG_THRESHOLD) msg(fmt,args); }
 
-
-#define LCHAN_PAYLOAD_MAX (TB_SIZE_MAX * NB_TB_BUFF_MAX) //from rrm
-
-
-
-
-#define NB_REQ_MAX 16
-
-
-
-#define SCH_OFFSET 0x3f  //2 bits for UL_SCH Pilot index
-#define SCH_SHIFT 2 //2 bits for UL_SCH Pilot index
-
-
-#define SINR_THRES0 (-3)
-#define SINR_THRES1 (0)
-#define SINR_THRES2 (3)
 
 #define MAX_NUM_RB 11
 #define MAX_NUM_CE 5
 
 /*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
 #define NUM_DCI_MAX 32
+
+#define NB_RA_PROC_MAX 4
 
 typedef struct {
   u8 E:1;
@@ -311,13 +236,11 @@ typedef struct {
 } DCI_PDU;
 
 typedef struct {
-  s8 Ccch_payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+  u8 payload[CCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))CCCH_PDU;
 
 typedef struct {
-
-  u8 Num_bytes_bcch ; /*!< \brief Number of bytes contained in the current BCCH payload */
-  s8 Bcch_payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
+  u8 payload[BCCH_PAYLOAD_SIZE_MAX] ;/*!< \brief CCCH payload */
 } __attribute__((__packed__))BCCH_PDU;
 
 // DLSCH LCHAN IDs
@@ -348,120 +271,61 @@ typedef struct {
   u16 Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
-#ifdef PHY_EMUL
-#include "SIMULATION/PHY_EMULATION/impl_defs.h"
-#else 
 #include "PHY/impl_defs_top.h"
-#endif
 
-
-typedef struct{
-  LCHAN_ID   Lchan_id; //only the LChan_id.Index is needed to identify LC in the CH side
-  u8 Lchan_type; 
-  u16 W_idx; 
-  MAC_MEAS_REQ_ENTRY Meas_entry;
-  LCHAN_DESC Lchan_desc[2]; //TX/RX LCHAN DESCRIPTOR
-  u8 Current_payload_tx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
-  u8 Current_payload_rx[TB_SIZE_MAX*NB_TB_BUFF_MAX];
-  u8 Lchan_status_tx,Lchan_status_rx;//???
-  u32 NB_TX;
-  u32 NB_TX_LAST;
-  u32 NB_BW_REQ_TX;
-  u32 NB_BW_REQ_RX;
-  u32 output_rate;
-  u32 NB_RX;
-  u32 Tx_rate;
-  u32 Rx_rate;
-  u32 Rx_rate_temp;
-  u32 Tx_rate_temp;
-  u32 Arrival_rate;
-  u32 Req_rate;
-  u32 Spec_eff;
-}LCHAN_INFO;
-#define LCHAN_INFO_SIZE sizeof(LCHAN_INFO)
 
 
 typedef struct{
-  LCHAN_ID   Lchan_id; //UNIDIRECTIONEL, 
-  u8 Lchan_type; 
-  u8 Qdepth;  //==> Tx arrival rate  //==> which rate to achive target rate over SINR :PFS 
-  u8 Rate;
-  MAC_MEAS_REQ_ENTRY Meas_entry;
-  LCHAN_DESC Lchan_desc; //TX/RX LCHAN DESCRIPTOR
-  u8 Nb_tb;
-  u8 Lchan_status;//???
-  PHY_RESOURCES Phy_resources;
-  // HARQ control
-  u8 Num_scheduled_tb[2];                            // Number of scheduled TBs in even/odd TTI
-  u16 Rx_ack_map[2];                                 // Received ACKs from opposite link in even/odd TTI
-  u16 Active_process_map_tx[2];                      // Active HARQ process map (TX) in even/odd TTI
-  u16 New_process_map_tx[2];                      // New HARQ process map (TX) in even/odd TTI
-  u8 Round_indices_tx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
-  u8 Round_indices_rx[2][NUMBER_HARQ_PROCESS_MAX]; // HARQ Round indices (TX) for active processes in even/odd TTI
-}LCHAN_INFO_DIL;
+  u16 rnti;
 
-#define LCHAN_INFO_DIL_SIZE sizeof(LCHAN_INFO_DIL)
+  // PHY interface info
 
+  /// DCI format for DLSCH
+  u16 DLSCH_dci_fmt;
+  
+  /// Current Aggregation Level for DCI
+  u8 DCI_aggregation_min;
 
-typedef struct LCHAN_INFO_TABLE_ENTRY{
-  LCHAN_INFO Lchan_info;
-  u8 Active;
-  //u8 Config_status;
-  u32 Next_sched_limit;
-  //  struct LCHAN_INFO_TABLE_ENTRY *Next_entry;
-  //struct LCHAN_INFO_TABLE_ENTRY *Prev_entry;
-}LCHAN_INFO_TABLE_ENTRY;
-#define LCHAN_INFO_TABLE_ENTRY_SIZE sizeof(LCHAN_INFO_TABLE_ENTRY)
+  /// 
+  u8 DLSCH_dci_size_bits;
 
-typedef struct LCHAN_INFO_DIL_TABLE_ENTRY{
-  LCHAN_INFO_DIL Lchan_info_dil;
-  u8 Active;
-  //u8 Config_status;
-  u32 Next_sched_limit;
-  //  struct LCHAN_INFO_TABLE_ENTRY *Next_entry;
-  //struct LCHAN_INFO_TABLE_ENTRY *Prev_entry;
-}LCHAN_INFO_DIL_TABLE_ENTRY;
-#define LCHAN_INFO_DIL_TABLE_ENTRY_SIZE sizeof(LCHAN_INFO_DIL_TABLE_ENTRY)
+  /// DCI buffer for DLSCH
+  u8 DLSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1];
 
+  /// DCI buffer for ULSCH
+  u8 ULSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1];
+
+  // Logical channel info for link with RLC
+
+} UE_TEMPLATE;
 
 typedef struct {
-  LCHAN_ID Lchan_id;
-  PHY_RESOURCES Phy_resources;
-  u8 Nb_tb;
-} RX_SCHED;
-
-typedef struct{
-  LCHAN_INFO_TABLE_ENTRY *Lchan_entry;
-  //  UL_ALLOC_PDU UL_alloc_pdu;
-  //  s8 Activation_tti;
-} TX_OPS;
-
+  u8 RA_dci_size_bytes1;
+  u8 RA_dci_size_bits1;
+  u8 RA_alloc_pdu1[(MAX_DCI_SIZE_BITS>>3)+1];
+  u8 RA_dci_fmt1;
+  u8 RA_dci_size_bytes2;
+  u8 RA_dci_size_bits2;
+  u8 RA_alloc_pdu2[(MAX_DCI_SIZE_BITS>>3)+1];
+  u8 RA_dci_fmt2;
+  u8 generate_rar;
+  u8 generate_rrcconnsetup;
+  u16 rnti;
+  u8 cont_res_id[6];
+} RA_TEMPLATE;
 
 typedef struct{
   u16 Node_id;
-  u8 Num_dlsch;
-  u8 Num_ulsch;
   DCI_PDU DCI_pdu;
   BCCH_PDU BCCH_pdu;
   CCCH_PDU CCCH_pdu;
-  LCHAN_INFO_TABLE_ENTRY Bcch_lchan;
-  LCHAN_INFO_TABLE_ENTRY Ccch_lchan;
-  LCHAN_INFO_TABLE_ENTRY Dcch_lchan[NB_CNX_CH+1];
-  LCHAN_INFO_TABLE_ENTRY Dtch_lchan[NB_RAB_MAX][NB_CNX_CH+1];
-  LCHAN_INFO_DIL_TABLE_ENTRY Dtch_dil_lchan[NB_RAB_MAX][NB_CNX_CH+1][NB_CNX_CH-1];
-  //MEAS_REQ_TABLE Meas_table;
-  DEFAULT_CH_MEAS Def_meas[NB_CNX_CH+1];
+  //  LCHAN_INFO_TABLE_ENTRY Bcch_lchan;
+  //  LCHAN_INFO_TABLE_ENTRY Ccch_lchan;
+  //  LCHAN_INFO_TABLE_ENTRY Dcch_lchan[NB_CNX_CH+1];
+  //  LCHAN_INFO_TABLE_ENTRY Dtch_lchan[NB_RAB_MAX][NB_CNX_CH+1];
   DLSCH_PDU DLSCH_pdu[NB_CNX_CH+1][2];
-  ULSCH_PDU RX_UL_sach_pdu;
-  //DL_MEAS DL_meas;
-  RX_SCHED Rx_sched[3][NUMBER_UL_SACH_MAX]; 
-  u8 Nb_rx_sched[3];
-  s8 Sinr_sorted_table[NB_CNX_CH+1][MAX_NB_SCHED]; 
-  s8 Sinr_sorted_index[NB_CNX_CH+1][MAX_NB_SCHED]; 
-  u8 Nb_sched;
-  //  u8 Sched_user[NB_CNX_CH+1];
-  //  u16 UL_MAP_USE;
-  //u16 DL_MAP_USE;
+  UE_TEMPLATE UE_template[NB_CNX_CH];
+  RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
 }CH_MAC_INST;
 
 
@@ -469,23 +333,8 @@ typedef struct{
 
 typedef struct{
   u16 Node_id;
-  LCHAN_INFO_TABLE_ENTRY Bcch_lchan[NB_SIG_CNX_UE];
-  LCHAN_INFO_TABLE_ENTRY Ccch_lchan[NB_SIG_CNX_UE];
-  LCHAN_INFO_TABLE_ENTRY Dcch_lchan[NB_CNX_UE];
-  LCHAN_INFO_TABLE_ENTRY Dtch_lchan[NB_RAB_MAX][NB_CNX_UE];
-  LCHAN_INFO_TABLE_ENTRY Dtch_dil_lchan[NB_RAB_MAX][NB_SIG_CNX_UE][NB_CNX_CH-1];
-  //MEAS_REQ_TABLE Meas_table;
-  DEFAULT_UE_MEAS Def_meas[NB_SIG_CNX_UE];
-  //  DCI_PDU RXDCI_pdu[NB_CNX_UE];
+  CCCH_PDU CCCH_pdu;
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
-  //  UL_MEAS UL_meas[];
-  //  DL_MEAS DL_meas[NB_CNX_UE];
-  RX_SCHED Rx_sched[NB_CNX_UE][3][NUMBER_UL_SACH_MAX]; 
-  u8 Nb_rx_sched[NB_CNX_UE][3];
-  TX_OPS Tx_ops[NB_CNX_UE][3][NUMBER_UL_SACH_MAX];
-  u8 Nb_tx_ops[NB_CNX_UE][3];
-  u16 CH_ul_freq_map[NB_SIG_CNX_UE];
-  u8 NB_decoded_chbch;
 }UE_MAC_INST;
 
 

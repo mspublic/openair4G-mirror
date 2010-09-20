@@ -53,7 +53,7 @@ typedef struct
     DCI_PDU* (*get_dci_sdu)(u8 Mod_id,u8 subframe);
 
     /// Get DLSCH sdu for particular RNTI and Transport block index
-    u8* (*get_dlsch_sdu)(u8 Mod_id,u8 rnti,u8 TB_index);
+    u8* (*get_dlsch_sdu)(u8 Mod_id,u16 rnti,u8 TB_index);
 
     /// Send ULSCH sdu to MAC for given rnti
     void (*rx_sdu)(u8 Mod_id,u16 rnti, u8 *sdu);
@@ -94,7 +94,8 @@ typedef struct
     u16 (*get_TBS)(u8 mcs, u16 nb_rb);
 
     /// Function to retrieve the HARQ round index for a particular UE/DLSCH and harq_pid
-    u8 (*get_ue_harq_round)(u8 Mod_id, u8 UE_id, u8 harq_pid);
+    void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round);
+
 
 
     //    unsigned char is_cluster_head;

@@ -222,7 +222,7 @@ typedef struct{
    SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_CH+1];
    MAC_MEAS_REQ_ENTRY  Srb2_meas[NB_CNX_CH+1];
    DEFAULT_CH_MEAS *Def_meas[NB_CNX_CH+1];	
-   char Rrc_dummy_pdu[TB_SIZE_MAX];
+   //   char Rrc_dummy_pdu[TB_SIZE_MAX];
    u8 Nb_rb[NB_CNX_CH];
   //u8 Nb_rb_dil[NB_SIG_CNX_UE][NB_CNX_CH-1];
    unsigned char IP_addr_type;
@@ -245,7 +245,7 @@ typedef struct{
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_UE];
   DEFAULT_UE_MEAS *Def_meas[NB_CNX_UE];
-  char Rrc_dummy_pdu[TB_SIZE_MAX];
+  //  char Rrc_dummy_pdu[TB_SIZE_MAX];
   u8 Nb_rb[NB_SIG_CNX_UE];
   u8 Nb_rb_dil[NB_SIG_CNX_UE][NB_CNX_CH-1];
   //unsigned char IP_addr_type;
@@ -279,6 +279,7 @@ char ch_rrc_generate_ccch(u8 Mod_id);
 void mac_rrc_radio_meas_resp(MAC_MEAS_T *Mac_meas, MAC_MEAS_REQ_ENTRY * Meas_req_table_entry);
 void  rrc_process_radio_meas(u8 Mod_id,MAC_MEAS_IND Mac_meas_ind,MAC_MEAS_REQ_ENTRY * Meas_entry);
 void ch_disconnect_ue(unsigned char Mod_id,unsigned char UE_index);
+void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u8 Idx);
 
 void ch_rrc_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
 void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index);
