@@ -1010,7 +1010,12 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round = 0;
     }
     else {
-      ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
+      if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs>28)
+	ulsch->harq_processes[harq_pid]->rvidx = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs - 28;
+      else {
+	ulsch->harq_processes[harq_pid]->rvidx = 0;
+	ulsch->harq_processes[harq_pid]->mcs = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
+      }
       ulsch->harq_processes[harq_pid]->round++;
     }
 #ifdef DEBUG_DCI
