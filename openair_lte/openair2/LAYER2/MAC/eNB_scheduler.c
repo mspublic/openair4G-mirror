@@ -20,7 +20,7 @@
 //static char eNB_generate_rar     = 0;  // flag to indicate start of RA procedure
 //static char eNB_generate_rrcconnsetup = 0;  // flag to indicate termination of RA procedure (mirror response)
 
-#define DEBUG_eNB_SCHEDULER
+#define DEBUG_eNB_SCHEDULER 
 #define DEBUG_HEADER_PARSING 1
 
 extern inline unsigned int taus(void);
@@ -511,14 +511,14 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       nb_rb=23;
 #else
       if (DLSCH_dci->mcs1 > 14)
-	DLSCH_dci->mcs1 = 14;
+	DLSCH_dci->mcs1 = 14; 
       
       if (DLSCH_dci->mcs1 > 10) {
-	DLSCH_dci->rballoc = DLSCH_RB_ALLOC_12;
+	DLSCH_dci->rballoc = DLSCH_RB_ALLOC_12; // navid should be mcs1 ?
 	nb_rb=12;
       }
       else {
-	DLSCH_dci->rballoc = DLSCH_RB_ALLOC;
+	DLSCH_dci->rballoc = DLSCH_RB_ALLOC; // navid : what about here?
 	nb_rb=23;
       }
 #endif
@@ -573,7 +573,7 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
 	sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(0,
 							  DCCH,
 							  &dcch_buffer[sdu_lengths[0]]);
-	
+	// navid : transport_block_size is 4 bytes
 	rlc_status = mac_rlc_status_ind(0,DCCH,
 					(TBS-header_len)/DCCH_LCHAN_DESC.transport_block_size,
 					DCCH_LCHAN_DESC.transport_block_size);
@@ -591,7 +591,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       
       // check for DTCH (later) and update header information
       
-      offset = generate_dlsch_header((unsigned char*)CH_mac_inst[0].DLSCH_pdu[0][0].payload[0],
+      offset = generate_dlsch_header((unsigned char*)CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0],
+      // offset = generate_dlsch_header((unsigned char*)CH_mac_inst[0].DLSCH_pdu[0][0].payload[0],
 				     num_sdus,              //num_sdus
 				     sdu_lengths,  //
 				     sdu_lcids,                                 
@@ -604,7 +605,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
 	  num_sdus,sdu_lengths[0],sdu_lcids[0],offset);
       
       // cycle through SDUs and place in dlsch_buffer
-      memcpy(&CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
+      memcpy(&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
+      // memcpy(&CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
       
       
       msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",mac_xface->frame,subframe,DLSCH_dci->mcs1,TBS,nb_rb);
@@ -612,7 +614,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       
       // fill remainder of DLSCH with random data 
       for (j=0;j<(TBS-sdu_lengths[0]-offset);j++)
-	CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
+	CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
+      //CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
     }     
   }      
 }    
@@ -625,7 +628,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   DCI_pdu->Num_common_dci  = 0;	
   DCI_pdu->Num_ue_spec_dci = 0;
 
-	
+  printf("[MAC] eNB inst %d scheduler subframe %d\n",Mod_id, subframe);
 
   switch (subframe) {
   case 0:
