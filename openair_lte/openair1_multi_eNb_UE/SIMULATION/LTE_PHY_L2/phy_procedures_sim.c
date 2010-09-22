@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
   int trial, n_errors=0;
   unsigned int nb_rb = 25;
   unsigned int first_rb = 0;
-  unsigned int eNb_id = 0;
+  //  unsigned int eNb_id = 0;
   unsigned int slot_offset;
   unsigned int sample_offset;
   unsigned int channel_offset=0;
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
   unsigned char rate_adaptation_flag;
   unsigned char transmission_mode;
 
-  int ue_id; // navid 
+  int ue_id,eNB_id; // navid 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
@@ -299,9 +299,10 @@ int main(int argc, char **argv) {
   //  PHY_VARS_eNB *PHY_vars_eNb; 
 
   PHY_vars_eNb_g = malloc(sizeof(PHY_VARS_eNB*));
-  PHY_vars_eNb_g[0] = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNb_g[0]->Mod_id=0;
-
+  for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
+    PHY_vars_eNb_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
+    PHY_vars_eNb_g[eNB_id]->Mod_id=eNB_id;
+  }
   //  PHY_VARS_UE *PHY_vars_UE; 
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
   for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
@@ -332,8 +333,51 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
-  
-  memcpy(&(PHY_vars_eNb_g[0]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+
+  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+    memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    phy_init_lte_eNB(&PHY_vars_eNb_g[eNB_id]->lte_frame_parms,
+		     &PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars,
+		     PHY_vars_eNb_g[eNB_id]->lte_eNB_ulsch_vars,
+		     0,
+		     PHY_vars_eNb_g[eNB_id],
+		     0,
+		     0);
+    
+    PHY_vars_eNb_g[eNB_id]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
+    PHY_vars_eNb_g[eNB_id]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
+    PHY_vars_eNb_g[eNB_id]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_ULSCH_t*));
+
+    for (i=0;i<NB_UE_INST;i++) {
+      for (j=0;j<2;j++) {
+	PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j] = new_eNb_dlsch(1,8);
+	if (!PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j]) {
+	  msg("Can't get eNb dlsch structures\n");
+	  exit(-1);
+	}
+	else {
+	  msg("dlsch_eNb[%d][%d] => %p\n",i,j,PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j]);
+	  PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j]->rnti=0;
+	}
+      }
+      PHY_vars_eNb_g[eNB_id]->ulsch_eNb[i] = new_eNb_ulsch(3);
+      if (!PHY_vars_eNb_g[eNB_id]->ulsch_eNb[i]) {
+	msg("Can't get eNb ulsch structures\n");
+	exit(-1);
+      }
+
+      PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
+
+    }
+
+    PHY_vars_eNb_g[eNB_id]->dlsch_eNb_SI  = new_eNb_dlsch(1,1);
+    PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra  = new_eNb_dlsch(1,1);
+
+    PHY_vars_eNb_g[eNB_id]->rx_total_gain_eNB_dB=150;
+    PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[0].mode = PRACH;
+    PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[0].crnti = 0xBEEF;
+
+  }
 
   for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
     memcpy(&(PHY_vars_UE_g[ue_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
@@ -360,23 +404,11 @@ int main(int argc, char **argv) {
   
   phy_init_lte_top(lte_frame_parms);
 
-  phy_init_lte_eNB(&PHY_vars_eNb_g[0]->lte_frame_parms,
-		   &PHY_vars_eNb_g[0]->lte_eNB_common_vars,
-		   PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,
-		   0,
-		   PHY_vars_eNb_g[0],
-		   0,
-		   0);
 
-  for (i=0;i<NB_UE_INST;i++) {
-    PHY_vars_eNb_g[0]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
-  }
-
-  PHY_vars_eNb_g[0]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
-  PHY_vars_eNb_g[0]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
-  PHY_vars_eNb_g[0]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_ULSCH_t*));
 
   for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
+    PHY_vars_eNb_g[0]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
+
     PHY_vars_UE_g[ue_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[ue_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     
@@ -384,28 +416,9 @@ int main(int argc, char **argv) {
     
     PHY_vars_UE_g[ue_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[ue_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
-  }// end navid 
-  for (i=0;i<NB_UE_INST;i++) {
-    for (j=0;j<2;j++) {
-      PHY_vars_eNb_g[0]->dlsch_eNb[i][j] = new_eNb_dlsch(1,8);
-      if (!PHY_vars_eNb_g[0]->dlsch_eNb[i][j]) {
-	msg("Can't get eNb dlsch structures\n");
-	exit(-1);
-      }
-      else {
-	msg("dlsch_eNb[%d][%d] => %p\n",i,j,PHY_vars_eNb_g[0]->dlsch_eNb[i][j]);
-	PHY_vars_eNb_g[0]->dlsch_eNb[i][j]->rnti=0;
-      }
-    }
-    PHY_vars_eNb_g[0]->ulsch_eNb[i] = new_eNb_ulsch(3);
-    if (!PHY_vars_eNb_g[0]->ulsch_eNb[i]) {
-      msg("Can't get eNb ulsch structures\n");
-      exit(-1);
-    }
-  }
 
-  PHY_vars_eNb_g[0]->dlsch_eNb_SI  = new_eNb_dlsch(1,1);
-  PHY_vars_eNb_g[0]->dlsch_eNb_ra  = new_eNb_dlsch(1,1);
+
+  }// end navid 
 
   for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
     for (i=0;i<NB_CH_INST;i++) {
@@ -486,15 +499,12 @@ int main(int argc, char **argv) {
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 
- for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-   PHY_vars_UE_g[ue_id]->rx_total_gain_dB=140;
-   PHY_vars_UE_g[ue_id]->UE_mode[0] = PRACH;
-   PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
- }// end navid 
+  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
+    PHY_vars_UE_g[ue_id]->rx_total_gain_dB=140;
+    PHY_vars_UE_g[ue_id]->UE_mode[0] = PRACH;
+    PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
+  }// end navid 
  
- PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB=150;
- PHY_vars_eNb_g[0]->eNB_UE_stats[0].mode = PRACH;
- PHY_vars_eNb_g[0]->eNB_UE_stats[0].crnti = 0xBEEF;
 
 #ifdef XFORMS
   fl_initialize(&argc, argv, NULL, 0, 0);    
@@ -520,15 +530,16 @@ int main(int argc, char **argv) {
 
       //      mac_xface->is_cluster_head = 1;
       printf("Phy procedures eNB for slot %d\n",slot); // navid
-      phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[0]);
+      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++)
+	phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[eNB_id]);
 
       if (((mac_xface->frame % 10) == 0) && (slot==19)) {
 	for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
 	  printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,PHY_vars_eNb_g[0]->eNB_UE_stats[ue_id].crnti);
 	} // end navid 
 	/*
-	len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
-	printf("%s\n\n",stats_buffer);
+	  len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
+	  printf("%s\n\n",stats_buffer);
 	*/
       }
       //      mac_xface->is_cluster_head = 0;
@@ -539,9 +550,8 @@ int main(int argc, char **argv) {
  
 #ifdef XFORMS
       if (last_slot == 14) 
-	for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-	  do_forms(PHY_vars_UE_g[ue_id]->lte_ue_dlsch_vars,PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,ch,channel_length);
-	}
+	do_forms(PHY_vars_UE_g[0]->lte_ue_dlsch_vars,PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,ch,channel_length);
+	
 #endif
 
       if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
@@ -562,16 +572,20 @@ int main(int argc, char **argv) {
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
 
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
-	txdataF = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[eNb_id];
+	for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+	  txdataF = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdataF[0];
 #ifndef IFFT_FPGA
-	txdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdata[eNb_id];
+	  txdata = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdata[0];
 #endif
+	}
       }
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	  txdataF = PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF;
+	for (ue_id=0;ue_id<NB_UE_INST;ue_id++) {
+	  txdataF = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
-	  txdata = PHY_vars_UE_g[0]->lte_ue_common_vars.txdata;
+	  txdata = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdata;
 #endif
+	}
       }
       else //it must be a special subframe
 	if (next_slot%2==0) {//DL part
@@ -581,9 +595,9 @@ int main(int argc, char **argv) {
 #endif
 	}
 	else {// UL part
-	    txdataF = PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF;
+	  txdataF = PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
-	    txdata = PHY_vars_UE_g[0]->lte_ue_common_vars.txdata;
+	  txdata = PHY_vars_UE_g[0]->lte_ue_common_vars.txdata;
 #endif
 	}
 
@@ -612,19 +626,19 @@ int main(int argc, char **argv) {
       
 #ifdef DEBUG_PHY
       /*
-      if (next_slot <= 1) {
+	if (next_slot <= 1) {
 	sprintf(fname,"eNb_frame%d_slot%d_txsigF20.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF0",txdataF2[0],512*6,1,1);
 	sprintf(fname,"eNb_frame%d_slot%d_txsigF21.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF1",txdataF2[1],512*6,1,1);
-      }
+	}
 
-      if ((next_slot > 3) && (next_slot < 10)) {
+	if ((next_slot > 3) && (next_slot < 10)) {
 	sprintf(fname,"UE_frame%d_slot%d_txsigF20.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txsF20",txdataF2[0],512*12,1,1);
 	sprintf(fname,"UE_frame%d_slot%d_txsigF21.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txsF21",txdataF2[1],512*12,1,1);
-      }
+	}
       */
 #endif
       
@@ -646,19 +660,19 @@ int main(int argc, char **argv) {
 
 #ifdef DEBUG_PHY
       /*
-      if (next_slot <= 1) {
+	if (next_slot <= 1) {
 	sprintf(fname,"eNb_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"eNb_frame%d_slot%d_txsigF1.m",mac_xface->frame,next_slot);
 	write_output(fname,"eNb_txsF1",&txdataF[1][slot_offset],512*12,1,1);
-      }
+	}
 
-      if ((next_slot > 3) && (next_slot < 10)) {
+	if ((next_slot > 3) && (next_slot < 10)) {
 	sprintf(fname,"UE_frame%d_slot%d_txsigF0.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txsF0",&txdataF[0][slot_offset],512*12,1,1);
 	sprintf(fname,"UE_frame%d_slot%d_txsigF1.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txsF1",&txdataF[1][slot_offset],512*12,1,1);
-      }
+	}
       */
 #endif
 
@@ -676,19 +690,19 @@ int main(int argc, char **argv) {
 
 #ifdef DEBUG_PHY
       /*
-      if (next_slot <= 1) {
+	if (next_slot <= 1) {
 	sprintf(fname,"eNb_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"eNb_frame%d_slot%d_txsig1.m",mac_xface->frame,next_slot);
         write_output(fname,"eNb_txs1",txdata[1],640*12,1,1);
-      }
+	}
       
-      if ((next_slot > 3) && (next_slot < 10)) {
+	if ((next_slot > 3) && (next_slot < 10)) {
 	sprintf(fname,"UE_frame%d_slot%d_txsig0.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txs0",txdata[0],640*12,1,1);
 	sprintf(fname,"UE_frame%d_slot%d_txsig1.m",mac_xface->frame,next_slot);
 	write_output(fname,"UE_txs1",txdata[1],640*12,1,1);
-      }
+	}
       */
 #endif
 
@@ -731,13 +745,13 @@ int main(int argc, char **argv) {
       if ((next_slot > 2) && (next_slot<10)) {
 #ifdef OFDMA_ULSCH
 	if (PHY_vars_UE_g[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
-	    path_loss_dB += (-20+6.2);  // UE
-	  else
-	    path_loss_dB += (-20.0+(double)PHY_vars_UE_g[ue_id]->ulsch_ue[0]->power_offset);
+	  path_loss_dB += (-20+6.2);  // UE
+	else
+	  path_loss_dB += (-20.0+(double)PHY_vars_UE_g[ue_id]->ulsch_ue[0]->power_offset);
 #else
-	  path_loss_dB += (-20);
+	path_loss_dB += (-20);
 #endif
-	}
+      }
 
       if ((next_slot>2) && (next_slot<10)) {
 	rx_gain = PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB;
@@ -851,8 +865,8 @@ int main(int argc, char **argv) {
       if ((last_slot == 18) && (mac_xface->frame == 1)) {
 	write_output("UE_rxsig0.m","UE_rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	write_output("UE_rxsig1.m","UE_rxs1", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("eNb_rxsig1.m","eNb_rxs1", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("eNb_rxsig0.m","eNb_rxs0", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+	write_output("eNb_rxsig1.m","eNb_rxs1", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       }
 #endif
 
@@ -881,19 +895,19 @@ int main(int argc, char **argv) {
     write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
   */
   /*
-  write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
-  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
-  write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+    write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
+    write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
+    write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+    write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
+    write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
+    write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+    write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
 
-  write_output("PBCH_rxF0_ext.m","pbch0_ext",lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
-  write_output("PBCH_rxF1_ext.m","pbch1_ext",lte_ue_pbch_vars[0]->rxdataF_ext[1],12*4*6,1,1);
-  write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-  write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars[0]->rxdataF_comp[1],12*4*6,1,1);
-  write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars[0]->llr,12*2*6*2,1,0);
+    write_output("PBCH_rxF0_ext.m","pbch0_ext",lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
+    write_output("PBCH_rxF1_ext.m","pbch1_ext",lte_ue_pbch_vars[0]->rxdataF_ext[1],12*4*6,1,1);
+    write_output("PBCH_rxF0_comp.m","pbch0_comp",lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
+    write_output("PBCH_rxF1_comp.m","pbch1_comp",lte_ue_pbch_vars[0]->rxdataF_comp[1],12*4*6,1,1);
+    write_output("PBCH_rxF_llr.m","pbch_llr",lte_ue_pbch_vars[0]->llr,12*2*6*2,1,0);
   */
 
 #ifdef IFFT_FPGA
@@ -917,7 +931,7 @@ int main(int argc, char **argv) {
   free(r_im);
   
   lte_sync_time_free();
-
+  
   return(n_errors);
 }
    
