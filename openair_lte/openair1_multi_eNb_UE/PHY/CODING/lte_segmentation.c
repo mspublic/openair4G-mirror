@@ -128,6 +128,7 @@ int lte_segmentation(unsigned char *input_buffer,
       k=0;
     }
   }
+  return(0);
 }
 
 

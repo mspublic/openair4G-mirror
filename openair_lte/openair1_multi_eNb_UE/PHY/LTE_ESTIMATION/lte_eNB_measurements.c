@@ -119,8 +119,9 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
 			      unsigned char init_averaging){
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNb->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNb->lte_frame_parms;
-  LTE_eNB_UE_stats *eNB_UE_stats = &phy_vars_eNb->eNB_UE_stats[0];
+  LTE_eNB_UE_stats *eNB_UE_stats = &phy_vars_eNb->eNB_UE_stats[UE_id];
   PHY_MEASUREMENTS_eNB *phy_measurements = &phy_vars_eNb->PHY_measurements_eNB[eNB_id];
+  LTE_eNB_SRS *eNB_srs_vars = &phy_vars_eNb->lte_eNB_srs_vars[UE_id];
 
   int aarx,rx_power_correction;
   int rx_power;
@@ -147,9 +148,9 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
 
 	  
     phy_measurements->rx_spatial_power[UE_id][0][aarx] = 
-      ((signal_energy_nodc(&eNB_common_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset],
+      ((signal_energy_nodc(&eNB_srs_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset],
 			   (frame_parms->N_RB_DL*6)) + 
-	signal_energy_nodc(&eNB_common_vars->srs_ch_estimates[eNB_id][aarx][1],
+	signal_energy_nodc(&eNB_srs_vars->srs_ch_estimates[eNB_id][aarx][1],
 			   (frame_parms->N_RB_DL*6)))*rx_power_correction) - 
       phy_measurements->n0_power[aarx];
 
@@ -161,7 +162,7 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
 
   
     
-  //      phy_measurements->rx_power[UE_id][aarx]/=frame_parms->nb_antennas_tx;
+    //      phy_measurements->rx_power[UE_id][aarx]/=frame_parms->nb_antennas_tx;
     phy_measurements->wideband_cqi_dB[UE_id][aarx] = (unsigned short) dB_fixed(phy_measurements->wideband_cqi[UE_id][aarx]);
     rx_power += phy_measurements->wideband_cqi[UE_id][aarx];
     //      phy_measurements->rx_avg_power_dB[UE_id] += phy_measurements->rx_power_dB[UE_id][aarx];
@@ -190,9 +191,9 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
 
       //      printf("eNB_common_vars->srs_ch_estimates[0] => %x\n",eNB_common_vars->srs_ch_estimates[0]);
       if (rb < 12)
-	ul_ch    = &eNB_common_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset + (rb*12)];
+	ul_ch    = &eNB_srs_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset + (rb*12)];
       else if (rb>12)
-	ul_ch    = &eNB_common_vars->srs_ch_estimates[eNB_id][aarx][6 + (rb-13)*12];
+	ul_ch    = &eNB_srs_vars->srs_ch_estimates[eNB_id][aarx][6 + (rb-13)*12];
       else {
 	phy_measurements->subband_cqi_dB[UE_id][aarx][rb] = 0;
 	continue;

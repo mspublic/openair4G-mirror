@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
 	 get_Qm(mcs));
   sprintf(bler_fname,"bler_%d.m",mcs);
   bler_fd = fopen(bler_fname,"w");
-  fprintf(bler_fd,"bler = [");
+  //fprintf(bler_fd,"bler = [");
 
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
   if (DLSCH_alloc_pdu2.tpmi == 5) {
     PHY_vars_eNb->dlsch_eNb[0]->pmi_alloc = (unsigned short)(taus()&0xffff);
     PHY_vars_UE->dlsch_ue[0]->pmi_alloc = PHY_vars_eNb->dlsch_eNb[0]->pmi_alloc;
-    PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single[0] = PHY_vars_eNb->dlsch_eNb[0]->pmi_alloc;
+    PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single = PHY_vars_eNb->dlsch_eNb[0]->pmi_alloc;
   }
   
   generate_eNb_dlsch_params_from_dci(0,

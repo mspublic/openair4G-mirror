@@ -47,31 +47,6 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	0);
   }
 
-  if ((l==(6-frame_parms->Ncp)) && (Ns%2==1)) {
-    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-#ifdef DEBUG_FEP
-      msg("Channel estimation eNb %d, aarx %d, %p, %p, %p\n",eNb_id,aa,
-	  &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-	  eNb_common_vars->srs,
-	  eNb_common_vars->srs_ch_estimates[eNb_id][aa]);
-#endif
-
-      //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
-      //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
-
-      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-			    (short*) eNb_common_vars->srs,
-			    (short*) eNb_common_vars->srs_ch_estimates[eNb_id][aa],
-			    frame_parms->ofdm_symbol_size,
-			    15);
-#ifdef DEBUG_FEP
-	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
-	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
-	write_output(fname,vname,eNb_common_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
-#endif
-    }
-  }
-
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");
 #endif

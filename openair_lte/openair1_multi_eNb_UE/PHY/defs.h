@@ -120,6 +120,7 @@ typedef struct
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
+  LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
   LTE_eNb_DLSCH_t  **dlsch_eNb[2];   // Nusers times two spatial streams
   LTE_eNb_ULSCH_t  **ulsch_eNb;   // Nusers + number of RA
@@ -133,7 +134,7 @@ typedef struct
   int max_eNb_id, max_sync_pos;
 
 
-  unsigned char first_run_timing_advance;
+  unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
   unsigned char    is_secondary_eNb; // primary by default
@@ -201,6 +202,8 @@ typedef struct
   /// hold the precoder for NULL beam to the primary eNb
   int              **ul_precoder_S_UE;
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
+
+  SRS_param_t SRS_parameters;
 
 } PHY_VARS_UE;
 

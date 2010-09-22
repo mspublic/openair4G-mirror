@@ -533,6 +533,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned char diversity_scheme)// 0 for no scheme,1 for diversity delay & 2 dor distributed alamouti
 {
 
+  LTE_eNB_SRS *eNB_srs_vars = phy_vars_eNb->lte_eNB_srs_vars;
+
   int i, j, eNb_id, UE_id;
 
 
@@ -658,64 +660,67 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     }
     
     // Channel estimates for SRS
-    eNB_common_vars->srs_ch_estimates[eNb_id] = (int **)malloc16(4*sizeof(int*));
-    if (eNB_common_vars->srs_ch_estimates[eNb_id]) {
+    for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+
+      eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id] = (int **)malloc16(4*sizeof(int*));
+      if (eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id]) {
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates[%d] allocated at %p\n",eNb_id,
-	  eNB_common_vars->srs_ch_estimates[eNb_id]);
+	msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d].srs_ch_estimates[%d] allocated at %p\n",UE_id,eNb_id,
+	    eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id]);
 #endif
-    }
-    else {
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates[%d] not allocated\n",eNb_id);
-      return(-1);
-    }
+      }
+      else {
+	msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d].srs_ch_estimates[%d] not allocated\n",UE_id,eNb_id);
+	return(-1);
+      }
     
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<2; j++) { //frame_parms->nb_antennas_tx
-	eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size));
-	if (eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1)+i]) {
+      for (i=0; i<frame_parms->nb_antennas_rx; i++)
+	for (j=0; j<2; j++) { //frame_parms->nb_antennas_tx
+	  eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size));
+	  if (eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY
-	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates[%d][%d] allocated at %p\n",eNb_id,(j<<1)+i,
-	      eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1)+i]);
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d]->srs_ch_estimates[%d][%d] allocated at %p\n",UE_id,eNb_id,(j<<1)+i,
+		eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id][(j<<1)+i]);
 #endif
-	  
-	  memset(eNB_common_vars->srs_ch_estimates[eNb_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size));
+	    
+	    memset(eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size));
+	  }
+	  else {
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d]->srs_ch_estimates[%d][%d] not allocated\n",UE_id,eNb_id,i);
+	    return(-1);
+	  }
 	}
-	else {
-	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates[%d] not allocated\n",i);
-	  return(-1);
-	}
+      
+      // Channel estimates for SRS (time)
+      eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id] = (int **)malloc16(4*sizeof(int*));
+      if (eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id]) {
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d]->srs_ch_estimates_time[%d] allocated at %p\n",UE_id,eNb_id,
+	    eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id]);
+#endif
+      }
+      else {
+	msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d]->srs_ch_estimates_time[%d] not allocated\n",UE_id,eNb_id);
+	return(-1);
       }
 
-    // Channel estimates for SRS (time)
-    eNB_common_vars->srs_ch_estimates_time[eNb_id] = (int **)malloc16(4*sizeof(int*));
-    if (eNB_common_vars->srs_ch_estimates_time[eNb_id]) {
+      for (i=0; i<frame_parms->nb_antennas_rx; i++)
+	for (j=0; j<frame_parms->nb_antennas_tx; j++) {
+	  eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	  if (eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id][(j<<1)+i]) {
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time allocated at %p\n",
-	  eNB_common_vars->srs_ch_estimates_time[eNb_id]);
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d].srs_ch_estimates_time[%d][%d] allocated at %p\n",UE_id,eNb_id,(j<<1)+i,
+		eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id][(j<<1)+i]);
 #endif
-    }
-    else {
-      msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time not allocated\n");
-      return(-1);
-    }
-
-    for (i=0; i<frame_parms->nb_antennas_rx; i++)
-      for (j=0; j<frame_parms->nb_antennas_tx; j++) {
-	eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1) + i] = (int *)malloc16(sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
-	if (eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i]) {
-#ifdef DEBUG_PHY
-	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] allocated at %p\n",(j<<1)+i,
-	      eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i]);
-#endif
-	  
-	  memset(eNB_common_vars->srs_ch_estimates_time[eNb_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	    
+	    memset(eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id][(j<<1)+i],0,sizeof(int)*(frame_parms->ofdm_symbol_size)*2);
+	  }
+	  else {
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_srs_vars[%d]->srs_ch_estimates_time[%d][%d] not allocated\n",UE_id,eNb_id,i);
+	    return(-1);
+	  }
 	}
-	else {
-	  msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->srs_ch_estimates_time[%d] not allocated\n",i);
-	  return(-1);
-	}
-      }
+    } //UE_id
 
     eNB_common_vars->sync_corr[eNb_id] = (unsigned int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
     if (eNB_common_vars->sync_corr[eNb_id]) {
@@ -735,18 +740,20 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
 #ifndef NO_UL_REF 
   generate_ul_ref_sigs_rx();
-  // SRS
-  eNB_common_vars->srs = (int *)malloc16(2*frame_parms->ofdm_symbol_size*sizeof(int*));
-  if (!eNB_common_vars->srs || 
-      (generate_srs_rx(frame_parms, eNB_common_vars->srs))==-1) {
-    msg("[openair][LTE_PHY][INIT] Error generating SRS\n");
-    return(-1);
-  }
-  else 
-#ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][INIT] SRS generated at %p\n",eNB_common_vars->srs);
-#endif
 
+  // SRS
+  for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+    eNB_srs_vars[UE_id].srs = (int *)malloc16(2*frame_parms->ofdm_symbol_size*sizeof(int*));
+    if (eNB_srs_vars[UE_id].srs) { 
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] eNB_srs_vars[%d].srs allocated at %p\n",UE_id,eNB_srs_vars[UE_id].srs);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] eNB_srs_vars[%d].srs not allocated\n",UE_id);
+      return(-1);
+    }
+  }
 #endif
 
   // ULSCH VARS

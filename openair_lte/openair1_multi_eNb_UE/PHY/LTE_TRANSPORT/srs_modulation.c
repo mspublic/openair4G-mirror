@@ -73,6 +73,8 @@ unsigned short Nb_81_110[8][4] = {{96,48,24,4},
 				  {48,24,12,4},
 				  {48,16,8,4}};
 
+unsigned short transmission_offset_tdd[16] = {2,6,10,18,14,22,26,30,70,74,194,326,586,210};
+
 int compareints (const void * a, const void * b)
 {
   return ( *(unsigned short*)a - *(unsigned short*)b );
@@ -80,41 +82,42 @@ int compareints (const void * a, const void * b)
 
 
 int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
+		    SRS_param_t *SRS_parms,
 		    mod_sym_t *txdataF,
 		    short amp,
 		    unsigned int sub_frame_number) {
 
   unsigned short msrsb,Nb,nb,b,msrs0,k,l,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   unsigned short *Msc_idx_ptr;
-  int k0;
+  int k0,T_SFC;
   int sub_frame_offset;
 
   if (frame_parms->N_RB_UL < 41) {
-    msrs0 = msrsb_6_40[frame_parms->Csrs][0];
-    msrsb = msrsb_6_40[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_6_40[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_6_40[SRS_parms->Csrs][0];
+    msrsb = msrsb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL < 61) {
-    msrs0 = msrsb_41_60[frame_parms->Csrs][0];
-    msrsb = msrsb_41_60[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_41_60[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_41_60[SRS_parms->Csrs][0];
+    msrsb = msrsb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL < 81) {
-    msrs0 = msrsb_61_80[frame_parms->Csrs][0];
-    msrsb = msrsb_61_80[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_61_80[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_61_80[SRS_parms->Csrs][0];
+    msrsb = msrsb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL <111) {
-    msrs0 = msrsb_81_110[frame_parms->Csrs][0];
-    msrsb = msrsb_81_110[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_81_110[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_81_110[SRS_parms->Csrs][0];
+    msrsb = msrsb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
 
   Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + frame_parms->kTC;
-  nb  = (4*frame_parms->n_RRC/msrsb)%Nb;
+  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + SRS_parms->kTC;
+  nb  = (4*SRS_parms->n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=frame_parms->Bsrs;b++) {
+  for (b=0;b<=SRS_parms->Bsrs;b++) {
     k0 += 2*nb*Msc_RS;
   }
 
@@ -145,6 +148,9 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_SRS
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
+
+  T_SFC = (SRS_parms->Ssrs<=7 ? 5 : 10); 
+  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[SRS_parms->Ssrs]) {
 
 #ifndef IFFT_FPGA_UE
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
@@ -183,10 +189,12 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   }
 #endif
   //  write_output("srs_txF.m","srstxF",&txdataF[symbol_offset],512,1,1);
+  }
   return(0);
 }
 
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
+		    SRS_param_t *SRS_parms,
 		    int *txdataF) {
 
   unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos;
@@ -194,31 +202,31 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   int k0;
 
   if (frame_parms->N_RB_UL < 41) {
-    msrs0 = msrsb_6_40[frame_parms->Csrs][0];
-    msrsb = msrsb_6_40[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_6_40[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_6_40[SRS_parms->Csrs][0];
+    msrsb = msrsb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL < 61) {
-    msrs0 = msrsb_41_60[frame_parms->Csrs][0];
-    msrsb = msrsb_41_60[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_41_60[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_41_60[SRS_parms->Csrs][0];
+    msrsb = msrsb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL < 81) {
-    msrs0 = msrsb_61_80[frame_parms->Csrs][0];
-    msrsb = msrsb_61_80[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_61_80[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_61_80[SRS_parms->Csrs][0];
+    msrsb = msrsb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
   else if (frame_parms->N_RB_UL <111) {
-    msrs0 = msrsb_81_110[frame_parms->Csrs][0];
-    msrsb = msrsb_81_110[frame_parms->Csrs][frame_parms->Bsrs];
-    Nb    = Nb_81_110[frame_parms->Csrs][frame_parms->Bsrs];
+    msrs0 = msrsb_81_110[SRS_parms->Csrs][0];
+    msrsb = msrsb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
+    Nb    = Nb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
   }
 
   Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + frame_parms->kTC;
-  nb  = (4*frame_parms->n_RRC/msrsb)%Nb;
+  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + SRS_parms->kTC;
+  nb  = (4*SRS_parms->n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=frame_parms->Bsrs;b++) {
+  for (b=0;b<=SRS_parms->Bsrs;b++) {
     k0 += 2*nb*Msc_RS;
   }
 

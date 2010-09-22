@@ -73,8 +73,6 @@ LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
 LTE_eNb_ULSCH_t **ulsch_eNb;
 LTE_UE_ULSCH_t **ulsch_ue;
 
-LTE_eNb_DLSCH_t *dlsch_eNb_cntl;
-LTE_UE_DLSCH_t *dlsch_ue_cntl;
 LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
 */
 

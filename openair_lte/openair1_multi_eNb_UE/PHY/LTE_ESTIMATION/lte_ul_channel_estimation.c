@@ -27,7 +27,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   int *ul_ch1, *ul_ch2;
 
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
-  int *temp_in_ifft,**temp_in_fft_0,*temp_in_fft_1;
+  int *temp_in_ifft,*temp_in_fft_0,*temp_in_fft_1;
   Msc_RS = N_rb_alloc*12;
 
 
@@ -99,7 +99,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  i = symbol_offset;
 	 
 	  for(j=0;j<(frame_parms->N_RB_UL*12);j++){
-	    temp_in_ifft_ptr[j] = (int*)ul_ch_estimates[aa][i];
+	    temp_in_ifft_ptr[j] = ul_ch_estimates[aa][i];
 	    i++;
 	  }
 
@@ -275,3 +275,62 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   return(0);
 }       
 
+extern unsigned short transmission_offset_tdd[16];
+#define DEBUG_SRS
+
+int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
+			       LTE_eNB_COMMON *eNb_common_vars,
+			       LTE_eNB_SRS *eNb_srs_vars,
+			       SRS_param_t *SRS_parms,
+			       unsigned char sub_frame_number,
+			       unsigned char eNb_id) {
+
+  int T_SFC,aa;
+  int N_symb,symbol;
+#ifdef DEBUG_SRS
+  char fname[40], vname[40];
+#endif
+
+
+  N_symb = 2*7-frame_parms->Ncp;
+  symbol = (sub_frame_number+1)*N_symb-1; //SRS is always in last symbol of subframe
+  T_SFC = (SRS_parms->Ssrs<=7 ? 5 : 10);
+ 
+  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[SRS_parms->Ssrs]) {
+
+    if (generate_srs_rx(frame_parms, 
+			SRS_parms,
+			eNb_srs_vars->srs)==-1) {
+      msg("lte_srs_channel_estimation: Error in generate_srs_rx\n");
+      return(-1);
+    }
+
+    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+#ifdef DEBUG_SRS
+      msg("SRS channel estimation eNb %d, subframs %d, aarx %d, %p, %p, %p\n",eNb_id,sub_frame_number,aa,
+	  &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+	  eNb_srs_vars->srs,
+	  eNb_srs_vars->srs_ch_estimates[eNb_id][aa]);
+#endif
+
+      //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
+      //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
+
+      mult_cpx_vector_norep((short*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+			    (short*) eNb_srs_vars->srs,
+			    (short*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
+			    frame_parms->ofdm_symbol_size,
+			    15);
+#ifdef DEBUG_SRS
+	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
+	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
+	write_output(fname,vname,eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
+#endif
+    }
+  }
+  else {
+    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) 
+      bzero(eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
+  }
+  return(0);
+}

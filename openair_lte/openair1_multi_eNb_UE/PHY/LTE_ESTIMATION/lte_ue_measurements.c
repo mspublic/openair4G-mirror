@@ -278,7 +278,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	  //	  msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,phy_vars_ue->PHY_measurements.subband_cqi[eNB_id][aarx][subband],phy_vars_ue->PHY_measurements.subband_cqi_dB[eNB_id][aarx][subband]);
 	}
       }
-      for (subband-0;subband<7;subband++) {
+      for (subband=0;subband<7;subband++) {
 	phy_vars_ue->PHY_measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(phy_vars_ue->PHY_measurements.subband_cqi_tot[eNB_id][subband],phy_vars_ue->PHY_measurements.n0_power_tot);
       }
     }

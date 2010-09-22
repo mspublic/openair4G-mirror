@@ -139,8 +139,15 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char relay_flag,
 			      unsigned char diversity_scheme);
 
+int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
+			       LTE_eNB_COMMON *eNb_common_vars,
+			       LTE_eNB_SRS *eNb_srs_vars,
+			       SRS_param_t *SRS_parms,
+			       unsigned char sub_frame_number,
+			       unsigned char eNb_id);
+
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
-			   LTE_eNB_COMMON *lte_eNb_common,
+			   LTE_eNB_SRS *lte_eNb_srs,
 			   unsigned int *eNb_id,
 			   unsigned char clear,
 			   unsigned char number_of_cards,

@@ -45,10 +45,6 @@ typedef struct {
   short *twiddle_fft;                  ///pointer to twiddle factors for FFT
   short *twiddle_ifft;                 ///pointer to twiddle factors for IFFT
   unsigned short *rev;                 ///pointer to FFT permutation
-  unsigned char Csrs;                  ///SRS BandwidthConfiguration \in {0,1,...,7}
-  unsigned char Bsrs;                  ///SRS Bandwidth \in {0,1,2,3}
-  unsigned char kTC;                   ///SRS kTC  Transmission Comb \in {0,1}
-  unsigned char n_RRC;                 ///SRS n_RRC Frequency Domain Position \in {0,1,...,23}
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -71,12 +67,14 @@ typedef struct{
   mod_sym_t **txdataF[3];    ///holds the transmit data in the frequency domain (#ifdef IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdata[3];           ///holds the received data in time domain (should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   int **rxdataF[3];          ///holds the received data in the frequency domain
-  /// hold the channel estimates in frequency domain based on SRS
-  int **srs_ch_estimates[3];
-  int **srs_ch_estimates_time[3];  
-  int *srs;               /// holds the SRS for channel estimation at the RX
   unsigned int *sync_corr[3];         /// holds output of the sync correlator
 } LTE_eNB_COMMON;
+
+typedef struct{
+  int **srs_ch_estimates[3];   /// hold the channel estimates in frequency domain based on SRS
+  int **srs_ch_estimates_time[3];    /// hold the channel estimates in time domain based on SRS
+  int *srs;               /// holds the SRS for channel estimation at the RX
+} LTE_eNB_SRS;
 
 typedef struct{
   ///holds the received data in the frequency domain for the allocated RBs

@@ -323,10 +323,6 @@ int main(int argc, char **argv) {
   lte_frame_parms->nb_antennas_rx     = 2;
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = 6;
-  lte_frame_parms->Csrs = 2;
-  lte_frame_parms->Bsrs = 0;
-  lte_frame_parms->kTC = 0;
-  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   init_frame_parms(lte_frame_parms);
@@ -342,7 +338,16 @@ int main(int argc, char **argv) {
   for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
     memcpy(&(PHY_vars_UE_g[ue_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     
-    
+    PHY_vars_UE_g[ue_id]->SRS_parameters.Csrs = 2;
+    PHY_vars_UE_g[ue_id]->SRS_parameters.Bsrs = 0;
+    PHY_vars_UE_g[ue_id]->SRS_parameters.kTC = 0;
+    PHY_vars_UE_g[ue_id]->SRS_parameters.n_RRC = 0;
+    if (ue_id>=3) {
+      printf("This SRS config will only work for 3 users");
+      exit(-1);
+    }
+    PHY_vars_UE_g[ue_id]->SRS_parameters.Ssrs = ue_id+1;
+
     phy_init_lte_ue(&PHY_vars_UE_g[ue_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[ue_id]->lte_ue_common_vars,
 		    PHY_vars_UE_g[ue_id]->lte_ue_dlsch_vars,
@@ -362,6 +367,10 @@ int main(int argc, char **argv) {
 		   PHY_vars_eNb_g[0],
 		   0,
 		   0);
+
+  for (i=0;i<NB_UE_INST;i++) {
+    PHY_vars_eNb_g[0]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
+  }
 
   PHY_vars_eNb_g[0]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
   PHY_vars_eNb_g[0]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));

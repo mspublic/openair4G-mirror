@@ -105,7 +105,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 int max_val;
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
-			   LTE_eNB_COMMON *lte_eNb_common,
+			   LTE_eNB_SRS *lte_eNb_srs,
 			   unsigned int  *eNb_id,
 			   unsigned char clear,
 			   unsigned char number_of_cards,
@@ -129,8 +129,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
     for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
       // do ifft of channel estimate
-      fft((short*) &lte_eNb_common->srs_ch_estimates[ind][aa][0],
-	  (short*) lte_eNb_common->srs_ch_estimates_time[ind][aa],
+      fft((short*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
+	  (short*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
 	  frame_parms->twiddle_ifft,
 	  frame_parms->rev,
 	  frame_parms->log2_symbol_size,
@@ -141,7 +141,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNb_common->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
+      write_output(fname,vname,lte_eNb_srs->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
 #endif
     }
@@ -151,8 +151,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     for (i = 0; i < frame_parms->ofdm_symbol_size/2; i++) {
       temp = 0;
       for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-	Re = ((s16*)lte_eNb_common->srs_ch_estimates_time[ind][aa])[(i<<2)];
-	Im = ((s16*)lte_eNb_common->srs_ch_estimates_time[ind][aa])[1+(i<<2)];
+	Re = ((s16*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[(i<<2)];
+	Im = ((s16*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[1+(i<<2)];
 	temp += (Re*Re/2) + (Im*Im/2);
       }
       if (temp > max_val) {

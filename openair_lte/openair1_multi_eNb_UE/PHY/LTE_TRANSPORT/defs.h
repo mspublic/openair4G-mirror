@@ -393,6 +393,14 @@ typedef struct {
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
+  unsigned char Csrs;                  ///SRS BandwidthConfiguration \in {0,1,...,7}
+  unsigned char Bsrs;                  ///SRS Bandwidth \in {0,1,2,3}
+  unsigned char kTC;                   ///SRS kTC  Transmission Comb \in {0,1}
+  unsigned char n_RRC;                 ///SRS n_RRC Frequency Domain Position \in {0,1,...,23}
+  unsigned char Ssrs;                  ///SRS Subframe configuration \in {0,...,15}
+} SRS_param_t;
+
+typedef struct {
   s32 UL_rssi[NB_ANTENNAS_RX];
   u8 DL_cqi[2];
   u8 DL_diffcqi[2];
@@ -412,6 +420,7 @@ typedef struct {
   u32 ulsch_decoding_attempts[3][4];
   u32 ulsch_round_errors[3][4];
   s8 dlsch_mcs_offset;
+  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -473,6 +482,7 @@ typedef enum {format0,
 	      format2A_4A_M10PRB,
 	      format3
 } DCI_format_t;
+
 typedef struct {
   /// Length of DCI in bits
   u8 dci_length;
@@ -485,7 +495,6 @@ typedef struct {
   /// DCI pdu
   u8 dci_pdu[1+(MAX_DCI_SIZE_BITS/8)];
 } DCI_ALLOC_t;
-
 
 void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
 
@@ -1184,6 +1193,7 @@ u8 SE2I_TBS(float SE,
 
 
 s32 generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
+		    SRS_param_t *SRS_parms,
 		    mod_sym_t *txdataF,
 		    s16 amp,
 		    u32 sub_frame_number);
@@ -1197,6 +1207,7 @@ s32 generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 */
 
 s32 generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
+		    SRS_param_t *SRS_parms,
 		    s32 *txdataF);
 
 /*!
