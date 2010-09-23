@@ -276,7 +276,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 }       
 
 extern unsigned short transmission_offset_tdd[16];
-#define DEBUG_SRS
+//#define DEBUG_SRS
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,

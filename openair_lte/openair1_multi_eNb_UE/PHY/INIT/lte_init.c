@@ -538,7 +538,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   int i, j, eNb_id, UE_id;
 
 
-  phy_vars_eNb->first_run_timing_advance = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
+    phy_vars_eNb->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
   phy_vars_eNb->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
   for (eNb_id=0; eNb_id<3; eNb_id++) {
