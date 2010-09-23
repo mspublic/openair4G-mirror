@@ -1,5 +1,27 @@
 #include "PHY/TOOLS/defs.h"
 
+typedef struct {
+  int nb_tx; ///Number of tx antennas
+  int nb_rx; ///Number of rx antennas
+  int nb_taps; ///number of taps
+  double *amps; ///Linear amplitudes of the taps. length(amps)=nb_taps. The values should sum up to 1.
+  double *delays; ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. CURRENTLY NOT IMPLEMENTED
+  struct complex **state; ///channel state vector. size(state) = (n_tx * n_rx) * nb_taps;
+  double channel_length; ///length of impulse response. should be set to 11+2*bw*t_max 
+  struct complex **ch; ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. 
+  double Td; ///Maximum path delay in mus.
+  double BW; ///Channel bandwidth in MHz.
+  double ricean_factor; ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
+  double aoa; /// angle of arrival of wavefront. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.
+  double max_Doppler; ///in Hz. if >0 generate a channel with a Clarke's Doppler profile with a maximum Doppler bandwidth max_Doppler. CURRENTLY NOT IMPLEMENTED!
+  struct complex *R_tx_sqrt; ///Square root of transmit correlation matrix size(R_tx)=n_tx * n_tx. CURRENTLY NOT IMPLEMENTED!
+  struct complex *R_rx_sqrt; ///Square root of receive correlation matrix size(R_rx)=n_rx * n_rx. CURRENTLY NOT IMPLEMENTED!
+  double path_loss_dB; ///path loss in dB
+  int channel_offset; ///additional delay of channel in samples.
+  int forgetting_factor; ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
+  int first_run; ///needs to be set to 1 for the first call, 0 otherwise.
+} channel_desc_t;
+
 /** @defgroup _numerical_ Useful Numerical Functions
  *@{
 The present clause specifies several numerical functions for testing of digital communication systems.
