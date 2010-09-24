@@ -1,13 +1,14 @@
 #include "PHY/TOOLS/defs.h"
 
 typedef struct {
-  int nb_tx; ///Number of tx antennas
-  int nb_rx; ///Number of rx antennas
-  int nb_taps; ///number of taps
+  u8 nb_tx; ///Number of tx antennas
+  u8 nb_rx; ///Number of rx antennas
+  u8 nb_taps; ///number of taps
   double *amps; ///Linear amplitudes of the taps. length(amps)=nb_taps. The values should sum up to 1.
   double *delays; ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. CURRENTLY NOT IMPLEMENTED
   struct complex **state; ///channel state vector. size(state) = (n_tx * n_rx) * nb_taps;
   double channel_length; ///length of impulse response. should be set to 11+2*bw*t_max 
+  struct complex **a; ///state vector
   struct complex **ch; ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. 
   double Td; ///Maximum path delay in mus.
   double BW; ///Channel bandwidth in MHz.
@@ -17,10 +18,13 @@ typedef struct {
   struct complex *R_tx_sqrt; ///Square root of transmit correlation matrix size(R_tx)=n_tx * n_tx. CURRENTLY NOT IMPLEMENTED!
   struct complex *R_rx_sqrt; ///Square root of receive correlation matrix size(R_rx)=n_rx * n_rx. CURRENTLY NOT IMPLEMENTED!
   double path_loss_dB; ///path loss in dB
-  int channel_offset; ///additional delay of channel in samples.
-  int forgetting_factor; ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
-  int first_run; ///needs to be set to 1 for the first call, 0 otherwise.
+  s8 channel_offset; ///additional delay of channel in samples.
+  double forgetting_factor; ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
+  u8 first_run; ///needs to be set to 1 for the first call, 0 otherwise.
+  double ip; /// initial phase for frequency offset simulation
 } channel_desc_t;
+
+
 
 /** @defgroup _numerical_ Useful Numerical Functions
  *@{
@@ -105,19 +109,8 @@ double uniformrandom();
 
 
 
-
-
-/** \fn void random_channel(double *amps,
-                            double t_max, 
-			    struct complex *a,
-			    int channel_length,
-			    double bw,
-			    struct complex *ch,
-			    double ricean_factor,
-			    struct complex *phase,
-			    double forgetting_factor,
-			    unsigned char clear);
-\brief This routine generates a random channel response (time domain) according to a tapped delay line model. 
+/** \fn channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset)
+\brief This routine initializes a new channel descriptor
 \param amps Linear amplitudes of the taps (length(amps)=channel_length). The taps are assumed to be spaced equidistantly between 0 and t_max. The values should sum up to 1.
 \param t_max Maximum path delay in mus.
 \param a Complex channel state vector of length channel_length
@@ -127,80 +120,44 @@ double uniformrandom();
 \param ricean_factor Ricean factor applied to all taps.
 \param phase Phase of the first tap.
 \param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
-\param clear Set to 1 to initialize first random channel
-
+\param max_Doppler This is the maximum Doppler frequency for Jakes' Model
+\param channel_offset This is a time delay to apply to channel
+\param path_loss_dB This is the path loss in dB
 */
-void random_channel(double *amps,
-		    double t_max, 
-		    struct complex *a,
-		    int channel_length,
-		    double bw,
-		    struct complex *ch,
-		    double ricean_factor,
-		    struct complex *phase,
-		    double forgetting_factor,
-		    unsigned char clear);
+
+channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB);
 
 
-/*\fn void multipath_channel(struct complex **ch,
+/** \fn void random_channel(channel_desc_t *desc)
+\brief This routine generates a random channel response (time domain) according to a tapped delay line model. 
+\param desc Pointer to the channel descriptor
+*/
+void random_channel(channel_desc_t *desc);
+
+/*\fn void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       double *amps, 
-		       double Td, 
-		       double BW, 
-		       double ricean_factor,
-		       double aoa,
-		       unsigned char nb_antennas_tx,
-		       unsigned char nb_antennas_rx,
-		       unsigned int length,
-		       unsigned int channel_length,
-		       double path_loss_dB,
-		       double forgetting factor,
-		       unsigned char clear,
-		       unsigned char keep_channel,
-		       unsigned char channel_id);
+		       u16 length,
+		       u8 keep_channel)
+
 \brief This function generates and applys a random frequency selective random channel model.
-@param ch Pointer to spatio-temporal channel coefficients
+@param desc Pointer to channel descriptor
 @param tx_sig_re input signal (real component) 
 @param tx_sig_im input signal (imaginary component) 
 @param rx_sig_re output signal (real component)
 @param rx_sig_im output signal (imaginary component)
-@param amps Amplitude of multipath components (average)
-@param Td maximum time-delay spread
-@param BW system bandwidth (sampling time)
-@param ricean_factor Ricean factor (linear)
-@param aoa angle of arrival of wavefront
-@param nb_antennas_tx Number of TX antennas
-@param nb_antennas_rx Number of RX antennas
 @param length Length of input signal
-@param channel_length Length of channel (time samples)
-@param path_loss_dB Path loss in dB
-@param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
-@param clear Set to 1 to initialize first random channel
 @param keep_channel Set to 1 to keep channel constant for null-B/F
-@param channel_id see Enum CH_ID in phy_procedures_sim_secsys.c
-@param channel_offset is used to indicate the delay introduced in delay diversity scheme
 */
-void multipath_channel(struct complex **ch,
+
+void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
 		       double **tx_sig_im, 
 		       double **rx_sig_re,
 		       double **rx_sig_im,
-		       double *amps, 
-		       double Td, 
-		       double BW, 
-		       double ricean_factor,
-		       double aoa,
-		       unsigned char nb_antennas_tx,
-		       unsigned char nb_antennas_rx,
-		       unsigned int length,
-		       unsigned int channel_length,
-		       double path_loss_dB,
-		       double forgetting_factor,
-		       unsigned char clear,
-		       unsigned char keep_channel,
-		       unsigned char channel_id,
-		       int channel_offset);
+		       u16 length,
+		       u8 keep_channel);
+
 /* *@} */
