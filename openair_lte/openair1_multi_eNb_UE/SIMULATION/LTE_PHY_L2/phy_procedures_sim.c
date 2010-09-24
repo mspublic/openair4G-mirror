@@ -187,20 +187,404 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
 #endif
 
 
+do_DL_sig(double **r0_re,double **r0_im,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u8 UE_id,u32 slot_offset,u16 next_slot,double *nf) {
+
+  mod_sym_t **txdataF;
+#ifdef IFFT_FPGA
+  int **txdataF2;
+#endif
+  int **txdata,**rxdata;
+  LTE_DL_FRAME_PARMS *frame_parms;
+
+  u8 eNB_id,aa;
+  double path_loss, tx_pwr, rx_pwr, snr_dB;
+  u32 i;
+
+#ifdef IFFT_FPGA
+  txdata    = (int **)malloc16(2*sizeof(int*));
+  txdata[0] = (int *)malloc16(OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  txdata[1] = (int *)malloc16(OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  bzero(txdata[0],OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  bzero(txdata[1],OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  txdataF2    = (int **)malloc16(2*sizeof(int*));
+  txdataF2[0] = (int *)malloc16(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  txdataF2[1] = (int *)malloc16(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  bzero(txdataF2[0],4*NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  bzero(txdataF2[1],4*NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+#endif
+
+  for (i=0;i<(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.samples_per_tti>>1);i++) {
+    for (aa=0;aa<PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_rx;aa++) {
+      r0_re[aa][i]=0.0;
+      r0_im[aa][i]=0.0;
+    }
+  }
+
+
+  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+
+    path_loss = pow(10.0,-.1*eNB2UE[eNB_id][UE_id]->path_loss_dB);
+
+    frame_parms = &PHY_vars_eNb_g[eNB_id]->lte_frame_parms;
+
+    txdataF = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdataF[0];
+#ifndef IFFT_FPGA
+    txdata = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdata[0];
+#endif
+
+#ifdef IFFT_FPGA
+    
+    slot_offset = (next_slot)*(PHY_vars_eNb_g[eNB_id]->frame_parms->N_RB_DL*12)*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7);
+    
+    //write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+    //write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+    
+    
+    // do talbe lookup and write results to txdataF2
+    for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+
+      l = slot_offset;	
+      for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7);i++) 
+	if ((i%512>=1) && (i%512<=150))
+	  txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	else if (i%512>=362)
+	  txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	else 
+	  txdataF2[aa][i] = 0;
+      
+    }
+      
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) 
+      PHY_ofdm_mod(txdataF2[aa],        // input
+		   txdata[aa],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   (frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    
+#else //IFFT_FPGA
+    
+    slot_offset = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
+    
+    
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+      PHY_ofdm_mod(&txdataF[aa][slot_offset],        // input
+		   txdata[aa],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   (frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    }  
+#endif //IFFT_FPGA
+    
+    tx_pwr = dac_fixed_gain(s_re,
+			    s_im,
+			    txdata,
+			    0, //slot_offset,
+			    frame_parms->nb_antennas_tx,
+			    frame_parms->samples_per_tti>>1,
+			    14,
+			    18); 
+    //printf("[RF TX] tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+    //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
+    multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r0_re,r0_im,
+		      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-frame_parms->Ncp),0);
+    
+    
+    if (eNB2UE[eNB_id][UE_id]->first_run == 1)
+      eNB2UE[eNB_id][UE_id]->first_run = 0;
+    
+    
+    //      path_loss_dB = 0;
+    //      path_loss = 1;
+    
+    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	r0_re[aa][i]=r0_re[aa][i]*sqrt(path_loss); 
+	r0_im[aa][i]=r0_im[aa][i]*sqrt(path_loss); 
+	
+      }
+    }
+    
+    
+    // RF model
+    
+    
+    rf_rx(r0_re,
+	  r0_im,
+	  NULL,
+	  NULL,
+	  0,
+	  frame_parms->nb_antennas_rx,
+	  frame_parms->samples_per_tti>>1,
+	  (eNB_id==0) ? (1.0/7.68e6 * 1e9) : 1e9,  // sampling time (ns)
+	  0.0,               // freq offset (Hz) (-20kHz..20kHz)
+	  0.0,               // drift (Hz) NOT YET IMPLEMENTED
+	  nf,                // noise_figure NOT YET IMPLEMENTED
+	  (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+	  200,               // IP3_dBm (dBm)
+	  &eNB2UE[eNB_id][UE_id]->ip,               // initial phase
+	  30.0e3,            // pn_cutoff (kHz)
+	  -500.0,            // pn_amp (dBc) default: 50
+	  0.0,               // IQ imbalance (dB),
+	  0.0);              // IQ phase imbalance (rad)
+    
+    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	r_re[aa][i]+=r0_re[aa][i]*sqrt(path_loss); 
+	r_im[aa][i]+=r0_im[aa][i]*sqrt(path_loss); 
+	
+      }
+    }
+  }      
+  rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
+  
+  //printf("[RF RX] rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
+  
+  sample_offset = 0;
+  
+  rxdata = PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata;
+  
+  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1) + sample_offset;
+  
+  
+  
+  adc(r_re,
+      r_im,
+      0,
+      slot_offset,
+      rxdata,
+      frame_parms->nb_antennas_rx,
+      frame_parms->samples_per_tti>>1,
+      12);
+  
+  rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
+  
+  //printf("[RF RX] rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+  
+  
+
+
+#ifdef IFFT_FPGA
+  free(txdataF2[0]);
+  free(txdataF2[1]);
+  free(txdataF2);
+  free(txdata[0]);
+  free(txdata[1]);
+  free(txdata);
+#endif 
+}
+
+do_UL_sig(double **r0_re,double **r0_im,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u8 eNB_id,u32 slot_offset,u16 next_slot,double *nf) {
+
+  mod_sym_t **txdataF;
+#ifdef IFFT_FPGA
+  int **txdataF2;
+#endif
+  int **txdata,**rxdata;
+  LTE_DL_FRAME_PARMS *frame_parms;
+
+  u8 UE_id,aa;
+  double path_loss, tx_pwr, rx_pwr, snr_dB;
+  u32 i;
+
+#ifdef IFFT_FPGA
+  txdata    = (int **)malloc16(2*sizeof(int*));
+  txdata[0] = (int *)malloc16(OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  txdata[1] = (int *)malloc16(OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  bzero(txdata[0],OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[0]->frame_parms->Ncp==1) ? 6 : 7));
+  bzero(txdata[1],OFDM_SYMBOL_SIZE*((PHY_vars_eNb_g[0]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  txdataF2    = (int **)malloc16(2*sizeof(int*));
+  txdataF2[0] = (int *)malloc16(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  txdataF2[1] = (int *)malloc16(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  
+  bzero(txdataF2[0],4*NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+  bzero(txdataF2[1],4*NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->frame_parms->Ncp==1) ? 6 : 7));
+#endif
+
+  for (i=0;i<(PHY_vars_eNb_g[0]->lte_frame_parms.samples_per_tti>>1);i++) {
+    for (aa=0;aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_rx;aa++) {
+      r0_re[aa][i]=0.0;
+      r0_im[aa][i]=0.0;
+    }
+  }
+
+
+  for (UE_id=0;UE_id<NB_CH_INST;UE_id++) {
+
+    path_loss = pow(10.0,-.1*UE2eNB[eNB_id][UE_id]->path_loss_dB);
+
+    frame_parms = &PHY_vars_UE_g[eNB_id]->lte_frame_parms;
+
+    txdataF = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdataF;
+#ifndef IFFT_FPGA
+    txdata = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdata;
+#endif
+
+#ifdef IFFT_FPGA
+    
+    slot_offset = (next_slot)*(PHY_vars_UE_g[eNB_id]->lte_frame_parms->N_RB_DL*12)*((PHY_vars_eNb_g[eNB_id]->lte_frame_parms->Ncp==1) ? 6 : 7);
+    
+    //write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
+    //write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+    
+    
+    // do talbe lookup and write results to txdataF2
+    for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+
+      l = slot_offset;	
+      for (i=0;i<NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7);i++) 
+	if ((i%512>=1) && (i%512<=150))
+	  txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	else if (i%512>=362)
+	  txdataF2[aa][i] = ((int*)mod_table)[txdataF[aa][l++]];
+	else 
+	  txdataF2[aa][i] = 0;
+      
+    }
+      
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) 
+      PHY_ofdm_mod(txdataF2[aa],        // input
+		   txdata[aa],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   (frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    
+#else //IFFT_FPGA
+    
+    slot_offset = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
+    
+    
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+      PHY_ofdm_mod(&txdataF[aa][slot_offset],        // input
+		   txdata[aa],         // output
+		   frame_parms->log2_symbol_size,                // log2_fft_size
+		   (frame_parms->Ncp==1) ? 6 : 7,                 // number of symbols
+		   frame_parms->nb_prefix_samples,               // number of prefix samples
+		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
+		   frame_parms->rev,           // bit-reversal permutation
+		   CYCLIC_PREFIX);
+    }  
+#endif //IFFT_FPGA
+    
+    tx_pwr = dac_fixed_gain(s_re,
+			    s_im,
+			    txdata,
+			    0, //slot_offset,
+			    frame_parms->nb_antennas_tx,
+			    frame_parms->samples_per_tti>>1,
+			    14,
+			    18); 
+    //printf("[RF TX] tx_pwr %f dB for slot %d (subframe %d)\n",10*log10(tx_pwr),next_slot,next_slot>>1);
+    //      printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
+    multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r0_re,r0_im,
+		      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-frame_parms->Ncp),0);
+    
+    
+    if (UE2eNB[eNB_id][UE_id]->first_run == 1)
+      UE2eNB[eNB_id][UE_id]->first_run = 0;
+    
+    
+    //      path_loss_dB = 0;
+    //      path_loss = 1;
+    
+    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	r0_re[aa][i]=r0_re[aa][i]*sqrt(path_loss); 
+	r0_im[aa][i]=r0_im[aa][i]*sqrt(path_loss); 
+	
+      }
+    }
+    
+    
+    // RF model
+    
+    
+    rf_rx(r0_re,
+	  r0_im,
+	  NULL,
+	  NULL,
+	  0,
+	  frame_parms->nb_antennas_rx,
+	  frame_parms->samples_per_tti>>1,
+	  (eNB_id==0) ? (1.0/7.68e6 * 1e9) : 1e9,  // sampling time (ns)
+	  0.0,               // freq offset (Hz) (-20kHz..20kHz)
+	  0.0,               // drift (Hz) NOT YET IMPLEMENTED
+	  nf,                // noise_figure NOT YET IMPLEMENTED
+	  (double)PHY_vars_eNb_g[eNB_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+	  200,               // IP3_dBm (dBm)
+	  &UE2eNB[UE_id][eNB_id]->ip,               // initial phase
+	  30.0e3,            // pn_cutoff (kHz)
+	  -500.0,            // pn_amp (dBc) default: 50
+	  0.0,               // IQ imbalance (dB),
+	  0.0);              // IQ phase imbalance (rad)
+    
+    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
+      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+	r_re[aa][i]+=r0_re[aa][i]*sqrt(path_loss); 
+	r_im[aa][i]+=r0_im[aa][i]*sqrt(path_loss); 
+	
+      }
+    }
+  }      
+  rx_pwr = signal_energy_fp(r_re,r_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
+  
+  //printf("[RF RX] rx_pwr (ADC in) %f dB for slot %d (subframe %d)\n",10*log10(rx_pwr),next_slot,next_slot>>1);  
+  
+  sample_offset = 0;
+  
+  rxdata = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.rxdata;
+  
+  slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1) + sample_offset;
+  
+  
+  
+  adc(r_re,
+      r_im,
+      0,
+      slot_offset,
+      rxdata,
+      frame_parms->nb_antennas_rx,
+      frame_parms->samples_per_tti>>1,
+      12);
+  
+  rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
+  
+  //printf("[RF RX] rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+  
+  
+
+
+#ifdef IFFT_FPGA
+  free(txdataF2[0]);
+  free(txdataF2[1]);
+  free(txdataF2);
+  free(txdata[0]);
+  free(txdata[1]);
+  free(txdata);
+#endif 
+}
 
 int main(int argc, char **argv) {
 
   char c;
   int i,j,l,aa,sector;
   double sigma2, sigma2_dB=0;
-  mod_sym_t **txdataF;
-#ifdef IFFT_FPGA
-  int **txdataF2;
-#endif
-  int **txdata,**rxdata;
-  double **s_re,**s_im,**r_re,**r_im;
+  double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.5,Td=1.0;
+  double aoa=.03,ricean_factor=.5,Td=1.0,forgetting_factor=.999,maxDoppler=0;
   int channel_length;
 
   unsigned char pbch_pdu[6];
@@ -237,10 +621,13 @@ int main(int argc, char **argv) {
   unsigned char rate_adaptation_flag;
   unsigned char transmission_mode;
 
-  int ue_id,eNB_id; // navid 
+  int UE_id,eNB_id; // navid 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
+
+  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+  channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
   NB_CH_INST=1;
   //    NODE_ID[0]=0;
@@ -254,7 +641,7 @@ int main(int argc, char **argv) {
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "ht:m:rn:s:")) != -1)
+  while ((c = getopt (argc, argv, "ht:m:rn:s:f:")) != -1)
     {
       switch (c)
 	{
@@ -282,6 +669,9 @@ int main(int argc, char **argv) {
 	case 'd':
     	  Td = atof(optarg);
 	  break;
+	case 'f':
+	  forgetting_factor = atof(optarg);
+	  break;
 	default:
 	  help ();
 	  exit (-1);
@@ -305,9 +695,9 @@ int main(int argc, char **argv) {
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
-  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-    PHY_vars_UE_g[ue_id] = malloc(sizeof(PHY_VARS_UE));
-    PHY_vars_UE_g[ue_id]->Mod_id=ue_id; 
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+    PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
+    PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
   }// end navid
 
   PHY_config = malloc(sizeof(PHY_CONFIG));
@@ -379,68 +769,68 @@ int main(int argc, char **argv) {
 
   }
 
-  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-    memcpy(&(PHY_vars_UE_g[ue_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     
-    PHY_vars_UE_g[ue_id]->SRS_parameters.Csrs = 2;
-    PHY_vars_UE_g[ue_id]->SRS_parameters.Bsrs = 0;
-    PHY_vars_UE_g[ue_id]->SRS_parameters.kTC = 0;
-    PHY_vars_UE_g[ue_id]->SRS_parameters.n_RRC = 0;
-    if (ue_id>=3) {
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Csrs = 2;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Bsrs = 0;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.kTC = 0;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.n_RRC = 0;
+    if (UE_id>=3) {
       printf("This SRS config will only work for 3 users");
       exit(-1);
     }
-    PHY_vars_UE_g[ue_id]->SRS_parameters.Ssrs = ue_id+1;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Ssrs = UE_id+1;
 
-    phy_init_lte_ue(&PHY_vars_UE_g[ue_id]->lte_frame_parms,
-		    &PHY_vars_UE_g[ue_id]->lte_ue_common_vars,
-		    PHY_vars_UE_g[ue_id]->lte_ue_dlsch_vars,
-		    PHY_vars_UE_g[ue_id]->lte_ue_dlsch_vars_SI,
-		    PHY_vars_UE_g[ue_id]->lte_ue_dlsch_vars_ra,
-		    PHY_vars_UE_g[ue_id]->lte_ue_pbch_vars,
-		    PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars,
-		    PHY_vars_UE_g[ue_id]);
+    phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
+		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars_SI,
+		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars_ra,
+		    PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars,
+		    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars,
+		    PHY_vars_UE_g[UE_id]);
   } // end navid
   
   phy_init_lte_top(lte_frame_parms);
 
 
 
-  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_eNb_g[0]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
 
-    PHY_vars_UE_g[ue_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
-    PHY_vars_UE_g[ue_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    PHY_vars_UE_g[UE_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    PHY_vars_UE_g[UE_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     
-    PHY_vars_UE_g[ue_id]->ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_ULSCH_t*));
+    PHY_vars_UE_g[UE_id]->ulsch_ue = (LTE_UE_ULSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_ULSCH_t*));
     
-    PHY_vars_UE_g[ue_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
-    PHY_vars_UE_g[ue_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    PHY_vars_UE_g[UE_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
+    PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
 
 
   }// end navid 
 
-  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     for (i=0;i<NB_CH_INST;i++) {
       for (j=0;j<2;j++) {
-	PHY_vars_UE_g[ue_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8);
-	if (!PHY_vars_UE_g[ue_id]->dlsch_ue[i][j]) {
+	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8);
+	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
 	  msg("Can't get ue dlsch structures\n");
 	  exit(-1);
 	}
 	else
-	  msg("dlsch_ue[%d][%d] => %p\n",ue_id,i,PHY_vars_UE_g[ue_id]->dlsch_ue[i][j]);//navid
+	  msg("dlsch_ue[%d][%d] => %p\n",UE_id,i,PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]);//navid
       }
       
       
-      PHY_vars_UE_g[ue_id]->ulsch_ue[i]  = new_ue_ulsch(3);
-      if (!PHY_vars_UE_g[ue_id]->ulsch_ue[i]) {
+      PHY_vars_UE_g[UE_id]->ulsch_ue[i]  = new_ue_ulsch(3);
+      if (!PHY_vars_UE_g[UE_id]->ulsch_ue[i]) {
 	msg("Can't get ue ulsch structures\n");
 	exit(-1);
       }
       
-      PHY_vars_UE_g[ue_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1);
-      PHY_vars_UE_g[ue_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1);
+      PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1);
+      PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1);
     }
   }// end navid
   //  init_transport_channels(transmission_mode);
@@ -462,10 +852,13 @@ int main(int argc, char **argv) {
 #endif
   
   s_re = malloc(2*sizeof(double*));
-  s_im = malloc(2*sizeof(double*));
+  s_im = malloc(2*sizeof(double*)); 
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
-  
+  r_re0 = malloc(2*sizeof(double*));
+  r_im0 = malloc(2*sizeof(double*));
+
+ 
   for (i=0;i<2;i++) {
 
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -476,12 +869,50 @@ int main(int argc, char **argv) {
     bzero(r_re[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    r_re0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    bzero(r_re0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    r_im0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
+    bzero(r_im0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
-  ch = (struct complex**) malloc(4 * sizeof(struct complex*));
-  for (i = 0; i<4; i++)
-    ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex));
 
+  // initialized channel descriptors
+  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+
+      eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+					       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+					       8,
+					       channel_length,
+					       amps,
+					       Td,
+					       BW,
+					       ricean_factor,
+					       aoa,
+					       forgetting_factor,
+					       maxDoppler,
+					       0,
+					       0);
+
+      UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+					       PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
+					       8,
+					       channel_length,
+					       amps,
+					       Td,
+					       BW,
+					       ricean_factor,
+					       aoa,
+					       forgetting_factor,
+					       maxDoppler,
+					       0,
+					       0);
+
+ 
+
+    }
+  }
+    
   randominit(0);
   set_taus_seed(0);
 
@@ -499,10 +930,10 @@ int main(int argc, char **argv) {
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-  for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-    PHY_vars_UE_g[ue_id]->rx_total_gain_dB=140;
-    PHY_vars_UE_g[ue_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+    PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
+    PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
   }// end navid 
  
 
@@ -534,8 +965,8 @@ int main(int argc, char **argv) {
 	phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[eNB_id]);
 
       if (((mac_xface->frame % 10) == 0) && (slot==19)) {
-	for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-	  printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,PHY_vars_eNb_g[0]->eNB_UE_stats[ue_id].crnti);
+	for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+	  printf("Frame %d, slot %d : eNB procedures (UE_id %x)\n",mac_xface->frame,slot,PHY_vars_eNb_g[0]->eNB_UE_stats[UE_id].crnti);
 	} // end navid 
 	/*
 	  len = chbch_stats_read(stats_buffer, NULL, 0, 4096);//STATS_BUF_LEN);
@@ -543,9 +974,9 @@ int main(int argc, char **argv) {
 	*/
       }
       //      mac_xface->is_cluster_head = 0;
-      for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-	printf("Phy procedures UE %d for slot %d\n", ue_id,slot);
-	phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[ue_id],0);
+      for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+	printf("Phy procedures UE %d for slot %d\n", UE_id,slot);
+	phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0);
       }// end navid 
  
 #ifdef XFORMS
@@ -555,12 +986,12 @@ int main(int argc, char **argv) {
 #endif
 
       if (((mac_xface->frame % 10) == 0)&& (slot==19)) {
-	for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
+	for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
 	  printf("Frame %d, slot %d : UE procedures (Power offset %d, Mode %s, t_CRNTI %x)\n",
 		 mac_xface->frame,slot,
-		 PHY_vars_UE_g[ue_id]->ulsch_ue[0]->power_offset,
-		 mode_string[PHY_vars_UE_g[ue_id]->UE_mode[0]],
-		 PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[0]->crnti);
+		 PHY_vars_UE_g[UE_id]->ulsch_ue[0]->power_offset,
+		 mode_string[PHY_vars_UE_g[UE_id]->UE_mode[0]],
+		 PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti);
 	  /*
 	    len = chbch_stats_read(stats_buffer,NULL,0,4096);
 	    printf("%s\n\n",stats_buffer);
@@ -570,17 +1001,36 @@ int main(int argc, char **argv) {
 
       //      write_output("eNb_txsigF0.m","eNb_txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
       //      write_output("eNb_txsigF1.m","eNb_txsF1", lte_eNB_common_vars->txdataF[eNb_id][1],300*120,1,4);
+#ifdef RF
+      //      ulsch_ue[0]->power_offset = 0;
 
-      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
-	for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
-	  txdataF = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdataF[0];
-#ifndef IFFT_FPGA
-	  txdata = PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars.txdata[0];
+      path_loss_dB = -105 + snr_dB;
+
+      if ((next_slot > 2) && (next_slot<10)) {
+#ifdef OFDMA_ULSCH
+	if (PHY_vars_UE_g[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
+	  path_loss_dB += (-20+6.2);  // UE
+	else
+	  path_loss_dB += (-20.0+(double)PHY_vars_UE_g[UE_id]->ulsch_ue[0]->power_offset);
+#else
+	path_loss_dB += (-20);
 #endif
+      }
+
+
+      path_loss    = pow(10,path_loss_dB/10);
+    
+      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
+	for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+
+	  do_DL_sig(r0_re,r0_im,r_re,r_im,s_re,s_im,UE_id);
+	  
 	}
       }
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	for (ue_id=0;ue_id<NB_UE_INST;ue_id++) {
+	for (eNB_id=0;eNB_id<NB_UE_INST;eNB_id++) {
+	  rx_gain = PHY_vars_eNb_g[eNB_id]->rx_total_gain_eNB_dB;
+
 	  txdataF = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdataF;
 #ifndef IFFT_FPGA
 	  txdata = PHY_vars_UE_g[eNB_id]->lte_ue_common_vars.txdata;
@@ -589,9 +1039,9 @@ int main(int argc, char **argv) {
       }
       else //it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	  txdataF = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[eNb_id];
+	  txdataF = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[eNB_id];
 #ifndef IFFT_FPGA
-	  txdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdata[eNb_id];
+	  txdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdata[eNB_id];
 #endif
 	}
 	else {// UL part
@@ -737,33 +1187,7 @@ int main(int argc, char **argv) {
       if (first_call == 1)
 	first_call = 0;
 
-#ifdef RF
-      //      ulsch_ue[0]->power_offset = 0;
-
-      path_loss_dB = -105 + snr_dB;
-
-      if ((next_slot > 2) && (next_slot<10)) {
-#ifdef OFDMA_ULSCH
-	if (PHY_vars_UE_g[0]->UE_mode == PRACH) // 6 RBs, 23 dBm
-	  path_loss_dB += (-20+6.2);  // UE
-	else
-	  path_loss_dB += (-20.0+(double)PHY_vars_UE_g[ue_id]->ulsch_ue[0]->power_offset);
-#else
-	path_loss_dB += (-20);
-#endif
-      }
-
-      if ((next_slot>2) && (next_slot<10)) {
-	rx_gain = PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB;
-	//printf("[RF RX] Slot %d: rx_gain (eNB) %d , path_loss (UE) %f\n",next_slot, rx_gain,path_loss_dB);
-      }
-      else {
-	rx_gain = PHY_vars_UE_g[0]->rx_total_gain_dB;
-	//printf("[RF RX] Slot %d: rx_gain (UE) %d, path_loss (eNB) %f\n",next_slot, rx_gain,path_loss_dB);
-      }
-
-      path_loss    = pow(10,path_loss_dB/10);
-      
+  
       //      path_loss_dB = 0;
       //      path_loss = 1;
       
@@ -807,14 +1231,14 @@ int main(int argc, char **argv) {
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL)
 	rxdata = PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata;
       else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
-	rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id];
+	rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNB_id];
 	sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
       }
       else //it must be a special subframe
 	if (next_slot%2==0) //DL part
 	  rxdata = PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata;
 	else {// UL part
-	  rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNb_id];
+	  rxdata = PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[eNB_id];
 	  sample_offset = channel_offset - (openair_daq_vars.timing_advance - TIMING_ADVANCE_INIT);
 	}
 
