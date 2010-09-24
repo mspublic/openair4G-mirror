@@ -1,0 +1,14 @@
+# start_kern script : This script launches the 3-node RTAI-kernel-space emulation from the CH machine (Machine0)
+
+# put the name or IP address of Machine1 here
+export Machine1=mezzo 
+# put the name of IP address of Machine2 here
+export Machine2=baryton
+
+# put the path to openair2 here (same on both machines)
+export OPENAIR2_DIR=/homes/anouar/openair2
+
+xterm -T "Machine0" -hold -e sh start_ch_kern  &
+
+xterm -T "Machine1" -hold -e ssh root@$Machine1 $OPENAIR2_DIR/EXAMPLES/ETH_EMUL_3_NODES_IPv4/start_mr1_kern &
+xterm -T "Machine2" -hold -e ssh root@$Machine2 $OPENAIR2_DIR/EXAMPLES/ETH_EMUL_3_NODES_IPv4/start_mr2_kern &
