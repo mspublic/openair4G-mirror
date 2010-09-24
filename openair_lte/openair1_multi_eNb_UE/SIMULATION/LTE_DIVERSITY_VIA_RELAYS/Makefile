@@ -57,7 +57,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_modulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_demodulation.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_coding.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_decoding.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/rar_tools.o
+#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/rar_tools.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
 PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
@@ -133,7 +133,7 @@ LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(LAYER2_OBJ)	
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
-all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim_ul relays_sim_dl relays_sim_overall relays_sim_harq
+all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim relays_sim_harq
 
 test:
 	echo $(OPENAIR2_DIR) $(LAYER2_OBJ)
@@ -162,14 +162,8 @@ physim : $(OBJ) phy_procedures_sim.c
 physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
 	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
-relays_sim_ul : $(OBJ2) relays_sim_ul.c
-	$(CC)  relays_sim_ul.c -I$(TOP_DIR) -o relaysim_ul $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_dl : $(OBJ2) relays_sim_dl.c
-	$(CC)  relays_sim_dl.c -I$(TOP_DIR) -o relaysim_dl $(CFLAGS) $(OBJ2) -lm
-
-relays_sim_overall : $(OBJ2) relays_sim_overall.c
-	$(CC)  relays_sim_overall.c -I$(TOP_DIR) -o relaysim_overall $(CFLAGS) $(OBJ2) -lm
+relays_sim : $(OBJ2) relays_sim.c
+	$(CC)  relays_sim.c -I$(TOP_DIR) -o relaysim $(CFLAGS) $(OBJ2) -lm
 
 relays_sim_harq : $(OBJ2) relays_sim_harq.c
 	$(CC)  relays_sim_harq.c -I$(TOP_DIR) -o relaysim_harq $(CFLAGS) $(OBJ2) -lm
