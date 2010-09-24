@@ -1,5 +1,5 @@
 function [gps_x, gps_y] = plot_gps_coordinates(map, longitude, latitude, rx_rssi, limits, label, color, varargin)
-% h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, label, color)
+% h = plot_gps_coordinates(mm, longitude, latitude, rx_rssi, limits, label, color, style)
 %
 %  This function plots the gps coordinates given by langitude and latutude
 %  onto the map of garbejaire. If langitude and latutude are matrices, each

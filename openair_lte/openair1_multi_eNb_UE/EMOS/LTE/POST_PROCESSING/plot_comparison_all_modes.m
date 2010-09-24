@@ -4,6 +4,8 @@ close all
 clear all
 h_fig = 0;
 
+addpath('~/Devel/matlab/IPDM')
+
 % pathname = '/media/disk/PENNE/';
 % mm = 'penne';
 % pathname = '/emos/AMBIALET/';
@@ -11,10 +13,12 @@ h_fig = 0;
 pathname = '/emos/EMOS/';
 mm = 'cordes';
 
+%%
 mode1 = load(fullfile(pathname,'Mode1/results/results_UE.mat'));
 mode1_ul = load(fullfile(pathname,'Mode1/results/results_eNB.mat'));
 mode2 = load(fullfile(pathname,'Mode2/results/results_UE.mat'));
 if strcmp(mm,'cordes')
+    mode2_update = load(fullfile(pathname,'Mode2_update/results/results_UE.mat'));
     mode2_ul = load(fullfile(pathname,'Mode2_update/results/results_eNB.mat'));
 else
     mode2_ul = load(fullfile(pathname,'Mode2/results/results_eNB.mat'));
@@ -35,10 +39,18 @@ mode2.UE_connected = (mode2.UE_mode_cat==3);
 mode2.throughput = double(100./(100+mode2.dlsch_fer_cat).*mode2.tbs_cat.*6.*100);
 mode2.good = (mode2.dlsch_fer_cat<=100 & mode2.dlsch_fer_cat>=0).';
 
+if strcmp(mm,'cordes')
+    mode2_update.UE_synched = (mode2_update.UE_mode_cat>0);
+    mode2_update.UE_connected = (mode2_update.UE_mode_cat==3);
+end
+
 mode6.UE_synched = (mode6.UE_mode_cat>0);
 mode6.UE_connected = (mode6.UE_mode_cat==3);
 mode6.throughput = double(100./(100+mode6.dlsch_fer_cat).*mode6.tbs_cat.*6.*100);
 mode6.good = (mode6.dlsch_fer_cat<=100 & mode6.dlsch_fer_cat>=0).';
+
+mode2_ideal.UE_connected = (mode2_ideal.UE_mode_cat(1:100:end)==3);
+mode2_ideal.UE_synched = (mode2_ideal.UE_mode_cat(1:100:end)>0);
 
 %%
 mode1_ul.ulsch_fer_cat = [100 diff(mode1_ul.ulsch_errors_cat)];
@@ -77,12 +89,67 @@ mode6_ul.ulsch_throughput_ideal_2Rx(~mode6_ul.eNB_connected,1) = 0;
 [mode2.dist, mode2.dist_travelled] = calc_dist(mode2.gps_lat_cat,mode2.gps_lon_cat,mm);
 [mode6.dist, mode6.dist_travelled] = calc_dist(mode6.gps_lat_cat,mode6.gps_lon_cat,mm);
 
-%% set throughput to 0 when UE was not connected
-mode2_ideal.UE_connected = (mode2_ideal.UE_mode_cat(1:100:end)==3);
-mode2_ideal.UE_synched = (mode2_ideal.UE_mode_cat(1:100:end)>0);
+
+%% define parcours 1
+NFrames_cum = cumsum(mode2.NFrames);
+parcours1 = false(1,length(mode2.timestamp_cat));
+
+switch mm
+    case 'cordes'
+        idx(1) = 1; %start
+        idx(2) = strmatch('data_term3_idx30_20100511T164443.EMOS',char(mode2.filenames)); %end
+        idx(3) = strmatch('data_term3_idx22_20100518T145355.EMOS',char(mode2.filenames)); %start
+        idx(4) = strmatch('data_term3_idx11_20100520T153238.EMOS',char(mode2.filenames)); %end
+
+        frame_idx = NFrames_cum(idx)/100;
+        parcours1(frame_idx(1):frame_idx(2)) = true;
+        parcours1(frame_idx(3):frame_idx(4)) = true;
+    case 'penne'
+        % double check this - do we neglect the coverage roads here?
+        idx = strmatch('data_term3_idx72_20100701T151158.EMOS',char(mode2.filenames));
+        frame_idx = NFrames_cum(idx)/100;
+        parcours1(1:frame_idx) = true;
+    case 'ambialet'
+        idx(1) = strmatch('data_term3_idx34_20100719T191120.EMOS',char(mode2.filenames)); %last file before parcours 1
+        idx(2) = strmatch('data_term3_idx07_20100721T180138.EMOS',char(mode2.filenames)); %last file of parcours 1
+
+        frame_idx = NFrames_cum(idx)/100;
+        parcours1(frame_idx(1)+1:frame_idx(2)) = true;
+end
 
 
-%% Coded throughput CDF comparison
+%% find a common subset of points
+% take the points from mode6 where UE_connected==1 as basis
+% then for each of those points find points in the other set that are close
+tol = 0.001;
+mode1_gps = [mode1.gps_lat_cat.' mode1.gps_lon_cat.'];
+mode2_gps = [mode2.gps_lat_cat.' mode2.gps_lon_cat.'];
+mode6_gps = [mode6.gps_lat_cat.' mode6.gps_lon_cat.'];
+mode1.ind_common = false(1,length(mode1_gps));
+mode2.ind_common = false(1,length(mode2_gps));
+mode6.ind_common = false(1,length(mode6_gps));
+for i=1:length(mode6_gps)
+    mode1_d = ipdm(mode6_gps(i,:),mode1_gps,'Subset','Maximum','Limit',tol);
+    mode2_d = ipdm(mode6_gps(i,:),mode2_gps,'Subset','Maximum','Limit',tol);
+    mode1.ind_common(mode1_d<=tol) = true;
+    mode2.ind_common(mode2_d<=tol) = true;
+    if any(mode1_d<=tol) && any(mode2_d<=tol)
+        mode6.ind_common(i) = true;
+    end
+end
+
+%% find routes taken more than once
+mode1.ind_duplicate = filter_routes(mode1.gps_lat_cat,mode1.gps_lon_cat,mode1.gps_time_cat);
+mode2.ind_duplicate = filter_routes(mode2.gps_lat_cat,mode2.gps_lon_cat,mode2.gps_time_cat);
+mode6.ind_duplicate = filter_routes(mode6.gps_lat_cat,mode6.gps_lon_cat,mode6.gps_time_cat);
+
+% sum(parcours1 & ~mode2.ind_duplicate & ~mode2.ind_common)
+% sum(~mode1.ind_duplicate & ~mode1.ind_common)
+
+% add mode2.throughput( parcours1 & ~mode2.ind_duplicate &
+% ~mode2.ind_common) to the points in mode6.throughput
+
+%% set throughput to 0 when not connected resp. not synched
 mode1.throughput(~mode1.UE_connected | ~mode1.good) = 0;
 mode2.throughput(~mode2.UE_connected | ~mode2.good) = 0;
 mode6.throughput(~mode6.UE_connected | ~mode6.good) = 0;
@@ -90,6 +157,15 @@ nn = fieldnames(mode2_ideal);
 for n = strmatch('rateps',nn).'
     mode2_ideal.(nn{n})(~mode2_ideal.UE_synched) = 0;
 end
+
+% %% select common routes of parcours 1 that have only been taken once
+% mode1.throughput(~mode1.ind_common | mode1.ind_duplicate) = nan;
+% mode2.throughput(~mode2.ind_common | mode2.ind_duplicate) = nan;
+% mode6.throughput(~mode6.ind_common | mode6.ind_duplicate) = nan;
+% nn = fieldnames(mode2_ideal);
+% for n = strmatch('rateps',nn).'
+%     mode2_ideal.(nn{n})(~mode2.ind_common | mode2.ind_duplicate) = nan;
+% end
 
 %%
 h_fig = h_fig+1;
@@ -102,7 +178,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})));
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})(mode2.ind_common & ~mode2.ind_duplicate)));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -110,17 +186,17 @@ for n = strmatch('rateps',nn).'
         ni=ni+1;
     end
 end
-[f,x] = ecdf(mode1.throughput);
+[f,x] = ecdf(mode1.throughput(mode1.ind_common & ~mode1.ind_duplicate));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'TX mode 1';
+legend_str{ni} = sprintf('TX mode 1 (%d pts)',sum((mode1.ind_common & ~mode1.ind_duplicate)));
 ni=ni+1;
-[f,x] = ecdf(mode2.throughput);
+[f,x] = ecdf(mode2.throughput(mode2.ind_common & ~mode2.ind_duplicate));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'Tx mode 2';
+legend_str{ni} = sprintf('Tx mode 2 (%d pts)',sum(mode2.ind_common & ~mode2.ind_duplicate));
 ni=ni+1;
-[f,x] = ecdf(mode6.throughput);
+[f,x] = ecdf(mode6.throughput(mode6.ind_common & ~mode6.ind_duplicate));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'Tx mode 6';
+legend_str{ni} = sprintf('Tx mode 6 (%d pts)',sum(mode6.ind_common & ~mode6.ind_duplicate));
 ni=ni+1;
 
 title('DLSCH throughput CDF')
@@ -141,7 +217,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n}))*10/6);
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})(mode2.ind_common & ~mode2.ind_duplicate))*10/6);
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -149,15 +225,15 @@ for n = strmatch('rateps',nn).'
         ni=ni+1;
     end
 end
-[f,x] = ecdf(mode1.throughput*10/6);
+[f,x] = ecdf(mode1.throughput(mode1.ind_common & ~mode1.ind_duplicate)*10/6);
 plot(x,f,colors{ni},'Linewidth',2)
         legend_str{ni} = 'TX mode 1';
         ni=ni+1;
-[f,x] = ecdf(mode2.throughput*10/6);
+[f,x] = ecdf(mode2.throughput(mode2.ind_common & ~mode2.ind_duplicate)*10/6);
 plot(x,f,colors{ni},'Linewidth',2)
         legend_str{ni} = 'Tx mode 2';
         ni=ni+1;
-[f,x] = ecdf(mode6.throughput*10/6);
+[f,x] = ecdf(mode6.throughput(mode6.ind_common & ~mode6.ind_duplicate)*10/6);
 plot(x,f,colors{ni},'Linewidth',2)
         legend_str{ni} = 'Tx mode 6';
         ni=ni+1;
@@ -181,7 +257,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})),'DL'));
+        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})(mode2.ind_common & ~mode2.ind_duplicate)),'DL'));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -189,15 +265,15 @@ for n = strmatch('rateps',nn).'
         ni=ni+1;
     end
 end
-[f,x] = ecdf(coded2uncoded(mode1.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode1.throughput(mode1.ind_common & ~mode1.ind_duplicate),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'TX mode 1';
 ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode2.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode2.throughput(mode2.ind_common & ~mode2.ind_duplicate),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'Tx mode 2';
 ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode6.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode6.throughput(mode6.ind_common & ~mode6.ind_duplicate),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'Tx mode 6';
 ni=ni+1;
@@ -209,14 +285,24 @@ legend(legend_str,'Interpreter','none','Location','SouthOutside');
 grid on
 saveas(h_fig,fullfile(pathname,'results','DLSCH_uncoded_throughput_cdf_comparison.eps'),'epsc2')
 
-%% Coded throughput CDF comparison (when connected)
-mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;
-mode2.throughput(~mode2.UE_connected | ~mode2.good) = nan;
-mode6.throughput(~mode6.UE_connected | ~mode6.good) = nan;
-nn = fieldnames(mode2_ideal);
-for n = strmatch('rateps',nn).'
-    mode2_ideal.(nn{n})(~mode2_ideal.UE_connected) = nan;
-end
+%% Kfactor vs throughput
+h_fig = h_fig + 1;
+figure(h_fig)
+mode2_ideal.K_fac_cat = reshape(mode2_ideal.K_fac_cat,4,[]);
+mode2_ideal.K_fac_cat(:,~mode2_ideal.UE_synched) = nan;
+plot_in_bins(10*log10(mean(mode2_ideal.K_fac_cat,1)),mode2.throughput,-20:3:30);
+xlabel('Ricean K-Factor [dB]')
+ylabel('Throughput [bps]')
+saveas(h_fig,fullfile(pathname,'Mode2','results','throughput_vs_Kfactor.eps'),'epsc2')
+
+% %% Coded throughput CDF comparison (when connected)
+% mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;
+% mode2.throughput(~mode2.UE_connected | ~mode2.good) = nan;
+% mode6.throughput(~mode6.UE_connected | ~mode6.good) = nan;
+% nn = fieldnames(mode2_ideal);
+% for n = strmatch('rateps',nn).'
+%     mode2_ideal.(nn{n})(~mode2_ideal.UE_connected) = nan;
+% end
 
 %%
 h_fig = h_fig+1;
@@ -229,7 +315,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})));
+        [f,x] = ecdf(scale_ideal_tp(mode2_ideal.(nn{n})(mode2.ind_common & ~mode2.ind_duplicate & mode2.UE_connected)));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -237,17 +323,17 @@ for n = strmatch('rateps',nn).'
         ni=ni+1;
     end
 end
-[f,x] = ecdf(mode1.throughput);
+[f,x] = ecdf(mode1.throughput(mode1.ind_common & ~mode1.ind_duplicate & mode1.UE_connected));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'TX mode 1';
+legend_str{ni} = sprintf('TX mode 1 (%d pts)',sum(mode1.ind_common & ~mode1.ind_duplicate & mode1.UE_connected));
 ni=ni+1;
-[f,x] = ecdf(mode2.throughput);
+[f,x] = ecdf(mode2.throughput(mode2.ind_common & ~mode2.ind_duplicate & mode2.UE_connected));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'Tx mode 2';
+legend_str{ni} = sprintf('Tx mode 2 (%d pts)',sum(mode2.ind_common & ~mode2.ind_duplicate & mode2.UE_connected));
 ni=ni+1;
-[f,x] = ecdf(mode6.throughput);
+[f,x] = ecdf(mode6.throughput(mode6.ind_common & ~mode6.ind_duplicate & mode6.UE_connected));
 plot(x,f,colors{ni},'Linewidth',2)
-legend_str{ni} = 'Tx mode 6';
+legend_str{ni} = sprintf('Tx mode 6 (%d pts)',sum(mode6.ind_common & ~mode6.ind_duplicate & mode6.UE_connected));
 ni=ni+1;
 
 title('DLSCH throughput CDF (when connected)')
@@ -268,7 +354,7 @@ for n = strmatch('rateps',nn).'
     hold on
     si = strfind(nn{n},'supportedQam');
     if si
-        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})),'DL'));
+        [f,x] = ecdf(coded2uncoded(scale_ideal_tp(mode2_ideal.(nn{n})(mode2.ind_common & ~mode2.ind_duplicate & mode2.UE_connected)),'DL'));
         plot(x,f,colors{ni},'Linewidth',2);
         legend_tmp = nn{n};
         legend_tmp(si:si+10) = [];
@@ -276,15 +362,15 @@ for n = strmatch('rateps',nn).'
         ni=ni+1;
     end
 end
-[f,x] = ecdf(coded2uncoded(mode1.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode1.throughput(mode1.ind_common & ~mode1.ind_duplicate & mode1.UE_connected),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'TX mode 1';
 ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode2.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode2.throughput(mode2.ind_common & ~mode2.ind_duplicate & mode2.UE_connected),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'Tx mode 2';
 ni=ni+1;
-[f,x] = ecdf(coded2uncoded(mode6.throughput,'DL'));
+[f,x] = ecdf(coded2uncoded(mode6.throughput(mode6.ind_common & ~mode6.ind_duplicate & mode6.UE_connected),'DL'));
 plot(x,f,colors{ni},'Linewidth',2)
 legend_str{ni} = 'Tx mode 6';
 ni=ni+1;
@@ -352,6 +438,34 @@ ylabel('P(x<abscissa)')
 grid on
 saveas(h_fig,fullfile(pathname,'results','UL_uncoded_throughput_cdf_comparison.eps'),'epsc2')
 
+%% PBCH
+h_fig = h_fig + 1;
+figure(h_fig)
+if strcmp(mm,'cordes')
+    mode2_update.pbch_fer_cat(~mode2_update.UE_synched) = 100;
+    mode2_update.pbch_good = (mode2_update.pbch_fer_cat<=100 & mode2_update.pbch_fer_cat>=0).';
+    [f,x] = ecdf(double(mode2_update.pbch_fer_cat(mode2_update.pbch_good)));
+    n_points = sum(mode2_update.pbch_good);
+else
+    mode2.pbch_fer_cat(~mode2.UE_synched) = 100;
+    mode2.pbch_good = (mode2.pbch_fer_cat<=100 & mode2.pbch_fer_cat>=0).';
+    [f,x] = ecdf(double(mode2.pbch_fer_cat(mode2.pbch_good & parcours1)));
+    n_points = sum(mode2.pbch_good & parcours1);
+end
+plot(x,f,'r','Linewidth',2)
+hold on
+mode1.pbch_fer_cat(~mode1.UE_synched) = 100;
+mode1.pbch_good = (mode1.pbch_fer_cat<=100 & mode1.pbch_fer_cat>=0).';
+[f,x] = ecdf(double(mode1.pbch_fer_cat(mode1.pbch_good)));
+plot(x,f,'b','Linewidth',2)
+legend(sprintf('Mode 2/6 (%d pts)',n_points),...
+    sprintf('Mode 1 (%d pts)',sum(mode1.pbch_good)),'Location','SouthEast');
+title('PBCH FER CDF')
+xlabel('PBCH FER [%]')
+ylabel('P(x<abscissa)')
+grid on
+saveas(h_fig,fullfile(pathname,'results','PBCH_FER_cdf_comparison.eps'),'epsc2')
+
 %% fit path loss model for all measurements
 dist = [mode1.dist mode2.dist mode6.dist];
 dist_ok = ((dist>0.5) & (dist<100)).';
@@ -397,7 +511,7 @@ close all
 
 switch mm
     case 'cordes'
-        plot_distance_travelled_cordes
+        % plot_distance_travelled_cordes
     case 'penne'
         load penne_zoom1.mat
         file_id = 1;

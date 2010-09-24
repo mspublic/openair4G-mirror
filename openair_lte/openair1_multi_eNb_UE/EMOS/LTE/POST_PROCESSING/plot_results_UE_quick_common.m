@@ -4,7 +4,8 @@ h_fig = 0;
 UE_synched = (UE_mode_cat>0);
 UE_connected = (UE_mode_cat==3);
 timebase = 1:length(UE_mode_cat);
-%timebase = gps_time_cat-gps_time_cat(find(~isnan(gps_time_cat),1));
+timebase2 = gps_time_cat-gps_time_cat(find(~isnan(gps_time_cat),1));
+timebase_cuts = find(diff(timebase2)>60*60*8);
 if (nomadic_flag)
     nomadic.UE_synched = (nomadic.UE_mode_cat>0);
     nomadic.UE_connected = (nomadic.UE_mode_cat==3);    
@@ -58,6 +59,9 @@ if ~isempty(strfind(lower(pathname),'interference'))
     ylim([-110 -90]);
 else
     ylim([-110 -30]);
+end
+if ~isempty(timebase_cuts)
+    plot(timebase_cuts,-110,'k^','Markersize',10,'Linewidth',2)
 end
 saveas(h_fig,fullfile(pathname,'RX_RSSI_dBm.eps'),'epsc2')
 
@@ -113,6 +117,11 @@ figure(h_fig);
 hold off
 good = (pbch_fer_cat<=100 & pbch_fer_cat>=0).';
 plot(timebase(UE_synched & good),pbch_fer_cat(UE_synched & good),'x');
+hold on
+if ~isempty(timebase_cuts)
+    ylim1 = get(gca,'Ylim');
+    plot(timebase_cuts,ylim1(1),'k^','Markersize',10,'Linewidth',2);
+end
 if (nomadic_flag)
     hold on
     nomadic.good = (nomadic.pbch_fer_cat<=100 & nomadic.pbch_fer_cat>=0).';
@@ -149,8 +158,8 @@ dlsch_throughput = double(100./(100+dlsch_fer_cat).*tbs_cat.*6.*100); %this assu
 good = (dlsch_fer_cat<=100 & dlsch_fer_cat>=0).';
 dlsch_throughput(~UE_connected | ~good) = 0;
 plot(timebase,dlsch_throughput,'x');
+hold on
 if (nomadic_flag)
-    hold on
     %nomadic.dlsch_throughput = (100-nomadic.dlsch_fer_cat).* nomadic.tbs_cat.*6;
     nomadic.dlsch_throughput = double(100./(100+nomadic.dlsch_fer_cat).* nomadic.tbs_cat.*6.*100);
     nomadic.good = (nomadic.dlsch_fer_cat<=100 & nomadic.dlsch_fer_cat>=0).';
@@ -162,6 +171,9 @@ xlabel('Time [sec]')
 ylabel('Throughput L1 [bps]')
 ylim([0 8.64e6]);
 title('DLSCH Throughput')
+if ~isempty(timebase_cuts)
+    plot(timebase_cuts,0,'k^','Markersize',10,'Linewidth',2)
+end
 saveas(h_fig,fullfile(pathname,'DLSCH_throughput.eps'),'epsc2')
 
 %% DLSCH throughput over GPS coordinates
@@ -213,9 +225,7 @@ saveas(h_fig,fullfile(pathname,'DLSCH_uncoded_throughput_cdf_comparison.eps'),'e
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 hold off
-dlsch_throughput(~UE_connected | ~good) = nan;
-%gps_speed_cat(~UE_connected | ~good) = nan;
-[out,n,n2] = plot_in_bins(gps_speed_cat, dlsch_throughput,  0:5:40);
+[out,n,n2] = plot_in_bins(gps_speed_cat, dlsch_throughput,0:5:40);
 ylim([0 8.64e6]);
 title('DLSCH Throughput vs Speed');
 xlabel('Speed[Meters/Second]');
@@ -227,9 +237,7 @@ csvwrite(fullfile(pathname,'DLSCH_throughput_speed.csv'),n2./n);
 h_fig = h_fig+1;    
 h_fig = figure(h_fig);
 hold off
-dlsch_throughput(~UE_connected | ~good) = nan;
-%dist(~UE_connected | ~good)  = nan;
-[out,n,n2] = plot_in_bins(dist, dlsch_throughput,  0:ceil(max_dist));
+[out,n,n2] = plot_in_bins(dist, dlsch_throughput,0:ceil(max_dist),1);
 ylim([0 8.64e6]);
 title('DLSCH Throughput vs Dist');
 xlabel('Dist[km]');
@@ -239,7 +247,6 @@ csvwrite(fullfile(pathname,'DLSCH_throughput_dist.csv'),n2./n);
 
 
 %% extrapolation to loaded cell
-dlsch_throughput(~UE_connected) = 0;
 h_fig = pfair(dlsch_throughput,gps_lon_cat,gps_lat_cat,dist,mm,pathname,'',h_fig);
 
 %% sevice coverage UL/DL

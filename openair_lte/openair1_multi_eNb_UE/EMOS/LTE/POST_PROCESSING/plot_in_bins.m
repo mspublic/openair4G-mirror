@@ -1,4 +1,4 @@
-function [out,n,n2] = plot_in_bins(x,y,edges)
+function [out,n,n2] = plot_in_bins(x,y,edges,service)
 %  [out] = plot_in_bins(data,bins)
 % This function puts the data y = y(x) in bins of x. For every bin it
 % calculates the average and the (95/85/50/5%) percentiles. The output is a 
@@ -12,6 +12,7 @@ x=x(:);
 y=y(:);
 
 [n, bin] = histc(x,edges);
+n1 = histc(x(y>0),edges);
 
 out = zeros(length(edges),5);
 n2 = zeros(size(n));
@@ -34,3 +35,16 @@ for i=1:length(midpoints)
     text(midpoints(i),min(0,yl(1)),sprintf(' %d',n2(i)), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
 end
 legend('Mean','95% prctile above','85% prctile above','50% prctile above','5% prctile above','Location','Best');
+
+if nargin == 4
+ax1 = gca;
+ax2 = axes('Position',get(gca,'Position'));
+plot(midpoints,n1(1:end-1)./n2(1:end-1)*100,'Color','k','Linewidth',2,'Parent',ax2);
+set(ax2,'YAxisLocation','right');
+set(ax2,'Color','none');
+set(ax2,'XColor','k');
+set(ax2,'YColor','k');
+set(ax2,'ylim',[0, 100]);
+set(get(ax2,'ylabel'),'String','Service (%)');
+set(gcf,'CurrentAxes',ax1)
+end

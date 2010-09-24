@@ -28,10 +28,10 @@ end
 %%
 figure(1)
 hold off
-time1 = mode1.gps_time_cat;
-time2 = mode2.gps_time_cat(parcours1);
+time1 = mode1.gps_time_cat(mode1.ind_common & ~mode1.ind_duplicate);
+time2 = mode2.gps_time_cat(mode2.ind_common & ~mode2.ind_duplicate);
 %time2_update = mode2_update.gps_time_cat;
-time6 = mode6.gps_time_cat;
+time6 = mode6.gps_time_cat(mode6.ind_common & ~mode6.ind_duplicate);
 select1 = zeros(size(time1));
 select2 = zeros(size(time2));
 %select2_update = zeros(size(time2_update));
@@ -48,17 +48,17 @@ linkdata on
 %%
 figure(2)
 hold off
-[x1,y1] = plot_gps_coordinates(mm,mode1.gps_lon_cat,mode1.gps_lat_cat,[],[],'Mode1','blue','Marker','x','Line','none');
+[x1,y1] = plot_gps_coordinates(mm,mode1.gps_lon_cat(mode1.ind_common & ~mode1.ind_duplicate),mode1.gps_lat_cat(mode1.ind_common & ~mode1.ind_duplicate),[],[],'Mode1','blue','Marker','x','Line','none');
 hold on
-[x2,y2] = plot_gps_coordinates('',mode2.gps_lon_cat(parcours1),mode2.gps_lat_cat(parcours1),[],[],'Mode2','blue','Marker','s','Line','none');
+[x2,y2] = plot_gps_coordinates('',mode2.gps_lon_cat(mode2.ind_common & ~mode2.ind_duplicate),mode2.gps_lat_cat(mode2.ind_common & ~mode2.ind_duplicate),[],[],'Mode2','blue','Marker','s','Line','none');
 %[x2_update,y2_update] = plot_gps_coordinates('',mode2_update.gps_lon_cat,mode2_update.gps_lat_cat);
-[x6,y6] = plot_gps_coordinates('',mode6.gps_lon_cat,mode6.gps_lat_cat,[],[],'Mode6','blue','Marker','o','Line','none');
-%set(findobj('XDataSource','x1'),'ZDataSource','select1');
-%set(findobj('XDataSource','x2'),'ZDataSource','select2');
-%set(findobj('XDataSource','x2_update'),'ZDataSource','select2_update');
-%set(findobj('XDataSource','x6'),'ZDataSource','select6');
-% you might have to set ZDataSource manually
+[x6,y6] = plot_gps_coordinates('',mode6.gps_lon_cat(mode6.ind_common & ~mode6.ind_duplicate),mode6.gps_lat_cat(mode6.ind_common & ~mode6.ind_duplicate),[],[],'Mode6','blue','Marker','o','Line','none');
 linkdata on
+set(findobj('XDataSource','x1'),'ZDataSource','select1');
+set(findobj('XDataSource','x2'),'ZDataSource','select2');
+%set(findobj('XDataSource','x2_update'),'ZDataSource','select2_update');
+set(findobj('XDataSource','x6'),'ZDataSource','select6');
+% you might have to set ZDataSource manually
 
 
 % %%

@@ -1,8 +1,6 @@
 set(0, 'DefaultLineMarkerSize', 10);
 set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
-set(0, 'DefaultAxesFontName', 'Helvetica');
-set(0, 'DefaultTextFontName', 'Helvetica');
 
 %%
 load SISO.mat
@@ -25,12 +23,13 @@ plot_style = {'b-*';'r-*';'g-*';'y-*';'k-*';...
 %%
 figure(1)
 hold off
-for mcs=0:27
+for mcs=0:23
     data = dlmread(sprintf('bler_%d.csv',mcs),';',1,0);
     snr = data(:,1);
-    bler = data(:,11)./data(:,6); % round 4
+    bler = data(:,5)./data(:,6); % round 1
+    bler4 = data(:,11)./data(:,6); % round 4
     harq_adjust = data(:,6)./sum(data(:,6:2:12),2);
-    throughput_all(:,mcs+1) = interp1(snr, (1-bler).*harq_adjust.*get_tbs(mcs,25)*6*100,snr_all,'nearest','extrap');
+    throughput_all(:,mcs+1) = interp1(snr, (1-bler4).*harq_adjust.*get_tbs(mcs,25)*6*100,snr_all,'nearest','extrap');
     throughput_all(1:find(snr_all==snr(1)),mcs+1) = 0;
     semilogy(snr,bler(:,1),plot_style{mcs+1});
     hold on

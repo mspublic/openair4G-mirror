@@ -11,8 +11,8 @@ close all
 mm='cordes';
 
 %% results interference measurements
-pathname = '/emos/EMOS/Interference/results/';
-plot_results_I0_quick
+%pathname = '/emos/EMOS/Interference/results/';
+%plot_results_I0_quick
 
 %% results from raw channel estimates (ideal throughput)
 pathname = '/emos/EMOS/Mode2/results_with_coverage/';
@@ -22,7 +22,7 @@ plot_results_cat
 %% results from quick post processing (modem throughput)
 pathname = '/emos/EMOS/Mode1/results';
 plot_results_UE_quick
-plot_results_eNb_quick
+%plot_results_eNb_quick
 
 %%
 pathname = '/emos/EMOS/Mode2/results_with_coverage';
@@ -32,11 +32,11 @@ plot_results_UE_quick
 %%
 pathname = '/emos/EMOS/Mode2_update/results';
 plot_results_UE_quick
-plot_results_eNb_quick
+%plot_results_eNb_quick
 
 %%
 pathname = '/emos/EMOS/Mode6/results';
 plot_results_UE_quick
-plot_results_eNb_quick
+%plot_results_eNb_quick
 
 
