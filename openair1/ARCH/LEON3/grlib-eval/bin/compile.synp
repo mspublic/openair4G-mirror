@@ -1,0 +1,11 @@
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/stdlib/version.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/stdlib/stdlib.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/sparc/sparc.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/modgen/multlib.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/modgen/leaves.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/amba.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/devices.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/ahbctrl.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/apbctrl.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/ahbctrl_mb.vhd
+add_file -vhdl -lib grlib /homes/khalfall/work/openairinterface/arch//openair_CardBus_MIMO1/LEON3/grlib-eval/lib/grlib/amba/defmst.vhd

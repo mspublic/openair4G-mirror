@@ -1,0 +1,4 @@
+ddrrec.vhd hs.vhd ahb_slv.vhd ddrctrl.vhd
+ddr_phy.vhd ddrsp.vhd ddrsp16a.vhd ddrsp32a.vhd ddrsp64a.vhd ddrspa.vhd
+
+

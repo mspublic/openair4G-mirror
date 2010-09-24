@@ -1,0 +1,8683 @@
+%!PS-Adobe-3.0
+%%Title: pci_mtf.vhd
+%%For: Karim Khalfalla
+%%Creator: a2ps version 4.13
+%%CreationDate: Wed Nov  8 18:09:39 2006
+%%BoundingBox: 24 24 588 768
+%%DocumentData: Clean7Bit
+%%Orientation: Landscape
+%%Pages: 11
+%%PageOrder: Ascend
+%%DocumentMedia: Letter 612 792 0 () ()
+%%DocumentNeededResources: font Courier
+%%+ font Courier-Bold
+%%+ font Courier-BoldOblique
+%%+ font Courier-Oblique
+%%+ font Helvetica
+%%+ font Helvetica-Bold
+%%+ font Symbol
+%%+ font Times-Bold
+%%+ font Times-Roman
+%%DocumentProcessColors: Black 
+%%DocumentSuppliedResources: procset a2ps-a2ps-hdr
+%%+ procset a2ps-black+white-Prolog
+%%+ encoding ISO-8859-1Encoding
+%%EndComments
+/a2psdict 200 dict def
+a2psdict begin
+%%BeginProlog
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+
+% EPSF import as in the Red Book
+/BeginInclude {
+  /b4_Inc_state save def    		% Save state for cleanup
+  /dict_count countdictstack def	% Count objects on dict stack
+  /op_count count 1 sub def		% Count objects on operand stack 
+  userdict begin
+    0 setgray 0 setlinecap
+    1 setlinewidth 0 setlinejoin
+    10 setmiterlimit [ ] 0 setdash newpath
+    gs_languagelevel 1 ne {
+      false setstrokeadjust false setoverprint 
+    } if
+} bind def
+
+/EndInclude {
+  count op_count sub { pos } repeat	% Clean up stacks
+  countdictstack dict_count sub { end } repeat
+  b4_Inc_state restore
+} bind def
+
+/BeginEPSF {
+  BeginInclude
+  /showpage { } def
+} bind def
+
+/EndEPSF {
+  EndInclude
+} bind def
+
+% Page prefeed
+/page_prefeed {         % bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} bind def
+
+/deffont {
+  findfont exch scalefont def
+} bind def
+
+/reencode_font {
+  findfont reencode 2 copy definefont pop def
+} bind def
+
+% Function c-show (str => -)
+% centers text only according to x axis.
+/c-show { 
+  dup stringwidth pop
+  2 div neg 0 rmoveto
+  show
+} bind def
+
+% Function l-show (str => -)
+% prints texts so that it ends at currentpoint
+/l-show {
+  dup stringwidth pop neg 
+  0 
+  rmoveto show
+} bind def
+
+% center-fit show (str w => -)
+% show centered, and scale currentfont so that the width is less than w
+/cfshow {
+  exch dup stringwidth pop
+  % If the title is too big, try to make it smaller
+  3 2 roll 2 copy
+  gt
+  { % if, i.e. too big
+    exch div
+    currentfont exch scalefont setfont
+  } { % ifelse
+    pop pop 
+  }
+  ifelse
+  c-show			% center title
+} bind def
+
+% Return the y size of the current font
+% - => fontsize
+/currentfontsize {
+  currentfont /FontType get 0 eq {
+    currentfont /FontMatrix get 3 get
+  }{
+    currentfont /FontMatrix get 3 get 1000 mul
+  } ifelse
+} bind def
+
+% reencode the font
+% <encoding-vector> <fontdict> -> <newfontdict>
+/reencode { %def
+  dup length 5 add dict begin
+    { %forall
+      1 index /FID ne 
+      { def }{ pop pop } ifelse
+    } forall
+    /Encoding exch def
+
+    % Use the font's bounding box to determine the ascent, descent,
+    % and overall height; don't forget that these values have to be
+    % transformed using the font's matrix.
+    % We use `load' because sometimes BBox is executable, sometimes not.
+    % Since we need 4 numbers an not an array avoid BBox from being executed
+    /FontBBox load aload pop
+    FontMatrix transform /Ascent exch def pop
+    FontMatrix transform /Descent exch def pop
+    /FontHeight Ascent Descent sub def
+
+    % Define these in case they're not in the FontInfo (also, here
+    % they're easier to get to.
+    /UnderlinePosition 1 def
+    /UnderlineThickness 1 def
+    
+    % Get the underline position and thickness if they're defined.
+    currentdict /FontInfo known {
+      FontInfo
+      
+      dup /UnderlinePosition known {
+	dup /UnderlinePosition get
+	0 exch FontMatrix transform exch pop
+	/UnderlinePosition exch def
+      } if
+      
+      dup /UnderlineThickness known {
+	/UnderlineThickness get
+	0 exch FontMatrix transform exch pop
+	/UnderlineThickness exch def
+      } if
+      
+    } if
+    currentdict 
+  end 
+} bind def
+
+% composite fonts for ASCII-EUC mixed string
+% Version 1.2 1/31/1990
+% Orignal Ken'ichi HANDA (handa@etl.go.jp)
+% Modified Norio Katayama (katayama@rd.nacsis.ac.jp),1998
+% Extend & Fix Koji Nakamaru (maru@on.cs.keio.ac.jp), 1999
+% Anyone can freely copy, modify, distribute this program.
+
+/copyfont {	% font-dic extra-entry-count  copyfont  font-dic
+	1 index maxlength add dict begin
+	{	1 index /FID ne 2 index /UniqueID ne and
+		{def} {pop pop} ifelse
+	} forall
+	currentdict
+	end
+} bind def
+
+/compositefont { % ASCIIFontName EUCFontName RomanScale RomanOffset Rot(T/F) compositefont font
+    /RomanRotation exch def
+    /RomanOffset exch def
+    /RomanScale exch def
+    userdict /fixeucfont_dict known not {
+	userdict begin
+	    /fixeucfont_dict 2 dict begin
+		/UpperByteEncoding [
+		    16#00 1 16#20 { pop 0 } for
+		    16#21 1 16#28 { 16#20 sub } for
+		    16#29 1 16#2F { pop 0 } for
+		    16#30 1 16#74 { 16#27 sub } for
+		    16#75 1 16#FF { pop 0 } for
+		] def
+	        /LowerByteEncoding [
+		    16#00 1 16#A0 { pop /.notdef } for
+		    16#A1 1 16#FE { 16#80 sub 16 2 string cvrs
+				    (cXX) dup 1 4 -1 roll
+				    putinterval cvn } for
+		    /.notdef
+		] def
+		currentdict
+	    end def
+	end
+    } if
+    findfont dup /FontType get 0 eq {
+	14 dict begin
+	    %
+	    % 7+8 bit EUC font
+	    %
+	    12 dict begin
+		/EUCFont exch def
+		/FontInfo (7+8 bit EUC font) readonly def
+		/PaintType 0 def
+		/FontType 0 def
+		/FontMatrix matrix def
+		% /FontName
+		/Encoding fixeucfont_dict /UpperByteEncoding get def
+		/FMapType 2 def
+		EUCFont /WMode known
+		{ EUCFont /WMode get /WMode exch def }
+		{ /WMode 0 def } ifelse
+		/FDepVector [
+		    EUCFont /FDepVector get 0 get
+		    [ 16#21 1 16#28 {} for 16#30 1 16#74 {} for ]
+		    {
+			13 dict begin
+			    /EUCFont EUCFont def
+			    /UpperByte exch 16#80 add def	
+			    % /FontName
+			    /FontInfo (EUC lower byte font) readonly def
+			    /PaintType 0 def
+			    /FontType 3 def
+			    /FontMatrix matrix def
+			    /FontBBox {0 0 0 0} def
+			    /Encoding
+				fixeucfont_dict /LowerByteEncoding get def
+			    % /UniqueID
+			    % /WMode
+			    /BuildChar {
+				gsave
+				exch dup /EUCFont get setfont
+				/UpperByte get
+				2 string
+				dup 0 4 -1 roll put
+				dup 1 4 -1 roll put
+				dup stringwidth setcharwidth
+				0 0 moveto show
+				grestore
+			    } bind def
+			    currentdict
+			end
+			/lowerbytefont exch definefont
+		    } forall
+		] def
+		currentdict
+	    end
+	    /eucfont exch definefont
+	    exch
+	    findfont 1 copyfont dup begin
+		RomanRotation {
+			/FontMatrix FontMatrix
+			[ 0 RomanScale neg RomanScale 0 RomanOffset neg 0 ]
+			matrix concatmatrix def
+		}{
+			/FontMatrix FontMatrix
+			[ RomanScale 0 0 RomanScale 0 RomanOffset ] matrix concatmatrix
+			def
+			/CDevProc
+			    {pop pop pop pop 0 exch -1000 exch 2 div 880} def
+		} ifelse
+	    end
+	    /asciifont exch definefont
+	    exch
+	    /FDepVector [ 4 2 roll ] def
+	    /FontType 0 def
+	    /WMode 0 def
+	    /FMapType 4 def
+	    /FontMatrix matrix def
+	    /Encoding [0 1] def
+	    /FontBBox {0 0 0 0} def
+%	    /FontHeight 1.0 def % XXXX
+	    /FontHeight RomanScale 1.0 ge { RomanScale }{ 1.0 } ifelse def
+	    /Descent -0.3 def   % XXXX
+	    currentdict
+	end
+	/tmpfont exch definefont
+	pop
+	/tmpfont findfont
+    }{
+	pop findfont 0 copyfont
+    } ifelse
+} def	
+
+/slantfont {	% FontName slant-degree  slantfont  font'
+    exch findfont 1 copyfont begin
+    [ 1 0 4 -1 roll 1 0 0 ] FontMatrix exch matrix concatmatrix
+    /FontMatrix exch def
+    currentdict
+    end
+} def
+
+% Function print line number (<string> # -)
+/# {
+  gsave
+    sx cw mul neg 2 div 0 rmoveto
+    f# setfont
+    c-show
+  grestore
+} bind def
+
+% -------- Some routines to enlight plain b/w printings ---------
+
+% Underline
+% width --
+/dounderline {
+  currentpoint
+  gsave
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    0 rlineto
+    stroke
+  grestore
+} bind def
+
+% Underline a string
+% string --
+/dounderlinestring {
+  stringwidth pop
+  dounderline
+} bind def
+
+/UL {
+  /ul exch store
+} bind def
+
+% Draw a box of WIDTH wrt current font
+% width --
+/dobox {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    stroke
+  grestore
+} bind def
+
+/BX {
+  /bx exch store
+} bind def
+
+% Box a string
+% string --
+/doboxstring {
+  stringwidth pop
+  dobox
+} bind def
+
+%
+% ------------- Color routines ---------------
+%
+/FG /setrgbcolor load def
+
+% Draw the background
+% width --
+/dobackground {
+  currentpoint
+  gsave
+    newpath
+    moveto
+    0 currentfont /Descent get currentfontsize mul rmoveto
+    dup 0 rlineto
+    0 currentfont /FontHeight get currentfontsize mul rlineto
+    neg 0 rlineto
+    closepath
+    bgcolor aload pop setrgbcolor
+    fill
+  grestore
+} bind def
+
+% Draw bg for a string
+% string --
+/dobackgroundstring {
+  stringwidth pop
+  dobackground
+} bind def
+
+
+/BG {
+  dup /bg exch store
+  { mark 4 1 roll ] /bgcolor exch store } if
+} bind def
+
+
+/Show {
+  bg { dup dobackgroundstring } if
+  ul { dup dounderlinestring } if
+  bx { dup doboxstring } if
+  show
+} bind def
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T {
+  cw mul x0 add
+  bg { dup currentpoint pop sub dobackground } if
+  ul { dup currentpoint pop sub dounderline } if
+  bx { dup currentpoint pop sub dobox } if
+  y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n {
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+/S {
+  Show
+} bind def
+
+%%BeginResource: procset a2ps-a2ps-hdr 2.0 2
+%%Copyright: (c) 1988, 89, 90, 91, 92, 93 Miguel Santana
+%%Copyright: (c) 1995, 96, 97, 98 Akim Demaille, Miguel Santana
+% Function title: prints page header.
+% <ct> <rt> <lt> are passed as argument
+/title { 
+  % 1. Draw the background
+  x v get y v get moveto
+  gsave
+    0 th 2 div neg rmoveto 
+    th setlinewidth
+    0.95 setgray
+    pw 0 rlineto stroke
+  grestore
+  % 2. Border it
+  gsave
+    0.7 setlinewidth
+    pw 0 rlineto
+    0 th neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+  % stk: ct rt lt
+  x v get y v get th sub 1 add moveto
+%%IncludeResource: font Helvetica
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  % 3. The left title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    fnfs 0.8 mul hm rmoveto
+    show			% left title
+  grestore
+  exch
+  % stk: ct ltw rt
+  % 4. the right title
+  gsave
+    dup stringwidth pop fnfs 0.8 mul add exch % leave space took on stack
+    dup
+    pw exch stringwidth pop fnfs 0.8 mul add sub
+    hm
+    rmoveto
+    show			% right title
+  grestore
+  % stk: ct ltw rtw
+  % 5. the center title
+  gsave
+    pw 3 1 roll
+    % stk: ct pw ltw rtw
+    3 copy 
+    % Move to the center of the left room
+    sub add 2 div hm rmoveto
+    % What is the available space in here?
+    add sub fnfs 0.8 mul sub fnfs 0.8 mul sub
+    % stk: ct space_left
+%%IncludeResource: font Helvetica-Bold
+  fHelvetica-Bold fnfs scalefont setfont
+    cfshow
+  grestore
+} bind def
+
+% Function border: prints virtual page border
+/border { %def
+  gsave				% print four sides
+    0 setgray
+    x v get y v get moveto
+    0.7 setlinewidth		% of the square
+    pw 0 rlineto
+    0 ph neg rlineto
+    pw neg 0 rlineto
+    closepath stroke
+  grestore
+} bind def
+
+% Function water: prints a water mark in background
+/water { %def
+  gsave
+    scx scy moveto rotate
+%%IncludeResource: font Times-Bold
+  fTimes-Bold 100 scalefont setfont
+    .97 setgray
+    dup stringwidth pop 2 div neg -50 rmoveto
+    show
+  grestore
+} bind def
+
+% Function rhead: prints the right header
+/rhead {  %def
+  lx ly moveto
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  l-show
+} bind def
+
+% Function footer (cf rf lf -> -)
+/footer {
+  fHelvetica fnfs 0.8 mul scalefont setfont
+  dx dy moveto
+  show
+
+  snx sny moveto
+  l-show
+  
+  fnx fny moveto
+  c-show
+} bind def
+%%EndResource
+%%BeginResource: procset a2ps-black+white-Prolog 2.0 1
+
+% Function T(ab), jumps to the n-th tabulation in the current line
+/T { 
+  cw mul x0 add y0 moveto
+} bind def
+
+% Function n: move to the next line
+/n { %def
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+} bind def
+
+% Function N: show and move to the next line
+/N {
+  Show
+  /y0 y0 bfs sub store
+  x0 y0 moveto
+}  bind def
+
+/S {
+  Show
+} bind def
+
+/p {
+  false UL
+  false BX
+  fCourier bfs scalefont setfont
+  Show
+} bind def
+
+/sy {
+  false UL
+  false BX
+  fSymbol bfs scalefont setfont
+  Show
+} bind def
+
+/k {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/K {
+  false UL
+  false BX
+  fCourier-Bold bfs scalefont setfont
+  Show
+} bind def
+
+/c {
+  false UL
+  false BX
+  fCourier-Oblique bfs scalefont setfont
+  Show
+} bind def
+
+/C {
+  false UL
+  false BX
+  fCourier-BoldOblique bfs scalefont setfont
+  Show 
+} bind def
+
+/l {
+  false UL
+  false BX
+  fHelvetica bfs scalefont setfont
+  Show
+} bind def
+
+/L {
+  false UL
+  false BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show 
+} bind def
+
+/str{
+  false UL
+  false BX
+  fTimes-Roman bfs scalefont setfont
+  Show
+} bind def
+
+/e{
+  false UL
+  true BX
+  fHelvetica-Bold bfs scalefont setfont
+  Show
+} bind def
+
+%%EndResource
+%%EndProlog
+%%BeginSetup
+%%IncludeResource: font Courier
+%%IncludeResource: font Courier-Oblique
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Times-Roman
+%%IncludeResource: font Symbol
+%%IncludeResource: font Courier-BoldOblique
+%%BeginResource: encoding ISO-8859-1Encoding
+/ISO-8859-1Encoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright 
+/parenleft /parenright /asterisk /plus /comma /minus /period /slash 
+/zero /one /two /three /four /five /six /seven 
+/eight /nine /colon /semicolon /less /equal /greater /question 
+/at /A /B /C /D /E /F /G 
+/H /I /J /K /L /M /N /O 
+/P /Q /R /S /T /U /V /W 
+/X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore 
+/quoteleft /a /b /c /d /e /f /g 
+/h /i /j /k /l /m /n /o 
+/p /q /r /s /t /u /v /w 
+/x /y /z /braceleft /bar /braceright /asciitilde /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef 
+/space /exclamdown /cent /sterling /currency /yen /brokenbar /section 
+/dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron 
+/degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /bullet 
+/cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown 
+/Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla 
+/Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis 
+/Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply 
+/Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls 
+/agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla 
+/egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis 
+/eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide 
+/oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis 
+] def
+%%EndResource
+% Initialize page description variables.
+/sh 612 def
+/sw 792 def
+/llx 24 def
+/urx 768 def
+/ury 588 def
+/lly 24 def
+/#copies 1 def
+/th 15.000000 def
+/fnfs 11 def
+/bfs 6.000000 def
+/cw 3.600000 def
+
+% Dictionary for ISO-8859-1 support
+/iso1dict 8 dict begin
+  /fCourier ISO-8859-1Encoding /Courier reencode_font
+  /fCourier-Bold ISO-8859-1Encoding /Courier-Bold reencode_font
+  /fCourier-BoldOblique ISO-8859-1Encoding /Courier-BoldOblique reencode_font
+  /fCourier-Oblique ISO-8859-1Encoding /Courier-Oblique reencode_font
+  /fHelvetica ISO-8859-1Encoding /Helvetica reencode_font
+  /fHelvetica-Bold ISO-8859-1Encoding /Helvetica-Bold reencode_font
+  /fTimes-Bold ISO-8859-1Encoding /Times-Bold reencode_font
+  /fTimes-Roman ISO-8859-1Encoding /Times-Roman reencode_font
+currentdict end def
+/bgcolor [ 0 0 0 ] def
+/bg false def
+/ul false def
+/bx false def
+% The font for line numbering
+/f# /Helvetica findfont bfs .6 mul scalefont def
+/fSymbol /Symbol findfont def
+/hm fnfs 0.25 mul def
+/pw
+   cw 101.400000 mul
+def
+/ph
+   520.200000 th add
+def
+/pmw urx llx sub pw 2 mul sub 1 div def
+/pmh 0 def
+/v 0 def
+/x [
+  0
+  dup pmw add pw add
+] def
+/y [
+  pmh ph add 0 mul ph add
+  dup
+] def
+/scx sw 2 div def
+/scy sh 2 div def
+/snx urx def
+/sny lly 2 add def
+/dx llx def
+/dy sny def
+/fnx scx def
+/fny dy def
+/lx snx def
+/ly ury fnfs 0.8 mul sub def
+/sx 5 def
+/tab 8 def
+/x0 0 def
+/y0 0 def
+%%EndSetup
+
+%%Page: (1-2) 1
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (----------------------------------------------------------------------------) c n
+0 T (--  This file is a part of the GRLIB VHDL IP LIBRARY) N
+0 T (--  Copyright \(C\) 2004 GAISLER RESEARCH) N
+0 T (--) N
+(5) # (--  This program is free software; you can redistribute it and/or modify) N
+0 T (--  it under the terms of the GNU General Public License as published by) N
+0 T (--  the Free Software Foundation; either version 2 of the License, or) N
+0 T (--  \(at your option\) any later version.) N
+0 T (--) N
+(10) # (--  See the file COPYING for the full details of the license.) N
+0 T (--) N
+0 T (-----------------------------------------------------------------------------) N
+0 T (-- Entity:  pci_mtf) N
+0 T (-- File:   pci_mtf.vhd) N
+(15) # (-- Author:  Jiri Gaisler - Gaisler Research) N
+0 T (-- Modified:  Alf Vaerneus - Gaisler Research) N
+0 T (-- Description: PCI master and target interface) N
+0 T (------------------------------------------------------------------------------) N
+0 T () N
+(20) # () S
+(library ) K
+(ieee) l
+(;) p n
+0 T () S
+(use) K
+( ieee.std_logic_1164.) p
+(all) K
+(;) p n
+0 T () S
+(library ) K
+(grlib) l
+(;) p n
+0 T () S
+(use) K
+( grlib.amba.) p
+(all) K
+(;) p n
+0 T () S
+(use) K
+( grlib.stdlib.) p
+(all) K
+(;) p n
+(25) # () S
+(use) K
+( grlib.devices.) p
+(all) K
+(;) p n
+0 T () S
+(library ) K
+(techmap) l
+(;) p n
+0 T () S
+(use) K
+( techmap.gencomp.) p
+(all) K
+(;) p n
+0 T () S
+(library ) K
+(gaisler) l
+(;) p n
+0 T () S
+(use) K
+( gaisler.pci.) p
+(all) K
+(;) p n
+(30) # () S
+(use) K
+( gaisler.pcilib.) p
+(all) K
+(;) p n
+0 T () S
+(use) K
+( gaisler.misc.) p
+(all) K
+(;) p n
+0 T () N
+0 T () S
+(entity) K
+( ) p
+(pci_mtf) l
+( ) p
+(is) K n
+0 T () S
+(  ) p
+(generic) K
+( \() p n
+(35) # (    memtech   : integer := DEFMEMTECH;) N
+0 T (    hmstndx   : integer := 0;) N
+0 T (    dmamst    : integer := NAHBMST;) N
+0 T (    readpref  : integer := 0;) N
+0 T (    abits     : integer := 21;) N
+(40) # (    dmaabits  : integer := 26;) N
+0 T (    fifodepth : integer := 3; ) S
+(-- FIFO depth) c n
+0 T () S
+(    device_id : integer := 0; ) p
+(-- PCI device ID) c n
+0 T () S
+(    vendor_id : integer := 0; ) p
+(-- PCI vendor ID) c n
+0 T () S
+(    master    : integer := 1; ) p
+(-- Enable PCI Master) c n
+(45) # () S
+(    hslvndx   : integer := 0;) p n
+0 T (    pindex    : integer := 0;) N
+0 T (    paddr     : integer := 0;) N
+0 T (    pmask     : integer := 16#fff#;) N
+0 T (    haddr     : integer := 16#F00#;) N
+(50) # (    hmask     : integer := 16#F00#;) N
+0 T (    ioaddr    : integer := 16#000#;) N
+0 T (    nsync     : integer ) S
+(range) K
+( 1 ) p
+(to) K
+( 2 := 2;) p 48 T () S
+(-- 1 or 2 sync regs between clocks) c n
+0 T () S
+(    oepol     : integer := 0) p n
+0 T (    ; pirq    : integer := 0) N
+(55) # (\);) N
+0 T (   ) S
+(port) K
+(\() p n
+0 T (      rst       : ) S
+(in) K
+( std_logic;) p n
+0 T (      clk       : ) S
+(in) K
+( std_logic;) p n
+0 T (      pciclk    : ) S
+(in) K
+( std_logic;) p n
+(60) # (      pcii      : ) S
+(in) K
+(  pci_in_type;) p n
+0 T (      pcio      : ) S
+(out) K
+( pci_out_type;) p n
+0 T (      apbi      : ) S
+(in) K
+( apb_slv_in_type;) p n
+0 T (      apbo      : ) S
+(out) K
+( apb_slv_out_type;) p n
+0 T (      ahbmi     : ) S
+(in) K
+(  ahb_mst_in_type;) p n
+(65) # (      ahbmo     : ) S
+(out) K
+( ahb_mst_out_type;) p n
+0 T (      ahbsi     : ) S
+(in) K
+(  ahb_slv_in_type;) p n
+0 T (      ahbso     : ) S
+(out) K
+( ahb_slv_out_type) p n
+0 T (\);) N
+0 T () S
+(end) K
+(;) p n
+(70) # () N
+0 T () S
+(architecture) K
+( rtl ) p
+(of) K
+( pci_mtf ) p
+(is) K n
+0 T () N
+0 T (constant) S
+( REVISION : amba_version_type := 0;) p n
+0 T () S
+(constant) K
+( CSYNC : integer := nsync-1;) p n
+(75) # () S
+(constant) K
+( HADDR_WIDTH : integer := 28;) p n
+0 T () S
+(constant) K
+( MADDR_WIDTH : integer := abits;) p n
+0 T () S
+(constant) K
+( DMAMADDR_WIDTH : integer := dmaabits;) p n
+0 T () S
+(constant) K
+( FIFO_DEPTH : integer := fifodepth;) p n
+0 T () S
+(constant) K
+( FIFO_FULL : std_logic_vector\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 0\) := \() p
+(others) K
+( => ') p
+(1) str
+('\);) p n
+(80) # () S
+(constant) K
+( FIFO_DATA_BITS : integer := 32; ) p
+(-- One valid bit) c n
+0 T () S
+(constant) K
+( NO_CPU_REGS : integer := 6;) p n
+0 T () S
+(constant) K
+( NO_PCI_REGS : integer := 6;) p n
+0 T () N
+0 T () S
+(constant) K
+( pconfig : apb_config_type := \() p n
+(85) # (  0 => ahb_device_reg \( VENDOR_GAISLER, GAISLER_PCIFBRG, 0, REVISION, 0\),) N
+0 T (  1 => apb_iobar\(paddr, pmask\)\);) N
+(pci_mtf.vhd) (Page 1/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T () p n
+0 T () S
+(constant) K
+( hconfig : ahb_config_type := \() p n
+0 T (  0 => ahb_device_reg \( VENDOR_GAISLER, GAISLER_PCIFBRG, 0, REVISION, pirq ) S
+(--0) c n
+(90) # () S
+(  \),) p n
+0 T (  4 => ahb_membar\(haddr, ') S
+(0) str
+(', ') p
+(0) str
+(', hmask\),) p n
+0 T (  5 => ahb_iobar \(ioaddr, 16#E00#\),) N
+0 T (  ) S
+(others) K
+( => zero32\);) p n
+0 T () N
+(95) # () S
+(type) K
+( pci_input_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  ad       : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  cbe      : std_logic_vector\(3 ) S
+(downto) K
+( 0\);) p n
+0 T (  frame    : std_logic;) N
+0 T (  devsel   : std_logic;) N
+(100) # (  idsel    : std_logic;) N
+0 T (  trdy     : std_logic;) N
+0 T (  irdy     : std_logic;) N
+0 T (  par      : std_logic;) N
+0 T (  stop ) S 8 T (   : std_logic;) N
+(105) # (  rst  ) S 8 T (   : std_logic;) N
+0 T (  gnt      : std_logic;) N
+0 T (  host     : std_logic;) N
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () N
+(110) # () S
+(type) K
+( pci_fifo_in_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  ren : std_logic;) p n
+0 T (  raddr : std_logic_vector\(FIFO_DEPTH - 1 ) S
+(downto) K
+( 0\);) p n
+0 T (  wen : std_logic;) N
+0 T (  waddr : std_logic_vector\(FIFO_DEPTH - 1 ) S
+(downto) K
+( 0\);) p n
+(115) # (  wdata : std_logic_vector\(FIFO_DATA_BITS - 1 ) S
+(downto) K
+( 0\);) p n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () N
+0 T () S
+(type) K
+( pci_fifo_out_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  rdata : std_logic_vector\(FIFO_DATA_BITS - 1 ) p
+(downto) K
+( 0\);) p n
+(120) # () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () N
+0 T () S
+(type) K
+( fifo_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  side     : std_logic; ) p
+(-- Owner access side. Receiver accesses the other side) c n
+0 T () S
+(  raddr    : std_logic_vector\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 0\);) p n
+(125) # (  waddr    : std_logic_vector\(FIFO_DEPTH - 2 ) S
+(downto) K
+( 0\);) p n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () N
+0 T () S
+(type) K
+( pci_target_state_type ) p
+(is) K
+( \(idle, b_busy, s_data, backoff, turn_ar\);) p n
+0 T () S
+(type) K
+( pci_master_state_type ) p
+(is) K
+( \(idle, addr, m_data, turn_ar, s_tar, dr_bus\);) p n
+(130) # () S
+(type) K
+( pci_master_fifo_state_type ) p
+(is) K
+( \(idle, addr, incr, last1, sync, t_retry, ttermwd, ttermnd, a) p n
+0 T (bort, done, wdone\);) N
+0 T () S
+(type) K
+( pci_target_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  state    : pci_target_state_type;) p n
+0 T (  cnt      : std_logic_vector\(2 ) S
+(downto) K
+( 0\);) p n
+0 T (  csel     : std_logic; ) S
+(-- Configuration chip select) c n
+(135) # () S
+(  msel     : std_logic; ) p
+(-- Memory hit) c n
+0 T () S
+(  barsel   : std_logic; ) p
+(-- Memory hit) c n
+0 T () S
+(  psel     : std_logic; ) p
+(-- Page hit) c n
+0 T () S
+(  addr     : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  laddr    : std_logic_vector\(31 ) S
+(downto) K
+( 0\);) p n
+(140) # (  lsize    : std_logic_vector\(1 ) S
+(downto) K
+( 0\);) p n
+0 T (  lwrite   : std_logic;) N
+0 T (  lburst   : std_logic;) N
+0 T (  lmult    : std_logic;) N
+0 T (  mult     : std_logic;) N
+(145) # (  read     : std_logic; ) S
+(-- PCI target read) c n
+0 T () S
+(  burst    : std_logic;) p n
+0 T (  pending  : std_logic;) N
+0 T (  wdel     : std_logic;) N
+0 T (  last     : std_logic;) N
+(150) # (  fifo     : fifo_type;) N
+0 T (  trdy_del : std_logic; ) S
+(-- \(delay trdy to send last word in fifo\) bug fix *** ) c n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( pci_master_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  state    : pci_master_state_type;) p n
+(155) # (  fstate   : pci_master_fifo_state_type;) N
+0 T (  cnt      : std_logic_vector\(2 ) S
+(downto) K
+( 0\);) p n
+0 T (  ltim     : std_logic_vector\(7 ) S
+(downto) K
+( 0\); ) p
+(-- Latency timer) c n
+0 T () S
+(  request  : std_logic;) p n
+0 T (  hwrite   : std_logic;) N
+(160) # (  stop_req : std_logic;) N
+0 T (  last     : std_logic;) N
+0 T (  valid    : std_logic;) N
+0 T (  split    : std_logic;) N
+0 T (  first    : std_logic;) N
+(165) # (  firstw   : std_logic;) N
+0 T (  fifo     : fifo_type;) N
+0 T (  rmdone   : std_logic; ) S
+(-- bug fix ***) c n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( pci_sync_regs ) p
+(is) K
+( ) p
+(array) K
+( \(0 ) p
+(to) K
+( NO_PCI_REGS - 1\) ) p
+(of) K
+( std_logic_vector\(csync ) p
+(downto) K
+( 0\);) p n
+(170) # () S
+(type) K
+( configctrl ) p
+(is) K
+( ) p
+(array) K
+( \(0 ) p
+(to) K
+( 3\) ) p
+(of) K
+( std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T () S
+(-- Sync registers written by PCI to CPU) c n
+(pci_mtf.vhd) (Page 2/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (1/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (3-4) 2
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (type) K
+( frompci ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  irq        : std_logic;) p n
+0 T (  irqid      : std_logic_vector\(7 ) S
+(downto) K
+( 0\);) p n
+(175) # (  hok        : std_logic;) N
+0 T (  ctrl       : configctrl;) N
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( from_pci_to_ahb ) p
+(is) K
+( ) p
+(array) K
+( \(0 ) p
+(to) K
+( 1\) ) p
+(of) K
+( frompci;) p n
+0 T () S
+(-- Sync registers written by CPU to PCI) c n
+(180) # () S
+(type) K
+( fromahb ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  irqack      : std_logic;) p n
+0 T (  gok         : std_logic;) N
+0 T (  exppage0    : std_logic_vector\(31 ) S
+(downto) K
+( 0\);) p n
+0 T (  shared0off  : std_logic_vector\(31 ) S
+(downto) K
+( 0\);) p n
+(185) # (  shared0size : std_logic_vector\(31 ) S
+(downto) K
+( 0\);) p n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( from_ahb_to_pci ) p
+(is) K
+( ) p
+(array) K
+( \(0 ) p
+(to) K
+( 1\) ) p
+(of) K
+( fromahb;) p n
+0 T () S
+(type) K
+( pci_reg_type ) p
+(is) K
+( ) p
+(record) K n
+0 T () S
+(  pci       : pci_sigs_type;) p n
+(190) # (  noe_par   : std_logic;) N
+0 T (  noe_ad    : std_logic;) N
+0 T (  noe_ctrl  : std_logic;) N
+0 T (  noe_cbe   : std_logic;) N
+0 T (  noe_frame : std_logic;) N
+(195) # (  noe_irdy  : std_logic;) N
+0 T (  noe_req   : std_logic;) N
+0 T (  noe_perr  : std_logic;) N
+0 T (  m         : pci_master_type;) N
+0 T (  t         : pci_target_type;) N
+(200) # (  comm      : pci_config_command_type; ) S
+(-- Command register) c n
+0 T () S
+(  stat      : pci_config_status_type; ) p
+(-- Status register) c n
+0 T () S
+(  bar0      : std_logic_vector\(31 ) p
+(downto) K
+( MADDR_WIDTH\); ) p
+(-- Base Address register 0) c n
+0 T () S
+(  bar1      : std_logic_vector\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\); ) p
+(-- Base Address register 1) c n
+0 T () S
+(  bar0_conf : std_logic;) p n
+(205) # (  bar1_conf : std_logic;) N
+0 T (  page      : std_logic_vector\(31 ) S
+(downto) K
+( MADDR_WIDTH-1\); ) p
+(-- AHB page) c n
+0 T () S
+(  ltim      : std_logic_vector\(7 ) p
+(downto) K
+( 0\); ) p
+(-- Latency timer) c n
+0 T () S
+(  cline     : std_logic_vector\(7 ) p
+(downto) K
+( 0\); ) p
+(-- Cache Line Size) c n
+0 T () S
+(  intline   : std_logic_vector\(7 ) p
+(downto) K
+( 0\); ) p
+(-- Interrupt Line) c n
+(210) # () S
+(  syncs     : pci_sync_regs;) p n
+0 T (  trans     : std_logic_vector\(NO_CPU_REGS - 1 ) S
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(-- For I/O handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(  for_ahb  : frompci;) p n
+0 T (  from_ahb : from_ahb_to_pci;) N
+(215) # () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () N
+0 T () S
+(type) K
+( cpu_master_state_type ) p
+(is) K
+( \(idle, write, read_w, read, stop\);) p n
+0 T () S
+(type) K
+( cpu_slave_state_type ) p
+(is) K
+( \(idle, w_wait, t_data, r_hold, r_wait, w_done, t_done\);) p n
+0 T () S
+(type) K
+( cpu_master_type ) p
+(is) K
+( ) p
+(record) K n
+(220) # () S
+(  state   : cpu_master_state_type; ) p
+(-- AMBA master state machine) c n
+0 T () S
+(  dmaddr  : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  fifo    : fifo_type;) N
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( cpu_slave_type ) p
+(is) K
+( ) p
+(record) K n
+(225) # () S
+(  state       : cpu_slave_state_type; ) p
+(-- AMBA slave state machine) c n
+0 T () S
+(  maddr       : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  mdata       : std_logic_vector\(31 ) S
+(downto) K
+( 0\);) p n
+0 T (  be          : std_logic_vector\(3 ) S
+(downto) K
+( 0\);) p n
+0 T (  perror      : std_logic;) N
+(230) # (  hresp       : std_logic_vector\(1 ) S
+(downto) K
+( 0\);) p n
+0 T (  hready      : std_logic;) N
+0 T (  htrans      : std_logic_vector\(1 ) S
+(downto) K
+( 0\);) p n
+0 T (  pcicomm     : std_logic_vector\(3 ) S
+(downto) K
+( 0\);) p n
+0 T (  hold        : std_logic;) N
+(235) # (  fifos_write : std_logic;) N
+0 T (  fifo        : fifo_type;) N
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+0 T () S
+(type) K
+( cpu_sync_regs ) p
+(is) K
+( ) p
+(array) K
+( \(0 ) p
+(to) K
+( NO_CPU_REGS - 1\) ) p
+(of) K
+( std_logic_vector\(csync ) p
+(downto) K
+( 0\);) p n
+0 T () S
+(type) K
+( cpu_reg_type ) p
+(is) K
+( ) p
+(record) K n
+(240) # () S
+(  m        : cpu_master_type;) p n
+0 T (  s        : cpu_slave_type;) N
+0 T (  syncs    : cpu_sync_regs;) N
+0 T (  trans    : std_logic_vector\(NO_PCI_REGS - 1 ) S
+(downto) K
+( 0\);) p n
+0 T (  pciba    : std_logic_vector\(3 ) S
+(downto) K
+( 0\);) p n
+(245) # (  cfto     : std_logic;) N
+0 T (  wcomm    : std_logic;) N
+0 T (  rcomm    : std_logic;) N
+0 T (  werr     : std_logic;) N
+0 T (  clscnt   : std_logic_vector\(8 ) S
+(downto) K
+( 0\);) p n
+(250) # (  dmapage  : std_logic_vector\(31 ) S
+(downto) K
+( DMAMADDR_WIDTH\); ) p
+(-- DMA page) c n
+0 T () S
+(  ioba     : std_logic_vector\(15 ) p
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(-- For I/O handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(  for_pci  : fromahb;) p n
+0 T (  from_pci : from_pci_to_ahb;) N
+(255) # (  irq      : std_logic;) N
+0 T (  irqack   : std_logic_vector\(3 ) S
+(downto) K
+( 0\);) p n
+0 T () S
+(end) K
+( ) p
+(record) K
+(;) p n
+(pci_mtf.vhd) (Page 3/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T () p n
+0 T () S
+(signal) K
+( clk_int : std_logic;) p n
+(260) # () S
+(signal) K
+( pr : pci_input_type;) p n
+0 T () S
+(signal) K
+( r, rin : pci_reg_type;) p n
+0 T () S
+(signal) K
+( r2, r2) p
+(in) K
+( : cpu_reg_type;) p n
+0 T () S
+(signal) K
+( dmai : ahb_dma_in_type;) p n
+0 T () S
+(signal) K
+( dmao : ahb_dma_out_type;) p n
+(265) # () S
+(signal) K
+( fifo1i, fifo2i, fifo3i, fifo4i : pci_fifo_in_type;) p n
+0 T () S
+(signal) K
+( fifo1o, fifo2o, fifo3o, fifo4o : pci_fifo_out_type;) p n
+0 T () S
+(signal) K
+( roe_ad, rioe_ad : std_logic_vector\(31 ) p
+(downto) K
+( 0\); ) p n
+0 T () S
+(attribute) K
+( syn_preserve : boolean;) p n
+0 T () S
+(attribute) K
+( syn_preserve ) p
+(of) K
+( roe_ad : ) p
+(signal) K
+( ) p
+(is) K
+( true; ) p n
+(270) # () S
+(begin) K n
+0 T () N
+0 T () S
+(-- Back-end state machine \(AHB clock domain\)) c n
+0 T () N
+0 T () S
+(  comb : ) p
+(process) K
+( \(rst, r2, r, dmao, ahbsi, fifo2o, fifo4o, apbi\)) p n
+(275) # (  ) S
+(variable) K
+( vdmai : ahb_dma_in_type;) p n
+0 T (  ) S
+(variable) K
+( v : cpu_reg_type;) p n
+0 T (  ) S
+(variable) K
+( hready : std_logic;) p n
+0 T (  ) S
+(variable) K
+( hresp, hsize : std_logic_vector\(1 ) p
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(variable) K
+( p_done, wsdone, wmdone, rtdone, rmdone : std_logic;) p n
+(280) # (  ) S
+(variable) K
+( pstart, habort, hstart_ack : std_logic;) p n
+0 T (  ) S
+(variable) K
+( hstart, pabort, pstart_ack, pcidc : std_logic;) p n
+0 T (  ) S
+(variable) K
+( i : integer ) p
+(range) K
+( 0 ) p
+(to) K
+( NO_CPU_REGS;) p n
+0 T (  ) S
+(variable) K
+( fifom_write, fifos_write : std_logic;) p n
+0 T (  ) S
+(variable) K
+( prdata : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+(285) # (  ) S
+(variable) K
+( wmvalid, wsvalid, rmvalid, rsvalid, burst_read, hold : std_logic;) p n
+0 T (  ) S
+(variable) K
+( fifors_limit, fifows_limit,fiform_limit, fifowm_limit, fifows_stop : std_logic;) p n
+0 T (  ) S
+(variable) K
+( comp, request, s_read_side, m_read_side : std_logic;) p n
+0 T (  ) S
+(variable) K
+( xirq : std_logic_vector\(NAHBIRQ-1 ) p
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(begin) K n
+(290) # () S
+(    v := r2;) p n
+0 T (    vdmai.start := ') S
+(0) str
+('; vdmai.size := r.t.lsize;) p n
+0 T (    vdmai.irq := ') S
+(0) str
+('; vdmai.busy := ') p
+(0) str
+('; vdmai.burst := ') p
+(1) str
+(';) p n
+0 T (    vdmai.wdata := fifo2o.rdata\(31 ) S
+(downto) K
+( 0\); vdmai.write := r.t.lwrite;) p n
+0 T (    rmvalid := ') S
+(1) str
+('; wmvalid := ') p
+(1) str
+('; request := ') p
+(0) str
+('; hold := ') p
+(0) str
+(';) p n
+(295) # (    rsvalid := ') S
+(1) str
+('; wsvalid := ') p
+(1) str
+('; burst_read := ') p
+(0) str
+(';) p n
+0 T (    hready := ') S
+(1) str
+('; hresp := HRESP_OKAY; hsize := ") p
+(10) str
+(";) p n
+0 T (    fifom_write := ') S
+(0) str
+('; v.s.fifos_write := ') p
+(0) str
+(';) p n
+0 T (    comp := ') S
+(0) str
+('; prdata := \() p
+(others) K
+( => ') p
+(0) str
+('\); v.s.hold := ') p
+(0) str
+(';) p n
+0 T (    s_read_side := ) S
+(\330) sy
+( r.m.fifo.side; m_read_side := ) p
+(\330) sy
+( r.t.fifo.side;) p n
+(300) # (    xirq := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (    ) S
+(-- for irq acknowledgement) c n
+0 T () S
+(    v.irqack\(0\) := ') p
+(0) str
+(';) p n
+0 T () N
+0 T (    ) S
+(-- Synch registers) c n
+(305) # () S
+(    pstart     := r2.trans\(0\);) p n
+0 T (    habort     := r2.trans\(1\);) N
+0 T (    hstart_ack := r2.trans\(2\);) N
+0 T () S
+(--    fifows_limit := r2.trans\(3\);) c n
+0 T () S
+(    wsdone     := r2.trans\(4\);) p n
+(310) # (    wmdone     := r2.trans\(5\);) N
+0 T () N
+0 T () N
+0 T (    ) S
+(for) K
+( i ) p
+(in) K
+( 0 ) p
+(to) K
+( NO_CPU_REGS - 1 ) p
+(loop) K n
+0 T () S
+(      v.syncs\(i\)\(csync\) := r.trans\(i\);) p n
+(315) # (     ) S
+(if) K
+( csync /= 0 ) p
+(then) K
+( v.syncs\(i\)\(0\) := r2.syncs\(i\)\(csync\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(loop) K
+(;) p n
+0 T () N
+0 T (    hstart      := r2.syncs\(0\)\(0\);) N
+0 T (    pabort      := r2.syncs\(1\)\(0\);) N
+(320) # (    pstart_ack  := r2.syncs\(2\)\(0\);) N
+0 T (    pcidc       := r2.syncs\(3\)\(0\);) N
+0 T (    rtdone      := r2.syncs\(4\)\(0\);) N
+0 T (    rmdone      := r2.syncs\(5\)\(0\);) N
+0 T () N
+(325) # (    ) S
+(-- Synchronization of I/Os handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(    v.from_pci\(1\) := r.for_ahb;) p n
+0 T (    v.from_pci\(0\) := r2.from_pci\(1\);) N
+0 T () N
+0 T (    p_done := pstart_ack ) S
+(\332) sy
+( pabort;) p n
+(330) # () N
+0 T (    ) S
+(if) K
+( r2.m.fifo.raddr = FIFO_FULL ) p
+(then) K
+( fiform_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fiform_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r2.m.fifo.waddr = FIFO_FULL ) p
+(then) K
+( fifowm_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifowm_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r2.s.fifo.raddr = FIFO_FULL ) p
+(then) K
+( fifors_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifors_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r2.s.fifo.waddr = FIFO_FULL ) p
+(then) K
+( fifows_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifows_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(335) # (    ) S
+(if) K
+( r2.s.fifo.waddr\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 1\) = FIFO_FULL\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 1\) ) p
+(then) K
+( fifow) p n
+0 T (s_stop := ') S
+(1) str
+('; ) p
+(else) K
+( fifows_stop := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T () S
+(---- *** APB Control & Status regs *** ----) c n
+0 T () N
+0 T () S
+(      ) p
+(if) K
+( \(apbi.psel\(pindex\) ) p
+(\331) sy
+( apbi.penable\) = ') p
+(1) str
+(' ) p
+(then) K n
+(340) # () S
+(        ) p
+(case) K
+( apbi.paddr\(6 ) p
+(downto) K
+( 2\) ) p
+(is) K n
+0 T () S
+(        ) p
+(when) K
+( ") p
+(00000) str
+(" =>) p n
+0 T (          ) S
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+(pci_mtf.vhd) (Page 4/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (2/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (5-6) 3
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (            v.pciba := apbi.pwdata\(31 ) p
+(downto) K
+( 28\);) p n
+0 T (            v.werr := r2.werr ) S
+(\331) sy
+( ) p
+(\330) sy
+( apbi.pwdata\(14\);) p n
+(345) # (            v.wcomm := apbi.pwdata\(10\) ) S
+(\331) sy
+( r.comm.mwie;) p n
+0 T (            v.rcomm := apbi.pwdata\(9\);) N
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          prdata := r2.pciba & ") S
+(00000) str
+(" & r.ltim & r2.werr & ) p
+(\330) sy
+( pr.host & r.comm.msen & r.comm.me) p n
+0 T (n & r2.wcomm & r2.rcomm & r2.cfto & r.cline;) N
+0 T (        ) S
+(when) K
+( ") p
+(00001) str
+(" =>) p n
+(350) # (          prdata := r.bar0\(31 ) S
+(downto) K
+( MADDR_WIDTH\) & addzero\(MADDR_WIDTH-1 ) p
+(downto) K
+( 0\);) p n
+0 T (        ) S
+(when) K
+( ") p
+(00010) str
+(" =>) p n
+0 T (          prdata := r.page\(31 ) S
+(downto) K
+( MADDR_WIDTH-1\) & addzero\(MADDR_WIDTH-2 ) p
+(downto) K
+( 0\);) p n
+0 T (        ) S
+(when) K
+( ") p
+(00011) str
+(" =>) p n
+0 T (          prdata := r.bar1\(31 ) S
+(downto) K
+( DMAMADDR_WIDTH\) & addzero\(DMAMADDR_WIDTH-1 ) p
+(downto) K
+( 0\);) p n
+(355) # (        ) S
+(when) K
+( ") p
+(00100) str
+(" =>) p n
+0 T (          ) S
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(            v.dmapage\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\) := apbi.pwdata\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\);) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          prdata := r2.dmapage\(31 ) S
+(downto) K
+( DMAMADDR_WIDTH\) & addzero\(DMAMADDR_WIDTH-1 ) p
+(downto) K
+( 0\);) p n
+(360) # (        ) S
+(when) K
+( ") p
+(00101) str
+(" =>) p n
+0 T (          ) S
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(            v.ioba := apbi.pwdata\(31 ) p
+(downto) K
+( 16\);) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          prdata := r2.ioba & addzero\(15 ) S
+(downto) K
+( 4\) & hstart & hstart_ack & pstart & pstart_ack;) p n
+(365) # (        ) S
+(when) K
+( ") p
+(00110) str
+(" =>) p n
+0 T (          prdata\(1\) := r.comm.men; prdata\(2\) := r.comm.msen;) N
+0 T (          prdata\(4\) := r.comm.mwie; prdata\(6\) := r.comm.per;) N
+0 T (          prdata\(24\) := r.stat.dped; prdata\(26\) := ') S
+(1) str
+(';) p n
+0 T (          prdata\(27\) := r.stat.sta; prdata\(28\) := r.stat.rta;) N
+(370) # (          prdata\(29\) := r.stat.rma; prdata\(31\) := r.stat.dpe;) N
+0 T (        ) S
+(when) K
+( ") p
+(01000) str
+(" => ) p
+(-- APB base address +0x20) c n
+0 T () S
+(          ) p
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+() p 8 T () S 16 T () S 24 T (v.for_pci.gok := apbi.pwdata\(1\);) N
+0 T (            v.irqack\(0\) := apbi.pwdata\(0\); ) S
+(-- if this bit is set, it will remain so only one cy) c n
+0 T (cle,) N
+(375) # () S
+(                                           ) p
+(-- because we re-initialize it to 0 every cycle.) c n
+0 T () S
+(          ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          prdata\(15 ) S
+(downto) K
+( 8\) := r2.from_pci\(0\).irqid; ) p
+(-- irqid) c n
+0 T () S
+(          prdata\(2\) := r2.from_pci\(0\).hok; ) p
+(-- hok) c n
+0 T () S
+(          prdata\(1\) := r2.for_pci.gok; ) p
+(-- gok) c n
+(380) # () S
+(          prdata\(0\) := r2.from_pci\(0\).irq; ) p
+(-- irq) c n
+0 T () S
+(        ) p
+(when) K
+( ") p
+(01010) str
+(" => ) p
+(-- APB base address +0x28) c n
+0 T () S
+(          ) p
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+() p 8 T () S 16 T () S 24 T (v.for_pci.exppage0 := apbi.pwdata\(31 ) S
+(downto) K
+( 0\);) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(385) # (          prdata := r2.for_pci.exppage0;) N
+0 T (        ) S
+(when) K
+( ") p
+(01100) str
+(" => ) p
+(-- APB base address +0x30) c n
+0 T () S
+(          ) p
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+() p 8 T () S 16 T () S 24 T (v.for_pci.shared0off := apbi.pwdata\(31 ) S
+(downto) K
+( 0\);) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(390) # (          prdata := r2.for_pci.shared0off;) N
+0 T (        ) S
+(when) K
+( ") p
+(01101) str
+(" => ) p
+(-- APB base address +0x34) c n
+0 T () S
+(          ) p
+(if) K
+( apbi.pwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+() p 8 T () S 16 T () S 24 T (v.for_pci.shared0size := apbi.pwdata\(31 ) S
+(downto) K
+( 0\);) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(395) # (          prdata := r2.for_pci.shared0size;) N
+0 T (        ) S
+(when) K
+( ") p
+(10000) str
+(" => ) p
+(-- APB base address +0x40) c n
+0 T () S
+(          prdata := r2.from_pci\(0\).ctrl\(0\);) p n
+0 T (        ) S
+(when) K
+( ") p
+(10001) str
+(" => ) p
+(-- APB base address +0x44) c n
+0 T () S
+(          prdata := r2.from_pci\(0\).ctrl\(1\);) p n
+(400) # (        ) S
+(when) K
+( ") p
+(10010) str
+(" => ) p
+(-- APB base address +0x48) c n
+0 T () S
+(          prdata := r2.from_pci\(0\).ctrl\(2\);) p n
+0 T (        ) S
+(when) K
+( ") p
+(10011) str
+(" => ) p
+(-- APB base address +0x4c) c n
+0 T () S
+(          prdata := r2.from_pci\(0\).ctrl\(3\);) p n
+0 T (        ) S
+(when) K
+( ) p
+(others) K
+( =>) p n
+(405) # (        ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (   ) S
+(-- I/Os handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(   ) p
+(--   Generation of an AHB irq whenever PCI side \(host PC\) writes 1 to irq while it was 0) c n
+(410) # () S
+(   v.irq := r2.from_pci\(0\).irq;) p n
+0 T (   ) S
+(if) K
+( \(r2.from_pci\(0\).irq = ') p
+(1) str
+(' ) p
+(\331) sy
+( r2.irq = ') p
+(0) str
+('\) ) p
+(then) K
+( xirq\(pirq\) := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (   ) S
+(-- Irq acknowledge management) c n
+0 T () S
+(   ) p
+(for) K
+( i ) p
+(in) K
+( 3 ) p
+(downto) K
+( 1 ) p
+(loop) K n
+(415) # () S
+(     v.irqack\(i\) := r2.irqack\(i-1\); ) p
+(-- v.irqack\(0\) is initialized to '0' each cycle,) c n
+0 T () S
+(                                   ) p
+(-- so r.irqack\(0\) remains set to '1' only one cycle,) c n
+0 T () S
+(                                   ) p
+(-- when it is written on the APB interface) c n
+0 T () S
+(   ) p
+(end) K
+( ) p
+(loop) K
+(;) p n
+0 T (   ) S
+(-- The irq acknowledge bit that is seen by PCI clock-domain is r.for_pci.irqack, & is the OR) c n
+0 T ( of the) N
+(420) # () S
+(   ) p
+(-- four bits r.irqack\(i\), so it remains set to '1' during 4 cycles.) c n
+0 T () S
+(   v.for_pci.irqack := r2.irqack\(0\) ) p
+(\332) sy
+( r2.irqack\(1\) ) p
+(\332) sy
+( r2.irqack\(2\) ) p
+(\332) sy
+( r2.irqack\(3\);) p n
+0 T () N
+0 T () S
+(---- *** AHB MASTER *** ----) c n
+0 T () N
+(425) # () S
+(    ) p
+(-- Burst control) c n
+(pci_mtf.vhd) (Page 5/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (    ) p
+(if) K
+( \(r2.m.state = read ) p
+(\332) sy
+( r2.m.state = read_w\) ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( r.t.lmult = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        comp := fifowm_limit ) p
+(\331) sy
+( r2.m.fifo.side;) p n
+0 T (      ) S
+(elsif) K
+( r.t.lburst = ') p
+(1) str
+(' ) p
+(then) K n
+(430) # () S
+(        ) p
+(if) K
+( r2.clscnt\(8\) = ') p
+(1) str
+(' ) p
+(then) K
+( comp := ') p
+(1) str
+(';) p n
+0 T (        ) S
+(else) K
+( v.clscnt := r2.clscnt - \(dmao.active ) p
+(\331) sy
+( dmao.ready\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( comp := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(else) K n
+0 T () S
+(      v.clscnt := ') p
+(0) str
+(' & \(r.cline - ') p
+(1) str
+('\); ) p
+(-- set burst counter to cache line size) c n
+(435) # () S
+(    ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(if) K
+( \(rtdone = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r2.m.fifo.raddr + ') p
+(1) str
+('\) = r.t.fifo.waddr\) ) p
+(then) K
+( rmvalid := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(--step DMA address) c n
+(440) # () S
+(    ) p
+(if) K
+( dmao.ready = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      v.m.dmaddr\(31 ) p
+(downto) K
+( 2\) := r2.m.dmaddr\(31 ) p
+(downto) K
+( 2\) + ') p
+(1) str
+(';) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- AHB master state machine) c n
+(445) # () S
+(    ) p
+(case) K
+( r2.m.state ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( idle =>) p n
+0 T (      ) S
+(if) K
+( hstart = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        wmdone := ') p
+(0) str
+('; fifowm_limit := ') p
+(0) str
+('; ) p n
+0 T (        vdmai.start := ') S
+(1) str
+(';) p n
+(450) # (        v.m.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        ) N
+0 T () S
+(--        if dmao.active = '1' then  -- zero ws fix) c n
+0 T () S
+(        ) p n
+0 T (        ) S
+(if) K
+( r.t.lwrite = ') p
+(1) str
+('  ) p
+(then) K n
+(455) # () S
+(          v.m.state := write; v.m.dmaddr := r.t.laddr; ) p
+(--vdmai.busy := '1';) c n
+0 T () S
+(          ) p n
+0 T () S
+(--            if rmvalid = '1' then v.m.state := write;) c n
+0 T (--            else vdmai.start := '0'; v.m.state := stop; end if;) N
+0 T () S
+(          ) p n
+(460) # (        ) S
+(else) K
+( v.m.state := read_w; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( v.m.dmaddr := r.t.laddr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) N
+0 T () S
+(--      end if;) c n
+0 T () S
+(      ) p n
+(465) # (    ) S
+(when) K
+( write =>) p n
+0 T (      vdmai.start := \(\(rmvalid ) S
+(\331) sy
+( ) p
+(\330) sy
+( fiform_limit\) ) p
+(\332) sy
+( \() p
+(\330) sy
+( dmao.active ) p
+(\331) sy
+( ) p
+(\330) sy
+( rmvalid\)\);) p n
+0 T (      ) S
+(if) K
+( \(dmao.active ) p
+(\331) sy
+( dmao.ready\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        v.m.fifo.raddr := r2.m.fifo.raddr + \(rmvalid ) p
+(\331) sy
+( ) p
+(\330) sy
+( fiform_limit ) p
+(\331) sy
+( ) p
+(\330) sy
+( dmao.mexc\);) p n
+0 T (        ) S
+(if) K
+( \(dmao.mexc = ') p
+(1) str
+(' ) p
+(\332) sy
+( rmvalid = ') p
+(0) str
+('\) ) p
+(then) K n
+(470) # () S
+(          habort := dmao.mexc ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.t.lwrite; v.werr := r2.werr ) p
+(\332) sy
+( \(dmao.mexc ) p
+(\331) sy
+( r.t.lwrite\); v.) p n
+0 T (m.state := stop; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( read_w =>) p n
+0 T (      vdmai.start := ) S
+(\330) sy
+( \(comp ) p
+(\331) sy
+( dmao.active\);) p n
+0 T (      ) S
+(if) K
+( dmao.mexc = ') p
+(1) str
+(' ) p
+(then) K
+( habort := ) p
+(\330) sy
+( r.t.lwrite; v.werr := ') p
+(1) str
+('; v.m.state := stop;) p n
+(475) # (      ) S
+(elsif) K
+( dmao.ready = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        fifom_write := ') p
+(1) str
+('; wmvalid := ) p
+(\330) sy
+( \(comp ) p
+(\332) sy
+( dmao.mexc\);) p n
+0 T (        ) S
+(if) K
+( comp = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.state := stop; v.m.fifo.waddr := r2.m.fifo.waddr + ') p
+(1) str
+(';) p n
+0 T (        ) S
+(else) K
+( v.m.fifo.waddr := r2.m.fifo.waddr + \() p
+(\330) sy
+( fifowm_limit\); v.m.state := read; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(480) # (    ) S
+(when) K
+( read =>) p n
+0 T (      vdmai.start := ) S
+(\330) sy
+( \(comp ) p
+(\331) sy
+( dmao.active\);) p n
+0 T (      fifom_write := dmao.ready; wmvalid := ) S
+(\330) sy
+( \(comp ) p
+(\332) sy
+( dmao.mexc\);) p n
+0 T () S
+(--      if \(\(comp and dmao.ready\) or dmao.retry\) = '1' then) c n
+0 T () S
+(      ) p
+(if) K
+( \(comp ) p
+(\331) sy
+( dmao.ready\) = ') p
+(1) str
+(' ) p
+(then) K n
+(485) # () S
+(        v.m.state := stop; v.m.fifo.waddr := r2.m.fifo.waddr + ') p
+(1) str
+(';) p n
+0 T (      ) S
+(elsif) K
+( \(dmao.active ) p
+(\331) sy
+( dmao.ready\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        v.m.fifo.waddr := r2.m.fifo.waddr + \() p
+(\330) sy
+( dmao.mexc ) p
+(\331) sy
+( ) p
+(\330) sy
+( fifowm_limit\);) p n
+0 T (        ) S
+(if) K
+( dmao.mexc = ') p
+(1) str
+(' ) p
+(then) K
+( habort := ) p
+(\330) sy
+( r.t.lwrite; v.werr := r2.werr ) p
+(\332) sy
+( r.t.lwrite; v.m.st) p n
+0 T (ate := stop; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(490) # (    ) S
+(when) K
+( stop =>) p n
+0 T (      ) S
+(if) K
+( hstart = ') p
+(0) str
+(' ) p
+(\331) sy
+( \(\(r.t.lwrite ) p
+(\331) sy
+( ) p
+(\330) sy
+( fiform_limit\) = ') p
+(1) str
+(' ) p
+(\332) sy
+( wmdone = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        v.m.state := idle; hstart_ack := ') p
+(0) str
+(';) p n
+0 T (        v.m.fifo.side := ') S
+(0) str
+('; habort := ') p
+(0) str
+(';) p n
+0 T (        v.m.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+(495) # (      ) S
+(else) K n
+0 T () S
+(        comp := ') p
+(1) str
+(';) p n
+0 T (        fiform_limit := r.t.lwrite;) N
+0 T (        fifowm_limit := ) S
+(\330) sy
+( r.t.lwrite;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(500) # (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- FIFO control) c n
+0 T () S
+(    ) p
+(if) K
+( fifowm_limit = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(--      if \(\(\(r2.m.fifo.side or hstart_ack or \(not hstart\)\) = '0' and not \(dmao.active and not ) c n
+0 T (dmao.ready\) = '1'\)) N
+(505) # () S
+(      ) p
+(if) K
+( \(\(\(r2.m.fifo.side ) p
+(\332) sy
+( hstart_ack ) p
+(\332) sy
+( \() p
+(\330) sy
+( hstart\)\) = ') p
+(0) str
+(' ) p
+(\331) sy
+( \(dmao.ready ) p
+(\332) sy
+( comp\) = ') p
+(1) str
+('\)) p n
+0 T (      ) S
+(\332) sy
+( \(\(hstart_ack ) p
+(\331) sy
+( ) p
+(\330) sy
+( hstart\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( v.m.state = stop\)\) ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( v.m.state = stop ) p
+(then) K
+( wmdone := ') p
+(1) str
+(';) p n
+0 T (        ) S
+(else) K
+( v.m.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(pci_mtf.vhd) (Page 6/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (3/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (7-8) 4
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (        hstart_ack := ') p
+(1) str
+(';) p n
+(510) # (        v.m.fifo.side := ) S
+(\330) sy
+( r2.m.fifo.side;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(elsif) K
+( fiform_limit = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(--      if dmao.active = '0' then) c n
+0 T () S
+(      ) p
+(if) K
+( dmao.active = ') p
+(0) str
+(' ) p
+(\331) sy
+( dmai.start = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- 1k bug fix ***) c n
+(515) # () S
+(        m_read_side := ') p
+(1) str
+(';) p n
+0 T (        hstart_ack := ') S
+(1) str
+(';) p n
+0 T () S
+(--        v.m.fifo.raddr := \(others => hstart\);) c n
+0 T () S
+(        v.m.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(-- 1k bug fix ***) c n
+0 T () S
+(      ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(520) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T () S
+(---- *** AHB MASTER END *** ----) c n
+0 T () N
+0 T (---- *** AHB SLAVE *** ----) N
+(525) # () N
+0 T (--    if MASTER = 1 then) N
+0 T () N
+0 T () S
+(      ) p
+(-- Access decode) c n
+0 T () S
+(      ) p
+(if) K
+( \(ahbsi.hready ) p
+(\331) sy
+( ahbsi.hsel\(hslvndx\)\) = ') p
+(1) str
+(' ) p
+(then) K n
+(530) # () S
+(        ) p
+(if) K
+( \(ahbsi.hmbsel\(0\) ) p
+(\332) sy
+( ahbsi.hmbsel\(1\)\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          hsize := ahbsi.hsize\(1 ) p
+(downto) K
+( 0\); v.s.htrans := ahbsi.htrans;) p n
+0 T (          ) S
+(if) K
+( \(v.s.htrans\(1\) ) p
+(\331) sy
+( r.comm.msen\) = ') p
+(1) str
+(' ) p
+(then) K
+( request := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(535) # () N
+0 T (      ) S
+(-- Access latches) c n
+0 T () S
+(      ) p
+(if) K
+( \(request = ') p
+(1) str
+(' ) p
+(\331) sy
+( r2.s.state = idle\) ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( ahbsi.hmbsel\(1\)  = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( ahbsi.haddr\(16\) = ') p
+(1) str
+(' ) p
+(then) K
+( ) p
+(-- Configuration cycles) c n
+(540) # () S
+(            v.s.maddr\(31 ) p
+(downto) K
+( 11\) := \() p
+(others) K
+( =>') p
+(0) str
+('\);) p n
+0 T (            v.s.maddr\(conv_integer\(ahbsi.haddr\(15 ) S
+(downto) K
+( 11\)\) + 10\) := ') p
+(1) str
+(';) p n
+0 T (            v.s.maddr\(10 ) S
+(downto) K
+( 0\) := ahbsi.haddr\(10 ) p
+(downto) K
+( 0\);) p n
+0 T (            v.s.pcicomm := ") S
+(101) str
+(" & ahbsi.hwrite;) p n
+0 T (          ) S
+(else) K
+( ) p
+(-- I/O space access) c n
+(545) # () S
+(            v.s.maddr\(31 ) p
+(downto) K
+( 16\) := r2.ioba;) p n
+0 T (            v.s.maddr\(15 ) S
+(downto) K
+( 0\) := ahbsi.haddr\(15 ) p
+(downto) K
+( 0\);) p n
+0 T (            v.s.pcicomm := ") S
+(001) str
+(" & ahbsi.hwrite;) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(else) K
+( ) p
+(-- Memory space access) c n
+(550) # () S
+(          ) p
+(if) K
+( conv_integer\(ahbsi.hmaster\) = dmamst ) p
+(then) K
+( v.s.maddr := ahbsi.haddr;) p n
+0 T (          ) S
+(else) K
+( v.s.maddr := r2.pciba & ahbsi.haddr\(27 ) p
+(downto) K
+( 0\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          ) S
+(if) K
+( ahbsi.hwrite = ') p
+(1) str
+(' ) p
+(then) K
+( v.s.pcicomm := r2.wcomm & ") p
+(111) str
+(";) p n
+0 T (          ) S
+(else) K
+( v.s.pcicomm := ahbsi.hburst\(0\) & ') p
+(1) str
+(' & \(r2.rcomm ) p
+(\332) sy
+( ) p
+(\330) sy
+( ahbsi.hburst\(0\)\) & ') p
+(0) str
+('; ) p
+(end) K
+() p n
+0 T ( ) S
+(if) K
+(;) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(555) # (        ) S
+(case) K
+( hsize ) p
+(is) K n
+0 T () S
+(        ) p
+(when) K
+( ") p
+(00) str
+(" => v.s.be := ") p
+(1110) str
+("; ) p
+(-- Decode byte enable) c n
+0 T () S
+(        ) p
+(when) K
+( ") p
+(01) str
+(" => v.s.be := ") p
+(1100) str
+(";) p n
+0 T (        ) S
+(when) K
+( ") p
+(10) str
+(" => v.s.be := ") p
+(0000) str
+(";) p n
+0 T (        ) S
+(when) K
+( ) p
+(others) K
+( => v.s.be := ") p
+(1111) str
+(";) p n
+(560) # (        ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (      ) S
+(if) K
+( \(\(rmdone ) p
+(\331) sy
+( ) p
+(\330) sy
+( r2.s.pcicomm\(0\)\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r2.s.fifo.raddr + ') p
+(1) str
+(' + pcidc\) = r.m.fifo.waddr) p n
+0 T (\) ) S
+(then) K
+( rsvalid := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(565) # (      ) S
+(-- FIFO address counters) c n
+0 T (--      if \(r2.s.state = t_data or r2.s.state = w_wait\) then) N
+0 T () S
+(      ) p
+(if) K
+( \(r2.s.state = t_data ) p
+(\332) sy
+( r2.s.state = w_wait ) p
+(\332) sy
+(  ) p
+(-- bug fix ***) c n
+0 T () S
+(      \(r2.s.state = r_hold ) p
+(\331) sy
+( fifors_limit = ') p
+(0) str
+(' ) p
+(\331) sy
+( \(\(pstart_ack ) p
+(\332) sy
+( pstart\) = ') p
+(0) str
+('\) ) p
+(\331) sy
+( request = ') p
+(1) str
+(') p n
+0 T (\)\) ) S
+(then) K
+( ) p
+(-- \(r_hold -> t_data\) bug fix ***) c n
+0 T () S
+(        v.s.fifos_write := r2.s.pcicomm\(0\) ) p
+(\331) sy
+( r2.s.htrans\(1\);) p n
+(570) # (        v.s.fifo.waddr := r2.s.fifo.waddr + r2.s.fifos_write;) N
+0 T (        v.s.fifo.raddr := r2.s.fifo.raddr + \(\(ahbsi.htrans\(1\) ) S
+(\331) sy
+( ) p
+(\330) sy
+( r2.s.pcicomm\(0\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( fifors_l) p n
+0 T (imit ) S
+(\331) sy
+( rsvalid\) ) p
+(\332) sy
+( ) p
+(\330) sy
+( ahbsi.hready\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (      ) S
+(if) K
+( pstart_ack = ') p
+(1) str
+(' ) p
+(then) K n
+(575) # () S
+(        ) p
+(if) K
+( pabort = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( \(r2.s.pcicomm = CONF_WRITE ) p
+(\332) sy
+( r2.s.pcicomm = CONF_READ\) ) p
+(then) K
+( v.cfto := ') p
+(1) str
+(';) p n
+0 T (          ) S
+(else) K
+( v.s.perror := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(else) K
+( v.s.perror := ') p
+(0) str
+('; v.cfto := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(580) # () N
+0 T (    ) S
+(-- AHB slave state machine) c n
+0 T () S
+(      ) p
+(case) K
+( r2.s.state ) p
+(is) K n
+0 T () S
+(      ) p
+(when) K
+( idle =>) p n
+0 T (        ) S
+(if) K
+( request = ') p
+(1) str
+(' ) p
+(\331) sy
+( p_done = ') p
+(0) str
+(' ) p
+(then) K n
+(585) # () S
+(          ) p
+(if) K
+( ahbsi.hwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(            v.s.state := w_wait;) p n
+0 T (            v.s.fifo.side := ') S
+(0) str
+(';) p n
+0 T (          ) S
+(else) K n
+0 T () S
+(            pstart := ') p
+(1) str
+('; v.s.state := r_wait;) p n
+(590) # (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(pci_mtf.vhd) (Page 7/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (        ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( w_wait =>) p n
+0 T (        ) S
+(if) K
+( \(\(ahbsi.hready ) p
+(\331) sy
+( ) p
+(\330) sy
+( ahbsi.htrans\(0\)\) = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(          v.s.state := w_done; fifows_limit := ) p
+(\330) sy
+( wsvalid;) p n
+(595) # (        ) S
+(else) K n
+0 T () S
+(          v.s.state := t_data;) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( t_data =>) p n
+0 T (        burst_read := ahbsi.htrans\(1\) ) S
+(\331) sy
+( ) p
+(\330) sy
+( fifors_limit;) p n
+(600) # (        ) S
+(if) K
+( \(fifows_stop ) p
+(\331) sy
+( r2.s.fifos_write\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( r2.s.fifo.side = ') p
+(1) str
+(' ) p
+(then) K
+( v.s.state := w_done; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(elsif) K
+( \(\(fifors_limit ) p
+(\332) sy
+( ) p
+(\330) sy
+( rsvalid\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( v.s.htrans\(1\) = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( \(r.m.fifo.side = ') p
+(0) str
+('\) ) p
+(\332) sy
+( \(rsvalid = ') p
+(0) str
+('\) ) p
+(then) K
+( v.s.state := t_done;) p n
+0 T (          ) S
+(else) K
+( v.s.state := r_hold; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(605) # (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(if) K
+( \(\(ahbsi.hready ) p
+(\331) sy
+( ) p
+(\330) sy
+( ahbsi.htrans\(0\)\) = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( r2.s.pcicomm\(0\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.s.state := w_done; wsvalid := ') p
+(0) str
+(';) p n
+0 T (          ) S
+(else) K
+( v.s.state := t_done; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(610) # (      ) S
+(when) K
+( r_hold =>) p n
+0 T (        s_read_side := ') S
+(1) str
+(';) p n
+0 T (        ) S
+(if) K
+( fifors_limit = ') p
+(0) str
+(' ) p
+(\331) sy
+( \(\(pstart_ack ) p
+(\332) sy
+( pstart\) = ') p
+(0) str
+('\) ) p
+(\331) sy
+( request = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( rmdone = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- bug fix *** ) c n
+0 T () S
+(            v.s.state := t_data;) p n
+(615) # (            burst_read := ahbsi.htrans\(1\) ) S
+(\331) sy
+( ) p
+(\330) sy
+( fifors_limit; ) p
+(-- bug fix ***) c n
+0 T () S
+(          ) p
+(else) K n
+0 T () S
+(            v.s.state := t_done;  ) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(elsif) K
+( \(ahbsi.hready = ') p
+(1) str
+(' ) p
+(\331) sy
+( ahbsi.htrans = ") p
+(00) str
+("\) ) p
+(then) K
+( ) p
+(-- \(idle -> t_done\) bug fix *** ) c n
+(620) # () S
+(          v.s.state := t_done;) p n
+0 T (        ) S
+(else) K
+( v.s.hold := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( r_wait =>) p n
+0 T (        s_read_side := ') S
+(0) str
+(';) p n
+0 T (        ) S
+(if) K
+( \(pstart_ack ) p
+(\331) sy
+( request\) = ') p
+(1) str
+(' ) p
+(then) K n
+(625) # () S
+(          v.s.state := t_data; hready := ') p
+(0) str
+(';) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( w_done =>) p n
+0 T (        v.s.state := t_done; wsvalid := ') S
+(0) str
+(';) p n
+0 T () S
+(--        if \(r2.s.htrans\(1\) or not fifows_limit\) = '1' then) c n
+(630) # (--        if \(r2.s.htrans\(1\) and fifows_limit\) = '1' then) N
+0 T () S
+(          v.s.fifo.waddr := r2.s.fifo.waddr + r2.s.fifos_write;) p n
+0 T () S
+(--          end if;) c n
+0 T () S
+(        fifows_limit := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(when) K
+( t_done =>) p n
+(635) # (        wsvalid := ') S
+(0) str
+(';) p n
+0 T (        fifors_limit := ) S
+(\330) sy
+( r2.s.pcicomm\(0\);) p n
+0 T (        ) S
+(if) K
+( \(pstart ) p
+(\332) sy
+( pstart_ack\) = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(          v.s.state := idle; v.s.perror := ') p
+(0) str
+(';) p n
+0 T (          v.s.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\); wsdone := ') p
+(0) str
+('; fifows_limit := ') p
+(0) str
+(';) p n
+(640) # (          v.s.pcicomm := \(0 => ') S
+(1) str
+(', ) p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(-- default write) c n
+0 T () S
+(        ) p
+(else) K
+( fifows_limit := r2.s.pcicomm\(0\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+0 T (      ) S
+(-- Respond encoder) c n
+(645) # () S
+(        ) p
+(if) K
+( v.s.state = t_data) p n
+0 T (        ) S
+(\332) sy
+( \(v.s.state = r_hold ) p
+(\331) sy
+( v.s.hold = ') p
+(0) str
+('\) ) p
+(-- bug fix ***) c n
+0 T () S
+(        ) p
+(\332) sy
+( \(v.s.state = t_done ) p
+(\331) sy
+( r2.s.state = t_data\) ) p
+(-- \(end of trans\) bug fix ***) c n
+0 T () S
+(        ) p
+(\332) sy
+( \(v.s.state = w_wait ) p
+(\331) sy
+( ahbsi.hwrite = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( r2.s.perror = ') p
+(1) str
+(' ) p
+(then) K
+( hresp := HRESP_ERROR;) p n
+(650) # (          ) S
+(elsif) K
+( wsvalid = ') p
+(1) str
+(' ) p
+(then) K
+( hresp := HRESP_OKAY;) p n
+0 T (          ) S
+(else) K
+( hresp := HRESP_RETRY; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          v.s.perror := ') S
+(0) str
+(';) p n
+0 T (        ) S
+(else) K
+( hresp := HRESP_RETRY; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(655) # (      ) S
+(if) K
+( r.comm.msen = ') p
+(0) str
+(' ) p
+(then) K
+( hresp := HRESP_ERROR; ) p
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- Master disabled) c n
+0 T () S
+(      ) p
+(if) K
+( \(v.s.htrans\(1\) ) p
+(\331) sy
+( request\) = ') p
+(0) str
+(' ) p
+(then) K
+( hresp := HRESP_OKAY; ) p
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- Response OK for B) c n
+0 T (USY and IDLE) N
+0 T () S
+(      ) p
+(if) K
+( \(hresp /= HRESP_OKAY ) p
+(\332) sy
+( hready = ') p
+(0) str
+('\) ) p
+(then) K
+( v.s.hready := ') p
+(0) str
+('; ) p
+(else) K
+( v.s.hready := ') p
+(1) str
+('; ) p
+(e) K n
+0 T (nd) S
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (      ) S
+(-- Dont change hresp during wait states) c n
+(660) # () S
+(      ) p
+(if) K
+( ahbsi.hready = ') p
+(0) str
+(' ) p
+(then) K
+( hresp := r2.s.hresp; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      v.s.hresp := hresp;) N
+0 T () N
+0 T (      ) S
+(-- FIFO controller) c n
+0 T () S
+(      ) p
+(if) K
+( fifows_limit = ') p
+(1) str
+(' ) p
+(then) K n
+(665) # () S
+(        ) p
+(if) K
+( \(r2.s.fifos_write ) p
+(\332) sy
+( ) p
+(\330) sy
+( wsvalid\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r2.s.fifo.side = ') p
+(0) str
+(' ) p
+(\332) sy
+( pstart_ack = ') p
+(1) str
+('\)   ) p
+(t) K n
+0 T (hen) N
+0 T () S
+(          ) p
+(if) K
+( wsvalid = ') p
+(0) str
+(' ) p
+(then) K
+( wsdone := ') p
+(1) str
+(';) p n
+0 T (          ) S
+(else) K
+( v.s.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          pstart := ) S
+(\330) sy
+( pstart_ack;) p n
+0 T (          v.s.fifo.side := pstart;) N
+(670) # (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(elsif) K
+( \(\(r2.s.state = t_done ) p
+(\332) sy
+( r2.s.state = r_hold\) ) p
+(\331) sy
+( fifors_limit = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( pstart_ack = ') p
+(1) str
+(' ) p
+(then) K
+( pstart := ') p
+(0) str
+('; v.s.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        ) S
+(else) K
+( v.s.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(pci_mtf.vhd) (Page 8/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (4/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (9-10) 5
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (      ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(675) # () N
+0 T () S
+(--    end if;) c n
+0 T () N
+0 T (---- *** AHB SLAVE END *** ----) N
+0 T () N
+(680) # (---- *** Sync Regs *** ----) N
+0 T () S
+(    v.trans\(0\) := pstart;) p n
+0 T (    v.trans\(1\) := habort;) N
+0 T (    v.trans\(2\) := hstart_ack;) N
+0 T (    v.trans\(3\) := fifows_limit;) N
+(685) # (    v.trans\(4\) := wsdone;) N
+0 T (    v.trans\(5\) := wmdone;) N
+0 T () N
+0 T (    vdmai.address := r2.m.dmaddr;) N
+0 T () N
+(690) # (    ) S
+(-- input data for write accesses) c n
+0 T () S
+(    ) p
+(if) K
+( r2.s.pcicomm\(0\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.s.mdata := ahbsi.hwdata; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(-- output data for read accesses) c n
+0 T (--    if \(ahbsi.htrans\(1\) and not r2.s.hold and not r2.s.pcicomm\(0\)\) = '1' then v.s.mdata := fi) N
+0 T (fo4o.rdata\(31 downto 0\); end if;) N
+0 T () S
+(    ) p
+(if) K
+( \(ahbsi.htrans\(1\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( r2.s.pcicomm\(0\)\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.s.mdata := fifo4o.rdata\(31 ) p
+(downto) K
+( 0\)) p n
+0 T (; ) S
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- bug fix ***) c n
+(695) # () N
+0 T () S
+(    ) p
+(if) K
+( rst = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(      v.s.state := idle;) p n
+0 T (      v.m.state := idle;) N
+0 T (      v.s.perror := ') S
+(0) str
+(';) p n
+(700) # (      v.pciba := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.trans := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.s.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+(705) # (      v.s.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fifo.side := ') S
+(0) str
+(';) p n
+0 T (      v.s.fifo.side := ') S
+(0) str
+(';) p n
+0 T (      v.wcomm := ') S
+(0) str
+(';) p n
+0 T (      v.rcomm := ') S
+(0) str
+(';) p n
+(710) # (      v.werr := ') S
+(0) str
+(';) p n
+0 T (      v.cfto := ') S
+(0) str
+(';) p n
+0 T (      v.dmapage := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.ioba := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      ) S
+(-- For I/O handled through Configuration Space \(Eurecom\)) c n
+(715) # () S
+(      v.for_pci.gok := ') p
+(0) str
+(';) p n
+0 T (      v.for_pci.irqack := ') S
+(0) str
+(';) p n
+0 T (      v.for_pci.exppage0 := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.for_pci.shared0off := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.for_pci.shared0size := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+(720) # (      ) S
+(for) K
+( i ) p
+(in) K
+( 0 ) p
+(to) K
+( 1 ) p
+(loop) K n
+0 T () S
+(        v.from_pci\(i\).irq := ') p
+(0) str
+(';) p n
+0 T (        v.from_pci\(i\).irqid := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        v.from_pci\(i\).hok := ') S
+(0) str
+(';) p n
+0 T (      ) S
+(end) K
+( ) p
+(loop) K
+(;) p n
+(725) # (      v.irq := ') S
+(0) str
+(';) p n
+0 T (      v.irqack := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    r2) S
+(in) K
+( <= v; dmai <= vdmai;) p n
+(730) # () N
+0 T (    apbo.prdata <= prdata;) N
+0 T (    ahbso.hready <= r2.s.hready;) N
+0 T (    ahbso.hresp  <= r2.s.hresp;) N
+0 T (    ahbso.hrdata <= r2.s.mdata;) N
+(735) # (    ahbso.hindex <= hslvndx;) N
+0 T (    fifo1i.wen <= fifom_write;) N
+0 T (    fifo1i.waddr <= r2.m.fifo.side & r2.m.fifo.waddr;) N
+0 T (    fifo1i.wdata <= dmao.rdata;) N
+0 T (    fifo2i.ren <= ') S
+(1) str
+(';) p n
+(740) # (    fifo2i.raddr <= m_read_side & \(r2.m.fifo.raddr + dmao.ready\);) N
+0 T (    fifo3i.wen <= r2.s.fifos_write;) N
+0 T (    fifo3i.waddr <= r2.s.fifo.side & r2.s.fifo.waddr;) N
+0 T (    fifo3i.wdata <= r2.s.mdata;) N
+0 T (    fifo4i.ren <= ') S
+(1) str
+(';) p n
+(745) # (    fifo4i.raddr <= s_read_side & \(r2.s.fifo.raddr + burst_read\);) N
+0 T () N
+0 T (    ) S
+(-- Allowing the PCI bridge to generate IRQ on AMBA side) c n
+0 T () S
+(    apbo.pirq   <= xirq; ) p
+(-- \(others => '0'\);) c n
+0 T () N
+(750) # () S
+(  ) p
+(end) K
+( ) p
+(process) K
+(;) p n
+0 T () N
+0 T (  ahbso.hconfig <= hconfig ) S
+(when) K
+( MASTER = 1 ) p
+(else) K
+( \() p
+(others) K
+( => zero32\);) p n
+0 T (  ahbso.hcache <= ') S
+(0) str
+(';) p n
+0 T (  apbo.pconfig <= pconfig;) N
+(755) # (  apbo.pindex <= pindex;) N
+0 T (  ahbso.hsplit <= \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (  ahbso.hirq   <= \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+(pci_mtf.vhd) (Page 9/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T () p n
+0 T () S
+(-- PCI core \(PCI clock domain\)) c n
+(760) # () N
+0 T () S
+(  pcicomb : ) p
+(process) K
+(\(pr, pcii, r, r2, fifo1o, fifo3o, roe_ad\)) p n
+0 T (  ) S
+(variable) K
+( v : pci_reg_type;) p n
+0 T (  ) S
+(variable) K
+( chit, mhit0, mhit1, phit, hit, hosthit, ready, cwrite, retry : std_logic;) p n
+0 T (  ) S
+(variable) K
+( cdata, cwdata : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+(765) # (  ) S
+(variable) K
+( comp : std_logic; ) p
+(-- Last transaction cycle on PCI bus) c n
+0 T () S
+(  ) p
+(variable) K
+( mto, tto, term, ben_err, lto : std_logic;) p n
+0 T (  ) S
+(variable) K
+( i : integer ) p
+(range) K
+( 0 ) p
+(to) K
+( NO_PCI_REGS;) p n
+0 T (  ) S
+(variable) K
+( tad, mad : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(variable) K
+( pstart, habort, hstart_ack, wsdone, wmdone : std_logic;) p n
+(770) # (  ) S
+(variable) K
+( hstart, pabort, pstart_ack, pcidc, rtdone, rmdone : std_logic;) p n
+0 T (  ) S
+(variable) K
+( fifort_limit, fifowt_limit, fiform_limit, fifowm_limit, fifowm_stop, t_valid : std_l) p n
+0 T (ogic;) N
+0 T (  ) S
+(variable) K
+( d_ready, tabort, backendnr : std_logic;) p n
+0 T (  ) S
+(variable) K
+( m_fifo_write, t_fifo_write, grant : std_logic;) p n
+0 T (  ) S
+(variable) K
+( write_access, memwrite, memread, read_match, m_read_side, t_read_side : std_logic;) p n
+(775) # (  ) S
+(variable) K
+( readt_dly : std_logic; ) p
+(-- 1 turnaround cycle) c n
+0 T () S
+(  ) p
+(variable) K
+( bus_idle, data_transfer, data_transfer_r, data_phase, targ_d_w_data, targ_abort, m_r) p n
+0 T (equest : std_logic;) N
+0 T (  ) S
+(variable) K
+( voe_ad : std_logic_vector\(31 ) p
+(downto) K
+( 0\);) p n
+0 T (  ) S
+(variable) K
+( oe_par   : std_logic;) p n
+0 T (  ) S
+(variable) K
+( oe_ad    : std_logic;) p n
+(780) # (  ) S
+(variable) K
+( oe_ctrl  : std_logic;) p n
+0 T (  ) S
+(variable) K
+( oe_cbe   : std_logic;) p n
+0 T (  ) S
+(variable) K
+( oe_frame : std_logic;) p n
+0 T (  ) S
+(variable) K
+( oe_irdy  : std_logic;) p n
+0 T (  ) S
+(variable) K
+( oe_req   : std_logic;) p n
+(785) # (  ) S
+(variable) K
+( oe_perr  : std_logic;) p n
+0 T (  ) S
+(begin) K n
+0 T () N
+0 T () N
+0 T () S
+(  ) p
+(-- Process defaults) c n
+(790) # () S
+(    v := r; v.pci.trdy := ') p
+(1) str
+('; v.pci.stop := ') p
+(1) str
+('; v.pci.frame := ') p
+(1) str
+(';) p n
+0 T (    v.pci.oe_ad := ') S
+(1) str
+('; v.pci.devsel := ') p
+(1) str
+('; v.pci.oe_frame := ') p
+(1) str
+(';) p n
+0 T (    v.pci.irdy := ') S
+(1) str
+('; v.pci.req := ') p
+(1) str
+('; hosthit := ') p
+(0) str
+('; m_request := ') p
+(0) str
+(';) p n
+0 T (    v.pci.oe_req := ') S
+(0) str
+('; v.pci.oe_cbe := ') p
+(1) str
+('; v.pci.oe_irdy := ') p
+(1) str
+(';) p n
+0 T (    mto := ') S
+(0) str
+('; tto := ') p
+(0) str
+('; v.m.stop_req := ') p
+(0) str
+('; lto := ') p
+(0) str
+(';) p n
+(795) # (    cdata := \() S
+(others) K
+( => ') p
+(0) str
+('\); retry := ') p
+(0) str
+('; t_fifo_write := ') p
+(0) str
+(';) p n
+0 T (    chit := ') S
+(0) str
+('; phit := ') p
+(0) str
+('; mhit0 := ') p
+(0) str
+('; mhit1 := ') p
+(0) str
+('; tabort := ') p
+(0) str
+(';) p n
+0 T (    readt_dly := ') S
+(0) str
+('; m_fifo_write := ') p
+(0) str
+('; voe_ad := roe_ad; ) p n
+0 T (    tad := r.pci.ad; mad := r.pci.ad; grant := pcii.gnt; d_ready := ') S
+(0) str
+(';) p n
+0 T (    m_read_side := ) S
+(\330) sy
+( r2.s.fifo.side; t_read_side := ) p
+(\330) sy
+( r2.m.fifo.side;) p n
+(800) # (    v.m.rmdone := ') S
+(0) str
+('; ) p n
+0 T () N
+0 T (    write_access := ) S
+(\330) sy
+( r.t.read ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.irdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.trdy;) p n
+0 T (    memwrite := r.t.msel ) S
+(\331) sy
+( r.t.lwrite ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.t.read;) p n
+0 T (    memread := r.t.msel ) S
+(\331) sy
+( ) p
+(\330) sy
+( r.t.lwrite ) p
+(\331) sy
+( r.t.read;) p n
+(805) # () N
+0 T (    ) S
+(-- Synch registers) c n
+0 T () S
+(    hstart := r.trans\(0\);) p n
+0 T (    pabort := r.trans\(1\);) N
+0 T (    pstart_ack := r.trans\(2\);) N
+(810) # (    pcidc := r.trans\(3\);) N
+0 T (    rtdone := r.trans\(4\);) N
+0 T (    rmdone := r.trans\(5\);) N
+0 T () N
+0 T (    ) S
+(for) K
+( i ) p
+(in) K
+( 0 ) p
+(to) K
+( NO_PCI_REGS - 1 ) p
+(loop) K n
+(815) # () S
+(      v.syncs\(i\)\(csync\) := r2.trans\(i\);) p n
+0 T (     ) S
+(if) K
+( csync /= 0 ) p
+(then) K
+( v.syncs\(i\)\(0\) := r.syncs\(i\)\(csync\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(loop) K
+(;) p n
+0 T () N
+0 T (    pstart     := r.syncs\(0\)\(0\);) N
+(820) # (    habort     := r.syncs\(1\)\(0\);) N
+0 T (    hstart_ack := r.syncs\(2\)\(0\);) N
+0 T (    backendnr  := r.syncs\(3\)\(0\);) N
+0 T (    wsdone     := r.syncs\(4\)\(0\);) N
+0 T (    wmdone     := r.syncs\(5\)\(0\);) N
+(825) # () N
+0 T (    ) S
+(-- Synchronization of I/Os handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(    v.from_ahb\(1\) := r2.for_pci;) p n
+0 T (    v.from_ahb\(0\) := r.from_ahb\(1\);) N
+0 T () N
+(830) # (    ) S
+(-- AHB acknowledge of PCI irq) c n
+0 T () S
+(    ) p
+(if) K
+( r.from_ahb\(0\).irqack = ') p
+(1) str
+(' ) p
+(then) K
+( v.for_ahb.irq := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- FIFO limit detector) c n
+0 T () S
+(    ) p
+(if) K
+( r.t.fifo.raddr = FIFO_FULL ) p
+(then) K
+( fifort_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifort_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(835) # (    ) S
+(if) K
+( r.t.fifo.waddr = FIFO_FULL ) p
+(then) K
+( fifowt_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifowt_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r.m.fifo.raddr = FIFO_FULL ) p
+(then) K
+( fiform_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fiform_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r.m.fifo.waddr = FIFO_FULL ) p
+(then) K
+( fifowm_limit := ') p
+(1) str
+('; ) p
+(else) K
+( fifowm_limit := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( r.m.fifo.waddr\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 1\) = FIFO_FULL\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 1\) ) p
+(then) K
+( fifowm) p n
+0 T (_stop := ') S
+(1) str
+('; ) p
+(else) K
+( fifowm_stop := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(840) # (    ) S
+(-- useful control variables) c n
+(pci_mtf.vhd) (Page 10/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (5/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (11-12) 6
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (    ) p
+(if) K
+( \(r.t.laddr = r.page & r.t.addr\(MADDR_WIDTH-2 ) p
+(downto) K
+( 0\) ) p
+(\332) sy
+( r.t.laddr = r2.dmapage & r.t.a) p n
+0 T (ddr\(DMAMADDR_WIDTH-1 ) S
+(downto) K
+( 0\)\)) p n
+0 T (    ) S
+(\331) sy
+( \(r.t.lburst = r.t.burst\) ) p
+(then) K
+( read_match := r.t.pending; ) p
+(else) K
+( read_match := r.t.csel ) p
+(\332) sy
+( r) p n
+0 T (.t.psel; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(if) K
+( \(pr.cbe = ") p
+(0000) str
+(" ) p
+(\331) sy
+( r.t.lsize = ") p
+(10) str
+("\) ) p
+(\332) sy
+( \(pr.cbe = ") p
+(1100) str
+(" ) p
+(\331) sy
+( r.t.lsize = ") p
+(01) str
+("\) ) p
+(\332) sy
+( \(pr.cbe = ") p
+(1) str n
+0 T (110) S
+(" ) p
+(\331) sy
+( r.t.lsize = ") p
+(00) str
+("\)) p n
+(845) # () S
+(-- pragma translate_off) c n
+0 T () S
+(    ) p
+(\332) sy
+( \(pr.cbe = ") p
+(XXXX) str
+("\) ) p
+(-- For simulation purposes) c n
+0 T (-- pragma translate_on) N
+0 T () S
+(    ) p
+(then) K
+( ben_err := ') p
+(0) str
+('; ) p
+(else) K
+( ben_err := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(850) # (    ) S
+(if) K
+( r.stat.dpe = ') p
+(0) str
+(' ) p
+(then) K
+( v.stat.dpe := ) p
+(\330) sy
+( r.pci.perr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T () S
+(----- *** PCI TARGET *** --------) c n
+0 T () N
+0 T () S
+(    ) p
+(-- Data valid?) c n
+(855) # () S
+(    ) p
+(if) K
+( \(\(wmdone ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.t.lwrite\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.t.fifo.raddr + ') p
+(1) str
+('\) = r2.m.fifo.waddr\) ) p
+(then) K
+( t_valid ) p n
+0 T (:= ') S
+(0) str
+(';) p n
+0 T (    ) S
+(else) K
+( t_valid := ) p
+(\330) sy
+( fifowt_limit ) p
+(\332) sy
+( ) p
+(\330) sy
+( r.t.fifo.side; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Step addresses) c n
+0 T () S
+(    ) p
+(if) K
+( \(r.t.state = s_data ) p
+(\332) sy
+( r.t.state = turn_ar ) p
+(\332) sy
+( r.t.state = backoff\) ) p
+(then) K n
+(860) # () S
+(      ) p
+(if) K
+( \(pcii.irdy ) p
+(\332) sy
+( r.pci.trdy\) = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(        v.t.addr := r.t.addr + \(\(r.t.csel ) p
+(\331) sy
+( r.t.read\) & ") p
+(00) str
+("\);) p n
+0 T (        readt_dly := ') S
+(1) str
+(';) p n
+0 T (        ) S
+(if) K
+( r.t.msel = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          v.t.wdel := \(fifort_limit ) p
+(\331) sy
+( r2.m.fifo.side\) ) p
+(\332) sy
+( r.t.lwrite;) p n
+(865) # (          v.t.fifo.raddr := r.t.fifo.raddr + \(r.t.read ) S
+(\331) sy
+( ) p
+(\330) sy
+( fifort_limit ) p
+(\331) sy
+( t_valid\);) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(if) K
+( write_access = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        v.t.fifo.waddr := r.t.fifo.waddr + \(r.t.msel ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.t.read ) p
+(\331) sy
+( ) p
+(\330) sy
+( ben_err\);) p n
+(870) # (        t_fifo_write := r.t.msel;) N
+0 T (        v.t.addr := r.t.addr + \(\(r.t.csel ) S
+(\331) sy
+( ) p
+(\330) sy
+( r.t.read\) & ") p
+(00) str
+("\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      tabort := habort;) N
+0 T (    ) S
+(else) K
+( v.t.wdel := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(875) # () N
+0 T (    ) S
+(-- Config space read access) c n
+0 T () S
+(    ) p
+(case) K
+( r.t.addr\(7 ) p
+(downto) K
+( 2\) ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( ") p
+(000000) str
+(" =>      ) p
+(-- 0x00, device & vendor id) c n
+0 T () S
+(      cdata := conv_std_logic_vector\(DEVICE_ID, 16\) &) p n
+(880) # (      conv_std_logic_vector\(VENDOR_ID, 16\);) N
+0 T (    ) S
+(when) K
+( ") p
+(000001) str
+(" =>      ) p
+(-- 0x04, status & command) c n
+0 T () S
+(      cdata\(1\) := r.comm.men; cdata\(2\) := r.comm.msen;) p n
+0 T (      cdata\(4\) := r.comm.mwie; cdata\(6\) := r.comm.per;) N
+0 T (      cdata\(24\) := r.stat.dped; cdata\(26\) := ') S
+(1) str
+(';) p n
+(885) # (      cdata\(27\) := r.stat.sta; cdata\(28\) := r.stat.rta;) N
+0 T (      cdata\(29\) := r.stat.rma; cdata\(31\) := r.stat.dpe;) N
+0 T (    ) S
+(when) K
+( ") p
+(000010) str
+(" =>      ) p
+(-- 0x08, class code & revision) c n
+0 T () S
+(      cdata\(31 ) p
+(downto) K
+( 8\) := conv_std_logic_vector\(16#0B4000#,24\);) p n
+0 T (    ) S
+(when) K
+( ") p
+(000011) str
+(" =>      ) p
+(-- 0x0C, latency & cacheline size) c n
+(890) # () S
+(      cdata\(7 ) p
+(downto) K
+( 0\) := r.cline;) p n
+0 T (      cdata\(15 ) S
+(downto) K
+( 8\) := r.ltim;) p n
+0 T (    ) S
+(when) K
+( ") p
+(000100) str
+(" =>      ) p
+(-- 0x10, BAR0) c n
+0 T () S
+(      cdata\(31 ) p
+(downto) K
+( MADDR_WIDTH\) := r.bar0;) p n
+0 T (    ) S
+(when) K
+( ") p
+(000101) str
+(" =>      ) p
+(-- 0x14, BAR1) c n
+(895) # () S
+(      cdata\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\) := r.bar1;) p n
+0 T (    ) S
+(when) K
+( ") p
+(001111) str
+(" =>      ) p
+(-- 0x3C, Interrupts & Latency timer settings) c n
+0 T () S
+(      cdata\(7 ) p
+(downto) K
+( 0\) := r.intline; ) p
+(-- Interrupt line) c n
+0 T () S
+(      cdata\(8\) := ') p
+(1) str
+('; ) p
+(-- Use interrupt pin INTA#) c n
+0 T () S
+(      ) p
+(if) K
+( fifodepth < 11 ) p
+(then) K
+( cdata\(fifodepth+13\) := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(; ) p
+(--Define wanted burst period) c n
+(900) # () S
+(    ) p
+(-- Synchronization of I/Os handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(    ) p
+(when) K
+( ") p
+(010000) str
+(" =>      ) p
+(-- 0x40) c n
+0 T () S
+(      cdata\(15 ) p
+(downto) K
+( 8\) := r.for_ahb.irqid;) p n
+0 T (      cdata\(2\) := r.for_ahb.hok;) N
+0 T (      cdata\(1\) := r.from_ahb\(0\).gok;) N
+(905) # (      cdata\(0\) := r.for_ahb.irq;) N
+0 T (    ) S
+(when) K
+( ") p
+(010010) str
+(" =>      ) p
+(-- 0x48) c n
+0 T () S
+(      cdata := r.from_ahb\(0\).exppage0;) p n
+0 T (    ) S
+(when) K
+( ") p
+(010100) str
+(" =>      ) p
+(-- 0x50) c n
+0 T () S
+(      cdata := r.from_ahb\(0\).shared0off;) p n
+(910) # (    ) S
+(when) K
+( ") p
+(010101) str
+(" =>      ) p
+(-- 0x54) c n
+0 T () S
+(      cdata := r.from_ahb\(0\).shared0size;) p n
+0 T (    ) S
+(when) K
+( ) p
+(others) K
+( =>) p n
+0 T (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+(915) # (    ) S
+(-- Config space write access) c n
+0 T () S
+(    cwdata := pr.ad;) p n
+0 T (    ) S
+(if) K
+( pr.cbe\(3\) = ') p
+(1) str
+(' ) p
+(then) K
+( cwdata\(31 ) p
+(downto) K
+( 24\) := cdata\(31 ) p
+(downto) K
+( 24\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( pr.cbe\(2\) = ') p
+(1) str
+(' ) p
+(then) K
+( cwdata\(23 ) p
+(downto) K
+( 16\) := cdata\(23 ) p
+(downto) K
+( 16\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( pr.cbe\(1\) = ') p
+(1) str
+(' ) p
+(then) K
+( cwdata\(15 ) p
+(downto) K
+(  8\) := cdata\(15 ) p
+(downto) K
+(  8\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(920) # (    ) S
+(if) K
+( pr.cbe\(0\) = ') p
+(1) str
+(' ) p
+(then) K
+( cwdata\( 7 ) p
+(downto) K
+(  0\) := cdata\( 7 ) p
+(downto) K
+(  0\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(if) K
+( \(r.t.csel ) p
+(\331) sy
+( write_access\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(case) K
+( r.t.addr\(7 ) p
+(downto) K
+( 2\) ) p
+(is) K n
+(pci_mtf.vhd) (Page 11/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (      ) p
+(when) K
+( ") p
+(000001) str
+(" =>      ) p
+(-- 0x04, status & command) c n
+0 T () S
+(        v.comm.men := cwdata\(1\);) p n
+(925) # (        ) S
+(if) K
+( MASTER = 1 ) p
+(then) K
+( v.comm.msen := cwdata\(2\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        v.comm.mwie := cwdata\(4\); v.comm.per := cwdata\(6\);) N
+0 T (        v.stat.dped := r.stat.dped ) S
+(\331) sy
+( ) p
+(\330) sy
+( cwdata\(24\); ) p
+(-- Sticky bit) c n
+0 T () S
+(        v.stat.sta := r.stat.sta ) p
+(\331) sy
+( ) p
+(\330) sy
+( cwdata\(27\); ) p
+(-- Sticky bit) c n
+0 T () S
+(        v.stat.rta := r.stat.rta ) p
+(\331) sy
+( ) p
+(\330) sy
+( cwdata\(28\); ) p
+(-- Sticky bit) c n
+(930) # () S
+(        v.stat.rma := r.stat.rma ) p
+(\331) sy
+( ) p
+(\330) sy
+( cwdata\(29\); ) p
+(-- Sticky bit) c n
+0 T () S
+(        v.stat.dpe := r.stat.dpe ) p
+(\331) sy
+( ) p
+(\330) sy
+( cwdata\(31\); ) p
+(-- Sticky bit) c n
+0 T () S
+(      ) p
+(when) K
+( ") p
+(000011) str
+(" =>      ) p
+(-- 0x0c, latency & cacheline size) c n
+0 T () S
+(        ) p
+(if) K
+( FIFO_DEPTH <= 7 ) p
+(then) K
+( v.cline\(FIFO_DEPTH - 1 ) p
+(downto) K
+( 0\) := cwdata\(FIFO_DEPTH - 1 ) p
+(downt) K n
+0 T (o) S
+( 0\);) p n
+0 T (        ) S
+(else) K
+( v.cline := cwdata\(7 ) p
+(downto) K
+( 0\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(935) # (        v.ltim := cwdata\(15 ) S
+(downto) K
+( 8\);) p n
+0 T (      ) S
+(when) K
+( ") p
+(000100) str
+(" =>      ) p
+(-- 0x10, BAR0) c n
+0 T () S
+(        v.bar0 := cwdata\(31 ) p
+(downto) K
+( MADDR_WIDTH\);) p n
+0 T (        ) S
+(if) K
+( v.bar0 = zero\(31 ) p
+(downto) K
+( MADDR_WIDTH\) ) p
+(then) K
+( v.bar0_conf := ') p
+(0) str
+('; ) p
+(else) K
+( v.bar0_conf := ') p
+(1) str
+() p n
+0 T ('; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( ") p
+(000101) str
+(" =>      ) p
+(-- 0x14, BAR1) c n
+(940) # () S
+(        v.bar1 := cwdata\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\);) p n
+0 T (        ) S
+(if) K
+( v.bar1 = zero\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\) ) p
+(then) K
+( v.bar1_conf := ') p
+(0) str
+('; ) p
+(else) K
+( v.bar1_conf :=) p n
+0 T ( ') S
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(when) K
+( ") p
+(001111) str
+(" =>  ) p
+(-- 0x3C, Interrupts & Latency timer settings) c n
+0 T () S
+(        v.intline := cwdata\(7 ) p
+(downto) K
+( 0\); ) p
+(-- Interrupt line) c n
+0 T () S
+(      ) p
+(-- Synchronization of I/Os handled through Configuration Space \(Eurecom\)) c n
+(945) # () S
+(      ) p
+(when) K
+( ") p
+(010000) str
+(" =>      ) p
+(-- 0x40) c n
+0 T () S
+(        v.for_ahb.irq := cwdata\(0\);) p n
+0 T (        v.for_ahb.hok := cwdata\(2\);) N
+0 T (        v.for_ahb.irqid := cwdata\(15 ) S
+(downto) K
+( 8\);) p n
+0 T (      ) S
+(-- exppage0, shared0off & shared0size are read-only on PCI side) c n
+(950) # () S
+(      ) p
+(when) K
+( ") p
+(011000) str
+(" =>     ) p
+(-- 0x60) c n
+0 T () S
+(        v.for_ahb.ctrl\(0\) := cwdata;) p n
+0 T (      ) S
+(when) K
+( ") p
+(011001) str
+(" =>     ) p
+(-- 0x64) c n
+0 T () S
+(        v.for_ahb.ctrl\(1\) := cwdata;) p n
+0 T (      ) S
+(when) K
+( ") p
+(011010) str
+(" =>     ) p
+(-- 0x68) c n
+(955) # () S
+(        v.for_ahb.ctrl\(2\) := cwdata;) p n
+0 T (      ) S
+(when) K
+( ") p
+(011011) str
+(" =>     ) p
+(-- 0x6c) c n
+0 T () S
+(        v.for_ahb.ctrl\(3\) := cwdata;) p n
+0 T (      ) S
+(when) K
+( ) p
+(others) K
+( =>) p n
+0 T (      ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+(960) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Page bar write) c n
+0 T () S
+(    ) p
+(if) K
+( \(r.t.psel ) p
+(\331) sy
+( write_access\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.page := pr.ad\(31 ) p
+(downto) K
+( MADDR_WIDTH - 1\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(965) # (    ) S
+(-- Command and address decode) c n
+0 T () S
+(    ) p
+(case) K
+( pr.cbe ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( CONF_READ | CONF_WRITE =>) p n
+0 T (      ) S
+(if) K
+( pr.ad\(1 ) p
+(downto) K
+( 0\) = ") p
+(00) str
+(" ) p
+(then) K
+( chit := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(if) K
+( pr.host = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(--Active low) c n
+(970) # () S
+(        ) p
+(if) K
+( pr.ad\(31 ) p
+(downto) K
+( 11\) = ") p
+(000000000000000000000) str
+(" ) p
+(then) K
+( hosthit := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( MEM_READ | MEM_WRITE =>) p n
+0 T (      ) S
+(if) K
+( pr.ad\(31 ) p
+(downto) K
+( MADDR_WIDTH\) = r.bar0 ) p
+(then) K n
+0 T () S
+(        phit := r.bar0_conf ) p
+(\331) sy
+( pr.ad\(MADDR_WIDTH - 1\);) p n
+(975) # (        mhit0 := r.bar0_conf ) S
+(\331) sy
+( ) p
+(\330) sy
+( pr.ad\(MADDR_WIDTH - 1\);) p n
+0 T (      ) S
+(elsif) K
+( pr.ad\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\) = r.bar1 ) p
+(then) K n
+0 T () S
+(        mhit1 := r.bar1_conf;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( MEM_R_MULT | MEM_R_LINE | MEM_W_INV =>) p n
+(980) # (      ) S
+(if) K
+( pr.ad\(31 ) p
+(downto) K
+( MADDR_WIDTH - 1\) = r.bar0 & ') p
+(0) str
+(' ) p
+(then) K
+( mhit0 := r.bar0_conf;) p n
+0 T (      ) S
+(elsif) K
+( pr.ad\(31 ) p
+(downto) K
+( DMAMADDR_WIDTH\) = r.bar1 ) p
+(then) K
+( mhit1 := r.bar1_conf; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( ) p
+(others) K
+( => phit := ') p
+(0) str
+('; mhit0 := ') p
+(0) str
+('; chit := ') p
+(0) str
+('; mhit1 := ') p
+(0) str
+(';) p n
+0 T (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+(985) # (    ) S
+(-- Hit detect) c n
+0 T () S
+(    hit := r.t.csel ) p
+(\332) sy
+( r.t.msel ) p
+(\332) sy
+( r.t.psel;) p n
+0 T () N
+0 T (    ) S
+(if) K
+( \(hstart ) p
+(\331) sy
+( r.pci.devsel\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( \(r.t.pending ) p
+(\332) sy
+( r.t.lwrite\) = ') p
+(0) str
+(' ) p
+(then) K n
+(990) # () S
+(        hstart := ) p
+(\330) sy
+( hstart_ack;) p n
+0 T (        v.t.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(995) # (    ) S
+(-- Target timeout counter) c n
+0 T () S
+(    ) p
+(if) K
+( \(hit ) p
+(\331) sy
+( pr.trdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(pr.frame ) p
+(\331) sy
+( pr.irdy\)\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( r.t.cnt /= ") p
+(000) str
+(" ) p
+(then) K
+( v.t.cnt := r.t.cnt - 1;) p n
+0 T (      ) S
+(else) K
+( tto := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(else) K
+( v.t.cnt := \(0 => ') p
+(0) str
+(', ) p
+(others) K
+( => ') p
+(1) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1000) # () N
+0 T (    ) S
+(-- Ready to transfer data) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(r.t.csel ) p
+(\331) sy
+( ) p
+(\330) sy
+( readt_dly\) ) p
+(\332) sy
+( r.t.psel\) = ') p
+(1) str
+(') p n
+0 T (       ) S
+(\332) sy
+( \(\(\(\(memwrite ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.pci.devsel\) = ') p
+(1) str
+('\)) p n
+0 T (       ) S
+(\332) sy
+( \(memread = ') p
+(1) str
+(' ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(hstart_ack ) p
+(\331) sy
+( v.t.wdel\) = ') p
+(1) str
+('\)\) ) p
+(\331) sy
+( ben_err = ') p
+(0) str
+('\)) p n
+(1005) # (       ) S
+(then) K
+( ready := ') p
+(1) str
+('; ) p
+(else) K
+( ready := ') p
+(0) str
+('; t_read_side := r.t.read ) p
+(\331) sy
+( ) p
+(\330) sy
+( hstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(pci_mtf.vhd) (Page 12/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (6/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (13-14) 7
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T () p n
+0 T (    ) S
+(-- Terminate current transaction) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(\(r.t.fifo.waddr >= \(FIFO_FULL - ") p
+(10) str
+("\) ) p
+(\331) sy
+( r.t.fifo.side = ') p
+(1) str
+('\)) p n
+0 T (    ) S
+(\332) sy
+( \(t_valid = ') p
+(0) str
+('\) ) p
+(\332) sy
+( r.pci.stop = ') p
+(0) str
+('\) ) p
+(\331) sy
+( pcii.frame = ') p
+(0) str
+('\)) p n
+(1010) # (    ) S
+(\332) sy
+( \(\(r.t.read ) p
+(xor) K
+( r.t.lwrite\) = ') p
+(0) str
+(' ) p
+(\331) sy
+( r.pci.devsel = ') p
+(0) str
+('\)) p n
+0 T (    ) S
+(\332) sy
+( \(tto = ') p
+(1) str
+('\) ) p
+(\332) sy
+( \(ben_err = ') p
+(1) str
+('\)) p n
+0 T (    ) S
+(then) K
+( term := ') p
+(1) str
+('; ) p
+(else) K
+( term := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Retry transfer) c n
+(1015) # () S
+(    ) p
+(if) K
+( r.t.state = b_busy ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( ) p
+(\330) sy
+( \(\(r.t.read ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.t.lwrite ) p
+(\331) sy
+( hstart_ack ) p
+(\331) sy
+( read_match\) = ') p
+(1) str
+(') p n
+0 T (      ) S
+(\332) sy
+( \(r.t.read ) p
+(\332) sy
+( hstart ) p
+(\332) sy
+( hstart_ack\) = ') p
+(0) str
+(') p n
+0 T (      ) S
+(\332) sy
+( \(\(r.t.csel ) p
+(\332) sy
+( r.t.psel\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( hstart ) p
+(\331) sy
+( ) p
+(\330) sy
+( hstart_ack\) = ') p
+(1) str
+('\)) p n
+0 T (      ) S
+(then) K
+( retry := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1020) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- target state machine) c n
+0 T () S
+(    ) p
+(case) K
+( r.t.state ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( idle  =>) p n
+(1025) # (      ) S
+(if) K
+( pr.frame = ') p
+(0) str
+(' ) p
+(then) K
+( v.t.state := b_busy; ) p
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- !HIT ?) c n
+0 T () S
+(      v.t.addr := pr.ad;) p n
+0 T (      ) S
+(if) K
+( readpref = 1 ) p
+(then) K
+( v.t.burst := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( v.t.burst := pr.cbe\(3\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      v.t.read := ) S
+(\330) sy
+( pr.cbe\(0\); v.t.mult := ) p
+(\330) sy
+( pr.cbe\(1\);) p n
+(1030) # (      v.t.csel := \(pr.idsel ) S
+(\332) sy
+( hosthit\) ) p
+(\331) sy
+( chit; v.t.psel := phit;) p n
+0 T (      v.t.msel := r.comm.men ) S
+(\331) sy
+( \(mhit0 ) p
+(\332) sy
+( mhit1\); v.t.barsel := mhit1;) p n
+0 T (    ) S
+(when) K
+( turn_ar =>) p n
+0 T (      ) S
+(if) K
+( pr.frame = ') p
+(1) str
+(' ) p
+(then) K
+( v.t.state := idle;) p n
+0 T (      ) S
+(else) K
+( v.t.state := b_busy; ) p
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- !HIT ?) c n
+(1035) # () S
+(      v.t.addr := pr.ad; v.t.wdel := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(if) K
+( readpref = 1 ) p
+(then) K
+( v.t.burst := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( v.t.burst := pr.cbe\(3\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      v.t.read := ) S
+(\330) sy
+( pr.cbe\(0\); v.t.mult := ) p
+(\330) sy
+( pr.cbe\(1\);) p n
+0 T (      v.t.csel := \(pr.idsel ) S
+(\332) sy
+( hosthit\) ) p
+(\331) sy
+( chit; v.t.psel := phit;) p n
+(1040) # (      v.t.msel := r.comm.men ) S
+(\331) sy
+( \(mhit0 ) p
+(\332) sy
+( mhit1\); v.t.barsel := mhit1;) p n
+0 T (    ) S
+(when) K
+( b_busy  =>) p n
+0 T (      ) S
+(if) K
+( \(pr.frame ) p
+(\331) sy
+( pr.irdy\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.t.state := idle;) p n
+0 T (      ) S
+(elsif) K
+( hit = ') p
+(1) str
+(' ) p
+(then) K
+( v.t.state := s_data;) p n
+0 T (        v.t.fifo.raddr := r.t.fifo.raddr + \(r.t.read ) S
+(\331) sy
+( r.t.msel\); readt_dly := ') p
+(1) str
+(';) p n
+(1045) # (        ) S
+(if) K
+( r.t.pending = ') p
+(0) str
+(' ) p
+(then) K
+( v.t.pending := retry ) p
+(\331) sy
+( ) p
+(\330) sy
+( hstart_ack; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( v.t.state := backoff; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( s_data  =>) p n
+0 T (      ) S
+(if) K
+( r.t.pending = ') p
+(1) str
+(' ) p
+(then) K
+( v.t.pending := ) p
+(\330) sy
+( \(\(habort ) p
+(\332) sy
+( ) p
+(\330) sy
+( r.pci.trdy\) ) p
+(\331) sy
+( read_match\); ) p
+(end) K
+( ) p
+(i) K n
+0 T (f) S
+(;) p n
+0 T (      ) S
+(if) K
+( \(pcii.frame = ') p
+(0) str
+(' ) p
+(\331) sy
+( r.pci.stop =') p
+(0) str
+(' ) p
+(\331) sy
+( \(r.pci.trdy ) p
+(\332) sy
+( ) p
+(\330) sy
+( pcii.irdy\) = ') p
+(1) str
+('\) ) p
+(then) K n
+(1050) # () S
+(        v.t.state := backoff;) p n
+0 T (        ) S
+(if) K
+( r.t.last = ') p
+(0) str
+(' ) p
+(then) K
+( v.t.last := r.t.msel ) p
+(\331) sy
+( r.t.lwrite ) p
+(\331) sy
+( v.t.wdel; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        v.t.fifo.raddr := r.t.fifo.raddr - \(r.t.read ) S
+(\331) sy
+( r.t.msel ) p
+(\331) sy
+( ) p
+(\330) sy
+( fifort_limit\);) p n
+0 T () S
+(--      elsif \(pcii.frame = '1' and \(r.pci.trdy = '0' or r.pci.stop = '0'\)\) then) c n
+0 T () S
+(      ) p
+(elsif) K
+( \(pcii.frame = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.t.trdy_del = ') p
+(0) str
+(' ) p
+(\332) sy
+( r.pci.stop = ') p
+(0) str
+('\)\) ) p
+(then) K
+( ) p
+(-- \(send last wor) c n
+0 T (d in fifo\) bug fix *** ) N
+(1055) # () S
+(        v.t.state := turn_ar;) p n
+0 T (        ) S
+(if) K
+( r.t.last = ') p
+(0) str
+(' ) p
+(then) K
+( v.t.last := r.t.msel ) p
+(\331) sy
+( r.t.lwrite ) p
+(\331) sy
+( v.t.wdel; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        v.t.fifo.raddr := r.t.fifo.raddr - \(r.t.read ) S
+(\331) sy
+( r.t.msel ) p
+(\331) sy
+( ) p
+(\330) sy
+( fifort_limit\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( backoff =>) p n
+(1060) # (      ) S
+(if) K
+( pcii.frame = ') p
+(1) str
+(' ) p
+(then) K
+( v.t.state := turn_ar; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- #TRDY assert) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.t.state = s_data ) p
+(\331) sy
+( habort = ') p
+(0) str
+(' ) p
+(\331) sy
+( ready = ') p
+(1) str
+(' ) p
+(\331) sy
+( retry = ') p
+(0) str
+('\) ) p
+(then) K
+( v.pci.trdy := ') p
+(0) str
+('; ) p
+() K n
+0 T (end) S
+( ) p
+(if) K
+(;) p n
+(1065) # () N
+0 T (    ) S
+(-- #STOP assert) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.t.state = backoff ) p
+(\332) sy
+( \(v.t.state = s_data ) p
+(\331) sy
+( \(\(tabort ) p
+(\332) sy
+( \(\(term ) p
+(\332) sy
+( retry\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( habort\)\) = ) p n
+0 T (') S
+(1) str
+('\)\)\) ) p
+(then) K n
+0 T () S
+(      v.pci.stop := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(1070) # (    ) S
+(-- #DEVSEL assert) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(\(v.t.state = backoff ) p
+(\331) sy
+( r.pci.devsel = ') p
+(0) str
+('\) ) p
+(\332) sy
+( v.t.state = s_data\) ) p
+(\331) sy
+( \(read_match ) p
+(\331) sy
+( tabor) p n
+0 T (t\) = ') S
+(0) str
+('\) ) p
+(then) K
+( v.pci.devsel := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Enable #TRDY, #STOP and #DEVSEL) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.t.state = s_data\) ) p
+(\332) sy
+( \(v.t.state = backoff\) ) p
+(\332) sy
+( \(v.t.state = turn_ar\) ) p
+(then) K n
+(1075) # () S
+(      v.pci.oe_ctrl := ) p
+(\330) sy
+( hit;) p n
+0 T (    ) S
+(else) K
+( v.pci.oe_ctrl := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Signaled target abort) c n
+0 T () S
+(    ) p
+(if) K
+( \(r.pci.devsel ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(r.pci.stop ) p
+(\332) sy
+( r.pci.oe_ctrl\)\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.stat.sta := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1080) # () N
+0 T (    ) S
+(if) K
+( r.t.state = s_data ) p
+(\331) sy
+( v.t.state = s_data ) p
+(\331) sy
+( r.pci.trdy = ') p
+(0) str
+(' ) p n
+0 T (       ) S
+(\331) sy
+( v.pci.trdy = ') p
+(1) str
+(' ) p
+(\331) sy
+( v.t.wdel = ') p
+(1) str
+(' ) p
+(\331) sy
+( pcii.frame = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- \(send last word in fifo\) ) c n
+0 T (bug fix *** ) N
+0 T () S
+(       v.t.trdy_del := ') p
+(0) str
+(';) p n
+0 T (    ) S
+(else) K n
+(1085) # () S
+(       v.t.trdy_del := v.pci.trdy;) p n
+(pci_mtf.vhd) (Page 13/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (    ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(if) K
+( r.t.state = s_data ) p
+(\331) sy
+( r.pci.trdy = ') p
+(1) str
+(' ) p
+(\331) sy
+( v.pci.trdy = ') p
+(0) str
+(' ) p
+(\331) sy
+( pcii.frame = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- bug ) c n
+0 T (fix *** ) N
+0 T () S
+(       readt_dly := ') p
+(1) str
+(';) p n
+(1090) # (       v.t.fifo.raddr := r.t.fifo.raddr + \(r.t.read ) S
+(\331) sy
+( ) p
+(\330) sy
+( fifort_limit ) p
+(\331) sy
+( t_valid\);) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Latched signals to AHB backend) c n
+0 T () S
+(    ) p
+(if) K
+( \(r.t.state = b_busy\) ) p
+(then) K n
+(1095) # () S
+(      ) p
+(if) K
+( \(hstart ) p
+(\332) sy
+( hstart_ack\) = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- must be idle) c n
+0 T () S
+(        v.t.lwrite := ) p
+(\330) sy
+( r.t.read;) p n
+0 T (        ) S
+(case) K
+( pr.cbe ) p
+(is) K n
+0 T () S
+(        ) p
+(when) K
+( ") p
+(0000) str
+(" => v.t.lsize := ") p
+(10) str
+(";) p n
+0 T (        ) S
+(when) K
+( ") p
+(1100) str
+(" => v.t.lsize := ") p
+(01) str
+(";) p n
+(1100) # (        ) S
+(when) K
+( ") p
+(1110) str
+(" => v.t.lsize := ") p
+(00) str
+(";) p n
+0 T (        ) S
+(when) K
+( ) p
+(others) K
+( => v.t.lsize := ") p
+(10) str
+(";) p n
+0 T (        ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T (        ) S
+(if) K
+( r.t.msel = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          v.t.lburst := r.t.burst;) p n
+(1105) # (          ) S
+(if) K
+( r.t.barsel = ') p
+(0) str
+(' ) p
+(then) K
+( v.t.laddr := r.page & r.t.addr\(MADDR_WIDTH-2 ) p
+(downto) K
+( 0\);) p n
+0 T (          ) S
+(else) K
+(  v.t.laddr := r2.dmapage & r.t.addr\(DMAMADDR_WIDTH-1 ) p
+(downto) K
+( 0\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          v.t.lmult :=  r.t.mult;) N
+0 T (          rtdone := ') S
+(0) str
+('; v.t.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (          hstart := r.t.read ) S
+(\331) sy
+( r.t.msel;) p n
+(1110) # (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Read data mux) c n
+(1115) # () S
+(    ) p
+(if) K
+( r.t.csel = ') p
+(1) str
+(' ) p
+(then) K
+( tad := cdata;) p n
+0 T (    ) S
+(elsif) K
+( r.t.psel = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      tad\(31 ) p
+(downto) K
+( MADDR_WIDTH-1\) := r.page;) p n
+0 T (      tad\(MADDR_WIDTH-2 ) S
+(downto) K
+( 0\) := zero32\(MADDR_WIDTH-2 ) p
+(downto) K
+( 0\);) p n
+0 T () S
+(--    elsif \(r.t.state = b_busy or \(r.pci.trdy or pcii.irdy\) = '0'\) then tad := fifo1o.rdata\(31) c n
+0 T ( downto 0\);) N
+(1120) # () S
+(    ) p
+(elsif) K
+( \(r.t.state = b_busy ) p
+(\332) sy
+( \(r.pci.trdy ) p
+(\332) sy
+( pcii.irdy\) = ') p
+(0) str
+(' ) p
+(\332) sy
+( r.t.wdel = ') p
+(1) str
+('\) ) p
+(then) K
+( tad := fi) p n
+0 T (fo1o.rdata\(31 ) S
+(downto) K
+( 0\); ) p
+(-- bug fix *** ) c n
+0 T () S
+(    ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- FIFO controller) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(fifowt_limit ) p
+(\331) sy
+( write_access\) = ') p
+(1) str
+(' ) p
+(\332) sy
+( \(r.t.last ) p
+(\332) sy
+( rtdone\) = ') p
+(1) str
+('\) ) p
+(then) K n
+(1125) # () S
+(      ) p
+(if) K
+( hstart = hstart_ack ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( rtdone = ') p
+(0) str
+(' ) p
+(then) K
+( hstart := ) p
+(\330) sy
+( hstart_ack; v.t.fifo.side := hstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(if) K
+( r.t.last = ') p
+(1) str
+(' ) p
+(then) K
+( rtdone := ') p
+(1) str
+('; v.t.last := ') p
+(0) str
+(';) p n
+0 T (        ) S
+(else) K
+( v.t.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (          ) S
+(if) K
+( rtdone = ') p
+(1) str
+(' ) p
+(then) K n
+(1130) # () S
+(            rtdone := ') p
+(0) str
+('; hstart := ') p
+(0) str
+('; v.t.fifo.side := ') p
+(0) str
+(';) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1135) # () N
+0 T (    ) S
+(if) K
+( \(fifort_limit ) p
+(\331) sy
+( v.t.wdel\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( hstart_ack = ') p
+(1) str
+(' ) p
+(then) K
+( hstart := ') p
+(0) str
+('; v.t.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      ) S
+(else) K
+( v.t.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1140) # () N
+0 T () S
+(----- *** PCI TARGET END*** --------) c n
+0 T () N
+0 T (----- *** PCI MASTER *** --------) N
+0 T () N
+(1145) # () S
+(  ) p
+(if) K
+( MASTER = 1 ) p
+(then) K n
+0 T () N
+0 T () S
+(    bus_idle := pcii.frame ) p
+(\331) sy
+( pcii.irdy;) p n
+0 T (    data_transfer := ) S
+(\330) sy
+( \(pcii.trdy ) p
+(\332) sy
+( r.pci.irdy\);) p n
+0 T (    data_transfer_r := ) S
+(\330) sy
+( \(pr.trdy ) p
+(\332) sy
+( pr.irdy\);) p n
+(1150) # (    data_phase := ) S
+(\330) sy
+( \(\(pcii.trdy ) p
+(\331) sy
+( pcii.stop\) ) p
+(\332) sy
+( r.pci.irdy\);) p n
+0 T (    targ_d_w_data := ) S
+(\330) sy
+( \(pr.stop ) p
+(\332) sy
+( pr.trdy\);) p n
+0 T (    targ_abort := pr.devsel ) S
+(\331) sy
+( ) p
+(\330) sy
+( pr.stop;) p n
+0 T () N
+0 T () N
+(1155) # (    ) S
+(-- Request from AHB backend to start PCI transaction) c n
+0 T () S
+(    ) p
+(if) K
+( \(pstart ) p
+(\331) sy
+( ) p
+(\330) sy
+( pstart_ack\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( \(r.m.fstate = idle ) p
+(\331) sy
+( r.m.request = ') p
+(0) str
+('\) ) p
+(then) K n
+0 T () S
+(        v.m.request := ') p
+(1) str
+(';) p n
+0 T (        rmdone := ') S
+(0) str
+('; v.m.valid := ') p
+(1) str
+(';) p n
+(1160) # (        v.m.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        v.m.hwrite := r2.s.pcicomm\(0\);) N
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(1165) # (    ) S
+(-- Master timeout and DEVSEL timeout) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(pr.irdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.frame\) ) p
+(\332) sy
+( \(pr.devsel ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.pci.oe_frame\)\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( r.m.cnt /= ") p
+(000) str
+(" ) p
+(then) K
+( v.m.cnt := r.m.cnt - 1;) p n
+0 T (      ) S
+(else) K
+( mto := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(pci_mtf.vhd) (Page 14/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (7/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (15-16) 8
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (    ) p
+(else) K
+( v.m.cnt := \() p
+(others) K
+( => ') p
+(1) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1170) # () N
+0 T (    ) S
+(-- Latency counter) c n
+0 T () S
+(    ) p
+(if) K
+( r.pci.frame = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( r.m.ltim > ") p
+(00000000) str
+(" ) p
+(then) K
+( v.m.ltim := r.m.ltim - ') p
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( lto := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1175) # (    ) S
+(else) K n
+0 T () S
+(      v.m.ltim := r.ltim;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Last data) c n
+(1180) # () S
+(    ) p
+(case) K
+( r2.s.pcicomm ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( MEM_R_MULT | MEM_R_LINE =>) p n
+0 T (      ) S
+(if) K
+( \(r.m.fifo.waddr >= \(FIFO_FULL - ") p
+(10) str
+("\) ) p
+(\331) sy
+( r.m.fifo.side = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        comp := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( comp := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1185) # (    ) S
+(when) K
+( MEM_WRITE | MEM_W_INV => comp := ) p
+(\330) sy
+( r.m.valid;) p n
+0 T (    ) S
+(when) K
+( ) p
+(others) K
+( => comp := ') p
+(1) str
+(';) p n
+0 T (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Minimun latency) c n
+(1190) # () S
+(    ) p
+(if) K
+( lto = ') p
+(0) str
+(' ) p
+(then) K
+( grant := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Data parity error detected) c n
+0 T () S
+(    ) p
+(if) K
+( \(r.m.fstate /= idle ) p
+(\331) sy
+( r.stat.dped = ') p
+(0) str
+('\) ) p
+(then) K
+( v.stat.dped := r.comm.per ) p
+(\331) sy
+( ) p
+(\330) sy
+( pcii.perr; ) p
+() K n
+0 T (end) S
+( ) p
+(if) K
+(;) p n
+0 T () N
+(1195) # (    ) S
+(-- FIFO control state machine) c n
+0 T () S
+(    ) p
+(case) K
+( r.m.fstate ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( idle =>) p n
+0 T (      ) S
+(if) K
+( \(r.m.request ) p
+(\331) sy
+( bus_idle ) p
+(\331) sy
+( ) p
+(\330) sy
+( pcii.gnt\) = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.m.state = idle ) p
+(\332) sy
+( r.m.state = dr_bus\)) p n
+0 T ( ) S
+(then) K n
+0 T () S
+(        v.m.fstate := addr; v.m.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); v.m.fifo.side := ') p
+(0) str
+('; m_request ) p n
+0 T (:= ') S
+(1) str
+(';) p n
+(1200) # (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( addr =>) p n
+0 T (      ) S
+(if) K
+( \(wsdone = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.m.fifo.raddr + ') p
+(1) str
+('\) = r2.s.fifo.waddr\) ) p
+(then) K
+( v.m.valid := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(i) K n
+0 T (f) S
+(;) p n
+0 T (      ) S
+(if) K
+( fiform_limit = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := last1;) p n
+0 T (      ) S
+(else) K
+( v.m.fstate := incr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1205) # (      v.m.fifo.raddr := r.m.fifo.raddr + r.m.hwrite;) N
+0 T (      v.m.first := ') S
+(1) str
+('; v.m.firstw := ') p
+(1) str
+(';) p n
+0 T (    ) S
+(when) K
+( incr =>) p n
+0 T (      d_ready := ') S
+(1) str
+(';) p n
+0 T (      ) S
+(if) K
+( data_transfer = ') p
+(1) str
+(' ) p
+(then) K n
+(1210) # () S
+(        ) p
+(if) K
+( fiform_limit = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := last1; v.m.split := ) p
+(\330) sy
+( backendnr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        ) S
+(if) K
+( \(wsdone = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.m.fifo.raddr + pcii.stop\) = r2.s.fifo.waddr\) ) p
+(then) K
+( v.m.valid := ') p
+(0) str
+() p n
+0 T ('; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        v.m.fifo.raddr := r.m.fifo.raddr + r.m.hwrite;) N
+0 T (        v.m.first := ') S
+(0) str
+(';) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1215) # (      ) S
+(if) K
+( data_transfer_r = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( fifowm_stop = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          ) p
+(if) K
+( r.m.firstw = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(            ) p
+(if) K
+( \(fifowm_limit ) p
+(\331) sy
+( pr.stop\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fifo.side := ) p
+(\330) sy
+( r.m.fifo.side; v.m.first) p n
+0 T (w := ') S
+(0) str
+('; pstart_ack := pstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (          ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1220) # (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (        v.m.fifo.waddr := r.m.fifo.waddr + \() S
+(\330) sy
+( r.m.hwrite\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(if) K
+( pr.stop = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( targ_abort = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := abort;) p n
+(1225) # (        ) S
+(elsif) K
+( targ_d_w_data = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := ttermwd;) p n
+0 T (        ) S
+(elsif) K
+( r.m.first = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := t_retry;) p n
+0 T () S
+(--        else v.m.fstate := ttermnd; end if;) c n
+0 T () S
+(        ) p
+(else) K
+(  ) p
+(-- bug fix *** ) c n
+0 T (--           if r.m.fifo.waddr = "0000000" then v.m.rmdone := '1'; end if;) N
+(1230) # () S
+(           ) p
+(if) K
+( r.m.fifo.waddr = zero32\(FIFO_DEPTH - 2 ) p
+(downto) K
+( 0\) ) p
+(then) K
+( v.m.rmdone := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (           v.m.fstate := ttermnd;) N
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(elsif) K
+( mto = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := abort;) p n
+0 T (      ) S
+(elsif) K
+( grant = ') p
+(1) str
+(' ) p
+(then) K n
+(1235) # () S
+(        ) p
+(if) K
+( r.m.hwrite = ') p
+(0) str
+(' ) p
+(then) K
+( rmdone := ) p
+(\330) sy
+( r.m.fifo.side; v.m.fifo.side := ') p
+(1) str
+('; v.m.fstate :=) p n
+0 T ( done; pstart_ack := pstart;) N
+0 T (        ) S
+(else) K
+( v.m.fstate := idle; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(elsif) K
+( \(pr.frame ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.m.first\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( r.m.hwrite = ') p
+(0) str
+(' ) p
+(then) K
+( rmdone := ) p
+(\330) sy
+( r.m.fifo.side; v.m.fifo.side := ') p
+(1) str
+('; v.m.fstate :=) p n
+0 T ( done; pstart_ack := pstart;) N
+0 T (        ) S
+(else) K
+( v.m.fstate := done; pstart_ack := pstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1240) # (      ) S
+(elsif) K
+( \(pr.devsel ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.m.first\) = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( r.m.hwrite = ') p
+(0) str
+(' ) p
+(then) K
+( rmdone := ) p
+(\330) sy
+( r.m.fifo.side; v.m.fifo.side := ') p
+(1) str
+('; v.m.fstate :=) p n
+0 T ( done; pstart_ack := pstart;) N
+0 T (        ) S
+(else) K
+( v.m.fstate := idle; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( last1 =>) p n
+(1245) # (      ) S
+(if) K
+( \(pr.trdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.stop\) = ') p
+(1) str
+(' ) p
+(then) K n
+(pci_mtf.vhd) (Page 15/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (        ) p
+(if) K
+( targ_abort = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := abort;) p n
+0 T (        ) S
+(elsif) K
+( targ_d_w_data = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := ttermwd;) p n
+0 T (        ) S
+(else) K
+( v.m.fstate := ttermnd; v.m.valid := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(elsif) K
+( \(pr.frame ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.m.first ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.m.split\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := done; rmdone := ) p
+(\330) sy
+( ) p n
+0 T (r.m.fifo.side; pstart_ack := pstart;) N
+(1250) # (      ) S
+(elsif) K
+( data_transfer = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( r.m.valid = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := sync; pstart_ack := pstart;) p n
+0 T (        ) S
+(else) K
+( v.m.fstate := done; rmdone := ) p
+(\330) sy
+( r.m.fifo.side; pstart_ack := pstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( d_ready := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1255) # (    ) S
+(when) K
+( sync =>) p n
+0 T (      ) S
+(if) K
+( pstart = ) p
+(\330) sy
+( pstart_ack ) p
+(then) K n
+0 T () S
+(        v.m.split := ') p
+(0) str
+(';) p n
+0 T (        ) S
+(if) K
+( \(\(r.m.split ) p
+(\332) sy
+( \(pr.trdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.stop ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.m.split\)\)  = ') p
+(1) str
+(' ) p
+(\332) sy
+( r.m.state /= m_data\) ) p
+(th) K n
+0 T (en) S
+( v.m.fstate := idle; d_ready := ') p
+(1) str
+(';) p n
+0 T (        ) S
+(else) K n
+(1260) # () S
+(          ) p
+(if) K
+( \(wsdone = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.m.fifo.raddr + ') p
+(1) str
+('\) = r2.s.fifo.waddr\) ) p
+(then) K
+( v.m.valid := ') p
+(0) str
+('; ) p
+(e) K n
+0 T (nd) S
+( ) p
+(if) K
+(;) p n
+0 T (          v.m.fstate := incr; data_transfer := ') S
+(1) str
+('; v.m.fifo.raddr := r.m.fifo.raddr + r.m.hwri) p n
+0 T (te; d_ready := ') S
+(1) str
+(';) p n
+0 T (        ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( m_read_side := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1265) # (    ) S
+(when) K
+( t_retry => v.m.fifo.raddr := r.m.fifo.raddr - r.m.hwrite; v.m.fstate := idle;) p n
+0 T (    ) S
+(when) K
+( ttermwd =>) p n
+0 T (      ) S
+(if) K
+( data_transfer = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fifo.raddr := r.m.fifo.raddr + r.m.hwrite;) p n
+0 T (      ) S
+(elsif) K
+( pr.trdy = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fifo.raddr := r.m.fifo.raddr - r.m.hwrite;) p n
+0 T (        ) S
+(if) K
+( \(r.m.hwrite ) p
+(\331) sy
+( r.m.valid\) = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.fstate := idle;) p n
+(1270) # (        ) S
+(else) K
+( v.m.fstate := done; rmdone := ) p
+(\330) sy
+( r.m.fifo.side; v.m.fifo.side := ') p
+(1) str
+('; pstart_ack :) p n
+0 T (= pstart; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( ttermnd =>) p n
+0 T (        ) S
+(if) K
+( r.m.hwrite = ') p
+(1) str
+(' ) p
+(then) K n
+0 T () S
+(          v.m.fifo.raddr := r.m.fifo.raddr - ') p
+(1) str
+(';) p n
+(1275) # (          ) S
+(if) K
+( \(r.m.fifo.raddr /= \(r2.s.fifo.waddr + ') p
+(1) str
+('\) ) p
+(\332) sy
+( wsdone = ') p
+(0) str
+('\) ) p
+(then) K
+( v.m.valid := ') p
+(1) str
+('; ) p n
+0 T (v.m.fstate := idle;) N
+0 T (          ) S
+(else) K
+( v.m.fstate := done; rmdone := ) p
+(\330) sy
+( r.m.fifo.side; v.m.fifo.side := ') p
+(1) str
+('; pstart_ack) p n
+0 T ( := pstart; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () S
+(--        else v.m.fstate := done; rmdone := not r.m.fifo.side; v.m.fifo.side := '1'; pstart_ac) c n
+0 T (k := pstart; end if;) N
+0 T () S
+(        ) p
+(else) K
+( v.m.fstate := done; rmdone := \() p
+(\330) sy
+( r.m.fifo.side ) p
+(\332) sy
+( r.m.rmdone\); v.m.fifo.side := ') p
+(1) str
+() p n
+0 T ('; pstart_ack := pstart; ) S
+(end) K
+( ) p
+(if) K
+(; ) p
+(-- bug fix *** ) c n
+0 T () S
+(    ) p
+(when) K
+( abort =>) p n
+(1280) # (      v.m.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\); v.m.fifo.waddr := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fstate := done; pstart_ack := pstart; pabort := ') S
+(1) str
+(';) p n
+0 T (    ) S
+(when) K
+( done =>) p n
+0 T (      d_ready := ') S
+(1) str
+('; comp := ') p
+(1) str
+('; v.m.request := ') p
+(0) str
+(';) p n
+0 T (      ) S
+(if) K
+( \(pstart ) p
+(\332) sy
+( pstart_ack\) = ') p
+(0) str
+(' ) p
+(then) K n
+(1285) # () S
+(        v.m.fstate := wdone; v.m.fifo.raddr := \() p
+(others) K
+( => ') p
+(0) str
+('\); v.m.fifo.side := ') p
+(0) str
+('; rmdone :=) p n
+0 T ( ') S
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( pstart_ack := pstart; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( wdone =>) p n
+0 T (      d_ready := ') S
+(1) str
+('; comp := ') p
+(1) str
+(';) p n
+0 T (      ) S
+(if) K
+( \(r.m.state = idle ) p
+(\332) sy
+( r.m.state = dr_bus\) ) p
+(then) K
+( v.m.fstate := idle; pabort := ') p
+(0) str
+(';  ) p
+(end) K
+( ) p
+(i) K n
+0 T (f) S
+(;) p n
+(1290) # (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- PCI master state machine) c n
+0 T () S
+(    ) p
+(case) K
+( r.m.state ) p
+(is) K n
+0 T () S
+(    ) p
+(when) K
+( idle => ) p
+(-- Master idle) c n
+(1295) # () S
+(      ) p
+(if) K
+( \(pcii.gnt = ') p
+(0) str
+(' ) p
+(\331) sy
+( bus_idle = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( m_request = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.state := addr;) p n
+0 T (        ) S
+(else) K
+( v.m.state := dr_bus; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( addr => ) p
+(-- Always one address cycle at the beginning of an transaction) c n
+(1300) # () S
+(      v.m.state := m_data;) p n
+0 T (    ) S
+(when) K
+( m_data => ) p
+(-- Master transfers data) c n
+0 T () S
+(      ) p
+(if) K
+( \(r.pci.frame = ') p
+(0) str
+('\) ) p
+(\332) sy
+( \(\(r.pci.frame ) p
+(\331) sy
+( pcii.trdy ) p
+(\331) sy
+( pcii.stop ) p
+(\331) sy
+( ) p
+(\330) sy
+( mto\) = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        v.m.state := m_data;) p n
+0 T (        ) S
+(if) K
+( \(r.pci.frame ) p
+(\331) sy
+( ) p
+(\330) sy
+( d_ready\) = ') p
+(1) str
+(' ) p
+(then) K
+( d_ready := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1305) # (      ) S
+(elsif) K
+( \(\(r.pci.frame ) p
+(\331) sy
+( \(mto ) p
+(\332) sy
+( ) p
+(\330) sy
+( pcii.stop\)\) = ') p
+(1) str
+('\) ) p
+(then) K n
+0 T () S
+(        v.m.state := s_tar;) p n
+0 T (        v.m.stop_req := ') S
+(1) str
+(';) p n
+0 T (      ) S
+(else) K
+( v.m.state := turn_ar; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( turn_ar => ) p
+(-- Transaction complete) c n
+(1310) # () S
+(      ) p
+(if) K
+( pcii.gnt = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(        ) p
+(if) K
+( m_request = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.state := addr;) p n
+0 T (        ) S
+(else) K
+( v.m.state := dr_bus; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(else) K
+( v.m.state := idle; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( s_tar => ) p
+(-- Stop was asserted) c n
+(1315) # () S
+(      ) p
+(if) K
+( pcii.gnt = ') p
+(0) str
+(' ) p
+(then) K
+( v.m.state := dr_bus;) p n
+0 T (      ) S
+(else) K
+( v.m.state := idle; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(when) K
+( dr_bus => ) p
+(-- Drive bus when parked on this agent) c n
+0 T () S
+(      ) p
+(if) K
+( pcii.gnt = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.state := idle;) p n
+0 T (      ) S
+(elsif) K
+( m_request = ') p
+(1) str
+(' ) p
+(then) K
+( v.m.state := addr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1320) # (    ) S
+(end) K
+( ) p
+(case) K
+(;) p n
+(pci_mtf.vhd) (Page 16/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (8/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (17-18) 9
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T () p n
+0 T (    ) S
+(-- FIFO write strobe) c n
+0 T () S
+(    m_fifo_write := ) p
+(\330) sy
+( r.m.hwrite ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.irdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(pr.trdy ) p
+(\331) sy
+( \(pr.stop ) p
+(\332) sy
+( ) p
+(\330) sy
+( r.trans\(3\)\)\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.pc) p n
+0 T (i.oe_irdy;) N
+0 T () N
+(1325) # (    ) S
+(-- PCI data mux) c n
+0 T () S
+(    ) p
+(if) K
+( v.m.state = addr ) p
+(then) K n
+0 T () S
+(      ) p
+(if) K
+( r.m.hwrite = ') p
+(1) str
+(' ) p
+(then) K
+( mad := \(r2.s.maddr + \(\(\(\() p
+(\330) sy
+( r2.s.fifo.side\) & r.m.fifo.raddr\)\) &) p n
+0 T ( ") S
+(00) str
+("\)\);) p n
+0 T (      ) S
+(else) K
+( mad := r2.s.maddr; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(elsif) K
+( \(r.m.state = addr ) p
+(\332) sy
+( data_transfer = ') p
+(1) str
+('\) ) p
+(then) K
+( mad := fifo3o.rdata\(31 ) p
+(downto) K
+( 0\);) p n
+(1330) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Target abort) c n
+0 T () S
+(    ) p
+(if) K
+( \(\(pr.devsel ) p
+(\331) sy
+( pr.trdy ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.gnt ) p
+(\331) sy
+( ) p
+(\330) sy
+( pr.stop\) = ') p
+(1) str
+('\) ) p
+(then) K
+( v.stat.rta := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(1335) # (    ) S
+(-- Master abort) c n
+0 T () S
+(    ) p
+(if) K
+( mto = ') p
+(1) str
+(' ) p
+(then) K
+( v.stat.rma := ') p
+(1) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Drive FRAME# and IRDY#) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.m.state = addr ) p
+(\332) sy
+( v.m.state = m_data\) ) p
+(then) K
+( v.pci.oe_frame := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1340) # () N
+0 T (    ) S
+(-- Drive CBE#) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.m.state = addr ) p
+(\332) sy
+( v.m.state = m_data ) p
+(\332) sy
+( v.m.state = dr_bus\) ) p
+(then) K
+( v.pci.oe_cbe := ') p
+(0) str
+('; ) p
+(e) K n
+0 T (nd) S
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- Drive IRDY# \(FRAME# delayed one pciclk\)) c n
+(1345) # () S
+(    v.pci.oe_irdy := r.pci.oe_frame;) p n
+0 T () N
+0 T (    ) S
+(-- FRAME# assert) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.m.state = addr ) p
+(\332) sy
+( \(v.m.state = m_data ) p
+(\331) sy
+( mto = ') p
+(0) str
+(' ) p
+(\331) sy
+( \(\(\(\(pcii.stop ) p
+(\332) sy
+( ) p
+(\330) sy
+( d_ready\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(c) p n
+0 T (omp ) S
+(\332) sy
+( v.m.split ) p
+(\332) sy
+( ) p
+(\330) sy
+( v.m.valid\)\) ) p
+(\331) sy
+( ) p
+(\330) sy
+( grant\)\) = ') p
+(1) str
+('\)\)) p n
+0 T (    ) S
+(then) K
+( v.pci.frame := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+(1350) # () N
+0 T (    ) S
+(-- IRDY# assert) c n
+0 T () S
+(    ) p
+(if) K
+( \(v.m.state = m_data ) p
+(\331) sy
+( \(\(d_ready ) p
+(\332) sy
+( mto ) p
+(\332) sy
+( \() p
+(\330) sy
+( r.m.valid\) ) p
+(\332) sy
+( \(v.pci.frame ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.pci.frame\)\) ) p n
+0 T (= ') S
+(1) str
+('\)\)  ) p
+(then) K
+( v.pci.irdy := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- REQ# assert) c n
+(1355) # () S
+(    ) p
+(if) K
+( \(\(v.m.request = ') p
+(1) str
+(' ) p
+(\331) sy
+( \(r.m.fstate = idle ) p
+(\332) sy
+( comp = ') p
+(0) str
+('\)\) ) p
+(\331) sy
+( \(v.m.stop_req ) p
+(\332) sy
+( r.m.stop_req\) ) p n
+0 T (= ') S
+(0) str
+('\) ) p
+(then) K
+( v.pci.req := ') p
+(0) str
+('; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    ) S
+(-- C/BE# assert) c n
+0 T () S
+(    ) p
+(if) K
+( v.m.state = addr ) p
+(then) K
+( v.pci.cbe := r2.s.pcicomm; ) p
+(else) K
+( v.pci.cbe := r2.s.be; ) p
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+(1360) # (  ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T () S
+(----- *** PCI MASTER END *** --------) c n
+0 T () N
+0 T (----- *** SHARED SIGNALS *** -------) N
+(1365) # () N
+0 T () S
+(    ) p
+(-- Default assertions) c n
+0 T () S
+(    v.pci.oe_par := r.pci.oe_ad; ) p
+(--Delayed one clock) c n
+0 T () S
+(    v.pci.oe_perr := ) p
+(\330) sy
+(\(r.comm.per ) p
+(\331) sy
+( ) p
+(\330) sy
+( r.pci.oe_par ) p
+(\331) sy
+( ) p
+(\330) sy
+( \(pr.irdy ) p
+(\331) sy
+( pr.trdy\)\) ) p
+(\331) sy
+( \(r.pci.oe_perr ) p
+(\332) sy
+() p n
+0 T ( r.pci.perr\);) N
+0 T (    v.pci.par := xorv\(r.pci.ad & r.pci.cbe\); ) S
+(-- Default asserted by master) c n
+(1370) # () S
+(    v.pci.ad := mad;  ) p
+(-- Default asserted by master) c n
+0 T () S
+(    v.pci.perr := ) p
+(\330) sy
+( \(pcii.par ) p
+(xor) K
+( xorv\(pr.ad & pr.cbe\)\) ) p
+(\332) sy
+( pr.irdy ) p
+(\332) sy
+( pr.trdy; ) p
+(-- Detect parity ) c n
+0 T (error) N
+0 T () N
+0 T () S
+(    ) p
+(-- Drive AD) c n
+0 T () S
+(    ) p
+(-- Master) c n
+(1375) # () S
+(    ) p
+(if) K
+( \(v.m.state = addr ) p
+(\332) sy
+( \(v.m.state = m_data ) p
+(\331) sy
+( r.m.hwrite = ') p
+(1) str
+('\) ) p
+(\332) sy
+( v.m.state = dr_bus\) ) p
+(then) K n
+0 T () S
+(      v.pci.oe_ad := ') p
+(0) str
+(';) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(-- Target) c n
+0 T () S
+(    ) p
+(if) K
+( r.t.read = ') p
+(1) str
+(' ) p
+(then) K n
+(1380) # () S
+(      ) p
+(if) K
+( v.t.state = s_data ) p
+(then) K n
+0 T () S
+(        v.pci.oe_ad := ') p
+(0) str
+(';) p n
+0 T (        v.pci.ad := tad; ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (      ) S
+(if) K
+( r.t.state = s_data ) p
+(then) K n
+0 T () S
+(        v.pci.par := xorv\(r.pci.ad & pcii.cbe\);) p n
+(1385) # (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    v.noe_ad := ) S
+(\330) sy
+( v.pci.oe_ad; v.noe_ctrl := ) p
+(\330) sy
+( v.pci.oe_ctrl;) p n
+0 T (    v.noe_par := ) S
+(\330) sy
+( v.pci.oe_par; v.noe_req := ) p
+(\330) sy
+( v.pci.oe_req;) p n
+(1390) # (    v.noe_frame := ) S
+(\330) sy
+( v.pci.oe_frame; v.noe_cbe := ) p
+(\330) sy
+( v.pci.oe_cbe;) p n
+0 T (    v.noe_irdy := ) S
+(\330) sy
+( v.pci.oe_irdy; v.noe_perr := ) p
+(\330) sy
+( v.pci.oe_perr;) p n
+0 T (  ) N
+0 T (    ) S
+(if) K
+( oepol  = 0 ) p
+(then) K n
+0 T () S
+(      voe_ad := \() p
+(others) K
+( => v.pci.oe_ad\);) p n
+(1395) # (      oe_ad := r.pci.oe_ad; oe_ctrl := r.pci.oe_ctrl;) N
+0 T (      oe_par := r.pci.oe_par; oe_req := r.pci.oe_req;) N
+0 T (      oe_frame := r.pci.oe_frame; oe_cbe := r.pci.oe_cbe;) N
+0 T (      oe_irdy := r.pci.oe_irdy; oe_perr := r.pci.oe_perr;) N
+(pci_mtf.vhd) (Page 17/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (    ) p
+(else) K n
+(1400) # () S
+(      voe_ad := \() p
+(others) K
+( => v.noe_ad\);) p n
+0 T (      oe_ad := r.noe_ad; oe_ctrl := r.noe_ctrl;) N
+0 T (      oe_par := r.noe_par; oe_req := r.noe_req;) N
+0 T (      oe_frame := r.noe_frame; oe_cbe := r.noe_cbe;) N
+0 T (      oe_irdy := r.noe_irdy; oe_perr := r.noe_perr;) N
+(1405) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (  ) N
+0 T () S
+(----- *** SHARED SIGNALS END *** -------) c n
+0 T () N
+(1410) # () S
+(    v.trans\(0\) := hstart;) p n
+0 T (    v.trans\(1\) := pabort;) N
+0 T (    v.trans\(2\) := pstart_ack;) N
+0 T (    v.trans\(3\) := pcidc;) N
+0 T (    v.trans\(4\) := rtdone;) N
+(1415) # (    v.trans\(5\) := rmdone;) N
+0 T () N
+0 T (    ) S
+(if) K
+( pr.rst = ') p
+(0) str
+(' ) p
+(then) K n
+0 T () S
+(      v.t.state := idle; v.m.state := idle; v.m.fstate := idle;) p n
+0 T (      v.bar0 := \() S
+(others) K
+( => ') p
+(0) str
+('\); v.bar0_conf := ') p
+(0) str
+(';) p n
+(1420) # (      v.bar1 := \() S
+(others) K
+( => ') p
+(0) str
+('\); v.bar1_conf := ') p
+(0) str
+(';) p n
+0 T (      v.t.msel := ') S
+(0) str
+('; v.t.csel := ') p
+(0) str
+(';) p n
+0 T (      v.t.pending := ') S
+(0) str
+(';) p n
+0 T (      v.page\(31 ) S
+(downto) K
+( 30\) := ") p
+(01) str
+(";) p n
+0 T (      v.page\(29 ) S
+(downto) K
+( MADDR_WIDTH-1\) := zero32\(29 ) p
+(downto) K
+( MADDR_WIDTH-1\);) p n
+(1425) # (      v.pci.par := ') S
+(0) str
+(';) p n
+0 T (      v.comm.msen := ) S
+(\330) sy
+( pr.host; v.comm.men := ') p
+(0) str
+(';) p n
+0 T (      v.comm.mwie := ') S
+(0) str
+('; v.comm.per := ') p
+(0) str
+(';) p n
+0 T (      v.stat.rta := ') S
+(0) str
+('; v.stat.rma := ') p
+(0) str
+(';) p n
+0 T (      v.stat.sta := ') S
+(0) str
+('; v.stat.dped := ') p
+(0) str
+(';) p n
+(1430) # (      v.stat.dpe := ') S
+(0) str
+(';) p n
+0 T (      v.cline := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.ltim := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.intline := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.trans := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+(1435) # (      v.t.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.t.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fifo.waddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.m.fifo.raddr := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.t.fifo.side := ') S
+(0) str
+(';) p n
+(1440) # (      v.m.fifo.side := ') S
+(0) str
+(';) p n
+0 T (      v.m.request := ') S
+(0) str
+(';) p n
+0 T (      v.m.hwrite := ') S
+(0) str
+(';) p n
+0 T (      v.m.valid := ') S
+(1) str
+(';) p n
+0 T (      v.m.split := ') S
+(0) str
+(';) p n
+(1445) # (      v.m.last := ') S
+(0) str
+('; v.t.last := ') p
+(0) str
+(';) p n
+0 T (      ) S
+(-- For I/O handled through Configuration Space \(Eurecom\)) c n
+0 T () S
+(      v.for_ahb.irq := ') p
+(0) str
+(';) p n
+0 T (      v.for_ahb.irqid := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      v.for_ahb.hok := ') S
+(0) str
+(';) p n
+(1450) # (      ) S
+(for) K
+( i ) p
+(in) K
+( 0 ) p
+(to) K
+( 3 ) p
+(loop) K n
+0 T () S
+(        v.for_ahb.ctrl\(i\) := \() p
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (      ) S
+(end) K
+( ) p
+(loop) K
+(;) p n
+0 T (      ) S
+(for) K
+( i ) p
+(in) K
+( 0 ) p
+(to) K
+( 1 ) p
+(loop) K n
+0 T () S
+(        v.from_ahb\(i\).gok := ') p
+(0) str
+(';) p n
+(1455) # (        v.from_ahb\(i\).exppage0 := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        v.from_ahb\(i\).shared0off := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        v.from_ahb\(i\).shared0size := \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (        v.from_ahb\(i\).irqack := ') S
+(0) str
+(';) p n
+0 T (      ) S
+(end) K
+( ) p
+(loop) K
+(;) p n
+(1460) # (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T () N
+0 T (    fifo2i.wen <= t_fifo_write;) N
+0 T (    fifo2i.waddr <= r.t.fifo.side & r.t.fifo.waddr;) N
+0 T (    fifo2i.wdata <= pr.ad;) N
+(1465) # (    fifo1i.ren <= ') S
+(1) str
+(';) p n
+0 T (    fifo1i.raddr <= t_read_side & \(r.t.fifo.raddr + readt_dly\);) N
+0 T (    fifo4i.wen <= m_fifo_write;) N
+0 T (    fifo4i.waddr <= r.m.fifo.side & r.m.fifo.waddr;) N
+0 T (    fifo4i.wdata <= pr.ad;) N
+(1470) # (    fifo3i.ren <= ') S
+(1) str
+(';) p n
+0 T (    fifo3i.raddr <= m_read_side & \(r.m.fifo.raddr + data_transfer\);) N
+0 T (    rin <= v;) N
+0 T (    rioe_ad <= voe_ad;) N
+0 T () N
+(1475) # (    ) N
+0 T (    pcio.cbeen    <= \() S
+(others) K
+( => oe_cbe\);) p n
+0 T (    pcio.cbe      <= r.pci.cbe;) N
+0 T () N
+0 T (    pcio.vaden    <= roe_ad; ) N
+(1480) # (    pcio.aden     <= oe_ad;) N
+0 T (    pcio.ad       <= r.pci.ad;) N
+0 T () N
+0 T () S
+(--    pcio.trdy     <= r.pci.trdy;) c n
+0 T () S
+(    pcio.trdy     <= r.t.trdy_del; ) p
+(-- \(send last word in fifo\) bug fix *** ) c n
+(pci_mtf.vhd) (Page 18/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (9/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (19-20) 10
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(1485) # (    pcio.ctrlen   <= oe_ctrl;) p n
+0 T (    pcio.trdyen   <= oe_ctrl;) N
+0 T (    pcio.devselen <= oe_ctrl;) N
+0 T (    pcio.stopen   <= oe_ctrl;) N
+0 T (    pcio.stop     <= r.pci.stop;) N
+(1490) # (    pcio.devsel   <= r.pci.devsel;) N
+0 T (    pcio.par      <= r.pci.par;) N
+0 T (    pcio.paren    <= oe_par;) N
+0 T (    pcio.perren   <= oe_perr;) N
+0 T (    pcio.perr     <= r.pci.perr;) N
+(1495) # () N
+0 T (    pcio.reqen    <= oe_req;) N
+0 T (    pcio.req      <= r.pci.req;) N
+0 T (    pcio.frameen  <= oe_frame;) N
+0 T (    pcio.frame    <= r.pci.frame;) N
+(1500) # (    pcio.irdyen   <= oe_irdy;) N
+0 T (    pcio.irdy     <= r.pci.irdy;) N
+0 T (  ) N
+0 T (  ) S
+(end) K
+( ) p
+(process) K
+(;) p n
+0 T () N
+(1505) # (  pcir : ) S
+(process) K
+( \(pciclk, pcii.rst\)) p n
+0 T (  ) S
+(begin) K n
+0 T () S
+(    ) p
+(if) K
+( rising_edge \(pciclk\) ) p
+(then) K n
+0 T () S
+(      pr.ad         <= to_x01\(pcii.ad\);) p n
+0 T (      pr.cbe        <= to_x01\(pcii.cbe\);) N
+(1510) # (      pr.devsel     <= to_x01\(pcii.devsel\);) N
+0 T (      pr.frame      <= to_x01\(pcii.frame\);) N
+0 T (      pr.idsel      <= to_x01\(pcii.idsel\);) N
+0 T (      pr.irdy       <= to_x01\(pcii.irdy\);) N
+0 T (      pr.trdy       <= to_x01\(pcii.trdy\);) N
+(1515) # (      pr.par        <= to_x01\(pcii.par\);) N
+0 T (      pr.stop       <= to_x01\(pcii.stop\);) N
+0 T (      pr.rst        <= to_x01\(pcii.rst\);) N
+0 T (      pr.gnt        <= to_x01\(pcii.gnt\);) N
+0 T (      pr.host       <= to_x01\(pcii.host\);) N
+(1520) # (      r.pci.ad      <= rin.pci.ad;) N
+0 T (      r.pci.cbe     <= rin.pci.cbe;) N
+0 T (      r.pci.frame   <= rin.pci.frame;) N
+0 T (      r.pci.devsel  <= rin.pci.devsel;   ) N
+0 T (      r.pci.trdy    <= rin.pci.trdy;   ) N
+(1525) # (      r.pci.irdy    <= rin.pci.irdy;   ) N
+0 T (      r.pci.stop    <= rin.pci.stop;   ) N
+0 T (      r.pci.par     <= rin.pci.par;    ) N
+0 T (      r.pci.req     <= rin.pci.req;    ) N
+0 T (      r.pci.perr    <= rin.pci.perr;) N
+(1530) # (      ) S
+(if) K
+( pcii.rst = ') p
+(0) str
+(' ) p
+(then) K
+( ) p
+(-- asynch reset required) c n
+0 T () S
+() p 8 T (r.pci.oe_ad <= ') S
+(1) str
+('; r.pci.oe_ctrl <= ') p
+(1) str
+('; r.pci.oe_par <= ') p
+(1) str
+(';) p n
+0 T (        r.pci.oe_req <= ') S
+(1) str
+('; r.pci.oe_frame <= ') p
+(1) str
+('; r.pci.oe_cbe <= ') p
+(1) str
+(';) p n
+0 T () S 8 T (r.pci.oe_irdy <= ') S
+(1) str
+('; r.pci.oe_perr <= ') p
+(1) str
+(';) p n
+0 T () N
+(1535) # () S 8 T (r.noe_ad <= ') S
+(0) str
+('; r.noe_ctrl <= ') p
+(0) str
+('; r.noe_par <= ') p
+(0) str
+(';) p n
+0 T () S 8 T (r.noe_req <= ') S
+(0) str
+('; r.noe_frame <= ') p
+(0) str
+('; r.noe_cbe <= ') p
+(0) str
+(';) p n
+0 T () S 8 T (r.noe_irdy <= ') S
+(0) str
+('; r.noe_perr <= ') p
+(0) str
+(';) p n
+0 T () N
+0 T () S 8 T () S
+(if) K
+( oepol  = 0 ) p
+(then) K
+( roe_ad <= \() p
+(others) K
+( => ') p
+(1) str
+('\);) p n
+(1540) # () S 8 T () S
+(else) K
+( roe_ad <= \() p
+(others) K
+( => ') p
+(0) str
+('\); ) p
+(end) K
+( ) p
+(if) K
+(; ) p n
+0 T (      ) S
+(else) K n
+0 T () S
+() p 8 T (roe_ad         <= rioe_ad; ) N
+0 T (        r.pci.oe_ad    <= rin.pci.oe_ad;) N
+0 T (        r.pci.oe_ctrl  <= rin.pci.oe_ctrl;) N
+(1545) # (        r.pci.oe_par   <= rin.pci.oe_par;) N
+0 T (        r.pci.oe_req   <= rin.pci.oe_req;) N
+0 T (        r.pci.oe_frame <= rin.pci.oe_frame;) N
+0 T (        r.pci.oe_cbe   <= rin.pci.oe_cbe;) N
+0 T (        r.pci.oe_irdy  <= rin.pci.oe_irdy;) N
+(1550) # (        r.pci.oe_perr  <= rin.pci.oe_perr;) N
+0 T () S 8 T (r.noe_par      <= rin.noe_par; ) N
+0 T (        r.noe_ad       <= rin.noe_ad;) N
+0 T () S 8 T (r.noe_ctrl     <= rin.noe_ctrl;) N
+0 T (        r.noe_cbe      <= rin.noe_cbe;) N
+(1555) # (        r.noe_frame    <= rin.noe_frame;) N
+0 T (        r.noe_irdy     <= rin.noe_irdy;) N
+0 T (        r.noe_req      <= rin.noe_req;  ) N
+0 T (        r.noe_perr     <= rin.noe_perr; ) N
+0 T (      ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+(1560) # (      r.m          <= rin.m;        ) N
+0 T (      r.t          <= rin.t; ) N
+0 T (      r.comm       <= rin.comm; ) N
+0 T (      r.stat       <= rin.stat;       ) N
+0 T (      r.bar0       <= rin.bar0;) N
+(1565) # (      r.bar1       <= rin.bar1;) N
+0 T (      r.bar0_conf  <= rin.bar0_conf;) N
+0 T (      r.bar1_conf  <= rin.bar1_conf;) N
+0 T (      r.page       <= rin.page;) N
+0 T (      r.ltim       <= rin.ltim;) N
+(1570) # (      r.cline      <= rin.cline;) N
+(pci_mtf.vhd) (Page 19/21) (Oct 10, 06 15:46) title
+border
+/v 1 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+0 T (      r.intline    <= rin.intline;) p n
+0 T (      r.syncs      <= rin.syncs;) N
+0 T (      r.trans      <= rin.trans;) N
+0 T (      r.for_ahb    <= rin.for_ahb;) N
+(1575) # (      r.from_ahb   <= rin.from_ahb;) N
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (  ) S
+(end) K
+( ) p
+(process) K
+(;) p n
+0 T () N
+0 T (  cpur : ) S
+(process) K
+( \(clk\)) p n
+(1580) # (  ) S
+(begin) K n
+0 T () S
+(    ) p
+(if) K
+( rising_edge \(clk\) ) p
+(then) K n
+0 T () S
+(      r2 <= r2) p
+(in) K
+(;) p n
+0 T (    ) S
+(end) K
+( ) p
+(if) K
+(;) p n
+0 T (  ) S
+(end) K
+( ) p
+(process) K
+(;) p n
+(1585) # () N
+0 T (  oe0 : ) S
+(if) K
+( oepol = 0 ) p
+(generate) K
+( ) p n
+0 T (    pcio.serren   <= ') S
+(1) str
+(';) p n
+0 T (    pcio.inten    <= ') S
+(1) str
+(';) p n
+0 T (    pcio.locken   <= ') S
+(1) str
+(';) p n
+(1590) # (  ) S
+(end) K
+( ) p
+(generate) K
+(;) p n
+0 T () N
+0 T (  oe1 : ) S
+(if) K
+( oepol = 1 ) p
+(generate) K n
+0 T () S
+(    pcio.serren   <= ') p
+(0) str
+(';) p n
+0 T (    pcio.inten    <= ') S
+(0) str
+(';) p n
+(1595) # (    pcio.locken   <= ') S
+(0) str
+(';) p n
+0 T (  ) S
+(end) K
+( ) p
+(generate) K
+(;) p n
+0 T (  ) N
+0 T (  pcio.serr     <= ') S
+(1) str
+(';) p n
+0 T (  pcio.int      <= ') S
+(1) str
+(';) p n
+(1600) # (  pcio.lock     <= ') S
+(1) str
+(';) p n
+0 T () N
+0 T (  pcio.power_state <= \() S
+(others) K
+( => ') p
+(0) str
+('\);) p n
+0 T (  pcio.pme_enable <= ') S
+(0) str
+(';) p n
+0 T (  pcio.pme_clear <= ') S
+(0) str
+(';) p n
+(1605) # () N
+0 T () N
+0 T (  msttgt : ) S
+(if) K
+( MASTER = 1 ) p
+(generate) K n
+0 T () N
+0 T () S
+(    ahbmst0 : pciahbmst ) p
+(generic) K
+( ) p
+(map) K
+( \(hindex => hmstndx, devid => GAISLER_PCIFBRG, incaddr => 1\)) p n
+(1610) # (    ) S
+(port) K
+( ) p
+(map) K
+( \(rst, clk, dmai, dmao, ahbmi, ahbmo\);) p n
+0 T () N
+0 T (    fifo1 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(pciclk, fifo1i.ren, fifo1i.raddr, fifo1o.rdata, clk, fifo1i.wen, fifo1i.waddr, fi) p n
+0 T (fo1i.wdata\);) N
+0 T () N
+(1615) # (    fifo2 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(clk, fifo2i.ren, fifo2i.raddr, fifo2o.rdata, pciclk, fifo2i.wen, fifo2i.waddr, fi) p n
+0 T (fo2i.wdata\);) N
+0 T () N
+0 T (    fifo3 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(pciclk, fifo3i.ren, fifo3i.raddr, fifo3o.rdata, clk, fifo3i.wen, fifo3i.waddr, fi) p n
+0 T (fo3i.wdata\);) N
+(1620) # () N
+0 T (    fifo4 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(clk, fifo4i.ren, fifo4i.raddr, fifo4o.rdata, pciclk, fifo4i.wen, fifo4i.waddr, fi) p n
+0 T (fo4i.wdata\);) N
+0 T () N
+0 T () S
+(-- pragma translate_off) c n
+(1625) # () S
+(    bootmsg : report_version) p n
+0 T (    ) S
+(generic) K
+( ) p
+(map) K
+( \(") p
+(pci_mtf) str
+(" & tost\(hslvndx\) &) p n
+0 T () S 8 T (") S
+(: 32-bit PCI/AHB bridge  rev ) str
+(" & tost\(REVISION\) &) p n
+0 T () S 8 T (") S
+(, ) str
+(" & tost\(2**abits/2**20\) & ") p
+( Mbyte PCI memory BAR, ) str
+(" &) p n
+0 T (  ) S 8 T (tost\(2**FIFO_DEPTH\) & ") S
+(-word FIFOs) str
+(" \);) p n
+(1630) # () S
+(-- pragma translate_on) c n
+0 T () N
+0 T () S
+(  ) p
+(end) K
+( ) p
+(generate) K
+(;) p n
+0 T () N
+0 T (  tgtonly : ) S
+(if) K
+( MASTER = 0 ) p
+(generate) K n
+(1635) # () S
+(    ahbmst0 : pciahbmst ) p
+(generic) K
+( ) p
+(map) K
+( \(hindex => hmstndx, devid => GAISLER_PCIFBRG, incaddr => 1\)) p n
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(rst, clk, dmai, dmao, ahbmi, ahbmo\);) p n
+0 T () N
+0 T (    fifo1 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(pciclk, fifo1i.ren, fifo1i.raddr, fifo1o.rdata, clk, fifo1i.wen, fifo1i.waddr, fi) p n
+0 T (fo1i.wdata\);) N
+(1640) # () N
+0 T (    fifo2 : syncram_2p ) S
+(generic) K
+( ) p
+(map) K
+( \(tech => memtech, abits => FIFO_DEPTH, dbits => FIFO_DATA_BI) p n
+0 T (TS, sepclk => 1\)) N
+0 T (    ) S
+(port) K
+( ) p
+(map) K
+( \(clk, fifo2i.ren, fifo2i.raddr, fifo2o.rdata, pciclk, fifo2i.wen, fifo2i.waddr, fi) p n
+0 T (fo2i.wdata\);) N
+0 T () N
+0 T () S
+(-- pragma translate_off) c n
+(pci_mtf.vhd) (Page 20/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (10/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+%%Page: (21) 11
+%%BeginPageSetup
+/pagesave save def
+sh 0 translate 90 rotate
+%%EndPageSetup
+iso1dict begin
+gsave
+llx lly 12 add translate
+/v 0 store
+/x0 x v get 2.520000 add sx cw mul add store
+/y0 y v get bfs th add sub store
+x0 y0 moveto
+(1645) # (    bootmsg : report_version) p n
+0 T (    ) S
+(generic) K
+( ) p
+(map) K
+( \(") p
+(pci_mtf) str
+(" & tost\(hmstndx\) &) p n
+0 T () S 8 T (") S
+(: 32-bit PCI/AHB bridge  rev, target-only, ) str
+(" & tost\(REVISION\) &) p n
+0 T () S 8 T (") S
+(, ) str
+(" & tost\(2**abits/2**20\) & ") p
+( Mbyte PCI memory BAR, ) str
+(" &) p n
+0 T (  ) S 8 T (tost\(2**FIFO_DEPTH\) & ") S
+(-word FIFOs) str
+(" \);) p n
+(1650) # () S
+(-- pragma translate_on) c n
+0 T () S
+(  ) p
+(end) K
+( ) p
+(generate) K
+(;) p n
+0 T () N
+0 T () S
+(end) K
+(;) p n
+0 T () N
+(pci_mtf.vhd) (Page 21/21) (Oct 10, 06 15:46) title
+border
+grestore
+(Printed by Karim Khalfalla) rhead
+(pci_mtf.vhd) (11/11) (Wednesday November 08, 2006) footer
+end % of iso1dict
+pagesave restore
+showpage
+
+%%Trailer
+end
+%%EOF

@@ -1,0 +1,10 @@
+
+FILENAME=LFSWcmd
+
+CFLAGS+=-I$(OPENAIR)/ARCH/CBMIMO1/DEVICE_DRIVER/
+
+all: $(FILENAME)
+
+clean:
+	rm -Rf $(FILENAME)
+	rm -Rf $(FILENAME).[iso]

@@ -1,0 +1,28 @@
+Index: jtag.vhd
+===================================================================
+RCS file: /home/cvs/openairinterface/arch/openair_CardBus_MIMO1/LEON3/grlib-eval/lib/gaisler/jtag/jtag.vhd,v
+retrieving revision 1.1.1.1
+diff -u -r1.1.1.1 jtag.vhd
+--- jtag.vhd	26 Sep 2006 13:52:33 -0000	1.1.1.1
++++ jtag.vhd	14 Mar 2007 16:57:16 -0000
+@@ -27,9 +27,9 @@
+ 
+ package jtag is
+ 
+-component tap 
++component tap
+   generic (
+-    tech   : integer := 0;    
++    tech   : integer := 0;
+     irlen  : integer range 2 to 8 := 4;
+     idcode : integer range 0 to 255 := 9;
+     id_msb : integer range 0 to 65536 := 0;
+@@ -39,7 +39,7 @@
+     tck  : in std_ulogic;
+     tms  : in std_ulogic;
+     tdi  : in std_ulogic;
+-    tdo  : out std_ulogic; 
++    tdo  : out std_ulogic;
+     tapo_tck    : out std_ulogic;
+     tapo_tdi    : out std_ulogic;
+     tapo_inst   : out std_logic_vector(7 downto 0);
