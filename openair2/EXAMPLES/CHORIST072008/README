@@ -1,0 +1,71 @@
+CHORIST082008
+
+This is an example of a small MPLS-based network deployment using a 
+single-cluster OpenAir L2 protocol stack. It makes use of 5 physical 
+machines. Three make up a MESH backbone running the openair2 protocol stack 
+(MR1,MR2 and MR3) and two are access nodes which provide IPv6 traffic to the mesh. 
+The openair nodes each run two network devices; eth0 is used to communicate with the 
+access nodes and nasmesh0 is the emulated openair radio interface. Openair is used for 
+both IP signaling traffic and MPLS user-plane traffic. IPv6 user-plane traffic from the 
+access nodes is routed to MPLS bearers in openair and L3 signaling transits on IPv6 bearers. In
+this scenario, the CH (MR2) is set-up manually to forward (relay) tranffic between 
+MR1 and MR3. The addressing scheme is shown in the shaded boxes attached to 
+each node in the network. You can see that it comprises both IPv6, IPv4 and 
+MPLS address/labels. User-plane traffic uses exclusively IPv6. Each node has a 
+configuration script which should be invoked to initiate the simulation. The 
+first to be run must be the clusterhead.
+
+For an image of the network architecture see the Twiki page for this example
+
+https://twiki.eurecom.fr/twiki/bin/view/OpenAirInterface/OpenAir2Examples
+
+
+
+Here are the scripts to be installed on all machines
+
+Machine 0
+---------
+	mr1_conf_nas.sh : 
+		Script to setup MR1 interface and classification rules.  
+		Installs nasmesh.ko driver
+		sets up IP and MPLS interfaces and launches L2 emulator (user-space execution)
+
+	mpls_mr1_nas.sh : 
+		Script to setup MPLS fowarding rules (MR1<->MR2)
+
+Machine 1
+---------
+	mr2_conf_nas.sh : 
+		Script to setup MR2 interfaces and classification rules (CH)
+		Installs nasmesh.ko driver
+		sets up IP and MPLS interfaces and launches L2 emulator (user-space execution)
+
+	mpls_mr1_nas.sh : 
+		Script to setup MPLS fowarding rules (MR1<->MR2,MR2<->MR3)
+
+Machine 2
+---------
+	mr3_conf_nas.sh : 
+		Script to setup MR3 interfaces and classification rules
+		Installs nasmesh.ko driver
+		sets up IP and MPLS interfaces and launches L2 emulator (user-space execution)
+
+	mpls_mr1_nas.sh : 
+		Script to setup MPLS fowarding rules (MR2<->MR3)
+
+Machine 3
+---------
+	mn1_conf.sh : 
+		Script to set up IPv6 forwarding on MN1 (towards MR1)
+
+Machine 4
+---------
+	mn2_conf.sh : 
+		Script to set up IPv6 forwarding on MN2 (towards MR3)
+
+
+
+All
+
+	del_mpls.sh : 
+		Removes all mpls configurations, same for all machines.
