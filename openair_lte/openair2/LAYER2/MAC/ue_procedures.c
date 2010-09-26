@@ -94,7 +94,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("[MAC][UE] ue_send_sdu : Mod_id %d, CH_index %d : num_ce %d num_sdu %d\n",Mod_id,CH_index,num_ce,num_sdu);
+  msg("[MAC][UE %d] ue_send_sdu : CH_index %d : num_ce %d num_sdu %d\n",Mod_id,CH_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -102,7 +102,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 	//#ifdef DEBUG_HEADER_PARSING
-	msg("[MAC][UE] CE %d : UE contention resolution for RRC :",i);
+	msg("[MAC][UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
 	msg("%x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	// Send to RRC here
 	//#endif
@@ -161,7 +161,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
-  msg("[MAC][UE] Sending SI to RRC (Lchan Id %d)\n",BCCH);
+  msg("[MAC][UE %d] Sending SI to RRC (Lchan Id %d)\n",Mod_id,BCCH);
 #endif
 
   Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,BCCH,(char *)pdu,len,0);//CH_index);
@@ -178,7 +178,7 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 				       CCCH,1,
 				       &UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
 				       CH_index);
-    msg("[MAC][UE] Requested RRCConnectionRequest, got %d bytes\n",Size);
+    msg("[MAC][UE %d] Requested RRCConnectionRequest, got %d bytes\n",Mod_id,Size);
     if (Size>0)
       return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
   }
@@ -268,7 +268,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    msg("[MAC][UE Scheduler] Truncated BSR Header\n");
+    //    msg("[MAC][UE %d] Scheduler Truncated BSR Header\n",Mod_id);
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = TRUNCATED_BSR;
@@ -292,7 +292,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    msg("[MAC][UE Scheduler] SHORT BSR Header\n");
+    //    msg("[MAC][UE %d] Scheduler SHORT BSR Header\n",Mod_id);
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = SHORT_BSR;
@@ -316,7 +316,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    msg("[MAC][UE Scheduler] Long BSR Header\n");
+    //    msg("[MAC][UE %d] Scheduler Long BSR Header\n",Mod_id);
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = LONG_BSR;
@@ -329,7 +329,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
 
   for (i=0;i<num_sdus;i++) {
-    printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+    //    printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 
     if (first_element>0) {
       mac_header_ptr->E = 1;
@@ -394,13 +394,13 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 				    (buflen-header_len)/DCCH_LCHAN_DESC.transport_block_size,
 				    DCCH_LCHAN_DESC.transport_block_size);
     if (rlc_status.bytes_in_buffer>0) {
-      msg("[MAC][UE] DCCH has %d bytes to send (buffer %d, header %d)\n",rlc_status.bytes_in_buffer,buflen,header_len);
+      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							DCCH,
 							&dcch_buffer[sdu_lengths[0]]);
       sdu_lcids[0] = DCCH;
-      msg("[MAC][UE] Got %d bytes for DCCH :",sdu_lengths[0]);
+      msg("[MAC][UE %d] Got %d bytes for DCCH :",sdu_lengths[0],Mod_id);
       num_sdus = 1;
     }
     else
@@ -421,7 +421,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 					   NULL,
 					   NULL,
 					   NULL);
-    msg("[MAC][UE] Payload offset %d\n",payload_offset);
+    msg("[MAC][UE %d] Payload offset %d\n",payload_offset,Mod_id);
 
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],dcch_buffer,sdu_lengths[0]);

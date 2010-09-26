@@ -41,13 +41,13 @@ typedef struct
     void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 subframe);
 
     /// Fill random access response sdu, passing timing advance
-    u16 (*fill_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length,u16 timing_advance_cmd);
+    u16 (*fill_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
 
     /// Terminate the RA procedure upon reception of l3msg on ulsch
     void (*terminate_ra_proc)(u8 Mod_id,u16 UE_id, u8 *l3msg);
 
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
-    void (*initiate_ra_proc)(u8 Mod_id,u16 preamble);
+    void (*initiate_ra_proc)(u8 Mod_id,u16 preamble,s16 timing_offset,u8 sect_id);
 
     /// Get DCI for current subframe from MAC
     DCI_PDU* (*get_dci_sdu)(u8 Mod_id,u8 subframe);

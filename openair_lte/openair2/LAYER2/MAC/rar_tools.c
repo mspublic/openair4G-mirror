@@ -17,29 +17,25 @@ extern inline unsigned int taus(void);
 unsigned short fill_rar(u8 Mod_id,
 			u8 *dlsch_buffer,
 			u16 N_RB_UL,
-			u8  input_buffer_length,
-			u16 timing_advance_cmd) {
+			u8  input_buffer_length) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
-
+  
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
 
   rarh->E                     = 0; // First and last RAR
   rarh->T                     = 0; // Preamble ID RAR
   rarh->RAPID                 = 0; // Respond to Preamble 0 only for the moment
-
   rar->R                      = 0;
-  rar->Timing_Advance_Command = timing_advance_cmd;
+  rar->Timing_Advance_Command = CH_mac_inst[Mod_id].RA_template[0].timing_offset;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);
   rar->mcs                    = 2;
   rar->TPC                    = 0;
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
-  rar->t_crnti                = taus();
+  rar->t_crnti                = CH_mac_inst[Mod_id].RA_template[0].rnti;
 
-  // save rnti in process 0
-  CH_mac_inst[Mod_id].RA_template[0].rnti = rar->t_crnti;
 #ifdef DEBUG_RAR
   debug_msg("[MAC eNB] Mod_id %d Generating RAR for CRNTI %x\n",Mod_id,rar->t_crnti);
 #endif

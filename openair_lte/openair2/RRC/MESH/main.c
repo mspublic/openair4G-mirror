@@ -387,7 +387,7 @@ void openair_rrc_on(u8 Mod_id){//configure  BCCH & CCCH Logical Channels and ass
     Mod_id-=NB_CH_INST;
     for(i=0;i<NB_SIG_CNX_UE;i++){  
 
-                  
+      msg("[RRC][UE %d] Activating CCCH (eNB %d)\n",Mod_id,i);
       UE_rrc_inst[Mod_id].Srb0[i].Srb_id = CCCH;
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[0],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&UE_rrc_inst[Mod_id].Srb0[i].Lchan_desc[1],&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -431,7 +431,7 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index) {
 
   u8 RRCConnectionSetupComplete[32], size=5,i;
 
-  msg("[RRC][UE] Generating RRCConnectionSetupComplete : 0 ");
+  msg("[RRC][UE %d] Generating RRCConnectionSetupComplete : 0 ",Mod_id);
   RRCConnectionSetupComplete[0]=0;
   for (i=1;i<size;i++) {
     RRCConnectionSetupComplete[i] = (u8)(taus()&0xff);
@@ -446,7 +446,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 CH_index)
 
   u8 RRCConnectionReconfigurationComplete[32], size=5,i;
 
-  msg("[RRC][UE] Generating RRCConnectionReconfigurationComplete : 1 ");
+  msg("[RRC][UE %d] Generating RRCConnectionReconfigurationComplete : 1 ",Mod_id);
   RRCConnectionReconfigurationComplete[0]=1;
   for (i=1;i<size;i++) {
     RRCConnectionReconfigurationComplete[i] = (u8)(taus()&0xff);
@@ -463,7 +463,7 @@ void ue_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
   /*------------------------------------------------------------------------------*/
 
   unsigned char ret;
-  msg("[RRC] Decoding CCCH\n");
+  msg("[RRC][UE %d] Decoding CCCH\n",Mod_id);
   // Decode packet
   switch (Srb_info->Rx_buffer.Payload[0]) {
   case 0: // ConnectionSetup
@@ -523,8 +523,7 @@ s32 rrc_ue_establish_drbs(u8 Mod_id,u8 CH_index) {
   memcpy(&UE_rrc_inst[Mod_id].Srb1[CH_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
     
 
-  msg("[RRC][UE %d], CONFIG_SRB1 %d(%d) corresponding to CH_index %d\n",
-      UE_rrc_inst[Mod_id].Node_id,
+  msg("[RRC][UE %d], CONFIG_SRB1 (%d) corresponding to CH_index %d\n",
       Mod_id,
       lchan_id,
       CH_index);
@@ -741,7 +740,7 @@ void ch_rrc_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
 
   // Get RRCConnectionSetup message and size (here 9)
   //  CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx = size;
-  msg("[RRC] Generate %d bytes (RRCConnectionReconfiguration) for DCCH : 1 ",size);//CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx);
+  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH : 1 ",Mod_id,size);//CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx);
   RRCConnectionReconfiguration[0]=1;
   for (i=1;i<size;i++) {
     RRCConnectionReconfiguration[i] = (u8)(taus()&0xff);
@@ -768,7 +767,7 @@ void ch_rrc_process_connectionsetupcomplete(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, 
 void ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,sdu_size){
 
     //Establish DRB (DTCH)
-  msg("[RRC][eNB] Received RRCConnectionReconfigurationComplete, configuring DRB\n");
+  msg("[RRC][eNB %d] Received RRCConnectionReconfigurationComplete from UE %d, configuring DRB\n",Mod_id,UE_index);
   Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
 				    (UE_index << RAB_SHIFT2) + DTCH,
 				    RADIO_ACCESS_BEARER,Rlc_info_um);
@@ -778,16 +777,16 @@ void ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,
 void ch_rrc_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size){  
   u8 sdu_type;
 
-  msg("[RRC] Received message on dcch for UE_index %d, size %d bytes\n", UE_index, sdu_size);
+  msg("[RRC][eNB %d] Received message on dcch for UE_index %d, size %d bytes\n", Mod_id,UE_index, sdu_size);
 
   // check sdu_type
   switch (Rx_sdu[0]) {
   case 0 : // ConnectionSetupComplete
-    msg("[RRC][eNB] Processing RRCConnectionSetupComplete message\n");
+    msg("[RRC][eNB %d] Processing RRCConnectionSetupComplete message\n",Mod_id);
     ch_rrc_process_connectionsetupcomplete(Mod_id,UE_index,Rx_sdu,sdu_size);
     break;
   case 1 : // RRCConnectionReconfigurationComplete
-    msg("[RRC][eNB] Processing RRCConnectionReconfigurationComplete message\n");
+    msg("[RRC][eNB %d] Processing RRCConnectionReconfigurationComplete message\n",Mod_id);
     ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,sdu_size);
     break;
   case 2 : // RRCConnectionRestablishmentComplete
@@ -821,7 +820,7 @@ void ch_rrc_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
 
   // Get RRCConnectionSetup message and size (here 9)
   CH_rrc_inst[Mod_id].Srb0.Tx_buffer.W_idx = size;
-  msg("[RRC] Generate %d bytes (RRCConnectionSetup) for CCCH : 0 ",CH_rrc_inst[Mod_id].Srb0.Tx_buffer.W_idx);
+  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH : 0 ",Mod_id,CH_rrc_inst[Mod_id].Srb0.Tx_buffer.W_idx,UE_index);
   RRCConnectionSetup[0]=0;
   for (i=1;i<size;i++) {
     RRCConnectionSetup[i] = (u8)(taus()&0xff);

@@ -26,10 +26,13 @@
 extern inline unsigned int taus(void);
 
 
-void initiate_ra_proc(u8 Mod_id, u16 preamble_index) {
+void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id) {
   msg("[MAC][eNB Proc] Initiating RA procedure for index %d\n",preamble_index);
   CH_mac_inst[Mod_id].RA_template[0].generate_rar=1;
   CH_mac_inst[Mod_id].RA_template[0].generate_rrcconnsetup=0;
+  CH_mac_inst[Mod_id].RA_template[0].timing_offset=timing_offset;
+  CH_mac_inst[Mod_id].RA_template[0].rnti = taus();
+
 }
 
 void terminate_ra_proc(u8 Mod_id,u16 UE_id,unsigned char *l3msg) {
@@ -164,16 +167,17 @@ void rx_sdu(u8 Mod_id,u16 UE_id,u8 *sdu) {
     if (rx_lcids[i] == DCCH) {
       //      if(CH_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
       msg("offset: %d\n",(u8)((u8*)payload_ptr-sdu));
-      for (j=0;j<rx_lengths[i];j++)
+      for (j=0;j<32;j++)
 	printf("%x ",payload_ptr[j]);
       printf("\n");
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
-				      DCCH,
-				      payload_ptr,
-				      DCCH_LCHAN_DESC.transport_block_size,
-				      rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
-				      NULL);//(unsigned int*)crc_status);
-      
+      if (rx_lengths[i]<32) {
+	Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
+					DCCH,
+					payload_ptr,
+					DCCH_LCHAN_DESC.transport_block_size,
+					rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
+					NULL);//(unsigned int*)crc_status);
+      }
       //      }
     }
     payload_ptr+=rx_lengths[i];

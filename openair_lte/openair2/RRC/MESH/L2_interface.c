@@ -64,7 +64,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
   u16 tmp;
 
 #ifdef DEBUG_RRC
-  msg("[RRC]Mod_id=%d: mac_rrc_data_req to SRB ID=%ld\n",Mod_id,Srb_id);
+  msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%ld\n",Mod_id,Srb_id);
 #endif
 
   if( Mac_rlc_xface->Is_cluster_head[Mod_id]){
@@ -112,7 +112,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx;
       UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx=0;
-      msg("[RRC][UE] Frame %d: sending rach from NODE %d\n",Rrc_xface->Frame_index,NODE_ID[Mod_id+NB_CH_INST]);
+      msg("[RRC][UE %d] Sending rach\n",Mod_id);
       return(Ret_size);
     }
     else{
@@ -133,13 +133,14 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
   if(!Mac_rlc_xface->Is_cluster_head[Mod_id]){
     Mod_id-=NB_CH_INST;
 
-    msg("[RRC] Received SDU for SRB %d\n",Srb_id);
+    msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];
       memcpy(&Srb_info->Rx_buffer.Payload[0],&Sdu[0],Sdu_len);
       if ((UE_rrc_inst[Mod_id].Info[0].Status == RRC_IDLE) || (UE_rrc_inst[Mod_id].Info[0].Status == RRC_PRE_SYNCHRO)) {
-	msg("[RRC] Received System Info Switching to RRC_PRE_SYNCHRO\n");
+	if (UE_rrc_inst[Mod_id].Info[0].Status == RRC_IDLE)
+	  msg("[RRC][UE %d] Received First System Info Switching to RRC_PRE_SYNCHRO\n",Mod_id);
 	UE_rrc_inst[Mod_id].Info[0].Status = RRC_PRE_SYNCHRO;
 	rrc_ue_generate_RRCConnectionRequest(Mod_id,0);
       }
@@ -154,7 +155,7 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];
       
-      msg("[RRC] RX_CCCH_DATA %d bytes: ",Sdu_len);
+      //      msg("[RRC] RX_CCCH_DATA %d bytes: ",Sdu_len);
       if (Sdu_len>0) {
 	for (i=0;i<Sdu_len;i++)
 	  msg("%x ",(unsigned char)Sdu[i]);
@@ -190,8 +191,8 @@ void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Srb_id, u32 sdu_size,u8 *Bu
   // usleep(1000000);
   unsigned short Idx2=(Srb_id >> RAB_SHIFT2);
 
-  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
-      Srb_id,sdu_size);
+  //  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
+  //      Srb_id,sdu_size);
   if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
     ch_rrc_decode_dcch(Mod_id,0,Buffer,sdu_size);
   else
@@ -268,8 +269,8 @@ void mac_rrc_mesh_meas_ind(u8 Mod_id, MAC_MEAS_REQ_ENTRY *Meas_entry){
 	Meas_ind.Lchan_id.Index=In_idx;
       else
 	Meas_ind.Lchan_id.Index=(Rb_id & RAB_OFFSET) + (Rrc_xface->UE_index[Mod_id+NB_CH_INST][Idx2] << RAB_SHIFT2) ;
-       msg("[OPENAIR][RRC] [Node %d] Frame %d: mac_rrc_meas_ind for LC_ID %d\n",NODE_ID[Mod_id+NB_CH_INST],Rrc_xface->Frame_index,
-	    Meas_ind.Lchan_id.Index);
+      //       msg("[OPENAIR][RRC] [Node %d] Frame %d: mac_rrc_meas_ind for LC_ID %d\n",NODE_ID[Mod_id+NB_CH_INST],Rrc_xface->Frame_index,
+      //	    Meas_ind.Lchan_id.Index);
       //if(!rrc_fill_buffer(&UE_rrc_inst[Mod_id].Srb2[Idx2].Tx_buffer,(char*)&Def_meas_req,DEFAULT_MEAS_REQ_SIZE))
       
       // UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[0]=RAB_MEAS_IND;
