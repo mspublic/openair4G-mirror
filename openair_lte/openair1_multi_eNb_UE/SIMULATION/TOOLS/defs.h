@@ -7,7 +7,7 @@ typedef struct {
   double *amps; ///Linear amplitudes of the taps. length(amps)=nb_taps. The values should sum up to 1.
   double *delays; ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. CURRENTLY NOT IMPLEMENTED
   struct complex **state; ///channel state vector. size(state) = (n_tx * n_rx) * nb_taps;
-  double channel_length; ///length of impulse response. should be set to 11+2*bw*t_max 
+  u8 channel_length; ///length of impulse response. should be set to 11+2*bw*t_max 
   struct complex **a; ///state vector
   struct complex **ch; ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. 
   double Td; ///Maximum path delay in mus.

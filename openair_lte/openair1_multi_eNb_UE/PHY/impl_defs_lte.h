@@ -20,7 +20,7 @@ ________________________________________________________________*/
 #define PBCH_PDU_SIZE 6 //bytes
 #define TIMING_ADVANCE_INIT 0
 
-#define PSS_UL_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
+#define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 typedef struct {

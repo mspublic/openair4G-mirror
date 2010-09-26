@@ -6,8 +6,8 @@
 #include "SIMULATION/RF/defs.h"
 
 #define MAX_CHANNEL_LENGTH 200
-//struct complex a[6][4][4][MAX_CHANNEL_LENGTH];
-// 6 = #number of different channels between 4 units (f.ex 2 eNbs and 2 UEs)
+
+//#define DEBUG_CH
 
 void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
@@ -20,13 +20,13 @@ void multipath_channel(channel_desc_t *desc,
   int i,ii,j,l;
   struct complex rx_tmp,tx;
   struct complex phase;
-  double path_loss = pow(10,-desc->path_loss_dB/20);
+  double path_loss = pow(10,desc->path_loss_dB/20);
   int dd;
   dd = -desc->channel_offset;
-#ifdef DEBUG_PHY
-  //  printf("path_loss = %g\n",path_loss);
+#ifdef DEBUG_CH
+    printf("[CHANNEL] path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length);
 #endif
-  
+  /*  
   for (i=0;i<desc->nb_rx;i++)      // RX Antenna loop
     for (j=0;j<desc->nb_tx;j++) {  // TX Antenna loop
       
@@ -39,12 +39,18 @@ void multipath_channel(channel_desc_t *desc,
 
 
       }
-      //ch[i + (j*nb_antennas_rx)][0].r=1;
-      //ch[i + (j*nb_antennas_rx)][0].i=0;
-
     }
+  */
+
+
 
   random_channel(desc);
+#ifdef DEBUG_CH
+  for (l = 0;l<(int)desc->channel_length;l++) {
+    printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].r,desc->ch[0][l].i);
+  }
+  printf("\n");
+#endif
 
   for (i=dd;i<((int)length+dd);i++) {
     for (ii=0;ii<desc->nb_rx;ii++) {
@@ -53,7 +59,7 @@ void multipath_channel(channel_desc_t *desc,
       for (j=0;j<desc->nb_tx;j++) {
 
 
-	for (l = 0;l<desc->channel_length;l++) {
+	for (l = 0;l<(int)desc->channel_length;l++) {
 	  if ((i>=0) && (i-l)>=0) {
 	    tx.r = tx_sig_re[j][i-l];
 	    tx.i = tx_sig_im[j][i-l];
@@ -68,6 +74,11 @@ void multipath_channel(channel_desc_t *desc,
       }  // j
       rx_sig_re[ii][i-dd] = rx_tmp.r*path_loss;
       rx_sig_im[ii][i-dd] = rx_tmp.i*path_loss;
+      /*
+      if ((ii==0)&&((i%32)==0)) {
+	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.r,rx_tmp.i,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
+      }
+      */
       //rx_sig_re[ii][i] = sqrt(.5)*(tx_sig_re[0][i] + tx_sig_re[1][i]);
       //rx_sig_im[ii][i] = sqrt(.5)*(tx_sig_im[0][i] + tx_sig_im[1][i]);
       

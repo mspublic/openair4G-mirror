@@ -7,11 +7,14 @@
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
 
+//#define DEBUG_CH
+
 channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB) {
 
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   u16 i;
- 
+
+
   chan_desc->nb_tx          = nb_tx;
   chan_desc->nb_rx          = nb_rx;
   chan_desc->nb_taps        = nb_taps;
@@ -31,6 +34,12 @@ channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_lengt
     chan_desc->ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex)); 
     chan_desc->a[i]  = (struct complex*) malloc(nb_taps * sizeof(struct complex));
   }
+
+  printf("[CHANNEL] RF %f amps: ",chan_desc->ricean_factor);
+  for (i=0;i<chan_desc->nb_taps;i++)
+    printf("%f ",chan_desc->amps[i]);
+  printf("\n");
+
   return(chan_desc);
 }
 
@@ -44,11 +53,14 @@ void random_channel(channel_desc_t *desc) {
   struct complex anew,phase;
 
   delta_tau = desc->Td/desc->channel_length;
+  //  printf("delta_tau %f, first_run %d\n",delta_tau,desc->first_run);
 
-  for (i=0;i<desc->channel_length;i++) {
 
-    for (aarx=0;aarx<desc->nb_rx;aarx++) {
-      for (aatx=0;aatx<desc->nb_tx;aatx++) {
+
+  for (aarx=0;aarx<desc->nb_rx;aarx++) {
+    for (aatx=0;aatx<desc->nb_tx;aatx++) {
+      for (i=0;i<(int)desc->nb_taps;i++) {
+
 	anew.r = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
 	anew.i = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
 
@@ -57,11 +69,13 @@ void random_channel(channel_desc_t *desc) {
 	// that we can safely assume plane wave propagation.
 	phase.r = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
 	phase.i = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
-	
 	if (i==0) {
 	  anew.r += phase.r * sqrt(1-desc->ricean_factor);
 	  anew.i += phase.i * sqrt(1-desc->ricean_factor);
 	}
+#ifdef DEBUG_CH
+	printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew.r,anew.i,desc->aoa,desc->ricean_factor,phase.r,phase.i);
+#endif	
 	
 	if (desc->first_run==1){
 	  desc->a[aarx+(aatx*desc->nb_rx)][i].r = anew.r;
@@ -71,22 +85,24 @@ void random_channel(channel_desc_t *desc) {
 	  desc->a[aarx+(aatx*desc->nb_rx)][i].r = (sqrt(desc->forgetting_factor)*desc->a[aarx+(aatx*desc->nb_rx)][i].r) + sqrt(1-desc->forgetting_factor)*anew.r;
 	  desc->a[aarx+(aatx*desc->nb_rx)][i].i = (sqrt(desc->forgetting_factor)*desc->a[aarx+(aatx*desc->nb_rx)][i].i) + sqrt(1-desc->forgetting_factor)*anew.i;
 	}
+
+      }
       
-
-	memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
-
-	for (k=0;k<(int)desc->channel_length;k++) {
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].r = 0.0;
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].i = 0.0;
-
-	  for (l=0;l<desc->channel_length;l++) {
-	    delay = ((double)l+.159)*delta_tau;
-	    s = sin(M_PI*(k - (delay*desc->BW)-(desc->BW*desc->Td/2)))/(M_PI*(k-(delay*desc->BW)-(desc->BW*desc->Td/2)));
-	    
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].r += s*desc->a[aarx+(aatx*desc->nb_rx)][l].r;
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].i += s*desc->a[aarx+(aatx*desc->nb_rx)][l].i;
-	  }
+      memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));  
+      for (k=0;k<(int)desc->channel_length;k++) {
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].r = 0.0;
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].i = 0.0;
+	
+	for (l=0;l<desc->nb_taps;l++) {
+	  delay = ((double)l+.159)*delta_tau;
+	  s = sin(M_PI*(k - (delay*desc->BW)-(desc->BW*desc->Td/2)))/(M_PI*(k-(delay*desc->BW)-(desc->BW*desc->Td/2)));
+	  
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].r += s*desc->a[aarx+(aatx*desc->nb_rx)][l].r;
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].i += s*desc->a[aarx+(aatx*desc->nb_rx)][l].i;
 	}
+#ifdef DEBUG_CH
+	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
+#endif
       }
     }
   }

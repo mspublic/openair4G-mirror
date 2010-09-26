@@ -437,6 +437,11 @@ int signal_energy_nodc(int *,unsigned int);
 */
 double signal_energy_fp(double **s_re, double **s_im, unsigned int nb_antennas, unsigned int length,unsigned int offset);
 
+/*!\fn double signal_energy_fp2(struct complex *, unsigned int);
+\brief Computes the signal energy per subcarrier
+*/
+double signal_energy_fp2(struct complex *s, unsigned int length);
+
 
 int iSqrt(int value);
 unsigned char log2_approx(unsigned int);

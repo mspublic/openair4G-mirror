@@ -165,6 +165,17 @@ double signal_energy_fp(double **s_re,double **s_im,unsigned int nb_antennas,uns
   }
   return(V/length/nb_antennas);
 }
+
+double signal_energy_fp2(struct complex *s,unsigned int length) {
+
+  int aa,i;
+  double V=0.0;
+
+  for (i=0;i<length;i++) {
+      V= V + (s[i].r*s[i].r) + (s[i].i*s[i].i); 
+    }
+  return(V/length);
+}
 #else
 
 int signal_energy(int *input,unsigned int length) {

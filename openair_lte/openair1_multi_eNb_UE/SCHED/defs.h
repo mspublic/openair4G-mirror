@@ -139,8 +139,8 @@ unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned 
 lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe);
 unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index);
 u8 get_RRCConnReq_harq_pid(unsigned char tdd_config,unsigned char current_subframe);
-void process_timing_advance(unsigned char timing_advance);
-void process_timing_advance_rar(unsigned short timing_advance);
+void process_timing_advance(PHY_VARS_UE *phy_vars_ue, unsigned char timing_advance);
+void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,unsigned short timing_advance);
 
 #else
 #ifdef EMOS
