@@ -757,7 +757,7 @@ int main(int argc, char **argv) {
     
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
-    PHY_vars_eNb_g[eNB_id]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_ULSCH_t*));
+    PHY_vars_eNb_g[eNB_id]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16((1+NUMBER_OF_UE_MAX)*sizeof(LTE_eNb_ULSCH_t*));
 
     for (i=0;i<NB_UE_INST;i++) {
       for (j=0;j<2;j++) {
@@ -771,14 +771,21 @@ int main(int argc, char **argv) {
 	  PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j]->rnti=0;
 	}
       }
-      PHY_vars_eNb_g[eNB_id]->ulsch_eNb[i] = new_eNb_ulsch(3);
-      if (!PHY_vars_eNb_g[eNB_id]->ulsch_eNb[i]) {
+      PHY_vars_eNb_g[eNB_id]->ulsch_eNb[1+i] = new_eNb_ulsch(3);
+      if (!PHY_vars_eNb_g[eNB_id]->ulsch_eNb[1+i]) {
 	msg("Can't get eNb ulsch structures\n");
 	exit(-1);
       }
 
       PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
 
+    }
+
+    // ULSCH for RA
+    PHY_vars_eNb_g[eNB_id]->ulsch_eNb[0] = new_eNb_ulsch(3);
+    if (!PHY_vars_eNb_g[eNB_id]->ulsch_eNb[0]) {
+      msg("Can't get eNb ulsch structures\n");
+      exit(-1);
     }
 
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb_SI  = new_eNb_dlsch(1,1);
