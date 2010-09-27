@@ -22,7 +22,7 @@
 #include "PHY/LTE_TRANSPORT/mcs_tbs_tools.h"
 
 
-#define BW 10
+#define BW 7.68
 #define Td 1.0
 
 
@@ -32,7 +32,7 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
-#define N_TRIALS 1000
+#define N_TRIALS 10000
 
 
 
@@ -3115,14 +3115,15 @@ int main(int argc, char **argv)
 
 
     //BLER Downlink
-    fprintf(bler_fd_dl,"%f,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_dl,
+    fprintf(bler_fd_dl,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_dl,
 	    n_errors_dl[0],round_trials_dl[0],
 	    n_errors_dl[1],round_trials_dl[1],
 	    n_errors_dl[2],round_trials_dl[2],
-	    n_errors_dl[3],round_trials_dl[3]);
+	    n_errors_dl[3],round_trials_dl[3],
+	    (double)(n_errors_dci+n_errors_dl[3])/round_trials_dl[0]);
 
     //BLER Uplink
-    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_ul,
+    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_ul,
 	    n_errors_ul[0][0],round_trials_ul[0][0],
 	    n_errors_ul[0][1],round_trials_ul[0][1],
 	    n_errors_ul[0][2],round_trials_ul[0][2],
@@ -3138,7 +3139,8 @@ int main(int argc, char **argv)
 	    n_errors_ul[3][0],round_trials_ul[3][0],
 	    n_errors_ul[3][1],round_trials_ul[3][1],
 	    n_errors_ul[3][2],round_trials_ul[3][2],
-	    n_errors_ul[3][3],round_trials_ul[3][3]);
+	    n_errors_ul[3][3],round_trials_ul[3][3],
+	    (double)(n_errors_ul[0][3]+n_errors_ul[1][3]+n_errors_ul[2][3]+n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]));
 
 
     harq_adjust = 0;

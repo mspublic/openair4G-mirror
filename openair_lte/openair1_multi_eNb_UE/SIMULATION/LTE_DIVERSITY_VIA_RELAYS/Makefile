@@ -133,7 +133,7 @@ LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(LAYER2_OBJ)	
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
-all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim relays_sim_harq
+all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys relays_sim relays_sim_harq relays_sim_harq2
 
 test:
 	echo $(OPENAIR2_DIR) $(LAYER2_OBJ)
@@ -167,6 +167,9 @@ relays_sim : $(OBJ2) relays_sim.c
 
 relays_sim_harq : $(OBJ2) relays_sim_harq.c
 	$(CC)  relays_sim_harq.c -I$(TOP_DIR) -o relaysim_harq $(CFLAGS) $(OBJ2) -lm
+
+relays_sim_harq2 : $(OBJ2) relays_sim_harq2.c
+	$(CC)  relays_sim_harq2.c -I$(TOP_DIR) -o relaysim_harq2 $(CFLAGS) $(OBJ2) -lm
 
 clean:
 	rm -f dlsim dlsim2 dlsim_secsys

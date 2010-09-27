@@ -32,7 +32,7 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
-#define N_TRIALS 1000
+#define N_TRIALS 10000
 
 
 
@@ -75,6 +75,7 @@ int main(int argc, char **argv)
   int re_allocated;
   
   unsigned int TBS;
+  unsigned int n_errors_dci = 0;
   unsigned int dci_cnt_0,dlsch_active_0 = 0,decode_error_0 = 1,dci_errors_0 = 0,n_errors_dl_0 = 0;
 #ifdef COLLABRATIVE_SCHEME
   unsigned int dci_cnt_1,dlsch_active_1 = 0,decode_error_1 = 1,dci_errors_1 = 0,n_errors_dl_1 = 0;
@@ -84,11 +85,10 @@ int main(int argc, char **argv)
   unsigned int ret_1;
 #endif
   unsigned int coded_bits_per_codeword_dl,nsymb;
-  unsigned int trials;
+  unsigned int trials,trials_ul;
   unsigned int tx_lev_dl,tx_lev_ul,tx_lev_dl_dB,tx_lev_ul_dB,num_layers;
-  unsigned int n_errors_dl = 0,trials_dl = 0;
-  unsigned int n_errors_ul = 0,trials_ul = 0;
-
+  unsigned int n_errors_dl[4]={0,0,0,0},round_trials_dl[4]={0,0,0,0},n_errors_special = 0;
+  unsigned int n_errors_ul[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}},round_trials_ul[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
 
 
   
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   double ip =0.0,rate_dl;
   double N0W, path_loss, path_loss_dB;
   double harq_adjust;
-  double relay_delay;
+  
   
   char fname[40], vname[40],bler_fname[20],bler_fname_dl[20],bler_fname_ul[20];
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   unsigned char *input_buffer_eNB0,*input_buffer_UE0,*input_buffer_UE0_temp,harq_pid_dl,harq_pid_ul,transmission_mode = 2;
   unsigned char *input_data_eNB0,*decoded_output;
   unsigned char *input_buffer_UE1,*input_buffer_UE1_temp;
-  //unsigned char round_dl,round_ul,ulx;
+  unsigned char round_dl,round_ul,ulx;
 
   
 
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 #endif
    
   
-  //snr0_ul = 1;
+  //snr0_ul = -3;
   //snr1_ul = snr0_ul;
   snr1_ul = snr0_ul+20;
 
@@ -732,6 +732,85 @@ int main(int argc, char **argv)
     channel_offset = lte_frame_parms->nb_prefix_samples>>=1;
   //printf("channel offset %d",channel_offset);
 #endif
+
+  for (SNR_ul=snr0_ul;SNR_ul<=snr1_ul;SNR_ul+=0.25) {
+
+    n_errors_special = 0;
+    n_errors_dci = 0;
+
+    n_errors_dl[0] = 0;
+    n_errors_dl[1] = 0;
+    n_errors_dl[2] = 0;
+    n_errors_dl[3] = 0;
+
+    round_trials_dl[0] = 0;
+    round_trials_dl[1] = 0;
+    round_trials_dl[2] = 0;
+    round_trials_dl[3] = 0;
+
+
+    for(ulx=0;ulx<4;ulx++){
+      n_errors_ul[0][ulx] = 0;
+      n_errors_ul[1][ulx] = 0;
+      n_errors_ul[2][ulx] = 0;
+      n_errors_ul[3][ulx] = 0;
+
+      round_trials_ul[0][ulx] = 0;
+      round_trials_ul[1][ulx] = 0;
+      round_trials_ul[2][ulx] = 0;
+      round_trials_ul[3][ulx] = 0;
+    }
+
+    round_dl = 0;
+    round_ul = 0;
+
+
+    dci_errors_0 = 0;
+    decode_error_0 = 1;
+
+#ifdef COLLABRATIVE_SCHEME
+    dci_errors_1 = 0;
+    decode_error_1 = 1;
+#endif
+
+
+    // Number of trials 
+    for (trials = 0;trials<N_TRIALS;trials++) {
+      fflush(stdout);
+      round_dl = 0;
+
+      while(round_dl < 4){
+
+	decode_error_0 = 1;
+#ifdef COLLABRATIVE_SCHEME
+	decode_error_1 = 1;
+#endif
+
+	round_trials_dl[round_dl]++;
+	if(round_dl == 0){
+	  PHY_vars_eNB[0]->dlsch_eNb[0][0]->harq_processes[0]->Ndi = 1;
+	  PHY_vars_eNB[0]->dlsch_eNb[0][0]->harq_processes[0]->rvidx = round_dl>>1;
+#ifdef COLLABRATIVE_SCHEME
+	  PHY_vars_eNB[0]->dlsch_eNb[1][0]->harq_processes[0]->Ndi = 1;
+	  PHY_vars_eNB[0]->dlsch_eNb[1][0]->harq_processes[0]->rvidx = round_dl>>1;
+#endif
+	  DLSCH_alloc_pdu2.ndi1             = 1;
+	  DLSCH_alloc_pdu2.rv1              = 0;
+	  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	}
+	else {
+	  PHY_vars_eNB[0]->dlsch_eNb[0][0]->harq_processes[0]->Ndi = 0;
+	  PHY_vars_eNB[0]->dlsch_eNb[0][0]->harq_processes[0]->rvidx = round_dl>>1;
+#ifdef COLLABRATIVE_SCHEME
+	  PHY_vars_eNB[0]->dlsch_eNb[1][0]->harq_processes[0]->Ndi = 0;
+	  PHY_vars_eNB[0]->dlsch_eNb[1][0]->harq_processes[0]->rvidx = round_dl>>1;
+#endif
+	  DLSCH_alloc_pdu2.ndi1             = 0;
+	  DLSCH_alloc_pdu2.rv1              = round_dl>>1;
+	  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	}
+
+
       
       
 	dlsch_encoding(input_buffer_eNB0,
@@ -918,8 +997,6 @@ int main(int argc, char **argv)
 #ifdef OUTPUT_DEBUG  
 	write_output("txsig0_eNB0.m","txs0_eNB0", txdata_eNB0[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 #endif
-
-
   
 
 	// multipath channel
@@ -946,30 +1023,9 @@ int main(int argc, char **argv)
 
     
 
-	// Loop over Uplink SNR
-	for(SNR_ul = snr0_ul;SNR_ul<=snr1_ul;SNR_ul+=0.25){
       
       
-	  n_errors_dl = 0;
-	  n_errors_ul = 0;
-
-	  dci_errors_0 = 0;
-#ifdef COLLABRATIVE_SCHEME
-	  dci_errors_1 = 0;
-#endif
-	  trials_dl = 0;
-	  trials_ul = 0;
-
-	  for(trials = 0;trials<N_TRIALS;trials++){
-
-	    trials_dl++;
-
-	    decode_error_0 = 1;
-
-#ifdef COLLABRATIVE_SCHEME
-	    decode_error_1 = 1;
-#endif
-
+      
 	//eNB0 to UE0
 	multipath_channel(ch[SeFu],s_re,s_im,r_re0_0,r_im0_0,
 			  amps,Td,BW,ricean_factor,aoa,
@@ -1074,7 +1130,8 @@ int main(int argc, char **argv)
 	      if(dci_cnt_0 == 0)
 		{
 		  dlsch_active_0 = 0;
-		  dci_errors_0++;
+		  if(round_dl == 0)
+		    dci_errors_0++;
 		}
 	    
 	      for (i=0;i<dci_cnt_0;i++)
@@ -1094,7 +1151,8 @@ int main(int argc, char **argv)
 		  }
 		else {
 		  dlsch_active_0 = 0;
-		  dci_errors_0++;
+		  if(round_dl == 0)
+		    dci_errors_0++;
 		}
 	    
 	      /*
@@ -1392,7 +1450,8 @@ int main(int argc, char **argv)
 	      if (dci_cnt_1 == 0)
 		{
 		  dlsch_active_1 = 0;
-		  dci_errors_1++;
+		  if(round_dl == 0)
+		    dci_errors_1++;
 		}
 
 
@@ -1412,7 +1471,8 @@ int main(int argc, char **argv)
 		  }
 		else {
 		  dlsch_active_1 = 0;
-		  dci_errors_1++;
+		  if(round_dl == 0)
+		    dci_errors_1++;
 		}
 	    
 	      /*	else if ((dci_alloc_rx_1[i].rnti == SI_RNTI) && (dci_alloc_rx_1[i].format == format1A))
@@ -1603,33 +1663,51 @@ int main(int argc, char **argv)
 	  }  // dlsch_active_1 == 1
 #endif
 
-
+	round_ul = 0;
       
 #ifdef COLLABRATIVE_SCHEME
 	if((dlsch_active_0 == 0) && (dlsch_active_1 == 0)){
-	  n_errors_dl++;
+	  if(round_dl == 0){
+	    n_errors_dci++;
+	    n_errors_dl[0]++;
+	    round_dl = 5;
+	  }
+	  round_ul = 5;
 	}
 	else 	if(((dlsch_active_0 == 1) && (decode_error_0 == 1)) && ((dlsch_active_1 == 1) && (decode_error_1 == 1))){
-	  n_errors_dl++;
+	  n_errors_dl[round_dl]++;
+	  round_ul = 5;
+	  round_dl++;
 	}
 	else if ((dlsch_active_0 == 0) && ((dlsch_active_1 == 1) && (decode_error_1 == 1))){
-	  n_errors_dl++;;
+	  n_errors_dl[round_dl]++;
+	  round_ul = 5;
+	  round_dl++;
 	}
 	else if (((dlsch_active_0 == 1) && (decode_error_0 == 1)) && (dlsch_active_1 == 0)){
-	  n_errors_dl++;
+	  n_errors_dl[round_dl]++;
+	  round_ul = 5;
+	  round_dl++;
 	}
 #else
 	if(dlsch_active_0 == 0){
-	  n_errors_dl++;
+	  if(round_dl == 0){
+	    n_errors_dci++;
+	    n_errors_dl[0]++;
+	    round_dl = 5;
+	  }
+	  round_ul = 5;
 	}
 	else 	if((dlsch_active_0 == 1) && (decode_error_0 == 1)){
-	  n_errors_dl++;
+	  n_errors_dl[round_dl]++;
+	  round_ul = 5;
+	  round_dl++;
 	}
 #endif
       
 
     
-
+	while(round_ul < 4){
       
 
 #ifdef COLLABRATIVE_SCHEME
@@ -1637,7 +1715,13 @@ int main(int argc, char **argv)
 
 
 
-	    trials_ul++;
+	    round_trials_ul[round_dl][round_ul]++;
+	    if(round_ul == 0){
+	      UL_alloc_pdu.ndi     = 1;
+	    }
+	    else {
+	      UL_alloc_pdu.ndi     = 0;
+	    }
 
 	    // UE0 ULSCH params
 	    generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
@@ -1972,7 +2056,14 @@ int main(int argc, char **argv)
 	  else if((dlsch_active_0 == 1) && (decode_error_0 == 0)){
 
 
-	    trials_ul++;
+	    round_trials_ul[round_dl][round_ul]++;
+
+	    if(round_ul == 0){
+	      UL_alloc_pdu.ndi     = 1;
+	    }
+	    else {
+	      UL_alloc_pdu.ndi     = 0;
+	    }
 
 	    // UE0 ULSCH params
 	    generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
@@ -2142,7 +2233,15 @@ int main(int argc, char **argv)
 	  else if((dlsch_active_1 == 1) && (decode_error_1 == 0)){
 
 
-	    trials_ul++;
+	    round_trials_ul[round_dl][round_ul]++;
+
+	    if(round_ul == 0){
+	      UL_alloc_pdu.ndi     = 1;
+	    }
+	    else {
+	      UL_alloc_pdu.ndi     = 0;
+	    }
+ 
 
 	    // UE1 ULSCH params
 	    generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
@@ -2314,7 +2413,15 @@ int main(int argc, char **argv)
 	  if((dlsch_active_0 == 1) && (decode_error_0 == 0)){
 
 
-	    trials_ul++;
+	    round_trials_ul[round_dl][round_ul]++;
+
+	    if(round_ul == 0){
+	      UL_alloc_pdu.ndi     = 1;
+	    }
+	    else {
+	      UL_alloc_pdu.ndi     = 0;
+	    }
+
 
 
 	    // UE0 ULSCH params
@@ -2492,6 +2599,7 @@ int main(int argc, char **argv)
 	  if(((dlsch_active_0 == 1)&& (decode_error_0 == 0)) && ((dlsch_active_1 == 1)&& (decode_error_1 == 0)))// When both the relays transmit
 	    {
 
+	      //trials_ul++;
 
 	      //UE0
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
@@ -2632,14 +2740,26 @@ int main(int argc, char **argv)
 
     
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-		n_errors_ul++;
+		n_errors_ul[round_dl][round_ul]++;
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
+		    n_errors_special++;
+		  }
+		  round_dl = 5;
+		}
 	      }
- 
+	      else
+		{
+		  round_ul = 5;
+		  round_dl = 5;
+		}
+	   
 	    }   // When both relays forward
 	  else if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
 	    {
 
-	    
+	      //  trials_ul++;
 	      //UE0
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -2742,13 +2862,24 @@ int main(int argc, char **argv)
 
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-		n_errors_ul++;
+		n_errors_ul[round_dl][round_ul]++;
+		if(round_dl < 3){
+		  round_ul = 5;
+		  round_dl++;
+		}
+		else
+		round_ul++;
 	      }
+	      else
+		{
+		  round_dl =5;
+		  round_ul =5;
+		}
 	    }// When only relay 0 (UE0) transmits
 	  else if ((dlsch_active_1 == 1) && (decode_error_1 == 0))// When only relay 1 (UE1) transmits
 	    {
 	  
-
+	      //  trials_ul++;
 	      //UE1
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -2845,14 +2976,25 @@ int main(int argc, char **argv)
 
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-		n_errors_ul++;
+		n_errors_ul[round_dl][round_ul]++;
+		if(round_dl < 3){
+		  round_ul = 5;
+		  round_dl++;
+		}
+		else
+		  round_ul++;
 	      }
+	      else
+		{
+		  round_dl = 5;
+		  round_ul = 5;
+		}
 	    }// when only UE1 transmits
 #else
 	  if((dlsch_active_0 == 1)&& (decode_error_0 == 0))// When only relay 0 (UE0) transmits
 	    {
 
-
+	      //  trials_ul++;
 	      //UE0
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
@@ -2953,37 +3095,77 @@ int main(int argc, char **argv)
 
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
-		n_errors_ul++;
+		n_errors_ul[round_dl][round_ul]++;
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
+		    n_errors_special++;
+		  }
+		  round_dl = 5;
+		}
 	      }
+	      else
+		{
+		  round_ul = 5;
+		  round_dl = 5;
+		}
 	    }// When only relay 0 (UE0) transmits
 #endif
-	  if(((((double)(n_errors_ul)/trials_ul)<1e-2)&&(trials_ul>100))||((n_errors_ul>100)&&(trials_ul>100)))
-	    break;
+	}//while( round_ul < 4)
+      }//while( round_dl < 4)
 
-	  }//trials
+      if(((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)&&(round_trials_ul[0][0]>100))||((((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)&&(round_trials_ul[1][0]>100))||((((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)&&(round_trials_ul[2][0]>100))||((((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2)&&(round_trials_ul[3][0]>100))||((n_errors_dl[0]>100)&&(round_trials_dl[0]>100)))
+	break;
+
+    }//trials
 
 
     //BLER Downlink
-    fprintf(bler_fd_dl,"%f,%d,%d,%e;\n",SNR_dl,
-	    n_errors_dl,trials_dl,(double)(n_errors_dl)/trials_dl);
-	   
+    fprintf(bler_fd_dl,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_dl,
+	    n_errors_dl[0],round_trials_dl[0],
+	    n_errors_dl[1],round_trials_dl[1],
+	    n_errors_dl[2],round_trials_dl[2],
+	    n_errors_dl[3],round_trials_dl[3],
+	    (double)(n_errors_dci+n_errors_dl[3])/round_trials_dl[0]);
 
     //BLER Uplink
-    fprintf(bler_fd_ul,"%f,%d,%d,%e;\n",SNR_ul,
-	    n_errors_ul,trials_ul,(double)(n_errors_ul)/trials_ul);
-	   
+    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_ul,
+	    n_errors_ul[0][0],round_trials_ul[0][0],
+	    n_errors_ul[0][1],round_trials_ul[0][1],
+	    n_errors_ul[0][2],round_trials_ul[0][2],
+	    n_errors_ul[0][3],round_trials_ul[0][3],
+	    n_errors_ul[1][0],round_trials_ul[1][0],
+	    n_errors_ul[1][1],round_trials_ul[1][1],
+	    n_errors_ul[1][2],round_trials_ul[1][2],
+	    n_errors_ul[1][3],round_trials_ul[1][3],
+	    n_errors_ul[2][0],round_trials_ul[2][0],
+	    n_errors_ul[2][1],round_trials_ul[2][1],
+	    n_errors_ul[2][2],round_trials_ul[2][2],
+	    n_errors_ul[2][3],round_trials_ul[2][3],
+	    n_errors_ul[3][0],round_trials_ul[3][0],
+	    n_errors_ul[3][1],round_trials_ul[3][1],
+	    n_errors_ul[3][2],round_trials_ul[3][2],
+	    n_errors_ul[3][3],round_trials_ul[3][3],
+	    (double)(n_errors_ul[0][3]+n_errors_ul[1][3]+n_errors_ul[2][3]+n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]));
 
-    relay_delay = 0;
-    relay_delay = (double)(trials_dl)/(trials_dl + trials_ul);
-  
+
+    harq_adjust = 0;
+
+    harq_adjust = (double)round_trials_dl[0]/((round_trials_dl[0] + round_trials_ul[0][0] + round_trials_ul[0][1] + round_trials_ul[0][2] + round_trials_ul[0][3]) + (round_trials_dl[1] + round_trials_ul[1][0] + round_trials_ul[1][1] + round_trials_ul[1][2] + round_trials_ul[1][3]) + (round_trials_dl[2] + round_trials_ul[2][0] + round_trials_ul[2][1] + round_trials_ul[2][2] + round_trials_ul[2][3]) + (round_trials_dl[3] + round_trials_ul[3][0] + round_trials_ul[3][1] + round_trials_ul[3][2] + round_trials_ul[3][3]));
+
+
+   
     //BLER and Throughput
-    fprintf(bler_fd,"%f,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dl,trials_dl,n_errors_ul,relay_delay,(double)(n_errors_dl + n_errors_ul)/trials_dl,(1-((double)(n_errors_dl + n_errors_ul)/trials_dl))*relay_delay*TBS*6*100);
+    fprintf(bler_fd,"%f,%d,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dci,n_errors_special,n_errors_dl[3],n_errors_ul[3][3],harq_adjust,((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0]),((1 - ((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0]))*harq_adjust*TBS*6*100));
     
 		
-	if((double)(n_errors_ul)/(trials_ul)<1e-2)
-	  break;
 
-}//SNR_ul
+
+
+    if((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)||(((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)||(((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)||(((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2))
+      break;
+
+  }//SNR_ul
     
     
 
