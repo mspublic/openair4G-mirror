@@ -498,7 +498,6 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u8 CH_index) { // add descriptor from RRC PD
     
 
   msg("[RRC][UE %d], CONFIG_SRB1 %d(%d) corresponding to CH_index %d\n",
-      UE_rrc_inst[Mod_id].Node_id,
       Mod_id,
       lchan_id,
       CH_index);
@@ -618,7 +617,7 @@ void ch_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
       //      Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DCCH;
       //      Idx = Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
 
-      Idx = (UE_index << RAB_SHIFT2) + DCCH;
+      Idx = (UE_index * MAX_NUM_RB) + DCCH;
       CH_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;
       CH_rrc_inst[Mod_id].Srb1[UE_index].Next_check_frame = Rrc_xface->Frame_index + 250;
       CH_rrc_inst[Mod_id].Srb1[UE_index].Status = NEED_RADIO_CONFIG;//RADIO CFG
@@ -769,7 +768,7 @@ void ch_rrc_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,Rx_sdu,
     //Establish DRB (DTCH)
   msg("[RRC][eNB %d] Received RRCConnectionReconfigurationComplete from UE %d, configuring DRB\n",Mod_id,UE_index);
   Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
-				    (UE_index << RAB_SHIFT2) + DTCH,
+				    (UE_index * MAX_NUM_RB) + DTCH,
 				    RADIO_ACCESS_BEARER,Rlc_info_um);
 
 }

@@ -37,7 +37,7 @@ unsigned short fill_rar(u8 Mod_id,
   rar->t_crnti                = CH_mac_inst[Mod_id].RA_template[0].rnti;
 
 #ifdef DEBUG_RAR
-  debug_msg("[MAC eNB] Mod_id %d Generating RAR for CRNTI %x\n",Mod_id,rar->t_crnti);
+  debug_msg("[MAC][eNB %d] Generating RAR for CRNTI %x\n",Mod_id,rar->t_crnti);
 #endif
   return(rar->t_crnti);
 }
@@ -47,19 +47,19 @@ u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti) {
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
 #ifdef DEBUG_RAR
-  msg("[MAC UE] rarh->E %d\n",rarh->E);
-  msg("[MAC UE] rarh->T %d\n",rarh->T);
-  msg("[MAC UE] rarh->RAPID %d\n",rarh->RAPID);
+  msg("[MAC][UE %d] rarh->E %d\n",Mod_id,rarh->E);
+  msg("[MAC][UE %d] rarh->T %d\n",Mod_id,rarh->T);
+  msg("[MAC][UE %d] rarh->RAPID %d\n",Mod_id,rarh->RAPID);
 
-  msg("[MAC UE] rar->R %d\n",rar->R);
-  msg("[MAC UE] rar->Timing_Advance_Command %d\n",rar->Timing_Advance_Command);
-  msg("[MAC UE] rar->hopping_flag %d\n",rar->hopping_flag);
-  msg("[MAC UE] rar->rb_alloc %d\n",rar->rb_alloc);
-  msg("[MAC UE] rar->mcs %d\n",rar->mcs);
-  msg("[MAC UE] rar->TPC %d\n",rar->TPC);
-  msg("[MAC UE] rar->UL_delay %d\n",rar->UL_delay);
-  msg("[MAC UE] rar->cqi_req %d\n",rar->cqi_req);
-  msg("[MAC UE] rar->t_crnti %x\n",rar->t_crnti);
+  msg("[MAC][UE %d] rar->R %d\n",Mod_id,rar->R);
+  msg("[MAC][UE %d] rar->Timing_Advance_Command %d\n",Mod_id,rar->Timing_Advance_Command);
+  msg("[MAC][UE %d] rar->hopping_flag %d\n",Mod_id,rar->hopping_flag);
+  msg("[MAC][UE %d] rar->rb_alloc %d\n",Mod_id,rar->rb_alloc);
+  msg("[MAC][UE %d] rar->mcs %d\n",Mod_id,rar->mcs);
+  msg("[MAC][UE %d] rar->TPC %d\n",Mod_id,rar->TPC);
+  msg("[MAC][UE %d] rar->UL_delay %d\n",Mod_id,rar->UL_delay);
+  msg("[MAC][UE %d] rar->cqi_req %d\n",Mod_id,rar->cqi_req);
+  msg("[MAC][UE %d] rar->t_crnti %x\n",Mod_id,rar->t_crnti);
 #endif
   *t_crnti = rar->t_crnti;
   return(rar->Timing_Advance_Command);

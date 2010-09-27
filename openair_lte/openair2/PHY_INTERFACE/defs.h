@@ -93,8 +93,8 @@ typedef struct
     /// TBS table lookup from PHY
     u16 (*get_TBS)(u8 mcs, u16 nb_rb);
 
-    /// Function to retrieve the HARQ round index for a particular UE/DLSCH and harq_pid
-    void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round);
+    /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
+    void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
 
 
