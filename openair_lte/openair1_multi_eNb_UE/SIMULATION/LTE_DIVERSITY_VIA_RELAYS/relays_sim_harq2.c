@@ -3114,10 +3114,7 @@ int main(int argc, char **argv)
 	}//while( round_ul < 4)
       }//while( round_dl < 4)
 
-     /* if(((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)&&(round_trials_ul[0][0]>100))||((((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)&&(round_trials_ul[1][0]>100))||((((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)&&(round_trials_ul[2][0]>100))||((((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2)&&(round_trials_ul[3][0]>100))||((n_errors_dl[0]>100)&&(round_trials_dl[0]>100)))
-	break;*/
-
-      if(((((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0])<1e-2) && (round_trials_dl[0] >100)) || ((n_errors_dl[0] > 100)&&(round_trials_dl[0] > 100)))
+      if(((((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2) && ((round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0])>100)) || ((n_errors_special + n_errors_ul[3][3])>100))
         break;
 
     }//trials
@@ -3131,7 +3128,7 @@ int main(int argc, char **argv)
 	    n_errors_dl[3],round_trials_dl[3]);
 
     //BLER Uplink
-    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_ul,
+    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_ul,
 	    n_errors_ul[0][0],round_trials_ul[0][0],
 	    n_errors_ul[0][1],round_trials_ul[0][1],
 	    n_errors_ul[0][2],round_trials_ul[0][2],
@@ -3147,7 +3144,8 @@ int main(int argc, char **argv)
 	    n_errors_ul[3][0],round_trials_ul[3][0],
 	    n_errors_ul[3][1],round_trials_ul[3][1],
 	    n_errors_ul[3][2],round_trials_ul[3][2],
-	    n_errors_ul[3][3],round_trials_ul[3][3]);
+	    n_errors_ul[3][3],round_trials_ul[3][3],
+	    n_errors_special,(double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]));
 
 
     harq_adjust = 0;
@@ -3161,11 +3159,10 @@ int main(int argc, char **argv)
     
 		
 
-    if(((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0])<1e-2)
+    if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
       break;
 
- /*   if((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)||(((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)||(((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)||(((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2))
-      break;*/
+
 
   }//SNR_ul
     
