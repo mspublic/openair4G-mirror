@@ -32,7 +32,7 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
-#define N_TRIALS 1000
+#define N_TRIALS 10000
 
 
 
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   
 
 
-  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=0.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
+  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=-2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
   double **s_re,**s_im,**r_re0_0,**r_im0_0;
   double **s_re_0,**s_im_0,**r_re1_0,**r_im1_0;
 #ifdef COLLABRATIVE_SCHEME
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 #endif
    
   
-  //snr0_ul = 1;
+  //snr0_ul = 2;
   //snr1_ul = snr0_ul;
   snr1_ul = snr0_ul+20;
 
@@ -1651,7 +1651,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -1816,8 +1816,8 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
-					      current_dlsch_cqi);
+					      0,
+					      0);
 
 
 	    //UE1 to eNB1: eNB1 ULSCH params
@@ -1986,7 +1986,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -2027,7 +2027,7 @@ int main(int argc, char **argv)
 			       AMP,subframe,
 			       PHY_vars_ue[0]->ulsch_ue[1]->harq_processes[0]->first_rb,
 			       PHY_vars_ue[0]->ulsch_ue[1]->harq_processes[0]->nb_rb,
-			       0,relay_flag,diversity_scheme);
+			       0,1,0);
 	  
 
 
@@ -2057,7 +2057,7 @@ int main(int argc, char **argv)
 			     AMP,subframe,
 			     lte_frame_parms,
 			     PHY_vars_ue[0]->ulsch_ue[1],
-			     relay_flag,diversity_scheme,0);
+			     1,0,0);
 	  
 	  
 #ifdef IFFT_FPGA
@@ -2156,8 +2156,8 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
-					      current_dlsch_cqi);
+					      0,
+					      0);
 
 
 	    //UE1 to eNB1: eNB1 ULSCH params
@@ -2197,7 +2197,7 @@ int main(int argc, char **argv)
 			       AMP,subframe,
 			       PHY_vars_ue[1]->ulsch_ue[1]->harq_processes[0]->first_rb,
 			       PHY_vars_ue[1]->ulsch_ue[1]->harq_processes[0]->nb_rb,
-			       1,relay_flag,diversity_scheme);
+			       1,1,0);
 	  
 
 
@@ -2229,7 +2229,7 @@ int main(int argc, char **argv)
 			     AMP,subframe,
 			     lte_frame_parms,
 			     PHY_vars_ue[1]->ulsch_ue[1],
-			     relay_flag,diversity_scheme,1);
+			     1,0,1);
 	  
 	  
 #ifdef IFFT_FPGA
@@ -2329,7 +2329,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -2590,8 +2590,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 		  // For 2 UEs 
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 		}
 	      }
 	  
@@ -2608,7 +2608,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2618,7 +2618,7 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
 		       relay_flag,
 		       diversity_scheme);
@@ -2700,8 +2700,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 		}
 	      }
 	  
@@ -2718,7 +2718,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2728,10 +2728,10 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
-		       relay_flag,
-		       diversity_scheme);
+		       1,
+		       0);
 		
 		
 		
@@ -2803,8 +2803,8 @@ int main(int argc, char **argv)
 	      //printf("sigma2_ul = %g\n",sigma2_ul);
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 		}
 	      }
 	  
@@ -2821,7 +2821,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2831,10 +2831,10 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[1],
-		       relay_flag,
-		       diversity_scheme);
+		       1,
+		       0);
 		
 		
 		
@@ -2911,8 +2911,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 		}
 	      }
 	  
@@ -2929,7 +2929,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2939,7 +2939,7 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
 		       relay_flag,
 		       diversity_scheme);
@@ -2957,7 +2957,7 @@ int main(int argc, char **argv)
 	      }
 	    }// When only relay 0 (UE0) transmits
 #endif
-	  if(((((double)(n_errors_ul)/trials_ul)<1e-2)&&(trials_ul>100))||((n_errors_ul>100)&&(trials_ul>100)))
+	  if(((((double)(n_errors_ul+n_errors_dl)/trials_dl)<1e-2)&&(trials_ul>100))||((n_errors_dl>100)&&(trials_dl>100)))
 	    break;
 
 	  }//trials
@@ -2980,7 +2980,7 @@ int main(int argc, char **argv)
     fprintf(bler_fd,"%f,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dl,trials_dl,n_errors_ul,relay_delay,(double)(n_errors_dl + n_errors_ul)/trials_dl,(1-((double)(n_errors_dl + n_errors_ul)/trials_dl))*relay_delay*TBS*6*100);
     
 		
-	if((double)(n_errors_ul)/(trials_ul)<1e-2)
+	if((double)(n_errors_ul+n_errors_dl)/(trials_dl)<1e-2)
 	  break;
 
 }//SNR_ul

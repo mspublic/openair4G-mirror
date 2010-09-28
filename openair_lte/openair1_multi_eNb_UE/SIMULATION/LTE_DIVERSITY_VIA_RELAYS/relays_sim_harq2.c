@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   
 
 
-  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=0.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
+  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=-2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
   double **s_re,**s_im,**r_re0_0,**r_im0_0;
   double **s_re_0,**s_im_0,**r_re1_0,**r_im1_0;
 #ifdef COLLABRATIVE_SCHEME
@@ -1735,7 +1735,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -1900,8 +1900,8 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
-					      current_dlsch_cqi);
+					      0,
+					      0);
 
 
 	    //UE1 to eNB1: eNB1 ULSCH params
@@ -2077,7 +2077,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -2118,7 +2118,7 @@ int main(int argc, char **argv)
 			       AMP,subframe,
 			       PHY_vars_ue[0]->ulsch_ue[1]->harq_processes[0]->first_rb,
 			       PHY_vars_ue[0]->ulsch_ue[1]->harq_processes[0]->nb_rb,
-			       0,relay_flag,diversity_scheme);
+			       0,1,0);
 	  
 
 
@@ -2148,7 +2148,7 @@ int main(int argc, char **argv)
 			     AMP,subframe,
 			     lte_frame_parms,
 			     PHY_vars_ue[0]->ulsch_ue[1],
-			     relay_flag,diversity_scheme,0);
+			     1,0,0);
 	  
 	  
 #ifdef IFFT_FPGA
@@ -2255,8 +2255,8 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
-					      current_dlsch_cqi);
+					      0,
+					      0);
 
 
 	    //UE1 to eNB1: eNB1 ULSCH params
@@ -2296,7 +2296,7 @@ int main(int argc, char **argv)
 			       AMP,subframe,
 			       PHY_vars_ue[1]->ulsch_ue[1]->harq_processes[0]->first_rb,
 			       PHY_vars_ue[1]->ulsch_ue[1]->harq_processes[0]->nb_rb,
-			       1,relay_flag,diversity_scheme);
+			       1,1,0);
 	  
 
 
@@ -2328,7 +2328,7 @@ int main(int argc, char **argv)
 			     AMP,subframe,
 			     lte_frame_parms,
 			     PHY_vars_ue[1]->ulsch_ue[1],
-			     relay_flag,diversity_scheme,1);
+			     1,0,1);
 	  
 	  
 #ifdef IFFT_FPGA
@@ -2436,7 +2436,7 @@ int main(int argc, char **argv)
 					      SI_RNTI,
 					      RA_RNTI,
 					      P_RNTI,
-					      1,
+					      0,
 					      0);//current_dlsch_cqi);
 
 
@@ -2698,8 +2698,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 		  // For 2 UEs 
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 		}
 	      }
 	  
@@ -2716,7 +2716,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2726,7 +2726,7 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
 		       relay_flag,
 		       diversity_scheme);
@@ -2820,8 +2820,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 		}
 	      }
 	  
@@ -2838,7 +2838,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2848,10 +2848,10 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
-		       relay_flag,
-		       diversity_scheme);
+		       1,
+		       0);
 		
 		
 		
@@ -2934,8 +2934,8 @@ int main(int argc, char **argv)
 	      //printf("sigma2_ul = %g\n",sigma2_ul);
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short)(sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+ (r_re1_1[aa][i]));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) (sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0)+(r_im1_1[aa][i]));
 		}
 	      }
 	  
@@ -2952,7 +2952,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -2962,10 +2962,10 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[1],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[1],
-		       relay_flag,
-		       diversity_scheme);
+		       1,
+		       0);
 		
 		
 		
@@ -3053,8 +3053,8 @@ int main(int argc, char **argv)
 	      for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
 	
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
-		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[1][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i] = (short) ((r_re1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
+		  ((short*)PHY_vars_eNB[1]->lte_eNB_common_vars.rxdata[0][aa])[2*i+1] = (short) ((r_im1_0[aa][i]) + sqrt(sigma2_ul/2)*gaussdouble(0.0,1.0));
 		}
 	      }
 	  
@@ -3071,7 +3071,7 @@ int main(int argc, char **argv)
 			      &PHY_vars_eNB[1]->lte_eNB_common_vars,
 			      l%(lte_frame_parms->symbols_per_tti/2),
 			      l/(lte_frame_parms->symbols_per_tti/2),
-			      1,
+			      0,
 			      0);
 		}
 
@@ -3081,7 +3081,7 @@ int main(int argc, char **argv)
 		       PHY_vars_eNB[1]->lte_eNB_ulsch_vars[0],
 		       lte_frame_parms,
 		       subframe,
-		       1,  
+		       0,  
 		       PHY_vars_eNB[1]->ulsch_eNb[0],
 		       relay_flag,
 		       diversity_scheme);
@@ -3114,22 +3114,24 @@ int main(int argc, char **argv)
 	}//while( round_ul < 4)
       }//while( round_dl < 4)
 
-      if(((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)&&(round_trials_ul[0][0]>100))||((((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)&&(round_trials_ul[1][0]>100))||((((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)&&(round_trials_ul[2][0]>100))||((((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2)&&(round_trials_ul[3][0]>100))||((n_errors_dl[0]>100)&&(round_trials_dl[0]>100)))
-	break;
+     /* if(((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)&&(round_trials_ul[0][0]>100))||((((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)&&(round_trials_ul[1][0]>100))||((((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)&&(round_trials_ul[2][0]>100))||((((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2)&&(round_trials_ul[3][0]>100))||((n_errors_dl[0]>100)&&(round_trials_dl[0]>100)))
+	break;*/
+
+      if(((((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0])<1e-2) && (round_trials_dl[0] >100)) || ((n_errors_dl[0] > 100)&&(round_trials_dl[0] > 100)))
+        break;
 
     }//trials
 
 
     //BLER Downlink
-    fprintf(bler_fd_dl,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_dl,
+    fprintf(bler_fd_dl,"%f,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_dl,
 	    n_errors_dl[0],round_trials_dl[0],
 	    n_errors_dl[1],round_trials_dl[1],
 	    n_errors_dl[2],round_trials_dl[2],
-	    n_errors_dl[3],round_trials_dl[3],
-	    (double)(n_errors_dci+n_errors_dl[3])/round_trials_dl[0]);
+	    n_errors_dl[3],round_trials_dl[3]);
 
     //BLER Uplink
-    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_ul,
+    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_ul,
 	    n_errors_ul[0][0],round_trials_ul[0][0],
 	    n_errors_ul[0][1],round_trials_ul[0][1],
 	    n_errors_ul[0][2],round_trials_ul[0][2],
@@ -3145,8 +3147,7 @@ int main(int argc, char **argv)
 	    n_errors_ul[3][0],round_trials_ul[3][0],
 	    n_errors_ul[3][1],round_trials_ul[3][1],
 	    n_errors_ul[3][2],round_trials_ul[3][2],
-	    n_errors_ul[3][3],round_trials_ul[3][3],
-	    (double)(n_errors_ul[0][3]+n_errors_ul[1][3]+n_errors_ul[2][3]+n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]));
+	    n_errors_ul[3][3],round_trials_ul[3][3]);
 
 
     harq_adjust = 0;
@@ -3160,10 +3161,11 @@ int main(int argc, char **argv)
     
 		
 
-
-
-    if((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)||(((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)||(((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)||(((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2))
+    if(((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0])<1e-2)
       break;
+
+ /*   if((((double)(n_errors_ul[0][0])/(round_trials_ul[0][0]))<1e-2)||(((double)(n_errors_ul[1][0])/(round_trials_ul[1][0]))<1e-2)||(((double)(n_errors_ul[2][0])/(round_trials_ul[2][0]))<1e-2)||(((double)(n_errors_ul[3][0])/(round_trials_ul[3][0]))<1e-2))
+      break;*/
 
   }//SNR_ul
     
