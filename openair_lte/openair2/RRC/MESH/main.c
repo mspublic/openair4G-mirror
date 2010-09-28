@@ -625,8 +625,8 @@ void ch_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
       memcpy(&CH_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       
-      msg("[OPENAIR][RRC] NODE=%d, CALLING RLC CONFIG SRB1\n",
-	  CH_rrc_inst[Mod_id].Node_id,Idx,Mac_config_req.Lchan_id.Index);
+      msg("[OPENAIR][RRC] UE %d CALLING RLC CONFIG SRB1 (rbid %d)\n",
+	  UE_index,Idx);
       Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
       /*      
@@ -739,7 +739,7 @@ void ch_rrc_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
 
   // Get RRCConnectionSetup message and size (here 9)
   //  CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx = size;
-  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH : 1 ",Mod_id,size);//CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx);
+  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH UE %d: 1 ",Mod_id,size,UE_index);//CH_rrc_inst[Mod_id].Srb1.Tx_buffer.W_idx);
   RRCConnectionReconfiguration[0]=1;
   for (i=1;i<size;i++) {
     RRCConnectionReconfiguration[i] = (u8)(taus()&0xff);
@@ -747,7 +747,7 @@ void ch_rrc_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
   }
   msg("\n");
 
-  Mac_rlc_xface->rrc_rlc_data_req(Mod_id,DCCH,rrc_mui++,0,size,(char*)RRCConnectionReconfiguration);
+  Mac_rlc_xface->rrc_rlc_data_req(Mod_id,(UE_index*MAX_NUM_RB)+DCCH,rrc_mui++,0,size,(char*)RRCConnectionReconfiguration);
 
   //  memcpy((void *)CH_rrc_inst[Mod_id].Srb1.Tx_buffer.Payload,
   //	 RRCConnectionSetup,9);

@@ -189,12 +189,12 @@ void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Srb_id, u32 sdu_size,u8 *Bu
     //------------------------------------------------------------------------------------------------------------------//
   //msg("[OPENAIR][RRC]Mod_id=%d: rlc_rrc_data_ind to SRB ID=%d, size %d,...\n",Mod_id,Srb_id,sdu_size);
   // usleep(1000000);
-  unsigned short Idx2=(Srb_id >> RAB_SHIFT2);
+  unsigned short Idx2=(Srb_id-1)/MAX_NUM_RB;
 
   //  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
   //      Srb_id,sdu_size);
   if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
-    ch_rrc_decode_dcch(Mod_id,0,Buffer,sdu_size);
+    ch_rrc_decode_dcch(Mod_id,Idx2,Buffer,sdu_size);
   else
     ue_rrc_decode_dcch(Mod_id-NB_CH_INST,Buffer,Idx2);
   

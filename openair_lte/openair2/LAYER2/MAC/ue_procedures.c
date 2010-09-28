@@ -400,7 +400,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 							DCCH,
 							&dcch_buffer[sdu_lengths[0]]);
       sdu_lcids[0] = DCCH;
-      msg("[MAC][UE %d] Got %d bytes for DCCH :",sdu_lengths[0],Mod_id);
+      msg("[MAC][UE %d] Got %d bytes for DCCH :",Mod_id,sdu_lengths[0]);
       num_sdus = 1;
     }
     else
@@ -421,7 +421,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 					   NULL,
 					   NULL,
 					   NULL);
-    msg("[MAC][UE %d] Payload offset %d\n",payload_offset,Mod_id);
+    msg("[MAC][UE %d] Payload offset %d\n",Mod_id,payload_offset);
 
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],dcch_buffer,sdu_lengths[0]);

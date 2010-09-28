@@ -356,10 +356,10 @@ void add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 agg
 void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt) {
   
   memcpy(&DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].dci_pdu[0],pdu,dci_size_bytes);
-  DCI_pdu->dci_alloc[0].dci_length = dci_size_bits;
-  DCI_pdu->dci_alloc[0].L          = aggregation;
-  DCI_pdu->dci_alloc[0].rnti       = rnti;
-  DCI_pdu->dci_alloc[0].format     = dci_fmt;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].dci_length = dci_size_bits;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].L          = aggregation;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].rnti       = rnti;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].format     = dci_fmt;
   
   
   DCI_pdu->Num_ue_spec_dci++;	
@@ -599,7 +599,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       
       DLSCH_dci->rv1 = round&3;
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("DLSCH_pdu (rballoc %x,mcs %d, ndi %d, rv %d)\n",DLSCH_dci->rballoc,DLSCH_dci->mcs1,DLSCH_dci->ndi1,DLSCH_dci->rv1);
+      msg("[MAC] eNB %d Scheduler, generating DLSCH for rnti %x (rballoc %x,mcs %d, ndi %d, rv %d)\n",
+	  Mod_id,rnti,DLSCH_dci->rballoc,DLSCH_dci->mcs1,DLSCH_dci->ndi1,DLSCH_dci->rv1);
 #endif
 
       add_ue_spec_dci(DCI_pdu,
@@ -618,9 +619,6 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       DCI_pdu->dci_alloc[0].format     = format2_2A_M10PRB;
       DCI_pdu->Num_ue_spec_dci = 1;	
       */
-#ifdef DEBUG_MAC_SCHEDULER
-      msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated DLSCH DCI, format 2_2A_M10PRB\n",mac_xface->frame,subframe);
-#endif
       // copy MAC header and SDU
       
       TBS = mac_xface->get_TBS(DLSCH_dci->mcs1,nb_rb);
@@ -674,7 +672,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       // memcpy(&CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
       
       
-      msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",mac_xface->frame,subframe,DLSCH_dci->mcs1,TBS,nb_rb);
+      msg("[MAC]eNB %d Frame %d, subframe %d: Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
+	  Mod_id,mac_xface->frame,subframe,DLSCH_dci->mcs1,TBS,nb_rb);
       
       
       // fill remainder of DLSCH with random data 
