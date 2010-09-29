@@ -150,9 +150,9 @@ typedef struct
 } PHY_VARS_eNB;
 
 #ifndef USER_MODE
-#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) fifo_printf
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) fifo_printf
 #else
-#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 10)) msg
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) msg
 #endif
 
 

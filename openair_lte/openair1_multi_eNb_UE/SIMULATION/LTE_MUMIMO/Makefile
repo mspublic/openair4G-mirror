@@ -11,9 +11,9 @@ CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
 
 TOP_DIR = ../..
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
+#CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
 
-#CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+CFLAGS = -O2 -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
 CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
 CFLAGS += -DTBS_FIX
@@ -24,26 +24,6 @@ endif
 
 ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
-endif
-
-ifdef MeNBMUE
-CFLAGS += -DMeNBMUE
-endif
-
-ifdef MU_RECEIVER
-CFLAGS += -DMU_RECEIVER
-endif
-
-ifdef ZBF_ENABLED
-CFLAGS += -DNULL_SHAPE_BF_ENABLED
-endif
-
-ifdef RANDOM_BF
-CFLAGS += -DRANDOM_BF
-endif
-
-ifdef PBS_SIM
-CFLAGS += -DPBS_SIM
 endif
 
 ifdef OPENAIR2
@@ -100,9 +80,6 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
-ifdef MeNBMUE
-#PHY_OBJS += $(TOP_DIR)/PHY/INIT/secsys_init.o
-endif
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
 ifdef OPENAIR2
 PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
@@ -146,14 +123,14 @@ endif
 LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(LAYER2_OBJ)	
-OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
+OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/SCHED/phy_procedures_lte_common.o $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
 
 all: dlsim dlsim2 ulsim ulsim2 physim physim_secsys
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
-$(OBJ) : %.o : %.c
+%.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ2) dlsim.c
@@ -161,22 +138,17 @@ dlsim : $(OBJ2) dlsim.c
 
 dlsim2 : $(OBJ2) dlsim2.c
 	$(CC) dlsim2.c -I$(TOP_DIR) -o dlsim2 $(CFLAGS) $(OBJ2) -lm
-dlsim_secsys : $(OBJ2) dlsim_secsys.c
-	$(CC) dlsim_secsys.c -I$(TOP_DIR) -o dlsim_secsys $(CFLAGS) $(OBJ2) -lm
 
 ulsim : $(OBJ2) ulsim.c ulsim_form.c
 	$(CC) ulsim.c ulsim_form.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ2) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm
-
 ulsim2 : $(OBJ2) ulsim2.c
 	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ2) -lm
 
 physim : $(OBJ) phy_procedures_sim.c 
 	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) -lm
-physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
-	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
 clean:
-	rm -f dlsim dlsim2 dlsim_secsys
+	rm -f dlsim dlsim2 ulsim ulsim2 physim
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*

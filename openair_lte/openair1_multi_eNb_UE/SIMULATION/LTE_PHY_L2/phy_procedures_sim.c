@@ -119,17 +119,11 @@ void help(void) {
   printf("Usage: physim -h(elp) -t transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -d max_delay\n");
 }
 
-struct complex **ch;
-
 #ifdef XFORMS
-FD_phy_procedures_sim *form;
-
-float I[3600],Q[3600],I2[3600],Q2[3600],I3[100],Q3[100];
-
-do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, struct complex **ch,unsigned int ch_len) {
+void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, struct complex **ch,unsigned int ch_len) {
 
   int j,s,i;
-
+  float I[3600],Q[3600],I2[3600],Q2[3600],I3[300],Q3[300];
 
   j=0;
   //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
@@ -149,8 +143,8 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
     fl_set_xyplot_data(form->pdsch_constellation,I,Q,j,"","","");
 
 
-  fl_set_xyplot_xbounds(form->pdsch_constellation,-800,800);
-  fl_set_xyplot_ybounds(form->pdsch_constellation,-800,800);
+  //fl_set_xyplot_xbounds(form->pdsch_constellation,-800,800);
+  //fl_set_xyplot_ybounds(form->pdsch_constellation,-800,800);
 
 
   j=0;
@@ -180,7 +174,7 @@ do_forms(LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_eNB_ULSCH **lte_eNB_ulsch_vars, st
   }
 
   fl_set_xyplot_data(form->ch00,I3,Q3,ch_len,"","","");
-  fl_set_xyplot_ybounds(form->ch00,-20,20);
+  //fl_set_xyplot_ybounds(form->ch00,-20,20);
 }
 #endif
 
@@ -314,7 +308,8 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
       rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],eNB2UE[eNB_id][UE_id]->channel_length);
 #ifdef DEBUG_SIM
-      printf("[SIM][UL] Channel eNB %d => UE %d : %f dB\n",eNB_id,UE_id,10*log10(rx_pwr));  
+      printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB\n",eNB_id,UE_id,10*log10(rx_pwr));  
+      printf("[SIM][DL] Channel eNB %d => UE %d : path_loss %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
 #endif
       rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM      
@@ -327,8 +322,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
       // RF model
 #ifdef DEBUG_SIM
-      printf("[SIM][DL] slot %d: eNB_id %d, UE_id %d -> path_loss %f dB\n",next_slot,eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
-      printf("[SIM][DL] UE_id %d (gain %d dB) tx_pwr %f dB for slot %d (subframe %d)\n",UE_id,PHY_vars_UE_g[UE_id]->rx_total_gain_dB,10*log10(tx_pwr),next_slot,next_slot>>1);      
+      printf("[SIM][DL] UE_id %d: rx_gain %d dB for slot %d (subframe %d)\n",UE_id,PHY_vars_UE_g[UE_id]->rx_total_gain_dB,next_slot,next_slot>>1);      
 #endif
       rf_rx(r_re0,
 	    r_im0,
@@ -630,7 +624,7 @@ int main(int argc, char **argv) {
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=.001,Td=1.0,forgetting_factor=.999,maxDoppler=0;
-  u8 channel_length;
+  u8 channel_length,nb_taps=8;
 
 
   int n_frames,n_errors;
@@ -654,6 +648,11 @@ int main(int argc, char **argv) {
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
+
+#ifdef XFORMS
+  FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+  char title[255];
+#endif
 
   NB_CH_INST=1;
   //    NODE_ID[0]=0;
@@ -753,6 +752,10 @@ int main(int argc, char **argv) {
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
 
+  phy_init_lte_top(lte_frame_parms);
+
+  // init all eNB vars
+
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
     memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     phy_init_lte_eNB(&PHY_vars_eNb_g[eNB_id]->lte_frame_parms,
@@ -785,8 +788,6 @@ int main(int argc, char **argv) {
 	exit(-1);
       }
 
-      PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[i].SRS_parameters = PHY_vars_UE_g[i]->SRS_parameters;
-
     }
 
     // ULSCH for RA
@@ -800,24 +801,13 @@ int main(int argc, char **argv) {
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra  = new_eNb_dlsch(1,1);
 
     PHY_vars_eNb_g[eNB_id]->rx_total_gain_eNB_dB=150;
-    PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[0].mode = PRACH;
-    PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[0].crnti = 0xBEEF;
-
   }
 
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+  // init all UE vars
+
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     
-    PHY_vars_UE_g[UE_id]->SRS_parameters.Csrs = 2;
-    PHY_vars_UE_g[UE_id]->SRS_parameters.Bsrs = 0;
-    PHY_vars_UE_g[UE_id]->SRS_parameters.kTC = 0;
-    PHY_vars_UE_g[UE_id]->SRS_parameters.n_RRC = 0;
-    if (UE_id>=3) {
-      printf("This SRS config will only work for 3 users");
-      exit(-1);
-    }
-    PHY_vars_UE_g[UE_id]->SRS_parameters.Ssrs = UE_id+1;
-
     phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
 		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
@@ -826,13 +816,6 @@ int main(int argc, char **argv) {
 		    PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars,
 		    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars,
 		    PHY_vars_UE_g[UE_id]);
-  } // end navid
-  
-  phy_init_lte_top(lte_frame_parms);
-
-
-
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
 
     PHY_vars_UE_g[UE_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[UE_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
@@ -842,10 +825,6 @@ int main(int argc, char **argv) {
     PHY_vars_UE_g[UE_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
 
-
-  }// end navid 
-
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     for (i=0;i<NB_CH_INST;i++) {
       for (j=0;j<2;j++) {
 	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8);
@@ -867,7 +846,25 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1);
       PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1);
     }
-  }// end navid
+  }
+
+  // do the srs init
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Csrs = 2;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Bsrs = 0;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.kTC = 0;
+    PHY_vars_UE_g[UE_id]->SRS_parameters.n_RRC = 0;
+    if (UE_id>=3) {
+      printf("This SRS config will only work for 3 users");
+      exit(-1);
+    }
+    PHY_vars_UE_g[UE_id]->SRS_parameters.Ssrs = UE_id+1;
+    
+    for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) 
+      PHY_vars_eNb_g[eNB_id]->eNB_UE_stats[UE_id].SRS_parameters = PHY_vars_UE_g[UE_id]->SRS_parameters;
+  }
+
   //  init_transport_channels(transmission_mode);
 
 #ifdef IFFT_FPGA
@@ -919,9 +916,10 @@ int main(int argc, char **argv) {
 #endif
       eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-					       8,
+					       nb_taps,
 					       channel_length,
 					       amps,
+					       NULL,
 					       Td,
 					       BW,
 					       ricean_factor,
@@ -935,9 +933,10 @@ int main(int argc, char **argv) {
 
       UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
-					       8,
+					       nb_taps,
 					       channel_length,
 					       amps,
+					       NULL,
 					       Td,
 					       BW,
 					       ricean_factor,
@@ -980,9 +979,13 @@ int main(int argc, char **argv) {
  
 
 #ifdef XFORMS
-  fl_initialize(&argc, argv, NULL, 0, 0);    
-  form = create_form_phy_procedures_sim();                 
-  fl_show_form(form->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,"LTE SIM");   
+  fl_initialize(&argc, argv, NULL, 0, 0);
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
+    for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++) {
+      form[eNB_id][UE_id] = create_form_phy_procedures_sim();                 
+      sprintf(title,"LTE SIM UE %d eNB %d",UE_id,eNB_id);   
+      fl_show_form(form[eNB_id][UE_id]->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,title);
+    }
 #endif
 
 #ifdef OPENAIR2
@@ -1003,27 +1006,23 @@ int main(int argc, char **argv) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
+
+      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
 #ifdef DEBUG_SIM
-      printf("[SIM] PHY procedures eNB for slot %d (subframe %d)\n",slot,slot>>1); // navid
+	printf("[SIM] PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,slot>>1);
 #endif
-      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++)
 	phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[eNB_id]);
+      }
 
-      for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+      for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
+	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 #ifdef DEBUG_SIM
-	printf("[SIM] PHY procedures UE %d for slot %d\n", UE_id,slot);
-	printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
+	  printf("[SIM] PHY procedures UE %d for frame %d, slot %d\n", UE_id,mac_xface->frame,slot);
+	  printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
 #endif
-	if (mac_xface->frame >= (UE_id*10))  // activate UE only after 10*UE_id frames so that different UEs turn on separately
 	  phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0);
-      }// end navid 
+      }
  
-#ifdef XFORMS
-      if (last_slot == 14) 
-	do_forms(PHY_vars_UE_g[0]->lte_ue_dlsch_vars,PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,ch,channel_length);
-	
-#endif
-
       if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
       /*
 	u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
@@ -1088,6 +1087,14 @@ int main(int argc, char **argv) {
 	}
       }
     }
+#ifdef XFORMS
+    for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
+      for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++) {
+	do_forms(form[eNB_id][UE_id],PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,PHY_vars_eNb_g[eNB_id]->lte_eNB_ulsch_vars,eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
+      }
+#endif
+
+
   }
 #ifdef IFFT_FPGA
   free(txdataF2[0]);

@@ -352,6 +352,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
   switch (dci_format) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
+    msg("dci_tools.c: format0 not yet implemented\n");
     return(-1);
     break;
   case format1A:  // This is DLSCH SACH allocation for control traffic
@@ -414,7 +415,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch0 = dlsch[0];
     break;
   case format2_2A_L10PRB:
-
+    msg("dci_tools.c: format2_2A_L10PRB not yet implemented\n");
     return(-1);
     break;
   case format2_2A_M10PRB:
@@ -544,7 +545,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       dlsch1->harq_processes[harq_pid]->TBS         = 0;
     break;
   default:
-    
+    msg("dci_tools.c: format %d not yet implemented\n",dci_format);
     return(-1);
     break;
   }

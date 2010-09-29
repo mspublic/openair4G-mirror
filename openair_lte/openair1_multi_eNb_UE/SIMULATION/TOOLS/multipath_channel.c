@@ -5,9 +5,123 @@
 #include "defs.h"
 #include "SIMULATION/RF/defs.h"
 
-#define MAX_CHANNEL_LENGTH 200
+/*
+int init_multipath_channel(channel_desc_t *channel) {
+  int i;
+  if (channel->nb_taps<=0) {
+    msg("init_multipath_channel: nb_taps must be > 0\n");
+    return(-1);
+  }
+  if (channel->channel_length<=0) {
+    msg("init_multipath_channel: channel_length must be > 0\n");
+    return(-1);
+  }
+  if (channel->nb_tx<=0) {
+    msg("init_multipath_channel: nb_tx must be > 0\n");
+    return(-1);
+  }
+  if (channel->nb_rx<=0) {
+    msg("init_multipath_channel: nb_rx must be > 0\n");
+    return(-1);
+  }
+  channel->amps = (double*) malloc(channel->nb_taps*sizeof(double));
+  if (!channel->amps) {
+    msg("init_multipath_channel: cannot allocate amps\n");
+    return(-1);
+  }
+  channel->delays = (double*) malloc(channel->nb_taps*sizeof(double));
+  if (!channel->delays) {
+    msg("init_multipath_channel: cannot allocate delays\n");
+    return(-1);
+  }
+  channel->state = (struct complex **) malloc(channel->nb_tx*channel->nb_rx*sizeof(struct complex *));
+  if (!channel->state) {
+    msg("init_multipath_channel: cannot allocate state\n");
+    return(-1);
+  }
+  for (i=0; i<channel->nb_tx*channel->nb_rx; i++) {
+    channel->state[i] = (struct complex *) malloc(channel->nb_taps*sizeof(struct complex));
+    if (!channel->state[i]) {
+      msg("init_multipath_channel: cannot allocate state\n");
+      return(-1);
+    }
+  }
+  channel->ch = (struct complex **) malloc(channel->nb_tx*channel->nb_rx*sizeof(struct complex *));
+  if (!channel->ch) {
+    msg("init_multipath_channel: cannot allocate ch\n");
+    return(-1);
+  }
+  for (i=0; i<channel->nb_tx*channel->nb_rx; i++) {
+    channel->ch[i] = (struct complex *) malloc(channel->channel_length*sizeof(struct complex));
+    if (!channel->ch[i]) {
+      msg("init_multipath_channel: cannot allocate ch\n");
+      return(-1);
+    }
+  }
+  channel->R_tx_sqrt = (struct complex **) malloc(channel->nb_tx*channel->nb_tx*sizeof(struct complex *));
+  if (!channel->Rx_tx_sqrt) {
+    msg("init_multipath_channel: cannot allocate R_tx_sqrt\n");
+    return(-1);
+  }
+  for (i=0; i<channel->nb_tx*channel->nb_tx; i++) {
+    channel->R_tx_sqrt[i] = (struct complex *) malloc(channel->channel_length*sizeof(struct complex));
+    if (!channel->R_tx_sqrt[i]) {
+      msg("init_multipath_channel: cannot allocate R_tx_sqrt\n");
+      return(-1);
+    }
+  }
+  channel->R_rx_sqrt = (struct complex **) malloc(channel->nb_rx*channel->nb_rx*sizeof(struct complex *));
+  if (!channel->R_rx_sqrt) {
+    msg("init_multipath_channel: cannot allocate R_rx_sqrt\n");
+    return(-1);
+  }
+  for (i=0; i<channel->nb_rx*channel->nb_rx; i++) {
+    channel->R_rx_sqrt[i] = (struct complex *) malloc(channel->channel_length*sizeof(struct complex));
+    if (!channel->R_rx_sqrt[i]) {
+      msg("init_multipath_channel: cannot allocate R_rx_sqrt\n");
+      return(-1);
+    }
+  }
+  return(0);
+}
 
-//#define DEBUG_CH
+int free_multipath_channel(channel_desc_t *channel) {
+  int i;
+  free(channel->amps);
+  free(channel->delays);
+  for (i=0; i<channel->nb_tx*channel->nb_rx; i++) {
+    free(channel->state[i] = (struct complex *) malloc(channel->nb_taps*sizeof(struct complex));
+    if (!channel->state[i]) {
+      msg("init_multipath_channel: cannot allocate state\n");
+      return(-1);
+    }
+  }
+  free(channel->state);
+  channel->ch = (struct complex **) malloc(channel->nb_tx*channel->nb_rx*sizeof(struct complex *));
+  if (!channel->ch) {
+    msg("init_multipath_channel: cannot allocate ch\n");
+    return(-1);
+  }
+  for (i=0; i<channel->nb_tx*channel->nb_rx; i++) {
+    channel->ch[i] = (struct complex *) malloc(channel->channel_length*sizeof(struct complex));
+    if (!channel->ch[i]) {
+      msg("init_multipath_channel: cannot allocate ch\n");
+      return(-1);
+    }
+  }
+  channel->R_tx_sqrt = (struct complex *) malloc(channel->nb_tx*channel->nb_tx*sizeof(struct complex));
+  if (!channel->Rx_tx_sqrt) {
+    msg("init_multipath_channel: cannot allocate Rx_tx_sqrt\n");
+    return(-1);
+  }
+  channel->R_rx_sqrt = (struct complex *) malloc(channel->nb_rx*channel->nb_rx*sizeof(struct complex));
+  if (!channel->R_rx_sqrt) {
+    msg("init_multipath_channel: cannot allocate R_rx_sqrt\n");
+    return(-1);
+  }
+  return(0);
+}
+*/
 
 void multipath_channel(channel_desc_t *desc,
 		       double **tx_sig_re, 
@@ -23,9 +137,11 @@ void multipath_channel(channel_desc_t *desc,
   double path_loss = pow(10,desc->path_loss_dB/20);
   int dd;
   dd = -desc->channel_offset;
+
 #ifdef DEBUG_CH
     printf("[CHANNEL] path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length);
 #endif
+
   /*  
   for (i=0;i<desc->nb_rx;i++)      // RX Antenna loop
     for (j=0;j<desc->nb_tx;j++) {  // TX Antenna loop
@@ -33,18 +149,13 @@ void multipath_channel(channel_desc_t *desc,
       if (keep_channel) {
 	// do nothing - keep channel
       } else {
-
-	
 	memset(desc->ch[i + (j*desc->nb_rx)], 0,desc->channel_length * sizeof(struct complex));
-
-
       }
     }
   */
 
-
-
   random_channel(desc);
+
 #ifdef DEBUG_CH
   for (l = 0;l<(int)desc->channel_length;l++) {
     printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].r,desc->ch[0][l].i);
@@ -57,8 +168,6 @@ void multipath_channel(channel_desc_t *desc,
       rx_tmp.r = 0;
       rx_tmp.i = 0;
       for (j=0;j<desc->nb_tx;j++) {
-
-
 	for (l = 0;l<(int)desc->channel_length;l++) {
 	  if ((i>=0) && (i-l)>=0) {
 	    tx.r = tx_sig_re[j][i-l];

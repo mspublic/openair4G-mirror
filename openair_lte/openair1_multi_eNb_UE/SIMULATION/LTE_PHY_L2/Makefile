@@ -17,7 +17,7 @@ CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DP
 
 CFLAGS += -DOPENAIR_LTE -DTBS_FIX #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 
-CFLAGS += -DOPENAIR2 
+CFLAGS += -DOPENAIR2 -DXFORMS
 
 ifdef EMOS
 CFLAGS += -DEMOS

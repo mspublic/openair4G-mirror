@@ -25,13 +25,13 @@
 //#define DEBUG_PHY
 
 #ifdef USER_MODE
-//#define DEBUG_PHY
+#define DEBUG_PHY
 #endif
 
-//#ifdef OPENAIR2
+#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
-//#endif
+#endif
 
 #define DIAG_PHY
 
@@ -710,7 +710,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
     }
 
-    //#ifdef OPENAIR2
+#ifdef OPENAIR2
     if (phy_vars_eNb->dlsch_eNb_ra->active == 1) {
       input_buffer_length = phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->TBS/8;
       phy_vars_eNb->eNB_UE_stats[0].crnti = mac_xface->fill_rar(0,
@@ -756,7 +756,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d, DLSCH (RA) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
 #endif
     }
-    //#endif //OPENAIR2
+#endif //OPENAIR2
     /*    
 	  if (dlsch_eNb_1A_active == 1) {
 	  input_buffer_length = dlsch_eNb_1A->harq_processes[0]->TBS/8;
@@ -1175,3 +1175,31 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb) {
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 }
   
+void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
+
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_DL) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_TX(%d)\n",mac_xface->frame, next_slot);
+#endif
+      phy_procedures_eNB_TX(next_slot,phy_vars_eNb);
+    }
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_UL) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_procedures_eNB_RX(last_slot,phy_vars_eNb);
+    }
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_S) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_TX(%d)\n",mac_xface->frame, next_slot);
+#endif
+      phy_procedures_eNB_S_TX(next_slot,phy_vars_eNb);
+    }
+    if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,last_slot>>1)==SF_S) {
+#ifdef DEBUG_PHY
+      msg("[PHY_PROCEDURES_LTE] Frame% d: Calling phy_procedures_eNB_S_RX(%d)\n",mac_xface->frame, last_slot);
+#endif
+      phy_procedures_eNB_S_RX(last_slot,phy_vars_eNb);
+    }
+}
+

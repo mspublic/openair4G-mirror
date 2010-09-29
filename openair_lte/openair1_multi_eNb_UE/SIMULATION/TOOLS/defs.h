@@ -5,18 +5,17 @@ typedef struct {
   u8 nb_rx; ///Number of rx antennas
   u8 nb_taps; ///number of taps
   double *amps; ///Linear amplitudes of the taps. length(amps)=nb_taps. The values should sum up to 1.
-  double *delays; ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. CURRENTLY NOT IMPLEMENTED
-  struct complex **state; ///channel state vector. size(state) = (n_tx * n_rx) * nb_taps;
+  double *delays; ///Delays of the taps. length(delays)=nb_taps. Has to be between 0 and t_max. 
   u8 channel_length; ///length of impulse response. should be set to 11+2*bw*t_max 
-  struct complex **a; ///state vector
+  struct complex **a; ///channel state vector. size(state) = (n_tx * n_rx) * nb_taps;
   struct complex **ch; ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. 
   double Td; ///Maximum path delay in mus.
   double BW; ///Channel bandwidth in MHz.
   double ricean_factor; ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
   double aoa; /// angle of arrival of wavefront. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.
   double max_Doppler; ///in Hz. if >0 generate a channel with a Clarke's Doppler profile with a maximum Doppler bandwidth max_Doppler. CURRENTLY NOT IMPLEMENTED!
-  struct complex *R_tx_sqrt; ///Square root of transmit correlation matrix size(R_tx)=n_tx * n_tx. CURRENTLY NOT IMPLEMENTED!
-  struct complex *R_rx_sqrt; ///Square root of receive correlation matrix size(R_rx)=n_rx * n_rx. CURRENTLY NOT IMPLEMENTED!
+  struct complex **R_tx_sqrt; ///Square root of transmit correlation matrix size(R_tx)=(n_tx * n_tx)*nb_taps. CURRENTLY NOT IMPLEMENTED!
+  struct complex **R_rx_sqrt; ///Square root of receive correlation matrix size(R_rx)=(n_rx * n_rx)*nb_taps. CURRENTLY NOT IMPLEMENTED!
   double path_loss_dB; ///path loss in dB
   s8 channel_offset; ///additional delay of channel in samples.
   double forgetting_factor; ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
@@ -111,7 +110,8 @@ double uniformrandom();
 
 /** \fn channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset)
 \brief This routine initializes a new channel descriptor
-\param amps Linear amplitudes of the taps (length(amps)=channel_length). The taps are assumed to be spaced equidistantly between 0 and t_max. The values should sum up to 1.
+\param amps Linear amplitudes of the taps (length(amps)=channel_length). The values should sum up to 1.
+\param delays Delays of the taps. If delays==NULL the taps are assumed to be spaced equidistantly between 0 and t_max. 
 \param t_max Maximum path delay in mus.
 \param a Complex channel state vector of length channel_length
 \param channel_length Number of taps.
@@ -125,7 +125,7 @@ double uniformrandom();
 \param path_loss_dB This is the path loss in dB
 */
 
-channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB);
+channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB);
 
 
 /** \fn void random_channel(channel_desc_t *desc)
