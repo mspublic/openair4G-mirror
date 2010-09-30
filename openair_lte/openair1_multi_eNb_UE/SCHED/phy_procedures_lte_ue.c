@@ -570,12 +570,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
     
 #ifdef DEBUG_PHY
-  if (dci_cnt) {
-    debug_msg("[PHY]][UE %d] Frame %d, slot %d: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,dci_cnt);
-  } 
+    debug_msg("[PHY][UE %d] Frame %d, slot %d: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,dci_cnt);
 #endif
-
-  //  debug_msg("[PHY][UE %d] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
 
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
 
@@ -601,16 +597,13 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
     }
 #endif
 
-#ifdef DEBUG_PHY
-  msg("[PHY][UE %d] subframe %d: dci_cnt %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_cnt);
-#endif
   for (i=0;i<dci_cnt;i++){
 
     if ((phy_vars_ue->UE_mode[eNB_id] != PRACH) && 
 	(dci_alloc_rx[i].rnti == phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti) &&
 	(dci_alloc_rx[i].format != format0)) {
 #ifdef DEBUG_PHY
-      msg("[PHY][UE %d] subframe %d: Found rnti %x, format %d\n",phy_vars_ue->Mod_id,last_slot>>1,dci_alloc_rx[i].rnti,
+      msg("[PHY][UE %d] frame %d, subframe %d: Found rnti %x, format %d\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot>>1,dci_alloc_rx[i].rnti,
 	  dci_alloc_rx[i].format);
 #endif      
 #ifdef DIAG_PHY

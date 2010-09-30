@@ -1168,7 +1168,10 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     MIMO_mode_t mimo_mode,
 	     unsigned char is_secondary_ue) {
 
-  unsigned char log2_maxh,aatx,aarx,eNb_id_i=eNb_id+1;//add 1 to eNb_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNb are shifted by 1
+  unsigned char log2_maxh,aatx,aarx;
+#ifdef MU_RECEIVER
+  unsigned char eNb_id_i=eNb_id+1;//add 1 to eNb_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNb are shifted by 1
+#endif
   int avgs,s;
 
   for (s=1;s<1+n_pdcch_symbols;s++) {
@@ -1253,9 +1256,9 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif //MU_RECEIVER
     
 
-    if (frame_parms->nb_antennas_rx > 1)
-      if (is_secondary_ue) {
+    if (frame_parms->nb_antennas_rx > 1) {
 #ifdef MU_RECEIVER
+      if (is_secondary_ue) {
 	pdcch_detection_mrc_i(frame_parms,
 			      lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
 			      lte_ue_pdcch_vars[eNb_id_i]->rxdataF_comp,
@@ -1266,13 +1269,13 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 	write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_pdcch_vars[eNb_id_i]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
+      } else 
 #endif //MU_RECEIVER
-      } else {
 	pdcch_detection_mrc(frame_parms,
 			    lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
 			    s);
-      }
-
+      
+    }
   
 
     if (mimo_mode == SISO) 
@@ -1632,8 +1635,6 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				      unsigned short ra_rnti) {
   
   unsigned short crc,dci_cnt,first_found,second_found,dci_len;
-  int i;
-
 
   // Aggregation level 8
   dci_cnt = 0;
@@ -1862,7 +1863,7 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
       dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
       dci_alloc[dci_cnt].format     = format2_2A_M10PRB;;
-      memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
+      memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
       dci_cnt++;
       first_found=1;
 #ifdef DEBUG_DCI_DECODING
@@ -1894,8 +1895,8 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
       dci_alloc[dci_cnt].L          = 8;
-      dci_alloc[dci_cnt].format     = format2_2A_L10PRB;
-      memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_L10PRB_TDD_t));
+      dci_alloc[dci_cnt].format     = format2_2A_M10PRB;
+      memcpy(&dci_alloc[dci_cnt].dci_pdu[0],dci_decoded_output,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
       dci_cnt++;
       second_found=1;
 #ifdef DEBUG_DCI_DECODING

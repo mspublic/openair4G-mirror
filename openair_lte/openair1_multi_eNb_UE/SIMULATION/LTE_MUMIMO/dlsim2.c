@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 
   char c;
   int i,j,aa,s,ind,Kr,Kr_bytes;;
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,SNRmeas;
+  double sigma2,sigma2_dB,SNR,snr0,snr1,SNRmeas;
   //int **txdataF, **txdata;
   int **txdata;
 #ifdef IFFT_FPGA
@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
   num_layers = 1;
   mcs = 0;
   n_frames = 1;
-  snr0 = 2;
+  snr0 = 10;
   //if(snr0>0)
   // snr0 = 0;
   while ((c = getopt (argc, argv, "hm:n:s:")) != -1)
@@ -214,13 +214,13 @@ int main(int argc, char **argv) {
 
   // Init PHY parameters
       
-  PHY_vars_eNb_g = malloc(sizeof(PHY_VARS_eNB*));
+  PHY_vars_eNb_g = malloc(NB_CH_INST*sizeof(PHY_VARS_eNB*));
   for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
     PHY_vars_eNb_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
     PHY_vars_eNb_g[eNB_id]->Mod_id=eNB_id;
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
-  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
+  PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
@@ -740,12 +740,14 @@ int main(int argc, char **argv) {
 
 
 
-  for (ch_realization=0;ch_realization<100;ch_realization++){
+  for (ch_realization=0;ch_realization<20;ch_realization++){
       
     printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
 
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 
+      PHY_vars_UE_g[UE_id]->UE_mode[0] = PUSCH;
+      PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF+UE_id;
  
 #ifdef AWGN // copy s_re and s_im to r_re and r_im
       for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {

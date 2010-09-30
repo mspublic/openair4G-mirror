@@ -3,8 +3,6 @@ load 'bler_awgn.mat';
 set(0, 'DefaultLineMarkerSize', 10);
 set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
-set(0, 'DefaultAxesFontName', 'Courier');
-set(0, 'DefaultTextFontName', 'Courier');
 
 h_fig = figure(2);
 hold off

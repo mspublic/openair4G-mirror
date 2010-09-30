@@ -716,13 +716,13 @@ int main(int argc, char **argv) {
   //PHY_vars = malloc(sizeof(PHY_VARS));
   //  PHY_VARS_eNB *PHY_vars_eNb; 
 
-  PHY_vars_eNb_g = malloc(sizeof(PHY_VARS_eNB*));
+  PHY_vars_eNb_g = malloc(NB_CH_INST*sizeof(PHY_VARS_eNB*));
   for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
     PHY_vars_eNb_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
     PHY_vars_eNb_g[eNB_id]->Mod_id=eNB_id;
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
-  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE*));
+  PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id] = malloc(sizeof(PHY_VARS_UE));
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
