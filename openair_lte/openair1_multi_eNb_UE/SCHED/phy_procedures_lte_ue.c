@@ -20,7 +20,7 @@
 //#endif
 
 #ifdef USER_MODE
-#define DEBUG_PHY
+//#define DEBUG_PHY
 #endif
 
 #ifdef OPENAIR2
@@ -28,7 +28,7 @@
 #include "LAYER2/MAC/defs.h"
 #endif
 
-#define DIAG_PHY
+//#define DIAG_PHY
 
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -575,7 +575,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
 
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
 
-#ifdef DIAG_PHY
+  //#ifdef DIAG_PHY
   if (last_slot==18)
     debug_msg("[PHY][UE %d][DIAG] Frame %d, slot %d: PDCCH: DCI errors %d, DCI received %d, DCI missed %d, DCI False Detection %d \n",
 	      phy_vars_ue->Mod_id,mac_xface->frame,last_slot,
@@ -583,7 +583,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
 	      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received,
 	      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_missed,
 	      phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_false);
-#endif // DIAG_PHY
+  //#endif // DIAG_PHY
   
 #ifdef EMOS
   emos_dump_UE.dci_cnt[last_slot>>1] = dci_cnt;
@@ -827,8 +827,9 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	msg("[PHY][UE %d] WARNING: dlsch_ue and dlsch_ue_SI active, but data structures can only handle one at a time\n",phy_vars_ue->Mod_id);
 
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
+#ifdef DEBUG_PHY
 	msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols 10,11,12\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
-      
+#endif      
 	// process symbols 10,11,12 and trigger DLSCH decoding
 	for (m=(11-phy_vars_ue->lte_frame_parms.Ncp*2+1);m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
@@ -882,12 +883,14 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    phy_vars_ue->dlsch_errors[eNB_id]++;
 #ifdef USER_MODE
+#ifdef DEBUG_PHY
 	    if (mac_xface->frame > 10) {
 	      printf("DLSCH (rv %d,mcs %d) in error\n",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 		     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	      //	      dump_dlsch();
 	      //	      exit(-1);
 	    }
+#endif
 #endif
 	  } 
 	  else {
