@@ -90,6 +90,8 @@ unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned cha
 
 unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
 
+  //  printf("get_ack: SF %d\n",subframe);
+
   switch (tdd_config) {
   case 3:
     if (subframe == 2) {  // ACK subframes 5 and 6
@@ -97,7 +99,7 @@ unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned 
       o_ACK[1] = harq_ack[6].ack;
     }
     else if (subframe == 3) {   // ACK subframes 7 and 8
-      o_ACK[0] = harq_ack[6].ack; //harq_ack[7].ack;
+      o_ACK[0] = harq_ack[7].ack;
       o_ACK[1] = harq_ack[8].ack;
     }
     else if (subframe == 4) {  // ACK subframes 9 and 0

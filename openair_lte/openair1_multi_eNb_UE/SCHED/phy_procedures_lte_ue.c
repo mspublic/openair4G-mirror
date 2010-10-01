@@ -222,7 +222,7 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
 
       first_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb;
       nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
-      msg("[PHY][UE %d] Generating PUSCH (harq_pid %d): first_rb %d, nb_rb %d\n",phy_vars_ue->Mod_id,harq_pid,first_rb,nb_rb);
+      msg("[PHY][UE %d] Subframe %d Generating PUSCH (harq_pid %d): first_rb %d, nb_rb %d, ACK (%d,%d)\n",phy_vars_ue->Mod_id,next_slot>>1,harq_pid,first_rb,nb_rb,phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1]);
 
 #ifdef OFDMA_ULSCH      
       generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb,0,0,0);
@@ -275,7 +275,7 @@ void phy_procedures_UE_S_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 
 
   int aa;
 
-  printf("S_TX: txdataF[0] %p\n",phy_vars_ue->lte_ue_common_vars.txdataF[0]);
+  //  printf("S_TX: txdataF[0] %p\n",phy_vars_ue->lte_ue_common_vars.txdataF[0]);
   if (next_slot%2==1) {
     for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++){
       //  printf("Clearing TX buffer\n");
@@ -557,9 +557,9 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
 	   2,
 	   (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 	   phy_vars_ue->is_secondary_ue); 
-
-  //  debug_msg("[PHY][UE %d] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
-
+#ifdef DEBUG_PHY
+  debug_msg("[PHY][UE %d] Frame %d, slot %d (%d): DCI decoding\n",mac_xface->frame,last_slot,last_slot>>1);
+#endif
 
   dci_cnt = dci_decoding_procedure(phy_vars_ue->lte_ue_pdcch_vars,
 				   dci_alloc_rx,
@@ -823,8 +823,8 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
     if (((last_slot%2)==0) && (l==0)) {
       //      printf("phy_procedures: lte_ue_dlsch_vars %p lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars,lte_ue_dlsch_vars[0]);
 
-      if ( (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) && (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1))
-	msg("[PHY][UE %d] WARNING: dlsch_ue and dlsch_ue_SI active, but data structures can only handle one at a time\n",phy_vars_ue->Mod_id);
+      //      if ( (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) && (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1))
+      //	msg("[PHY][UE %d] WARNING: dlsch_ue and dlsch_ue_SI active, but data structures can only handle one at a time\n",phy_vars_ue->Mod_id);
 
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 #ifdef DEBUG_PHY
@@ -875,6 +875,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	
 #else
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
+	  printf("[PHY][UE] Calling dlsch_decoding for subframe %d\n",((last_slot>>1)-1)%10);
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue[eNB_id][0],
@@ -1020,7 +1021,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	if (mac_xface->frame < phy_vars_ue->dlsch_ra_errors[eNB_id])
 	  phy_vars_ue->dlsch_ra_errors[eNB_id]=0;
 	
-	
+	printf("[PHY][UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot>>1)-1)%10);
 	ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars_ra[eNB_id]->llr[0],
 			     &phy_vars_ue->lte_frame_parms,
 			     phy_vars_ue->dlsch_ue_ra[eNB_id],
@@ -1065,8 +1066,9 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
     }
 
     if (((last_slot%2)==0) && (l==(4-phy_vars_ue->lte_frame_parms.Ncp)))  {
-
+#ifdef DEBUG_PHY
       debug_msg("[PHY][UE %d] Frame %d, slot %d: Calling pdcch procedures\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+#endif
       if (lte_ue_pdcch_procedures(eNB_id,last_slot,phy_vars_ue) == -1) {
 	msg("[PHY][UE %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 	return(-1);

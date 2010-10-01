@@ -74,6 +74,9 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    for (i=0;i<10;i++)
+      dlsch->harq_ids[i] = Mdlharq;
+
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNb_HARQ_t *)malloc16(sizeof(LTE_DL_eNb_HARQ_t));
       //      printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);

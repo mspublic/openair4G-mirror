@@ -31,6 +31,8 @@
 #define DEBUG_PHY
 #define RF
 
+//#define DEBUG_SIM 
+
 #define BW 7.68
 
 #define N_TRIALS 1
@@ -929,7 +931,7 @@ int main(int argc, char **argv) {
 					       0,
 					       0);
 
-      eNB2UE[eNB_id][UE_id]->path_loss_dB = -90 + snr_dB;
+      eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
 
       UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
@@ -946,7 +948,7 @@ int main(int argc, char **argv) {
 					       0,
 					       0);
 
-      UE2eNB[UE_id][eNB_id]->path_loss_dB = -90 + snr_dB - 20;
+      UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 20;
 #ifdef DEBUG_SIM
       printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
       printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);

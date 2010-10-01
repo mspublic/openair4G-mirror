@@ -472,7 +472,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   else
     ulsch->cqi_crc_status = 0;
 #ifdef DEBUG_ULSCH_DECODING
-  msg("ulsch_coding: Or1=%d\n",ulsch->Or1);
+  msg("ulsch_decoding: Or1=%d\n",ulsch->Or1);
   for (i=0;i<1+((8+ulsch->Or1)/8);i++)
     msg("ulsch_decoding: O[%d] %d\n",i,ulsch->o[i]);
   if (ulsch->cqi_crc_status == 1)

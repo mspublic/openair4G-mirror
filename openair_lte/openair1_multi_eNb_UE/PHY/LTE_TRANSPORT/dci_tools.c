@@ -224,6 +224,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch1->current_harq_pid = harq_pid;
     dlsch0->harq_ids[subframe] = harq_pid;
     dlsch1->harq_ids[subframe] = harq_pid;
+    //    printf("Setting DLSCH harq id %d to subframe %d\n",harq_pid,subframe);
 
     dlsch0->rb_alloc[0]                         = conv_rballoc(((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
 							       ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc);
@@ -292,8 +293,10 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       dlsch0->harq_processes[harq_pid]->mimo_mode   = SISO;
 
     dlsch0->harq_processes[harq_pid]->Ndi         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi1;
-    if (dlsch0->harq_processes[harq_pid]->Ndi == 1)
+    if (dlsch0->harq_processes[harq_pid]->Ndi == 1) {
       dlsch0->harq_processes[harq_pid]->status = ACTIVE;
+      //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
+    }
     dlsch0->harq_processes[harq_pid]->mcs         = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs1;
     if (dlsch0->nb_rb > 0) {
 #ifdef TBS_FIX
