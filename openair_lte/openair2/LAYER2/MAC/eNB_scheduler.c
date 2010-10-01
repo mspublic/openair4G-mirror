@@ -504,7 +504,7 @@ void schedule_ulsch(u8 Mod_id,u8 subframe) {
 	  ULSCH_dci->mcs = round + 28;
 
 	ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						   UE_id*openair_daq_vars.ue_ul_nb_rb,
+						   6 + (UE_id*openair_daq_vars.ue_ul_nb_rb),
 						   openair_daq_vars.ue_ul_nb_rb);
 	add_ue_spec_dci(DCI_pdu,
 			ULSCH_dci,
@@ -692,7 +692,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   DCI_pdu->Num_common_dci  = 0;	
   DCI_pdu->Num_ue_spec_dci = 0;
 
-  printf("[MAC] eNB inst %d scheduler subframe %d\n",Mod_id, subframe);
+  //  printf("[MAC] eNB inst %d scheduler subframe %d\n",Mod_id, subframe);
 
   switch (subframe) {
   case 0:
@@ -725,15 +725,20 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
     
   case 6:
     
-    schedule_dlsch(Mod_id,subframe);
     break;
 
+  case 7:
+    
+    schedule_dlsch(Mod_id,subframe);    
+    break;
+    
 
     
   case 8:
 
     schedule_RA(Mod_id,subframe);
-    
+    // Schedule UL subframe
+    schedule_ulsch(Mod_id,subframe);    
     break;
     
   case 9:
@@ -743,11 +748,6 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 
     
 
-    
-    break;
-    
-  case 7:
-    
     
     break;
     

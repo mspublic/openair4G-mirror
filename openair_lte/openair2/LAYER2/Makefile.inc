@@ -1,0 +1,85 @@
+CFLAGS += -DOPENAIR2 
+
+COMMON_DIR = $(OPENAIR2_DIR)/COMMON
+L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
+RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE
+RLC_AM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/AM
+RLC_TM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/TM
+RLC_DIR = $(OPENAIR2_DIR)/LAYER2/RLC
+PDCP_DIR = $(OPENAIR2_DIR)/LAYER2/PDCP
+MEM_DIR = $(OPENAIR2_DIR)/UTIL/MEM
+LIST_DIR = $(OPENAIR2_DIR)/UTIL/LISTS
+MATH_DIR = $(OPENAIR2_DIR)/UTIL/MATH
+TIMER_DIR = $(OPENAIR2_DIR)/UTIL/TIMER
+PHY_INTERFACE_DIR = $(OPENAIR2_DIR)/PHY_INTERFACE
+RRC_DIR = $(OPENAIR2_DIR)/RRC/MESH
+L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
+SIMULATION_DIR = $(OPENAIR2_DIR)/SIMULATION
+CONTROL_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/CONTROL
+ABSTRACTION_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/ABSTRACTION
+TRANSPORT_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/TRANSPORT
+MAC_DIR = $(OPENAIR2_DIR)/LAYER2/MAC
+DEVICE_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/DEVICE_DRIVER
+RRC_CELL_DIR = $(OPENAIR2_DIR)/RRC/CELLULAR
+
+SOURCES_L2 =  $(LIST_DIR)/list.c
+SOURCES_L2 +=  $(LIST_DIR)/list2.c
+
+SOURCES_L2 +=  $(TIMER_DIR)/umts_timer.c
+
+SOURCES_L2 +=  $(PDCP_DIR)/pdcp.c
+SOURCES_L2 +=  $(PDCP_DIR)/pdcp_fifo.c
+
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_fsm.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mux.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_retrans.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_util.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mac_status.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_demux.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_receiver.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reassembly.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_rx.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_control_primitives.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reset.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_status.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timers.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_notif.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_tx.c
+
+SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm.c
+SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm_control_primitives.c
+SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm_fsm.c
+SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm_segment.c
+SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm_reassembly.c
+
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_fsm.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_control_primitives.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_segment.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_reassembly.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_receiver.c
+
+SOURCES_L2 +=  $(RLC_DIR)/rlc_mac.c
+SOURCES_L2 +=  $(RLC_DIR)/rlc.c
+SOURCES_L2 +=  $(RLC_DIR)/rlc_rrc.c
+SOURCES_L2 +=  $(RLC_DIR)/rlc_mpls.c
+
+SOURCES_L2 +=  $(MEM_DIR)/mem_block.c
+
+RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o $(RRC_DIR)/utils.o 
+
+
+MAC_OBJS =  $(MAC_DIR)/lte_transport_init.o 
+MAC_OBJS += $(MAC_DIR)/main.o 
+MAC_OBJS += $(MAC_DIR)/ue_procedures.o 
+MAC_OBJS += $(MAC_DIR)/rar_tools.o 
+MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
+
+
+L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
+
+L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS)
+
+L2_incl = -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH -I$(OPENAIR3)/MESH/RRM  -DNO_RRM
