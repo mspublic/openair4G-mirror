@@ -32,7 +32,7 @@
 
 //#define COLLABRATIVE_SCHEME // When Collbarative scheme is used i.e. Distribute Alamouti or Delay Diversity
 
-#define N_TRIALS 10000
+#define N_TRIALS 1000
 
 
 
@@ -778,6 +778,7 @@ int main(int argc, char **argv)
     for (trials = 0;trials<N_TRIALS;trials++) {
       fflush(stdout);
       round_dl = 0;
+      round_ul = 0;
 
       while(round_dl < 4){
 
@@ -1671,6 +1672,10 @@ int main(int argc, char **argv)
 	    n_errors_dci++;
 	    n_errors_dl[0]++;
 	    round_dl = 5;
+	  }
+	  else{
+	    n_errors_dl[round_dl]++;
+	    round_dl++;
 	  }
 	  round_ul = 5;
 	}
@@ -2741,12 +2746,21 @@ int main(int argc, char **argv)
     
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		round_ul++;
-		if(round_ul == 4){
-		  if(round_dl != 3){
+		if(round_ul == 3){
+		  if(round_dl < 3){
 		    n_errors_special++;
+		    round_ul = 5;
+		    round_dl = 5;
 		  }
-		  round_dl = 5;
+		  else{
+		    round_ul =5;
+		    round_dl =5;
+		  }
+		}
+		else{
+		  round_ul++;
+		  if(round_ul > 3)
+		    round_dl = 5;
 		}
 	      }
 	      else
@@ -2864,7 +2878,7 @@ int main(int argc, char **argv)
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
 		round_ul++;
-		if(round_ul == 4)
+		if(round_ul  > 3)
 		  round_dl++;
 	      }
 	      else
@@ -2975,7 +2989,7 @@ int main(int argc, char **argv)
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
 		round_ul++;
-		if(round_ul == 4)
+		if(round_ul  > 3)
 		  round_dl++;
 	      }
 	      else
@@ -3090,12 +3104,21 @@ int main(int argc, char **argv)
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		round_ul++;
-		if(round_ul == 4){
-		  if(round_dl != 3){
+		if(round_ul == 3){
+		  if(round_dl < 3){
 		    n_errors_special++;
+		    round_ul = 5;
+		    round_dl = 5;
 		  }
-		  round_dl = 5;
+		  else{
+		    round_ul =5;
+		    round_dl =5;
+		  }
+		}
+		else{
+		  round_ul++;
+		  if(round_ul > 3)
+		    round_dl = 5;
 		}
 	      }
 	      else
@@ -3108,8 +3131,12 @@ int main(int argc, char **argv)
 	}//while( round_ul < 4)
       }//while( round_dl < 4)
 
+      if(((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2))))) && ((round_trials_ul[0][0]>100)||(round_trials_ul[1][0]>100) || (round_trials_ul[2][0]>100) || (round_trials_ul[3][0]>100)))|| (n_errors_special + n_errors_ul[3][3]>100))
+	break;
+      
+      /*
       if(((((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2) && ((round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0])>100)) || ((n_errors_special + n_errors_ul[3][3])>100))
-        break;
+      break;*/
 
     }//trials
 
@@ -3122,7 +3149,7 @@ int main(int argc, char **argv)
 	    n_errors_dl[3],round_trials_dl[3]);
 
     //BLER Uplink
-    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%e;\n",SNR_ul,
+    fprintf(bler_fd_ul,"%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;\n",SNR_ul,
 	    n_errors_ul[0][0],round_trials_ul[0][0],
 	    n_errors_ul[0][1],round_trials_ul[0][1],
 	    n_errors_ul[0][2],round_trials_ul[0][2],
@@ -3138,8 +3165,7 @@ int main(int argc, char **argv)
 	    n_errors_ul[3][0],round_trials_ul[3][0],
 	    n_errors_ul[3][1],round_trials_ul[3][1],
 	    n_errors_ul[3][2],round_trials_ul[3][2],
-	    n_errors_ul[3][3],round_trials_ul[3][3],
-	    n_errors_special,(double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]));
+	    n_errors_ul[3][3],round_trials_ul[3][3]);
 
 
     harq_adjust = 0;
@@ -3154,8 +3180,12 @@ int main(int argc, char **argv)
 		
 
 
-    if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
-      break;
+    if(((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-((1-(double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2)))))
+    break;
+
+
+    /*   if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
+	 break;*/
 
 
   }//SNR_ul

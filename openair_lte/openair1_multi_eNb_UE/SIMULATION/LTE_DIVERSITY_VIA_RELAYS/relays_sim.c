@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 #endif
    
   
-  //snr0_ul = 2;
+  //snr0_ul = 3;
   //snr1_ul = snr0_ul;
   snr1_ul = snr0_ul+20;
 
@@ -2957,8 +2957,13 @@ int main(int argc, char **argv)
 	      }
 	    }// When only relay 0 (UE0) transmits
 #endif
-	  if(((((double)(n_errors_ul)/trials_ul)<1e-2)&&(trials_ul>100)) || (n_errors_ul > 100))
+
+	  if(((((double)(n_errors_dl + n_errors_ul)/trials_dl) <= ((double)(n_errors_dl)/trials_dl)) && (trials_ul >100))|| (n_errors_ul > 100))
 	    break;
+
+	
+	  /*  if(((((double)(n_errors_ul)/trials_ul)<1e-2)&&(trials_ul>100)) || (n_errors_ul > 100))
+	      break;*/
 
 	  }//trials
 
@@ -2980,8 +2985,11 @@ int main(int argc, char **argv)
     fprintf(bler_fd,"%f,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dl,trials_dl,n_errors_ul,relay_delay,(double)(n_errors_dl + n_errors_ul)/trials_dl,(1-((double)(n_errors_dl + n_errors_ul)/trials_dl))*relay_delay*TBS*6*100);
     
 		
-	if((double)(n_errors_ul)/(trials_ul)<1e-2)
-	  break;
+    if(((double)(n_errors_dl + n_errors_ul)/trials_dl) <= ((double)(n_errors_dl)/trials_dl))
+      break;
+
+    /*	if((double)(n_errors_ul)/(trials_ul)<1e-2)
+	break;*/
 
 }//SNR_ul
     
