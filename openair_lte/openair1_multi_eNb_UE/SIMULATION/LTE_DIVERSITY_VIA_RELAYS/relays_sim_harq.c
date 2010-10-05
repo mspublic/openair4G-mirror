@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   
 
 
-  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=-2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
+  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
   double **s_re,**s_im,**r_re0_0,**r_im0_0;
   double **s_re_0,**s_im_0,**r_re1_0,**r_im1_0;
 #ifdef COLLABRATIVE_SCHEME
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   double **s_re_1,**s_im_1,**r_re1_1,**r_im1_1;
 #endif
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.1,ricean_factor=0.0909;
+  double aoa=.03,ricean_factor=1/(1+pow(10,0.1*20));
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0,rate_dl;
   double N0W, path_loss, path_loss_dB;
@@ -778,7 +778,6 @@ int main(int argc, char **argv)
     for (trials = 0;trials<N_TRIALS;trials++) {
       fflush(stdout);
       round_dl = 0;
-      round_ul = 0;
 
       while(round_dl < 4){
 
@@ -1700,6 +1699,10 @@ int main(int argc, char **argv)
 	    n_errors_dci++;
 	    n_errors_dl[0]++;
 	    round_dl = 5;
+	  }
+	  else{
+	    n_errors_dl[round_dl]++;
+	    round_dl++;
 	  }
 	  round_ul = 5;
 	}
@@ -2669,7 +2672,7 @@ int main(int argc, char **argv)
 				FRAME_LENGTH_COMPLEX_SAMPLES,
 				channel_length,
 				0,1//forgetting factor
-				,((first_call1_1 == 1)?1:0),0,SuDe,channel_offset);
+				,((first_call1_1 == 1)?1:0),0,SuDe,0);
 
 	      if(first_call1_1 == 1)
 		first_call1_1 = 1;
@@ -2687,8 +2690,14 @@ int main(int argc, char **argv)
 	    
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		  r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
-		  r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
+		  if(i<channel_offset){
+		    r_re1_1[aa][i]=0; 
+		    r_im1_1[aa][i]=0; 
+		  }
+		  else{
+		    r_re1_1[aa][i]=r_re1_1[aa][i-channel_offset]*sqrt(path_loss); 
+		    r_im1_1[aa][i]=r_im1_1[aa][i-channel_offset]*sqrt(path_loss); 
+		  }
 		}
 	      }
 	    
@@ -2746,21 +2755,12 @@ int main(int argc, char **argv)
     
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		if(round_ul == 3){
-		  if(round_dl < 3){
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
 		    n_errors_special++;
-		    round_ul = 5;
-		    round_dl = 5;
 		  }
-		  else{
-		    round_ul =5;
-		    round_dl =5;
-		  }
-		}
-		else{
-		  round_ul++;
-		  if(round_ul > 3)
-		    round_dl = 5;
+		  round_dl = 5;
 		}
 	      }
 	      else
@@ -2878,7 +2878,7 @@ int main(int argc, char **argv)
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
 		round_ul++;
-		if(round_ul  > 3)
+		if(round_ul == 4)
 		  round_dl++;
 	      }
 	      else
@@ -2989,7 +2989,7 @@ int main(int argc, char **argv)
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
 		round_ul++;
-		if(round_ul  > 3)
+		if(round_ul == 4)
 		  round_dl++;
 	      }
 	      else
@@ -3104,21 +3104,12 @@ int main(int argc, char **argv)
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		if(round_ul == 3){
-		  if(round_dl < 3){
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
 		    n_errors_special++;
-		    round_ul = 5;
-		    round_dl = 5;
 		  }
-		  else{
-		    round_ul =5;
-		    round_dl =5;
-		  }
-		}
-		else{
-		  round_ul++;
-		  if(round_ul > 3)
-		    round_dl = 5;
+		  round_dl = 5;
 		}
 	      }
 	      else
@@ -3131,10 +3122,12 @@ int main(int argc, char **argv)
 	}//while( round_ul < 4)
       }//while( round_dl < 4)
 
-      if(((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2))))) && ((round_trials_ul[0][0]>100)||(round_trials_ul[1][0]>100) || (round_trials_ul[2][0]>100) || (round_trials_ul[3][0]>100)))|| (n_errors_special + n_errors_ul[3][3]>100))
+
+      if((((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0])))*(1-(1e-2))))) && ((round_trials_ul[0][0]>100)||(round_trials_ul[1][0]>100) || (round_trials_ul[2][0]>100) || (round_trials_ul[3][0]>100)))|| (n_errors_special + n_errors_ul[3][3]>100))
 	break;
       
-      /*
+   
+   /*
       if(((((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2) && ((round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0])>100)) || ((n_errors_special + n_errors_ul[3][3])>100))
       break;*/
 
@@ -3179,13 +3172,12 @@ int main(int argc, char **argv)
     
 		
 
-
-    if(((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-((1-(double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2)))))
-    break;
-
-
-    /*   if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
-	 break;*/
+    if((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0])))*(1-(1e-2)))))
+      break;
+    
+    /*
+    if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
+    break;*/
 
 
   }//SNR_ul

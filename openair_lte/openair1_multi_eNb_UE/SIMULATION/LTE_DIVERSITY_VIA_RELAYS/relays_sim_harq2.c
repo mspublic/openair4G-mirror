@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   
 
 
-  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=-2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
+  double sigma2_dl,sigma2_ul, sigma2_dB_dl=0,sigma2_dB_ul=0,SNR_dl=2.0,SNR_ul,snr0_ul =-10.0,snr1_ul,SNRmeas_0,SNRmeas_1;
   double **s_re,**s_im,**r_re0_0,**r_im0_0;
   double **s_re_0,**s_im_0,**r_re1_0,**r_im1_0;
 #ifdef COLLABRATIVE_SCHEME
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   double **s_re_1,**s_im_1,**r_re1_1,**r_im1_1;
 #endif
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.1,ricean_factor=0.0909;
+  double aoa=.03,ricean_factor=1/(1+pow(10,0.1*(20)));
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0,rate_dl;
   double N0W, path_loss, path_loss_dB;
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
 #endif
    
   
-  //snr0_ul = -7;
+  //snr0_ul = -5;
   //snr1_ul = snr0_ul;
   snr1_ul = snr0_ul+20;
 
@@ -778,7 +778,6 @@ int main(int argc, char **argv)
     for (trials = 0;trials<N_TRIALS;trials++) {
       fflush(stdout);
       round_dl = 0;
-      round_ul = 0;
 
       while(round_dl < 4){
 
@@ -2601,7 +2600,7 @@ int main(int argc, char **argv)
 		
 	  
 	
-	
+
 
    
 #ifdef COLLABRATIVE_SCHEME
@@ -2673,7 +2672,7 @@ int main(int argc, char **argv)
 				FRAME_LENGTH_COMPLEX_SAMPLES,
 				channel_length,
 				0,1//forgetting factor
-				,((first_call1_1 == 1)?1:0),0,SuDe,channel_offset);
+				,((first_call1_1 == 1)?1:0),0,SuDe,0);
 
 	      if(first_call1_1 == 1)
 		first_call1_1 = 1;
@@ -2689,10 +2688,17 @@ int main(int argc, char **argv)
 	      path_loss = 1;
 	    
 	    
+
 	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
 		for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
-		  r_re1_1[aa][i]=r_re1_1[aa][i]*sqrt(path_loss); 
-		  r_im1_1[aa][i]=r_im1_1[aa][i]*sqrt(path_loss); 
+		  if(i<channel_offset){
+		    r_re1_1[aa][i]=0; 
+		    r_im1_1[aa][i]=0; 
+		  }
+		  else{
+		    r_re1_1[aa][i]=r_re1_1[aa][i-channel_offset]*sqrt(path_loss); 
+		    r_im1_1[aa][i]=r_im1_1[aa][i-channel_offset]*sqrt(path_loss); 
+		  }
 		}
 	      }
 	    
@@ -2750,21 +2756,12 @@ int main(int argc, char **argv)
     
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		if(round_ul == 3){
-		  if(round_dl < 3){
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
 		    n_errors_special++;
-		    round_ul = 5;
-		    round_dl = 5;
 		  }
-		  else{
-		    round_ul =5;
-		    round_dl =5;
-		  }
-		}
-		else{
-		  round_ul++;
-		  if(round_ul > 3)
-		    round_dl = 5;
+		  round_dl = 5;
 		}
 	      }
 	      else
@@ -3120,21 +3117,12 @@ int main(int argc, char **argv)
 
 	      if (ret_ul == (1+MAX_TURBO_ITERATIONS)) {
 		n_errors_ul[round_dl][round_ul]++;
-		if(round_ul == 3){
-		  if(round_dl < 3){
+		round_ul++;
+		if(round_ul == 4){
+		  if(round_dl != 3){
 		    n_errors_special++;
-		    round_ul = 5;
-		    round_dl = 5;
 		  }
-		  else{
-		    round_ul =5;
-		    round_dl =5;
-		  }
-		}
-		else{
-		  round_ul++;
-		  if(round_ul > 3)
-		    round_dl = 5;
+		  round_dl = 5;
 		}
 	      }
 	      else
@@ -3147,12 +3135,13 @@ int main(int argc, char **argv)
 	}//while( round_ul < 4)
       }//while( round_dl < 4)
 
-      if(((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2))))) && ((round_trials_ul[0][0]>100)||(round_trials_ul[1][0]>100) || (round_trials_ul[2][0]>100) || (round_trials_ul[3][0]>100)))|| (n_errors_special + n_errors_ul[3][3]>100))
+
+      if((((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0])))*(1-(1e-2))))) && ((round_trials_ul[0][0]>100)||(round_trials_ul[1][0]>100) || (round_trials_ul[2][0]>100) || (round_trials_ul[3][0]>100)))|| (n_errors_special + n_errors_ul[3][3]>100))
 	break;
-
-      /*      if(((((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2) && ((round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0])>100)) || ((n_errors_special + n_errors_ul[3][3])>100))
-	      break;*/
-
+      /*
+      if(((((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2) && ((round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0])>100)) || ((n_errors_special + n_errors_ul[3][3])>100))
+        break;
+      */
     }//trials
 
 
@@ -3185,117 +3174,120 @@ int main(int argc, char **argv)
 
     harq_adjust = 0;
 
-    harq_adjust = (double)(1+round_trials_dl[0])/((round_trials_dl[0] + round_trials_ul[0][0] + round_trials_ul[0][1] + round_trials_ul[0][2] + round_trials_ul[0][3]) + (round_trials_dl[1] + round_trials_ul[1][0] + round_trials_ul[1][1] + round_trials_ul[1][2] + round_trials_ul[1][3]) + (round_trials_dl[2] + round_trials_ul[2][0] + round_trials_ul[2][1] + round_trials_ul[2][2] + round_trials_ul[2][3]) + (round_trials_dl[3] + round_trials_ul[3][0] + round_trials_ul[3][1] + round_trials_ul[3][2] + round_trials_ul[3][3]));
+    harq_adjust = (double)round_trials_dl[0]/((round_trials_dl[0] + round_trials_ul[0][0] + round_trials_ul[0][1] + round_trials_ul[0][2] + round_trials_ul[0][3]) + (round_trials_dl[1] + round_trials_ul[1][0] + round_trials_ul[1][1] + round_trials_ul[1][2] + round_trials_ul[1][3]) + (round_trials_dl[2] + round_trials_ul[2][0] + round_trials_ul[2][1] + round_trials_ul[2][2] + round_trials_ul[2][3]) + (round_trials_dl[3] + round_trials_ul[3][0] + round_trials_ul[3][1] + round_trials_ul[3][2] + round_trials_ul[3][3]));
 
 
    
     //BLER and Throughput
-    fprintf(bler_fd,"%f,%d,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dci,n_errors_special,n_errors_dl[3],n_errors_ul[3][3],harq_adjust,((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/(round_trials_dl[0])),((1 - ((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/(round_trials_dl[0])))*harq_adjust*TBS*6*100));
-    
-		
-
-    if(((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-((1-(double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0]))*(1-(1e-2)))))
-    break;
-
-
-
-}//SNR_ul
-    
+    fprintf(bler_fd,"%f,%d,%d,%d,%d,%e,%e,%e;\n",SNR_ul,n_errors_dci,n_errors_special,n_errors_dl[3],n_errors_ul[3][3],harq_adjust,((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0]),((1 - ((double)(n_errors_dci + n_errors_special + n_errors_dl[3] + n_errors_ul[3][3])/round_trials_dl[0]))*harq_adjust*TBS*6*100));
     
 
-fprintf(bler_fd_dl,"];");
-fclose(bler_fd_dl);
-fprintf(bler_fd_ul,"];");
-fclose(bler_fd_ul);  
-fprintf(bler_fd,"];");
-fclose(bler_fd);
+    if((((double)(n_errors_special + n_errors_ul[3][3] + n_errors_dl[3] + n_errors_dci)/(round_trials_dl[0])) <= (1-(1-((double)(n_errors_dci + n_errors_dl[3])/(round_trials_dl[0])))*(1-(1e-2)))))
+      break;	
+
+    /*	
+    if(((double)(n_errors_special + n_errors_ul[3][3])/(round_trials_ul[0][0]+round_trials_ul[1][0]+round_trials_ul[2][0]+round_trials_ul[3][0]))<1e-2)
+      break;
+    */
+
+
+  }//SNR_ul
+    
+    
+
+  fprintf(bler_fd_dl,"];");
+  fclose(bler_fd_dl);
+  fprintf(bler_fd_ul,"];");
+  fclose(bler_fd_ul);  
+  fprintf(bler_fd,"];");
+  fclose(bler_fd);
   
   
-printf("Freeing dlsch structures\n");
-for(aa=0;j<2;j++)//loop over eNBs
-  {
-    for(j=0;j<2;j++){
-      for (i=0;i<2;i++)
-	{
-	  free_eNb_dlsch(PHY_vars_eNB[aa]->dlsch_eNb[j][i]);
-	  free_ue_dlsch(PHY_vars_ue[aa]->dlsch_ue[j][i]);
-	}
-    }
-  }  
+  printf("Freeing dlsch structures\n");
+  for(aa=0;j<2;j++)//loop over eNBs
+    {
+      for(j=0;j<2;j++){
+	for (i=0;i<2;i++)
+	  {
+	    free_eNb_dlsch(PHY_vars_eNB[aa]->dlsch_eNb[j][i]);
+	    free_ue_dlsch(PHY_vars_ue[aa]->dlsch_ue[j][i]);
+	  }
+      }
+    }  
     
   
   
   
 #ifdef IFFT_FPGA
-printf("Freeing transmit signals\n");
-free(txdataF2_eNB0[0]);
-free(txdataF2_eNB0[1]);
-free(txdataF2_eNB0);
-free(txdata_eNB0[0]);
-free(txdata_eNB0[1]);
-free(txdata_eNB0);
-free(txdataF2_UE0[0]);
-free(txdataF2_UE0[1]);
-free(txdataF2_UE0);
-free(txdata_UE0[0]);
-free(txdata_UE0[1]);
-free(txdata_UE0);
+  printf("Freeing transmit signals\n");
+  free(txdataF2_eNB0[0]);
+  free(txdataF2_eNB0[1]);
+  free(txdataF2_eNB0);
+  free(txdata_eNB0[0]);
+  free(txdata_eNB0[1]);
+  free(txdata_eNB0);
+  free(txdataF2_UE0[0]);
+  free(txdataF2_UE0[1]);
+  free(txdataF2_UE0);
+  free(txdata_UE0[0]);
+  free(txdata_UE0[1]);
+  free(txdata_UE0);
 #ifdef COLLABRATIVE_SCHEME
-free(txdataF2_UE1[0]);
-free(txdataF2_UE1[1]);
-free(txdataF2_UE1);
-free(txdata_UE1[0]);
-free(txdata_UE1[1]);
-free(txdata_UE1);
+  free(txdataF2_UE1[0]);
+  free(txdataF2_UE1[1]);
+  free(txdataF2_UE1);
+  free(txdata_UE1[0]);
+  free(txdata_UE1[1]);
+  free(txdata_UE1);
 #endif
 
 #endif 
   
 
-printf("Freeing transmit signals\n");
-for (i=0;i<2;i++) {
-  free(s_re[i]);
-  free(s_im[i]);
-  free(r_re0_0[i]);
-  free(r_im0_0[i]);
+  printf("Freeing transmit signals\n");
+  for (i=0;i<2;i++) {
+    free(s_re[i]);
+    free(s_im[i]);
+    free(r_re0_0[i]);
+    free(r_im0_0[i]);
 #ifdef COLLABRATIVE_SCHEME
-  free(r_re0_1[i]);
-  free(r_im0_1[i]);
+    free(r_re0_1[i]);
+    free(r_im0_1[i]);
 #endif
-  free(s_re_0[i]);
-  free(s_im_0[i]);
-  free(r_re1_0[i]);
-  free(r_im1_0[i]);
+    free(s_re_0[i]);
+    free(s_im_0[i]);
+    free(r_re1_0[i]);
+    free(r_im1_0[i]);
 #ifdef COLLABRATIVE_SCHEME
-  free(s_re_1[i]);
-  free(s_im_1[i]);
-  free(r_re1_1[i]);
-  free(r_im1_1[i]);
+    free(s_re_1[i]);
+    free(s_im_1[i]);
+    free(r_re1_1[i]);
+    free(r_im1_1[i]);
 #endif
- }
-free(s_re);
-free(s_im);
-free(r_re0_0);
-free(r_im0_0);
+  }
+  free(s_re);
+  free(s_im);
+  free(r_re0_0);
+  free(r_im0_0);
 #ifdef COLLABRATIVE_SCHEME
-free(r_re0_1);
-free(r_im0_1);
+  free(r_re0_1);
+  free(r_im0_1);
 #endif
-free(s_re_0);
-free(s_im_0);
-free(r_re1_0);
-free(r_im1_0);
+  free(s_re_0);
+  free(s_im_0);
+  free(r_re1_0);
+  free(r_im1_0);
 #ifdef COLLABRATIVE_SCHEME
-free(s_re_1);
-free(s_im_1);
-free(r_re1_1);
-free(r_im1_1);
+  free(s_re_1);
+  free(s_im_1);
+  free(r_re1_1);
+  free(r_im1_1);
 #endif
   
-lte_sync_time_free();
+  lte_sync_time_free();
   
-printf("Finshed!\n");
+  printf("Finshed!\n");
   
-return(0);
+  return(0);
  
 }
