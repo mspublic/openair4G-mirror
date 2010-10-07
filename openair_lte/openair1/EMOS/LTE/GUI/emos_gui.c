@@ -894,7 +894,7 @@ void refresh_interface()
 
       if (!is_cluster_head) {
 	dlsch_dci = (DCI2_5MHz_2A_M10PRB_TDD_t*) fifo_output_UE.DCI_alloc[0][5].dci_pdu;
-	throughput = dlsch_tbs25[dlsch_dci->mcs1][24] * (100-fifo_output_UE.dlsch_fer);
+	throughput = dlsch_tbs25[dlsch_dci->mcs1][24] * (100-fifo_output_UE.dlsch_fer) * 6;
 	sprintf(temp_label, "%d bps", throughput);
 	fl_set_object_label(throughput_frm->throughput_text, temp_label);
       }		
