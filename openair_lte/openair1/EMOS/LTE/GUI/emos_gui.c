@@ -700,20 +700,20 @@ void refresh_interface()
 	  time_memory[SCREEN_MEMORY_SIZE - 1] = (float)(timestamp - start_time) / (float)1e9;
 	  for (chsch_index=0;chsch_index<2;chsch_index++){
 	    if (!is_cluster_head) {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[chsch_index];
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[0];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].rx_rssi_dBm[0];
 	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[0];
 	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_tot[chsch_index];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[0][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_UE.PHY_measurements[0].wideband_cqi_dB[0][1];
 	    }
 	    else {
-	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
-	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_tot_dBm;
+	      power1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].rx_rssi_dBm[0];
+	      power2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].rx_rssi_dBm[0];
 	      noise1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[0];
 	      noise2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].n0_power_dB[1];
-	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
-	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_tot[chsch_index];
+	      snr1_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_dB[0][0];
+	      snr2_memory[chsch_index][SCREEN_MEMORY_SIZE-1] = (float)fifo_output_eNB.PHY_measurements_eNB[0].wideband_cqi_dB[0][1];
 	    }
 	  }
 	  capacity_memory[SCREEN_MEMORY_SIZE - 1] = 0;
@@ -894,10 +894,16 @@ void refresh_interface()
 
       if (!is_cluster_head) {
 	dlsch_dci = (DCI2_5MHz_2A_M10PRB_TDD_t*) fifo_output_UE.DCI_alloc[0][5].dci_pdu;
-	throughput = dlsch_tbs25[dlsch_dci->mcs1][25] * fifo_output_UE.dlsch_fer;
-	sprintf(temp_label, "%d Mbps", throughput);
+	throughput = dlsch_tbs25[dlsch_dci->mcs1][24] * (100-fifo_output_UE.dlsch_fer);
+	sprintf(temp_label, "%d bps", throughput);
 	fl_set_object_label(throughput_frm->throughput_text, temp_label);
       }		
+      else {
+	dlsch_dci = (DCI2_5MHz_2A_M10PRB_TDD_t*) fifo_output_eNB.DCI_alloc[0][5].dci_pdu;
+	throughput = dlsch_tbs25[dlsch_dci->mcs1][24] * 100 * 6;
+	sprintf(temp_label, "%d bps", throughput);
+	fl_set_object_label(throughput_frm->throughput_text, temp_label);
+      }
 
     }
 
@@ -1088,7 +1094,9 @@ void power_callback(FL_OBJECT *ob, long user_data)
 	      //gains[3] = 17;
 			
 	      ioctl_result = 0;
- 
+	      
+	      throughput_wnd = fl_show_form(throughput_frm->throughput_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "DLSCH Throughput");
+
 	      if (terminal_idx==1) {
 		is_cluster_head = 1;
 		node_id = 0; 
@@ -1115,8 +1123,6 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
-
-		throughput_wnd = fl_show_form(throughput_frm->throughput_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "DLSCH Throughput");
 
 		is_cluster_head = 0;
 		node_id = 8; 
