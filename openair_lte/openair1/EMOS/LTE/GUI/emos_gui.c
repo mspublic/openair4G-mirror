@@ -50,6 +50,8 @@ FD_main_frm *main_frm;
 Window main_wnd;
 FD_config_dialog *config_frm;
 Window config_wnd;
+FD_throughput_form *throughput_frm;
+Window throughput_wnd;
 
 // Diverse variables and default values
 int power = TERM_OFF;
@@ -150,6 +152,8 @@ PHY_CONFIG *PHY_config;
 //int gpsd_fd;
 struct gps_data_t *gps_data = NULL;
 struct gps_fix_t dummy_gps_data;
+
+DCI2_5MHz_2A_M10PRB_TDD_t *dlsch_dci;
 
 // Function prototypes
 void exit_callback(FL_OBJECT *ob, long user_data);
@@ -286,6 +290,7 @@ int main(int argc, char *argv[])
   fl_initialize(&argc, argv, "EMOS terminal GUI", 0, 0);
   main_frm = create_form_main_frm();
   config_frm = create_form_config_dialog();
+  throughput_frm = create_form_throughput_form();
 	
   // Get time stamp of startup time (for time difference calculations)
   start_time = rt_get_time_ns();
@@ -659,6 +664,7 @@ void refresh_interface()
   float norm = 0;
   double snr_lin;
   int length;
+  int throughput;
 
   static RTIME last_timestamp = (RTIME) 0; 
   static RTIME timestamp = (RTIME) 0; 
@@ -885,7 +891,13 @@ void refresh_interface()
 	fl_set_object_label(main_frm->rx_mode_lbl, temp_label);
 	fl_set_object_lcolor(main_frm->rx_mode_lbl, SCREEN_COLOR_ON);
       }
-		
+
+      if (!is_cluster_head) {
+	dlsch_dci = (DCI2_5MHz_2A_M10PRB_TDD_t*) fifo_output_UE.DCI_alloc[0][5].dci_pdu;
+	throughput = dlsch_tbs25[dlsch_dci->mcs1][25] * fifo_output_UE.dlsch_fer;
+	sprintf(temp_label, "%d Mbps", throughput);
+	fl_set_object_label(throughput_frm->throughput_text, temp_label);
+      }		
 
     }
 
@@ -1103,6 +1115,9 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		ioctl_result += ioctl(openair_dev_fd, openair_START_2ARY_CLUSTERHEAD, &fc);
 	      }
 	      else if (terminal_idx==3) {
+
+		throughput_wnd = fl_show_form(throughput_frm->throughput_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "DLSCH Throughput");
+
 		is_cluster_head = 0;
 		node_id = 8; 
 		PHY_config->tdd = 1;
@@ -1223,6 +1238,8 @@ void power_callback(FL_OBJECT *ob, long user_data)
 		}
 				
 	      //fl_suspend_timer(main_frm->gps_timer);
+	      fl_hide_form(throughput_frm->throughput_form);
+
 				
 	      stop_interface();
 	      power = TERM_OFF;
@@ -1647,7 +1664,7 @@ void input_callback(FL_OBJECT *ob, long user_data)
 void label_callback(FL_OBJECT *ob, long user_data)
 {
   strcpy(label_str,fl_get_input(main_frm->label_input));
-  if (label_str) {
+  if (strlen(label_str)>0) {
     fl_set_button(main_frm->label_button,1);
     use_label = 1;
   }

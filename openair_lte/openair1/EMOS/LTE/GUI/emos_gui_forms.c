@@ -549,3 +549,30 @@ create_form_config_dialog( void )
 
     return fdui;
 }
+
+
+/***************************************
+ ***************************************/
+
+FD_throughput_form *
+create_form_throughput_form( void )
+{
+    FL_OBJECT *obj;
+    FD_throughput_form *fdui = fl_malloc( sizeof *fdui );
+
+    fdui->vdata = fdui->cdata = NULL;
+    fdui->ldata = 0;
+
+    fdui->throughput_form = fl_bgn_form( FL_NO_BOX, 429, 290 );
+
+    obj = fl_add_box( FL_UP_BOX, 0, 0, 429, 290, "" );
+
+    fdui->throughput_text = obj = fl_add_text( FL_NORMAL_TEXT, 0, 0, 428, 290, "text" );
+    fl_set_object_lsize( obj, FL_HUGE_SIZE );
+
+    fl_end_form( );
+
+    fdui->throughput_form->fdui = fdui;
+
+    return fdui;
+}

@@ -3,7 +3,7 @@ Magic: 14000
 Internal Form Definition File
     (do not change)
 
-Number of forms: 3
+Number of forms: 4
 Unit of measure: FL_COORD_PIXEL
 SnapGrid: 1
 
@@ -1659,6 +1659,48 @@ name: dir_input
 callback: 
 argument: 
 return: FL_RETURN_END_CHANGED
+
+=============== FORM ===============
+Name: throughput_form
+Width: 429
+Height: 290
+Number of Objects: 2
+
+--------------------
+class: FL_BOX
+type: UP_BOX
+box: 0 0 429 290
+boxtype: FL_UP_BOX
+colors: FL_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_NORMAL_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: 
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: 
+callback: 
+argument: 
+
+--------------------
+class: FL_TEXT
+type: NORMAL_TEXT
+box: 0 0 428 290
+boxtype: FL_FLAT_BOX
+colors: FL_COL1 FL_MCOL
+alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+style: FL_NORMAL_STYLE
+size: FL_HUGE_SIZE
+lcol: FL_BLACK
+label: text
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: throughput_text
+callback: 
+argument: 
 
 ==============================
 create_the_forms
