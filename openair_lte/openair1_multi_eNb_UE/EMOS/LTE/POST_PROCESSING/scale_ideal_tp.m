@@ -9,7 +9,7 @@ load SISO_scaling.mat
 snr = interp1(tp_mi,snr_mi,tp1,'nearest','extrap');
 
 % apply the offset of the nomadic antennas
-snr = snr - 4.7;
+% snr = snr - 4.7;
 
 % lookup the new throughput
 tp2 = interp1(snr_sim,tp_sim,snr,'nearest','extrap');

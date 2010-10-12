@@ -5,6 +5,8 @@ function [out,n,n2] = plot_in_bins(x,y,edges,service)
 % matrix with 4 columns corresponding to the computed statistics and
 % length(edges) row. See help histc for treatment of edges.
 
+clf
+
 if (length(x) ~= length(y))
     error('x and y must be the same size!');
 end
@@ -37,14 +39,14 @@ end
 legend('Mean','95% prctile above','85% prctile above','50% prctile above','5% prctile above','Location','Best');
 
 if nargin == 4
-ax1 = gca;
-ax2 = axes('Position',get(gca,'Position'));
-plot(midpoints,n1(1:end-1)./n2(1:end-1)*100,'Color','k','Linewidth',2,'Parent',ax2);
-set(ax2,'YAxisLocation','right');
-set(ax2,'Color','none');
-set(ax2,'XColor','k');
-set(ax2,'YColor','k');
-set(ax2,'ylim',[0, 100]);
-set(get(ax2,'ylabel'),'String','Service (%)');
-set(gcf,'CurrentAxes',ax1)
+    ax1 = gca;
+    ax2 = axes('Position',get(ax1,'Position'));
+    plot(midpoints,n1(1:end-1)./n2(1:end-1)*100,'Color','k','Linewidth',2,'Parent',ax2);
+    set(ax2,'YAxisLocation','right');
+    set(ax2,'Color','none');
+    set(ax2,'XColor','k');
+    set(ax2,'YColor','k');
+    set(ax2,'ylim',[0, 100]);
+    set(get(ax2,'ylabel'),'String','Service (%)');
+    set(gcf,'CurrentAxes',ax1)
 end

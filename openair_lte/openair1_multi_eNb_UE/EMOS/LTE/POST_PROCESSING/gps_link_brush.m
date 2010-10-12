@@ -26,12 +26,21 @@ switch mm
 end
 
 %%
+% mode1_ind = mode1.ind_common & ~mode1.ind_duplicate;
+% mode2_ind = mode2.ind_common & ~mode2.ind_duplicate;
+% mode6_ind = mode6.ind_common & ~mode6.ind_duplicate;
+mode1_ind = true(1,length(mode1.timestamp_cat));
+mode2_ind = true(1,length(mode2.timestamp_cat));
+mode6_ind = true(1,length(mode6.timestamp_cat));
+
+
+%%
 figure(1)
 hold off
-time1 = mode1.gps_time_cat(mode1.ind_common & ~mode1.ind_duplicate);
-time2 = mode2.gps_time_cat(mode2.ind_common & ~mode2.ind_duplicate);
+time1 = mode1.gps_time_cat(mode1_ind);
+time2 = mode2.gps_time_cat(mode2_ind);
 %time2_update = mode2_update.gps_time_cat;
-time6 = mode6.gps_time_cat(mode6.ind_common & ~mode6.ind_duplicate);
+time6 = mode6.gps_time_cat(mode6_ind);
 select1 = zeros(size(time1));
 select2 = zeros(size(time2));
 %select2_update = zeros(size(time2_update));
@@ -48,11 +57,11 @@ linkdata on
 %%
 figure(2)
 hold off
-[x1,y1] = plot_gps_coordinates(mm,mode1.gps_lon_cat(mode1.ind_common & ~mode1.ind_duplicate),mode1.gps_lat_cat(mode1.ind_common & ~mode1.ind_duplicate),[],[],'Mode1','blue','Marker','x','Line','none');
+[x1,y1] = plot_gps_coordinates(mm,mode1.gps_lon_cat(mode1_ind),mode1.gps_lat_cat(mode1_ind),[],[],'Mode1','blue','Marker','x','Line','none');
 hold on
-[x2,y2] = plot_gps_coordinates('',mode2.gps_lon_cat(mode2.ind_common & ~mode2.ind_duplicate),mode2.gps_lat_cat(mode2.ind_common & ~mode2.ind_duplicate),[],[],'Mode2','blue','Marker','s','Line','none');
+[x2,y2] = plot_gps_coordinates('',mode2.gps_lon_cat(mode2_ind),mode2.gps_lat_cat(mode2_ind),[],[],'Mode2','blue','Marker','s','Line','none');
 %[x2_update,y2_update] = plot_gps_coordinates('',mode2_update.gps_lon_cat,mode2_update.gps_lat_cat);
-[x6,y6] = plot_gps_coordinates('',mode6.gps_lon_cat(mode6.ind_common & ~mode6.ind_duplicate),mode6.gps_lat_cat(mode6.ind_common & ~mode6.ind_duplicate),[],[],'Mode6','blue','Marker','o','Line','none');
+[x6,y6] = plot_gps_coordinates('',mode6.gps_lon_cat(mode6_ind),mode6.gps_lat_cat(mode6_ind),[],[],'Mode6','blue','Marker','o','Line','none');
 linkdata on
 set(findobj('XDataSource','x1'),'ZDataSource','select1');
 set(findobj('XDataSource','x2'),'ZDataSource','select2');

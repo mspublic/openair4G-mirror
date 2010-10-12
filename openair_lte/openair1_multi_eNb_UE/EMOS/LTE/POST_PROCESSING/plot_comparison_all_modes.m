@@ -8,10 +8,10 @@ addpath('~/Devel/matlab/IPDM')
 
 % pathname = '/media/disk/PENNE/';
 % mm = 'penne';
-pathname = '/emos/AMBIALET/';
-mm = 'ambialet';
-% pathname = '/emos/EMOS/';
-% mm = 'cordes';
+% pathname = '/emos/AMBIALET/';
+% mm = 'ambialet';
+pathname = '/emos/EMOS/';
+mm = 'cordes';
 
 %%
 mode1 = load(fullfile(pathname,'Mode1/results/results_UE.mat'));

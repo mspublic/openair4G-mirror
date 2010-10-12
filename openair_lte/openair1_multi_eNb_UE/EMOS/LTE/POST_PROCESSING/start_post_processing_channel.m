@@ -62,9 +62,10 @@ for dir_idx=1:1:length(dd)
         end
             
     end
+    
     % We need to call the concatenate script here
-    %Concatenate_results_UE_quick
-    %Concatenate_results_eNB_quick
+    Concatenate_results_UE_quick
+    Concatenate_results_eNB_quick
         
 end
 

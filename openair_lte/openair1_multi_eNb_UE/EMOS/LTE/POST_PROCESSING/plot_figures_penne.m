@@ -19,28 +19,27 @@ h_fig = 0;
 
 %% results from raw channel estimates (ideal throughput)
 pathname = '/media/disk/PENNE/Mode2/results/';
-%pathname = '/extras/kaltenbe/CNES/emos_postprocessed_data/Mode2/results';
 %Concatenate_results_UE_quick
 plot_results_cat
 
 %% results from quick post processing (modem throughput)
 pathname = '/media/disk/PENNE/Mode1/results';
-plot_results_UE_quick
-%plot_results_eNb_quick
+%plot_results_UE_quick
+plot_results_eNb_quick
 
 %%
 pathname = '/media/disk/PENNE/Mode2/results';
 plot_results_UE_quick
-%plot_results_eNb_quick
+plot_results_eNb_quick
 
 %%
 pathname = '/media/disk/PENNE/Mode2_OFDMA/results/';
 plot_results_UE_quick
-%plot_results_eNb_quick
+plot_results_eNb_quick
 
 %%
 pathname = '/media/disk/PENNE/Mode6/20100702_VTP_Mode6/';
 plot_results_UE_quick
-%plot_results_eNb_quick
+plot_results_eNb_quick
 
 
