@@ -1,12 +1,7 @@
-
-/** @defgroup sched_h_ SCHED header file
-* @ingroup _PROCESS_SCHEDULING_
-                          openair_sched.h  -  description
-                             -------------------
-  \author Lionel GAUTHIER (wireless3G4Free Version), modified for openair by R. Knopp, modified for LTE by F. Kaltenberger
+/*
+  \author R. Knopp, F. Kaltenberger
   \company EURECOM
   \email knopp@eurecom.fr
-* @{
 */
 
 #ifndef __openair_SCHED_H__
@@ -112,6 +107,9 @@ void openair1_restart(void);
 #endif //USER_MODE
 
 #ifdef OPENAIR_LTE
+/** @addtogroup _PHY_PROCEDURES_
+ * @{
+ */
 
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
 void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id);
@@ -148,6 +146,7 @@ void phy_procedures_emos(unsigned char last_slot);
 #else
 void phy_procedures(unsigned char last_slot);
 #endif //EMOS
+/**@}*/
 #endif //OPENAIR_LTE
 
 #ifndef OPENAIR_LTE

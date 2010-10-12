@@ -471,6 +471,46 @@ The following figure shows a comparison of the throughput on the UL using OFDMA 
 \printfile{SCFDMA_OFDMA_comparison/UL_SCFDMA_throughput_gps}
 \printfile{SCFDMA_OFDMA_comparison/UL_OFDMA_throughput_gps}
 
+\subsection{Village Coverage}
+
+To evaluate the coverage and performance of LTE in villages, the village of Vallence d'Albigeois at the site of Ambialet was mapped out in transmission mode 2 completely. As a comparison we used data from crossroads just west of the village, which was in an open field. The locations of the two data sets are shown in the following figure. Further we show the throughput CDF comparison of the two data sets using the real modem throughput and the extrapolated throughput for two receive antennas. 
+
+\printfile{AMBIALET/results/village_comparison_map.jpg}
+\printfile{AMBIALET/results/throughput_cdf_comparison_village.pdf}
+
+It can be seen that first of all the number of data points without connection is approximately 70\% at the cossroads while it is almost 90\% in the village. The number of points that without synchronization is 10\% in the village while there are no such cases at the crossroads. Correspondingly, also the average throughput is 1-2 Mbps lower in the village than in the open fields. 
+
+\subsection{Transmission Mode 4/5}
+In order to asses the feasability of mode 4 and mode 5, we calculate the percentage of points where Mode4 or Mode5 are feasible. We have used an exemplary subset of the measurements of the site Ambialtet. The calculation is based on the PMI and the RI feedback from the UE, which we quickly recall here.
+
+\paragraph{PMI calculation}
+Each user calculates a PMI for each subband and each receive antenna according to \cite{ghaffar10b}. Further, for every subband, the receive antenna with the stronger RX signal is determined and this information is stored at the UE. When a subband PMI feedback is requested by the eNb, the UE reports the PMI of the strongest rx antenna for each subband. 
+
+\paragraph{RI calculation}
+For the RI calculation we use the PMIs that were calculated for each receive antenna. If in the same subband the PMIs are opposite, the channel is close to orthogonal and we set the RI for this subband to 1. Unfortunately in LTE there is only one RI for the whole bandwidth. The wideband RI is this set to 1 if there are at least $x$ subbands with a RI of 1. 
+
+\paragraph{MU-MIMO}
+The decision to use transmission mode 5 at the eNb is done by the eNb scheduler similarily to the mode 4 RI calculations. The eNb checks the PMI values it recieved from all the users and tries to find two users with opposite PMIs. Again, since the PMI feedback is done at a subband basis, this decision depends on the number of subbands. Since the measurements were done using only a single user, we need to split the data set into two. 
+In the following figure we show first the two sets of data that were used for UE1 and UE2. In the table below we show the percentage of points of the measurment that allows for service in MU-MIMO mode or in SU-MIMO mode. The percentages are calculated as a function of the number of subbands.
+
+
+\begin{minipage}{16cm}
+  \centering
+  \includegraphics[width=8cm]{/extras/kaltenbe/CNES/emos_postprocessed_data/AMBIALET/results/mu-mimo_ambialet.jpg}
+  %\includegraphics[width=8cm]{/emos/EMOS/#2}
+  
+\begin{tabular}{llll}
+No. subbands & MU-MIMO (UE1 \& UE2) & SU-MIMO UE1 & SU-MIMO UE2 \\ 
+1 & 73 & 44 & 37 \\ 
+2 & 44 & 18 & 16 \\ 
+3 & 22 & 5 & 5 \\ 
+4 & 10 & 1 & 1 \\ 
+5 & 4 & 0 & 0 \\ 
+6 & 1 & 0 & 0 \\ 
+7 & 0 & 0 & 0
+\end{tabular}
+\end{minipage}
+
 
 \section{Cordes}
 \label{sec:cordes}

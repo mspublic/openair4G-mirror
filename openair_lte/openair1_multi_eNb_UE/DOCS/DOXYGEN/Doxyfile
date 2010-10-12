@@ -67,16 +67,17 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../../PHY/spec_defs.h \
-			 ../../PHY/impl_defs.h \
+INPUT                  = ../../PHY/impl_defs_top.h \
+			 ../../PHY/impl_defs_lte.h \
+			 ../../PHY/defs.h \
 			 ../../PHY/CODING/defs.h \
 			 ../../PHY/TOOLS/defs.h \
-			 ../../PHY/TRANSPORT/defs.h \
+			 ../../PHY/LTE_TRANSPORT/defs.h \
 			 ../../PHY/MODULATION/defs.h \
-			 ../../PHY/ESTIMATION/defs.h \
-			 ../../PHY/CONFIG/defs.h \
-			 ../../PHY/INIT/defs.h
-
+			 ../../PHY/LTE_ESTIMATION/defs.h \
+			 ../../PHY/INIT/defs.h \
+			 ../../SCHED/defs.h \
+			 ../../SCHED/phy_procedures_emos.h
 FILE_PATTERNS          = *.h
 RECURSIVE              = NO
 EXCLUDE                = 
@@ -151,7 +152,7 @@ LATEX_HIDE_INDICES     = NO
 #---------------------------------------------------------------------------
 # configuration options related to the RTF output
 #---------------------------------------------------------------------------
-GENERATE_RTF           = NO
+GENERATE_RTF           = YES
 RTF_OUTPUT             = rtf
 COMPACT_RTF            = YES
 RTF_HYPERLINKS         = YES
@@ -192,7 +193,7 @@ EXPAND_ONLY_PREDEF     = NO
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           = 
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = 
+PREDEFINED             = OPENAIR_LTE EMOS
 EXPAND_AS_DEFINED      = 
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
