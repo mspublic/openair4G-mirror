@@ -14,7 +14,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-#define AWGN
+//#define AWGN
 #define NO_DCI
 
 #define BW 7.68
@@ -318,10 +318,12 @@ int main(int argc, char **argv) {
 		     PHY_vars_eNb_g[eNB_id],
 		     0,
 		     0);
-    
+
+    /*    
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
     PHY_vars_eNb_g[eNB_id]->dlsch_eNb[1] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
     PHY_vars_eNb_g[eNB_id]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_ULSCH_t*));
+    */
 
     for (i=0;i<NB_UE_INST;i++) {
       for (j=0;j<2;j++) {
@@ -362,6 +364,7 @@ int main(int argc, char **argv) {
 		    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars,
 		    PHY_vars_UE_g[UE_id]);
 
+    /*
     PHY_vars_UE_g[UE_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[UE_id]->dlsch_ue[1] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     
@@ -369,7 +372,7 @@ int main(int argc, char **argv) {
     
     PHY_vars_UE_g[UE_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
-
+    */
 
     for (i=0;i<NB_CH_INST;i++) {
       for (j=0;j<2;j++) {
@@ -457,6 +460,7 @@ int main(int argc, char **argv) {
 					       channel_length,
 					       amps,
 					       NULL,
+					       NULL,
 					       Td,
 					       BW,
 					       ricean_factor,
@@ -471,6 +475,7 @@ int main(int argc, char **argv) {
 					       nb_taps,
 					       channel_length,
 					       amps,
+					       NULL,
 					       NULL,
 					       Td,
 					       BW,
@@ -556,7 +561,7 @@ int main(int argc, char **argv) {
 	}
     
 	//#endif 
-
+	//if (UE_id==0) {
 	re_allocated = dlsch_modulation(PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
 					1024,
 					0,
@@ -565,7 +570,7 @@ int main(int argc, char **argv) {
     
     
 	printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
-    
+	//}
     
       
 	if (num_layers>1)
@@ -679,7 +684,7 @@ int main(int argc, char **argv) {
   write_output("txsigF1.m","txsF1", PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[0][1],300*120,1,4);
 #endif
 
-  // do talbe lookup and write results to txdataF2
+  // do table lookup and write results to txdataF2
   for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
     ind = 0;
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
@@ -757,7 +762,7 @@ int main(int argc, char **argv) {
 
 
 
-  for (ch_realization=0;ch_realization<20;ch_realization++){
+  for (ch_realization=0;ch_realization<1;ch_realization++){
       
     printf("[SIM]**********************Channel Realization Index = %d **************************\n", ch_realization);
 

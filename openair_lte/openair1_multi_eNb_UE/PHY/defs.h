@@ -122,8 +122,9 @@ typedef struct
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  **dlsch_eNb[2];   // Nusers times two spatial streams
-  LTE_eNb_ULSCH_t  **ulsch_eNb;   // Nusers + number of RA
+  LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
+  // old: LTE_eNb_DLSCH_t  **dlsch_eNb[2];   // Nusers times two spatial streams
+  LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNb_DLSCH_t  *dlsch_eNb_SI,*dlsch_eNb_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
@@ -171,9 +172,9 @@ typedef struct
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
-  LTE_UE_DLSCH_t   **dlsch_ue[2];
-  LTE_UE_ULSCH_t   **ulsch_ue;
-  LTE_UE_DLSCH_t   **dlsch_ue_SI,**dlsch_ue_ra;
+  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
+  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
 
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];

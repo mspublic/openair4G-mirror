@@ -77,7 +77,8 @@ INPUT                  = ../../PHY/impl_defs_top.h \
 			 ../../PHY/LTE_ESTIMATION/defs.h \
 			 ../../PHY/INIT/defs.h \
 			 ../../SCHED/defs.h \
-			 ../../SCHED/phy_procedures_emos.h
+			 ../../SCHED/phy_procedures_emos.h \
+			 ../../SIMULATION/TOOLS/defs.h
 FILE_PATTERNS          = *.h
 RECURSIVE              = NO
 EXCLUDE                = 

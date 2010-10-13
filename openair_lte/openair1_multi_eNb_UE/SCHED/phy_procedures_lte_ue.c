@@ -568,12 +568,12 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
 				   SI_RNTI,RA_RNTI);
   
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
-    
-#ifdef DEBUG_PHY
+  
+  //#ifdef DEBUG_PHY
     debug_msg("[PHY][UE %d] Frame %d, slot %d: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,dci_cnt);
-#endif
-
-  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
+    //#endif
+    
+    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
 
   //#ifdef DIAG_PHY
   if (last_slot==18)
@@ -875,7 +875,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	
 #else
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
-	  printf("[PHY][UE] Calling dlsch_decoding for subframe %d\n",((last_slot>>1)-1)%10);
+	  debug_msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,((last_slot>>1)-1)%10);
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue[eNB_id][0],
@@ -895,12 +895,14 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 #endif
 	  } 
 	  else {
-	    	    
+#ifdef USER_MODE
+#ifdef DEBUG_PHY	    	    
 	    printf("dlsch harq_pid %d (rx): \n",phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
 	    for (j=0;j<phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS>>3;j++)
 	      printf("%x ",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b[j]);
 	    printf("\n");
-	    
+#endif 
+#endif	    
 #ifdef OPENAIR2
 	    mac_xface->ue_send_sdu(phy_vars_ue->Mod_id,
 				   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
