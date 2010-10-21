@@ -221,6 +221,15 @@ int main(int argc, char **argv) {
 	case 'h':
 	default:
 	  printf("%s -h(elp) -a(wgn on) -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
+	  printf("-h This message\n");
+	  printf("-a Use AWGN channel and not multipath\n");
+	  printf("-p Use extended prefix mode\n");
+	  printf("-n Number of frames to simulate\n");
+	  printf("-s Starting SNR, runs from SNR to SNR + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
+	  printf("-t Delay spread for multipath channel\n");
+	  printf("-x Transmission mode (1,2,6 for the moment)\n");
+	  printf("-y Number of TX antennas used in eNB\n");
+	  printf("-z Number of RX antennas used in UE\n");
 	  exit(1);
 	  break;
 	}

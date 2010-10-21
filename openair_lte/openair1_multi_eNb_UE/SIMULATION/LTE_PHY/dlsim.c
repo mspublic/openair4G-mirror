@@ -247,7 +247,17 @@ int main(int argc, char **argv) {
 	break;
       case 'h':
       default:
-	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
+	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
+	printf("-h This message\n");
+	printf("-a Use AWGN channel and not multipath\n");
+	printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
+	printf("-p Use extended prefix mode\n");
+	printf("-n Number of frames to simulate\n");
+	printf("-s Starting SNR, runs from SNR to SNR + 5 dB.  If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n");
+	printf("-t Delay spread for multipath channel\n");
+	printf("-x Transmission mode (1,2,6 for the moment)\n");
+	printf("-y Number of TX antennas used in eNB\n");
+	printf("-z Number of RX antennas used in UE\n");
 	exit(1);
 	break;
       }
@@ -265,7 +275,7 @@ int main(int argc, char **argv) {
     snr0 = 7;
   */
 
-  snr1 = snr0+25.0;
+  snr1 = snr0+5.0;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
   /*

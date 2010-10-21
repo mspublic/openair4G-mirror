@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hapl:r:m:n:s:t:")) != -1)
+  while ((c = getopt (argc, argv, "hap:n:s:t:x:y:z:")) != -1)
     {
       switch (c)
 	{
@@ -165,9 +165,6 @@ int main(int argc, char **argv) {
 	  printf("Running AWGN simulation\n");
 	  awgn_flag = 1;
 	  break;
-	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -n n_frames -s snr0 -t DelaySpread -p (extended prefix flag)\n",argv[0]);
-	  exit(1);
 	case 'n':
 	  n_frames = atoi(optarg);
 	  break;
@@ -180,17 +177,41 @@ int main(int argc, char **argv) {
 	case 'p':
 	  extended_prefix_flag=1;
 	  break;
-	case 'r':
-	  n_rx=atoi(optarg);
-	  break;
-	case 'm':
-	  n_tx=atoi(optarg);
-	  break;
-	case 'l':
+	case 'x':
 	  transmission_mode=atoi(optarg);
+	  if ((transmission_mode!=1) ||
+	      (transmission_mode!=2) ||
+	      (transmission_mode!=6)) {
+	    msg("Unsupported transmission mode %d\n",transmission_mode);
+	    exit(-1);
+	  }
+	  break;
+	case 'y':
+	  n_tx=atoi(optarg);
+	  if ((n_tx==0) || (n_tx>2)) {
+	    msg("Unsupported number of tx antennas %d\n",n_tx);
+	    exit(-1);
+	  }
+	  break;
+	case 'z':
+	  n_rx=atoi(optarg);
+	  if ((n_rx==0) || (n_rx>2)) {
+	    msg("Unsupported number of rx antennas %d\n",n_rx);
+	    exit(-1);
+	  }
 	  break;
 	default:
-	  printf("%s -h(elp) -p(extended_prefix) -m mcs -n n_frames -s snr0\n",argv[0]);
+	case 'h':
+	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -n n_frames -t Delayspread -s snr0 -x transmission_mode -y RXant -z transmission mode\n",argv[0]);
+	  printf("-h This message\n");
+	  printf("-a Use AWGN channel and not multipath\n");
+	  printf("-p Use extended prefix mode\n");
+	  printf("-n Number of frames to simulate\n");
+	  printf("-s Starting SNR, runs from SNR to SNR + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
+	  printf("-t Delay spread for multipath channel\n");
+	  printf("-x Transmission mode (1,2,6 for the moment)\n");
+	  printf("-y Number of TX antennas used in eNB\n");
+	  printf("-z Number of RX antennas used in UE\n");
 	  exit (-1);
 	  break;
 	}
