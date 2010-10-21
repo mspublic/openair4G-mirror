@@ -603,10 +603,10 @@ void lte_rate_matching_cc_rx(unsigned int RCC,
       printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
     */
     // Maximum-ratio combining of repeated bits and retransmissions
-    w16[ind] += soft_input[k];
 #ifdef RM_DEBUG_CC
       printf("RM_RX_CC k %d (%d) ind: %d (%d)\n",k,soft_input[k],ind,w16[ind]);
 #endif
+    w16[ind] += soft_input[k];
     ind++;
     if (ind==Kw) {
       ind=0;

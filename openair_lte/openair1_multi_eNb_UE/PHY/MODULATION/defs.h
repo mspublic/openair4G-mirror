@@ -54,6 +54,9 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 		unsigned char eNb_id,
 		int no_prefix);
 
+void normal_prefix_mod(s32 *txdataF,s32 *txdata,u8 nsymb,LTE_DL_FRAME_PARMS *frame_parms);
+
+
 #endif
 /** @}*/
 #endif

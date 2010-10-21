@@ -67,7 +67,11 @@ extern int rx_sig_fifo;
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id) {
   unsigned int coded_bits_per_codeword;
 
-  coded_bits_per_codeword = ( phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb * (12 * get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs)) * (phy_vars_ue->lte_frame_parms.num_dlsch_symbols));
+  coded_bits_per_codeword = get_G(&phy_vars_ue->lte_frame_parms,
+				  phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
+				  get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs),  
+				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
+
   write_output("rxsigF0.m","rxsF0", phy_vars_ue->lte_ue_common_vars.rxdataF[0],2*12*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", phy_vars_ue->lte_ue_dlsch_vars[0]->rxdataF_ext[0],2*12*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
   write_output("dlsch00_ch0_ext.m","dl00_ch0_ext", phy_vars_ue->lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[0],300*12,1,1);
@@ -82,6 +86,35 @@ void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id) {
   
   write_output("dlsch_mag1.m","dlschmag1",phy_vars_ue->lte_ue_dlsch_vars[0]->dl_ch_mag,300*12,1,1);
   write_output("dlsch_mag2.m","dlschmag2",phy_vars_ue->lte_ue_dlsch_vars[0]->dl_ch_magb,300*12,1,1);
+}
+
+void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id) {
+  unsigned int coded_bits_per_codeword;
+
+  coded_bits_per_codeword = get_G(&phy_vars_ue->lte_frame_parms,
+				  phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
+				  get_Qm(phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs),  
+				  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
+  printf("Dumping dlsch_SI : nb_rb %d, mcs %d, num_pdcch_symbols %d,G %d\n",
+	 phy_vars_ue->dlsch_ue_SI[eNB_id]->nb_rb,
+	 phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs,  
+	 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+	 coded_bits_per_codeword);
+
+  write_output("rxsigF0.m","rxsF0", phy_vars_ue->lte_ue_common_vars.rxdataF[0],2*12*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", phy_vars_ue->lte_ue_dlsch_vars_SI[0]->rxdataF_ext[0],2*12*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
+  write_output("dlsch00_ch0_ext.m","dl00_ch0_ext", phy_vars_ue->lte_ue_dlsch_vars_SI[0]->dl_ch_estimates_ext[0],300*12,1,1);
+  /*
+    write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[1],300*12,1,1);
+    write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[2],300*12,1,1);
+    write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",lte_ue_dlsch_vars[0]->dl_ch_estimates_ext[3],300*12,1,1);
+    write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[0]->rho[0],300*12,1,1);
+  */
+  write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0", phy_vars_ue->lte_ue_dlsch_vars_SI[0]->rxdataF_comp[0],300*12,1,1);
+  write_output("dlsch_rxF_llr.m","dlsch_llr", phy_vars_ue->lte_ue_dlsch_vars_SI[0]->llr[0],coded_bits_per_codeword,1,0);
+  
+  write_output("dlsch_mag1.m","dlschmag1",phy_vars_ue->lte_ue_dlsch_vars_SI[0]->dl_ch_mag,300*12,1,1);
+  write_output("dlsch_mag2.m","dlschmag2",phy_vars_ue->lte_ue_dlsch_vars_SI[0]->dl_ch_magb,300*12,1,1);
 }
 #endif
 
@@ -468,23 +501,32 @@ void phy_procedures_emos_UE_RX(unsigned char last_slot,u8 eNB_id) {
 
 void lte_ue_pbch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_vars_ue) {
 
-  int pbch_error;
-  
-  pbch_error = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
-		       phy_vars_ue->lte_ue_pbch_vars[eNB_id],
-		       &phy_vars_ue->lte_frame_parms,
-		       eNB_id,
-		       (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI);
-  if (pbch_error) {
+  int pbch_tx_ant;
+  u8 pbch_phase;
+
+  for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
+    printf("Trying PBCH %d\n",pbch_phase);
+    pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
+			  phy_vars_ue->lte_ue_pbch_vars[eNB_id],
+			  &phy_vars_ue->lte_frame_parms,
+			  eNB_id,
+			  SISO,
+			  pbch_phase);
+    printf("Received %d TX antennas\n",pbch_tx_ant);
+    if ((pbch_tx_ant>0) && (pbch_tx_ant<4))
+      break;
+  }
+
+  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
     emos_dump_UE.frame_tx = *((unsigned int*) phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output);
-    emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[4];
+    emos_dump_UE.mimo_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1];
     //PHY_vars->PHY_measurements.frame_tx = *((unsigned int*) lte_ue_pbch_vars->decoded_output);
 #endif
-    phy_vars_ue->lte_frame_parms.mode1_flag = (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[4] == 1);
-    openair_daq_vars.dlsch_transmission_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[4];
-
+    phy_vars_ue->lte_frame_parms.mode1_flag = (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1] == 1);
+    openair_daq_vars.dlsch_transmission_mode = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1];
+    
     
   }
   else {
@@ -502,7 +544,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
     debug_msg("[PHY][UE %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
 	      phy_vars_ue->Mod_id,mac_xface->frame, last_slot, phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors, phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq);
     debug_msg("[PHY][UE %d] frame %d, slot %d, PBCH received frame=%d, transmission mode=%d!\n",
-	      phy_vars_ue->Mod_id,mac_xface->frame, last_slot,*((unsigned int*) phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output),phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[4]);
+	      phy_vars_ue->Mod_id,mac_xface->frame, last_slot,((u16)(*((u8*) phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output))<<2)+pbch_phase,phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]);
     
     
     if (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq>20) {
@@ -549,12 +591,18 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
   
   //  write_output("UE_rxsigF0.m","UE_rxsF0", lte_ue_common_vars->rxdataF[0],512*12*2,2,1);
   //  write_output("UE_rxsigF1.m","UE_rxsF1", lte_ue_common_vars->rxdataF[1],512*12*2,2,1);
-  
+
+  // phy_vars_ue->lte_ue_pdcch_vars->num_pdcch_symbols = rx_pcfich(&phy_vars_ue->lte_ue_common_vars,
+  //	                                                           &phy_vars_ue->lte_frame_parms,
+  //	                                                           eNB_id);
+
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols = 3;
+
   rx_pdcch(&phy_vars_ue->lte_ue_common_vars,
 	   phy_vars_ue->lte_ue_pdcch_vars,
 	   &phy_vars_ue->lte_frame_parms,
 	   eNB_id,
-	   2,
+	   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
 	   (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 	   phy_vars_ue->is_secondary_ue); 
 #ifdef DEBUG_PHY
@@ -570,11 +618,11 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
   
   //#ifdef DEBUG_PHY
-    debug_msg("[PHY][UE %d] Frame %d, slot %d: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,dci_cnt);
-    //#endif
-    
-    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
-
+  debug_msg("[PHY][UE %d] Frame %d, slot %d: DCI found %i\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,dci_cnt);
+  //#endif
+  
+  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
+  
   //#ifdef DIAG_PHY
   if (last_slot==18)
     debug_msg("[PHY][UE %d][DIAG] Frame %d, slot %d: PDCCH: DCI errors %d, DCI received %d, DCI missed %d, DCI False Detection %d \n",
@@ -769,6 +817,18 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
   unsigned char harq_pid;
   int timing_advance;
   unsigned int dlsch_buffer_length;
+  u8 pilot1,pilot2,pilot3;
+
+  if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
+    pilot1 = 4;
+    pilot2 = 7;
+    pilot3 = 11;
+  }
+  else {  // extended prefix
+    pilot1 = 3;
+    pilot2 = 6;
+    pilot3 = 9;
+  }
 
   if (subframe_select_tdd(phy_vars_ue->lte_frame_parms.tdd_config,last_slot>>1) == SF_S) 
     if ((last_slot%2)==0)
@@ -780,7 +840,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 
   // RX processing of symbols in last_slot
   for (l=0;l<n_symb;l++) {
-    //    msg("Processing symbol %d\n",l);
+    //    msg("Processing symbol %d of slot %d\n",l,last_slot);
 
     slot_fep(&phy_vars_ue->lte_frame_parms,
 	     &phy_vars_ue->lte_ue_common_vars,
@@ -831,14 +891,15 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols 10,11,12\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif      
 	// process symbols 10,11,12 and trigger DLSCH decoding
-	for (m=(11-phy_vars_ue->lte_frame_parms.Ncp*2+1);m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
+	for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars,
 		   &phy_vars_ue->lte_frame_parms,
 		   eNB_id,
 		   eNB_id+1,
 		   phy_vars_ue->dlsch_ue[eNB_id],
-		   m,
+		   m, // symbol
+		   0, // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
@@ -875,11 +936,18 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	
 #else
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
+	  dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
+			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			     phy_vars_ue->dlsch_ue[0][0],
+			     phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
+			     0,
+			     (((last_slot>>1)-1)%10)<<1);
 	  debug_msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,((last_slot>>1)-1)%10);
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue[eNB_id][0],
-			       ((last_slot>>1)-1)%10);
+			       ((last_slot>>1)-1)%10,
+			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    phy_vars_ue->dlsch_errors[eNB_id]++;
@@ -945,12 +1013,12 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
       }
       
       if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
-#ifdef DEBUG_PHY
+	//#ifdef DEBUG_PHY
 	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI) demod symbols 10,11,12\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
-#endif
+	//#endif
 	
 	// process symbols 10,11,12 and trigger DLSCH decoding
-	for (m=(11-phy_vars_ue->lte_frame_parms.Ncp*2+1);m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
+	for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_SI,
 		   &phy_vars_ue->lte_frame_parms,
@@ -958,6 +1026,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_SI[eNB_id],
 		   m,
+		   0,
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
@@ -970,14 +1039,25 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	  phy_vars_ue->dlsch_SI_errors[eNB_id]=0;
 
 	if (phy_vars_ue->dlsch_ue_SI[eNB_id]) {
+	  /*
+	  dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
+			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			     phy_vars_ue->dlsch_ue_SI[eNB_id],
+			     phy_vars_ue->lte_ue_dlsch_vars_SI[eNB_id]->llr[0],
+			     0,
+			     (((last_slot>>1)-1)%10)<<1);
+	  */
 	  ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars_SI[eNB_id]->llr[0],
 			       &phy_vars_ue->lte_frame_parms,
 			       phy_vars_ue->dlsch_ue_SI[eNB_id],
-			       ((last_slot>>1)-1)%10);
+			       ((last_slot>>1)-1)%10,
+			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
 	  
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	    phy_vars_ue->dlsch_SI_errors[eNB_id]++;
 	    msg("[PHY][UE %d] Frame %d, subframe %d, received SI in error\n",phy_vars_ue->Mod_id,mac_xface->frame,((last_slot>>1)-1)%10);
+	    dump_dlsch_SI(phy_vars_ue,eNB_id);
+	    exit(-1);
 	  }
 	  else {
 
@@ -1006,14 +1086,15 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 #endif
       
 	// process symbols 10,11,12 and trigger DLSCH decoding
-	for (m=(11-phy_vars_ue->lte_frame_parms.Ncp*2+1);m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
+	for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_ra,
 		   &phy_vars_ue->lte_frame_parms,
 		   eNB_id,
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_ra[eNB_id],
-		   m,
+		   m, // symbol
+		   0, // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
@@ -1022,12 +1103,21 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	
 	if (mac_xface->frame < phy_vars_ue->dlsch_ra_errors[eNB_id])
 	  phy_vars_ue->dlsch_ra_errors[eNB_id]=0;
-	
-	printf("[PHY][UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot>>1)-1)%10);
+
+	phy_vars_ue->dlsch_ue_ra[eNB_id]->rnti = RA_RNTI;
+
+	//	printf("[PHY][UE] Calling dlsch_decoding (RA) for subframe %d\n",((last_slot>>1)-1)%10);
+	  dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
+			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			     phy_vars_ue->dlsch_ue_ra[eNB_id],
+			     phy_vars_ue->lte_ue_dlsch_vars_ra[eNB_id]->llr[0],
+			     0,
+			     (((last_slot>>1)-1)%10)<<1);
 	ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars_ra[eNB_id]->llr[0],
 			     &phy_vars_ue->lte_frame_parms,
 			     phy_vars_ue->dlsch_ue_ra[eNB_id],
-			     ((last_slot>>1)-1)%10);
+			     ((last_slot>>1)-1)%10,  // subframe
+			     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
 	
 	if (ret == (1+MAX_TURBO_ITERATIONS)) {
 	  phy_vars_ue->dlsch_ra_errors[eNB_id]++;
@@ -1067,7 +1157,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
       
     }
 
-    if (((last_slot%2)==0) && (l==(4-phy_vars_ue->lte_frame_parms.Ncp)))  {
+    if (((last_slot%2)==0) && (l==pilot1))  {
 #ifdef DEBUG_PHY
       debug_msg("[PHY][UE %d] Frame %d, slot %d: Calling pdcch procedures\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
@@ -1076,14 +1166,15 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 	return(-1);
 	//exit_openair=1;
       }
-
+    }
+    /*
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 #ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols 0,1,2\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols \n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
 	
 	// process symbols 0,1,2
-	for (m=phy_vars_ue->lte_frame_parms.first_dlsch_symbol;m<(4-phy_vars_ue->lte_frame_parms.Ncp);m++)
+	for (m=num_pdcch_symbols;m<pilot2;m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1091,6 +1182,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   phy_vars_ue->dlsch_ue[eNB_id],
 		   m,
+		   1, // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
@@ -1134,17 +1226,21 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
       }
-    }
+    */
 
     if (((last_slot%2)==1) && (l==0)) {
-      
-      if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1)  {
+
+      for (m=phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols;
+	   m<pilot2;
+	   m++) {      
+
+	if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1)  {
 #ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols 3,4,5\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod first slot (m %d)\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,m);
 #endif
 
-	// process symbols 3,4,5
-	for (m=4-phy_vars_ue->lte_frame_parms.Ncp+1;m<(phy_vars_ue->lte_frame_parms.symbols_per_tti/2);m++)
+	// process DLSCH received in first slot
+
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1152,18 +1248,18 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   phy_vars_ue->dlsch_ue[eNB_id],
 		   m,
+		   (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,   // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
+	} // CRNTI active
       
-      if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1)  {
-#ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI) demod symbols 3,4,5\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
-#endif
+	if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1)  {
+	  //#ifdef DEBUG_PHY
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI) demod first slot, m %d\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,m);
+	  //#endif
 	  
-	// process symbols 3,4,5
-	for (m=4-phy_vars_ue->lte_frame_parms.Ncp+1;m<(phy_vars_ue->lte_frame_parms.symbols_per_tti/2);m++)
+	  // process SI DLSCH in first slot
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_SI,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1171,17 +1267,17 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_SI[eNB_id],
 		   m,
+		   (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,   // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
-      if (phy_vars_ue->dlsch_ue_ra[eNB_id]->active == 1)  {
+	} // SI active
+
+	if (phy_vars_ue->dlsch_ue_ra[eNB_id]->active == 1)  {
 #ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (RA) demod symbols 3,4,5\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (RA) demod in first slot\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
-	
-	// process symbols 3,4,5
-	for (m=4-phy_vars_ue->lte_frame_parms.Ncp+1;m<(phy_vars_ue->lte_frame_parms.symbols_per_tti/2);m++)
+	  
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_ra,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1189,20 +1285,21 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_ra[eNB_id],
 		   m,
+		   (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
-    }
+	} // RA active
+      } // loop from first dlsch symbol to end of slot
+    } // 2nd quarter
 
-    if (((last_slot%2)==1) && (l==(4-phy_vars_ue->lte_frame_parms.Ncp))) {
-      if(phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
+    if (((last_slot%2)==1) && (l==pilot1)) {
+      for (m=pilot2;m<pilot3;m++) {
+
+	if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
 #ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod symbols 6,7,8\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod between pilot 2 and 3 (2nd slot)\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
-	  
-	// process symbols 6,7,8
-	for (m=(phy_vars_ue->lte_frame_parms.symbols_per_tti/2)+1;m<(11-phy_vars_ue->lte_frame_parms.Ncp*2);m++)
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1210,17 +1307,16 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   phy_vars_ue->dlsch_ue[eNB_id],
 		   m,
+		   0,
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
-      if(phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
-#ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI) demod symbols 6,7,8\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
-#endif
-	
-	// process symbols 6,7,8
-	for (m=(phy_vars_ue->lte_frame_parms.symbols_per_tti/2)+1;m<(11-phy_vars_ue->lte_frame_parms.Ncp*2);m++)
+	} // CRNTI active
+
+	if(phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
+	  //#ifdef DEBUG_PHY
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI) demod between pilot 2 and 3 (2nd slot), m %d\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,m);
+	  //#endif
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_SI,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1228,18 +1324,17 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_SI[eNB_id],
 		   m,
+		   0,   // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
+	} // SI active
     
-      if(phy_vars_ue->dlsch_ue_ra[eNB_id]->active == 1) {
+ 	if (phy_vars_ue->dlsch_ue_ra[eNB_id]->active == 1) {
 #ifdef DEBUG_PHY
-	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (RA) demod symbols 6,7,8\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
+	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (RA) demod between pilot 2 and 3 (2nd slot)\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
-	
-	// process symbols 6,7,8
-	for (m=(phy_vars_ue->lte_frame_parms.symbols_per_tti/2)+1;m<(11-phy_vars_ue->lte_frame_parms.Ncp*2);m++)
+
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars_ra,
 		   &phy_vars_ue->lte_frame_parms,
@@ -1247,11 +1342,14 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 		   eNB_id+1,
 		   &phy_vars_ue->dlsch_ue_ra[eNB_id],
 		   m,
+		   0,   // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
                    phy_vars_ue->is_secondary_ue);
-      }
-    }
+	} // RA active
+
+      } // loop over 3rd quarter
+    } // 3rd quarter of subframe
   }   // l loop
     
 #ifdef EMOS

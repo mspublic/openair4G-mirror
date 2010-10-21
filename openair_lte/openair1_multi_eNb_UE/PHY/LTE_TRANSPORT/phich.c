@@ -5,10 +5,10 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
 
-//#define DEBUG_PHICH
+#define DEBUG_PHICH
 
 extern unsigned short pcfich_reg[4];
-unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
+unsigned short phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
 unsigned char subframe2_ul_harq(unsigned char tdd_config,unsigned char subframe) {
 
@@ -30,50 +30,77 @@ unsigned char subframe2_ul_harq(unsigned char tdd_config,unsigned char subframe)
   return(0);
 }
 
+int check_pcfich(u16 reg) {
 
-void generate_phich_reg_mapping_ext(LTE_DL_FRAME_PARMS *frame_parms) {
+  if ((reg == pcfich_reg[0]) ||
+      (reg == pcfich_reg[1]) ||
+      (reg == pcfich_reg[2]) ||
+      (reg == pcfich_reg[3]))
+    return(1);
+  return(0);
+}
 
-  unsigned short n0 = (frame_parms->N_RB_DL * 2) - 4;
-  unsigned short n1 = (frame_parms->N_RB_DL * 3);
+void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
+
+  unsigned short n0 = (frame_parms->N_RB_DL * 2) - 4;  // 2 REG per RB less the 4 used by PCFICH in first symbol
+  unsigned short n1 = (frame_parms->N_RB_DL * 3);      // 3 REG per RB in second and third symbol
   unsigned short n2 = n1;
-  unsigned short mprime = 0,mprime2=0;
+  unsigned short mprime = 0;
   unsigned short Ngroup_PHICH;
 
+  // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
   Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
-
-
-
   if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
-
+  // check if Extended prefix
   if (frame_parms->Ncp == 1) {
     Ngroup_PHICH<<=1;
   }
 
 #ifdef DEBUG_PHICH
-  msg("Ngroup_PHICH %d (Ng_times6 %d)\n",Ngroup_PHICH,frame_parms->Ng_times6);
+  msg("[PHY] Ngroup_PHICH %d (Ng_times6 %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),frame_parms->Ng_times6);
 #endif
-  
 
-  for (mprime=0;mprime<(Ngroup_PHICH>>1);mprime++) {
-    mprime2=mprime;
-    phich_reg_ext[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
-    // check for overlap with PCFICH
-    if ((phich_reg_ext[mprime][0] == pcfich_reg[0]) ||
-	(phich_reg_ext[mprime][0] == pcfich_reg[1]) ||
-	(phich_reg_ext[mprime][0] == pcfich_reg[2]) ||
-	(phich_reg_ext[mprime][0] == pcfich_reg[3])) {
-      mprime2++;
-      phich_reg_ext[mprime][0] = (frame_parms->Nid_cell + mprime2)%n0;
-    }
+  // This is the algorithm from Section 6.9.3 in 36-211
+  for (mprime=0;mprime<((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1));mprime++) {
 
-    phich_reg_ext[mprime][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
-    phich_reg_ext[mprime][2] = ((frame_parms->Nid_cell*n1/n0) + mprime + (2*n2/3))%n2;
+    if (frame_parms->Ncp==0){  // normal prefix
+      phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime)%n0;
+      if (check_pcfich(phich_reg[mprime][0])==1)
+	phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime + 1)%n0;
+
+      phich_reg[mprime][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
+      if (check_pcfich(phich_reg[mprime][1])==1)
+	phich_reg[mprime][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + 1 + (n1/3))%n1;
+
+      phich_reg[mprime][2] = ((frame_parms->Nid_cell*n2/n0) + mprime + (2*n2/3))%n2;
+      if (check_pcfich(phich_reg[mprime][2])==1)
+	phich_reg[mprime][2] = ((frame_parms->Nid_cell*n2/n0) + mprime + 1 + (2*n2/3))%n2;
 #ifdef DEBUG_PHICH
-  debug_msg("phich_reg :%d => %d,%d,%d\n",mprime,phich_reg_ext[mprime][0],phich_reg_ext[mprime][1],phich_reg_ext[mprime][2]);
+      msg("[PHY] phich_reg :%d => %d,%d,%d\n",mprime,phich_reg[mprime][0],phich_reg[mprime][1],phich_reg[mprime][2]);
 #endif
-  }
-}
+    }
+    else {  // extended prefix
+      phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime)%n0;
+      phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime)%n0;
+      if (check_pcfich(phich_reg[mprime][0])==1) {
+	phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime + 1)%n0;
+	phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime + 1)%n0;
+      }
+
+      phich_reg[mprime<<1][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
+      phich_reg[mprime<<1][2] = ((frame_parms->Nid_cell*n2/n0) + mprime + (2*n2/3))%n2;
+
+      phich_reg[1+(mprime<<1)][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
+      phich_reg[1+(mprime<<1)][2] = ((frame_parms->Nid_cell*n2/n0) + mprime + (2*n2/3))%n2;
+#ifdef DEBUG_PHICH
+      msg("[PHY] phich_reg :%d => %d,%d,%d\n",mprime<<1,phich_reg[mprime<<1][0],phich_reg[mprime][1],phich_reg[mprime][2]);
+      msg("[PHY] phich_reg :%d => %d,%d,%d\n",1+(mprime<<1),phich_reg[1+(mprime<<1)][0],phich_reg[1+(mprime<<1)][1],phich_reg[1+(mprime<<1)][2]);
+#endif
+    }
+  } // mprime loop
+}  // num_pdcch_symbols loop
+
 
 mod_sym_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
 mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2 
@@ -87,7 +114,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
 			mod_sym_t **y) {
 
   mod_sym_t d[4],*dp;
-  unsigned int i,aa;
+  //  unsigned int i,aa;
   unsigned int re_offset;
   unsigned short c;
   // 
@@ -170,7 +197,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
       break;
     default:
-      msg("phich_coding.c: Illegal PHICH Number\n");
+      msg("[PHY] phich_coding.c: Illegal PHICH Number\n");
     }
 
 
@@ -182,7 +209,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       // ignore for now
 
       // Symbol 1
-      re_offset = frame_parms->N_RB_DL*18 + (phich_reg_ext[ngroup_PHICH][1]<<2);
+      re_offset = frame_parms->N_RB_DL*18 + (phich_reg[ngroup_PHICH][1]<<2);
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -198,7 +225,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       y[1][re_offset+1] += alam_bpsk_perm2[d[1]-1];
 
       // Symbol 2
-      re_offset = frame_parms->N_RB_DL*30 + (phich_reg_ext[ngroup_PHICH][2]<<2);
+      re_offset = frame_parms->N_RB_DL*30 + (phich_reg[ngroup_PHICH][2]<<2);
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -218,7 +245,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       // ignore for now
 
       // Symbol 1
-      re_offset = frame_parms->N_RB_DL*18 + (phich_reg_ext[ngroup_PHICH][1]<<2);
+      re_offset = frame_parms->N_RB_DL*18 + (phich_reg[ngroup_PHICH][1]<<2);
       if (re_offset > frame_parms->N_RB_DL*24)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];
@@ -239,7 +266,7 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
       }
 
       // Symbol 2
-      re_offset = frame_parms->N_RB_DL*30 + (phich_reg_ext[ngroup_PHICH][2]<<2);
+      re_offset = frame_parms->N_RB_DL*30 + (phich_reg[ngroup_PHICH][2]<<2);
       if (re_offset > frame_parms->N_RB_DL*36)
 	re_offset-=frame_parms->N_RB_DL*12;
       y[0][re_offset]   += d[0];

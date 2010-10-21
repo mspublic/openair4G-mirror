@@ -10,7 +10,7 @@
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
-//#define DEBUG_ULSCH
+#define DEBUG_ULSCH
 
 #ifndef __SSE3__
 __m128i zeroU;
@@ -367,6 +367,8 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0[i],1),_mm_srai_epi16(ul_ch_mag128_1[i],1));
       ul_ch_mag128_0b[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0b[i],1),_mm_srai_epi16(ul_ch_mag128_1b[i],1));
     }
+    // remove any bias (DC component after IDFT)
+    ((u32*)rxdataF_comp128_0)[0]=0;
   }
 
   _mm_empty();
@@ -1189,7 +1191,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs = max(avgs,avgU[(aarx<<1)]);
   
-      log2_maxh = 4+(log2_approx(avgs)/2);
+      log2_maxh = 2+(log2_approx(avgs)/2);
 #ifdef DEBUG_ULSCH
       msg("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
 #endif

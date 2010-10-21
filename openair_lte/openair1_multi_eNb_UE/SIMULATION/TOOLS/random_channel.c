@@ -10,7 +10,21 @@
 
 //#define DEBUG_CH
 
-channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double *delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB) {
+channel_desc_t *new_channel_desc(u8 nb_tx,
+				 u8 nb_rx, 
+				 u8 nb_taps, 
+				 u8 channel_length, 
+				 double *amps, 
+				 double *delays, 
+				 struct complex** R_sqrt, 
+				 double Td, 
+				 double BW, 
+				 double ricean_factor, 
+				 double aoa, 
+				 double forgetting_factor, 
+				 double max_Doppler, 
+				 s32 channel_offset, 
+				 double path_loss_dB) {
 
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   u16 i,j;

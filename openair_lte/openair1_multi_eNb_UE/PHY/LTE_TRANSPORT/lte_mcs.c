@@ -61,6 +61,21 @@ u16 get_TBS(u8 mcs,u16 nb_rb) {
   }
 }
 
+u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u8 mod_order,u8 num_pdcch_symbols) {
+
+  if (frame_parms->Ncp==0) { // normal prefix
+  // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
+  // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
+  // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
+    return(nb_rb * mod_order * (13-num_pdcch_symbols)*12);
+  }
+  else {
+  // PDDPDD PDDPDD - 13 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
+  // PCDPDD PDDPDD - 12 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
+  // PCCPDD PDDPDD - 11 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
+    return(nb_rb * mod_order * (11-num_pdcch_symbols)*12);
+  }
+}
 // following function requires dlsch_tbs_full.h
 #include "PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 

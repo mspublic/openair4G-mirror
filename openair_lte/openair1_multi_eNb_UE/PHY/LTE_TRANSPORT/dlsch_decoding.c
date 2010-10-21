@@ -48,7 +48,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
 	  if (!dlsch->harq_processes[i]->c[r])
 	    exit_flag=2;
-	  dlsch->harq_processes[i]->d[r] = (unsigned short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
+	  dlsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
 	}
       
       }	else {
@@ -66,9 +66,10 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 }
 
 unsigned int  dlsch_decoding(short *dlsch_llr,
-			     LTE_DL_FRAME_PARMS *lte_frame_parms,
+			     LTE_DL_FRAME_PARMS *frame_parms,
 			     LTE_UE_DLSCH_t *dlsch,
-			     unsigned char subframe){
+			     unsigned char subframe,
+			     u8 num_pdcch_symbols){
   
   
 
@@ -76,7 +77,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   unsigned char harq_pid;
   unsigned int A,E;
   unsigned char mod_order;
-  unsigned int coded_bits_per_codeword,i;
+  unsigned int G,i;
   unsigned int ret,offset;
   unsigned short iind;
   //  unsigned char dummy_channel_output[(3*8*block_length)+12];
@@ -95,8 +96,8 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     return(MAX_TURBO_ITERATIONS);
   }
 
-  if (!lte_frame_parms) {
-    msg("dlsch_decoding.c: NULL lte_frame_parms pointer\n");
+  if (!frame_parms) {
+    msg("dlsch_decoding.c: NULL frame_parms pointer\n");
     return(MAX_TURBO_ITERATIONS);
   }
 
@@ -132,8 +133,10 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
   ret = MAX_TURBO_ITERATIONS;
 
-  // This has to be updated for presence of PDCCH and PBCH
-  coded_bits_per_codeword =( nb_rb * (12 * mod_order) * (lte_frame_parms->num_dlsch_symbols));
+
+  G = get_G(frame_parms,nb_rb,mod_order,num_pdcch_symbols);
+
+
 
   //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,dlsch->harq_processes[harq_pid]->Ndi);
 
@@ -192,7 +195,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
 #ifdef DEBUG_DLSCH_DECODING    
     msg("HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, mod_order %d, nb_rb %d, Nl %d)...\n",
-	   harq_pid,r, coded_bits_per_codeword,
+	harq_pid,r, G,
 	   Kr*3,
 	   mod_order,
 	   nb_rb,
@@ -200,7 +203,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 #endif    
 
     if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
-				   coded_bits_per_codeword,
+				   G,
 				   dlsch->harq_processes[harq_pid]->w[r],
 				   dummy_w[r],
 				   dlsch_llr,
@@ -233,7 +236,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     /*
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
-      write_output("decoder_llr.m","decllr",dlsch_llr,coded_bits_per_codeword,1,0);
+      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
       write_output("decoder_in.m","dec",&dlsch->harq_processes[harq_pid]->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 

@@ -12,6 +12,7 @@ extern unsigned short RIV_max;
 
 //#define DEBUG_RAR
 
+#ifdef OPENAIR2
 int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       unsigned char subframe,
 				       LTE_eNb_ULSCH_t *ulsch,
@@ -158,5 +159,5 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 #endif
     return(0);
 }
-
+#endif
 

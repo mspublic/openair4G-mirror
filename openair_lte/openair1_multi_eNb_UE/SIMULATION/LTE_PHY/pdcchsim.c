@@ -142,7 +142,6 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
-  int transmission_mode = 1;
   unsigned char eNb_id = 0;
 
   u8 awgn_flag=0;
@@ -152,7 +151,7 @@ int main(int argc, char **argv) {
   int n_frames=1;
   channel_desc_t *eNB2UE;
   u32 nsymb,tx_lev,tx_lev_dB;
-  u8 extended_prefix_flag=0;
+  u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1,num_pdcch_symbols;
   u8 dci_cnt=0;
   LTE_DL_FRAME_PARMS *frame_parms;
 #ifdef EMOS
@@ -184,9 +183,6 @@ int main(int argc, char **argv) {
 	  printf("Running AWGN simulation\n");
 	  awgn_flag = 1;
 	  break;
-	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -n n_frames -s snr0 -t DelaySpread -p (extended prefix flag)\n",argv[0]);
-	  exit(1);
 	case 'n':
 	  n_frames = atoi(optarg);
 	  break;
@@ -199,13 +195,37 @@ int main(int argc, char **argv) {
 	case 'p':
 	  extended_prefix_flag=1;
 	  break;
+	case 'x':
+	  transmission_mode=atoi(optarg);
+	  if ((transmission_mode!=1) ||
+	      (transmission_mode!=2) ||
+	      (transmission_mode!=6)) {
+	    msg("Unsupported transmission mode %d\n",transmission_mode);
+	    exit(-1);
+	  }
+	  break;
+	case 'y':
+	  n_tx=atoi(optarg);
+	  if ((n_tx==0) || (n_tx>2)) {
+	    msg("Unsupported number of tx antennas %d\n",n_tx);
+	    exit(-1);
+	  }
+	  break;
+	case 'z':
+	  n_rx=atoi(optarg);
+	  if ((n_rx==0) || (n_rx>2)) {
+	    msg("Unsupported number of rx antennas %d\n",n_rx);
+	    exit(-1);
+	  }
+	  break;
+	case 'h':
 	default:
-	  printf("%s -h(elp) -p(extended_prefix) -m mcs -n n_frames -s snr0\n",argv[0]);
-	  exit (-1);
+	  printf("%s -h(elp) -a(wgn on) -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
+	  exit(1);
 	  break;
 	}
     }
-  lte_param_init(1,1,1,extended_prefix_flag);
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag);
 
 
   snr1 = snr0+.2;//25.0;
@@ -275,13 +295,12 @@ int main(int argc, char **argv) {
 
   
   generate_pilots(PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-		  1087,
+		  1024,
 		  &PHY_vars_eNb->lte_frame_parms,
 		  0,
 		  2);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
     
   
-
   memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
   dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
   dci_alloc[0].L          = 2;
@@ -298,16 +317,15 @@ int main(int argc, char **argv) {
   dci_alloc[2].L          = 2;
   dci_alloc[2].rnti       = 0x1234;
   
-  generate_dci_top(3,
-		   2,
-		   1,
-		   dci_alloc,
-		   0,
-		   1024,
-		   &PHY_vars_eNb->lte_frame_parms,
-		   PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-		   0);
-     
+  num_pdcch_symbols = generate_dci_top(2,
+				       1,
+				       dci_alloc,
+				       0,
+				       1024,
+				       &PHY_vars_eNb->lte_frame_parms,
+				       PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
+				       0);
+  printf("Num_pddch_symbols %d\n",num_pdcch_symbols);
   
   //  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
@@ -347,8 +365,8 @@ int main(int argc, char **argv) {
     else {
       normal_prefix_mod(txdataF2[aa],txdata[aa],2*nsymb,frame_parms);
     }
-    tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*2],
-			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+    tx_lev += signal_energy(&txdata[aa][0],
+			  frame_parms->ofdm_symbol_size);
   
 #else
   write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
@@ -376,7 +394,7 @@ int main(int argc, char **argv) {
     }
 
     tx_lev += signal_energy(&txdata[aa][0],
-			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+			    frame_parms->ofdm_symbol_size);
   }  
 #endif
 
@@ -419,8 +437,8 @@ int main(int argc, char **argv) {
 	// scale by path_loss = NOW - P_noise
 	//sigma2       = pow(10,sigma2_dB/10);
 	//N0W          = -95.87;
-	sigma2_dB = (double)tx_lev_dB +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/(50*PHY_vars_eNb->lte_frame_parms.nb_antennas_tx)) - SNR;
-	//	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %d\n",sigma2_dB,SNR,tx_lev_dB);
+	sigma2_dB = (double)tx_lev_dB +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/(300*PHY_vars_eNb->lte_frame_parms.nb_antennas_tx)) - SNR;
+	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %d\n",sigma2_dB,SNR,tx_lev_dB);
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
 	//	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
@@ -546,16 +564,15 @@ int main(int argc, char **argv) {
 	      write_output("H00.m","h00",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
 	      // do PDCCH procedures here
 	      PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+	      PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
+
 	      rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
 		       PHY_vars_UE->lte_ue_pdcch_vars,
 		       &PHY_vars_UE->lte_frame_parms,
 		       0,
-		       3,
 		       (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 		       PHY_vars_UE->is_secondary_ue); 
-	      
-	      dci_cnt = dci_decoding_procedure(3,
-					       PHY_vars_UE->lte_ue_pdcch_vars,
+	      dci_cnt = dci_decoding_procedure(PHY_vars_UE->lte_ue_pdcch_vars,
 					       dci_alloc_rx,
 					       0,
 					       &PHY_vars_UE->lte_frame_parms,
@@ -573,7 +590,8 @@ int main(int argc, char **argv) {
 
     write_output("rxsig0.m","rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],2*frame_parms->samples_per_tti,1,1);
     write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);    
-    
+    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
+    write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);    
 
 #ifdef EMOS
   write_output("EMOS_ch0.m","emos_ch0",&emos_dump.channel[0][0][0],N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS,1,1);

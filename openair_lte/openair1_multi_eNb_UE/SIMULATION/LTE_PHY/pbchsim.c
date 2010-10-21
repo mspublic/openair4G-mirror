@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
   int subframe_offset;
   char fname[40], vname[40];
   int trial, n_errors;
-  int transmission_mode = 1;
+  u8 transmission_mode = 1,n_tx=1,n_rx=1;
   unsigned char eNb_id = 0;
 
   u8 awgn_flag=0;
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "hapn:s:t:")) != -1)
+  while ((c = getopt (argc, argv, "hapl:r:m:n:s:t:")) != -1)
     {
       switch (c)
 	{
@@ -180,13 +180,22 @@ int main(int argc, char **argv) {
 	case 'p':
 	  extended_prefix_flag=1;
 	  break;
+	case 'r':
+	  n_rx=atoi(optarg);
+	  break;
+	case 'm':
+	  n_tx=atoi(optarg);
+	  break;
+	case 'l':
+	  transmission_mode=atoi(optarg);
+	  break;
 	default:
 	  printf("%s -h(elp) -p(extended_prefix) -m mcs -n n_frames -s snr0\n",argv[0]);
 	  exit (-1);
 	  break;
 	}
     }
-  lte_param_init(1,1,1,extended_prefix_flag);
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag);
 
 
   snr1 = snr0+25.0;
@@ -277,7 +286,7 @@ int main(int argc, char **argv) {
   
   
   generate_pbch(PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-		1087,
+		1024,
 		&PHY_vars_eNb->lte_frame_parms,
 		pbch_pdu,
 		0);

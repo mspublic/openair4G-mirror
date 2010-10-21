@@ -19,7 +19,7 @@
 
 #define BW 7.68
 
-#define OUTPUT_DEBUG 1
+//#define OUTPUT_DEBUG 1
 
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0
@@ -50,12 +50,13 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = 1;
+  lte_frame_parms->Nid_cell           = 0;
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = (lte_frame_parms->Ncp==0) ? 8: 6;
+  lte_frame_parms->Ng_times6          = 1;
   //  lte_frame_parms->Csrs = 2;
   //  lte_frame_parms->Bsrs = 0;
   //  lte_frame_parms->kTC = 0;
@@ -73,7 +74,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->rev              = rev;
   
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
-  
+
+  /*  
   lte_gold(lte_frame_parms);
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
@@ -83,6 +85,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   generate_pcfich_reg_mapping(lte_frame_parms);
   generate_phich_reg_mapping(lte_frame_parms);
+  */
+
+  phy_init_lte_top(lte_frame_parms);
 
   phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
 		  &PHY_vars_UE->lte_ue_common_vars,
@@ -141,10 +146,10 @@ int main(int argc, char **argv) {
   double Td=0.8;
   double iqim=0.0;
   u8 channel_length,nb_taps=8;
-  u8 extended_prefix_flag=0;
+  u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
 
   int eNb_id = 0, eNb_id_i = 1;
-  unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
+  unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=1;
   unsigned short NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
   unsigned char Ns,l,m;
 
@@ -171,7 +176,7 @@ int main(int argc, char **argv) {
 
   channel_desc_t *eNB2UE;
 
-  u8 num_pdcch_symbols=3;
+  u8 num_pdcch_symbols;
   u8 pilot1,pilot2,pilot3;
 
   dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
@@ -190,7 +195,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   //if(snr0>0)
   // snr0 = 0;
-  while ((c = getopt (argc, argv, "hadpm:n:s:t:c:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpm:n:s:t:c:x:y:z:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -217,18 +222,42 @@ int main(int argc, char **argv) {
       case 'c':
 	num_pdcch_symbols=atoi(optarg);
 	break;
+      case 'x':
+	transmission_mode=atoi(optarg);
+	if ((transmission_mode!=1) ||
+	    (transmission_mode!=2) ||
+	    (transmission_mode!=6)) {
+	  msg("Unsupported transmission mode %d\n",transmission_mode);
+	  exit(-1);
+	}
+	break;
+      case 'y':
+	n_tx=atoi(optarg);
+	if ((n_tx==0) || (n_tx>2)) {
+	  msg("Unsupported number of tx antennas %d\n",n_tx);
+	  exit(-1);
+	}
+	break;
+      case 'z':
+	n_rx=atoi(optarg);
+	if ((n_rx==0) || (n_rx>2)) {
+	  msg("Unsupported number of rx antennas %d\n",n_rx);
+	  exit(-1);
+	}
+	break;
       case 'h':
       default:
-	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -m mcs -n n_frames -s snr0\n",argv[0]);
+	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
 	exit(1);
 	break;
       }
   }
 
-  lte_param_init(1,1,1,extended_prefix_flag);  
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag);  
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
+  printf("Transmission mode %d with %dx%d antenna configuration\n",transmission_mode,n_tx,n_rx);
 
   /*  
   snr0 = -8 + mcs;
@@ -279,7 +308,7 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNb->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  coded_bits_per_codeword = NB_RB * (12 * get_Qm(mcs)) * (PHY_vars_eNb->lte_frame_parms.num_dlsch_symbols);
+  coded_bits_per_codeword = get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,get_Qm(mcs),num_pdcch_symbols);
 
 #ifdef TBS_FIX
   rate = (double)3*dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(4*coded_bits_per_codeword);
@@ -461,7 +490,7 @@ int main(int argc, char **argv) {
 
     round=0;
     for (trials = 0;trials<n_frames;trials++) {
-      printf("*");
+      //      printf("Trial %d\n",trials);
       fflush(stdout);
       round=0;
       while (round < 4) {
@@ -507,7 +536,7 @@ int main(int argc, char **argv) {
 	}
 	
 #endif 
-		
+
 	re_allocated = dlsch_modulation(PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 					1024,
 					0,
@@ -528,15 +557,14 @@ int main(int argc, char **argv) {
 					  num_pdcch_symbols,
 					  PHY_vars_eNb->dlsch_eNb[0][1]);
 	
-	generate_dci_top(num_pdcch_symbols,
-			 1,
-			 0,
-			 dci_alloc,
-			 0,
-			 1024,
-			 &PHY_vars_eNb->lte_frame_parms,
-			 PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-			 0);
+	num_pdcch_symbols = generate_dci_top(1,
+					     0,
+					     dci_alloc,
+					     0,
+					     1024,
+					     &PHY_vars_eNb->lte_frame_parms,
+					     PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
+					     0);
 	
 	generate_pilots(PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 			1024,
@@ -584,9 +612,10 @@ int main(int argc, char **argv) {
 	  else {
 	    normal_prefix_mod(txdataF2[aa],txdata[aa],2*nsymb,frame_parms);
 	  }
-	    tx_lev += signal_energy(&txdata[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
-				    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-	  }
+
+	  tx_lev += signal_energy(&txdata[aa][0],
+				  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	}
 	
 #else //IFFT_FPGA
 	
@@ -613,14 +642,14 @@ int main(int argc, char **argv) {
 			      2*nsymb,
 			      frame_parms);
 	  }
-	  tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*2],
-				  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	  tx_lev += signal_energy(&txdata[aa][0],
+				  frame_parms->ofdm_symbol_size);
 	  
 	}  
 #endif //IFFT_FPGA
 	
 	
-	//printf("tx_lev = %d\n",tx_lev);
+	//	printf("tx_lev = %d (%d)\n",tx_lev,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	
 	
@@ -649,6 +678,7 @@ int main(int argc, char **argv) {
 
         }
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
+	//	printf("tx_lev_dB %d\n",tx_lev_dB);
 	sigma2_dB = tx_lev_dB +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)) - SNR;
 
 	//AWGN
@@ -719,16 +749,18 @@ int main(int argc, char **argv) {
 
 	    if ((Ns==0) && (l==pilot1)) {// process symbols 0,1,2
 	      if (dci_flag == 1) {
+
+		PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+		PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
 		rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
 			 PHY_vars_UE->lte_ue_pdcch_vars,
 			 &PHY_vars_UE->lte_frame_parms,
 			 eNb_id,
-			 num_pdcch_symbols,
 			 (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 			 0);
 		
-		dci_cnt = dci_decoding_procedure(num_pdcch_symbols,
-						 PHY_vars_UE->lte_ue_pdcch_vars,
+
+		dci_cnt = dci_decoding_procedure(PHY_vars_UE->lte_ue_pdcch_vars,
 						 dci_alloc_rx,
 						 eNb_id,
 						 &PHY_vars_UE->lte_frame_parms,
@@ -736,6 +768,8 @@ int main(int argc, char **argv) {
 						 RA_RNTI);
 		//	      printf("dci_cnt %d\n",dci_cnt);
 		//	      write_output("dlsch00_ch0.m","dl00_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][0][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);
+		//			      write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,2,1);
+		//	      write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
 		//	      exit(-1);
 		
 		
@@ -953,7 +987,7 @@ int main(int argc, char **argv) {
 	  if (ret <= MAX_TURBO_ITERATIONS) {
 #ifdef OUTPUT_DEBUG  
 	    printf("No DLSCH errors found\n");
-	    exit(-1);
+	    //	    exit(-1);
 #endif
 	    round=5;
 	  }	

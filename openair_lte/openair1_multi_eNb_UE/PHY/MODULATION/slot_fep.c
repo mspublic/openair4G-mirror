@@ -1,7 +1,7 @@
 #include "PHY/defs.h"
 #include "defs.h"
 //#define DEBUG_FEP
-
+ 
 int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	     LTE_UE_COMMON *ue_common_vars,
 	     unsigned char l,
@@ -13,7 +13,9 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char eNb_id;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
-  unsigned int subframe_offset = (frame_parms->ofdm_symbol_size + nb_prefix_samples) * frame_parms->symbols_per_tti * (Ns>>1);
+  unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
+  unsigned int subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
+  unsigned int slot_offset = (frame_parms->samples_per_tti>>1) * (Ns&1);
 
 #ifdef DEBUG_FEP
   if (l<0 || l>=7-frame_parms->Ncp) {
@@ -27,27 +29,45 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: symbol %d, nb_prefix_samples %d\n",symbol, nb_prefix_samples);
+  msg("slot_fep: symbol %d, nb_prefix_samples %d\n",symbol, (l==0)?nb_prefix_samples0:nb_prefix_samples);
 #endif
   
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-    fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
-					     nb_prefix_samples + 
-					     (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol +
-					     subframe_offset],
-	(short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
-	frame_parms->twiddle_fft,
-	frame_parms->rev,
-	frame_parms->log2_symbol_size,
-	frame_parms->log2_symbol_size>>1,
-	0);
+    if (l==0) {
+      fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
+					       slot_offset +
+					       nb_prefix_samples0 + 
+					       subframe_offset],
+	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+	  frame_parms->twiddle_fft,
+	  frame_parms->rev,
+	  frame_parms->log2_symbol_size,
+	  frame_parms->log2_symbol_size>>1,
+	  0);
+    }
+    else {
+
+      fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
+					       slot_offset +
+					       (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
+					       (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
+					       subframe_offset],
+	  (short*)&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+	  frame_parms->twiddle_fft,
+	  frame_parms->rev,
+	  frame_parms->log2_symbol_size,
+	  frame_parms->log2_symbol_size>>1,
+	  0);
+    }
+
   }
+    
 
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
       for (eNb_id=0;eNb_id<3;eNb_id++){
 #ifdef DEBUG_FEP
-	printf("Channel estimation eNb %d, aatx %d\n",eNb_id,aa);
+	printf("Channel estimation eNb %d, aatx %d, symbol %d\n",eNb_id,aa,l);
 #endif
 	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[eNb_id],
 				  ue_common_vars->rxdataF,
@@ -63,7 +83,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_FEP
     printf("Frequency offset estimation\n");
 #endif   
-    if ((Ns == 0) & (l==3)) 
+    if ((Ns == 0) & (l==(4-frame_parms->Ncp))) 
       lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
 			  frame_parms,
 			  l,

@@ -7,6 +7,7 @@
 #include "PHY/defs.h"
 
 extern unsigned int lte_gold_table[20][2][14];
+//#define DEBUG_DL_CELL_SPEC
 
 int lte_dl_cell_spec(mod_sym_t *output,
 		     short amp,

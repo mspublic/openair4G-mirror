@@ -1,7 +1,8 @@
 /* file: dci.c
-   purpose: DCI processing (encoding,decoding,crc extraction) from 36-212, V8.6 2009-03.  
+   purpose: DCI/PDCCH processing (encoding,decoding,crc extraction) from 36-211/36-212, V8.6 2009-03.  
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009 
+   updates: 10.2010, support for all aggregation levels and normal/extended prefix, bit scrambling.
 */
 #ifdef USER_MODE
 #include <stdio.h>
@@ -27,12 +28,38 @@ __m128i zero2;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero2,(xmmy)))
 #endif
 
-extern unsigned short phich_reg_ext[MAX_NUM_PHICH_GROUPS][3];
+extern u16 phich_reg[MAX_NUM_PHICH_GROUPS][3];
+extern u16 pcfich_reg[4];
 
-unsigned int check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,unsigned int mprime) {
+u32 check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,u32 kprime,u8 lprime) {
 
-  unsigned short i;
-  unsigned short Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
+  u16 i;
+  u16 Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
+  u16 mprime;
+
+  if ((lprime>0) && (frame_parms->Ncp==0) )
+    return(0);
+
+  // compute REG based on symbol
+  if ((lprime == 0)||
+      ((lprime==1)&&(frame_parms->nb_antennas_tx == 4)))
+    mprime = kprime/6;
+  else
+    mprime = kprime>>2;
+
+  // check if PCFICH uses mprime
+  if ((lprime==0) && 
+      ((mprime == pcfich_reg[0]) ||
+       (mprime == pcfich_reg[1]) ||
+       (mprime == pcfich_reg[2]) ||
+       (mprime == pcfich_reg[3]))) {
+#ifdef DEBUG_DCI_ENCODING
+    msg("[PHY] REG %d allocated to PCFICH\n",mprime);
+#endif
+    return(1);
+  }
+
+  // handle Special subframe case for TDD !!!
 
   //  printf("Checking phich_reg %d\n",mprime);
   if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
@@ -43,27 +70,33 @@ unsigned int check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,unsigned int mprime
   }
 
 
-  for (i=0;i<Ngroup_PHICH;i++)
-    if (mprime == phich_reg_ext[i][1])
+
+  for (i=0;i<Ngroup_PHICH;i++) {
+    if (mprime == phich_reg[i][lprime]) {
+#ifdef DEBUG_DCI_ENCODING
+      msg("[PHY] REG %d (lprime %d) allocated to PHICH\n",mprime,lprime);
+#endif
       return(1);
+    }
+  }
   return(0);
 }
 
-unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
+u16 extract_crc(u8 *dci,u8 dci_len) {
 
-  unsigned short crc16,*dci16=(unsigned short*)dci;
+  u16 crc16,*dci16=(u16*)dci;
   
   /*
-  unsigned char crc;
-  crc = ((unsigned short *)dci)[DCI_LENGTH>>4];
+  u8 crc;
+  crc = ((u16 *)dci)[DCI_LENGTH>>4];
   printf("crc1: %x, shift %d (DCI_LENGTH %d)\n",crc,DCI_LENGTH&0xf,DCI_LENGTH);
   crc = (crc>>(DCI_LENGTH&0xf));
   // clear crc bits
-  ((unsigned short *)dci)[DCI_LENGTH>>4] &= (0xffff>>(16-(DCI_LENGTH&0xf)));
-  printf("crc2: %x, dci0 %x\n",crc,((short *)dci)[DCI_LENGTH>>4]);
-  crc |= (((unsigned short *)dci)[1+(DCI_LENGTH>>4)])<<(16-(DCI_LENGTH&0xf));
+  ((u16 *)dci)[DCI_LENGTH>>4] &= (0xffff>>(16-(DCI_LENGTH&0xf)));
+  printf("crc2: %x, dci0 %x\n",crc,((s16 *)dci)[DCI_LENGTH>>4]);
+  crc |= (((u16 *)dci)[1+(DCI_LENGTH>>4)])<<(16-(DCI_LENGTH&0xf));
   // clear crc bits
-  (((unsigned short *)dci)[1+(DCI_LENGTH>>4)]) = 0;
+  (((u16 *)dci)[1+(DCI_LENGTH>>4)]) = 0;
   printf("extract_crc: crc %x\n",crc);
   */
   /*
@@ -76,27 +109,27 @@ unsigned short extract_crc(unsigned char *dci,unsigned char dci_len) {
   //  printf("crc2: %x => %x\n",dci16[(dci_len>>4)+1],crc16);
   dci16[(dci_len>>4)]&=(0xffff>>(16-(dci_len&0xf)));
   dci16[(dci_len>>4)+1] = 0;
-  return((unsigned short)crc16);
+  return((u16)crc16);
 
 }
 
 
 
-static unsigned char d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
-static unsigned char w[3*3*(MAX_DCI_SIZE_BITS+16)];
+static u8 d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
+static u8 w[3*3*(MAX_DCI_SIZE_BITS+16)];
 
-void dci_encoding(unsigned char *a,
-		  unsigned char A,
-		  unsigned short E,
-		  unsigned char *e,
-		  unsigned short rnti) {
+void dci_encoding(u8 *a,
+		  u8 A,
+		  u16 E,
+		  u8 *e,
+		  u16 rnti) {
 
 
-  unsigned char D = (A + 16);
-  unsigned int RCC;
+  u8 D = (A + 16);
+  u32 RCC;
 
 #ifdef DEBUG_DCI_ENCODING
-  int i;
+  s32 i;
 #endif
   // encode dci 
 
@@ -114,7 +147,7 @@ void dci_encoding(unsigned char *a,
 #endif
   
 #ifdef DEBUG_DCI_ENCODING
-  msg("Doing DCI interleaving for %d coded bits, e %p\n",D,e);
+  msg("Doing DCI interleaving for %d coded bits, e %p\n",D*3,e);
 #endif
   RCC = sub_block_interleaving_cc(D,d+96,w);
 
@@ -127,13 +160,13 @@ void dci_encoding(unsigned char *a,
 }
 
 
-unsigned char *generate_dci0(unsigned char *dci,
-			     unsigned char *e,
-			     unsigned char DCI_LENGTH,
-			     unsigned char aggregation_level,
-			     unsigned short rnti) {
+u8 *generate_dci0(u8 *dci,
+		  u8 *e,
+		  u8 DCI_LENGTH,
+		  u8 aggregation_level,
+		  u16 rnti) {
   
-  unsigned short coded_bits;
+  u16 coded_bits;
 
   if (aggregation_level>3) {
     msg("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
@@ -153,29 +186,29 @@ unsigned char *generate_dci0(unsigned char *dci,
   return(e+coded_bits);
 }
 
-unsigned int Y;
+u32 Y;
 
 #define CCEBITS 72
-#define CCEPERSYMBOL 8
-#define PDCCHSYMBOLS 2
-#define DCI_BITS (PDCCHSYMBOLS*CCEPERSYMBOL*CCEBITS)
-#define Msymb (DCI_BITS/2)
-#define Mquad (Msymb/4)
+#define CCEPERSYMBOL 8  // This is for 300 RE
+#define CCEPERSYMBOL0 5  // This is for 300 RE
+#define DCI_BITS_MAX ((2*CCEPERSYMBOL+CCEPERSYMBOL0)*CCEBITS)
+#define Msymb (DCI_BITS_MAX/2)
+//#define Mquad (Msymb/4)
 
-static unsigned int bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
+static u32 bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
 static mod_sym_t wtemp[2][Msymb];
 
-void pdcch_interleaving(mod_sym_t **z, mod_sym_t **wbar,unsigned short Nid_cell,unsigned char nb_antennas_tx) {
+void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,u8 n_symbols_pdcch) {
 
   mod_sym_t *wptr,*wptr2,*zptr;
-
-  unsigned int RCC = (Mquad>>5), ND;
-  unsigned int row,col,Kpi,index;
-  int i,k,a;
+  u32 Mquad = get_nCCE(n_symbols_pdcch,frame_parms)*9;
+  u32 RCC = (Mquad>>5), ND;
+  u32 row,col,Kpi,index;
+  s32 i,k,a;
 #ifdef RM_DEBUG
-  int nulled=0;
+  s32 nulled=0;
 #endif
-  //msg("Mquad %d\n",Mquad);
+  //  msg("[PHY] PDCCH Interleaving Mquad %d (Nsymb %d)\n",Mquad,n_symbols_pdcch);
   if ((Mquad&0x1f) > 0)
     RCC++;
   Kpi = (RCC<<5);
@@ -188,7 +221,7 @@ void pdcch_interleaving(mod_sym_t **z, mod_sym_t **wbar,unsigned short Nid_cell,
     for (row=0;row<RCC;row++) {
       //msg("col %d, index %d, row %d\n",col,index,row);
       if (index>=ND) {
-	for (a=0;a<nb_antennas_tx;a++){
+	for (a=0;a<frame_parms->nb_antennas_tx;a++){
 	  //msg("a %d k %d\n",a,k);
 
 	  wptr = &wtemp[a][k<<2];
@@ -210,10 +243,10 @@ void pdcch_interleaving(mod_sym_t **z, mod_sym_t **wbar,unsigned short Nid_cell,
   // permutation
   for (i=0;i<Mquad;i++) {
 
-    for (a=0;a<nb_antennas_tx;a++) {
+    for (a=0;a<frame_parms->nb_antennas_tx;a++) {
       
       wptr  = &wtemp[a][i<<2];
-      wptr2 = &wbar[a][((i+Nid_cell)%Mquad)<<2];
+      wptr2 = &wbar[a][((i+frame_parms->Nid_cell)%Mquad)<<2];
       wptr2[0] = wptr[0];
       wptr2[1] = wptr[1];
       wptr2[2] = wptr[2];
@@ -222,61 +255,90 @@ void pdcch_interleaving(mod_sym_t **z, mod_sym_t **wbar,unsigned short Nid_cell,
   }
 }
 
-void pdcch_demapping(unsigned short *llr,unsigned short *wbar,LTE_DL_FRAME_PARMS *frame_parms) {
+void pdcch_demapping(u16 *llr,u16 *wbar,LTE_DL_FRAME_PARMS *frame_parms,u8 num_pdcch_symbols) {
 
-  unsigned int i, lprime;
-  unsigned short kprime,mprime,symbol_offset,tti_offset;
-  short re_offset;
+  u32 i, lprime;
+  u16 kprime,kprime_mod12,mprime,symbol_offset,tti_offset,tti_offset0;
+  s16 re_offset,re_offset0;
 
-  // demapping from REGs (2 symbols for PDCCH, in symbol w/out reference signals, i.e. 3 REGs/RB)
+  // This is the REG allocation algorithm from 36-211, second part of Section 6.8.5
+
 
   mprime=0;
 
 
   re_offset = 0;
-
+  re_offset0 = 0; // counter for symbol with pilots (extracted outside!)
   
-  for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime+=4) {
-    for (lprime=0;lprime<2;lprime++) {
+  for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime++) {
+    for (lprime=0;lprime<num_pdcch_symbols;lprime++) {
 
-      symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(1+lprime);
+      symbol_offset = (u32)frame_parms->N_RB_DL*12*lprime;
   
-
+      tti_offset = symbol_offset + re_offset;
+      tti_offset0 = symbol_offset + re_offset0;
       // if REG is allocated to PHICH, skip it
-      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
+      if (check_phich_reg(frame_parms,kprime,lprime) == 1) {
 	//	msg("dci_demapping: skipping REG %d\n",kprime>>2);
-	kprime+=4;
+	if ((lprime == 0)&&((kprime%6)==0))
+	  re_offset0+=4;
       }
+      else {  // not allocated to PHICH/PCFICH
 
-      // Copy REG to TX buffer
-      for (i=0;i<4;i++) {
-	
-	tti_offset = symbol_offset + re_offset + i;
-	
-	
-	wbar[mprime] = llr[tti_offset];
-	//	msg("demapping %d (symbol %d re %d) -> %d,%d\n",tti_offset,symbol_offset,re_offset+i,((char *)&wbar[mprime])[0],((char *)&wbar[mprime])[1]);
-	mprime++;
-      }
-    }
-    re_offset+=4;
-    // Stop when all REGs are copied in
-    if (mprime>=Msymb)
-      break;
-  }
+	if (lprime == 0) {
+	  // first symbol, or second symbol+4 TX antennas skip pilots
+	  kprime_mod12 = kprime%12;
+	  if ((kprime_mod12 == 0) || (kprime_mod12 == 6)) {
+	    // kprime represents REG	    
+
+	    for (i=0;i<4;i++) {
+	      wbar[mprime] = llr[tti_offset0+i];
+#ifdef DEBUG_DCI_ENCODING
+	      msg("[PHY] PDCCH demapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset0,symbol_offset,re_offset0,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
+#endif
+	      mprime++;
+	      re_offset0++;
+	    }
+	  }
+	}
+	else if ((lprime==1)&&(frame_parms->nb_antennas_tx == 4)) {  
+	  // LATER!!!!
+	}
+	else { // no pilots in this symbol
+	  kprime_mod12 = kprime%12;
+	  if ((kprime_mod12 == 0) || (kprime_mod12 == 4) || (kprime_mod12 == 8)) {
+	    // kprime represents REG	    
+	    for (i=0;i<4;i++) {
+	      wbar[mprime] = llr[tti_offset+i];
+#ifdef DEBUG_DCI_ENCODING
+	      msg("[PHY] PDCCH demapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
+#endif
+		mprime++;
+	    }
+	  }  // is representative
+	} // no pilots case	
+      } // not allocated to PHICH/PCFICH
+
+      // Stop when all REGs are copied in
+      if (mprime>=Msymb)
+	break;
+    } //lprime loop
+    re_offset++;
+
+  } // kprime loop
 }
 
-static unsigned short wtemp_rx[Msymb];
-void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short Nid_cell) {
+static u16 wtemp_rx[Msymb];
+void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,u16 *z, u16 *wbar,u8 number_pdcch_symbols) {
 
 
 
-  unsigned short *wptr,*zptr,*wptr2;
+  u16 *wptr,*zptr,*wptr2;
 
-
-  unsigned int RCC = (Mquad>>5), ND;
-  unsigned int row,col,Kpi,index;
-  int i,k;
+  u32 Mquad=get_nCCE(number_pdcch_symbols,frame_parms)*9;
+  u32 RCC = (Mquad>>5), ND;
+  u32 row,col,Kpi,index;
+  s32 i,k;
 
   if (!z) {
     msg("dci.c: pdcch_deinterleaving: FATAL z is Null\n");
@@ -285,7 +347,7 @@ void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short
   // undo permutation
   for (i=0;i<Mquad;i++) {
     wptr = &wtemp_rx[i<<2];
-    wptr2 = &wbar[((i+Nid_cell)%Mquad)<<2];
+    wptr2 = &wbar[((i+frame_parms->Nid_cell)%Mquad)<<2];
 
     wptr[0] = wptr2[0];
     wptr[1] = wptr2[1];
@@ -339,22 +401,22 @@ void pdcch_deinterleaving(unsigned short *z, unsigned short *wbar,unsigned short
 }
 
 
-int pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-			 int **rxdataF_comp,
-			 int **rxdataF_comp_i,
-			 int **rho_i,
-			 short *pdcch_llr16,
-			 short *pdcch_llr8in,
-			 unsigned char symbol) {
+s32 pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
+			 s32 **rxdataF_comp,
+			 s32 **rxdataF_comp_i,
+			 s32 **rho_i,
+			 s16 *pdcch_llr16,
+			 s16 *pdcch_llr8in,
+			 u8 symbol) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *llr128;
-  int i;
+  s32 i;
   char *pdcch_llr8;
   pdcch_llr8 = (char *)&pdcch_llr8in[symbol*frame_parms->N_RB_DL*12];
-  short *pdcch_llr;
+  s16 *pdcch_llr;
   pdcch_llr = &pdcch_llr16[symbol*frame_parms->N_RB_DL*12];
 
   //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
@@ -366,10 +428,10 @@ int pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     return -1;
   }
 
-  qpsk_qpsk((short *)rxF,
-	    (short *)rxF_i,
-	    (short *)llr128,
-	    (short *)rho,
+  qpsk_qpsk((s16 *)rxF,
+	    (s16 *)rxF_i,
+	    (s16 *)llr128,
+	    (s16 *)rho,
 	    frame_parms->N_RB_DL*12);
 
   //prepare for Viterbi which accepts 8 bit, but prefers 4 bit, soft input.
@@ -389,13 +451,13 @@ int pdcch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
-		   int **rxdataF_comp,
+s32 pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
+		   s32 **rxdataF_comp,
 		   char *pdcch_llr,
-		   unsigned char symbol) {
+		   u8 symbol) {
 
-  short *rxF= (short*) &rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int i;
+  s16 *rxF= (s16*) &rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  s32 i;
   char *pdcch_llr8;
 
   pdcch_llr8 = &pdcch_llr[2*symbol*frame_parms->N_RB_DL*12];
@@ -404,7 +466,7 @@ int pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
     msg("pdcch_qpsk_llr: llr is null, symbol %d\n",symbol);
     return(-1);
   }
-  //  msg("pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
+  //    msg("pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
 
   for (i=0;i<(frame_parms->N_RB_DL*24);i++) {
 
@@ -427,13 +489,13 @@ int pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
 __m128i avg128P;
 
 //compute average channel_level on each (TX,RX) antenna pair
-void pdcch_channel_level(int **dl_ch_estimates_ext,
+void pdcch_channel_level(s32 **dl_ch_estimates_ext,
 			 LTE_DL_FRAME_PARMS *frame_parms,
-			 int *avg,
-			 unsigned char nb_rb) {
+			 s32 *avg,
+			 u8 nb_rb) {
 
-  short rb;
-  unsigned char aatx,aarx;
+  s16 rb;
+  u8 aatx,aarx;
   __m128i *dl_ch128;
   
 
@@ -459,10 +521,10 @@ void pdcch_channel_level(int **dl_ch_estimates_ext,
 	*/
       }
 
-      avg[(aatx<<1)+aarx] = (((int*)&avg128P)[0] + 
-			     ((int*)&avg128P)[1] + 
-			     ((int*)&avg128P)[2] + 
-			     ((int*)&avg128P)[3])/(nb_rb*12);
+      avg[(aatx<<1)+aarx] = (((s32*)&avg128P)[0] + 
+			     ((s32*)&avg128P)[1] + 
+			     ((s32*)&avg128P)[2] + 
+			     ((s32*)&avg128P)[3])/(nb_rb*12);
 
       //            msg("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
@@ -474,15 +536,15 @@ void pdcch_channel_level(int **dl_ch_estimates_ext,
 __m128i mmtmpPD0,mmtmpPD1,mmtmpPD2,mmtmpPD3;
 
 void pdcch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
-				   unsigned char symbol,
-				   int **dl_ch_estimates_ext,
-				   int **dl_ch_estimates_ext_i,
-				   int **dl_ch_rho_ext,
-				   unsigned char output_shift) {
+				   u8 symbol,
+				   s32 **dl_ch_estimates_ext,
+				   s32 **dl_ch_estimates_ext_i,
+				   s32 **dl_ch_rho_ext,
+				   u8 output_shift) {
 
-  unsigned short rb;
+  u16 rb;
   __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128;
-  unsigned char aarx;
+  u8 aarx;
 
   //  printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
 
@@ -572,16 +634,16 @@ void pdcch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
-			 int **rxdataF_comp,
-			 int **rxdataF_comp_i,
-			 int **rho,
-			 int **rho_i,
-			 unsigned char symbol) {
+			 s32 **rxdataF_comp,
+			 s32 **rxdataF_comp_i,
+			 s32 **rho,
+			 s32 **rho_i,
+			 u8 symbol) {
 
-  unsigned char aatx;
+  u8 aatx;
 
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
-  int i;
+  s32 i;
 
   if (frame_parms->nb_antennas_rx>1) {
     for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
@@ -616,24 +678,26 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-void pdcch_extract_rbs_single(int **rxdataF,
-			      int **dl_ch_estimates,
-			      int **rxdataF_ext,
-			      int **dl_ch_estimates_ext,
-			      unsigned char symbol,
+void pdcch_extract_rbs_single(s32 **rxdataF,
+			      s32 **dl_ch_estimates,
+			      s32 **rxdataF_ext,
+			      s32 **dl_ch_estimates_ext,
+			      u8 symbol,
 			      LTE_DL_FRAME_PARMS *frame_parms) {
 
 
-  unsigned short rb,nb_rb=0;
-  unsigned char i,aarx;
-  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
+  u16 rb,nb_rb=0;
+  u8 i,j,aarx;
+  s32 *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
 
 
-  unsigned char symbol_mod;
+  u8 symbol_mod;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  //  msg("extract_rbs: symbol_mod %d\n",symbol_mod);
+#ifdef DEBUG_DCI_DECODING
+  msg("[PHY] extract_rbs_single: symbol_mod %d\n",symbol_mod);
+#endif
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
     dl_ch0     = &dl_ch_estimates[aarx][5+(symbol_mod*(frame_parms->ofdm_symbol_size))];
@@ -654,17 +718,17 @@ void pdcch_extract_rbs_single(int **rxdataF,
 	}
 	
 
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
 	/*
 	  msg("rb %d\n",rb);
 	  for (i=0;i<12;i++)
-	  msg("(%d %d)",((short *)dl_ch)[i<<1],((short*)dl_ch)[1+(i<<1)]);
+	  msg("(%d %d)",((s16 *)dl_ch)[i<<1],((s16*)dl_ch)[1+(i<<1)]);
 	  msg("\n");*/
 	
 	for (i=0;i<12;i++) {
 	  rxF_ext[i]=rxF[i<<1];
 	  //	      msg("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[(aatx<<1)+aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
-	  //     ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
+	  //     ((s16*)&rxF[i<<1])[0],((s16*)&rxF[i<<1])[0]);
 	}
 	nb_rb++;
 	dl_ch0_ext+=12;
@@ -676,72 +740,121 @@ void pdcch_extract_rbs_single(int **rxdataF,
       }
     else {  // Odd number of RBs
       for (rb=0;rb<frame_parms->N_RB_DL>>1;rb++) {
-	//	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
-	
 
-	/*	  
-		 msg("rb %d\n",rb);
-		 for (i=0;i<12;i++)
-		 msg("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-		 msg("\n");
-	*/
-
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	for (i=0;i<12;i++)
-	  rxF_ext[i]=rxF[i<<1];
-	nb_rb++;
-	dl_ch0_ext+=12;
-	rxF_ext+=12;
-	
-	dl_ch0+=12;
-	rxF+=24;
+	if (symbol_mod>0) {
+	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
+	  for (i=0;i<12;i++)
+	    rxF_ext[i]=rxF[i<<1];
+	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  rxF_ext+=12;
+	  
+	  dl_ch0+=12;
+	  rxF+=24;
+	}
+	else {
+	  j=0;
+	  for (i=0;i<12;i++) {
+	    if ((i!=frame_parms->nushift) &&
+		(i!=frame_parms->nushift+3) &&
+		(i!=frame_parms->nushift+6) &&
+		(i!=frame_parms->nushift+9)) {
+	      rxF_ext[j]=rxF[i<<1];
+	      //	      	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+	      dl_ch0_ext[j++]=dl_ch0[i];
+	      //	      	      printf("ch %d => (%d,%d)\n",i,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
+	    }
+	  }
+	  nb_rb++;
+	  dl_ch0_ext+=8;
+	  rxF_ext+=8;
+	  
+	  dl_ch0+=12;
+	  rxF+=24;
+	}
       }
       // Do middle RB (around DC)
       //	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);      
 
+      if (symbol_mod==0) {
+	j=0;
+	for (i=0;i<6;i++) {
+	  if ((i!=frame_parms->nushift) &&
+	      (i!=frame_parms->nushift+3)){
+	    dl_ch0_ext[j]=dl_ch0[i];
+	    rxF_ext[j++]=rxF[i<<1];
+	    //	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	  }
+	}
+	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
+	for (;i<12;i++) {
+	  if ((i!=frame_parms->nushift+6) &&
+	      (i!=frame_parms->nushift+9)){
+	    dl_ch0_ext[j]=dl_ch0[i];
+	    rxF_ext[j++]=rxF[(1+i-6)<<1];
+	    //	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	  }
+	}
+      
 	
-      for (i=0;i<6;i++) {
-	dl_ch0_ext[i]=dl_ch0[i];
-	rxF_ext[i]=rxF[i<<1];
+	nb_rb++;
+	dl_ch0_ext+=8;
+	rxF_ext+=8;
+	dl_ch0+=12;
+	rxF+=14;
+	rb++;
       }
-      rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
-      for (;i<12;i++) {
-	dl_ch0_ext[i]=dl_ch0[i];
-	rxF_ext[i]=rxF[(1+i)<<1];
-      }
-      
-      
-      nb_rb++;
-      dl_ch0_ext+=12;
-      rxF_ext+=12;
-      dl_ch0+=12;
-#ifdef KHZ66_NULL
-      dl_ch0_ext[8] = 0;
-      dl_ch0_ext[9] = 0;
-      dl_ch0_ext[10] = 0;
-      dl_ch0_ext[11] = 0;
-#endif
-      rxF+=14;
-      rb++;
-      
-      for (;rb<frame_parms->N_RB_DL;rb++) {
-	//	msg("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);	
-	  /*
-  	    msg("rb %d\n",rb);
-	    for (i=0;i<12;i++)
-	    msg("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-	    msg("\n");
-	  */
-
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	for (i=0;i<12;i++)
+      else {
+	for (i=0;i<6;i++) {
+	  dl_ch0_ext[i]=dl_ch0[i];
 	  rxF_ext[i]=rxF[i<<1];
+	}
+	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
+	for (;i<12;i++) {
+	  dl_ch0_ext[i]=dl_ch0[i];
+	  rxF_ext[i]=rxF[(1+i-6)<<1];
+	}
+      
+	
 	nb_rb++;
 	dl_ch0_ext+=12;
 	rxF_ext+=12;
-	
 	dl_ch0+=12;
-	rxF+=24;
+	rxF+=14;
+	rb++;
+      }
+
+      for (;rb<frame_parms->N_RB_DL;rb++) {
+	if (symbol_mod > 0) {
+	  memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
+	  for (i=0;i<12;i++)
+	    rxF_ext[i]=rxF[i<<1];
+	  nb_rb++;
+	  dl_ch0_ext+=12;
+	  rxF_ext+=12;
+	  
+	  dl_ch0+=12;
+	  rxF+=24;
+	}
+	else {
+	  j=0;
+	  for (i=0;i<12;i++) {
+	    if ((i!=frame_parms->nushift) &&
+		(i!=frame_parms->nushift+3) &&
+		(i!=frame_parms->nushift+6) &&
+		(i!=frame_parms->nushift+9)) {
+	      rxF_ext[j]=rxF[i<<1];
+	      //	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+	      dl_ch0_ext[j++]=dl_ch0[i];
+	    }
+	  }
+	  nb_rb++;
+	  dl_ch0_ext+=8;
+	  rxF_ext+=8;
+	  
+	  dl_ch0+=12;
+	  rxF+=24;
+	}
       }
     }
   }
@@ -751,18 +864,18 @@ void pdcch_extract_rbs_single(int **rxdataF,
 
 }
 
-void pdcch_extract_rbs_dual(int **rxdataF,
-			    int **dl_ch_estimates,
-			    int **rxdataF_ext,
-			    int **dl_ch_estimates_ext,
-			    unsigned char symbol,
+void pdcch_extract_rbs_dual(s32 **rxdataF,
+			    s32 **dl_ch_estimates,
+			    s32 **rxdataF_ext,
+			    s32 **dl_ch_estimates_ext,
+			    u8 symbol,
 			    LTE_DL_FRAME_PARMS *frame_parms) {
   
 
-  unsigned short rb,nb_rb=0;
-  unsigned char i,aarx;
-  int *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
-  unsigned char symbol_mod;
+  u16 rb,nb_rb=0;
+  u8 i,aarx;
+  s32 *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
+  u8 symbol_mod;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -789,18 +902,18 @@ void pdcch_extract_rbs_dual(int **rxdataF,
 	}
 	
 
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
+	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
+	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(s32));
 	  /*
 	    msg("rb %d\n",rb);
 	    for (i=0;i<12;i++)
-	    msg("(%d %d)",((short *)dl_ch)[i<<1],((short*)dl_ch)[1+(i<<1)]);
+	    msg("(%d %d)",((s16 *)dl_ch)[i<<1],((s16*)dl_ch)[1+(i<<1)]);
 	    msg("\n");*/
 	  
 	for (i=0;i<12;i++) {
 	  rxF_ext[i]=rxF[i<<1];
 	  //	  	      msg("%d : (%d,%d)\n",(rxF+(2*i)-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))*2])/2,
-	  //   ((short*)&rxF[i<<1])[0],((short*)&rxF[i<<1])[0]);
+	  //   ((s16*)&rxF[i<<1])[0],((s16*)&rxF[i<<1])[0]);
 	}
 	nb_rb++;
 	dl_ch0_ext+=12;
@@ -817,8 +930,8 @@ void pdcch_extract_rbs_dual(int **rxdataF,
 
 	//	msg("rb %d: %d\n",rb,rxF-&rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))*2]);
 
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
+	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
+	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(s32));
 	for (i=0;i<12;i++)
 	  rxF_ext[i]=rxF[i<<1];
 	nb_rb++;
@@ -868,8 +981,8 @@ void pdcch_extract_rbs_dual(int **rxdataF,
       for (;rb<frame_parms->N_RB_DL;rb++) {
 	
 	//	msg("rb %d: %d\n",rb,rxF-&rxdataF[aarx][(symbol*(frame_parms->ofdm_symbol_size))*2]);
-	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(int));
+	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(s32));
+	memcpy(dl_ch1_ext,dl_ch1,12*sizeof(s32));
 	for (i=0;i<12;i++)
 	  rxF_ext[i]=rxF[i<<1];
 	nb_rb++;
@@ -892,18 +1005,18 @@ void pdcch_extract_rbs_dual(int **rxdataF,
 }
 
 
-void pdcch_channel_compensation(int **rxdataF_ext,
-				int **dl_ch_estimates_ext,
-				int **rxdataF_comp,
-				int **rho,
+void pdcch_channel_compensation(s32 **rxdataF_ext,
+				s32 **dl_ch_estimates_ext,
+				s32 **rxdataF_comp,
+				s32 **rho,
 				LTE_DL_FRAME_PARMS *frame_parms,
-				unsigned char symbol,
-				unsigned char output_shift) {
+				u8 symbol,
+				u8 output_shift) {
 
-  unsigned short rb;
+  u16 rb;
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
   __m128i *dl_ch128_2, *rho128;
-  unsigned char aatx,aarx;
+  u8 aatx,aarx;
 
 
 
@@ -911,7 +1024,10 @@ void pdcch_channel_compensation(int **rxdataF_ext,
   zero2 = _mm_xor_si128(zero2,zero2);
 #endif
 
-  //  msg("comp: symbol %d\n",symbol);
+#ifdef DEBUG_DCI_DECODING
+  msg("[PHY] PDCCH comp: symbol %d\n",symbol);
+#endif
+
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
     //if (frame_parms->mode1_flag && aatx>0) break; //if mode1_flag is set then there is only one stream to extract, independent of nb_antennas_tx
 
@@ -1081,13 +1197,13 @@ void pdcch_channel_compensation(int **rxdataF_ext,
 }     
 
 void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
-			 int **rxdataF_comp,
-			 unsigned char symbol) {
+			 s32 **rxdataF_comp,
+			 u8 symbol) {
 
-  unsigned char aatx;
+  u8 aatx;
 
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
-  int i;
+  s32 i;
 
   if (frame_parms->nb_antennas_rx>1) {
     for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
@@ -1105,11 +1221,11 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
-		int **rxdataF_comp,
-		unsigned char l) {
+		s32 **rxdataF_comp,
+		u8 l) {
 
 
-  unsigned char rb,re,jj,ii;
+  u8 rb,re,jj,ii;
 
   jj=0;
   ii=0;
@@ -1125,16 +1241,16 @@ void pdcch_siso(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void pdcch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
-		    int **rxdataF_comp,
-		    unsigned char symbol){
+		    s32 **rxdataF_comp,
+		    u8 symbol){
 
 
-  short *rxF0,*rxF1;
-  unsigned char rb,re;
-  int jj=(symbol*frame_parms->N_RB_DL*12);
+  s16 *rxF0,*rxF1;
+  u8 rb,re;
+  s32 jj=(symbol*frame_parms->N_RB_DL*12);
 
-  rxF0     = (short*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
-  rxF1     = (short*)&rxdataF_comp[2][jj];  //tx antenna 1  h1*y
+  rxF0     = (s16*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
+  rxF1     = (s16*)&rxdataF_comp[2][jj];  //tx antenna 1  h1*y
 
   for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 
@@ -1158,23 +1274,23 @@ void pdcch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
   
 }
 
-int avgP[4];
+s32 avgP[4];
 
-int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
+s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
-	     unsigned char eNb_id,
-	     unsigned char n_pdcch_symbols,
+	     u8 eNb_id,
 	     MIMO_mode_t mimo_mode,
-	     unsigned char is_secondary_ue) {
+	     u8 is_secondary_ue) {
 
-  unsigned char log2_maxh,aatx,aarx;
+  u8 log2_maxh,aatx,aarx;
 #ifdef MU_RECEIVER
-  unsigned char eNb_id_i=eNb_id+1;//add 1 to eNb_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNb are shifted by 1
+  u8 eNb_id_i=eNb_id+1;//add 1 to eNb_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNb are shifted by 1
 #endif
-  int avgs,s;
+  s32 avgs,s;
+  u8 n_pdcch_symbols = lte_ue_pdcch_vars[eNb_id]->num_pdcch_symbols;
 
-  for (s=1;s<1+n_pdcch_symbols;s++) {
+  for (s=0;s<n_pdcch_symbols;s++) {
       if (is_secondary_ue == 1) {
 	pdcch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 				 lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
@@ -1216,12 +1332,12 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
       avgs = max(avgs,avgP[(aarx<<1)+aatx]);
   
-  log2_maxh = 4+(log2_approx(avgs)/2);
+  log2_maxh = 3+(log2_approx(avgs)/2);
 #ifdef DEBUG_PHY
   msg("[PDCCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgP[0],avgs);
 #endif
 
-  for (s=1;s<1+n_pdcch_symbols;s++) {
+  for (s=0;s<n_pdcch_symbols;s++) {
     pdcch_channel_compensation(lte_ue_pdcch_vars[eNb_id]->rxdataF_ext,
 			       lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext,
 			       lte_ue_pdcch_vars[eNb_id]->rxdataF_comp,
@@ -1314,42 +1430,136 @@ int rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 
   pdcch_demapping(lte_ue_pdcch_vars[eNb_id]->llr,
 		  lte_ue_pdcch_vars[eNb_id]->wbar,
-		  frame_parms);
+		  frame_parms,
+		  n_pdcch_symbols);
 
-  pdcch_deinterleaving((unsigned short*)lte_ue_pdcch_vars[eNb_id]->e_rx,
+  pdcch_deinterleaving(frame_parms,
+		       (u16*)lte_ue_pdcch_vars[eNb_id]->e_rx,
 		       lte_ue_pdcch_vars[eNb_id]->wbar,
-		       frame_parms->Nid_cell);
+		       n_pdcch_symbols);
+  
+  pdcch_unscrambling(frame_parms,
+		     lte_ue_pdcch_vars[eNb_id]->e_rx,
+		     get_nCCE(n_pdcch_symbols,frame_parms)*72);
+  
   return(0);
+}
+
+
+void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		      u8 *e,
+		      u32 length) {
+  int i;
+  u8 reset;
+  u32 x1, x2, s=0;
+
+  reset = 1;
+  // x1 is set in lte_gold_generic
+  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+
+  for (i=0; i<length; i++) {
+    if ((i&0x1f)==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    //    printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
+    e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
+  }
+}
+
+void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+			s8* llr,
+			u32 length) {
+
+  int i;
+  u8 reset;
+  u32 x1, x2, s=0;
+
+  reset = 1;
+  // x1 is set in first call to lte_gold_generic
+  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+
+  for (i=0; i<length; i++) {
+    if (i%32==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+    // take the quarter of the PBCH that corresponds to this frame
+    //    printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
+    if (((s>>(i%32))&1)==1)
+      llr[i] = -llr[i];
+
+  }
 }
 	     
 
-static unsigned char e[DCI_BITS];	
+u8 get_num_pdcch_symbols(u8 num_dci,
+			 DCI_ALLOC_t *dci_alloc,
+			 LTE_DL_FRAME_PARMS *frame_parms,
+			 u8 subframe) {
+
+  u16 numCCE = 0;
+  u8 i;
+
+  // check pddch duration imposed by PHICH duration (Section 6.9 of 36-211)
+  if (frame_parms->Ncp==1) { // extended prefix
+    if ((frame_parms->frame_type == 1) && 
+	((frame_parms->tdd_config<3)||(frame_parms->tdd_config==6)) &&
+	((subframe==1) || (subframe==6))) // subframes 1 and 6 (S-subframes) for 5ms switching periodicity are 2 symbols
+      return(2);
+    else {   // 10ms switching periodicity is always 3 symbols, any DL-only subframe is 3 symbols
+      return(3);
+    }
+  }
+
+  // compute numCCE
+  for (i=0;i<num_dci;i++) {
+    numCCE += (1<<(dci_alloc[i].L));
+  }
+
+  if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
+    return(1);
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 4 : 5)))
+    return(2);
+  else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 7 : 8)))
+    return(3);
+  else if ((frame_parms->N_RB_DL<=10) && ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 10 : 11))))
+    return(4);
+  
+  msg("[PHY] dci.c: get_num_pdcch_symbols subframe %d FATAL, illegal numCCE %d\n",subframe,numCCE);
+  return(0);
+}
+
+static u8 e[DCI_BITS_MAX];	
 static mod_sym_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
      
-void generate_dci_top(unsigned char num_ue_spec_dci,
-		      unsigned char num_common_dci,
-		      DCI_ALLOC_t *dci_alloc, 
-		      unsigned int n_rnti,
-		      short amp,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      mod_sym_t **txdataF,
-		      unsigned int sub_frame_offset) {
+u8 generate_dci_top(u8 num_ue_spec_dci,
+		    u8 num_common_dci,
+		    DCI_ALLOC_t *dci_alloc, 
+		    u32 n_rnti,
+		    s16 amp,
+		    LTE_DL_FRAME_PARMS *frame_parms,
+		    mod_sym_t **txdataF,
+		    u32 subframe) {
 
-  unsigned char *e_ptr;
-  unsigned int i, lprime;
-  unsigned short gain_lin_QPSK,kprime,mprime,nsymb,symbol_offset,tti_offset;
-  short re_offset;
+  u8 *e_ptr,num_pdcch_symbols;
+  s8 L;
+  u32 i, lprime;
+  u16 gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
+  s16 re_offset;
 
   mod_sym_t *y[2];
   mod_sym_t *wbar[2];
   
 #ifdef IFFT_FPGA
-  unsigned char qpsk_table_offset = 0; 
-  unsigned char qpsk_table_offset2 = 0;
+  u8 qpsk_table_offset = 0; 
+  u8 qpsk_table_offset2 = 0;
 #endif
 
-
-
+  num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
+  //  printf("num_pdcch_symbols = %d\n",num_pdcch_symbols);
 
   wbar[0] = &wbar0[0];
   wbar[1] = &wbar1[0];
@@ -1358,50 +1568,61 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 
   e_ptr = e;
 
-  // generate common DCIs first
-  i=0;
-  for (i=0;i<num_common_dci;i++) {
+  // generate DCIs in order of decreasing aggregation level, then common/ue spec
+  // MAC is assumed to have ordered the UE spec DCI according to the RNTI-based randomization
+  for (L=3;L>=0;L--) {
+    for (i=0;i<num_common_dci;i++) {
 
+      if (dci_alloc[i].L == (u8)L) {
+	
 #ifdef DEBUG_DCI_ENCODING
-    msg("Generating common DCI %d of length %d, aggregation %d\n",i,dci_alloc[i].dci_length,dci_alloc[i].L);
+	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L);
 #endif
-    e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			  e_ptr,
-			  dci_alloc[i].dci_length,
-			  dci_alloc[i].L,
-			  dci_alloc[i].rnti);    
-  }
+	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
+			      e_ptr,
+			      dci_alloc[i].dci_length,
+			      dci_alloc[i].L,
+			      dci_alloc[i].rnti);    
+      }
+    }
+    for (;i<num_ue_spec_dci + num_common_dci;i++) {
 
-  for (;i<num_ue_spec_dci + num_common_dci;i++) {
-
+      if (dci_alloc[i].L == (u8)L) {
+      
 #ifdef DEBUG_DCI_ENCODING
-    msg("Generating UE specific DCI %d of length %d, aggregation %d\n",i,dci_alloc[i].dci_length,dci_alloc[i].L);
+	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format);
 #endif
-    e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
-			  e_ptr,
-			  dci_alloc[i].dci_length,
-			  dci_alloc[i].L,
-			  dci_alloc[i].rnti);        
+	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
+			      e_ptr,
+			      dci_alloc[i].dci_length,
+			      dci_alloc[i].L,
+			      dci_alloc[i].rnti);        
+      }
+    }
   }
 
   // Scrambling
-  // not yet
+  
+    pdcch_scrambling(frame_parms,
+		     e,
+		     72*get_nCCE(num_pdcch_symbols,frame_parms));
+  
 
 #ifdef DEBUG_DCI_ENCODING
-  msg("PDCCH Modulation\n");
+  msg("[PHY] PDCCH Modulation\n");
 #endif
   // Now do modulation
-  gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
+  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   e_ptr = e;
   if (frame_parms->mode1_flag) { //SISO
 
 #ifndef IFFT_FPGA
     for (i=0;i<Msymb;i++) {
-      ((short*)(&(y[0][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
-      ((short*)(&(y[1][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[0][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[1][i])))[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
-      ((short*)(&(y[0][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
-      ((short*)(&(y[1][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[0][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((s16*)(&(y[1][i])))[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
     }
 #else
@@ -1426,31 +1647,31 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
       for (i=0;i<Msymb;i+=2) {
 
 #ifdef DEBUG_DCI_ENCODING
-	msg("PDCCH Modulation: REG %d\n",i>>2);
+	msg("[PHY] PDCCH Modulation: REG %d\n",i>>2);
 #endif
 	// first antenna position n -> x0
-	((short*)&y[0][i])[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+	((s16*)&y[0][i])[0] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
 	e_ptr++;
-	((short*)&y[0][i])[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
+	((s16*)&y[0][i])[1] = (*e_ptr == 0) ? -gain_lin_QPSK : gain_lin_QPSK;
 	e_ptr++;
 
 	// second antenna position n -> -x1*
-	((short*)&y[1][i])[0] = (*e_ptr == 0) ? gain_lin_QPSK : -gain_lin_QPSK;
+	((s16*)&y[1][i])[0] = (*e_ptr == 0) ? gain_lin_QPSK : -gain_lin_QPSK;
 	e_ptr++;
-	((short*)&y[1][i])[1] = (*e_ptr == 0) ? -gain_lin_QPSK : -gain_lin_QPSK;
+	((s16*)&y[1][i])[1] = (*e_ptr == 0) ? -gain_lin_QPSK : -gain_lin_QPSK;
 	e_ptr++;
 
 	// fill in the rest of the ALAMOUTI precoding
-	((short*)&y[0][i+1])[0] = -((short*)&y[1][i])[0];
-	((short*)&y[0][i+1])[1] = ((short*)&y[1][i])[1];
-	((short*)&y[1][i+1])[0] = ((short*)&y[0][i])[0];
-	((short*)&y[1][i+1])[1] = -((short*)&y[0][i])[1];
+	((s16*)&y[0][i+1])[0] = -((s16*)&y[1][i])[0];
+	((s16*)&y[0][i+1])[1] = ((s16*)&y[1][i])[1];
+	((s16*)&y[1][i+1])[0] = ((s16*)&y[0][i])[0];
+	((s16*)&y[1][i+1])[1] = -((s16*)&y[0][i])[1];
 
       }
 #else  
       for (i=0;i<Msymb;i+=2) {
 #ifdef DEBUG_DCI_ENCODING
-  msg("PDCCH Modulation: Symbol %d : REG %d/%d\n",i,i>>2,Msymb>>2);
+  msg("[PHY] PDCCH Modulation: Symbol %d : REG %d/%d\n",i,i>>2,Msymb>>2);
 #endif
 	qpsk_table_offset = 1;  //x0
 	qpsk_table_offset2 = 1;  //x0*
@@ -1494,13 +1715,12 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 
 
 #ifdef DEBUG_DCI_ENCODING
-  msg("PDCCH Interleaving\n");
+  msg("[PHY] PDCCH Interleaving\n");
 #endif
 
   //  msg("y %p (%p,%p), wbar %p (%p,%p)\n",y,y[0],y[1],wbar,wbar[0],wbar[1]);
-  pdcch_interleaving(&y[0],&wbar[0],frame_parms->Nid_cell,frame_parms->nb_antennas_tx);
-
-  // mapping to REGs (2 symbols for PDCCH, in symbol w/out reference signals, i.e. 3 REGs/RB)
+  // This is the interleaving procedure defined in 36-211, first part of Section 6.8.5
+  pdcch_interleaving(frame_parms,&y[0],&wbar[0],num_pdcch_symbols);
 
   mprime=0;
   nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -1509,44 +1729,75 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
 #else
   re_offset = frame_parms->first_carrier_offset;
 #endif
-  
-  for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime+=4) {
-    for (lprime=0;lprime<2;lprime++) {
+
+  // This is the REG allocation algorithm from 36-211, second part of Section 6.8.5
+  for (kprime=0;kprime<frame_parms->N_RB_DL*12;kprime++) {
+    for (lprime=0;lprime<num_pdcch_symbols;lprime++) {
 
 #ifdef IFFT_FPGA      
-      symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(1+lprime+(sub_frame_offset*nsymb));
+      symbol_offset = (u32)frame_parms->N_RB_DL*12*(lprime+(subframe*nsymb));
   
 #else
-      symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(1+lprime+(sub_frame_offset*nsymb));
+      symbol_offset = (u32)frame_parms->ofdm_symbol_size*(lprime+(subframe*nsymb));
 #endif
 
+
+	  
+      tti_offset = symbol_offset + re_offset;
+
+      //      printf("kprime %d, lprime %d => REG %d (symbol %d)\n",kprime,lprime,(lprime==0)?(kprime/6) : (kprime>>2),symbol_offset);
       // if REG is allocated to PHICH, skip it
-      if (check_phich_reg(frame_parms,kprime>>2) == 1) {
-	//	msg("generate_dci: skipping REG %d\n",kprime>>2);
-	kprime+=4;
-      }
-      // Copy REG to TX buffer      
-      for (i=0;i<4;i++) {
-	
-
-	
-#ifdef IFFT_FPGA
-	if ((re_offset+i) == (frame_parms->N_RB_DL*12))
-	  re_offset = re_offset - (frame_parms->N_RB_DL*12);
-#else
-	if ((re_offset+i) == (frame_parms->ofdm_symbol_size))
-	  re_offset = re_offset + 1 - (frame_parms->ofdm_symbol_size);
+      if (check_phich_reg(frame_parms,kprime,lprime) == 1) {
+#ifdef DEBUG_DCI_ENCODING
+	msg("generate_dci: skipping REG %d (kprime %d, lprime %d)\n",(lprime==0)?(kprime/6) : (kprime>>2),kprime,lprime);
 #endif
-
-	tti_offset = symbol_offset + re_offset+i;	
-	txdataF[0][tti_offset] = wbar[0][mprime];
-	if (frame_parms->nb_antennas_tx > 1)
-	  txdataF[1][tti_offset] = wbar[1][mprime];
-	//	msg("PDCCH mapping %d (symbol %d re %d) -> %d\n",tti_offset,symbol_offset,re_offset+i,wbar[0][mprime]);
-	mprime++;
       }
-    }
-    re_offset+=4;
+      else {
+	// Copy REG to TX buffer      
+	
+	if ((lprime == 0)||
+	    ((lprime==1)&&(frame_parms->nb_antennas_tx == 4))) {  
+	  // first symbol, or second symbol+4 TX antennas skip pilots
+
+	  kprime_mod12 = kprime%12;
+	  if ((kprime_mod12 == 0) || (kprime_mod12 == 6)) {
+	    // kprime represents REG	    
+
+	    for (i=0;i<6;i++) {
+	      if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+		txdataF[0][tti_offset+i] = wbar[0][mprime];
+		if (frame_parms->nb_antennas_tx > 1)
+		  txdataF[1][tti_offset+i] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+		msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+	      }
+	    }
+	  }
+	}
+	else { // no pilots in this symbol
+	  kprime_mod12 = kprime%12;
+	  if ((kprime_mod12 == 0) || (kprime_mod12 == 4) || (kprime_mod12 == 8)) {
+	    // kprime represents REG	    
+	    for (i=0;i<4;i++) {
+	      txdataF[0][tti_offset+i] = wbar[0][mprime];
+	      if (frame_parms->nb_antennas_tx > 1)
+		txdataF[1][tti_offset+i] = wbar[1][mprime];
+#ifdef DEBUG_DCI_ENCODING
+	      msg("[PHY] PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+#endif
+		mprime++;
+	    }
+	  }
+	}
+	if (mprime>=Msymb)
+	  return(num_pdcch_symbols);	
+      } // check_phich_reg
+      
+    } //lprime loop
+    
+    re_offset++;
 #ifdef IFFT_FPGA
     if (re_offset == (frame_parms->N_RB_DL*12))
       re_offset = 0;
@@ -1554,38 +1805,36 @@ void generate_dci_top(unsigned char num_ue_spec_dci,
     if (re_offset == (frame_parms->ofdm_symbol_size))
       re_offset = 1;
 #endif
-
-    // Stop when all REGs are copied out
-    if (mprime>=Msymb)
-      break;
-  }
+    
+  } // kprime loop
+  return(num_pdcch_symbols);
 }
 
-static unsigned char dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
+static u8 dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
 static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
  
-void dci_decoding(unsigned char DCI_LENGTH,
-		  unsigned char aggregation_level,
+void dci_decoding(u8 DCI_LENGTH,
+		  u8 aggregation_level,
 		  char *e,
-		  unsigned char *decoded_output) {
+		  u8 *decoded_output) {
 
 
-  unsigned short RCC;
+  u16 RCC;
 
-  unsigned short D=(DCI_LENGTH+16+64);
-  unsigned short coded_bits;
+  u16 D=(DCI_LENGTH+16+64);
+  u16 coded_bits;
 #ifdef DEBUG_DCI_DECODING
-  int i;
+  s32 i;
 #endif
   if (aggregation_level>3) {
-    msg("dci.c: dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
+    msg("[PHY] dci.c: dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
     return;
   }
 
   coded_bits = 72 * (1<<aggregation_level);
 
 #ifdef DEBUG_DCI_DECODING
-  msg("Doing DCI decoding for %d bits, DCI_LENGTH %d,coded_bits %d, e %p\n",3*(DCI_LENGTH+16),DCI_LENGTH,coded_bits,e);
+  msg("[PHY] Doing DCI decoding for %d bits, DCI_LENGTH %d,coded_bits %d, e %p\n",3*(DCI_LENGTH+16),DCI_LENGTH,coded_bits,e);
 #endif
   
   // now do decoding
@@ -1596,20 +1845,18 @@ void dci_decoding(unsigned char DCI_LENGTH,
 
    
 #ifdef DEBUG_DCI_DECODING
-  msg("Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
+  msg("[PHY] Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
 #endif
 
   lte_rate_matching_cc_rx(RCC,coded_bits,w_rx,dummy_w_rx,e);
  
-  sub_block_deinterleaving_cc((unsigned int)(DCI_LENGTH+16), 
+  sub_block_deinterleaving_cc((u32)(DCI_LENGTH+16), 
 			      &d_rx[96], 
 			      &w_rx[0]); 
  
 #ifdef DEBUG_DCI_DECODING
-  msg("Before memset\n");
-
   for (i=0;i<16+DCI_LENGTH;i++)
-    msg("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
+    msg("[PHY] DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
 #endif  
   memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
   
@@ -1625,16 +1872,17 @@ void dci_decoding(unsigned char DCI_LENGTH,
 }
 
 
-static unsigned char dci_decoded_output[(MAX_DCI_SIZE_BITS+64)/8];
+static u8 dci_decoded_output[(MAX_DCI_SIZE_BITS+64)/8];
 
-unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
-				      DCI_ALLOC_t *dci_alloc,
-				      short eNb_id,
-				      LTE_DL_FRAME_PARMS *frame_parms,
-				      unsigned short si_rnti,
-				      unsigned short ra_rnti) {
+/*
+u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+			   DCI_ALLOC_t *dci_alloc,
+			   s16 eNb_id,
+			   LTE_DL_FRAME_PARMS *frame_parms,
+			   u16 si_rnti,
+			   u16 ra_rnti) {
   
-  unsigned short crc,dci_cnt,first_found,second_found,dci_len;
+  u16 crc,dci_cnt,first_found,second_found,dci_len;
 
   // Aggregation level 8
   dci_cnt = 0;
@@ -1649,14 +1897,6 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
 
-  /*      
-  for (i=0;i<3+(dci_len/8);i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
-
-
-  msg("CRC 0/1A: %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-  
-  */
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1680,13 +1920,6 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
       //      printf("DCI Format 0\n");
     }
     else {
-      /*
-      printf("DCI cnt %d : Format 1A (type %d,mcs %d, rv %d,hpid %d)\n",dci_cnt,
-	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->type,
-	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->rv,
-	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->mcs,
-	     ((DCI1A_5MHz_TDD_1_6_t*)&dci_alloc[dci_cnt].dci_pdu[0])->harq_pid);
-      */
       dci_alloc[dci_cnt].format     = format1A;
     }
 
@@ -1714,17 +1947,10 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   dci_len = sizeof_DCI1A_5MHz_TDD_1_6_t;
   dci_decoding(dci_len,
 	       3,
-	       &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
+	       &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS_MAX/2],
 	       dci_decoded_output);
   crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-  /*        
-  for (i=0;i<dci_len/8;i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
-
-    msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-  
-  */
   if (crc == si_rnti) {
     dci_alloc[dci_cnt].dci_length = dci_len;
     dci_alloc[dci_cnt].rnti       = si_rnti;
@@ -1782,14 +2008,6 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
     crc = (extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16)); 
 
-    /*        
-  for (i=0;i<1+(dci_len/8);i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
-
-
-    msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    */
-
     if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
@@ -1811,18 +2029,9 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     dci_len = sizeof_DCI2_5MHz_2A_L10PRB_TDD_t;
     dci_decoding(dci_len,
 		 3,
-		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
+		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS_MAX/2],
 		 dci_decoded_output);
     crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-    /*
-  for (i=0;i<dci_len/8;i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
-    
-
-   
-    
-    msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    */
 
     if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
@@ -1850,13 +2059,6 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		 dci_decoded_output);
 
     crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-    /*
-  for (i=0;i<3+(dci_len/8);i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
-
-    msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    */
-    
 
     if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
@@ -1880,17 +2082,11 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
     dci_decoding(dci_len,
 		 3,
-		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS/2],
+		 &lte_ue_pdcch_vars[eNb_id]->e_rx[DCI_BITS_MAX/2],
 		 dci_decoded_output);
 
     crc = extract_crc(dci_decoded_output,dci_len) ^ (crc16(dci_decoded_output,dci_len)>>16); 
-    /*
-  for (i=0;i<3+(dci_len/8);i++)
-    msg("i %d : %x\n",i,dci_decoded_output[i]);
 
-    msg("CRC : %x\n",crc);
-    msg("CRC : %x (len %d, %x %x)\n",crc,dci_len,(unsigned int)extract_crc(dci_decoded_output,dci_len) ,crc16(dci_decoded_output,dci_len)>>16);
-    */
     if (crc == lte_ue_pdcch_vars[eNb_id]->crnti) {
       dci_alloc[dci_cnt].dci_length = dci_len;
       dci_alloc[dci_cnt].rnti       = lte_ue_pdcch_vars[eNb_id]->crnti;
@@ -1909,4 +2105,252 @@ unsigned short dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
 
 
+}
+*/
+
+u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms) {
+
+  u16 Nreg=0;
+
+  if ((num_pdcch_symbols>0) && (num_pdcch_symbols<4))
+    switch (frame_parms->N_RB_DL) {
+    case 6:
+      Nreg=12+(num_pdcch_symbols-1)*18;
+      break;
+    case 25:
+      Nreg=50+(num_pdcch_symbols-1)*75;
+      break;
+    case 50:
+      Nreg=100+(num_pdcch_symbols-1)*150;
+      break;
+    case 100:
+      Nreg=200+(num_pdcch_symbols-1)*300;
+      break;
+    default:
+      return(0);
+    }
+  return(Nreg/9);
+}
+void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+			     DCI_ALLOC_t *dci_alloc,
+			     s16 eNb_id,
+			     LTE_DL_FRAME_PARMS *frame_parms,
+			     u16 si_rnti,
+			     u16 ra_rnti,
+			     u8 L,
+			     u8 format_si,
+			     u8 format_ra,
+			     u8 format_c,
+			     u8 sizeof_bits,
+			     u8 sizeof_bytes,
+			     u8 *dci_cnt,
+			     u32 *CCEmap0,
+			     u32 *CCEmap1,
+			     u32 *CCEmap2) {
+  
+  u16 crc,CCEind,nCCE;
+  u32 *CCEmap;
+  nCCE = get_nCCE(lte_ue_pdcch_vars[eNb_id]->num_pdcch_symbols,frame_parms);
+  for (CCEind=0;
+       CCEind<nCCE;
+       CCEind+=(1<<L)) {
+    if (( (CCEind+(1<<L)) < nCCE) &&
+	(((CCEind<32) && (((*CCEmap0>>CCEind)&1)==0)) ||
+	 ((CCEind<64) && (CCEind>31) && (((*CCEmap1>>(CCEind-32))&1)==0)) ||
+	 ((CCEind<96) && (CCEind>63) && (((*CCEmap2>>(CCEind-64))&1)==0)))) {
+#ifdef DEBUG_DCI_DECODING
+      msg("[PHY] Attempting Aggregation Level %d DCI length %d at CCE %d (CCEmap0 %x)\n",1<<L,sizeof_bits,CCEind,*CCEmap0);
+#endif 
+      // CCE is not allocated yet
+
+
+      dci_decoding(sizeof_bits,
+		   L,
+		   &lte_ue_pdcch_vars[eNb_id]->e_rx[CCEind*72],
+		   dci_decoded_output);
+      
+      crc = extract_crc(dci_decoded_output,sizeof_bits) ^ (crc16(dci_decoded_output,sizeof_bits)>>16); 
+    
+      if (((L>1) && ((crc == si_rnti)||
+		     (crc == ra_rnti)))||
+	  (crc == lte_ue_pdcch_vars[eNb_id]->crnti))   {
+	dci_alloc[*dci_cnt].dci_length = sizeof_bits;
+	dci_alloc[*dci_cnt].rnti       = crc;
+	dci_alloc[*dci_cnt].L          = L;
+
+	if (crc==si_rnti)
+	  dci_alloc[*dci_cnt].format     = format_si;
+	else if (crc==ra_rnti)
+	  dci_alloc[*dci_cnt].format     = format_ra;
+	else if (crc==lte_ue_pdcch_vars[eNb_id]->crnti) {
+	  if ((format_c == format0)&&((dci_decoded_output[0]&1)==0)) // check if pdu is format 0 or 1A
+	    dci_alloc[*dci_cnt].format     = format0;
+	  else if (format_c == format0)
+	    dci_alloc[*dci_cnt].format     = format1A;
+	  else
+	    dci_alloc[*dci_cnt].format     = format_c;
+	}
+	memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_decoded_output,sizeof_bytes);
+	*dci_cnt = *dci_cnt+1;
+
+	if (CCEind<32)
+	  CCEmap = CCEmap0;
+	else if (CCEind<64)
+	  CCEmap = CCEmap1;
+	else if (CCEind<96)
+	  CCEmap = CCEmap2;
+
+	switch (1<<L) {
+	case 1:
+	  *CCEmap|=(1<<(CCEind&0x1f));
+	  break;
+	case 2:
+	  *CCEmap|=(0x03<<(CCEind&0x1f));
+	  break;
+	case 4:
+	  *CCEmap|=(0x0f<<(CCEind&0x1f));
+	  break;
+	case 8:
+	  *CCEmap|=(0xff<<(CCEind&0x1f));
+	  break;
+	}	
+#ifdef DEBUG_DCI_DECODING
+	msg("Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d\n",
+	    *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind);
+#endif
+      } // rnti match
+    } // CCE free
+  } // CCE loop
+}
+
+u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+			   DCI_ALLOC_t *dci_alloc,
+			   s16 eNb_id,
+			   LTE_DL_FRAME_PARMS *frame_parms,
+			   u16 si_rnti,
+			   u16 ra_rnti) {
+ 
+  u8  dci_cnt=0;
+  u32 CCEmap0=0,CCEmap1=0,CCEmap2=0;
+
+
+  // First check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 1A), 
+  // and UE_SPEC format0 (PUSCH) too while we're at it
+
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  3,
+			  format1A,
+			  format1A,
+			  format0,
+			  sizeof_DCI1A_5MHz_TDD_1_6_t,
+			  sizeof(DCI1A_5MHz_TDD_1_6_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  // Now check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
+  // and UE_SPEC format0 (PUSCH) too while we're at it
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format0,
+			  sizeof_DCI1A_5MHz_TDD_1_6_t,
+			  sizeof(DCI1A_5MHz_TDD_1_6_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+
+  // Now check UE_SPEC search spaces at aggregation 8 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  3,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+
+  // Now check UE_SPEC search spaces at aggregation 4 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+
+  // Now check UE_SPEC search spaces at aggregation 2 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  // Now check UE_SPEC search spaces at aggregation 1 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  dci_alloc,
+			  eNb_id,
+			  frame_parms,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+  return(dci_cnt);
 }

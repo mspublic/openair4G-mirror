@@ -17,7 +17,7 @@ ________________________________________________________________*/
 #define LTE_CE_FILTER_LENGTH 5
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
-#define PBCH_PDU_SIZE 6 //bytes
+#define PBCH_PDU_SIZE 3 //bytes
 #define TIMING_ADVANCE_INIT 0
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
@@ -30,11 +30,13 @@ typedef struct {
   unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
   unsigned char Ng_times6;              /// Number of PHICH groups (times 6, 1,3,6,12)
   unsigned char nushift;                /// shift of pilot position in one RB
+  unsigned char frame_type;             /// Frame type (0 FDD, 1 TDD)
   unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
   unsigned char mode1_flag;             /// flag to indicate SISO transmission
   unsigned short ofdm_symbol_size;
   unsigned char log2_symbol_size;
   unsigned short nb_prefix_samples;
+  unsigned short nb_prefix_samples0;
   unsigned short first_carrier_offset;
   unsigned int samples_per_tti;
   unsigned short symbols_per_tti;
@@ -136,6 +138,7 @@ typedef struct {
   unsigned short *llr16;
   unsigned short *wbar;
   char *e_rx;
+  u8 num_pdcch_symbols;
   unsigned short crnti;
   unsigned int dci_errors;          /// Total number of PDU errors (diagnostic mode)
   unsigned int dci_received;        /// Total number of PDU received
@@ -147,7 +150,7 @@ typedef struct {
   int **rxdataF_ext;
   int **rxdataF_comp;
   int **dl_ch_estimates_ext;
-  short *llr;
+  char *llr;
   short *channel_output;
   unsigned char *decoded_output;
   unsigned int pdu_errors;          /// Total number of PDU errors

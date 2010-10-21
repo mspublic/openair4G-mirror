@@ -54,7 +54,6 @@ CHBCH_RX_t rx_mode = ML;
 unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
 #ifdef OPENAIR_LTE
-LTE_DL_FRAME_PARMS *lte_frame_parms;
 
 /********NOTE************/
 /*All these variables are now contained in either PHY_VARS_UE or PHY_VARS_eNB*/

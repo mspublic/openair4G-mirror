@@ -148,16 +148,18 @@ void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *roun
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb) {
  
   write_output("rxsigF0.m","rxsF0", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][0][0],512*12*2,2,1);
-  write_output("rxsigF1.m","rxsF1", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*12*2,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("rxsigF1_ext.m","rxsF1_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*12*2,2,1);
   write_output("srs_seq.m","srs",phy_vars_eNb->lte_eNB_srs_vars[0].srs,2*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
   write_output("srs_est0.m","srsest0",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
-  write_output("srs_est1.m","srsest1",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
   write_output("drs_est0.m","drsest0",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
   write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
   write_output("ulsch_rxF_llr.m","ulsch_llr",phy_vars_eNb->lte_eNB_ulsch_vars[0]->llr,phy_vars_eNb->ulsch_eNb[0]->harq_processes[1]->nb_rb*12*2*9,1,0);	
+  if (phy_vars_eNb->lte_frame_parms.nb_antennas_rx>1) {
+    write_output("rxsigF1.m","rxsF1", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*12*2,2,1);
+    write_output("rxsigF1_ext.m","rxsF1_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*12*2,2,1);
+    write_output("srs_est1.m","srsest1",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
+    write_output("drs_est1.m","drsest1",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+  }
   write_output("ulsch_ch_mag.m","ulsch_ch_mag",&phy_vars_eNb->lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*12,1,1);	  
 
 }
@@ -443,12 +445,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
   u8 pbch_pdu[PBCH_PDU_SIZE];
   //  unsigned int nb_dci_ue_spec = 0, nb_dci_common = 0;
-  u16 input_buffer_length, re_allocated,rnti;
+  u16 input_buffer_length, re_allocated;
   u32 sect_id = 0,i,aa;
   u8 harq_pid;
   DCI_PDU *DCI_pdu;
   u8 *DLSCH_pdu;
   s8 UE_id;
+  u8 num_pdcch_symbols;
 
   for (sect_id = 0 ; sect_id < number_of_cards; sect_id++) {
 
@@ -480,14 +483,17 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch\n",mac_xface->frame, next_slot);
 #endif
-      
-      *((unsigned int*) pbch_pdu) = mac_xface->frame;
-      ((unsigned char*) pbch_pdu)[4] = openair_daq_vars.dlsch_transmission_mode;
-      
+
+      if ((mac_xface->frame&3) == 0) {
+	*((u8*) pbch_pdu) = (u8)((mac_xface->frame>>2)&0xff);
+	((u8*) pbch_pdu)[1] = openair_daq_vars.dlsch_transmission_mode;
+      }
+
       generate_pbch(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 		    AMP,
 		    &phy_vars_eNb->lte_frame_parms,
-		    pbch_pdu);
+		    pbch_pdu,
+		    mac_xface->frame&3);
     }
   }
 
@@ -613,14 +619,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 #endif
 
       for (sect_id=0;sect_id<number_of_cards;sect_id++) 
-	generate_dci_top(DCI_pdu->Num_ue_spec_dci,//nb_dci_ue_spec,
-			 DCI_pdu->Num_common_dci,//nb_dci_common,
-			 DCI_pdu->dci_alloc,
-			 0,
-			 AMP,
-			 &phy_vars_eNb->lte_frame_parms,
-			 phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
-			 next_slot>>1);
+	num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,//nb_dci_ue_spec,
+					     DCI_pdu->Num_common_dci,//nb_dci_common,
+					     DCI_pdu->dci_alloc,
+					     0,
+					     AMP,
+					     &phy_vars_eNb->lte_frame_parms,
+					     phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
+					     next_slot>>1);
+      msg("num_pdcch_symbols %d\n",num_pdcch_symbols);
     }
 
     // For even next slots generate dlsch
@@ -652,14 +659,20 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 	printf("\n");
 	dlsch_encoding(DLSCH_pdu,
 		       &phy_vars_eNb->lte_frame_parms,
+		       num_pdcch_symbols,
 		       phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]);
-      
+	dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
+			 num_pdcch_symbols,
+			 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0],
+			 0,
+			 next_slot>>1);      
 	for (sect_id=0;sect_id<number_of_cards;sect_id++)
 	  
 	  re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					  AMP,
 					  next_slot/2,
 					  &phy_vars_eNb->lte_frame_parms,
+					  num_pdcch_symbols,
 					  phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]);
 	/*
 	  if (mimo_mode == DUALSTREAM) {
@@ -691,23 +704,31 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
 
       
 #ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (cntl) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
 #endif
       
       dlsch_encoding(dlsch_input_buffer,
 		     &phy_vars_eNb->lte_frame_parms,
+		     num_pdcch_symbols,
 		     phy_vars_eNb->dlsch_eNb_SI);
-      
+      /*
+      dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
+		       num_pdcch_symbols,
+		       phy_vars_eNb->dlsch_eNb_SI,
+		       0,
+		       next_slot>>1);      
+      */
       for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					AMP,
 					next_slot/2,
 					&phy_vars_eNb->lte_frame_parms,
+					num_pdcch_symbols,
 					phy_vars_eNb->dlsch_eNb_SI);
       phy_vars_eNb->dlsch_eNb_SI->active = 0;
 
 #ifdef DEBUG_PHY    
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d, DLSCH (cntl) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
+      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d, DLSCH (SI) re_allocated = %d\n",mac_xface->frame, next_slot, re_allocated);
 #endif
 
     }
@@ -745,12 +766,20 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb) {
       
       dlsch_encoding(dlsch_input_buffer,
 		     &phy_vars_eNb->lte_frame_parms,
+		     num_pdcch_symbols,
 		     phy_vars_eNb->dlsch_eNb_ra);
+      phy_vars_eNb->dlsch_eNb_ra->rnti = RA_RNTI;
+      dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
+		       num_pdcch_symbols,
+		       phy_vars_eNb->dlsch_eNb_ra,
+		       0,
+		       next_slot>>1);
       for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					AMP,
 					next_slot/2,
 					&phy_vars_eNb->lte_frame_parms,
+					num_pdcch_symbols,
 					phy_vars_eNb->dlsch_eNb_ra);
       phy_vars_eNb->dlsch_eNb_ra->active = 0;
 

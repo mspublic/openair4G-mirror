@@ -119,10 +119,11 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
+		   u8 num_pdcch_symbols,
 		   LTE_eNb_DLSCH_t *dlsch) {
   
-  unsigned short offset,i;
-  unsigned int coded_bits_per_codeword;
+  unsigned short offset;
+  unsigned int G;
   unsigned int crc=1;
   unsigned short iind;
   unsigned short nb_rb = dlsch->nb_rb;
@@ -135,16 +136,9 @@ int dlsch_encoding(unsigned char *a,
 
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  //  printf("dlsch_coding: TBS %d, mcs %d\n",dlsch->harq_processes[harq_pid]->TBS,dlsch->harq_processes[harq_pid]->mcs);
-  // This has to be updated for presence of PBCH/PSCH
-  // This assumes no data in pilot symbols (i.e. for multi-cell orthogonality, to be updated for strict LTE compliance
-  /*
-    coded_bits_per_codeword = (frame_parms->Ncp == 0) ?
-    ( N_RB * (12 * mod_order) * (14-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order)) :
-    ( N_RB * (12 * mod_order) * (12-frame_parms->first_dlsch_symbol)) - (N_RB*(frame_parms->nb_antennas_tx*6*3*mod_order));
-  */
-  coded_bits_per_codeword = ( nb_rb * (12 * mod_order) * (frame_parms->num_dlsch_symbols));
+  G = get_G(frame_parms,nb_rb,mod_order,num_pdcch_symbols);
 
+  
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
 
     /*
@@ -237,14 +231,14 @@ int dlsch_encoding(unsigned char *a,
 #ifdef DEBUG_DLSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
-	   coded_bits_per_codeword,
+	   E,
 	   Kr*3,
 	   mod_order,nb_rb);
 #endif
 
 
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
-					coded_bits_per_codeword,  //G
+					G,  //G
 					dlsch->harq_processes[harq_pid]->w[r],
 					&dlsch->e[0],
 					dlsch->harq_processes[harq_pid]->C, // C

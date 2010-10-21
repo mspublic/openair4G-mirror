@@ -8,12 +8,7 @@
 
 //#define DEBUG_DLSCH_MODULATION
 
-/*
-#define is_not_pilot(pilots,first_pilot,re) (pilots==0) || \ 
-	((pilots==1)&&(first_pilot==1)&&(((re>2)&&(re<6))||((re>8)&&(re<12)))) || \
-	((pilots==1)&&(first_pilot==0)&&(((re<3))||((re>5)&&(re<9)))) \
-*/
-#define is_not_pilot(pilots,first_pilot,re) (1)
+#define is_not_pilot(pilots,re,nushift) ((pilots==0) || ((re!=nushift) && (re!=nushift+3)&&(re!=nushift+6)&&(re!=nushift+9))?1:0)
 
 
 
@@ -78,7 +73,6 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       MIMO_mode_t mimo_mode,
 		       unsigned char nu,
 		       unsigned char pilots,
-		       unsigned char first_pilot,
 		       unsigned char mod_order,
 		       unsigned char precoder_index,
 		       short amp,
@@ -123,13 +117,14 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     
     if ((skip_dc == 1) && (re==6))
       re_off=re_off - frame_parms->ofdm_symbol_size+1;
-    // check that re is not a pilot (need shift for 2nd pilot symbol!!!!)
-    // Again this is not LTE, here for SISO only positions 3-5 and 8-11 are allowed for data REs
-    // This allows for pilots from adjacent eNbs to be interference free
+
+
     
     tti_offset = symbol_offset + re_off + re;
-    if (is_not_pilot(pilots,first_pilot,re)) { 
-      
+    
+    // check that re is not a pilot
+    if (is_not_pilot(pilots,re,frame_parms->nushift)==1) { 
+      //      printf("re %d (jj %d)\n",re,*jj);
       *re_allocated = *re_allocated + 1;
       
       if (mimo_mode == SISO) {  //SISO mapping
@@ -143,6 +138,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
 	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
+
+	  //	  printf("%d,%d\n",((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
 	  break;
 	  
 	case 4:  //16QAM
@@ -335,11 +332,18 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  break;
 	}
 	// fill in the rest of the ALAMOUTI precoding
-	((short *)&txdataF[0][tti_offset+1])[0] += -((short *)&txdataF[1][tti_offset])[0]; //x1
-	((short *)&txdataF[0][tti_offset+1])[1] += ((short *)&txdataF[1][tti_offset])[1];
-	((short *)&txdataF[1][tti_offset+1])[0] += ((short *)&txdataF[0][tti_offset])[0];  //x0*
-	((short *)&txdataF[1][tti_offset+1])[1] += -((short *)&txdataF[0][tti_offset])[1];
-	
+	if (is_not_pilot(pilots,re,frame_parms->nushift)==1) {
+	  ((short *)&txdataF[0][tti_offset+1])[0] += -((short *)&txdataF[1][tti_offset])[0]; //x1
+	  ((short *)&txdataF[0][tti_offset+1])[1] += ((short *)&txdataF[1][tti_offset])[1];
+	  ((short *)&txdataF[1][tti_offset+1])[0] += ((short *)&txdataF[0][tti_offset])[0];  //x0*
+	  ((short *)&txdataF[1][tti_offset+1])[1] += -((short *)&txdataF[0][tti_offset])[1];
+	}
+	else {
+	  ((short *)&txdataF[0][tti_offset+2])[0] += -((short *)&txdataF[1][tti_offset])[0]; //x1
+	  ((short *)&txdataF[0][tti_offset+2])[1] += ((short *)&txdataF[1][tti_offset])[1];
+	  ((short *)&txdataF[1][tti_offset+2])[0] += ((short *)&txdataF[0][tti_offset])[0];  //x0*
+	  ((short *)&txdataF[1][tti_offset+2])[1] += -((short *)&txdataF[0][tti_offset])[1];
+	}
       }
       else if (mimo_mode == ANTCYCLING ) {
 	switch (mod_order) {
@@ -496,6 +500,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       if (mimo_mode == ALAMOUTI) {
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;
+	if (is_not_pilot(pilots,re,frame_parms->nushift)==0) {
+	  re++;  
+	  *re_allocated = *re_allocated + 1;
+	}
       }
     }
   }
@@ -523,7 +531,6 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       MIMO_mode_t mimo_mode,
 		       unsigned char nu,
 		       unsigned char pilots,
-		       unsigned char first_pilot,
 		       unsigned char mod_order,
 		       unsigned char precoder_index,
 		       short amp,
@@ -558,7 +565,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
     tti_offset = symbol_offset + re_off + re;
     
-    if (is_not_pilot(pilots,first_pilot,re)) { 
+    if (is_not_pilot(pilots,re,nu)==1) { 
       //      printf("dlsch_modulation tti_offset %d (re %d)\n",tti_offset,re);
       *re_allocated = *re_allocated + 1;
 
@@ -654,8 +661,14 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	      qpsk_table_offset2+=2;
 	    *jj=*jj+1;
 
+
 	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
-	    txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
+	    }
+	    else {
+	      txdataF[1][tti_offset+2] = (mod_sym_t) qpsk_table_offset2;   // x0*
+	    }
 
 
 	    qpsk_table_offset = 1; //-x1*
@@ -674,8 +687,12 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 
 	    txdataF[1][tti_offset] = (mod_sym_t) qpsk_table_offset;     // -x1*
-	    txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;  // x1
-
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;  // x1
+	    }
+	    else {
+	      txdataF[0][tti_offset+2] = (mod_sym_t) qpsk_table_offset2;  // x1
+	    }
 	    //	    printf("txdataF[0][tti_offset] %d %d\n",txdataF[0][tti_offset],txdataF[0][tti_offset+1]); 
 	    break;
 
@@ -711,8 +728,12 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[0][tti_offset] = (mod_sym_t) qam16_table_offset; //x0
-	    txdataF[1][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x0*
-
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[1][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x0*
+	    }
+	    else {
+	      txdataF[1][tti_offset+2] = (mod_sym_t) qam16_table_offset2; //x0*
+	    }
 
 	    qam16_table_offset = 5; //-x1*
 	    qam16_table_offset2 = 5; //x1
@@ -742,8 +763,12 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[1][tti_offset] = (mod_sym_t) qam16_table_offset;  //x1*
-	    txdataF[0][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x1
-
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[0][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x1
+	    }
+	    else {
+	      txdataF[0][tti_offset+2] = (mod_sym_t) qam16_table_offset2; //x1
+	    }
 	    break;
 	  case 6:   // 64-QAM
 
@@ -788,8 +813,12 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[0][tti_offset] = (mod_sym_t) qam64_table_offset; //x0
-	    txdataF[1][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x0*
-
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[1][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x0*
+	    }
+	    else {
+	      txdataF[1][tti_offset+2] = (mod_sym_t) qam64_table_offset2; //x0*
+	    }
 	    qam64_table_offset = 21; //-x1*
 	    qam64_table_offset2 = 21; //x1
 	    if (output[*jj] == 1)
@@ -830,8 +859,12 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[1][tti_offset] = (mod_sym_t) qam64_table_offset; //-x1*
-	    txdataF[0][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x1
-		    
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	      txdataF[0][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x1
+	    }
+	    else {
+	      txdataF[0][tti_offset+2] = (mod_sym_t) qam64_table_offset2; //x1
+	    }
 	    break;
 	  }
 	}
@@ -938,6 +971,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     if (mimo_mode == ALAMOUTI) {
       re++;  // adjacent carriers are taken care of by precoding
       *re_allocated = *re_allocated + 1;
+      if (is_not_pilot(pilots,re,frame_parms->nushift)==0) { // if the next position is a pilot, skip it
+	re++;  
+	*re_allocated = *re_allocated + 1;
+      }
     }
   }
   return(0);
@@ -957,49 +994,44 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
 		     unsigned int sub_frame_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
+		     u8 num_pdcch_symbols,
 		     LTE_eNb_DLSCH_t *dlsch){
 
-  unsigned char nsymb;
+  unsigned char nsymb,aa;
   unsigned char harq_pid = dlsch->current_harq_pid;
   unsigned int jj,re_allocated,symbol_offset;
   unsigned short l,rb,re_offset;
   unsigned int rb_alloc_ind;
   unsigned int *rb_alloc = dlsch->rb_alloc;
-  unsigned char pilots,first_pilot,second_pilot;
+  unsigned char pilots=0;
   unsigned char skip_dc;
   unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
-  second_pilot = (frame_parms->Ncp==0) ? 4 : 3;
   
   //Modulation mapping (difference w.r.t. LTE specs)
   
   jj=0;
   re_allocated=0;
   
-  for (l=frame_parms->first_dlsch_symbol;l<nsymb;l++) {
+  for (l=num_pdcch_symbols;l<nsymb;l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
     msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    
-    pilots=0;
-    first_pilot=0;
-    if ((l==(nsymb>>1))){
-      pilots=1;
-      first_pilot=1;
-    }
 
-    if ((l==second_pilot)||(l==(second_pilot+(nsymb>>1)))) {
-      pilots=1;
-      first_pilot=0;
+    if (frame_parms->Ncp==0) { // normal prefix
+      if ((l==4)||(l==7)||(l==11))
+	pilots=1;
+      else
+	pilots=0;
     }
-
-    if (pilots==0) { // don't skip pilot symbols
-      // This is not LTE, it guarantees that
-      // pilots from adjacent base-stations
-      // do not interfere with data
-      // LTE is eNb centric.  "Smart" Interference
-      // cancellation isn't possible
+    else {
+      if ((l==3)||(l==6)||(l==9))
+	pilots=1;
+      else
+	pilots=0;
+    }
 
 #ifdef IFFT_FPGA
       re_offset = frame_parms->N_RB_DL*12/2;
@@ -1009,7 +1041,9 @@ int dlsch_modulation(mod_sym_t **txdataF,
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb));
 #endif
 
-      //      printf("symbol_offset %d,subframe offset %d\n",symbol_offset,sub_frame_offset);
+      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+	memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
+      //      printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,sub_frame_offset,pilots);
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 	
 	if (rb < 32)
@@ -1041,7 +1075,6 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     dlsch->harq_processes[harq_pid]->mimo_mode,
 			     dlsch->layer_index,
 			     pilots,
-			     first_pilot,
 			     mod_order,
 			     get_pmi_5MHz(dlsch->harq_processes[harq_pid]->mimo_mode,dlsch->pmi_alloc,rb),
 			     amp,
@@ -1071,13 +1104,13 @@ int dlsch_modulation(mod_sym_t **txdataF,
 #endif
       }
 	
-    }
   }
+  
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
+  msg("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
 #endif
-
+  
   return (re_allocated);
 }

@@ -655,6 +655,7 @@ int main(int argc, char **argv) {
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   char title[255];
 #endif
+  LTE_DL_FRAME_PARMS *frame_parms;
 
   NB_CH_INST=1;
   //    NODE_ID[0]=0;
@@ -733,33 +734,34 @@ int main(int argc, char **argv) {
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  lte_frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
-  lte_frame_parms->N_RB_DL            = 25;
-  lte_frame_parms->N_RB_UL            = 25;
-  lte_frame_parms->Ng_times6          = 1;
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 0;
-  lte_frame_parms->nb_antennas_tx     = 2;
-  lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 4;
-  lte_frame_parms->num_dlsch_symbols  = 6;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+  frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
+  frame_parms->frame_type         = 1;
+  frame_parms->N_RB_DL            = 25;
+  frame_parms->N_RB_UL            = 25;
+  frame_parms->Ng_times6          = 1;
+  frame_parms->Ncp                = 1;
+  frame_parms->Nid_cell           = 0;
+  frame_parms->nushift            = 0;
+  frame_parms->nb_antennas_tx     = 1;
+  frame_parms->nb_antennas_rx     = 1;
+  frame_parms->first_dlsch_symbol = 4;
+  frame_parms->num_dlsch_symbols  = 6;
+  frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
-  init_frame_parms(lte_frame_parms);
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-  phy_init_top(NB_ANTENNAS_TX);
+  init_frame_parms(frame_parms);
+  copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
+  phy_init_top(NB_ANTENNAS_TX,frame_parms);
 
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
+  frame_parms->twiddle_fft      = twiddle_fft;
+  frame_parms->twiddle_ifft     = twiddle_ifft;
+  frame_parms->rev              = rev;
 
-  phy_init_lte_top(lte_frame_parms);
+  phy_init_lte_top(frame_parms);
 
   // init all eNB vars
 
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
-    memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     phy_init_lte_eNB(&PHY_vars_eNb_g[eNB_id]->lte_frame_parms,
 		     &PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars,
 		     PHY_vars_eNb_g[eNB_id]->lte_eNB_ulsch_vars,
@@ -810,7 +812,7 @@ int main(int argc, char **argv) {
   // init all UE vars
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     
     phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
@@ -1031,7 +1033,7 @@ int main(int argc, char **argv) {
 	  phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0);
       }
  
-      if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_DL) {
+      if (subframe_select_tdd(frame_parms->tdd_config,next_slot>>1) == SF_DL) {
       /*
 	u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1046,7 +1048,7 @@ int main(int argc, char **argv) {
 		printf("DL B(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
       }
-      else if (subframe_select_tdd(lte_frame_parms->tdd_config,next_slot>>1) == SF_UL) {
+      else if (subframe_select_tdd(frame_parms->tdd_config,next_slot>>1) == SF_UL) {
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)

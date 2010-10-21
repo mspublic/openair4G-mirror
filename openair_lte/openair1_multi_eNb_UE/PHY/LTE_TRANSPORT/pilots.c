@@ -16,10 +16,12 @@ void generate_pilots(mod_sym_t **txdataF,
   Nsymb = (frame_parms->Ncp==0)?14:12;
   second_pilot = (frame_parms->Ncp==0)?4:3;
 
+  //  printf("Doing TX pilots Nsymb %d, second_pilot %d\n",Nsymb,second_pilot);
+
   for (tti=0;tti<Ntti;tti++) {
 	  
 	
-    //    printf("Doing TX pilots for TTI %d\n",tti);
+
 
 #ifdef IFFT_FPGA
     tti_offset = tti*frame_parms->N_RB_DL*12*Nsymb;
@@ -43,8 +45,8 @@ void generate_pilots(mod_sym_t **txdataF,
 		     0);
 
     
-    
-    //antenna 0 symbol 3 slot 0
+    //    printf("tti %d : second_pilot offset %d \n",tti,tti_offset+(second_pilot*samples_per_symbol));
+    //antenna 0 symbol 3/4 slot 0
     lte_dl_cell_spec(&txdataF[0][tti_offset+(second_pilot*samples_per_symbol)],
 		     amp,
 		     frame_parms,
@@ -52,7 +54,8 @@ void generate_pilots(mod_sym_t **txdataF,
 		     slot_offset,
 		     1,
 		     0);
-    
+
+    //    printf("tti %d : third_pilot offset %d \n",tti,tti_offset+((Nsymb>>1)*samples_per_symbol));    
     //antenna 0 symbol 0 slot 1
     lte_dl_cell_spec(&txdataF[0][tti_offset+((Nsymb>>1)*samples_per_symbol)],
 		     amp,
@@ -62,7 +65,8 @@ void generate_pilots(mod_sym_t **txdataF,
 		     0,
 		     0);
         
-    //antenna 0 symbol 3 slot 1
+    //    printf("tti %d : third_pilot offset %d \n",tti,tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol));    
+    //antenna 0 symbol 3/4 slot 1
     lte_dl_cell_spec(&txdataF[0][tti_offset+(((Nsymb>>1)+second_pilot)*samples_per_symbol)],
 		     amp,
 		     frame_parms,

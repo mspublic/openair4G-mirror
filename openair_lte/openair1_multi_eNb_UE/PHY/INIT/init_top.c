@@ -216,7 +216,7 @@ int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
 #endif //USER_MODE
 */
 
-int phy_init_top(unsigned char nb_antennas_tx) {
+int phy_init_top(unsigned char nb_antennas_tx,LTE_DL_FRAME_PARMS *frame_parms) {
 
 
  unsigned char card_id;

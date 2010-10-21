@@ -16,11 +16,13 @@
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
   if (frame_parms->Ncp==1) {
+    frame_parms->nb_prefix_samples0=512;
     frame_parms->nb_prefix_samples = 512;
     frame_parms->symbols_per_tti = 12;
   }
   else {
-    frame_parms->nb_prefix_samples = 256;
+    frame_parms->nb_prefix_samples0 = 160;
+    frame_parms->nb_prefix_samples = 144;
     frame_parms->symbols_per_tti = 14;
   }
   
@@ -37,6 +39,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
     frame_parms->samples_per_tti = 15360;
     frame_parms->first_carrier_offset = 724; 
     frame_parms->nb_prefix_samples>>=1;
+    frame_parms->nb_prefix_samples0>>=1;
    break;
   case 25:
     frame_parms->ofdm_symbol_size = 512;
@@ -44,6 +47,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
     frame_parms->samples_per_tti = 7680;
     frame_parms->first_carrier_offset = 362;
     frame_parms->nb_prefix_samples>>=2;
+    frame_parms->nb_prefix_samples0>>=2;
     break;
   case 15:
     frame_parms->ofdm_symbol_size = 256;
@@ -51,6 +55,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
     frame_parms->samples_per_tti = 3840;
     frame_parms->first_carrier_offset = 166;
     frame_parms->nb_prefix_samples>>=3;
+    frame_parms->nb_prefix_samples0>>=1;
     break;
   case 6:
     frame_parms->ofdm_symbol_size = 128;
@@ -58,6 +63,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
     frame_parms->samples_per_tti = 1920;
     frame_parms->first_carrier_offset = 92;
     frame_parms->nb_prefix_samples>>=4;
+    frame_parms->nb_prefix_samples0>>=1;
     break;
 
   default:
@@ -101,7 +107,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   generate_RIV_tables();
   
   generate_pcfich_reg_mapping(lte_frame_parms);
-  generate_phich_reg_mapping_ext(lte_frame_parms);
+  generate_phich_reg_mapping(lte_frame_parms);
   
   //set_taus_seed(1328);
   
@@ -470,7 +476,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
       ue_pbch_vars[eNb_id]->dl_ch_estimates_ext[i] = (int *)malloc16(sizeof(int)*6*12*4);
     
-    ue_pbch_vars[eNb_id]->llr = (short *)malloc16(36*12*2*sizeof(short));
+    ue_pbch_vars[eNb_id]->llr = (short *)malloc16(6*12*4*2*sizeof(char));
     
     ue_pbch_vars[eNb_id]->channel_output = (short *)malloc16((3*64+12)*sizeof(short));
     
