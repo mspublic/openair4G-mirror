@@ -1,3 +1,0 @@
-Open Makefile and change the content of variale KERNEL_INCLUDE=<path to your linux source code>/include
-By default, it will point to ./kernel/include which is a part of linux 2.6.20
-
