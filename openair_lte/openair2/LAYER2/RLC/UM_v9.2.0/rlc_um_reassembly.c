@@ -47,7 +47,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
 #endif
 
 #ifdef DEBUG_RLC_UM_REASSEMBLY
-  msg ("[RLC_UM_LITE][MOD %d][RB %d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, lengthP);
+  msg ("[RLC_UM][MOD %d][RB %d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, lengthP);
 #endif
 
   if ((rlcP->data_plane)) {
@@ -63,7 +63,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
   if ((rlcP->output_sdu_in_construction)) {
 
 #ifdef DEBUG_RLC_UM_DISPLAY_ASCII_DATA
-    msg ("[RLC_UM_LITE][RB %d][REASSEMBLY] DATA :", rlcP->rb_id);
+    msg ("[RLC_UM][MOD %d][RB %d][REASSEMBLY] DATA :", rlcP->module_id, rlcP->rb_id);
     for (index = 0; index < lengthP; index++) {
       msg ("%02X.", srcP[index]);
     }
@@ -74,12 +74,12 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
       memcpy (&rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write], srcP, lengthP);
       rlcP->output_sdu_size_to_write += lengthP;
     } else {
-      msg ("[RLC_UM_LITE][RB %d][REASSEMBLY] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->rb_id);
+      msg ("[RLC_UM][MOD %d][RB %d][REASSEMBLY] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id);
       // erase  SDU
       rlcP->output_sdu_size_to_write = 0;
     }
   } else {
-    msg ("[RLC_UM_LITE][RB %d][REASSEMBLY] ERROR  OUTPUT SDU IS NULL\n", rlcP->rb_id);
+    msg ("[RLC_UM][MOD %d][RB %d][REASSEMBLY] ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id);
   }
 }
 
@@ -104,7 +104,7 @@ rlc_um_send_sdu (struct rlc_um_entity *rlcP)
 
   if ((rlcP->output_sdu_in_construction)) {
 #ifdef DEBUG_RLC_UM_SEND_SDU
-    msg ("[RLC_UM_LITE][MOD %d][RB %d][SEND_SDU] %d bytes frame %d\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame);
+    msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] %d bytes frame %d\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame);
 /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
   sec = (rlc_um_time_us/ 1000000);
@@ -126,10 +126,10 @@ rlc_um_send_sdu (struct rlc_um_entity *rlcP)
       rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction, rlcP->data_plane);
     } else {
 #ifdef DEBUG_RLC_UM_SEND_SDU
-      msg ("[RLC_UM_LITE][RB %d][SEND_SDU] ERROR SIZE <= 0\n", rlcP->rb_id);
+      msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] ERROR SIZE <= 0\n",rlcP->module_id, rlcP->rb_id);
 #endif
-      msg ("[RLC_UM_LITE][RB %d][SEND_SDU] ERROR SIZE <= 0\n", rlcP->rb_id);
-      msg("[RLC_UM_LITE] Freeing mem_block ...\n");
+      msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] ERROR SIZE <= 0\n",rlcP->module_id, rlcP->rb_id);
+      msg("[RLC_UM][MOD %d] Freeing mem_block ...\n", rlcP->module_id);
       free_mem_block (rlcP->output_sdu_in_construction);
     }
     rlcP->output_sdu_in_construction = NULL;

@@ -23,6 +23,5 @@
 #            endif
 #        endif
 #
-protected_rlc_um_segment(void rlc_um_segment_15 (struct rlc_um_entity *rlcP));
-protected_rlc_um_segment(void rlc_um_segment_7 (struct rlc_um_entity *rlcP));
+protected_rlc_um_segment(void rlc_um_segment_10 (struct rlc_um_entity *rlcP));
 #    endif

@@ -1,9 +1,7 @@
 #######################################
 WHAT IS NOT IMPLEMENTED:
 #######################################
-- The segmentation for MAC-i/is is not coded
-- the ordered list of length indicators is not compliant, reserved values for
-  L.I. are not always put at the end of the list of L.I.s.
+
 
 #######################################
 MEMO FOR LG:

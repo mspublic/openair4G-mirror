@@ -28,12 +28,12 @@
 #define DEBUG_RLC_UM_DISCARD_SDU
 //-----------------------------------------------------------------------------
 void
-rlc_um_stat_req     (struct rlc_um_entity *rlcP, 
+rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
 							  unsigned int* tx_data_pdu,
 							  unsigned int* rx_sdu,
-							  unsigned int* rx_error_pdu,  
+							  unsigned int* rx_error_pdu,
 							  unsigned int* rx_data_pdu,
 							  unsigned int* rx_data_pdu_out_of_window) {
 //-----------------------------------------------------------------------------
@@ -50,19 +50,12 @@ u32_t
 rlc_um_get_buffer_occupancy (struct rlc_um_entity *rlcP)
 {
 //-----------------------------------------------------------------------------
-  if (rlcP->buffer_occupancy > 0) {
-     return rlcP->buffer_occupancy;
-  } else {
-    if ((rlcP->li_one_byte_short_to_add_in_next_pdu) ||
-        (rlcP->li_exactly_filled_to_add_in_next_pdu)) {
-        // WARNING LG WE ASSUME TRANSPORT BLOCKS ARE < 125 bytes 
-        return 3; // so this is the exact size of the next TB to be sent (SN + 2LIs)
+    if (rlcP->buffer_occupancy > 0) {
+        return rlcP->buffer_occupancy;
     } else {
         return 0;
     }
-  }
 }
-
 //-----------------------------------------------------------------------------
 void
 rlc_um_get_pdus (void *argP)
@@ -74,9 +67,9 @@ rlc_um_get_pdus (void *argP)
 
       case RLC_NULL_STATE:
         // from 3GPP TS 25.322 V9.2.0 p43
-        // In the NULL state the RLC entity does not exist and therefore it is 
+        // In the NULL state the RLC entity does not exist and therefore it is
         // not possible to transfer any data through it.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // establishment, the RLC entity:
         //   - is created; and
         //   - enters the DATA_TRANSFER_READY state.
@@ -84,45 +77,41 @@ rlc_um_get_pdus (void *argP)
 
       case RLC_DATA_TRANSFER_READY_STATE:
         // from 3GPP TS 25.322 V9.2.0 p43-44
-        // In the DATA_TRANSFER_READY state, unacknowledged mode data can be 
+        // In the DATA_TRANSFER_READY state, unacknowledged mode data can be
         // exchanged between the entities according to subclause 11.2.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // release, the RLC entity:
         // -enters the NULL state; and
         // -is considered as being terminated.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // modification, the RLC entity:
         // - stays in the DATA_TRANSFER_READY state;
-        // - modifies only the protocol parameters and timers as indicated by 
+        // - modifies only the protocol parameters and timers as indicated by
         // upper layers.
-        // Upon reception of a CRLC-SUSPEND-Req from upper layers, the RLC 
+        // Upon reception of a CRLC-SUSPEND-Req from upper layers, the RLC
         // entity:
         // - enters the LOCAL_SUSPEND state.
 
         // SEND DATA TO MAC
-        if (rlc->data_pdu_size > 125) {
-          rlc_um_segment_15 (rlc);
-        } else {
-          rlc_um_segment_7 (rlc);
-        }
+        rlc_um_segment_10 (rlc);
         break;
 
       case RLC_LOCAL_SUSPEND_STATE:
         // from 3GPP TS 25.322 V9.2.0 p44
         // In the LOCAL_SUSPEND state, the RLC entity is suspended, i.e. it does
-        // not send UMD PDUs with "Sequence Number" greater than or equal to a 
+        // not send UMD PDUs with "Sequence Number" greater than or equal to a
         // certain specified value (see subclause 9.7.5).
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // release, the RLC entity:
         // - enters the NULL state; and
         // - is considered as being terminated.
         // Upon reception of a CRLC-RESUME-Req from upper layers, the RLC entity:
         // - enters the DATA_TRANSFER_READY state; and
         // - resumes the data transmission.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // modification, the RLC entity:
         // - stays in the LOCAL_SUSPEND state;
-        // - modifies only the protocol parameters and timers as indicated by 
+        // - modifies only the protocol parameters and timers as indicated by
         //   upper layers.
 
         // TO DO TAKE CARE OF SN : THE IMPLEMENTATION OF THIS FUNCTIONNALITY IS NOT CRITICAL
@@ -144,9 +133,9 @@ rlc_um_rx (void *argP, struct mac_data_ind data_indP)
 
       case RLC_NULL_STATE:
         // from 3GPP TS 25.322 V9.2.0 p43
-        // In the NULL state the RLC entity does not exist and therefore it is 
+        // In the NULL state the RLC entity does not exist and therefore it is
         // not possible to transfer any data through it.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // establishment, the RLC entity:
         //   - is created; and
         //   - enters the DATA_TRANSFER_READY state.
@@ -156,43 +145,40 @@ rlc_um_rx (void *argP, struct mac_data_ind data_indP)
 
       case RLC_DATA_TRANSFER_READY_STATE:
         // from 3GPP TS 25.322 V9.2.0 p43-44
-        // In the DATA_TRANSFER_READY state, unacknowledged mode data can be 
+        // In the DATA_TRANSFER_READY state, unacknowledged mode data can be
         // exchanged between the entities according to subclause 11.2.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // release, the RLC entity:
         // -enters the NULL state; and
         // -is considered as being terminated.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // modification, the RLC entity:
         // - stays in the DATA_TRANSFER_READY state;
-        // - modifies only the protocol parameters and timers as indicated by 
+        // - modifies only the protocol parameters and timers as indicated by
         // upper layers.
-        // Upon reception of a CRLC-SUSPEND-Req from upper layers, the RLC 
+        // Upon reception of a CRLC-SUSPEND-Req from upper layers, the RLC
         // entity:
         // - enters the LOCAL_SUSPEND state.
-        data_indP.tb_size = data_indP.tb_size >> 3;     // from bits to bytes
-        //data_indP.tb_size = (data_indP.tb_size + 7) >> 3;       // from bits to bytes
-	//	msg("[RLC_UM_LITE_RX][RB %d] tb_size %d\n",rlc->rb_id,
-	//	    data_indP.tb_size);
+        data_indP.tb_size = data_indP.tb_size >> 3;
         rlc_um_receive (rlc, data_indP);
         break;
 
       case RLC_LOCAL_SUSPEND_STATE:
         // from 3GPP TS 25.322 V9.2.0 p44
         // In the LOCAL_SUSPEND state, the RLC entity is suspended, i.e. it does
-        // not send UMD PDUs with "Sequence Number" greater than or equal to a 
+        // not send UMD PDUs with "Sequence Number" greater than or equal to a
         // certain specified value (see subclause 9.7.5).
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // release, the RLC entity:
         // - enters the NULL state; and
         // - is considered as being terminated.
         // Upon reception of a CRLC-RESUME-Req from upper layers, the RLC entity:
         // - enters the DATA_TRANSFER_READY state; and
         // - resumes the data transmission.
-        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating 
+        // Upon reception of a CRLC-CONFIG-Req from upper layer indicating
         // modification, the RLC entity:
         // - stays in the LOCAL_SUSPEND state;
-        // - modifies only the protocol parameters and timers as indicated by 
+        // - modifies only the protocol parameters and timers as indicated by
         //   upper layers.
         msg ("[RLC_UM][MOD %d][RB %d] RLC_LOCAL_SUSPEND_STATE\n", rlc->module_id, rlc->rb_id);
         break;
@@ -221,7 +207,7 @@ rlc_um_mac_status_indication (void *rlcP, u16_t no_tbP, u16_t tb_sizeP, struct m
 #endif
 
   status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((struct rlc_um_entity *) rlcP);
-  
+
   // LG + HA : approximation of num of transport blocks 21/10/2008
   if (status_resp.buffer_occupancy_in_bytes == 0 ) {
     status_resp.buffer_occupancy_in_pdus = 0;
@@ -271,7 +257,7 @@ rlc_um_mac_data_request (void *rlcP)
 
 #ifdef DEBUG_RLC_UM_MAC_DATA_REQUEST
   if (((struct rlc_um_entity *) rlcP)->rb_id > 10) {
-    msg ("[RLC_UM_LITE] TTI %d: MAC_DATA_REQUEST %d TBs on RB %d\n", 
+    msg ("[RLC_UM] TTI %d: MAC_DATA_REQUEST %d TBs on RB %d\n",
 	 Mac_rlc_xface->frame,
 	 data_req.data.nb_elements,
 	 ((struct rlc_um_entity *) rlcP)->rb_id);
@@ -298,7 +284,6 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 {
 //-----------------------------------------------------------------------------
   struct rlc_um_entity *rlc = (struct rlc_um_entity *) rlcP;
-  u8_t              use_special_li;
   u8_t              insert_sdu = 0;
 #ifdef DEBUG_RLC_UM_DISCARD_SDU
   int             index;
@@ -310,14 +295,14 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 
 #ifdef DEBUG_RLC_UM_DATA_REQUEST
   if (rlc->rb_id > 10)
-    msg ("[RLC_UM][MOD %d][RB %d] TTI %d RLC_UM_DATA_REQ size %d Bytes, BO %ld , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
+    msg ("[RLC_UM][MOD %d][RB %d] TTI %d RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
      rlc->module_id,
      rlc->rb_id,
 	 Mac_rlc_xface->frame,
-	 ((struct rlc_um_data_req *) (sduP->data))->data_size, 
-	 rlc->buffer_occupancy, 
-	 rlc->nb_sdu, 
-      rlc->current_sdu_index, 
+	 ((struct rlc_um_data_req *) (sduP->data))->data_size,
+	 rlc->buffer_occupancy,
+	 rlc->nb_sdu,
+      rlc->current_sdu_index,
 	 rlc->next_sdu_index);
   /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
@@ -333,19 +318,19 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
   } else {
 
     // from 3GPP TS 25.322 V9.2.0 p66-67
-    // Upon a request of unacknowledged mode data transfer from upper layer, 
+    // Upon a request of unacknowledged mode data transfer from upper layer,
     // the Sender shall:
     // - if no SDU discard configuration has been made by upper layers:
-    //     - only discard SDUs when the Transmission buffer is full 
+    //     - only discard SDUs when the Transmission buffer is full
     // (see subclause 9.7.3);
     // - if "Timer based SDU Discard without explicit signalling" is configured:
-    //     - start a timer Timer_Discard for each SDU received from upper layer 
+    //     - start a timer Timer_Discard for each SDU received from upper layer
     //       (see subclause 9.7.3);
     // - schedule the RLC SDUs received from upper layer for transmission;
     // - if one or more RLC SDUs have been scheduled for transmission:
     //     - notify the lower layer of reception of data from upper layers;
     //     - perform the actions specified in subclause 11.2.2.2.
-    
+
     if ((rlc->sdu_discard_mode & RLC_SDU_DISCARD_NOT_CONFIGURED)) {
       if ((rlc->input_sdus[rlc->current_sdu_index])) {
         // from 3GPP TS 25.322 V9.2.0 p70
@@ -355,31 +340,31 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
         //   the Sender shall:
         //     -increment VT(US) so that the "Sequence Number" field in this UMD
         //      PDU is incremented with two compared with the previous UMD PDU;
-        //     -fill the first data octet in this UMD PDU with the first octet 
+        //     -fill the first data octet in this UMD PDU with the first octet
         //      of an RLC SDU;
-        //     -if the "Extension bit" does not indicate that the UMD PDU 
-        //      contains a complete SDU which is not segmented, concatenated or 
+        //     -if the "Extension bit" does not indicate that the UMD PDU
+        //      contains a complete SDU which is not segmented, concatenated or
         //      padded:
-        //        -set the first "Length Indicator" in this UMD PDU to indicate 
-        //         that the previous RLC PDU was exactly filled with the last 
-        //         segment of an RLC SDU (to avoid that the Receiver 
+        //        -set the first "Length Indicator" in this UMD PDU to indicate
+        //         that the previous RLC PDU was exactly filled with the last
+        //         segment of an RLC SDU (to avoid that the Receiver
         //         unnecessarily discards an extra SDU).
-        // In the case where the TFC selection exchange has been initiated by 
-        // sending the RLC Entity Info parameter to MAC, the UE may wait until 
-        // after it provides MAC with the requested set of UMD PDUs before 
+        // In the case where the TFC selection exchange has been initiated by
+        // sending the RLC Entity Info parameter to MAC, the UE may wait until
+        // after it provides MAC with the requested set of UMD PDUs before
         // discarding the afore-mentioned SDU.
         // EURECOM NOTE: since there is a single thread of execution for RRC-RLC-PDCP
         // there is no TFC selection initiated.
 #ifdef DEBUG_RLC_UM_DISCARD_SDU
-        msg ("[RLC_UM_LITE][RB %d] SDU DISCARDED : BUFFER OVERFLOW, BO %ld , NB SDU %d\n", rlc->rb_id, rlc->buffer_occupancy, rlc->nb_sdu);
+        msg ("[RLC_UM][RB %d] SDU DISCARDED : BUFFER OVERFLOW, BO %d , NB SDU %d\n", rlc->rb_id, rlc->buffer_occupancy, rlc->nb_sdu);
 #endif
         //rlc->vt_us = (rlc->vt_us + 1) & 0x7F; // already incremented by one after previous transmission
         //rlc->do_sdu_discard_without_explicit_signalling_procedure = 1;
-        
+
         if (((struct rlc_um_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_remaining_size !=
             ((struct rlc_um_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_size) {
 #ifdef DEBUG_RLC_UM_VT_US
-          msg ("[RLC_UM_LITE][RB %d] Inc VT(US) in rlc_um_data_req()/discarding SDU\n", rlc->rb_id);
+          msg ("[RLC_UM][RB %d] Inc VT(US) in rlc_um_data_req()/discarding SDU\n", rlc->rb_id);
 #endif
           // LGv9 rlc->li_one_byte_short_to_add_in_next_pdu = 0;
           // LGv9 rlc->li_exactly_filled_to_add_in_next_pdu = 1;
@@ -403,10 +388,10 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 #endif
       } else {
 #ifdef DEBUG_RLC_UM_DISCARD_SDU
-        msg ("[RLC_UM_LITE][RB %d] DISCARD : BUFFER OVERFLOW ERROR : SHOULD FIND A SDU\n", rlc->rb_id);
-        msg ("[RLC_UM_LITE][RB %d] size input buffer=%d current_sdu_index=%d next_sdu_index=%d\n", rlc->rb_id, rlc->size_input_sdus_buffer, rlc->current_sdu_index, rlc->next_sdu_index);
+        msg ("[RLC_UM][RB %d] DISCARD : BUFFER OVERFLOW ERROR : SHOULD FIND A SDU\n", rlc->rb_id);
+        msg ("[RLC_UM][RB %d] size input buffer=%d current_sdu_index=%d next_sdu_index=%d\n", rlc->rb_id, rlc->size_input_sdus_buffer, rlc->current_sdu_index, rlc->next_sdu_index);
         for (index = 0; index < rlc->size_input_sdus_buffer; index++) {
-          msg ("[RLC_UM_LITE][RB %d] BUFFER[%d]=%p\n", rlc->rb_id, index, rlc->input_sdus[index]);
+          msg ("[RLC_UM][RB %d] BUFFER[%d]=%p\n", rlc->rb_id, index, rlc->input_sdus[index]);
         }
 #endif
       }
@@ -415,9 +400,7 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
   if ((insert_sdu)) {
     rlc->input_sdus[rlc->next_sdu_index] = sduP;
     // IMPORTANT : do not change order of affectations
-    use_special_li = ((struct rlc_um_data_req *) (sduP->data))->use_special_li;
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_size = ((struct rlc_um_data_req *) (sduP->data))->data_size;
-    ((struct rlc_um_tx_sdu_management *) (sduP->data))->use_special_li = use_special_li;
     rlc->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_size;
     rlc->nb_sdu += 1;
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->first_byte = &sduP->data[sizeof (struct rlc_um_data_req_alloc)];
