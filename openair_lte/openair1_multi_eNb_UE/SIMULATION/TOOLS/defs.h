@@ -56,6 +56,13 @@ typedef struct {
   double ip; 
 } channel_desc_t;
 
+typedef enum {
+  SCM_A=0,
+  SCM_B,
+  SCM_C,
+  SCM_D
+} SCM_t;
+
 /** 
 \brief This routine initializes a new channel descriptor
 \param nb_tx Number of TX antennas
@@ -76,6 +83,15 @@ typedef struct {
 */
 
 channel_desc_t *new_channel_desc(u8 nb_tx,u8 nb_rx, u8 nb_taps, u8 channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, s32 channel_offset, double path_loss_dB);
+
+channel_desc_t *new_channel_desc_scm(u8 nb_tx,
+				     u8 nb_rx, 
+				     SCM_t channel_model, 
+				     double BW, 
+				     double forgetting_factor, 
+				     s32 channel_offset, 
+				     double path_loss_dB);
+
 
 
 /** \fn void random_channel(channel_desc_t *desc)
@@ -123,9 +139,11 @@ void multipath_channel(channel_desc_t *desc,
 inline unsigned int taus();
 
 
-/** \fn void set_taus_seed(unsigned int seed_init)
+/** 
+\fn void set_taus_seed(unsigned int seed_init)
 \brief Sets the seed for the Tausworthe generator.
 @param seed_init 0 means generate based on CPU time, otherwise provide the seed
+*/
 void set_taus_seed(unsigned int seed_init);
 /**@} */
 

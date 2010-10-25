@@ -104,7 +104,7 @@
 */
 
 #define UL_RB_ALLOC 0x1ff;
-#define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,2)
+#define CCCH_RB_ALLOC computeRIV(frame_parms->N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x1f0f // igore DC component,RB13
 
@@ -175,6 +175,10 @@ int main(int argc, char **argv) {
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
+  LTE_DL_FRAME_PARMS *frame_parms;
+
+  u8 num_pdcch_symbols = 3;
+
   // Init simulation parameters
 
   transmission_mode = 5;
@@ -231,36 +235,36 @@ int main(int argc, char **argv) {
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
-  lte_frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
-  lte_frame_parms->N_RB_DL            = 25;
-  lte_frame_parms->N_RB_UL            = 25;
-  lte_frame_parms->Ng_times6          = 1;
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 0;
-  lte_frame_parms->nb_antennas_tx     = 2;
-  lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 4;
-  lte_frame_parms->num_dlsch_symbols  = 6;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+  frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
+  frame_parms->N_RB_DL            = 25;
+  frame_parms->N_RB_UL            = 25;
+  frame_parms->Ng_times6          = 1;
+  frame_parms->Ncp                = 1;
+  frame_parms->Nid_cell           = 0;
+  frame_parms->nushift            = 0;
+  frame_parms->nb_antennas_tx     = 2;
+  frame_parms->nb_antennas_rx     = 2;
+  frame_parms->first_dlsch_symbol = 4;
+  frame_parms->num_dlsch_symbols  = 6;
+  frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
-  init_frame_parms(lte_frame_parms);
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-  phy_init_top(NB_ANTENNAS_TX);
+  init_frame_parms(frame_parms);
+  copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
+  phy_init_top(NB_ANTENNAS_TX,frame_parms);
 
-  lte_frame_parms->twiddle_fft      = twiddle_fft;
-  lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-  lte_frame_parms->rev              = rev;
+  frame_parms->twiddle_fft      = twiddle_fft;
+  frame_parms->twiddle_ifft     = twiddle_ifft;
+  frame_parms->rev              = rev;
 
-  phy_init_lte_top(lte_frame_parms);
+  phy_init_lte_top(frame_parms);
 
   randominit(0);
   set_taus_seed(0);
 
   channel_length = (int) 11+2*BW*Td;
 
-  nsymb = (lte_frame_parms->Ncp == 0) ? 14 : 12;
-  coded_bits_per_codeword = NB_RB * (12 * get_Qm(mcs)) * (lte_frame_parms->num_dlsch_symbols);
+  nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+  coded_bits_per_codeword = NB_RB * (12 * get_Qm(mcs)) * (frame_parms->num_dlsch_symbols);
   printf("Rate = %f (mod %d)\n",(((double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1])*3/4)/coded_bits_per_codeword,
 	 get_Qm(mcs));
 
@@ -310,7 +314,7 @@ int main(int argc, char **argv) {
   // init eNB vars
 
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
-    memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    memcpy(&(PHY_vars_eNb_g[eNB_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     phy_init_lte_eNB(&PHY_vars_eNb_g[eNB_id]->lte_frame_parms,
 		     &PHY_vars_eNb_g[eNB_id]->lte_eNB_common_vars,
 		     PHY_vars_eNb_g[eNB_id]->lte_eNB_ulsch_vars,
@@ -353,7 +357,7 @@ int main(int argc, char **argv) {
   }
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
-    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), lte_frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     
     phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
@@ -454,6 +458,7 @@ int main(int argc, char **argv) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 
       printf("[SIM] Initializing channel from eNB %d to UE %d\n",eNB_id,UE_id);
+      /*
       eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 					       nb_taps,
@@ -485,7 +490,22 @@ int main(int argc, char **argv) {
 					       maxDoppler,
 					       0,
 					       path_loss_dB[UE_id]);
+      */
+      eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						   PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						   SCM_C,
+						   BW,
+						   forgetting_factor,
+						   0,
+						   path_loss_dB[UE_id]);
 
+      UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+						   PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
+						   SCM_C,
+						   BW,
+						   forgetting_factor,
+						   0,
+						   path_loss_dB[UE_id]);
     }
   }
 
@@ -544,7 +564,8 @@ int main(int argc, char **argv) {
 	input_buffer[i]= (unsigned char)(taus()&0xff);
     
       dlsch_encoding(input_buffer,
-		     lte_frame_parms,
+		     &PHY_vars_eNb_g[0]->lte_frame_parms,
+		     num_pdcch_symbols,
 		     PHY_vars_eNb_g[0]->dlsch_eNb[UE_id][0]);
     
       //#ifdef OUTPUT_DEBUG
@@ -566,10 +587,11 @@ int main(int argc, char **argv) {
 					1024,
 					0,
 					&PHY_vars_eNb_g[0]->lte_frame_parms,
+					num_pdcch_symbols,
 					PHY_vars_eNb_g[0]->dlsch_eNb[UE_id][0]);
     
     
-	printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
+	printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols/12,PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols);
 	//}
     
       
@@ -578,6 +600,7 @@ int main(int argc, char **argv) {
 					  1024,
 					  0,
 					  &PHY_vars_eNb_g[0]->lte_frame_parms,
+					  num_pdcch_symbols,
 					  PHY_vars_eNb_g[0]->dlsch_eNb[UE_id][1]);
     }
   }
@@ -610,6 +633,7 @@ int main(int argc, char **argv) {
     
     dlsch_encoding(input_buffer,
 		   &PHY_vars_eNb_g[0]->lte_frame_parms,
+		   num_pdcch_symbols,
 		   PHY_vars_eNb_g[0]->dlsch_eNb_SI);
     
 #ifdef OUTPUT_DEBUG
@@ -631,13 +655,14 @@ int main(int argc, char **argv) {
 				    1024,
 				    0,
 				    &PHY_vars_eNb_g[0]->lte_frame_parms,
+				    num_pdcch_symbols,
 				    PHY_vars_eNb_g[0]->dlsch_eNb_SI);
     
     
-    printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
+    printf("RB count %d (%d,%d)\n",re_allocated,re_allocated/PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols/12,PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols);
     
-    if ((re_allocated/(lte_frame_parms->num_dlsch_symbols*12)) != NB_RB)
-      printf("Bad RB count %d (%d,%d)\n",re_allocated,re_allocated/lte_frame_parms->num_dlsch_symbols/12,lte_frame_parms->num_dlsch_symbols);
+    if ((re_allocated/(PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols*12)) != NB_RB)
+      printf("Bad RB count %d (%d,%d)\n",re_allocated,re_allocated/PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols/12,PHY_vars_eNb_g[0]->lte_frame_parms.num_dlsch_symbols);
   
   
     
@@ -656,7 +681,8 @@ int main(int argc, char **argv) {
     generate_pbch(PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
 		  1024,
 		  &PHY_vars_eNb_g[0]->lte_frame_parms,
-		  pbch_pdu);
+		  pbch_pdu,
+		  0);
 
   }
 
@@ -685,7 +711,7 @@ int main(int argc, char **argv) {
 #endif
 
   // do table lookup and write results to txdataF2
-  for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+  for (aa=0;aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_tx;aa++) {
     ind = 0;
     for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
       if (((i%512)>=1) && ((i%512)<=150))
@@ -702,14 +728,14 @@ int main(int argc, char **argv) {
 #endif
 
   tx_lev = 0;
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+  for (aa=0; aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
     PHY_ofdm_mod(txdataF2[aa],        // input
 		 txdata[aa],         // output
-		 lte_frame_parms->log2_symbol_size,                // log2_fft_size
+		 PHY_vars_eNb_g[0]->lte_frame_parms.log2_symbol_size,                // log2_fft_size
 		 NUMBER_OF_SYMBOLS_PER_FRAME,                 // number of symbols
-		 lte_frame_parms->nb_prefix_samples,               // number of prefix samples
-		 lte_frame_parms->twiddle_ifft,  // IFFT twiddle factors
-		 lte_frame_parms->rev,           // bit-reversal permutation
+		 PHY_vars_eNb_g[0]->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
+		 PHY_vars_eNb_g[0]->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
+		 PHY_vars_eNb_g[0]->lte_frame_parms.rev,           // bit-reversal permutation
 		 CYCLIC_PREFIX);
 
     tx_lev += signal_energy(&txdata[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
@@ -726,7 +752,7 @@ int main(int argc, char **argv) {
 #endif
   
   tx_lev = 0;
-  for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+  for (aa=0; aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_tx; aa++) {
     PHY_ofdm_mod(PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id][aa],        // input
 		 txdata[aa],         // output
 		 PHY_vars_eNb_g[0]->lte_frame_parms.log2_symbol_size,                // log2_fft_size
@@ -754,7 +780,7 @@ int main(int argc, char **argv) {
 
 
   for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+    for (aa=0;aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_tx;aa++) {
       s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
       s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
@@ -787,7 +813,7 @@ int main(int argc, char **argv) {
 
 #ifdef AWGN // copy s_re and s_im to r_re and r_im
       for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	for (aa=0;aa<PHY_vars_eNb_g[0]->lte_frame_parms.nb_antennas_tx;aa++) {
 	  r_re[UE_id][aa][i] = s_re[aa][i];
 	  r_im[UE_id][aa][i] = s_im[aa][i];
 	}
@@ -806,12 +832,12 @@ int main(int argc, char **argv) {
     //for (SNR=snr0;SNR<snr1;SNR+=.2) {
     SNR = snr0;
       
-    sigma2_dB = 10*log10(tx_lev) + 10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)) - SNR;
+    sigma2_dB = 10*log10(tx_lev) + 10*log10(frame_parms->ofdm_symbol_size/(NB_RB*12)) - SNR;
     sigma2 = pow(10,sigma2_dB/10);
       
     printf("[SIM] SNR = %f dB (tx_lev %f, sigma2_dB %f)\n",
 	   SNR,
-	   (double)10*log10(tx_lev)+10*log10(lte_frame_parms->ofdm_symbol_size/(NB_RB*12)),
+	   (double)10*log10(tx_lev)+10*log10(frame_parms->ofdm_symbol_size/(NB_RB*12)),
 	   sigma2_dB);
       
     for (trials = 0;trials<n_frames;trials++) {
@@ -826,13 +852,13 @@ int main(int argc, char **argv) {
 	// AWGN
 	for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++) {
 	  if ((i/640)%3!=0){
-	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 	      ((short*) PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[UE_id][aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	      ((short*) PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[UE_id][aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	    }
 	  }
 	  else{
-	    for (aa=0;aa<lte_frame_parms->nb_antennas_rx;aa++) {
+	    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 	      ((short*) PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[UE_id][aa][i]);
 	      ((short*) PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[UE_id][aa][i]);
 	    }

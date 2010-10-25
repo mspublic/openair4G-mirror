@@ -1,13 +1,11 @@
 CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
 #CC = gcc-4
 
-CFLAGS += -DCELLULAR
-
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
-CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
+CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
@@ -17,6 +15,7 @@ CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundar
 
 CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
 CFLAGS += -DTBS_FIX
+CFLAGS += -DCELLULAR
 
 ifdef EMOS
 CFLAGS += -DEMOS
@@ -32,64 +31,8 @@ endif
 
 CFLAGS += -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/UTIL/TIMER -I/usr/include/X11 -I/usr/X11R6/include
 
-
-
-PHY_OBJS = $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_demodulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_demodulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_coding.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/ulsch_decoding.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/rar_tools.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
-PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
-PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep.o
-PHY_OBJS += $(TOP_DIR)/PHY/MODULATION/slot_fep_ul.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_adjust_sync.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/freq_equalization.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_eNB_measurements.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_segmentation.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/crc_byte.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/rate_matching.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
-PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
-PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
-ifdef OPENAIR2
-PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
-endif
-ifdef EMOS
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
-endif
-ifdef OPENAIR2
-PHY_OBJS += $(OPENAIR2_DIR)/PHY_INTERFACE/mac_phy_primitives.o
-endif
+include $(TOP_DIR)/PHY/Makefile.inc
+include $(TOP_DIR)/SCHED/Makefile.inc
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
@@ -99,24 +42,6 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
-
-TOOLS_OBJS = $(TOP_DIR)/PHY/TOOLS/file_output.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_sv.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cmult_vv.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/sqrt.o
-TOOLS_OBJS += $(TOP_DIR)/PHY/TOOLS/lte_dfts.o
-
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_eNb.o
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_ue.o
-ifdef MeNBMUE
-SCHED_OBJS += $(TOP_DIR)/SCHED/phy_procedures_lte_MeNbMue.o
-endif
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 

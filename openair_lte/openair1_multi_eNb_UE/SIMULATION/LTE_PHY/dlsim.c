@@ -74,6 +74,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->rev              = rev;
   
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
+  PHY_vars_eNb->lte_frame_parms = *lte_frame_parms;
 
   /*  
   lte_gold(lte_frame_parms);

@@ -223,6 +223,7 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
     // get harq_pid from subframe relationship
     harq_pid = subframe2harq_pid_tdd(phy_vars_ue->lte_frame_parms.tdd_config,(next_slot>>1));
 
+#ifdef OPENAIR2
     if ((phy_vars_ue->ulsch_ue_RRCConnReq_active[eNB_id] == 1) && (phy_vars_ue->ulsch_ue_RRCConnReq_frame[eNB_id] == mac_xface->frame) && (phy_vars_ue->ulsch_ue_RRCConnReq_subframe[eNB_id] == (next_slot>>1))) {
       //      harq_pid = 0;
       phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
@@ -246,6 +247,8 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
       }
       RRCConnReq_flag=0;
     }
+#endif
+
     if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag == 1) {
 
       // deactivate service request
@@ -505,14 +508,14 @@ void lte_ue_pbch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
   u8 pbch_phase;
 
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
-    printf("Trying PBCH %d\n",pbch_phase);
+    //printf("Trying PBCH %d\n",pbch_phase);
     pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
 			  phy_vars_ue->lte_ue_pbch_vars[eNB_id],
 			  &phy_vars_ue->lte_frame_parms,
 			  eNB_id,
 			  SISO,
 			  pbch_phase);
-    printf("Received %d TX antennas\n",pbch_tx_ant);
+    //printf("Received %d TX antennas\n",pbch_tx_ant);
     if ((pbch_tx_ant>0) && (pbch_tx_ant<4))
       break;
   }
@@ -602,7 +605,6 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
 	   phy_vars_ue->lte_ue_pdcch_vars,
 	   &phy_vars_ue->lte_frame_parms,
 	   eNB_id,
-	   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
 	   (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 	   phy_vars_ue->is_secondary_ue); 
 #ifdef DEBUG_PHY

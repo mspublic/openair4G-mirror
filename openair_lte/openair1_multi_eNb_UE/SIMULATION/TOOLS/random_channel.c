@@ -47,6 +47,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->BW             = BW;
   chan_desc->ricean_factor  = ricean_factor;
   chan_desc->aoa            = aoa;
+  chan_desc->forgetting_factor = forgetting_factor;
   chan_desc->channel_offset = channel_offset;
   chan_desc->path_loss_dB   = path_loss_dB;
   chan_desc->first_run      = 1;
@@ -78,6 +79,87 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 
   return(chan_desc);
 }
+
+double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
+double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
+
+channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
+				     u8 nb_rx, 
+				     SCM_t channel_model, 
+				     double BW, 
+				     double forgetting_factor, 
+				     s32 channel_offset, 
+				     double path_loss_dB) {
+
+  channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
+  u16 i,j;
+  double sum_amps;
+
+  chan_desc->nb_tx          = nb_tx;
+  chan_desc->nb_rx          = nb_rx;
+  chan_desc->BW             = BW;
+  chan_desc->forgetting_factor = forgetting_factor;
+  chan_desc->channel_offset = channel_offset;
+  chan_desc->path_loss_dB   = path_loss_dB;
+  chan_desc->first_run      = 1;
+  chan_desc->ip             = 0.0;
+
+  switch (channel_model) {
+  case SCM_A:
+    msg("channel model not yet supported\n");
+    free(chan_desc);
+    return(NULL);
+  case SCM_B:
+    msg("channel model not yet supported\n");
+    free(chan_desc);
+    return(NULL);
+  case SCM_C:
+    chan_desc->nb_taps        = 18;
+    chan_desc->Td             = 4.625;
+    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*scm_c_amps_dB[i]); 
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = scm_c_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    }
+    chan_desc->R_sqrt         = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+      for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	chan_desc->R_sqrt[i][j].r = 1.0;
+	chan_desc->R_sqrt[i][j].i = 0.0;
+      }
+    }
+    break;
+  case SCM_D:
+    msg("channel model not yet supported\n");
+    free(chan_desc);
+    return(NULL);
+  default:
+    msg("channel model not yet supported\n");
+    free(chan_desc);
+    return(NULL);
+  }
+  printf("[CHANNEL] RF %f\n",chan_desc->ricean_factor);
+  for (i=0;i<chan_desc->nb_taps;i++)
+    printf("[CHANNEL] tap %d: amp %f, delay %f\n",i,chan_desc->amps[i],chan_desc->delays[i]);
+
+  return(chan_desc);
+}
+
 
 int random_channel(channel_desc_t *desc) {
 		    
