@@ -45,9 +45,9 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 #endif
         if (!(((struct mac_tb_ind *) (tb->data))->error_indication)) {
             first_byte = ((struct mac_tb_ind *) (tb->data))->data_ptr;
-            tb_size_in_bytes = data_indP.tb_size;
+            tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
 
-            rlc_um_receive_process_dar (rlcP, tb, first_byte, tb_size_in_bytes, ((struct mac_tb_ind *) (tb->data))->error_indication);
+            rlc_um_receive_process_dar (rlcP, tb, first_byte, tb_size_in_bytes);
         } else {
 #ifdef DEBUG_RLC_STATS
             rlcP->rx_pdus_in_error += 1;

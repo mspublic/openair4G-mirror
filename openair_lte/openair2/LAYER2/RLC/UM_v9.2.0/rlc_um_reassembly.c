@@ -20,9 +20,9 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 
-//#define DEBUG_RLC_UM_REASSEMBLY 1
-//#define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
-//#define DEBUG_RLC_UM_SEND_SDU
+#define DEBUG_RLC_UM_REASSEMBLY 1
+#define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
+#define DEBUG_RLC_UM_SEND_SDU
 
 void            rlc_um_clear_rx_sdu (struct rlc_um_entity *rlcP);
 void            rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP);
@@ -82,16 +82,6 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
     msg ("[RLC_UM][MOD %d][RB %d][REASSEMBLY] ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id);
   }
 }
-
-//-----------------------------------------------------------------------------
-inline void
-rlc_um_send_sdu_minus_1_byte (struct rlc_um_entity *rlcP)
-{
-//-----------------------------------------------------------------------------
-  rlcP->output_sdu_size_to_write -= 1;
-  rlc_um_send_sdu (rlcP);
-}
-
 //-----------------------------------------------------------------------------
 void
 rlc_um_send_sdu (struct rlc_um_entity *rlcP)

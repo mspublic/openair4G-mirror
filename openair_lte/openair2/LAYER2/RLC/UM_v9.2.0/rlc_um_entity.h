@@ -74,12 +74,6 @@ typedef struct rlc_um_entity {
   // UM_Window_Size = 512 when a 10 bit SN is configured and UM_Window_Size = 0
   // when the receiving UM RLC entity is configured for MCCH or MTCH.
 
-  //-----------------------------
-  // discard info
-  //-----------------------------
-  u8_t              sdu_discard_mode;
-  u8_t              sdu_discard_without_explicit_signalling;
-
   u32_t            *frame_tick_milliseconds;      // pointer on this tick variable handled by RRC : READ ONLY
   //-----------------------------
   // tranmission
@@ -109,19 +103,6 @@ typedef struct rlc_um_entity {
   //-----------------------------
   u8_t              logical_channel_identity;
 
-
-  u16_t             first_li_in_next_pdu; // indicates :
-  // value = 000000000000000 that the previous PDU was exactly
-  // with the last segment of an RLC SDU and there is no LI that
-  // indicates the end of the SDU in the previous RLC PDU.
-  // value = 111111111111011 The last segment of an RLC SDU was one octet
-  // short of exactly filling the previous RLC PDU and there is no LI that
-  // indicates the end of the SDU in the previous RLC PDU. The remaining one
-  // octet in the previous RLC PDU is ignored.
-  // value = 111111111111110 AMD PDU: The rest of the RLC PDU includes a
-  // piggybacked STATUS PDU.
-  // value = 111111111111111 The rest of the RLC PDU is padding. The padding
-  // length can be zero.
 
   //*****************************************************************************
   // RECEIVER

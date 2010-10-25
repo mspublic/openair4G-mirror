@@ -9,20 +9,58 @@
 #include "rlc_um_structs.h"
 #include "rlc_primitives.h"
 #include "rlc_def.h"
+#include "rlc_def_lte.h"
 #include "mac_primitives.h"
 #include "list.h"
 #include "rlc_um_reassembly_proto_extern.h"
+#include "rlc_um_dar_proto_extern.h"
 
+#define DEBUG_RLC_UM_RX_DECODE
+//-----------------------------------------------------------------------------
+int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP) {
+//-----------------------------------------------------------------------------
+    int continue_loop = 1;
+    *num_liP = 0;
+
+    while ((continue_loop)) {
+        li_arrayP[*num_liP] = e_liP->li1;
+        *data_sizeP = *data_sizeP - e_liP->li1;
+        *dataP = &*dataP[e_liP->li1];
+        *num_liP = *num_liP +1;
+        if ((e_liP->e1)) {
+            li_arrayP[*num_liP] = e_liP->li2;
+            *data_sizeP = *data_sizeP - e_liP->li2;
+            *dataP = &*dataP[e_liP->li2];
+            *num_liP = *num_liP +1;
+            if (e_liP->e2 == 0) {
+                continue_loop = 0;
+            } else {
+                e_liP++;
+            }
+        } else {
+            continue_loop = 0;
+        }
+        if (*num_liP >= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
+            return -1;
+        }
+    }
+    return 0;
+}
 //-----------------------------------------------------------------------------
 void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
 //-----------------------------------------------------------------------------
     mem_block_t        *pdu_mem;
     struct mac_tb_ind  *tb_ind;
     rlc_um_e_li_t      *e_li;
+    unsigned char      *data;
     int                 e;
     int                 fi;
+    unsigned int        size;
     u16_t sn;
     u16_t sn_tmp = snP;
+    unsigned int        num_li;
+    unsigned int        li_array[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU];
+    int i;
 
     assert(rlcP->dar_buffer[snP] != NULL);
     // go backward in the buffer till there are continuous PDUs
@@ -35,44 +73,139 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
     while ((pdu_mem = rlcP->dar_buffer[sn])) {
         tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
         if (rlcP->sn_length == 10) {
-            e = ((rlc_um_pdu_sn_10_t*)(tb_ind->first_byte))->e;
-            fi = ((rlc_um_pdu_sn_10_t*)(tb_ind->first_byte))->fi;
-            e_li = ((rlc_um_pdu_sn_10_t*)(tb_ind->first_byte))->data;
+            e = ((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->e;
+            fi = ((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->fi;
+            e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->data;
+            size   = tb_ind->size - 2;
+            data = &tb_ind->data_ptr[2];
         } else {
-            e = ((rlc_um_pdu_sn_5_t*)(tb_ind->first_byte))->e;
-            fi = ((rlc_um_pdu_sn_5_t*)(tb_ind->first_byte))->fi;
-            e_li = ((rlc_um_pdu_sn_5_t*)(tb_ind->first_byte))->data;
+            e = ((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->e;
+            fi = ((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->fi;
+            e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->data;
+            size   = tb_ind->size - 1;
+            data = &tb_ind->data_ptr[1];
         }
         if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
-            switch (fi):
+            switch (fi) {
                 case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id);
+#endif
                     // one complete SDU
+                    rlc_um_send_sdu(rlcP); // may be not necessary
+                    rlc_um_reassembly (data, size, rlcP);
+                    rlc_um_send_sdu(rlcP); // may be not necessary
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id);
+#endif
                     // one beginning segment of SDU in PDU
+                    rlc_um_send_sdu(rlcP); // may be not necessary
+                    rlc_um_reassembly (data, size, rlcP);
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=01 (10)\n", rlcP->module_id, rlcP->rb_id);
+#endif
                     // one last segment of SDU
+                    rlc_um_reassembly (data, size, rlcP);
+                    rlc_um_send_sdu(rlcP);
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=00 (11)\n", rlcP->module_id, rlcP->rb_id);
+#endif
                     // one whole segment of SDU in PDU
+                    rlc_um_reassembly (data, size, rlcP);
                     break;
                 default:;
+            }
         } else {
-            switch (fi):
-                case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-                    // N complete SDUs
-                    break;
-                case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-                    // N complete SDUs + one segment of SDU in PDU
-                    break;
-                case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-                    // one last segment of SDU + N complete SDUs in PDU
-                    break;
-                case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-                    // one whole segment of SDU in PDU
-                    break;
-                default:;
+            if (rlc_um_read_length_indicators(&data, e_li, li_array, &num_li, &size ) >= 0) {
+                switch (fi) {
+                    case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id);
+            for (i=0; i < num_li; i++) {
+                msg("%d ",li_array[i]);
+            }
+            msg(" remaining size %d\n",size);
+#endif
+                        // N complete SDUs
+                        rlc_um_send_sdu(rlcP);
+                        for (i = 0; i < num_li; num_li++) {
+                            rlc_um_reassembly (data, li_array[i], rlcP);
+                            rlc_um_send_sdu(rlcP);
+                            data = &data[li_array[i]];
+                        }
+                        if (size > 0) { // normally should always be > 0 but just for help debug
+                            // data is already ok, done by last loop above
+                            rlc_um_reassembly (data, size, rlcP);
+                            rlc_um_send_sdu(rlcP);
+                        }
+                        break;
+                    case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id);
+            for (i=0; i < num_li; i++) {
+                msg("%d ",li_array[i]);
+            }
+            msg(" remaining size %d\n",size);
+#endif
+                        // N complete SDUs + one segment of SDU in PDU
+                        rlc_um_send_sdu(rlcP);
+                        for (i = 0; i < num_li; num_li++) {
+                            rlc_um_reassembly (data, li_array[i], rlcP);
+                            rlc_um_send_sdu(rlcP);
+                            data = &data[li_array[i]];
+                        }
+                        if (size > 0) { // normally should always be > 0 but just for help debug
+                            // data is already ok, done by last loop above
+                            rlc_um_reassembly (data, size, rlcP);
+                        }
+                        break;
+                    case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id);
+            for (i=0; i < num_li; i++) {
+                msg("%d ",li_array[i]);
+            }
+            msg(" remaining size %d\n",size);
+#endif
+                        // one last segment of SDU + N complete SDUs in PDU
+                        for (i = 0; i < num_li; num_li++) {
+                            rlc_um_reassembly (data, li_array[i], rlcP);
+                            rlc_um_send_sdu(rlcP);
+                            data = &data[li_array[i]];
+                        }
+                        if (size > 0) { // normally should always be > 0 but just for help debug
+                            // data is already ok, done by last loop above
+                            rlc_um_reassembly (data, size, rlcP);
+                            rlc_um_send_sdu(rlcP);
+                        }
+                        break;
+                    case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
+#ifdef DEBUG_RLC_UM_RX_DECODE
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id);
+            for (i=0; i < num_li; i++) {
+                msg("%d ",li_array[i]);
+            }
+            msg(" remaining size %d\n",size);
+#endif
+                        for (i = 0; i < num_li; num_li++) {
+                            rlc_um_reassembly (data, li_array[i], rlcP);
+                            rlc_um_send_sdu(rlcP);
+                            data = &data[li_array[i]];
+                        }
+                        if (size > 0) { // normally should always be > 0 but just for help debug
+                            // data is already ok, done by last loop above
+                            rlc_um_reassembly (data, size, rlcP);
+                        }
+                        break;
+                    default:;
+                }
+            }
         }
     }
 
@@ -80,8 +213,44 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
 //-----------------------------------------------------------------------------
 void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP) {
 //-----------------------------------------------------------------------------
-    if (rlcP->timer_reordering_running != 0) {
-        if (rlcP->timer_reordering_running == 0) {
+    signed int in_window;
+    u16_t     saved_sn;
+    if ((rlcP->timer_reordering_running)) {
+        if ((rlcP->timer_reordering  + rlcP->timer_reordering_init)   == *rlcP->frame_tick_milliseconds) {
+            // 5.1.2.2.4   Actions when t-Reordering expires
+            //  When t-Reordering expires, the receiving UM RLC entity shall:
+            //  -update VR(UR) to the SN of the first UMD PDU with SN >= VR(UX) that has not been received;
+            //  -reassemble RLC SDUs from any UMD PDUs with SN < updated VR(UR), remove RLC headers when doing so and deliver the reassembled RLC SDUs to upper layer in ascending order of the RLC SN if not delivered before;
+            //  -if VR(UH) > VR(UR):
+            //      -start t-Reordering;
+            //      -set VR(UX) to VR(UH).
+#ifdef DEBUG_RLC_UM_RX
+            msg ("[RLC_UM][MOD %d][RB %d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id);
+            msg ("[RLC_UM][MOD %d][RB %d] set VR(UR) to", rlcP->module_id, rlcP->rb_id);
+#endif
+            saved_sn = rlcP->vr_ur;
+            rlcP->vr_ur = rlcP->vr_ux;
+            while (rlc_um_get_pdu_from_dar_buffer(rlcP, rlcP->vr_ur)) {
+                rlcP->vr_ur = (rlcP->vr_ur+1)%(1 << rlcP->sn_length);
+#ifdef DEBUG_RLC_UM_RX
+            msg (".");
+#endif
+            }
+#ifdef DEBUG_RLC_UM_RX
+            msg (" %d\n", rlcP->vr_ur);
+#endif
+
+            rlc_um_try_reassembly(rlcP, saved_sn);
+
+            in_window = rlc_um_in_window(rlcP, rlcP->vr_ur,  rlcP->vr_uh,  rlcP->vr_uh);
+            if (in_window == 2) {
+                rlcP->timer_reordering_running = 1;
+                rlcP->timer_reordering         = rlcP->timer_reordering_init;
+                rlcP->vr_ux = rlcP->vr_uh;
+#ifdef DEBUG_RLC_UM_RX
+                msg ("[RLC_UM][MOD %d][RB %d] restarting t-Reordering set VR(UX) to %d (VR(UH)>VR(UR))\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ux);
+#endif
+            }
         }
     }
 }
@@ -281,4 +450,5 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
             rlcP->vr_ux = rlcP->vr_uh;
         }
     }
+    rlc_um_check_timer_dar_time_out(rlcP);
 }

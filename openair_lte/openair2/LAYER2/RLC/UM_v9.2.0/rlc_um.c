@@ -314,90 +314,6 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 #endif*/
 #endif
   if (rlc->input_sdus[rlc->next_sdu_index] == NULL) {
-    insert_sdu = 1;
-  } else {
-
-    // from 3GPP TS 25.322 V9.2.0 p66-67
-    // Upon a request of unacknowledged mode data transfer from upper layer,
-    // the Sender shall:
-    // - if no SDU discard configuration has been made by upper layers:
-    //     - only discard SDUs when the Transmission buffer is full
-    // (see subclause 9.7.3);
-    // - if "Timer based SDU Discard without explicit signalling" is configured:
-    //     - start a timer Timer_Discard for each SDU received from upper layer
-    //       (see subclause 9.7.3);
-    // - schedule the RLC SDUs received from upper layer for transmission;
-    // - if one or more RLC SDUs have been scheduled for transmission:
-    //     - notify the lower layer of reception of data from upper layers;
-    //     - perform the actions specified in subclause 11.2.2.2.
-
-    if ((rlc->sdu_discard_mode & RLC_SDU_DISCARD_NOT_CONFIGURED)) {
-      if ((rlc->input_sdus[rlc->current_sdu_index])) {
-        // from 3GPP TS 25.322 V9.2.0 p70
-        // SDU discard without explicit signalling:
-        // ...
-        // - for the first UMD PDU to be transmitted after the discard operation,
-        //   the Sender shall:
-        //     -increment VT(US) so that the "Sequence Number" field in this UMD
-        //      PDU is incremented with two compared with the previous UMD PDU;
-        //     -fill the first data octet in this UMD PDU with the first octet
-        //      of an RLC SDU;
-        //     -if the "Extension bit" does not indicate that the UMD PDU
-        //      contains a complete SDU which is not segmented, concatenated or
-        //      padded:
-        //        -set the first "Length Indicator" in this UMD PDU to indicate
-        //         that the previous RLC PDU was exactly filled with the last
-        //         segment of an RLC SDU (to avoid that the Receiver
-        //         unnecessarily discards an extra SDU).
-        // In the case where the TFC selection exchange has been initiated by
-        // sending the RLC Entity Info parameter to MAC, the UE may wait until
-        // after it provides MAC with the requested set of UMD PDUs before
-        // discarding the afore-mentioned SDU.
-        // EURECOM NOTE: since there is a single thread of execution for RRC-RLC-PDCP
-        // there is no TFC selection initiated.
-#ifdef DEBUG_RLC_UM_DISCARD_SDU
-        msg ("[RLC_UM][RB %d] SDU DISCARDED : BUFFER OVERFLOW, BO %d , NB SDU %d\n", rlc->rb_id, rlc->buffer_occupancy, rlc->nb_sdu);
-#endif
-        //rlc->vt_us = (rlc->vt_us + 1) & 0x7F; // already incremented by one after previous transmission
-        //rlc->do_sdu_discard_without_explicit_signalling_procedure = 1;
-
-        if (((struct rlc_um_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_remaining_size !=
-            ((struct rlc_um_tx_sdu_management *) (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_size) {
-#ifdef DEBUG_RLC_UM_VT_US
-          msg ("[RLC_UM][RB %d] Inc VT(US) in rlc_um_data_req()/discarding SDU\n", rlc->rb_id);
-#endif
-          // LGv9 rlc->li_one_byte_short_to_add_in_next_pdu = 0;
-          // LGv9 rlc->li_exactly_filled_to_add_in_next_pdu = 1;
-          rlc->buffer_occupancy -= ((struct rlc_um_tx_sdu_management *)
-                                    (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_remaining_size;
-        } else {
-          rlc->buffer_occupancy -= ((struct rlc_um_tx_sdu_management *)
-                                    (rlc->input_sdus[rlc->current_sdu_index]->data))->sdu_size;
-        }
-        rlc->nb_sdu -= 1;
-        free_mem_block (rlc->input_sdus[rlc->current_sdu_index]);
-        rlc->input_sdus[rlc->current_sdu_index] = NULL;
-        insert_sdu = 1;
-        rlc->current_sdu_index = (rlc->current_sdu_index + 1) % rlc->size_input_sdus_buffer;
-#ifdef DEBUG_RLC_UM_DISCARD_SDU
-        //msg ("[RLC_UM_LITE][RB %d] DISCARD RESULT:\n", rlc->rb_id);
-        //msg ("[RLC_UM_LITE][RB %d] size input buffer=%d current_sdu_index=%d next_sdu_index=%d\n", rlc->rb_id, rlc->size_input_sdus_buffer, rlc->current_sdu_index, rlc->next_sdu_index);
-        //for (index = 0; index < rlc->size_input_sdus_buffer; index++) {
-        //msg ("[RLC_UM_LITE][RB %d] BUFFER[%d]=%p\n", rlc->rb_id, index, rlc->input_sdus[index]);
-        //}
-#endif
-      } else {
-#ifdef DEBUG_RLC_UM_DISCARD_SDU
-        msg ("[RLC_UM][RB %d] DISCARD : BUFFER OVERFLOW ERROR : SHOULD FIND A SDU\n", rlc->rb_id);
-        msg ("[RLC_UM][RB %d] size input buffer=%d current_sdu_index=%d next_sdu_index=%d\n", rlc->rb_id, rlc->size_input_sdus_buffer, rlc->current_sdu_index, rlc->next_sdu_index);
-        for (index = 0; index < rlc->size_input_sdus_buffer; index++) {
-          msg ("[RLC_UM][RB %d] BUFFER[%d]=%p\n", rlc->rb_id, index, rlc->input_sdus[index]);
-        }
-#endif
-      }
-    }
-  }
-  if ((insert_sdu)) {
     rlc->input_sdus[rlc->next_sdu_index] = sduP;
     // IMPORTANT : do not change order of affectations
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_size = ((struct rlc_um_data_req *) (sduP->data))->data_size;
@@ -407,11 +323,11 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_remaining_size = ((struct rlc_um_tx_sdu_management *)
                                                                               (sduP->data))->sdu_size;
     ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_segmented_size = 0;
-    ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_creation_time = *rlc->frame_tick_milliseconds;
+    // LG ((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_creation_time = *rlc->frame_tick_milliseconds;
     // LG ??? WHO WROTE THAT LINE ?((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_creation_time = 0;
     rlc->next_sdu_index = (rlc->next_sdu_index + 1) % rlc->size_input_sdus_buffer;
   } else {
-    //    msg("[RLC][UM] Freeing sduP (%p)\n",sduP);
+    msg("[RLC_UM][MOD %d][RB %d] RLC-UM_DATA_REQ input buffer full SDU garbaged\n",rlc->module_id, rlc->rb_id);
     free_mem_block (sduP);
   }
 }

@@ -17,6 +17,7 @@
 #include "rlc_def.h"
 #include "rlc_um_constants.h"
 
+#define RLC_UM_SEGMENT
 //-----------------------------------------------------------------------------
 void
 rlc_um_segment_10 (struct rlc_um_entity *rlcP)
@@ -27,7 +28,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
     signed int          test_pdu_remaining_size;
 
     int                 nb_pdu_to_transmit = rlcP->nb_pdu_requested_by_mac;
-    rlc_um_pdu_sn10_t  *pdu;
+    rlc_um_pdu_sn_10_t *pdu;
     struct mac_tb_req  *pdu_tb_req;
     mem_block_t        *pdu_mem;
     char               *data;
@@ -57,10 +58,10 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 return;
             }
             pdu_remaining_size = rlcP->data_pdu_size - 2;
-            pdu        = (rlc_um_pdu_sn10_t*) (&pdu_mem->data[sizeof(struct mac_tb_req)]);
+            pdu        = (rlc_um_pdu_sn_10_t*) (&pdu_mem->data[sizeof(struct mac_tb_req)]);
             pdu_tb_req = (struct mac_tb_req*) (pdu_mem->data);
 
-            memset (pdu_mem->data, 0, sizeof (rlc_um_pdu_sn10_t)+sizeof(struct mac_tb_req));
+            memset (pdu_mem->data, 0, sizeof (rlc_um_pdu_sn_10_t)+sizeof(struct mac_tb_req));
             li_length_in_bytes = 1;
         }
         //----------------------------------------
