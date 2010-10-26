@@ -170,6 +170,7 @@ struct mac_status_resp {
 
 struct mac_tb_ind {
   unsigned char             *data_ptr;
+  unsigned short             size;
   unsigned char              error_indication;
   unsigned char              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc
 };

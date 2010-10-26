@@ -122,10 +122,10 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
                     rlc[module_idP].m_rlc_am_array[index].allocation = 1;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
-                   // msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, index);
+                   msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, index);
                     return RLC_OP_STATUS_OK;
                 } else {
-                 //   msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX %d IS ALLOCATED\n", module_idP, rb_idP, index);
+                 msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX %d IS ALREADY ALLOCATED\n", module_idP, rb_idP, index);
                 }
             break;
             case RLC_TM:
@@ -146,14 +146,14 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
                     rlc[module_idP].m_rlc_um_array[index].allocation = 1;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
-		    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB UM INDEX IS %d  RLC_MODE %d\n", module_idP, rb_idP, index, rlc_modeP);
-		    return RLC_OP_STATUS_OK;
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB UM INDEX IS %d  RLC_MODE %d\n", module_idP, rb_idP, index, rlc_modeP);
+                    return RLC_OP_STATUS_OK;
                 } else {
-		  //msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB UM INDEX %d IS ALREADY ALLOCATED\n", module_idP, rb_idP, index);
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB UM INDEX %d IS ALREADY ALLOCATED\n", module_idP, rb_idP, index);
                 }
             break;
             default:
-	      msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB WITH INDEX %d EROOOOOOOOR\n", module_idP, rb_idP, index);
+                msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB WITH INDEX %d EROOOOOOOOR\n", module_idP, rb_idP, index);
               mac_xface->macphy_exit("");
               return RLC_OP_STATUS_BAD_PARAMETER;
         }
