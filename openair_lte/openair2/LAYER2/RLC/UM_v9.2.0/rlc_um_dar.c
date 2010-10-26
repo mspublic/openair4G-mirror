@@ -4,16 +4,10 @@
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
-#include "rlc_um_entity.h"
-#include "rlc_um_constants.h"
-#include "rlc_um_structs.h"
+#include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "rlc_def.h"
-#include "rlc_def_lte.h"
 #include "mac_primitives.h"
 #include "list.h"
-#include "rlc_um_reassembly_proto_extern.h"
-#include "rlc_um_dar_proto_extern.h"
 
 #define DEBUG_RLC_UM_RX_DECODE
 //-----------------------------------------------------------------------------

@@ -1,21 +1,10 @@
-/*
-                              rlc_um_segment.c
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
- ***************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_SEGMENT_C
 #include "rtos_header.h"
 #include "platform_types.h"
 #include "list.h"
-#include "rlc_um_entity.h"
-#include "rlc_um_structs.h"
+#include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "rlc_def.h"
-#include "rlc_um_constants.h"
 
 #define RLC_UM_SEGMENT
 //-----------------------------------------------------------------------------

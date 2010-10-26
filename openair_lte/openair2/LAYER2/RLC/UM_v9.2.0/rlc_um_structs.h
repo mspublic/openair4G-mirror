@@ -1,10 +1,3 @@
-/*
-                             rlc_um_structs.h
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
- ***************************************************************************/
 #    ifndef __RLC_UM_STRUCTS_H__
 #        define __RLC_UM_STRUCTS_H__
 

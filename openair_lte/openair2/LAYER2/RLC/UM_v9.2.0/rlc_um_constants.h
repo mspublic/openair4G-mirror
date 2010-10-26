@@ -1,12 +1,3 @@
-/*
-                              rlc_um_constants.c
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
-
- ***************************************************************************/
 #    ifndef __RLC_UM_CONSTANTS_H__
 #        define __RLC_UM_CONSTANTS_H__
 

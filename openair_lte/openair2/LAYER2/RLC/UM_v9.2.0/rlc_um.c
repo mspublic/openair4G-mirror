@@ -1,24 +1,12 @@
-/*
-                                rlc_um.c
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
- ***************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_C
 #include "rtos_header.h"
 #include "platform_types.h"
 
 #include "list.h"
-#include "rlc_um_entity.h"
-#include "rlc_um_proto_extern.h"
-#include "rlc_um_structs.h"
-#include "rlc_def.h"
+#include "rlc_um.h"
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
-#include "rlc_um_segment_proto_extern.h"
-#include "rlc_um_receiver_proto_extern.h"
 #include "LAYER2/MAC/extern.h"
 
 
@@ -28,7 +16,7 @@
 #define DEBUG_RLC_UM_DISCARD_SDU
 //-----------------------------------------------------------------------------
 void
-rlc_um_stat_req     (struct rlc_um_entity *rlcP,
+rlc_um_stat_req     (rlc_um_entity_t *rlcP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
 							  unsigned int* tx_data_pdu,
@@ -47,7 +35,7 @@ rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 }
 //-----------------------------------------------------------------------------
 u32_t
-rlc_um_get_buffer_occupancy (struct rlc_um_entity *rlcP)
+rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
     if (rlcP->buffer_occupancy > 0) {
@@ -61,7 +49,7 @@ void
 rlc_um_get_pdus (void *argP)
 {
 //-----------------------------------------------------------------------------
-  struct rlc_um_entity *rlc = (struct rlc_um_entity *) argP;
+  rlc_um_entity_t *rlc = (rlc_um_entity_t *) argP;
 
   switch (rlc->protocol_state) {
 
@@ -127,7 +115,7 @@ void
 rlc_um_rx (void *argP, struct mac_data_ind data_indP)
 {
 //-----------------------------------------------------------------------------
-  struct rlc_um_entity *rlc = (struct rlc_um_entity *) argP;
+  rlc_um_entity_t *rlc = (rlc_um_entity_t *) argP;
 
   switch (rlc->protocol_state) {
 
@@ -196,40 +184,40 @@ rlc_um_mac_status_indication (void *rlcP, u16_t no_tbP, u16_t tb_sizeP, struct m
   struct mac_status_resp status_resp;
 
   if (rlcP) {
-  ((struct rlc_um_entity *) rlcP)->nb_pdu_requested_by_mac = no_tbP - ((struct rlc_um_entity *)
+  ((rlc_um_entity_t *) rlcP)->nb_pdu_requested_by_mac = no_tbP - ((rlc_um_entity_t *)
                                                                        rlcP)->pdus_to_mac_layer.nb_elements;
-  //((struct rlc_um_entity *) rlcP)->data_pdu_size = (tb_sizeP + 7) >> 3;
-  ((struct rlc_um_entity *) rlcP)->data_pdu_size = tb_sizeP >> 3;
-  ((struct rlc_um_entity *) rlcP)->data_pdu_size_in_bits = tb_sizeP;
+  //((rlc_um_entity_t *) rlcP)->data_pdu_size = (tb_sizeP + 7) >> 3;
+  ((rlc_um_entity_t *) rlcP)->data_pdu_size = tb_sizeP >> 3;
+  ((rlc_um_entity_t *) rlcP)->data_pdu_size_in_bits = tb_sizeP;
 
 #ifdef NODE_RG
-  //  msg("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION data_pdu_size_in_bits = %d\n", ((struct rlc_um_entity *) rlcP)->rb_id, tb_sizeP);
+  //  msg("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION data_pdu_size_in_bits = %d\n", ((rlc_um_entity_t *) rlcP)->rb_id, tb_sizeP);
 #endif
 
-  status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((struct rlc_um_entity *) rlcP);
+  status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
 
   // LG + HA : approximation of num of transport blocks 21/10/2008
   if (status_resp.buffer_occupancy_in_bytes == 0 ) {
     status_resp.buffer_occupancy_in_pdus = 0;
-  } else  if ((status_resp.buffer_occupancy_in_bytes + 1)  <=  ((struct rlc_um_entity *) rlcP)->data_pdu_size) {
+  } else  if ((status_resp.buffer_occupancy_in_bytes + 1)  <=  ((rlc_um_entity_t *) rlcP)->data_pdu_size) {
     status_resp.buffer_occupancy_in_pdus = 1;
   } else {
-    status_resp.buffer_occupancy_in_pdus = status_resp.buffer_occupancy_in_bytes / (((struct rlc_um_entity *)
+    status_resp.buffer_occupancy_in_pdus = status_resp.buffer_occupancy_in_bytes / (((rlc_um_entity_t *)
 										     rlcP)->data_pdu_size - 1);
-    if ( (    status_resp.buffer_occupancy_in_bytes % (((struct rlc_um_entity *)rlcP)->data_pdu_size - 1))  > 0 ) {
+    if ( (    status_resp.buffer_occupancy_in_bytes % (((rlc_um_entity_t *)rlcP)->data_pdu_size - 1))  > 0 ) {
       status_resp.buffer_occupancy_in_pdus +=  1;
     }
   }
-  status_resp.rlc_info.rlc_protocol_state = ((struct rlc_um_entity *) rlcP)->protocol_state;
+  status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
 #ifdef DEBUG_RLC_UM_TX_STATUS
-  if (((struct rlc_um_entity *) rlcP)->rb_id > 0) {
-    msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION (DATA) %d TBs -> %d TBs\n", ((struct rlc_um_entity *) rlcP)->rb_id, no_tbP, status_resp.buffer_occupancy_in_pdus);
+  if (((rlc_um_entity_t *) rlcP)->rb_id > 0) {
+    msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION (DATA) %d TBs -> %d TBs\n", ((rlc_um_entity_t *) rlcP)->rb_id, no_tbP, status_resp.buffer_occupancy_in_pdus);
     if ((tx_statusP.tx_status == MAC_TX_STATUS_SUCCESSFUL) && (tx_statusP.no_pdu)) {
-      msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n", ((struct rlc_um_entity *)
+      msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n", ((rlc_um_entity_t *)
                                                                                        rlcP)->rb_id, tx_statusP.no_pdu);
     }
     if ((tx_statusP.tx_status == MAC_TX_STATUS_UNSUCCESSFUL) && (tx_statusP.no_pdu)) {
-      msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n", ((struct rlc_um_entity *)
+      msg ("[RLC_UM_LITE][RB %d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n", ((rlc_um_entity_t *)
                                                                                        rlcP)->rb_id, tx_statusP.no_pdu);
     }
   }
@@ -250,23 +238,23 @@ rlc_um_mac_data_request (void *rlcP)
   rlc_um_get_pdus (rlcP);
 
   list_init (&data_req.data, NULL);
-  list_add_list (&((struct rlc_um_entity *) rlcP)->pdus_to_mac_layer, &data_req.data);
+  list_add_list (&((rlc_um_entity_t *) rlcP)->pdus_to_mac_layer, &data_req.data);
 #ifdef DEBUG_RLC_STATS
-  ((struct rlc_um_entity *) rlcP)->tx_pdus += data_req.data.nb_elements;
+  ((rlc_um_entity_t *) rlcP)->tx_pdus += data_req.data.nb_elements;
 #endif
 
 #ifdef DEBUG_RLC_UM_MAC_DATA_REQUEST
-  if (((struct rlc_um_entity *) rlcP)->rb_id > 10) {
+  if (((rlc_um_entity_t *) rlcP)->rb_id > 10) {
     msg ("[RLC_UM] TTI %d: MAC_DATA_REQUEST %d TBs on RB %d\n",
 	 Mac_rlc_xface->frame,
 	 data_req.data.nb_elements,
-	 ((struct rlc_um_entity *) rlcP)->rb_id);
+	 ((rlc_um_entity_t *) rlcP)->rb_id);
   }
 #endif
-  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((struct rlc_um_entity *) rlcP);
-  data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / ((struct rlc_um_entity *)
+  data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
+  data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / ((rlc_um_entity_t *)
                                                                             rlcP)->data_pdu_size;
-  data_req.rlc_info.rlc_protocol_state = ((struct rlc_um_entity *) rlcP)->protocol_state;
+  data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
   return data_req;
 }
 
@@ -283,7 +271,7 @@ void
 rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 {
 //-----------------------------------------------------------------------------
-  struct rlc_um_entity *rlc = (struct rlc_um_entity *) rlcP;
+  rlc_um_entity_t *rlc = (rlc_um_entity_t *) rlcP;
   u8_t              insert_sdu = 0;
 #ifdef DEBUG_RLC_UM_DISCARD_SDU
   int             index;

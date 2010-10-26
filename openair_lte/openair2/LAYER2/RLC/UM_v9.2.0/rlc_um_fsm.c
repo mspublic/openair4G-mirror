@@ -1,18 +1,9 @@
-/***************************************************************************
-                          rlc_um_fsm.c  -
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
- ***************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_FSM_C
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#include "rlc_um_entity.h"
-#include "rlc_um_constants.h"
-#include "rlc_def.h"
+#include "rlc_um.h"
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
 #ifdef DEBUG_RLC_UM_FSM

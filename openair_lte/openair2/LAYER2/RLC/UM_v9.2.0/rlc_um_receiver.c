@@ -1,26 +1,14 @@
-/*
-                             rlc_um_receiver.c
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
- ***************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_RECEIVER_C
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
-#include "rlc_um_entity.h"
-#include "rlc_um_constants.h"
+#include "rlc_um.h"
 #include "rlc_um_structs.h"
 #include "rlc_primitives.h"
-#include "rlc_def.h"
 #include "mac_primitives.h"
 #include "list.h"
-#include "rlc_um_reassembly_proto_extern.h"
-#include "rlc_um_dar_proto_extern.h"
 //-----------------------------------------------------------------------------
 void
 rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)

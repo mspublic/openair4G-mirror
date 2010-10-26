@@ -1,23 +1,10 @@
-/***************************************************************************
-                          rlc_um_control_primitives.c  -
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
-
- ***************************************************************************/
 #define RLC_UM_MODULE
 #define RLC_UM_CONTROL_PRIMITIVES_C
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#include "rlc_um_entity.h"
-#include "rlc_um_constants.h"
-#include "rlc_um_structs.h"
+#include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "rlc_um_fsm_proto_extern.h"
-#include "rlc_um_control_primitives_proto_extern.h"
 #include "list.h"
 #include "rrm_config_structs.h"
 #include "LAYER2/MAC/extern.h"

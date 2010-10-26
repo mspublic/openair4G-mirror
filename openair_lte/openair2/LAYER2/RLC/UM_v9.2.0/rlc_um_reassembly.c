@@ -1,36 +1,20 @@
-/*
-                            rlc_um_reassembly.c
-
-                             -------------------
-  AUTHOR  : Lionel GAUTHIER
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-
- ***************************************************************************/
 #define RLC_UM_MODULE
-#define RLC_UM_C
+#define RLC_UM_REASSEMBLY_C
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
-#include "rlc_um_entity.h"
-#include "rlc_um_structs.h"
+#include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "rlc_um_constants.h"
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 
 #define DEBUG_RLC_UM_REASSEMBLY 1
 #define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
 #define DEBUG_RLC_UM_SEND_SDU
-
-void            rlc_um_clear_rx_sdu (struct rlc_um_entity *rlcP);
-void            rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP);
-void            rlc_um_send_sdu_minus_1_byte (struct rlc_um_entity *rlcP);
-void            rlc_um_send_sdu (struct rlc_um_entity *rlcP);
 //-----------------------------------------------------------------------------
 inline void
-rlc_um_clear_rx_sdu (struct rlc_um_entity *rlcP)
+rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
   rlcP->output_sdu_size_to_write = 0;
@@ -38,7 +22,7 @@ rlc_um_clear_rx_sdu (struct rlc_um_entity *rlcP)
 
 //-----------------------------------------------------------------------------
 void
-rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
+rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
   int             sdu_max_size;
@@ -84,7 +68,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, struct rlc_um_entity *rlcP)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_um_send_sdu (struct rlc_um_entity *rlcP)
+rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
 /*#ifndef USER_MODE
