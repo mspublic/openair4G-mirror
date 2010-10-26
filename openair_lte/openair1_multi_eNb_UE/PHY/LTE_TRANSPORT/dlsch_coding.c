@@ -65,7 +65,7 @@ void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
   
 }
 
-LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
 
   LTE_eNb_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
@@ -79,18 +79,20 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
 
     for (i=0;i<Mdlharq;i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNb_HARQ_t *)malloc16(sizeof(LTE_DL_eNb_HARQ_t));
-      //      printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
+                  printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b) {
 	  msg("Can't get b\n");
 	  exit_flag=1;
 	}
-	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
-	  if (!dlsch->harq_processes[i]->c[r]) {
-	    msg("Can't get c\n");
-	    exit_flag=2;
+	if (abstraction_flag==0) {
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
+	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
+	    if (!dlsch->harq_processes[i]->c[r]) {
+	      msg("Can't get c\n");
+	      exit_flag=2;
+	    }
 	  }
 	}
       }	else {
@@ -99,17 +101,19 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       }
     }
 
-    if (exit_flag==0) {
+    if ((exit_flag==0)) {
       for (i=0;i<Mdlharq;i++) {
-	for (j=0;j<96;j++)
-	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
-	    dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
 	dlsch->harq_processes[i]->round=0;
+	if (abstraction_flag==0) {
+	  for (j=0;j<96;j++)
+	    for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
+	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
+	}
       }
       return(dlsch);
     }
   }
-  msg("new_eNb_dlsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
+  msg("new_eNb_dlsch exit flag %d, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
   free_eNb_dlsch(dlsch);
   return(NULL);
   
@@ -254,5 +258,16 @@ int dlsch_encoding(unsigned char *a,
       write_output("enc_output.m","enc",dlsch->e,r_offset,1,4);
 #endif
   }
-  
+  return(0);
+}
+
+void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 *DLSCH_pdu,
+			 LTE_eNb_DLSCH_t *dlsch) {
+
+  unsigned char harq_pid = dlsch->current_harq_pid;
+
+  memcpy(dlsch->harq_processes[harq_pid]->b,DLSCH_pdu,dlsch->harq_processes[harq_pid]->TBS>>3);
+  msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNb->Mod_id);
+
 }

@@ -1324,3 +1324,13 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   else
     return(&ulsch_power[0]);
 }
+
+int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNb,
+		   u8 subframe,
+		   u8 sect_id,
+		   u8 UE_index) {
+  msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",phy_vars_eNb->Mod_id,subframe,sect_id,UE_index);
+  ulsch_power[0] = 45;
+  ulsch_power[1] = 45;
+  return(&ulsch_power[0]);
+}

@@ -2,7 +2,14 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/extern.h"
 #include "extern.h"
-
+#include "MAC_INTERFACE/defs.h"
+#include "MAC_INTERFACE/extern.h"
+#ifdef OPENAIR2
+#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/extern.h"
+#include "RRC/MESH/extern.h"
+#include "PHY_INTERFACE/extern.h"
+#endif
 //#define DEBUG_ULSCH_DECODING
 
 void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
@@ -28,7 +35,7 @@ void free_eNb_ulsch(LTE_eNb_ULSCH_t *ulsch) {
   }
 }
 
-LTE_eNb_ULSCH_t *new_eNb_ulsch(unsigned char Mdlharq) {
+LTE_eNb_ULSCH_t *new_eNb_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
 
   LTE_eNb_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,r;
@@ -44,14 +51,15 @@ LTE_eNb_ULSCH_t *new_eNb_ulsch(unsigned char Mdlharq) {
 	ulsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_ULSCH_PAYLOAD_BYTES);
 	if (!ulsch->harq_processes[i]->b)
 	  exit_flag=3;
-	for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
-	  ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
-	  if (!ulsch->harq_processes[i]->c[r])
-	    exit_flag=2;
-	  ulsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
+	if (abstraction_flag==0) {
+	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
+	    ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
+	    if (!ulsch->harq_processes[i]->c[r])
+	      exit_flag=2;
+	    ulsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
+	  }
+	  ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
 	}
-	ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
-      
       }	else {
 	exit_flag=1;
       }
@@ -639,4 +647,37 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   }
   
   return(ret);
+}
+
+u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNb,
+			u8 subframe,
+			u8 UE_index) {
+
+  u8 UE_id;
+  u16 rnti,i;
+  u8 harq_pid = subframe2harq_pid_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,subframe);
+
+  rnti = phy_vars_eNb->ulsch_eNb[UE_index]->rnti;
+  msg("[PHY] EMUL eNB %d ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",phy_vars_eNb->Mod_id,subframe,UE_index,harq_pid,rnti);
+
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
+    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNb->Mod_id]->crnti)
+      break;
+
+  if (UE_id==NB_UE_INST) {
+    msg("ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",rnti);
+    return(1+MAX_TURBO_ITERATIONS);
+  }
+  else {
+    msg("found UE with rnti %x => UE_id %d\n",rnti,UE_id);
+  }
+  // Do abstraction here to determine if packet it in error
+
+  memcpy(phy_vars_eNb->ulsch_eNb[UE_index]->harq_processes[harq_pid]->b,
+	 PHY_vars_UE_g[UE_id]->ulsch_ue[phy_vars_eNb->Mod_id]->harq_processes[harq_pid]->b,
+	 phy_vars_eNb->ulsch_eNb[UE_index]->harq_processes[harq_pid]->TBS>>3);
+
+  // Do abstraction of PUSCH feedback
+
+  
 }

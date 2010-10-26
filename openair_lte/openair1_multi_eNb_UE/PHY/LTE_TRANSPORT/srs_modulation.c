@@ -193,6 +193,11 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
+int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,u8 subframe) {
+
+  msg("[PHY][UE EMUL] generate_srs_tx_emul for subframe %d\n",subframe);
+}
+
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 		    SRS_param_t *SRS_parms,
 		    int *txdataF) {

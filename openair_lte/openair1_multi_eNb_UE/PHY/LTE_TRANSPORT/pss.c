@@ -144,3 +144,8 @@ int generate_pss(mod_sym_t **txdataF,
   }
   return(0);
 }
+
+int generate_pss_emul(PHY_VARS_eNB *phy_vars_eNb,u8 sect_id) {
+  
+  msg("[PHY] EMUL eNB generate_pss_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
+}

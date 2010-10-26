@@ -12,7 +12,12 @@
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 
-
+#ifdef OPENAIR2
+#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/extern.h"
+#include "RRC/MESH/extern.h"
+#include "PHY_INTERFACE/extern.h"
+#endif
 //#define DEBUG_PHY
 
 int* sync_corr_ue = NULL;
@@ -375,4 +380,22 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     return(peak_pos);
   }
 
+}
+
+int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
+			   u8 sect_id,
+			   s32 *sync_val) {
+
+  u8 UE_id;
+
+  msg("[PHY] EMUL lte_sync_time_eNb_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
+  *sync_val = 0;
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+    printf("checking UE %d (PRACH %d)\n",UE_id,PHY_vars_UE_g[UE_id]->generate_prach);
+    if (PHY_vars_UE_g[UE_id]->generate_prach == 1) {
+      *sync_val = 1;
+      return(0);
+    }
+  }
+  return(-1);
 }

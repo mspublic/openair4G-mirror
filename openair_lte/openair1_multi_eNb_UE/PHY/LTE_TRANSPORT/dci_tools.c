@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -619,6 +619,9 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
   case 2:
     if ((subframe!=2) && (subframe!=7)) {
       msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+#ifdef USER_MODE
+      exit(-1);
+#endif
       return(255);
     }
     return(subframe/7);
@@ -626,6 +629,9 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
   case 3:
     if ((subframe<2) || (subframe>4)) {
       msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+#ifdef USER_MODE
+      exit(-1);
+#endif
       return(255);
     }
     return(subframe-2);
@@ -633,6 +639,9 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
   case 4:
     if ((subframe<2) || (subframe>3)) {
       msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+#ifdef USER_MODE
+      exit(-1);
+#endif
       return(255);
     }
     return(subframe-2);
@@ -640,6 +649,9 @@ unsigned char subframe2harq_pid_tdd(unsigned char tdd_config,unsigned char subfr
   case 5:
     if (subframe!=2) {
       msg("dci_tools.c: subframe2_harq_pid_tdd, Illegal subframe %d for TDD mode %d\n",subframe,tdd_config);
+#ifdef USER_MODE
+      exit(-1);
+#endif
       return(255);
     }
     return(subframe-2);
@@ -858,9 +870,9 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   
   unsigned char harq_pid;
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
   msg("dci_tools.c: Filling ue ulsch params -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",ulsch,rnti,dci_format,subframe);
-#endif
+  //#endif
 
   if (dci_format == format0) {
 

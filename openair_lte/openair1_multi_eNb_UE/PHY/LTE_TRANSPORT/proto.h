@@ -9,19 +9,19 @@
  */
 void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
 
-LTE_eNb_DLSCH_t *new_eNb_dlsch(u8 Kmimo,u8 Mdlharq);
+LTE_eNb_DLSCH_t *new_eNb_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag);
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
-LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq);
+LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag);
 
 void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch);
 
-LTE_eNb_ULSCH_t *new_eNb_ulsch(u8 Mdlharq);
+LTE_eNb_ULSCH_t *new_eNb_ulsch(u8 Mdlharq,u8 abstraction_flag);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
-LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq);
+LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
 
 
 
@@ -46,7 +46,9 @@ s32 dlsch_encoding(u8 *a,
 		   u8 num_pdcch_symbols,
 		   LTE_eNb_DLSCH_t *dlsch);
 
-
+void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 *DLSCH_pdu,
+			 LTE_eNb_DLSCH_t *dlsch);
 
 
 // Functions below implement 36-211
@@ -164,12 +166,15 @@ s32 generate_pss(mod_sym_t **txdataF,
 		 u16 l,
 		 u16 Ns);
 
+s32 generate_pss_emul(PHY_VARS_eNB *phy_vars_eNb,u8 sect_id);
+
 s32 generate_pbch(mod_sym_t **txdataF,
 		  s32 amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  u8 *pbch_pdu,
 		  u8 frame_mod4);
 
+s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb);
 
 /** \fn qpsk_qpsk(s16 *stream0_in,
     s16 *stream1_in,
@@ -540,6 +545,10 @@ u32 dlsch_decoding(s16 *dlsch_llr,
 		   u8 subframe,
 		   u8 num_pdcch_symbols);
 
+u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
+			u8 subframe,
+			u8 dlsch_id,
+			u8 eNB_id);
 
 /** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     LTE_UE_DLSCH **lte_ue_dlsch_vars,
@@ -594,6 +603,10 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    u8 eNb_id,
 	    MIMO_mode_t mimo_mode,
 	    u8 frame_mod4);
+
+u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
+		 u8 eNB_id,
+		 u8 pbch_phase);
 
 /*! \brief PBCH unscrambling
   This is similar to pbch_scrabling with the difference that inputs are signed s16s (llr values) and instead of flipping bits we change signs.
@@ -651,6 +664,12 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 		      mod_sym_t **txdataF,
 		      u32 sub_frame_offset);
 
+u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 num_ue_spec_dci,
+			 u8 num_common_dci,
+			 DCI_ALLOC_t *dci_alloc,
+			 u8 subframe); 
+
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
@@ -683,6 +702,13 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			   LTE_DL_FRAME_PARMS *frame_parms,
 			   u16 si_rnti,
 			   u16 ra_rnti);
+
+u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+				u8 num_ue_spec_dci,
+				u8 num_common_dci,
+				DCI_ALLOC_t *dci_alloc_tx,
+				DCI_ALLOC_t *dci_alloc_rx,
+				s16 eNB_id);
 
 u8 get_Qm(u8 I_MCS);
 
@@ -860,21 +886,38 @@ s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      u8 relay_flag,
 	      u8 diversity_scheme);
 
+int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNb,
+		   u8 subframe,
+		   u8 sect_id,
+		   u8 UE_index);
+
 s32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid);
+
+s32 ulsch_encoding_emul(u8 *ulsch_buffer,
+			PHY_VARS_UE *phy_vars_ue,
+			u8 eNB_id,
+			u8 harq_pid);
 
 u32  ulsch_decoding(s16 *ulsch_llr,
 		    LTE_DL_FRAME_PARMS *frame_parms,
 		    LTE_eNb_ULSCH_t *ulsch,
 		    u8 subframe);
 
+u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNb,
+			u8 subframe,
+			u8 UE_index);
 
 void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 subframe,
 			LTE_eNb_ULSCH_t *ulsch_eNb,
 			mod_sym_t **txdataF);
+
+void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 subframe,
+			 LTE_eNb_ULSCH_t *ulsch_eNb);
 
 void print_CQI(void *o,u8 *o_RI,UCI_format fmt,u8 eNB_id);
 

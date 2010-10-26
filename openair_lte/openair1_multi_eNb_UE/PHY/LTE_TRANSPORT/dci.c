@@ -1810,6 +1810,23 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   return(num_pdcch_symbols);
 }
 
+u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 num_ue_spec_dci,
+			 u8 num_common_dci,
+			 DCI_ALLOC_t *dci_alloc,
+			 u8 subframe){ 
+
+  u8 num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,
+					       dci_alloc,
+					       &phy_vars_eNb->lte_frame_parms,
+					       subframe);
+  printf("[PHY] EMUL eNB %d generate_dci_top_emul : num_pdcch_symbols = %d\n",phy_vars_eNb->Mod_id,num_pdcch_symbols);
+  memcpy(phy_vars_eNb->dci_alloc[subframe&1],dci_alloc,sizeof(DCI_ALLOC_t)*(num_ue_spec_dci+num_common_dci));
+  phy_vars_eNb->num_ue_spec_dci[subframe&1]=num_ue_spec_dci;
+  phy_vars_eNb->num_common_dci[subframe&1]=num_common_dci;
+  return(num_pdcch_symbols);
+}
+
 static u8 dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
 static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
  
@@ -2352,5 +2369,30 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
+  return(dci_cnt);
+}
+
+u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+				u8 num_ue_spec_dci,
+				u8 num_common_dci,
+				DCI_ALLOC_t *dci_alloc_tx,
+				DCI_ALLOC_t *dci_alloc_rx,
+				s16 eNB_id) {
+ 
+  u8  dci_cnt=0,i;
+  
+  memcpy(dci_alloc_rx,dci_alloc_tx,num_common_dci*sizeof(DCI_ALLOC_t));
+  dci_cnt = num_common_dci;
+  printf("DCI Emul : num_common_dci %d\n",num_common_dci);
+
+  for (i=num_common_dci;i<(num_ue_spec_dci+num_common_dci);i++) {
+    printf("Checking dci %d => %x format %d\n",i,lte_ue_pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format);
+    if (dci_alloc_tx[i].rnti == lte_ue_pdcch_vars[eNB_id]->crnti) {
+      memcpy(dci_alloc_rx+dci_cnt,dci_alloc_tx+i,sizeof(DCI_ALLOC_t));
+      dci_cnt++;
+    }
+  }
+
+
   return(dci_cnt);
 }

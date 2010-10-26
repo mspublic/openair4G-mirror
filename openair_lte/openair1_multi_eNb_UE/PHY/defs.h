@@ -30,6 +30,7 @@
 #define max(a,b)  ((a)>(b) ? (a) : (b))
 #define min(a,b)  ((a)<(b) ? (a) : (b))
 
+
 #else // USER_MODE
 #include "ARCH/COMMON/defs.h"
 
@@ -110,6 +111,7 @@
 #endif //OPENAIR_LTE
 
 
+#define NUM_DCI_MAX 32
 
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -128,6 +130,7 @@ typedef struct
   LTE_eNb_DLSCH_t  *dlsch_eNb_SI,*dlsch_eNb_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
+  u8 pbch_pdu[PBCH_PDU_SIZE];
   char eNb_generate_rar;
   char eNb_generate_rag_ack;
 
@@ -148,6 +151,10 @@ typedef struct
   int              **dl_precoder_SeNb[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
+  /// For emulation only (used by UE abstraction to retrieve DCI)
+  u8 num_common_dci[2];                         // num_dci in even/odd subframes
+  u8 num_ue_spec_dci[2];                         // num_dci in even/odd subframes
+  DCI_ALLOC_t dci_alloc[2][NUM_DCI_MAX]; // dci_alloc from even/odd subframes
 } PHY_VARS_eNB;
 
 #ifndef USER_MODE
@@ -195,7 +202,7 @@ typedef struct
   int dlsch_ra_errors[NUMBER_OF_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
-
+  u8               generate_prach;
   unsigned char    is_secondary_ue; // primary by default
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
@@ -209,6 +216,7 @@ typedef struct
 } PHY_VARS_UE;
 
 #include "PHY/INIT/defs.h"
+#include "PHY/LTE_TRANSPORT/proto.h"
 
 #ifndef OPENAIR_LTE
 //#include "PHY/TRANSPORT/defs.h"

@@ -66,7 +66,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
   
 }
 
-LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
 
   LTE_UE_ULSCH_t *ulsch;
   unsigned char exit_flag = 0,i,j,r;
@@ -84,11 +84,13 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
 	  msg("Can't get b\n");
 	  exit_flag=1;
 	}
-	for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
-	  ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_ULSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
-	  if (!ulsch->harq_processes[i]->c[r]) {
-	    msg("Can't get c\n");
-	    exit_flag=2;
+	if (abstraction_flag==0) {
+	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++) {
+	    ulsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+(MAX_ULSCH_PAYLOAD_BYTES));  // account for filler in first segment and CRCs for multiple segment case
+	    if (!ulsch->harq_processes[i]->c[r]) {
+	      msg("Can't get c\n");
+	      exit_flag=2;
+	    }
 	  }
 	}
 	ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
@@ -98,13 +100,15 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq) {
       }
     }
 
-    if (exit_flag==0) {
+    if ((abstraction_flag == 0) && (exit_flag==0)) {
       for (i=0;i<Mdlharq;i++)
 	for (j=0;j<96;j++)
 	  for (r=0;r<MAX_NUM_ULSCH_SEGMENTS;r++)
 	    ulsch->harq_processes[i]->d[r][j] = LTE_NULL;
       return(ulsch);
     }
+    else if (abstraction_flag==1)
+      return(ulsch);
   }
   msg("new_ue_ulsch exit flag, size of  %d ,   %d\n",exit_flag, sizeof(LTE_UE_ULSCH_t));
   free_ue_ulsch(ulsch);
@@ -574,4 +578,13 @@ int ulsch_encoding(unsigned char *a,
     msg("ulsch_coding.c: Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
 
   return(0);
+}
+
+
+int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 harq_pid) {
+  
+  msg("[PHY] EMUL UE ulsch_encoding for eNB %d, harq_pid %d\n",eNB_id,harq_pid);
+  memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
+	 ulsch_buffer,
+	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 }

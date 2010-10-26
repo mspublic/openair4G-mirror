@@ -296,4 +296,10 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   _m_empty();
 
 }
-  
+
+
+void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id) {
+
+  msg("[PHY] EMUL UE lte_ue_measurements_emul last slot %d, eNB_id %d\n",last_slot,eNB_id);
+}
+

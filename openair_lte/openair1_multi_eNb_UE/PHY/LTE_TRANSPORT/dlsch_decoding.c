@@ -1,5 +1,6 @@
 //#include "defs.h"
 #include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "PHY/CODING/extern.h"
 
 //#define DEBUG_DLSCH_DECODING
@@ -27,7 +28,7 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch) {
   }
 }
 
-LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
+LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
 
   LTE_UE_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r;
@@ -42,15 +43,16 @@ LTE_UE_DLSCH_t *new_ue_dlsch(unsigned char Kmimo,unsigned char Mdlharq) {
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
-	if (!dlsch->harq_processes[i]->b)
-	  exit_flag=3;
-	for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
-	  dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
-	  if (!dlsch->harq_processes[i]->c[r])
-	    exit_flag=2;
-	  dlsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
+	if (abstraction_flag == 0) {
+	  if (!dlsch->harq_processes[i]->b)
+	    exit_flag=3;
+	  for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++) {
+	    dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 768);	
+	    if (!dlsch->harq_processes[i]->c[r])
+	      exit_flag=2;
+	    dlsch->harq_processes[i]->d[r] = (short*)malloc16(((3*8*6144)+12+96)*sizeof(short));
+	  }
 	}
-      
       }	else {
 	exit_flag=1;
       }
@@ -336,4 +338,49 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   }
   
   return(ret);
+}
+
+u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
+			u8 subframe,
+			u8 dlsch_id,
+			u8 eNB_id) {
+
+  LTE_UE_DLSCH_t *dlsch_ue;
+  LTE_eNb_DLSCH_t *dlsch_eNB;
+  u8 harq_pid;
+  
+  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id,dlsch_id);
+
+  //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra->harq_processes[0]);
+
+  switch (dlsch_id) {
+  case 0: // SI
+    dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
+    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb_SI;
+    memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
+    break;
+  case 1: // RA
+    dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
+    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra;
+    memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
+    break;
+  case 2: // TB0
+    dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
+    harq_pid = dlsch_ue->current_harq_pid;
+    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id])][0];
+    printf("copying TB0 : harq_pid %d, TBS %d (rnti %x, UE_index %d)\n",harq_pid,dlsch_ue->harq_processes[harq_pid]->TBS>>3,
+	   dlsch_ue->rnti,find_ue((s16)dlsch_ue->rnti,PHY_vars_eNb_g[eNB_id]));
+    memcpy(dlsch_ue->harq_processes[harq_pid]->b,dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+    break;
+  case 3: // TB1
+    dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
+    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb[find_ue((s16)dlsch_ue->rnti,PHY_vars_eNb_g[eNB_id])][1];
+    memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+    break;
+  default:
+    msg("dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
+    return(1+MAX_TURBO_ITERATIONS);
+  }
+
+  return(1);
 }

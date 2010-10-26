@@ -228,6 +228,11 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
   
 }
       
+void lte_eNB_I0_measurements_emul(PHY_VARS_eNB *phy_vars_eNb,
+				  u8 sect_id) {
+
+  msg("[PHY] EMUL lte_eNB_IO_measurements_emul: eNB %d, sect %d\n",phy_vars_eNb->Mod_id,sect_id);
+}
 
 
 

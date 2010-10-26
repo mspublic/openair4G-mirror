@@ -111,8 +111,8 @@ void openair1_restart(void);
  * @{
  */
 
-void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
-void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id);
+void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag);
+void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
@@ -122,14 +122,14 @@ void get_RRCConnReq_alloc(unsigned char tdd_config,
 		   unsigned int *frame,
 		   unsigned char *subframe);
 unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe);
-void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
-int phy_procedures_UE_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
-void phy_procedures_UE_S_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
-void phy_procedures_UE_S_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id);
-void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
-void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
-void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb);
-void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb);
+void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id,u8 abstraction_flag);
+int phy_procedures_UE_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id,u8 abstraction_flag);
+void phy_procedures_UE_S_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id,u8 abstraction_flag);
+void phy_procedures_UE_S_RX(unsigned char last_slot,PHY_VARS_UE *phy_vars_ue,u8 eNb_id,u8 abstraction_flag);
+void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag);
+void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag);
+void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag);
+void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag);
 void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNb);
 
@@ -144,7 +144,7 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,unsigned short timing_a
 #ifdef EMOS
 void phy_procedures_emos(unsigned char last_slot);
 #else
-void phy_procedures(unsigned char last_slot);
+void phy_procedures(unsigned char last_slot,u8 abstraction_flag);
 #endif //EMOS
 /**@}*/
 #endif //OPENAIR_LTE

@@ -256,6 +256,11 @@ int generate_pbch(mod_sym_t **txdataF,
   return(0);
 }
 
+s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb) {
+  
+  msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNb->Mod_id);
+}
+
 u16 pbch_extract(int **rxdataF,
 		 int **dl_ch_estimates,
 		 int **rxdataF_ext,
@@ -785,4 +790,29 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   crc = (crc16(decoded_output,PBCH_A)>>16) ^ (*(short*)&decoded_output[PBCH_A>>3]);
   return(crc);
 
+}
+
+
+u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
+		 u8 eNB_id,
+		 u8 pbch_phase) {
+
+  u8 pbch_error=0;
+
+  msg("[PHY] EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d\n",eNB_id,pbch_phase);
+
+  if (pbch_phase == (mac_xface->frame % 4)) {
+
+    // abtract pbch error here
+    // pbch_error = pbch_abstraction();
+
+    if (pbch_error == 0) {
+      memcpy(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output,PHY_vars_eNb_g[eNB_id]->pbch_pdu,PBCH_PDU_SIZE);    
+      return(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx);
+    }
+    else
+      return(0xffff);
+  }
+  else
+    return(0xffff);
 }

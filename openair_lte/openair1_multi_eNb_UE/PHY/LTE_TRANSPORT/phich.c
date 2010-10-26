@@ -308,3 +308,9 @@ void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
+void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNb,
+			 u8 subframe,
+			 LTE_eNb_ULSCH_t *ulsch_eNb) {
+
+  msg("[PHY] EMUL eNB %d generate_phich_emul\n",phy_vars_eNb->Mod_id);
+}
