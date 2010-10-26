@@ -31,97 +31,6 @@ ________________________________________________________________*/
 * @{
  This subclause gives an overview of the mechanisms and interfaces provided MAC Layer.
 
-  \section _Overview MAC-layer Architecture
- The following figure shows the architecture of the MAC layer for both basestations (Node-B) and
- terminals (UE).
- \image html mac_w3g4f_mac_channels.png "Openair MAC" width=15cm
- \image latex mac_w3g4f_mac_channels.png "Openair MAC" width=15cm
-
- The MAC layer is responsible for scheduling control plane and user traffic on the physical
- OFDMA resources.  On transmission, the inputs to the MAC layer are connected to data queues originating in
- the RLC layer which form the set of logical channels.  The control plane traffic is
- represented by the following logical channels:
-
- -# Broadcast Control Channel (BCCH) : This resource is a low bit-rate control channel used by the network 
- (via the basestation) for broadcasting basic information to users the cell served by a particular basestation.
- -# Common Control Channel (CCCH) : This resource is a low bit-rate control channel used both by user terminals and the 
- basestation during the attachment or association phase of a new user terminal.  Requests to join the cell are made by the terminal
- and ackowledgements are given by the basestation.
- -# Multicast Control Channel (MCCH): This resource is a low bit-rate control channel used by the network 
- (via the basestation) to dynamically dimension the resources of the Multicast traffic channels.
- -# Dedicated Control Channel (DCCH): This is a resource used by either the basestation or user terminal to relay access-layer 
- signaling information (link-layer return channels, RF measurement reporting, traffic measurement reporting, power control, etc.) 
- to the correspodent node. 
-
-	 
- The user plane traffic is represented by the following logical channels:
- -# Multicast Traffic Channel (MTCH): This resource is a variable bit-rate traffic channel used by the network to 
- relay multicast information to the groups of users in the cell served by the basestation.
- -# Dedicated Traffic Channel (DTCH): This resource is a variable bit-rate traffic channel with negotiated QoS parameters
- used by the network or user terminals to relay data traffic.
-
-
-
- It is important to note that although dedicated resources are configured at the input of the MAC-layer, the physical resources 
- allocated in the scheduling entities (with exception of the CHBCH) are dynamically allocated with the granularity of the mini-frame 
- (nominally 2ms), and thus all physical resources are shared.  Furthermore, in the case of TDD deployments, the portion of bandwidth allocated 
- to uplink and downlink traffic is also dynamically adjusted at the granularity of the mini-frame.
-
- \section _CHBCH_SCHED CHBCH Scheduling
- The BCCH and CCCH (downlink) are multiplexed in the scheduling entity resposible for generation of the 
- CHBCH transport channel (\ref _CHBCH). In addition, the SACH allocations for both downlink and uplink traffic in the current mini-frame 
- are signaled in the MAC-layer PDUs DL_SACCH_PDU and UL_ALLOC_PDU.  The contents of a particular 
- DL_SACCH_PDU determine DL SACH allocations in the current mini-frame for a particular logical channel, along with sequencing, coding format 
- parameters and feedback information (PHY and MAC). The UL_ALLOC_PDU 
- contains the time and frequency allocations to be used by a particular logical
- channel during the uplink portion of the mini-frame. 
- The resulting MAC-layer primitive is described by the data structure CHBCH_PDU.
-
- \section _RACH_SCHED UL CCCH Scheduling
- The CCCH (uplink) is used exclusively during the attachment phase of the user terminal with a particular
- Node-B and corresponds to the only random-access resources allocated by the Node-B in the mini-frame. 
- These are the UL SACH allocations with the CCCH logical channel id.  The number of random-access
- resources scheduled in each mini-frame is dependent on the available resources and higher-layer parametrization.
- During the attachment phase, the UE scheduler randomly selects the resource to be used in the next mini-frame among the 
- set of allocated SACH CCCH resources.  The UE uses the multiuser pilot symbol corresponding to user index 0 and transmits only
- the portion in the sub-band chosen for the CCCH rather than the entire symbol as in the case of a regular UL SACH transmission.
-
- \section _SACH_SCHED SACH Scheduling
- The MCCH and DCCH (downlink) are multiplexed along with user-plane traffic (MTCH,DTCH) on the available SACH resources.
- The SACH resources are the collection of OFDMA subcarrier groups and symbols during the variable length SACH period.
- The SACH PDUs passed to the PHY layer are described by the structure SACH_PDU. The goal of SACH scheduling is to
- respect the negotiated QoS of each logical channel, while maximizing the aggregate spectral efficiency of the downlink and uplink
- data streams. The actual algorithm used by the Node-B is not specified.  
-
- As a general rule, MCCH, DCCH and MTCH do not use HARQ, or equivalently at most a single transmission round is used.  DTCH generally
- use HARQ with a maximum number of retransmission rounds determined by higher layer configuration (i.e. the delay class in mac_lchan_desc),
- which is at most 8, corresponding to the number of parallel HARQ processes.
-
- SACH scheduling makes use of up to 8 parallel HARQ processes per logical channel in order to maximize throughput
- and benefit from superior channel conditions.
-
- At the start of each mini-frame, the Node-B scheduler determines the physical allocations (OFDM symbol, OFDM sub-bands, transmit antennas)
- for downlink and uplink logical channels and correspondingly parametrizes the DL_SACCH_PDU and UL_ALLOC_PDU data structures.  For logical 
- channels using HARQ (DCCH/DTCH), it manages the HARQ retransmission rounds in conjunction with the PHY
- channel decoder and packet integretity verification algorithm.  At each HARQ round a new coding format and power level 
- can be chosen for the redundancy bits to be transmitted, which are applied uniformly to all HARQ processes. UL power control 
- and HARQ acknowledgements are also computed for corresponding UL flow.
-
- The DL_SACCH_PDU contains the HARQ sequencing information which indicates the active HARQ processes and their progress indices.
-
- The UE SACH scheduler parses the UL_ALLOC_PDU to find its allocations and processes the next retransmission round of the HARQ process for
- the allocated logical channels as well as performing DL power control on the correspoding DL flows, acknowledging receipt
- of a HARQ PDU, and relaying the quantized logical channel PDU backlog. The latter are reflected by the UL_SACCH_FB data structure.
- The UE SACH scheduler can select transmit power and coding format with the granularity of the mini-frame.  These allocations are reflected 
- in the UL_SACCH_PDU which precedes the corresponding SACH resources.  The UL_SACCH_PDU must use the lowest spectral-efficiency coding format 
- and is not subject to HARQ since it must be correctly decoded so that the HARQ process of the corresponding SACH can make use of the coded 
- symbols in current mini-frame.  
-
- Processing of the UL_ALLOC_PDU at the UE must be sufficiently efficient for the UL_SACH to be configured in the same mini-frame. 
-
- Adjacent cell interference should be managed by the Node-Bs in a given region in a decentralized fashion 
- using DL power control coupled with resource randomization across HARQ retransmission rounds combined with 
- dual-antenna reception at the UE. 
 * @}
 */
 
@@ -151,7 +60,6 @@ ________________________________________________________________*/
 #define MAX_NUM_CE 5
 
 /*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
-#define NUM_DCI_MAX 32
 
 #define NB_RA_PROC_MAX 4
 

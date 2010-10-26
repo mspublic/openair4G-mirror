@@ -441,7 +441,7 @@ void schedule_RA(u8 Mod_id,u8 subframe) {
 		     format1A);
 	*/
 
-	add_common_dci(DCI_pdu,
+	add_ue_spec_dci(DCI_pdu,
 		       (void*)&RA_template[i].RA_alloc_pdu2[0],
 		       RA_template[i].rnti,
 		       RA_template[i].RA_dci_size_bytes2,
@@ -653,7 +653,15 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       }
       
       // check for DTCH (later) and update header information
-      
+      // check first for RLC data on DCCH
+
+      /*
+      header_len = 3; // 2 bytes DTCH SDU subheader
+      rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*UE_id),
+				      (TBS-header_len-sdu_lengths[0]-header_len)/DTCH_LCHAN_DESC.transport_block_size,
+				      DTCH_LCHAN_DESC.transport_block_size);
+      */
+
       offset = generate_dlsch_header((unsigned char*)CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0],
       // offset = generate_dlsch_header((unsigned char*)CH_mac_inst[0].DLSCH_pdu[0][0].payload[0],
 				     num_sdus,              //num_sdus
