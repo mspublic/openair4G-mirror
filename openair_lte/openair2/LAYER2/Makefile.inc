@@ -1,8 +1,9 @@
-CFLAGS += -DOPENAIR2 
+CFLAGS += -DOPENAIR2
 
 COMMON_DIR = $(OPENAIR2_DIR)/COMMON
 L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
-RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE
+#RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE
+RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0
 RLC_AM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/AM
 RLC_TM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/TM
 RLC_DIR = $(OPENAIR2_DIR)/LAYER2/RLC
@@ -60,6 +61,8 @@ SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_control_primitives.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_segment.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_reassembly.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_receiver.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_dar.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_very_simple_test.c
 
 SOURCES_L2 +=  $(RLC_DIR)/rlc_mac.c
 SOURCES_L2 +=  $(RLC_DIR)/rlc.c
@@ -68,13 +71,13 @@ SOURCES_L2 +=  $(RLC_DIR)/rlc_mpls.c
 
 SOURCES_L2 +=  $(MEM_DIR)/mem_block.c
 
-RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o $(RRC_DIR)/utils.o 
+RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o $(RRC_DIR)/utils.o
 
 
-MAC_OBJS =  $(MAC_DIR)/lte_transport_init.o 
-MAC_OBJS += $(MAC_DIR)/main.o 
-MAC_OBJS += $(MAC_DIR)/ue_procedures.o 
-MAC_OBJS += $(MAC_DIR)/rar_tools.o 
+MAC_OBJS =  $(MAC_DIR)/lte_transport_init.o
+MAC_OBJS += $(MAC_DIR)/main.o
+MAC_OBJS += $(MAC_DIR)/ue_procedures.o
+MAC_OBJS += $(MAC_DIR)/rar_tools.o
 MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 
 

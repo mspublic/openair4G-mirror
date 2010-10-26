@@ -12,8 +12,8 @@
 #    include "platform_types.h"
 #    include "platform_constants.h"
 #    include "rlc_am_proto_extern.h"
-#    include "rlc_um_proto_extern.h"
 #    include "rlc_tm_proto_extern.h"
+#    include "rlc_um.h"
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
@@ -50,7 +50,7 @@
 #        define public_rlc(x) x
 #    else
 #        define private_rlc(x)
-#        if defined(RLC_MAC_C) || defined(RLC_MPLS_C) || defined(RLC_RRC_C) || defined(RLC_AM_C) || defined(RLC_TM_C) || defined(RLC_UM_C) || defined (PDCP_C) 
+#        if defined(RLC_MAC_C) || defined(RLC_MPLS_C) || defined(RLC_RRC_C) || defined(RLC_AM_C) || defined(RLC_TM_C) || defined(RLC_UM_C) || defined (PDCP_C)
 #            define protected_rlc(x) extern x
 #        else
 #            define protected_rlc(x)
@@ -75,11 +75,6 @@
 
 #define  RLC_MUI_UNDEFINED     0
 
-enum RLC_SDU_DISCARD_MODE { SDU_DISCARD_MODE_RESET = 0x00,
-  SDU_DISCARD_MODE_TIMER_BASED_EXPLICIT = 0x01,
-  SDU_DISCARD_MODE_MAX_DAT_RETRANSMISSION = 0x04,
-  SDU_DISCARD_MODE_NOT_CONFIGURED = 0x10
-};
 
 
 typedef volatile struct {
@@ -97,9 +92,9 @@ typedef volatile struct {
 //      int                                 in_sequence_delivery; // not implemented
   u8_t              max_rst;//16
   u8_t              max_dat;
-  u16_t             poll_pdu;//16 peridic Nb of Tb to ask status 
+  u16_t             poll_pdu;//16 peridic Nb of Tb to ask status
   u16_t             poll_sdu;//1 idem For ip packet
-  u8_t              poll_window;//50, Nb of Tb in Tx window before asking status 
+  u8_t              poll_window;//50, Nb of Tb in Tx window before asking status
   u32_t             tx_window_size;//128
   u32_t             rx_window_size;//128
   u8_t              max_mrw;//8 NB_max control for ReTx
@@ -144,7 +139,7 @@ typedef struct {
   union {
     struct rlc_am_rx_pdu_management dummy1;
     struct rlc_tm_rx_pdu_management dummy2;
-    struct rlc_um_rx_pdu_management dummy3;
+    //struct rlc_um_rx_pdu_management dummy3;
     struct mac_tb_ind dummy4;
     struct mac_rx_tb_management dummy5;
   } dummy;
@@ -170,7 +165,7 @@ typedef struct rlc_pointer_t {
 typedef struct rlc_t {
     rlc_pointer_t        m_rlc_pointer[MAX_RB];
     struct rlc_am_entity m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];
-    struct rlc_um_entity m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];
+    rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];
     struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];
 }rlc_t;
 
@@ -218,7 +213,7 @@ protected_rlc(void            rlc_data_ind     (module_id_t, rb_id_t, sdu_size_t
 protected_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
 
 
-public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP, 
+public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                                               rb_id_t        rb_idP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
@@ -228,7 +223,7 @@ public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 							  unsigned int* tx_data_pdu,
 							  unsigned int* tx_control_pdu,
 							  unsigned int* rx_sdu,
-							  unsigned int* rx_error_pdu,  
+							  unsigned int* rx_error_pdu,
 							  unsigned int* rx_data_pdu,
 							  unsigned int* rx_data_pdu_out_of_window,
 							  unsigned int* rx_control_pdu) ;)

@@ -149,8 +149,9 @@ struct mac_status_ind {
 
 struct mac_tb_ind {
   u8_t             *data_ptr;
+  u16_t             size;
   u8_t              error_indication;
-  u8_t              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc
+  //u8_t              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc
 };
 //---------------------
 struct mac_data_req {
@@ -165,8 +166,8 @@ struct mac_data_ind {
   list_t          data;
   u16_t             no_tb;
   u16_t             tb_size;      // in bits
-  u8_t              error_indication;
-  u8_t              rx_timing_deviation;
+  //u8_t              error_indication;
+  //u8_t              rx_timing_deviation;
 };
 //---------------------
 struct mac_status_resp {
