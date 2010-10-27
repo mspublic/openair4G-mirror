@@ -509,6 +509,7 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u8 CH_index) { // add descriptor from RRC PD
   return(0);
 }
 
+/*
 s32 rrc_ue_establish_drbs(u8 Mod_id,u8 CH_index) {
 
   u8 lchan_id = DTCH;
@@ -533,7 +534,7 @@ s32 rrc_ue_establish_drbs(u8 Mod_id,u8 CH_index) {
 
   return(0);
 }
-
+*/
 
 u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 
@@ -625,8 +626,8 @@ void ch_rrc_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
       memcpy(&CH_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
       memcpy(&CH_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
-      msg("[OPENAIR][RRC] UE %d CALLING RLC CONFIG SRB1 (rbid %d)\n",
-	  UE_index,Idx);
+      msg("[OPENAIR][RRC] CALLING RLC CONFIG SRB1 (rbid %d) for UE %d\n",
+	  Idx,UE_index);
       Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 
       /*

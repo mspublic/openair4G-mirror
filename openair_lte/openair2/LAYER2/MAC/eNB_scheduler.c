@@ -659,17 +659,19 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       // check first for RLC data on DCCH
       header_len = 3; // 2 bytes DTCH SDU subheader
       rlc_status = mac_rlc_status_ind(Mod_id,DTCH+(MAX_NUM_RB*UE_id),
-                                        0,
-                                        TBS-header_len-sdu_length_total-header_len);
+				      0,
+				      TBS-header_len-sdu_length_total-header_len);
       if (rlc_status.bytes_in_buffer > 0) {
-          sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id,
-                                DTCH+(MAX_NUM_RB*UE_id),
-                              &dlsch_buffer[sdu_length_total]);
-          sdu_lcids[num_sdus] = DTCH;
-          sdu_length_total += sdu_lengths[num_sdus];
-          num_sdus++;
-      }
 
+	sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id,
+								DTCH+(MAX_NUM_RB*UE_id),
+								&dlsch_buffer[sdu_length_total]);
+	msg("[MAC] eNB %d, Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
+	sdu_lcids[num_sdus] = DTCH;
+	sdu_length_total += sdu_lengths[num_sdus];
+	num_sdus++;
+      }
+      
       offset = generate_dlsch_header((unsigned char*)CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0],
       // offset = generate_dlsch_header((unsigned char*)CH_mac_inst[0].DLSCH_pdu[0][0].payload[0],
 				     num_sdus,              //num_sdus
