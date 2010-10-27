@@ -77,7 +77,7 @@ OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
 
-all: relay_sim relay_DF_sim
+all: relay_sim relay_DF_sim relay_test_sim
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
@@ -88,8 +88,11 @@ relay_sim : $(OBJ2) relay_sim.c
 relay_DF_sim : $(OBJ2) relay_DF_sim.c
 	$(CC) relay_DF_sim.c -I$(TOP_DIR) -o relay_DF_sim $(CFLAGS) $(OBJ2) -lm -lblas
 
+relay_test_sim : $(OBJ2) relay_test_sim.c
+	$(CC) relay_test_sim.c -I$(TOP_DIR) -o relay_test_sim $(CFLAGS) $(OBJ2) -lm -lblas
+
 clean:
-	rm -f relay_sim relay_DF_sim 
+	rm -f relay_sim relay_DF_sim relay_test_sim 
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
