@@ -10,6 +10,7 @@
 #include "list.h"
 
 #define DEBUG_RLC_UM_RX_DECODE
+#define DEBUG_RLC_UM_RX
 //-----------------------------------------------------------------------------
 int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP) {
 //-----------------------------------------------------------------------------

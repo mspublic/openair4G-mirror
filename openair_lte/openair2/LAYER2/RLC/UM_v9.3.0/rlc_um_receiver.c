@@ -9,6 +9,7 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "list.h"
+#define DEBUG_RLC_UM_DISPLAY_TB_DATA
 //-----------------------------------------------------------------------------
 void
 rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
