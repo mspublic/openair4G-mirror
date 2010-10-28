@@ -6,12 +6,8 @@ CFLAGS += -DCELLULAR
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
-CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
-#CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
-#CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-#CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
-
+CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
