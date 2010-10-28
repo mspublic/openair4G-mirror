@@ -102,7 +102,7 @@ init_rlc_um (rlc_um_entity_t *rlcP)
   rlcP->output_sdu_in_construction = NULL;
 
   rlcP->sn_length          = 10;
-  rlcP->sn_length_in_bytes = 2;
+  rlcP->header_min_length_in_bytes = 2;
   rlcP->data_pdu_size      = 0;
 
   rlcP->tx_pdcp_sdu                 = 0;
@@ -160,7 +160,7 @@ rlc_um_set_configured_parameters (rlc_um_entity_t *rlcP, mem_block_t *cprimitive
 {
 //-----------------------------------------------------------------------------
   rlcP->sn_length          = 10;
-  rlcP->sn_length_in_bytes = 2;
+  rlcP->header_min_length_in_bytes = 2;
   rlcP->data_pdu_size      = 0;
   // timers
   rlcP->timer_reordering         = 0;

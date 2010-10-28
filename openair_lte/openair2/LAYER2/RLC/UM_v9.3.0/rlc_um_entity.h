@@ -56,7 +56,7 @@ typedef struct rlc_um_entity {
   // CONFIGURATION PARAMETERS
   //*****************************************************************************
   u8_t              sn_length;
-  u8_t              sn_length_in_bytes;
+  u8_t              header_min_length_in_bytes;
 
   #define           UM_WINDOW_SIZE_SN_10_BITS 512
   #define           UM_WINDOW_SIZE_SN_5_BITS  16

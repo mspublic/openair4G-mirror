@@ -69,6 +69,7 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
        free_mem_block(tb);
     }
   }
+  msg("[RLC-MAC]  TBS size  %d\n", tbs_size);
   return tbs_size;
 }
 //-----------------------------------------------------------------------------
