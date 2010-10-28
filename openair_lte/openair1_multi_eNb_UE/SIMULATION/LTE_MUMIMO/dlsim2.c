@@ -234,6 +234,7 @@ int main(int argc, char **argv) {
 
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
+  mac_xface->frame = -1;
 
   frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   frame_parms->N_RB_DL            = 25;

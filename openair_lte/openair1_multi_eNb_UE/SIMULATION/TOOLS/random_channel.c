@@ -7,6 +7,7 @@
 
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
+#include "scm_corrmat.h"
 
 //#define DEBUG_CH
 
@@ -132,16 +133,16 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
-    for (i = 0; i<chan_desc->nb_taps; i++) {
+    for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
     }
-    chan_desc->R_sqrt         = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
-    for (i = 0; i<chan_desc->nb_taps; i++) {
-      chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
-      for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	chan_desc->R_sqrt[i][j].r = 1.0;
-	chan_desc->R_sqrt[i][j].i = 0.0;
-      }
+    else {
+      msg("correltation matrix only implemented for nb_tx==2 and nb_rx==2\n");
+      return(NULL);
     }
     break;
   case SCM_D:
@@ -203,7 +204,7 @@ int random_channel(channel_desc_t *desc) {
     beta.r = 0.0;
     beta.i = 0.0;
     cblas_zgemv(CblasRowMajor, CblasNoTrans, desc->nb_tx*desc->nb_rx, desc->nb_tx*desc->nb_rx, 
-		(void*) &alpha, (void*) desc->R_sqrt[i], desc->nb_rx*desc->nb_tx,
+		(void*) &alpha, (void*) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
 		(void*) anew, 1, (void*) &beta, (void*) acorr, 1);
 
 	
