@@ -210,7 +210,7 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
 
   status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (status_resp.buffer_occupancy_in_bytes > 0) {
-    status_resp.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->sn_length_in_bytes;
+    status_resp.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
   }
 //msg("[RLC_UM][MOD %d][RB %d] MAC_STATUS_INDICATION BO = %d\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, status_resp.buffer_occupancy_in_bytes);
 
@@ -252,7 +252,7 @@ rlc_um_mac_data_request (void *rlcP)
 #endif
   data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (data_req.buffer_occupancy_in_bytes > 0) {
-    data_req.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->sn_length_in_bytes;
+    data_req.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
   }  //data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / ((rlc_um_entity_t *)rlcP)->data_pdu_size;
   data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
   return data_req;
