@@ -14,9 +14,9 @@
 #include "rlc_primitives.h"
 #include "mem_block.h"
 
-#define DEBUG_RLC_AM_SEGMENT
-#define DEBUG_RLC_AM_SEGMENT_FILL_DATA
-#define DEBUG_MEM_MNGT
+//#define DEBUG_RLC_AM_SEGMENT
+//#define DEBUG_RLC_AM_SEGMENT_FILL_DATA
+//#define DEBUG_MEM_MNGT
 //-----------------------------------------------------------------------------
 mem_block_t      *rlc_am_segment_15 (struct rlc_am_entity *rlcP);
 mem_block_t      *rlc_am_segment_7  (struct rlc_am_entity *rlcP);

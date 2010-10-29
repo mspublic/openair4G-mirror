@@ -76,13 +76,13 @@ rlc_am_send_status (struct rlc_am_entity *rlcP)
   if (rlcP->timer_status_prohibit > 0) {
     if (rlcP->running_timer_status_prohibit >  Mac_rlc_xface->frame) {
         //msg ("[RLC_AM][RB %d][STATUS] PREVENTED CREATE_STATUS_PDU %d %d\n", rlcP->rb_id, rlcP->running_timer_status_prohibit, Mac_rlc_xface->frame);
-    
+
       return 0;
     } else {
         //msg ("[RLC_AM][RB %d][STATUS] AUTHORIZE CREATE_STATUS_PDU frame %d  timer %d timeout %d\n", rlcP->rb_id, Mac_rlc_xface->frame, rlcP->running_timer_status_prohibit, rlcP->timer_status_prohibit);
       rlcP->running_timer_status_prohibit = rlcP->timer_status_prohibit/10 + Mac_rlc_xface->frame;
     }
-  } 
+  }
 
   // sufis are created in a array of sufi in rlc struct;
   rlc_am_find_holes (rlcP);

@@ -19,7 +19,7 @@
 #include "rlc_am_discard_tx_proto_extern.h"
 #include "rlc_am_proto_extern.h"
 #include "LAYER2/MAC/extern.h"
-#define DEBUG_MUX
+//#define DEBUG_MUX
 //#define DEBUG_RLC_AM_POLL
 
 #ifdef NODE_MT
@@ -574,7 +574,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
 
       list_add_tail_eurecom (copy_pdu, &rlcP->pdus_to_mac_layer_ch1);
         rlcP->stat_tx_retransmit_pdu += 1;
-      
+
       nb_pdu_to_transmit_ch1--;
       data_pdu_tx++;
       // for polling
@@ -842,7 +842,7 @@ rlc_am_mux_rg (struct rlc_am_entity *rlcP, unsigned int traffic_typeP)
       // this variable last_scheduled is used because a RLC may be scheduled
       // when several DSCH are configured in the RG
       if ((last_scheduled != (unsigned int) Mac_rlc_xface->frame) && (((unsigned int) Mac_rlc_xface->frame) % 48 == 0) ) {
-      
+
          if (rlcP->configured_tx_window_size < 2048) {
           // rlc_am_get_not_acknowledged_pdu(rlcP);
 	   rlc_am_get_not_acknowledged_pdu_optimized (rlcP);

@@ -18,8 +18,8 @@
 #include "rlc_am_util_proto_extern.h"
 #include "mem_block.h"
 
-#define DEBUG_RECEIVER_BUFFER
-#define DEBUG_REASSEMBLY
+//#define DEBUG_RECEIVER_BUFFER
+//#define DEBUG_REASSEMBLY
 //#define DEBUG_STATUS
 //-----------------------------------------------------------------------------
 void            receiver_retransmission_management (struct rlc_am_entity *rlcP, mem_block_t * pduP, struct rlc_am_pdu_header *rlc_headerP);
@@ -428,7 +428,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
 
       remaining_data_size = rlcP->pdu_size - 2 - (nb_li);
       data_pdu = (u8_t *) (&rlc_header->li_data_7[nb_li]);
- 
+
       while (li_index < nb_li) {
         switch (li[li_index]) {
             case (u8_t) RLC_LI_LAST_PDU_EXACTLY_FILLED:
@@ -487,7 +487,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
 
     } else {
 #ifdef DEBUG_REASSEMBLY
-      msg("[RLC][AM] Reassembly, No discard. rlc_header->byte2 %d\n"); 
+      msg("[RLC][AM] Reassembly, No discard. rlc_header->byte2 %d\n");
 #endif
       // exploit HE field info
       if ((rlc_header->byte2 & RLC_HE_MASK) == RLC_HE_SUCC_BYTE_CONTAINS_DATA) {
@@ -502,7 +502,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
 
         remaining_data_size = rlcP->pdu_size - 2 - nb_li;
         data_pdu = (u8_t *) (&rlc_header->li_data_7[nb_li]);
- 
+
         while (li_index < nb_li) {
 
           switch (li[li_index]) {
@@ -511,7 +511,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
                 msg ("[RLC_AM][RB %d][REASSEMBLY] PDU SN 0x%04X GET LI RLC_LI_LAST_PDU_EXACTLY_FILLED NUM LI %d\n", rlcP->rb_id, working_sn,nb_li);
 #endif
                 send_sdu (rlcP);
-		
+
 		sdu_sent=1;
                 break;
               case (u8_t) RLC_LI_PDU_PIGGY_BACKED_STATUS:        // ignore
@@ -562,7 +562,7 @@ process_receiver_buffer_7 (struct rlc_am_entity *rlcP)
     msg("receiver_buffer[%d] %p (sdu_sent %d)\n",working_sn_index,rlcP->receiver_buffer[working_sn_index],sdu_sent);
   }
   //  if (sdu_sent == 0) {
-  //    msg("[RLC_AM][RB %d][REASSEMBLY] Forcing send_sdu (sent_sdu == 0)\n",rlcP->rb_id); 
+  //    msg("[RLC_AM][RB %d][REASSEMBLY] Forcing send_sdu (sent_sdu == 0)\n",rlcP->rb_id);
   //    send_sdu(rlcP);
   //  }
 }
