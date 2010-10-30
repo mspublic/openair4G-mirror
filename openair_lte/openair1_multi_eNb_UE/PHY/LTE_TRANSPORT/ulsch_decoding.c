@@ -649,6 +649,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   return(ret);
 }
 
+#ifdef PHY_ABSTRACTION
 u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNb,
 			u8 subframe,
 			u8 UE_index) {
@@ -678,6 +679,13 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNb,
 	 phy_vars_eNb->ulsch_eNb[UE_index]->harq_processes[harq_pid]->TBS>>3);
 
   // Do abstraction of PUSCH feedback
+  get_ack(phy_vars_eNb->lte_frame_parms.tdd_config,
+	  PHY_vars_UE_g[UE_id]->dlsch_ue[phy_vars_eNb->Mod_id][0]->harq_ack,
+	  subframe,
+	  phy_vars_eNb->ulsch_eNb[UE_index]->o_ACK);
+  msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNb->Mod_id,subframe,phy_vars_eNb->ulsch_eNb[UE_index]->o_ACK[0],phy_vars_eNb->ulsch_eNb[UE_index]->o_ACK[1]);
 
-  
+  phy_vars_eNb->ulsch_eNb[UE_index]->cqi_crc_status = 1;
+  return(1);
 }
+#endif

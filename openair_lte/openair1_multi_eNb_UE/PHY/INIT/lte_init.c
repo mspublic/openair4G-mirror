@@ -11,7 +11,7 @@
 //#include "pci_commands.h"
 #endif //CBMIMO1
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 

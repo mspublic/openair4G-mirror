@@ -1,13 +1,10 @@
 /*________________________phy_procedures_lte.c________________________
 
-  Authors : Hicham Anouar, Raymond Knopp, Florian Kaltenberger
+  Authors : Raymond Knopp, Florian Kaltenberger
   Company : EURECOM
   Emails  : knopp@eurecom.fr, kaltenbe@eurecom.fr
   ________________________________________________________________*/
 
-
-// This routine is called periodically by macphy_scheduler to analyse the set of PHY_primitives that were
-// Scheduled by MAC and on PHY resources at the appropriate time
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"

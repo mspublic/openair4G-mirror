@@ -581,6 +581,7 @@ int ulsch_encoding(unsigned char *a,
 }
 
 
+#ifdef PHY_ABSTRACTION
 int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 harq_pid) {
   
   msg("[PHY] EMUL UE ulsch_encoding for eNB %d, harq_pid %d\n",eNB_id,harq_pid);
@@ -588,3 +589,4 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 h
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 }
+#endif

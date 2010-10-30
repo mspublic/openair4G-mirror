@@ -1,8 +1,10 @@
-#include "LAYER2/MAC/defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#ifdef OPENAIR2
+#include "LAYER2/MAC/defs.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#endif
 
 extern unsigned int  localRIV2alloc_LUT25[512];
 extern unsigned int  distRIV2alloc_LUT25[512];

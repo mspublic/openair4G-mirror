@@ -382,6 +382,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
 }
 
+#ifdef PHY_ABSTRACTION
 int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
 			   u8 sect_id,
 			   s32 *sync_val) {
@@ -399,3 +400,4 @@ int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
   }
   return(-1);
 }
+#endif

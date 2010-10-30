@@ -31,7 +31,7 @@
 #define DEBUG_PHY
 #define RF
 
-//#define DEBUG_SIM 
+#define DEBUG_SIM 
 
 #define BW 7.68
 
@@ -422,7 +422,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   
 }
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -925,8 +925,8 @@ int main(int argc, char **argv) {
     PHY_vars_UE_g[UE_id]->SRS_parameters.kTC = 0;
     PHY_vars_UE_g[UE_id]->SRS_parameters.n_RRC = 0;
     if (UE_id>=3) {
-      printf("This SRS config will only work for 3 users");
-      exit(-1);
+      printf("This SRS config will only work for 3 users! \n");
+     
     }
     PHY_vars_UE_g[UE_id]->SRS_parameters.Ssrs = UE_id+1;
     

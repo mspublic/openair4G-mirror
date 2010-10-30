@@ -261,6 +261,7 @@ int dlsch_encoding(unsigned char *a,
   return(0);
 }
 
+#ifdef PHY_ABSTRACTION
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
 			 u8 *DLSCH_pdu,
 			 LTE_eNb_DLSCH_t *dlsch) {
@@ -271,3 +272,4 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
   msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNb->Mod_id);
 
 }
+#endif

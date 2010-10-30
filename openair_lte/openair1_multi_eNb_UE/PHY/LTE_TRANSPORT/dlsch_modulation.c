@@ -1013,9 +1013,9 @@ int dlsch_modulation(mod_sym_t **txdataF,
   
   jj=0;
   re_allocated=0;
-  
+  //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols;l<nsymb;l++) {
-
+    
 #ifdef DEBUG_DLSCH_MODULATION
     msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc %x, mod %d, nu %d, rb_alloc[0] %d) in %d\n",harq_pid,dlsch->harq_processes[harq_pid]->mimo_mode,pmi2hex_2Ar1(dlsch->pmi_alloc),mod_order, dlsch->layer_index, rb_alloc[0], l);
 #endif    

@@ -4,8 +4,8 @@ CC = $(shell if [ $$OSTYPE = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
-CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
+CPUFLAGS += $(shell if [ -z $$SSE3PROC ]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS += $(shell if [ -z $$SSE4PROC ]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = ../..
 
@@ -69,7 +69,7 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(LAYER2_OBJ)	
-OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
+OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)  
 
 all: dlsim pbchsim pdcchsim ulsim ulsim2 
 
