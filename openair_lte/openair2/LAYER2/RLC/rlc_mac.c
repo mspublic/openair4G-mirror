@@ -104,9 +104,12 @@ tbs_size_t mac_rlc_data_req     (module_id_t module_idP, chan_id_t channel_idP, 
                   }
       } else {
           //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, channel_idP);
+          msg("mac_rlc_data_req() : parameter rb_id out of bounds :%d\n", channel_idP);
+	  exit(-1);
       }
   } else {
       //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
+    msg("FONCTION mac_rlc_data_req() : parameter module_id out of bounds :%d\n", module_idP);
   }
   return (tbs_size_t)0;
 }

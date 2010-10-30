@@ -142,7 +142,7 @@ rlc_op_status_t rlc_data_req     (module_id_t module_idP, rb_id_t rb_idP, mui_t 
   mem_block_t* new_sdu;
 
 #ifdef DEBUG_RLC_DATA_REQ
-  msg("rlc_data_req: module_idP %d, rb_idP %d, muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,rb_idP,muiP,confirmP,sdu_sizeP,sduP);
+  msg("rlc_data_req: module_idP %d (%d), rb_idP %d (%d), muip %d, confirmP %d, sud_sizeP %d, sduP %p\n",module_idP,MAX_MODULES,rb_idP,MAX_RAB,muiP,confirmP,sdu_sizeP,sduP);
 #endif
   if ((module_idP >= 0) && (module_idP < MAX_MODULES)) {
       if ((rb_idP >= 0) && (rb_idP < MAX_RAB)) {
