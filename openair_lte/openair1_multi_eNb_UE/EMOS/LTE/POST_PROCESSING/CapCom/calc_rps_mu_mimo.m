@@ -1,5 +1,5 @@
 function [Ratepersec_4Qam_MUMIMO_1stRx,Ratepersec_4Qam_MUMIMO_2ndRx,Ratepersec_4Qam_MUMIMO_2Rx] = ...
-        calc_rps_mu_mimo(estimates_UE1, estimates_UE2)
+        calc_rps_mu_mimo(estimates_UE)
     
 % this function calculates the MU-MIMO rate of the two users
 % first we have to determine the compatible subbands (based on PMI feedback)
@@ -8,3 +8,6 @@ function [Ratepersec_4Qam_MUMIMO_1stRx,Ratepersec_4Qam_MUMIMO_2ndRx,Ratepersec_4
 % with the higher capacity
 
 
+Ratepersec_4Qam_MUMIMO_1stRx = 0;
+Ratepersec_4Qam_MUMIMO_2ndRx = 0;
+Ratepersec_4Qam_MUMIMO_2Rx = 0;

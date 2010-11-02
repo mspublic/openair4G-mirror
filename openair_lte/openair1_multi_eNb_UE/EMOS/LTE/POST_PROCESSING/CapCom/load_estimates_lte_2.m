@@ -103,7 +103,7 @@ end
 NFrames = min(sum(NFrames_file), NFrames_max);
 
 if (is_eNb)
-    %estimates = repmat(fifo_dump_emos_struct_eNb,1,100);
+    estimates_tmp = repmat(fifo_dump_emos_struct_eNb,NFiles,100);
     
     Ratepersec_4Qam_SISO_1Rx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_SISO_1Rx = zeros(1,floor(NFrames/100));
@@ -118,7 +118,7 @@ if (is_eNb)
     
     minestimates = repmat(min_estimates_struct_eNb, NFiles, NFrames);
 else
-    %estimates = repmat(fifo_dump_emos_struct_UE,1,100);
+    estimates_tmp = repmat(fifo_dump_emos_struct_UE,NFiles,100);
     
     Ratepersec_4Qam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
     Ratepersec_16Qam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
@@ -149,53 +149,53 @@ for n=1:NFiles
     fid(n) = fopen(filename{n},'r');
 end
     
-while (any(~feof(fid)) && (k <= min([NFrames_file,NFrames_max])))
+while (any(~feof_vec(fid)) && (k <= min([NFrames_file,NFrames_max])))
         
     for n=1:NFiles
         %H = complex(zeros(2,2,2,200)); % NUser * NTx x NRx * Nsymb
         
         if (is_eNb)
-            estimates_tmp(n) = binread(fid(n),fifo_dump_emos_struct_eNb,1,4,'l');
+            estimates_tmp(n,k) = binread(fid(n),fifo_dump_emos_struct_eNb,1,4,'l');
             
-            minestimates(n,k).mcs = get_mcs(estimates_tmp.dci_alloc(10,1).dci_pdu,'format0');
+            minestimates(n,k).mcs = get_mcs(estimates_tmp(n,k).dci_alloc(10,1).dci_pdu,'format0');
             minestimates(n,k).tbs = get_tbs(minestimates(k).mcs,25);
-            minestimates(n,k).rx_rssi_dBm = estimates_tmp.phy_measurements_eNb(1).rx_rssi_dBm(1);
-            minestimates(n,k).frame_tx = estimates_tmp.frame_tx;
-            minestimates(n,k).timestamp = estimates_tmp.timestamp;
+            minestimates(n,k).rx_rssi_dBm = estimates_tmp(n,k).phy_measurements_eNb(1).rx_rssi_dBm(1);
+            minestimates(n,k).frame_tx = estimates_tmp(n,k).frame_tx;
+            minestimates(n,k).timestamp = estimates_tmp(n,k).timestamp;
             if (version<1)
-                minestimates(n,k).UE_mode = estimates_tmp.eNb_UE_stats(3,1).UE_mode;
+                minestimates(n,k).UE_mode = estimates_tmp(n,k).eNb_UE_stats(3,1).UE_mode;
             else
-                minestimates(n,k).UE_mode = estimates_tmp.eNb_UE_stats(1,1).UE_mode;
+                minestimates(n,k).UE_mode = estimates_tmp(n,k).eNb_UE_stats(1,1).UE_mode;
             end
-            minestimates(n,k).phy_measurements = estimates_tmp.phy_measurements_eNb(1);
-            minestimates(n,k).ulsch_errors = estimates_tmp.ulsch_errors;
-            minestimates(n,k).mimo_mode = estimates_tmp.mimo_mode;
-            minestimates(n,k).eNb_id = estimates_tmp.eNb_UE_stats.sector;
+            minestimates(n,k).phy_measurements = estimates_tmp(n,k).phy_measurements_eNb(1);
+            minestimates(n,k).ulsch_errors = estimates_tmp(n,k).ulsch_errors;
+            minestimates(n,k).mimo_mode = estimates_tmp(n,k).mimo_mode;
+            minestimates(n,k).eNb_id = estimates_tmp(n,k).eNb_UE_stats.sector;
             
         else
-            estimates_tmp(n) = binread(fid,fifo_dump_emos_struct_UE,1,4,'l');
+            estimates_tmp(n,k) = binread(fid(n),fifo_dump_emos_struct_UE,1,4,'l');
             
-            minestimates(n,k).mcs = get_mcs(estimates_tmp.dci_alloc(7,1).dci_pdu);
+            minestimates(n,k).mcs = get_mcs(estimates_tmp(n,k).dci_alloc(7,1).dci_pdu);
             minestimates(n,k).tbs = get_tbs(minestimates(k).mcs,25);
-            minestimates(n,k).rx_rssi_dBm = estimates_tmp.phy_measurements(1).rx_rssi_dBm(1);
-            minestimates(n,k).frame_tx = estimates_tmp.frame_tx;
-            minestimates(n,k).frame_rx = estimates_tmp.frame_rx;
-            minestimates(n,k).pbch_fer = estimates_tmp.pbch_fer(1);
-            minestimates(n,k).timestamp = estimates_tmp.timestamp;
-            minestimates(n,k).UE_mode = estimates_tmp.UE_mode;
-            minestimates(n,k).phy_measurements = estimates_tmp.phy_measurements(1);
-            minestimates(n,k).dlsch_fer = estimates_tmp.dlsch_fer;
-            minestimates(n,k).dlsch_errors = estimates_tmp.dlsch_errors;
-            minestimates(n,k).mimo_mode = estimates_tmp.mimo_mode;
-            minestimates(n,k).eNb_id = estimates_tmp.eNb_id;
+            minestimates(n,k).rx_rssi_dBm = estimates_tmp(n,k).phy_measurements(1).rx_rssi_dBm(1);
+            minestimates(n,k).frame_tx = estimates_tmp(n,k).frame_tx;
+            minestimates(n,k).frame_rx = estimates_tmp(n,k).frame_rx;
+            minestimates(n,k).pbch_fer = estimates_tmp(n,k).pbch_fer(1);
+            minestimates(n,k).timestamp = estimates_tmp(n,k).timestamp;
+            minestimates(n,k).UE_mode = estimates_tmp(n,k).UE_mode;
+            minestimates(n,k).phy_measurements = estimates_tmp(n,k).phy_measurements(1);
+            minestimates(n,k).dlsch_fer = estimates_tmp(n,k).dlsch_fer;
+            minestimates(n,k).dlsch_errors = estimates_tmp(n,k).dlsch_errors;
+            minestimates(n,k).mimo_mode = estimates_tmp(n,k).mimo_mode;
+            minestimates(n,k).eNb_id = estimates_tmp(n,k).eNb_id;
             
             
         end % if (is_eNb)
         
         
         %read GPS data and estimates every second
-        if ((mod(k,NO_ESTIMATES_DISK)==0) && ~feof(fid))
-            gps_data(l) = binread(fid,gps_data_struct,1,4,'l');
+        if ((mod(k,NO_ESTIMATES_DISK)==0) && ~any(feof_vec(fid)))
+            gps_data(n,l) = binread(fid(n),gps_data_struct,1,4,'l');
             l=l+1;
             sec = sec +1;
         end
@@ -204,7 +204,7 @@ while (any(~feof(fid)) && (k <= min([NFrames_file,NFrames_max])))
     
     % do MU-MIMO processing
     [Ratepersec_4Qam_MUMIMO_1stRx(sec),Ratepersec_4Qam_MUMIMO_2ndRx(sec),Ratepersec_4Qam_MUMIMO_2Rx(sec)] = ...
-        calc_rps_mu_mimo(estimates_tmp(1), estimates_tmp(2));
+        calc_rps_mu_mimo(estimates_tmp);
     
 end %while
     
@@ -241,4 +241,12 @@ else
     throughput.rateps_MUMIMO_64Qam_eNB1_2Rx = Ratepersec_64Qam_MUMIMO_2Rx;
     throughput.rateps_MUMIMO_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_MUMIMO_2Rx;    
 end
+end
 
+
+function eof = feof_vec(fid)
+    eof = false(size(fid));
+    for i=1:length(fid)
+        eof(i) = feof(fid(i));
+    end
+end
