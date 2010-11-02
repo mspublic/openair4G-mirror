@@ -493,7 +493,7 @@ typedef struct __attribute__ ((__packed__)){
   /// TPMI information for precoding
   unsigned char tpmi:6;
 } DCI2_5MHz_4A_M10PRB_TDD_t;
-#define sizeof_DCI2_5MHz_4A_M10PRBTDD_t 45
+#define sizeof_DCI2_5MHz_4A_M10PRB_TDD_t 45
 
 
 /// DCI Format Type 2 (5 MHz, FDD, 2 Antenna Ports, less than 10 PRBs, 38 bits)
@@ -606,7 +606,7 @@ typedef struct __attribute__ ((__packed__)){
   /// TPMI information for precoding
   unsigned char tpmi:6;
 } DCI2_5MHz_4A_M10PRB_FDD_t;
-#define sizeof_DCI2_5MHz_4A_M10PRBFDD_t 42
+#define sizeof_DCI2_5MHz_4A_M10PRB_FDD_t 42
 
 
 
@@ -726,7 +726,7 @@ typedef struct __attribute__ ((__packed__)){
   /// TPMI information for precoding
   unsigned char tpmi:2;
 } DCI2A_5MHz_4A_M10PRB_TDD_t;
-#define sizeof_DCI2A_5MHz_4A_M10PRBTDD_t 45
+#define sizeof_DCI2A_5MHz_4A_M10PRB_TDD_t 45
 
 
 /// DCI Format Type 2A (5 MHz, FDD, 2 Antenna Ports, less than 10 PRBs, 35 bits)
@@ -835,7 +835,7 @@ typedef struct __attribute__ ((__packed__)){
   /// TPMI information for precoding
   unsigned char tpmi:2;
 } DCI2A_5MHz_4A_M10PRB_FDD_t;
-#define sizeof_DCI2A_5MHz_4A_M10PRBFDD_t 38
+#define sizeof_DCI2A_5MHz_4A_M10PRB_FDD_t 38
 
 
 typedef struct __attribute__ ((__packed__)){

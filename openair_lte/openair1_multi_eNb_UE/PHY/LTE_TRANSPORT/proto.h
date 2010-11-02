@@ -592,6 +592,7 @@ s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
+	     u8 subframe,
 	     u8 eNb_id,
 	     MIMO_mode_t mimo_mode,
 	     u8 is_secondary_ue);
@@ -870,7 +871,28 @@ s32 generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
 
+void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		       u8 subframe,
+		       u8 *b,
+		       u8 *bt);
+
+void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+			 u8 subframe,
+			 s16 *d);
+
+void generate_pcfich(u8 num_pdcch_symbols,
+		     s16 amp,
+		     LTE_DL_FRAME_PARMS *frame_parms,
+		     mod_sym_t **txdataF,
+		     u8 subframe);
+
+u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
+	     u8 subframe,
+	     LTE_UE_PDCCH *lte_ue_pdcch_vars,
+	     MIMO_mode_t mimo_mode);
+
 void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
+
 
 void init_transport_channels(u8);
 
@@ -946,10 +968,12 @@ u8 get_num_pdcch_symbols(u8 num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *f
 void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,u8 n_symbols_pdcch);
 
 void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+			u8 subframe,
 			s8* llr,
 			u32 length);
 
 void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		      u8 subframe,
 		      u8 *e,
 		      u32 length);
 /**@}*/

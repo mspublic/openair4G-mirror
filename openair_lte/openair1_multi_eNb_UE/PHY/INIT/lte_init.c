@@ -125,6 +125,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
   int i,j;
   unsigned char eNb_id;
 
+  msg("Initializing UE vars for eNB TXant %d, UE RXant %d\n",frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
   // TX buffers
   ue_common_vars->txdataF = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 #ifdef IFFT_FPGA
@@ -469,13 +470,13 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
       ue_pbch_vars[eNb_id]->rxdataF_ext[i] = (int *)malloc16(sizeof(int)*(6*12*4));
     
     ue_pbch_vars[eNb_id]->rxdataF_comp    = (int **)malloc16(4*sizeof(int*));
-    for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
-      ue_pbch_vars[eNb_id]->rxdataF_comp[i] = (int *)malloc16(sizeof(int)*(6*12*4));
-    
     ue_pbch_vars[eNb_id]->dl_ch_estimates_ext = (int **)malloc16(4*sizeof(short*));
-    for (i=0;i<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;i++)
-      ue_pbch_vars[eNb_id]->dl_ch_estimates_ext[i] = (int *)malloc16(sizeof(int)*6*12*4);
-    
+
+    for (i=0;i<frame_parms->nb_antennas_tx;i++)
+      for (j=0;j<frame_parms->nb_antennas_rx;j++) {
+	ue_pbch_vars[eNb_id]->rxdataF_comp[(i<<1)+j]        = (int *)malloc16(sizeof(int)*(6*12*4));
+	ue_pbch_vars[eNb_id]->dl_ch_estimates_ext[(i<<1)+j] = (int *)malloc16(sizeof(int)*6*12*4);
+      }    
     ue_pbch_vars[eNb_id]->llr = (short *)malloc16(6*12*4*2*sizeof(char));
     
     ue_pbch_vars[eNb_id]->channel_output = (short *)malloc16((3*64+12)*sizeof(short));
