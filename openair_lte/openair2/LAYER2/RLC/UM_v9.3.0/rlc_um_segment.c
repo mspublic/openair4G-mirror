@@ -6,7 +6,7 @@
 #include "rlc_um.h"
 #include "rlc_primitives.h"
 
-#define RLC_UM_SEGMENT
+//#define RLC_UM_SEGMENT
 //-----------------------------------------------------------------------------
 void
 rlc_um_segment_10 (struct rlc_um_entity *rlcP)
@@ -270,6 +270,8 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         if (fill_num_li > 0) {
             pdu->e = 1;
         }
+        pdu->sn = rlcP->vt_us;
+        rlcP->vt_us = rlcP->vt_us+1;
 
         pdu_tb_req->data_ptr        = (unsigned char*)pdu;
         pdu_tb_req->tb_size_in_bits = (data_pdu_size - pdu_remaining_size) << 3;

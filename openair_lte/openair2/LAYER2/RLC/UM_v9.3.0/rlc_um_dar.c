@@ -279,23 +279,43 @@ inline signed int rlc_um_in_window(rlc_um_entity_t *rlcP, signed int lower_bound
 //-----------------------------------------------------------------------------
     int modulo = 1 << rlcP->sn_length;
     signed int modulus = (signed int)rlcP->vr_uh - (signed int)(modulo >> 1);
+#ifdef DEBUG_RLC_UM_RX
+    signed int     lower_bound  = lower_boundP;
+    signed int     higher_bound = higher_boundP;
+    signed int     sn           = snP;
+#endif
     lower_boundP  = (lower_boundP  - modulus) % modulo;
     higher_boundP = (higher_boundP - modulus) % modulo;
     snP           = (snP           - modulus) % modulo;
 
     if ( lower_boundP > snP) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d not in WINDOW[%03d:%03d] (SN<LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+#endif
         return -2;
     }
     if ( higher_boundP < snP) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d not in WINDOW[%03d:%03d] (SN>HIGHER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+#endif
         return -1;
     }
     if ( lower_boundP == snP) {
         if ( higher_boundP == snP) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+#endif
             return 3;
         }
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+#endif
         return 1;
     }
     if ( higher_boundP == snP) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+#endif
         return 2;
     }
     return 0;
@@ -306,13 +326,22 @@ inline signed int rlc_um_in_reordering_window(rlc_um_entity_t *rlcP, signed int 
 //-----------------------------------------------------------------------------
     int modulo = 1 << rlcP->sn_length;
     signed int modulus = (signed int)rlcP->vr_uh - (signed int)(modulo >> 1);
+#ifdef DEBUG_RLC_UM_RX
+signed int sn = snP;
+#endif
     snP           = (snP - modulus) % modulo;
 
     if ( 0 <= snP) {
         if (snP < (signed int)(modulo >> 1)) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, sn, modulus, rlcP->vr_uh);
+#endif
             return 0;
         }
     }
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] %d NOT IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, sn, modulus, rlcP->vr_uh);
+#endif
     return -1;
 }
 //-----------------------------------------------------------------------------
@@ -379,7 +408,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
     //          -set VR(UR) to (VR(UH) – UM_Window_Size);
     if (rlc_um_in_reordering_window(rlcP, sn) < 0) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] RX PDU  SN %d OUTSIDE REORDERING WINDOW\n", rlcP->module_id, rlcP->rb_id, sn);
+        msg ("[RLC_UM][MOD %d][RB %d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, sn, rlcP->vr_uh, 1 << (rlcP->sn_length-1));
 #endif
         rlcP->vr_uh = (sn + 1) % (1 << rlcP->sn_length);
 
@@ -420,6 +449,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
         if (rlcP->vr_uh != rlcP->vr_ux) {
             in_window = rlc_um_in_reordering_window(rlcP, rlcP->vr_ux);
             if (in_window < 0) {
+#ifdef DEBUG_RLC_UM_RX
+            msg ("[RLC_UM][MOD %d][RB %d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux,rlcP->vr_uh);
+#endif
                 rlcP->timer_reordering_running = 0;
                 rlcP->timer_reordering         = 0;
             }
@@ -428,6 +460,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
     if (rlcP->timer_reordering_running) {
         in_window = rlc_um_in_window(rlcP, rlcP->vr_ux,  rlcP->vr_ur,  rlcP->vr_ur);
         if (in_window >= 0) {
+#ifdef DEBUG_RLC_UM_RX
+            msg ("[RLC_UM][MOD %d][RB %d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux,rlcP->vr_uh);
+#endif
             rlcP->timer_reordering_running = 0;
             rlcP->timer_reordering         = 0;
         }
@@ -443,6 +478,9 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
             rlcP->timer_reordering_running = 1;
             rlcP->timer_reordering         = rlcP->timer_reordering_init;
             rlcP->vr_ux = rlcP->vr_uh;
+#ifdef DEBUG_RLC_UM_RX
+            msg ("[RLC_UM][MOD %d][RB %d] RESTART t-Reordering set VR(UX) to VR(UH) =%d\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux);
+#endif
         }
     }
     rlc_um_check_timer_dar_time_out(rlcP);

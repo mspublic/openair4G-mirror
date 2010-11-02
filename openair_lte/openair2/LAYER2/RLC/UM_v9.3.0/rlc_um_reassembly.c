@@ -78,7 +78,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 
   if ((rlcP->output_sdu_in_construction)) {
 #ifdef DEBUG_RLC_UM_SEND_SDU
-    msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] %d bytes frame %d\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame);
+    msg ("\n\n[RLC_UM][MOD %d][RB %d][SEND_SDU] %d bytes frame %d\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame);
 /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
   sec = (rlc_um_time_us/ 1000000);

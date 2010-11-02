@@ -153,6 +153,15 @@ rlc_um_free_all_resources (rlc_um_entity_t *rlcP)
   if ((rlcP->output_sdu_in_construction)) {
     free_mem_block (rlcP->output_sdu_in_construction);
   }
+  if (rlcP->dar_buffer_alloc) {
+    for (index = 0; index < 1024; index++) {
+      if (rlcP->dar_buffer[index]) {
+        free_mem_block (rlcP->dar_buffer[index]);
+      }
+    }
+    free_mem_block (rlcP->dar_buffer_alloc);
+    rlcP->dar_buffer_alloc = NULL;
+  }
 }
 //-----------------------------------------------------------------------------
 void
@@ -178,5 +187,11 @@ rlc_um_set_configured_parameters (rlc_um_entity_t *rlcP, mem_block_t *cprimitive
     rlcP->input_sdus = (mem_block_t **) (rlcP->input_sdus_alloc->data);
     memset (rlcP->input_sdus, 0, rlcP->size_input_sdus_buffer * sizeof (void *));
   }
+  if (rlcP->dar_buffer_alloc == NULL) {
+    rlcP->dar_buffer_alloc = get_free_mem_block (1024 * sizeof (void *));
+    rlcP->dar_buffer = (mem_block_t **) (rlcP->dar_buffer_alloc->data);
+    memset (rlcP->dar_buffer, 0, 1024 * sizeof (void *));
+  }
+  
   rlcP->first_pdu = 1;
 }

@@ -37,6 +37,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
             tb_size_in_bytes = ((struct mac_tb_ind *) (tb->data))->size;
 
             rlc_um_receive_process_dar (rlcP, tb, first_byte, tb_size_in_bytes);
+            msg ("[RLC_UM][MOD %d][RB %d] VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
         } else {
 #ifdef DEBUG_RLC_STATS
             rlcP->rx_pdus_in_error += 1;

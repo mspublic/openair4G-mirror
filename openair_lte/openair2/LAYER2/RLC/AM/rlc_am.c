@@ -28,9 +28,9 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 #define DEBUG_RLC_AM_DATA_REQUEST
-#define DEBUG_RLC_AM_TX
-#define DEBUG_RLC_AM_RX
-#define DEBUG_RLC_AM_BO
+//#define DEBUG_RLC_AM_TX
+//#define DEBUG_RLC_AM_RX
+//#define DEBUG_RLC_AM_BO
 //-----------------------------------------------------------------------------
 void            display_protocol_vars_rlc_am (struct rlc_am_entity *rlcP);
 u32_t             rlc_am_get_buffer_occupancy_in_pdus_for_ch1 (struct rlc_am_entity *rlcP);
@@ -52,9 +52,9 @@ rlc_am_get_buffer_occupancy_in_bytes_ch1 (struct rlc_am_entity *rlcP)
   } else {
     if ((rlcP->li_one_byte_short_to_add_in_next_pdu) ||
         (rlcP->li_exactly_filled_to_add_in_next_pdu)) {
-        // WARNING LG WE ASSUME TRANSPORT BLOCKS ARE < 125 bytes 
+        // WARNING LG WE ASSUME TRANSPORT BLOCKS ARE < 125 bytes
         sum = rlcP->pdu_size; // 4 bytes; // so this is the exact size of the next TB to be sent (SN + 2LIs)
-    } 
+    }
   }
 
 
@@ -412,7 +412,7 @@ rlc_am_mac_data_request (void *rlcP)
   rlc_am_get_pdus (rlcP, RLC_AM_TRAFFIC_ALLOWED_FOR_DATA);
 
   list_init (&data_req.data, NULL);
-   
+
   //list_add_list (&((struct rlc_am_entity *) rlcP)->pdus_to_mac_layer_ch1, &data_req.data);
    while (nb_pdu_to_transmit > 0 ) {
       pdu = list_remove_head (&((struct rlc_am_entity *) rlcP)->pdus_to_mac_layer_ch1);

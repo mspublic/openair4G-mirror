@@ -109,7 +109,7 @@ typedef struct rlc_um_entity {
   s32_t             output_sdu_size_to_write;     // for writing in sdu
 
   mem_block_t    **dar_buffer; // array of rx pdus
-
+  mem_block_t     *dar_buffer_alloc;     // allocation of the array
 
   //struct rlc_um_data_ind   output_rlc_primitive;// for writing header in rt_fifo
 
