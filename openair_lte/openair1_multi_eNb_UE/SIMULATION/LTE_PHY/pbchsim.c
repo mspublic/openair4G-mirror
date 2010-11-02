@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
 	  break;
 	default:
 	case 'h':
-	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -n n_frames -t Delayspread -r Rayleigh -s snr0 -x transmission_mode -y TXant -z RXant\n",argv[0]);
+	  printf("%s -h(elp) -a(wgn on) -p(extended_prefix) -n n_frames -t Delayspread -r Rayleigh -s snr0 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
 	  printf("-p Use extended prefix mode\n");
@@ -251,6 +251,8 @@ int main(int argc, char **argv) {
 	  printf("-x Transmission mode (1,2,6 for the moment)\n");
 	  printf("-y Number of TX antennas used in eNB\n");
 	  printf("-z Number of RX antennas used in UE\n");
+	  printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+	  printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
 	  exit (-1);
 	  break;
 	}
