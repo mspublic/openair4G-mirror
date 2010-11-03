@@ -16,8 +16,8 @@
 #    define RLC_RESET_AND_SUSPEND_STATE               0x14
 #    define RLC_LOCAL_SUSPEND_STATE                   0x08
 //----------------------------------------------------------
-#    define RLC_SDU_MAX_SIZE_CONTROL_PLANE              600    // RRC CONNECTION SETUP MAY BE HUGE
-#    define RLC_SDU_MAX_SIZE_DATA_PLANE                 5004
+#    define RLC_SDU_MAX_SIZE_CONTROL_PLANE              2000    // RRC CONNECTION SETUP MAY BE HUGE
+#    define RLC_SDU_MAX_SIZE_DATA_PLANE                 1800
 #    define RLC_MAX_FLEXIBLE_DATA_PDU_SIZE              1503
 //----------------------------------------------------------
 // dimensions

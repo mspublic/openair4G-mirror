@@ -27,13 +27,13 @@ int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, un
         e1 = ((unsigned int)e_liP->b1 & 0x00000080) >> 7;
         li1 = (((unsigned int)e_liP->b1 & 0x0000007F) << 4) + (((unsigned int)e_liP->b2 & 0x000000F0) >> 4);
         li_arrayP[*num_liP] = li1;
-        *data_sizeP = *data_sizeP - li1;
+        *data_sizeP = *data_sizeP - li1 - 2;
         *num_liP = *num_liP +1;
         if ((e1)) {
             e2 = ((unsigned int)e_liP->b2 & 0x00000008) >> 3;
             li2 = (((unsigned int)e_liP->b2 & 0x00000007) << 8) + ((unsigned int)e_liP->b3 & 0x000000FF);
             li_arrayP[*num_liP] = li2;
-            *data_sizeP = *data_sizeP - li2;
+            *data_sizeP = *data_sizeP - li2 - 1;
             *num_liP = *num_liP +1;
             if (e2 == 0) {
                 continue_loop = 0;

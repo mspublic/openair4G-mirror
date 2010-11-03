@@ -14,10 +14,6 @@
 #define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
 #define DEBUG_RLC_UM_SEND_SDU
 
-//extern char* tcip_sdu;
-//extern char* voip_sdu;
-//extern char* very_small_sdu;
-
 //-----------------------------------------------------------------------------
 inline void
 rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP)
@@ -100,6 +96,8 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
         msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] OK SDU VOIP\n\n\n", rlcP->module_id, rlcP->rb_id);
     } else if (strncmp(very_small_sdu, rlcP->output_sdu_in_construction->data, strlen(very_small_sdu)) == 0) {
         msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] OK SDU SMALL\n\n\n", rlcP->module_id, rlcP->rb_id);
+    } else {
+        msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] UNKNOWN SDU\n\n\n", rlcP->module_id, rlcP->rb_id);
     }
 #endif
     if (rlcP->output_sdu_size_to_write > 0) {

@@ -39,7 +39,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
                 ((struct rlc_um_data_req*)(sdu_mem->data))->data_offset    = sizeof (struct rlc_um_data_req_alloc) - sizeof (struct rlc_um_data_req);
                 ((struct rlc_um_data_req*)(sdu_mem->data))->use_special_li = 0;
                 strcpy (&sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)], voip_sdu);
-                sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(tcip_sdu)+1] = 0;
+                sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(voip_sdu)+1] = 0;
                 rlc_um_data_req     (rlcP,  sdu_mem);
             }
             break;
@@ -51,7 +51,7 @@ rlc_um_test_send_sdu     (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP) {
                 ((struct rlc_um_data_req*)(sdu_mem->data))->data_offset    = sizeof (struct rlc_um_data_req_alloc) - sizeof (struct rlc_um_data_req);
                 ((struct rlc_um_data_req*)(sdu_mem->data))->use_special_li = 0;
                 strcpy (&sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)], very_small_sdu);
-                sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(tcip_sdu)+1] = 0;
+                sdu_mem->data[sizeof (struct rlc_um_data_req_alloc)+ strlen(very_small_sdu)+1] = 0;
                 rlc_um_data_req     (rlcP,  sdu_mem);
             }
             break;

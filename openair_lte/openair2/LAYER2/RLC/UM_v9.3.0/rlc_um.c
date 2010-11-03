@@ -188,13 +188,13 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
-    if ((mac_xface->frame % 1000) == 0) {
+    if ((mac_xface->frame % 10) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
     }
     if ((mac_xface->frame % 4) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_VOIP);
     }
-    if ((mac_xface->frame % 5) == 0) {
+    if ((mac_xface->frame % 2) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_SMALL);
     }
 #endif
