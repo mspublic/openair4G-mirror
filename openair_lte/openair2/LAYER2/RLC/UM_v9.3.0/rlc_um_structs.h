@@ -32,25 +32,23 @@ struct rlc_um_tx_data_pdu_management {
 };
 //-----------------------
 typedef struct rlc_um_pdu_sn_5 {
-  unsigned fi:2;
-  unsigned e:1;
-  unsigned sn:5;
-  u8_t     data[1];
-}rlc_um_pdu_sn_5_t ;
+/*  u8_t fi:2;
+  u8_t e:1;
+  u8_t sn:5;*/
+  u8_t     b1;
+  u8_t     data[3];
+} __attribute__((__packed__)) rlc_um_pdu_sn_5_t ;
 //-----------------------
 typedef struct rlc_um_pdu_sn_10 {
-  unsigned r1:3;
-  unsigned fi:2;
-  unsigned e:1;
-  unsigned sn:10;
-  u8_t     data[1];
-}rlc_um_pdu_sn_10_t ;
+  u8_t  b1;
+  u8_t  b2;
+  u8_t  data[2];
+}__attribute__((__packed__)) rlc_um_pdu_sn_10_t ;
 
 typedef struct rlc_um_e_li {
-    unsigned e1:1;
-    unsigned li1:11;
-    unsigned e2:1;
-    unsigned li2:11;
+  u8_t  b1;
+  u8_t  b2;
+  u8_t  b3;
 }rlc_um_e_li_t;
 //-----------------------
 struct rlc_um_data_req_alloc {  // alloc enought bytes for sdu mngt also

@@ -3,6 +3,7 @@
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
+#include <string.h>
 #include "rlc.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
@@ -12,6 +13,11 @@
 #define DEBUG_RLC_UM_REASSEMBLY 1
 #define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
 #define DEBUG_RLC_UM_SEND_SDU
+
+//extern char* tcip_sdu;
+//extern char* voip_sdu;
+//extern char* very_small_sdu;
+
 //-----------------------------------------------------------------------------
 inline void
 rlc_um_clear_rx_sdu (rlc_um_entity_t *rlcP)
@@ -78,7 +84,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 
   if ((rlcP->output_sdu_in_construction)) {
 #ifdef DEBUG_RLC_UM_SEND_SDU
-    msg ("\n\n[RLC_UM][MOD %d][RB %d][SEND_SDU] %d bytes frame %d\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame);
+    msg ("\n\n\n[RLC_UM][MOD %d][RB %d][SEND_SDU] %d bytes frame %d sdu %p\n", rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, Mac_rlc_xface->frame, rlcP->output_sdu_in_construction);
 /*#ifndef USER_MODE
   rlc_um_time_us = (unsigned long int)(rt_get_time_ns ()/(RTIME)1000);
   sec = (rlc_um_time_us/ 1000000);
@@ -87,21 +93,23 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
   usec =  rlc_um_time_us % 1000000;
   msg ("[RLC_UM_LITE][RB  %d] at time %2d:%2d.%6d\n", rlcP->rb_id, min, sec , usec);
 #endif*/
+    msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_in_construction->data);
+    if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
+        msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id);
+    } else if (strncmp(voip_sdu, rlcP->output_sdu_in_construction->data, strlen(voip_sdu)) == 0) {
+        msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] OK SDU VOIP\n\n\n", rlcP->module_id, rlcP->rb_id);
+    } else if (strncmp(very_small_sdu, rlcP->output_sdu_in_construction->data, strlen(very_small_sdu)) == 0) {
+        msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] OK SDU SMALL\n\n\n", rlcP->module_id, rlcP->rb_id);
+    }
 #endif
     if (rlcP->output_sdu_size_to_write > 0) {
 #ifdef DEBUG_RLC_STATS
       rlcP->rx_sdus += 1;
 #endif
-
-#ifdef BENCH_QOS_L2
-      fprintf (bench_l2, "[SDU DELIVERY] FRAME %d SIZE %d RB %d RLC-UM %p\n", Mac_rlc_xface->frame, rlcP->output_sdu_size_to_write, rlcP->rb_id, rlcP);
-#endif
       // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id,rlcP->output_sdu_size_to_write);
       rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction, rlcP->data_plane);
     } else {
-#ifdef DEBUG_RLC_UM_SEND_SDU
-      msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] ERROR SIZE <= 0\n",rlcP->module_id, rlcP->rb_id);
-#endif
+
       msg ("[RLC_UM][MOD %d][RB %d][SEND_SDU] ERROR SIZE <= 0\n",rlcP->module_id, rlcP->rb_id);
       msg("[RLC_UM][MOD %d] Freeing mem_block ...\n", rlcP->module_id);
       free_mem_block (rlcP->output_sdu_in_construction);

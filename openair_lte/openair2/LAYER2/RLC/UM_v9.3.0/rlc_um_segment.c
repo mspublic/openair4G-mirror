@@ -6,7 +6,7 @@
 #include "rlc_um.h"
 #include "rlc_primitives.h"
 
-//#define RLC_UM_SEGMENT
+#define RLC_UM_SEGMENT
 //-----------------------------------------------------------------------------
 void
 rlc_um_segment_10 (struct rlc_um_entity *rlcP)
@@ -45,53 +45,45 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         msg ("[RLC_UM][MOD %d][RB %d] SEGMENT nb_bytes_to_transmit %d BO %d\n", rlcP->module_id, rlcP->rb_id, nb_bytes_to_transmit, rlcP->buffer_occupancy);
         // pdu management
         if (!pdu_mem) {
-            if (rlcP->data_pdu_size > 0) {
-                // PDU fixed size
-                data_pdu_size = rlcP->data_pdu_size;
-#ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT fixed PDU size %d bytes\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
-#endif
-            } else {
-                if ((rlcP->input_sdus[rlcP->current_sdu_index])) {
-                    sdu_mngt = ((struct rlc_um_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data));
-                    // try to make one PDU contain exactly one SDU
-                    if (sdu_mngt->sdu_remaining_size == sdu_mngt->sdu_size) {
-                        if  (nb_bytes_to_transmit >= (sdu_mngt->sdu_size + rlcP->header_min_length_in_bytes)) {
-                            data_pdu_size = sdu_mngt->sdu_size + rlcP->header_min_length_in_bytes;
+            if ((rlcP->input_sdus[rlcP->current_sdu_index])) {
+                sdu_mngt = ((struct rlc_um_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data));
+                // try to make one PDU contain exactly one SDU
+                if (sdu_mngt->sdu_remaining_size == sdu_mngt->sdu_size) {
+                    if  (nb_bytes_to_transmit >= (sdu_mngt->sdu_size + rlcP->header_min_length_in_bytes)) {
+                        data_pdu_size = sdu_mngt->sdu_size + rlcP->header_min_length_in_bytes;
 #ifdef RLC_UM_SEGMENT
                         msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain only 1 complete SDU\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
 #endif
-                        } else {
-                            data_pdu_size = nb_bytes_to_transmit;
-#ifdef RLC_UM_SEGMENT
-                            msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
-#endif
-                        }
                     } else {
-                        if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes)) {
-                            data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes;
+                        data_pdu_size = nb_bytes_to_transmit;
 #ifdef RLC_UM_SEGMENT
-                            msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@0\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+                        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
 #endif
-                        } else {
-                            data_pdu_size = nb_bytes_to_transmit;
-#ifdef RLC_UM_SEGMENT
-                            msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@0\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
-#endif
-                        }
                     }
                 } else {
                     if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes)) {
                         data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes;
 #ifdef RLC_UM_SEGMENT
-                        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+                        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@0\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
 #endif
                     } else {
                         data_pdu_size = nb_bytes_to_transmit;
 #ifdef RLC_UM_SEGMENT
-                        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+                        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@0\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
 #endif
                     }
+                }
+            } else {
+                if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes)) {
+                    data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes;
+#ifdef RLC_UM_SEGMENT
+                    msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+#endif
+                } else {
+                    data_pdu_size = nb_bytes_to_transmit;
+#ifdef RLC_UM_SEGMENT
+                    msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+#endif
                 }
             }
             if (!(pdu_mem = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
@@ -213,18 +205,27 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 fill_num_li += 1;
                 if (li_length_in_bytes  == 2) {
                     if (fill_num_li == test_num_li) {
-                        e_li->e1  = 0;
+                        //e_li->e1  = 0;
+                        e_li->b1 = e_li->b1 & 0x7F;
                     } else {
-                        e_li->e1  = 1;
+                        //e_li->e1  = 1;
+                        e_li->b1 = e_li->b1 | 0x80;                    
                     }
-                    e_li->li1 = sdu_mngt->sdu_remaining_size;
+                    //e_li->li1 = sdu_mngt->sdu_remaining_size;
+                    e_li->b1 = sdu_mngt->sdu_remaining_size >> 4;
+                    e_li->b2 = sdu_mngt->sdu_remaining_size << 4;
                 } else {
                     if (fill_num_li == test_num_li) {
-                        e_li->e2  = 0;
+                        //e_li->e2  = 0;
+                        // DO nothing
+                        ;
                     } else {
-                        e_li->e2  = 1;
+                        //e_li->e2  = 1;
+                        e_li->b2  = e_li->b2 | 0x80;
                     }
-                    e_li->li2 = sdu_mngt->sdu_remaining_size;
+                    //e_li->li2 = sdu_mngt->sdu_remaining_size;
+                    e_li->b2 = e_li->b2 | (sdu_mngt->sdu_remaining_size >> 8);
+                    e_li->b3 = sdu_mngt->sdu_remaining_size &0xFF;
                     e_li++;
                 }
 
@@ -264,13 +265,15 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         if (!fi_last_byte_pdu_is_last_byte_sdu) {
             fi = fi + 1;
         }
-        pdu->fi = fi;
+        pdu->b1 = pdu->b1 | (fi << 3);
 
         // set fist e bit
         if (fill_num_li > 0) {
-            pdu->e = 1;
+            pdu->b1 = pdu->b1 | 0x04;
         }
-        pdu->sn = rlcP->vt_us;
+        //pdu->sn = rlcP->vt_us;
+        pdu->b1 = pdu->b1 | (rlcP->vt_us >> 8);
+        pdu->b2 = rlcP->vt_us & 0xFF;
         rlcP->vt_us = rlcP->vt_us+1;
 
         pdu_tb_req->data_ptr        = (unsigned char*)pdu;
@@ -279,6 +282,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         pdu = NULL;
         pdu_mem = NULL;
 
-        nb_bytes_to_transmit = nb_bytes_to_transmit - data_pdu_size;
+        //nb_bytes_to_transmit = nb_bytes_to_transmit - data_pdu_size;
+        nb_bytes_to_transmit = 0; // 1 PDU only
     }
 }

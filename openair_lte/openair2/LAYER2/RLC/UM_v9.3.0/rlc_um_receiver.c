@@ -26,8 +26,8 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 #endif
 
 #ifdef DEBUG_RLC_UM_DISPLAY_TB_DATA
-        msg ("[RLC_UM][MOD %d][RB %d] DUMP RX PDU:", rlcP->module_id, rlcP->rb_id);
-        for (tb_size_in_bytes = 0; tb_size_in_bytes < data_indP.tb_size; tb_size_in_bytes++) {
+        msg ("[RLC_UM][MOD %d][RB %d] DUMP RX PDU(%d bytes):", rlcP->module_id, rlcP->rb_id, ((struct mac_tb_ind *) (tb->data))->size);
+        for (tb_size_in_bytes = 0; tb_size_in_bytes < ((struct mac_tb_ind *) (tb->data))->size; tb_size_in_bytes++) {
             msg ("%02X.", ((struct mac_tb_ind *) (tb->data))->data_ptr[tb_size_in_bytes]);
         }
         msg ("\n");
@@ -43,7 +43,7 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
             rlcP->rx_pdus_in_error += 1;
 #endif
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU  WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id);
+            msg ("[RLC_UM][MOD %d][RB %d] RX PDU WITH ERROR INDICATED BY LOWER LAYERS -> GARBAGE\n", rlcP->module_id, rlcP->rb_id);
 #endif
         }
         free_mem_block (tb);

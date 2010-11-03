@@ -32,11 +32,20 @@ struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, n
         if (tb != NULL) {
             ((struct mac_tb_ind *) (tb->data))->first_bit = 0;
             ((struct mac_tb_ind *) (tb->data))->data_ptr = &tb->data[sizeof (mac_rlc_max_rx_header_size_t)];
+            ((struct mac_tb_ind *) (tb->data))->size = tb_sizeP;
             if (crcsP)
 	      ((struct mac_tb_ind *) (tb->data))->error_indication = crcsP[nb_tb_read];
 
             memcpy(((struct mac_tb_ind *) (tb->data))->data_ptr, &bufferP[tbs_size], tb_sizeP);
 
+#ifdef DEBUG_MAC_INTERFACE
+            int tb_size_in_bytes;
+            msg ("[MAC-RLC] DUMP RX PDU(%d bytes):", tb_sizeP);
+            for (tb_size_in_bytes = 0; tb_size_in_bytes < tb_sizeP; tb_size_in_bytes++) {
+                msg ("%02X.", ((struct mac_tb_ind *) (tb->data))->data_ptr[tb_size_in_bytes]);
+            }
+            msg ("\n");
+#endif
             nb_tb_read = nb_tb_read + 1;
             tbs_size   = tbs_size   + tb_sizeP;
             list_add_tail_eurecom(tb, &data_ind.data);
@@ -66,10 +75,17 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
        memcpy(&bufferP[tbs_size], &((struct mac_tb_req *) (tb->data))->data_ptr[0], tb_size);
        //msg("[RLC-MAC] if RAB UM TB SN %d\n", (unsigned int)(bufferP[tbs_size] >> 1) & 0x7F);
        tbs_size = tbs_size + tb_size;
+#ifdef DEBUG_MAC_INTERFACE
+        int tb_size_in_bytes;
+        msg ("[MAC-RLC] DUMP TX PDU(%d bytes):", tb_size);
+        for (tb_size_in_bytes = 0; tb_size_in_bytes < tb_size; tb_size_in_bytes++) {
+            msg ("%02X.", ((struct mac_tb_req *) (tb->data))->data_ptr[tb_size_in_bytes]);
+        }
+        msg ("\n");
+#endif
        free_mem_block(tb);
     }
   }
-  msg("[RLC-MAC]  TBS size  %d\n", tbs_size);
   return tbs_size;
 }
 //-----------------------------------------------------------------------------

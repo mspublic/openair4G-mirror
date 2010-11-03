@@ -16,18 +16,26 @@ int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, un
 //-----------------------------------------------------------------------------
     int continue_loop = 1;
     *num_liP = 0;
+    unsigned int e1;
+    unsigned int li1;
+    unsigned int e2;
+    unsigned int li2;
 
     while ((continue_loop)) {
-        li_arrayP[*num_liP] = e_liP->li1;
-        *data_sizeP = *data_sizeP - e_liP->li1;
-        *dataP = &*dataP[e_liP->li1];
+        //msg("[RLC_UM] e_liP->b1 = %02X\n", e_liP->b1);
+        //msg("[RLC_UM] e_liP->b2 = %02X\n", e_liP->b2);
+        e1 = ((unsigned int)e_liP->b1 & 0x00000080) >> 7;
+        li1 = (((unsigned int)e_liP->b1 & 0x0000007F) << 4) + (((unsigned int)e_liP->b2 & 0x000000F0) >> 4);
+        li_arrayP[*num_liP] = li1;
+        *data_sizeP = *data_sizeP - li1;
         *num_liP = *num_liP +1;
-        if ((e_liP->e1)) {
-            li_arrayP[*num_liP] = e_liP->li2;
-            *data_sizeP = *data_sizeP - e_liP->li2;
-            *dataP = &*dataP[e_liP->li2];
+        if ((e1)) {
+            e2 = ((unsigned int)e_liP->b2 & 0x00000008) >> 3;
+            li2 = (((unsigned int)e_liP->b2 & 0x00000007) << 8) + ((unsigned int)e_liP->b3 & 0x000000FF);
+            li_arrayP[*num_liP] = li2;
+            *data_sizeP = *data_sizeP - li2;
             *num_liP = *num_liP +1;
-            if (e_liP->e2 == 0) {
+            if (e2 == 0) {
                 continue_loop = 0;
             } else {
                 e_liP++;
@@ -39,6 +47,7 @@ int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, un
             return -1;
         }
     }
+    *dataP = *dataP + (((*num_liP*3) +1) >> 1);
     return 0;
 }
 //-----------------------------------------------------------------------------
@@ -52,30 +61,40 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
     int                 fi;
     unsigned int        size;
     u16_t sn;
-    u16_t sn_tmp = snP;
+    u16_t sn_tmp;
     unsigned int        num_li;
     unsigned int        li_array[RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU];
     int i;
 
+#ifdef DEBUG_RLC_UM_RX
+    msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY START AT PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, snP);
+#endif
     assert(rlcP->dar_buffer[snP] != NULL);
     // go backward in the buffer till there are continuous PDUs
     sn_tmp = snP;
-    while ((rlcP->dar_buffer[sn]) && (sn != rlcP->vr_uh)) {
+    sn     = snP;
+    while ((rlcP->dar_buffer[sn_tmp]) && (sn_tmp != rlcP->vr_uh)) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY GOING BACKWARD IN RX BUFFER PDU SN=%03d OK EVALUATING PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, sn, (sn_tmp - 1) & ((1 << rlcP->sn_length) - 1));
+#endif
         sn = sn_tmp;
         sn_tmp = (sn_tmp - 1) & ((1 << rlcP->sn_length) - 1);
     }
 
     while ((pdu_mem = rlcP->dar_buffer[sn])) {
+#ifdef DEBUG_RLC_UM_RX
+        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, sn);
+#endif
         tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
         if (rlcP->sn_length == 10) {
-            e = ((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->e;
-            fi = ((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->fi;
+            e  = (((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->b1 & 0x04) >> 2;
+            fi = (((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->b1 & 0x18) >> 3;
             e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_10_t*)(tb_ind->data_ptr))->data;
             size   = tb_ind->size - 2;
             data = &tb_ind->data_ptr[2];
         } else {
-            e = ((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->e;
-            fi = ((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->fi;
+            e  = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0x20) >> 5;
+            fi = (((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->b1 & 0xC0) >> 6;
             e_li = (rlc_um_e_li_t*)((rlc_um_pdu_sn_5_t*)(tb_ind->data_ptr))->data;
             size   = tb_ind->size - 1;
             data = &tb_ind->data_ptr[1];
@@ -84,7 +103,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
             switch (fi) {
                 case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id);
+                    msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id);
 #endif
                     // one complete SDU
                     rlc_um_send_sdu(rlcP); // may be not necessary
@@ -93,7 +112,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id);
+                    msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id);
 #endif
                     // one beginning segment of SDU in PDU
                     rlc_um_send_sdu(rlcP); // may be not necessary
@@ -101,7 +120,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=01 (10)\n", rlcP->module_id, rlcP->rb_id);
+                    msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=01 (10)\n", rlcP->module_id, rlcP->rb_id);
 #endif
                     // one last segment of SDU
                     rlc_um_reassembly (data, size, rlcP);
@@ -109,7 +128,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                     break;
                 case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=00 (11)\n", rlcP->module_id, rlcP->rb_id);
+                    msg ("[RLC_UM][MOD %d][RB %d] RX PDU NO E_LI FI=00 (11)\n", rlcP->module_id, rlcP->rb_id);
 #endif
                     // one whole segment of SDU in PDU
                     rlc_um_reassembly (data, size, rlcP);
@@ -121,15 +140,16 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                 switch (fi) {
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id);
-            for (i=0; i < num_li; i++) {
-                msg("%d ",li_array[i]);
-            }
-            msg(" remaining size %d\n",size);
+                        msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id);
+                        for (i=0; i < num_li; i++) {
+                            msg("%d ",li_array[i]);
+                        }
+                        msg(" remaining size %d\n",size);
 #endif
                         // N complete SDUs
                         rlc_um_send_sdu(rlcP);
-                        for (i = 0; i < num_li; num_li++) {
+
+                        for (i = 0; i < num_li; i++) {
                             rlc_um_reassembly (data, li_array[i], rlcP);
                             rlc_um_send_sdu(rlcP);
                             data = &data[li_array[i]];
@@ -142,15 +162,15 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id);
-            for (i=0; i < num_li; i++) {
-                msg("%d ",li_array[i]);
-            }
-            msg(" remaining size %d\n",size);
+                        msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id);
+                        for (i=0; i < num_li; i++) {
+                            msg("%d ",li_array[i]);
+                        }
+                        msg(" remaining size %d\n",size);
 #endif
                         // N complete SDUs + one segment of SDU in PDU
                         rlc_um_send_sdu(rlcP);
-                        for (i = 0; i < num_li; num_li++) {
+                        for (i = 0; i < num_li; i++) {
                             rlc_um_reassembly (data, li_array[i], rlcP);
                             rlc_um_send_sdu(rlcP);
                             data = &data[li_array[i]];
@@ -162,14 +182,14 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id);
-            for (i=0; i < num_li; i++) {
-                msg("%d ",li_array[i]);
-            }
-            msg(" remaining size %d\n",size);
+                        msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id);
+                        for (i=0; i < num_li; i++) {
+                            msg("%d ",li_array[i]);
+                        }
+                        msg(" remaining size %d\n",size);
 #endif
                         // one last segment of SDU + N complete SDUs in PDU
-                        for (i = 0; i < num_li; num_li++) {
+                        for (i = 0; i < num_li; i++) {
                             rlc_um_reassembly (data, li_array[i], rlcP);
                             rlc_um_send_sdu(rlcP);
                             data = &data[li_array[i]];
@@ -182,13 +202,13 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-            msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id);
-            for (i=0; i < num_li; i++) {
-                msg("%d ",li_array[i]);
-            }
-            msg(" remaining size %d\n",size);
+                        msg ("[RLC_UM][MOD %d][RB %d] RX PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id);
+                        for (i=0; i < num_li; i++) {
+                            msg("%d ",li_array[i]);
+                        }
+                        msg(" remaining size %d\n",size);
 #endif
-                        for (i = 0; i < num_li; num_li++) {
+                        for (i = 0; i < num_li; i++) {
                             rlc_um_reassembly (data, li_array[i], rlcP);
                             rlc_um_send_sdu(rlcP);
                             data = &data[li_array[i]];
@@ -202,8 +222,9 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, u16_t snP) {
                 }
             }
         }
+        free_mem_block(rlcP->dar_buffer[sn]);
+        rlcP->dar_buffer[sn] = NULL;
     }
-
 }
 //-----------------------------------------------------------------------------
 void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP) {
@@ -370,7 +391,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
     //      -place the received UMD PDU in the reception buffer.
 
     unsigned int sn_tmp;
-    signed int sn = pduP->sn;
+    signed int sn = ((pduP->b1 & 0x00000003) << 8) + pduP->b2;
     signed int in_window = rlc_um_in_window(rlcP, rlcP->vr_uh - UM_WINDOW_SIZE_SN_10_BITS, sn, rlcP->vr_ur);
 
     if ((in_window == 1) || (in_window == 0)){
