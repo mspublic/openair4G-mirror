@@ -22,7 +22,7 @@
 #            endif
 #        endif
 private_rlc_um_dar(  int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP));
-private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, u16_t snP));
+private_rlc_um_dar(  void rlc_um_try_reassembly      (rlc_um_entity_t *rlcP, signed int snP));
 private_rlc_um_dar(  void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP));
 private_rlc_um_dar(  mem_block_t *rlc_um_remove_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP));
 private_rlc_um_dar(  inline mem_block_t* rlc_um_get_pdu_from_dar_buffer(rlc_um_entity_t *rlcP, u16_t snP));

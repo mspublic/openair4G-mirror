@@ -110,7 +110,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 test_pdu_remaining_size = 0;
                 test_remaining_size_to_substract = 0;
                 test_remaining_num_li_to_substract = 0;
-                pdu_remaining_size = pdu_remaining_size - 2;
+                pdu_remaining_size = pdu_remaining_size - (test_li_length_in_bytes ^ 3);
             } else if ((sdu_mngt->sdu_remaining_size + (test_li_length_in_bytes ^ 3)) < test_pdu_remaining_size ) {
                 test_num_li += 1;
                 num_fill_sdu += 1;
@@ -120,6 +120,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
             } else {
                 assert(0==0);
+                assert(0!=0);
                 // reduce the size of the PDU
                 continue_fill_pdu_with_sdu = 0;
                 test_pdu_remaining_size = test_pdu_remaining_size - sdu_mngt->sdu_remaining_size;
@@ -203,14 +204,17 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 if (li_length_in_bytes  == 2) {
                     if (fill_num_li == test_num_li) {
                         //e_li->e1  = 0;
-                        e_li->b1 = e_li->b1 & 0x7F;
+                        e_li->b1 = 0;
                     } else {
                         //e_li->e1  = 1;
-                        e_li->b1 = e_li->b1 | 0x80;                    
+                        e_li->b1 =  0x80;                    
                     }
                     //e_li->li1 = sdu_mngt->sdu_remaining_size;
-                    e_li->b1 = e_li->b1 | sdu_mngt->sdu_remaining_size >> 4;
+                    e_li->b1 = e_li->b1 | (sdu_mngt->sdu_remaining_size >> 4);
                     e_li->b2 = sdu_mngt->sdu_remaining_size << 4;
+#ifdef RLC_UM_SEGMENT
+                    msg ("[RLC_UM][MOD %d][RB %d] SEGMENT set e_li->b1=%02X set e_li->b2=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, e_li->b1, e_li->b2, fill_num_li, test_num_li);
+#endif
                 } else {
                     if (fill_num_li != test_num_li) {
                         //e_li->e2  = 1;
@@ -219,6 +223,9 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                     //e_li->li2 = sdu_mngt->sdu_remaining_size;
                     e_li->b2 = e_li->b2 | (sdu_mngt->sdu_remaining_size >> 8);
                     e_li->b3 = sdu_mngt->sdu_remaining_size & 0xFF;
+#ifdef RLC_UM_SEGMENT
+                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT set e_li->b2=%02X set e_li->b3=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, e_li->b2, e_li->b3, fill_num_li, test_num_li);
+#endif
                     e_li++;
                 }
 

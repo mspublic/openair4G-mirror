@@ -57,7 +57,11 @@ typedef struct rlc_um_entity {
   //*****************************************************************************
   u8_t              sn_length;
   u8_t              header_min_length_in_bytes;
+  signed int        sn_modulo;
+  signed int        um_window_size;
 
+  #define           UM_SN_10_BITS_MODULO      1024
+  #define           UM_SN_5_BITS_MODULO       32
   #define           UM_WINDOW_SIZE_SN_10_BITS 512
   #define           UM_WINDOW_SIZE_SN_5_BITS  16
   // This constant is used by the receiving UM RLC entity to define SNs of those
@@ -80,8 +84,6 @@ typedef struct rlc_um_entity {
   u16_t             current_sdu_index;
 
   u32_t             buffer_occupancy;
-  u16_t             data_pdu_size;
-  //u16_t             data_pdu_size_in_bits;
 
   //u16_t             nb_pdu_requested_by_mac;
   u32_t             nb_bytes_requested_by_mac;
@@ -115,9 +117,11 @@ typedef struct rlc_um_entity {
 
   list_t          pdus_from_mac_layer;
 
-  u8_t              last_reassemblied_sn:7;
+  //u8_t              last_reassemblied_sn:7;
   u16_t              rb_id;
-
+  u16_t              last_reassemblied_sn;
+  u16_t              last_reassemblied_missing_sn;
+  u16_t              reassembly_missing_sn_detected;
 
   //-----------------------------
   // STATISTICS

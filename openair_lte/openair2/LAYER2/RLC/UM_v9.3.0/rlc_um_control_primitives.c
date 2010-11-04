@@ -22,7 +22,7 @@ config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t 
   ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.stop = 0;
   ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.cont = 1;
 
-  ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.frame_tick_milliseconds = &Mac_rlc_xface->frame;
+  ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.frame_tick_milliseconds = &mac_xface->frame;
   ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.size_input_sdus_buffer = 256;
   ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.rb_id = rb_idP;
   send_rlc_um_control_primitive (rlcP, module_idP, mb);
@@ -103,7 +103,7 @@ init_rlc_um (rlc_um_entity_t *rlcP)
 
   rlcP->sn_length          = 10;
   rlcP->header_min_length_in_bytes = 2;
-  rlcP->data_pdu_size      = 0;
+
 
   rlcP->tx_pdcp_sdu                 = 0;
   rlcP->tx_pdcp_sdu_discarded       = 0;
@@ -122,6 +122,9 @@ rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
   rlcP->nb_sdu = 0;
   rlcP->next_sdu_index = 0;
   rlcP->current_sdu_index = 0;
+  
+  rlcP->last_reassemblied_sn = 0;
+  //rlcP->reassembly_missing_pdu_detected = 0;
 
   // TX SIDE
   rlcP->vt_us = 0;
@@ -169,11 +172,15 @@ rlc_um_set_configured_parameters (rlc_um_entity_t *rlcP, mem_block_t *cprimitive
 {
 //-----------------------------------------------------------------------------
   rlcP->sn_length          = 10;
+  rlcP->sn_modulo          = UM_SN_10_BITS_MODULO;
+  rlcP->um_window_size     = UM_WINDOW_SIZE_SN_10_BITS;
   rlcP->header_min_length_in_bytes = 2;
-  rlcP->data_pdu_size      = 0;
+  
+  rlcP->last_reassemblied_missing_sn = rlcP->sn_modulo - 1;
+  rlcP->reassembly_missing_sn_detected = 0;
   // timers
   rlcP->timer_reordering         = 0;
-  rlcP->timer_reordering_init    = 15;
+  rlcP->timer_reordering_init    = 20000;
   rlcP->timer_reordering_running = 0;
   // SPARE : not 3GPP
   rlcP->frame_tick_milliseconds = ((struct crlc_primitive *)

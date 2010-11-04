@@ -188,7 +188,7 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
-    if ((mac_xface->frame % 10) == 0) {
+    if ((mac_xface->frame % 30) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
     }
     if ((mac_xface->frame % 4) == 0) {
@@ -248,7 +248,7 @@ rlc_um_mac_data_request (void *rlcP)
 #endif
 
 #ifdef DEBUG_RLC_UM_MAC_DATA_REQUEST
-    msg ("[RLC_UM][MOD %d][RB %d] TTI %d: MAC_DATA_REQUEST %d TBs\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, Mac_rlc_xface->frame, data_req.data.nb_elements);
+    msg ("[RLC_UM][MOD %d][RB %d] TTI %d: MAC_DATA_REQUEST %d TBs\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, data_req.data.nb_elements);
 #endif
   data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (data_req.buffer_occupancy_in_bytes > 0) {
