@@ -378,7 +378,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 
 
     printf("copying TB0 : harq_pid %d, TBS %d (rnti %x, UE_index %d)\n",harq_pid,dlsch_ue->harq_processes[harq_pid]->TBS>>3,
-	   dlsch_ue->rnti,find_ue((s16)dlsch_ue->rnti,PHY_vars_eNb_g[eNB_id]));
+	   (s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id]));
     memcpy(dlsch_ue->harq_processes[harq_pid]->b,dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   case 3: // TB1

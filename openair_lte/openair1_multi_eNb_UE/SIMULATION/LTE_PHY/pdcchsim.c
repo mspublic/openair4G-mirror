@@ -307,7 +307,10 @@ int main(int argc, char **argv) {
 	  dci_length = sizeof_DCI2_5MHz_4A_M10PRB_TDD_t;
 	  break;
 	default:
-	  
+	  break;
+	}
+	break;
+      case 'h':  
 	  printf("%s -h(elp) -a(wgn on) -n n_frames -r RiceanFactor -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant -L AggregLevelUEspec -M AggregLevelCommonDCI -N DCIFormat\n\n",argv[0]);
 	  printf("-h This message\n");
 	  printf("-a Use AWGN channel and not multipath\n");
@@ -338,9 +341,9 @@ int main(int argc, char **argv) {
 	  printf("                          14 - format2_4A_M10PRB\n");  
 	  exit(1);
 	  break;
-	}
       }
   }
+
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag);
 
