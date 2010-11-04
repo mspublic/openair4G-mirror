@@ -119,12 +119,14 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 test_remaining_num_li_to_substract = 1;
                 test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
             } else {
-                assert(0==0);
-                assert(0!=0);
+                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT sdu_mngt->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n", rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, test_pdu_remaining_size, test_li_length_in_bytes ^ 3);
                 // reduce the size of the PDU
                 continue_fill_pdu_with_sdu = 0;
-                test_pdu_remaining_size = test_pdu_remaining_size - sdu_mngt->sdu_remaining_size;
-                pdu_remaining_size = pdu_remaining_size - test_pdu_remaining_size;
+                num_fill_sdu += 1;
+                test_pdu_remaining_size = 0;
+                test_remaining_size_to_substract = 0;
+                test_remaining_num_li_to_substract = 0;
+                pdu_remaining_size = pdu_remaining_size - 1;
             }
             sdu_buffer_index = (sdu_buffer_index + 1) % rlcP->size_input_sdus_buffer;
         }
@@ -241,7 +243,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
 #ifdef RLC_UM_SEGMENT
                 msg ("[RLC_UM][MOD %d][RB %d] SEGMENT Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n", rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, pdu_remaining_size - sdu_mngt->sdu_remaining_size);
 #endif
-                assert(1==1);
+                assert(1!=1);
                 memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
                 // free SDU
                 rlcP->buffer_occupancy -= sdu_mngt->sdu_remaining_size;

@@ -31,9 +31,5 @@
 #define voip_sdu  "Nos tests montrent que le nouveau Toshiba MK7559GSXP, un disque dur de 750 Go"
 #define very_small_sdu "NoS tEsTs MoNtReNt"
 
-//protected_rlc_um_very_simple_test(char* tcip_sdu);
-//protected_rlc_um_very_simple_test(char* voip_sdu);
-//protected_rlc_um_very_simple_test(char* very_small_sdu);
-
 public_rlc_um_very_simple_test(void rlc_um_test_send_sdu (rlc_um_entity_t* rlcP,  unsigned int sdu_typeP));
 #    endif

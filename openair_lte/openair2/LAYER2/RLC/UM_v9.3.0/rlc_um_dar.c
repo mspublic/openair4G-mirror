@@ -137,13 +137,12 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             // one whole segment of SDU in PDU
                             rlc_um_reassembly (data, size, rlcP);
                         } else {
-                            assert(2 == 2);
                             rlcP->reassembly_missing_sn_detected = 1; // not necessary but for readability of the code
                         }
 
                         break;
                     default:
-                        assert(0 == 0);
+                        assert(0 != 0);
                 }
             } else {
                 if (rlc_um_read_length_indicators(&data, e_li, li_array, &num_li, &size ) >= 0) {
@@ -247,12 +246,12 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                                 // data is already ok, done by last loop above
                                 rlc_um_reassembly (data, size, rlcP);
                             } else {
-                                assert (5==5);
+                                assert (5!=5);
                             }
                             rlcP->reassembly_missing_sn_detected = 0;
                             break;
                         default:
-                            assert(1 == 1);
+                            assert(1 != 1);
                             rlcP->reassembly_missing_sn_detected = 1;
                     }
                 }
@@ -269,6 +268,9 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
             continue_reassembly = 0;
         }
     }
+#ifdef DEBUG_RLC_UM_RX
+    msg ("[RLC_UM][MOD %d][RB %d] TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ur, rlcP->vr_ux,rlcP->vr_uh);
+#endif
 }
 //-----------------------------------------------------------------------------
 void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP) {
