@@ -541,6 +541,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
 
 
   for (UE_id=0;UE_id<NB_CNX_CH;UE_id++) {
+    sdu_length_total=0;
+    num_sdus=0;
     rnti = CH_mac_inst[Mod_id].UE_template[UE_id].rnti;
     if (rnti>0) {
       // This is an allocated UE_id
@@ -658,6 +660,7 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       // check for DTCH (later) and update header information
       // check first for RLC data on DCCH
       header_len = 3; // 2 bytes DTCH SDU subheader
+
       rlc_status = mac_rlc_status_ind(Mod_id,DTCH+(MAX_NUM_RB*UE_id),
 				      0,
 				      TBS-header_len-sdu_length_total-header_len);
