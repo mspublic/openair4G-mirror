@@ -644,6 +644,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,unsigned char last_slot, PHY_VARS_UE *phy_
     rx_pdcch(&phy_vars_ue->lte_ue_common_vars,
 	     phy_vars_ue->lte_ue_pdcch_vars,
 	     &phy_vars_ue->lte_frame_parms,
+	     last_slot>>1,
 	     eNB_id,
 	     (phy_vars_ue->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 	     phy_vars_ue->is_secondary_ue); 
