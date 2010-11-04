@@ -149,6 +149,13 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 				      DCCH_LCHAN_DESC.transport_block_size,
 				      rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
 				      NULL);
+    }else if (rx_lcids[i] == DTCH) {
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+				      DTCH,
+				      (u8 *)payload_ptr,
+				      rx_lengths[i],
+				      1,
+				      NULL);
     }
     payload_ptr+=rx_lengths[i];
   }
