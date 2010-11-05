@@ -24,7 +24,7 @@ plot_results_cat
 
 %% results from quick post processing (modem throughput)
 pathname = '/media/disk/PENNE/Mode1/results';
-%plot_results_UE_quick
+plot_results_UE_quick
 plot_results_eNb_quick
 
 %%

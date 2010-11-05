@@ -307,3 +307,25 @@ xlabel('RX RSSI [dBm]');
 ylabel('Service (%)');
 title('DL Service Coverage (PBCH)');
 saveas(h_fig,fullfile(pathname,'service_coverage_dl_rx_rssi.eps'),'epsc2');
+
+%% UL service coverage vs RX_RSSI
+h_fig = h_fig+1;    
+h_fig = figure(h_fig);
+hold off
+%edges = -95:1:-55;
+edges = -100:3:-30;
+d1 = rx_rssi_dBm_cat(UE_connected,1);
+n1 = histc(d1,edges);
+n2 = histc(rx_rssi_dBm_cat(:,1),edges);
+midpoints = (edges(1:end-1) + edges(2:end))/2;
+plot(midpoints,n1(1:end-1)./n2(1:end-1)*100,'Linewidth',2);
+for i=1:length(midpoints)
+    text(midpoints(i),0,sprintf(' %d',n2(i)), 'HorizontalAlignment','left','VerticalAlignment','middle','Rotation',90);
+end
+xlim([edges(1),edges(end)])
+ylim([0, 100]);
+xlabel('RX RSSI [dBm]');
+ylabel('Service (%)');
+title('UL Service Coverage (ULSCH)');
+saveas(h_fig,fullfile(pathname,'service_coverage_ul_rx_rssi.eps'),'epsc2');
+

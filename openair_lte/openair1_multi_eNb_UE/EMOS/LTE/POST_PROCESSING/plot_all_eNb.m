@@ -8,14 +8,14 @@ clear all
 
 % in the following two lines set the root path and select the subfolders
 % you want to plot
-root_path = '/emos/AMBIALET/Mode2';
-d = dir(fullfile(root_path, '*MODE2*'));
+root_path = '/emos/PENNE/Mode2';
+d = dir(fullfile(root_path, '*VTP*'));
 dir_names = {d.name};
 
 % set to the output directory
-pathname = '/emos/AMBIALET/Mode2/results';
+pathname = '/emos/PENNE/Mode2/results';
 
-mm='ambialet';
+mm='penne';
 decimation = 100;
 
 %%
@@ -59,4 +59,4 @@ end
 save(fullfile(pathname,'results_eNB.mat'),nn{:});
 
 h_fig = 0;
-plot_results_eNb_quick
+%plot_results_eNb_quick

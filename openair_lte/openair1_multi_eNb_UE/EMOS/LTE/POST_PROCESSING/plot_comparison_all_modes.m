@@ -8,10 +8,10 @@ addpath('~/Devel/matlab/IPDM')
 
 % pathname = '/media/disk/PENNE/';
 % mm = 'penne';
-% pathname = '/emos/AMBIALET/';
-% mm = 'ambialet';
-pathname = '/emos/EMOS/';
-mm = 'cordes';
+pathname = '/emos/AMBIALET/';
+mm = 'ambialet';
+%pathname = '/emos/EMOS/';
+%mm = 'cordes';
 
 %%
 mode1 = load(fullfile(pathname,'Mode1/results/results_UE.mat'));
@@ -294,6 +294,33 @@ plot_in_bins(10*log10(mean(mode2_ideal.K_fac_cat,1)),mode2.throughput,-20:3:30);
 xlabel('Ricean K-Factor [dB]')
 ylabel('Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'Mode2','results','throughput_vs_Kfactor.eps'),'epsc2')
+
+%% Kfactor vs UL throughput
+h_fig = h_fig + 1;
+figure(h_fig)
+mode2_ul.K_fac_cat = reshape(mode2_ul.K_fac_cat,4,[]);
+mode2_ul.K_fac_cat(:,~mode2_ul.eNB_connected) = nan;
+plot_in_bins(10*log10(mean(mode2_ul.K_fac_cat,1)),mode2_ul.ulsch_throughput,-20:3:30);
+xlabel('Ricean K-Factor [dB]')
+ylabel('Throughput [bps]')
+saveas(h_fig,fullfile(pathname,'Mode2','results','throughput_vs_Kfactor_ul.eps'),'epsc2')
+
+%% Kfactor vs UL throughput
+h_fig = h_fig + 1;
+figure(h_fig)
+plot_in_bins(10*log10(mean(mode2_ul.K_fac_cat,1)),mode2_ul.ulsch_throughput_ideal_1Rx,-20:3:30);
+xlabel('Ricean K-Factor [dB]')
+ylabel('Throughput [bps]')
+saveas(h_fig,fullfile(pathname,'Mode2','results','throughput_vs_Kfactor_ul_ideal_1Rx.eps'),'epsc2')
+
+%% Kfactor vs UL throughput
+h_fig = h_fig + 1;
+figure(h_fig)
+plot_in_bins(10*log10(mean(mode2_ul.K_fac_cat,1)),mode2_ul.ulsch_throughput_ideal_2Rx,-20:3:30);
+xlabel('Ricean K-Factor [dB]')
+ylabel('Throughput [bps]')
+saveas(h_fig,fullfile(pathname,'Mode2','results','throughput_vs_Kfactor_ul_ideal_2Rx.eps'),'epsc2')
+
 
 % %% Coded throughput CDF comparison (when connected)
 % mode1.throughput(~mode1.UE_connected | ~mode1.good) = nan;

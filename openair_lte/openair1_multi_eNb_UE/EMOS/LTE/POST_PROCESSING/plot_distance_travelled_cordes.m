@@ -248,7 +248,7 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.rx_rssi_dBm_cat(select6,1),'g')
 ylim([-110 -30]);
-legend('Mode1','Mode2','Mode6')
+legend('Mode1','Mode2')
 xlabel('Distance travelled [km]')
 ylabel('RX RSSI [dBm]')
 saveas(h_fig,fullfile(pathname,'all_modes_comparison3_rssi_dBm.eps'),'epsc2');
@@ -273,7 +273,7 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.throughput(select6,1),'g')
 ylim([0 8.64e6]);
-legend('Mode1','Mode2','Mode6')
+legend('Mode1','Mode2')
 xlabel('Distance travelled [km]')
 ylabel('Throughput [bps]')
 saveas(h_fig,fullfile(pathname,'all_modes_comparison3_troughput_distance_travelled.eps'),'epsc2');
@@ -292,7 +292,7 @@ plot(mode2_update.dist_travelled(select2_update)-mode2_update.dist_travelled(sel
     mode2_update.pbch_fer_cat(select2_update,1),'r');
 %plot(mode6.dist_travelled(select6)-mode6.dist_travelled(select6(1)), ...
 %    mode6.throughput(select6,1),'g')
-legend('Mode1','Mode2','Mode6')
+legend('Mode1','Mode2')
 xlabel('Distance travelled [km]')
 ylabel('PBCH FER [bps]')
 saveas(h_fig,fullfile(pathname,'all_modes_comparison3_pbch_fer_distance_travelled.eps'),'epsc2');

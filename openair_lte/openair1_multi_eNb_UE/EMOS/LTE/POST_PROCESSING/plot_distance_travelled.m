@@ -103,7 +103,7 @@ plot(mode2.dist_travelled(index2)-mode2.dist_travelled(index2(1)),...
 %    mode6.throughput(index6,1),'g')
 
 
-legend('Mode1','Mode2')
+legend('Mode1','Mode2/6')
 xlabel('Distance travelled [km]')
 ylabel('PBCH FER [bps]')
 saveas(h_fig,fullfile(pathname,'results',sprintf('all_modes_comparison%d_pbch_fer_distance_travelled.eps',file_id)),'epsc2');

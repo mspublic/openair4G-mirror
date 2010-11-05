@@ -1,4 +1,4 @@
-function [Ratepersec_4Qam_MUMIMO_1stRx,Ratepersec_4Qam_MUMIMO_2ndRx,Ratepersec_4Qam_MUMIMO_2Rx] = ...
+function [Ratepersec_4Qam_MUMIMO] = ...
         calc_rps_mu_mimo(estimates_UE)
     
 % this function calculates the MU-MIMO rate of the two users
@@ -8,6 +8,4 @@ function [Ratepersec_4Qam_MUMIMO_1stRx,Ratepersec_4Qam_MUMIMO_2ndRx,Ratepersec_4
 % with the higher capacity
 
 
-Ratepersec_4Qam_MUMIMO_1stRx = 0;
-Ratepersec_4Qam_MUMIMO_2ndRx = 0;
-Ratepersec_4Qam_MUMIMO_2Rx = 0;
+Ratepersec_4Qam_MUMIMO = 0;

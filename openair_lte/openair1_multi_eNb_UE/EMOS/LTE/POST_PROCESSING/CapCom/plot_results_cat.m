@@ -47,6 +47,16 @@ plot_gps_coordinates(mm, [gps_data_cat.longitude], [gps_data_cat.latitude], 10*l
 title('K_factor [dB]')
 saveas(h_fig,fullfile(pathname,'K_factor_gps.jpg'),'jpg');
 
+in=in+1;
+h_fig = figure(in);
+hold off
+plot(10*log10(mean(K_fac_cat,1)));
+xlabel('Time [sec]')
+ylabel('K_factor [dB]')
+plot(timebase_cuts,0,'k^','Markersize',10,'Linewidth',2)
+saveas(h_fig,fullfile(pathname,'K_factor_time.eps'),'epsc2');
+
+
 %% plot coded throughput as CDFs
 in = in+1;    
 h_fig = figure(in);

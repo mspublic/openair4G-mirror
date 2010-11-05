@@ -1,5 +1,11 @@
-pathname = '/emos/EMOS/';
-mm = 'cordes';
+clear all
+close all
+
+%%
+% pathname = '/emos/EMOS/';
+% mm = 'cordes';
+pathname = '/emos/AMBIALET/';
+mm = 'ambialet';
 mode2_ideal = load(fullfile(pathname,'/Mode2/results/results_cat_UE.mat'));
 mode2 = load(fullfile(pathname,'/Mode2/results/results_UE.mat'));
 

@@ -203,8 +203,7 @@ while (any(~feof_vec(fid)) && (k <= min([NFrames_file,NFrames_max])))
     end %NFiles
     
     % do MU-MIMO processing
-    [Ratepersec_4Qam_MUMIMO_1stRx(sec),Ratepersec_4Qam_MUMIMO_2ndRx(sec),Ratepersec_4Qam_MUMIMO_2Rx(sec)] = ...
-        calc_rps_mu_mimo(estimates_tmp);
+    [Ratepersec_4Qam_MUMIMO(sec)] = calc_rps_mu_mimo(estimates_tmp);
     
 end %while
     
@@ -226,20 +225,11 @@ if (is_eNb)
     SNR.siso_2Rx = siso_SNR_2Rx;
 else
     
-    throughput.rateps_MUMIMO_4Qam_eNB1_1stRx = Ratepersec_4Qam_MUMIMO_1stRx;
-    throughput.rateps_MUMIMO_16Qam_eNB1_1stRx = Ratepersec_16Qam_MUMIMO_1stRx;
-    throughput.rateps_MUMIMO_64Qam_eNB1_1stRx = Ratepersec_64Qam_MUMIMO_1stRx;
-    throughput.rateps_MUMIMO_supportedQam_eNB1_1stRx = Ratepersec_supportedQam_MUMIMO_1stRx;
+    throughput.rateps_MUMIMO_4Qam = Ratepersec_4Qam_MUMIMO;
+    throughput.rateps_MUMIMO_16Qam = Ratepersec_16Qam_MUMIMO;
+    throughput.rateps_MUMIMO_64Qam = Ratepersec_64Qam_MUMIMO;
+    throughput.rateps_MUMIMO_supportedQam = Ratepersec_supportedQam_MUMIMO;
     
-    throughput.rateps_MUMIMO_4Qam_eNB1_2ndRx = Ratepersec_4Qam_MUMIMO_2ndRx;
-    throughput.rateps_MUMIMO_16Qam_eNB1_2ndRx = Ratepersec_16Qam_MUMIMO_2ndRx;
-    throughput.rateps_MUMIMO_64Qam_eNB1_2ndRx = Ratepersec_64Qam_MUMIMO_2ndRx;
-    throughput.rateps_MUMIMO_supportedQam_eNB1_2ndRx = Ratepersec_supportedQam_MUMIMO_2ndRx;
-    
-    throughput.rateps_MUMIMO_4Qam_eNB1_2Rx = Ratepersec_4Qam_MUMIMO_2Rx;
-    throughput.rateps_MUMIMO_16Qam_eNB1_2Rx = Ratepersec_16Qam_MUMIMO_2Rx;
-    throughput.rateps_MUMIMO_64Qam_eNB1_2Rx = Ratepersec_64Qam_MUMIMO_2Rx;
-    throughput.rateps_MUMIMO_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_MUMIMO_2Rx;    
 end
 end
 
