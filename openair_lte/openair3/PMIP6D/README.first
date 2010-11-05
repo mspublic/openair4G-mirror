@@ -43,8 +43,9 @@ The content of this readme is the following:
 
   1) What is this block about in OpenAirInterface
   2) Folders and files description
-  3) Hardware requirement and How to build PMIP6D
-  4) How to run a simple experimentation
+  3) Organization of the folders and their dependencies
+  4) Hardware requirement and How to build PMIP6D
+  5) How to run a simple experimentation
 
 ------------------------------------------------
 1) What is this block about in OpenAirInterface ?
@@ -78,7 +79,7 @@ The content of this readme is the following:
     
 
 ----------------------------------------------------
-3) Organization of the folders and their dependancies
+3) Organization of the folders and their dependencies
 ----------------------------------------------------
 
      The 3 folders have the following structures
@@ -134,3 +135,4 @@ The content of this readme is the following:
 	On MAG1 execute -> pmip6d -m -i -L 2001:100::1 -N 2001:1::3 -E 2001:100::2
 	On MAG2 execute -> pmip6d -m -i -L 2001:100::1 -N 2001:1::2 -E 2001:100::3
 
+	See the JPEG file called "PMIPv6_schema_example_1LMA_2MRs.jpg" in the "images" directory.

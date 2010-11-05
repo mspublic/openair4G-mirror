@@ -40,19 +40,19 @@ Table of contents
 
 The content of this readme is the following:
 
-	X) System requirements
+	0) System requirements
 	1) Installation of SYSLOGs Servers on MAGs
 	2) Miscallaneous commands to execute
-	X) PMIP6D
+	3) PMIP6D Compilation
 	
 -----------------------------------------
-X. System Requirements
+0) System Requirements
 -----------------------------------------
 
 	UBUNTU linux distribution is a mandatory environment to run PMIP6D.
 		
 -----------------------------------------
-1. Installation of SYSLOGs Servers on MAGs
+1) Installation of SYSLOGs Servers on MAGs
 -----------------------------------------
 
 	1.1) Each MAG machine has to run a SYSLOG Server on it.
@@ -75,7 +75,7 @@ X. System Requirements
 		Restart the Access Point afterwards.
 
 -----------------------------------------
-2) XXXXXXXXXXXXXXXXXXXX
+2) Miscallaneous commands to execute
 -----------------------------------------
 
 	2.1) On some UBUNTU versions, you might have a problem of "config.h file not found". A simple symbolic link is enough to avoid this error.
