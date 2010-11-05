@@ -6,6 +6,7 @@
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
+#include "MAC_INTERFACE/extern.h"
 
 #define RLC_UM_SEGMENT
 //-----------------------------------------------------------------------------
@@ -40,31 +41,31 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
     unsigned int       fi_last_byte_pdu_is_last_byte_sdu;
     unsigned int       fi;
 
-    msg ("[RLC_UM][MOD %d][RB %d] SEGMENT\n", rlcP->module_id, rlcP->rb_id);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
     list_init (&pdus, NULL);    // param string identifying the list is NULL
     pdu_mem = NULL;
 
     while ((rlcP->input_sdus[rlcP->current_sdu_index]) && (nb_bytes_to_transmit > 0)) {
-        msg ("[RLC_UM][MOD %d][RB %d] SEGMENT nb_bytes_to_transmit %d BO %d\n", rlcP->module_id, rlcP->rb_id, nb_bytes_to_transmit, rlcP->buffer_occupancy);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT nb_bytes_to_transmit %d BO %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, nb_bytes_to_transmit, rlcP->buffer_occupancy);
         // pdu management
         if (!pdu_mem) {
             if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes)) {
                 data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes;
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, data_pdu_size);
 #endif
             } else {
                 data_pdu_size = nb_bytes_to_transmit;
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@1\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT alloc PDU size %d bytes to contain all bytes requested by MAC@1\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, data_pdu_size);
 #endif
             }
             if (!(pdu_mem = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT ERROR COULD NOT GET NEW PDU, EXIT\n", rlcP->module_id, rlcP->rb_id);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT ERROR COULD NOT GET NEW PDU, EXIT\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
                 return;
             }
 #ifdef RLC_UM_SEGMENT
-            msg ("[RLC_UM][MOD %d][RB %d] SEGMENT get new PDU %d bytes\n", rlcP->module_id, rlcP->rb_id, data_pdu_size);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT get new PDU %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, data_pdu_size);
 #endif
             pdu_remaining_size = data_pdu_size - 2;
             pdu        = (rlc_um_pdu_sn_10_t*) (&pdu_mem->data[sizeof(struct mac_tb_req)]);
@@ -119,7 +120,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 test_remaining_num_li_to_substract = 1;
                 test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
             } else {
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT sdu_mngt->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n", rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, test_pdu_remaining_size, test_li_length_in_bytes ^ 3);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT sdu_mngt->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt->sdu_remaining_size, test_pdu_remaining_size, test_li_length_in_bytes ^ 3);
                 // reduce the size of the PDU
                 continue_fill_pdu_with_sdu = 0;
                 num_fill_sdu += 1;
@@ -138,7 +139,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         //----------------------------------------
         // Do the real filling of the pdu
         //----------------------------------------
-        msg ("[RLC_UM][MOD %d][RB %d] data shift %d Bytes num_li %d\n", rlcP->module_id, rlcP->rb_id, ((test_num_li*3) +1) >> 1, test_num_li);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] data shift %d Bytes num_li %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, ((test_num_li*3) +1) >> 1, test_num_li);
 
         data = ((char*)(&pdu->data[((test_num_li*3) +1) >> 1]));
         e_li = (rlc_um_e_li_t*)(pdu->data);
@@ -157,18 +158,18 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
             sdu_mngt = ((struct rlc_um_tx_sdu_management *) (rlcP->input_sdus[rlcP->current_sdu_index]->data));
 #ifdef RLC_UM_SEGMENT
             if (sdu_mngt->sdu_segmented_size == 0) {
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT GET NEW SDU %p AVAILABLE SIZE %d Bytes\n", rlcP->module_id, rlcP->rb_id, sdu_mngt, sdu_mngt->sdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT GET NEW SDU %p AVAILABLE SIZE %d Bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt, sdu_mngt->sdu_remaining_size);
             } else {
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT GET AGAIN SDU %p REMAINING AVAILABLE SIZE %d Bytes / %d Bytes \n", rlcP->module_id, rlcP->rb_id, sdu_mngt, sdu_mngt->sdu_remaining_size, sdu_mngt->sdu_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT GET AGAIN SDU %p REMAINING AVAILABLE SIZE %d Bytes / %d Bytes \n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt, sdu_mngt->sdu_remaining_size, sdu_mngt->sdu_size);
             }
 #endif
             data_sdu = &((rlcP->input_sdus[rlcP->current_sdu_index])->data[sizeof (struct rlc_um_tx_sdu_management) + sdu_mngt->sdu_segmented_size]);
 
             if (sdu_mngt->sdu_remaining_size > pdu_remaining_size) {
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT Filling all remaining PDU with %d bytes\n", rlcP->module_id, rlcP->rb_id, pdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT Filling all remaining PDU with %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, pdu_remaining_size);
 #endif
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT pdu_mem %p pdu %p pdu->data %p data %p data_sdu %p pdu_remaining_size %d\n", rlcP->module_id, rlcP->rb_id, pdu_mem, pdu, pdu->data, data, data_sdu,pdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT pdu_mem %p pdu %p pdu->data %p data %p data_sdu %p pdu_remaining_size %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, pdu_mem, pdu, pdu->data, data, data_sdu,pdu_remaining_size);
 
                 memcpy(data, data_sdu, pdu_remaining_size);
                 sdu_mngt->sdu_remaining_size = sdu_mngt->sdu_remaining_size - pdu_remaining_size;
@@ -180,7 +181,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 pdu_remaining_size = 0;
             } else if (sdu_mngt->sdu_remaining_size == pdu_remaining_size) {
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT Exactly Filling remaining PDU with %d remaining bytes of SDU\n", rlcP->module_id, rlcP->rb_id, pdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT Exactly Filling remaining PDU with %d remaining bytes of SDU\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, pdu_remaining_size);
 #endif
                 memcpy(data, data_sdu, pdu_remaining_size);
 
@@ -197,7 +198,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 pdu_remaining_size = 0;
             } else if ((sdu_mngt->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT Filling  PDU with %d all remaining bytes of SDU\n", rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT Filling  PDU with %d all remaining bytes of SDU\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt->sdu_remaining_size);
 #endif
                 memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
                 data = &data[sdu_mngt->sdu_remaining_size];
@@ -215,7 +216,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                     e_li->b1 = e_li->b1 | (sdu_mngt->sdu_remaining_size >> 4);
                     e_li->b2 = sdu_mngt->sdu_remaining_size << 4;
 #ifdef RLC_UM_SEGMENT
-                    msg ("[RLC_UM][MOD %d][RB %d] SEGMENT set e_li->b1=%02X set e_li->b2=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, e_li->b1, e_li->b2, fill_num_li, test_num_li);
+                    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT set e_li->b1=%02X set e_li->b2=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, e_li->b1, e_li->b2, fill_num_li, test_num_li);
 #endif
                 } else {
                     if (fill_num_li != test_num_li) {
@@ -226,7 +227,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                     e_li->b2 = e_li->b2 | (sdu_mngt->sdu_remaining_size >> 8);
                     e_li->b3 = sdu_mngt->sdu_remaining_size & 0xFF;
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT set e_li->b2=%02X set e_li->b3=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, e_li->b2, e_li->b3, fill_num_li, test_num_li);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT set e_li->b2=%02X set e_li->b3=%02X fill_num_li=%d test_num_li=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, e_li->b2, e_li->b3, fill_num_li, test_num_li);
 #endif
                     e_li++;
                 }
@@ -241,7 +242,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                 pdu_remaining_size = pdu_remaining_size - (sdu_mngt->sdu_remaining_size + li_length_in_bytes);
             } else {
 #ifdef RLC_UM_SEGMENT
-                msg ("[RLC_UM][MOD %d][RB %d] SEGMENT Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n", rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, pdu_remaining_size - sdu_mngt->sdu_remaining_size);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt->sdu_remaining_size, pdu_remaining_size - sdu_mngt->sdu_remaining_size);
 #endif
                 assert(1!=1);
                 memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);

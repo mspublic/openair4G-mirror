@@ -71,7 +71,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
     if (snP < 0) snP = snP + rlcP->sn_modulo;
     
 #ifdef DEBUG_RLC_UM_RX
-    msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, rlcP->last_reassemblied_sn, snP);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->last_reassemblied_sn, snP);
 #endif
 
     continue_reassembly = 1;
@@ -81,7 +81,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
         if ((pdu_mem = rlcP->dar_buffer[sn])) {
             rlcP->last_reassemblied_sn = sn;
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, sn);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn);
 #endif
             tb_ind = (struct mac_tb_ind *)(pdu_mem->data);
             if (rlcP->sn_length == 10) {
@@ -101,7 +101,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                 switch (fi) {
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id);
+                        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=11 (00)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
 #endif
                         // one complete SDU
                         rlc_um_send_sdu(rlcP); // may be not necessary
@@ -111,7 +111,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id);
+                        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=10 (01)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
 #endif
                         // one beginning segment of SDU in PDU
                         rlc_um_send_sdu(rlcP); // may be not necessary
@@ -120,7 +120,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU NO E_LI FI=01 (10)\n", rlcP->module_id, rlcP->rb_id);
+                        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=01 (10)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
 #endif
                         // one last segment of SDU
                         if (rlcP->reassembly_missing_sn_detected == 0) {
@@ -131,7 +131,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                         break;
                     case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                        msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU NO E_LI FI=00 (11)\n", rlcP->module_id, rlcP->rb_id);
+                        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU NO E_LI FI=00 (11)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
 #endif
                         if (rlcP->reassembly_missing_sn_detected == 0) {
                             // one whole segment of SDU in PDU
@@ -149,7 +149,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                     switch (fi) {
                         case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                            msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id);
+                            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=11 (00) Li=", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
                             for (i=0; i < num_li; i++) {
                                 msg("%d ",li_array[i]);
                             }
@@ -172,7 +172,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             break;
                         case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_PDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                            msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id);
+                            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=10 (01) Li=", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
                             for (i=0; i < num_li; i++) {
                                 msg("%d ",li_array[i]);
                             }
@@ -193,7 +193,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             break;
                         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                            msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id);
+                            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=01 (10) Li=", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
                             for (i=0; i < num_li; i++) {
                                 msg("%d ",li_array[i]);
                             }
@@ -221,7 +221,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             break;
                         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                            msg ("[RLC_UM][MOD %d][RB %d] TRY REASSEMBLY PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id);
+                            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY PDU FI=00 (11) Li=", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
                             for (i=0; i < num_li; i++) {
                                 msg("%d ",li_array[i]);
                             }
@@ -229,7 +229,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
 #endif
                             if (rlcP->reassembly_missing_sn_detected) { 
 #ifdef DEBUG_RLC_UM_RX_DECODE
-                                msg ("[RLC_UM][MOD %d][RB %d] DISCARD FIRST LI %d", rlcP->module_id, rlcP->rb_id, li_array[0]);
+                                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] DISCARD FIRST LI %d", rlcP->module_id, rlcP->rb_id, mac_xface->frame, li_array[0]);
 #endif
                                 reassembly_start_index = 1;
                                 data = &data[li_array[0]];
@@ -269,7 +269,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
         }
     }
 #ifdef DEBUG_RLC_UM_RX
-    msg ("[RLC_UM][MOD %d][RB %d] TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ur, rlcP->vr_ux,rlcP->vr_uh);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ur, rlcP->vr_ux,rlcP->vr_uh);
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -287,12 +287,12 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP) {
             //      -start t-Reordering;
             //      -set VR(UX) to VR(UH).
 #ifdef DEBUG_RLC_UM_RX
-            msg ("\n\n[RLC_UM][MOD %d][RB %d]*****************************************************\n", rlcP->module_id, rlcP->rb_id);
-            msg ("[RLC_UM][MOD %d][RB %d]*    T I M E  -  O U T                              *\n", rlcP->module_id, rlcP->rb_id);
-            msg ("[RLC_UM][MOD %d][RB %d]*****************************************************\n", rlcP->module_id, rlcP->rb_id);
-            msg ("[RLC_UM][MOD %d][RB %d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id);
-            msg ("[RLC_UM][MOD %d][RB %d] timer_reordering=%d frame=%d\n", rlcP->module_id, rlcP->rb_id, rlcP->timer_reordering, mac_xface->frame);
-            msg ("[RLC_UM][MOD %d][RB %d] set VR(UR)=%03d to", rlcP->module_id, rlcP->rb_id, rlcP->vr_ur);
+            msg ("\n\n[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]*    T I M E  -  O U T                              *\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]*****************************************************\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TIMER t-Reordering expiration\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] timer_reordering=%d frame=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->timer_reordering, mac_xface->frame);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] set VR(UR)=%03d to", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ur);
 #endif
             saved_sn = rlcP->vr_ur;
             rlcP->vr_ur = rlcP->vr_ux;
@@ -314,7 +314,7 @@ void rlc_um_check_timer_dar_time_out(rlc_um_entity_t *rlcP) {
                 rlcP->timer_reordering         = rlcP->timer_reordering_init;
                 rlcP->vr_ux = rlcP->vr_uh;
 #ifdef DEBUG_RLC_UM_RX
-                msg ("[RLC_UM][MOD %d][RB %d] restarting t-Reordering set VR(UX) to %d (VR(UH)>VR(UR))\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ux);
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] restarting t-Reordering set VR(UX) to %d (VR(UH)>VR(UR))\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ux);
 #endif
             }
         }
@@ -343,6 +343,9 @@ rlc_um_store_pdu_in_dar_buffer(rlc_um_entity_t *rlcP, mem_block_t *pduP, u16_t s
 {
 //-----------------------------------------------------------------------------
 
+#ifdef DEBUG_RLC_UM_RX
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] STORE PDU IN DAR BUFFER  SN=%03d  VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, snP, rlcP->vr_ur, rlcP->vr_ux, rlcP->vr_uh);
+#endif
     rlcP->dar_buffer[snP] = pduP;
 }
 //-----------------------------------------------------------------------------
@@ -367,31 +370,31 @@ inline signed int rlc_um_in_window(rlc_um_entity_t *rlcP, signed int lower_bound
 
     if ( lower_boundP > snP) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d not in WINDOW[%03d:%03d] (SN<LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d not in WINDOW[%03d:%03d] (SN<LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, lower_bound, higher_bound);
 #endif
         return -2;
     }
     if ( higher_boundP < snP) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d not in WINDOW[%03d:%03d] (SN>HIGHER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d not in WINDOW[%03d:%03d] (SN>HIGHER BOUND) <=> %d not in WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, lower_bound, higher_bound, snP, lower_boundP, higher_boundP);
 #endif
         return -1;
     }
     if ( lower_boundP == snP) {
         if ( higher_boundP == snP) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, lower_bound, higher_bound);
 #endif
             return 3;
         }
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d  in WINDOW[%03d:%03d] (SN=LOWER BOUND)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, lower_bound, higher_bound);
 #endif
         return 1;
     }
     if ( higher_boundP == snP) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND)\n", rlcP->module_id, rlcP->rb_id, sn, lower_bound, higher_bound);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, lower_bound, higher_bound);
 #endif
         return 2;
     }
@@ -410,13 +413,13 @@ signed int sn = snP;
     if ( 0 <= snP) {
         if (snP < rlcP->um_window_size) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, sn, modulus, rlcP->vr_uh);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, modulus, rlcP->vr_uh);
 #endif
             return 0;
         }
     }
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] %d NOT IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, sn, modulus, rlcP->vr_uh);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d NOT IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, modulus, rlcP->vr_uh);
 #endif
     return -1;
 }
@@ -451,7 +454,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
 
     if ((in_window == 1) || (in_window == 0)){
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] RX PDU  VR(UH) – UM_Window_Size) <= SN %d < VR(UR) -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, sn);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UH) – UM_Window_Size) <= SN %d < VR(UR) -> GARBAGE\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn);
 #endif
         //discard the PDU
         free_mem_block(pdu_memP);
@@ -462,7 +465,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
         in_window = rlc_um_in_window(rlcP, rlcP->vr_ur, sn, rlcP->vr_uh);
         if (in_window == 0){
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] RX PDU  VR(UR) < SN %d < VR(UH) and RECEIVED BEFORE-> GARBAGE\n", rlcP->module_id, rlcP->rb_id, sn);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  VR(UR) < SN %d < VR(UH) and RECEIVED BEFORE-> GARBAGE\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn);
 #endif
             //discard the PDU
             free_mem_block(pdu_memP);
@@ -484,7 +487,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
     //          -set VR(UR) to (VR(UH) – UM_Window_Size);
     if (rlc_um_in_reordering_window(rlcP, sn) < 0) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, sn, rlcP->vr_uh, rlcP->um_window_size);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, rlcP->vr_uh, rlcP->um_window_size);
 #endif
         rlcP->vr_uh = (sn + 1) % rlcP->sn_modulo;
 
@@ -496,7 +499,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
                 in_window = in_window + rlcP->sn_modulo;
             }
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n", rlcP->module_id, rlcP->rb_id, rlcP->vr_ur, in_window);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->vr_ur, in_window);
 #endif
             rlcP->vr_ur = in_window;
         }
@@ -526,7 +529,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
             in_window = rlc_um_in_reordering_window(rlcP, rlcP->vr_ux);
             if (in_window < 0) {
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux,rlcP->vr_uh);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->vr_ux,rlcP->vr_uh);
 #endif
                 rlcP->timer_reordering_running = 0;
                 rlcP->timer_reordering         = 0;
@@ -537,7 +540,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
         in_window = rlc_um_in_window(rlcP, rlcP->vr_ur,  rlcP->vr_ux,  rlcP->vr_uh);
         if ((in_window == -2) || (in_window == 1)) {
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux,rlcP->vr_uh);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->vr_ux,rlcP->vr_uh);
 #endif
             rlcP->timer_reordering_running = 0;
             rlcP->timer_reordering         = 0;
@@ -555,7 +558,7 @@ rlc_um_receive_process_dar (rlc_um_entity_t *rlcP, mem_block_t *pdu_memP,rlc_um_
             rlcP->timer_reordering         = rlcP->timer_reordering_init;
             rlcP->vr_ux = rlcP->vr_uh;
 #ifdef DEBUG_RLC_UM_RX
-            msg ("[RLC_UM][MOD %d][RB %d] RESTART t-Reordering set VR(UX) to VR(UH) =%d\n", rlcP->module_id, rlcP->rb_id,rlcP->vr_ux);
+            msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RESTART t-Reordering set VR(UX) to VR(UH) =%d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->vr_ux);
 #endif
         }
     }

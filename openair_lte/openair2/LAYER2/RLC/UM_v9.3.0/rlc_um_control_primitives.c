@@ -180,7 +180,7 @@ rlc_um_set_configured_parameters (rlc_um_entity_t *rlcP, mem_block_t *cprimitive
   rlcP->reassembly_missing_sn_detected = 0;
   // timers
   rlcP->timer_reordering         = 0;
-  rlcP->timer_reordering_init    = 200;
+  rlcP->timer_reordering_init    = 500;
   rlcP->timer_reordering_running = 0;
   // SPARE : not 3GPP
   rlcP->frame_tick_milliseconds = ((struct crlc_primitive *)

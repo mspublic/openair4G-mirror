@@ -108,7 +108,7 @@ rlc_um_get_pdus (void *argP)
         break;
 
       default:
-        msg ("[RLC_UM][MOD %d][RB %d] MAC_DATA_REQ UNKNOWN PROTOCOL STATE %02X hex\n", rlc->module_id, rlc->rb_id, rlc->protocol_state);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQ UNKNOWN PROTOCOL STATE %02X hex\n", rlc->module_id, rlc->rb_id, mac_xface->frame, rlc->protocol_state);
   }
 }
 
@@ -170,11 +170,11 @@ rlc_um_rx (void *argP, struct mac_data_ind data_indP)
         // - stays in the LOCAL_SUSPEND state;
         // - modifies only the protocol parameters and timers as indicated by
         //   upper layers.
-        msg ("[RLC_UM][MOD %d][RB %d] RLC_LOCAL_SUSPEND_STATE\n", rlc->module_id, rlc->rb_id);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_LOCAL_SUSPEND_STATE\n", rlc->module_id, rlc->rb_id, mac_xface->frame);
         break;
 
       default:
-        msg ("[RLC_UM][MOD %d][RB %d] TX UNKNOWN PROTOCOL STATE %02X hex\n", rlc->module_id, rlc->rb_id, rlc->protocol_state);
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TX UNKNOWN PROTOCOL STATE %02X hex\n", rlc->module_id, rlc->rb_id, mac_xface->frame, rlc->protocol_state);
   }
 }
 
@@ -188,13 +188,13 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
-    if ((mac_xface->frame % 30) == 0) {
+    if ((mac_xface->frame % 20) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
     }
-    if ((mac_xface->frame % 4) == 0) {
+    if ((mac_xface->frame % 4000) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_VOIP);
     }
-    if ((mac_xface->frame % 2) == 0) {
+    if ((mac_xface->frame % 4000) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_SMALL);
     }
 #endif
@@ -212,17 +212,17 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (status_resp.buffer_occupancy_in_bytes > 0) {
     status_resp.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
   }
-//msg("[RLC_UM][MOD %d][RB %d] MAC_STATUS_INDICATION BO = %d\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, status_resp.buffer_occupancy_in_bytes);
+//msg("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION BO = %d\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, status_resp.buffer_occupancy_in_bytes);
 
   status_resp.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
 #ifdef DEBUG_RLC_UM_TX_STATUS
   if (((rlc_um_entity_t *) rlcP)->rb_id > 0) {
-    msg ("[RLC_UM][MOD %d][RB %d] MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, tbs_sizeP, status_resp.buffer_occupancy_in_bytes);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, tbs_sizeP, status_resp.buffer_occupancy_in_bytes);
     if ((tx_statusP.tx_status == MAC_TX_STATUS_SUCCESSFUL) && (tx_statusP.no_pdu)) {
-      msg ("[RLC_UM][MOD %d][RB %d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n",((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, tx_statusP.no_pdu);
+      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION  TX STATUS   SUCCESSFUL %d PDUs\n",((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, tx_statusP.no_pdu);
     }
     if ((tx_statusP.tx_status == MAC_TX_STATUS_UNSUCCESSFUL) && (tx_statusP.no_pdu)) {
-      msg ("[RLC_UM][MOD %d][RB %d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n",((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, tx_statusP.no_pdu);
+      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_STATUS_INDICATION  TX STATUS UNSUCCESSFUL %d PDUs\n",((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, tx_statusP.no_pdu);
     }
   }
 #endif
@@ -248,7 +248,7 @@ rlc_um_mac_data_request (void *rlcP)
 #endif
 
 #ifdef DEBUG_RLC_UM_MAC_DATA_REQUEST
-    msg ("[RLC_UM][MOD %d][RB %d] TTI %d: MAC_DATA_REQUEST %d TBs\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, data_req.data.nb_elements);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] MAC_DATA_REQUEST %d TBs\n", ((rlc_um_entity_t *) rlcP)->module_id, ((rlc_um_entity_t *) rlcP)->rb_id, mac_xface->frame, data_req.data.nb_elements);
 #endif
   data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (data_req.buffer_occupancy_in_bytes > 0) {
@@ -272,19 +272,17 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
 {
 //-----------------------------------------------------------------------------
   rlc_um_entity_t *rlc = (rlc_um_entity_t *) rlcP;
-  u8_t              insert_sdu = 0;
-#ifdef DEBUG_RLC_UM_DISCARD_SDU
-  int             index;
-#endif
+
 #ifndef USER_MODE
   unsigned long int rlc_um_time_us;
   int min, sec, usec;
 #endif
 
 #ifdef DEBUG_RLC_UM_DATA_REQUEST
-    msg ("[RLC_UM][MOD %d][RB %d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC_UM_DATA_REQ size %d Bytes, BO %d , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
      rlc->module_id,
      rlc->rb_id,
+     mac_xface->frame,
 	 ((struct rlc_um_data_req *) (sduP->data))->data_size,
 	 rlc->buffer_occupancy,
 	 rlc->nb_sdu,
@@ -313,7 +311,7 @@ rlc_um_data_req (void *rlcP, mem_block_t *sduP)
     // LG ??? WHO WROTE THAT LINE ?((struct rlc_um_tx_sdu_management *) (sduP->data))->sdu_creation_time = 0;
     rlc->next_sdu_index = (rlc->next_sdu_index + 1) % rlc->size_input_sdus_buffer;
   } else {
-    msg("[RLC_UM][MOD %d][RB %d] RLC-UM_DATA_REQ input buffer full SDU garbaged\n",rlc->module_id, rlc->rb_id);
+    msg("[RLC_UM][MOD %d][RB %d][FRAME %05d] RLC-UM_DATA_REQ input buffer full SDU garbaged\n",rlc->module_id, rlc->rb_id, mac_xface->frame);
     free_mem_block (sduP);
   }
 }
