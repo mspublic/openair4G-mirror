@@ -64,6 +64,7 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/llr_quantization.o  # erhan added this!
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
@@ -73,7 +74,7 @@ OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $
 OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) 
 
 
-all: relay_sim relay_DF_sim relay_test_sim
+all: relay_sim relay_DF_sim relay_QF_sim relay_test_sim
 
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
@@ -84,11 +85,14 @@ relay_sim : $(OBJ2) relay_sim.c
 relay_DF_sim : $(OBJ2) relay_DF_sim.c
 	$(CC) relay_DF_sim.c -I$(TOP_DIR) -o relay_DF_sim $(CFLAGS) $(OBJ2) -lm -lblas
 
+relay_QF_sim : $(OBJ2) relay_QF_sim.c
+	$(CC) relay_QF_sim.c -I$(TOP_DIR) -o relay_QF_sim $(CFLAGS) $(OBJ2) -lm -lblas
+
 relay_test_sim : $(OBJ2) relay_test_sim.c
 	$(CC) relay_test_sim.c -I$(TOP_DIR) -o relay_test_sim $(CFLAGS) $(OBJ2) -lm -lblas
 
 clean:
-	rm -f relay_sim relay_DF_sim relay_test_sim 
+	rm -f relay_sim relay_DF_sim relay_QF_sim relay_test_sim 
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe*
