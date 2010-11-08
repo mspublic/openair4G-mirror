@@ -29,10 +29,10 @@
 unsigned char dlsch_cqi;
 
 PHY_VARS_eNB *PHY_vars_eNb;
-PHY_VARS_UE  **PHY_vars_UE;   // this variable is modified to enable multiple relay nodes (# Relay Node = "NUM_OF_RN"); 
+PHY_VARS_UE  **PHY_vars_UE;   // this variable is modified to enable multiple relay nodes (# Relay Node = "num_of_relays"); 
 
-// In the following function the first parameter ("unsigned char numRN") is added for # RN in the Parallel Relay Network (PRN); 
-void lte_param_init(unsigned char numRN, unsigned char N_tx, unsigned char N_rx, unsigned char transmission_mode, u8 extended_prefix_flag) {
+// In the following function the first parameter ("unsigned char num_relay") is added for # RN in the Parallel Relay Network (PRN); 
+void lte_param_init(unsigned char num_relay, unsigned char N_tx, unsigned char N_rx, unsigned char transmission_mode, u8 extended_prefix_flag) {
 	
 	unsigned int j;	
 	LTE_DL_FRAME_PARMS *lte_frame_parms;
@@ -40,12 +40,12 @@ void lte_param_init(unsigned char numRN, unsigned char N_tx, unsigned char N_rx,
 	printf("Start lte_param_init\n");
   	
   	PHY_vars_eNb = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
-  	PHY_vars_UE  = (PHY_VARS_UE **)malloc(numRN * sizeof(PHY_VARS_UE *));
+  	PHY_vars_UE  = (PHY_VARS_UE **)malloc(num_relay * sizeof(PHY_VARS_UE *));
   	if (!(PHY_vars_eNb && PHY_vars_UE)){
 		printf("Cannot allocate memory!\n");
 		exit(EXIT_FAILURE);
 	}  	
-  	for(j=0; j<numRN; j++){
+  	for(j=0; j<num_relay; j++){
   		PHY_vars_UE[j] = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));  	
   		if (!(PHY_vars_UE[j])){
 			printf("Cannot allocate memory!\n");
@@ -88,7 +88,7 @@ void lte_param_init(unsigned char numRN, unsigned char N_tx, unsigned char N_rx,
   	lte_frame_parms->twiddle_ifft  = twiddle_ifft;
   	lte_frame_parms->rev           = rev;
   
-  	for(j=0; j<numRN; j++){
+  	for(j=0; j<num_relay; j++){
   		PHY_vars_UE[j]->lte_frame_parms = *lte_frame_parms;
 	}
   	/*  
@@ -104,7 +104,7 @@ void lte_param_init(unsigned char numRN, unsigned char N_tx, unsigned char N_rx,
 
   	phy_init_lte_top(lte_frame_parms);
   	
-  	for(j=0; j<numRN; j++){
+  	for(j=0; j<num_relay; j++){
   		phy_init_lte_ue(&PHY_vars_UE[j]->lte_frame_parms,
 			  		  	&PHY_vars_UE[j]->lte_ue_common_vars,
 			  		  	PHY_vars_UE[j]->lte_ue_dlsch_vars,
@@ -190,17 +190,16 @@ int main(int argc, char **argv) {
 	u8 num_pdcch_symbols;
 	u8 pilot1, pilot2, pilot3;
 	
-	unsigned int NUM_OF_RN = 1;
-		
-		
+	unsigned int num_of_relays; // total number of relays in the system;
+			
 	dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
 	channel_length = (int) 11+2*BW*Td;
 
-	NUM_OF_RN  = 1; // by default this program acts exactly as 'dlsim.c'; 
-	num_layers = 1;
-	mcs        = 0;
-	n_frames   = 1000;
-	snr0       = 10;
+	num_of_relays = 1; // by default this program acts exactly as 'dlsim.c'; 
+	num_layers    = 1;
+	mcs           = 15;
+	n_frames      = 1000;
+	snr0          = 10;
 	
 		 
 	while ((c = getopt (argc, argv, "hadpm:n:r:s:t:c:x:y:z:")) != -1) {
@@ -251,15 +250,15 @@ int main(int argc, char **argv) {
 				}
 				break;
 		  	case 'r':
-				NUM_OF_RN = atoi(optarg);
-				if ((NUM_OF_RN < 0) || (NUM_OF_RN > 8)) {
-		  			msg("Unsupported number of Relay Nodes (RNs) in the PRN system %d\n", NUM_OF_RN);
+				num_of_relays = atoi(optarg);
+				if ((num_of_relays < 1) || (num_of_relays > 8)) {
+		  			msg("Unsupported number of Relay Nodes (RNs) in the PRN system %d\n", num_of_relays);
 		  			exit(-1);
 				}
 				break; 
 			case 'h':
 		  	default:
-				printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -r NUM_OF_RN -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n", argv[0]);
+				printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -r num_of_relays -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n", argv[0]);
 				printf("-h This message\n");
 				printf("-a Use AWGN channel and not multipath\n");
 				printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
@@ -270,20 +269,20 @@ int main(int argc, char **argv) {
 				printf("-x Transmission mode (1,2,6 for the moment)\n");
 				printf("-y Number of TX antennas used in eNB\n");
 				printf("-z Number of RX antennas used in UE\n");
-				printf("-r Number of Relay Nodes (RNs) in the Parallel Relay Network (PRN) \n"); // or # UEs in the system, each connected to the destination via limited capacity backhaul;
+				printf("-r Number of Relay Nodes (RNs) in the Parallel Relay Network (PRN) \n"); //= # UEs that are connected to the eNb via limited capacity backhaul;
 				exit(1);
 				break;
 		}
 	}
 
-	lte_param_init(NUM_OF_RN, n_tx, n_rx, transmission_mode, extended_prefix_flag);  
+	lte_param_init(num_of_relays, n_tx, n_rx, transmission_mode, extended_prefix_flag);  
 	printf("Setting mcs = %d\n", mcs);
 	printf("NPRB = %d\n", NB_RB);
 	printf("n_frames = %d\n", n_frames);
 	printf("Transmission mode %d with %dx%d antenna configuration\n", transmission_mode, n_tx, n_rx);
 
 
-	snr1 = snr0 + 2.0;  // simulated SNR range: [snr0:2.0:snr1];
+	snr1 = snr0 + 10.0;  // simulated SNR range: [snr0:0.2:snr1];
 	printf("SNR0 %f, SNR1 %f\n", snr0, snr1);
 
 	frame_parms = &PHY_vars_eNb->lte_frame_parms;
@@ -310,10 +309,10 @@ int main(int argc, char **argv) {
 	// Allocating memory and test the dynamic allocations;
 	s_re = (double **)malloc(2*sizeof(double *));
 	s_im = (double **)malloc(2*sizeof(double *));
-	r_re = (double ***)malloc(NUM_OF_RN*sizeof(double **));
-	r_im = (double ***)malloc(NUM_OF_RN*sizeof(double **));
-	dci_alloc_rx = (DCI_ALLOC_t **)malloc(NUM_OF_RN*sizeof(DCI_ALLOC_t *));
-	eNB2UE = (channel_desc_t **)malloc(NUM_OF_RN*sizeof(channel_desc_t *));
+	r_re = (double ***)malloc(num_of_relays*sizeof(double **));
+	r_im = (double ***)malloc(num_of_relays*sizeof(double **));
+	dci_alloc_rx = (DCI_ALLOC_t **)malloc(num_of_relays*sizeof(DCI_ALLOC_t *));
+	eNB2UE = (channel_desc_t **)malloc(num_of_relays*sizeof(channel_desc_t *));
 	if (!(s_re && s_im && r_re && r_im && dci_alloc_rx && eNB2UE)){
 		printf("Cannot allocate memory!\n");
 		exit(EXIT_FAILURE);
@@ -326,7 +325,7 @@ int main(int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 	}		
-	for(j=0; j<NUM_OF_RN; j++){
+	for(j=0; j<num_of_relays; j++){
 		r_re[j] = (double **)malloc(2*sizeof(double*));
 		r_im[j] = (double **)malloc(2*sizeof(double*));
 		dci_alloc_rx[j] = (DCI_ALLOC_t *)malloc(8*sizeof(DCI_ALLOC_t));
@@ -354,10 +353,10 @@ int main(int argc, char **argv) {
 	#endif
 
 	printf("Rate = %f (mod %d)\n",(((double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1])*3/4)/coded_bits_per_codeword, get_Qm(mcs));
-	sprintf(bler_fname,"bler_relay_DF_%d_%d.m", mcs, NUM_OF_RN);
+	sprintf(bler_fname,"bler_relay_DF_mcs%d_%d-QAM_RN%d.m", mcs, (short)pow(2, get_Qm(mcs)), num_of_relays);
 	bler_fd = fopen(bler_fname,"w");
 
-	for(j=0; j<NUM_OF_RN; j++){
+	for(j=0; j<num_of_relays; j++){
 		PHY_vars_UE[j]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 	}
 	
@@ -395,13 +394,13 @@ int main(int argc, char **argv) {
 	PHY_vars_eNb->dlsch_eNb_SI        = new_eNb_dlsch(1,1);
 	PHY_vars_eNb->dlsch_eNb_SI->rnti  = SI_RNTI;	
 	
-	for(j=0; j<NUM_OF_RN; j++){
+	for(j=0; j<num_of_relays; j++){
 		PHY_vars_UE[j]->dlsch_ue_SI[0]       = new_ue_dlsch(1,1);
 		PHY_vars_UE[j]->dlsch_ue_SI[0]->rnti = SI_RNTI;		
 	}
 
 	// Create random Channels coefficients;	
-	for(j=0; j<NUM_OF_RN; j++){
+	for(j=0; j<num_of_relays; j++){
 		eNB2UE[j] = new_channel_desc(1, 1,
 			 				  nb_taps,
 						      channel_length,
@@ -425,7 +424,7 @@ int main(int argc, char **argv) {
 		}		
 		PHY_vars_eNb->dlsch_eNb[0][i]->rnti = 0x1234;
 		
-		for(j=0; j<NUM_OF_RN; j++){
+		for(j=0; j<num_of_relays; j++){
 			PHY_vars_UE[j]->dlsch_ue[0][i] = new_ue_dlsch(1,8); 			
 			if (!PHY_vars_UE[j]->dlsch_ue[0][i]) {   
 		  		printf("Can't get ue dlsch structures\n");
@@ -438,7 +437,7 @@ int main(int argc, char **argv) {
 	if (DLSCH_alloc_pdu2.tpmi == 5) {
 		PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc    = (unsigned short)(taus()&0xffff);
 		PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single = PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc;
-		for(j=0; j<NUM_OF_RN; j++){
+		for(j=0; j<num_of_relays; j++){
 			PHY_vars_UE[j]->dlsch_ue[0][0]->pmi_alloc = PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc; 
 		}		
 	}
@@ -487,7 +486,7 @@ int main(int argc, char **argv) {
      
       
     // Start of the simulation over different SNR values;  
-	for (SNR=snr0; SNR < snr1; SNR +=0.5) {
+	for (SNR=snr0; SNR < snr1; SNR +=0.25) {
 		
 		dci_errors = 0;			
 		for(i=0; i<4; i++){
@@ -651,7 +650,7 @@ int main(int argc, char **argv) {
 			  				s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 		        		}
 		        		else {
-		        			for(j=0; j<NUM_OF_RN; j++){
+		        			for(j=0; j<num_of_relays; j++){
 		           				r_re[j][aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
 		        				r_im[j][aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 		        			}
@@ -660,7 +659,7 @@ int main(int argc, char **argv) {
 				}
 
 				if (awgn_flag == 0) {						
-					for(j=0; j<NUM_OF_RN; j++){ 
+					for(j=0; j<num_of_relays; j++){ 
 						multipath_channel(eNB2UE[j], s_re, s_im, r_re[j], r_im[j], 2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES, 0);
 					}
 				}
@@ -670,7 +669,7 @@ int main(int argc, char **argv) {
 				sigma2 = pow(10, sigma2_dB/10);
 				for (i=0; i < 2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 					for (aa=0; aa < PHY_vars_eNb->lte_frame_parms.nb_antennas_rx; aa++) {
-						for (j=0; j < NUM_OF_RN; j++) { // loop over all Relay nodes;
+						for (j=0; j < num_of_relays; j++) { // loop over all Relay nodes;
 							((short*)PHY_vars_UE[j]->lte_ue_common_vars.rxdata[aa])[2*i]  =(short)(r_re[j][aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 							((short*)PHY_vars_UE[j]->lte_ue_common_vars.rxdata[aa])[2*i+1]=(short)(r_im[j][aa][i]+(iqim*r_re[j][aa][i])+sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 				  		}
@@ -681,7 +680,7 @@ int main(int argc, char **argv) {
 				//    lte_sync_time_free();
 	
 				#ifdef OUTPUT_DEBUG
-					for (j=0; j < NUM_OF_RN; j++) { // loop over all Relay nodes;
+					for (j=0; j < num_of_relays; j++) { // loop over all Relay nodes;
 						printf("RX level in null symbol %d\n", dB_fixed(signal_energy(&PHY_vars_UE[j]->lte_ue_common_vars.rxdata[0][160+OFDM_SYM BOL_SIZE_COMPLEX_SAMPLES], OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 						printf("RX level in data symbol %d\n", dB_fixed(signal_energy(&PHY_vars_UE[j]->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)], OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 					}
@@ -702,7 +701,7 @@ int main(int argc, char **argv) {
 
 				/* Once, at one of the RS, the DLSCH pkt has been decoded, then we continue with the following trial! 
 				Declare an error iff all RNs fail to decode!*/
-				for (j=0; j<NUM_OF_RN; j++) { // loop over all Relay nodes;
+				for (j=0; j<num_of_relays; j++) { // loop over all Relay nodes;
 					// Inner receiver scheduling for 3 slots
 					for (Ns=0; Ns < 3; Ns++) {
 						for (l=0; l < pilot2; l++) {
@@ -741,7 +740,7 @@ int main(int argc, char **argv) {
 									if (dci_cnt == 0) {
 					  					dlsch_active = 0;	
 					  					if(round == 0){  // if an error in the first DCI, then contunue with the next transmission block !?;
-											if (j == (NUM_OF_RN-1)){
+											if (j == (num_of_relays-1)){
 												dci_errors++;
 												error_tot[0]++;
 												round_trials[0]++;
@@ -767,7 +766,7 @@ int main(int argc, char **argv) {
 					  					else {
 											dlsch_active = 0;
 											if(round == 0){  // if an error in the first DCI, then contunue with the next transmission block !?;
-												if (j == (NUM_OF_RN-1)){
+												if (j == (num_of_relays-1)){
 													dci_errors++;
 													error_tot[0]++;
 													round_trials[0]++;
@@ -887,7 +886,7 @@ int main(int argc, char **argv) {
 					  		#ifdef OUTPUT_DEBUG  
 								printf("No DLSCH errors found\n");
 							#endif
-							break;      // no need to wait for other relay nodes to decode!; (time saving in processing!)
+							break;   // no need to wait for other relay nodes to decode!; (time saving in processing!)
 						}	
 			 		 	else {
 							//decode_error = 1;  // decode error indicator;
@@ -907,7 +906,7 @@ int main(int argc, char **argv) {
 								}
 								exit(-1);
 							#endif
-							if (j == (NUM_OF_RN-1)){
+							if (j == (num_of_relays-1)){
 								//printf("DLSCH Active, but Decode Error...\n");				  	
 					  			error_tot[round]++;
 					  			round++;
@@ -917,16 +916,17 @@ int main(int argc, char **argv) {
 											
 				}	// loop over number of Relay nodes (or UEs in Downlink);
 								
-			} // loop for  numner of rounds;
+			} // loop for  number of rounds (trials);
 			
 			
 			// printf("\n");		
-			if ((error_tot[0] >= 100) && (trials > (n_frames/2)))
+			if ((error_tot[0] >= 100) && (trials > (n_frames/2))){
+				//printf("**********\n");
 				break; 
-				
+			}	
 	  	}   // trials
 
-		for (j=0; j < NUM_OF_RN; j++){
+		for (j=0; j < num_of_relays; j++){
 			printf("\n**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n", SNR,
 				   (double)tx_lev_dB+10*log10(PHY_vars_UE[j]->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)), sigma2_dB);
 		}
@@ -951,10 +951,11 @@ int main(int argc, char **argv) {
 				   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0])/(double)PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->TBS,
 		 		   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0]));
 
-		fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+		fprintf(bler_fd,"%f;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
 			    SNR,
 			    mcs,
 			    PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->TBS,
+			    rate*((double)(round_trials[0]-dci_errors)/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3])), // effective rate;
 			    rate,
 				error_tot[0],
 				round_trials[0],
@@ -966,7 +967,7 @@ int main(int argc, char **argv) {
 				round_trials[3],
 				dci_errors);
 		
-		if (((double)error_tot[0]/(round_trials[0]))<1e-2) 
+		if (((double)error_tot[0]/(round_trials[0]))<1e-5) 
 		  	break;
 	  
 	}  // loop for SNR;
@@ -979,11 +980,11 @@ int main(int argc, char **argv) {
 		free_eNb_dlsch(PHY_vars_eNb->dlsch_eNb[0][i]);
 		
 		printf("UE %d\n", i);
-		for (j=0; j < NUM_OF_RN; j++) {
+		for (j=0; j < num_of_relays; j++) {
 			free_ue_dlsch(PHY_vars_UE[j]->dlsch_ue[0][i]);
 		}
 	}
-	for(j=0; j < NUM_OF_RN; j++){
+	for(j=0; j < num_of_relays; j++){
   		free(PHY_vars_UE[j]->dlsch_ue_SI[0]);
   		free(PHY_vars_UE[j]);  	  		
   	}
@@ -1010,7 +1011,7 @@ int main(int argc, char **argv) {
 	/*
 	printf("Freeing channel I/O\n");
 	
-	for (j=0; j < NUM_OF_RN; j++) {
+	for (j=0; j < num_of_relays; j++) {
 		for (i=0; i<2; i++) {
 			free(r_re[j][i]);
 			free(r_im[j][i]);

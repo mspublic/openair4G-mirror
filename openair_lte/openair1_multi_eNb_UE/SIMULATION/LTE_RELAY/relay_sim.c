@@ -901,7 +901,6 @@ int main(int argc, char **argv) {
 		free(r_re[i]);
 		free(r_im[i]);
 	}
-	
 	free(s_re);
 	free(s_im);
 	free(r_re);
