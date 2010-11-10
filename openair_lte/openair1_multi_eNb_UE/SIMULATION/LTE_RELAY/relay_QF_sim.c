@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 	u8 extended_prefix_flag=0, transmission_mode=1, n_tx=1, n_rx=1;
 
 	int eNb_id = 0, eNb_id_i = 1;
-	unsigned char mcs, dual_stream_UE=0, awgn_flag=0, round, dci_flag=1; //dci_flag=1 if we want to decode DCI bits as well;
+	unsigned char mcs, dual_stream_UE=0, awgn_flag=0, round, dci_flag=0; //dci_flag=1 if we want to decode DCI bits as well;
 	unsigned short NB_RB = conv_nprb(0, DLSCH_RB_ALLOC);
 	unsigned char Ns, l, m;
 
@@ -366,7 +366,8 @@ int main(int argc, char **argv) {
 	#else
 	  	rate = (double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(coded_bits_per_codeword);
 	#endif
-
+	
+	printf("Coded_bits_per_codeword = %d\n", coded_bits_per_codeword);
 	printf("Rate = %f (mod %d)\n",(((double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1])*3/4)/coded_bits_per_codeword, get_Qm(mcs));
 	sprintf(bler_fname,"bler_relay_QF_mcs%d_%d-QAM_RN%d_bitPerLLR%d.m", mcs, (short)pow(2, get_Qm(mcs)), num_of_relays, backhaulBitsPerLLR);
 	bler_fd = fopen(bler_fname, "w");
@@ -522,7 +523,7 @@ int main(int argc, char **argv) {
      
       
     // Start of the simulation over different SNR values;  
-	for (SNR=snr0; SNR < snr1; SNR +=0.25) {
+	for (SNR=snr0; SNR < snr1; SNR +=0.5) {
 		
 		dci_errors = 0;			
 		for(i=0; i<4; i++){
@@ -916,17 +917,15 @@ int main(int argc, char **argv) {
 			 		 	// llr quantization at each RN according to the backhaul capacity constraints C_i [bits/sec/Hz];			 		 	
 			 		 	// Quantization codebook desing and parameter passing to the final destination;
 			 		 				 		 			 		 	
-			 		 	//dlsch_LLR_quant(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), Mlevel, llr_quant[j]);
-			 		 	dlsch_LLR_quant2(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), backhaulBitsPerLLR, llr_quant[j]);
-			 		 	dlsch_MRC_relay_LLR(llr_quant[j], 8*((3*8*6144)+12), llr_quant_sum);				   			 		 				 		 	 		
-				 		//dlsch_MRC_relay_LLR(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), llr_quant_sum);	
-				 		
-				 		//for (i=0; i < 8*((3*8*6144)+12); i++){		
-						//	printf("LLR_out[%d]: %d, LLR_in[%d]: %d \n",i, llr_quant_sum[i], i, PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0][i]);
-						//}
-							
-			 			//printf("Size of LLR: %d \n", sizeof(*PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0]));
-			 		 	
+			 		 	//dlsch_LLR_quant(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), pow(2, backhaulBitsPerLLR), llr_quant[j]); 
+			 		 	dlsch_LLR_quant(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 6072, Mlevel, llr_quant[j]); // 6072;
+			 		 	//dlsch_LLR_quant2(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), backhaulBitsPerLLR, llr_quant[j]);
+			 		 	//dlsch_LLR_quant3(PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12), backhaulBitsPerLLR, llr_quant[j]);
+			 		 	dlsch_MRC_relay_LLR(llr_quant[j], 6072, llr_quant_sum);				   			 		 				 		 	 		
+				 						 		
+				 		//write_output("dlsch_rxF_llr.m","dlsch_llr", PHY_vars_UE[j]->lte_ue_dlsch_vars[eNb_id]->llr[0], 8*((3*8*6144)+12),1,0);
+				 		//write_output("dlsch_rxF_llr_quant.m","dlsch_llr_quant", llr_quant[j], 8*((3*8*6144)+12),1,0);
+				 		//exit(-1);
 			 		 	/*------------------------------------------------------------------------------------------------------------*/		 		 					
 					
 					}  // end of if (dlsch_active == 1);											
@@ -977,8 +976,8 @@ int main(int argc, char **argv) {
 			
 			
 			// printf("\n");		
-			if ((error_tot[0] >= 100) && (trials > (n_frames/2)))
-				break; 
+			//if ((error_tot[0] >= 100) && (trials > (n_frames/2)))
+			//	break; 
 				
 	  	}   // trials
 
@@ -1009,7 +1008,7 @@ int main(int argc, char **argv) {
 				   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0])/(double)PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->TBS,
 		 		   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0]));
 
-		fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+		fprintf(bler_fd,"%f \t %d \t %d \t %d \t %d \t %f \t %f \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d;\n",
 			    SNR,
 			    mcs,
 			    backhaulBitsPerLLR,  // Backhaul Capacity in [bits/LLR];

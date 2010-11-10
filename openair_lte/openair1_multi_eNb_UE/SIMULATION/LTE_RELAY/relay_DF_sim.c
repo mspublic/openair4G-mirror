@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 	u8 extended_prefix_flag=0, transmission_mode=1, n_tx=1, n_rx=1;
 
 	int eNb_id = 0, eNb_id_i = 1;
-	unsigned char mcs, dual_stream_UE=0, awgn_flag=0, round, dci_flag=1;
+	unsigned char mcs, dual_stream_UE=0, awgn_flag=0, round, dci_flag=0;
 	unsigned short NB_RB = conv_nprb(0, DLSCH_RB_ALLOC);
 	unsigned char Ns, l, m;
 
@@ -486,7 +486,7 @@ int main(int argc, char **argv) {
      
       
     // Start of the simulation over different SNR values;  
-	for (SNR=snr0; SNR < snr1; SNR +=0.25) {
+	for (SNR=snr0; SNR < snr1; SNR +=0.5) {
 		
 		dci_errors = 0;			
 		for(i=0; i<4; i++){
@@ -920,10 +920,11 @@ int main(int argc, char **argv) {
 			
 			
 			// printf("\n");		
-			if ((error_tot[0] >= 100) && (trials > (n_frames/2))){
+			//if ((error_tot[0] >= 100) && (trials > (n_frames/2))){
 				//printf("**********\n");
-				break; 
-			}	
+			//	break; 
+			//}
+				
 	  	}   // trials
 
 		for (j=0; j < num_of_relays; j++){
@@ -951,7 +952,7 @@ int main(int argc, char **argv) {
 				   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0])/(double)PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->TBS,
 		 		   (1.0*(round_trials[0]-error_tot[0])+2.0*(round_trials[1]-error_tot[1])+3.0*(round_trials[2]-error_tot[2])+4.0*(round_trials[3]-error_tot[3]))/((double)round_trials[0]));
 
-		fprintf(bler_fd,"%f;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+		fprintf(bler_fd,"%f \t %d \t %d \t %f \t %f \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d \t %d;\n",
 			    SNR,
 			    mcs,
 			    PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->TBS,
