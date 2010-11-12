@@ -27,6 +27,11 @@ extern CH_MAC_INST *CH_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern u8 Is_rrc_registered;
 
+extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
+extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
+
+
+
 //#ifndef USER_MODE
 extern MAC_xface *mac_xface;
 extern RRC_XFACE *Rrc_xface;
@@ -46,6 +51,7 @@ extern void* bigphys_malloc(int);
 #else
 extern EMULATION_VARS *Emul_vars;
 #endif //PHY_EMUL
+
 
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;

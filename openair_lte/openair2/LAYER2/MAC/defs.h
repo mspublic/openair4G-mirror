@@ -181,7 +181,39 @@ typedef struct {
 
 #include "PHY/impl_defs_top.h"
 
+typedef enum {
+  S_UL_NONE = 0,
+  // S_UL_WAITING,
+  S_UL_SCHEDULED, 
+  S_UL_BUFFERED,  
+  S_UL_NUM_STATUS
+} UE_ULSCH_STATUS;
 
+typedef enum {
+  S_DL_NONE = 0,
+  // S_DL_WAITING,
+  S_DL_SCHEDULED, 
+  S_DL_BUFFERED,  
+  S_DL_NUM_STATUS
+} UE_DLSCH_STATUS;
+
+// temp struct for sched
+typedef struct {
+  
+  u16 rnti;
+  u16 subframe;
+  u16 serving_num;  
+  UE_ULSCH_STATUS status;
+} eNB_ULSCH_INFO;
+// temp struct for sched
+typedef struct {
+  
+  u16 rnti;
+  u16 weigth;
+  u16 subframe;
+  u16 serving_num;  
+  UE_DLSCH_STATUS status;
+} eNB_DLSCH_INFO;
 
 typedef struct{
   /// C-RNTI of UE
@@ -261,6 +293,7 @@ typedef struct{
   u16 Node_id;
   CCCH_PDU CCCH_pdu;
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
+  //ULSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
 }UE_MAC_INST;
 
 
@@ -295,6 +328,19 @@ void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
 u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
+
+void init_ue_sched_info(void);
+void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_ULSCH_STATUS status);
+void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
+s8 find_UE_id(u8 Mod_id,u16 rnti) ;
+s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
+s8 find_active_UEs(u8 Mod_id);
+u16 find_ulgranted_UEs(u8 Mod_id);
+u16 find_dlgranted_UEs(u8 Mod_id);
+u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
+u8 schedule_next_ulue(u8 Mod_id, u8 UE_id,u8 subframe);
+u8 schedule_next_dlue(u8 Mod_id, u8 UE_id,u8 subframe);
+u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
 void out_of_sync_ind(u8 Mod_id,u16);

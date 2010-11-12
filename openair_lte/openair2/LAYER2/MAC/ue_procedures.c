@@ -157,6 +157,14 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 				      1,
 				      NULL);
     }
+    else if (rx_lcids[i] == DTCH) {
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+				      DTCH,
+				      (u8 *)payload_ptr,
+				      rx_lengths[i],
+				      1,
+				      NULL);
+    }
     payload_ptr+=rx_lengths[i];
   }
   /*
@@ -379,7 +387,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }
-
+// generate BSR
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;

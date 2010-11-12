@@ -96,8 +96,7 @@ typedef struct
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
     void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
-
-
+    u16 (*get_nCCE_max)(u8 Mod_id);
     //    unsigned char is_cluster_head;
     //    unsigned char is_primary_cluster_head;
     //    unsigned char is_secondary_cluster_head;
