@@ -81,7 +81,7 @@ void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
     mac_xface->initiate_ra_proc          = initiate_ra_proc;
     mac_xface->rx_sdu                    = rx_sdu;
     mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
-
+    
     //UE MAC functions    
     mac_xface->ue_decode_si              = ue_decode_si;
     mac_xface->ue_send_sdu               = ue_send_sdu;
@@ -99,8 +99,9 @@ void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
     
     // PHY Helper functions
     mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
-    mac_xface->computeRIV = computeRIV;
-    mac_xface->get_TBS = get_TBS;
+    mac_xface->computeRIV             = computeRIV;
+    mac_xface->get_TBS                = get_TBS;
+    mac_xface->get_nCCE_max           = get_nCCE_max;
 
     msg("ALL INIT OK\n");
     

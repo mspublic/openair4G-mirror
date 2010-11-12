@@ -2171,6 +2171,13 @@ u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms) {
     }
   return(Nreg/9);
 }
+
+u16 get_nCCE_max(u8 Mod_id) {
+
+  // check for eNB only !
+  return(get_nCCE(3,&PHY_vars_eNb_g[Mod_id]->lte_frame_parms)); // 5, 15,21
+}
+
 void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			     DCI_ALLOC_t *dci_alloc,
 			     s16 eNb_id,

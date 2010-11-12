@@ -1079,11 +1079,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH RA Reception for rnti %x harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,phy_vars_eNb->ulsch_eNb[i]->rnti,harq_pid);
 #endif
 
-#ifdef DEBUG_PHY
+      //#ifdef DEBUG_PHY
       if (phy_vars_eNb->ulsch_eNb[i]->RRCConnRequest_flag == 1)
-	msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH Recption for RRCConnRequest in Sector %d\n",
+	msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for RRCConnRequest in Sector %d\n",
 	    mac_xface->frame,last_slot,last_slot>>1,sect_id);
-#endif
+      else
+	msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH Reception for UE %d Mode %s\n",
+	    mac_xface->frame,last_slot,last_slot>>1,i,mode_string[phy_vars_eNb->eNB_UE_stats[i].mode]);
+      //#endif
       if (abstraction_flag==0) {
 	ulsch_power = rx_ulsch(&phy_vars_eNb->lte_eNB_common_vars,
 			       phy_vars_eNb->lte_eNB_ulsch_vars[i],  
@@ -1104,7 +1107,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 
 
       for (j=0;j<phy_vars_eNb->lte_frame_parms.nb_antennas_rx;j++)
-	phy_vars_eNb->eNB_UE_stats[i].UL_rssi[i] = dB_fixed(ulsch_power[j]) - phy_vars_eNb->rx_total_gain_eNB_dB;
+	phy_vars_eNb->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(ulsch_power[j]) - phy_vars_eNb->rx_total_gain_eNB_dB;
 
 #ifdef DEBUG_PHY
       msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH RX power (%d,%d) dB\n",mac_xface->frame,last_slot,last_slot>>1,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]));

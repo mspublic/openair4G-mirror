@@ -24,7 +24,7 @@ ________________________________________________________________*/
 
 #ifdef USER_MODE
 #ifndef PBS_SIM 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 #endif //PBS_SIM
 //#define NULL_SHAPE_BF_ENABLED
 #endif //USER_MODE

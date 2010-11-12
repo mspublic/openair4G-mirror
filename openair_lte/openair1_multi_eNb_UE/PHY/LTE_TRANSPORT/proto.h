@@ -963,6 +963,8 @@ u32 pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,u8 wideband_pmi);
 
 u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms);
 
+u16 get_nCCE_max(u8 Mod_id);
+
 u8 get_num_pdcch_symbols(u8 num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
 void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,u8 n_symbols_pdcch);
