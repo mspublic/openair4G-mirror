@@ -781,6 +781,7 @@ int main(int argc, char **argv) {
 		rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
 			 PHY_vars_UE->lte_ue_pdcch_vars,
 			 &PHY_vars_UE->lte_frame_parms,
+			 0,
 			 eNb_id,
 			 (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 			 0);
