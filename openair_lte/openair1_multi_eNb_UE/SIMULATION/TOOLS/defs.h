@@ -19,7 +19,7 @@ typedef struct {
   ///Number of tx antennas
   u8 nb_tx; 
   ///Number of rx antennas
-  u8 nb_rx; 
+  u8 nb_rx;
   ///number of taps
   u8 nb_taps; 
   ///linear amplitudes of taps
@@ -44,7 +44,7 @@ typedef struct {
   double max_Doppler; 
   ///Square root of the full correlation matrix size(R_tx) = nb_taps * (n_tx * n_rx) * (n_tx * n_rx).
   struct complex **R_sqrt; 
-  ///path loss in dB
+  ///path loss including shadow fading in dB 
   double path_loss_dB;
   ///additional delay of channel in samples. 
   s8 channel_offset; 
@@ -53,8 +53,64 @@ typedef struct {
   ///needs to be set to 1 for the first call, 0 otherwise.
   u8 first_run;
   /// initial phase for frequency offset simulation 
-  double ip; 
+  double ip;
 } channel_desc_t;
+
+typedef struct {
+  /// Number of sectors
+  u8 n_sectors;
+  /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
+  double alpha_rad[NUMBER_OF_eNB_MAX];
+  /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas)
+  double phi_rad;
+  /// Antenna gain (dBi)
+  double ant_gain_dBi;
+  /// Tx power (dBm)
+  double tx_power_dBm;
+  /// Rx noise level (dB)
+  double rx_noise_level;
+  ///x coordinate (cartesian, in m)
+  double x; 
+  ///y coordinate (cartesian, in m)
+  double y; 
+  ///z coordinate (antenna height, in m)
+  double z;
+  /// direction of travel in radians wrt north
+  double direction_rad;
+  /// speed of node (m/s)
+  double speed;
+} node_desc_t;
+
+typedef enum {
+  rural=0,
+  urban,
+  indoor
+} scenario_t;
+  
+typedef struct {
+  /// Scenario classifcation
+  scenario_t scenario;
+  /// Carrier frequency in Hz
+  double carrier_frequency;
+  /// Bandwidth (in Hz)
+  double bandwidth;
+  /// path loss at 0m distance
+  double path_loss_0;
+  /// path loss exponent 
+  double path_loss_exponent;
+  /// shadow fading standard deviation [dB] (assuming log-normal shadow fading with 0 mean)
+  double shadow_fading_std;
+  /// correlation distance of shadow fading 
+  double shadow_fading_correlation_distance;
+  /// Shadowing correlation between cells
+  double shadow_fading_correlation_cells;
+  /// Shadowing correlation between sectors
+  double shadow_fading_correlation_sectors;
+  /// Rice factor???
+  /// Walls (penetration loss)
+  /// Nodes in the scenario
+  node_desc_t* nodes;
+} scenario_desc_t;
 
 typedef enum {
   SCM_A=0,
@@ -72,11 +128,11 @@ typedef enum {
 \param amps Linear amplitudes of the taps (length(amps)=channel_length). The values should sum up to 1.
 \param delays Delays of the taps. If delays==NULL the taps are assumed to be spaced equidistantly between 0 and t_max. 
 \param R_sqrt Channel correlation matrix. If R_sqrt==NULL, no channel correlation is applied.
-\param t_max Maximum path delay in mus.
-\param bw Channel bandwidth in MHz.
+\param Td Maximum path delay in mus.
+\param BW Channel bandwidth in MHz.
 \param ricean_factor Ricean factor applied to all taps.
 \param aoa Anlge of arrival
-\param forgetting factor This parameter (0...1) allows for simple 1st order temporal variation
+\param forgetting_factor This parameter (0...1) allows for simple 1st order temporal variation
 \param max_Doppler This is the maximum Doppler frequency for Jakes' Model
 \param channel_offset This is a time delay to apply to channel
 \param path_loss_dB This is the path loss in dB
