@@ -32,7 +32,8 @@ ccodelte_encode (unsigned int numbits,
 		 unsigned short rnti) {
   unsigned int             state;
 
-  unsigned char              c, out, shiftbit =0, first_bit;
+  unsigned char              c, out, first_bit;
+  char shiftbit=0;
   unsigned short c16;
   unsigned short next_last_byte;
   unsigned int crc=0;
@@ -51,13 +52,17 @@ ccodelte_encode (unsigned int numbits,
   }
   else if (add_crc == 2) {
     crc = crc16(inPtr,numbits);
-    //    printf("ccode_lte : crc %x\n",crc);
+#ifdef DEBUG_CCODE
+    printf("ccode_lte : crc %x\n",crc);
+#endif
     // scramble with RNTI
     crc ^= (((unsigned int)rnti)<<16);
-
-    //    printf("ccode_lte : crc %x (rnti %x)\n",crc,rnti);
+#ifdef DEBUG_CCODE
+    printf("ccode_lte : crc %x (rnti %x)\n",crc,rnti);
+#endif
     first_bit      = 2;
-    c = (unsigned char)(crc>>24);
+    //    c = (unsigned char)(crc>>24);
+    c = (unsigned char)((crc>>16)&0xff);
   }
   else {
     next_last_byte = numbits>>3;
@@ -71,13 +76,13 @@ ccodelte_encode (unsigned int numbits,
   // Perform Tail-biting
 
   // get bits from last byte of input (or crc)
-  for (shiftbit = first_bit; shiftbit<8; shiftbit++) {
-    state >>= 1;
-    if ((c&(1<<shiftbit)) != 0)
-      state |= 64;
+  //  for (shiftbit = first_bit; shiftbit<8; shiftbit++) {
+  for (shiftbit = 0 ; shiftbit <(8-first_bit) ; shiftbit++) {
+    if ((c&(1<<(7-first_bit-shiftbit))) != 0)
+      state |= (1<<shiftbit);
 
 #ifdef DEBUG_CCODE
-    printf("shiftbit %d, %d: %d -> %d \n",shiftbit,state>>6,dummy,state);
+    printf("shiftbit %d, %d -> %d \n",shiftbit,c&(1<<(7-first_bit-shiftbit)),state);
     dummy+=3;
 #endif
   }
@@ -85,7 +90,8 @@ ccodelte_encode (unsigned int numbits,
   if ((add_crc==0)&&((numbits&7)>0)) {
     c = inPtr[next_last_byte];
     //    printf("last_byte %x\n",c);
-    for (shiftbit = 0 ; shiftbit < (numbits&7) ; shiftbit++) {
+    //    for (shiftbit = 0 ; shiftbit < (numbits&7) ; shiftbit++) {
+    for (shiftbit = (numbits&7)-1 ; shiftbit>=0 ; shiftbit--) {
       state >>= 1;
       if ((c&(1<<shiftbit)) != 0)
 	state |= 64;
@@ -96,8 +102,8 @@ ccodelte_encode (unsigned int numbits,
     }
   }
 
-  state = state & 0x3f;
-
+  state = state & 0x3f;   // true initial state of Tail-biting CCode
+  state<<=1;              // because of loop structure in CCode
 #ifdef DEBUG_CCODE
   printf("Initial state %d\n",state);
   dummy = 0;
@@ -115,7 +121,8 @@ ccodelte_encode (unsigned int numbits,
 #endif //DEBUG_CCODE
 
 
-    for (shiftbit = 0; (shiftbit<8) && (numbits>0);shiftbit++,numbits--) {
+    //    for (shiftbit = 0; (shiftbit<8) && (numbits>0);shiftbit++,numbits--) {
+    for (shiftbit = 7; (shiftbit>=0) && (numbits>0);shiftbit--,numbits--) {
       state >>= 1;
       if ((c&(1<<shiftbit)) != 0){
 	state |= 64;
@@ -128,7 +135,7 @@ ccodelte_encode (unsigned int numbits,
       *outPtr++ = (out>>2)&1;
 
 #ifdef DEBUG_CCODE
-      printf("numbits %d, input %d, outbit %d: %d -> %d (%d)\n",numbits,state>>6,dummy,state,out,ccodelte_table[state]);
+      printf("numbits %d, input %d, outbit %d: %d -> %d (%d%d%d)\n",numbits,state>>6,dummy,state,out,out&1,(out>>1)&1,(out>>2)&1);
       dummy+=3;
 #endif //DEBUG_CCODE      
 
@@ -140,7 +147,8 @@ ccodelte_encode (unsigned int numbits,
   if (add_crc == 1) { 
 
     c = (unsigned char)(crc>>24);
-    for (shiftbit = 0; (shiftbit<8);shiftbit++) {
+    //    for (shiftbit = 0; (shiftbit<8);shiftbit++) {
+    for (shiftbit = 7; (shiftbit>=0);shiftbit--) {
       state >>= 1;
       if ((c&(1<<shiftbit)) != 0){
 	state |= 64;
@@ -164,7 +172,8 @@ ccodelte_encode (unsigned int numbits,
   if (add_crc == 2) {
 
     c16 = (unsigned short)(crc>>16);
-    for (shiftbit = 0; (shiftbit<16);shiftbit++) {
+    //    for (shiftbit = 0; (shiftbit<16);shiftbit++) {
+    for (shiftbit = 15; (shiftbit>=0);shiftbit--) {
       state >>= 1;
       if ((c16&(1<<shiftbit)) != 0){
 	state |= 64;
@@ -201,7 +210,7 @@ void ccodelte_init(void)
 {
   unsigned int  i, j, k, sum;
 
-  for (i = 0; i < 192; i++) {
+  for (i = 0; i < 128; i++) {
     ccodelte_table[i] = 0;
     /* Compute 3 output bits */
     for (j = 0; j < 3; j++) {

@@ -133,10 +133,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 2:  //QPSK
 	  
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-	    ((short*)&txdataF[aa][tti_offset])[0] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[aa][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 
 	  //	  printf("%d,%d\n",((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
@@ -210,16 +210,16 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  // first antenna position n -> x0
 	  
-	  ((short*)&txdataF[0][tti_offset])[0] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&txdataF[0][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
-	  ((short*)&txdataF[0][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&txdataF[0][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
 	  
 	  // second antenna position n -> -x1*
 	  
-	  ((short*)&txdataF[1][tti_offset])[0] += (output[*jj]==0) ? (gain_lin_QPSK) : -gain_lin_QPSK;
+	  ((short*)&txdataF[1][tti_offset])[0] += (output[*jj]==1) ? (gain_lin_QPSK) : -gain_lin_QPSK;
 	  *jj=*jj+1;
-	  ((short*)&txdataF[1][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&txdataF[1][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj=*jj+1;
 	  
 	  break;
@@ -349,9 +349,9 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	switch (mod_order) {
 	case 2:  //QPSK
 	  
-	  ((short*)&txdataF[re&1][tti_offset])[0] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&txdataF[re&1][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
-	  ((short*)&txdataF[re&1][tti_offset])[1] += (output[*jj]==0) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&txdataF[re&1][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 	  break;
 	  

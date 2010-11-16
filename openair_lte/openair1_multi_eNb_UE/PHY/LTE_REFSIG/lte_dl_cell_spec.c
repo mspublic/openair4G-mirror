@@ -30,10 +30,10 @@ int lte_dl_cell_spec(mod_sym_t *output,
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
   ((short *)&qpsk[0])[1] = a;
-  ((short *)&qpsk[1])[0] = a;
-  ((short *)&qpsk[1])[1] = -a;
-  ((short *)&qpsk[2])[0] = -a;
-  ((short *)&qpsk[2])[1] = a;
+  ((short *)&qpsk[1])[0] = -a;
+  ((short *)&qpsk[1])[1] = a;
+  ((short *)&qpsk[2])[0] = a;
+  ((short *)&qpsk[2])[1] = -a;
   ((short *)&qpsk[3])[0] = -a;
   ((short *)&qpsk[3])[1] = -a;
 #endif
@@ -112,10 +112,10 @@ int lte_dl_cell_spec_rx(int *output,
 
   ((short *)&qpsk[0])[0] = ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[0])[1] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[1])[0] = ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[1])[1] = ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[2])[0] = -ONE_OVER_SQRT2_Q15;
-  ((short *)&qpsk[2])[1] = -ONE_OVER_SQRT2_Q15;
+  ((short *)&qpsk[1])[0] = -ONE_OVER_SQRT2_Q15;
+  ((short *)&qpsk[1])[1] = -ONE_OVER_SQRT2_Q15;
+  ((short *)&qpsk[2])[0] = ONE_OVER_SQRT2_Q15;
+  ((short *)&qpsk[2])[1] = ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
 

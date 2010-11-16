@@ -95,7 +95,6 @@ unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned
 #endif
   ND3 = ND*3;
 
-
   k=0;
   for (col=0;col<32;col++) {
 #ifdef RM_DEBUG_CC

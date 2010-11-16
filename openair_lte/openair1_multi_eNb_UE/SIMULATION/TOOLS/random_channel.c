@@ -31,11 +31,15 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   u16 i,j;
   double delta_tau;
 
+  msg("[CHANNEL] Getting new channel descriptor, nb_tx %d, nb_rx %d, nb_taps %d, channel_length %d\n",
+      nb_tx,nb_rx,nb_taps,channel_length);
+
   chan_desc->nb_tx          = nb_tx;
   chan_desc->nb_rx          = nb_rx;
   chan_desc->nb_taps        = nb_taps;
   chan_desc->channel_length = channel_length;
   chan_desc->amps           = amps;
+  msg("[CHANNEL Doing delays ...\n");
   if (delays==NULL) {
     chan_desc->delays = (double*) malloc(nb_taps*sizeof(double));
     delta_tau = Td/nb_taps;
@@ -44,6 +48,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   }
   else
     chan_desc->delays         = delays;
+
   chan_desc->Td             = Td;
   chan_desc->BW             = BW;
   chan_desc->ricean_factor  = ricean_factor;
@@ -55,11 +60,19 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->ip             = 0.0;
   chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
   chan_desc->a              = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
+
+  msg("[CHANNEL] Filling ch \n");
+
   for (i = 0; i<nb_tx*nb_rx; i++) 
     chan_desc->ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex)); 
+
+  msg("[CHANNEL] Filling a \n");
   for (i = 0; i<nb_taps; i++) {
+    msg("tap %d (%p,%d)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
     chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
   }
+
+  msg("[CHANNEL] Doing R_sqrt ...\n");
   if (R_sqrt == NULL) {
     chan_desc->R_sqrt         = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
     for (i = 0; i<nb_taps; i++) {

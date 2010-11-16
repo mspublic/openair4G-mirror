@@ -23,30 +23,34 @@ unsigned int lte_gold_table[20][2][14];  // need 55 bytes for sequence
 
 void lte_gold(LTE_DL_FRAME_PARMS *frame_parms) {
 
-  unsigned char ns,l;
-  unsigned int n,x1,x2;
+  unsigned char ns,l,Ncp=1-frame_parms->Ncp;
+  unsigned int n,x1,x2;//,x1tmp,x2tmp;
 
   for (ns=0;ns<20;ns++) {
 
     for (l=0;l<2;l++) {
       
-      x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + (((1+(frame_parms->Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
+      x2 = Ncp + 
+	(frame_parms->Nid_cell<<1) + 
+	(((1+(frame_parms->Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + (1+(frame_parms->Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
+      //      printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
       x1 = 1+ (1<<31);
-      x2=x2 + ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
+      x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
       // skip first 50 double words (1600 bits)
-      //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
+      //printf("n=0 : x1 %x, x2 %x\n",x1,x2);
       for (n=1;n<50;n++) {
 	x1 = (x1>>1) ^ (x1>>4);
 	x1 = x1 ^ (x1<<31) ^ (x1<<28);
-	x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x1>>4);
+	x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
 	x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+	//	printf("x1 : %x, x2 : %x\n",x1,x2);
       }
       for (n=0;n<14;n++) {
 	x1 = (x1>>1) ^ (x1>>4);
 	x1 = x1 ^ (x1<<31) ^ (x1<<28);
-	x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x1>>4);
+	x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
 	x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
 	lte_gold_table[ns][l][n] = x1^x2;
 	//	printf("n=%d : c %x\n",n,x1^x2);	
@@ -68,19 +72,19 @@ unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char 
   int n;
   if (reset) {
     *x1 = 1+ (1<<31);
-    *x2=*x2 + ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
+    *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
     // skip first 50 double words (1600 bits)
     //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
     for (n=1;n<50;n++) {
       *x1 = (*x1>>1) ^ (*x1>>4);
       *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-      *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x1>>4);
+      *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
       *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
     }
   }
   *x1 = (*x1>>1) ^ (*x1>>4);
   *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x1>>4);
+  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
   *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
   return(*x1^*x2);
   //	printf("n=%d : c %x\n",n,x1^x2);	

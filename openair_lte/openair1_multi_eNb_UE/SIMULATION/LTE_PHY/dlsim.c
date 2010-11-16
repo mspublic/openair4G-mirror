@@ -334,8 +334,8 @@ int main(int argc, char **argv) {
 #else
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(coded_bits_per_codeword);
 #endif
-
-  printf("Rate = %f (mod %d)\n",(((double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1])*3/4)/coded_bits_per_codeword,
+  rate*=get_Qm(mcs);
+  printf("Rate = %f (TBS %d,mod %d)\n",rate,(int)(rate*coded_bits_per_codeword),
 	 get_Qm(mcs));
   sprintf(bler_fname,"bler_%d.m",mcs);
   bler_fd = fopen(bler_fname,"w");
@@ -508,6 +508,7 @@ int main(int argc, char **argv) {
     dci_errors=0;
 
     round=0;
+
     for (trials = 0;trials<n_frames;trials++) {
       //      printf("Trial %d\n",trials);
       fflush(stdout);
@@ -529,18 +530,20 @@ int main(int argc, char **argv) {
 	  DLSCH_alloc_pdu2.rv1              = round>>1;
 	  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
 	}
-
+ 
 	dlsch_encoding(input_buffer,
 		       &PHY_vars_eNb->lte_frame_parms,
 		       num_pdcch_symbols,
 		       PHY_vars_eNb->dlsch_eNb[0][0]);
-	
+
 	dlsch_scrambling(&PHY_vars_eNb->lte_frame_parms,
 			 num_pdcch_symbols,
 			 PHY_vars_eNb->dlsch_eNb[0][0],
+			 coded_bits_per_codeword,
 			 0,
 			 0);
 	
+
 	if (n_frames==1) {
 	  for (s=0;s<PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->C;s++) {
 	    if (s<PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->Cminus)
@@ -791,6 +794,7 @@ int main(int argc, char **argv) {
 						 dci_alloc_rx,
 						 eNb_id,
 						 &PHY_vars_UE->lte_frame_parms,
+						 get_mi(&PHY_vars_UE->lte_frame_parms,0),
 						 SI_RNTI,
 						 RA_RNTI);
 		//	      printf("dci_cnt %d\n",dci_cnt);
@@ -999,10 +1003,12 @@ int main(int argc, char **argv) {
 	  dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
 			     num_pdcch_symbols,
 			     PHY_vars_UE->dlsch_ue[0][0],
+			     coded_bits_per_codeword,
 			     PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],
 			     0,
 			     0);
-	  		     
+	   
+		     
 	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],

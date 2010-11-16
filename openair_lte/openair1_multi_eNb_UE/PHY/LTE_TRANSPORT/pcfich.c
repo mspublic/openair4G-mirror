@@ -2,16 +2,33 @@
 #include "MAC_INTERFACE/extern.h"
 
 unsigned short pcfich_reg[4];
+unsigned char pcfich_first_reg_idx = 0;
 
 //#define DEBUG_PCFICH
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned short kbar = 6 * (frame_parms->Nid_cell %(2*frame_parms->N_RB_DL));
+  unsigned short first_reg;
+
   pcfich_reg[0] = kbar/6;
+  first_reg = pcfich_reg[0];
+
   pcfich_reg[1] = ((kbar + (frame_parms->N_RB_DL>>1)*6)%(frame_parms->N_RB_DL*12))/6;
+  if (pcfich_reg[1] < pcfich_reg[0]) {
+    pcfich_first_reg_idx = 1;
+    first_reg = pcfich_reg[1];
+  }  
   pcfich_reg[2] = ((kbar + (frame_parms->N_RB_DL)*6)%(frame_parms->N_RB_DL*12))/6;
+  if (pcfich_reg[2] < first_reg) {
+    pcfich_first_reg_idx = 2;
+    first_reg = pcfich_reg[2];
+  }
   pcfich_reg[3] = ((kbar + ((3*frame_parms->N_RB_DL)>>1)*6)%(frame_parms->N_RB_DL*12))/6;
+  if (pcfich_reg[3] < first_reg) {
+    pcfich_first_reg_idx = 3;
+    first_reg = pcfich_reg[3];
+  }
   
 #ifdef DEBUG_PCFICH
   debug_msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
@@ -231,7 +248,9 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
       //      printf("pcfich_b[%d][%d] %d => phich_d[%d] %d]\n",i,j,pcfich_b[i][j],j,phich_d[j]);
       metric += ((pcfich_b[i][j]==0) ? (phich_d[j]) : (-phich_d[j]));
     }
-    //    printf("metric %d : %d\n",i,metric);
+#ifdef DEBUG_PCFICH
+    msg("metric %d : %d\n",i,metric);
+#endif
     if (metric > old_metric) {
       num_pdcch_symbols = 1+i;
       old_metric = metric;

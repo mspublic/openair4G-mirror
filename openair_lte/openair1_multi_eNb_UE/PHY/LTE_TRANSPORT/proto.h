@@ -701,6 +701,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNb_id,
 			   LTE_DL_FRAME_PARMS *frame_parms,
+			   u8 mi,
 			   u16 si_rnti,
 			   u16 ra_rnti);
 
@@ -868,6 +869,8 @@ s32 generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 				       u16 ra_rnti,
 				       u16 p_rnti);
 
+int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
+
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
 
@@ -961,13 +964,17 @@ u16 computeRIV(u16 N_RB_DL,u16 RBstart,u16 Lcrbs);
 u32 pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,u8 wideband_pmi);
 
 
-u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms);
+u16 get_nCCE(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi);
+
+u16 get_nquad(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi);
+
+u8 get_mi(LTE_DL_FRAME_PARMS *frame,u8 subframe);
 
 u16 get_nCCE_max(u8 Mod_id);
 
 u8 get_num_pdcch_symbols(u8 num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 
-void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,u8 n_symbols_pdcch);
+void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,u8 n_symbols_pdcch,u8 mi);
 
 void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 subframe,

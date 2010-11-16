@@ -44,11 +44,13 @@ typedef struct __attribute__ ((__packed__)){
   /// Power Control
   unsigned char TPC:2;
   /// Cyclic shift
+  unsigned char cshift:3;
+  /// DAI
   unsigned char dai:2;
   /// CQI Request
   unsigned char cqi_req:1;
   /// Padding
-  unsigned char padding:5;
+  unsigned char padding:2;
 } DCI0_5MHz_TDD_1_6_t;
 #define sizeof_DCI0_5MHz_TDD_1_6_t 27
 
@@ -66,32 +68,36 @@ typedef struct __attribute__ ((__packed__)){
   unsigned char ndi:1;
   /// Power Control
   unsigned char TPC:2;
+  /// DRS Cyclic Shift
+  unsigned char cshift:3;
   /// CQI Request
   unsigned char cqi_req:1;
   /// Padding
-  unsigned char padding:5;
+  unsigned char padding:2;
 } DCI0_5MHz_FDD_t;
 #define sizeof_DCI0_5MHz_FDD_t 25
 
 
 /// DCI Format Type 1 (5 MHz, TDD, 30 bits)
 typedef struct __attribute__ ((__packed__)){
-  /// Resource Allocation Header
-  unsigned char rah:1;
-  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  unsigned short rballoc:13;
-  /// Modulation and Coding Scheme and Redundancy Version
-  unsigned char mcs:5;
-  /// HARQ Process
-  unsigned char harq_pid:4;
-  /// New Data Indicator
-  unsigned char ndi:1;
-  /// Redundancy version
-  unsigned char rv:2;
-  /// Power Control
-  unsigned char TPC:2;
+  /// Dummy bits to align to 32-bits
+  u32 dummy:2;
   /// DAI (TDD)
-  unsigned char dai:2;
+  u32 dai:2;
+  /// Power Control
+  u32 TPC:2;
+  /// Redundancy version
+  u32 rv:2;
+  /// New Data Indicator
+  u32 ndi:1;
+  /// HARQ Process
+  u32 harq_pid:4;
+  /// Modulation and Coding Scheme and Redundancy Version
+  u32 mcs:5;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  u32 rballoc:13;
+  /// Resource Allocation Header
+  u32 rah:1;
 } DCI1_5MHz_TDD_t;
 #define sizeof_DCI1_5MHz_TDD_t 30
 

@@ -84,7 +84,7 @@ void phy_generate_viterbi_tables_lte() {
 #define INIT0 0x00000080
 #define RESCALE 0x00000040
 
-
+//#define DEBUG_VITERBI
 
 #ifdef DEBUG_VITERBI
 void print_bytes(char *s,__m128i *x) {
@@ -97,7 +97,7 @@ void print_bytes(char *s,__m128i *x) {
 
 }
 
-
+/*
 void print_shorts(__m128i x,char *s) {
 
   short *tempb = (short *)&x;
@@ -107,7 +107,7 @@ void print_shorts(__m128i x,char *s) {
 	 );
 
 }
-
+*/
 #endif // USER_MODE
 
 
@@ -314,7 +314,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
       metrics32_47 = _mm_subs_epu8(metrics32_47,min_state);
       metrics48_63 = _mm_subs_epu8(metrics48_63,min_state);
       
-      /*      
+      /*            
 	print_bytes("metrics0_15",&metrics0_15);
 	print_bytes("metrics16_31",&metrics16_31);
 	print_bytes("metrics32_47",&metrics32_47);
@@ -325,7 +325,7 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
       
     }
 
-  }
+  } // iteration
 
   // Traceback
   prev_state0 = 0;
@@ -362,9 +362,9 @@ void phy_viterbi_lte_sse2(char *y,unsigned char *decoded_bytes,unsigned short n)
 //    if ((position%8) == 0)
 //	printf("%d: %x\n",1+(position>>3),decoded_bytes[1+(position>>3)]);
 		     	
-    decoded_bytes[(position)>>3] += (prev_state0 & 0x1)<<(position & 0x7);
+    decoded_bytes[(position)>>3] += (prev_state0 & 0x1)<<(7-(position & 0x7));
     
-  //  printf("pos %d : ps = %d -> %d\n",position,prev_state0,TB_ptr2[prev_state0]);
+    //    printf("pos %d : ps = %d -> %d\n",position,prev_state0,TB_ptr2[prev_state0]);
     
     if (TB_ptr2[prev_state0] == 0) 
       prev_state0 = (prev_state0 >> 1);

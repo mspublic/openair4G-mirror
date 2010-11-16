@@ -60,7 +60,7 @@ int generate_pbch(mod_sym_t **txdataF,
   u32 jj=0;
   u32 re_allocated=0;
   u32 rb, re_offset, symbol_offset;
-
+  u16 amask=0;
 
   pbch_D    = 16+PBCH_A;
   pbch_D_bytes   = pbch_D>>3;
@@ -95,39 +95,30 @@ int generate_pbch(mod_sym_t **txdataF,
     }
     */
     
-    // Place crc
-    // double check!!!
+    // Fix byte endian of PBCH (bit 23 goes in first)
     for (i=0;i<(PBCH_A>>3);i++) 
-      pbch_a[i] = pbch_pdu[i];
+      pbch_a[(PBCH_A>>3)-i-1] = pbch_pdu[i];
     //  pbch_data[i] = ((char*) &crc)[0];
     //  pbch_data[i+1] = ((char*) &crc)[1];
 #ifdef DEBUG_PBCH_ENCODING
     for (i=0;i<(PBCH_A>>3);i++) 
       msg("[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
 #endif
-    
-    ccodelte_encode(PBCH_A,2,pbch_a,pbch_d+96,(u16)frame_parms->nb_antennas_tx);
-    /*
-      threegpplte_turbo_encoder(pbch_data,
-      pbch_crc_bytes,
-      pbch_coded_data,
-      0,
-      f1f2mat[threegpp_interleaver_parameters(pbch_crc_bytes)*2],   // f1 (see 36121-820, page 14)
-      f1f2mat[(threegpp_interleaver_parameters(pbch_crc_bytes)*2)+1]  // f2 (see 36121-820, page 14)
-      );
-      
-      // rate matching
-      if (rate_matching_lte(pbch_coded_bits, 
-      pbch_crc_bits*3+12, 
-      pbch_coded_data,
-      0) !=0 ) {
-      msg("[PBCH] Rate matching problem!\n");
-      return(-1);
-      }
-    */
-    
+    switch (frame_parms->nb_antennas_tx) {
+    case 1:
+      amask = 0x0000;
+      break;
+    case 2:
+      amask = 0xffff;
+      break;
+    case 4:
+      amask = 0x5555;
+    }
+    ccodelte_encode(PBCH_A,2,pbch_a,pbch_d+96,amask);
+
+     
 #ifdef DEBUG_PBCH_ENCODING
-#ifdef DEBUG_DCI_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
     for (i=0;i<16+PBCH_A;i++)
       msg("%d : (%d,%d,%d)\n",i,*(pbch_d+96+(3*i)),*(pbch_d+97+(3*i)),*(pbch_d+98+(3*i)));
 #endif
@@ -166,12 +157,13 @@ int generate_pbch(mod_sym_t **txdataF,
     
     lte_rate_matching_cc(RCC,pbch_E,pbch_w,pbch_e);
 
-    // scrambling
+#ifdef DEBUG_PBCH_ENCODING
+    msg("PBCH_e:\n");
+    for (i=0;i<pbch_E;i++)
+      msg("%d %d\n",i,*(pbch_e+i));
+    msg("\n");
+#endif
 
-    pbch_scrambling(frame_parms,
-		    pbch_e,
-		    pbch_E);
-    
 #ifdef DEBUG_PBCH
 #ifdef USER_MODE
     write_output("pbch_e.m","pbch_e",
@@ -181,6 +173,14 @@ int generate_pbch(mod_sym_t **txdataF,
 		 4);
 #endif //USER_MODE
 #endif //DEBUG_PBCH
+
+    // scrambling
+
+    pbch_scrambling(frame_parms,
+		    pbch_e,
+		    pbch_E);
+    
+
   } // frame_mod4==0
 
   // modulation and mapping (slot 1, symbols 0..3)
@@ -568,7 +568,8 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
     }
     // take the quarter of the PBCH that corresponds to this frame
     if ((i>(frame_mod4*(length>>2))) && (i<((1+frame_mod4)*(length>>2)))) {
-      if (((s>>(i%32))&1)==1)
+      //      if (((s>>(i%32))&1)==1)
+      if (((s>>(i%32))&1)==0)
 	llr[i] = -llr[i];
     }
   }
@@ -779,15 +780,20 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 #ifdef USER_MODE
   write_output("pbch_decoded_out.m","pbch_dec_out",
 	       decoded_output,
-	       pbch_D,
+	       PBCH_A>>3,
 	       1,
 	       4);
 #endif //USER_MODE
 #endif //DEBUG_PBCH
 
-  //  printf("PBCH CRC %x : %x\n",crc16(decoded_output,PBCH_A),(*(short*)&decoded_output[PBCH_A>>3]));
+#ifdef DEBUG_PBCH
+  printf("PBCH CRC %x : %x\n",
+	 crc16(decoded_output,PBCH_A),
+	 ((u16)decoded_output[PBCH_A>>3]<<8)+decoded_output[(PBCH_A>>3)+1]);
+#endif
 
-  crc = (crc16(decoded_output,PBCH_A)>>16) ^ (*(short*)&decoded_output[PBCH_A>>3]);
+  crc = (crc16(decoded_output,PBCH_A)>>16) ^ 
+    (((u16)decoded_output[PBCH_A>>3]<<8)+decoded_output[(PBCH_A>>3)+1]);
   return(crc);
 
 }

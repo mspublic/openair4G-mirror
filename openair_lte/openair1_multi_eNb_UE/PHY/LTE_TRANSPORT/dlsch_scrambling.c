@@ -7,6 +7,7 @@
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 num_pdcch_symbols,
 		      LTE_eNb_DLSCH_t *dlsch,
+		      u16 G,
 		      u8 q,
 		      u8 Ns) {
 
@@ -14,19 +15,19 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   u8 reset;
   u32 x1, x2, s=0;
   u8 *e=dlsch->e;
-  u32 length = dlsch->G;
 
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
-  
-  for (i=0; i<length; i++) {
+
+  //  printf("scrambling: rnti %x, length %d\n",dlsch->rnti,G);  
+  for (i=0; i<G; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
-    //    printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
+    //        printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
     e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
   }
 
@@ -36,30 +37,30 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 num_pdcch_symbols,
 			LTE_UE_DLSCH_t *dlsch,
-			s8* llr,
+			u16 G,
+			s16* llr,
 			u8 q,
 			u8 Ns) {
 
   int i;
   u8 reset;
   u32 x1, x2, s=0;
-  u32 length=dlsch->G;
   
   reset = 1;
   // x1 is set in first call to lte_gold_generic
 
   x2 = (dlsch->rnti<<14) + (q<<13) + ((Ns>>1)<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
-
-  for (i=0; i<length; i++) {
+  //  printf("unscrambling: rnti %x, length %d\n",dlsch->rnti,G);
+  for (i=0; i<G; i++) {
     if (i%32==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
     // take the quarter of the PBCH that corresponds to this frame
-    //    printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
-    if (((s>>(i%32))&1)==1)
+    //       printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
+    if (((s>>(i%32))&1)==0)
       llr[i] = -llr[i];
 
   }
-}
+} 
