@@ -221,15 +221,15 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	phich_d_ptr[2] = 0;
 	phich_d_ptr[3] = 0;
 	for (j=0;j<frame_parms->nb_antennas_rx;j++) {
-	  phich_d_ptr[0] += (((s16*)&rxdataF_comp[reg_offset+i][j])[0]+
-			     ((s16*)&rxdataF_comp[reg_offset+i+1][j+2])[0]); // RE component
-	  phich_d_ptr[1] += (((s16*)&rxdataF_comp[reg_offset+i][j])[1] -
-			     ((s16*)&rxdataF_comp[reg_offset+i+1][j+2])[1]);// IM component
+	  phich_d_ptr[0] += (((s16*)&rxdataF_comp[j][reg_offset+i])[0]+
+			     ((s16*)&rxdataF_comp[j+2][reg_offset+i+1])[0]); // RE component
+	  phich_d_ptr[1] += (((s16*)&rxdataF_comp[j][reg_offset+i])[1] -
+			     ((s16*)&rxdataF_comp[j+2][reg_offset+i+1])[1]);// IM component
 	  
-	  phich_d_ptr[2] += (((s16*)&rxdataF_comp[reg_offset+i+1][j])[0]-
-			     ((s16*)&rxdataF_comp[reg_offset+i][j+2])[0]); // RE component
-	  phich_d_ptr[3] += (((s16*)&rxdataF_comp[reg_offset+i+1][j])[1] +
-			     ((s16*)&rxdataF_comp[reg_offset+i][j+2])[1]);// IM component
+	  phich_d_ptr[2] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[0]-
+			     ((s16*)&rxdataF_comp[j+2][reg_offset+i])[0]); // RE component
+	  phich_d_ptr[3] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[1] +
+			     ((s16*)&rxdataF_comp[j+2][reg_offset+i])[1]);// IM component
 	}
 	phich_d_ptr+=4;
       }

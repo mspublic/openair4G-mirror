@@ -258,6 +258,7 @@ int main(int argc, char **argv) {
 	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs -n n_frames -s snr0 -t Delayspread -x transmission mode (1,2,6) -y TXant -z RXant\n",argv[0]);
 	printf("-h This message\n");
 	printf("-a Use AWGN channel and not multipath\n");
+	printf("-m MCS\n");
 	printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
 	printf("-p Use extended prefix mode\n");
 	printf("-n Number of frames to simulate\n");

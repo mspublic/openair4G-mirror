@@ -316,7 +316,7 @@ u16 pbch_extract(int **rxdataF,
       }
     }
 
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
       dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
       for (rb=0; rb<nb_rb; rb++) {
@@ -364,7 +364,7 @@ int pbch_channel_level(int **dl_ch_estimates_ext,
   u32 nsymb = (frame_parms->Ncp==0) ? 7:6;
   u32 symbol_mod = symbol % nsymb;
 
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       //clear average level
       avg128 = _mm_xor_si128(avg128,avg128);
@@ -419,7 +419,7 @@ void pbch_channel_compensation(int **rxdataF_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   
-  for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+  for (aatx=0;aatx<4;aatx++) //frame_parms->nb_antennas_tx;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
       dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
@@ -514,7 +514,7 @@ void pbch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
+    for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol_mod*6*12];  
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol_mod*6*12];  
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
