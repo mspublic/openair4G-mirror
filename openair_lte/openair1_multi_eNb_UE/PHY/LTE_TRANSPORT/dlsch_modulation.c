@@ -21,7 +21,7 @@ void generate_64qam_table(void) {
     for (b=-1;b<=1;b+=2) 
       for (c=-1;c<=1;c+=2) {
 	index = (1+a)*2 + (1+b) + (1+c)/2;  
-	qam64_table[index] = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
+	qam64_table[index] = -a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
       } 
 }
 
@@ -32,7 +32,7 @@ void generate_16qam_table(void) {
   for (a=-1;a<=1;a+=2) 
     for (b=-1;b<=1;b+=2) {
 	index = (1+a) + (1+b)/2;  
-	qam16_table[index] = a*(QAM16_n1 + (b*QAM16_n2)); 
+	qam16_table[index] = -a*(QAM16_n1 + (b*QAM16_n2)); 
       } 
 }
 
@@ -145,17 +145,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 4:  //16QAM
 	  
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_re+=1;
+	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
 	  
 	  
-	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_im+=2;
+	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
@@ -172,23 +172,22 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam64_table_offset_re+=1;
-	  *jj=*jj+1;
-	  
-	  
-	  qam64_table_offset_im = 0;
-	  if (output[*jj] == 1)
-	    qam64_table_offset_im+=4;
-	  *jj=*jj+1;
-	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
@@ -229,17 +228,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  // Antenna 0 position n 
 	  
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_re+=1;
+	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
 	  
 	  
-	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_im+=2;
+	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
@@ -251,17 +250,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  // Antenna 1 position n Real part -> -x1*
 	  
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_re+=1;
+	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
 	  
 	  
-	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_im+=2;
+	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
@@ -276,23 +275,22 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  // Antenna 0
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam64_table_offset_re+=1;
-	  *jj=*jj+1;
-	  
-	  
-	  qam64_table_offset_im = 0;
-	  if (output[*jj] == 1)
-	    qam64_table_offset_im+=4;
-	  *jj=*jj+1;
-	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
@@ -304,23 +302,21 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  // Antenna 1 => -x1*
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam64_table_offset_re+=1;
-	  *jj=*jj+1;
-	  
-	  
-	  qam64_table_offset_im = 0;
-	  if (output[*jj] == 1)
-	    qam64_table_offset_im+=4;
-	  *jj=*jj+1;
-	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
@@ -358,17 +354,18 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 4:  //16QAM
 	  
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_re+=1;
+	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
 	  
 	  
-	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_im+=2;
+	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
@@ -383,23 +380,22 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 6:  //64QAM
 	  
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam64_table_offset_re+=1;
-	  *jj=*jj+1;
-	  
-	  
-	  qam64_table_offset_im = 0;
-	  if (output[*jj] == 1)
-	    qam64_table_offset_im+=4;
-	  *jj=*jj+1;
-	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;
@@ -429,17 +425,18 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 4:  //16QAM
 	  
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
 	  if (output[*jj] == 1)
 	    qam16_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_re+=1;
+	    qam16_table_offset_im+=2;
 	  *jj=*jj+1;
 	  
 	  
-	  qam16_table_offset_im = 0;
 	  if (output[*jj] == 1)
-	    qam16_table_offset_im+=2;
+	    qam16_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam16_table_offset_im+=1;
@@ -456,23 +453,21 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  
 	  
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_im+=4;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_re+=2;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
-	    qam64_table_offset_re+=1;
-	  *jj=*jj+1;
-	  
-	  
-	  qam64_table_offset_im = 0;
-	  if (output[*jj] == 1)
-	    qam64_table_offset_im+=4;
-	  *jj=*jj+1;
-	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (output[*jj] == 1)
+	    qam64_table_offset_re+=1;
 	  *jj=*jj+1;
 	  if (output[*jj] == 1)
 	    qam64_table_offset_im+=1;

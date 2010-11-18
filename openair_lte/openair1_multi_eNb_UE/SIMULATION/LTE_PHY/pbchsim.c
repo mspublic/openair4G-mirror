@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "harpi:j:n:s:t:x:y:z:N:F:")) != -1)
+  while ((c = getopt (argc, argv, "har:pi:j:n:s:t:x:y:z:N:F:")) != -1)
     {
       switch (c)
 	{
@@ -746,7 +746,7 @@ int main(int argc, char **argv) {
 #endif
 	    
 	    if (l==0) {
-	      
+	     /* 
 	      lte_ue_measurements(PHY_vars_UE,
 				  &PHY_vars_UE->lte_frame_parms,
 				  0,
@@ -781,6 +781,7 @@ int main(int argc, char **argv) {
 			       0,
 			       1,
 			       16384);
+*/
 	    }
 	    
 	    if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?4:3)) {

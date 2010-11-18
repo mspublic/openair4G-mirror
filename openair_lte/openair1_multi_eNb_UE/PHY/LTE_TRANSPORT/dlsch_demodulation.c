@@ -405,11 +405,12 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     mmtmpD0 = _mm_abs_epi16(rxF[i]);
     //    print_shorts("tmp0",&tmp0);
 
-    mmtmpD0 = _mm_subs_epi16(mmtmpD0,ch_mag[i]);
+    //    mmtmpD0 = _mm_subs_epi16(mmtmpD0,ch_mag[i]);
+    mmtmpD0 = _mm_subs_epi16(ch_mag[i],mmtmpD0);
 
 
-    llr128[0] = _mm_unpacklo_epi16(rxF[i],mmtmpD0);
-    llr128[1] = _mm_unpackhi_epi16(rxF[i],mmtmpD0);
+    llr128[0] = _mm_unpacklo_epi32(rxF[i],mmtmpD0);
+    llr128[1] = _mm_unpackhi_epi32(rxF[i],mmtmpD0);
     llr128+=2;
 
     //    print_bytes("rxF[i]",&rxF[i]);
@@ -452,15 +453,18 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 
     mmtmpD1 = _mm_abs_epi16(rxF[i]);
-    mmtmpD1  = _mm_subs_epi16(mmtmpD1,ch_mag[i]);
+    mmtmpD1  = _mm_subs_epi16(ch_mag[i],mmtmpD1);
     mmtmpD2 = _mm_abs_epi16(mmtmpD1);
-    mmtmpD2 = _mm_subs_epi16(mmtmpD2,ch_magb[i]);
+    mmtmpD2 = _mm_subs_epi16(ch_magb[i],mmtmpD2);
 
-    for (j=0;j<8;j++) {
+    for (j=0;j<8;j+=2) {
       llr[0] = ((short *)&rxF[i])[j];
-      llr[1] = ((short *)&mmtmpD1)[j];
-      llr[2] = ((short *)&mmtmpD2)[j];
-      llr+=3;
+      llr[1] = ((short *)&rxF[i])[j+1];
+      llr[2] = ((short *)&mmtmpD1)[j];
+      llr[3] = ((short *)&mmtmpD1)[j+1];
+      llr[4] = ((short *)&mmtmpD2)[j];
+      llr[5] = ((short *)&mmtmpD2)[j+1];
+      llr+=6;
     }
 
   }

@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "harpc:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
+  while ((c = getopt (argc, argv, "har:pc:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
     switch (c)
       {
       case 'a':
