@@ -113,7 +113,8 @@ typedef struct {
 } scenario_desc_t;
 
 typedef enum {
-  SCM_A=0,
+  custom=0, 
+  SCM_A,
   SCM_B,
   SCM_C,
   SCM_D

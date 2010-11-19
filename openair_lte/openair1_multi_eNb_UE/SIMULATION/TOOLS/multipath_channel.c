@@ -142,19 +142,11 @@ void multipath_channel(channel_desc_t *desc,
     printf("[CHANNEL] path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length);
 #endif
 
-  /*  
-  for (i=0;i<desc->nb_rx;i++)      // RX Antenna loop
-    for (j=0;j<desc->nb_tx;j++) {  // TX Antenna loop
-      
-      if (keep_channel) {
-	// do nothing - keep channel
-      } else {
-	memset(desc->ch[i + (j*desc->nb_rx)], 0,desc->channel_length * sizeof(struct complex));
-      }
+    if (keep_channel) {
+      // do nothing - keep channel
+    } else {
+      random_channel(desc);
     }
-  */
-
-  random_channel(desc);
 
 #ifdef DEBUG_CH
   for (l = 0;l<(int)desc->channel_length;l++) {

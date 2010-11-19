@@ -154,8 +154,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
     }
     else {
-      msg("correltation matrix only implemented for nb_tx==2 and nb_rx==2\n");
-      return(NULL);
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	  chan_desc->R_sqrt[i][j].r = 1.0;
+	  chan_desc->R_sqrt[i][j].i = 0.0;
+	}
+	msg("correltation matrix only implemented for nb_tx==2 and nb_rx==2, using idendity\n");
+      }
     }
     break;
   case SCM_D:
