@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03;
   double ricean_factor=0.0000005;
+  double forgetting_factor=0;
   double Td=0.8;
   double iqim=0.0;
   u8 channel_length,nb_taps=8;
@@ -339,16 +340,6 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNb->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  coded_bits_per_codeword = get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,get_Qm(mcs),num_pdcch_symbols);
-
-#ifdef TBS_FIX
-  rate = (double)3*dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(4*coded_bits_per_codeword);
-#else
-  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(coded_bits_per_codeword);
-#endif
-  rate*=get_Qm(mcs);
-  printf("Rate = %f (TBS %d,mod %d)\n",rate,(int)(rate*coded_bits_per_codeword),
-	 get_Qm(mcs));
   sprintf(bler_fname,"bler_%d.csv",mcs);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
@@ -401,7 +392,8 @@ int main(int argc, char **argv) {
   PHY_vars_eNb->dlsch_eNb_SI->rnti  = SI_RNTI;
   PHY_vars_UE->dlsch_ue_SI[0]->rnti = SI_RNTI;
 
-  if (channel_model==custom)
+  if (channel_model==custom) {
+    msg("[SIM] Using custom channel model\n");
     eNB2UE = new_channel_desc(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
 			      PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
 			      nb_taps,
@@ -413,18 +405,21 @@ int main(int argc, char **argv) {
 			      BW,
 			      ricean_factor,
 			      aoa,
-			      .999,
+			      forgetting_factor,
 			      0,
 			      0,
 			      0);
-  else
+  }
+  else {
+    msg("[SIM] Using SCM\n");
     eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
 				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
 				  SCM_C,
 				  BW,
-				  .999,
+				  forgetting_factor,
 				  0,
 				  0);
+  }
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -493,7 +488,7 @@ int main(int argc, char **argv) {
   
   memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
   dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
-  dci_alloc[0].L          = 2;
+  dci_alloc[0].L          = 3;
   dci_alloc[0].rnti       = 0x1234;
   /*
   memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
@@ -503,15 +498,17 @@ int main(int argc, char **argv) {
   */
   memcpy(&dci_alloc[1].dci_pdu[0],&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD0_t));
   dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_0_t;
-  dci_alloc[1].L          = 2;
+  dci_alloc[1].L          = 3;
   dci_alloc[1].rnti       = 0x1234;
 
+  /*
   memcpy(&dci_alloc[2].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
   dci_alloc[2].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
   dci_alloc[2].L          = 2;
   dci_alloc[2].rnti       = 0x1235;
+  */
 
-  num_ue_spec_dci = 3;
+  num_ue_spec_dci = 2;
   num_common_dci = 0;
 
 
@@ -566,6 +563,28 @@ int main(int argc, char **argv) {
 	  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
 	}
  
+	num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
+					     num_common_dci,
+					     dci_alloc,
+					     0,
+					     1024,
+					     &PHY_vars_eNb->lte_frame_parms,
+					     PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
+					     0);
+
+	coded_bits_per_codeword = get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,get_Qm(mcs),num_pdcch_symbols);
+
+#ifdef TBS_FIX
+	rate = (double)3*dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(4*coded_bits_per_codeword);
+#else
+	rate = (double)dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]/(coded_bits_per_codeword);
+#endif
+	rate*=get_Qm(mcs);
+
+	if (trials==0) 
+	  printf("Rate = %f (TBS %d,mod %d)\n",rate,(int)(rate*coded_bits_per_codeword),
+		 get_Qm(mcs));
+
 	// use the PMI from previous trial
 	if (DLSCH_alloc_pdu2.tpmi == 5) 
 	  PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
@@ -618,15 +637,6 @@ int main(int argc, char **argv) {
 					  &PHY_vars_eNb->lte_frame_parms,
 					  num_pdcch_symbols,
 					  PHY_vars_eNb->dlsch_eNb[0][1]);
-	
-	num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
-					     num_common_dci,
-					     dci_alloc,
-					     0,
-					     1024,
-					     &PHY_vars_eNb->lte_frame_parms,
-					     PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-					     0);
 	
 	generate_pilots(PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
 			1024,
