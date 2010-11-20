@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 
   u8 num_pdcch_symbols=3,num_pdcch_symbols_dummy;
   u8 pilot1,pilot2,pilot3;
-
+  u8 rx_sample_offset = 15;
   //char stats_buffer[4096];
   //int len;
 
@@ -295,7 +295,7 @@ int main(int argc, char **argv) {
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
-  printf("Transmission mode %d with %dx%d antenna configuration\n",transmission_mode,n_tx,n_rx);
+  printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx,n_rx,extended_prefix_flag);
 
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
@@ -764,8 +764,8 @@ int main(int argc, char **argv) {
 	//	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
-	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[aa][i+rx_sample_offset] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[aa][i+rx_sample_offset] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	  }
 	}    
 	//    lte_sync_time_init(PHY_vars_eNb->lte_frame_parms,lte_ue_common_vars);
@@ -1011,6 +1011,7 @@ int main(int argc, char **argv) {
 	if (dlsch_active == 1) {
 
 	  if (n_frames==1) {
+	    write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
 	    write_output("rxsig0.m","rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 	    write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
 

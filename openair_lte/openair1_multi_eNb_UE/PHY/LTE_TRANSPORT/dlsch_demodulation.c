@@ -2059,7 +2059,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
 	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
-      lte_ue_dlsch_vars[eNb_id]->log2_maxh = (log2_approx(avgs)/2);
+      lte_ue_dlsch_vars[eNb_id]->log2_maxh = (log2_approx(avgs)/2)-1;
 #ifdef DEBUG_PHY
       msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_dlsch_vars[eNb_id]->log2_maxh,avg[0],avgs);
       msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);

@@ -44,7 +44,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
     chan_desc->delays = (double*) malloc(nb_taps*sizeof(double));
     delta_tau = Td/nb_taps;
     for (i=0; i<nb_taps; i++)
-      chan_desc->delays[i] = ((double)i+0.159)*delta_tau;
+      chan_desc->delays[i] = ((double)i)*delta_tau;
   }
   else
     chan_desc->delays         = delays;
