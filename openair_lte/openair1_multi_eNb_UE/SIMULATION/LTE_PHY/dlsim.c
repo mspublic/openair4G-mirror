@@ -179,9 +179,9 @@ int main(int argc, char **argv) {
 
   channel_desc_t *eNB2UE;
 
-  u8 num_pdcch_symbols=3,num_pdcch_symbols_dummy;
+  u8 num_pdcch_symbols=3;
   u8 pilot1,pilot2,pilot3;
-  u8 rx_sample_offset = 15;
+  u8 rx_sample_offset = 0;
   //char stats_buffer[4096];
   //int len;
 
@@ -384,7 +384,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 5 : 0) ;  // precoding
+  DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 4 : 0) ;  // precoding
 
   // Create transport channel structures for SI pdus
   PHY_vars_eNb->dlsch_eNb_SI   = new_eNb_dlsch(1,1,0);
@@ -407,7 +407,7 @@ int main(int argc, char **argv) {
 			      aoa,
 			      forgetting_factor,
 			      0,
-			      0,
+			      rx_sample_offset,
 			      0);
   }
   else {
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
 				  SCM_C,
 				  BW,
 				  forgetting_factor,
-				  0,
+				  rx_sample_offset,
 				  0);
   }
 
@@ -582,8 +582,11 @@ int main(int argc, char **argv) {
 	rate*=get_Qm(mcs);
 
 	if (trials==0) 
-	  printf("Rate = %f (TBS %d,mod %d)\n",rate,(int)(rate*coded_bits_per_codeword),
-		 get_Qm(mcs));
+	  printf("Rate = %f (TBS %d, mod %d, pdcch_sym %d)\n",
+		 rate,
+		 (int)(rate*coded_bits_per_codeword),
+		 get_Qm(mcs),
+		 num_pdcch_symbols);
 
 	// use the PMI from previous trial
 	if (DLSCH_alloc_pdu2.tpmi == 5) 
@@ -600,7 +603,6 @@ int main(int argc, char **argv) {
 			 coded_bits_per_codeword,
 			 0,
 			 0);
-	
 
 	if (n_frames==1) {
 	  for (s=0;s<PHY_vars_eNb->dlsch_eNb[0][0]->harq_processes[0]->C;s++) {
@@ -764,8 +766,8 @@ int main(int argc, char **argv) {
 	//	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
-	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[aa][i+rx_sample_offset] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[aa][i+rx_sample_offset] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	  }
 	}    
 	//    lte_sync_time_init(PHY_vars_eNb->lte_frame_parms,lte_ue_common_vars);
@@ -1061,7 +1063,6 @@ int main(int argc, char **argv) {
 			     PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],
 			     0,
 			     0);
-	   
 		     
 	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,

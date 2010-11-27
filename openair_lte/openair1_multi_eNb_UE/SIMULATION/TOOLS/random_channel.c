@@ -10,6 +10,7 @@
 #include "scm_corrmat.h"
 
 //#define DEBUG_CH
+#define NB_SAMPLES_CHANNEL_OFFSET 4
 
 channel_desc_t *new_channel_desc(u8 nb_tx,
 				 u8 nb_rx, 
@@ -39,7 +40,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->nb_taps        = nb_taps;
   chan_desc->channel_length = channel_length;
   chan_desc->amps           = amps;
-  msg("[CHANNEL Doing delays ...\n");
+  msg("[CHANNEL] Doing delays ...\n");
   if (delays==NULL) {
     chan_desc->delays = (double*) malloc(nb_taps*sizeof(double));
     delta_tau = Td/nb_taps;
@@ -217,6 +218,17 @@ int random_channel(channel_desc_t *desc) {
       } //aatx
     } //aarx
 
+    /*
+    // for debugging set a=anew;
+    for (aarx=0;aarx<desc->nb_rx;aarx++) {
+      for (aatx=0;aatx<desc->nb_tx;aatx++) {
+
+	desc->a[i][aarx+(aatx*desc->nb_rx)].r = anew[aarx+(aatx*desc->nb_rx)].r;
+	desc->a[i][aarx+(aatx*desc->nb_rx)].i = anew[aarx+(aatx*desc->nb_rx)].i;
+      }
+    }
+    */
+
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
     alpha.r = 1.0;
@@ -253,7 +265,11 @@ int random_channel(channel_desc_t *desc) {
 	desc->ch[aarx+(aatx*desc->nb_rx)][k].i = 0.0;
 	
 	for (l=0;l<desc->nb_taps;l++) {
-	  s = sin(M_PI*(k - (desc->delays[l]*desc->BW)-(desc->BW*desc->Td/2)))/(M_PI*(k-(desc->delays[l]*desc->BW)-(desc->BW*desc->Td/2)));
+	  if ((k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
+	    s = 1.0;
+	  else
+	    s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
+	      (M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
 	  
 	  desc->ch[aarx+(aatx*desc->nb_rx)][k].r += s*desc->a[l][aarx+(aatx*desc->nb_rx)].r;
 	  desc->ch[aarx+(aatx*desc->nb_rx)][k].i += s*desc->a[l][aarx+(aatx*desc->nb_rx)].i;

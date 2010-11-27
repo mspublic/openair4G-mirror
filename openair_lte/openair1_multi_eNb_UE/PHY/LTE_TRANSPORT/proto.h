@@ -985,5 +985,21 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 subframe,
 		      u8 *e,
 		      u32 length);
+
+void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+		      u8 num_pdcch_symbols,
+		      LTE_eNb_DLSCH_t *dlsch,
+		      u16 G,
+		      u8 q,
+		      u8 Ns);
+
+void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
+			u8 num_pdcch_symbols,
+			LTE_UE_DLSCH_t *dlsch,
+			u16 G,
+			s16* llr,
+			u8 q,
+			u8 Ns);
+
 /**@}*/
 #endif

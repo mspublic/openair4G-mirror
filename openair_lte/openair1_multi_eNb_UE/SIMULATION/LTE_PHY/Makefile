@@ -1,4 +1,4 @@
-CC = $(shell if [ $$OSTYPE = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
+CC = $(shell if [ $(OSTYPE) = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
 #CC = gcc-4
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
@@ -64,7 +64,7 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
-#STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
+STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
 LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 
@@ -80,7 +80,7 @@ $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ2) dlsim.c
-	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) -lm -lblas
+	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) /usr/lib/libblas.a -lm 
 
 pbchsim : $(OBJ2) pbchsim.c
 	$(CC) pbchsim.c -I$(TOP_DIR) -o pbchsim $(CFLAGS) $(OBJ2) -lm -lblas
