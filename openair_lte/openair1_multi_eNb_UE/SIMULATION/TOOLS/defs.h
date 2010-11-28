@@ -32,6 +32,8 @@ typedef struct {
   struct complex **a; 
   ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. ATTENTION: the dimensions of ch are the transposed ones of a. This is to allow the use of BLAS when applying the correlation matrices to the state.
   struct complex **ch; 
+  ///Sampled frequency response (90 kHz resolution)
+  struct complex **chF; 
   ///Maximum path delay in mus.
   double Td; 
   ///Channel bandwidth in MHz.
@@ -182,6 +184,36 @@ void multipath_channel(channel_desc_t *desc,
 		       double **rx_sig_im,
 		       u16 length,
 		       u8 keep_channel);
+/*
+\fn double compute_pbch_sinr(channel_desc_t *desc,
+                             channel_desc_t *desc_i1, 
+			     channel_desc_t *desc_i2,
+			     double snr_dB,double snr_i1_dB,
+			     double snr_i2_dB,
+			     u16 nb_rb)
+
+\brief This function computes the average SINR over all frequency resources of the PBCH.  It is used for PHY abstraction of the PBCH BLER
+@param desc Pointer to channel descriptor of eNB
+@param desc Pointer to channel descriptor of interfering eNB 1
+@param desc Pointer to channel descriptor of interfering eNB 2
+@param snr_dB SNR of eNB
+@param snr_i1_dB SNR of interfering eNB 1
+@param snr_i2_dB SNR of interfering eNB 2
+@param nb_rb Number of RBs in system
+*/
+double compute_pbch_sinr(channel_desc_t *desc,
+			 channel_desc_t *desc_i1, 
+			 channel_desc_t *desc_i2,
+			 double snr_dB,double snr_i1_dB,
+			 double snr_i2_dB,
+			 u16 nb_rb);
+
+double compute_sinr(channel_desc_t *desc,
+			 channel_desc_t *desc_i1, 
+			 channel_desc_t *desc_i2,
+			 double snr_dB,double snr_i1_dB,
+			 double snr_i2_dB,
+			 u16 nb_rb);
 
 /**@}*/
 

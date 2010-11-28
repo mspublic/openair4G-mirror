@@ -124,7 +124,8 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
-		   LTE_eNb_DLSCH_t *dlsch) {
+		   LTE_eNb_DLSCH_t *dlsch,
+		   u8 subframe) {
   
   unsigned short offset;
   unsigned int G;
@@ -140,9 +141,9 @@ int dlsch_encoding(unsigned char *a,
 
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = get_G(frame_parms,nb_rb,mod_order,num_pdcch_symbols);
+  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
 
-  
+   
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
 
     /*

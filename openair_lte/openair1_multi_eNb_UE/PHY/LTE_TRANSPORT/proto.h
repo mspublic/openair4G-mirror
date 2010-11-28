@@ -28,7 +28,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
 /** \fn dlsch_encoding(u8 *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
     u8 num_pdcch_symbols,
-    LTE_eNb_DLSCH_t *dlsch)
+    LTE_eNb_DLSCH_t *dlsch,
+    u8 subframe)
     \brief This function performs a subset of the bit-coding functions for LTE as described in 36-212, Release 8.Support is limited to turbo-coded channels (DLSCH/ULSCH). The implemented functions are:
     - CRC computation and addition
     - Code block segmentation and sub-block CRC addition
@@ -39,12 +40,14 @@ LTE_UE_ULSCH_t *new_ue_ulsch(u8 Mdlharq,u8 abstraction_flag);
     @param frame_parms Pointer to frame descriptor structure
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch Pointer to dlsch to be encoded
+    @param subframe Subframe number
     @returns status
 */
 s32 dlsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
-		   LTE_eNb_DLSCH_t *dlsch);
+		   LTE_eNb_DLSCH_t *dlsch,
+		   u8 subframe);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
 			 u8 *DLSCH_pdu,
@@ -66,6 +69,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
     s16 amp,
     u32 *re_allocated,
     u8 skip_dc,
+    u8 skip_half,
     LTE_DL_FRAME_PARMS *frame_parms);
 
     \brief Fills RB with data
@@ -82,6 +86,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
     \param amp Amplitude for symbols
     \param re_allocated pointer to allocation counter
     \param skip_dc offset for positive RBs
+    \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
     \param frame_parms Frame parameter descriptor
 */
 
@@ -98,6 +103,7 @@ s32 allocate_REs_in_RB(mod_sym_t **txdataF,
 		       s16 amp,
 		       u32 *re_allocated,
 		       u8 skip_dc,
+		       u8 skip_half,
 		       LTE_DL_FRAME_PARMS *frame_parms);
 
 /** \fn s32 dlsch_modulation(mod_sym_t **txdataF,
@@ -205,6 +211,7 @@ void qpsk_qpsk(s16 *stream0_in,
     s16 *dlsch_llr,
     u8 symbol,
     u16 nb_rb,
+    u16 pbch_pss_sss_adj,
     s16 **llr128p)
 
     \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
@@ -216,6 +223,7 @@ void qpsk_qpsk(s16 *stream0_in,
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
@@ -234,6 +242,7 @@ s32 dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     s16 *dlsch_llr,
     u8 symbol,
     u16 nb_rb,
+    u16 pbch_pss_sss_adj,
     s16 **llr128p)
 
     \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
@@ -251,6 +260,7 @@ s32 dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 symbol,
 		   u8 first_symbol_flag,
 		   u16 nb_rb,
+		   u16 pbch_pss_sss_adj,
 		   s16 **llr128p);
 
 /** \fn dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -259,6 +269,7 @@ s32 dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     s32 **dl_ch_mag,
     u8 symbol,
     u16 nb_rb,
+    u16 pbch_pss_sss_adjust,
     s16 **llr128p)
     \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
     @param frame_parms Frame descriptor structure
@@ -268,6 +279,7 @@ s32 dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag
     @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adjust  Adjustment factor in RE for PBCH/PSS/SSS allocations
     @param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
@@ -278,6 +290,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 symbol,
 		     u8 first_symbol_flag,
 		     u16 nb_rb,
+		     u16 pbch_pss_sss_adjust,
 		     s16 **llr128p);
 
 /** \fn void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -286,7 +299,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     s32 **dl_ch_mag,
     s32 **dl_ch_magb,
     u8 symbol,
-    u16 nb_rb)
+    u16 nb_rb,
+    u16 pbch_pss_sss_adjust)
     \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -296,6 +310,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag
     @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
 */
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     s32 **rxdataF_comp,
@@ -304,7 +319,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     s32 **dl_ch_magb,
 		     u8 symbol,
 		     u8 first_symbol_flag,
-		     u16 nb_rb);
+		     u16 nb_rb,
+		     u16 pbch_pss_sss_adjust);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     s32 **rxdataF_comp,
@@ -409,6 +425,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
     u8 *pmi_ext,
     u32 *rb_alloc,
     u8 symbol,
+    u8 subframe,
     LTE_DL_FRAME_PARMS *frame_parms)
     \brief This function extracts the received resource blocks, both channel estimates and data symbols,
     for the current allocation and for single antenna eNb transmission.
@@ -420,17 +437,19 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
     @param pmi_ext Extracted PMI for chosen RBs
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
+    @param subframe Subframe number
     @param frame_parms Pointer to frame descriptor
 */
 u16 dlsch_extract_rbs_single(s32 **rxdataF,
-					s32 **dl_ch_estimates,
-					s32 **rxdataF_ext,
-					s32 **dl_ch_estimates_ext,
-					u16 pmi,
-					u8 *pmi_ext,
-					u32 *rb_alloc,
-					u8 symbol,
-					LTE_DL_FRAME_PARMS *frame_parms);
+			     s32 **dl_ch_estimates,
+			     s32 **rxdataF_ext,
+			     s32 **dl_ch_estimates_ext,
+			     u16 pmi,
+			     u8 *pmi_ext,
+			     u32 *rb_alloc,
+			     u8 symbol,
+			     u8 subframe,
+			     LTE_DL_FRAME_PARMS *frame_parms);
 
 /** \fn dlsch_extract_rbs_dual(s32 **rxdataF,
     s32 **dl_ch_estimates,
@@ -556,6 +575,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     u8 eNb_id,
     u8 eNb_id_i,
     LTE_UE_DLSCH_t **dlsch_ue,
+    u8 subframe,
     u8 symbol,
     u8 first_symbol_flag,
     u8 dual_stream_UE)
@@ -571,6 +591,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     @param eNb_id eNb index (Nid1) 0,1,2
     @param eNb_id_i Interfering eNb index (Nid1) 0,1,2
     @param dlsch_ue 
+    @param subframe Subframe number
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag
     @param dual_stream_UE Flag to indicate dual-stream interference cancellation
@@ -583,6 +604,7 @@ s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     u8 eNb_id,
 	     u8 eNb_id_i,
 	     LTE_UE_DLSCH_t **dlsch_ue,
+	     u8 subframe,
 	     u8 symbol,
 	     u8 first_symbol_flag,
 	     u8 dual_stream_UE,
@@ -718,7 +740,11 @@ u8 get_I_TBS(u8 I_MCS);
 
 u16 get_TBS(u8 mcs,u16 nb_rb);
 
-u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u8 mod_order,u8 num_pdcch_symbols);
+u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
+
+u16 adjust_G_tdd(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe);
+u16 adjust_G_tdd2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 subframe,u8 symbol);
+
 
 #ifndef modOrder
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS

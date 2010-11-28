@@ -60,12 +60,16 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   chan_desc->first_run      = 1;
   chan_desc->ip             = 0.0;
   chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+  chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
   chan_desc->a              = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
 
   msg("[CHANNEL] Filling ch \n");
 
   for (i = 0; i<nb_tx*nb_rx; i++) 
     chan_desc->ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex)); 
+
+  for (i = 0; i<nb_tx*nb_rx; i++) 
+    chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex));  // allocate for up to 100 RBs, 2 samples per RB
 
   msg("[CHANNEL] Filling a \n");
   for (i = 0; i<nb_taps; i++) {
@@ -144,9 +148,12 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     chan_desc->ricean_factor  = 1;
     chan_desc->aoa            = 0;
     chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
     chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
     if (nb_tx==2 && nb_rx==2) {
@@ -162,7 +169,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 	  chan_desc->R_sqrt[i][j].r = 1.0;
 	  chan_desc->R_sqrt[i][j].i = 0.0;
 	}
-	msg("correltation matrix only implemented for nb_tx==2 and nb_rx==2, using idendity\n");
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
     }
     break;

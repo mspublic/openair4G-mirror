@@ -136,7 +136,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   ret = MAX_TURBO_ITERATIONS;
 
 
-  G = get_G(frame_parms,nb_rb,mod_order,num_pdcch_symbols);
+  G = get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe);
 
 
 

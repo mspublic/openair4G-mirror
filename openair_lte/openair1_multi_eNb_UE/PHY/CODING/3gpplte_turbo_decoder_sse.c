@@ -815,7 +815,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
 #endif //DEBUG_LOGMAP
 
       if ((systematic2_g[inst][i] + ext2[i]) > 0)
-	decoded_bytes[pi>>3] += (1 << (pi&7));
+	decoded_bytes[pi>>3] += (1 << (7-(pi&7)));
 
       pi              = threegpplte_interleaver(f1,f2,n);
     }

@@ -77,7 +77,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 #endif //DEBUG_TURBO_ENCODER
 
     for (b=0;b<8;b++) {
-      *x = (input[i]&(1<<b))>>b;
+      *x = (input[i]&(1<<(7-b)))>>(7-b);
 
 #ifdef DEBUG_TURBO_ENCODER
       printf("bit %d: %d\n",b,*x);
@@ -100,7 +100,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 
       pi_pos          = pi>>3; 
       pi_bitpos       = pi&7;
-      xprime          = (input[pi_pos]&(1<<pi_bitpos))>>pi_bitpos;
+      xprime          = (input[pi_pos]&(1<<(7-pi_bitpos)))>>(7-pi_bitpos);
       zprime          = threegpplte_rsc(xprime,&state1);
 #ifdef DEBUG_TURBO_ENCODER 
       printf("pi %d, pi_pos %d, pi_bitpos %d, x %d, z %d, xprime %d, zprime %d, state0 %d state1 %d\n",pi,pi_pos,pi_bitpos,*x,z,xprime,zprime,state0,state1);

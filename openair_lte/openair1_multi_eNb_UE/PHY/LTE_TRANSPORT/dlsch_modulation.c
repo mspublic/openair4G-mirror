@@ -6,7 +6,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_MODULATION
+//#define DEBUG_DLSCH_MODULATION 
 
 #define is_not_pilot(pilots,re,nushift) ((pilots==0) || ((re!=nushift) && (re!=nushift+3)&&(re!=nushift+6)&&(re!=nushift+9))?1:0)
 
@@ -78,6 +78,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       short amp,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
+		       unsigned char skip_half,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset,aa;
@@ -89,7 +90,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   short gain_lin_QPSK,gain_lin_16QAM1,gain_lin_16QAM2;
   short re_off=re_offset;
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
-  
+  u8 first_re,last_re;
+
   switch (mod_order) {
   case 2:
     // QPSK single stream
@@ -109,10 +111,18 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     break;
   }
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("allocate_re : re_offset %d (%d), jj %d -> %d,%d, nu %d\n",re_offset,skip_dc,*jj, output[*jj], output[1+*jj],nu);
+  printf("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d, nu %d\n",mod_order,symbol_offset,re_offset,skip_dc,skip_half,*jj, output[*jj], output[1+*jj],nu);
 #endif
 
-  for (re=0;re<12;re++) {
+  first_re=0;
+  last_re=12;
+
+  if (skip_half==1) 
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  
+  for (re=first_re;re<last_re;re++) {
     
     
     if ((skip_dc == 1) && (re==6))
@@ -124,14 +134,14 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     
     // check that re is not a pilot
     if (is_not_pilot(pilots,re,frame_parms->nushift)==1) { 
-      //      printf("re %d (jj %d)\n",re,*jj);
+      //                printf("re %d (jj %d)\n",re,*jj);
       *re_allocated = *re_allocated + 1;
       
       if (mimo_mode == SISO) {  //SISO mapping
 	
 	switch (mod_order) {
 	case 2:  //QPSK
-	  
+	  //	  printf("%d : %d,%d => ",tti_offset,((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
 	    ((short*)&txdataF[aa][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
@@ -139,7 +149,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 
-	  //	  printf("%d,%d\n",((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
+	  //	  	  	  printf("%d,%d\n",((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
 	  break;
 	  
 	case 4:  //16QAM
@@ -531,6 +541,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       short amp,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
+		       unsigned char skip_half,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset,aa;
@@ -542,12 +553,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   unsigned char qam16_table_offset2 = 0;
   unsigned char qpsk_table_offset2 = 0;
   short re_off=re_offset;
-  
+  u8 first_re,last_re;  
 
   if (nu>1) {
     msg("dlsch_modulation.c: allocate_REs_in_RB, error, unknown layer index %d\n",nu);
     return(-1);
   }
+
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
 
   for (re=0;re<12;re++) {
 
@@ -987,7 +1003,7 @@ unsigned char get_pmi_5MHz(MIMO_mode_t mode,unsigned int pmi_alloc,unsigned shor
 
 int dlsch_modulation(mod_sym_t **txdataF,
 		     short amp,
-		     unsigned int sub_frame_offset,
+		     unsigned int subframe_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 num_pdcch_symbols,
 		     LTE_eNb_DLSCH_t *dlsch){
@@ -999,7 +1015,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   unsigned int rb_alloc_ind;
   unsigned int *rb_alloc = dlsch->rb_alloc;
   unsigned char pilots=0;
-  unsigned char skip_dc;
+  unsigned char skip_dc,skip_half;
   unsigned char mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -1029,18 +1045,18 @@ int dlsch_modulation(mod_sym_t **txdataF,
     }
 
 #ifdef IFFT_FPGA
-      re_offset = frame_parms->N_RB_DL*12/2;
-      symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(sub_frame_offset*nsymb));
+    re_offset = frame_parms->N_RB_DL*12/2;
+    symbol_offset = (unsigned int)frame_parms->N_RB_DL*12*(l+(subframe_offset*nsymb));
 #else
-      re_offset = frame_parms->first_carrier_offset;
-      symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(sub_frame_offset*nsymb));
+    re_offset = frame_parms->first_carrier_offset;
+    symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 #endif
 
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
 	memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
-      //      printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,sub_frame_offset,pilots);
+      //           printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
-	
+
 	if (rb < 32)
 	  rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
 	else if (rb < 64)
@@ -1051,12 +1067,64 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
 	else
 	  rb_alloc_ind = 0;
+	
+	// check for PBCH
+	skip_half=0;
+	if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
 
-	if ((rb == frame_parms->N_RB_DL>>1) && ((frame_parms->N_RB_DL&1)>0))
-	  skip_dc = 1;
-	else
-	  skip_dc = 0;
-
+	  if ((rb==frame_parms->N_RB_DL>>1))
+	    skip_dc = 1;
+	  else
+	    skip_dc = 0;
+	  // PBCH
+	  if ((subframe_offset==0) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4))) {
+	    rb_alloc_ind = 0;
+	  }
+	  //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
+	  if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	    skip_half=1;
+	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	    skip_half=2;
+	  
+	  //SSS
+	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	    rb_alloc_ind = 0;
+	  }
+	  //SSS 
+	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
+	    skip_half=1;
+	  else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	    skip_half=2;
+	  
+	  //PSS
+	  if ((subframe_offset==1) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	    rb_alloc_ind = 0;
+	  }
+	  //PSS 
+	  if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
+	    skip_half=1;
+	  else if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	    skip_half=2;
+	  
+	  
+	}
+	else {  // EVEN N_RB_DL
+	  //PBCH
+	  if ((subframe_offset==0) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
+	    rb_alloc_ind = 0;
+	  skip_dc=0;
+	  skip_half=0;
+	  
+	  //SSS
+	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	    rb_alloc_ind = 0;
+	  }	    
+	  //PSS
+	  if ((subframe_offset==1) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	    rb_alloc_ind = 0;
+	  }
+	}
+	
 	if (dlsch->layer_index>1) {
 	  msg("layer_index %d: re_offset %d, symbol %d offset %d\n",dlsch->layer_index,re_offset,l,symbol_offset); 
 	  return(-1);
@@ -1075,6 +1143,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     amp,
 			     &re_allocated,
 			     skip_dc,
+			     skip_half,
 			     frame_parms);
 
 	re_offset+=12; // go to next RB
@@ -1104,7 +1173,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch : jj = %d,re_allocated = %d\n",jj,re_allocated);
+  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,subframe_offset));
 #endif
   
   return (re_allocated);
