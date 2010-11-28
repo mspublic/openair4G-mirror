@@ -9,7 +9,7 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi
 
 TOP_DIR = ../..
 
-CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
+CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
@@ -54,15 +54,7 @@ CFLAGS += -I$(OPENAIR2_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR2_DIR)/COMMON -I$(
 
 include $(TOP_DIR)/PHY/Makefile.inc
 include $(TOP_DIR)/SCHED/Makefile.inc
-
-SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/taus.o  
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
-SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
+include $(TOP_DIR)/SIMULATION/Makefile.inc
 
 STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
