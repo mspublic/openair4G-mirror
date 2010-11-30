@@ -771,7 +771,6 @@ int main(int argc, char **argv) {
     tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
   }
     // multipath channel
-  randominit(0);
   
   for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx;aa++) {
@@ -810,7 +809,7 @@ int main(int argc, char **argv) {
   }
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
 
-    
+    printf("SNR %f\n",SNR); 
     n_errors = 0;
     n_errors2 = 0;
     n_alamouti = 0;
