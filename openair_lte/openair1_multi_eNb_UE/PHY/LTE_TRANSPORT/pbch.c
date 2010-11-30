@@ -69,7 +69,7 @@ int generate_pbch(mod_sym_t **txdataF,
   //  pbch_E_bytes = pbch_coded_bits>>3;
 
   if (frame_mod4==0) {
-    bzero(pbch_a,pbch_A>>3);
+    bzero(pbch_a,PBCH_A>>3);
     bzero(pbch_e,pbch_E);
     memset(pbch_d,LTE_NULL,96);
     // Encode data
