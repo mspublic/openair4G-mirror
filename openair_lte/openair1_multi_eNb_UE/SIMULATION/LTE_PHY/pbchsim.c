@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   fifo_dump_emos emos_dump;
 #endif
 
-  FILE *input_fd=NULL;
+  FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];
   double input_val1,input_val2;
   u16 amask=0;
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "haACr:pf:g:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
+  while ((c = getopt (argc, argv, "haA:Cr:pf:g:i:j:n:s:S:t:x:y:z:N:F:")) != -1)
     {
       switch (c)
 	{
@@ -283,6 +283,11 @@ int main(int argc, char **argv) {
 	  abstraction_flag=1;
 	  ntrials=10000;
 	  msg("Running Abstraction test\n");
+	  pbch_file_fd=fopen(optarg,"r");
+	  if (pbch_file_fd==NULL) {
+	    printf("Problem with filename %s\n",optarg);
+	    exit(-1);
+	  }
 	  break;
 	case 'C':
 	  calibration_flag=1;
@@ -518,6 +523,10 @@ int main(int argc, char **argv) {
     break;
   case 4:
     amask = 0x5555;
+  }
+
+  if (pbch_file_fd!=NULL) {
+    load_pbch_desc(pbch_file_fd);
   }
 
   if (input_fd==NULL) {
@@ -826,7 +835,7 @@ int main(int argc, char **argv) {
 	    freq_channel(eNB2UE2,25);
 	    pbch_sinr = compute_pbch_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25);
 	    printf("total_sinr %f\n",compute_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25));
-	    printf("pbch_sinr %f\n",pbch_sinr);
+	    printf("pbch_sinr %f => BLER %f\n",pbch_sinr,pbch_bler(pbch_sinr));
 	  }
 	  else {
 	    pbch_sinr = -3.0;
