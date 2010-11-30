@@ -215,6 +215,7 @@ double compute_sinr(channel_desc_t *desc,
 			 double snr_i2_dB,
 			 u16 nb_rb);
 
+double pbch_bler(double sinr);
 /**@}*/
 
 /**
