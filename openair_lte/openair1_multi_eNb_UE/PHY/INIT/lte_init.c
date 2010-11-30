@@ -479,9 +479,9 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 	ue_pbch_vars[eNb_id]->rxdataF_comp[(j<<1)+i]        = (int *)malloc16(sizeof(int)*(6*12*4));
 	ue_pbch_vars[eNb_id]->dl_ch_estimates_ext[(j<<1)+i] = (int *)malloc16(sizeof(int)*6*12*4);
       }    
-    ue_pbch_vars[eNb_id]->llr = (short *)malloc16(6*12*4*2*sizeof(char));
+    ue_pbch_vars[eNb_id]->llr = (char *)malloc16(1920*sizeof(char));
     
-    ue_pbch_vars[eNb_id]->channel_output = (short *)malloc16((3*64+12)*sizeof(short));
+    //    ue_pbch_vars[eNb_id]->channel_output = (short *)malloc16(*sizeof(short));
     
     ue_pbch_vars[eNb_id]->decoded_output = (unsigned char *)malloc16(64*sizeof(unsigned char));
     

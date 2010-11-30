@@ -494,7 +494,7 @@ typedef struct {
   /// Format
   DCI_format_t format;
   /// DCI pdu
-  u8 dci_pdu[1+(MAX_DCI_SIZE_BITS/8)];
+  u8 dci_pdu[8];
 } DCI_ALLOC_t;
 
 

@@ -60,7 +60,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->kTC = 0;
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-
+  lte_frame_parms->tdd_config = 3;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -809,7 +809,7 @@ int main(int argc, char **argv) {
   }
   for (SNR=snr0;SNR<snr1;SNR+=.2) {
 
-    printf("SNR %f\n",SNR); 
+
     n_errors = 0;
     n_errors2 = 0;
     n_alamouti = 0;
@@ -821,11 +821,14 @@ int main(int argc, char **argv) {
       while(pbch_sinr>-2.0) {
 	
 	if (awgn_flag == 0) {	
-	  
+
+
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+
 	  multipath_channel(eNB2UE1,s_re1,s_im1,r_re1,r_im1,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+
 	  multipath_channel(eNB2UE2,s_re1,s_im2,r_re2,r_im2,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	  if (abstraction_flag == 1) {
