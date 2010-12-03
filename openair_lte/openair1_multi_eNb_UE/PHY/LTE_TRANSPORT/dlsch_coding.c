@@ -11,7 +11,7 @@
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
 
-//#define DEBUG_DLSCH_CODING 
+#define DEBUG_DLSCH_CODING 
 //#define DEBUG_DLSCH_FREE 1
 
 /*
@@ -236,7 +236,7 @@ int dlsch_encoding(unsigned char *a,
 #ifdef DEBUG_DLSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
-	   E,
+	   G,
 	   Kr*3,
 	   mod_order,nb_rb);
 #endif

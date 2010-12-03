@@ -478,7 +478,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = offset + ((nb_rb-pbch_pss_sss_rb)*3);
   }
 
-  printf("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
+//  printf("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
 
   for (i=0;i<len;i++) {
 
