@@ -792,7 +792,7 @@ int main(int argc, char **argv) {
 	    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)]);
 	    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	  }
-	  /*	  
+	  	  
 	  if (interf1>=-20) {
 	    r_re[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNb1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
 	    r_im[aarx][i]+= pow(10.0,.05*interf1)*((double)(((short *)PHY_vars_eNb1->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
@@ -802,7 +802,7 @@ int main(int argc, char **argv) {
 	    r_re[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNb2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)]);
 	    r_im[aarx][i]+=pow(10.0,.05*interf2)*((double)(((short *)PHY_vars_eNb2->lte_eNB_common_vars.txdata[eNb_id][aa]))[(i<<1)+1]);
 	  }
-	  */
+	  
 	}
       }
     }
@@ -818,7 +818,7 @@ int main(int argc, char **argv) {
       if (abstraction_flag==1)
 	printf("*********************** trial %d ***************************\n",trial);
 
-      while(pbch_sinr>-2.0) {
+      while (pbch_sinr>-2.0) {
 	
 	if (awgn_flag == 0) {	
 
@@ -843,6 +843,9 @@ int main(int argc, char **argv) {
 	    pbch_sinr = -3.0;
 	  }
 	  //	  exit(-1);
+	} // awgn_flag
+	else {
+	  pbch_sinr = -3.0;
 	}
       }
       
@@ -859,7 +862,7 @@ int main(int argc, char **argv) {
       }
       */
       for (n_trials=0;n_trials<ntrials;n_trials++) {
-	//	  printf("n_trial %d\n",n_trials);
+	//printf("n_trial %d\n",n_trials);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
 	    if (n_trials==0) {
