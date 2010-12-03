@@ -1170,7 +1170,7 @@ int main(int argc, char **argv) {
 	  ret = dlsch_decoding(PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],		 
 			       &PHY_vars_UE->lte_frame_parms,
 			       PHY_vars_UE->dlsch_ue[0][0],
-			       0,
+			       subframe,
 			       num_pdcch_symbols);
 	  
 	  if (ret <= MAX_TURBO_ITERATIONS) {
