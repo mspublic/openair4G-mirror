@@ -19,7 +19,7 @@
 
 #define BW 7.68
 
-//#define ABSTRACTION
+#define ABSTRACTION
 
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
   FILE *input_trch_fd;
   unsigned char input_trch_file=0;
   char input_trch_val[16];
-   double n0_pow_dB;
+  double pilot_sinr, abs_channel;
   #ifdef ABSTRACTION
    FILE *csv_fd;
    char csv_fname[20];
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
   int n_frames;
 
   channel_desc_t *eNB2UE;
-
+  double snr;
   u8 num_pdcch_symbols=3;
   u8 pilot1,pilot2,pilot3;
   u8 rx_sample_offset = 0;
@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
   //int len;
   u8 num_rounds = 4,fix_rounds=0;
   u8 subframe=6;
-
+  int u;
   channel_length = (int) 11+2*BW*Td;
 
   // default parameters
@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpm:n:o:s:t:c:g:r:x:y:z:I:R:S:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:x:y:z:I:R:S:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -240,6 +240,9 @@ int main(int argc, char **argv) {
 	break;
       case 't':
 	Td= atof(optarg);
+	break;
+      case 'f':
+	snr_step= atof(optarg);
 	break;
       case 'p':
 	extended_prefix_flag=1;
@@ -312,6 +315,7 @@ int main(int argc, char **argv) {
 	printf("-n Number of frames to simulate\n");
 	printf("-o Sample offset for receiver\n");
 	printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
+	printf("-f step size of SNR, default value is 1.\n");
 	printf("-t Delay spread for multipath channel\n");
 	printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
 	printf("-g [A,B,C,D] Use 3GPP 25.814 SCM (ignores delay spread and Ricean factor)\n");
@@ -801,7 +805,7 @@ int main(int argc, char **argv) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx;aa++) {
 	    if (awgn_flag == 0) {
 	      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
-	       s_im[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+	      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
             }
             else {
 	      for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
@@ -817,13 +821,31 @@ int main(int argc, char **argv) {
             }
 	  }
 	}
-
+	//	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
 #ifdef ABSTRACTION
-	if (trials==0 && SNR==snr0 && round==0){
+	if (trials==0 && round==0){
         if (awgn_flag == 0) {	
+	  if(SNR==snr0){
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	}}
+	  }else{
+	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
+}
+
+	  freq_channel(eNB2UE, 25);
+	  snr=pow(10.0,.1*SNR);
+	  fprintf(csv_fd,"%f,",SNR);
+
+	  for (u=0;u<50;u++){
+	    abs_channel = (eNB2UE->chF[0][u].r*eNB2UE->chF[0][u].r + eNB2UE->chF[0][u].i*eNB2UE->chF[0][u].i);
+	    pilot_sinr = 10*log10(snr*abs_channel);
+	    fprintf(csv_fd,"%e,",pilot_sinr); 
+	   
+	  }
+	 
+	}
+	}
 	else{
 	  if (awgn_flag == 0) {	
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
@@ -845,7 +867,7 @@ int main(int argc, char **argv) {
 	//AWGN
 	sigma2 = pow(10,sigma2_dB/10);
 
-	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
+	//	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
 	//	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
@@ -1095,7 +1117,7 @@ int main(int argc, char **argv) {
 	    }
 	  }
 	}
-
+	/*
 #ifdef ABSTRACTION
 	if(trials==0){
 	  //fprintf(csv_fd,"%f,%d,%d,%d",SNR, rx_lev_data_sym , rx_lev_null_sym, rx_snr_dB);
@@ -1111,7 +1133,7 @@ int main(int argc, char **argv) {
 	  fprintf(csv_fd,",");
 	}
 #endif
-
+	*/
 	if (dlsch_active == 1) {
 
 	  if (n_frames==1) {
