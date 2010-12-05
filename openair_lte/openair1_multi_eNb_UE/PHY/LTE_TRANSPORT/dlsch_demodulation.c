@@ -352,7 +352,10 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
+    if (frame_parms->mode1_flag==0)
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
+    else
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
   }
   else {
     len = (nb_rb*12) - pbch_pss_sss_adjust;
@@ -387,8 +390,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag;
   __m128i *llr128;
-  int i,len,pbch_pss_sss_rb;
-  unsigned char symbol_mod,offset=0;
+  int i,len;
+  unsigned char symbol_mod,len_mod4=0;
   
 //  printf("dlsch_rx.c: dlsch_16qam_llr: symbol %d\n",symbol);
 
@@ -402,19 +405,22 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   ch_mag =(__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  if ((pbch_pss_sss_adjust % 12) == 6)
-    offset=1;
-  pbch_pss_sss_rb = pbch_pss_sss_adjust/12;
-  
+
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    len = offset + ((nb_rb-pbch_pss_sss_rb)*2);
+    if (frame_parms->mode1_flag==0)
+      len = nb_rb*8 - pbch_pss_sss_adjust;
+    else
+      len = nb_rb*10 - pbch_pss_sss_adjust;
   }
   else {
-    len = offset + ((nb_rb-pbch_pss_sss_rb)*3);
+    len = nb_rb*12 - pbch_pss_sss_adjust;
   }
 
-
-
+  //  printf("16qam llr symbol %d : len %d\n",symbol,len);
+  len_mod4 = len&3;
+  len>>=2;  // length in quad words (4 REs)
+  len+=(len_mod4>>1);
+  //  printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
   for (i=0;i<len;i++) {
 
 
@@ -433,7 +439,10 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     //    print_bytes("rxF[i+1]",&rxF[i+1]);
   }
 
-  *llr128p = (short *)(llr128-offset);
+  if (len_mod4>0)
+    *llr128p = (short *)(llr128-1);
+  else
+    *llr128p = (short *)(llr128);
 
   _mm_empty();
   _m_empty();
@@ -454,8 +463,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag,*ch_magb;
-  int j=0,i,len,pbch_pss_sss_rb;
-  unsigned char symbol_mod,offset=0;
+  int j=0,i,len;
+  unsigned char symbol_mod,len_mod4;
 
 
   if (first_symbol_flag==1)
@@ -466,19 +475,23 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag =(__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb =(__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 
+//  printf("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
 
-  if ((pbch_pss_sss_adjust % 12) == 6)
-    offset=1;
-  pbch_pss_sss_rb = pbch_pss_sss_adjust/12;
-  
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    len = offset + ((nb_rb-pbch_pss_sss_rb)*2);
+    if (frame_parms->mode1_flag==0)
+      len = nb_rb*8 - pbch_pss_sss_adjust;
+    else
+      len = nb_rb*10 - pbch_pss_sss_adjust;
   }
   else {
-    len = offset + ((nb_rb-pbch_pss_sss_rb)*3);
+    len = nb_rb*12 - pbch_pss_sss_adjust;
   }
 
-//  printf("symbol %d (%d) pbch_pss_sss_adjust %d => len %d\n",symbol,(int)(llr-dlsch_llr),pbch_pss_sss_adjust,len);
+  //  printf("16qam llr symbol %d : len %d\n",symbol,len);
+  len_mod4 = len&3;
+  len>>=2;  // length in quad words (4 REs)
+  len+=(len_mod4>>1);
+  //  printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
 
   for (i=0;i<len;i++) {
 
@@ -500,8 +513,9 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   }
 
-  llr = llr - (12*offset);
-
+  if (len_mod4>0)
+    llr = llr - 12;
+ 
   _mm_empty();
   _m_empty();
 
@@ -723,12 +737,15 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
 
 
-  unsigned char symbol_mod,pilots=0,j=0;
+  unsigned char symbol_mod,pilots=0,j=0,poffset=0;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   pilots = ((symbol_mod==0)||(symbol_mod==(4-frame_parms->Ncp))) ? 1 : 0;
   l=symbol;
   nsymb = (frame_parms->Ncp==0) ? 14:12;
+
+  if (symbol_mod==(4-frame_parms->Ncp))
+    poffset=3;
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
@@ -851,46 +868,42 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	  }
 	  else {
-	    //	    	    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) { 
+		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //	printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
-	      dl_ch0_ext+=4;
-	      rxF_ext+=4;
+	      dl_ch0_ext+=5;
+	      rxF_ext+=5;
 	    }
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) { 
+		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
-		  //	printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
 		}
 	      }
-	      dl_ch0_ext+=4;
-	      rxF_ext+=4;
+	      dl_ch0_ext+=5;
+	      rxF_ext+=5;
 	    }
 	    else {
 	      for (i=0;i<12;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3) &&
-		    (i!=frame_parms->nushift+6) &&
-		    (i!=frame_parms->nushift+9)) {
+		if ((i!=(frame_parms->nushift+poffset)) &&
+		    (i!=(frame_parms->nushift+poffset+6))) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		  
 		}
 	      }
-	      dl_ch0_ext+=8;
-	      rxF_ext+=8;
+	      dl_ch0_ext+=10;
+	      rxF_ext+=10;
 	    }
 	  }
 	}	    
@@ -934,7 +947,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	  for (;i<12;i++) {
 	    dl_ch0_ext[i]=dl_ch0[i];
-	    rxF_ext[i]=rxF[(1+i)<<1];
+	    rxF_ext[i]=rxF[(1+i-6)<<1];
 	  }
 	  dl_ch0_ext+=12;
 	  rxF_ext+=12;
@@ -942,24 +955,22 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	else { // pilots==1
 	  j=0;
 	  for (i=0;i<6;i++) {
-	    if ((i!=frame_parms->nushift) &&
-		(i!=frame_parms->nushift+3)){
+	    if (i!=(frame_parms->nushift+poffset)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[i<<1];
-	      //	      	      	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	           	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
 	    }
 	  }
 	  rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
 	  for (;i<12;i++) {
-	    if ((i!=frame_parms->nushift+6) &&
-		(i!=frame_parms->nushift+9)){
+	    if (i!=(frame_parms->nushift+6+poffset)) {
 	      dl_ch0_ext[j]=dl_ch0[i];
 	      rxF_ext[j++]=rxF[(1+i-6)<<1];
-	      //	      	      	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+	      //	            	      printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
 	    }
 	  }
-	  dl_ch0_ext+=8;
-	  rxF_ext+=8; 
+	  dl_ch0_ext+=10;
+	  rxF_ext+=10;
 	} // symbol_mod==0
       } // rballoc==1
       else {
@@ -1041,45 +1052,41 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	    }
 	  }
 	  else {
-	    //    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
+	    //	    printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
 	    j=0;
 	    if (skip_half==1) {
 	      for (i=0;i<6;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) { 
+		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
-	      dl_ch0_ext+=4;
-	      rxF_ext+=4;
+	      dl_ch0_ext+=5;
+	      rxF_ext+=5;
 	    }
 	    else if (skip_half==2) {
 	      for (i=0;i<6;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3)) { 
+		if (i!=(frame_parms->nushift+poffset)) {
 		  rxF_ext[j]=rxF[(i+6)<<1];
-		  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i+6];
 		}
 	      }
-	      dl_ch0_ext+=4;
-	      rxF_ext+=4;
+	      dl_ch0_ext+=5;
+	      rxF_ext+=5;
 	    }
 	    else {
 	      for (i=0;i<12;i++) {
-		if ((i!=frame_parms->nushift) &&
-		    (i!=frame_parms->nushift+3) &&
-		    (i!=frame_parms->nushift+6) &&
-		    (i!=frame_parms->nushift+9)) {
+		if ((i!=(frame_parms->nushift+poffset)) &&
+		    (i!=(frame_parms->nushift+poffset+6))) {
 		  rxF_ext[j]=rxF[i<<1];
-		  //		  			      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+		  //		  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
 		  dl_ch0_ext[j++]=dl_ch0[i];
 		}
 	      }
-	      dl_ch0_ext+=8;
-	      rxF_ext+=8;
+	      dl_ch0_ext+=10;
+	      rxF_ext+=10;
 	    }
 	  } // pilots=0
 	}
@@ -1293,7 +1300,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	  for (;i<12;i++) {
 	    dl_ch0_ext[i]=dl_ch0[i];
 	    dl_ch1_ext[i]=dl_ch1[i];
-	    rxF_ext[i]=rxF[(1+i)<<1];
+	    rxF_ext[i]=rxF[(1+i-6)<<1];
 	  }
 	  nb_rb++;
 	  dl_ch0_ext+=12;
@@ -1338,10 +1345,10 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	dl_ch0_ext[11] = 0;
 	dl_ch1_ext[11] = 0;
 #endif
-	nb_rb++;
-	dl_ch0_ext+=12;
-	dl_ch1_ext+=12;
-	rxF_ext+=12;
+	//	nb_rb++;
+	//	dl_ch0_ext+=12;
+	//	dl_ch1_ext+=12;
+	//	rxF_ext+=12;
       }
       else {
 	rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))*2];
@@ -1544,8 +1551,14 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   zero = _mm_xor_si128(zero,zero);
 #endif
 
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
-    pilots=1;
+  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
+
+    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size    
+      nb_rb=1+(5*nb_rb/6);
+    else  
+      pilots=1;
+    
+  }
 
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++) {
     if (mod_order == 4)
@@ -1566,7 +1579,6 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
 
       for (rb=0;rb<nb_rb;rb++) {
-
 	if (mod_order>2) {  
 	  // get channel amplitude if not QPSK
 
@@ -2052,10 +2064,9 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 			 unsigned short nb_rb){
 
   short rb;
-  unsigned char aatx,aarx;
+  unsigned char aatx,aarx,nre=12;
   __m128i *dl_ch128;
   
-
   for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
     for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
       //clear average level
@@ -2069,13 +2080,13 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 	//	print_shorts("ch",&dl_ch128[0]);
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
 	avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
-	if ((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1))) {
+	if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
 	  avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
 
-	  dl_ch128+=3;	
+	  dl_ch128+=2;	
 	}
 	else 
-	  dl_ch128+=2;	
+	  dl_ch128+=3;	
 	/*
 	  if (rb==0) {
 	  print_shorts("dl_ch128",&dl_ch128[0]);
@@ -2085,10 +2096,17 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 	*/
       }
 
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+	nre=8;
+      else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+	nre=10;
+      else
+	nre=12;
+
       avg[(aatx<<1)+aarx] = (((int*)&avg128D)[0] + 
 			     ((int*)&avg128D)[1] + 
 			     ((int*)&avg128D)[2] + 
-			     ((int*)&avg128D)[3])/(nb_rb*12);
+			     ((int*)&avg128D)[3])/(nb_rb*nre);
 
       //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }

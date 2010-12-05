@@ -75,11 +75,11 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     f_dc=filt24_1_dcr;  //for first pilot of RB, first half
     f2_dc=filt24_3_dcl;  //for first pilot of RB, first half
     break;
-  case 2 :
+  case 2 : 
     f=filt24_2;
     f2=filt24_4;
     fl=filt24_2l;
-    f2l2=filt24_4l2;
+    f2l2=filt24_4l2; 
     fr=filt24_2r2;
     f2r2=filt24_4r;
     f_dc=filt24_2_dcr;  //for first pilot of RB, first half

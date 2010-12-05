@@ -70,6 +70,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
     u32 *re_allocated,
     u8 skip_dc,
     u8 skip_half,
+    u8 use2ndpilots,
     LTE_DL_FRAME_PARMS *frame_parms);
 
     \brief Fills RB with data
@@ -87,6 +88,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
     \param re_allocated pointer to allocation counter
     \param skip_dc offset for positive RBs
     \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
+    \param use2ndpilots Set to use the pilots from antenna port 1 for PDSCH
     \param frame_parms Frame parameter descriptor
 */
 
@@ -104,6 +106,7 @@ s32 allocate_REs_in_RB(mod_sym_t **txdataF,
 		       u32 *re_allocated,
 		       u8 skip_dc,
 		       u8 skip_half,
+		       u8 use2ndpilots,
 		       LTE_DL_FRAME_PARMS *frame_parms);
 
 /** \fn s32 dlsch_modulation(mod_sym_t **txdataF,

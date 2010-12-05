@@ -649,8 +649,9 @@ int main(int argc, char **argv) {
 	rate*=get_Qm(mcs);
 
 	if (trials==0) 
-	  printf("Rate = %f (TBS %d, mod %d, pdcch_sym %d)\n",
+	  printf("Rate = %f (G %d TBS %d, mod %d, pdcch_sym %d)\n",
 		 rate,
+		 coded_bits_per_codeword,
 		 (int)(rate*coded_bits_per_codeword),
 		 get_Qm(mcs),
 		 num_pdcch_symbols);

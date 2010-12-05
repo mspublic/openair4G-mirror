@@ -236,6 +236,7 @@ int generate_pbch(mod_sym_t **txdataF,
 			 &re_allocated,
 			 0,
 			 0,
+			 1,
 			 frame_parms);
       
       re_offset+=12; // go to next RB

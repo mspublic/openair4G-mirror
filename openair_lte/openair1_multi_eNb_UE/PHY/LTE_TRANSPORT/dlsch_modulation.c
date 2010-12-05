@@ -8,9 +8,25 @@
 
 //#define DEBUG_DLSCH_MODULATION 
 
-#define is_not_pilot(pilots,re,nushift) ((pilots==0) || ((re!=nushift) && (re!=nushift+3)&&(re!=nushift+6)&&(re!=nushift+9))?1:0)
+//#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
+u8 is_not_pilot(pilots,re,nushift,use2ndpilots) {
 
+  u8 offset = (pilots==2)?3:0;
+
+  if (pilots==0)
+    return(1);
+
+  if (use2ndpilots==1) {  // This is for SISO (mode 1)
+    if ((re!=nushift+offset) && (re!=nushift+6+offset))
+      return(1);
+  }
+  else { // 2 antenna pilots
+    if ((re!=nushift) && (re!=nushift+6) && (re!=nushift+3) && (re!=nushift+9))
+      return(1);
+  }
+  return(0);
+}
 
 void generate_64qam_table(void) {
 
@@ -79,6 +95,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
 		       unsigned char skip_half,
+		       unsigned char use2ndpilots,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset,aa;
@@ -133,8 +150,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     tti_offset = symbol_offset + re_off + re;
     
     // check that re is not a pilot
-    if (is_not_pilot(pilots,re,frame_parms->nushift)==1) { 
-      //                printf("re %d (jj %d)\n",re,*jj);
+    if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) { 
+      //     printf("re %d (jj %d)\n",re,*jj);
       *re_allocated = *re_allocated + 1;
       
       if (mimo_mode == SISO) {  //SISO mapping
@@ -338,7 +355,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  break;
 	}
 	// fill in the rest of the ALAMOUTI precoding
-	if (is_not_pilot(pilots,re,frame_parms->nushift)==1) {
+	if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) {
 	  ((short *)&txdataF[0][tti_offset+1])[0] += -((short *)&txdataF[1][tti_offset])[0]; //x1
 	  ((short *)&txdataF[0][tti_offset+1])[1] += ((short *)&txdataF[1][tti_offset])[1];
 	  ((short *)&txdataF[1][tti_offset+1])[0] += ((short *)&txdataF[0][tti_offset])[0];  //x0*
@@ -505,7 +522,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       if (mimo_mode == ALAMOUTI) {
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;
-	if (is_not_pilot(pilots,re,frame_parms->nushift)==0) {
+	if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==0) {
 	  re++;  
 	  *re_allocated = *re_allocated + 1;
 	}
@@ -542,6 +559,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 		       unsigned int *re_allocated,
 		       unsigned char skip_dc,
 		       unsigned char skip_half,
+		       unsigned char use2ndpilots,
 		       LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned int tti_offset,aa;
@@ -576,7 +594,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
     tti_offset = symbol_offset + re_off + re;
     
-    if (is_not_pilot(pilots,re,nu)==1) { 
+    if (is_not_pilot(pilots,re,nu,use2ndpilots)==1) { 
       //      printf("dlsch_modulation tti_offset %d (re %d)\n",tti_offset,re);
       *re_allocated = *re_allocated + 1;
 
@@ -674,7 +692,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 
 	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots,)==1) {
 	      txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
 	    }
 	    else {
@@ -698,7 +716,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 
 	    txdataF[1][tti_offset] = (mod_sym_t) qpsk_table_offset;     // -x1*
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[0][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;  // x1
 	    }
 	    else {
@@ -739,7 +757,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[0][tti_offset] = (mod_sym_t) qam16_table_offset; //x0
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[1][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x0*
 	    }
 	    else {
@@ -774,7 +792,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[1][tti_offset] = (mod_sym_t) qam16_table_offset;  //x1*
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[0][tti_offset+1] = (mod_sym_t) qam16_table_offset2; //x1
 	    }
 	    else {
@@ -824,7 +842,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[0][tti_offset] = (mod_sym_t) qam64_table_offset; //x0
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[1][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x0*
 	    }
 	    else {
@@ -870,7 +888,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    *jj=*jj+1;
 	    
 	    txdataF[1][tti_offset] = (mod_sym_t) qam64_table_offset; //-x1*
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[0][tti_offset+1] = (mod_sym_t) qam64_table_offset2; //x1
 	    }
 	    else {
@@ -982,7 +1000,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
     if (mimo_mode == ALAMOUTI) {
       re++;  // adjacent carriers are taken care of by precoding
       *re_allocated = *re_allocated + 1;
-      if (is_not_pilot(pilots,re,frame_parms->nushift)==0) { // if the next position is a pilot, skip it
+      if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==0) { // if the next position is a pilot, skip it
 	re++;  
 	*re_allocated = *re_allocated + 1;
       }
@@ -1032,13 +1050,17 @@ int dlsch_modulation(mod_sym_t **txdataF,
 #endif    
 
     if (frame_parms->Ncp==0) { // normal prefix
-      if ((l==4)||(l==7)||(l==11))
-	pilots=1;
+      if ((l==4)||(l==11))
+	pilots=2;   // pilots in nushift+3, nushift+9
+      else if (l==7)
+	pilots=1;   // pilots in nushift, nushift+6
       else
 	pilots=0;
     }
     else {
-      if ((l==3)||(l==6)||(l==9))
+      if ((l==3)||(l==9))
+	pilots=2;
+      else if (l==6)
 	pilots=1;
       else
 	pilots=0;
@@ -1144,6 +1166,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 			     &re_allocated,
 			     skip_dc,
 			     skip_half,
+			     (frame_parms->mode1_flag==1)?1:0,
 			     frame_parms);
 
 	re_offset+=12; // go to next RB

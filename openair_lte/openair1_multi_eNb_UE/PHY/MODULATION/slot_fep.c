@@ -65,7 +65,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-      for (eNb_id=0;eNb_id<3;eNb_id++){
+      for (eNb_id=0;eNb_id<1;eNb_id++){ //3;eNb_id++){
 #ifdef DEBUG_FEP
 	printf("Channel estimation eNb %d, aatx %d, symbol %d\n",eNb_id,aa,l);
 #endif
