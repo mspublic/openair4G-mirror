@@ -68,7 +68,7 @@ u16 adjust_G_tdd2(LTE_DL_FRAME_PARMS *frame_parms,u32 *rb_alloc,u8 mod_order,u8 
 
   nsymb = (frame_parms->Ncp==0) ? 14 : 12;
 
-  //  printf("adjust_G_tdd2 : symbol %d, subframe %d\n",symbol,subframe);
+  //    printf("adjust_G_tdd2 : symbol %d, subframe %d\n",symbol,subframe);
   if ((subframe!=0) && (subframe!=5))  // if not PBCH/SSS or SSS
     return(0);
 

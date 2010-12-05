@@ -19,7 +19,7 @@
 
 #define BW 7.68
 
-#define ABSTRACTION
+//#define ABSTRACTION
 
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0
@@ -532,7 +532,7 @@ int main(int argc, char **argv) {
   
   memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
   dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
-  dci_alloc[0].L          = 3;
+  dci_alloc[0].L          = 1;
   dci_alloc[0].rnti       = 0x1234;
   /*
   memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
@@ -552,7 +552,7 @@ int main(int argc, char **argv) {
   dci_alloc[2].rnti       = 0x1235;
   */
 
-  num_ue_spec_dci = 2;
+  num_ue_spec_dci = 1;
   num_common_dci = 0;
 
 
