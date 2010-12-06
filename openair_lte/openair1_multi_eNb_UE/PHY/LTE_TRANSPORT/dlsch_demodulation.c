@@ -416,11 +416,11 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = nb_rb*12 - pbch_pss_sss_adjust;
   }
 
-  printf("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
+  //  printf("16qam llr symbol %d : len %d, pbch_pss_sss_adjust %d\n",symbol,len,pbch_pss_sss_adjust);
   len_mod4 = len&3;
   len>>=2;  // length in quad words (4 REs)
   len+=(len_mod4>>1);
-    printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
+  //printf("16qam llr symbol %d : len %d (%d)\n",symbol,len,len_mod4);
   for (i=0;i<len;i++) {
 
 
