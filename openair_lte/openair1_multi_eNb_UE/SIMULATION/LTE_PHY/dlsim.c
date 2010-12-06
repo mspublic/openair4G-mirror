@@ -172,16 +172,6 @@ int main(int argc, char **argv) {
   unsigned char input_trch_file=0;
   char input_trch_val[16];
   double pilot_sinr, abs_channel;
-  #ifdef ABSTRACTION
-   FILE *csv_fd;
-   char csv_fname[20];
-   int ch_realization;
-
-   void *data;
-    int ii;
-    // int bler;
-  double blerr;
-  #endif
 
   //  unsigned char pbch_pdu[6];
 
@@ -191,7 +181,7 @@ int main(int argc, char **argv) {
   //  FILE *rx_frame_file;
 
   int n_frames;
-
+  int n_ch_rlz = 1;
   channel_desc_t *eNB2UE;
   double snr;
   u8 num_pdcch_symbols=3;
@@ -202,6 +192,7 @@ int main(int argc, char **argv) {
   u8 num_rounds = 4,fix_rounds=0;
   u8 subframe=6;
   int u;
+  int abstx=0;
   channel_length = (int) 11+2*BW*Td;
 
   // default parameters
@@ -210,7 +201,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:x:y:z:I:R:S:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:x:y:z:M:N:I:R:S:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -243,6 +234,12 @@ int main(int argc, char **argv) {
 	break;
       case 'f':
 	snr_step= atof(optarg);
+	break;
+      case 'M':
+	abstx= atof(optarg);
+	break;
+      case 'N':
+	n_ch_rlz= atof(optarg);
 	break;
       case 'p':
 	extended_prefix_flag=1;
@@ -323,12 +320,26 @@ int main(int argc, char **argv) {
 	printf("-y Number of TX antennas used in eNB\n");
 	printf("-z Number of RX antennas used in UE\n");
 	printf("-R Number of HARQ rounds (fixed)\n");
+	printf("-M Determines whether the Absraction flag is on or Off. 1-->On and 0-->Off. Default status is Off. \n");
+	printf("-N Determines the number of Channel Realizations in Absraction mode. Default value is 1. \n");
 	exit(1);
 	break;
       }
   }
 
+
+   FILE *csv_fd;
+   char csv_fname[20];
+   int ch_realization;
+
+   void *data;
+    int ii;
+    // int bler;
+  double blerr;
+
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag);  
+
+  
   printf("Setting mcs = %d\n",mcs);
   printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
@@ -381,12 +392,12 @@ int main(int argc, char **argv) {
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
 
-#ifdef ABSTRACTION
+  if(abstx){
    // CSV file 
   sprintf(csv_fname,"data_out%d.m",mcs);
   csv_fd = fopen(csv_fname,"w");
   fprintf(csv_fd,"data_all%d=[",mcs);
-#endif
+  }
 
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -587,12 +598,11 @@ int main(int argc, char **argv) {
   }
   
    //imran      
-#ifdef ABSTRACTION
- for (ch_realization=0;ch_realization<60;ch_realization++){
-
+  
+ for (ch_realization=0;ch_realization<n_ch_rlz;ch_realization++){
+   if(abstx){
  printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
-#endif
-   
+   }
   for (SNR=snr0;SNR<snr1;SNR+=snr_step) {
     errs[0]=0;
     errs[1]=0;
@@ -823,7 +833,7 @@ int main(int argc, char **argv) {
 	  }
 	}
 	//	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
-#ifdef ABSTRACTION
+	if(abstx){
 	if (trials==0 && round==0){
         if (awgn_flag == 0) {	
 	  if(SNR==snr0){
@@ -847,19 +857,19 @@ int main(int argc, char **argv) {
 	 
 	}
 	}
+	
 	else{
 	  if (awgn_flag == 0) {	
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
 	  }
         }
-#else //ABStraction
- if (awgn_flag == 0) {	
+	}
+	else{ //ABStraction
+	  if (awgn_flag == 0) {	
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
- }
-
-#endif //ABStraction
+	  }}//ABStraction
       
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
 	//		printf("tx_lev_dB %d\n",tx_lev_dB);
@@ -1284,26 +1294,26 @@ int main(int argc, char **argv) {
 	    round_trials[3],
 	    dci_errors);
 
-#ifdef ABSTRACTION         
+    if(abstx){ //ABSTRACTION         
       blerr= (double)errs[0]/(round_trials[0]);
       fprintf(csv_fd,"%e;\n",blerr);
-#endif //ABStraction
+    } //ABStraction
 
       if (((double)errs[0]/(round_trials[0]))<1e-2) 
 	      break;
   }// SNR
   
-#ifdef ABSTRACTION
+
  } //ch_realization
-#endif
+
  
  fclose(bler_fd);
  if (input_trch_file==1)
    fclose(input_trch_fd);
-#ifdef ABSTRACTION
+ if(abstx){// ABSTRACTION
  fprintf(csv_fd,"];");
  fclose(csv_fd);
-#endif
+ }
    
     
    
