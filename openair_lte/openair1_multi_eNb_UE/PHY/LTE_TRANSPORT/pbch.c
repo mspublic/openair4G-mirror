@@ -236,7 +236,7 @@ int generate_pbch(mod_sym_t **txdataF,
 			 &re_allocated,
 			 0,
 			 0,
-			 1,
+			 0,
 			 frame_parms);
       
       re_offset+=12; // go to next RB
@@ -409,11 +409,11 @@ int pbch_channel_level(int **dl_ch_estimates_ext,
 __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
 
 void pbch_channel_compensation(int **rxdataF_ext,
-				int **dl_ch_estimates_ext,
-				int **rxdataF_comp,
-				LTE_DL_FRAME_PARMS *frame_parms,
-				u8 symbol,
-				u8 output_shift) {
+			       int **dl_ch_estimates_ext,
+			       int **rxdataF_comp,
+			       LTE_DL_FRAME_PARMS *frame_parms,
+			       u8 symbol,
+			       u8 output_shift) {
 
   u16 rb,nb_rb=6;
   u8 aatx,aarx,symbol_mod;
