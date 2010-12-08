@@ -8,7 +8,7 @@ addpath('~/Devel/matlab/IPDM')
 
 % pathname = '/media/disk/PENNE/';
 % mm = 'penne';
-pathname = '/emos/AMBIALET/';
+pathname = '/media/data/AMBIALET/';
 mm = 'ambialet';
 %pathname = '/emos/EMOS/';
 %mm = 'cordes';
