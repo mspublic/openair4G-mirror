@@ -771,14 +771,19 @@ int main(int argc, char **argv) {
 	  }
 	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	    n_errors_cfi++;
+
 	}
       } // symbol loop
+
+      if ((n_errors_ul>100) && (n_errors_dl>100) && (n_errors_common>100))
+	break;
+
     } //trials
 
-    printf("SNR %f : n_errors_common = %d/%d\n", SNR,n_errors_common,n_trials_common);
-    printf("SNR %f : n_errors_ul = %d/%d\n", SNR,n_errors_ul,n_trials_ul);
-    printf("SNR %f : n_errors_dl = %d/%d\n", SNR,n_errors_dl,n_trials_dl);
-    printf("SNR %f : n_errors_cfi = %d/%d\n", SNR,n_errors_cfi,n_frames);
+    printf("SNR %f : n_errors_common = %d/%d (%e)\n", SNR,n_errors_common,n_trials_common,(double)n_errors_common/n_trials_common);
+    printf("SNR %f : n_errors_ul = %d/%d (%e)\n", SNR,n_errors_ul,n_trials_ul,(double)n_errors_ul/n_trials_ul);
+    printf("SNR %f : n_errors_dl = %d/%d (%e)\n", SNR,n_errors_dl,n_trials_dl,(double)n_errors_dl/n_trials_dl);
+    printf("SNR %f : n_errors_cfi = %d/%d (%e)\n", SNR,n_errors_cfi,trial,(double)n_errors_cfi/trial);
     
   } // NSR
   
