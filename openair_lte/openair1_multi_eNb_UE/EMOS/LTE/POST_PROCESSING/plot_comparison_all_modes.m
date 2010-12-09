@@ -5,6 +5,8 @@ clear all
 h_fig = 0;
 
 addpath('~/Devel/matlab/IPDM')
+addpath('CapCom')
+addpath('maps')
 
 % pathname = '/media/disk/PENNE/';
 % mm = 'penne';
@@ -121,7 +123,7 @@ end
 %% find a common subset of points
 % take the points from mode6 where UE_connected==1 as basis
 % then for each of those points find points in the other set that are close
-tol = 0.001;
+tol = 0.0001;
 mode1_gps = [mode1.gps_lat_cat.' mode1.gps_lon_cat.'];
 mode2_gps = [mode2.gps_lat_cat.' mode2.gps_lon_cat.'];
 mode6_gps = [mode6.gps_lat_cat.' mode6.gps_lon_cat.'];
@@ -540,29 +542,28 @@ switch mm
     case 'cordes'
         % plot_distance_travelled_cordes
     case 'penne'
-        load penne_zoom1.mat
-        file_id = 1;
-        plot_distance_travelled
+        for file_id = 1:3
+            load(sprintf('penne_zoom%d.mat',file_id))
+            select2b = false(size(parcours1));
+            select2b(parcours1)=select2;
+            index1 = find(select1);
+            index2 = find(select2);
+            index6 = find(select6);
+            index2b = find(select2b);
+            plot_distance_travelled(mode1,index1,mode2,mode2_ideal,index2b,mode6,index6,pathname,file_id,mm);
+        end
 
-        load penne_zoom2.mat
-        file_id = 2;
-        plot_distance_travelled
-
-        load penne_zoom3.mat
-        file_id = 3;
-        plot_distance_travelled
     case 'ambialet'
-        load ambialet_zoom1.mat
-        file_id = 1;
-        plot_distance_travelled
-
-        load ambialet_zoom2.mat
-        file_id = 2;
-        plot_distance_travelled
-
-        load ambialet_zoom3.mat
-        file_id = 3;
-        plot_distance_travelled
+        for file_id = 1:3
+            load(sprintf('ambialet_zoom%d.mat',file_id))
+            select2b = false(size(parcours1));
+            select2b(parcours1)=select2;
+            index1 = find(select1);
+            index2 = find(select2);
+            index6 = find(select6);
+            index2b = find(select2b);
+            plot_distance_travelled(mode1,index1,mode2,mode2_ideal,index2b,mode6,index6,pathname,file_id,mm);
+        end
         
         eval_village_ambialet
         

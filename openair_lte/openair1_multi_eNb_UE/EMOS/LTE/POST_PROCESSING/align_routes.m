@@ -1,8 +1,10 @@
 addpath('~/Devel/matlab/IPDM')
+addpath('CapCom')
 addpath('maps')
 
-load ambialet.mat
-mm='ambialet';
+%pathname = '/media/data/AMBIALET';
+%mm='ambialet';
+%load ambialet.mat
 
 % 1) Identify the common set of routes between all 3 modes
 % --> saved in modex.ind_common
@@ -69,16 +71,17 @@ hold off
 cm = colormap(lines);
 for i=1:length(mode1.start_points);
     if (i==1)
-        mm = 'ambialet';
+        plot_gps_coordinates(mm,mode1.gps_lon_cat(mode1.start_points(i):mode1.end_points(i)),...
+                                mode1.gps_lat_cat(mode1.start_points(i):mode1.end_points(i)),...
+                                [],[],sprintf('m1c%d',i),cm(mod(i-1,64)+1,:),'Marker','x','Line','none');
     else
-        mm = '';
-    end
-    plot_gps_coordinates(mm,mode1.gps_lon_cat(mode1.start_points(i):mode1.end_points(i)),...
-                            mode1.gps_lat_cat(mode1.start_points(i):mode1.end_points(i)),...
-                            [],[],sprintf('m1c%d',i),cm(mod(i-1,64)+1,:),'Marker','x','Line','none');
+        plot_gps_coordinates('',mode1.gps_lon_cat(mode1.start_points(i):mode1.end_points(i)),...
+                                mode1.gps_lat_cat(mode1.start_points(i):mode1.end_points(i)),...
+                                [],[],sprintf('m1c%d',i),cm(mod(i-1,64)+1,:),'Marker','x','Line','none');
+    end        
     fprintf(1,'saved %d\n',i);
 end
-%saveas(h_fig,fullfile('chunks','mode1.jpg'));
+saveas(h_fig,fullfile(pathname,'route_align','chunks_mode1.jpg'));
 
 h_fig = figure(2);
 hold off
@@ -86,16 +89,17 @@ hold off
 cm = colormap(lines);
 for i=1:length(mode2.start_points);
     if (i==1)
-        mm = 'ambialet';
+        plot_gps_coordinates(mm,mode2.gps_lon_cat(mode2.start_points(i):mode2.end_points(i)),...
+                                mode2.gps_lat_cat(mode2.start_points(i):mode2.end_points(i)),...
+                                [],[],sprintf('m2c%d',i),cm(mod(i-1,64)+1,:),'Marker','o','Line','none');
     else
-        mm = '';
-    end
-    plot_gps_coordinates(mm,mode2.gps_lon_cat(mode2.start_points(i):mode2.end_points(i)),...
-                            mode2.gps_lat_cat(mode2.start_points(i):mode2.end_points(i)),...
-                            [],[],sprintf('m2c%d',i),cm(mod(i-1,64)+1,:),'Marker','o','Line','none');
+        plot_gps_coordinates('',mode2.gps_lon_cat(mode2.start_points(i):mode2.end_points(i)),...
+                                mode2.gps_lat_cat(mode2.start_points(i):mode2.end_points(i)),...
+                                [],[],sprintf('m2c%d',i),cm(mod(i-1,64)+1,:),'Marker','o','Line','none');
+    end        
     fprintf(1,'saved %d\n',i);
 end
-%saveas(h_fig,fullfile('chunks','mode2.jpg'));
+saveas(h_fig,fullfile(pathname,'route_align','chunks_mode2.jpg'));
 
 h_fig = figure(3);
 hold off
@@ -103,16 +107,17 @@ hold off
 cm = colormap(lines);
 for i=1:length(mode6.start_points);
     if (i==1)
-        mm = 'ambialet';
+        plot_gps_coordinates(mm,mode6.gps_lon_cat(mode6.start_points(i):mode6.end_points(i)),...
+                                mode6.gps_lat_cat(mode6.start_points(i):mode6.end_points(i)),...
+                                [],[],sprintf('m6c%d',i),cm(mod(i-1,64)+1,:),'Marker','s','Line','none');
     else
-        mm = '';
+        plot_gps_coordinates('',mode6.gps_lon_cat(mode6.start_points(i):mode6.end_points(i)),...
+                                mode6.gps_lat_cat(mode6.start_points(i):mode6.end_points(i)),...
+                                [],[],sprintf('m6c%d',i),cm(mod(i-1,64)+1,:),'Marker','s','Line','none');
     end
-    plot_gps_coordinates(mm,mode6.gps_lon_cat(mode6.start_points(i):mode6.end_points(i)),...
-                            mode6.gps_lat_cat(mode6.start_points(i):mode6.end_points(i)),...
-                            [],[],sprintf('m6c%d',i),cm(mod(i-1,64)+1,:),'Marker','s','Line','none');
     fprintf(1,'saved %d\n',i);
 end
-%saveas(h_fig,fullfile('chunks','mode6.jpg'));
+saveas(h_fig,fullfile(pathname,'route_align','chunks_mode6.jpg'));
 
 %keyboard
 %end
@@ -258,31 +263,59 @@ for i=1:num_chunks
 %         max(chunk_size2(i),chunk_size6(i))/min(chunk_size2(i),chunk_size6(i))<10)
 %         chunk_idx(i) = true;
 %     end
-    if (chunk_list(i).mode1.ok && chunk_list(i).mode2.ok && chunk_list(i).mode6.ok)
+    if (chunk_list(i).mode1.ok && chunk_list(i).mode2.ok && chunk_list(i).mode6.ok && ...
+        length(chunk_list(i).mode1.indices)>=10 && length(chunk_list(i).mode2.indices)>=10 && length(chunk_list(i).mode6.indices)>=10)
         chunk_idx(i)=true;
     end
 end
 
-figure(4);
+h_fig = figure(4);
 hold off
 bar([chunk_size1(chunk_idx);chunk_size2(chunk_idx);chunk_size6(chunk_idx)].','stacked')
 %set(gca,'yscale','log');
 legend('mode1','mode2','mode6')
 xlabel('chunk')
 ylabel('# samples')
+saveas(h_fig,fullfile(pathname,'route_align','chunk_stats.eps'), 'epsc2');
 
 %% visualize chunks ver 1
-h_fig=figure(5);
+h_fig=figure(10);
+hold off
+first_plot=1;
+cm = colormap(lines);
 for i=1:num_chunks
     if chunk_idx(i)
-        plot_gps_coordinates('ambialet',mode1.gps_lon_cat(chunk_list(i).mode1.indices),mode1.gps_lat_cat(chunk_list(i).mode1.indices),[],[],'chunk 1','blue');
-        plot_gps_coordinates('',mode2.gps_lon_cat(chunk_list(i).mode2.indices),mode2.gps_lat_cat(chunk_list(i).mode2.indices),[],[],'chunk 2','red');
-        plot_gps_coordinates('',mode6.gps_lon_cat(chunk_list(i).mode6.indices),mode6.gps_lat_cat(chunk_list(i).mode6.indices),[],[],'chunk 6','green');
-        %saveas(h_fig,fullfile('chunks',sprintf('chunk%d.jpg',i)));
-        drawnow;
-        fprintf(1,'saved %d\n',i);
+        h_fig=figure(10);
+        if (first_plot==1)
+            plot_gps_coordinates(mm,mode1.gps_lon_cat(chunk_list(i).mode1.indices),...
+                                            mode1.gps_lat_cat(chunk_list(i).mode1.indices),...
+                                            [],[],sprintf('chunk %d',i),cm(mod(i-1,64)+1,:),...
+                                            'Marker','x','Line','none');
+            first_plot = 0;
+        else
+            plot_gps_coordinates('',mode1.gps_lon_cat(chunk_list(i).mode1.indices),...
+                                    mode1.gps_lat_cat(chunk_list(i).mode1.indices),...
+                                    [],[],sprintf('chunk %d',i),cm(mod(i-1,64)+1,:),...
+                                    'Marker','x','Line','none');
+        end            
+        plot_gps_coordinates('',mode2.gps_lon_cat(chunk_list(i).mode2.indices),...
+                                mode2.gps_lat_cat(chunk_list(i).mode2.indices),...
+                                    [],[],'',cm(mod(i-1,64)+1,:),...
+                                    'Marker','o','Line','none');
+        plot_gps_coordinates('',mode6.gps_lon_cat(chunk_list(i).mode6.indices),...
+                                mode6.gps_lat_cat(chunk_list(i).mode6.indices),...
+                                [],[],'',cm(mod(i-1,64)+1,:),...
+                                    'Marker','s','Line','none');
+        %fprintf(1,'saved %d\n',i);
+        %drawnow;
+        plot_distance_travelled(mode1,chunk_list(i).mode1.indices,...
+                                mode2,mode2_ideal,chunk_list(i).mode2.indices,...
+                                mode6,chunk_list(i).mode6.indices,...
+                                fullfile(pathname,'route_align'), i, mm);
     end
 end
+h_fig=figure(10);
+saveas(h_fig,fullfile(pathname,'route_align','chunks.jpg'));
 
 
 % %%

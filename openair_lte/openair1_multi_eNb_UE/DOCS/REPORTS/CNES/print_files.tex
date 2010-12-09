@@ -395,14 +395,9 @@ We plot the CDF of the throughput that was measured with our modem as well as th
 
 Last but not least we show the throughput of the UL for the measured TDD mode and extrapolated for FDD. The data for the UL data is based on the measurements from all three modes, except for the site of Cordes, where we only used mode 6\footnote{This was chosen this measurements were taken at the end of the measurements in Cordes, where the equipment was working much more stable. For the mode 1 and mode 2 measurements there were frequent crashes of the UE that makes it almost impossible to align the data recorded at the eNb with the one at the UE (this is necessary to obtain the GPS data). Also the measurements in mode 6 cover all of the zones, where there was uplink availiable}.
 
-\subsubsection{Time}
+\subsubsection{Time/Map}
 
-The plots in this subsection show the DLSCH throughput for mode 1, 2 and 6 over time. Further we show the ideal throughput for the three modes using only the first, only the second or both receive antennas at the UE.
-
-
-\subsubsection{Map}
-
-The plots in this subsection show the DLSCH throughput for mode 1, 2 and 6 as well as the ideal throughputs for the three modes using  both receive antennas at the UE on a map.
+The plots in this subsection show the DLSCH and the ULSCH throughput (real and extrapolated) for mode 1, 2 and 6 over time and on a map. 
 
 \subsubsection{Distance}
 
@@ -607,27 +602,22 @@ Comparing the modem results with the ideal results, we see that the modem perfor
 Looking at the extrapolated curves only, we can see a very clear benefit of using 2 RX antennas at UE in all modes. We further see that modes 2 and 6 show almost identical performance. 
 
 
-\subsubsection{Time}
-
-\printfile{CORDES/Mode1/results/DLSCH_throughput.pdf}
-\printfile{CORDES/Mode2/results/DLSCH_throughput.pdf}
-
-\printfile{CORDES/Mode6/results/DLSCH_throughput.pdf}
-\printfile{CORDES/Mode2/results/coded_throughput_time_1stRx.pdf}
-
-\printfile{CORDES/Mode2/results/coded_throughput_time_2ndRx.pdf}
-\printfile{CORDES/Mode2/results/coded_throughput_time_2Rx.pdf}
-
-\printfile{CORDES/Mode6/results/UL_throughput.pdf}
-
-
-\subsubsection{Map}
+\subsubsection{Time/Map}
 
 \printfile{CORDES/Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode1/results/DLSCH_throughput.pdf}
+
 \printfile{CORDES/Mode2/results/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode2/results/DLSCH_throughput.pdf}
 
 \printfile{CORDES/Mode6/results/DLSCH_troughput_gps.jpg}
+\printfile{CORDES/Mode6/results/DLSCH_throughput.pdf}
+
 \printfile{CORDES/Mode6/results/UL_throughput_gps.jpg}
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
+
+\printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+\printfile{CORDES/Mode6/results/UL_throughput.pdf}
 
 \printfile{CORDES/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
 \printfile{CORDES/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
@@ -635,8 +625,11 @@ Looking at the extrapolated curves only, we can see a very clear benefit of usin
 \printfile{CORDES/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
 \printfile{CORDES/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
 
-\printfile{CORDES/Mode6/results/UL_throughput_ideal_1Rx_gps.jpg}
-\printfile{CORDES/Mode6/results/UL_throughput_ideal_2Rx_gps.jpg}
+\printfile{CORDES/Mode2/results/coded_throughput_time_1stRx.pdf}
+\printfile{CORDES/Mode2/results/coded_throughput_time_2ndRx.pdf}
+
+\printfile{CORDES/Mode2/results/coded_throughput_time_2Rx.pdf}
+
 
 \subsubsection{Distance}
 
@@ -706,41 +699,41 @@ However, if we look at the extrapolated results (for example \verb+ideal_through
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_4users_.pdf}
-\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_cdf_4users_.pdf}
-
-\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode1 modem]{CORDES/Mode1/results/pfair_troughput_gps_4users_}
+\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_4users_.pdf}
-\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{CORDES/Mode1/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode2 modem]{CORDES/Mode2/results/pfair_troughput_gps_4users_}
+\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_4users_.pdf}
-\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{CORDES/Mode2/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode6 modem]{CORDES/Mode6/results/pfair_troughput_gps_4users_.jpg}
+\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
-\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode6 modem]{CORDES/Mode6/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 \printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
-\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode1 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 \printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
-\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode2 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 \printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
+\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode6 ideal]{CORDES/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 
 
 \subsubsection{Service Coverage}
@@ -749,6 +742,7 @@ However, if we look at the extrapolated results (for example \verb+ideal_through
 \printfile{CORDES/Mode2/results/service_coverage_ul.pdf}
 
 \printfile{CORDES/Mode2/results/service_coverage_dl_rx_rssi.pdf}
+\printfile{CORDES/Mode2/results/service_coverage_ul_rx_rssi.pdf}
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled_cordes}
@@ -877,27 +871,22 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{PENNE/results/UL_throughput_cdf_comparison.pdf}
 \printfile{PENNE/results/UL_throughput_cdf_comparison_fdd.pdf}
 
-\subsubsection{Time}
-
-\printfile{PENNE/Mode1/results/DLSCH_throughput.pdf}
-\printfile{PENNE/Mode2/results/DLSCH_throughput.pdf}
-
-\printfile{PENNE/Mode6/results/DLSCH_throughput.pdf}
-\printfile{PENNE/Mode2/results/coded_throughput_time_1stRx.pdf}
-
-\printfile{PENNE/Mode2/results/coded_throughput_time_2ndRx.pdf}
-\printfile{PENNE/Mode2/results/coded_throughput_time_2Rx.pdf}
-
-\printfile{PENNE/Mode2/results/UL_throughput.pdf}
-
-
-\subsubsection{Map}
+\subsubsection{Time/Map}
 
 \printfile{PENNE/Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{PENNE/Mode1/results/DLSCH_throughput.pdf}
+
 \printfile{PENNE/Mode2/results/DLSCH_troughput_gps.jpg}
+\printfile{PENNE/Mode2/results/DLSCH_throughput.pdf}
 
 \printfile{PENNE/Mode6/results/DLSCH_troughput_gps.jpg}
+\printfile{PENNE/Mode6/results/DLSCH_throughput.pdf}
+
+\printfile{PENNE/Mode2/results/UL_throughput_ideal_1Rx_gps.jpg}
+\printfile{PENNE/Mode2/results/UL_throughput_ideal_2Rx_gps.jpg}
+
 \printfile{PENNE/Mode2/results/UL_throughput_gps.jpg}
+\printfile{PENNE/Mode2/results/UL_throughput.pdf}
 
 \printfile{PENNE/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
 \printfile{PENNE/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
@@ -905,8 +894,11 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{PENNE/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
 \printfile{PENNE/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
 
-\printfile{PENNE/Mode2/results/UL_throughput_ideal_1Rx_gps.jpg}
-\printfile{PENNE/Mode2/results/UL_throughput_ideal_2Rx_gps.jpg}
+\printfile{PENNE/Mode2/results/coded_throughput_time_1stRx.pdf}
+\printfile{PENNE/Mode2/results/coded_throughput_time_2ndRx.pdf}
+
+\printfile{PENNE/Mode2/results/coded_throughput_time_2Rx.pdf}
+
 
 \subsubsection{Distance}
 
@@ -945,6 +937,7 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \subsubsection{Ricean factor}
 
 \printfile{PENNE/Mode2/results/throughput_vs_Kfactor.pdf}
+\printfile{PENNE/Mode2/results/throughput_vs_Kfactor_ul.pdf}
 
 \printfile{PENNE/Mode2/results/throughput_vs_Kfactor_mode1_2Rx.pdf}
 \printfile{PENNE/Mode2/results/throughput_vs_Kfactor_mode2_2Rx.pdf}
@@ -952,44 +945,48 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{PENNE/Mode2/results/throughput_vs_Kfactor_mode6_maxq_2Rx.pdf}
 \printfile{PENNE/Mode2/results/throughput_vs_Kfactor_mode6_feedbackq_2Rx.pdf}
 
+\printfile{PENNE/Mode2/results/throughput_vs_Kfactor_ul_ideal_1Rx.pdf}
+\printfile{PENNE/Mode2/results/throughput_vs_Kfactor_ul_ideal_2Rx.pdf}
+
+
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_4users_.pdf}
-\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_cdf_4users_.pdf}
-
-\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode1 modem]{PENNE/Mode1/results/pfair_troughput_gps_4users_}
+\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_4users_.pdf}
-\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{PENNE/Mode1/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode2 modem]{PENNE/Mode2/results/pfair_troughput_gps_4users_}
+\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_4users_.pdf}
-\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{PENNE/Mode2/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode6 modem]{PENNE/Mode6/results/pfair_troughput_gps_4users_.jpg}
+\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
-\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode6 modem]{PENNE/Mode6/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 \printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
-\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode1 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 \printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
-\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode2 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 \printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
+\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode6 ideal]{PENNE/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 
 
 \subsubsection{Service Coverage}
@@ -998,6 +995,7 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{PENNE/Mode2/results/service_coverage_ul.pdf}
 
 \printfile{PENNE/Mode2/results/service_coverage_dl_rx_rssi.pdf}
+\printfile{PENNE/Mode2/results/service_coverage_ul_rx_rssi.pdf}
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled_penne}
@@ -1123,27 +1121,22 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{AMBIALET/results/UL_throughput_cdf_comparison.pdf}
 \printfile{AMBIALET/results/UL_throughput_cdf_comparison_fdd.pdf}
 
-\subsubsection{Time}
-
-\printfile{AMBIALET/Mode1/results/DLSCH_throughput.pdf}
-\printfile{AMBIALET/Mode2/results/DLSCH_throughput.pdf}
-
-\printfile{AMBIALET/Mode6/results/DLSCH_throughput.pdf}
-\printfile{AMBIALET/Mode2/results/coded_throughput_time_1stRx.pdf}
-
-\printfile{AMBIALET/Mode2/results/coded_throughput_time_2ndRx.pdf}
-\printfile{AMBIALET/Mode2/results/coded_throughput_time_2Rx.pdf}
-
-\printfile{AMBIALET/Mode2/results/UL_throughput.pdf}
-
-
-\subsubsection{Map}
+\subsubsection{Time/Map}
 
 \printfile{AMBIALET/Mode1/results/DLSCH_troughput_gps.jpg}
+\printfile{AMBIALET/Mode1/results/DLSCH_throughput.pdf}
+
 \printfile{AMBIALET/Mode2/results/DLSCH_troughput_gps.jpg}
+\printfile{AMBIALET/Mode2/results/DLSCH_throughput.pdf}
 
 \printfile{AMBIALET/Mode6/results/DLSCH_troughput_gps.jpg}
+\printfile{AMBIALET/Mode6/results/DLSCH_throughput.pdf}
+
+\printfile{AMBIALET/Mode2/results/UL_throughput_ideal_1Rx_gps.jpg}
+\printfile{AMBIALET/Mode2/results/UL_throughput_ideal_2Rx_gps.jpg}
+
 \printfile{AMBIALET/Mode2/results/UL_throughput_gps.jpg}
+\printfile{AMBIALET/Mode2/results/UL_throughput.pdf}
 
 \printfile{AMBIALET/Mode2/results/coded_throughput_Alamouti_gps_2Rx.jpg}
 \printfile{AMBIALET/Mode2/results/coded_throughput_SISO_gps_2Rx.jpg}
@@ -1151,8 +1144,11 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{AMBIALET/Mode2/results/coded_throughput_feedbackBeamforming_gps_2Rx.jpg}
 \printfile{AMBIALET/Mode2/results/coded_throughput_optBeamforming_gps_2Rx.jpg}
 
-\printfile{AMBIALET/Mode2/results/UL_throughput_ideal_1Rx_gps.jpg}
-\printfile{AMBIALET/Mode2/results/UL_throughput_ideal_2Rx_gps.jpg}
+\printfile{AMBIALET/Mode2/results/coded_throughput_time_1stRx.pdf}
+\printfile{AMBIALET/Mode2/results/coded_throughput_time_2ndRx.pdf}
+
+\printfile{AMBIALET/Mode2/results/coded_throughput_time_2Rx.pdf}
+
 
 \subsubsection{Distance}
 
@@ -1182,6 +1178,7 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \subsubsection{Ricean factor}
 
 \printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor.pdf}
+\printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_ul.pdf}
 
 \printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_mode1_2Rx.pdf}
 \printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_mode2_2Rx.pdf}
@@ -1189,44 +1186,46 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_mode6_maxq_2Rx.pdf}
 \printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_mode6_feedbackq_2Rx.pdf}
 
+\printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_ul_ideal_1Rx.pdf}
+\printfile{AMBIALET/Mode2/results/throughput_vs_Kfactor_ul_ideal_2Rx.pdf}
 
 \subsubsection{Extrapolation to loaded cell}
 
-\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_4users_.pdf}
-\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_cdf_4users_.pdf}
-
-\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_troughput_gps_4users_}
+\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_4users_.pdf}
-\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode1 modem]{AMBIALET/Mode1/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_troughput_gps_4users_}
+\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_4users_.pdf}
-\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode2 modem]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_dist_4users_.pdf}
 \printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_troughput_gps_4users_.jpg}
+\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_4users_.pdf}
 
-\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
-\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_cdf_4users_.pdf}
+\printfile[Mode6 modem]{AMBIALET/Mode6/results/pfair_throughput_dist_4users_.pdf}
 
-\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 \printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode1_2Rx}
+\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
-\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode1_2Rx.pdf}
+\printfile[Mode1 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode1_2Rx.pdf}
 
-\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 \printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode2_2Rx}
+\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
-\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode2_2Rx.pdf}
+\printfile[Mode2 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode2_2Rx.pdf}
 
-\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 \printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_troughput_gps_4users_mode6_feedbackq_2Rx}
+\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_4users_mode6_feedbackq_2Rx.pdf}
+
+\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_cdf_4users_mode6_feedbackq_2Rx.pdf}
+\printfile[Mode6 ideal]{AMBIALET/Mode2/results/pfair_throughput_dist_4users_mode6_feedbackq_2Rx.pdf}
 
 \subsubsection{Service Coverage}
 
@@ -1234,6 +1233,7 @@ We show the frame error rate on the PBCH in mode 1 and 2. A more detailed compar
 \printfile{AMBIALET/Mode2/results/service_coverage_ul.pdf}
 
 \printfile{AMBIALET/Mode2/results/service_coverage_dl_rx_rssi.pdf}
+\printfile{AMBIALET/Mode2/results/service_coverage_ul_rx_rssi.pdf}
 
 \subsubsection{Distance travelled}
 \label{sec:dist_travelled_ambialet}

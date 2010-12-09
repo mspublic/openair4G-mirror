@@ -5,7 +5,7 @@ function ind = filter_routes(lat,lon,time)
 
 len = length(lat);
 ind = false(size(lat));
-tol_gps = 0.001;
+tol_gps = 0.0001;
 tol_time = 15*60; % 15 min in sec
 
 for i=2:len
