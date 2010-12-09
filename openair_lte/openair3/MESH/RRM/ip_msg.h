@@ -51,6 +51,9 @@ typedef enum {
     STOP_COLL_SENS              , ///< Message IP       : CH1 sends order to stop collaboration to CH2
     UP_CLUST_SENS_RESULTS       , ///< Message IP       : update to send to CH from CH_COLL
     STOP_COLL_SENS_CONF         , ///< Message IP       : CH2 sends confirmationof stop collaboration to CH1
+    ASK_FREQ_TO_CH_3            , ///< Message IP       : user that wants to transmits ask channels to CH
+    USER_DISCONNECT_9           , ///< Message IP       : user wants to disconnect
+    CLOSE_LINK                  , ///< Message IP       : user wants to stop a link
     /*STOP_COLL_SENS             , ///< Message RRC->RRM : in FC/CH to report a frequency query
     RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
     RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
@@ -135,6 +138,17 @@ typedef struct {
     QOS_CLASS_T      QoS          ; //!< QoS required; if 0 all QoS at disposition
 } open_freq_query_t;
 
+/*! //mod_lor_10_10_29 
+*******************************************************************************
+\brief  Definition des parametres de les fonctions rrm_ask_freq_to_CH() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID      L2_id              ; //!< Layer 2 (MAC) ID of source user
+    L2_ID      L2_id_dest         ; //!< Layer 2 (MAC) ID of destination user
+    QOS_CLASS_T      QoS          ; //!< QoS required; it corresponds to the mumber of channels required
+} ask_freq_to_CH_t;
+
 /*! 
 *******************************************************************************
 \brief  Definition des parametres de les fonctions  
@@ -163,13 +177,20 @@ typedef struct {
 
 /*! 
 *******************************************************************************
-\brief  Definition des parametres des fonctions rrm_update_SN_freq() et 
-        rrm_update_SN_freq()dans 
-        une structure permettant le passage des parametres via un socket
+\brief  
 */
 typedef struct {
-    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID of FC/BTS
-} stop_coll_sens_conf_t;
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID 
+} stop_coll_sens_conf_t, user_disconnect_t; //add_lor_10_11_09
+
+/*! //add_lor_10_11_09
+*******************************************************************************
+\brief  
+*/
+typedef struct {
+    L2_ID               L2_id                ; //!< Layer 2 (MAC) ID 
+    L2_ID               L2_id_dest           ; //!< Layer 2 (MAC) ID of dest
+}close_link_t;
 
 #ifdef TRACE
 extern const char *Str_msg_ip[NB_MSG_IP] ; 
@@ -191,6 +212,10 @@ msg_t *msg_stop_coll_sens( Instance_t inst);//mod_lor_10_05_06
 msg_t *msg_up_clust_sens_results( Instance_t inst, L2_ID L2_id, unsigned int NB_info, 
                         unsigned int info_value, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); //mod_lor_10_05_07
 msg_t *msg_stop_coll_sens_conf( Instance_t inst, L2_ID L2_id);//mod_lor_10_05_12
+msg_t *msg_ask_freq_to_CH_3( Instance_t inst, L2_ID L2_id, L2_ID L2_id_dest, QOS_CLASS_T QoS, Transaction_t Trans_id );//mod_lor_10_10_28
+msg_t *msg_user_disconnect_9( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id); //add_lor_10_11_09
+msg_t *msg_close_link( Instance_t inst, L2_ID L2_id, L2_ID L2_id_dest, Transaction_t Trans_id); //add_lor_10_11_09
+
 #ifdef __cplusplus
 }
 #endif

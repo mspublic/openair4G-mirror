@@ -56,6 +56,9 @@
 #include "forms.h" //mod_eure_lor
 #include "sensing_form.h"//mod_eure_lor
 #include "SN_freq_form.h" //mod_lor_10_06_01
+#include "sens_scen_2_form.h"       //mod_lor_10_11_04
+#include "all_freq_to_users_form.h" //mod_lor_10_11_04
+#include "sens_CH1_scen_2.h"        //mod_lor_10_11_04
 
 
 /*
@@ -74,6 +77,9 @@
  static unsigned char CH_COLL_L3id [4]={0x0A,0x00,0x02,0x02};
  FD_sensing_form *form;
  FD_Secondary_Network_frequencies *SN_form; //mod_lor_10_06_01
+ FD_sens_scen_2 *Sens_form_CH2;             //mod_lor_10_11_04
+ FD_all_freq_to_users *Chann_form;          //mod_lor_10_11_04
+ FD_sens_CH1_scen_2 *Sens_form_CH1;         //mod_lor_10_11_04
  static int SN_waiting = 0; //mod_lor_10_06_02
 //mod_lor_10_05_18--
 /*
@@ -157,8 +163,8 @@ static pthread_t pthread_recv_rrc_msg_hnd,
 
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
-static float st_fr; //mod_lor_10_06_01
-static float end_fr; //mod_lor_10_06_01
+static float st_fr = 2.42e6; //mod_lor_10_06_01
+static float end_fr = 2.46e6; //mod_lor_10_06_01
 
 #ifdef TRACE
 static FILE *cmm2rrm_fd  = NULL ;
@@ -174,6 +180,19 @@ static FILE *output_2 = NULL; //mod_lor_10_04_20
 ** DECLARATION DES FONCTIONS
 ** ----------------------------------------------------------------------------
 */
+/*!
+*******************************************************************************
+\brief  Comparaison de deux ID de niveau 2
+
+\return si 0 alors les IDs sont identiques
+*/
+static int L2_ID_cmp(
+    L2_ID *L2_id1, ///< ID de niveau 2
+    L2_ID *L2_id2  ///< ID de niveau 2
+    )
+{
+    return memcmp( L2_id1, L2_id2, sizeof(L2_ID) ) ;
+}
 
 //mod_eure_lor++
 /*!
@@ -289,6 +308,187 @@ void plot_SN_channels(CHANNELS_DB_T *channels_db, unsigned int NB_info, unsigned
     fl_check_forms();
 }
 //mod_lor_10_06_01--
+//add_lor_10_11_04++
+/*!
+*******************************************************************************
+\brief  function to plot the spectrum sensing results in cluster 1
+
+\return NULL
+*/
+void plot_spectra_CH1(Sens_ch_t *S, unsigned int NB_info, /*FD_sens_CH1_scen_2 *Sens_form_CH1,*/ int sensor) {
+    
+    float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
+    //float f[100],spec_dBm[100];
+    unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
+    unsigned int SB_BW;
+    int i, j, k=0;
+    //printf("nb_info %d tot sub: %d \n",NB_info, tot_sub_bands);//dbg
+    // Compute frequencies and store in f 
+    if (sensor!=-1){
+        for (i=0;i<NB_info ;i++) {
+            SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
+            for (j=0; j< MAX_NUM_SB;j++){
+                f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
+                // Transfer power measurements to spec_dBm (float)
+                spec_dBm[k] = S[i].mu0[j];
+                //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]); //dbg
+                 k++;
+            }
+        }
+    }else{
+        for (i=0;i<NB_info ;i++) {
+            SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
+            for (j=0; j< MAX_NUM_SB;j++){
+                f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
+                // Transfer power measurements to spec_dBm (float)
+                spec_dBm[k] = (S[i].is_free[j]+1)%2;
+                //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]); //dbg
+                 k++;
+            }
+        }
+    }
+   
+    if (sensor == 1){
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_1_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_1_sens,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH1->User_1_sens,f,spec_dBm,tot_sub_bands,"","","");
+        
+    }else if (sensor == 2){
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_2_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_2_sens,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH1->User_2_sens,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == 3){
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_3_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_3_sens,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH1->User_3_sens,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == 4){
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_4_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_4_sens,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH1->User_4_sens,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == -1){
+        fl_set_xyplot_xbounds(Sens_form_CH1->Cluster_2_sensing,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->Cluster_2_sensing,0,2);
+
+        fl_set_xyplot_data(Sens_form_CH1->Cluster_2_sensing,f,spec_dBm,tot_sub_bands,"","","");
+    }else
+        printf("Error! User %d not considered",sensor); //mod_lor_10_12_07
+    fl_check_forms();
+}
+
+/*!
+*******************************************************************************
+\brief  function to plot the spectrum sensing results of collaborative cluster 2
+
+\return NULL
+*/
+void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *form,*/ unsigned int sensor) {
+    
+    float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
+    //float f[100],spec_dBm[100];
+    unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
+    unsigned int SB_BW;
+    int i, j, k=0;
+
+    for (i=0;i<NB_info ;i++) {
+        SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
+        for (j=0; j< MAX_NUM_SB;j++){
+            f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
+            // Transfer power measurements to spec_dBm (float)
+            spec_dBm[k] = S[i].mu0[j];
+            //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]); //dbg
+             k++;
+        }
+    }
+   
+    if (sensor == 1){
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_1,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_1,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH2->User_1,f,spec_dBm,tot_sub_bands,"","","");
+    }else if (sensor == 2){
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_2,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_2,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH2->User_2,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == 3){
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_3,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_3,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH2->User_3,f,spec_dBm,tot_sub_bands,"","","");
+    }else if(sensor == 4){
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_4,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_4,-115,-70);
+
+        fl_set_xyplot_data(Sens_form_CH2->User_4,f,spec_dBm,tot_sub_bands,"","","");
+    }else 
+        printf("Error! User %d not considered",sensor); //mod_lor_10_12_07
+    fl_check_forms();
+}
+
+/*!
+*******************************************************************************
+\brief  function to plot the attributed channel
+
+\return NULL
+*/
+
+void plot_all_chann_scen_2(unsigned int *tx, unsigned int *chann_start, unsigned int *chann_end, unsigned int NB_info, unsigned int rrm_id) { 
+    
+    float Start_fr, Final_fr;
+    
+    float f[SB_NEEDED_FOR_SN*NB_info], spec_dBm[SB_NEEDED_FOR_SN*NB_info];
+    Start_fr = st_fr;
+    Final_fr = end_fr;
+
+    unsigned int tot_sub_bands = SB_NEEDED_FOR_SN*NB_info;
+    unsigned int SB_BW ;
+
+    int i, j, k=0;
+
+    // Compute frequencies and store in f 
+    for (i=0;i<NB_info ;i++) {
+        SB_BW = (chann_end[i]-chann_start[i])/SB_NEEDED_FOR_SN;
+        for (j=0; j< SB_NEEDED_FOR_SN;j++){
+            f[k]=chann_start[i]+(SB_BW*j)+(SB_BW/2);
+            if (tx[i]==1)
+                spec_dBm[k] = 2;
+            else
+                spec_dBm[k] = 1;
+            k++;
+        }
+    }
+    
+    //printf ("start: %f; end %f\n",f[0], f[k-1]);//dbg
+   
+    if (rrm_id == 1){
+        fl_set_xyplot_xbounds(Chann_form->User_1_channels,Start_fr,Final_fr);
+        fl_set_xyplot_ybounds(Chann_form->User_1_channels,0,3);
+        fl_set_xyplot_data(Chann_form->User_1_channels,f,spec_dBm,tot_sub_bands,"","","");
+        
+    }else if (rrm_id == 2){
+        fl_set_xyplot_xbounds(Chann_form->User_2_channels,Start_fr,Final_fr);
+        fl_set_xyplot_ybounds(Chann_form->User_2_channels,0,3);
+        fl_set_xyplot_data(Chann_form->User_2_channels,f,spec_dBm,tot_sub_bands,"","","");
+    
+    }else if (rrm_id == 3){
+        fl_set_xyplot_xbounds(Chann_form->User_3_channels,Start_fr,Final_fr);
+        fl_set_xyplot_ybounds(Chann_form->User_3_channels,0,3);
+        fl_set_xyplot_data(Chann_form->User_3_channels,f,spec_dBm,tot_sub_bands,"","","");
+   
+    }else if (rrm_id == 4){
+        fl_set_xyplot_xbounds(Chann_form->User_4_channels,Start_fr,Final_fr);
+        fl_set_xyplot_ybounds(Chann_form->User_4_channels,0,3);
+        fl_set_xyplot_data(Chann_form->User_4_channels,f,spec_dBm,tot_sub_bands,"","","");
+    
+    }else
+        printf("Error! User %d not considered",rrm_id);
+    fl_check_forms();
+}
+//add_lor_10_11_04--
 //mod_lor_10_04_20++
 static msg_t *msg_graph_resp(
     Instance_t    inst     , //!< instance ID
@@ -314,10 +514,11 @@ static msg_t *msg_graph_resp(
 typedef struct {
     unsigned int        NB_chan              ; //!< Number of channels 
     unsigned int        NB_val               ; //!< Number of values 
-    unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
-    unsigned int        val[NB_SENS_MAX]    ; //!< Vector of values
-
+    unsigned int        channels[3*NB_SENS_MAX]; //!< Vector of channels //mod_lor_10_07_01: 3*NB_SENS_MAX instead of NB_SENS_MAX
+    unsigned int        val[3*NB_SENS_MAX]    ; //!< Vector of values  //mod_lor_10_07_01: 3*NB_SENS_MAX instead of NB_SENS_MAX
 } gen_sens_info_t ;
+//mod_lor_10_11_09++
+
 
 static msg_t *msg_generic_sens_resp(
     Instance_t   inst     , //!< instance ID
@@ -351,7 +552,9 @@ static msg_t *msg_generic_sens_resp(
                 memcpy( p->val, val, NB_val*sizeof(unsigned int) );
        
         }
+
         msg->data = (char *) p ;
+
         
     }
     return msg ;
@@ -1022,8 +1225,8 @@ static void processing_msg_cmm(
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
-                st_fr = p->Start_fr; //mod_lor_10_06_01
-                end_fr = p->Stop_fr; //mod_lor_10_06_01
+                //st_fr = p->Start_fr; //mod_lor_10_06_01
+                //end_fr = p->Stop_fr; //mod_lor_10_06_01
                 
                 cmm_init_sensing(header->inst,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
                         p->Nb_channels, p->Overlap,p->Sampl_freq);
@@ -1054,6 +1257,36 @@ static void processing_msg_cmm(
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
                 cmm_ask_freq(header->inst);
+            }
+            break ;
+        case CMM_INIT_COLL_SENSING : //add_lor_10_11_08
+            {
+                cmm_init_coll_sensing_t *p = (cmm_init_coll_sensing_t *) msg ;                
+                msg_fct( "[CMM]>[RRM]:%d:CMM_INIT_COLL_SENSING\n",header->inst);
+                rrm->sensing.sens_active=1;
+                cmm_init_coll_sensing(header->inst,p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
+                        p->Nb_channels, p->Overlap,p->Sampl_freq);
+                
+            }
+            break ;
+        case CMM_NEED_TO_TX : //add_lor_10_10_28
+            {
+                cmm_need_to_tx_t *p = (cmm_need_to_tx_t *) msg ;  
+                msg_fct( "[CMM]>[RRM]:%d:CMM_NEED_TO_TX\n",header->inst);
+                cmm_need_to_tx(header->inst, p->dest,p->QoS_class);
+            }
+            break ;
+        case CMM_USER_DISC : //add_lor_10_11_08
+            {
+                msg_fct( "[CMM]>[RRM]:%d:CMM_USER_DISC\n",header->inst);
+                cmm_user_disc(header->inst);
+            }
+            break ;
+        case CMM_LINK_DISC : //add_lor_10_11_09
+            {
+                cmm_link_disk_t *p = (cmm_link_disk_t *) msg ;
+                msg_fct( "[CMM]>[RRM]:%d:CMM_LINK_DISC with user %d\n",header->inst, p->dest);
+                cmm_link_disc(header->inst, p->dest);
             }
             break ;
 
@@ -1314,9 +1547,10 @@ static void processing_msg_rrc(
                 unsigned int        channels[2*p->NB_chan];                //!< Vector of channels
                 unsigned int        free[2*p->NB_chan]    ;                //!< Vector of values
                 
-                
-                channels[0]=p->ass_channels[0].Start_f;            //!<saved starting frequency
-                channels[1]=p->ass_channels[0].Final_f; //!<saved final frequency
+                if (p->NB_chan!=0){
+                    channels[0]=p->ass_channels[0].Start_f;            //!<saved starting frequency
+                    channels[1]=p->ass_channels[0].Final_f; //!<saved final frequency
+                }
                 
                 
                 int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,2*p->NB_chan,2*p->NB_chan,channels,free, 0) );
@@ -1325,6 +1559,51 @@ static void processing_msg_rrc(
             }
             break;
         //mod_lor_10_06_04--
+        //mod_lor_10_11_05++
+        case RRC_UP_FREQ_ASS_SEC :
+            {
+                rrm_up_freq_ass_sec_t *p  = (rrm_up_freq_ass_sec_t *) msg ;
+                int i;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM ;
+                 
+                unsigned int chann_start[NB_SENS_MAX];
+                unsigned int chann_end[NB_SENS_MAX];
+                unsigned int tx[NB_SENS_MAX];
+                unsigned int tot_ch = 0;
+                
+                unsigned int        channels[2*NB_SENS_MAX];                //!< Vector of channels
+                
+                msg_fct( "[RRC]>[RRM]:%d:RRC_UP_FREQ_ASS_SEC ch %d\n",header->inst,p->NB_all);
+    
+                for (i=0;i<p->NB_all;i++){
+                    if (memcmp( &(p->L2_id[i]), &(rrm->L2_id), sizeof(L2_ID) )==0){
+                        printf("USER:%d:Transmission on channel %d from %d to %d\n\n",header->inst,p->ass_channels[i].Ch_id, p->ass_channels[i].Start_f, p->ass_channels[i].Final_f);
+                        chann_start[tot_ch]     = p->ass_channels[i].Start_f;
+                        chann_end[tot_ch]       = p->ass_channels[i].Final_f;
+                        channels[tot_ch*2]      = chann_start[tot_ch];
+                        channels[(tot_ch*2)+1]  = chann_end[tot_ch];
+                        tx[tot_ch]              = 1;
+                        tot_ch++;
+                    }
+                    if (memcmp( &(p->L2_id_dest[i]), &(rrm->L2_id), sizeof(L2_ID) )==0){
+                        printf("USER:%d:Ready to receive on channel %d from %d to %d\n\n",header->inst,p->ass_channels[i].Ch_id, p->ass_channels[i].Start_f, p->ass_channels[i].Final_f);
+                        chann_start[tot_ch]     = p->ass_channels[i].Start_f;
+                        chann_end[tot_ch]       = p->ass_channels[i].Final_f;
+                        channels[tot_ch*2]      = chann_start[tot_ch];
+                        channels[(tot_ch*2)+1]  = chann_end[tot_ch];
+                        tx[tot_ch]              = 0;
+                        tot_ch++;
+                    }
+                }
+                plot_all_chann_scen_2(tx, chann_start, chann_end, tot_ch, header->inst-FIRST_SENSOR_ID+1);
+                
+                
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,tot_ch*2,tot_ch,channels,tx, 0) );
+                    WARNING(r!=0);
+                 
+            }
+            break;
+        //mod_lor_10_11_05--
 
         default :
             fprintf(stderr,"RRC:\n") ;
@@ -1359,8 +1638,15 @@ static void processing_msg_sensing(
                 if(rrm->sensing.sens_active == 0)//mod_lor_10_04_23
                     break;
                 msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS trans %d\n",header->inst, header->Trans_id);
-                plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
-               
+                //mod_lor_10_11_04++
+                if (SCEN_1)
+                    plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_2_CENTR && !COLL_CLUST)
+                    plot_spectra_CH1(p->Sens_meas, p->NB_info,  header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_2_CENTR && COLL_CLUST)
+                    plot_spectra_CH2(p->Sens_meas, p->NB_info,  header->inst-FIRST_SENSOR_ID+1);
+                //mod_lor_10_11_04--
+                
                 rrc_update_sens( header->inst, rrm->L2_id, p->NB_info, p->Sens_meas, p->info_time );
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type ;
@@ -1374,7 +1660,7 @@ static void processing_msg_sensing(
                 free[0]=SB_BANDWIDTH;                           //!<saved subband dimension
                 
                 
-                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,2,2,channels,free, Trans) );
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,2,1,channels,free, Trans) );
                     WARNING(r!=0);
                 //mod_lor_10_04_21-- mod_lor_10_06_02--
                 //mod_lor_10_04_20--
@@ -1520,18 +1806,22 @@ static void processing_msg_ip(
                 channels[1]=p->Sens_meas[p->NB_info-1].Final_f; //!<saved final frequency
                 free[0]=SB_BANDWIDTH;                           //!<saved subband dimension
                 
-                if(update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time)||SN_waiting == 1) {//mod_lor_10_06_02
-                    
-                    if ((open_freq_query(rrm->id, rrm->L2_id, 0, SN_waiting)>0) && SN_waiting){   //mod_lor_10_06_02
-                        SN_waiting=0; //mod_lor_10_06_02
+                if (SCEN_1){
+                    if(update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time)||SN_waiting == 1) {//mod_lor_10_06_02
                         
-                        free[1]=1;    //To transmit to the graphic interface if an update have to be sent to SN
-                    }else if(SN_waiting)
-                        free[1]=3;
-                    else
-                        free[1]=1;
-                }else
-                    free[1]=0;
+                        if ((open_freq_query(rrm->id, rrm->L2_id, 0, SN_waiting)>0) && SN_waiting){   //mod_lor_10_06_02
+                            SN_waiting=0; //mod_lor_10_06_02
+                            
+                            free[1]=1;    //To transmit to the graphic interface if an update have to be sent to SN
+                        }else if(SN_waiting)
+                            free[1]=3;
+                        else
+                            free[1]=1;
+                    }else
+                        free[1]=0;
+                }else if (SCEN_2_CENTR){ //add_lor_10_11_03
+                    update_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time);  
+                }
                 //mod_lor_10_04_21++
                 
                 
@@ -1551,7 +1841,7 @@ static void processing_msg_ip(
                   //  printf("  ->channel %d is %d\n",channels[i],free[i]);//dbg
                 }
                 pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;*/
-                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,2,2,channels,free, header->Trans_id));
+                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,2,1,channels,free, header->Trans_id));
                     WARNING(r!=0);
                 
                 //mod_lor_10_04_21--
@@ -1565,25 +1855,24 @@ static void processing_msg_ip(
                     break;
                 update_coll_sens_t *p = (update_coll_sens_t *) msg ;
                 msg_fct( "[IP]>[RRM]:%d:UP_CLUST_SENS_RESULTS from %d \n",rrm->id, header->inst);
+                 if (SCEN_2_CENTR && !COLL_CLUST)
+                    plot_spectra_CH1(p->Sens_meas, p->NB_info,  -1); 
                 up_coll_sens_results( rrm->id, p->L2_id, p->NB_info, p->Sens_meas, p->info_time); 
                 //mod_lor_10_04_21++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
-                unsigned int        channels[NB_SENS_MAX]; //!< Vector of channels
-                unsigned int        free[NB_SENS_MAX]    ; //!< Vector of values
-                int i;
-                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-                CHANNELS_DB_T *channel=rrm->rrc.pChannelsEntry;
-                for (i=0;channel!=NULL && i<NB_SENS_MAX;i++){
-                    
-                    channels[i]=channel->channel.Ch_id;
-                    free[i]=channel->is_free;
-                    channel=channel->next;
-                }
-                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,i,i,channels,free, header->Trans_id));
+                unsigned int        channels[2];                //!< Vector of channels
+                unsigned int        free[2]    ;                //!< Vector of values
+                unsigned int    Trans = rrm->ip.trans_cnt;
+                
+                channels[0]=p->Sens_meas[0].Start_f;            //!<saved starting frequency
+                channels[1]=p->Sens_meas[p->NB_info-1].Final_f; //!<saved final frequency
+                free[0]=SB_BANDWIDTH;                           //!<saved subband dimension
+                
+                
+                int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,2,1,channels,free, Trans) );
                     WARNING(r!=0);
                 
-                //mod_lor_10_04_21--
+                //mod_lor_10_04_21--*/
                 
             }
             break ;
@@ -1599,6 +1888,38 @@ static void processing_msg_ip(
                 //mod_lor_10_04_20--
                 open_freq_query( rrm->id, p->L2_id, p->QoS, header->Trans_id ); 
                 
+            }
+            break ;
+        case ASK_FREQ_TO_CH_3 : //add_lor_10_11_03
+            {
+                ask_freq_to_CH_t *p = (ask_freq_to_CH_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:ASK_FREQ_TO_CH_3 from %d\n",rrm->id, header->inst);
+                ///graphic interphace
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; 
+                unsigned int stop=0,dest_id,i;
+                for (i=0;i<nb_inst && stop==0;i++){
+                    if(L2_ID_cmp(&(rrm_inst[i].L2_id), &(p->L2_id_dest))==0){
+                        stop=1;
+                        dest_id = i;
+                    }
+                }
+                printf("dest id %d\n",dest_id);
+                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,1,0,&dest_id,NULL, header->Trans_id)); 
+                    WARNING(r!=0);
+                        printf ("N5a tot waiting: %d\n",rrm->ip.users_waiting_update);//dbg
+                if (ask_freq_to_CH( rrm->id, &(p->L2_id), &(p->L2_id_dest), 1, header->Trans_id )!=0){
+                    int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,0,1,NULL,&dest_id, header->Trans_id)); 
+                        WARNING(r!=0);
+                    printf ("Not available channels... Waiting for a channel...\n");
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    printf ("N5b tot waiting: %d\n",rrm->ip.users_waiting_update);//dbg
+                    memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][0].L2_id,p->L2_id.L2_id, sizeof(L2_ID));
+                    memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][1].L2_id,p->L2_id_dest.L2_id, sizeof(L2_ID));
+
+                    rrm->ip.users_waiting_update++;
+                    printf ("N5c tot waiting: %d\n",rrm->ip.users_waiting_update);//dbg
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                } 
             }
             break ;
         case UPDATE_OPEN_FREQ_7 :
@@ -1625,6 +1946,7 @@ static void processing_msg_ip(
                 msg_fct( "\n");//dbg
                 occ_ch_NB = update_open_freq( rrm->id, p->L2_id, p->NB_chan, occ_channels, p->channels, header->Trans_id ); //mod_lor_10_05_18
                 //mod_lor_10_05_18--
+                printf("%d %d\n",p->NB_chan,occ_ch_NB);//dbg
                 pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
                 int r =  send_msg( rrm->graph.s,msg_generic_sens_resp(header->inst,msg_type,(3*p->NB_chan),occ_ch_NB,channels,occ_channels, header->Trans_id)); //mod_lor_10_05_17
                     WARNING(r!=0);
@@ -1729,6 +2051,41 @@ static void processing_msg_ip(
                 rrc_end_scan_conf( header->inst, p->L2_id, header->Trans_id );
                 
             }
+        case USER_DISCONNECT_9 : //add_lor_10_11_09
+            {
+                user_disconnect_t *p = (user_disconnect_t *) msg ;
+                msg_fct( "[IP]>[RRM]:%d:USER_DISCONNECT from %d\n",rrm->id, header->inst);
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
+                    WARNING(r!=0);
+                disconnect_user( rrm->id, p->L2_id );
+                
+            }
+            break ;
+        case CLOSE_LINK : //add_lor_10_11_09
+            {
+                close_link_t *p = (close_link_t *) msg ;
+                int msg_type = header->msg_type + NB_MSG_SNS_RRM  + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
+                msg_fct( "[IP]>[RRM]:%d:CLOSE_LINK from %d\n",rrm->id, header->inst);
+                unsigned int stop1=0, stop2=0,dest_id,source_id,i;
+                for (i=0;i<nb_inst && (stop1==0 || stop2==0);i++){
+                    if(L2_ID_cmp(&(rrm_inst[i].L2_id), &(p->L2_id))==0){
+                        stop1=1;
+                        source_id = i;
+                    }
+                    if(L2_ID_cmp(&(rrm_inst[i].L2_id), &(p->L2_id_dest))==0){
+                        stop2=1;
+                        dest_id = i;
+                    }
+                }
+                printf ("source %d  dest %d st1 %d st2 %d\n",source_id, dest_id, stop1, stop2); //dbg
+               
+                int r =  send_msg( rrm->graph.s, msg_generic_sens_resp(header->inst,msg_type,1,1,&source_id,&dest_id, header->Trans_id)); 
+                    WARNING(r!=0);
+                close_active_link( rrm->id, p->L2_id, p->L2_id_dest );
+                
+            }
+            break ;
             break ;
         //mod_lor_10_05_12--
        
@@ -2070,6 +2427,7 @@ int main( int argc , char **argv )
         rrm_inst[ii].sensing.transaction= NULL ;
         
         rrm_inst[ii].sensing.sens_active= 0 ;       //mod_lor_10_04_21
+        rrm_inst[ii].ip.users_waiting_update=0;     //add_lor_10_11_08
         rrm_inst[ii].rrc.pNeighborEntry = NULL ;
         rrm_inst[ii].rrc.pRbEntry       = NULL ;
         rrm_inst[ii].rrc.pSensEntry     = NULL ;
@@ -2161,8 +2519,8 @@ int main( int argc , char **argv )
         exit(-1) ;
     }
      //mod_eure_lor++
-     fl_initialize(&argc, argv, "Fusion Center Spectral Measurements", 0, 0);
-     if (FC_ID>=0){ 
+     if (FC_ID>=0 && SCEN_1){ 
+        fl_initialize(&argc, argv, "Fusion Center Spectral Measurements", 0, 0);
         form = create_form_sensing_form(); 
         fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spectral Measurements");     
         fl_check_forms();    
@@ -2170,13 +2528,31 @@ int main( int argc , char **argv )
      //mod_eure_lor--
     
      //mod_lor_10_06_01++ 
-     if (BTS_ID>=0){
+     if (BTS_ID>=0 && SCEN_1){
          //fl_initialize(&argc, argv, "Secondary Network Frequencies", 0, 0);  
          SN_form = create_form_Secondary_Network_frequencies(); 
          fl_show_form(SN_form->Secondary_Network_frequencies,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Secondary Network Frequencies");     
          fl_check_forms();   
      }
      //mod_lor_10_06_01--
+     //mod_lor_10_11_04++
+     if (SCEN_2_CENTR && COLL_CLUST){ 
+         fl_initialize(&argc, argv, "Cluster 2", 0, 0);  
+         Sens_form_CH2 = create_form_sens_scen_2(); 
+         fl_show_form(Sens_form_CH2->sens_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 2: Sensing");     
+         fl_check_forms();   
+     }
+     if (SCEN_2_CENTR && !COLL_CLUST){ 
+         fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
+         Sens_form_CH1 = create_form_sens_CH1_scen_2(); 
+         fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Sensing");     //Cluster 1:  mod_lor_10_12_07
+         fl_check_forms();   
+         
+         Chann_form = create_form_all_freq_to_users();
+         fl_show_form(Chann_form->all_freq_to_users,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Used channels");     
+         fl_check_forms();
+     }
+     //mod_lor_10_11_04--
 
     /* main loop */
     rrm_scheduler( ) ;

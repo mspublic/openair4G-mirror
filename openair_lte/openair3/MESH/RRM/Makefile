@@ -4,10 +4,10 @@ OSTYPE		= $(shell uname -o )
 #EMUL_RRC        = 1
 #AAA: if sns emulated remove comment from next line
 #EMUL_SNS        = 1  
-RRC_KERNEL_MODE = 0
+RRC_KERNEL_MODE = 0 
 
 
-# VPATH		=.:./deps:./obj
+#VPATH		=.:./deps:./obj
 # en ABSOLU pour utiliser les tags avec nedit de n'importe ou
 CHEMIN		= $(shell pwd)
 OPENAIR1_DIR= $(CHEMIN)/../../../openair1
@@ -43,7 +43,7 @@ endif
 TARGET	    = emul_int rrm
 
 #put rrm_graph.c instead of rrm.c to connect the graphic interface block to the rrm
-SRC	    = rrm_graph.c   
+SRC	    = rrm_graph.c    
 SRC	   += rrm_sock.c
 SRC	   += rrm_util.c
 SRC	   += rrm_2_rrc_msg.c
@@ -65,6 +65,9 @@ SRC    += rrm_2_sensing_msg.c
 SRC    += ip_msg.c 
 SRC    += sensing_form.c 
 SRC    += SN_freq_form.c 
+SRC    += sens_scen_2_form.c 
+SRC    += all_freq_to_users_form.c
+SRC    += sens_CH1_scen_2.c
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

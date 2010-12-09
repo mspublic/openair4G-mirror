@@ -44,7 +44,10 @@ const char *Str_msg_ip[NB_MSG_IP] = {
     STRINGIZER(INIT_COLL_SENS_REQ       ),
     STRINGIZER(STOP_COLL_SENS           ),
     STRINGIZER(UP_CLUST_SENS_RESULTS    ),
-    STRINGIZER(STOP_COLL_SENS_CONF      )/*,
+    STRINGIZER(STOP_COLL_SENS_CONF      ),
+    STRINGIZER(ASK_FREQ_TO_CH_3         ),
+    STRINGIZER(USER_DISCONNECT_9        ),
+    STRINGIZER(CLOSE_LINK               )/*,
     STRINGIZER(RRC_CLUST_SCAN_REQ       ),
     STRINGIZER(RRM_CLUST_SCAN_CONF      ),
     STRINGIZER(RRM_CLUST_MON_REQ        ),
@@ -167,6 +170,38 @@ msg_t *msg_open_freq_query_4(
         {
             init_ip_msg_head(&(msg->head),inst,OPEN_FREQ_QUERY_4, sizeof( open_freq_query_t ) ,Trans_id);
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            p->QoS = QoS;
+        }
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        ask_freq_to_CH_3().
+\return message formate
+*/
+msg_t *msg_ask_freq_to_CH_3( 
+    Instance_t    inst, 
+    L2_ID         L2_id           ,
+    L2_ID         L2_id_dest      ,
+    QOS_CLASS_T   QoS             ,
+    Transaction_t Trans_id 
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+
+    if ( msg != NULL )
+    {
+        ask_freq_to_CH_t *p = RRM_CALLOC(ask_freq_to_CH_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst,ASK_FREQ_TO_CH_3, sizeof( ask_freq_to_CH_t ) ,Trans_id);
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            memcpy( p->L2_id_dest.L2_id, L2_id_dest.L2_id, sizeof(L2_ID) )  ;
             p->QoS = QoS;
         }
         msg->data = (char *) p ;
@@ -401,3 +436,63 @@ msg_t *msg_up_clust_sens_results(
 }
 
 //mod_lor_10_05_07--
+
+/*!add_lor_10_11_09
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        user_disconnect.
+\return message formate
+*/
+msg_t *msg_user_disconnect_9( 
+    Instance_t inst,        //!< identification de l'instance
+    L2_ID L2_id,            //!< L2_id of the user that wants to disconnect
+    Transaction_t Trans_id
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        user_disconnect_t *p = RRM_CALLOC(user_disconnect_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst,USER_DISCONNECT_9, sizeof( user_disconnect_t) ,Trans_id);            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+        }
+        msg->data = (char *) p ;
+    }  
+    return msg  ;
+
+}
+
+/*!add_lor_10_11_09
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        user_disconnect.
+\return message formate
+*/
+msg_t *msg_close_link( 
+    Instance_t inst,        //!< identification de l'instance
+    L2_ID L2_id,            //!< L2_id of the user that wants to stop the link
+    L2_ID L2_id_dest,       //!< L2_id of the destination
+    Transaction_t Trans_id
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        close_link_t *p = RRM_CALLOC(close_link_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_ip_msg_head(&(msg->head),inst,CLOSE_LINK, sizeof( close_link_t) ,Trans_id);            
+            memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
+            memcpy( p->L2_id_dest.L2_id, L2_id_dest.L2_id, sizeof(L2_ID) )  ;
+        }
+        msg->data = (char *) p ;
+    }  
+    return msg  ;
+
+}

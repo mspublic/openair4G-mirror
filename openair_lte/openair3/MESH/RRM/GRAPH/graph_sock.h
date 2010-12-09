@@ -29,7 +29,7 @@
 *******************************************************************************
 \brief	 Entete des messages de RRM/CMM/RRC/SENSING
 */
-typedef struct {
+typedef struct { 
 	unsigned short start    ; ///< Identification du debut de message
 	unsigned char  inst     ; ///< Identification de l'instance RRM
 	unsigned char  msg_type ; ///< Identification du type message

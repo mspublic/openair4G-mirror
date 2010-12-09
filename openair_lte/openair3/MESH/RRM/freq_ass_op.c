@@ -146,7 +146,7 @@ unsigned int take_decision_sens(
         if((pSensChann = get_chann_info(  pSensNode->info_hd , Ch_id)) != NULL){
             flag++;    
             for (i = 0; i<NUM_SB; i++){
-                //printf (" ch %d is_free %d", i, pSensChann->is_free[i]);
+                //printf (" ch %d is_free %d\t", i, pSensChann->is_free[i]);//dbg
                 if (pSensChann->is_free[i]==1)
                     finalSensChann->is_free[i]++;
                 else  if (pSensChann->is_free[i]==0)
@@ -174,7 +174,8 @@ unsigned int take_decision_sens(
 /*!
 *******************************************************************************
 \brief  Function that identify free block of SB_NEEDED_FOR_SN subbands analysing the 
-* sensing information present in the sensing database 
+* sensing information present in the sensing database; it saves the available channels 
+* in the channels database 
         
 \return 
 */
@@ -197,10 +198,10 @@ unsigned int find_available_channels(
     // printf("beginning of find_available_channels\n\n\n");//dbg
     while(take_decision_sens( Sens_db,&curr_sens_ch,sens_ch_id)==0)
     {
-    //    printf("\nsens_ch_id in while :%d found channel id %d\n\n\n", sens_ch_id, curr_sens_ch.Ch_id);//dbg
+        //printf("\nsens_ch_id in while :%d found channel id %d\n\n\n", sens_ch_id, curr_sens_ch.Ch_id);//dbg
         curr_fr = curr_sens_ch.Start_f;
         for (sb=0;sb<NUM_SB;sb++){ //loop over all the subbands of a sensing channel
-         //   printf("        sb %d is_free %d", sb, curr_sens_ch.is_free[sb]);//dbg
+            //printf("        sb %d is_free %d", sb, curr_sens_ch.is_free[sb]);//dbg
             if (curr_sens_ch.is_free[sb]==0){
                 sb_f = 0;
                 curr_fr+=SB_BANDWIDTH;
@@ -343,6 +344,24 @@ void cmm_ask_freq(
     
 }
 
+/*!//mod_lor_10_10_28
+*******************************************************************************
+ \brief CMM of secondary user ask activate a transmission requirement.  
+ * In the message it pass its L2_id to be identified by its Cluster Head 
+*/
+void cmm_need_to_tx( 
+    Instance_t inst             ,//!< identification de l'instance
+    Instance_t dest             ,//!< identification de l'instance du noeud destinataire
+    QOS_CLASS_T QoS_class        //!< Required quality of service (i.e. number of channels)
+    )
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+    rrm_t *rrm_dest = &rrm_inst[dest];
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+    rrm->ip.trans_cnt++ ;
+    PUT_IP_MSG(msg_ask_freq_to_CH_3( inst, rrm->L2_id, rrm_dest->L2_id, QoS_class, rrm->ip.trans_cnt));
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+}
 
 /*!
 *******************************************************************************
@@ -525,233 +544,312 @@ unsigned int update_SN_occ_freq( //mod_lor_10_05_18
     return (need_to_update); //mod_lor_10_05_17
     
 }
-    
-/*!
-\brief CMM of a SU asks to have a channel in SENDORA scenario 2 centralized  
- */ 
-/*void cmm_need_to_tx(
-    Instance_t inst             , //!< instance ID 
-    QOS_CLASS_T QoS_class         //!< quality of service required 
+
+/*!//add_lor_10_10_28
+*******************************************************************************
+ \brief User ask for frequency
+ * it checks available channels to attribute channels to users. It sends an
+ * update message to users with attributed channels
+*/
+unsigned int ask_freq_to_CH(
+    Instance_t    inst                   , //!< identification de l'instance
+    L2_ID         L2_id[NB_SENS_MAX]     , //!< L2_id of the SU
+    L2_ID         L2_id_dest[NB_SENS_MAX], //!< L2_id of the SU dest
+    unsigned int  N_users                , //!< quality of service required (i.e. number of channels required)
+    Transaction_t Trans_id                 //!< Transaction ID
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
+    unsigned int NB_chan=0, ind = 0, act_us=0;
+    CHANNELS_DB_T *pChannels;
+    CHANNEL_T ass_channels[NB_SENS_MAX];
+    L2_ID source_L2_id[NB_SENS_MAX];
+    L2_ID dest_L2_id[NB_SENS_MAX];
 
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_ask_for_freq( inst, rrm->L2_id_FC, QoS_class, rrm->rrc.trans_cnt));
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-}*/
-
-/*!
-\brief CMM of a SU asks to start a connection with another SU in SENDORA scenario 2 distributed  
- */ 
-/*void cmm_init_trans_req(
-    Instance_t    inst      , //!< identification de l'instance 
-    L2_ID L2_id             , //!< ID of SU with which it wants to communicate
-    unsigned int Session_id , //!< Session identifier
-    QOS_CLASS_T   QoS_class , //!< QOS class index
-    Transaction_t Trans_id    //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ; 
-
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_init_conn_req( inst, L2_id, Session_id, QoS_class, rrm->rrc.trans_cnt));
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-}*/
-
-
-/*!
-\brief RRC reported confirmation about the connection (SENDORA 2 scenario distr.)
-    A selection of the potential channels to use is then performed
-    and a msg_rrm_freq_all_prop is sent.
- */ 
-/*void rrc_init_conn_conf(
-    Instance_t    inst      , //!< identification de l'instance 
-    L2_ID L2_id             , //!< ID of SU with which the connection will be established
-    unsigned int Session_id , //!< Session identifier
-    Transaction_t Trans_id    //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ; 
-    CHANNELS_DB_T *pChann_db = rrm->rrc.pChannelsEntry;
-    //CHANNEL_T *fr_channels;//CLC
-    unsigned int NB_free_ch = 0;
-    unsigned int i = 0;
-    while ( pChann_db!=NULL)
-    {
-        //fprintf(stdout,"cp1: loop pChann_db!=NULL\n");//dbg
-        //fprintf(stdout,"channel: %d is_free: %d is_ass: %d\n", pChann_db->channel.Ch_id, pChann_db->is_free, pChann_db->is_ass); //dbg
-        if (pChann_db->is_free && !(pChann_db->is_ass))
-            NB_free_ch++;
-        pChann_db = pChann_db->next;
+    ///Identify the number of available channels   
+    if (rrm->rrc.pChannelsEntry==NULL)  {
+        NB_chan = find_available_channels(rrm->rrc.pSensEntry,&(rrm->rrc.pChannelsEntry));
+        printf ("found channels: %d \n", NB_chan);//dbg
     }
     
-    CHANNEL_T fr_channels[NB_free_ch];
-    //fr_channels = RRM_CALLOC(CHANNEL_T, NB_free_ch ) ;//CLC
-    pChann_db = rrm->rrc.pChannelsEntry;
-    while ( pChann_db!=NULL)
-    {
-        if (pChann_db->is_free && !(pChann_db->is_ass)){
-            fr_channels[i] = pChann_db->channel;
-            i++;
+    ///Analysing the list of identified channels
+    pChannels = rrm->rrc.pChannelsEntry;
+    while (pChannels!=NULL){
+        if (pChannels->is_free && !pChannels->is_ass && act_us<N_users){
+            memcpy(&(ass_channels[ind]) , &(pChannels->channel), sizeof(CHANNEL_T));
+            pChannels = up_chann_ass( rrm->rrc.pChannelsEntry  , ass_channels[ind].Ch_id, 1, L2_id[act_us], L2_id_dest[act_us] );
+            //printf ("copied channel: %d start %d end %d\n",ass_channels[ind].Ch_id,ass_channels[ind].Start_f,ass_channels[ind].Final_f);//dbg
+            memcpy(source_L2_id[ind].L2_id , L2_id[act_us].L2_id, sizeof(L2_ID));
+            memcpy(dest_L2_id[ind].L2_id , L2_id_dest[act_us].L2_id, sizeof(L2_ID));
+            ind++;
+            act_us++;
         }
-        pChann_db = pChann_db->next;
-    }
-    //fprintf(stdout,"freq prop NB_chan in rrc_init_conn_conf() cp2: %d\n", NB_free_ch);//dbg
-    //for (int i = 0; i<NB_free_ch; i++) //dbg
-    //    fprintf(stdout,"channels in rrc_init_conn_conf(): %d\n", fr_channels[i].Ch_id); //dbg
-    
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_freq_all_prop( inst, L2_id, Session_id, NB_free_ch, fr_channels, Trans_id));
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-}*/
-
-
-/*!
-\brief RRC reported confirmation from SU2 on the proposed channels (SENDORA 2 scenario distr.)
- */    
-/*void rrc_freq_all_prop_conf( 
-    Instance_t    inst              , //!< identification de l'instance
-    L2_ID         L2_id             , //!< ID of the other SU involved in connection establishing
-    unsigned int Session_id         , //!< Session identifier
-    unsigned int NB_free_ch         , //!< Number of proposed channels
-    CHANNEL_T   *fr_channels        , //!< List of proposed channels
-    Transaction_t  Trans_id           //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ; 
-    //CHANNELS_DB_T *pChann_db = rrm->rrc.pChannelsEntry;
-    
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_rep_freq_all( inst, rrm->L2_id_FC, rrm->L2_id, L2_id, Session_id, NB_free_ch, fr_channels, Trans_id));
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-}*/
-
-
-/*!
-\brief RRC reportes a message from CH communicating the assignement of a channel (SENDORA scenario 2 distr) 
- */
-/*void rrc_rep_freq_ack( 
-    Instance_t    inst              , //!< identification de l'instance
-    L2_ID         L2_id_ch          , //!< Cluster head ID
-    L2_ID         L2_id_source      , //!< ID of the first SU involved in connection establishing
-    L2_ID         L2_id_dest        , //!< ID of the second SU involved in connection establishing
-    unsigned int  Session_id        , //!< Session identifier
-    CHANNEL_T     all_channel       , //!< Channel assigned to the two secondary users
-    Transaction_t Trans_id            //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ; 
-    up_chann_ass( rrm->rrc.pChannelsEntry, all_channel.Ch_id, 1, L2_id_source, L2_id_dest);
-    //TO DO SCEN_2_DISTR: add Session_id field in CHANNELS_DB or maybe a "active_session" variable in rrm.h
-    if (L2_ID_cmp(&(L2_id_source), &(rrm->L2_id)) == 0 || L2_ID_cmp(&(L2_id_dest), &(rrm->L2_id)) == 0 ){
-        pthread_mutex_lock( &( rrm->cmm.exclu ) ) ;
-        rrm->cmm.trans_cnt++ ;
-        PUT_CMM_MSG(msg_rrm_init_trans_conf( inst, Session_id, all_channel, Trans_id));
-        pthread_mutex_unlock( &( rrm->cmm.exclu ) ) ;
-    }
-}*/
-    
-/*!
-\brief RRC init connection request from another SU (SENDORA scenario 2 distr) 
- */
-/*void rrc_init_conn_req( 
-    Instance_t    inst            , //!< identification de l'instance
-    L2_ID         L2_id           , //!< ID of an SU that wants to establish a connection
-    unsigned int Session_id       , //!< Session identifier
-    QOS_CLASS_T QoS_class         , //!< QoS required on the link
-    Transaction_t Trans_id          //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ; 
-    
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_conn_set( inst, L2_id, Session_id, QoS_class, Trans_id));
-    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-}*/
-
-/*!
-\brief RRC reported proposed channels from SU1
- */    
-/*void rrc_freq_all_prop( 
-    Instance_t    inst              , //!< identification de l'instance
-    L2_ID         L2_id             , //!< ID of the other SU involved in connection establishing
-    unsigned int Session_id         , //!< Session identifier
-    unsigned int NB_free_ch         , //!< Number of proposed channels
-    CHANNEL_T   *fr_channels        , //!< List of proposed channels
-    Transaction_t Trans_id            //!< Transaction ID
-    )
-{
-    rrm_t *rrm = &rrm_inst[inst] ;
-    CHANNELS_DB_T *pChann_db ;
-    //CHANNEL_T *pr_channels = RRM_CALLOC(CHANNEL_T, NB_free_ch );//CLC
-    CHANNEL_T pr_channels[NB_free_ch];
-    unsigned int NB_prop_ch;
-    unsigned int j = 0;
-
-    for ( int i = 0; i<NB_free_ch; i++)
-    {
-        pChann_db = get_chann_db_info( rrm->rrc.pChannelsEntry  , fr_channels[i].Ch_id );
-        if (pChann_db == NULL || (pChann_db->is_free && !(pChann_db->is_ass))){
-            pr_channels[j] = pChann_db->channel;
-            j++;
+        else if (pChannels->is_free && pChannels->is_ass){
+            memcpy(&(ass_channels[ind]) , &(pChannels->channel), sizeof(CHANNEL_T));
+            memcpy(source_L2_id[ind].L2_id , pChannels->source_id.L2_id, sizeof(L2_ID));
+            memcpy(dest_L2_id[ind].L2_id , pChannels->dest_id.L2_id, sizeof(L2_ID));
+            ind++;
         }
+        pChannels = pChannels->next;
     }
-    NB_prop_ch = j;
-    
-    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_freq_all_prop_conf( inst, L2_id, Session_id, NB_prop_ch, pr_channels, Trans_id));
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
+    
+    //printf ( "ind: %d\n",ind);//dbg    
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    rrm->rrc.trans_cnt++ ;
+    //PUT_RRC_MSG(msg_rrm_up_freq_ass( inst, source_L2_id[0], 1, ass_channels));//dbg
+    PUT_RRC_MSG(msg_rrm_up_freq_ass_sec( inst, source_L2_id, dest_L2_id, ind, ass_channels));
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    
+    //else 
+      //  printf ("Error! not enough free channels");
+    if (act_us==N_users)
+        return (0);
+    else {
+        printf ("Not enough free channels. Link not allocated\n");
+        return (N_users-act_us);
+    }
     
 }
+
+
+/*!//add_lor_10_11_03
+*******************************************************************************
+\brief  Function that prepare information in CH_coll to send to fusion center: 
+        is_free depends on the number of information and it is a number between 
+        0 and 10 that indicates the probability of busy channel
+\return 0 if operation ended correctly, 1 if info on sensing channel does not exist 
 */
 
-/*!
-\brief RRC reported proposed channels from SU1 in CH
- */    
-/*void rrc_rep_freq_all( 
-    Instance_t    inst              , //!< identification de l'instance
-    L2_ID         L2_id_source      , //!< ID of the first SU involved in connection establishing
-    L2_ID         L2_id_dest        , //!< ID of the second SU involved in connection establishing
-    unsigned int  Session_id        , //!< Session identifier
-    unsigned int  NB_prop_ch        , //!< Number of proposed channels
-    CHANNEL_T     *pr_channels      , //!< List of proposed channels
-    Transaction_t Trans_id            //!< Transaction ID
+unsigned int take_ch_coll_decision( 
+	Sens_node_t *SensDB     , //!< pointer to the sensing database
+	Sens_ch_t *finalSensChann, //!< info that will be returned after decision
+	unsigned int Ch_id       //!< channel ID
+	
+	)
+{
+    Sens_node_t *pSensNode = SensDB;
+    Sens_ch_t *pSensChann;
+    int i, flag=0;
+    for (i = 0; i<NUM_SB; i++) // initialization of is_free vector
+        finalSensChann->is_free[i]=0; 
+    while (pSensNode!= NULL ){
+
+        if((pSensChann = get_chann_info(  pSensNode->info_hd , Ch_id)) != NULL){
+            flag++;    
+            for (i = 0; i<NUM_SB; i++){
+                //printf (" ch %d is_free %d", i, pSensChann->is_free[i]);
+                if (pSensChann->is_free[i]==1)
+                    finalSensChann->is_free[i]+=10;
+            }
+        }
+        pSensNode = pSensNode->next;
+    }
+    if (flag==0)  // case in which information on the channel requested is not in the database
+        return 1;
+
+    for (i = 0; i<NUM_SB; i++){
+        finalSensChann->is_free[i]=finalSensChann->is_free[i]/flag;
+        ///AAA: to change when using weights for collaborating sensing
+        if (finalSensChann->is_free[i]>5)
+            finalSensChann->is_free[i]=1;
+        else  
+            finalSensChann->is_free[i]=0;
+       // printf ("ch %d is_free %d \n", i, finalSensChann->is_free[i]);
+    }
+    finalSensChann->Start_f = pSensChann->Start_f;
+    finalSensChann->Final_f = pSensChann->Final_f;
+    finalSensChann->Ch_id   = pSensChann->Ch_id;
+    return 0;
+    
+}
+ 
+ 
+/*!add_lor_10_11_09
+*******************************************************************************
+ \brief CMM user disconnect. Request to disconnect the user.
+ * Sending message to CH in order to stop all communications related to this user
+ * (also stop sensing activity of the user) 
+*/
+void cmm_user_disc( 
+    Instance_t inst            //!< identification de l'instance
+    )
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+    rrm->ip.trans_cnt++ ;
+    PUT_IP_MSG(msg_user_disconnect_9( inst, rrm->L2_id, rrm->ip.trans_cnt));
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+
+    
+}
+
+/*!add_lor_10_11_09
+*******************************************************************************
+ \brief CMM user disconnect. Request to disconnect the user.
+ * Sending message to CH in order to stop all communications related to this user
+ * (also stop sensing activity of the user) 
+*/
+void cmm_link_disc( 
+    Instance_t inst           ,//!< identification de l'instance
+    Instance_t dest            //!< identification du destinataire
+    )
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+    rrm_t *rrm_dest = &rrm_inst[dest] ;
+
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+    rrm->ip.trans_cnt++ ;
+    PUT_IP_MSG(msg_close_link( inst, rrm->L2_id, rrm_dest->L2_id, rrm->ip.trans_cnt));
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+
+    
+}
+
+/*!add_lor_10_11_09
+*******************************************************************************
+ \brief disconnect user. Ch removes all communications of the user
+*/
+void disconnect_user( 
+    Instance_t    inst     , //!< identification de l'instance
+    L2_ID         L2_id      //!< L2_id of the SU 
     )
 {
     rrm_t *rrm = &rrm_inst[inst] ;
-    CHANNELS_DB_T *pChann_db ;
-    CHANNEL_T all_channel ;
-
-    for ( int i = 0; i<NB_prop_ch; i++)
-    {
-        pChann_db = get_chann_db_info( rrm->rrc.pChannelsEntry  , pr_channels[i].Ch_id );
-        if (pChann_db != NULL && (pChann_db->is_free) && !(pChann_db->is_ass)){
-            all_channel = pChann_db->channel;
-            up_chann_ass( rrm->rrc.pChannelsEntry, pr_channels[i].Ch_id, 1, L2_id_source, L2_id_dest);
-            break;
-        }
-    }
-    fprintf(stdout,"channel: %d is_free: %d is_ass: %d\n source: ", pChann_db->channel.Ch_id, pChann_db->is_free, pChann_db->is_ass); //dbg
-    for ( int i=0;i<8;i++)
-        fprintf(stdout, "%02X", pChann_db->source_id.L2_id[i]);
-    fprintf(stdout, "\n"); //dbg
-    fprintf(stdout,"dest: ");
-    for ( int i=0;i<8;i++)
-        fprintf(stdout, "%02X", pChann_db->dest_id.L2_id[i]);
-    fprintf(stdout, "\n"); //dbg
+    CHANNELS_DB_T *pChannels;
+    L2_ID User_active_L2_id[MAX_USER_NB];
+    L2_ID User_dest_L2_id[MAX_USER_NB];
+    int i, new_free = 0;
+    int chan_up = 0;
+    int all_result;
     
+    ///remove waiting communications
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+    printf ("T1 tot waiting before: %d\n",rrm->ip.users_waiting_update);//dbg
+    for(i = 0; i < rrm->ip.users_waiting_update; i++){
+        if (  L2_ID_cmp(&L2_id, &(rrm->ip.L2_id_wait_users[i][0]))==0 || L2_ID_cmp(&L2_id, &(rrm->ip.L2_id_wait_users[i][1]) )==0 ){
+            if (i < rrm->ip.users_waiting_update-1) {///check if there are still waiting communications to consider
+                memcpy(rrm->ip.L2_id_wait_users[i][0].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][0].L2_id, sizeof(L2_ID));
+                memcpy(rrm->ip.L2_id_wait_users[i][1].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][1].L2_id, sizeof(L2_ID));
+                i--;
+            }
+            rrm->ip.users_waiting_update--;
+            printf ("N1 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+        }
+    } 
+    printf ("T2 tot waiting after: %d\n",rrm->ip.users_waiting_update);//dbg
+    
+    ///remove active communications
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    rrm->rrc.trans_cnt++ ;
-    PUT_RRC_MSG(msg_rrm_rep_freq_ack( inst, L2_id_source, L2_id_dest, Session_id, all_channel, Trans_id));
+    pChannels = rrm->rrc.pChannelsEntry;
+    while (pChannels!=NULL){
+        if (pChannels->is_ass && ( L2_ID_cmp(&L2_id, &(pChannels->source_id))==0 || L2_ID_cmp(&L2_id, &(pChannels->dest_id) )==0 )){
+            pChannels->is_ass = 0;
+            new_free++;
+            //printf ("T3 removed channel: %d\n",pChannels->channel.Ch_id);//dbg
+        }
+        pChannels=pChannels->next;
+    }
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    printf("[CH %d]: Communications of user ",rrm->id);
+    for ( i=0;i<8;i++)
+        printf("%02X", L2_id.L2_id[i]);
+    printf( " removed\n");
+    
+    ///sending update
+    while (rrm->ip.users_waiting_update > 0 && new_free>0){
+        memcpy(User_active_L2_id[chan_up].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][0].L2_id, sizeof(L2_ID));
+        memcpy(User_dest_L2_id[chan_up].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][1].L2_id, sizeof(L2_ID));
+        chan_up++;
+        new_free--;
+        rrm->ip.users_waiting_update--;
+        printf ("N2 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+    }
+  //  printf ("New_free: %d\n",new_free);//dbg
+    all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,chan_up, 0 );  ///Update of channels
+    if (all_result != 0)
+        printf ("Error in reassigning free channels new_free: %d all_result: %d\n",new_free, all_result);//dbg
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+}
+
+/*!add_lor_10_11_09
+*******************************************************************************
+ \brief close link. Ch removes an active (or waiting link)
+*/
+int close_active_link( 
+    Instance_t    inst       , //!< identification de l'instance
+    L2_ID         L2_id      , //!< L2_id of the SU 
+    L2_ID         L2_id_dest   //!< L2_id of the SU dest
+    )
+{
+    rrm_t *rrm = &rrm_inst[inst] ;
+    CHANNELS_DB_T *pChannels;
+    int i, new_free = 0;
+    int all_result;
+    int removed = 0;
+    
+    ///check waiting communications
+    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+    printf ("T1 tot waiting before: %d\n",rrm->ip.users_waiting_update);//dbg
+    for(i = 0; i < rrm->ip.users_waiting_update && removed == 0; i++){
+        if (  (L2_ID_cmp(&L2_id, &(rrm->ip.L2_id_wait_users[i][0]))==0 && L2_ID_cmp(&L2_id_dest, &(rrm->ip.L2_id_wait_users[i][1]) )==0 ) || (L2_ID_cmp(&L2_id, &(rrm->ip.L2_id_wait_users[i][1]))==0 && L2_ID_cmp(&L2_id_dest, &(rrm->ip.L2_id_wait_users[i][0]) )==0 )){
+            removed = 1;
+            if (i < rrm->ip.users_waiting_update-1) {///check if there are still waiting communications to consider
+                memcpy(rrm->ip.L2_id_wait_users[i][0].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][0].L2_id, sizeof(L2_ID));
+                memcpy(rrm->ip.L2_id_wait_users[i][1].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][1].L2_id, sizeof(L2_ID));
+                i--;
+            }
+            rrm->ip.users_waiting_update--;
+            printf ("T1bis tot waiting inside: %d\n",rrm->ip.users_waiting_update);//dbg
+        }
+    } 
+    printf ("T2 tot waiting after: %d removed %d\n",rrm->ip.users_waiting_update, removed);//dbg
+    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+    
+    
+    ///check active communications
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    pChannels = rrm->rrc.pChannelsEntry;
+    while (removed == 0 && pChannels!=NULL){
+        if (pChannels->is_ass && ( (L2_ID_cmp(&L2_id, &(pChannels->source_id))==0 && L2_ID_cmp(&L2_id_dest, &(pChannels->dest_id) )==0 ) /*|| (L2_ID_cmp(&L2_id, &(pChannels->dest_id))==0 && L2_ID_cmp(&L2_id_dest, &(pChannels->source_id) )==0 )*/)){ //mod_lor_07_12_10
+            pChannels->is_ass = 0;
+            new_free++;
+            removed = 1;
+            printf ("T3 removed channel: %d\n",pChannels->channel.Ch_id);//dbg
+        }
+        pChannels=pChannels->next;
+    }
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
+    ///link does not exist
+    if (removed == 0){
+        printf("[CH %d]: Requested link to remove does not exist.\n ",rrm->id);
+        return 1;
+    }
+    printf("[CH %d]: Link between ",rrm->id);
+    for ( i=0;i<8;i++)
+        printf("%02X", L2_id.L2_id[i]);
+    printf( " and ");
+    for ( i=0;i<8;i++)
+        printf("%02X", L2_id_dest.L2_id[i]);
+    printf( " removed\n");
     
-}*/
+    ///sending update only if channel removed among active links
+    if (new_free>0 && removed){
+        pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+        printf ("New_free: %d\n",new_free);//dbg
+        //rrm->ip.users_waiting_update--; //mod_lor_10_12_09
+        printf ("N3 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+        if(rrm->ip.users_waiting_update>0)//mod_lor_10_12_09
+            all_result = ask_freq_to_CH( inst, &(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][0]), &(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][1]), 1, 0 );  ///Update of channels
+        else//mod_lor_10_12_09
+            all_result = ask_freq_to_CH( inst, &(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][0]), &(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][1]), 0, 0 );  ///Update of channels//mod_lor_10_12_09
+        if (all_result != 0)
+            printf ("Error in reassigning free channels new_free: %d all_result: %d\n",new_free, all_result);//dbg
+        pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+    }
+    return 0;
+}

@@ -75,7 +75,10 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
     STRINGIZER(UPDATE_OPEN_FREQ_7       ),
     STRINGIZER(UPDATE_SN_OCC_FREQ_5     ),
     STRINGIZER(RRM_UP_FREQ_ASS          ),
-    STRINGIZER(RRM_END_SCAN_CONF        )/*,
+    STRINGIZER(RRM_END_SCAN_CONF        ),
+    STRINGIZER(RRC_UP_FREQ_ASS          ),//add_lor_10_11_05
+    STRINGIZER(RRM_UP_FREQ_ASS_SEC      ),//add_lor_10_11_05
+    STRINGIZER(RRC_UP_FREQ_ASS_SEC      )/*,//add_lor_10_11_05
     STRINGIZER(RRM_OPEN_FREQ            ),
     STRINGIZER(RRM_UPDATE_SN_FREQ       ),
     STRINGIZER(RRC_UPDATE_SN_FREQ       ),
@@ -530,6 +533,52 @@ msg_t *msg_rrm_end_scan_req(
     }
     return msg ;
 }
+
+/*!//add_lor_10_11_05
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        rrm_up_freq_ass_sec().
+\return message formate
+*/
+
+msg_t *msg_rrm_up_freq_ass_sec(
+        Instance_t inst             , //!< instance ID 
+        L2_ID *L2_id                , //!< Layer 2 (MAC) ID vector of SUs starting tx
+        L2_ID *L2_id_dest           , //!< Layer 2 (MAC) ID vector of SUs receiving tx
+        unsigned int NB_all         , //!< Number of allocated links
+        CHANNEL_T *ass_channels       //!< Vector of allocated links
+        )
+            
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ;
+    int i;
+
+    if ( msg != NULL )
+    {
+        unsigned int size = sizeof(  rrm_up_freq_ass_sec_t );
+                //printf ("size rrm_up_freq_ass_t %d\n", size);//dbg
+        rrm_up_freq_ass_sec_t *p = RRM_CALLOC2( rrm_up_freq_ass_sec_t , size ) ;
+
+
+        if ( p != NULL )
+        {
+        
+            
+            init_rrc_msg_head(&(msg->head),inst,RRM_UP_FREQ_ASS_SEC, size,0);
+            p->NB_all = NB_all;
+            for (i=0;i<NB_all;i++){
+                memcpy( p->L2_id[i].L2_id, L2_id[i].L2_id, sizeof(L2_ID) )  ;
+                memcpy( p->L2_id_dest[i].L2_id, L2_id_dest[i].L2_id, sizeof(L2_ID) )  ;
+            }
+            memcpy( p->ass_channels, ass_channels, NB_all*sizeof(CHANNEL_T) );
+
+        }
+        msg->data = (char *) p ;
+        
+    }
+    return msg ;
+}
+
 
 /*!
 *******************************************************************************

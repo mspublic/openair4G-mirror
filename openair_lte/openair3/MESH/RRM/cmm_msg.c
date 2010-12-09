@@ -59,8 +59,11 @@ const char *Str_msg_cmm_rrm[NB_MSG_CMM_RRM] =  {
     STRINGIZER(CMM_INIT_CH_REQ        ),
     STRINGIZER(CMM_INIT_SENSING       ),
     STRINGIZER(CMM_STOP_SENSING       ), 
-    STRINGIZER(CMM_ASK_FREQ           )//, 
-    //STRINGIZER(CMM_NEED_TO_TX         ),
+    STRINGIZER(CMM_ASK_FREQ           ), 
+    STRINGIZER(CMM_NEED_TO_TX         ),
+    STRINGIZER(CMM_INIT_COLL_SENSING  ),//add_lor_10_11_08
+    STRINGIZER(CMM_USER_DISC          ),//add_lor_10_11_08
+    STRINGIZER(CMM_LINK_DISC          )//,//add_lor_10_11_08
     //STRINGIZER(CMM_INIT_TRANS_REQ     ),
     //STRINGIZER(RRM_INIT_TRANS_CONF    )
 };
@@ -641,6 +644,120 @@ msg_t *msg_cmm_ask_freq(
     {
         init_cmm_msg_head(&(msg->head),inst,CMM_ASK_FREQ, 0 ,0);            
         msg->data = NULL ;
+    }
+    return msg  ;
+}
+
+/*!
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_need_to_tx. //add: mod_lor_10_10_28
+\return message formate
+*/
+msg_t *msg_cmm_need_to_tx( 
+    Instance_t inst        ,//!< identification de l'instance du noeud qui veut transmettre
+    Instance_t dest        ,//!< identification de l'instance du noeud destinataire
+    QOS_CLASS_T QoS_class   //!< Required quality of service (i.e. number of channels)
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    if ( msg != NULL )
+    {
+        cmm_need_to_tx_t *p = RRM_CALLOC(cmm_need_to_tx_t , 1 ) ;
+        if ( p != NULL )
+        {
+            init_cmm_msg_head(&(msg->head),inst, CMM_NEED_TO_TX, sizeof( cmm_need_to_tx_t) ,0);
+            p->dest           = dest;
+            p->QoS_class      = QoS_class;
+        }       
+        msg->data = (char *) p ;
+    }
+    return msg  ;
+}
+
+/*! //add_lor_10_11_08
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_init_coll_sensing.
+\return message formate
+*/
+msg_t *msg_cmm_init_coll_sensing( 
+    Instance_t       inst,        //!< identification de l'instance
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t , 1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        cmm_init_coll_sensing_t *p = RRM_CALLOC(cmm_init_coll_sensing_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_cmm_msg_head(&(msg->head),inst, CMM_INIT_COLL_SENSING, sizeof( cmm_init_coll_sensing_t) ,0);
+            p->Start_fr     = Start_fr;
+            p->Stop_fr      = Stop_fr;
+            p->Meas_band    = Meas_band;
+            p->Meas_tpf     = Meas_tpf;
+            p->Nb_channels  = Nb_channels;
+            p->Overlap      = Overlap;
+            p->Sampl_freq   = Sampl_freq;
+        }       
+        msg->data = (char *) p ;
+    }
+    return msg ;
+}
+
+/*!//add_lor_10_11_09
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_user_disc. msg received by a secondary user that wants to disconnect
+\return message formate
+*/
+msg_t *msg_cmm_user_disc( 
+    Instance_t inst        //!< identification de l'instance
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        init_cmm_msg_head(&(msg->head),inst,CMM_USER_DISC, 0 ,0);            
+        msg->data = NULL ;
+    }
+    return msg  ;
+}
+
+/*!//add_lor_10_11_09
+*******************************************************************************
+\brief  La fonction formate en un message les parametres de la fonction 
+        cmm_linkr_disc. msg received by a secondary user that wants to stop a link
+\return message formate
+*/
+msg_t *msg_cmm_link_disc( 
+    Instance_t inst       ,//!< identification de l'instance
+    Instance_t dest        //!< identification du destinataire
+    )
+{
+    msg_t *msg = RRM_CALLOC(msg_t ,1 ) ; 
+    
+    if ( msg != NULL )
+    {
+        cmm_link_disk_t *p = RRM_CALLOC(cmm_link_disk_t , 1 ) ;
+
+        if ( p != NULL )
+        {
+            init_cmm_msg_head(&(msg->head),inst, CMM_LINK_DISC, sizeof( cmm_link_disk_t) ,0);
+            p->dest = dest;
+        }       
+        msg->data = (char *) p ;
+
     }
     return msg  ;
 }

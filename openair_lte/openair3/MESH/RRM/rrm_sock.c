@@ -376,11 +376,11 @@ int send_msg_int(
             perror("sendmsg:socket ip");
         }
     }
-    
+    //fprintf(stderr,"Before free ret %d\n  ", ret);//dbg
     RRM_FREE(buf) ; 
     RRM_FREE(msg->data) ;
     RRM_FREE(msg) ;
-    
+    //fprintf(stderr,"After free ret %d\n  ", ret);//dbg
     return ret ;
 }
 

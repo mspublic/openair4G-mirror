@@ -78,7 +78,10 @@ const char *Str_msg_rrc_rrm[NB_MSG_RRC_RRM] = {
    // STRINGIZER(UPDATE_OPEN_FREQ_7       ),
    // STRINGIZER(UPDATE_SN_OCC_FREQ_5     ),
     STRINGIZER(RRM_UP_FREQ_ASS          ),
-    STRINGIZER(RRM_END_SCAN_CONF        )/*,
+    STRINGIZER(RRM_END_SCAN_CONF        ),
+    STRINGIZER(RRC_UP_FREQ_ASS          ),//add_lor_10_11_05
+    STRINGIZER(RRM_UP_FREQ_ASS_SEC      ),//add_lor_10_11_05
+    STRINGIZER(RRC_UP_FREQ_ASS_SEC      )/*,//add_lor_10_11_05
     STRINGIZER(RRC_OPEN_FREQ            ),
     STRINGIZER(RRM_OPEN_FREQ            ),
     STRINGIZER(RRM_UPDATE_SN_FREQ       ),

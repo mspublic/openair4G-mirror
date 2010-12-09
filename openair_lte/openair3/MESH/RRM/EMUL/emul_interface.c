@@ -790,6 +790,7 @@ static void * fn_action_differe (
 int main( int argc , char **argv )
 {
     int ret = 0;
+    int tr, rec;
 #ifdef RRC_EMUL
     sock_rrm_t s_rrc ;
 #endif /* RRC_EMUL */
@@ -892,7 +893,13 @@ int main( int argc , char **argv )
     scenario( NUM_SCENARIO, &s_rrc, &s_cmm, &s_sns );
 #endif /* RRC_EMUL */
     sleep(5);
-    printf("Commands: \n    'q' to exit\n    's' to start sensing\n    'e' to end sensing\n    'a' to active BTS request\n\n\n" );
+    printf("Commands: \n    'q' to exit\n    's' to start sensing\n    'e' to end sensing\n" );
+    //mod_lor_10_10_27++
+    if (SCEN_1)
+        printf("    'a' to active BTS request\n\n\n" );
+    if (SCEN_2_CENTR)
+        printf("    'c' to active collaborative sensing\n    'a' to active a secondary user\n    'l' to remove a link between two secondary users\n    'd' to disconnect a secondary user\n\n\n" );
+    //mod_lor_10_10_27--
     //getchar() ;//mod_lor_10_04_27
     while (flag_not_exit){
         scanf("%c",&c);
@@ -911,6 +918,60 @@ int main( int argc , char **argv )
                     Nb_channels,Overlap, Sampl_freq) );
             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
         }
+        else if (c == 'd'){ //add_lor_10_11_09
+            printf("Select user to disconnect (from 1 to 4)  ... \n");
+            scanf("%d",&tr);
+            while (tr<1||tr>4){
+                printf(" User id not valid!\nSelect user (from 1 to 4)  ... \n");
+                scanf("%d",&tr);
+            }
+            //mod_lor_10_12_07++
+            tr = tr+FIRST_SENSOR_ID-1;  
+            //mod_lor_10_12_07--
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_user_disc(tr) );
+            pthread_mutex_unlock( &actdiff_exclu ) ;
+
+        }
+        else if (c == 'l'){ //add_lor_10_11_09
+            printf("Digit id of users involved in the link to remove (from 1 to 4)  ... \n");
+            scanf("%d",&tr);
+            while (tr<1||tr>4){
+                printf(" User id not valid!\nSelect user (from 1 to 4)  ... \n");
+                scanf("%d",&tr);
+            }
+            scanf("%d",&rec);
+            while (rec<1||rec>4||rec==tr){
+                if (rec==tr)
+                    printf(" A user cannot have a link with itself!\n");
+                else
+                    printf(" User id not valid!\n");
+                printf("Select user (from 1 to 4)  ... \n");
+                scanf("%d",&rec);
+            }
+            //mod_lor_10_12_07++
+            tr = tr+FIRST_SENSOR_ID-1;  
+            rec = rec+FIRST_SENSOR_ID-1;
+            //mod_lor_10_12_07--
+            
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_link_disc(tr,rec) );
+            pthread_mutex_unlock( &actdiff_exclu ) ;
+
+        }
+        else if (c == 'c'){//add_lor_10_11_08
+            printf("Starting collaborative sensing ... \n\n");
+            unsigned int     Nb_channels= (Stop_fr-Start_fr)/Meas_band; 
+            if (Nb_channels>NB_SENS_MAX){
+                printf("ERROR! too many channels! Maximum number of channels is %d",NB_SENS_MAX);
+                break;
+            }
+            pthread_mutex_lock( &actdiff_exclu  ) ; 
+            add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm,
+                    msg_cmm_init_coll_sensing(FC_ID,Start_fr,Stop_fr,Meas_band,Meas_tpf,
+                    Nb_channels,Overlap, Sampl_freq) );
+            pthread_mutex_unlock( &actdiff_exclu ) ;  
+        }
         else if (c == 'e'){//mod_lor_10_04_27
             printf("Ending sensing ... \n\n");
             pthread_mutex_lock( &actdiff_exclu  ) ; 
@@ -920,10 +981,38 @@ int main( int argc , char **argv )
             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--*/
         }
         else if (c == 'a'){
-            printf("Activating BTS to ask for frequencies  ... \n\n");
             if (BTS_ID>=0){
+                printf("Activating BTS to ask for frequencies  ... \n\n");
                 pthread_mutex_lock( &actdiff_exclu  ) ; 
                 add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_ask_freq(BTS_ID) );
+                pthread_mutex_unlock( &actdiff_exclu ) ;
+            }
+            //mod_lor_10_10_28++
+            //mod_lor_10_10_28--
+            else if (SCEN_2_CENTR){
+                printf("Select user that wants to transmit (from 1 to 4)  ... \n");
+                scanf("%d",&tr);
+                while (tr<1||tr>4){
+                    printf(" User id not valid!\nSelect user that wants to transmit (from 1 to 3)  ... \n");
+                    scanf("%d",&tr);
+                }
+                printf("Select user destination of the transmission(from 1 to 4)  ... \n");
+                scanf("%d",&rec);
+                while (rec<1||rec>4||rec==tr){
+                    if (rec==tr)
+                        printf(" Receiver could not be equal to transmitter!\n");
+                    else
+                        printf(" User id not valid!\n");
+                    printf("Select user destination (from 1 to 4)  ... \n");
+                    scanf("%d",&rec);
+                }
+                //mod_lor_10_12_07++
+                tr = tr+FIRST_SENSOR_ID-1;  
+                rec = rec+FIRST_SENSOR_ID-1;
+                //mod_lor_10_12_07--
+                    
+                pthread_mutex_lock( &actdiff_exclu  ) ; 
+                add_actdiff(&list_actdiff,0, cnt_actdiff++, &s_cmm, msg_cmm_need_to_tx(tr,rec,1) );
                 pthread_mutex_unlock( &actdiff_exclu ) ;
             }
             else

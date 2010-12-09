@@ -68,6 +68,24 @@ unsigned int check_SN_channels(
 void take_local_decision(
     Sens_ch_t *Sens_info
     );
+
+unsigned int take_ch_coll_decision( 
+	Sens_node_t *SensDB     , //!< pointer to the sensing database
+	Sens_ch_t *finalSensChann, //!< info that will be returned after decision
+	unsigned int Ch_id       //!< channel ID
+	);
+
+int check_allocated_channels( 
+	Instance_t inst         , //!< Identification de l'instance
+	L2_ID *User_active_L2_id ,
+	L2_ID *User_dest_L2_id ,
+	int *free_av
+	);
+
+int count_free_channels( 
+	Instance_t inst         , //!< Identification de l'instance
+	int *free_av
+	);
 // ---------------------------------------------------------------------------
 
 

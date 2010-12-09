@@ -25,17 +25,18 @@ et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI.
 
 /*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
 */
-#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
-#define SCEN_1         1
-#define SCEN_2_CENTR   0
+#define WSN            0  ///if wsn = 0 -> secondary network, else sensor network 
+#define SCEN_1         0
+#define SCEN_2_CENTR   1
 #define SCEN_2_DISTR   0
+#define COLL_CLUST     0  //mod_lor_10_11_04
 
 //mod_lor_10_05_12--*/
 
 #define BTS_ID 1  //put -1 in case we are not in SCEN_1
 #define FC_ID 0
 #define CH_COLL_ID -1
-#define NB_SENS_MAX 20
+#define NB_SENS_MAX 4
 #define FIRST_SENSOR_ID 2
 
 #ifdef __cplusplus
@@ -91,12 +92,11 @@ typedef enum {
     RRC_END_SCAN_REQ            , ///< Message RRC->RRM : end of a scanning process
     RRC_END_SCAN_CONF           , ///< Message RRC->RRM : end of a scanning process ack
     RRC_INIT_MON_REQ            , ///< Message IP       : initiation of a scanning monitoring
-   // OPEN_FREQ_QUERY_4           , ///< Message RRM->RRC : BTS to ask free frequencies to FC
-   // UPDATE_OPEN_FREQ_7          , ///< Message IP       : list of frequencies usable by the secondary network
-    //UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
     RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
     RRC_UP_FREQ_ASS             , ///< Message RRC->RRM ://mod_lor_10_06_04
+    RRM_UP_FREQ_ASS_SEC         , ///< Message RRM->RRC : CH assigns channels to SUs (scen2) //add_lor_10_11_05
+    RRC_UP_FREQ_ASS_SEC         , ///< Message RRC->RRM : frequencies assigned by CH (scen2)  //add_lor_10_11_05
     NB_MSG_RRC_RRM                ///< Nombre de message RRM-RRC
 
 } MSG_RRC_RRM_T ;
@@ -127,6 +127,10 @@ typedef enum {
     CMM_INIT_SENSING        , ///< Message CMM->RRM : requete d'initialisation du sensing
     CMM_STOP_SENSING        , ///< Message CMM->RRM : requete de stop du sensing
     CMM_ASK_FREQ            , ///< Message CMM->RRM : in BTS, message to start an open freq. query
+    CMM_NEED_TO_TX          , ///< Message CMM->RRM : in SU, second scenario centr, message to start an open freq. query
+    CMM_INIT_COLL_SENSING   , ///< Message CMM->RRM : requete d'initialisation du sensing collaborative //add_lor_10_11_08
+    CMM_USER_DISC           , ///< Message CMM->RRM : user disconnected -> delete all active com //add_lor_10_11_08
+    CMM_LINK_DISC           , ///< Message CMM->RRM : stop comm -> delete an active link //add_lor_10_11_08
     NB_MSG_CMM_RRM            ///< Nombre de message de l'interface
 } MSG_CMM_RRM_T ;
  //mod_lor_10_04_27++
@@ -139,6 +143,9 @@ typedef enum {
     STOP_COLL_SENS              , ///< Message IP       : CH1 sends order to stop collaboration to CH2
     UP_CLUST_SENS_RESULTS       , ///< Message IP       : update to send to CH from CH_COLL
     STOP_COLL_SENS_CONF         , ///< Message IP       : CH2 sends confirmationof stop collaboration to CH1
+    ASK_FREQ_TO_CH_3            , ///< Message IP       : user that wants to transmits ask channels to CH
+    USER_DISCONNECT_9           , ///< Message IP       : user wants to disconnect
+    CLOSE_LINK                  , ///< Message IP       : user wants to stop a link
     NB_MSG_IP                   ///< Nombre de message IP
 } MSG_IP_T ;
  //mod_lor_10_04_27--

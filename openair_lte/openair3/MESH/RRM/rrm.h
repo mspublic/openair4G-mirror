@@ -120,12 +120,14 @@ extern "C" {
 	
     //mod_lor_10_01_25++
     struct {
-      sock_rrm_int_t      *s              ; ///< Socket associé a l'IP
-      unsigned int    trans_cnt           ; ///< Compteur de transaction avec l'interface IP
-      transact_t      *transaction        ; ///< liste des transactions non terminees
-      unsigned int    waiting_SN_update   ; ///< flag to know if an update is expected from SN about frequencies in use //mod_lor_10_05_18
-      pthread_mutex_t exclu               ; ///< mutex pour le partage de structure
-    } ip     							  ; ///<  info relatif a l'interface IP
+      sock_rrm_int_t  *s                                ; ///< Socket associé a l'IP
+      unsigned int    trans_cnt                         ; ///< Compteur de transaction avec l'interface IP
+      transact_t      *transaction                      ; ///< liste des transactions non terminees
+      unsigned int    waiting_SN_update                 ; ///< flag to know if an update is expected from SN about frequencies in use //mod_lor_10_05_18
+      unsigned int    users_waiting_update              ; ///< flag to know if there are users that wait for channels //add_lor_10_11_08
+      L2_ID           L2_id_wait_users[NB_SENS_MAX][2]  ; ///< vector of users waiting for channels //add_lor_10_11_08
+      pthread_mutex_t exclu                             ; ///< mutex pour le partage de structure
+    } ip     							                ; ///<  info relatif a l'interface IP
     //mod_lor_10_01_25--
 
   } rrm_t ;

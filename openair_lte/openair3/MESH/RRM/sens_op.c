@@ -96,7 +96,8 @@ void take_local_decision(
 
 /*!
 *******************************************************************************
-\brief  Updating of the sensing measures 
+\brief  Updating of the sensing measures received by the rrm from the sensing unit
+* of the node. If the node is a mesh router it reports the information to its clusterhead
 */
 void rrc_update_sens( 
 	Instance_t inst         , //!< Identification de l'instance
@@ -249,13 +250,13 @@ void cmm_init_sensing(
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
         
        //mod_lor_10_05_05++ 
-       if (SCEN_2_CENTR && rrm->role == FUSIONCENTER){
+       /*if (SCEN_2_CENTR && rrm->role == FUSIONCENTER){
             pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
             rrm->ip.trans_cnt++ ;
             PUT_IP_MSG(msg_init_coll_sens_req( inst, rrm->L2_id, Start_fr, Stop_fr,Meas_band, Meas_tpf,
                          Nb_channels,  Overlap, Sampl_freq, rrm->ip.trans_cnt));
             pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
-        }
+        }*/
         //mod_lor_10_05_05--
         
     }
@@ -270,7 +271,8 @@ void cmm_init_sensing(
 
 /*!
 *******************************************************************************
- \brief rrc transmits order to start sensing
+ \brief rrc transmits order to start sensing received from the clusterhead.
+ * The node will than activate its sensing unit sending a scan_ord message
 */
 //mod_lor_10_03_13++
 void rrc_init_scan_req( 
@@ -589,7 +591,7 @@ void rrc_clust_mon_req(
     }
 }*/
 
-/*!
+/*!mod_lor_10_11_03 -> part about SCEN_2 and CH_COLL
 *******************************************************************************
 \brief  Updating of the sensing measures received via IP from another node
 */
@@ -605,34 +607,163 @@ unsigned int update_sens_results(
 
     CHANNELS_DB_T *channel;
     int i,j,k, send_up_to_SN=0;
+    unsigned int all_result;
+    int tot_ch;
+    //L2_ID User_active_L2_id;
     
-   /* printf("Update from node\n");
-    for (i=0;i<NB_info;i++){
-        printf("channel %d st: %d end: %d\n", Sens_meas[i].Ch_id,Sens_meas[i].Start_f,Sens_meas[i].Final_f);
-        for (k=0;k<NUM_SB;k++)
-            printf ("bk= %d, mu0=%d; mu1=%d; I0 = %d; is_free = %d\n",k,Sens_meas[i].mu0[k],Sens_meas[i].mu1[k],Sens_meas[i].I0[k], Sens_meas[i].is_free[k]);
-    }*/
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
     update_node_info( &(rrm->rrc.pSensEntry), &L2_id, NB_info, Sens_meas, info_time);
-    //print_sens_db( rrm->rrc.pSensEntry   );//dbg
-    //sleep (20);
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
-    //mod_lor_10_05_28
-    if (!(rrm->ip.waiting_SN_update) ){
-        pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-        channel = rrm->rrc.pChannelsEntry;
-        while (channel!=NULL){
-            //printf("Channel!=NULL\n");
-            if (channel->is_ass)
-                if((send_up_to_SN = evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)))
-                    break;
-            channel = channel->next;
+    //mod_lor_10_10_27++
+    if(rrm->role == CH_COLL){
+        //AAA: add procedure to take decision from the database -> send a probability that the channel is busy to primary
+       
+        Sens_ch_t coll_measures[NB_SENS_MAX];
+        Sens_node_t *pNode=rrm->rrc.pSensEntry;
+        unsigned int weight=0; ///number of sensors of CH_COLL
+        while (pNode!=NULL){
+            weight++;
+            pNode=pNode->next;
         }
+        //printf ("nodes %d\n",weight);//dbg 
+            
+        pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+        for (i=0; take_ch_coll_decision( rrm->rrc.pSensEntry, &coll_measures[i],(i+1))==0; i++);
         pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-        if (send_up_to_SN && rrm->role == FUSIONCENTER){
-            return 1;
-            //open_freq_query(inst, L2_id, 0, 0);
+	
+      //  pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+       // take_ch_coll_decision(rrm->rrc.pSensEntry, channel.Ch_id,is_free);
+       // pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+        
+        pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+        rrm->ip.trans_cnt++ ;
+        PUT_IP_MSG(msg_up_clust_sens_results( inst, rrm->L2_id, i, weight, coll_measures, rrm->ip.trans_cnt));
+        pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+
+    }
+    //mod_lor_10_10_27++
+    
+    //mod_lor_10_05_28
+    ///case of scenario 1
+    if (SCEN_1){
+        if (!(rrm->ip.waiting_SN_update) ){
+            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            channel = rrm->rrc.pChannelsEntry;
+            while (channel!=NULL){
+                //printf("Channel!=NULL\n");
+                if (channel->is_ass)
+                    if((send_up_to_SN = evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)))
+                        break;
+                channel = channel->next;
+            }
+            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+            if (send_up_to_SN && rrm->role == FUSIONCENTER){
+                return 1;
+                //open_freq_query(inst, L2_id, 0, 0);
+            }
+        }
+    }
+    ///case of scenario 2 add_lor_10_11_03
+    else if (SCEN_2_CENTR){
+        int free_av=0;
+        int N_chan=0;
+        int chan_in_use=0;
+        unsigned int reallocate = 0;
+        L2_ID User_active_L2_id[MAX_USER_NB];
+        L2_ID User_dest_L2_id[MAX_USER_NB];
+        CHANNELS_DB_T *t_channels_db = NULL;
+        
+        ///check part: it evaluates if a channel in use is not free anymore 
+        send_up_to_SN = check_allocated_channels( inst, User_active_L2_id ,User_dest_L2_id ,&free_av);
+        
+        ///Attribute new channels to users that have to change or that are waiting
+        if (send_up_to_SN>0 || rrm->ip.users_waiting_update>0){
+            /// case in which there are enough free channels
+            if (free_av>=(send_up_to_SN + rrm->ip.users_waiting_update)){ 
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                j = rrm->ip.users_waiting_update-1;
+                for (k = send_up_to_SN; k<(send_up_to_SN + rrm->ip.users_waiting_update);k++){
+                    memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][0].L2_id, sizeof(L2_ID));
+                    memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][1].L2_id, sizeof(L2_ID));
+                    j--;
+                }
+                all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for both busy and waiting users
+                if (all_result == 0){
+                    rrm->ip.users_waiting_update=0;
+                } else {
+                    printf ("ERROR!!! in if free not enough free!!! all_result =%d\n",all_result);//dbg
+                }
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+            }
+            
+            ///no channels to change, but users waiting channels //add_lor_10_11_08++
+            ///reallocate only if there are more available channels, otherwise don't do anything
+            else if (send_up_to_SN==0 && rrm->ip.users_waiting_update>0){
+                chan_in_use = count_free_channels (inst, &free_av);
+                tot_ch = chan_in_use + free_av;
+                N_chan = find_available_channels(rrm->rrc.pSensEntry,&(t_channels_db));
+                del_all_channels( &(t_channels_db));
+                if (N_chan>tot_ch){
+                    reallocate = 1;
+                }else if (free_av>0){
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    for (k=0; rrm->ip.users_waiting_update>0 && free_av>0; k++) { /// allocate frequencies to waiting users
+                        memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][0].L2_id, sizeof(L2_ID));
+                        memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][1].L2_id, sizeof(L2_ID));
+                        free_av--;
+                        rrm->ip.users_waiting_update--;
+                        printf ("N7 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+                    }
+                    all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for waiting users
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                }
+            }//add_lor_10_11_08--
+            
+            ///all channels to reallocate
+            if (reallocate || (free_av<=(send_up_to_SN + rrm->ip.users_waiting_update) && send_up_to_SN>0)){
+                chan_in_use = count_free_channels (inst, &free_av);
+                tot_ch = chan_in_use + send_up_to_SN;
+                if (chan_in_use!=0){
+                    ///add all channels in use to channels to change
+                    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                    t_channels_db = rrm->rrc.pChannelsEntry;
+                    while (t_channels_db!=NULL){
+                        if (t_channels_db->is_ass && t_channels_db->is_free){
+                            memcpy(User_active_L2_id[send_up_to_SN].L2_id , t_channels_db->source_id.L2_id, sizeof(L2_ID));
+                            memcpy(User_dest_L2_id[send_up_to_SN].L2_id , t_channels_db->dest_id.L2_id, sizeof(L2_ID));
+                            send_up_to_SN++;
+                        }
+                        t_channels_db = t_channels_db->next;
+                    }
+                    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                }
+                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                del_all_channels( & (rrm->rrc.pChannelsEntry) ); 
+                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                for (k = send_up_to_SN, j = rrm->ip.users_waiting_update-1; j>=0 ;j--,k++){
+                    memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][0].L2_id, sizeof(L2_ID));
+                    memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][1].L2_id, sizeof(L2_ID));
+                }
+                all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for waiting users
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                if (all_result == 0){
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    rrm->ip.users_waiting_update=0;
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                } else {
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    rrm->ip.users_waiting_update=0;
+                    for (j=1; j<=all_result;j++){
+                        memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][0].L2_id,User_active_L2_id[k-j].L2_id, sizeof(L2_ID));
+                        memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][1].L2_id,User_dest_L2_id[k-j].L2_id, sizeof(L2_ID));
+                        rrm->ip.users_waiting_update++;
+                        printf ("N8 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+                    }
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                }
+            }
         }
     }
     return 0;
@@ -759,8 +890,7 @@ void sns_end_scan_conf(
 }
 //mod_lor_10_04_14--
 
-//mod_lor_10_05_10++
-/*!
+/*!//mod_lor_10_11_03
 *******************************************************************************
 \brief  Updating of the sensing measures received via IP from another node
 */
@@ -773,84 +903,320 @@ void up_coll_sens_results(
 	)
 {
     rrm_t *rrm = &rrm_inst[inst] ; 
-
-   
-    int i;
+    int free_av=0;
+    int N_chan=0;
+    int chan_in_use=0;
+    unsigned int reallocate = 0;
+    L2_ID User_active_L2_id[MAX_USER_NB];
+    L2_ID User_dest_L2_id[MAX_USER_NB];
+    CHANNELS_DB_T *t_channels_db = NULL;
+    int i,j,k, send_up_to_SN=0;
+    unsigned int all_result;
+    int tot_ch;
 
     pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-    //fprintf(stderr,"inst update %d\n", rrm->state);//dbg
     update_node_info( &(rrm->rrc.pSensEntry), &L2_id, NB_info, Sens_meas, info_time);
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-    //fprintf(stderr,"node entry  @%p \n", rrm->rrc.pSensEntry);//dbg
-    //fprintf(stderr,"2 cluster_head\n");//dbg
-    //AAA: for the moment the channel db is reserved for CHs and SUs only in SCEN_2_DISTR 
-    
-    
-  
-    if ( rrm->role == FUSIONCENTER || SCEN_2_DISTR || rrm->role == CH_COLL ) //mod_lor_10_03_08: role instead of status -> to check
-    //mod_lor_10_05_06 -> 2nd option of if changed (before SCEN_2_DISTR)
-    {
+
+    if (SCEN_2_CENTR && rrm->role == FUSIONCENTER){
+        ///check part: it evaluates if a channel in use is not free anymore 
+        send_up_to_SN = check_allocated_channels( inst, User_active_L2_id ,User_dest_L2_id ,&free_av);
         
-        //fprintf(stderr,"cluster_head\n");//dbg
-        CHANNEL_T channel ;
-        CHANNELS_DB_T *canal;
-        unsigned int is_free[MAX_NUM_SB];//mod_lor_10_05_28 ->char instead of int
-        for (i=0;i<MAX_NUM_SB;i++)
-            is_free[i]=0;
-        int decision;
-        for (i=0; i<NB_info; i++){
-            
-            channel.Start_f = Sens_meas[i].Start_f;
-            channel.Final_f = Sens_meas[i].Final_f;
-            channel.Ch_id   = Sens_meas[i].Ch_id;
-            channel.QoS     = 0;
-            
-            //mod_lor_10_03_19++
-            /*pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            decision = take_decision(rrm->rrc.pSensEntry, channel.Ch_id);
-            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-            //mod_lor_10_03_19--
-            
-            //mod_lor_10_05_07++
-            if (decision>0)
-                is_free = 1;
-            else
-                is_free = 0;
-                
-            if(rrm->role == CH_COLL){
-                Sens_meas[i].is_free = is_free;
-                //Sens_meas[i].meas = decision;
-            }*/
-            //mod_lor_10_05_07--
-            //mod_lor_10_03_19++
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            take_decision(rrm->rrc.pSensEntry, channel.Ch_id,is_free);//mod_eure_lor
-            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-            //mod_lor_10_03_19--
-            
-            //mod_lor_10_05_07++
-            /*if (decision>0)
-                is_free = 1;
-            else
-                is_free = 0;*/
-                
-            if(rrm->role == CH_COLL){
-                memcpy(Sens_meas[i].is_free, is_free, MAX_NUM_SB*sizeof(unsigned int)); //mod_lor_10_05_28 ->char instead of int
-                //Sens_meas[i].meas = decision;
+        ///Attribute new channels to users that have to change or that are waiting
+        if (send_up_to_SN>0 || rrm->ip.users_waiting_update>0){
+            /// case in which there are enough free channels
+            if (free_av>=(send_up_to_SN + rrm->ip.users_waiting_update)){ 
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                j = rrm->ip.users_waiting_update-1;
+                for (k = send_up_to_SN; k<(send_up_to_SN + rrm->ip.users_waiting_update);k++){
+                    memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][0].L2_id, sizeof(L2_ID));
+                    memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][1].L2_id, sizeof(L2_ID));
+                    j--;
+                }
+                all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for both busy and waiting users
+                if (all_result == 0){
+                    rrm->ip.users_waiting_update=0;
+                } else {
+                    printf ("ERROR!!! in if free not enough free!!! all_result =%d\n",all_result);//dbg
+                }
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
             }
             
-            fprintf(stdout,"Channel %d is %d:\n", channel.Ch_id,is_free[0]); //dbg ou LOG
+            ///no channels to change, but users waiting channels //add_lor_10_11_08++
+            ///reallocate only if there are more available channels, otherwise don't do anything
+            else if (send_up_to_SN==0 && rrm->ip.users_waiting_update>0){
+                chan_in_use = count_free_channels (inst, &free_av);
+                tot_ch = chan_in_use + free_av;
+                N_chan = find_available_channels(rrm->rrc.pSensEntry,&(t_channels_db));
+                del_all_channels( &(t_channels_db));
+                if (N_chan>tot_ch){
+                    reallocate = 1;
+                }else if (free_av>0){
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    for (k=0; rrm->ip.users_waiting_update>0 && free_av>0; k++) { /// allocate frequencies to waiting users
+                        memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][0].L2_id, sizeof(L2_ID));
+                        memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update-1][1].L2_id, sizeof(L2_ID));
+                        free_av--;
+                        rrm->ip.users_waiting_update--;
+                        printf ("N9 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+                    }
+                    all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for waiting users
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                }
+            }//add_lor_10_11_08--
             
-            pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
-            canal = up_chann_db( &(rrm->rrc.pChannelsEntry), channel, is_free[0], info_time);//TO DO SCEN2: fix it!
-            pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
-            //fprintf(stderr,"chann %d updated\n", Sens_meas[i].Ch_id);//dbg
-            
+            ///all channels to reallocate
+            if (reallocate || (free_av<=(send_up_to_SN + rrm->ip.users_waiting_update) && send_up_to_SN>0)){
+                chan_in_use = count_free_channels (inst, &free_av);
+                tot_ch = chan_in_use + send_up_to_SN;
+                if (chan_in_use!=0){
+                    ///add all channels in use to channels to change
+                    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                    t_channels_db = rrm->rrc.pChannelsEntry;
+                    while (t_channels_db!=NULL){
+                        if (t_channels_db->is_ass && t_channels_db->is_free){
+                            memcpy(User_active_L2_id[send_up_to_SN].L2_id , t_channels_db->source_id.L2_id, sizeof(L2_ID));
+                            memcpy(User_dest_L2_id[send_up_to_SN].L2_id , t_channels_db->dest_id.L2_id, sizeof(L2_ID));
+                            send_up_to_SN++;
+                        }
+                        t_channels_db = t_channels_db->next;
+                    }
+                    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                }
+                pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+                del_all_channels( & (rrm->rrc.pChannelsEntry) ); 
+                pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+                pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                for (k = send_up_to_SN, j = rrm->ip.users_waiting_update-1; j>=0 ;j--,k++){
+                    memcpy(User_active_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][0].L2_id, sizeof(L2_ID));
+                    memcpy(User_dest_L2_id[k].L2_id , rrm->ip.L2_id_wait_users[j][1].L2_id, sizeof(L2_ID));
+                }
+                all_result = ask_freq_to_CH( inst, User_active_L2_id, User_dest_L2_id,k, 0 );  ///Update of channels for waiting users
+                pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                if (all_result == 0){
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    rrm->ip.users_waiting_update=0;
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                } else {
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    rrm->ip.users_waiting_update=0;
+                    for (j=1; j<=all_result;j++){
+                        memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][0].L2_id,User_active_L2_id[k-j].L2_id, sizeof(L2_ID));
+                        memcpy(rrm->ip.L2_id_wait_users[rrm->ip.users_waiting_update][1].L2_id,User_dest_L2_id[k-j].L2_id, sizeof(L2_ID));
+                        rrm->ip.users_waiting_update++;
+                        printf ("N10 tot waiting: %d\n",rrm->ip.users_waiting_update);//db
+                    }
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                }
+            }
         }
+    }
 
+        ///check part
+//        send_up_to_SN = check_allocated_channels( inst, User_active_L2_id ,User_dest_L2_id ,&free_av);
+        
+        /*pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+        channel = rrm->rrc.pChannelsEntry;
+        tot_ch = 0;
+        send_up_to_SN=0;
+        k=0;
+        free_av=0;
+        while (channel!=NULL){
+            if(evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)){
+                if (channel->is_ass){
+                    ///save the address of user active on the channel
+                    memcpy( User_active_L2_id[send_up_to_SN].L2_id, channel->source_id.L2_id, sizeof(L2_ID) )  ;
+                    memcpy( User_dest_L2_id[send_up_to_SN].L2_id, channel->dest_id.L2_id, sizeof(L2_ID) )  ;
+                    send_up_to_SN++;
+                }
+                channel->is_free=0;
+                channels_to_change[tot_ch]= channel->channel.Ch_id;
+            }else{
+                if (!(channel->is_ass))
+                    free_av++;
+                channels_to_change[tot_ch]=-1;
+            }
+            channel = channel->next;
+            tot_ch++;
+        }
+        pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;*/
+        
+        ///Attribute new channels to users that have to change
+/*      if (send_up_to_SN>0){
+            //pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+            /// case in which there are enough free channels
+            if (free_av>=send_up_to_SN){
+                for (k = 0; k < send_up_to_SN; k++) {
+                    ask_freq_to_CH( inst, User_active_L2_id[k], User_dest_L2_id[k],1, 0 );  ///QoS fixed to 1
+                }
+                /*k = 0;                              ///check on channels to attribute
+                channel = rrm->rrc.pChannelsEntry;
+                while (channel!=NULL && k< send_up_to_SN){
+                    if (channel->is_free && !(channel->is_ass)){
+                        channel->is_ass=1;
+                        memcpy( channel->source_id.L2_id, User_active_L2_id[k].L2_id, sizeof(L2_ID) )  ;
+                        memcpy( channel->dest_id.L2_id, User_dest_L2_id[k].L2_id, sizeof(L2_ID) )  ;
+                        k++;
+                    }
+                    
+                }*/
+//            }
+            ///all channels to reallocate
+/*            else{
+                del_all_channels( & (rrm->rrc.pChannelsEntry) ); 
+                for (k = 0; k < send_up_to_SN; k++) {
+                    all_result = ask_freq_to_CH( inst, User_active_L2_id[k], User_dest_L2_id[k],1, 0 );  ///QoS fixed to 1
+                    if (all_result!=0)
+                        break;
+                }
+                //add_lor_10_11_08++
+                if (k!=send_up_to_SN){
+                    printf("Not enough available channels for all users!\n%d links not assigned\n",send_up_to_SN-k);//dbg
+                    pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+                    while (k < send_up_to_SN){
+                        memcpy(L2_id_wait_users[users_waiting_update][1].L2_id,User_active_L2_id[k].L2_id, sizeof(L2_ID));
+                        memcpy(L2_id_wait_users[users_waiting_update][2].L2_id,User_dest_L2_id[k].L2_id, sizeof(L2_ID));
+                        users_waiting_update++;
+                        k++;
+                    }
+                    pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+                }
+                //add_lor_10_11_08--
+                
+                
+                /*k = 0;                              ///check on channels to attribute
+                channel = rrm->rrc.pChannelsEntry;
+                while (channel!=NULL){
+                    if (channel->is_ass){
+                        memcpy( User_active_L2_id[k].L2_id, channel->source_id.L2_id, sizeof(L2_ID) )  ;
+                        memcpy( User_dest_L2_id[k].L2_id, channel->dest_id.L2_id, sizeof(L2_ID) )  ;
+                        k++;
+                    }
+                }
+                
+                ///new identification of available channels and allocation to users that need to communicate
+                NB_chan = find_available_channels(rrm->rrc.pSensEntry,&(rrm->rrc.pChannelsEntry));
+                printf ("found channels: %d \n", NB_chan);//dbg
+                
+                ///Analysing the list of identified channels
+                channel = rrm->rrc.pChannelsEntry;
+                j=0;
+                
+                while (channel!=NULL && j<k){
+                    if (channel->is_free && !channel->is_ass){
+                        memcpy(&(ass_channels[j]) , &(channel->channel), sizeof(CHANNEL_T));
+                        up_chann_ass( rrm->rrc.pChannelsEntry  , ass_channels[j].Ch_id, 1, User_active_L2_id[j], User_dest_L2_id[j] );
+                        printf ("copied channel: %d start %d end %d\n",ass_channels[j].Ch_id,ass_channels[j].Start_f,ass_channels[j].Final_f);//dbg
+                        j++;
+                    }
+                    channel = channel->next;
+                }*/
     
-    }else   
-        fprintf(stderr,"error!!! Cannot update channels \n");
+//            }
+            //pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+//        }
+        
+    
+            //ask_freq_to_CH( inst, User_active_L2_id, send_up_to_SN, 0 ); /// Update sent to user active 
+        
+    
+    else  
+        fprintf(stderr,"Error!!! Not a fusion center or not in Scenario 2 \n");
 
 }
-//mod_lor_10_05_10--
+
+
+/*!//mod_lor_10_11_03
+*******************************************************************************
+\brief  check channels in use in second scenario
+*/
+int check_allocated_channels( 
+	Instance_t inst         , //!< Identification de l'instance
+	L2_ID *User_active_L2_id ,
+	L2_ID *User_dest_L2_id ,
+	int *free_av
+	)
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+    CHANNELS_DB_T *channel;
+    int send_up_to_SN=0;
+    
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    channel = rrm->rrc.pChannelsEntry;
+    send_up_to_SN=0;
+    *free_av=0;
+    while (channel!=NULL){
+        if(evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)){
+            if (channel->is_ass){
+                ///save the address of user active on the channel
+                memcpy( User_active_L2_id[send_up_to_SN].L2_id, channel->source_id.L2_id, sizeof(L2_ID) )  ;
+                memcpy( User_dest_L2_id[send_up_to_SN].L2_id, channel->dest_id.L2_id, sizeof(L2_ID) )  ;
+                send_up_to_SN++;
+            }
+            channel->is_free=0;
+        }else{
+            if (!(channel->is_ass))
+                *free_av++;
+        }
+        channel = channel->next;
+    }
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    return (send_up_to_SN);
+}
+
+
+/*!//mod_lor_10_11_08
+*******************************************************************************
+\brief  start_coll_sensing
+*/
+void cmm_init_coll_sensing( 
+    Instance_t       inst,            //!< identification de l'instance
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq
+    )
+{
+    rrm_t *rrm = &rrm_inst[inst] ;
+    if (SCEN_2_CENTR && rrm->role == FUSIONCENTER){
+        pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
+        rrm->ip.trans_cnt++ ;
+        PUT_IP_MSG(msg_init_coll_sens_req( inst, rrm->L2_id, Start_fr, Stop_fr,Meas_band, Meas_tpf,
+                     Nb_channels,  Overlap, Sampl_freq, rrm->ip.trans_cnt));
+        pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+    }else {
+        printf ("ERROR! Node is not the main CH or not in the right scenario.\n");
+    }
+}
+
+/*!//mod_lor_10_11_08
+*******************************************************************************
+\brief  count channels in use and free channels in second scenario
+*/
+int count_free_channels( 
+	Instance_t inst         , //!< Identification de l'instance
+	int *free_av
+	)
+{
+    rrm_t *rrm = &rrm_inst[inst] ; 
+    CHANNELS_DB_T *channel;
+    int used_ch=0;
+    
+    pthread_mutex_lock( &( rrm->rrc.exclu ) ) ;
+    channel = rrm->rrc.pChannelsEntry;
+    *free_av=0;
+    while (channel!=NULL){
+        if(!evalaute_sens_info(rrm->rrc.pSensEntry,channel->channel.Start_f,channel->channel.Final_f)){
+            if (!(channel->is_ass))
+                *free_av++;
+            else
+                used_ch++;
+        }
+        channel = channel->next;
+    }
+    pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
+    return (used_ch);
+}

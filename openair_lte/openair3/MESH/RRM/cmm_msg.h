@@ -57,7 +57,10 @@ typedef enum {
     CMM_INIT_SENSING        , ///< Message CMM->RRM : requete d'initialisation du sensing
     CMM_STOP_SENSING        , ///< Message CMM->RRM : requete de stop du sensing
     CMM_ASK_FREQ            , ///< Message CMM->RRM : in BTS, message to start an open freq. query
-    //CMM_NEED_TO_TX          , ///< Message CMM->RRM : in SU, second scenario centr, message to start an open freq. query
+    CMM_NEED_TO_TX          , ///< Message CMM->RRM : in SU, second scenario centr, message to start an open freq. query
+    CMM_INIT_COLL_SENSING   , ///< Message CMM->RRM : requete d'initialisation du sensing collaborative //add_lor_10_11_08
+    CMM_USER_DISC           , ///< Message CMM->RRM : user disconnected -> delete all active com //add_lor_10_11_08
+    CMM_LINK_DISC           , ///< Message CMM->RRM : stop comm -> delete an active link //add_lor_10_11_08
     //CMM_INIT_TRANS_REQ      , ///< Message CMM->RRM : in SU, second scenario distr, message to start a connection with another SU
     //RRM_INIT_TRANS_CONF     , ///< Message RRM->CMM : confirmation de l'ouverture de la transition
     NB_MSG_CMM_RRM            ///< Nombre de message de l'interface
@@ -174,15 +177,16 @@ typedef struct {
     unsigned int     Nb_channels;
     unsigned int     Overlap;
     unsigned int     Sampl_freq;
-} cmm_init_sensing_t ;
+} cmm_init_sensing_t, cmm_init_coll_sensing_t ;
 //mod_lor_10_03_12++
 
-/*!
+/*!//add_lor_10_11_03
 *******************************************************************************
 \brief  Definition des parametres de la fonction cmm_cx_setup_req() dans 
         une structure permettant le passage des parametres via un socket
 */
 typedef struct   { 
+    Instance_t      dest                    ; //!< Destination of the message
     QOS_CLASS_T     QoS_class               ; //!< QOS class index
 } cmm_need_to_tx_t ;
 
@@ -207,6 +211,14 @@ typedef struct {
     CHANNEL_T       all_channel             ; //!< QOS class index           
 } rrm_init_trans_conf_t ;
 
+/*!//add_lor_10_11_09
+*******************************************************************************
+\brief  Definition des parametres de la fonction cmm_cx_setup_req() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct   { 
+    Instance_t      dest                    ; //!< Destination of the message
+} cmm_link_disk_t ;
 
 
 
@@ -241,11 +253,14 @@ msg_t *msg_cmm_init_sensing( Instance_t inst, unsigned int  Start_fr, unsigned i
         unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq ); //mod_lor_10_03_12
 msg_t *msg_cmm_stop_sensing( Instance_t inst);
 msg_t *msg_cmm_ask_freq( Instance_t inst);
-msg_t *msg_cmm_need_to_tx( Instance_t inst, QOS_CLASS_T QoS_class);
+msg_t *msg_cmm_need_to_tx( Instance_t inst, Instance_t dest,QOS_CLASS_T QoS_class);
 msg_t *msg_cmm_init_trans_req( Instance_t inst, L2_ID L2_id , unsigned int Session_id, QOS_CLASS_T QoS_class, Transaction_t Trans_id );
 msg_t *msg_rrm_init_trans_conf( Instance_t inst, unsigned int Session_id, CHANNEL_T all_channel, Transaction_t Trans_id );
 msg_t *msg_cmm_ask_freq( Instance_t inst);
-
+msg_t *msg_cmm_init_sensing( Instance_t inst, unsigned int  Start_fr, unsigned int  Stop_fr,unsigned int Meas_band,
+        unsigned int Meas_tpf, unsigned int Nb_channels,unsigned int Overlap, unsigned int Sampl_freq ); //add_lor_10_11_08
+msg_t *msg_cmm_user_disc( Instance_t inst); //add_lor_10_11_08
+msg_t *msg_cmm_link_disc( Instance_t inst, Instance_t dest); //add_lor_10_11_09
 #ifdef __cplusplus
 }
 #endif

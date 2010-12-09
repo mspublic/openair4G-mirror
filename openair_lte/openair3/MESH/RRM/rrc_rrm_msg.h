@@ -75,9 +75,11 @@ typedef enum {
     //OPEN_FREQ_QUERY_4           , ///< Message IP   : BTS to ask free frequencies to FC
     //UPDATE_OPEN_FREQ_7          , ///< 30Message IP       : list of frequencies usable by the secondary network
     //UPDATE_SN_OCC_FREQ_5        , ///< Message IP       : BTS sends used freq. to FC
-    RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs
+    RRM_UP_FREQ_ASS             , ///< Message RRM->RRC : BTS assigns channels to SUs (scen1)
     RRM_END_SCAN_CONF           , ///< Message RRM->RRC : end of a scanning process
     RRC_UP_FREQ_ASS             , ///< Message RRC->RRM ://mod_lor_10_06_04
+    RRM_UP_FREQ_ASS_SEC         , ///< Message RRM->RRC : CH assigns channels to SUs (scen2) //add_lor_10_11_05
+    RRC_UP_FREQ_ASS_SEC         , ///< Message RRC->RRM : frequencies assigned by CH (scen2)  //add_lor_10_11_05
     /*RRC_ASK_FOR_FREQ            , ///< Message RRC->RRM : in FC/CH to report a frequency query
     RRM_OPEN_FREQ               , ///< Message RRM->RRC : FC communicates open frequencies 
     RRM_UPDATE_SN_FREQ          , ///< Message RRM->RRC : BTS sends used freq. to FC
@@ -347,6 +349,18 @@ typedef struct {
     CHANNEL_T           ass_channels[NB_SENS_MAX]; //!< description of assigned channelS
 } rrm_up_freq_ass_t ;
 
+/*! //add_lor_10_11_05
+*******************************************************************************
+\brief  Definition des parametres de la fonction rrm_up_freq_ass() dans 
+        une structure permettant le passage des parametres via un socket
+*/
+typedef struct {
+    L2_ID               L2_id [NB_SENS_MAX]      ; //!< Layer 2 (MAC) ID of SU source
+    L2_ID               L2_id_dest [NB_SENS_MAX] ; //!< Layer 2 (MAC) ID of SU source
+    unsigned int        NB_all                   ; //!< Number of allocated channels
+    CHANNEL_T           ass_channels[NB_SENS_MAX]; //!< description of assigned channelS
+} rrm_up_freq_ass_sec_t ;
+
 ///< TYPEDEF VIA IP
 //mod_lor_10_04_27++
 /*! 
@@ -446,6 +460,9 @@ msg_t *msg_rrm_init_scan_req(Instance_t inst, unsigned int  Start_fr, unsigned i
 msg_t *msg_rrm_end_scan_req( Instance_t inst, L2_ID L2_id, Transaction_t Trans_id );
 msg_t *msg_rrm_up_freq_ass( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, CHANNEL_T *ass_channels);
 msg_t *msg_rrm_end_scan_conf( Instance_t inst, Transaction_t Trans_id);
+msg_t *msg_rrm_up_freq_ass_sec( Instance_t inst, L2_ID *L2_id, L2_ID *L2_id_dest,unsigned int NB_all, CHANNEL_T *ass_channels);//add_lor_10_11_05
+
+
 /*//mod_lor_10_04_27++             
 ///MESSAGES VIA IP
 msg_t *msg_update_sens_results_3( Instance_t inst, L2_ID L2_id, unsigned int NB_chan, Sens_ch_t *Sens_meas, Transaction_t Trans_id ); 
