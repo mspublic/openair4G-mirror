@@ -50,7 +50,7 @@ $(L2_OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
 
 physim : $(OBJ) $(L2_OBJS) phy_procedures_sim.c phy_procedures_sim_form.c 
-	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas
+	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
 	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 

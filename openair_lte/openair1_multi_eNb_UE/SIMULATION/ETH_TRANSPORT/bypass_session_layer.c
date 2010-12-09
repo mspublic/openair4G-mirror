@@ -4,12 +4,8 @@
  Company : EURECOM
  Emails  : anouar@eurecom.fr
 ________________________________________________________________*/
-#ifdef RTAI_ISNT_POSIX
-#include "SIMULATION/PHY_EMULATION/SCHED/rt_compat.h"
-#endif
 #include "defs.h"
 #include "vars.h"
-#include "SIMULATION/PHY_EMULATION/DEVICE_DRIVER/extern.h" 
 //#include "mac_extern.h"
 
 #ifdef USER_MODE

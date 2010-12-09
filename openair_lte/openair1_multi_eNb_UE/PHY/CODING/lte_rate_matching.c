@@ -16,7 +16,7 @@ static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,
 
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
-//#define RM_DEBUG_CC 1
+// #define RM_DEBUG_CC 1
 
 unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w) {
 
@@ -103,7 +103,6 @@ unsigned int sub_block_interleaving_cc(unsigned int D, unsigned char *d,unsigned
     index = bitrev_cc[col];
     index3 = 3*index;
     for (row=0;row<RCC;row++) {
-
       w[k]          =  d[index3-ND3];
       w[Kpi+k]     =   d[index3-ND3+1];
       w[(Kpi<<1)+k] =  d[index3-ND3+2]; 
