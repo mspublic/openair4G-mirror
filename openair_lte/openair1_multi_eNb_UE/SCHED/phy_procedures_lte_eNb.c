@@ -706,10 +706,16 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	  dlsch_encoding(DLSCH_pdu,
 			 &phy_vars_eNb->lte_frame_parms,
 			 num_pdcch_symbols,
-			 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]);
+			 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0],
+			 next_slot>>1);
 	  dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
 			   num_pdcch_symbols,
 			   phy_vars_eNb->dlsch_eNb[(u8)UE_id][0],
+			   get_G(&phy_vars_eNb->lte_frame_parms,
+				 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
+				 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->rb_alloc,
+				 get_Qm(phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
+				 num_pdcch_symbols,next_slot>>1),
 			   0,
 			   next_slot>>1);      
 	  for (sect_id=0;sect_id<number_of_cards;sect_id++)
@@ -760,17 +766,24 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 #endif
 
       if (abstraction_flag == 0) {
+
 	dlsch_encoding(dlsch_input_buffer,
 		       &phy_vars_eNb->lte_frame_parms,
 		       num_pdcch_symbols,
-		       phy_vars_eNb->dlsch_eNb_SI);
-	/*
-	  dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
-	  num_pdcch_symbols,
-	  phy_vars_eNb->dlsch_eNb_SI,
-	  0,
-	  next_slot>>1);      
-	*/
+		       phy_vars_eNb->dlsch_eNb_SI,
+		       next_slot>>1);
+	
+	dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
+			 num_pdcch_symbols,
+			 phy_vars_eNb->dlsch_eNb_SI,
+			 get_G(&phy_vars_eNb->lte_frame_parms,
+			       phy_vars_eNb->dlsch_eNb_SI->harq_processes[0]->mcs,
+			       phy_vars_eNb->dlsch_eNb_SI->rb_alloc,
+			       get_Qm(phy_vars_eNb->dlsch_eNb_SI->harq_processes[0]->mcs),
+			       num_pdcch_symbols,next_slot>>1),
+			 0,
+			 next_slot>>1);      
+	
 	for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	  re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					  AMP,
@@ -824,14 +837,22 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 #endif
 
       if (abstraction_flag == 0) {
+
 	dlsch_encoding(dlsch_input_buffer,
 		       &phy_vars_eNb->lte_frame_parms,
 		       num_pdcch_symbols,
-		       phy_vars_eNb->dlsch_eNb_ra);
+		       phy_vars_eNb->dlsch_eNb_ra,
+		       next_slot>>1);
+
 	phy_vars_eNb->dlsch_eNb_ra->rnti = RA_RNTI;
 	dlsch_scrambling(&phy_vars_eNb->lte_frame_parms,
 			 num_pdcch_symbols,
 			 phy_vars_eNb->dlsch_eNb_ra,
+			 get_G(&phy_vars_eNb->lte_frame_parms,
+			       phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->mcs,
+			       phy_vars_eNb->dlsch_eNb_ra->rb_alloc,
+			       get_Qm(phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->mcs),
+			       num_pdcch_symbols,next_slot>>1),
 			 0,
 			 next_slot>>1);
 	for (sect_id=0;sect_id<number_of_cards;sect_id++) 
