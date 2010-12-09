@@ -56,7 +56,6 @@ u8 NB_INST=2;
 void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
 
   s32 ret;
-  s32 i;
   s32 ue_id;
 
   msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
@@ -529,7 +528,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif //IFFT_FPGA
     }  // UE_id TX loop
   } // abstraction_flag
-      
+
+ 
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
 
     if (abstraction_flag!=0) {
@@ -695,9 +695,10 @@ int main(int argc, char **argv) {
   u8 target_ul_mcs=2;
   u8 rate_adaptation_flag;
   u8 transmission_mode;
-  u8 abstraction_flag=0;
+  u8 abstraction_flag=0,ethernet_flag=0;
+  u16 ethernet_id;
   u8 extended_prefix_flag=0;
-  s32 UE_id,eNB_id; // navid 
+  s32 UE_id,eNB_id,ret; 
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
@@ -723,7 +724,7 @@ int main(int argc, char **argv) {
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "haetx:m:rn:s:f:u:")) != -1)
+  while ((c = getopt (argc, argv, "haetx:m:rn:s:f:u:M:")) != -1)
     {
       switch (c)
 	{
@@ -759,6 +760,11 @@ int main(int argc, char **argv) {
 	  break;
 	case 'a':
 	  abstraction_flag=1;
+	  break;
+	case 'M':
+	  abstraction_flag=1;
+	  ethernet_flag=1;
+	  ethernet_id = atoi(optarg);
 	  break;
 	case 'e':
 	  extended_prefix_flag=1;
@@ -796,6 +802,7 @@ int main(int argc, char **argv) {
 
   frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   frame_parms->frame_type         = 1;
+  frame_parms->tdd_config         = 3;
   frame_parms->N_RB_DL            = 25;
   frame_parms->N_RB_UL            = 25;
   frame_parms->Ng_times6          = 1;
@@ -979,6 +986,12 @@ int main(int argc, char **argv) {
     }
     
   }
+  else {
+    if (ethernet_flag == 1) {
+      ret=netlink_init();
+    }
+  }   
+
   // initialized channel descriptors
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
