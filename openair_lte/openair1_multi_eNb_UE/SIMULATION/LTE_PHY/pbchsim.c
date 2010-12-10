@@ -220,6 +220,15 @@ int main(int argc, char **argv) {
 	  case 'D': 
 	    channel_model=SCM_D;
 	    break;
+	  case 'E': 
+	    channel_model=EPA;
+	    break;
+	  case 'F': 
+	    channel_model=EVA;
+	    break;
+	  case 'G': 
+	    channel_model=ETU;
+	    break;
 	  default:
 	    msg("Unsupported channel model!\n");
 	    exit(-1);
@@ -314,7 +323,7 @@ int main(int argc, char **argv) {
 	  printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
 	  printf("-S Ending SNR, runs from SNR0 to SNR1\n");
 	  printf("-t Delay spread for multipath channel\n");
-	  printf("-g [A,B,C,D] Use 3GPP 25.814 SCM (ignores delay spread and Ricean factor)\n");
+	  printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
 	  printf("-x Transmission mode (1,2,6 for the moment)\n");
 	  printf("-y Number of TX antennas used in eNB\n");
 	  printf("-z Number of RX antennas used in UE\n");
@@ -451,10 +460,10 @@ int main(int argc, char **argv) {
 				 0);
   }
   else {
-    msg("[SIM] Using SCM\n");
+    msg("[SIM] Using SCM/101\n");
     eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
 				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				  SCM_C,
+				  channel_model,
 				  BW,
 				  .999,
 				  0,
@@ -463,7 +472,7 @@ int main(int argc, char **argv) {
     if (interf1>-20)
       eNB2UE1 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
 				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				  SCM_C,
+				  channel_model,
 				  BW,
 				  .999,
 				  0,
@@ -472,7 +481,7 @@ int main(int argc, char **argv) {
     if (interf2>-20)
       eNB2UE2 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
 				    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				    SCM_C,
+				    channel_model,
 				    BW,
 				    .999,
 				    0,
@@ -1014,14 +1023,14 @@ int main(int argc, char **argv) {
       if (abstraction_flag==1) {
 	printf("SNR %f : n_errors = %d/%d, n_alamouti %d\n", SNR,n_errors,ntrials,n_alamouti);
 	if (write_output_file==1)
-	  fprintf(output_fd,"%f %f %e\n",SNR,pbch_sinr,(double)n_errors/ntrials);
+	  fprintf(output_fd,"%f %f %e \n",SNR,pbch_sinr,(double)n_errors/ntrials,(double)n_errors*n_errors/ntrials/ntrials);
       }
       n_errors=0;
       if ((abstraction_flag==0) && (n_errors2>1000) && (trial>5000))
 	break;
     } // trials
     if (abstraction_flag==0) {
-      printf("SNR %f : n_errors2 = %d/%d (Pe %e,%d,%d), n_alamouti %d\n", SNR,n_errors2,ntrials*(1+trial),(double)n_errors2/(ntrials*(1+trial)),ntrials,trial,n_alamouti);
+      printf("SNR %f : n_errors2 = %d/%d (BLER %e,40ms BLER %e,%d,%d), n_alamouti %d\n", SNR,n_errors2,ntrials*(1+trial),(double)n_errors2/(ntrials*(1+trial)),pow((double)n_errors2/(ntrials*(1+trial)),4),ntrials,trial,n_alamouti);
       if (write_output_file==1)
 	fprintf(output_fd,"%f %e\n",SNR,(double)n_errors2/(ntrials*(1+trial)));
     }

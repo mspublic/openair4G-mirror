@@ -188,6 +188,8 @@ int main(int argc, char **argv) {
   double input_val1,input_val2;
   u8 n_rnti=0x1234;
 
+  SCM_t channel_model=custom;
+
   DCI_ALLOC_t dci_alloc[8],dci_alloc_rx[8];
 
   channel_length = (int) 11+2*BW*Td;
@@ -204,7 +206,7 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "har:pc:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
+  while ((c = getopt (argc, argv, "har:pg:c:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -217,6 +219,34 @@ int main(int argc, char **argv) {
 	  printf("Illegal tdd_config %d (should be 0-6)\n",tdd_config);
 	  exit(-1);
 	}
+	break;
+	case 'g':
+	  switch((char)*optarg) {
+	  case 'A': 
+	    channel_model=SCM_A;
+	    break;
+	  case 'B': 
+	    channel_model=SCM_B;
+	    break;
+	  case 'C': 
+	    channel_model=SCM_C;
+	    break;
+	  case 'D': 
+	    channel_model=SCM_D;
+	    break;
+	  case 'E': 
+	    channel_model=EPA;
+	    break;
+	  case 'F': 
+	    channel_model=EVA;
+	    break;
+	  case 'G': 
+	    channel_model=ETU;
+	    break;
+	  default:
+	    msg("Unsupported channel model!\n");
+	    exit(-1);
+	  }
 	break;
       case 'i':
 	interf1=atoi(optarg);
@@ -389,6 +419,8 @@ int main(int argc, char **argv) {
       }
   }
 
+  if ((transmission_mode>1) && (n_tx==1))
+    n_tx=2;
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,tdd_config);
 
@@ -429,23 +461,36 @@ int main(int argc, char **argv) {
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
 	 frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
 
+  if (channel_model==custom) {
+    msg("[SIM] Using custom channel model\n");
 
-  eNB2UE = new_channel_desc(n_tx,
-			    n_rx,
-			    nb_taps,
-			    channel_length,
-			    amps,
-			    NULL,
-			    NULL,
-			    Td,
-			    BW,
-			    ricean_factor,
-			    aoa,
-			    .999,
-			    0,
-			    0,
-			    0);
+    eNB2UE = new_channel_desc(n_tx,
+			      n_rx,
+			      nb_taps,
+			      channel_length,
+			      amps,
+			      NULL,
+			      NULL,
+			      Td,
+			      BW,
+			      ricean_factor,
+			      aoa,
+			      .999,
+			      0,
+			      0,
+			      0);
+  }
+  else {
+    msg("[SIM] Using SCM/101\n");
+    eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
+				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				  channel_model,
+				  BW,
+				  .999,
+				  0,
+				  0);
 
+  }
   for (i=0;i<2;i++) {
 
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
