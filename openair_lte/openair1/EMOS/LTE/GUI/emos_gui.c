@@ -73,7 +73,8 @@ int values_in_memory=0;
 long long start_time;
 int num_tx_ant = 2;
 int num_ch = 2;
-int terminal_idx = 0;
+int terminal_idx = 0; //UE
+int duplex_mode = 0; //TDD
 //int pdu_errors[2] = {0,0};
 //int pdu_errors_last[2] = {0,0};
 int domain_selector = TIME_DOMAIN;
@@ -90,7 +91,6 @@ struct tm starttime;
 int current_dlsch_cqi; //this is actually defined in phy_procedures_lte_ue.c - we should get rid of this
 int rate_adaptation = 1;
 int use_label = 0;
-unsigned int frequency = 0;
 
 /*
 unsigned char tx_gain_table_c[36] = {
@@ -106,10 +106,16 @@ unsigned char tx_gain_table_c[36] = {
 unsigned int *tx_gain_table = (unsigned int*) tx_gain_table_c;
 */
 unsigned char tx_gain_table_ue[4] = {200, 200, 140, 140};
-unsigned char tx_gain_table_eNb[4] = {195, 195, 140, 140};
+unsigned char tx_gain_table_eNb[4] = {162, 162, 140, 140};
+unsigned char tx_gain_table_ue_fdd[4] = {200, 200, 140, 140};
+unsigned char tx_gain_table_eNb_fdd[4] = {162, 162, 140, 140};
 unsigned int timing_advance = 0;
 unsigned int tcxo = 128;  
+unsigned int tcxo_ue_tdd = 37;  
+unsigned int tcxo_ue_fdd = 115;  
 int freq_correction =  0;
+unsigned int frequency = 0;
+unsigned int frequency_fdd = 6;
 //unsigned int rf_mode_ue=0; //mixer low gain, lna off
 unsigned int rf_mode_ue=1; //mixer low gain, lna on
 unsigned int rf_mode_eNb=2; //mixer high gain, lna on
@@ -171,6 +177,11 @@ void input_callback(FL_OBJECT *ob, long user_data);
 void label_callback(FL_OBJECT *ob, long user_data);
 void label_btn_callback(FL_OBJECT *ob, long user_data);
 void gps_data_callback(int gps_fd, void* data);
+void terminal_button_callback(FL_OBJECT *ob, long user_data);
+void rx_mode_button_callback(FL_OBJECT *ob, long user_data);
+void set_cbmimo1_parameters(int terminal_idx, int duplex_mode); 
+void duplex_button_callback(FL_OBJECT *ob, long user_data);
+void link_adpt_callback(FL_OBJECT *ob, long user_data);
 
 void initialize_interface();
 void stop_interface();
@@ -1557,7 +1568,15 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
   //fl_set_button(main_frm->terminal_btn4,0);
   fl_set_button(ob,1);
   terminal_idx = user_data;
-  if (terminal_idx == 1) {
+
+  set_cbmimo1_parameters(terminal_idx,duplex_mode);
+
+}
+
+void set_cbmimo1_parameters(int terminal_idx, int duplex_mode) 
+{
+  char temp_label[1024];
+  if ((terminal_idx == 1) && (duplex_mode==0)) {
     sprintf(temp_label,"%d",tx_gain_table_eNb[0]);
     fl_set_input(main_frm->rf_gain_txt, temp_label);
     sprintf(temp_label,"%d",tx_gain_table_eNb[2]);
@@ -1569,7 +1588,7 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
     sprintf(temp_label,"%d",tcxo);
     fl_set_input(main_frm->tcxo_txt, temp_label);
   }
-  else if (terminal_idx == 3) {
+  else if ((terminal_idx == 3) && (duplex_mode==0)) {
     sprintf(temp_label,"%d",tx_gain_table_ue[0]);
     fl_set_input(main_frm->rf_gain_txt, temp_label);
     sprintf(temp_label,"%d",tx_gain_table_ue[2]);
@@ -1578,10 +1597,48 @@ void terminal_button_callback(FL_OBJECT *ob, long user_data)
     fl_set_input(main_frm->rf_mode_txt, temp_label);
     sprintf(temp_label,"%d",frequency);
     fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo_ue_tdd);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
+  }
+  if ((terminal_idx == 1) && (duplex_mode==1)) {
+    sprintf(temp_label,"%d",tx_gain_table_eNb_fdd[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_eNb_fdd[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_eNb);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency_fdd);
+    fl_set_input(main_frm->freq_txt, temp_label);
     sprintf(temp_label,"%d",tcxo);
     fl_set_input(main_frm->tcxo_txt, temp_label);
   }
+  else if ((terminal_idx == 3) && (duplex_mode==1)) {
+    sprintf(temp_label,"%d",tx_gain_table_ue_fdd[0]);
+    fl_set_input(main_frm->rf_gain_txt, temp_label);
+    sprintf(temp_label,"%d",tx_gain_table_ue_fdd[2]);
+    fl_set_input(main_frm->digital_gain_txt, temp_label);
+    sprintf(temp_label,"%d",rf_mode_ue);
+    fl_set_input(main_frm->rf_mode_txt, temp_label);
+    sprintf(temp_label,"%d",frequency_fdd);
+    fl_set_input(main_frm->freq_txt, temp_label);
+    sprintf(temp_label,"%d",tcxo_ue_fdd);
+    fl_set_input(main_frm->tcxo_txt, temp_label);
+  }
 }
+
+void duplex_button_callback(FL_OBJECT *ob, long user_data)
+{
+  char temp_label[1024];
+  fl_set_button(main_frm->fdd_button,0);
+  fl_set_button(main_frm->tdd_button,0);
+
+  fl_set_button(ob,1);
+  duplex_mode = user_data;
+
+  set_cbmimo1_parameters(terminal_idx,duplex_mode);
+
+}
+
 
 void rx_mode_button_callback(FL_OBJECT *ob, long user_data)
 {

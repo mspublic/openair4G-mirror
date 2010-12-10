@@ -11,7 +11,7 @@ SnapGrid: 1
 Name: main_frm
 Width: 1010
 Height: 710
-Number of Objects: 83
+Number of Objects: 85
 
 --------------------
 class: FL_BOX
@@ -1175,7 +1175,7 @@ argument:
 --------------------
 class: FL_BUTTON
 type: PUSH_BUTTON
-box: 265 650 40 40
+box: 265 632 40 28
 boxtype: FL_ROUNDED3D_UPBOX
 colors: FL_LIGHTER_COL1 FL_COL1
 alignment: FL_ALIGN_CENTER
@@ -1193,7 +1193,7 @@ argument: 1
 --------------------
 class: FL_BUTTON
 type: PUSH_BUTTON
-box: 320 650 40 40
+box: 320 633 41 28
 boxtype: FL_ROUNDED3D_UPBOX
 colors: FL_LIGHTER_COL1 FL_COL1
 alignment: FL_ALIGN_CENTER
@@ -1211,7 +1211,7 @@ argument: 3
 --------------------
 class: FL_TEXT
 type: NORMAL_TEXT
-box: 260 620 110 20
+box: 260 611 110 20
 boxtype: FL_FLAT_BOX
 colors: FL_PALEGREEN FL_MCOL
 alignment: FL_ALIGN_CENTER|FL_ALIGN_INSIDE
@@ -1520,6 +1520,42 @@ name: tcxo_txt
 callback: input_callback
 argument: 0
 return: FL_RETURN_END_CHANGED
+
+--------------------
+class: FL_BUTTON
+type: PUSH_BUTTON
+box: 265 664 40 28
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LIGHTER_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_BOLD_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: TDD
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: tdd_button
+callback: duplex_button_callback
+argument: 0
+
+--------------------
+class: FL_BUTTON
+type: PUSH_BUTTON
+box: 319 664 41 28
+boxtype: FL_ROUNDED3D_UPBOX
+colors: FL_LIGHTER_COL1 FL_COL1
+alignment: FL_ALIGN_CENTER
+style: FL_BOLD_STYLE
+size: FL_DEFAULT_SIZE
+lcol: FL_BLACK
+label: FDD
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fdd_button
+callback: duplex_button_callback
+argument: 1
 
 =============== FORM ===============
 Name: splash_frm

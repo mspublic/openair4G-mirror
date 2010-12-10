@@ -386,21 +386,21 @@ create_form_main_frm( void )
     fl_set_object_color( obj, FL_PALEGREEN, FL_COL1 );
     fl_set_object_lalign( obj, FL_ALIGN_LEFT | FL_ALIGN_INSIDE );
 
-    fdui->terminal_btn1 = obj = fl_add_button( FL_PUSH_BUTTON, 265, 650, 40, 40, "eNb" );
+    fdui->terminal_btn1 = obj = fl_add_button( FL_PUSH_BUTTON, 265, 632, 40, 28, "eNb" );
     fl_set_object_boxtype( obj, FL_ROUNDED3D_UPBOX );
     fl_set_object_color( obj, FL_LIGHTER_COL1, FL_COL1 );
     fl_set_object_lalign( obj, FL_ALIGN_CENTER );
     fl_set_object_lstyle( obj, FL_BOLD_STYLE );
     fl_set_object_callback( obj, terminal_button_callback, 1 );
 
-    fdui->terminal_btn3 = obj = fl_add_button( FL_PUSH_BUTTON, 320, 650, 40, 40, "UE" );
+    fdui->terminal_btn3 = obj = fl_add_button( FL_PUSH_BUTTON, 320, 633, 41, 28, "UE" );
     fl_set_object_boxtype( obj, FL_ROUNDED3D_UPBOX );
     fl_set_object_color( obj, FL_LIGHTER_COL1, FL_COL1 );
     fl_set_object_lalign( obj, FL_ALIGN_CENTER );
     fl_set_object_lstyle( obj, FL_BOLD_STYLE );
     fl_set_object_callback( obj, terminal_button_callback, 3 );
 
-    obj = fl_add_text( FL_NORMAL_TEXT, 260, 620, 110, 20, "terminal type" );
+    obj = fl_add_text( FL_NORMAL_TEXT, 260, 611, 110, 20, "terminal type" );
     fl_set_object_color( obj, FL_PALEGREEN, FL_MCOL );
     fl_set_object_lalign( obj, FL_ALIGN_CENTER | FL_ALIGN_INSIDE );
 
@@ -479,6 +479,20 @@ create_form_main_frm( void )
     fl_set_object_lsize( obj, FL_TINY_SIZE );
     fl_set_object_callback( obj, input_callback, 0 );
     fl_set_object_return( obj, FL_RETURN_END_CHANGED );
+
+    fdui->tdd_button = obj = fl_add_button( FL_PUSH_BUTTON, 265, 664, 40, 28, "TDD" );
+    fl_set_object_boxtype( obj, FL_ROUNDED3D_UPBOX );
+    fl_set_object_color( obj, FL_LIGHTER_COL1, FL_COL1 );
+    fl_set_object_lalign( obj, FL_ALIGN_CENTER );
+    fl_set_object_lstyle( obj, FL_BOLD_STYLE );
+    fl_set_object_callback( obj, duplex_button_callback, 0 );
+
+    fdui->fdd_button = obj = fl_add_button( FL_PUSH_BUTTON, 319, 664, 41, 28, "FDD" );
+    fl_set_object_boxtype( obj, FL_ROUNDED3D_UPBOX );
+    fl_set_object_color( obj, FL_LIGHTER_COL1, FL_COL1 );
+    fl_set_object_lalign( obj, FL_ALIGN_CENTER );
+    fl_set_object_lstyle( obj, FL_BOLD_STYLE );
+    fl_set_object_callback( obj, duplex_button_callback, 1 );
 
     fl_end_form( );
 
