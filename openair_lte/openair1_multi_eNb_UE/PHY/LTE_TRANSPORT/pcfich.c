@@ -128,6 +128,11 @@ void generate_pcfich(u8 num_pdcch_symbols,
       pcfich_d[0][i+3] = pcfich_d[1][i+1];
       pcfich_d[1][i+2] = pcfich_d[0][i];
       pcfich_d[1][i+3] = -pcfich_d[0][i+1];
+      /*
+      printf("pcfich_d %d => (%d,%d,%d,%d) (%d %d %d %d)\n",
+	     i,pcfich_d[0][i],pcfich_d[0][i+1],pcfich_d[0][i+2],pcfich_d[0][i+3],
+	     pcfich_d[1][i],pcfich_d[1][i+1],pcfich_d[1][i+2],pcfich_d[1][i+3]);
+      */
     }
   }
 
@@ -161,9 +166,11 @@ void generate_pcfich(u8 num_pdcch_symbols,
       if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
 
 	txdataF[0][symbol_offset+reg_offset+i] = ((s32*)pcfich_d[0])[m];
-	//	printf("pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
-	//	       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[0],
-	//	       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[1]);
+	/*
+		printf("pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
+		       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[0],
+		       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[1]);
+	*/
 	if (frame_parms->mode1_flag==0)   // ALAMOUTI
 	  txdataF[1][symbol_offset+reg_offset+i] = ((s32*)pcfich_d[1])[m];
 	m++;
@@ -208,14 +215,16 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	  phich_d_ptr[0] += ((s16*)&rxdataF_comp[j][reg_offset+i])[0]; // RE component
 	  phich_d_ptr[1] += ((s16*)&rxdataF_comp[j][reg_offset+i])[1]; // IM component
 	} 
+	/*	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => phich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
+	       phich_d_ptr[0]);
+	*/
 	phich_d_ptr+=2;
       }
     }
     else { // ALAMOUTI
       for (i=0;i<4;i+=2) {
-	//	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
-	//	       ((s16*)&rxdataF_comp[reg_offset+i])[0],
-	//	       ((s16*)&rxdataF_comp[reg_offset+i])[1]);
 	phich_d_ptr[0] = 0;
 	phich_d_ptr[1] = 0;
 	phich_d_ptr[2] = 0;
@@ -231,7 +240,14 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	  phich_d_ptr[3] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[1] +
 			     ((s16*)&rxdataF_comp[j+2][reg_offset+i])[1]);// IM component
 	}
+	/*
+	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => phich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
+	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
+	       phich_d_ptr[0]);
+	*/
 	phich_d_ptr+=4;
+
       }
     }
   }
