@@ -1624,6 +1624,15 @@ void set_cbmimo1_parameters(int terminal_idx, int duplex_mode)
     sprintf(temp_label,"%d",tcxo_ue_fdd);
     fl_set_input(main_frm->tcxo_txt, temp_label);
   }
+
+  tx_gain_table_eNb[0]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[1]= atoi(fl_get_input(main_frm->rf_gain_txt));
+  tx_gain_table_eNb[2]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  tx_gain_table_eNb[3]= atoi(fl_get_input(main_frm->digital_gain_txt));
+  rf_mode_eNb= atoi(fl_get_input(main_frm->rf_mode_txt));
+  frequency = atoi(fl_get_input(main_frm->freq_txt));
+  tcxo = atoi(fl_get_input(main_frm->tcxo_txt));
+
 }
 
 void duplex_button_callback(FL_OBJECT *ob, long user_data)
