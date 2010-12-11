@@ -11,9 +11,15 @@
 #include <stdio.h>
 #endif
 
+#ifndef TEST_DEBUG
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define msg printf
+#endif
 
 #ifndef EXPRESSMIMO_TARGET
 #include "emmintrin.h"
@@ -426,7 +432,11 @@ int test_viterbi()
   inPtr = test;
   outPtr = output;
   phy_generate_viterbi_tables_lte();
-  ccodelte_encode(64, inPtr, outPtr,0);
+  ccodelte_encode(64,     //input length in bits 
+		  0,      // add 16-bit crc with rnti scrambling
+		  inPtr,  // input pointer
+		  outPtr, // output pointer
+		  0);     // rnti (optional)
 
   for (i = 0; i < 64*3; i++){
     channel_output[i] = 7*(2*output[i] - 1);
@@ -436,21 +446,17 @@ int test_viterbi()
   phy_viterbi_lte_sse2(channel_output,decoded_output,64);
   printf("Optimized Viterbi :");
   for (i =0 ; i<8 ; i++)
-    printf("%x ",decoded_output[i]);
-  printf("\n");
-
-
-  printf("\n");
+    printf("input %d : %x => %x\n",i,inPtr[i],decoded_output[i]);
 }
 
 
 
 
-void main() {
+int main() {
 
 
   test_viterbi();
-
+  return(0);
 }
 
 #endif // TEST_DEBUG

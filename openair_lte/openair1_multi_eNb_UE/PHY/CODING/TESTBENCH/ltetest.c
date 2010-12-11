@@ -26,54 +26,87 @@
 
 int current_dlsch_cqi;
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
+PHY_VARS_eNB *PHY_vars_eNb;
+PHY_VARS_UE *PHY_vars_UE;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
-  printf("Start lte_param_init\n");
-  PHY_vars = malloc(sizeof(PHY_VARS));
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config) {
+
+  unsigned int ind;
+  LTE_DL_FRAME_PARMS *lte_frame_parms;
+
+  printf("Start lte_param_init (Nid_cell %d, extended_prefix %d, transmission_mode %d, N_tx %d, N_rx %d)\n",
+	 Nid_cell, extended_prefix_flag,transmission_mode,N_tx,N_rx);
+  PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
+
+  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
   PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   randominit(0);
   set_taus_seed(0);
   
-  crcTableInit();
+  lte_frame_parms = &(PHY_vars_eNb->lte_frame_parms);
 
-  number_of_cards = 1;
-  lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
-  lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
-  lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
-  lte_ue_pdcch_vars = &(PHY_vars->lte_ue_pdcch_vars[0]);
-  lte_ue_pbch_vars = &(PHY_vars->lte_ue_pbch_vars[0]);
-  lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
-  lte_ue_dlsch_vars_ra   = &PHY_vars->lte_ue_dlsch_vars_ra[0];
-  lte_ue_dlsch_vars_1A   = &PHY_vars->lte_ue_dlsch_vars_1A[0];
- 
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
+  lte_frame_parms->N_RB_UL            = 25;   
+  lte_frame_parms->Ncp                = extended_prefix_flag;
+  lte_frame_parms->Nid_cell           = Nid_cell;
+  lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->first_dlsch_symbol = 2;
-  lte_frame_parms->num_dlsch_symbols  = 6;
+  lte_frame_parms->first_dlsch_symbol = 4;
+  lte_frame_parms->num_dlsch_symbols  = (lte_frame_parms->Ncp==0) ? 8: 6;
+  lte_frame_parms->Ng_times6          = 1;
+  lte_frame_parms->tdd_config         = tdd_config;
+
+  //  lte_frame_parms->Csrs = 2;
+  //  lte_frame_parms->Bsrs = 0;
+  //  lte_frame_parms->kTC = 0;
+  //  lte_frame_parms->n_RRC = 0;
+  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
 
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(N_tx); //allocation
-  
+  phy_init_top(N_tx,lte_frame_parms); //allocation
+
+   
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
+
+  memcpy(&PHY_vars_UE->lte_frame_parms,lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+
   
-  generate_64qam_table();
-  generate_16qam_table();
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,
-		  lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,
-		  lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
+  phy_init_lte_top(lte_frame_parms);
+
+  phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
+		  &PHY_vars_UE->lte_ue_common_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars,
+		  PHY_vars_UE->lte_ue_dlsch_vars_SI,
+		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
+		  PHY_vars_UE->lte_ue_pbch_vars,
+		  PHY_vars_UE->lte_ue_pdcch_vars,
+		  PHY_vars_UE);
+
+  phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
+		   &PHY_vars_eNb->lte_eNB_common_vars,
+		   PHY_vars_eNb->lte_eNB_ulsch_vars,
+		   0,
+		   PHY_vars_eNb,
+		   0,
+		   0);
+
+
+  phy_init_lte_top(lte_frame_parms);
+
   printf("Done lte_param_init\n");
+
+
 }
+
 /*
 void print_shorts(char *s,__m128i *x) {
 
@@ -124,60 +157,6 @@ char quantize(double D,double x,unsigned char B) {
 static char channel_output[2*MAX_BLOCK_LENGTH]__attribute__ ((aligned(16)));
 static unsigned char decoded_output[MAX_BLOCK_LENGTH/8];
 
-int test_viterbi(double sigma,
-		 unsigned int BLOCK_LENGTH,
-		 unsigned int ntrials,
-		 unsigned int *errors,
-		 unsigned int *trials,
-		 double rate)
-{
-
-  unsigned int i,n,coded_bits;
-
-
-
-  for (n=0;n<ntrials;n++) {
-
-    coded_bits = (unsigned int)((BLOCK_LENGTH+8.0)/rate);
-
-    for (i=0;i<2*(BLOCK_LENGTH+8);i++)
-      channel_output[i] = 0;
-
-    rate_matching(coded_bits,2*(BLOCK_LENGTH+8),channel_output,1,n);
-
-    for (i = 0; i < 2*(BLOCK_LENGTH+8); i++){
-
-      
-      if ((channel_output[i]&0x80) == 0) 
-	channel_output[i]=0;
-      else if ((channel_output[i]&0x40) != 0)
-	channel_output[i] = quantize4bit(sigma/4.0,(sqrt(2.0)*sigma*gaussdouble(0.0,1.0))- 2);
-      else
-	channel_output[i] = quantize4bit(sigma/4.0,(sigma*gaussdouble(0.0,1.0))- 1);
-    }
- 
-    memset(decoded_output,0,1+(BLOCK_LENGTH/8));
-
-
-    phy_viterbi_dot11_sse2(channel_output,decoded_output,8+BLOCK_LENGTH);
-
-    // check for errors
-    for (i=0;i<BLOCK_LENGTH/8;i++)
-      if (decoded_output[i]!=0) {
-	*errors = *errors+1;
-	break;
-      }
-    if (*errors == 100)
-      break;
-  }
-
-  *trials = n;
-
-
-  return(0);
-
-}
-
 int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
 		 LTE_UE_DLSCH_t *dlsch_ue,
 		 unsigned int coded_bits,
@@ -227,14 +206,16 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
     }
 
     dlsch_encoding(test_input,
-		   lte_frame_parms,
-		   dlsch_eNb);    //encoded subframe taking just even subframes corresponding to one spatial stream
+		   &PHY_vars_eNb->lte_frame_parms,
+		   1,
+		   PHY_vars_eNb->dlsch_eNb[0][0],
+		   6);
 
     uerr=0;
 
 
     for (i = 0; i < coded_bits; i++){
-      channel_output[i] = (short)quantize(sigma/4.0,(2.0*dlsch_eNb->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
+      channel_output[i] = (short)quantize(sigma/4.0,(2.0*PHY_vars_eNb->dlsch_eNb[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
     }
 
 
@@ -243,9 +224,11 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
     //    memset(decoded_output,0,16);
     //    printf("decoding\n");
     ret = dlsch_decoding(channel_output,
-			 lte_frame_parms,
-			 dlsch_ue,0);
-            
+			 &PHY_vars_UE->lte_frame_parms,
+			 PHY_vars_UE->dlsch_ue[0][0],
+			 6,
+			 1);
+
     /*    int diffs = 0,puncts=0;
     for (i=0;i<dlsch_ue->harq_processes[0]->Kplus*3;i++) {
       if (dlsch_ue->harq_processes[0]->d[0][96+i] == 0) {
@@ -548,7 +531,8 @@ void test_encoder(unsigned int block_length,
 }
 */
 
-#define NTRIALS 1000000
+#define NTRIALS 10000
+#define DLSCH_RB_ALLOC 0x1fff//0x1fbf // igore DC component,RB13
 
 int main(int argc, char *argv[]) {
 
@@ -562,57 +546,35 @@ int main(int argc, char *argv[]) {
   char done2=1;
 
   unsigned short iind;
-  LTE_eNb_DLSCH_t *dlsch_eNb = new_eNb_dlsch(1,4);
-  LTE_UE_DLSCH_t *dlsch_ue = new_ue_dlsch(1,4);
   unsigned int coded_bits;
   unsigned char NB_RB=25;
-  unsigned char mod_order[2];
-  MIMO_mode_t mimo_mode;
 
-
-  mod_order[0]=2;
-  mod_order[1]=2;
-  mimo_mode = SISO;//ALAMOUTI;//ANTCYCLING;
-
-  PHY_config = malloc(sizeof(PHY_CONFIG));
-  PHY_vars = malloc(sizeof(PHY_VARS));
-  mac_xface = malloc(sizeof(MAC_xface));
 
 
   randominit(0);
-  set_taus_seed(0);
-  
-  crcTableInit();
-  ccodedot11_init();
-  ccodedot11_init_inv();
-   
-  phy_generate_viterbi_tables();
-  lte_frame_parms = &(PHY_config->lte_frame_parms);
-  lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 1;
-  lte_frame_parms->nb_antennas_tx     = 2;
-  lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 2;
-  init_frame_parms(lte_frame_parms);
-  
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-  lte_param_init(2,2);
-  
-  phy_init_top(2); //allocation
+
+  lte_param_init(1,1,1,0,0,3);
+
+  PHY_vars_eNb->dlsch_eNb[0][0] = new_eNb_dlsch(1,8,0);
+  PHY_vars_UE->dlsch_ue[0][0]  = new_ue_dlsch(1,8,0);
+  PHY_vars_eNb->dlsch_eNb[0][1] = new_eNb_dlsch(1,8,0);
+  PHY_vars_UE->dlsch_ue[0][1]  = new_ue_dlsch(1,8,0);
 
   if (argc>1)
     mcs = atoi(argv[1]);
   else
     mcs = 0;
 
-  if (argc>2)
-    NB_RB = atoi(argv[2]);
-  else
-    NB_RB = 25;
-
   printf("NB_RB %d\n",NB_RB);
+  DLSCH_alloc_pdu2.rah              = 0;
+  DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
+  DLSCH_alloc_pdu2.TPC              = 0;
+  DLSCH_alloc_pdu2.dai              = 0;
+  DLSCH_alloc_pdu2.harq_pid         = 0;
+  DLSCH_alloc_pdu2.tb_swap          = 0;
+  DLSCH_alloc_pdu2.mcs1             = mcs;  
+  DLSCH_alloc_pdu2.ndi1             = 1;
+  DLSCH_alloc_pdu2.rv1              = 0;
 
   if (argc>2)
     qbits = atoi(argv[3]);
@@ -620,9 +582,30 @@ int main(int argc, char *argv[]) {
     qbits = 4;
 
   printf("Quantization bits %d\n",qbits);
-  coded_bits = (lte_frame_parms->Ncp == 0) ?
-    ( NB_RB * (12 * mod_order[0]) * (14-lte_frame_parms->first_dlsch_symbol-3)) :
-    ( NB_RB * (12 * mod_order[0]) * (12-lte_frame_parms->first_dlsch_symbol-3)) ;     
+
+  generate_eNb_dlsch_params_from_dci(0,
+                                     &DLSCH_alloc_pdu2,
+				     0x1234,
+				     format2_2A_M10PRB,
+				     PHY_vars_eNb->dlsch_eNb[0],
+				     &PHY_vars_eNb->lte_frame_parms,
+				     SI_RNTI,
+				     RA_RNTI,
+				     P_RNTI,
+				     0); //change this later
+  generate_ue_dlsch_params_from_dci(0,
+				    &DLSCH_alloc_pdu2,
+				    C_RNTI,
+				    format2_2A_M10PRB,
+				    PHY_vars_UE->dlsch_ue[0],
+				    &PHY_vars_UE->lte_frame_parms,
+				    SI_RNTI,
+				    RA_RNTI,
+				    P_RNTI);
+  
+  coded_bits = 	get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,PHY_vars_eNb->dlsch_eNb[0][0]->rb_alloc,
+		      get_Qm(mcs),1,6);
+
   printf("Coded_bits (G) = %d\n",coded_bits);
 
   block_length =  dlsch_tbs25[get_I_TBS(mcs)][NB_RB-1]>>3;
@@ -638,33 +621,7 @@ int main(int argc, char *argv[]) {
 	       3);
  */ //  exit(0);
 
-  if (!dlsch_eNb) {
-    printf("Can't get eNb dlsch structures\n");
-    exit(-1);
-  }
 
-  if (!dlsch_ue) {
-    printf("Can't get ue dlsch structures\n");
-    exit(-1);
-  }
-  dlsch_eNb->harq_processes[0]->mimo_mode          = mimo_mode;
-  dlsch_eNb->layer_index        = 0;
-  dlsch_eNb->harq_processes[0]->Nl                 = 1;
-  dlsch_eNb->harq_processes[0]->mcs                = mcs;
-  dlsch_eNb->harq_processes[0]->TBS                = dlsch_tbs25[get_I_TBS(dlsch_eNb->harq_processes[0]->mcs)][NB_RB-1]; 
-  dlsch_eNb->nb_rb  = 25;
-  dlsch_eNb->harq_processes[0]->rvidx = 0;
-  dlsch_eNb->harq_processes[0]->Ndi = 1;
-  dlsch_eNb->current_harq_pid = 0;
-
-  dlsch_ue->harq_processes[0]->mimo_mode           = mimo_mode;
-  dlsch_ue->layer_index        = 0;
-  dlsch_ue->harq_processes[0]->Nl                  = 1;
-  dlsch_ue->harq_processes[0]->mcs                 = mcs;
-  dlsch_ue->harq_processes[0]->TBS                 = dlsch_tbs25[get_I_TBS(dlsch_ue->harq_processes[0]->mcs)][NB_RB-1]; 
-  dlsch_ue->harq_processes[0]->Ndi = 1;
-  dlsch_ue->nb_rb = 25; 
-  dlsch_ue->current_harq_pid = 0;
 
   for (SNR=-2;SNR<16;SNR+=.2) {
 
@@ -684,8 +641,8 @@ int main(int argc, char *argv[]) {
     
 
     
-    ret = test_logmap8(dlsch_eNb,
-		       dlsch_ue,
+    ret = test_logmap8(PHY_vars_eNb->dlsch_eNb[0][0],
+		       PHY_vars_UE->dlsch_ue[0][0],
 		       coded_bits,
 		       NB_RB,
 		       sigma,   // noise standard deviation

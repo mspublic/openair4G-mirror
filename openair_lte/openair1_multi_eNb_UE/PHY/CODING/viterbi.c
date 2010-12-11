@@ -409,6 +409,9 @@ void print_bytes(__m128i x,char *s) {
 */
 
 #ifdef TEST_DEBUG
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 int test_viterbi()
 {
   unsigned char test[8];
@@ -445,6 +448,11 @@ int test_viterbi()
   memset(decoded_output,0,16);
   phy_viterbi_dot11(channel_output,decoded_output,64);
 
+  printf("Input               :");
+  for (i =0 ; i<8 ; i++)
+    printf("%x ",inPtr[i]);
+  printf("\n");
+
   printf("Unoptimized Viterbi :");
   for (i =0 ; i<8 ; i++)
     printf("%x ",decoded_output[i]);
@@ -452,7 +460,7 @@ int test_viterbi()
 
   memset(decoded_output,0,16);
   phy_viterbi_dot11_sse2(channel_output,decoded_output,64);
-  printf("Optimized Viterbi :");
+  printf("Optimized Viterbi   :");
   for (i =0 ; i<8 ; i++)
     printf("%x ",decoded_output[i]);
   printf("\n");
@@ -464,11 +472,11 @@ int test_viterbi()
 
 
 
-void main() {
+int main() {
 
 
   test_viterbi();
-
+  return(0);
 }
 
 #endif // TEST_DEBUG

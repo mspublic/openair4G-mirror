@@ -15,17 +15,18 @@
 
 #endif
 
-#include "PHY/types.h"
+//#include "PHY/types.h"
+
 #include "defs.h"
 
 
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
-u32             poly24a = 0xc656fb00;    //1100 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
-u32             poly24b = 0x80006300;    // 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1
-u32             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
-u32             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
-u32             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
+unsigned int             poly24a = 0xc656fb00;    //1100 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
+unsigned int             poly24b = 0x80006300;    // 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1
+unsigned int             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
+unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
+unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
 /*********************************************************
 
 For initialization && verification purposes, 
@@ -68,9 +69,9 @@ void crcTableInit (void)
   do {
     crc24aTable[c] = crcbit (&c, 1, poly24a);
     crc24bTable[c] = crcbit (&c, 1, poly24b);
-    crc16Table[c] = (u16) (crcbit (&c, 1, poly16) >> 16);
-    crc12Table[c] = (u16) (crcbit (&c, 1, poly12) >> 16);
-    crc8Table[c] = (u8) (crcbit (&c, 1, poly8) >> 24);
+    crc16Table[c] = (unsigned short) (crcbit (&c, 1, poly16) >> 16);
+    crc12Table[c] = (unsigned short) (crcbit (&c, 1, poly12) >> 16);
+    crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
   } while (++c);
 }
 /*********************************************************
@@ -168,7 +169,7 @@ crc8 (unsigned char * inptr, int bitlen)
 
 main()
 {
-  u8 test[] = "Thebigredfox";
+  unsigned char test[] = "Thebigredfox";
   crcTableInit();
   printf("%x\n", crcbit(test, sizeof(test) - 1, poly24));
   printf("%x\n", crc24(test, (sizeof(test) - 1)*8));

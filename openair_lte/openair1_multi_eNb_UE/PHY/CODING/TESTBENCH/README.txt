@@ -5,12 +5,9 @@ This directory contains a testbench for performance evalulation (antipodal modul
 Files:
 
 Makefile                 : Makefile for generating the two testbenches
-ltetest.c                : Testbench for LTE Turbo code and WIFI/WIMAX 
-			   convolutional code with rate matching.  Compares the
-			   performance of the two for equal rates and variable
-			   transport block sizes
-viterbi.c		 : Testbench for Viterbi decoder
+ltetest.c                : Testbench for LTE Turbo code (rate 1/3 terminated code).  Performs LTE rate-matching 
+			   for different mcs.
+viterbi_test.c		 : Testbench for 802.11 Viterbi decoder (rate 1/2 terminated code)
 
-Directories:
-
-TESTBENCH                : Testbench for channel coding/decoding
+pdcch_test.c             : Testbench for LTE PDCCH/DCI encoding/decoding (rate 1/3 Tail-biting code). Performs LTE rate-matching
+			   and allows testing different aggregation levels and DCI sizes.

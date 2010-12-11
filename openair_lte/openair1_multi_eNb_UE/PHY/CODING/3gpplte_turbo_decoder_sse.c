@@ -27,10 +27,19 @@ static short zero[8]={0,0,0,0,0,0,0,0};
 #include "smmintrin.h"
 #endif
 
+#ifndef TEST_DEBUG 
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 
+#else
+
+#include "defs.h"
+#define msg printf
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
 
 typedef short llr_t; // internal decoder data is 16-bit fixed
 typedef short channel_t;
@@ -838,7 +847,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
-      //      msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      //     msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:
@@ -885,47 +894,59 @@ int test_logmap8()
 
   short channel_output[512];
   unsigned char output[512],decoded_output[16];
-  unsigned int i;
-
+  unsigned int i,crc,ret;
   
   test[0] = 7;
   test[1] = 0xa5;
-  test[2] = 0;
-  test[3] = 0xfe;
-  test[4] = 0x1a;
-  test[5] = 0x0;
-  //  test[5] = 0x33;
-  //  test[6] = 0x99;
-  //  test[7] = 0;
-  
+  test[2] = 0x11;
+  test[3] = 0x92;
+  test[4] = 0xfe;
 
-  threegpplte_turbo_encoder(test,
-			    5, 
-			    output,
-			    3,
-			    10);
+  crcTableInit();
 
-  for (i = 0; i < 132; i++){
+  crc = crc24a(test,
+	       40)>>8;
+    
+  *(unsigned int*)(&test[5]) = crc;
+ 
+  printf("crc24 = %x\n",crc);
+  threegpplte_turbo_encoder(test,   //input
+			    8,      //input length bytes
+			    output, //output
+			    0,      //filler bits
+			    7,      //interleaver f1
+			    16);    //interleaver f2
+
+  for (i = 0; i < 204; i++){
     channel_output[i] = 15*(2*output[i] - 1);
     //    msg("Position %d : %d\n",i,channel_output[i]);
   }
 
   memset(decoded_output,0,16);
-  phy_threegpplte_turbo_decoder(channel_output,decoded_output,40,3,10,6,3);
+  ret = phy_threegpplte_turbo_decoder(channel_output,
+				      decoded_output,
+				      64,       // length bits
+				      7,        // interleaver f1
+				      16,       // interleaver f2
+				      6,        // max iterations
+				      CRC24_A,  // CRC type (CRC24_A,CRC24_B)
+				      0,        // filler bits
+				      0);       // decoder instance
 
-
-
-
+  printf("Number of iterations %d\n",ret);
+  for (i=0;i<8;i++)
+    printf("output %d => %x (input %x)\n",i,decoded_output[i],test[i]);
 }
 
 
 
 
-void main() {
+int main() {
 
 
   test_logmap8();
 
+  return(0);
 }
 
 #endif // TEST_DEBUG
