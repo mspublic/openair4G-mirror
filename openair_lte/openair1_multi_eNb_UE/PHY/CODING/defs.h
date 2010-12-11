@@ -299,6 +299,14 @@ void ccodelte_init(void);
 \brief This function initializes the trellis structure for decoding an LTE convolutional code.*/
 void ccodelte_init_inv(void);
 
+/*!\fn void ccodelte_init(void)
+\brief This function initializes the generator polynomials for an DAB convolutional code (first 3 bits).*/
+void ccodedab_init(void);
+
+/*!\fn void ccodelte_init_inv(void)
+\brief This function initializes the trellis structure for decoding an DAB convolutional code (first 3 bits).*/
+void ccodedab_init_inv(void);
+
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);

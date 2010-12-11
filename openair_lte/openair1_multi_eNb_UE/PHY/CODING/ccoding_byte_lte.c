@@ -9,6 +9,8 @@
 
 unsigned short glte[] = { 0133, 0171, 0165 }; // {A,B}
 unsigned short glte_rev[] = { 0155, 0117, 0127 }; // {A,B}   
+unsigned short gdab[] = { 0133, 0171, 0145 }; // {A,B}
+unsigned short gdab_rev[] = { 0155, 0117, 0123 }; // {A,B}   
 unsigned char  ccodelte_table[128];      // for transmitter
 unsigned char  ccodelte_table_rev[128];  // for receiver
 
@@ -243,6 +245,42 @@ void ccodelte_init_inv(void)
   }
 }
 
+void ccodedab_init(void)
+{
+  unsigned int  i, j, k, sum;
+
+  for (i = 0; i < 128; i++) {
+    ccodelte_table[i] = 0;
+    /* Compute 3 output bits */
+    for (j = 0; j < 3; j++) {
+      sum = 0;
+      for (k = 0; k < 7; k++)
+        if ((i & gdab[j]) & (1 << k))
+          sum++;
+      /* Write the sum modulo 2 in bit j */
+      ccodelte_table[i] |= (sum & 1) << j;
+    }
+  }
+}
+
+/* Input in LSB, followed by state in 6 MSBs */
+void ccodedab_init_inv(void)
+{
+  unsigned int  i, j, k, sum;
+
+  for (i = 0; i < 128; i++) {
+    ccodelte_table_rev[i] = 0;
+    /* Compute R output bits */
+    for (j = 0; j < 3; j++) {
+      sum = 0;
+      for (k = 0; k < 7; k++)
+        if ((i & gdab_rev[j]) & (1 << k))
+          sum++;
+      /* Write the sum modulo 2 in bit j */
+      ccodelte_table_rev[i] |= (sum & 1) << j;
+    }
+  }
+}
 
 
 /*****************************************************************/

@@ -405,7 +405,7 @@ void print_bytes(__m128i x,char *s) {
 */
 
 #ifdef TEST_DEBUG
-int test_viterbi()
+int test_viterbi(unsigned char dabflag)
 {
   unsigned char test[8];
   //_declspec(align(16))  char channel_output[512];
@@ -425,10 +425,15 @@ int test_viterbi()
   test[6] = 0x99;
   test[7] = 0x14;
   
-
-  ccodelte_init();
-  ccodelte_init_inv();
-  
+  if (dabflag==0) {
+    ccodelte_init();
+    ccodelte_init_inv();
+  }
+  else {
+    ccodedab_init();
+    ccodedab_init_inv();
+    printf("Running with DAB polynomials\n");
+  }
   inPtr = test;
   outPtr = output;
   phy_generate_viterbi_tables_lte();
@@ -452,10 +457,17 @@ int test_viterbi()
 
 
 
-int main() {
+int main(int argc, char **argv) {
 
+  char c;
+  unsigned char dabflag=0;
 
-  test_viterbi();
+  while ((c = getopt (argc, argv, "d")) != -1) {
+    if (c=='d')
+      dabflag=1;
+  }
+
+  test_viterbi(dabflag);
   return(0);
 }
 
