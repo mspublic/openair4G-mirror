@@ -4,8 +4,9 @@
  Company : EURECOM
  Emails  : anouar@eurecom.fr
 ________________________________________________________________*/
+#include "PHY/defs.h"
 #include "defs.h"
-#include "vars.h"
+#include "extern.h"
 //#include "mac_extern.h"
 
 #ifdef USER_MODE
@@ -41,16 +42,16 @@ int bypass_rx_data (void){
   int             bytes_data_to_read;
   int             num_flows;
   int             current_flow;  
-  unsigned int Wahed=1;
-  pthread_mutex_lock(&Mac_low_mutex);
-  if(Mac_low_mutex_var){
+
+  pthread_mutex_lock(&emul_low_mutex);
+  if(emul_low_mutex_var){
     //    msg("[BYPASS] WAIT BYPASS_PHY...\n");
-    pthread_cond_wait(&Mac_low_cond, &Mac_low_mutex); 
+    pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
   }
   if(num_bytesP==0){
     //msg("[BYPASS] IDLE_WAIT\n");
     //exit(0);
-    pthread_mutex_unlock(&Mac_low_mutex);
+    pthread_mutex_unlock(&emul_low_mutex);
   }
   else{
     // msg("[BYPASS] BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
@@ -67,12 +68,12 @@ int bypass_rx_data (void){
       switch(Emulation_status){
       case WAIT_PM_CT:
 	if(messg->M_id == 0){
-	  Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  //    msg("[BYPASS] RX_PRIMARY_MASTER_CONTROL_MESSAGE \n");
 	}
 	break;
       case WAIT_EM_CT:
-	  Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  //msg("[BYPASS] RX_MASTER %d CONTROL_MESSAGE\n",messg->M_id);
 	
 	break;
@@ -80,12 +81,12 @@ int bypass_rx_data (void){
 	/*      case WAIT_CH_CT:
 	if(!Is_primary_master){
 	  if(messg->M_id == 0){
-	    Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	    Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	    //    msg("[BYPASS] RX_PRIMARY_MASTER_CONTROL_MESSAGE \n");
 	  }
 	}
 	else{
-	  Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  //msg("[BYPASS] RX_MASTER %d CONTROL_MESSAGE\n",messg->M_id);
 	}
 	break;
@@ -93,7 +94,7 @@ int bypass_rx_data (void){
       case WAIT_CHBCH_DATA:
 	if(messg->Message_type == BYPASS_CHBCH_DATA){
 	  // msg("[BYPASS] RX_CH_DATA_MESSAGE from Master %d \n",messg->M_id);
-	  Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  current_flow = 0;
 	  num_flows = messg->Nb_flows;
 	  //msg("[BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
@@ -107,7 +108,7 @@ int bypass_rx_data (void){
       case WAIT_UL_DL_DATA:
 	if(messg->Message_type == BYPASS_UL_DL_DATA){
 	  //	  msg("[BYPASS] RX_UE_DATA_MESSAGE from Master%d \n",messg->M_id);
-	  Master_list_rx=((Master_list_rx) |(Wahed<< messg->M_id));
+	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  current_flow = 0;
 	  num_flows = messg->Nb_flows;
 	  //msg("[BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
@@ -127,10 +128,10 @@ int bypass_rx_data (void){
     }
   
     num_bytesP=0;
-    Mac_low_mutex_var=1; 
+    emul_low_mutex_var=1; 
     //msg("[BYPASS] CALLING_SIGNAL_HIGH_MAC\n");
-    pthread_cond_signal(&Mac_low_cond);
-    pthread_mutex_unlock(&Mac_low_mutex);
+    pthread_cond_signal(&emul_low_cond);
+    pthread_mutex_unlock(&emul_low_mutex);
     bypass_signal_mac_phy();
 
 
@@ -155,9 +156,9 @@ int bypass_rx_handler(unsigned int fifo, int rw){
       // printk("BYTES_READ=%d\n",bytes_read);
       if (bytes_read > 0) {
 	num_bytesP=header_bytes+bytes_read;
-	Mac_low_mutex_var=0;
+	emul_low_mutex_var=0;
 	//printk("BYPASS_PHY SIGNAL MAC_LOW...\n");
-	pthread_cond_signal(&Mac_low_cond);
+	pthread_cond_signal(&emul_low_cond);
       }
     }
     // }
@@ -169,17 +170,17 @@ void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer){
 /******************************************************************************************************/ 
 //  msg("[BYPASS] BYPASS RX_HANDLER IN ...\n");
   if(Num_bytes >0){
-    pthread_mutex_lock(&Mac_low_mutex);
-    while(!Mac_low_mutex_var){
+    pthread_mutex_lock(&emul_low_mutex);
+    while(!emul_low_mutex_var){
       //    msg("[BYPASS] BYPASS: WAIT MAC_LOW...\n");
-      pthread_cond_wait(&Mac_low_cond, &Mac_low_mutex); 
+      pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
     }
     num_bytesP=Num_bytes;
     memcpy(rx_bufferP,Rx_buffer,Num_bytes);
-    Mac_low_mutex_var=0;
+    emul_low_mutex_var=0;
     //msg("[BYPASS] RX_HANDLER SIGNAL MAC_LOW\n");
-    pthread_cond_signal(&Mac_low_cond); //on ne peut que signaler depuis un context linux (rtf_handler); pas de wait, jamais!!!!!!
-    pthread_mutex_unlock(&Mac_low_mutex);
+    pthread_cond_signal(&emul_low_cond); //on ne peut que signaler depuis un context linux (rtf_handler); pas de wait, jamais!!!!!!
+    pthread_mutex_unlock(&emul_low_mutex);
   }
 }
 #endif //USER_MODE
@@ -234,6 +235,8 @@ void bypass_tx_data(char Type){
   messg = (bypass_msg_header_t *) (&bypass_tx_buffer[sizeof (bypass_proto2multicast_header_t)]);
   num_flows = 0;
   byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (bypass_proto2multicast_header_t);
+
+
   if(Type==CHBCH_DATA){
     messg->Message_type = BYPASS_CHBCH_DATA;
     tx_handler(CHBCH_DATA,bypass_tx_buffer, &byte_tx_count, &num_flows);

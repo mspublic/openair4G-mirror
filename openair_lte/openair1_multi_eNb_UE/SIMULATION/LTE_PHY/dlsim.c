@@ -97,13 +97,14 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
 		  PHY_vars_UE->lte_ue_pbch_vars,
 		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE);
+		  PHY_vars_UE,0);
 
   phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
 		   &PHY_vars_eNb->lte_eNB_common_vars,
 		   PHY_vars_eNb->lte_eNB_ulsch_vars,
 		   0,
 		   PHY_vars_eNb,
+		   0,
 		   0,
 		   0);
 

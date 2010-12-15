@@ -13,6 +13,8 @@
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "SIMULATION/ETH_TRANSPORT/vars.h"
+#include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
@@ -52,6 +54,18 @@
 #ifdef OPENAIR2
 u16 NODE_ID[1];
 u8 NB_INST=2;
+
+void init_bypass() {
+
+  msg("[PHYSIM] INIT BYPASS\n");      
+  pthread_mutex_init(&Tx_mutex,NULL);
+  pthread_cond_init(&Tx_cond,NULL);
+  Tx_mutex_var=1; 
+  pthread_mutex_init(&emul_low_mutex,NULL);
+  pthread_cond_init(&emul_low_cond,NULL);
+  emul_low_mutex_var=1; 
+  bypass_init(emul_tx_handler,emul_rx_handler);
+}
 
 void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
 
@@ -702,6 +716,8 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
+  u8 nb_ue_local=1,nb_ue_remote=0;
+  u8 nb_eNB_local=1,nb_eNB_remote=0;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -724,7 +740,7 @@ int main(int argc, char **argv) {
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "haetx:m:rn:s:f:u:M:")) != -1)
+  while ((c = getopt (argc, argv, "haetx:m:rn:s:f:u:U:v:V:M:")) != -1)
     {
       switch (c)
 	{
@@ -756,7 +772,16 @@ int main(int argc, char **argv) {
 	  forgetting_factor = atof(optarg);
 	  break;
 	case 'u':
-	  NB_UE_INST=atoi(optarg);
+	  nb_ue_local = atoi(optarg);
+	  break;
+	case 'U':
+	  nb_ue_remote = atoi(optarg);
+	  break;
+	case 'b':
+	  nb_eNB_local = atoi(optarg);
+	  break;
+	case 'B':
+	  nb_eNB_remote = atoi(optarg);
 	  break;
 	case 'a':
 	  abstraction_flag=1;
@@ -776,6 +801,8 @@ int main(int argc, char **argv) {
 	}
     }
 
+  NB_UE_INST = nb_ue_local + nb_ue_remote;
+  NB_CH_INST = nb_eNB_local + nb_eNB_remote;
 
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
@@ -835,7 +862,8 @@ int main(int argc, char **argv) {
 		     0,
 		     PHY_vars_eNb_g[eNB_id],
 		     0,
-		     0);
+		     0,
+		     abstraction_flag);
     
     /*
       PHY_vars_eNb_g[eNB_id]->dlsch_eNb[0] = (LTE_eNb_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNb_DLSCH_t*));
@@ -890,7 +918,8 @@ int main(int argc, char **argv) {
 		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars_ra,
 		    PHY_vars_UE_g[UE_id]->lte_ue_pbch_vars,
 		    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars,
-		    PHY_vars_UE_g[UE_id]);
+		    PHY_vars_UE_g[UE_id],
+		    abstraction_flag);
 
     /*
       PHY_vars_UE_g[UE_id]->dlsch_ue[0] = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
@@ -988,7 +1017,8 @@ int main(int argc, char **argv) {
   }
   else {
     if (ethernet_flag == 1) {
-      ret=netlink_init();
+//      ret=netlink_init();
+        init_bypass();
     }
   }   
 
@@ -1077,7 +1107,10 @@ int main(int argc, char **argv) {
 #ifdef OPENAIR2
   l2_init(PHY_vars_eNb_g[0]);
 
-  mac_xface->mrbch_phy_sync_failure(0,0);
+
+
+  if (NB_CH_INST>0)
+    mac_xface->mrbch_phy_sync_failure(0,0);
 #ifdef DEBUG_SIM
   printf("[SIM] Synching to eNB\n");
 #endif

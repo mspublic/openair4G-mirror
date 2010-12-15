@@ -739,7 +739,7 @@ int main(int argc, char **argv) {
       // scale by path_loss = NOW - P_noise
       //sigma2       = pow(10,sigma2_dB/10);
       //N0W          = -95.87;
-      sigma2_dB = (double)tx_lev_dB +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/(300*PHY_vars_eNb->lte_frame_parms.nb_antennas_tx)) - SNR;
+      sigma2_dB = (double)tx_lev_dB +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/300) - SNR;
       if (n_frames==1)
 	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %d\n",sigma2_dB,SNR,tx_lev_dB);
       //AWGN

@@ -119,7 +119,10 @@ typedef enum {
   SCM_A,
   SCM_B,
   SCM_C,
-  SCM_D
+  SCM_D,
+  EPA,
+  EVA,
+  ETU
 } SCM_t;
 
 /** 

@@ -58,6 +58,14 @@ void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer);
 
 void bypass_tx_data (char Type);
 
+void emulation_tx_rx(void);
+
+unsigned int emul_tx_handler(unsigned char Mode,char *Tx_buffer,unsigned int* Nbytes,unsigned int *Nb_flows);
+unsigned int emul_rx_handler(unsigned char Mode,char *rx_buffer, unsigned int Nbytes);
+
+unsigned int emul_rx_data(void);
+
+
 /*************************************************************/
 
 #endif //

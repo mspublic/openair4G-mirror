@@ -132,7 +132,7 @@ double compute_sinr(channel_desc_t *desc,
 }
 
 u8 pbch_polynomial_degree;
-double a[6];
+double a[7];
 
 void load_pbch_desc(FILE *pbch_file_fd) {
 
@@ -140,7 +140,7 @@ void load_pbch_desc(FILE *pbch_file_fd) {
   char dummy[25];
 
   fscanf(pbch_file_fd,"%d",&pbch_polynomial_degree);
-  if (pbch_polynomial_degree>5) {
+  if (pbch_polynomial_degree>6) {
     printf("Illegal degree for pbch interpolation polynomial\n",pbch_polynomial_degree);
     exit(-1);
   }

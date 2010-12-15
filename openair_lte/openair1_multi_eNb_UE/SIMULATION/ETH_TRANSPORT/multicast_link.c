@@ -67,7 +67,7 @@ multicast_link_init ()
     group_list[group].socket = make_socket_inet (SOCK_DGRAM, &group_list[group].port, &sin);
 
     if (setsockopt (group_list[group].socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof (reuse_addr)) < 0) {
-            msg ("setsockopt:SO_REUSEADDR");
+            msg ("[MULTICAST] ERROR : setsockopt:SO_REUSEADDR, exiting ...");
       exit (EXIT_FAILURE);
     }
 
@@ -76,18 +76,18 @@ multicast_link_init ()
     //
     multicast_loop = 0;
     if (setsockopt (group_list[group].socket, IPPROTO_IP, IP_MULTICAST_LOOP, &multicast_loop, sizeof (multicast_loop)) < 0) {
-      msg ("ERROR: %s line %d multicast_link_main_loop() IP_MULTICAST_LOOP %m", __FILE__, __LINE__);
+      msg ("[MULTICAST] ERROR: %s line %d multicast_link_main_loop() IP_MULTICAST_LOOP %m", __FILE__, __LINE__);
       exit (EXIT_FAILURE);
     }
     // Join the broadcast group:
     command.imr_multiaddr.s_addr = inet_addr (group_list[group].host_addr);
     command.imr_interface.s_addr = htonl (INADDR_ANY);
     if (command.imr_multiaddr.s_addr == -1) {
-       msg ("ERROR: %s line %d NO MULTICAST", __FILE__, __LINE__);
+       msg ("[MULTICAST] ERROR: %s line %d NO MULTICAST", __FILE__, __LINE__);
       exit (EXIT_FAILURE);
     }
     if (setsockopt (group_list[group].socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &command, sizeof (command)) < 0) {
-       msg ("ERROR: %s line %d IP_ADD_MEMBERSHIP %m", __FILE__, __LINE__);
+       msg ("[MULTICAST] ERROR: %s line %d IP_ADD_MEMBERSHIP %m", __FILE__, __LINE__);
       exit (EXIT_FAILURE);
     }
 
@@ -234,13 +234,13 @@ multicast_link_start (  void (*rx_handlerP) (unsigned int, char*))
 {
   //-----------------------------------------------------------------------------
   rx_handler = rx_handlerP;
-  msg("MULTICAST LINK START: handler=%p\n",rx_handler);
+  msg("[MULTICAST] LINK START: handler=%p\n",rx_handler);
 #ifdef BYPASS_PHY  
   //  pthread_mutex_init(&Bypass_phy_wr_mutex,NULL);
   //pthread_cond_init(&Bypass_phy_wr_cond,NULL);
   //Bypass_phy_wr=0;
 #endif //BYPASS_PHY
-multicast_link_init ();
+  multicast_link_init ();
 
   if (pthread_create (&main_loop_thread, NULL, multicast_link_main_loop, NULL) != 0) {
     msg ("[MULTICAST LINK] Thread started");

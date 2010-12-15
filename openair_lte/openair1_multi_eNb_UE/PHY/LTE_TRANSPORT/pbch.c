@@ -321,6 +321,7 @@ u16 pbch_extract(int **rxdataF,
     for (aatx=0;aatx<4;aatx++) {//frame_parms->nb_antennas_tx;aatx++) {
       dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size))];
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*(6*12)];
+
       for (rb=0; rb<nb_rb; rb++) {
 	// skip DC carrier
 	// if (rb==3) dl_ch0++;
@@ -344,7 +345,7 @@ u16 pbch_extract(int **rxdataF,
 	  dl_ch0_ext+=8;
 	}
      }
-    }
+    }  //tx antenna loop
 
   }
 
@@ -587,7 +588,7 @@ void pbch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
   u8 rb,re,symbol_mod;
   int jj;
 
-
+  //  printf("Doing alamouti\n");
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   jj         = (symbol_mod*6*12);
 

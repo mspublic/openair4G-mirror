@@ -118,6 +118,7 @@ typedef struct
 {
   /// Module ID indicator for this instance
   u8 Mod_id;
+  u8 local_flag;
   unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
@@ -169,6 +170,7 @@ typedef struct
 {
   /// Module ID indicator for this instance
   u8 Mod_id;
+  u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 

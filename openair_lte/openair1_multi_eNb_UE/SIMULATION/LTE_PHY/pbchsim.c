@@ -338,6 +338,10 @@ int main(int argc, char **argv) {
 	  break;
 	}
     }
+
+  if (transmission_mode==2)
+    n_tx=2;
+
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell);
 
 
@@ -557,6 +561,10 @@ int main(int argc, char **argv) {
     dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
     dci_alloc[0].L          = 3;
     dci_alloc[0].rnti       = 0x1234;    
+    memcpy(&dci_alloc[1].dci_pdu[1],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+    dci_alloc[1].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+    dci_alloc[1].L          = 3;
+    dci_alloc[1].rnti       = 0x1234;    
     
     printf("Generating PBCH for mode1_flag = %d\n", PHY_vars_eNb->lte_frame_parms.mode1_flag);
     
@@ -567,7 +575,7 @@ int main(int argc, char **argv) {
 		    0,
 		    2);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
     
-    num_pdcch_symbols = generate_dci_top(1,
+    num_pdcch_symbols = generate_dci_top(2,
 					 0,
 					 dci_alloc,
 					 0,
@@ -575,7 +583,10 @@ int main(int argc, char **argv) {
 					 &PHY_vars_eNb->lte_frame_parms,
 					 PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 					 0);
-    
+    if (num_pdcch_symbols<3) {
+      printf("Less than 3 pdcch symbols\n");
+      exit(-1);
+    }
     generate_pbch(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 		  1024,
 		  &PHY_vars_eNb->lte_frame_parms,
@@ -678,7 +689,7 @@ int main(int argc, char **argv) {
     else {
       normal_prefix_mod(txdataF2[aa],txdata[aa],2*nsymb,frame_parms);
     }
-    tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*2],
+    tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
 			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     
 #else
@@ -706,7 +717,7 @@ int main(int argc, char **argv) {
 			  frame_parms);
       }
       
-      tx_lev += signal_energy(&txdata[aa][0],
+      tx_lev += signal_energy(&txdata[aa][2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
 			      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     }
     
@@ -834,12 +845,13 @@ int main(int argc, char **argv) {
 
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-
+	  	  
 	  multipath_channel(eNB2UE1,s_re1,s_im1,r_re1,r_im1,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 
-	  multipath_channel(eNB2UE2,s_re1,s_im2,r_re2,r_im2,
+	  multipath_channel(eNB2UE2,s_re2,s_im2,r_re2,r_im2,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	  
 	  if (abstraction_flag == 1) {
 	    freq_channel(eNB2UE,25);
 	    freq_channel(eNB2UE1,25);
@@ -859,17 +871,18 @@ int main(int argc, char **argv) {
       }
       
       sigma2_dB = 10*log10((double)tx_lev) +10*log10(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)) - SNR;
-      //	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
+      if (n_frames==1)
+	printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
       //AWGN
       sigma2 = pow(10,sigma2_dB/10);
       //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
-      /*      
-      if (trial==0) {
+            
+      if (n_frames==1) {
 	printf("rx_level data symbol %f, tx_lev %f\n",
 	       10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0)),
 	       10*log10(tx_lev));
       }
-      */
+      
       for (n_trials=0;n_trials<ntrials;n_trials++) {
 	//printf("n_trial %d\n",n_trials);
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
@@ -1023,7 +1036,7 @@ int main(int argc, char **argv) {
       if (abstraction_flag==1) {
 	printf("SNR %f : n_errors = %d/%d, n_alamouti %d\n", SNR,n_errors,ntrials,n_alamouti);
 	if (write_output_file==1)
-	  fprintf(output_fd,"%f %f %e \n",SNR,pbch_sinr,(double)n_errors/ntrials,(double)n_errors*n_errors/ntrials/ntrials);
+	  fprintf(output_fd,"%f %f %e %e\n",SNR,pbch_sinr,(double)n_errors/ntrials,pbch_bler(pbch_sinr));
       }
       n_errors=0;
       if ((abstraction_flag==0) && (n_errors2>1000) && (trial>5000))
@@ -1037,7 +1050,10 @@ int main(int argc, char **argv) {
   } // NSR
 
   if (n_frames==1) {
+
     write_output("H00.m","h00",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
+    if (n_tx==2)
+      write_output("H10.m","h10",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
     write_output("rxsig0.m","rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],2*frame_parms->samples_per_tti,1,1);
     write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);    
     write_output("PBCH_rxF0_ext.m","pbch0_ext",PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);

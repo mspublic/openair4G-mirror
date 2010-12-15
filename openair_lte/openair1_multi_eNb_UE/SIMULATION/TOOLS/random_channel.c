@@ -102,6 +102,15 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
 double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
 
+double epa_delays[] = { 0,.03,.07,.09,.11,.19,.41};
+double epa_amps_dB[] = {0.0,-1.0,-2.0,-3.0,-8.0,-17.2,-20.8};
+
+double eva_delays[] = { 0,.03,.15,.31,.37,.71,1.09,1.73,2.51};
+double eva_amps_dB[] = {0.0,-1.5,-1.4,-3.6,-0.6,-9.1,-7.0,-12.0,-16.9};
+
+double etu_delays[] = { 0,.05,.12,.2,.23,.5,1.6,2.3,5.0};
+double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
+
 channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
@@ -177,6 +186,129 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     msg("channel model not yet supported\n");
     free(chan_desc);
     return(NULL);
+  case EPA:
+    chan_desc->nb_taps        = 7;
+    chan_desc->Td             = .410;
+    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*epa_amps_dB[i]); 
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = epa_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+    for (i = 0; i<chan_desc->nb_taps; i++) 
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
+    }
+    else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	  chan_desc->R_sqrt[i][j].r = 1.0;
+	  chan_desc->R_sqrt[i][j].i = 0.0;
+	}
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }
+    break;
+  case EVA:
+    chan_desc->nb_taps        = 9;
+    chan_desc->Td             = 2.51;
+    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*eva_amps_dB[i]); 
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = eva_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+    for (i = 0; i<chan_desc->nb_taps; i++) 
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
+    }
+    else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	  chan_desc->R_sqrt[i][j].r = 1.0;
+	  chan_desc->R_sqrt[i][j].i = 0.0;
+	}
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }
+    break;
+  case ETU:
+    chan_desc->nb_taps        = 9;
+    chan_desc->Td             = 5.0;
+    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    sum_amps = 0;
+    chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
+    for (i = 0; i<chan_desc->nb_taps; i++) {
+      chan_desc->amps[i]      = pow(10,.1*etu_amps_dB[i]); 
+      sum_amps += chan_desc->amps[i];
+    }
+    for (i = 0; i<chan_desc->nb_taps; i++)
+      chan_desc->amps[i] /= sum_amps;
+    chan_desc->delays         = etu_delays;
+    chan_desc->ricean_factor  = 1;
+    chan_desc->aoa            = 0;
+    chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+    chan_desc->a              = (struct complex**) malloc(chan_desc->nb_taps*sizeof(struct complex*));
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
+    for (i = 0; i<nb_tx*nb_rx; i++) 
+      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+    for (i = 0; i<chan_desc->nb_taps; i++) 
+      chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
+    if (nb_tx==2 && nb_rx==2) {
+      chan_desc->R_sqrt  = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) 
+	chan_desc->R_sqrt[i] = (struct complex*) &R22_sqrt[i][0];
+    }
+    else {
+      chan_desc->R_sqrt         = (struct complex**) malloc(6*sizeof(struct complex**));
+      for (i = 0; i<6; i++) {
+	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
+	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+	  chan_desc->R_sqrt[i][j].r = 1.0;
+	  chan_desc->R_sqrt[i][j].i = 0.0;
+	}
+	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
+      }
+    }
+    break;
   default:
     msg("channel model not yet supported\n");
     free(chan_desc);
