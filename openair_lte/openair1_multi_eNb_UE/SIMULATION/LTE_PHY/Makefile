@@ -1,5 +1,5 @@
 CC = $(shell if [ $(OSTYPE) = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi)
-#CC = gcc-4
+#CC = gcc-4.3
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -9,7 +9,7 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi
 
 TOP_DIR = ../..
 
-CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
+CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb -static $(CPUFLAGS) 
 
 #CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
 
@@ -72,7 +72,7 @@ $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ2) dlsim.c
-	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) /usr/lib/libblas.a -lm 
+	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) -lm -lblas 
 
 pbchsim : $(OBJ2) pbchsim.c
 	$(CC) pbchsim.c -I$(TOP_DIR) -o pbchsim $(CFLAGS) $(OBJ2) -lm -lblas
@@ -91,6 +91,7 @@ ulsim2 : $(OBJ2) ulsim2.c
 
 physim : $(OBJ) phy_procedures_sim.c 
 	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) -lm
+
 physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
 	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
 

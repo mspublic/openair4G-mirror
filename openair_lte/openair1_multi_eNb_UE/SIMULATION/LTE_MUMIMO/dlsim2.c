@@ -14,7 +14,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-//#define AWGN
+#define AWGN
 #define NO_DCI
 
 #define BW 7.68
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
   double blerr;
   int ch_realization;
 
-  int eNB_id,UE_id,NB_UE_INST=2,NB_CH_INST=1;
+  int eNB_id,UE_id,NB_UE_INST=1,NB_CH_INST=1;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 
   // Init simulation parameters
 
-  transmission_mode = 5;
+  transmission_mode = 6;
   num_layers = 1;
   mcs = 0;
   n_frames = 100;
@@ -551,7 +551,19 @@ int main(int argc, char **argv) {
       dci_alloc[UE_id].rnti       = PHY_vars_eNb_g[0]->eNB_UE_stats[UE_id].crnti;
       dci_alloc[UE_id].format     = format2_2A_M10PRB;
       num_ue_spec_dci++;
+    }
 
+    num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
+					 num_common_dci,
+					 dci_alloc,
+					 0,
+					 1024,
+					 &PHY_vars_eNb_g[0]->lte_frame_parms,
+					 PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
+					 0);
+    printf("Num_pddch_symbols %d\n",num_pdcch_symbols);
+
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       // DLSCH
       input_buffer_length = PHY_vars_eNb_g[0]->dlsch_eNb[UE_id][0]->harq_processes[0]->TBS/8;
     
@@ -624,6 +636,16 @@ int main(int argc, char **argv) {
     dci_alloc[0].format     = format1A;
     num_common_dci++;
     
+    num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
+					 num_common_dci,
+					 dci_alloc,
+					 0,
+					 1024,
+					 &PHY_vars_eNb_g[0]->lte_frame_parms,
+					 PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
+					 0);
+    printf("Num_pddch_symbols %d\n",num_pdcch_symbols);
+
     input_buffer_length = PHY_vars_eNb_g[0]->dlsch_eNb_SI->harq_processes[0]->TBS/8;
     printf("Input buffer size %d bytes\n",input_buffer_length);
     
@@ -687,23 +709,12 @@ int main(int argc, char **argv) {
 
   }
 
-  generate_dci_top(num_ue_spec_dci,
-		   num_common_dci,
-		   dci_alloc,
-		   0,
-		   1024,
-		   &PHY_vars_eNb_g[0]->lte_frame_parms,
-		   PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
-		   0);
-
   generate_pilots(PHY_vars_eNb_g[0]->lte_eNB_common_vars.txdataF[sector_id],
 		  1024,
 		  &PHY_vars_eNb_g[0]->lte_frame_parms,
 		  sector_id,
 		  LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
   
-
-
 #ifdef IFFT_FPGA
 
 #ifdef OUTPUT_DEBUG  
@@ -811,6 +822,7 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[UE_id]->dlsch_SI_errors[0] = 0;
       PHY_vars_UE_g[UE_id]->dlsch_ra_errors[0] = 0;
  
+      PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
 
 #ifdef AWGN // copy s_re and s_im to r_re and r_im
       for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
@@ -910,27 +922,29 @@ int main(int argc, char **argv) {
 	}
 
 #ifdef OUTPUT_DEBUG      
+	if(trials==0){
 	write_output("rxsig0.m","rxs0", PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-	write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),(6*(PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNb_id][1][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-	write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNb_id][2][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
-	write_output("dlsch11_ch0.m","dl11_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms->ofdm_symbol_size)),1,1);
+	write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[sector_id][0][0]),(6*(PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[sector_id][1][0]),(6*(PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[sector_id][2][0]),(6*(PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	write_output("dlsch11_ch0.m","dl11_ch0",&(PHY_vars_UE_g[UE_id]->lte_ue_common_vars.dl_ch_estimates[sector_id][3][0]),(6*(PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	write_output("rxsigF0.m","rxsF0", PHY_vars_UE_g[UE_id]->lte_ue_common_vars.rxdataF[0],2*12*PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size,2,1);
-	write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size,1,1);
-	write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*12,1,1);
-	write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size,1,1);
-	write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);
-	write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[1],300*12,1,1);
-	write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
-	write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[3],300*12,1,1);
-	write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[eNb_id]->rho[0],300*12,1,1);
-	write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0],300*12,1,1);
-	write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
-	write_output("dlsch_rxF_llr.m","dlsch_llr",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->llr[0],coded_bits_per_codeword,1,0);
-	write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
+	write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->rxdataF_ext[0],2*12*PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size,1,1);
+	write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_estimates_ext[0],300*12,1,1);
+	write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[sector_id]->rxdataF_ext[0],2*3*PHY_vars_UE_g[UE_id]->lte_frame_parms.ofdm_symbol_size,1,1);
+	write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[sector_id]->dl_ch_estimates_ext[0],300*3,1,1);
+	write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_estimates_ext[1],300*12,1,1);
+	write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_estimates_ext[2],300*12,1,1);
+	write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_estimates_ext[3],300*12,1,1);
+	write_output("dlsch_rho.m","dl_rho",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->rho[0],300*12,1,1);
+	write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->rxdataF_comp[0],300*12,1,1);
+	write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[sector_id]->rxdataF_comp[0],4*300,1,1);
+	write_output("dlsch_rxF_llr.m","dlsch_llr",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->llr[0],coded_bits_per_codeword,1,0);
+	write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[sector_id]->llr,2400,1,4);
 	  
-	write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,300*12,1,1);
-	write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*12,1,1);
+	write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_mag,300*12,1,1);
+	write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars[sector_id]->dl_ch_magb,300*12,1,1);
+	}
 #endif //OUTPUT_DEBUG
 	  
       }   //UE_id
@@ -938,8 +952,10 @@ int main(int argc, char **argv) {
     } //trials
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
       printf("[SIM] UE %d: Errors %d/%d, Pe = %e, dci_errors %d/%d, Pe = %e\n",UE_id,
-	     PHY_vars_UE_g[UE_id]->dlsch_errors[0],1+trials,(double)PHY_vars_UE_g[UE_id]->dlsch_errors[0]/(trials+1),
-	     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->dci_errors,1+trials,(double)PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->dci_errors/(trials+1));
+	     PHY_vars_UE_g[UE_id]->dlsch_errors[0],PHY_vars_UE_g[UE_id]->dlsch_received[0],
+	     (double)PHY_vars_UE_g[UE_id]->dlsch_errors[0]/PHY_vars_UE_g[UE_id]->dlsch_received[0],
+	     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->dci_errors,1+trials,
+	     (double)PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->dci_errors/(trials+1));
       blerr= (double)errs/(trials+1);
       fprintf(bler_fd,"%f,%e;\n",SNR,blerr);
       fprintf(csv_fd,"%e;\n",blerr);

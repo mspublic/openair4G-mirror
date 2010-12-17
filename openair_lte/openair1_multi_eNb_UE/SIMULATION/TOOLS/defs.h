@@ -96,7 +96,7 @@ typedef struct {
   double carrier_frequency;
   /// Bandwidth (in Hz)
   double bandwidth;
-  /// path loss at 0m distance
+  /// path loss at 0m distance in dB
   double path_loss_0;
   /// path loss exponent 
   double path_loss_exponent;

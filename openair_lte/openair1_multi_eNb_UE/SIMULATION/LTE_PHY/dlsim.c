@@ -21,10 +21,12 @@
 
 //#define ABSTRACTION
 
+/*
 #define RBmask0 0x00fc00fc
 #define RBmask1 0x0
 #define RBmask2 0x0
 #define RBmask3 0x0
+*/
 
 unsigned char dlsch_cqi;
 
@@ -57,6 +59,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->first_dlsch_symbol = 4;
   lte_frame_parms->num_dlsch_symbols  = (lte_frame_parms->Ncp==0) ? 8: 6;
   lte_frame_parms->Ng_times6          = 1;
+  lte_frame_parms->tdd_config         = 3;
   //  lte_frame_parms->Csrs = 2;
   //  lte_frame_parms->Bsrs = 0;
   //  lte_frame_parms->kTC = 0;
@@ -73,6 +76,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
   
+  PHY_vars_UE->is_secondary_ue = 0;
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
   PHY_vars_eNb->lte_frame_parms = *lte_frame_parms;
 
@@ -121,10 +125,8 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNb->lte_frame_parms.N_RB_UL,0,2)
-#define DLSCH_RB_ALLOC 0x1fff//0x1fbf // igore DC component,RB13
-//#define DLSCH_RB_ALLOC 0x1f0f // igore DC component,RB13
-
-
+//#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+#define DLSCH_RB_ALLOC 0x1fff // all 25 RBs
 
 int main(int argc, char **argv) {
 
@@ -145,7 +147,8 @@ int main(int argc, char **argv) {
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03;
   double ricean_factor=0.0000005;
-  double forgetting_factor=0;
+  double forgetting_factor=0; //0 means a new channel every time
+  double hold_channel=0; //use hold_channel=1 instead of forgetting_factor=1 (more efficient)
   double Td=0.8;
   double iqim=0.0;
   u8 channel_length,nb_taps=8;
@@ -185,7 +188,7 @@ int main(int argc, char **argv) {
   int n_ch_rlz = 1;
   channel_desc_t *eNB2UE;
   double snr;
-  u8 num_pdcch_symbols=3;
+  u8 num_pdcch_symbols=3,num_pdcch_symbols_2;
   u8 pilot1,pilot2,pilot3;
   u8 rx_sample_offset = 0;
   //char stats_buffer[4096];
@@ -202,7 +205,7 @@ int main(int argc, char **argv) {
   snr0 = 0;
   num_layers = 1;
 
-  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:r:x:y:z:M:N:I:R:S:")) != -1) {
+  while ((c = getopt (argc, argv, "hadpm:n:o:s:f:t:c:g:F:r:x:y:z:M:N:I:R:S:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -226,6 +229,9 @@ int main(int argc, char **argv) {
 	  printf("Ricean factor must be between 0 and 1\n");
 	  exit(-1);
 	}
+	break;
+      case 'F':
+	forgetting_factor = atof(optarg);
 	break;
       case 's':
 	snr0 = atoi(optarg);
@@ -316,6 +322,7 @@ int main(int argc, char **argv) {
 	printf("-f step size of SNR, default value is 1.\n");
 	printf("-t Delay spread for multipath channel\n");
 	printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
+	printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
 	printf("-g [A,B,C,D] Use 3GPP 25.814 SCM (ignores delay spread and Ricean factor)\n");
 	printf("-x Transmission mode (1,2,6 for the moment)\n");
 	printf("-y Number of TX antennas used in eNB\n");
@@ -389,12 +396,12 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNb->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  sprintf(bler_fname,"bler_%d.csv",mcs);
+  sprintf(bler_fname,"bler_tx%d_mcs%d.csv",transmission_mode,mcs);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
 
   if(abstx){
-   // CSV file 
+  // CSV file 
   sprintf(csv_fname,"data_out%d.m",mcs);
   csv_fd = fopen(csv_fname,"w");
   fprintf(csv_fd,"data_all%d=[",mcs);
@@ -412,7 +419,7 @@ int main(int argc, char **argv) {
   }
 
 
-   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+  PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 
   // Fill in UL_alloc
   UL_alloc_pdu.type    = 0;
@@ -440,7 +447,7 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 4 : 0) ;  // precoding
+  DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 3 : 0) ;  // precoding
 
   // Create transport channel structures for SI pdus
   PHY_vars_eNb->dlsch_eNb_SI   = new_eNb_dlsch(1,1,0);
@@ -481,6 +488,9 @@ int main(int argc, char **argv) {
     msg("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
+
+  if (hold_channel==1)
+    random_channel(eNB2UE);
   
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
@@ -502,7 +512,6 @@ int main(int argc, char **argv) {
 
   }
   
-  /*
   if (DLSCH_alloc_pdu2.tpmi == 5) 
     PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
   else
@@ -510,7 +519,6 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single;
   PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc = PHY_vars_eNb->eNB_UE_stats[0].DL_pmi_single;
-  */
 
   generate_eNb_dlsch_params_from_dci(0,
                                      &DLSCH_alloc_pdu2,
@@ -581,7 +589,8 @@ int main(int argc, char **argv) {
 
   if (input_trch_file==0) {
     for (i=0;i<input_buffer_length;i++)
-      input_buffer[i]= (unsigned char)(taus()&0xff);
+      //input_buffer[i]= (unsigned char)(taus()&0xff);
+      input_buffer[i]= (unsigned char) i;
   }
   else {
     i=0;
@@ -600,10 +609,10 @@ int main(int argc, char **argv) {
   
    //imran      
   
- for (ch_realization=0;ch_realization<n_ch_rlz;ch_realization++){
-   if(abstx){
- printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
-   }
+  for (ch_realization=0;ch_realization<n_ch_rlz;ch_realization++){
+    if(abstx){
+      printf("**********************Channel Realization Index = %d **************************\n", ch_realization);
+    }
   for (SNR=snr0;SNR<snr1;SNR+=snr_step) {
     errs[0]=0;
     errs[1]=0;
@@ -622,6 +631,10 @@ int main(int argc, char **argv) {
       //            printf("Trial %d\n",trials);
       fflush(stdout);
       round=0;
+
+      if (trials%100==0)
+	eNB2UE->first_run = 1;
+
       while (round < num_rounds) {
 	//printf("Trial %d : Round %d \n",trials,round);
 	round_trials[round]++;
@@ -640,14 +653,14 @@ int main(int argc, char **argv) {
 	  memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
 	}
  
-	num_pdcch_symbols = generate_dci_top(num_ue_spec_dci,
-					     num_common_dci,
-					     dci_alloc,
-					     0,
-					     1024,
-					     &PHY_vars_eNb->lte_frame_parms,
-					     PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
-					     subframe);
+	num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci,
+					       num_common_dci,
+					       dci_alloc,
+					       0,
+					       1024,
+					       &PHY_vars_eNb->lte_frame_parms,
+					       PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id],
+					       subframe);
 
 	coded_bits_per_codeword = get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,PHY_vars_eNb->dlsch_eNb[0][0]->rb_alloc,
 					get_Qm(mcs),num_pdcch_symbols,subframe);
@@ -659,7 +672,7 @@ int main(int argc, char **argv) {
 #endif
 	rate*=get_Qm(mcs);
 
-	if (trials==0) 
+	if (trials==0 && round==0) 
 	  printf("Rate = %f (G %d TBS %d, mod %d, pdcch_sym %d)\n",
 		 rate,
 		 coded_bits_per_codeword,
@@ -667,9 +680,23 @@ int main(int argc, char **argv) {
 		 get_Qm(mcs),
 		 num_pdcch_symbols);
 
+	/*
+	// generate channel here
+	random_channel(eNB2UE);
+	// generate frequency response
+	freq_channel(eNB2UE,NB_RB);
+	// generate PMI from channel
+	*/
+
 	// use the PMI from previous trial
-	if (DLSCH_alloc_pdu2.tpmi == 5) 
+	if (DLSCH_alloc_pdu2.tpmi == 5) {
 	  PHY_vars_eNb->dlsch_eNb[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
+	  PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
+	  /*
+	  if (trials%100==0 & round==0)
+	    printf("PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
+	  */
+	}
 
 	dlsch_encoding(input_buffer,
 		       &PHY_vars_eNb->lte_frame_parms,
@@ -835,42 +862,41 @@ int main(int argc, char **argv) {
 	}
 	//	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
 	if(abstx){
-	if (trials==0 && round==0){
-        if (awgn_flag == 0) {	
-	  if(SNR==snr0){
-	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	  }else{
+	  if (trials==0 && round==0){
+	    if (awgn_flag == 0) {	
+	      if(SNR==snr0){
+		multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+				  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	      }else{
+		multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+				  2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
+	      }
+	    
+	      freq_channel(eNB2UE, 25);
+	      snr=pow(10.0,.1*SNR);
+	      fprintf(csv_fd,"%f,",SNR);
+	      
+	      for (u=0;u<50;u++){
+		abs_channel = (eNB2UE->chF[0][u].r*eNB2UE->chF[0][u].r + eNB2UE->chF[0][u].i*eNB2UE->chF[0][u].i);
+		pilot_sinr = 10*log10(snr*abs_channel);
+		fprintf(csv_fd,"%e,",pilot_sinr); 
+		
+	      }
+	    }
+	  }
+	  else {
+	    if (awgn_flag == 0) {	
+	      multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
+				2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
+	    }
+	  }
+	}
+	else { //ABStraction
+	  if (awgn_flag == 0) {	
 	    multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
-}
-
-	  freq_channel(eNB2UE, 25);
-	  snr=pow(10.0,.1*SNR);
-	  fprintf(csv_fd,"%f,",SNR);
-
-	  for (u=0;u<50;u++){
-	    abs_channel = (eNB2UE->chF[0][u].r*eNB2UE->chF[0][u].r + eNB2UE->chF[0][u].i*eNB2UE->chF[0][u].i);
-	    pilot_sinr = 10*log10(snr*abs_channel);
-	    fprintf(csv_fd,"%e,",pilot_sinr); 
-	   
+			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,hold_channel);
 	  }
-	 
-	}
-	}
-	
-	else{
-	  if (awgn_flag == 0) {	
-	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
-	  }
-        }
-	}
-	else{ //ABStraction
-	  if (awgn_flag == 0) {	
-	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
-	  }}//ABStraction
+	}//ABStraction
       
 	//(double)tx_lev_dB - (SNR+sigma2_dB));
 	//		printf("tx_lev_dB %d\n",tx_lev_dB);
@@ -945,8 +971,6 @@ int main(int argc, char **argv) {
 	      
 	      //	      	printf("rx_avg_power_dB %d\n",PHY_vars_UE->PHY_measurements.rx_avg_power_dB[0]);
 	      //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
-	      //if (trials%100==0)
-	      //	printf("PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
 	    }
 
 	    if ((Ns==(2*subframe)) && (l==pilot1)) {// process symbols 0,1,2
@@ -1152,12 +1176,12 @@ int main(int argc, char **argv) {
 	    write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
 	    write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
 	    write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-
-	  /*
-	    write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][1][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);
-	    write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][2][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);	    
-	    write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);
-	  */
+	    if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1)
+	      write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][1][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
+	    if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+	      write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][2][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
+	    if ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) && (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1))
+	      write_output("dlsch11_ch0.m","dl11_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][3][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
 
 	    write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][2*subframe*nsymb*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
 	    write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -1169,7 +1193,7 @@ int main(int argc, char **argv) {
 	    }
 	    write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*12,1,1);
 	    if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1) {
-	      write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
+	      write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
 	    }
 	    write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
 	    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);

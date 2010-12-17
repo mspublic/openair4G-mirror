@@ -1007,8 +1007,8 @@ int main(int argc, char **argv) {
 			      0,
 			      SISO,
 			      frame_mod4) == amask) {
-		    if (n_frames==1)
-		      msg("pbch decoded sucessfully for SISO, frame_mod4 %d, amask %x!\n",frame_mod4,amask);
+		    //if (n_frames==1)
+		    //  msg("pbch decoded sucessfully for SISO, frame_mod4 %d, amask %x!\n",frame_mod4,amask);
 		    break;
 		  }
 		  else if (rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
@@ -1018,16 +1018,16 @@ int main(int argc, char **argv) {
 				   ALAMOUTI,
 				   frame_mod4)== amask) {
 		    n_alamouti++;
-		    if (n_frames==1)
-		      msg("pbch decoded sucessfully for ALAMOUTI, frame_mod4 %d!\n",frame_mod4);
+		    //if (n_frames==1)
+		    //  msg("pbch decoded sucessfully for ALAMOUTI, frame_mod4 %d!\n",frame_mod4);
 		    break;
 		  }
 		}
 		if (frame_mod4==4) {
 		  n_errors++;
 		  n_errors2++;
-		  if (n_frames==1)
-		    msg("pbch error\n");
+		  //if (n_frames==1)
+		  //  msg("pbch error\n");
 		}
 	      }
 	    }

@@ -381,6 +381,7 @@ int random_channel(channel_desc_t *desc) {
 	
     if (desc->first_run==1){
       cblas_zcopy(desc->nb_tx*desc->nb_rx, (void*) acorr, 1, (void*) desc->a[i], 1);
+      desc->first_run = 0;
     }
     else {
       alpha.r = sqrt(1-desc->forgetting_factor);
