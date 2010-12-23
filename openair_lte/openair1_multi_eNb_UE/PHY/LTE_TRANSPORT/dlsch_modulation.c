@@ -1074,9 +1074,9 @@ int dlsch_modulation(mod_sym_t **txdataF,
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 #endif
 
-      for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-	memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
-      //           printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
+    //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
+    //	memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
+    //printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
       for (rb=0;rb<frame_parms->N_RB_DL;rb++) {
 
 	if (rb < 32)
