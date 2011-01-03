@@ -5,6 +5,7 @@
 */
 
 #include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -113,7 +114,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       return(dlsch);
     }
   }
-  msg("new_eNb_dlsch exit flag %d, size of  %d ,   %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
+  msg("new_eNb_dlsch exit flag %d, size of  %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
   free_eNb_dlsch(dlsch);
   return(NULL);
   
@@ -156,7 +157,10 @@ int dlsch_encoding(unsigned char *a,
     crc = crc24a(a,
 		 A)>>8;
     
-    *(unsigned int*)(&a[A>>3]) = crc;
+    a[A>>3] = ((u8*)&crc)[2];
+    a[1+(A>>3)] = ((u8*)&crc)[1];
+    a[2+(A>>3)] = ((u8*)&crc)[0];
+
     dlsch->harq_processes[harq_pid]->B = A+24;
     dlsch->harq_processes[harq_pid]->b = a;
     lte_segmentation(dlsch->harq_processes[harq_pid]->b,
@@ -269,8 +273,14 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
 
   unsigned char harq_pid = dlsch->current_harq_pid;
 
-  memcpy(dlsch->harq_processes[harq_pid]->b,DLSCH_pdu,dlsch->harq_processes[harq_pid]->TBS>>3);
-  msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNb->Mod_id);
+  memcpy(dlsch->harq_processes[harq_pid]->b,
+	 DLSCH_pdu,
+	 dlsch->harq_processes[harq_pid]->TBS>>3);
+  //  msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNb->Mod_id);
 
+  memcpy(&eNB_transport_info[phy_vars_eNb->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNb->Mod_id]],
+	 DLSCH_pdu,
+	 dlsch->harq_processes[harq_pid]->TBS>>3);  
+  eNB_transport_info_TB_index[phy_vars_eNb->Mod_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
 }
 #endif

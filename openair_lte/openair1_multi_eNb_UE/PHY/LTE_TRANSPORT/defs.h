@@ -484,6 +484,14 @@ typedef enum {format0,
 	      format3
 } DCI_format_t;
 
+typedef enum {
+  pucch_format1,
+  pucch_format1a,
+  pucch_format1b,
+  pucch_format2,
+  pucch_format2a,
+  pucch_format2b
+} PUCCH_FMT_t;
 typedef struct {
   /// Length of DCI in bits
   u8 dci_length;

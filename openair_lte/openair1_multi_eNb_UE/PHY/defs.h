@@ -229,6 +229,7 @@ typedef struct
   //#include "PHY/LTE_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
 
+#include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif // USER_MODE
 
 

@@ -716,6 +716,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   unsigned short i,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
+  u8 temp;
 
   if (crc_type > 3) {
     msg("Illegal crc length!\n");
@@ -847,6 +848,10 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24a(&decoded_bytes[F>>3],
 		   n-24-F)>>8;
+      temp=((u8 *)&crc)[2];
+      ((u8 *)&crc)[2] = ((u8 *)&crc)[0];
+      ((u8 *)&crc)[0] = temp;
+
       //     msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
@@ -854,6 +859,10 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       oldcrc&=0x00ffffff;
       crc = crc24b(decoded_bytes,
 		  n-24)>>8;
+      temp=((u8 *)&crc)[2];
+      ((u8 *)&crc)[2] = ((u8 *)&crc)[0];
+      ((u8 *)&crc)[0] = temp;
+
       //      msg("CRC24_B = %x, oldcrc = %x\n",crc,oldcrc);
 
       break;

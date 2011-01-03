@@ -588,5 +588,15 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 h
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+
+  memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
+	 ulsch_buffer,
+	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);  
+  UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
+
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+(ulsch->o_RI[1]&1)<<1;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack = (ulsch->o_ACK[0]&1) + (ulsch->o_ACK[1]&1)<<1;
 }
 #endif

@@ -261,6 +261,8 @@ int generate_pbch(mod_sym_t **txdataF,
 s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb) {
   
   msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNb->Mod_id);
+  eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_flag=1;
+
 }
 
 u16 pbch_extract(int **rxdataF,

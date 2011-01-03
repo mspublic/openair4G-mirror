@@ -1030,5 +1030,20 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 q,
 			u8 Ns);
 
+void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,u8 ncs_cell[20][7]);
+
+void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
+		    u8 ncs_cell[20][7],
+		    PUCCH_FMT_t fmt,
+		    u8 deltaPUCCH_Shift,
+		    u8 NRB2,
+		    u8 Ncs1_div_deltaPUCCH_Shift,
+		    u16 n1_pucch,
+		    u16 n2_pucch,
+		    u8 shortened_format,
+		    u32 payload,
+		    s16 amp,
+		    u8 subframe);
+
 /**@}*/
 #endif

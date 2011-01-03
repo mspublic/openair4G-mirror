@@ -88,5 +88,6 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 #endif
 
 #include "PHY/CODING/scrambler.h"
+#include "SIMULATION/ETH_TRANSPORT/vars.h"
 
 #endif /*__PHY_VARS_H__ */

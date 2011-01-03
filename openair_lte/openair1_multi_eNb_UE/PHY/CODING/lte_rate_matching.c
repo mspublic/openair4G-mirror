@@ -17,7 +17,7 @@ static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,
 //#define RM_DEBUG 1
 //#define RM_DEBUG2 1
 // #define RM_DEBUG_CC 1
-
+ 
 unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsigned char *w) {
 
   unsigned int RTC = (D>>5), ND, ND3;
@@ -53,7 +53,7 @@ unsigned int sub_block_interleaving_turbo(unsigned int D, unsigned char *d,unsig
       w[Kpi+(k<<1)] =  d[index3-ND3+1];
       w[Kpi+1+(k<<1)] =  d[index3-ND3+5]; 
 #ifdef RM_DEBUG
-      printf("row %d, index %d k %d w(%d,%d,%d)\n",row,index,k,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
+      printf("row %d, index %d, index-Nd %d (k,Kpi+2k,Kpi+2k+1) (%d,%d,%d) w(%d,%d,%d)\n",row,index,index-ND,k,Kpi+(k<<1),Kpi+(k<<1)+1,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
       
       if (w[k]== LTE_NULL)
 	nulled++;
@@ -379,7 +379,10 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
   Nir = Nsoft/Kmimo/min(8,Mdlharq);
   Ncb = min(Nir/C,3*(RTC<<5));
 
-
+  if (Ncb<(3*(RTC<<5))) {
+    msg("Exiting, RM condition (Nir %d, Nsoft %d, Kw %d\n",Nir,Nsoft,3*(RTC<<5));
+    exit(-1);
+  }
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
@@ -418,7 +421,7 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
     e2[k] = w[ind];
 #ifdef RM_DEBUG
     //    printf("k %d ind %d, w %c(%d)\n",k,ind,w[ind],w[ind]);
-    printf("RM_TX %d Ind: %d (%d)\n",k,ind,e2[k]);
+    printf("RM_TX %d (%d) Ind: %d (%d)\n",k,k+r*E,ind,e2[k]);
 #endif
     ind++;
     if (ind==Ncb)

@@ -6,6 +6,7 @@
 #include "PHY/TOOLS/twiddle_extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#include "SIMULATION/ETH_TRANSPORT/extern.h"
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
