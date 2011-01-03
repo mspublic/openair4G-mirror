@@ -82,7 +82,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
 		  PHY_vars_UE->lte_ue_pbch_vars,
 		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE);
+		  PHY_vars_UE,0);
 
   phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
 		   &PHY_vars_eNb->lte_eNB_common_vars,
@@ -90,7 +90,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNb,
 		   0,
+		   0,
 		   0);
+
   memcpy((void*)&PHY_vars_eNb1->lte_frame_parms,(void*)&PHY_vars_eNb->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
   PHY_vars_eNb1->lte_frame_parms.nushift=1;
   PHY_vars_eNb1->lte_frame_parms.Nid_cell=2;
@@ -102,18 +104,22 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   phy_init_lte_eNB(&PHY_vars_eNb1->lte_frame_parms,
 		   &PHY_vars_eNb1->lte_eNB_common_vars,
 		   PHY_vars_eNb1->lte_eNB_ulsch_vars,
-		   0,
+                   0,
 		   PHY_vars_eNb1,
 		   0,
+                   0,
 		   0);
-
+ 
   phy_init_lte_eNB(&PHY_vars_eNb2->lte_frame_parms,
 		   &PHY_vars_eNb2->lte_eNB_common_vars,
 		   PHY_vars_eNb2->lte_eNB_ulsch_vars,
 		   0,
 		   PHY_vars_eNb2,
 		   0,
+		   0,
 		   0);
+ 
+
 
   phy_init_lte_top(lte_frame_parms);
 
@@ -1007,8 +1013,8 @@ int main(int argc, char **argv) {
 			      0,
 			      SISO,
 			      frame_mod4) == amask) {
-		    //if (n_frames==1)
-		    //  msg("pbch decoded sucessfully for SISO, frame_mod4 %d, amask %x!\n",frame_mod4,amask);
+		    if (n_frames==1)
+		      msg("pbch decoded sucessfully for SISO, frame_mod4 %d, amask %x!\n",frame_mod4,amask);
 		    break;
 		  }
 		  else if (rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
@@ -1018,16 +1024,16 @@ int main(int argc, char **argv) {
 				   ALAMOUTI,
 				   frame_mod4)== amask) {
 		    n_alamouti++;
-		    //if (n_frames==1)
-		    //  msg("pbch decoded sucessfully for ALAMOUTI, frame_mod4 %d!\n",frame_mod4);
+		    if (n_frames==1)
+		      msg("pbch decoded sucessfully for ALAMOUTI, frame_mod4 %d!\n",frame_mod4);
 		    break;
 		  }
 		}
 		if (frame_mod4==4) {
 		  n_errors++;
 		  n_errors2++;
-		  //if (n_frames==1)
-		  //  msg("pbch error\n");
+		  if (n_frames==1)
+		    msg("pbch error\n");
 		}
 	      }
 	    }
