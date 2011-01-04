@@ -5,6 +5,7 @@
  Emails  : anouar@eurecom.fr
 ________________________________________________________________*/
 #include <pthread.h>
+#include "defs.h"
 
 #ifndef __BYPASS_SESSION_LAYER_VARS_H__
 #    define __BYPASS_SESSION_LAYER_VARS_H__
@@ -23,5 +24,11 @@ char Tx_mutex_var;
 
 int (*rx_handler) (unsigned char,char*,int);
 int (*tx_handler) (unsigned char,char*, unsigned int*, unsigned int*);
+
+eNB_transport_info_t eNB_transport_info[NUMBER_OF_eNB_MAX];
+u16 eNB_transport_info_TB_index[NUMBER_OF_eNB_MAX];
+
+UE_transport_info_t UE_transport_info[NUMBER_OF_UE_MAX];
+u16 UE_transport_info_TB_index[NUMBER_OF_UE_MAX];
 
 #endif

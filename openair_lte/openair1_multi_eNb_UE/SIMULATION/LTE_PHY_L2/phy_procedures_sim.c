@@ -718,6 +718,7 @@ int main(int argc, char **argv) {
 #endif
   u8 nb_ue_local=1,nb_ue_remote=0;
   u8 nb_eNB_local=1,nb_eNB_remote=0;
+  u8 first_eNB_local=0,first_UE_local=0;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -1125,15 +1126,17 @@ int main(int argc, char **argv) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-
-      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+      clear_eNB_transport_info(nb_eNB_local);
+      for (eNB_id=first_eNB_local;eNB_id<(first_eNB_local+nb_eNB_local);eNB_id++) {
 #ifdef DEBUG_SIM
 	printf("[SIM] PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,slot>>1);
 #endif
 	phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[eNB_id],abstraction_flag);
       }
 
-      for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
+      // Call ETHERNET emulation here
+      clear_eNB_transport_info(nb_eNB_local);
+      for (UE_id=first_eNB_local; UE_id<(first_eNB_local+nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 #ifdef DEBUG_SIM
 	  printf("[SIM] PHY procedures UE %d for frame %d, slot %d\n", UE_id,mac_xface->frame,slot);

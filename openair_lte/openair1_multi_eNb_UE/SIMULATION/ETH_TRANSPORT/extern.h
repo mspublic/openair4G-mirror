@@ -26,4 +26,9 @@ extern char Tx_mutex_var;
 extern int (*rx_handler) (unsigned char,char*,int);
 extern int (*tx_handler) (unsigned char,char*, unsigned int*, unsigned int*);
 
+extern eNB_transport_info_t eNB_transport_info[NUMBER_OF_eNB_MAX];
+extern u16 eNB_transport_info_TB_index[NUMBER_OF_eNB_MAX];
+
+extern UE_transport_info_t UE_transport_info[NUMBER_OF_UE_MAX];
+extern u16 UE_transport_info_TB_index[NUMBER_OF_UE_MAX];
 #endif

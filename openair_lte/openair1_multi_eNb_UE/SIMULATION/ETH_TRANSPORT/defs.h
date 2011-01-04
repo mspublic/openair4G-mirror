@@ -68,5 +68,47 @@ unsigned int emul_rx_data(void);
 
 /*************************************************************/
 
+
+typedef struct  {
+  u32 pbch_flag:1;
+  u32 pss:2;
+  u32 sss:8;
+  u32 cfi:2;
+  u32 phich:19;
+  u32 pbch_payload:24;
+} eNB_cntl;
+
+typedef struct  {
+  u32 pucch_flag:3;  // 0,7 = none, 1 = type 1, 2=type 1a, 3=type 1b, 4=type 2, 5=type 2a, 6=type 2b
+  u32 pucch_Ncs1:3;  // physical configuration of pucch, for abstraction purposes
+  u32 pucch_uci:13;        // cqi information
+  u32 pucch_ack:2;         // ack/nak information
+  u32 pusch_flag:1;  // 0=none,1=active
+  u32 pusch_uci;     // uci information on pusch
+  u32 pusch_ri:2;    // ri information on pusch
+  u32 pusch_ack:2;   // ack/nak on pusch
+  u32 prach_flag:1;  // 0=none,1=active
+  u32 prach_id:6;    // this is the PHY preamble index for the prach
+} UE_cntl;
+
+#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
+
+typedef struct {
+  eNB_cntl cntl;
+  u8 num_common_dci;
+  u8 num_ue_spec_dci;
+  DCI_ALLOC_t dci_alloc;
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
+} eNB_transport_info_t ;
+
+typedef struct {
+  UE_cntl cntl;
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
+} UE_transport_info_t ;
+
+void clear_eNB_transport_info(u8);
+void clear_UE_transport_info(u8);
+
 #endif //
+
 
