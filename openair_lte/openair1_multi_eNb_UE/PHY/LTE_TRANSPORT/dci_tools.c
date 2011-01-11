@@ -381,8 +381,9 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 
   case format0:   // This is an UL SACH allocation so nothing here, inform MAC
     if (frame_parms->tdd_config>0)
-      msg("DCI format0, rnti %x : hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+      msg("DCI format0, rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	  dci->rnti,
+	  ((u32*)&dci->dci_pdu)[0],
 	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->hopping,
 	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc,
 	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->mcs,
@@ -413,7 +414,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
       msg("Don't know how to handle TDD format 0 yet\n");
     break;
   case format1A:  // This is DLSCH allocation for control traffic
-    msg("DCI format1, rnti %x\n",dci->rnti);
+    msg("DCI format1, rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu)[0]);
     msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->vrb_type);
     msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc]);
     msg("MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->mcs);

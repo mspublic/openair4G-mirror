@@ -25,6 +25,16 @@ int current_dlsch_cqi; //FIXME!
 PHY_VARS_eNB *PHY_vars_eNb,*PHY_vars_eNb1,*PHY_vars_eNb2;;
 PHY_VARS_UE *PHY_vars_UE;
 
+DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+
+#define UL_RB_ALLOC 0x1ff;
+#define CCCH_RB_ALLOC computeRIV(PHY_vars_eNb->lte_frame_parms.N_RB_UL,0,2)
+#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+
+
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config) {
 
   unsigned int ind;
@@ -128,17 +138,14 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   printf("Done lte_param_init\n");
 
+  CCCH_alloc_pdu.type               = 1;
+  CCCH_alloc_pdu.vrb_type           = 0;
+  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
+  CCCH_alloc_pdu.ndi      = 1;
+  CCCH_alloc_pdu.mcs      = 1;
+  CCCH_alloc_pdu.harq_pid = 0;
 
 }
-
-DCI0_5MHz_TDD0_t          UL_alloc_pdu;
-DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
-DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
-DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
-
-#define UL_RB_ALLOC 0x1ff;
-#define CCCH_RB_ALLOC computeRIV(PHY_vars_eNb->lte_frame_parms->N_RB_UL,0,2)
-#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
 int main(int argc, char **argv) {
 
@@ -573,7 +580,7 @@ int main(int argc, char **argv) {
 	  
 	// Do SI_RNTI
 	rv = (n_frames==1) ? 0 : taus();
-	  
+  
 	if ((rv&1) == 0) {
 	  memcpy(&dci_alloc[0].dci_pdu[0],&CCCH_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
 	  dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
@@ -608,10 +615,10 @@ int main(int argc, char **argv) {
 	  rv = (n_frames==1) ? 0 : taus();
 	  if (((rv&1)==0) && 
 	      ((numCCE+(1<<log2L)) <= nCCE_max)) {
-	    ((u8 *)&DLSCH_alloc_pdu2)[0]=0x7f;
-	    ((u8 *)&DLSCH_alloc_pdu2)[1]=0xff;
-	    ((u8 *)&DLSCH_alloc_pdu2)[2]=0x60;
-	    ((u8 *)&DLSCH_alloc_pdu2)[3]=0x10;
+	    ((u8 *)&DLSCH_alloc_pdu2)[3]=0x7f;
+	    ((u8 *)&DLSCH_alloc_pdu2)[2]=0xff;
+	    ((u8 *)&DLSCH_alloc_pdu2)[1]=0x60;
+	    ((u8 *)&DLSCH_alloc_pdu2)[0]=0x10;
 	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI1_5MHz_TDD_t));
 	    dci_alloc[num_dci].dci_length = sizeof_DCI1_5MHz_TDD_t;
 	    dci_alloc[num_dci].L          = log2L;

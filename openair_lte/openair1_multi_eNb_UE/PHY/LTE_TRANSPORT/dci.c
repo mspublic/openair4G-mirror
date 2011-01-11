@@ -184,6 +184,7 @@ u8 *generate_dci0(u8 *dci,
 		  u16 rnti) {
   
   u16 coded_bits;
+  u8 dci_flip[8];
 
   if (aggregation_level>3) {
     msg("dci.c: generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
@@ -198,7 +199,24 @@ u8 *generate_dci0(u8 *dci,
     msg("i %d : %x\n",i,dci[i]);
 #endif
   */
-  dci_encoding(dci,DCI_LENGTH,coded_bits,e,rnti);
+  if (DCI_LENGTH<=32){
+    dci_flip[0] = dci[3];
+    dci_flip[1] = dci[2];
+    dci_flip[2] = dci[1];
+    dci_flip[3] = dci[0];   
+  }
+  else {
+    dci_flip[0] = dci[3];
+    dci_flip[1] = dci[2];
+    dci_flip[2] = dci[1];
+    dci_flip[3] = dci[0];
+    dci_flip[4] = dci[7];
+    dci_flip[5] = dci[6];
+    dci_flip[6] = dci[5];
+    dci_flip[7] = dci[4];
+  }
+	
+  dci_encoding(dci_flip,DCI_LENGTH,coded_bits,e,rnti);
 
   return(e+coded_bits);
 }
@@ -1757,6 +1775,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 	
 #ifdef DEBUG_DCI_ENCODING
 	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L);
+	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
 			      e_ptr,
@@ -2196,6 +2215,9 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	  dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[1];
 	  dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[2];
 	  dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[3];
+#ifdef DEBUG_DCI_DECODING
+          msg("DCI => %x,%x,%x,%x\n",dci_decoded_output[0],dci_decoded_output[1],dci_decoded_output[2],dci_decoded_output[3]);
+#endif
 	}
 	else {
 	  dci_alloc[*dci_cnt].dci_pdu[7] = dci_decoded_output[0];
@@ -2234,6 +2256,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 #ifdef DEBUG_DCI_DECODING
 	msg("Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x)\n",
 	    *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap);
+	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 #endif
 	if (crc==lte_ue_pdcch_vars[eNb_id]->crnti)
 	  return;
