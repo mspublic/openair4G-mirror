@@ -38,6 +38,7 @@ et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI.
 #define CH_COLL_ID -1
 #define NB_SENS_MAX 4
 #define FIRST_SENSOR_ID 2
+#define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06
 
 #ifdef __cplusplus
 extern "C" {

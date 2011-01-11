@@ -204,6 +204,58 @@ void cmm_stop_sensing(
 void cmm_ask_freq( 
     Instance_t inst            //!< identification de l'instance
     );
+   
+/*!
+  \brief  add_lor_10_11_03
+*/
+    
+void cmm_need_to_tx( 
+    Instance_t inst             ,//!< identification de l'instance
+    Instance_t dest             ,//!< identification de l'instance du noeud destinataire
+    QOS_CLASS_T QoS_class        //!< Required quality of service (i.e. number of channels)
+    );
+    
+/*!
+  \brief  add_lor_10_11_08
+*/
+void cmm_init_coll_sensing( 
+    Instance_t       inst,            //!< identification de l'instance
+    unsigned int     Start_fr,
+    unsigned int     Stop_fr,
+    unsigned int     Meas_band,
+    unsigned int     Meas_tpf,
+    unsigned int     Nb_channels,
+    unsigned int     Overlap,
+    unsigned int     Sampl_freq
+    );
+/*!
+  \brief  add_lor_10_11_09
+*/
+void cmm_user_disc( 
+    Instance_t inst            //!< identification de l'instance
+    );
+/*!
+  \brief  add_lor_10_11_09
+*/
+void cmm_link_disc( 
+    Instance_t inst           ,//!< identification de l'instance
+    Instance_t dest            //!< identification du destinataire
+    );
+/*!
+  \brief  add_lor_10_11_09
+*/
+void disconnect_user( 
+    Instance_t    inst     , //!< identification de l'instance
+    L2_ID         L2_id      //!< L2_id of the SU 
+    );
+ /*!
+  \brief  add_lor_10_11_09
+*/   
+int close_active_link( 
+    Instance_t    inst       , //!< identification de l'instance
+    L2_ID         L2_id      , //!< L2_id of the SU 
+    L2_ID         L2_id_dest   //!< L2_id of the SU dest
+    );
 
 
 

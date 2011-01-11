@@ -276,7 +276,7 @@ void plot_SN_channels(CHANNELS_DB_T *channels_db, unsigned int NB_info, unsigned
     unsigned int SB_BW;
     float Start_fr, Final_fr;
     int i, j, k=0;
-    //printf("nb_info %d tot sub: %d \n",NB_info, tot_sub_bands);//dbg
+    printf("nb_info %d tot sub: %d \n",NB_info, tot_sub_bands);//dbg
     // Compute frequencies and store in f 
     for (i=0;i<NB_info ;i++) {
         pCurrent = get_chann_db_info(channels_db,selected[i]);
@@ -292,7 +292,7 @@ void plot_SN_channels(CHANNELS_DB_T *channels_db, unsigned int NB_info, unsigned
     }
     Start_fr = st_fr;
     Final_fr = end_fr;
-    //printf ("start: %f; end %f\n",f[0], f[k-1]);//dbg
+    printf ("start: %f; end %f\n",f[0], f[k-1]);//dbg
    
     if (rrm_id == BTS_ID){
         fl_set_xyplot_xbounds(SN_form->Selected_frequencies,Start_fr,Final_fr);
@@ -319,6 +319,9 @@ void plot_spectra_CH1(Sens_ch_t *S, unsigned int NB_info, /*FD_sens_CH1_scen_2 *
     
     float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
     //float f[100],spec_dBm[100];
+    float Start_fr, Final_fr;//add_lor_11_01_10
+    Start_fr = st_fr; //add_lor_11_01_10
+    Final_fr = end_fr;//add_lor_11_01_10
     unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
     unsigned int SB_BW;
     int i, j, k=0;
@@ -349,34 +352,35 @@ void plot_spectra_CH1(Sens_ch_t *S, unsigned int NB_info, /*FD_sens_CH1_scen_2 *
     }
    
     if (sensor == 1){
-        fl_set_xyplot_xbounds(Sens_form_CH1->User_1_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_1_sens,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_1_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_1_sens,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH1->User_1_sens,f,spec_dBm,tot_sub_bands,"","","");
         
     }else if (sensor == 2){
-        fl_set_xyplot_xbounds(Sens_form_CH1->User_2_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_2_sens,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_2_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_2_sens,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH1->User_2_sens,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
-        fl_set_xyplot_xbounds(Sens_form_CH1->User_3_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_3_sens,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_3_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_3_sens,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH1->User_3_sens,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 4){
-        fl_set_xyplot_xbounds(Sens_form_CH1->User_4_sens,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_4_sens,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH1->User_4_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_4_sens,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH1->User_4_sens,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == -1){
-        fl_set_xyplot_xbounds(Sens_form_CH1->Cluster_2_sensing,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_xbounds(Sens_form_CH1->Cluster_2_sensing,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
         fl_set_xyplot_ybounds(Sens_form_CH1->Cluster_2_sensing,0,2);
 
         fl_set_xyplot_data(Sens_form_CH1->Cluster_2_sensing,f,spec_dBm,tot_sub_bands,"","","");
     }else
         printf("Error! User %d not considered",sensor); //mod_lor_10_12_07
     fl_check_forms();
+    
 }
 
 /*!
@@ -389,6 +393,9 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
     
     float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
     //float f[100],spec_dBm[100];
+    float Start_fr, Final_fr;//add_lor_11_01_10
+    Start_fr = st_fr; //add_lor_11_01_10
+    Final_fr = end_fr;//add_lor_11_01_10
     unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
     unsigned int SB_BW;
     int i, j, k=0;
@@ -405,23 +412,23 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
     }
    
     if (sensor == 1){
-        fl_set_xyplot_xbounds(Sens_form_CH2->User_1,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_1,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_1,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_1,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH2->User_1,f,spec_dBm,tot_sub_bands,"","","");
     }else if (sensor == 2){
-        fl_set_xyplot_xbounds(Sens_form_CH2->User_2,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_2,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_2,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_2,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH2->User_2,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
-        fl_set_xyplot_xbounds(Sens_form_CH2->User_3,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_3,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_3,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_3,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH2->User_3,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 4){
-        fl_set_xyplot_xbounds(Sens_form_CH2->User_4,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_4,-115,-70);
+        fl_set_xyplot_xbounds(Sens_form_CH2->User_4,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_4,-110,-80);
 
         fl_set_xyplot_data(Sens_form_CH2->User_4,f,spec_dBm,tot_sub_bands,"","","");
     }else 
@@ -449,6 +456,7 @@ void plot_all_chann_scen_2(unsigned int *tx, unsigned int *chann_start, unsigned
 
     int i, j, k=0;
 
+    printf ("rrm_id: %d; num_info %d\n",rrm_id, NB_info);//dbg
     // Compute frequencies and store in f 
     for (i=0;i<NB_info ;i++) {
         SB_BW = (chann_end[i]-chann_start[i])/SB_NEEDED_FOR_SN;
@@ -461,8 +469,8 @@ void plot_all_chann_scen_2(unsigned int *tx, unsigned int *chann_start, unsigned
             k++;
         }
     }
-    
-    //printf ("start: %f; end %f\n",f[0], f[k-1]);//dbg
+    printf("tot sub: %d k %d\n",tot_sub_bands,k);//dbg
+    printf ("start: %f; end %f\n",f[0], f[k-1]);//dbg
    
     if (rrm_id == 1){
         fl_set_xyplot_xbounds(Chann_form->User_1_channels,Start_fr,Final_fr);
@@ -479,12 +487,12 @@ void plot_all_chann_scen_2(unsigned int *tx, unsigned int *chann_start, unsigned
         fl_set_xyplot_ybounds(Chann_form->User_3_channels,0,3);
         fl_set_xyplot_data(Chann_form->User_3_channels,f,spec_dBm,tot_sub_bands,"","","");
    
-    }else if (rrm_id == 4){
+    }/*else if (rrm_id == 4){
         fl_set_xyplot_xbounds(Chann_form->User_4_channels,Start_fr,Final_fr);
         fl_set_xyplot_ybounds(Chann_form->User_4_channels,0,3);
         fl_set_xyplot_data(Chann_form->User_4_channels,f,spec_dBm,tot_sub_bands,"","","");
     
-    }else
+    }*/else
         printf("Error! User %d not considered",rrm_id);
     fl_check_forms();
 }
@@ -758,8 +766,9 @@ static void * thread_send_msg_ip (
                  //fprintf(stderr,"Thread Send Message inst %d socket %d\n", ii, rrm->ip.s->s); //dbg
                // if (pItem->msg->head.msg_type == 26)
                  //   msg_fct( "IP -> UPDATE_SENSING_RESULTS_3 inst: %d sockid %d\n", ii, rrm->ip.s->s);//dbg
-    
+            //msg_fct( "before send_msg_int msg: %d socket %d\n", pItem->msg->head.msg_type, rrm->ip.s->s);//dbg
                 int r =  send_msg_int( rrm->ip.s, pItem->msg );
+                //msg_fct( "after send_msg_int \n");//dbg
            
                 WARNING(r!=0);
             }
@@ -1118,7 +1127,7 @@ static void processing_msg_cmm(
                         }//memcpy()*/
                     //mod_lor_10_05_18++: destination addresses depends on 
                     //scenario and on role, they are declared at beginning of file
-                    if (SCEN_2_CENTR && rrm->id == 4){
+                    if (SCEN_2_CENTR && rrm->id >= FIRST_SECOND_CLUSTER_USER_ID){ //mod_lor_11_01_06
                         tmp[0]=CH_COLL_L3id[0];
                         tmp[1]=CH_COLL_L3id[1];
                         tmp[2]=CH_COLL_L3id[2];
@@ -1138,13 +1147,24 @@ static void processing_msg_cmm(
                     
                     //mod_lor_10_05_06--
                     fprintf(stderr,"IP interface starting inst. %d\n",rrm->id); 
+                    //dbg++ (add_lor_11_01_06)
+                    fprintf(stderr,"Source: ");
+                    for ( int i=0;i<4;i++)
+                        fprintf(stderr,"%02X:", p->L3_info[i]);
+                    fprintf(stderr,"\nDest: ");
+                    for (int  i=0;i<4;i++)
+                        fprintf(stderr,"%02X:", tmp[i]);
+                    fprintf(stderr,"\n");
+                    //dbg--
                     int sock = open_socket_int(rrm->ip.s, p->L3_info, 0, tmp, 0, header->inst);
                     if ( sock != -1 )
                     {
                         fprintf(stderr,"   Ip -> socket =  %d\n", rrm->ip.s->s );
                         fflush(stderr);
-                    }else
+                    }else{
                         fprintf(stderr," Error in IP socket opening \n");
+                        
+                    }
                 }else
                         fprintf(stderr," Socket IP for inst %d already opened %d \n",rrm->id,rrm->ip.s->s);
 #endif            //mod_lor_10_01_25--*/
@@ -1437,6 +1457,10 @@ static void processing_msg_rrc(
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
+                //add_lor_11_01_07++
+                if (SCEN_2_CENTR)
+                    sleep(header->inst);
+                //add_lor_11_01_07--
                 rrc_phy_synch_to_CH_ind(header->inst,p->Ch_index,p->L2_id ) ;
                 //msg_fct( "[RRC]>[RRM]:%d:RRC_PHY_SYNCH_TO_CH_IND Done\n",header->inst);
 
@@ -1641,10 +1665,10 @@ static void processing_msg_sensing(
                 //mod_lor_10_11_04++
                 if (SCEN_1)
                     plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
-                else if (SCEN_2_CENTR && !COLL_CLUST)
+                else if (SCEN_2_CENTR && header->inst<FIRST_SECOND_CLUSTER_USER_ID)
                     plot_spectra_CH1(p->Sens_meas, p->NB_info,  header->inst-FIRST_SENSOR_ID+1);
-                else if (SCEN_2_CENTR && COLL_CLUST)
-                    plot_spectra_CH2(p->Sens_meas, p->NB_info,  header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_2_CENTR && header->inst>=FIRST_SECOND_CLUSTER_USER_ID) //mod_lor_11_01_07
+                    plot_spectra_CH2(p->Sens_meas, p->NB_info,  header->inst-FIRST_SECOND_CLUSTER_USER_ID+1);
                 //mod_lor_10_11_04--
                 
                 rrc_update_sens( header->inst, rrm->L2_id, p->NB_info, p->Sens_meas, p->info_time );
@@ -1677,7 +1701,14 @@ static void processing_msg_sensing(
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
-                
+                //add_lor_11_01_10++
+                if (SCEN_1)
+                    plot_spectra(NULL, 0, form, header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_2_CENTR && header->inst<FIRST_SECOND_CLUSTER_USER_ID)
+                    plot_spectra_CH1(NULL, 0,  header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_2_CENTR && header->inst>=FIRST_SECOND_CLUSTER_USER_ID) //mod_lor_11_01_07
+                    plot_spectra_CH2(NULL, 0,  header->inst-FIRST_SECOND_CLUSTER_USER_ID+1);
+                //add_lor_11_01_10--*/
                 sns_end_scan_conf( header->inst );  
             }
             break ;
@@ -2048,9 +2079,12 @@ static void processing_msg_ip(
                     WARNING(r!=0);
                 //mod_lor_10_05_10--
                 //memcpy( rrm->L2_id_FC.L2_id, p->L2_id.L2_id, sizeof(L2_ID) );
-                rrc_end_scan_conf( header->inst, p->L2_id, header->Trans_id );
+                rrc_end_scan_conf( rrm->id, p->L2_id, header->Trans_id );
+                if (SCEN_2_CENTR ) //add_lor_11_01_10
+                    plot_spectra_CH1(NULL, 0,  -1);//add_lor_11_01_10
                 
             }
+            break ;
         case USER_DISCONNECT_9 : //add_lor_10_11_09
             {
                 user_disconnect_t *p = (user_disconnect_t *) msg ;
@@ -2536,16 +2570,16 @@ int main( int argc , char **argv )
      }
      //mod_lor_10_06_01--
      //mod_lor_10_11_04++
-     if (SCEN_2_CENTR && COLL_CLUST){ 
-         fl_initialize(&argc, argv, "Cluster 2", 0, 0);  
+     if (SCEN_2_CENTR /*&& COLL_CLUST*/){ 
+         fl_initialize(&argc, argv, "Clusters", 0, 0);  
          Sens_form_CH2 = create_form_sens_scen_2(); 
          fl_show_form(Sens_form_CH2->sens_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 2: Sensing");     
          fl_check_forms();   
-     }
-     if (SCEN_2_CENTR && !COLL_CLUST){ 
-         fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
+     //} //mod_lor_11_01_07
+     //if (SCEN_2_CENTR && !COLL_CLUST){ 
+         //fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
          Sens_form_CH1 = create_form_sens_CH1_scen_2(); 
-         fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Sensing");     //Cluster 1:  mod_lor_10_12_07
+         fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Sensing");     //Cluster 1:  mod_lor_10_12_07
          fl_check_forms();   
          
          Chann_form = create_form_all_freq_to_users();

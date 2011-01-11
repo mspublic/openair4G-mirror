@@ -15,20 +15,22 @@
 
 /*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
 */
-#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
-#define SCEN_1         1
-#define SCEN_2_CENTR   0
+#define WSN            0  ///if wsn = 0 -> secondary network, else sensor network 
+#define SCEN_1         0
+#define SCEN_2_CENTR   1
 #define SCEN_2_DISTR   0
+#define COLL_CLUST     0  //mod_lor_10_11_04
 
 //mod_lor_10_05_05++
 /*!
 *******************************************************************************
 \brief Id of different CRRM entities in case of multiple entities on same machine       
   */
-#define BTS_ID 1
+#define BTS_ID -1
 #define FC_ID 0
-#define CH_COLL_ID -1
+#define CH_COLL_ID 1
 #define FIRST_SENSOR_ID 2
+#define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06
 //mod_lor_10_05_05--
 
 /*! 
@@ -36,17 +38,18 @@
  \brief Parameters about channels:
  * 
 */
-#define NB_OF_SENSORS 3
+#define NB_OF_SENSORS 5 //!< Number of units that can perform sensing (if scen2_centr it includes secondary users of both clusters)
 #define CH_NEEDED_FOR_SN 1 //!< Number of channels needed by secondary network//mod_lor_10_05_17
 #define SB_NEEDED_FOR_SN 25 //mod_lor_10_05_26: 
-#define NB_SENS_MAX    20  //!< Maximum number of channels accepted by the system
+#define NB_SENS_MAX    4  //!< Maximum number of channels accepted by the system; AAA: should be low (4) in SCEN_2 otherwise overflow at rrc level
 #define MAX_NUM_SB 100//mod_eure_lor
 #define SB_BANDWIDTH   200  //! in khz, bandwidth of each sub-band; AAA -> modify only in relation with NUM_SB and sensing parameters in emul_interface!  //mod_lor_10_05_26
 #define NUM_SB 100//mod_eure_lor
-#define LAMBDA0 -105   //mod_lor_10_05_26: for mu0 that is the averaged value
-#define LAMBDA1 -100   //mod_lor_10_05_26: for mu1 that is the maximum value
+#define LAMBDA0 -103   //mod_lor_10_05_26: for mu0 that is the averaged value
+#define LAMBDA1 -98   //mod_lor_10_05_26: for mu1 that is the maximum value
 #define MIN_NB_SB_CH 25   //mod_lor_10_05_26: for mu1 that is the maximum value
-#define BG 2 //! sub-bands of protection between channels
+#define BG 8 //! sub-bands of protection between channels
+#define MAX_USER_NB 5 //! max number of users //add_lor_10_11_03
 
 /*! \brief Transaction ID descriptor
 */
@@ -115,7 +118,6 @@ typedef struct  Sens_ch_s {
     char mu1[MAX_NUM_SB];
     
     //float               meas       ; ///< Sensing results 
-
     unsigned int        is_free  [MAX_NUM_SB]  ; ///< Decision about the channel //mod_lor_10_05_28 ->char instead of int
     //mod_eure_lor--
     struct  Sens_ch_s   *next      ; ///< pointeur sur le prochain canal 

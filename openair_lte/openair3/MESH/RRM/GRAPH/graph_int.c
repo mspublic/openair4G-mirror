@@ -112,7 +112,7 @@ main(int argc,char **argv) {
         
         }//dbg_color--*/
     }
-    else if (rrm_inst == BTS_ID ||((rrm_inst == CH_COLL_ID || rrm_inst >= 4 )&& SCEN_2_CENTR)){ //mod_lor_10_05_12 AAA
+    else if (rrm_inst == BTS_ID ||((rrm_inst == CH_COLL_ID || rrm_inst >= FIRST_SECOND_CLUSTER_USER_ID )&& SCEN_2_CENTR)){ //mod_lor_10_05_12 AAA
         //colorbg = 103;
         colorfg = 11;
     }
@@ -218,6 +218,7 @@ main(int argc,char **argv) {
                                 msg_fct( "Sending confirmation of stopped sensing to Fusion Center ...\n");
                             else
                                 msg_fct( "Sending confirmation of stopped sensing to Cluster Head ...\n");//mod_lor_10_05_12--
+                            printf("\e[38;5;%dm",colorfg);
                         }
                         break ;
            
@@ -369,7 +370,7 @@ main(int argc,char **argv) {
                      case RRC_UP_FREQ_ASS :
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
-                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED \n ",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED\n ",Header->inst);
                             if (p->NB_chan!=0){
 								printf("\e[38;5;%dm",comments);
 								msg_fct( "Channel to use: from ");
@@ -637,6 +638,7 @@ main(int argc,char **argv) {
                             printf("\e[38;5;%dm",colorfg);   //mod_lor_10_04_23
                             
                         }
+                        break ;
                     case UP_CLUST_SENS_RESULTS :
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
@@ -728,7 +730,7 @@ main(int argc,char **argv) {
                                 msg_fct( "The sensor is now connected to the fusion center\n");
                             else if(SCEN_2_DISTR)
                                 msg_fct( "Secondary User is now connected to Cluster Head\n");
-                            else if(Header->inst <4)
+                            else if(Header->inst < FIRST_SECOND_CLUSTER_USER_ID)
                                 msg_fct( "Secondary User is now connected to Cluster Head #1\n");
                             else
                                 msg_fct( "Secondary User is now connected to Cluster Head #2\n");//mod_lor_10_05_12--

@@ -446,6 +446,17 @@ void up_coll_sens_results( //AAA: to add weights for the collaborative cluster i
 	double info_time
 	);//mod_lor_10_05_10--
 
+/*!
+\brief  Received request of frequencies from secondary user -> attribute available channels
+*/	
+unsigned int ask_freq_to_CH(
+    Instance_t    inst                   , //!< identification de l'instance
+    L2_ID         L2_id[NB_SENS_MAX]     , //!< L2_id of the SU
+    L2_ID         L2_id_dest[NB_SENS_MAX], //!< L2_id of the SU dest
+    unsigned int  N_users                , //!< quality of service required (i.e. number of channels required)
+    Transaction_t Trans_id                 //!< Transaction ID
+    );
+
 
 /*! @} */
 

@@ -12,14 +12,14 @@ FD_sens_CH1_scen_2 *create_form_sens_CH1_scen_2(void)
 //mod_lor_10_12_07++
   fdui->sens_CH1_scen_2 = fl_bgn_form(FL_NO_BOX, 460, 560);
   obj = fl_add_box(FL_UP_BOX,0,0,460,560,"");
-  fdui->User_1_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,10,420,100,"Cluster_1_User_1_sens");
+  fdui->User_1_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,10,420,100,"User_1_sens");
     fl_set_object_color(obj,FL_BLACK,FL_BLUE);
     fl_set_object_lsize(obj,FL_NORMAL_SIZE);
-  fdui->User_2_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,140,420,100,"Cluster_1_User_2_sens");
+  fdui->User_2_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,140,420,100,"User_2_sens");
     fl_set_object_color(obj,FL_BLACK,FL_BLUE);
     fl_set_object_lsize(obj,FL_NORMAL_SIZE);
-  fdui->User_3_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,280,420,100,"Cluster_2_User_3_sens");
-    fl_set_object_color(obj,FL_BLACK,FL_PALEGREEN);
+  fdui->User_3_sens = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,280,420,100,"User_3_sens");
+    fl_set_object_color(obj,FL_BLACK,FL_BLUE);
     fl_set_object_lsize(obj,FL_NORMAL_SIZE);
   fdui->Cluster_2_sensing = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,20,420,420,100,"Cluster_2_received_information");
     fl_set_object_color(obj,FL_BLACK,FL_YELLOW);

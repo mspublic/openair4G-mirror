@@ -407,9 +407,11 @@ void rrc_end_scan_conf(
     pthread_mutex_unlock( &( rrm->rrc.exclu ) ) ;
     
     if ((rrm->role == CH_COLL) && (rrm->rrc.pSensEntry == NULL)){
+        //printf("before IP message\n");//dbg
         pthread_mutex_lock( &( rrm->ip.exclu ) ) ;
         PUT_IP_MSG(msg_stop_coll_sens_conf( inst, rrm->L2_id)); //mod_lor_10_05_12
         pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
+        //printf("after IP message\n");//dbg
     }
         
     

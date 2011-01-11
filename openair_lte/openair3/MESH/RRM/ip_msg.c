@@ -380,9 +380,10 @@ msg_t *msg_stop_coll_sens_conf(
 
         if ( p != NULL )
         {
-            init_ip_msg_head(&(msg->head),inst,STOP_COLL_SENS_CONF, sizeof( init_coll_sens_req_t) ,0);            
+            init_ip_msg_head(&(msg->head),inst,STOP_COLL_SENS_CONF, sizeof( stop_coll_sens_conf_t) ,0);            
             memcpy( p->L2_id.L2_id, L2_id.L2_id, sizeof(L2_ID) )  ;
         }
+        msg->data = (char *) p ;
     }
     return msg  ;
 }

@@ -1005,7 +1005,7 @@ static void processing_msg_cmm(
                        
                     //mod_lor_10_05_18++: destination addresses depends on 
                     //scenario and on role, they are declared at beginning of file
-                    if (SCEN_2_CENTR && rrm->id == 4){
+                    if (SCEN_2_CENTR && rrm->id >= FIRST_SECOND_CLUSTER_USER_ID){ //mod_lor_11_01_06
                         tmp[0]=CH_COLL_L3id[0];
                         tmp[1]=CH_COLL_L3id[1];
                         tmp[2]=CH_COLL_L3id[2];
