@@ -884,7 +884,7 @@ int main(int argc, char **argv) {
 	    }
 #endif //IFFT_FPGA
 	
-	    	printf("tx_lev = %d (%d)\n",tx_lev,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	    //printf("tx_lev = %d (%d)\n",tx_lev,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	  
 	    if (n_frames<=3)
@@ -1295,31 +1295,6 @@ int main(int argc, char **argv) {
 		write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,300*12,1,1);
 		write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*12,1,1);
 	      }
-	      write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*12,1,1);
-	      if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1) {
-		write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
-	      }
-	      write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
-	      write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);
-	      /*
-		write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[1],300*12,1,1);
-		write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
-		write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[3],300*12,1,1);
-		write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[eNb_id]->rho[0],300*12,1,1);
-	      */
-	      write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
-	      write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
-	      write_output("dlsch_e.m","e",PHY_vars_eNb->dlsch_eNb[0][0]->e,coded_bits_per_codeword,1,4);
-	      write_output("dlsch_rxF_llr.m","dlsch_llr",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],coded_bits_per_codeword,1,0);
-	      write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
-	    
-	      write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_mag[0],300*12,1,1);
-	      write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_magb[0],300*12,1,1);
-	    
-	    
-	      //	printf("Calling decoding (Ndi %d, harq_pid %d)\n",
-	      //       dlsch_ue[0]->harq_processes[0]->Ndi,
-	      //       dlsch_ue[0]->current_harq_pid);
 	      
 	      PHY_vars_UE->dlsch_ue[0][0]->rnti = n_rnti;
 	      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,

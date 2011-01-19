@@ -477,30 +477,40 @@ void openair_sync(void) {
 	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
 	pbch_decoded = 0;
-	if (rx_pbch(lte_ue_common_vars,
-		    lte_ue_pbch_vars[0],
-		    lte_frame_parms,
-		    0,
-		    SISO)) {
+	for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
+	  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+				PHY_vars_UE->lte_ue_pbch_vars[0],
+				&PHY_vars_UE->lte_frame_parms,
+				0,
+				SISO,
+				frame_mod4);
+	  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+	    PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
+	    pbch_decoded = 1;
+	    break;
+	  }
 	  
-	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for SISO!\n");
-	  pbch_decoded = 1;
+	  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+				PHY_vars_UE->lte_ue_pbch_vars[0],
+				&PHY_vars_eNb->lte_frame_parms,
+				0,
+				ALAMOUTI,
+				frame_mod4);
+	  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+	    PHY_vars_UE->lte_frame_parms.mode1_flag = 0;
+	    pbch_decoded = 1;
+	    break;
+	  }
 	}
-	else if (rx_pbch(lte_ue_common_vars,
-		    lte_ue_pbch_vars[0],
-		    lte_frame_parms,
-		    0,
-		    ALAMOUTI)) {
 
-	  msg("[openair][SCHED][SYNCH] PBCH decoded sucessfully for ALAMOUTI!\n");
-	  pbch_decoded = 1;
-	}
-
+	  
 	if (pbch_decoded) {
-
-	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[0]->decoded_output[4] == 1);
-	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[0]->decoded_output[4];
-
+	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
+	      PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
+	  lte_frame_parms->nb_antennas_tx = pbch_tx_ant;
+	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[0]->decoded_output[1] == 1);
+	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[0]->decoded_output[1];
+	  
 	  if (openair_daq_vars.node_running == 1) {
       
 	    pci_interface[0]->frame_offset = PHY_vars->rx_offset;

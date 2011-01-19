@@ -7,14 +7,14 @@ CPUFLAGS = -mmmx -msse -msse2 -m32  #-mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
 
-TOP_DIR = ../..
+TOP_DIR      = ../..
 OPENAIR2_DIR = ../../../openair2
 OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 
-CFLAGS += -DOPENAIR_LTE -DPHY_ABSTRACTION  -DOPENAIR2 #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+CFLAGS += -DOPENAIR_LTE -DOPENAIR2 -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE 
 
 #CFLAGS += -DXFORMS
 
@@ -22,12 +22,17 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
+ifdef EMUL
+CFLAGS += -DPHY_ABSTRACTION
+endif
+
 
 include $(TOP_DIR)/PHY/Makefile.inc
 include $(TOP_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
+#ifdef EMUL
 include $(TOP_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
-
+#endif
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  

@@ -24,19 +24,6 @@ extern __m128i zero;
 #include "PHY_INTERFACE/defs.h"
 #endif
 
-//#define DEBUG_PBCH
-
-/* This implements the LTE PBCH channel with the following differences form the spec 3GPP 36.212-860
- *  * we do not use the OFDM symbols 0 and 3/4 (normal/extended CP respectively)
- *      (in a later version, when we use 4 Tx antennas, we should also skip over the pilots in symbol 1)
- *  * that gives us pbch_coded_bits = 36*6*2=432 (RE/RB * #RB * bits/RB) for normal CP and
- *                  pbch_coded_bits = 24*6*2=288 for extended CP
- *  * the input length (information bits) is 64 input bits (including CRC)
- *  * we use turbo code with rate 1/3, rate matching to the corresponding size
- */
-
-//#define DEBUG_PBCH
-
 #define PBCH_A 24
 
 u8 pbch_d[96+(3*(16+PBCH_A))], pbch_w[3*3*(16+PBCH_A)],pbch_e[1920];  //one bit per byte
@@ -100,7 +87,7 @@ int generate_pbch(mod_sym_t **txdataF,
       pbch_a[(PBCH_A>>3)-i-1] = pbch_pdu[i];
     //  pbch_data[i] = ((char*) &crc)[0];
     //  pbch_data[i+1] = ((char*) &crc)[1];
-#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH
     for (i=0;i<(PBCH_A>>3);i++) 
       msg("[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
 #endif
@@ -118,10 +105,8 @@ int generate_pbch(mod_sym_t **txdataF,
 
      
 #ifdef DEBUG_PBCH_ENCODING
-#ifdef DEBUG_PBCH_ENCODING
     for (i=0;i<16+PBCH_A;i++)
       msg("%d : (%d,%d,%d)\n",i,*(pbch_d+96+(3*i)),*(pbch_d+97+(3*i)),*(pbch_d+98+(3*i)));
-#endif
 #endif //DEBUG_PBCH_ENCODING
     
     // Bit collection
@@ -164,6 +149,13 @@ int generate_pbch(mod_sym_t **txdataF,
     msg("\n");
 #endif
 
+
+    // scrambling
+
+    pbch_scrambling(frame_parms,
+		    pbch_e,
+		    pbch_E);
+    
 #ifdef DEBUG_PBCH
 #ifdef USER_MODE
     write_output("pbch_e.m","pbch_e",
@@ -173,13 +165,6 @@ int generate_pbch(mod_sym_t **txdataF,
 		 4);
 #endif //USER_MODE
 #endif //DEBUG_PBCH
-
-    // scrambling
-
-    pbch_scrambling(frame_parms,
-		    pbch_e,
-		    pbch_E);
-    
 
   } // frame_mod4==0
 
@@ -204,13 +189,6 @@ int generate_pbch(mod_sym_t **txdataF,
 #endif
 
     
-    //    if (pilots==0) { // don't skip pilot symbols
-      // This is not LTE, it guarantees that
-      // pilots from adjacent base-stations
-      // do not interfere with data
-      // LTE is eNb centric.  "Smart" Interference
-      // cancellation isn't possible
-    //    printf("Doing PBCH symbol %d (pilots %d)\n",l,pilots);
 #ifdef IFFT_FPGA
     re_offset = frame_parms->N_RB_DL*12-3*12;
     symbol_offset = frame_parms->N_RB_DL*12*l;
@@ -542,6 +520,7 @@ void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+  //msg("pbch_scrambling: Nid_cell = %d\n",x2);
 
   for (i=0; i<length; i++) {
     if ((i&0x1f)==0) {
@@ -564,6 +543,7 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+  //msg("pbch_unscrambling: Nid_cell = %d\n",x2);
 
   for (i=0; i<length; i++) {
     if (i%32==0) {
@@ -668,6 +648,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
   u8 *decoded_output = lte_ue_pbch_vars->decoded_output;
   //  s16 *channel_output = lte_ue_pbch_vars->channel_output;
   u16 crc;
+
 
   pbch_D    = 16+PBCH_A;
   pbch_D_bytes   = pbch_D>>3;
@@ -775,13 +756,17 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 			      &pbch_d_rx[96], 
 			      &pbch_w_rx[0]); 
 
-  memset(decoded_output,0,((16+PBCH_A)>>3));
+  memset(pbch_a,0,((16+PBCH_A)>>3));
 
-  phy_viterbi_lte_sse2(pbch_d_rx+96,decoded_output,16+PBCH_A);
+  phy_viterbi_lte_sse2(pbch_d_rx+96,pbch_a,16+PBCH_A);
   
+  // Fix byte endian of PBCH (bit 23 goes in first)
+  for (i=0;i<(PBCH_A>>3);i++) 
+    decoded_output[(PBCH_A>>3)-i-1] = pbch_a[i];
+
 #ifdef DEBUG_PBCH
-  for (i=0;i<2+(PBCH_A>>3);i++) 
-    msg("[PBCH] decoded_output[%d] = %x\n",i,decoded_output[i]);
+  for (i=0;i<(PBCH_A>>3);i++) 
+    msg("[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
 #ifdef USER_MODE
   write_output("pbch_decoded_out.m","pbch_dec_out",
 	       decoded_output,
@@ -793,13 +778,22 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
 #ifdef DEBUG_PBCH
   printf("PBCH CRC %x : %x\n",
-	 crc16(decoded_output,PBCH_A),
-	 ((u16)decoded_output[PBCH_A>>3]<<8)+decoded_output[(PBCH_A>>3)+1]);
+	 crc16(pbch_a,PBCH_A),
+	 ((u16)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
 #endif
 
-  crc = (crc16(decoded_output,PBCH_A)>>16) ^ 
-    (((u16)decoded_output[PBCH_A>>3]<<8)+decoded_output[(PBCH_A>>3)+1]);
-  return(crc);
+  crc = (crc16(pbch_a,PBCH_A)>>16) ^ 
+    (((u16)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
+
+
+  if (crc == 0x0000)
+    return(1);
+  else if (crc == 0xffff)
+    return(2);
+  else if (crc == 0x5555)
+    return(4);
+  else 
+    return(-1);
 
 }
 

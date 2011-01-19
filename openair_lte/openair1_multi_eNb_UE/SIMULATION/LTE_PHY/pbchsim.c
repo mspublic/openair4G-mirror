@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
   channel_desc_t *eNB2UE,*eNB2UE1,*eNB2UE2;
   u32 nsymb,tx_lev,tx_lev_dB;
   u8 extended_prefix_flag=0;
-  s8 interf1=-19,interf2=-19;
+  s8 interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
 #ifdef EMOS
   fifo_dump_emos emos_dump;
@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
   DCI_ALLOC_t dci_alloc[8];
   u8 abstraction_flag=0,calibration_flag=0;
   double pbch_sinr;
+  int pbch_tx_ant;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -552,9 +553,9 @@ int main(int argc, char **argv) {
 
     //    for (i=0;i<6;i++)
     //      pbch_pdu[i] = i;
-    pbch_pdu[0]=0;
-    pbch_pdu[1]=0;
-    pbch_pdu[2]=64;
+    pbch_pdu[0]=100;
+    pbch_pdu[1]=1;
+    pbch_pdu[2]=0;
     
     generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 		 1024,
@@ -598,7 +599,14 @@ int main(int argc, char **argv) {
 		  &PHY_vars_eNb->lte_frame_parms,
 		  pbch_pdu,
 		  0);
-    
+    /*
+    generate_pbch(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+		  1024,
+		  &PHY_vars_eNb->lte_frame_parms,
+		  pbch_pdu,
+		  3);
+    */
+
     if (interf1>-20) {
       generate_pss(PHY_vars_eNb1->lte_eNB_common_vars.txdataF[0],
 		   1024,
@@ -852,16 +860,20 @@ int main(int argc, char **argv) {
 	  multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	  	  
-	  multipath_channel(eNB2UE1,s_re1,s_im1,r_re1,r_im1,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	  if (interf1>-20) 
+	    multipath_channel(eNB2UE1,s_re1,s_im1,r_re1,r_im1,
+			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 
-	  multipath_channel(eNB2UE2,s_re2,s_im2,r_re2,r_im2,
-			    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
+	  if (interf2>-20) 
+	    multipath_channel(eNB2UE2,s_re2,s_im2,r_re2,r_im2,
+			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	  
 	  if (abstraction_flag == 1) {
 	    freq_channel(eNB2UE,25);
-	    freq_channel(eNB2UE1,25);
-	    freq_channel(eNB2UE2,25);
+	    if (interf1>-20) 
+	      freq_channel(eNB2UE1,25);
+	    if (interf2>-20) 
+	      freq_channel(eNB2UE2,25);
 	    pbch_sinr = compute_pbch_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25);
 	    printf("total_sinr %f\n",compute_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25));
 	    printf("pbch_sinr %f => BLER %f\n",pbch_sinr,pbch_bler(pbch_sinr));
@@ -1007,29 +1019,37 @@ int main(int argc, char **argv) {
 	      if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?10:9)) {
 		
 		for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
-		  if (rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-			      PHY_vars_UE->lte_ue_pbch_vars[0],
-			      &PHY_vars_UE->lte_frame_parms,
-			      0,
-			      SISO,
-			      frame_mod4) == amask) {
-		    if (n_frames==1)
-		      msg("pbch decoded sucessfully for SISO, frame_mod4 %d, amask %x!\n",frame_mod4,amask);
+		  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+					PHY_vars_UE->lte_ue_pbch_vars[0],
+					&PHY_vars_UE->lte_frame_parms,
+					0,
+					SISO,
+					frame_mod4);
+		  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+		    PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
 		    break;
 		  }
-		  else if (rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-				   PHY_vars_UE->lte_ue_pbch_vars[0],
-				   &PHY_vars_eNb->lte_frame_parms,
-				   0,
-				   ALAMOUTI,
-				   frame_mod4)== amask) {
+
+		  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
+					PHY_vars_UE->lte_ue_pbch_vars[0],
+					&PHY_vars_eNb->lte_frame_parms,
+					0,
+					ALAMOUTI,
+					frame_mod4);
+		  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+		    PHY_vars_UE->lte_frame_parms.mode1_flag = 0;
 		    n_alamouti++;
-		    if (n_frames==1)
-		      msg("pbch decoded sucessfully for ALAMOUTI, frame_mod4 %d!\n",frame_mod4);
 		    break;
 		  }
 		}
-		if (frame_mod4==4) {
+
+
+		if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
+		  if (n_frames==1)
+		    msg("pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
+			PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
+		}
+		else {
 		  n_errors++;
 		  n_errors2++;
 		  if (n_frames==1)
@@ -1064,7 +1084,7 @@ int main(int argc, char **argv) {
     write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);    
     write_output("PBCH_rxF0_ext.m","pbch0_ext",PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
     write_output("PBCH_rxF0_comp.m","pbch0_comp",PHY_vars_UE->lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-    write_output("PBCH_rxF_llr.m","pbch_llr",PHY_vars_UE->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,0);
+    write_output("PBCH_rxF_llr.m","pbch_llr",PHY_vars_UE->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
   }
 
 

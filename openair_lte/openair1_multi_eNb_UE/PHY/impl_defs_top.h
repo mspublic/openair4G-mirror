@@ -65,13 +65,14 @@ ________________________________________________________________*/
 #include "spec_defs_top.h"
 
 
+
 /**@addtogroup _PHY_STRUCTURES_
  * @{ 
 */
 #define NUMBER_OF_OFDM_CARRIERS (frame_parms->ofdm_symbol_size)
 #define NUMBER_OF_SYMBOLS_PER_FRAME (frame_parms->symbols_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)
 #define LOG2_NUMBER_OF_OFDM_CARRIERS (frame_parms->log2_symbol_size)
-#define NUMBER_OF_USEFUL_CARRIERS (NUMBER_OF_OFDM_CARRIERS-(12*frame_parms->N_RB_DL))
+#define NUMBER_OF_USEFUL_CARRIERS (12*frame_parms->N_RB_DL)
 #define NUMBER_OF_ZERO_CARRIERS (NUMBER_OF_OFDM_CARRIERS-NUMBER_OF_USEFUL_CARRIERS)
 #define NUMBER_OF_USEFUL_CARRIERS_BYTES (NUMBER_OF_USEFUL_CARRIERS>>2)
 #define HALF_NUMBER_OF_USEFUL_CARRIERS (NUMBER_OF_USEFUL_CARRIERS>>1)
@@ -145,7 +146,7 @@ ________________________________________________________________*/
 //#define MAX_RF_GAIN 160
 //#define MIN_RF_GAIN 96
 #define MAX_RF_GAIN 150
-#define MIN_RF_GAIN 130
+#define MIN_RF_GAIN 110
 
 #define PHY_SYNCH_OFFSET ((OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)-1)  // OFFSET of BEACON SYNCH
 #define PHY_SYNCH_MIN_POWER 1000

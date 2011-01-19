@@ -2253,11 +2253,11 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	  *CCEmap|=(0xff<<(CCEind&0x1f));
 	  break;
 	}	
-#ifdef DEBUG_DCI_DECODING
+	//#ifdef DEBUG_DCI_DECODING
 	msg("Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x)\n",
 	    *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap);
 	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
-#endif
+	//#endif
 	if (crc==lte_ue_pdcch_vars[eNb_id]->crnti)
 	  return;
       } // rnti match

@@ -195,6 +195,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->active = 1;
     dlsch0 = dlsch[0];
+
+    dlsch[0]->rnti = rnti;
     
     break;
   case format1:
@@ -236,6 +238,8 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->active = 1;
     dlsch0 = dlsch[0];
+
+    dlsch[0]->rnti = rnti;
 
     break;
   case format2_2A_L10PRB:
@@ -352,6 +356,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     }
 
     dlsch0->active = 1;
+
+    dlsch0->rnti = rnti;
+    dlsch1->rnti = rnti;
 
     break;
   default:
@@ -516,6 +523,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
 
     dlsch[0]->harq_processes[harq_pid]->TBS         = dlsch_tbs25[get_I_TBS(dlsch[0]->harq_processes[harq_pid]->mcs)][NPRB-1];
 
+    dlsch[0]->rnti = rnti;
 
     dlsch0 = dlsch[0];
     break;
@@ -561,6 +569,9 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch[0]->active = 1;
+
+    dlsch[0]->rnti = rnti;
+
     dlsch0 = dlsch[0];
 
     break;
@@ -694,12 +705,17 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
     }
     else
       dlsch1->harq_processes[harq_pid]->TBS         = 0;
+
+    dlsch0->rnti = rnti;
+    dlsch1->rnti = rnti;
+  
     break;
   default:
     msg("dci_tools.c: format %d not yet implemented\n",dci_format);
     return(-1);
     break;
   }
+
   
 #ifdef DEBUG_DCI
   if (dlsch[0]) {
@@ -1104,6 +1120,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 	ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->round++;
     }
+
 #ifdef DEBUG_DCI
     msg("ulsch (ue): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (ue): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
@@ -1182,6 +1199,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       }
       ulsch->harq_processes[harq_pid]->round++;
     }
+    ulsch->rnti = rnti;
 #ifdef DEBUG_DCI
     msg("ulsch (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);

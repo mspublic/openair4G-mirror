@@ -692,7 +692,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 
 	    txdataF[0][tti_offset] = (mod_sym_t) qpsk_table_offset;      // x0
-	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots,)==1) {
+	    if (is_not_pilot(pilots,re+1,frame_parms->nushift,use2ndpilots)==1) {
 	      txdataF[1][tti_offset+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
 	    }
 	    else {

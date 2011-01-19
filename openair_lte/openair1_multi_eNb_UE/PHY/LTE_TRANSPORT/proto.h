@@ -622,7 +622,9 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     MIMO_mode_t mimo_mode,
 	     u8 is_secondary_ue);
 
-
+/*! \brief receiver for the PBCH
+\returns number of tx antennas or -1 if error
+*/
 u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    LTE_UE_PBCH *lte_ue_pbch_vars,
 	    LTE_DL_FRAME_PARMS *frame_parms,

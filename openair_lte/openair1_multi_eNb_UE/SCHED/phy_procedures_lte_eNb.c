@@ -236,9 +236,11 @@ void phy_procedures_eNB_S_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,
 		     next_slot);
       
       }
+#ifdef PHY_ABSTRACTION
       else {
 	generate_pss_emul(phy_vars_eNb,sect_id);
       }
+#endif
     }
   }
 }
@@ -347,12 +349,14 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,
 #endif    
 #endif
     }
+#ifdef PHY_ABSTRACTION
     else {
       sync_pos = lte_sync_time_eNb_emul(phy_vars_eNb,
 					0,//sect_id,
 					&sync_val);
 
     }
+#endif
 
     if ((sync_pos>=0) && (sync_val > max_peak_val)) {
       max_peak_val = sync_val;
@@ -420,10 +424,12 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,
 				sect_id,
 				phy_vars_eNb->first_run_I0_measurements);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	lte_eNB_I0_measurements_emul(phy_vars_eNb,
 				     sect_id);
       }
+#endif
     }
 
     if (I0_clear == 1)
@@ -506,15 +512,14 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
     
    if (next_slot == 1) {
       
-      
-#ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch\n",mac_xface->frame, next_slot);
-#endif
-
       if ((mac_xface->frame&3) == 0) {
 	*((u8*) pbch_pdu) = (u8)((mac_xface->frame>>2)&0xff);
 	((u8*) pbch_pdu)[1] = openair_daq_vars.dlsch_transmission_mode;
       }
+
+#ifdef DEBUG_PHY
+      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch, pdu[0]=%d\n",mac_xface->frame, next_slot,((u8*) pbch_pdu)[0]);
+#endif
 
       if (abstraction_flag==0) {
 	generate_pbch(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
@@ -523,9 +528,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 		      pbch_pdu,
 		      mac_xface->frame&3);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	generate_pbch_emul(phy_vars_eNb);
       }
+#endif
     }
   }
 
@@ -643,9 +650,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       if (abstraction_flag==0) {
       //      generate_phich_top(&phy_vars_eNb->lte_frame_parms,next_slot>>1,phy_vars_eNb->ulsch_eNb[0],phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id]);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	generate_phich_emul(phy_vars_eNb,next_slot>>1,phy_vars_eNb->ulsch_eNb[0]);
       }
+#endif
     }
 
     // if we have DCI to generate do it now
@@ -666,10 +675,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 					       phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					       next_slot>>1);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	num_pdcch_symbols = generate_dci_top_emul(phy_vars_eNb,DCI_pdu->Num_ue_spec_dci,DCI_pdu->Num_common_dci,DCI_pdu->dci_alloc,next_slot>>1);
       }
-    
+#endif    
     }
     else {  // for emulation!!
       phy_vars_eNb->num_ue_spec_dci[(next_slot>>1)&1]=0;
@@ -740,11 +750,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	    }
 	  */
 	}
+#ifdef PHY_ABSTRACTION
 	else {
 	  dlsch_encoding_emul(phy_vars_eNb,
 			      DLSCH_pdu,
 			      phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]);
 	}
+#endif
 	phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->active = 0;
 	
 	//#ifdef DEBUG_PHY    
@@ -763,6 +775,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+      for (i=0;i<input_buffer_length;i++)
+	debug_msg("dlsch_input_buffer[%d]=%x\n",i,dlsch_input_buffer[i]);
 #endif
 
       if (abstraction_flag == 0) {
@@ -792,11 +806,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 					  num_pdcch_symbols,
 					  phy_vars_eNb->dlsch_eNb_SI);
       } 
+#ifdef PHY_ABSTRACTION
       else {
 	dlsch_encoding_emul(phy_vars_eNb,
 			    dlsch_input_buffer,
 			    phy_vars_eNb->dlsch_eNb_SI);
       }
+#endif
       phy_vars_eNb->dlsch_eNb_SI->active = 0;
       
 #ifdef DEBUG_PHY    
@@ -863,11 +879,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 					  num_pdcch_symbols,
 					  phy_vars_eNb->dlsch_eNb_ra);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	dlsch_encoding_emul(phy_vars_eNb,
 			    dlsch_input_buffer,
 			    phy_vars_eNb->dlsch_eNb_ra);
       }
+#endif
       phy_vars_eNb->dlsch_eNb_ra->active = 0;
 	
 #ifdef DEBUG_PHY    
@@ -1118,13 +1136,14 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 			       relay_flag,
 			       diversity_scheme);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	ulsch_power = rx_ulsch_emul(phy_vars_eNb,
 				    last_slot>>1,
 				    sect_id,  // this is the effective sector id
 				    i);
-
       }
+#endif
 
 
       for (j=0;j<phy_vars_eNb->lte_frame_parms.nb_antennas_rx;j++)
@@ -1140,11 +1159,13 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 			     phy_vars_eNb->ulsch_eNb[i],
 			     last_slot>>1);
       }
+#ifdef PHY_ABSTRACTION
       else {
 	ret = ulsch_decoding_emul(phy_vars_eNb,
 				  last_slot>>1,
 				  i);
       }
+#endif
       msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNb->ulsch_eNb[i]->o_ACK[0],phy_vars_eNb->ulsch_eNb[i]->o_ACK[1]);
 
     

@@ -72,7 +72,7 @@ $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -I$(TOP_DIR) -o $@ $<
 
 dlsim : $(OBJ2) dlsim.c
-	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) -lm /usr/lib/libblas.a #-lblas 
+	$(CC) dlsim.c -I$(TOP_DIR) -o dlsim $(CFLAGS) $(OBJ2) -lm -lblas 
 
 pbchsim : $(OBJ2) pbchsim.c
 	$(CC) pbchsim.c -I$(TOP_DIR) -o pbchsim $(CFLAGS) $(OBJ2) -lm -lblas
