@@ -855,7 +855,7 @@ int main(int argc, char **argv) {
 	    
 #else //IFFT_FPGA
 
-	    if (n_frames<=3) {
+	    if (n_frames==1) {
 	      write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	      if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
 		write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
@@ -887,7 +887,7 @@ int main(int argc, char **argv) {
 	    //printf("tx_lev = %d (%d)\n",tx_lev,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 	  
-	    if (n_frames<=3)
+	    if (n_frames==1)
 	      write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 	  }
 	  else {  // Read signal from file
@@ -1029,7 +1029,8 @@ int main(int argc, char **argv) {
 	    // Inner receiver scheduling for 3 slots
 	    for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
 	      for (l=0;l<pilot2;l++) {
-		//		printf("Ns %d, l %d\n",Ns,l);
+		if (n_frames==1)
+		  printf("Ns %d, l %d\n",Ns,l);
 		slot_fep(&PHY_vars_UE->lte_frame_parms,
 			 &PHY_vars_UE->lte_ue_common_vars,
 			 l,
@@ -1043,7 +1044,7 @@ int main(int argc, char **argv) {
 				      1,
 				      0);
 	      
-		  //	      	printf("rx_avg_power_dB %d\n",PHY_vars_UE->PHY_measurements.rx_avg_power_dB[0]);
+		  //	printf("rx_avg_power_dB %d\n",PHY_vars_UE->PHY_measurements.rx_avg_power_dB[0]);
 		  //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
 		  //if (trials%100==0)
 		  //	printf("PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
@@ -1070,12 +1071,6 @@ int main(int argc, char **argv) {
 						     SI_RNTI,
 						     RA_RNTI);
 		    //		  printf("dci_cnt %d\n",dci_cnt);
-		    //		  write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
-		    //		  write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,2,1);
-		    //		  write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],3*300,1,1); 
-		    //		  write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
-		    //		  exit(-1);
-		
 		
 		    if (dci_cnt==0) {
 		      dlsch_active = 0;
@@ -1155,8 +1150,6 @@ int main(int argc, char **argv) {
 		    for (m=PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols;
 			 m<pilot2;
 			 m++) {
-		      if (n_frames==1)
-			printf("Demodulating DLSCH for symbol %d (pilot 2 %d)\n",m,pilot2);
 		      if (rx_dlsch(&PHY_vars_UE->lte_ue_common_vars,
 				   PHY_vars_UE->lte_ue_dlsch_vars,
 				   &PHY_vars_UE->lte_frame_parms,
@@ -1227,75 +1220,57 @@ int main(int argc, char **argv) {
 			dlsch_active=0;
 			break;
 		      }
+		  
+		  if ((n_frames==1) && (Ns==(2+(2*subframe))) && (l==0))  {
+		    write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
+		    if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+		      write_output("ch1.m","ch1",eNB2UE->ch[PHY_vars_eNb->lte_frame_parms.nb_antennas_rx],eNB2UE->channel_length,1,8);
+		    write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
+		    write_output("dlsch00_ch0.m","dl00_ch0",
+				 &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),
+				 PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+		    if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1)
+		      write_output("dlsch01_ch0.m","dl01_ch0",
+				   &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][1][0]),
+				   PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+		    if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+		      write_output("dlsch10_ch0.m","dl10_ch0",
+				   &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][2][0]),
+				   PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+		    if ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) && (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1))
+		      write_output("dlsch11_ch0.m","dl11_ch0",
+				   &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][3][0]),
+				   PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
+		    
+		    write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
+		    write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+		    if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
+		      write_output("rxsig1.m","rxs1", PHY_vars_UE->lte_ue_common_vars.rxdata[1],PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
+		      write_output("rxsigF1.m","rxsF1", PHY_vars_UE->lte_ue_common_vars.rxdataF[1],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
+		      write_output("rxsigF1_ext.m","rxsF1_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[1],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+		      
+		    }
+		    write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*nsymb,1,1);
+		    if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1) {
+		      write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*nsymb,1,1);
+		    }
+		    write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
+		    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);
+
+		    write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0],300*nsymb,1,1);
+		    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
+		    write_output("dlsch_e.m","e",PHY_vars_eNb->dlsch_eNb[0][0]->e,coded_bits_per_codeword,1,4);
+		    write_output("dlsch_rxF_llr.m","dlsch_llr",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],coded_bits_per_codeword,1,0);
+		    write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
+		    
+		    write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,300*nsymb,1,1);
+		    write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*nsymb,1,1);
+		  }
+	      
 		}
 	      }
 	    }
-	    /*
-	      #ifdef ABSTRACTION
-	      if(trials==0){
-	      //fprintf(csv_fd,"%f,%d,%d,%d",SNR, rx_lev_data_sym , rx_lev_null_sym, rx_snr_dB);
-	      fprintf(csv_fd,"%f,%e",SNR,n0_pow_dB);
-	      data= &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]);
 
-	      for (ii=10;ii<((1*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size))<<1)-414;ii+=2) {
-	      fprintf(csv_fd,",%d+1i*(%d)",((short *)data)[ii], ((short *)data)[ii+1]);
-	      //fprintf(csv_fd,",%e",(double)10*log10(pow(2,((short *)data)[ii])+pow(2,((short *)data)[ii+1])) + 10*log10(2));
-	      //printf("%e",(double)10*log10(pow(2,((short *)data)[ii])+pow(2,((short *)data)[ii+1])) + 10*log10(2));
-	      //ch_power_dB[ii-10] = (double)10*log10(pow(2,((short *)data)[ii])+pow(2,((short *)data)[ii])) + 10*log10(2); 
-	      }
-	      fprintf(csv_fd,",");
-	      }
-	      #endif
-	    */
-	    if (dlsch_active == 1) {
-
-	      if (n_frames==1) {
-		write_output("ch0.m","ch0",eNB2UE->ch[0],eNB2UE->channel_length,1,8);
-		write_output("rxsig0.m","rxs0", &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
-		write_output("dlsch00_ch0.m","dl00_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][0][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-		if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1)
-		  write_output("dlsch01_ch0.m","dl01_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][1][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-		if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
-		  write_output("dlsch10_ch0.m","dl10_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][2][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-		if ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) && (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1))
-		  write_output("dlsch11_ch0.m","dl11_ch0",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNb_id][3][0]),(6*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size)),1,1);
-
-		/*
-		  write_output("dlsch01_ch0.m","dl01_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][1][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);
-		  write_output("dlsch10_ch0.m","dl10_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][2][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);	    
-		  write_output("dlsch11_ch0.m","dl11_ch0",&(lte_ue_common_vars->dl_ch_estimates[eNb_id][3][0]),(6*(lte_frame_parms.ofdm_symbol_size)),1,1);
-		*/
-	    
-		write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][2*subframe*nsymb*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
-		write_output("rxsigF0_ext.m","rxsF0_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[0],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
-		if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
-		  write_output("rxsig1.m","rxs1", PHY_vars_UE->lte_ue_common_vars.rxdata[1],PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
-		  write_output("rxsigF1.m","rxsF1", PHY_vars_UE->lte_ue_common_vars.rxdataF[1],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,2,1);
-		  write_output("rxsigF1_ext.m","rxsF1_ext", PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_ext[1],2*12*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
-	      
-		}
-		write_output("dlsch00_ch0_ext.m","dl00_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[0],300*12,1,1);
-		if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1) {
-		  write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
-		}
-		write_output("pdcchF0_ext.m","pdcchF_ext", PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],2*3*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,1,1);
-		write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->dl_ch_estimates_ext[0],300*3,1,1);
-		/*
-		  write_output("dlsch01_ch0_ext.m","dl01_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[1],300*12,1,1);
-		  write_output("dlsch10_ch0_ext.m","dl10_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[2],300*12,1,1);
-		  write_output("dlsch11_ch0_ext.m","dl11_ch0_ext",lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext[3],300*12,1,1);
-		  write_output("dlsch_rho.m","dl_rho",lte_ue_dlsch_vars[eNb_id]->rho[0],300*12,1,1);
-		*/
-		write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
-		write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
-		write_output("dlsch_e.m","e",PHY_vars_eNb->dlsch_eNb[0][0]->e,coded_bits_per_codeword,1,4);
-		write_output("dlsch_rxF_llr.m","dlsch_llr",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->llr[0],coded_bits_per_codeword,1,0);
-		write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
-	    
-		write_output("dlsch_mag1.m","dlschmag1",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,300*12,1,1);
-		write_output("dlsch_mag2.m","dlschmag2",PHY_vars_UE->lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,300*12,1,1);
-	      }
-	      
 	      PHY_vars_UE->dlsch_ue[0][0]->rnti = n_rnti;
 	      dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
 				 PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
@@ -1347,7 +1322,6 @@ int main(int argc, char **argv) {
 		  printf("DLSCH in error in round %d\n",round);
 		
 	      }
-	    }
 	    
 	}  //round
 	//      printf("\n");

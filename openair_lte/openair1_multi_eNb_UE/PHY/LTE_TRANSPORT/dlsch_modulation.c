@@ -64,18 +64,18 @@ void layer1prec2A(int *antenna0_sample, int *antenna1_sample, unsigned char prec
     break;
 
   case 1: // 1 -1
-    ((short *)antenna1_sample)[0] += -((short *)antenna0_sample)[0];
-    ((short *)antenna1_sample)[1] += -((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[0];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[1];
     break;
 
   case 2: // 1 j
-    ((short *)antenna1_sample)[0] += -((short *)antenna0_sample)[1];
-    ((short *)antenna1_sample)[1] += ((short *)antenna0_sample)[0];
+    ((short *)antenna1_sample)[0] = -((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = ((short *)antenna0_sample)[0];
     break;
 
   case 3: // 1 -j
-    ((short *)antenna1_sample)[0] += ((short *)antenna0_sample)[1];
-    ((short *)antenna1_sample)[1] += -((short *)antenna0_sample)[0];
+    ((short *)antenna1_sample)[0] = ((short *)antenna0_sample)[1];
+    ((short *)antenna1_sample)[1] = -((short *)antenna0_sample)[0];
     break;
   }
 
@@ -108,6 +108,7 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
   short re_off=re_offset;
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);  
   u8 first_re,last_re;
+  int tmp_sample1,tmp_sample2;
 
   switch (mod_order) {
   case 2:
@@ -440,13 +441,20 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	switch (mod_order) {
 	case 2:  //QPSK
 	  
-	  ((short*)&txdataF[0][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&tmp_sample1)[0] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
-	  ((short*)&txdataF[0][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  ((short*)&tmp_sample1)[1] = (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  *jj = *jj + 1;
 
-	  if (frame_parms->nb_antennas_tx == 2) 
-	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  ((short*)&txdataF[0][tti_offset])[0] += ((short*)&tmp_sample1)[0];
+	  ((short*)&txdataF[0][tti_offset])[1] += ((short*)&tmp_sample1)[1];
+
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
+	    ((short*)&txdataF[1][tti_offset])[0] += ((short*)&tmp_sample2)[0];
+	    ((short*)&txdataF[1][tti_offset])[1] += ((short*)&tmp_sample2)[1];
+	  }
+
 	  break;
 	  
 	case 4:  //16QAM
@@ -469,11 +477,18 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    qam16_table_offset_im+=1;
 	  *jj=*jj+1;
 	  
-	  ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+	   ((short*)&tmp_sample1)[0] = (short)(((int)amp*qam16_table[qam16_table_offset_re])>>15);
+	   ((short*)&tmp_sample1)[1] = (short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
+
+	   ((short *)&txdataF[0][tti_offset])[0] += ((short*)&tmp_sample1)[0];
+	   ((short *)&txdataF[0][tti_offset])[1] += ((short*)&tmp_sample1)[1];
 	  
-	  if (frame_parms->nb_antennas_tx == 2) 
-	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
+	    ((short*)&txdataF[1][tti_offset])[0] += ((short*)&tmp_sample2)[0];
+	    ((short*)&txdataF[1][tti_offset])[1] += ((short*)&tmp_sample2)[1];
+	  }
+
 	  break;
 	  
 	case 6:  //64QAM
@@ -500,12 +515,17 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	    qam64_table_offset_im+=1;
 	  *jj=*jj+1;
 	  
-	  ((short *)&txdataF[0][tti_offset])[0]+=(short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((short *)&txdataF[0][tti_offset])[1]+=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
+	  ((short*)&tmp_sample1)[0] = (short)(((int)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((short*)&tmp_sample1)[1] = (short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 
-	  if (frame_parms->nb_antennas_tx == 2) 
-	    layer1prec2A(&txdataF[0][tti_offset],&txdataF[1][tti_offset],precoder_index);
-
+	  ((short *)&txdataF[0][tti_offset])[0] += ((short*)&tmp_sample1)[0];
+	  ((short *)&txdataF[0][tti_offset])[1] += ((short*)&tmp_sample1)[1];
+	  
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index);
+	    ((short*)&txdataF[1][tti_offset])[0] += ((short*)&tmp_sample2)[0];
+	    ((short*)&txdataF[1][tti_offset])[1] += ((short*)&tmp_sample2)[1];
+	  }
 	  
 	  break;
 	  
@@ -585,12 +605,8 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
   for (re=0;re<12;re++) {
 
-
     if ((skip_dc == 1) && (re==6))
       re_off=re_off - frame_parms->N_RB_DL*12;
-   // check that re is not a pilot (need shift for 2nd pilot symbol!!!!)
-    // Again this is not LTE, here for SISO only positions 3-5 and 8-11 are allowed for data REs
-    // This allows for pilots from adjacent eNbs to be interference free
 
     tti_offset = symbol_offset + re_off + re;
     

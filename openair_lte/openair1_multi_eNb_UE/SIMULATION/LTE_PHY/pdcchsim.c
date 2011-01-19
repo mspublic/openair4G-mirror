@@ -569,6 +569,16 @@ int main(int argc, char **argv) {
       
     for (trial=0; trial<n_frames; trial++) {
 
+      /*
+      for (aa=0; aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx;aa++) {
+#ifdef IFFT_FPGA
+      memset(&PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][0],0,NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
+#else
+      memset(&PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+#endif
+      }
+      */
+
       if (input_fd == NULL) {
 	common_active=0;
 	dl_active=0;
