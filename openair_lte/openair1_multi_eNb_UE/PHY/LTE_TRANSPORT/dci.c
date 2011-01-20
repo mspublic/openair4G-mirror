@@ -123,9 +123,9 @@ u16 extract_crc(u8 *dci,u8 dci_len) {
   printf("dci_crc =>%x\n",crc16);
 #endif
 
-  dci[(dci_len>>3)]&=(0xffff<<(dci_len&0xf));
-  dci[(dci_len>>3)+1] = 0;
-  dci[(dci_len>>3)+2] = 0;
+  //  dci[(dci_len>>3)]&=(0xffff<<(dci_len&0xf));
+  //  dci[(dci_len>>3)+1] = 0;
+  //  dci[(dci_len>>3)+2] = 0;
   return((u16)crc16);
 
 }
@@ -1774,7 +1774,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
       if (dci_alloc[i].L == (u8)L) {
 	
 #ifdef DEBUG_DCI_ENCODING
-	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L);
+	msg("[PHY] Generating common DCI %d/%d of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].dci_length,1<<dci_alloc[i].L,*(unsigned int*)dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
 #endif
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
@@ -2163,6 +2163,8 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   
   u16 crc,CCEind,nCCE;
   u32 *CCEmap;
+  int i;
+
   nCCE = get_nCCE(lte_ue_pdcch_vars[eNb_id]->num_pdcch_symbols,frame_parms,mi);
   for (CCEind=0;
        CCEind<nCCE;
@@ -2183,12 +2185,12 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 		   L,
 		   &lte_ue_pdcch_vars[eNb_id]->e_rx[CCEind*72],
 		   dci_decoded_output);
-
-      //            for (i=0;i<3+(sizeof_bits>>3);i++)
-      //      	printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
-
+      /*
+                  for (i=0;i<3+(sizeof_bits>>3);i++)
+            	printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
+      */
       crc = (crc16(dci_decoded_output,sizeof_bits)>>16) ^ extract_crc(dci_decoded_output,sizeof_bits); 
-      //      printf("extracted_crc : %x (crc %x)\n",crc,(crc16(dci_decoded_output,sizeof_bits)>>16));
+      //     printf("extracted_crc : %x (crc %x)\n",crc,(crc16(dci_decoded_output,sizeof_bits)>>16));
 	     
 
       if (((L>1) && ((crc == si_rnti)||

@@ -913,10 +913,10 @@ int main(int argc, char **argv) {
 	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	    }
 	  }    
-	  //	  if (n_trials==0) {
-	  //	    printf("rx_level data symbol %f\n",
-	  //		   10*log10(signal_energy(PHY_vars_UE->lte_ue_common_vars.rxdata[0],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
-	  //	  }
+	//	  	  if (n_trials==0) {
+	//	  	    printf("rx_level data symbol %f\n",
+	//	  		   10*log10(signal_energy(PHY_vars_UE->lte_ue_common_vars.rxdata[0],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)));
+	//	  	  }
 	  
 	  /*
 	  // optional: read rx_frame from file

@@ -235,7 +235,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
 				   dlsch->harq_processes[harq_pid]->w[r]); 
 
-    /*
+    
 #ifdef DEBUG_DLSCH_DECODING    
     if (r==0) {
       write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
@@ -247,7 +247,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
       msg("%d : %d\n",i,dlsch->harq_processes[harq_pid]->d[r][96+i]);
     msg("\n");
 #endif
-    */
+    
 
     //    msg("Clearing c, %p\n",dlsch->harq_processes[harq_pid]->c[r]);
     memset(dlsch->harq_processes[harq_pid]->c[r],0,Kr_bytes);

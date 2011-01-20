@@ -152,9 +152,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       // see 36-212 V8.6.0 p. 45
       NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
 
-      //      printf("TPC %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC,RA_alloc_pdu.TPC);
-      //      printf("RV %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv,RA_alloc_pdu.rv);
-      //      printf("NDI %d (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi,RA_alloc_pdu.ndi);
+            printf("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC);
+            printf("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv);
+            printf("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi);
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
@@ -365,7 +365,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     return(-1);
     break;
   }
-#ifdef DEBUG_DCI
+  #ifdef DEBUG_DCI
   if (dlsch0) {
     msg("dlsch0 eNB: NBRB     %d\n",dlsch0->nb_rb);
     msg("dlsch0 eNB: rballoc  %x\n",dlsch0->rb_alloc[0]);
@@ -377,7 +377,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     msg("dlsch0 eNB: tpmi %d\n",tpmi);
     msg("dlsch0 eNB: mimo_mode %d\n",dlsch0->harq_processes[harq_pid]->mimo_mode);
   }
-#endif
+  #endif
   return(0);
 }
 
@@ -421,7 +421,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
       msg("Don't know how to handle TDD format 0 yet\n");
     break;
   case format1A:  // This is DLSCH allocation for control traffic
-    msg("DCI format1, rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu)[0]);
+    msg("DCI format1A, rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu)[0]);
     msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->vrb_type);
     msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc]);
     msg("MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->mcs);
@@ -507,7 +507,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
 
     dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
-
+    printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
     if (dlsch[0]->nb_rb > 3) {
       msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
       return(-1);       

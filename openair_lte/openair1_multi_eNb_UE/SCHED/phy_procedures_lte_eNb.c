@@ -774,7 +774,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 
       
 #ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d\n",mac_xface->frame, next_slot, input_buffer_length);
+      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",mac_xface->frame, next_slot, input_buffer_length,num_pdcch_symbols);
       for (i=0;i<input_buffer_length;i++)
 	debug_msg("dlsch_input_buffer[%d]=%x\n",i,dlsch_input_buffer[i]);
 #endif

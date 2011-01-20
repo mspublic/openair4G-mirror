@@ -71,7 +71,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   for (i = 0; i<nb_tx*nb_rx; i++) 
     chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex));  // allocate for up to 100 RBs, 2 samples per RB
 
-  msg("[CHANNEL] Filling a \n");
+  msg("[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
   for (i = 0; i<nb_taps; i++) {
     msg("tap %d (%p,%d)\n",i,&chan_desc->a[i],nb_tx*nb_rx * sizeof(struct complex));
     chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
@@ -90,6 +90,12 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
   }
   else {
     chan_desc->R_sqrt = R_sqrt;
+  }
+
+  for (i = 0; i<nb_taps; i++) {
+    for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
+      printf("Rsqrt[%d][%d] %f %f\n",i,j,chan_desc->R_sqrt[i][j].r,chan_desc->R_sqrt[i][j].i);
+    }
   }
 
   printf("[CHANNEL] RF %f\n",chan_desc->ricean_factor);
@@ -328,11 +334,12 @@ int random_channel(channel_desc_t *desc) {
   int i,k,l,aarx,aatx;
   struct complex anew[NB_ANTENNAS_TX*NB_ANTENNAS_RX],acorr[NB_ANTENNAS_TX*NB_ANTENNAS_RX];
   struct complex phase, alpha, beta;
-
+  
   if ((desc->nb_tx>NB_ANTENNAS_TX) || (desc->nb_rx > NB_ANTENNAS_RX)) {
     msg("random_channel.c: Error: temporary buffer for channel not big enough\n");
     return(-1);
   }
+
 
   for (i=0;i<(int)desc->nb_taps;i++) {
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
@@ -357,7 +364,7 @@ int random_channel(channel_desc_t *desc) {
       } //aatx
     } //aarx
 
-    /*
+    
     // for debugging set a=anew;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
@@ -366,10 +373,11 @@ int random_channel(channel_desc_t *desc) {
 	desc->a[i][aarx+(aatx*desc->nb_rx)].i = anew[aarx+(aatx*desc->nb_rx)].i;
       }
     }
-    */
+    
 
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
+    /*
     alpha.r = 1.0;
     alpha.i = 0.0;
     beta.r = 0.0;
@@ -378,10 +386,14 @@ int random_channel(channel_desc_t *desc) {
 		(void*) &alpha, (void*) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
 		(void*) anew, 1, (void*) &beta, (void*) acorr, 1);
 
-	
+    */
+
+    /*	
     if (desc->first_run==1){
+
       cblas_zcopy(desc->nb_tx*desc->nb_rx, (void*) acorr, 1, (void*) desc->a[i], 1);
       desc->first_run = 0;
+
     }
     else {
       alpha.r = sqrt(1-desc->forgetting_factor);
@@ -394,6 +406,7 @@ int random_channel(channel_desc_t *desc) {
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].r = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].r) + sqrt(1-desc->forgetting_factor)*anew.r;
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].i = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].i) + sqrt(1-desc->forgetting_factor)*anew.i;
     }
+    */
   } //nb_taps      
 
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
@@ -410,9 +423,10 @@ int random_channel(channel_desc_t *desc) {
 	  else
 	    s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
 	      (M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
-	  
 	  desc->ch[aarx+(aatx*desc->nb_rx)][k].r += s*desc->a[l][aarx+(aatx*desc->nb_rx)].r;
 	  desc->ch[aarx+(aatx*desc->nb_rx)][k].i += s*desc->a[l][aarx+(aatx*desc->nb_rx)].i;
+	  //	  printf("l %d : desc->ch.r %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].r);
+
 	} //nb_taps
 #ifdef DEBUG_CH
 	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);

@@ -27,7 +27,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
       //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
-    //        printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
+            printf("scrambling %d : e %d, c %d\n",i,e[i],((s>>(i&0x1f))&1));
     e[i] = (e[i]&1) ^ ((s>>(i&0x1f))&1);
   }
 
@@ -58,7 +58,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
       reset = 0;
     }
     // take the quarter of the PBCH that corresponds to this frame
-    //       printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
+           printf("unscrambling %d : e %d, c %d\n",i,llr[i],((s>>(i&0x1f))&1));
     if (((s>>(i%32))&1)==0)
       llr[i] = -llr[i];
 
