@@ -176,7 +176,7 @@ typedef struct
   PHY_MEASUREMENTS PHY_measurements; /// Measurement variables 
   LTE_DL_FRAME_PARMS  lte_frame_parms;
   LTE_UE_COMMON    lte_ue_common_vars;
-  LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX];
+  LTE_UE_DLSCH     *lte_ue_dlsch_vars[NUMBER_OF_eNB_MAX+1];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_SI[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];

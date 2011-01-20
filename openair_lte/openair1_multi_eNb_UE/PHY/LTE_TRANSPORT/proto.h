@@ -158,7 +158,6 @@ void generate_pilots(mod_sym_t **txdataF,
    @param amp Amplitude of signal
    @param frame_parms Pointer to frame descriptor
    @param eNb_id Nid2 (0,1,2)
-   @param is_secondary_eNb (0,1,2)
    @param slot index (0..19)
 */
 s32 generate_pilots_slot(mod_sym_t **txdataF,
@@ -196,7 +195,6 @@ s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb);
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
     @param stream0_out Output from LLR unit for stream0
-    @param stream0_out Output from LLR unit for stream1
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs
 */
@@ -207,20 +205,11 @@ void qpsk_qpsk(s16 *stream0_in,
 	       s32 length
 	       );
 
-/** \fn dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-    s32 **rxdataF_comp,
-    s32 **rxdataF_comp_i,
-    s32 **rho_i,
-    s16 *dlsch_llr,
-    u8 symbol,
-    u16 nb_rb,
-    u16 pbch_pss_sss_adj,
-    s16 **llr128p)
-
+/**
     \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp Compensated channel output for interference
+    @param rxdataF_comp_i Compensated channel output for interference
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
@@ -238,23 +227,17 @@ s32 dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			u8 symbol,
 			u8 first_symbol_flag,
 			u16 nb_rb,
+			u16 pbch_pss_sss_adj,
 			s16 **llr128p);
 
-/** \fn dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-    s32 **rxdataF_comp,
-    s16 *dlsch_llr,
-    u8 symbol,
-    u16 nb_rb,
-    u16 pbch_pss_sss_adj,
-    s16 **llr128p)
-
-    \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
+/** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag 
     @param nb_rb number of RBs for this allocation
+    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr
 */
 s32 dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -266,14 +249,7 @@ s32 dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		   u16 pbch_pss_sss_adj,
 		   s16 **llr128p);
 
-/** \fn dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-    s32 **rxdataF_comp,
-    s16 *dlsch_llr,
-    s32 **dl_ch_mag,
-    u8 symbol,
-    u16 nb_rb,
-    u16 pbch_pss_sss_adjust,
-    s16 **llr128p)
+/**
     \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -296,14 +272,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 		     u16 pbch_pss_sss_adjust,
 		     s16 **llr128p);
 
-/** \fn void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-    s32 **rxdataF_comp,
-    s16 *dlsch_llr,
-    s32 **dl_ch_mag,
-    s32 **dl_ch_magb,
-    u8 symbol,
-    u16 nb_rb,
-    u16 pbch_pss_sss_adjust)
+/**
     \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -333,7 +302,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     \brief This function does the first stage of llr computation for SISO, by just extracting the pilots, PBCH and primary/secondary synchronization sequences.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp Compensated channel output for interference
+    @param rxdataF_comp_i Compensated channel output for interference
     @param l symbol in sub-frame
     @param nb_rb Number of RBs in this allocation
 */
@@ -375,7 +344,7 @@ void dlsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param dl_ch_mag Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
+    @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
     @param symbol Symbol in sub-frame
     @param nb_rb Number of RBs in this allocation
 */
@@ -402,7 +371,7 @@ void dlsch_antcyc(LTE_DL_FRAME_PARMS *frame_parms,
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
     @param rho Cross correlation between spatial channels
-    @param rho Cross correlation between signal and inteference channels
+    @param rho_i Cross correlation between signal and inteference channels
     @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
     @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
     @param symbol Symbol in sub-frame
@@ -476,28 +445,16 @@ u16 dlsch_extract_rbs_single(s32 **rxdataF,
     @param frame_parms Pointer to frame descriptor
 */
 u16 dlsch_extract_rbs_dual(s32 **rxdataF,
-				      s32 **dl_ch_estimates,
-				      s32 **rxdataF_ext,
-				      s32 **dl_ch_estimates_ext,
-				      u16 pmi,
-				      u8 *pmi_ext,
-				      u32 *rb_alloc,
-				      u8 symbol,
-				      LTE_DL_FRAME_PARMS *frame_parms);
+			   s32 **dl_ch_estimates,
+			   s32 **rxdataF_ext,
+			   s32 **dl_ch_estimates_ext,
+			   u16 pmi,
+			   u8 *pmi_ext,
+			   u32 *rb_alloc,
+			   u8 symbol,
+			   LTE_DL_FRAME_PARMS *frame_parms);
 
-/** \fn dlsch_channel_compensation(s32 **rxdataF_ext,
-    s32 **dl_ch_estimates_ext,
-    s32 **dl_ch_mag,
-    s32 **dl_ch_magb,
-    s32 **rxdataF_comp,
-    s32 **rho,
-    LTE_DL_FRAME_PARMS *frame_parms,
-    u8 symbol,
-    u8 mod_order,
-    u16 nb_rb,
-    u8 output_shift,
-    PHY_VARS_UE *phy_vars_ue)
-    \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
+/** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
     @param dl_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
     @param dl_ch_mag First Channel magnitudes (16QAM/64QAM)
@@ -506,10 +463,11 @@ u16 dlsch_extract_rbs_dual(s32 **rxdataF,
     @param rho Cross-correlation between two spatial channels on each RX antenna
     @param frame_parms Pointer to frame descriptor
     @param symbol Symbol on which to operate
+    @param first_symbol_flag set to 1 on first DLSCH symbol
     @param mod_order Modulation order of allocation
     @param nb_rb Number of RBs in allocation
     @param output_shift Rescaling for compensated output (should be energy-normalizing)
-    @param UE PHY_measurements
+    @param phy_measurements Pointer to UE PHY measurements
 */
 void dlsch_channel_compensation(s32 **rxdataF_ext,
 				s32 **dl_ch_estimates_ext,
@@ -525,11 +483,7 @@ void dlsch_channel_compensation(s32 **rxdataF_ext,
 				u8 output_shift,
 				PHY_MEASUREMENTS *phy_measurements);
 
-/** \fn dlsch_channel_level(s32 **dl_ch_estimates_ext,
-    LTE_DL_FRAME_PARMS *frame_parms,
-    s32 *avg,
-    u16 nb_rb)
-    \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
+/** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param dl_ch_estimates_ext Channel estimates in allocated RBs
     @param frame_parms Pointer to frame descriptor
     @param avg Pointer to average signal strength
@@ -542,13 +496,7 @@ void dlsch_channel_level(s32 **dl_ch_estimates_ext,
 			 u8 pilots_flag,
 			 u16 nb_rb);
 
-/** \fn u32 void  dlsch_decoding(u16 A,
-    s16 *dlsch_llr,
-    LTE_DL_FRAME_PARMS *lte_frame_parms,
-    LTE_UE_DLSCH_t *dlsch,
-    u8 subframe)
-
-    \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
+/** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first 
     computes the segmentation information, followed by rate dematching and sub-block deinterleaving the of the
     received LLRs computed by dlsch_demodulation for each transport block segment. It then calls the
@@ -559,6 +507,7 @@ void dlsch_channel_level(s32 **dl_ch_estimates_ext,
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
     @param subframe Subframe number
+    @param num_pdcch_symbols Number of PDCCH symbols
     @returns 0 on success, 1 on unsuccessful decoding
 */
 u32 dlsch_decoding(s16 *dlsch_llr,
@@ -572,34 +521,24 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 dlsch_id,
 			u8 eNB_id);
 
-/** \fn rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
-    LTE_UE_DLSCH **lte_ue_dlsch_vars,
-    LTE_DL_FRAME_PARMS *frame_parms,
-    u8 eNb_id,
-    u8 eNb_id_i,
-    LTE_UE_DLSCH_t **dlsch_ue,
-    u8 subframe,
-    u8 symbol,
-    u8 first_symbol_flag,
-    u8 dual_stream_UE)
-    \brief This function is the top-level entry point to dlsch demodulation, after frequency-domain transformation and channel estimation.  It performs
+/** \brief This function is the top-level entry point to dlsch demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
     - RE extraction (pilot, PBCH, synch. signals)
     - antenna combining (MRC, Alamouti, cycling)
     - LLR computation
     @param lte_ue_common_vars Pointer to Common RX variable structure for UE
-    @param lte_ue_dlsch_vars Pointer to DLSCH variable structure for UE
+    @param lte_ue_dlsch_vars Pointer to DLSCH signal variable structure for UE
     @param frame_parms Pointer to frame descriptor
     @param eNb_id eNb index (Nid1) 0,1,2
-    @param eNb_id_i Interfering eNb index (Nid1) 0,1,2
-    @param dlsch_ue 
+    @param eNb_id_i Interfering eNb index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
+    @param dlsch_ue Pointer to DLSCH coding variable structure for UE
     @param subframe Subframe number
     @param symbol Symbol on which to act (within sub-frame)
-    @param first_symbol_flag
+    @param first_symbol_flag set to 1 on first DLSCH symbol
     @param dual_stream_UE Flag to indicate dual-stream interference cancellation
-    @param UE PHY_measurements
-    @param is_secondary_ue Flag to indicate wether it should follow special receiver logic
+    @param phy_measurements Pointer to UE PHY measurements procedure
+    @param i_mod Modulation order of the interfering stream
 */
 s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
@@ -612,7 +551,7 @@ s32 rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     u8 first_symbol_flag,
 	     u8 dual_stream_UE,
 	     PHY_MEASUREMENTS *phy_measurements,
-	     u8 is_secondary_ue);
+	     u8 i_mod);
 
 s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_PDCCH **lte_ue_pdcch_vars,
@@ -651,6 +590,7 @@ void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   \param frame_parms Pointer to frame descriptor
   \param llr Output of the demodulator
   \param length Length of the sequence
+  \param frame_mod4 Frame number modulo 4
 */ 
 void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		       s8* llr,
@@ -780,7 +720,7 @@ u8 SE2I_TBS(float SE,
   @param frame_parms LTE DL Frame Parameters
   @param txdataF pointer to the frequency domain TX signal
   @param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
-  @sub_frame_offset  Offset of this subframe in units of subframes
+  @param sub_frame_number  Offset of this subframe in units of subframes
 */
 
 s32 generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
@@ -794,10 +734,9 @@ s32 generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,
 
 /*!
   \brief This function is similar to generate_srs_tx but generates a conjugate sequence for channel estimation. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
-  @param frame_parms LTE DL Frame Parameters
+  @param frame_parms Pointer to LTE DL Frame Parameters
+  @param SRS_parms Pointer SRS parameter structure
   @param txdataF pointer to the frequency domain TX signal
-  @param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
-  @sub_frame_offset  Offset of this subframe in units of subframes
 */
 
 s32 generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,

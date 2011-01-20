@@ -149,12 +149,7 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
 				     unsigned char Nl, 
 				     unsigned char r);
 
-/** \fn unsigned int lte_rate_matching_cc(unsigned int RCC,
-			     unsigned int E, 
-			     unsigned char *w,
-			     unsigned char *e)
-
-
+/** 
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RCC R^CC_subblock from subblock interleaver (number of rows in interleaving matrix) for up to 8 segments
 \param E Number of coded channel bits
@@ -167,21 +162,7 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 				  unsigned char *w,
 				  unsigned char *e);
 
-/** \fn unsigned int lte_rate_matching_turbo_rx(unsigned int RTC,
-    unsigned int G, 
-    short *w,
-    unsigned char *dummy_w,
-    short *soft_input, 
-    unsigned char C, 
-    unsigned int Nsoft, 
-    unsigned char Mdlharq,
-    unsigned char Kmimo,
-    unsigned char rvidx,
-    unsigned char clear,
-    unsigned char Qm, 
-    unsigned char Nl, 
-    unsigned char r)
-    
+/**     
 \brief This is the LTE rate matching algorithm for Turbo-coded channels (e.g. DLSCH,ULSCH).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RTC R^TC_subblock from subblock interleaver (number of rows in interleaving matrix)
 \param G This the number of coded transport bits allocated in sub-frame
@@ -197,7 +178,7 @@ unsigned int lte_rate_matching_cc(unsigned int RCC,
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
-\param \f$E\f$, the number of coded bits per segment 
+\param E the number of coded bits per segment 
 \returns 0 on success, -1 on failure
 */
 
@@ -216,13 +197,7 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
 			       unsigned char Nl, 
 			       unsigned char r,
 			       unsigned int *E);
-/** \fn unsigned int lte_rate_matching_cc_rx(unsigned int RCC,
-    unsigned int E, 
-    char *w,
-    unsigned char *dummy_w,
-    char *soft_input)
-
-    
+/**     
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )
 \param RCC R^CC_subblock from subblock interleaver (number of rows in interleaving matrix)
 \param E This the number of coded bits allocated for channel
@@ -395,7 +370,7 @@ int rate_matching_lte(unsigned int N_coded,
 		      unsigned int off);
 
 
-/*!\fn void phy_threegpplte_turbo_decoder(short *y, unsigned char *decoded_bytes,unsigned short n,unsigned short interleaver_f1,unsigned short interleaver_f2,unsigned char max_iterations,unsigned char crc_type, unsigned char F)
+/*!
 \brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
 @param y LLR input (16-bit precision)
 @param decoded_bytes Pointer to decoded output

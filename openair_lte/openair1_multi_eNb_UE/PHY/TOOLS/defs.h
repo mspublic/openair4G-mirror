@@ -111,7 +111,7 @@ int mult_cpx_vector_norep(short *x1,
 			   unsigned short output_shift);
 
 
-/*!\fn int mult_cpx_vector_norep2(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
+/*!\fn int mult_cpx_vector_norep2(short *x1,short *x2,short *y,unsigned int N,int output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
 
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|

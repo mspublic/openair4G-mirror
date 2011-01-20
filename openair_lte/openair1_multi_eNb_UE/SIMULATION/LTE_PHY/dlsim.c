@@ -133,8 +133,10 @@ int main(int argc, char **argv) {
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  //double amps[1] = {1};
   double aoa=.03;
   double ricean_factor=0.0000005;
+  //double ricean_factor=1;
   double forgetting_factor=0; //0 means a new channel every time
   double hold_channel=0; //use hold_channel=1 instead of forgetting_factor=1 (more efficient)
   double Td=0.8;
@@ -143,8 +145,9 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
-  int eNb_id = 0, eNb_id_i = 1;
+  int eNb_id = 0, eNb_id_i = NUMBER_OF_eNB_MAX;
   unsigned char mcs,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
+  unsigned char i_mod = 2;
   unsigned short NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
   unsigned char Ns,l,m;
   u8 tdd_config=3;
@@ -369,8 +372,10 @@ int main(int argc, char **argv) {
       }
   }
 
-  if (transmission_mode==5)
+  if (transmission_mode==5) {
     n_users = 2;
+    dual_stream_UE=1;
+  }
 
   lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,tdd_config);  
 
@@ -1161,7 +1166,7 @@ int main(int argc, char **argv) {
 				   (m==PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols)?1:0,
 				   dual_stream_UE,
 				   &PHY_vars_UE->PHY_measurements,
-				   0)==-1) {
+				   i_mod)==-1) {
 			dlsch_active = 0;
 			break;
 		      }
@@ -1195,7 +1200,7 @@ int main(int argc, char **argv) {
 				   0,
 				   dual_stream_UE,
 				   &PHY_vars_UE->PHY_measurements,
-				   0)==-1) {
+				   i_mod)==-1) {
 			dlsch_active=0;
 			break;
 		      }
@@ -1216,7 +1221,7 @@ int main(int argc, char **argv) {
 				   0,
 				   dual_stream_UE,
 				   &PHY_vars_UE->PHY_measurements,
-				   0)==-1) {
+				   i_mod)==-1) {
 			dlsch_active=0;
 			break;
 		      }

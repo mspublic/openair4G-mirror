@@ -283,12 +283,15 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			unsigned char symbol,
 			unsigned char first_symbol_flag,
 			unsigned short nb_rb,
+			u16 pbch_pss_sss_adjust,
 			short **llr128p) {
 
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rxF_i=(__m128i*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *rho=(__m128i*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *llr128;
+  int len;
+  u8 symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
   //  printf("dlsch_qpsk_qpsk: symbol %d\n",symbol);
   
   if (first_symbol_flag == 1) {
@@ -312,16 +315,30 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     return -1;
   }
 
+  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
+    // if symbol has pilots
+    if (frame_parms->mode1_flag==0)
+      // in 2 antenna ports we have 8 REs per symbol per RB
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
+    else
+      // for 1 antenna port we have 10 REs per symbol per RB 
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  }
+  else {
+    // symbol has no pilots
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
+  }
+
   qpsk_qpsk((short *)rxF,
 	    (short *)rxF_i,
 	    (short *)llr128,
 	    (short *)rho,
-	    nb_rb*12);
+	    len);
 
-  llr128 += nb_rb*3;
+  llr128 += (len>>2);
   *llr128p = (short *)llr128;
 
-
+  return(0);
 }
 
 int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -2130,19 +2147,19 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 	     LTE_UE_DLSCH **lte_ue_dlsch_vars,
 	     LTE_DL_FRAME_PARMS *frame_parms,
 	     unsigned char eNb_id,
-	     unsigned char eNb_id_i,
+	     unsigned char eNb_id_i, //if this == NUMBER_OF_eNB_MAX, we assume MU interference
 	     LTE_UE_DLSCH_t **dlsch_ue,
 	     u8 subframe,
 	     unsigned char symbol,
 	     unsigned char first_symbol_flag,
-	     unsigned char dual_stream_UE,
+	     unsigned char dual_stream_flag,
 	     PHY_MEASUREMENTS *phy_measurements,
-	     unsigned char is_secondary_ue) {
+	     unsigned char i_mod) {
   
   unsigned short nb_rb;
 
-  unsigned char aatx,aarx,symbol_mod;
-  int avgs;
+  unsigned char aatx,aarx,symbol_mod,pilots=0;
+  int avgs, rb;
 
   unsigned char harq_pid0;
 
@@ -2171,10 +2188,15 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     return(-1);
   }
 
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
+    pilots=1;
+  else 
+    pilots=0;
+
   harq_pid0 = dlsch_ue[0]->current_harq_pid;
 
   if (frame_parms->nb_antennas_tx>1) {
-    if (!is_secondary_ue) {
 #ifdef DEBUG_DLSCH_MOD     
       msg("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch_ue[0]->pmi_alloc),dlsch_ue[0],dlsch_ue[0]->rb_alloc[0]);
 #endif
@@ -2188,7 +2210,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				   symbol,
 				   frame_parms);
 
-    if (dual_stream_UE == 1)
+    if ((dual_stream_flag==1) && (eNb_id_i!=NUMBER_OF_eNB_MAX))
       nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
 				     lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
 				     lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
@@ -2198,29 +2220,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				     dlsch_ue[0]->rb_alloc,
 				     symbol,
 				     frame_parms);
-    } else { // is secondary ue
-      nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-				       lte_ue_common_vars->dl_ch_estimates[eNb_id+1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
-				       lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
-				       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
-				       dlsch_ue[0]->pmi_alloc,
-				       lte_ue_dlsch_vars[eNb_id]->pmi_ext,
-				       dlsch_ue[0]->rb_alloc,
-				       symbol,
-				       subframe,
-				       frame_parms);
-      dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
-			       lte_ue_common_vars->dl_ch_estimates[eNb_id_i - 1], //add 1 to eNb_id to compensate for the shifted B/F'd pilots from the SeNb
-			       lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
-			       lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
-			       dlsch_ue[0]->pmi_alloc,
-			       lte_ue_dlsch_vars[eNb_id_i]->pmi_ext,
-			       dlsch_ue[0]->rb_alloc,
-			       symbol,
-			       subframe,
-			       frame_parms);
-    }
-  }
+
+  } // n_tx > 1 
   else {
 
       nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
@@ -2233,7 +2234,8 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				       symbol,
 				       subframe,
 				       frame_parms);
-      if (dual_stream_UE == 1)
+
+      if ((dual_stream_flag==1) && (eNb_id_i!=NUMBER_OF_eNB_MAX))
 	nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
 					 lte_ue_common_vars->dl_ch_estimates[eNb_id_i],
 					 lte_ue_dlsch_vars[eNb_id_i]->rxdataF_ext,
@@ -2244,7 +2246,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 					 symbol,
 					 subframe,
 					 frame_parms);
-    } 
+  } //else
 
   //  printf("nb_rb = %d, eNb_id %d\n",nb_rb,eNb_id);
   if (nb_rb==0) {
@@ -2254,34 +2256,30 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 
 
   if (first_symbol_flag==1) {
-    symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-    if (nb_rb) {
-      dlsch_channel_level(lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
-			  frame_parms,
-			  avg,
-			  symbol_mod,
-			  nb_rb);
+    dlsch_channel_level(lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+			frame_parms,
+			avg,
+			symbol_mod,
+			nb_rb);
 #ifdef DEBUG_PHY
     msg("[DLSCH] avg[0] %d\n",avg[0]);
 #endif
       
-      avgs = 0;
-      for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
-	for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	  avgs = max(avgs,avg[(aarx<<1)+aatx]);
-      lte_ue_dlsch_vars[eNb_id]->log2_maxh = (log2_approx(avgs)/2)-1;
+    avgs = 0;
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
+      for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
+	avgs = max(avgs,avg[(aarx<<1)+aatx]);
+    lte_ue_dlsch_vars[eNb_id]->log2_maxh = (log2_approx(avgs)/2)-1;
 #ifdef DEBUG_PHY
-      msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_dlsch_vars[eNb_id]->log2_maxh,avg[0],avgs);
-      msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
+    msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_dlsch_vars[eNb_id]->log2_maxh,avg[0],avgs);
+    msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
 #endif
-    }
   }
   aatx = frame_parms->nb_antennas_tx;
   aarx = frame_parms->nb_antennas_rx;
 
   if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<UNIFORM_PRECODING11) {// no precoding
 
-    //    printf("channel compensation, no precoding, eNb_id %d, lte_ue_dlsch_vars %p, lte_ue_dlsch_vars[eNb_id] %p\n",eNb_id,lte_ue_dlsch_vars,lte_ue_dlsch_vars[eNb_id]);
     dlsch_channel_compensation(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 			       lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
 			       lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
@@ -2296,10 +2294,11 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			       lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 			       phy_measurements); // log2_maxh+I0_shift
 #ifdef DEBUG_PHY
-	write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+    write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
 #endif
-
-    if ((dual_stream_UE == 1) || is_secondary_ue) {
+    
+    if ((dual_stream_flag==1) && (eNb_id_i!=NUMBER_OF_eNB_MAX)) {
+      
       // get MF output for interfering stream
       dlsch_channel_compensation(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
 				 lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
@@ -2310,7 +2309,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				 frame_parms,
 				 symbol,
 				 first_symbol_flag,
-				 (is_secondary_ue) ? 2 : get_Qm(dlsch_ue[1]->harq_processes[harq_pid0]->mcs), // if is_secondary_ue, one assumes the interfering constellation is QPSK
+				 i_mod,
 				 nb_rb,
 				 lte_ue_dlsch_vars[eNb_id]->log2_maxh,
 				 phy_measurements); // log2_maxh+I0_shift
@@ -2321,7 +2320,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
       }
 #endif 
 
-    // compute correlation between signal and interference channels
+      // compute correlation between signal and interference channels
       dlsch_dual_stream_correlation(frame_parms,
 				    symbol,
 				    nb_rb,
@@ -2331,7 +2330,6 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
     
     }
-
   }
   else if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding
     //    printf("Channel compensation for precoding\n");
@@ -2349,6 +2347,71 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				    nb_rb,
 				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
     //    printf("Channel compensation for precoding done\n");
+
+    
+    if ((dual_stream_flag==1) && (eNb_id_i==NUMBER_OF_eNB_MAX)) {
+
+      // if interference source is MU interference, assume opposite precoder was used at eNb
+
+      // calcualte opposite PMI
+      for (rb=0;rb<nb_rb;rb++) {
+	switch(lte_ue_dlsch_vars[eNb_id]->pmi_ext[rb]) {
+	  
+	case 0:
+	  
+	  lte_ue_dlsch_vars[eNb_id_i]->pmi_ext[rb]=1;
+	  
+	  break;
+	case 1:
+	  
+	  lte_ue_dlsch_vars[eNb_id_i]->pmi_ext[rb]=0;
+	  
+	  break;
+	  
+	case 2:
+	  
+	  lte_ue_dlsch_vars[eNb_id_i]->pmi_ext[rb]=3;
+	  
+	  break;
+	  
+	case 3:
+	  
+	  lte_ue_dlsch_vars[eNb_id_i]->pmi_ext[rb]=2;
+	  
+	    break;
+	    
+	default:
+	  printf("lte_ue_dlsch_vars[eNb_id_i] is not valid");
+	  }
+	
+      }
+
+      // apply opposite precoder to calculate interfering stream
+      dlsch_channel_compensation_prec(lte_ue_dlsch_vars[eNb_id]->rxdataF_ext,
+				      lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+				      lte_ue_dlsch_vars[eNb_id_i]->dl_ch_mag,
+				      lte_ue_dlsch_vars[eNb_id_i]->dl_ch_magb,
+				      lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp,
+				      lte_ue_dlsch_vars[eNb_id_i]->pmi_ext,
+				      frame_parms,
+				      phy_measurements,
+				      symbol,
+				      first_symbol_flag,
+				      i_mod, 
+				      nb_rb,
+				      lte_ue_dlsch_vars[eNb_id]->log2_maxh);
+  
+
+      // compute correlation between precoded channel and channel precoded with opposite PMI
+      dlsch_dual_stream_correlation(frame_parms,
+				    symbol,
+				    nb_rb,
+				    lte_ue_dlsch_vars[eNb_id]->dl_ch_estimates_ext,
+				    lte_ue_dlsch_vars[eNb_id_i]->dl_ch_estimates_ext,
+				    lte_ue_dlsch_vars[eNb_id]->dl_ch_rho_ext,
+				    lte_ue_dlsch_vars[eNb_id]->log2_maxh);
+    
+    }
   }
 
   //  printf("MRC\n");
@@ -2362,7 +2425,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 			lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,
 			symbol,
 			nb_rb,
-			(is_secondary_ue) ? 1 : dual_stream_UE); // if is_secondary_ue, one can exploit the dual_stream_UE flag for this function. Even though this is not really safe programming, it will work for this purpose.
+			dual_stream_flag); 
 #ifdef DEBUG_PHY
   write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_dlsch_vars[eNb_id]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
   write_output("rxF_comp_i.m","rxF_c_i",&lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);    
@@ -2388,43 +2451,55 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 
     switch (get_Qm(dlsch_ue[0]->harq_processes[harq_pid0]->mcs)) {
     case 2 : 
-#ifdef MU_RECEIVER
-      if ((dual_stream_UE == 0) && (!is_secondary_ue))
-#else
-      if ((dual_stream_UE == 0))
-#endif //MU_RECEIVER
+      if (dual_stream_flag == 0)
 	dlsch_qpsk_llr(frame_parms,
 		       lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
 		       lte_ue_dlsch_vars[eNb_id]->llr[0],
 		       symbol,first_symbol_flag,nb_rb,
 		       adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
 		       lte_ue_dlsch_vars[eNb_id]->llr128);
-      else
+      else if (i_mod == 2) 
 	dlsch_qpsk_qpsk_llr(frame_parms,
 			    lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
 			    lte_ue_dlsch_vars[eNb_id_i]->rxdataF_comp,
 			    lte_ue_dlsch_vars[eNb_id]->dl_ch_rho_ext,
 			    lte_ue_dlsch_vars[eNb_id]->llr[0],
 			    symbol,first_symbol_flag,nb_rb,
+			    adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,2,subframe,symbol),
 			    lte_ue_dlsch_vars[eNb_id]->llr128);
+      else {
+	msg("rx_dlsch.c : IC receiver only implemented for 4QAM-4QAM\n");
+	return(-1);
+      }
+      
       break;
     case 4 :
-      dlsch_16qam_llr(frame_parms,
-		      lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
-		      lte_ue_dlsch_vars[eNb_id]->llr[0],
-		      lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
-		      symbol,first_symbol_flag,nb_rb,
-		      adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,4,subframe,symbol),
-		      lte_ue_dlsch_vars[eNb_id]->llr128);
+      if (dual_stream_flag == 0)
+	dlsch_16qam_llr(frame_parms,
+			lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
+			lte_ue_dlsch_vars[eNb_id]->llr[0],
+			lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
+			symbol,first_symbol_flag,nb_rb,
+			adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,4,subframe,symbol),
+			lte_ue_dlsch_vars[eNb_id]->llr128);
+      else {
+	msg("rx_dlsch.c : IC receiver for 16QAM not yet implemented\n");
+	return(-1);
+      }
       break;
     case 6 :
-      dlsch_64qam_llr(frame_parms,
-		      lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
-		      lte_ue_dlsch_vars[eNb_id]->llr[0],
-		      lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
-		      lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,
-		      symbol,first_symbol_flag,nb_rb,
-		      adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,6,subframe,symbol));
+      if (dual_stream_flag == 0)
+	dlsch_64qam_llr(frame_parms,
+			lte_ue_dlsch_vars[eNb_id]->rxdataF_comp,
+			lte_ue_dlsch_vars[eNb_id]->llr[0],
+			lte_ue_dlsch_vars[eNb_id]->dl_ch_mag,
+			lte_ue_dlsch_vars[eNb_id]->dl_ch_magb,
+			symbol,first_symbol_flag,nb_rb,
+			adjust_G_tdd2(frame_parms,dlsch_ue[0]->rb_alloc,6,subframe,symbol));
+      else {
+	msg("rx_dlsch.c : IC receiver for 64QAM not yet implemented\n");
+	return(-1);
+      }
       break;
     default:
       msg("rx_dlsch.c : Unknown mod_order!!!!\n");
@@ -2438,4 +2513,4 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
   }
 
   return(0);    
-}
+  }

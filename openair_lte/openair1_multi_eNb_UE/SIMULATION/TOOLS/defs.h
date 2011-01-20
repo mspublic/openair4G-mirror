@@ -281,7 +281,7 @@ unsigned int *generate_gauss_LUT(unsigned char Nbits,unsigned char L);
 /** \fn int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 \brief This routine returns a zero-mean unit-variance Gaussian random variable.  
  Given a 32-bit uniform random variable, 
-\f$\mathrm{u}\f$ (from \ref _taus, we first extract the sign and then search in the monotonically increasing Gaussian LUT for 
+\f$\mathrm{u}\f$ (from \ref _taus_, we first extract the sign and then search in the monotonically increasing Gaussian LUT for 
 the two entries \f$(i,i+1)\f$ for which 
 \f$ 2^{31}\mathrm{erf}\left(\frac{i}{2^{Nbits-1}}\right) < |u| \leq 2^{31}\mathrm{erf}\left(\frac{i+1}{2^{Nbits-1}}\right) \f$ and assign 
 the value \f$\mathrm{sgn}(u)i\f$.  The search requires at most \f$Nbits-1\f$ comparisons.

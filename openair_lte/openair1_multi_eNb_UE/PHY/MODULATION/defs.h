@@ -36,7 +36,7 @@ void PHY_ofdm_mod(int *input,
 \param ue_common_vars LTE UE Common Vars
 \param l symbol within slot (0..6/7)
 \param Ns Slot number (0..19)
-\param offset offset within rxdata (points to beginning of subframe)
+\param sample_offset offset within rxdata (points to beginning of subframe)
 \param no_prefix if 1 prefix is removed by HW 
 */
 

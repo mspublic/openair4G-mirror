@@ -1,4 +1,4 @@
-/*! \fn int rf_rx(double **r_re,double **r_im,unsigned int nb_rx_antennas,unsigned int length,double s_time,double f_off,double drift,double *noise_figure,double rx_gain_dB,int IP3_dBm,double *initial_phase,double pn_cutoff,double pn_amp_dBc,double IQ_imb_dB,double IQ_phase) 
+/*! 
 \brief Apply RF impairments to received signal
 @param r_re Double two-dimensional array of Real part of received signal
 @param r_im Double two-dimensional array of Imag part of received signal
