@@ -485,7 +485,7 @@ int main(int argc, char **argv) {
 			      BW,
 			      ricean_factor,
 			      aoa,
-			      .999,
+			      0,
 			      0,
 			      0,
 			      0);
@@ -496,7 +496,7 @@ int main(int argc, char **argv) {
 				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
 				  channel_model,
 				  BW,
-				  .999,
+				  0,
 				  0,
 				  0);
 

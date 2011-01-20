@@ -364,20 +364,19 @@ int random_channel(channel_desc_t *desc) {
       } //aatx
     } //aarx
 
-    
+    /*
     // for debugging set a=anew;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-
-	desc->a[i][aarx+(aatx*desc->nb_rx)].r = anew[aarx+(aatx*desc->nb_rx)].r;
-	desc->a[i][aarx+(aatx*desc->nb_rx)].i = anew[aarx+(aatx*desc->nb_rx)].i;
-      }
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = anew[aarx+(aatx*desc->nb_rx)].r;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = anew[aarx+(aatx*desc->nb_rx)].i;
+ 	printf("anew(%d,%d) = %f+1j*%f\n",aatx,aarx,anew[aarx+(aatx*desc->nb_rx)].r, anew[aarx+(aatx*desc->nb_rx)].i);
+     }
     }
-    
+    */
 
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
-    /*
     alpha.r = 1.0;
     alpha.i = 0.0;
     beta.r = 0.0;
@@ -386,27 +385,41 @@ int random_channel(channel_desc_t *desc) {
 		(void*) &alpha, (void*) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
 		(void*) anew, 1, (void*) &beta, (void*) acorr, 1);
 
+    /*
+    for (aarx=0;aarx<desc->nb_rx;aarx++) {
+      for (aatx=0;aatx<desc->nb_tx;aatx++) {
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = acorr[aarx+(aatx*desc->nb_rx)].r;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = acorr[aarx+(aatx*desc->nb_rx)].i;
+	printf("tap %d, acorr1(%d,%d) = %f+1j*%f\n",i,aatx,aarx,acorr[aarx+(aatx*desc->nb_rx)].r, acorr[aarx+(aatx*desc->nb_rx)].i);
+      }
+    }
     */
 
-    /*	
     if (desc->first_run==1){
-
       cblas_zcopy(desc->nb_tx*desc->nb_rx, (void*) acorr, 1, (void*) desc->a[i], 1);
-      desc->first_run = 0;
-
     }
     else {
       alpha.r = sqrt(1-desc->forgetting_factor);
       alpha.i = 0;
       beta.r = sqrt(desc->forgetting_factor);
       beta.i = 0;
-      cblas_zscal(desc->nb_tx*desc->nb_rx, (void*) &beta,  (void*) desc->a[i], 1);
-      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void*) &alpha, (void*) acorr, 1, (void*) desc->a[i], 1);
+      cblas_zscal(desc->nb_tx*desc->nb_rx, (void*) &alpha, (void*) acorr, 1);
+      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void*) &beta,  (void*) desc->a[i], 1, (void*) acorr, 1);
 
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].r = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].r) + sqrt(1-desc->forgetting_factor)*anew.r;
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].i = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].i) + sqrt(1-desc->forgetting_factor)*anew.i;
     }
+
+    /*
+    for (aarx=0;aarx<desc->nb_rx;aarx++) {
+      for (aatx=0;aatx<desc->nb_tx;aatx++) {
+ 	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = acorr[aarx+(aatx*desc->nb_rx)].r;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = acorr[aarx+(aatx*desc->nb_rx)].i;
+	printf("tap %d, a(%d,%d) = %f+1j*%f\n",i,aatx,aarx,desc->a[i][aarx+(aatx*desc->nb_rx)].r, desc->a[i][aarx+(aatx*desc->nb_rx)].i);
+      }
+    }
     */
+
   } //nb_taps      
 
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
@@ -434,6 +447,9 @@ int random_channel(channel_desc_t *desc) {
       } //channel_length
     } //aatx
   } //aarx
+
+  if (desc->first_run==1)
+    desc->first_run = 0;
 
   return (0);
 }
