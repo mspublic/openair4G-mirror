@@ -816,8 +816,8 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
       return(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx);
     }
     else
-      return(0xffff);
+      return(-1);
   }
   else
-    return(0xffff);
+    return(-1);
 }

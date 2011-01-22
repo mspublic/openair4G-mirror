@@ -34,7 +34,7 @@
 #define DEBUG_PHY
 #define RF
 
-#define DEBUG_SIM 
+//#define DEBUG_SIM 
 
 #define BW 7.68
 
@@ -1213,7 +1213,7 @@ int main(int argc, char **argv) {
 	  */
 	}
       }
-      if ((last_slot==1) && (mac_xface->frame==1)) {
+      if ((last_slot==1) && (mac_xface->frame==1) && (abstraction_flag==0)) {
 	write_output("UErxsigF0.m","rxsF0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
 	write_output("eNbrxsigF0.m","rxsF0", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
 	write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -1229,7 +1229,7 @@ int main(int argc, char **argv) {
       */
     }
 
-    if (mac_xface->frame==1) {
+    if ((mac_xface->frame==1)&&(abstraction_flag==0)) {
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNbrxsig0.m","rxs0", PHY_vars_eNb_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     }

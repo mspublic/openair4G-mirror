@@ -22,17 +22,13 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-ifdef EMUL
 CFLAGS += -DPHY_ABSTRACTION
-endif
 
 
 include $(TOP_DIR)/PHY/Makefile.inc
 include $(TOP_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
-#ifdef EMUL
 include $(TOP_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
-#endif
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  

@@ -542,6 +542,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
       ue_pbch_vars[eNb_id]->pdu_errors=0;
       ue_pbch_vars[eNb_id]->pdu_errors_last=0;
       ue_pbch_vars[eNb_id]->pdu_fer=0;
+      ue_pbch_vars[eNb_id]->decoded_output = (unsigned char *)malloc16(64*sizeof(unsigned char));
     } 
   }
   //initialization for the last instance of ue_dlsch_vars (used for MU-MIMO)

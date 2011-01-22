@@ -587,12 +587,15 @@ int ulsch_encoding(unsigned char *a,
 
 #ifdef PHY_ABSTRACTION
 int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 harq_pid) {
+
+  LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
   
   msg("[PHY] EMUL UE ulsch_encoding for eNB %d, harq_pid %d\n",eNB_id,harq_pid);
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 
+  /*
   memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);  
@@ -602,5 +605,6 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 h
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+(ulsch->o_RI[1]&1)<<1;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack = (ulsch->o_ACK[0]&1) + (ulsch->o_ACK[1]&1)<<1;
+  */
 }
 #endif
