@@ -1788,9 +1788,10 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
       if (dci_alloc[i].L == (u8)L) {
       
-#ifdef DEBUG_DCI_ENCODING
-	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format);
-#endif
+	//#ifdef DEBUG_DCI_ENCODING
+	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,dci_alloc[i].dci_pdu);
+	dump_dci(frame_parms,&dci_alloc[i]);
+	//#endif
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
 			      e_ptr,
 			      dci_alloc[i].dci_length,
@@ -2200,18 +2201,6 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	dci_alloc[*dci_cnt].rnti       = crc;
 	dci_alloc[*dci_cnt].L          = L;
 
-	if (crc==si_rnti)
-	  dci_alloc[*dci_cnt].format     = format_si;
-	else if (crc==ra_rnti)
-	  dci_alloc[*dci_cnt].format     = format_ra;
-	else if (crc==lte_ue_pdcch_vars[eNb_id]->crnti) {
-	  if ((format_c == format0)&&((dci_decoded_output[0]&1)==0)) // check if pdu is format 0 or 1A
-	    dci_alloc[*dci_cnt].format     = format0;
-	  else if (format_c == format0)
-	    dci_alloc[*dci_cnt].format     = format1A;
-	  else
-	    dci_alloc[*dci_cnt].format     = format_c;
-	}
 	if (sizeof_bytes<=4) {
 	  dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[0];
 	  dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[1];
@@ -2231,6 +2220,20 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 	  dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[6];
 	  dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[7];
 	}
+
+	if (crc==si_rnti)
+	  dci_alloc[*dci_cnt].format     = format_si;
+	else if (crc==ra_rnti)
+	  dci_alloc[*dci_cnt].format     = format_ra;
+	else if (crc==lte_ue_pdcch_vars[eNb_id]->crnti) {
+	  if ((format_c == format0)&&((dci_decoded_output[0]&0x80)==0)) // check if pdu is format 0 or 1A
+	    dci_alloc[*dci_cnt].format     = format0;
+	  else if (format_c == format0)
+	    dci_alloc[*dci_cnt].format     = format1A;
+	  else
+	    dci_alloc[*dci_cnt].format     = format_c;
+	}
+
 	//	memcpy(&dci_alloc[*dci_cnt].dci_pdu[0],dci_decoded_output,sizeof_bytes);
 	*dci_cnt = *dci_cnt+1;
 

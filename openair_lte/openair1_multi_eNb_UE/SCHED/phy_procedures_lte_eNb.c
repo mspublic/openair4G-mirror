@@ -156,7 +156,7 @@ void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb) {
   write_output("srs_est0.m","srsest0",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
   write_output("drs_est0.m","drsest0",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
   write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",phy_vars_eNb->lte_eNB_ulsch_vars[0]->llr,phy_vars_eNb->ulsch_eNb[0]->harq_processes[1]->nb_rb*12*2*9,1,0);	
+  write_output("ulsch_rxF_llr.m","ulsch_llr",phy_vars_eNb->lte_eNB_ulsch_vars[0]->llr,phy_vars_eNb->ulsch_eNb[0]->harq_processes[2]->nb_rb*12*2*9,1,0);	
   if (phy_vars_eNb->lte_frame_parms.nb_antennas_rx>1) {
     write_output("rxsigF1.m","rxsF1", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*12*2,2,1);
     write_output("rxsigF1_ext.m","rxsF1_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*12*2,2,1);
@@ -722,12 +722,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 			   num_pdcch_symbols,
 			   phy_vars_eNb->dlsch_eNb[(u8)UE_id][0],
 			   get_G(&phy_vars_eNb->lte_frame_parms,
-				 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->harq_processes[harq_pid]->mcs,
+				 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->nb_rb,
 				 phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->rb_alloc,
 				 get_Qm(phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->harq_processes[harq_pid]->mcs),
 				 num_pdcch_symbols,next_slot>>1),
 			   0,
-			   next_slot>>1);      
+			   next_slot);      
 	  for (sect_id=0;sect_id<number_of_cards;sect_id++)
 	    
 	    re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
@@ -791,12 +791,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 			 num_pdcch_symbols,
 			 phy_vars_eNb->dlsch_eNb_SI,
 			 get_G(&phy_vars_eNb->lte_frame_parms,
-			       phy_vars_eNb->dlsch_eNb_SI->harq_processes[0]->mcs,
+			       phy_vars_eNb->dlsch_eNb_SI->nb_rb,
 			       phy_vars_eNb->dlsch_eNb_SI->rb_alloc,
 			       get_Qm(phy_vars_eNb->dlsch_eNb_SI->harq_processes[0]->mcs),
 			       num_pdcch_symbols,next_slot>>1),
 			 0,
-			 next_slot>>1);      
+			 next_slot);      
 	
 	for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	  re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
@@ -850,6 +850,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (RA) with input size = %d,RRCConnRequest frame %d, RRCConnRequest subframe %d\n",mac_xface->frame, next_slot,input_buffer_length, phy_vars_eNb->ulsch_eNb[0]->RRCConnRequest_frame,phy_vars_eNb->ulsch_eNb[0]->RRCConnRequest_subframe);
+      for (i=0;i<input_buffer_length;i++)
+	debug_msg("RA : dlsch_input_buffer[%d]=%x\n",i,dlsch_input_buffer[i]);
 #endif
 
       if (abstraction_flag == 0) {
@@ -865,12 +867,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 			 num_pdcch_symbols,
 			 phy_vars_eNb->dlsch_eNb_ra,
 			 get_G(&phy_vars_eNb->lte_frame_parms,
-			       phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->mcs,
+			       phy_vars_eNb->dlsch_eNb_ra->nb_rb,
 			       phy_vars_eNb->dlsch_eNb_ra->rb_alloc,
 			       get_Qm(phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->mcs),
 			       num_pdcch_symbols,next_slot>>1),
 			 0,
-			 next_slot>>1);
+			 next_slot);
 	for (sect_id=0;sect_id<number_of_cards;sect_id++) 
 	  re_allocated = dlsch_modulation(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 					  AMP,

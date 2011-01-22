@@ -349,7 +349,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	
 	
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
-			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-frame_parms->Ncp),0);
+			  frame_parms->samples_per_tti>>1,0);
 	
 	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],eNB2UE[eNB_id][UE_id]->channel_length);
 #ifdef DEBUG_SIM
@@ -596,7 +596,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	*/ 
       
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
-			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(7-frame_parms->Ncp),0);
+			  frame_parms->samples_per_tti>>1,0);
 	/*
 	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)

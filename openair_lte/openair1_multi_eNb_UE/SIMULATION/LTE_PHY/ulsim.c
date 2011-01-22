@@ -37,9 +37,9 @@ void dump_ulsch(u8 nsymb) {
   write_output("rxsigF0.m","rxsF0", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
     write_output("rxsigF1.m","rxsF1", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*nsymb*2,2,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*nsymb*2,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
   if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
-    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*nsymb*2,2,1);
+    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0][0],300*nsymb*2,2,1);
   write_output("srs_est0.m","srsest0",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
   if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
     write_output("srs_est1.m","srsest1",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
@@ -66,6 +66,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   lte_frame_parms = &(PHY_vars_eNb->lte_frame_parms);
 
+  lte_frame_parms->frame_type         = 1;
+  lte_frame_parms->tdd_config         = 3;
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
@@ -110,13 +112,15 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
 		  PHY_vars_UE->lte_ue_pbch_vars,
 		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE);
+		  PHY_vars_UE,
+		  0);
 
   phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
 		   &PHY_vars_eNb->lte_eNB_common_vars,
 		   PHY_vars_eNb->lte_eNB_ulsch_vars,
 		   0,
 		   PHY_vars_eNb,
+		   0,
 		   0,
 		   0);
 
@@ -126,7 +130,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
-DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI0_5MHz_TDD_1_6_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
@@ -250,7 +254,6 @@ int main(int argc, char **argv) {
 
   lte_param_init(1,1,1,extended_prefix_flag);  
   printf("Setting mcs = %d\n",mcs);
-  printf("NPRB = %d\n",NB_RB);
   printf("n_frames = %d\n",n_frames);
 
   /*  
@@ -331,14 +334,6 @@ int main(int argc, char **argv) {
    PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 0x1234;
 
   // Fill in UL_alloc
-  UL_alloc_pdu.type    = 0;
-  UL_alloc_pdu.hopping = 0;
-  UL_alloc_pdu.rballoc = UL_RB_ALLOC;
-  UL_alloc_pdu.mcs     = 1;
-  UL_alloc_pdu.ndi     = 1;
-  UL_alloc_pdu.TPC     = 0;
-  UL_alloc_pdu.cqi_req = 1;
-
   CCCH_alloc_pdu.type               = 0;
   CCCH_alloc_pdu.vrb_type           = 0;
   CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
@@ -359,8 +354,8 @@ int main(int argc, char **argv) {
   DLSCH_alloc_pdu2.tpmi             = 5 ;  // precoding
 
   // Create transport channel structures for SI pdus
-  PHY_vars_eNb->dlsch_eNb_SI   = new_eNb_dlsch(1,1);
-  PHY_vars_UE->dlsch_ue_SI[0]  = new_ue_dlsch(1,1);
+  PHY_vars_eNb->dlsch_eNb_SI   = new_eNb_dlsch(1,1,0);
+  PHY_vars_UE->dlsch_ue_SI[0]  = new_ue_dlsch(1,1,0);
   PHY_vars_eNb->dlsch_eNb_SI->rnti  = SI_RNTI;
   PHY_vars_UE->dlsch_ue_SI[0]->rnti = SI_RNTI;
 
@@ -391,13 +386,13 @@ int main(int argc, char **argv) {
 			    0,
 			    0);
   
-  PHY_vars_eNb->ulsch_eNb[0] = new_eNb_ulsch(3);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3);
+  PHY_vars_eNb->ulsch_eNb[0] = new_eNb_ulsch(3,0);
+  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(3,0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0;i<2;i++) {
-    PHY_vars_eNb->dlsch_eNb[0][i] = new_eNb_dlsch(1,8);
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8);
+    PHY_vars_eNb->dlsch_eNb[0][i] = new_eNb_dlsch(1,8,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,0);
   
     if (!PHY_vars_eNb->dlsch_eNb[0][i]) {
       printf("Can't get eNb dlsch structures\n");
@@ -421,6 +416,8 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
 
+
+
   generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				    C_RNTI,
 				    8,
@@ -434,6 +431,8 @@ int main(int argc, char **argv) {
 				    P_RNTI,
 				    0,
 				    0);
+
+  printf("RIV %d\n",UL_alloc_pdu.rballoc);
 
   generate_eNb_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				     SI_RNTI,

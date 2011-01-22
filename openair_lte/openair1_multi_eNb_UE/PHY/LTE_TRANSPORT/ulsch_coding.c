@@ -182,7 +182,11 @@ int ulsch_encoding(unsigned char *a,
     crc = crc24a(a,
 		 A)>>8;
 
-    *(unsigned int*)(&a[A>>3]) = crc;
+
+    a[A>>3] = ((u8*)&crc)[2];
+    a[1+(A>>3)] = ((u8*)&crc)[1];
+    a[2+(A>>3)] = ((u8*)&crc)[0];
+
     ulsch->harq_processes[harq_pid]->B = A+24;
     ulsch->harq_processes[harq_pid]->b = a;
     lte_segmentation(ulsch->harq_processes[harq_pid]->b,

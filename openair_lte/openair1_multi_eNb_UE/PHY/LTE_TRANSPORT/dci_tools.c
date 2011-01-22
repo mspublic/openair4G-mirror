@@ -6,7 +6,7 @@
 #include "PHY/vars.h"
 #endif
 
-//#define DEBUG_DCI
+#define DEBUG_DCI
 
 unsigned int  localRIV2alloc_LUT25[512];
 unsigned int  distRIV2alloc_LUT25[512];
@@ -1035,17 +1035,28 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   unsigned char harq_pid;
 
   //#ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue ulsch params -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",ulsch,rnti,dci_format,subframe);
+  msg("dci_tools.c: Filling ue ulsch params (dci %x) -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",*(unsigned int *)dci_pdu,ulsch,rnti,dci_format,subframe);
+  msg("type %d, hopping %d, rballoc %d, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->dai,
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cqi_req);
   //#endif
 
   if (dci_format == format0) {
 
+    printf("RIV %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
 
     if (rnti == ra_rnti)
       harq_pid = 0;
     else 
       harq_pid = subframe2harq_pid_tdd(3,(subframe+4)%10);
-    //    msg("harq_pid = %d\n",harq_pid);
+    //msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
@@ -1062,6 +1073,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
     ulsch->harq_processes[harq_pid]->TPC                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->TPC;
+
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
@@ -1107,7 +1119,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       if (ulsch->harq_processes[harq_pid]->mcs < 28)
-	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb];
+	ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
       ulsch->harq_processes[harq_pid]->round = 0;
@@ -1185,7 +1197,7 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->rvidx = 0;
       ulsch->harq_processes[harq_pid]->mcs         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->mcs;
       //if (ulsch->harq_processes[harq_pid]->mcs)
-      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb];
+      ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
       ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
       ulsch->harq_processes[harq_pid]->round = 0;
