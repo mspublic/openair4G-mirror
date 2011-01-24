@@ -1210,6 +1210,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	}
 #ifdef USER_MODE
 	if (phy_vars_eNb->ulsch_eNb[i]->RRCConnRequest_flag == 1) {
+	  msg("Connected. Exiting.\n");
 	  dump_ulsch(phy_vars_eNb);
 	  exit(-1);
 	}

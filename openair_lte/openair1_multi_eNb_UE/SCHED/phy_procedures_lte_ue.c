@@ -258,13 +258,11 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
 	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->SRS_parameters,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[12],next_slot>>1);
 #endif
       }
-
-      else {
-	generate_srs_tx_emul(phy_vars_ue,next_slot>>1);
-      }
-
     }
-    
+    else {
+      generate_srs_tx_emul(phy_vars_ue,next_slot>>1);
+    }
+
     // get harq_pid from subframe relationship
     harq_pid = subframe2harq_pid_tdd(phy_vars_ue->lte_frame_parms.tdd_config,(next_slot>>1));
 
@@ -1136,9 +1134,9 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
       }
       
       if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
-	//#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY
 	debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH (SI %d) demod symbols 10,11,12\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,eNB_id);
-	//#endif
+#endif
 	
 	// process symbols 10,11,12 and trigger DLSCH decoding
 	if (abstraction_flag==0) {

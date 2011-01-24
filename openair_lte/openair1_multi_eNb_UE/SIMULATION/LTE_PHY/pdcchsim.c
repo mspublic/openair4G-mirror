@@ -656,30 +656,31 @@ int main(int argc, char **argv) {
 	  
 	//  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
-	if (n_frames==1)
-	  write_output("txsigF0.m","txsF0", lte_eNB_common_vars->txdataF[eNb_id][0],300*120,1,4);
-	//write_output("txsigF1.m","txsF1", lte_eNB_common_vars->txdataF[1],300*120,1,4);
-	  
+	if (n_frames==1) {
+	  write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],300*120,1,4);
+	//write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],300*120,1,4);
+	}
+
 	// do talbe lookup and write results to txdataF2
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx;aa++) {
 	  l = 0;
 	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
 	    if ((i%512>=1) && (i%512<=150))
-	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
+	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][l++]];
 	    else if (i%512>=362)
-	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars->txdataF[eNb_id][aa][l++]];
+	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][l++]];
 	    else 
 	      txdataF2[aa][i] = 0;
 	  printf("l=%d\n",l);
 	}
-	if (n_frames==1)
+	if (n_frames==1) {
 	  write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	//write_output("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-	  
+	}
 	  
 	tx_lev=0;
 	  
-	for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
+	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	    
 	  if (frame_parms->Ncp == 1) 
 	    PHY_ofdm_mod(txdataF2[aa],        // input

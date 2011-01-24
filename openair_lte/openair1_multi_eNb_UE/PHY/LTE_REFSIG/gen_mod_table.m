@@ -30,7 +30,7 @@ QAM64_n3 = 5056;
 %% QPSK
 for r=0:1 %0 -- 1 LS
 for j=0:1 %0 -- 1 MS
-qpsk_table2(r+1,j+1) = (r*2-1)*QPSK +  1j*(2*j-1)*QPSK;
+qpsk_table2(2*r+j+1) = ((1-r*2)*QPSK +  1j*(1-2*j)*QPSK);
 end
 end
 
@@ -40,13 +40,17 @@ end
   for a=-1:2:1 
     for b=-1:2:1
 	index = (1+a) + (1+b)/2;  
-	qam16_table(index+1) = a*(QAM16_n1 + (b*QAM16_n2)); 
+	qam16_table(index+1) = -a*(QAM16_n1 + (b*QAM16_n2)); 
     end
   end
 
-for r=0:3 %00 -- 11 LS
-for j=0:3 %00 -- 11 MS
-qam16_table2(r+1,j+1) = qam16_table(r+1) + 1j*qam16_table(j+1);
+for b0=0:1
+for b1=0:1
+for b2=0:1
+for b3=0:1
+qam16_table2(b0*8+b1*4+b2*2+b3*1+1) = qam16_table(b0*2+b2*1+1) + 1j*qam16_table(b1*2+b3*1+1);
+end
+end
 end
 end
 
@@ -55,16 +59,25 @@ end
     for b=-1:2:1 
       for c=-1:2:1
 	index = (1+a)*2 + (1+b) + (1+c)/2;  
-	qam64_table(index+1) = a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3)));
+	qam64_table(index+1) = -a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3)));
       end
     end
   end	
 
-for r=0:7 %0000 -- 1111 LS
-for j=0:7 %0000 -- 1111 MS
-qam64_table2(r+1,j+1) = qam64_table(r+1) + 1j*qam64_table(j+1);
+for b0=0:1
+for b1=0:1
+for b2=0:1
+for b3=0:1
+for b4=0:1
+for b5=0:1
+qam64_table2(b0*32+b1*16+b2*8+b3*4+b4*2+b5*1+1) = qam64_table(b0*4+b2*2+b4*1+1) + 1j*qam64_table(b1*4+b3*2+b5*1+1);
 end
 end
+end
+end
+end
+end
+
 
 
 %% PSS

@@ -96,9 +96,14 @@ void generate_pcfich(u8 num_pdcch_symbols,
 		     u8 subframe) {
 
   u8 pcfich_bt[32],nsymb,pcfich_quad;
-  s16 pcfich_d[2][32];
+  mod_sym_t pcfich_d[2][16];
   u8 i;
   u16 symbol_offset,m,re_offset,reg_offset;
+  s16 gain_lin_QPSK;
+#ifdef IFFT_FPGA
+  u8 qpsk_table_offset = 0; 
+  u8 qpsk_table_offset2 = 0;
+#endif
 
 #ifdef DEBUG_PCFICH
   msg("[PHY] Generating PCFICH for %d PDCCH symbols, AMP %d\n",num_pdcch_symbols,amp);
@@ -109,31 +114,85 @@ void generate_pcfich(u8 num_pdcch_symbols,
     pcfich_scrambling(frame_parms,subframe,pcfich_b[num_pdcch_symbols-1],pcfich_bt);
 
   // modulation
+  gain_lin_QPSK = (s16)((amp*ONE_OVER_SQRT2_Q15)>>15);  
 
   if (frame_parms->mode1_flag) { // SISO
-    for (i=0;i<32;i++) {
-      pcfich_d[0][i]   = ((pcfich_bt[i] == 0) ? amp : -amp);
-      //      printf("pcfich %d : %d (%d,%d)\n",i,pcfich_d[0][i],pcfich_b[num_pdcch_symbols-1][i],pcfich_bt[i]);
+#ifndef IFFT_FPGA
+    for (i=0;i<16;i++) {
+      ((s16*)(&(pcfich_d[0][i])))[0]   = ((pcfich_bt[2*i] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[1][i])))[0]   = ((pcfich_bt[2*i] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[0][i])))[1]   = ((pcfich_bt[2*i+1] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[1][i])))[1]   = ((pcfich_bt[2*i+1] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
     }
+#else
+    for (i=0;i<16;i++) {
+      qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
+      if (pcfich_bt[2*i] == 1)
+	qpsk_table_offset+=2;
+      if (pcfich_bt[2*i+1] == 1) 
+	qpsk_table_offset+=1;
+      
+      pcfich_d[0][i] = (mod_sym_t) qpsk_table_offset;
+      pcfich_d[1][i] = (mod_sym_t) qpsk_table_offset;
+    }
+#endif
   }
   else { // ALAMOUTI
-    for (i=0;i<32;i+=4) {
-      pcfich_d[0][i]   = (pcfich_bt[i] == 0) ? amp : -amp;
-      pcfich_d[0][i+1] = (pcfich_bt[i+1] == 0) ? amp : -amp;
-      
-      pcfich_d[1][i] = (pcfich_bt[i+2] == 0) ? -amp : amp;
-      pcfich_d[1][i+1] = (pcfich_bt[i+3] == 0) ? amp : -amp;
-
-      pcfich_d[0][i+2] = -pcfich_d[1][i];
-      pcfich_d[0][i+3] = pcfich_d[1][i+1];
-      pcfich_d[1][i+2] = pcfich_d[0][i];
-      pcfich_d[1][i+3] = -pcfich_d[0][i+1];
+#ifndef IFFT_FPGA
+    for (i=0;i<16;i+=2) {
+      // first antenna position n -> x0
+      ((s16*)(&(pcfich_d[0][i])))[0]   = ((pcfich_bt[2*i] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[0][i])))[1]   = ((pcfich_bt[2*i+1] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      // second antenna position n -> -x1*
+      ((s16*)(&(pcfich_d[1][i+1])))[0]   = ((pcfich_bt[2*i+2] == 1) ? gain_lin_QPSK : -gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[1][i+1])))[1]   = ((pcfich_bt[2*i+3] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      // fill in the rest of the ALAMOUTI precoding
+      ((s16*)&pcfich_d[0][i+1])[0] = -((s16*)&pcfich_d[1][i])[0];
+      ((s16*)&pcfich_d[0][i+1])[1] =  ((s16*)&pcfich_d[1][i])[1];
+      ((s16*)&pcfich_d[1][i+1])[0] =  ((s16*)&pcfich_d[0][i])[0];
+      ((s16*)&pcfich_d[1][i+1])[1] = -((s16*)&pcfich_d[0][i])[1];
+    }
       /*
       printf("pcfich_d %d => (%d,%d,%d,%d) (%d %d %d %d)\n",
 	     i,pcfich_d[0][i],pcfich_d[0][i+1],pcfich_d[0][i+2],pcfich_d[0][i+3],
 	     pcfich_d[1][i],pcfich_d[1][i+1],pcfich_d[1][i+2],pcfich_d[1][i+3]);
       */
+#else
+    for (i=0;i<16;i+=2) {
+      qpsk_table_offset =  MOD_TABLE_QPSK_OFFSET;  //x0
+      qpsk_table_offset2 =  MOD_TABLE_QPSK_OFFSET; //x0*
+      
+      // flipping bit for imag part of symbol means taking x0*
+      if (pcfich_bt[2*i] == 1) { //real
+	qpsk_table_offset+=2;
+	qpsk_table_offset2+=2;
+      }
+      if (pcfich_bt[2*i+1] == 1) //imag
+	qpsk_table_offset+=1;
+      else
+	qpsk_table_offset2+=1;
+	
+      pcfich_d[0][i]   = (mod_sym_t) qpsk_table_offset;      // x0
+      pcfich_d[1][i+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
+	
+	
+      qpsk_table_offset = MOD_TABLE_QPSK_OFFSET; //-x1*
+      qpsk_table_offset2 = MOD_TABLE_QPSK_OFFSET;//x1
+	
+      // flipping bit for real part of symbol means taking -x1*
+      if (pcfich_bt[2*i+2] == 1) //real   
+	qpsk_table_offset2+=2;
+      else
+	qpsk_table_offset+=2;
+      if (pcfich_bt[2*i+3] == 1) { //imag
+	qpsk_table_offset+=1;
+	qpsk_table_offset2+=1;
+      }
+	
+      pcfich_d[1][i] = (mod_sym_t) qpsk_table_offset;     // -x1*
+      pcfich_d[0][i+1] = (mod_sym_t) qpsk_table_offset2;  // x1
     }
+#endif
   }
 
 
@@ -165,14 +224,19 @@ void generate_pcfich(u8 num_pdcch_symbols,
     for (i=0;i<6;i++) {
       if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
 
-	txdataF[0][symbol_offset+reg_offset+i] = ((s32*)pcfich_d[0])[m];
+	txdataF[0][symbol_offset+reg_offset+i] = pcfich_d[0][m];
 	/*
-		printf("pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
-		       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[0],
-		       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[1]);
+#ifndef IFFT_FPGA
+	printf("pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
+	       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[0],
+	       ((s16*)&txdataF[0][symbol_offset+reg_offset+i])[1]);
+#else
+	printf("pcfich: quad %d, i %d, offset %d => m%d (%d)\n",pcfich_quad,i,reg_offset+i,m,
+	       txdataF[0][symbol_offset+reg_offset+i]);
+#endif
 	*/
-	if (frame_parms->mode1_flag==0)   // ALAMOUTI
-	  txdataF[1][symbol_offset+reg_offset+i] = ((s32*)pcfich_d[1])[m];
+	if (frame_parms->nb_antennas_tx>1)  
+	  txdataF[1][symbol_offset+reg_offset+i] = pcfich_d[1][m];
 	m++;
       }
     }

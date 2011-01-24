@@ -695,7 +695,7 @@ int main(int argc, char **argv) {
   s32 i,j;
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.001,Td=1.0,forgetting_factor=.999,maxDoppler=0;
+  double aoa=.03,ricean_factor=.001,Td=1.0,forgetting_factor=.5,maxDoppler=0;
   u8 channel_length,nb_taps=8;
 
 

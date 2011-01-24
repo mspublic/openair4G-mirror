@@ -1828,12 +1828,12 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
     }
 #else
     for (i=0;i<Msymb;i++) {
-      qpsk_table_offset = 1;
+      qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
       if (*e_ptr == 1)
-	qpsk_table_offset+=1;
+	qpsk_table_offset+=2;
       e_ptr++;
       if (*e_ptr == 1) 
-	qpsk_table_offset+=2;
+	qpsk_table_offset+=1;
       e_ptr++;
       
       y[0][i] = (mod_sym_t) qpsk_table_offset;
@@ -1874,37 +1874,37 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 #ifdef DEBUG_DCI_ENCODING
   msg("[PHY] PDCCH Modulation: Symbol %d : REG %d/%d\n",i,i>>2,Msymb>>2);
 #endif
-	qpsk_table_offset = 1;  //x0
-	qpsk_table_offset2 = 1;  //x0*
+	qpsk_table_offset =  MOD_TABLE_QPSK_OFFSET;  //x0
+	qpsk_table_offset2 =  MOD_TABLE_QPSK_OFFSET;  //x0*
 	
 	if (*e_ptr == 1) { //real
-	  qpsk_table_offset+=1;
-	  qpsk_table_offset2+=1;
+	  qpsk_table_offset+=2;
+	  qpsk_table_offset2+=2;
 	}
 	e_ptr++;
 	
 	if (*e_ptr == 1) //imag
-	  qpsk_table_offset+=2;
+	  qpsk_table_offset+=1;
 	else
-	  qpsk_table_offset2+=2;
+	  qpsk_table_offset2+=1;
 	e_ptr++;
 	
 	y[0][i]   = (mod_sym_t) qpsk_table_offset;      // x0
 	y[1][i+1] = (mod_sym_t) qpsk_table_offset2;   // x0*
 	
 	
-	qpsk_table_offset = 1; //-x1*
-	qpsk_table_offset2 = 1; //x1
+	qpsk_table_offset = MOD_TABLE_QPSK_OFFSET; //-x1*
+	qpsk_table_offset2 = MOD_TABLE_QPSK_OFFSET; //x1
 	
 	if (*e_ptr == 1)    // flipping bit for real part of symbol means taking -x1*
-	  qpsk_table_offset2+=1;
+	  qpsk_table_offset2+=2;
 	else
-	  qpsk_table_offset+=1;
+	  qpsk_table_offset+=2;
 	e_ptr++;
 	
 	if (*e_ptr == 1) {
-	  qpsk_table_offset+=2;
-	  qpsk_table_offset2+=2;
+	  qpsk_table_offset+=1;
+	  qpsk_table_offset2+=1;
 	}
 	e_ptr++;
 	

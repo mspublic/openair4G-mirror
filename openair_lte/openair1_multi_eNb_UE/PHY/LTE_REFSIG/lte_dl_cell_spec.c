@@ -22,10 +22,10 @@ int lte_dl_cell_spec(mod_sym_t *output,
   mod_sym_t qpsk[4];
 
 #ifdef IFFT_FPGA
-  qpsk[0] = 4;
-  qpsk[1] = 2;
-  qpsk[2] = 3;
-  qpsk[3] = 1;
+  qpsk[0] = 1;
+  qpsk[1] = 3;
+  qpsk[2] = 2;
+  qpsk[3] = 4;
 #else
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;

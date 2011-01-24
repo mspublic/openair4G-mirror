@@ -129,6 +129,7 @@ int main(int argc, char **argv) {
   int **txdata;
 #ifdef IFFT_FPGA
   int **txdataF2;
+  int ind;
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
@@ -150,8 +151,8 @@ int main(int argc, char **argv) {
   unsigned char i_mod = 2;
   unsigned short NB_RB=conv_nprb(0,DLSCH_RB_ALLOC);
   unsigned char Ns,l,m;
-  u8 tdd_config=3;
-  u8 n_rnti=0x1234;
+  u16 tdd_config=3;
+  u16 n_rnti=0x1234;
   int n_users = 1;
 
   SCM_t channel_model=custom;
@@ -818,15 +819,15 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
 	    
 	    if (n_frames==1) {
-	      write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars->txdataF[0][0],300*120,1,4);
-	      write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars->txdataF[0][1],300*120,1,4);
+	      write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[0][0],300*nsymb*10,1,4);
+	      if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+		write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[0][1],300*nsymb*10,1,4);
 	    }
 	  
 	    // do talbe lookup and write results to txdataF2
 	    for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx;aa++) {
 	      ind = 0;
-	      //	  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
-	      for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX;i++) 
+	      for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX;i++) 
 		if (((i%512)>=1) && ((i%512)<=150))
 		  txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][ind++]];
 		else if ((i%512)>=362)
@@ -836,6 +837,12 @@ int main(int argc, char **argv) {
 	      //    printf("ind=%d\n",ind);
 	    }
 	  
+	    if (n_frames==1) {
+	      write_output("txsigF20.m","txsF20", txdataF2[0], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	      if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+		write_output("txsigF21.m","txsF21", txdataF2[1], FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	    }
+
 	    tx_lev = 0;
 	    for (aa=0; aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_tx; aa++) {
 	      if (frame_parms->Ncp == 1)
@@ -849,12 +856,14 @@ int main(int argc, char **argv) {
 			     CYCLIC_PREFIX);
 	      else {
 		normal_prefix_mod(&txdataF2[aa][subframe*nsymb*PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size],
-				  &txdata[aa][PHY_vars_eNb->lte_frame_parms.samples_per_tti],2*nsymb,frame_parms);
+				  &txdata[aa][subframe*PHY_vars_eNb->lte_frame_parms.samples_per_tti],
+				  2*nsymb,
+				  frame_parms);
 	      }
 	    
 	    
-	      tx_lev += signal_energy(&txdata[aa][(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size+PHY_vars_eNb->lte_frame_parms.nb_prefix_samples0)],
-				      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+	      tx_lev += signal_energy(&txdata[aa][subframe*PHY_vars_eNb->lte_frame_parms.samples_per_tti],
+				      PHY_vars_eNb->lte_frame_parms.samples_per_tti);
 	    }
 	
 	    
@@ -889,8 +898,8 @@ int main(int argc, char **argv) {
 	    }
 #endif //IFFT_FPGA
 	
-	    //printf("tx_lev = %d (%d)\n",tx_lev,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+	    printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 	  
 	    if (n_frames==1)
 	      write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -931,6 +940,11 @@ int main(int argc, char **argv) {
 		    r_re[aarx][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
 		    r_im[aarx][i] = ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 		  }
+		  else {
+		    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		  }
+ 
 		}
 	      }
 	    }
