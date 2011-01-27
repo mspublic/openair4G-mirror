@@ -11,10 +11,11 @@
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
+#include "UTIL/LOG/log_if.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "SIMULATION/ETH_TRANSPORT/vars.h"
-#include "SIMULATION/ETH_TRANSPORT/defs.h"
+//#include "SIMULATION/ETH_TRANSPORT/vars.h"
+//#include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -222,7 +223,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   s32 rx_pwr2;
   u32 i;
   u32 slot_offset;
-
+    
   if (abstraction_flag == 0) {
 #ifdef IFFT_FPGA
     txdata    = (s32 **)malloc(2*sizeof(s32*));
@@ -731,7 +732,8 @@ int main(int argc, char **argv) {
   char title[255];
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
-
+  
+  
   NB_CH_INST=1;
   //    NODE_ID[0]=0;
   NB_UE_INST=1; // navid 
@@ -846,6 +848,8 @@ int main(int argc, char **argv) {
   frame_parms->num_dlsch_symbols  = (extended_prefix_flag==0) ? 8: 6;
   frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
+  //initialize the log generator 
+  logInit();
   init_frame_parms(frame_parms);
   copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
   phy_init_top(NB_ANTENNAS_TX,frame_parms);
@@ -853,6 +857,8 @@ int main(int argc, char **argv) {
   frame_parms->twiddle_fft      = twiddle_fft;
   frame_parms->twiddle_ifft     = twiddle_ifft;
   frame_parms->rev              = rev;
+  // navid 
+  frame_parms->tdd_config = 3;
 
   phy_init_lte_top(frame_parms);
 
@@ -1021,10 +1027,10 @@ int main(int argc, char **argv) {
     }
     
   }
-  else {
+  else {ret=netlink_init();
     if (ethernet_flag == 1) {
-//      ret=netlink_init();
-        init_bypass();
+      //ret=netlink_init();
+      init_bypass();
     }
   }   
 
