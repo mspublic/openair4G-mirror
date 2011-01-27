@@ -6,6 +6,7 @@
 
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
+#include "UTIL/LOG/log_if.h"
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -909,7 +910,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 
   //  printf("[MAC] eNB inst %d scheduler subframe %d\n",Mod_id, subframe);
 
-  printf("[MAC] eNB inst %d scheduler subframe %d nCCE %d \n",Mod_id, subframe, mac_xface->get_nCCE_max(Mod_id) );
+  LOG_I (MAC, "eNB inst %d scheduler subframe %d nCCE %d \n",Mod_id, subframe, mac_xface->get_nCCE_max(Mod_id) );
 
   switch (subframe) {
   case 0:
