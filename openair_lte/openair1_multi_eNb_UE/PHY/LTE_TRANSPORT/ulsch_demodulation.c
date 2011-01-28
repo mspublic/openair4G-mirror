@@ -10,7 +10,7 @@
 #include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
-#define DEBUG_ULSCH
+//#define DEBUG_ULSCH
 
 #ifndef __SSE3__
 __m128i zeroU;
@@ -1272,11 +1272,11 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
         
   //#ifdef DEBUG_ULSCH
   // Inverse-Transform equalized outputs
-  msg("Doing IDFTs\n");
+  //  msg("Doing IDFTs\n");
   lte_idft(frame_parms,
 	   eNB_ulsch_vars->rxdataF_comp[eNb_id][0],
 	   ulsch->harq_processes[harq_pid]->nb_rb*12);
-  msg("Done\n"); 
+  //  msg("Done\n"); 
   //#endif //DEBUG_ULSCH
 
 #endif
