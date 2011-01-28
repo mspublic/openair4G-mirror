@@ -23,7 +23,7 @@
 
 #include "../MAC/extern.h"
 
-//#define PDCP_DEBUG 1
+#define PDCP_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 
@@ -32,8 +32,6 @@
 
 
 #include <sys/socket.h>
-
-#ifdef LINUX
 #include <linux/netlink.h>
 
 
@@ -43,8 +41,6 @@ extern struct nlmsghdr *nas_nlh;
 extern struct iovec nas_iov;
 extern int nas_sock_fd;
 extern struct msghdr nas_msg;
-
-#endif //LINUX
 
 #define MAX_PAYLOAD 1600  /* maximum payload size*/
 
