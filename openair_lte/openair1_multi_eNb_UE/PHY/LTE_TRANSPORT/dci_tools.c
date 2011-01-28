@@ -390,15 +390,15 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
     if (frame_parms->tdd_config>0)
       msg("DCI format0, rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
 	  dci->rnti,
-	  ((u32*)&dci->dci_pdu)[0],
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->hopping,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->mcs,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->ndi,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->TPC,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->cshift,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->dai,
-	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu)->cqi_req);
+	  ((u32*)&dci->dci_pdu[0])[0],
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->hopping,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->cshift,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai,
+	  ((DCI0_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->cqi_req);
     else 
       msg("Don't know how to handle TDD format 0 yet\n");
     break;
@@ -408,32 +408,48 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
       msg("DCI format1, rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d, dai %d\n",
 	  dci->rnti, 
 	  ((u32*)&dci->dci_pdu)[0],
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->rah,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->rballoc,
-  	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->mcs,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->harq_pid,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->ndi,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->rv,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->TPC,
-	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu)->dai);
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->rah,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->rballoc,
+  	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->mcs,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->harq_pid,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->ndi,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->rv,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->TPC,
+	  ((DCI1_5MHz_TDD_t *)&dci->dci_pdu[0])->dai);
 
     else 
       msg("Don't know how to handle TDD format 0 yet\n");
     break;
   case format1A:  // This is DLSCH allocation for control traffic
-    msg("DCI format1A, rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu)[0]);
-    msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->vrb_type);
-    msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rballoc]);
-    msg("MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->mcs);
-    msg("HARQ_PID %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->harq_pid);
-    msg("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->ndi);
-    msg("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->rv);
-    msg("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->TPC);
-    msg("DAI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu)->dai);
+    msg("DCI format1A, rnti %x (%x)\n",dci->rnti,((u32*)&dci->dci_pdu[0])[0]);
+    msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
+    msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
+    msg("MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
+    msg("HARQ_PID %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
+    msg("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
+    msg("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
+    msg("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
+    msg("DAI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
     break;
   case format2_2A_L10PRB:
     break;
   case format2_2A_M10PRB:
+      msg("DCI format2_2A_M10PRB, rnti %x (%8x %8x): harq_pid %d, tb_swap %d, rah %d, rb_alloc %x, mcs1 %d, mcs2 %d, rv1 %d, rv2 %d, tpmi %d, ndi1 %d, ndi2 %d\n",
+	  dci->rnti,
+	  ((u32 *)&dci->dci_pdu)[1],
+	  ((u32 *)&dci->dci_pdu)[0],
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->harq_pid,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->tb_swap,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->rah,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->rballoc,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->mcs1,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->mcs2,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->rv1,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->rv2,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->tpmi,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi1,
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi2
+	  );
     break;
   default:
     return(-1);
@@ -1163,6 +1179,11 @@ int generate_eNb_ulsch_params_from_dci(void *dci_pdu,
   
   unsigned char harq_pid;
   unsigned int rb_alloc;
+
+#ifdef DEBUG_DCI
+  msg("[PHY][eNB] Subframe %d : filling ulsch params for dci format %d, dci %x\n",
+      subframe,dci_format,*(unsigned int*)dci_pdu);
+#endif
 
   if (dci_format == format0) {
 
