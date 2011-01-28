@@ -942,8 +942,13 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
 
   LOG_I (MAC, "eNB inst %d scheduler subframe %d nCCE %d \n",Mod_id, subframe, mac_xface->get_nCCE_max(Mod_id) );
 
+ 
   switch (subframe) {
   case 0:
+    //test navid
+    Mac_rlc_xface->frame++;
+    Mac_rlc_xface->pdcp_run();
+
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt) 
     add_common_dci(DCI_pdu,
 		   &BCCH_alloc_pdu,

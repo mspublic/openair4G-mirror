@@ -339,7 +339,8 @@ typedef struct{
   //void (*mac_switch_node_function)(unsigned char);
   //  void (*mac_rlc_exit)(void);
   //RLC_INTERFACE_FUNCTIONS
-  void (*pdcp_run)(unsigned int);
+  //  void (*pdcp_run)(unsigned int);
+  void (*pdcp_run)();
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);	
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);
