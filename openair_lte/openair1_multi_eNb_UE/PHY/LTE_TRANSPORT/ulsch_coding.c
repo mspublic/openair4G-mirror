@@ -12,7 +12,7 @@
 #include "defs.h"
 #include "extern.h"
 
-//#define DEBUG_ULSCH_CODING 
+#define DEBUG_ULSCH_CODING 
 //#define DEBUG_ULSCH_FREE 1
 
 /*
@@ -164,7 +164,15 @@ int ulsch_encoding(unsigned char *a,
   A=ulsch->harq_processes[harq_pid]->TBS;
   Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
+
 #ifdef DEBUG_ULSCH_CODING
+  printf("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
+	 ulsch->harq_processes[harq_pid]->TBS,
+	 Q_m,
+	 ulsch->harq_processes[harq_pid]->mcs,
+	 harq_pid,
+	 ulsch->harq_processes[harq_pid]->Ndi);
+
   for (i=0;i<ulsch->O_ACK;i++)
     printf("ulsch_coding: O_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
   for (i=0;i<ulsch->O_RI;i++)
@@ -263,7 +271,7 @@ int ulsch_encoding(unsigned char *a,
   }
 
   if (ulsch->harq_processes[harq_pid]->C == 0) {
-    msg("ulsch_coding.c : error, null segment\n");
+    msg("[PHY][UE] FATAL : ulsch_coding.c : null segment\n");
     return(-1);
   }
 
