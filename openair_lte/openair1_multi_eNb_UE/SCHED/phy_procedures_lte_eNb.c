@@ -540,11 +540,15 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 
     // Parse DCI received from MAC
     DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNb->Mod_id,next_slot>>1);
-
+#ifdef DEBUG_PHY
+    msg("[PHY][eNB] Subframe %d : ***************DCI******************\n",next_slot>>1);
+#endif
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
 #ifdef DEBUG_PHY
       msg("[PHY][eNB] Subframe %d : Doing DCI index %d/%d\n",next_slot>>1,i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
+      dump_dci(&phy_vars_eNb->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
 #endif
+
       if (DCI_pdu->dci_alloc[i].rnti == SI_RNTI) {
 	generate_eNb_dlsch_params_from_dci(next_slot>>1,
 					   &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -580,8 +584,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	  exit(-1);
 	}
 	//#ifdef DEBUG_PHY
-	  msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d (%d): Generated ULSCH %d (rnti %x) DCI, format 0 (DCI pos %d/%d)\n",mac_xface->frame,
-	      next_slot,next_slot>>1,UE_id,DCI_pdu->dci_alloc[i].rnti,i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
+	  msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d (%d): Generated ULSCH %d (rnti %x, dci %x) DCI, format 0 (DCI pos %d/%d)\n",mac_xface->frame,
+	      next_slot,next_slot>>1,UE_id,DCI_pdu->dci_alloc[i].rnti,
+	      *(unsigned int *)&DCI_pdu->dci_alloc[i].dci_pdu[0],
+	      i,DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci);
 	  //#endif
 	
 	    generate_eNb_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -625,7 +631,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 					     P_RNTI,
 					     phy_vars_eNb->eNB_UE_stats[(u8)UE_id].DL_pmi_single);
       
-	  msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Generated DLSCH DCI, format %d\n",mac_xface->frame, next_slot,DCI_pdu->dci_alloc[i].format);
+	  msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Generated DLSCH DCI (rnti %x => %x,%x), format %d\n",mac_xface->frame, next_slot,
+	      DCI_pdu->dci_alloc[i].rnti,
+	      *(unsigned int*)DCI_pdu->dci_alloc[i].dci_pdu,
+	      *(unsigned int*)(1+DCI_pdu->dci_alloc[i].dci_pdu),
+	      DCI_pdu->dci_alloc[i].format);
 	}
 	else {
 	  msg("[PHY_PROCEDURES_eNB] Frame %d : No UE_id with corresponding rnti %x, dropping DLSCH\n",mac_xface->frame,(s16)DCI_pdu->dci_alloc[i].rnti);
