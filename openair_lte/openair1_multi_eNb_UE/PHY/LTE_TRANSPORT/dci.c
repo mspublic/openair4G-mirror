@@ -206,14 +206,14 @@ u8 *generate_dci0(u8 *dci,
     dci_flip[3] = dci[0];   
   }
   else {
-    dci_flip[0] = dci[3];
-    dci_flip[1] = dci[2];
-    dci_flip[2] = dci[1];
-    dci_flip[3] = dci[0];
-    dci_flip[4] = dci[7];
-    dci_flip[5] = dci[6];
-    dci_flip[6] = dci[5];
-    dci_flip[7] = dci[4];
+    dci_flip[0] = dci[7];
+    dci_flip[1] = dci[6];
+    dci_flip[2] = dci[5];
+    dci_flip[3] = dci[4];
+    dci_flip[4] = dci[3];
+    dci_flip[5] = dci[2];
+    dci_flip[6] = dci[1];
+    dci_flip[7] = dci[0];
   }
 	
   dci_encoding(dci_flip,DCI_LENGTH,coded_bits,e,rnti);
