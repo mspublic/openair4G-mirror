@@ -365,7 +365,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
       last_size=2;
-      printf("short sdu\n");
+      //printf("short sdu\n");
     }
     else {
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
@@ -376,7 +376,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2   = (sdu_lengths[i]>>7)&0xff;
 
       last_size=3;
-      printf("long sdu\n");
+      //printf("long sdu\n");
     }
   }
 
@@ -408,14 +408,17 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
     rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,DCCH,
 				    (buflen-header_len)/DCCH_LCHAN_DESC.transport_block_size,
 				    DCCH_LCHAN_DESC.transport_block_size);
-    if (rlc_status.bytes_in_buffer>0) {
+    msg("[MAC][UE %d] RLC status for DCCH : %d\n",
+	Mod_id,rlc_status.bytes_in_buffer);
+
+    if (rlc_status.bytes_in_buffer!=0) {
       msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							DCCH,
 							&dcch_buffer[sdu_lengths[0]]);
       sdu_lcids[0] = DCCH;
-      msg("[MAC][UE %d] Got %d bytes for DCCH :",Mod_id,sdu_lengths[0]);
+      msg("[MAC][UE %d] Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
       num_sdus = 1;
     }
     else
