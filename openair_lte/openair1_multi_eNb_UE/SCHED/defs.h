@@ -97,6 +97,7 @@ typedef struct {
   unsigned int  dlsch_rate_adaptation;
   unsigned int  dlsch_transmission_mode;
   unsigned int  ulsch_allocation_mode;
+  unsigned int  rx_total_gain_dB;
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE

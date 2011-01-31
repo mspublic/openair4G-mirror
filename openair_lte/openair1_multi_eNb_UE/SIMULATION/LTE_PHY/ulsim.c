@@ -58,7 +58,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   printf("Start lte_param_init\n");
   PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
   PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  PHY_config = malloc(sizeof(PHY_CONFIG));
+  //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   randominit(0);
@@ -85,9 +85,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   init_frame_parms(lte_frame_parms);
   
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
+  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(N_tx,lte_frame_parms); //allocation
+  phy_init_top(lte_frame_parms); //allocation
   
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
@@ -513,7 +513,7 @@ int main(int argc, char **argv) {
 	//write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 	
 	// do talbe lookup and write results to txdataF2
-	for (aa=0;aa<lte_frame_parms->nb_antennas_tx;aa++) {
+	for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
 	  l = 0;
 	  for (i=0;i<nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX;i++) 
 	    if ((i%512>=1) && (i%512<=150))
@@ -539,9 +539,9 @@ int main(int argc, char **argv) {
 			 PHY_vars_UE->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
 			 PHY_vars_UE->lte_frame_parms.rev,           // bit-reversal permutation
 			 CYCLIC_PREFIX);
-	  else {
+	  else 
 	    normal_prefix_mod(txdataF2[aa],txdata[aa],nsymb,frame_parms);
-	  }
+	}
 	//  tx_lev += signal_energy(&txdata[aa][4*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
 	//		  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
 	

@@ -47,7 +47,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_eNb2 = malloc(sizeof(PHY_VARS_eNB));
 
   PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  PHY_config = malloc(sizeof(PHY_CONFIG));
+  //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   randominit(0);
@@ -75,9 +75,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   init_frame_parms(lte_frame_parms);
   
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
+  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(N_tx,lte_frame_parms); //allocation
+  phy_init_top(lte_frame_parms); //allocation
 
    
   lte_frame_parms->twiddle_fft      = twiddle_fft;

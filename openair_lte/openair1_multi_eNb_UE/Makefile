@@ -1,38 +1,26 @@
+# command line flags are automatically exported and thus passed down to any sub-make. 
+# here we set the default flags in case on command line flags are provided
+# these flags have to be explicitely exported so that the sub-make is aware of them
+
+
+ifndef OPENAIR_LTE
+export OPENAIR_LTE=1
+endif
+
+ifndef OPENAIR1
+export OPENAIR1=0
+endif
+
+ifndef OPENAIR2
+export OPENAIR2=0
+endif
+
+ifndef EMOS
+export EMOS=0
+endif
+
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 && mv openair_rf.ko openair_rf_softmodem.ko)
-
-openair_rf_cbmimo1_softmodem_lte.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 && mv openair_rf.ko openair_rf_softmodem_lte.ko)
-
-openair_rf_cbmimo1_softmodem_lte_l2.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_softmodem_lte_l2.ko)
-
-openair_rf_cbmimo1_softmodem_lte_emos.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 EMOS=1 && mv openair_rf.ko openair_rf_softmodem_lte_emos.ko)
-
-openair_rf_cbmimo1_softmodem_lte_emos_l2.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 EMOS=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_softmodem_lte_emos_l2.ko)
-openair_rf_cbmimo1_softmodem_lte_emos_l2_eNB.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR_LTE=1 EMOS=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_softmodem_lte_emos_l2_eNB.ko) 
-
-openair_rf_cbmimo1_l2.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 DUALSTREAM=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_l2.ko)
-
-openair_rf_cbmimo1_l2_2615.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPENAIR2=1 && mv openair_rf.ko openair_rf_l2_2615.ko)
-
-
-openair_rf_cbmimo1_softmodem_duo.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER/ && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 DUALSTREAM=1 && mv openair_rf.ko openair_rf_softmodem_duo.ko)
-
-openair_rf_cbmimo1_softmodem_emos.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 EMOS=1 && mv openair_rf.ko openair_rf_softmodem_emos.ko)
-
-openair_rf_cbmimo1_softmodem_emos_duo.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 EMOS=1 DUALSTREAM=1 && mv openair_rf.ko openair_rf_softmodem_emos_duo.ko)
-
-openair_rf_cbmimo1_softmodem_idromelrf.ko:
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) V=1 -C /usr/src/linux  M=`pwd` RTAI=1 OPEN_AIR=1 NO_TXMUX=1 IDROMEL_RF=1 && mv openair_rf.ko openair_rf_softmodem.ko)
+	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) RTAI=1 V=1 -C /usr/src/linux  M=`pwd` && mv openair_rf.ko openair_rf_softmodem.ko)
 
 #Remove all but source files
 cleanall: 
@@ -56,9 +44,10 @@ clean:
 	find -name 'octave-core' -delete -print; 
 
 #Remove files created by SVN, dangerous!!! DO NOT RUN ON YOUR WORKING REPOSITORY!
-cleansvn:
-	rm -rf `find -name *.svn* -print`; \
-	find -name *.svn* -delete -print
+#FK: Don't do this! Use svn export instead.
+#cleansvn:
+#	rm -rf `find -name *.svn* -print`; \
+#	find -name *.svn* -delete -print
 
 tgz:
 	mkdir /tmp/openair1_tmp; \
@@ -91,92 +80,6 @@ install_cbmimo1_softmodem:
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko updatefirmware=1 ; \
 	else \
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
-	fi
-
-install_cbmimo1_softmodem_lte:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte.ko ; \
-	fi
-
-install_cbmimo1_softmodem_lte_l2:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_l2.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_l2.ko ; \
-	fi
-
-install_cbmimo1_softmodem_lte_emos_l2:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2.ko ; \
-	fi
-
-install_cbmimo1_softmodem_lte_emos_l2_eNB:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-  	   insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2_eNB.ko updatefirmware=1 ; \
-	else \
-	   insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos_l2_eNB.ko ; \
-	fi
- 
-
-install_cbmimo1_softmodem_lte_emos:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_lte_emos.ko ; \
-	fi
-
-install_cbmimo1_l2:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_l2.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_l2.ko ; \
-	fi
-	insmod ../openair2/LAYER2/openair_layer2.ko
-	insmod ../openair2/RRC/MESH/openair_RRC.ko
-
-install_cbmimo1_l2_2615:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_l2_2615.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_l2_2615.ko ; \
-	fi
-	insmod ../openair2/LAYER2/openair_layer2_2615.ko
-	insmod ../openair2/RRC/MESH/openair_RRC_2615.ko
-
-
-install_cbmimo1_softmodem_duo:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_duo.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_duo.ko ; \
-	fi
-
-install_cbmimo1_softmodem_emos:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_emos.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_emos.ko ; \
-	fi
-
-install_cbmimo1_softmodem_emos_duo:
-	make fifos
-	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_emos_duo.ko updatefirmware=1 ; \
-	else \
-		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_emos_duo.ko ; \
 	fi
 
 remove_cbmimo1:

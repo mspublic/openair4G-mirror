@@ -45,6 +45,7 @@
 #include <linux/bigphysarea.h>
 #endif 
 
+#include "PHY/defs.h"
 #include "cbmimo1_device.h"
 
 #include "from_grlib_softconfig.h"
@@ -76,9 +77,9 @@ void openair_set_tcxo_dac(unsigned char card_id,unsigned int);
 
 void openair_get_frame(unsigned char card_id);
 
-int openair_dma(unsigned char card_id,unsigned int cmd);
+int openair_dma(unsigned char card_id, unsigned int cmd);
 
-int setup_regs(unsigned char card_id);
+int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms);
 
 void dump_config(void);
 

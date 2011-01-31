@@ -32,6 +32,7 @@
 
 
 #else // USER_MODE
+/*
 #include "ARCH/COMMON/defs.h"
 
 #include <asm/io.h>
@@ -43,6 +44,7 @@
 #include <rtai_math.h>
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+*/
 
 #define msg fifo_printf//rt_printk
 #define msg_nrt printk

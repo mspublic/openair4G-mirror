@@ -54,7 +54,7 @@ int create_rt_fifo(int rt_fifoP, int sizeP) {
 */
 
 //------------------------------------------------------------------------------
-int setup_regs(unsigned char card_id) {
+int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms) {
 
   //------------------------------------------------------------------------------
 

@@ -13,6 +13,7 @@ pointer to the macphy_scheduler() routine*/
 
 #undef __PHY_IMPLEMENTATION_DEFS_H__
 
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "defs.h"
 #include "extern.h"
 
@@ -28,13 +29,10 @@ void dummy_macphy_scheduler(u8 last_slot)
   //if (last_slot == 0)
   //  mac_xface->frame++;
 
-  //  if (mac_xface->frame % 100 == 0)
-  //    msg("[OPENAIR][MAC XFACE] in dummy_macphy_scheduler(): MAC no yet registered!\n"); 
+  msg("[OPENAIR][MAC XFACE] in dummy_macphy_scheduler(): MAC no yet registered!\n"); 
 
   //#ifdef EMOS
-	
   //	phy_procedures(last_slot);
-
   //#endif
 	
 }

@@ -229,7 +229,7 @@ double pbch_bler(double sinr);
 \brief Tausworthe Uniform Random Generator.  This is based on the hardware implementation described in 
   Lee et al, "A Hardware Gaussian Noise Generator Usign the Box-Muller Method and its Error Analysis," IEEE Trans. on Computers, 2006.
 */
-inline unsigned int taus();
+inline unsigned int taus(void);
 
 
 /** 
@@ -294,7 +294,7 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
-double uniformrandom();
+double uniformrandom(void);
 
 /**@} */
 /**@} */

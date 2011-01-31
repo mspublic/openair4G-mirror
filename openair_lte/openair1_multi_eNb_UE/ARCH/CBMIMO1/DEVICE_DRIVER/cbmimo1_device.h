@@ -48,7 +48,7 @@
 #define openair_RX_RF_MODE                  _IOR(openair_IOC_MAGIC,19,int)
 #define openair_SET_TCXO_DAC                _IOR(openair_IOC_MAGIC,20,int)
 #define openair_GET_PHASE_ESTIMATE          _IOR(openair_IOC_MAGIC,21,int)
-#define openair_DO_SYNCH              _IOR(openair_IOC_MAGIC,22,int)
+#define openair_DO_SYNCH                    _IOR(openair_IOC_MAGIC,22,int)
 #define openair_GET_SIGNALS                 _IOR(openair_IOC_MAGIC,23,int)
 #define openair_SET_FFT_SCALE               _IOR(openair_IOC_MAGIC,24,int)
 #define openair_FFT_TEST                    _IOR(openair_IOC_MAGIC,25,int)

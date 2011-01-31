@@ -830,7 +830,7 @@ int main(int argc, char **argv) {
     PHY_vars_UE_g[UE_id]->Mod_id=UE_id; 
   }// end navid
 
-  PHY_config = malloc(sizeof(PHY_CONFIG));
+  //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
@@ -851,8 +851,8 @@ int main(int argc, char **argv) {
   //initialize the log generator 
   logInit();
   init_frame_parms(frame_parms);
-  copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
-  phy_init_top(NB_ANTENNAS_TX,frame_parms);
+  //copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
+  phy_init_top(frame_parms);
 
   frame_parms->twiddle_fft      = twiddle_fft;
   frame_parms->twiddle_ifft     = twiddle_ifft;

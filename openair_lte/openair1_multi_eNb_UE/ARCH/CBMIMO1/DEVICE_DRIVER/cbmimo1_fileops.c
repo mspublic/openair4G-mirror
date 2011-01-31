@@ -7,6 +7,7 @@
 
 #include "cbmimo1_device.h"
 #include "defs.h"
+#include "../../COMMON/defs.h"
 #include "extern.h"
 
 #ifdef RTAI_ENABLED
@@ -175,6 +176,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   unsigned int ioctl_ack_cnt = 0;
 
   TX_VARS dummy_tx_vars;
+  LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
   scale = &scale_mem;
 
@@ -193,123 +195,97 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //----------------------
     printk("[openair][IOCTL]     openair_DUMP_CONFIG\n");
 
-    openair_daq_vars.mac_registered=1; // Fix this - should only be set if MAC is really registered
-    
 #ifdef RTAI_ENABLED
     if (openair_daq_vars.node_configured > 0) {
       printk("[openair][IOCTL] NODE ALREADY CONFIGURED (%d), DYNAMIC RECONFIGURATION NOT SUPPORTED YET!!!!!!!\n",openair_daq_vars.node_configured);
     }
     else {
-      if (openair_daq_vars.mac_registered == 1) {
-	copy_from_user((char *)PHY_config,(char *)arg,sizeof(PHY_CONFIG));
-	dump_config();
-	printk("[openair][IOCTL] Allocating PHY variables\n");
-
+      copy_from_user((char *)frame_parms,(char *)arg,sizeof(LTE_DL_FRAME_PARMS));
+      //dump_config();
+      printk("[openair][IOCTL] Allocating frame_parms\n");
+      
 #ifdef OPENAIR_LTE
-	lte_frame_parms = &PHY_config->lte_frame_parms;
-
-	lte_ue_common_vars = &PHY_vars->lte_ue_common_vars;
-	lte_ue_dlsch_vars  = &PHY_vars->lte_ue_dlsch_vars[0];
-	lte_ue_pbch_vars   = &PHY_vars->lte_ue_pbch_vars[0];
-	lte_ue_pdcch_vars  = &PHY_vars->lte_ue_pdcch_vars[0];
-	lte_ue_dlsch_vars_cntl = &PHY_vars->lte_ue_dlsch_vars_cntl[0];
-	lte_ue_dlsch_vars_ra = &PHY_vars->lte_ue_dlsch_vars_ra[0];
-	lte_ue_dlsch_vars_1A = &PHY_vars->lte_ue_dlsch_vars_1A[0];
-
-	lte_eNB_common_vars = &PHY_vars->lte_eNB_common_vars;
-	lte_eNB_ulsch_vars  = &PHY_vars->lte_eNB_ulsch_vars[0];
-
-	openair_daq_vars.node_configured = phy_init_top(NB_ANTENNAS_TX);
-	msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
-
-	lte_frame_parms->twiddle_fft      = twiddle_fft;
-	lte_frame_parms->twiddle_ifft     = twiddle_ifft;
-	lte_frame_parms->rev              = rev;
-
-	phy_init_lte_top(lte_frame_parms);
-
+      openair_daq_vars.node_configured = phy_init_top(frame_parms);
+      msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
+      
+      frame_parms->twiddle_fft      = twiddle_fft;
+      frame_parms->twiddle_ifft     = twiddle_ifft;
+      frame_parms->rev              = rev;
+      
+      //phy_init_lte_top(frame_parms);
+      //msg("[openair][IOCTL] phy_init_lte_top done: %d\n",openair_daq_vars.node_configured);
 #else
-	openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
+      openair_daq_vars.node_configured = phy_init(NB_ANTENNAS_TX);
 #endif
-	if (openair_daq_vars.node_configured < 0) {
-	  printk("[openair][IOCTL] Error in configuring PHY\n");
-	  break;
-	}
-	
-	else {
-	  printk("[openair][IOCTL] PHY Configuration successful\n");
-
-
-#ifndef EMOS	  
-	  openair_daq_vars.node_configured = mac_init();
-	  if (openair_daq_vars.node_configured != 1)
-	    printk("[openair][IOCTL] Error in configuring MAC\n");
-	  else 
-	    printk("[openair][IOCTL] MAC Configuration successful\n");
-#endif	
-	}
-
-#ifndef NOCARD_TEST
-	// Initialize FPGA PCI registers
-       
-	openair_daq_vars.dual_tx = PHY_config->dual_tx;
-	openair_daq_vars.tdd     = PHY_config->tdd;
-	openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;  //unused for FDD
-
-#ifdef OPENAIR_LTE
-	if (openair_daq_vars.tdd)
-		openair_daq_vars.freq = 0; //TX: 1902600kHz RX: 1902600kHz
-	else
-		openair_daq_vars.freq = 4; //UE TX: 1917600kHz UE RX: 1902600kHz
-	printk("[openair][IOCTL] Configuring for frequency TX 1917600kHz RX 1902600kHz (%d)\n",openair_daq_vars.freq);
-#else
-	openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
-	printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
-#endif
-
-	openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
-	openair_daq_vars.rx_gain_val = 0;
-
-	// PUT the card in calibrated frequency mode by putting a value > 255 in tcxo register
-	openair_daq_vars.tcxo_dac = 256;
-
-	openair_daq_vars.node_id = NODE;
-	openair_daq_vars.mode    = openair_NOT_SYNCHED;
-	openair_daq_vars.node_running = 0;
-
-	openair_daq_vars.manual_timing_advance = 0;
-	openair_daq_vars.timing_advance = 19;
-	openair_daq_vars.dlsch_transmission_mode = 2;
-	openair_daq_vars.target_ue_dl_mcs = 0;
-	openair_daq_vars.target_ue_ul_mcs = 0;
-	openair_daq_vars.dlsch_rate_adaptation = 0;
-	openair_daq_vars.ue_ul_nb_rb = 2;
-	openair_daq_vars.ulsch_allocation_mode = 0;
-	lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
-
-	mac_xface->is_cluster_head = 0;
-
-	for (i=0;i<number_of_cards;i++) { 
-	  ret = setup_regs(i);
-
-	// Start LED dance with proper period
-	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-	}
-
-	//	usleep(10);
-	ret = openair_sched_init();
-	//ret = -1;
-	if (ret != 0)
-	  printk("[openair][DUMP][CONFIG] Error in starting scheduler\n");
-	
-	// add Layer 1 stats in /proc/openair	
-	add_openair1_stats();
-	// rt_preempt_always(1);
-#endif //NOCARD_TEST
+      if (openair_daq_vars.node_configured < 0) {
+	printk("[openair][IOCTL] Error in configuring PHY\n");
+	break;
       }
+      
       else {
-	printk("[openair][IOCTL] Add a MAC module first !!!!\n");
+	printk("[openair][IOCTL] PHY Configuration successful\n");
+	
+	
+#ifndef EMOS	  
+	openair_daq_vars.node_configured = mac_init();
+	if (openair_daq_vars.node_configured != 1)
+	  printk("[openair][IOCTL] Error in configuring MAC\n");
+	else 
+	  printk("[openair][IOCTL] MAC Configuration successful\n");
+#endif	
       }
+      
+#ifndef NOCARD_TEST
+      // Initialize FPGA PCI registers
+      
+      openair_daq_vars.dual_tx = (frame_parms->nb_antennas_tx>1);
+      openair_daq_vars.tdd     = frame_parms->frame_type;
+      openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;  //unused for FDD
+      
+#ifdef OPENAIR_LTE
+      openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
+      printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
+#else
+      openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
+      printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
+#endif
+
+      openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
+      openair_daq_vars.rx_gain_val = 0;
+      openair_daq_vars.tcxo_dac = 256;       // PUT the card in calibrated frequency mode by putting a value > 255 in tcxo register
+      openair_daq_vars.node_id = NODE;
+      openair_daq_vars.mode    = openair_NOT_SYNCHED;
+      openair_daq_vars.node_running = 0;
+      
+      openair_daq_vars.manual_timing_advance = 0;
+      openair_daq_vars.timing_advance = 19;
+      openair_daq_vars.dlsch_transmission_mode = 2;
+      openair_daq_vars.target_ue_dl_mcs = 0;
+      openair_daq_vars.target_ue_ul_mcs = 0;
+      openair_daq_vars.dlsch_rate_adaptation = 0;
+      openair_daq_vars.ue_ul_nb_rb = 2;
+      openair_daq_vars.ulsch_allocation_mode = 0;
+      frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
+
+      mac_xface->is_cluster_head = 0;
+
+      for (i=0;i<number_of_cards;i++) { 
+	ret = setup_regs(i,frame_parms);
+	
+	// Start LED dance with proper period
+	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+      }
+      
+      //	usleep(10);
+      ret = openair_sched_init();
+      //ret = -1;
+      if (ret != 0)
+	printk("[openair][DUMP][CONFIG] Error in starting scheduler\n");
+      
+      // add Layer 1 stats in /proc/openair	
+      // add_openair1_stats();
+      // rt_preempt_always(1);
+#endif //NOCARD_TEST
     }
 #endif // RTAI_ENABLED
     break;
@@ -317,7 +293,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //----------------------
   case openair_START_1ARY_CLUSTERHEAD:
     //----------------------
-
+    /*
 #ifdef RTAI_ENABLED
     printk("[openair][IOCTL]     openair_1ARY_START_CLUSTERHEAD\n");
     printk("[openair][IOCTL]     Freq corr = %d, Freq0 = %d, Freq1 = %d, NODE_ID = %d\n",*((unsigned int *)arg_ptr)&1,
@@ -451,7 +427,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #endif // RTAI_ENABLED
     break;
-
+    */
+    /*
     //----------------------
   case openair_START_1ARY_CLUSTERHEAD_COGNITIVE:
     //----------------------
@@ -497,8 +474,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #endif // RTAI_ENABLED
     break;
-
-
+    */
+    /*
     //----------------------
   case openair_START_NODE:
     //----------------------
@@ -620,7 +597,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
 #endif // RTAI_ENABLED
     break;
-
+    */
+    /*
     //----------------------
   case openair_START_2ARY_CLUSTERHEAD:
 
@@ -667,8 +645,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif // RTAI_ENABLED
     break;
     //----------------------
-
-
+    */
 
 
     //----------------------
@@ -700,7 +677,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
       for (i=0;i<number_of_cards;i++) {
-	setup_regs(i);
+	setup_regs(i,frame_parms);
 	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       }
 
@@ -710,12 +687,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       mac_xface->frame = 0;
       mac_xface->is_cluster_head = 0;
 
-      /* 
+      /*
       for (j=0;j<NB_ANTENNAS;j++) 
 	for (i=0;i<FRAME_LENGTH_BYTES;i+=OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*4)
 	  copy_to_user(&((unsigned char *)arg)[i+(j*FRAME_LENGTH_BYTES)],&((unsigned char *)RX_DMA_BUFFER[j])[i],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*4);
       */
-      
+
       udelay(1000);
  #endif // NOCARD_TEST
  
@@ -737,7 +714,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     PHY_vars->PHY_measurements.mrbch_search_count= 0;
 #endif //OPENAIR_LTE    
     break;
-      
+  
   case openair_GET_BUFFER:
 
     printk("[openair][IOCTL]     openair_GET_BUFFER (%p)\n",(void *)RX_DMA_BUFFER[0]);
@@ -749,7 +726,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #endif
 
-    openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
+    //openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME; //this puts the node into RX mode only for TDD, its ignored in FDD mode
     openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
 
 #ifdef RTAI_ENABLED
@@ -758,7 +735,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.node_id = NODE;      
       
       for (i=0;i<number_of_cards;i++)
-	ret = setup_regs(i);
+	ret = setup_regs(i,frame_parms);
 
       openair_daq_vars.one_shot_get_frame=1;
 
@@ -776,6 +753,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     //----------------------
 
+    /*
   case openair_GET_CONFIG:
 
 #ifdef RTAI_ENABLED
@@ -784,6 +762,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif // RTAI_ENABLED
 
     break;
+    */
 
   case openair_GET_BIGPHYSTOP:
 
@@ -793,6 +772,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif // RTAI_ENABLED
     break;
 
+    /*
   case openair_GET_VARS:
 
 #ifdef PC_TARGET
@@ -802,6 +782,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #endif // RTAI_ENABLED
 #endif // PC_TARGET
     break;
+    */
 
   case openair_SET_TX_GAIN:
 
@@ -828,8 +809,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     for (i=0;i<number_of_cards;i++)
       openair_set_rx_gain_cal_openair(i,((unsigned int *)arg)[0]);
 
-    PHY_vars->rx_total_gain_dB = ((unsigned int *)arg)[0];
-    PHY_vars->rx_total_gain_eNB_dB = ((unsigned int *)arg)[0];
+    //PHY_vars->rx_total_gain_dB = ((unsigned int *)arg)[0];
+    //PHY_vars->rx_total_gain_eNB_dB = ((unsigned int *)arg)[0];
     openair_daq_vars.rx_gain_mode = DAQ_AGC_OFF; // ((unsigned int *)arg)[0] & 0x1; 
     break;
 
@@ -851,7 +832,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.tx_test=1;
     for (i=0;i<number_of_cards;i++) {
-      ret = setup_regs(i);
+      ret = setup_regs(i,frame_parms);
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       udelay(1000);
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_FS4);
@@ -888,7 +869,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	   ((*((unsigned *)arg_ptr))>>12)&0x1f);
 
     for (i=0;i<number_of_cards;i++) {
-      ret = setup_regs(i);
+      ret = setup_regs(i,frame_parms);
       pci_interface[i]->first_rb = ((*((unsigned *)arg_ptr))>>7)&0x1f;
       pci_interface[i]->nb_rb = ((*((unsigned *)arg_ptr))>>12)&0x1f;
     //    start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
@@ -948,7 +929,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
 
     openair_daq_vars.tx_test=1;
-    ret = setup_regs(0);
+    ret = setup_regs(0,frame_parms);
 
     openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 
@@ -1001,7 +982,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
     openair_daq_vars.freq_info = 0 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
-    ret = setup_regs(0);
+    ret = setup_regs(0,frame_parms);
 
     openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
 		
@@ -1451,7 +1432,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     msg("[openair][IOCTL] openair_daq_vars.timing_advance = %d\n",openair_daq_vars.timing_advance);
 
     for (i=0;i<number_of_cards;i++)
-      ret = setup_regs(i);
+      ret = setup_regs(i,frame_parms);
 
     if (ret != 0)
       msg("[openair][IOCTL] Failed to set timing advance\n");
@@ -1499,7 +1480,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( ((((unsigned int *)arg)[0]) > 0) && 
 	 ((((unsigned int *)arg)[0]) < 7) )
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
-    lte_frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
+    frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
     break;
 
   case openair_SET_ULSCH_ALLOCATION_MODE:
@@ -1516,4 +1497,5 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   }
   return 0;
 }
+
 

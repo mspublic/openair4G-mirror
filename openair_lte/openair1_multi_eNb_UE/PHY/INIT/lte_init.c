@@ -1,8 +1,6 @@
 //#include <string.h>
-#include "defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
 #ifdef CBMIMO1
+#include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -10,6 +8,9 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
 //#include "pci_commands.h"
 #endif //CBMIMO1
+#include "defs.h"
+#include "PHY/extern.h"
+#include "SIMULATION/TOOLS/defs.h"
 
 //#define DEBUG_PHY
 
@@ -95,6 +96,19 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING 
 } 
 
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
+
+  crcTableInit();
+  
+  ccodedot11_init();
+  ccodedot11_init_inv();
+
+  ccodelte_init();
+  ccodelte_init_inv();
+
+#ifndef EXPRESSMIMO_TARGET
+  phy_generate_viterbi_tables();
+  phy_generate_viterbi_tables_lte();
+#endif //EXPRESSMIMO_TARGET
 
   lte_gold(lte_frame_parms);
   lte_sync_time_init(lte_frame_parms);

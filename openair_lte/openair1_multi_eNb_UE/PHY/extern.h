@@ -6,12 +6,15 @@
 #include "PHY/TOOLS/twiddle_extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#ifdef USER_MODE
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
+#endif
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-extern PHY_CONFIG *PHY_config;
+//extern PHY_CONFIG *PHY_config;
+//extern PHY_VARS *PHY_vars;
 
 #ifndef OPENAIR_LTE
 extern unsigned char scrambling_sequence[];
@@ -26,9 +29,9 @@ extern unsigned int sync_pos;
 extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
-//extern PHY_VARS *PHY_vars;
 extern PHY_VARS_UE **PHY_vars_UE_g;
 extern PHY_VARS_eNB **PHY_vars_eNb_g;
+extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
 //extern PHY_LINKS *PHY_links;
 

@@ -3,12 +3,22 @@
 #define __NO_VERSION__
 #endif
  
+#ifdef CBMIMO1
+#include "ARCH/COMMON/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
+//#include "pci_commands.h"
+#endif //CBMIMO1
+
 #include "defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-/*
 
+/*!
 * @addtogroup _PHY_STRUCTURES_
 * Memory Initializaion and Cleanup for LTE MODEM.
 * @{
@@ -23,20 +33,11 @@ Blah Blah
 #endif //USER_MODE
 */
 
-//#ifdef CBMIMO1
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
-//#include "pci_commands.h"
-//#endif //CBMIMO1
-
 
 #ifndef USER_MODE
 
 // Get from HW addresses
-void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
+int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_PARMS *frame_parms) {
 
   unsigned char card_id,i;
   int *tmp_ptr;
@@ -85,7 +86,7 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
       
       
 #ifndef USER_MODE
-      TX_DMA_BUFFER[card_id][i] = tmp_ptr_tx;
+      TX_DMA_BUFFER[card_id][i] = (int) tmp_ptr_tx;
 #endif //USER_MODE
       
       
@@ -103,9 +104,9 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
       else {
 	bzero(tmp_ptr,FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES+2*PAGE_SIZE);
 #ifndef USER_MODE
-	pci_buffer[card_id][1+(2*i)] = tmp_ptr;
+	pci_buffer[card_id][1+(2*i)] = (int) tmp_ptr;
 	
-	tmp_ptr = (((unsigned long)tmp_ptr + PAGE_SIZE -1) & PAGE_MASK);
+	tmp_ptr = (int*) (((unsigned long)tmp_ptr + PAGE_SIZE -1) & PAGE_MASK);
 	//          reserve_mem(tmp_ptr,FRAME_LENGTH_BYTES+2*PAGE_SIZE);
 	
 #endif //USER_MODE
@@ -120,7 +121,7 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
       
       
 #ifndef USER_MODE
-      RX_DMA_BUFFER[card_id][i] = tmp_ptr;
+      RX_DMA_BUFFER[card_id][i] = (int) tmp_ptr;
 #endif // //USER_MODE
     }
     
@@ -151,72 +152,12 @@ void init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue) {
 #ifndef USER_MODE
     mbox = (unsigned int)(&pci_interface[0]->adac_cnt);
 
-    PHY_vars->mbox = mbox;
 #endif // USER_MODE 
 #endif // CBMIMO1
 }
 #endif // USER_MODE
 
-/*
-#else  // USER_MODE
-int init_signal_buffers(unsigned char Nb_eNB,unsigned char Nb_ue) {
-
-
-  unsigned char buffer_id,i;
-  unsigned int tx_dma_buffer_size_bytes;
-
-  for (buffer_id=0;buffer_id<(Nb_eNB+Nb_ue);buffer_id++) {
-    for (i=0;i<NB_ANTENNAS_RX;i++) {
-	
-	// Allocate memory for TX DMA Buffer
-	
-#ifdef IFFT_FPGA
-      tx_dma_buffer_size_bytes = NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t);
-#else
-      tx_dma_buffer_size_bytes = FRAME_LENGTH_BYTES;
-#endif
-      
-      TX_DMA_BUFFER[buffer_id][i] = (mod_sym_t *)bigmalloc16(tx_dma_buffer_size_bytes);
-
-      printf("Allocated TX_DMA_BUFFER %d, antenna %d of size %d bytes at %p\n",buffer_id,i,tx_dma_buffer_size_bytes,TX_DMA_BUFFER[buffer_id][i]);
-
-      if (TX_DMA_BUFFER[buffer_id][i]==NULL) {
-	msg("[PHY][INIT] Could not allocate TX_DMA %d (%x bytes)\n",i, 
-	    tx_dma_buffer_size_bytes);
-	return(-1);
-      }
-      else {
-	bzero(TX_DMA_BUFFER[buffer_id][i],tx_dma_buffer_size_bytes);
-      }
-      
-      
-      // RX DMA Buffers
-
-      RX_DMA_BUFFER[buffer_id][i] = (int *)bigmalloc16(FRAME_LENGTH_BYTES+2*OFDM_SYMBOL_SIZE_BYTES);      
-      if (RX_DMA_BUFFER[buffer_id][i]==NULL) {
-#ifdef DEBUG_PHY
-	msg("[PHY][INIT] Could not allocate RX_DMA %d (%x bytes)\n",i, 
-	    FRAME_LENGTH_BYTES+2*OFDM_SYMBOL_SIZE_BYTES);
-#endif
-	return(-1);
-      }
-      else {
-	bzero(RX_DMA_BUFFER[buffer_id][i],FRAME_LENGTH_BYTES+OFDM_SYMBOL_SIZE_BYTES);
-      }
-      
-      
-      
-      
-#ifndef USER_MODE
-
-#endif //USER_MODE
-    }
-  }
-}
-#endif //USER_MODE
-*/
-
-int phy_init_top(unsigned char nb_antennas_tx,LTE_DL_FRAME_PARMS *frame_parms) {
+int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
 
  unsigned char card_id;
@@ -232,21 +173,9 @@ int phy_init_top(unsigned char nb_antennas_tx,LTE_DL_FRAME_PARMS *frame_parms) {
   
 
     
-  crcTableInit();
-  
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
-  ccodelte_init();
-  ccodelte_init_inv();
-
-#ifndef EXPRESSMIMO_TARGET
-  phy_generate_viterbi_tables();
-  phy_generate_viterbi_tables_lte();
-#endif //EXPRESSMIMO_TARGET
 
 #ifndef USER_MODE
-  init_signal_buffers(number_of_cards,1);
+  init_signal_buffers(number_of_cards,1,frame_parms);
 #endif
   
 #ifdef DEBUG_PHY    

@@ -1788,10 +1788,10 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
 
       if (dci_alloc[i].L == (u8)L) {
       
-	//#ifdef DEBUG_DCI_ENCODING
+#ifdef DEBUG_DCI_ENCODING
 	msg("[PHY] Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,dci_alloc[i].dci_pdu);
 	dump_dci(frame_parms,&dci_alloc[i]);
-	//#endif
+#endif
 	e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
 			      e_ptr,
 			      dci_alloc[i].dci_length,

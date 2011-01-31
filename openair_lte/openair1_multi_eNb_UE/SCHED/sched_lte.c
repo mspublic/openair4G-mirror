@@ -165,13 +165,13 @@ static void * openair_thread(void *param) {
   //------------------------------
 #ifndef USER_MODE
   struct sched_param p;
-
-#endif //  /* USER_MODE */
-
+#endif // USER_MODE
 
   u8           next_slot, last_slot;
   unsigned int time_in,time_out,i;
   int diff;
+
+  LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
 
 #ifdef SERIAL_IO
@@ -201,24 +201,20 @@ static void * openair_thread(void *param) {
   exit_openair = 0;
   
   if (mac_xface->is_primary_cluster_head ==1) {
-    PHY_vars->rx_total_gain_dB = 138;
-    PHY_vars->rx_total_gain_eNB_dB = 138;
+    PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB = 138;
+    openair_daq_vars.rx_total_gain_dB = 138;
   }
   else {
-    PHY_vars->rx_total_gain_dB = MIN_RF_GAIN;
-    PHY_vars->rx_total_gain_eNB_dB = MIN_RF_GAIN;
+    PHY_vars_UE_g[0]->rx_total_gain_dB = MIN_RF_GAIN;
+    openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
+    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
   }
 
 #ifdef CBMIMO1  
   for (i=0;i<number_of_cards;i++) 
-    openair_set_rx_gain_cal_openair(i,PHY_vars->rx_total_gain_dB);
+    openair_set_rx_gain_cal_openair(i,openair_daq_vars.rx_total_gain_dB);
 #endif
 	
-  // turn off AGC by default
-  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-
-  openair_daq_vars.synch_source = 1; //by default we sync to CH1
-
   // Inner thread endless loop
   // exits on error or normally
   
@@ -256,6 +252,7 @@ static void * openair_thread(void *param) {
 
       //      mac_xface->macphy_scheduler(last_slot); 
 
+      /*
 #ifdef OPENAIR_LTE
       phy_procedures_lte(last_slot,next_slot);
 #else
@@ -265,6 +262,7 @@ static void * openair_thread(void *param) {
       phy_procedures(last_slot);
 #endif
 #endif 
+      */
 
       if (last_slot==SLOTS_PER_FRAME-2)
       	mac_xface->frame++;
@@ -368,12 +366,14 @@ void openair_sync(void) {
 
   RTIME time;
 
+  LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
+
   openair_daq_vars.mode = openair_NOT_SYNCHED;
 
   //openair_set_lo_freq_openair(openair_daq_vars.freq,openair_daq_vars.freq);	
 
   for (i=0;i<number_of_cards;i++) {
-    ret = setup_regs(i);
+    ret = setup_regs(i,frame_parms);
 
     openair_get_frame(i); //received frame is stored in PHY_vars->RX_DMA_BUFFER
   }
@@ -430,6 +430,7 @@ void openair_sync(void) {
 
 #endif
 
+    /*
     if (openair_daq_vars.node_configured&2) { // the node has been cofigured as a UE
 
       msg("[openair][SCHED][SYNCH] starting sync\n");
@@ -465,14 +466,12 @@ void openair_sync(void) {
 		   0);
 	}
 
-	/*
-	lte_ue_measurements(lte_ue_common_vars,
-			    lte_frame_parms,
-			    &PHY_vars->PHY_measurements,
-			    sync_pos-sync_pos_slot,
-			    0,
-			    0);
-	*/
+	//lte_ue_measurements(lte_ue_common_vars,
+	//		    lte_frame_parms,
+	//		    &PHY_vars->PHY_measurements,
+	//		    sync_pos-sync_pos_slot,
+	//		    0,
+	//		    0);
 
 	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
@@ -536,6 +535,7 @@ void openair_sync(void) {
 	}
       }
     }
+   
 
     // Measurements
     rx_power = 0;
@@ -573,18 +573,19 @@ void openair_sync(void) {
     }
 #endif
 
-
     // Do AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      phy_adjust_gain (clear, 512, 0);
+      phy_adjust_gain(clear, 512, 0);
       if (clear == 1)
 	clear = 0;
     }
+   */
+
   }
 
   msg("[openair][SCHED] leaving openair_sync()\n");
-
 }
+
 
 
 static void * top_level_scheduler(void *param) {
@@ -597,6 +598,8 @@ static void * top_level_scheduler(void *param) {
   int first_increment = 0;
   int i;
   int ret=0;  
+
+  LTE_DL_FRAME_PARMS *frame_parms=lte_frame_parms_g;
   
   msg("[openair][SCHED][top_level_scheduler] top_level_scheduler started with id %x, MODE %d, cpuid = %d, fpu_flag = %d\n",(unsigned int)pthread_self(),openair_daq_vars.mode,rtai_cpuid(),pthread_self()->uses_fpu);
 
@@ -636,7 +639,7 @@ static void * top_level_scheduler(void *param) {
 
 #ifdef CBMIMO1  // Note this code cannot run on PLATON!!!
 	if (openair_daq_vars.tx_test == 0) 
-	  openair_sync();
+	  //openair_sync();
 #endif // CBMIMO1
 
 	msg("[openair][SCHED] adac_cnt = %d\n",adac_cnt);
@@ -897,6 +900,7 @@ int openair_sched_init(void) {
   
   int error_code;
   
+  LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
   
   mac_xface->frame = 0;
   
@@ -922,7 +926,6 @@ int openair_sched_init(void) {
   }
 
   openair_daq_vars.mode = openair_NOT_SYNCHED;
-  UE_mode = NOT_SYNCHED;
   
   error_code = rtf_create(rx_sig_fifo, NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
   printk("[openair][SCHED][INIT] Created rx_sig_fifo (%d bytes), error_code %d\n",
@@ -1008,7 +1011,7 @@ int openair_sched_init(void) {
 
   //if (mac_xface->is_cluster_head == 0) 
   //FK mac_xface->is_cluster_head not initialized at this stage
-    error_code = init_dlsch_threads();
+  //  error_code = init_dlsch_threads();
 
   return(error_code);
 
@@ -1040,7 +1043,7 @@ void openair_sched_cleanup() {
 
   //if (mac_xface->is_cluster_head == 0)
   //FK: mac_xface->is_cluster_head not initialized at this stage
-    cleanup_dlsch_threads();
+  //  cleanup_dlsch_threads();
 
   printk("[openair][SCHED][CLEANUP] Done!\n");
 }

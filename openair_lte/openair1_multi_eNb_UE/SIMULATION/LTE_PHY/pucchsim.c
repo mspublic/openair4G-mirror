@@ -38,7 +38,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
 
   PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  PHY_config = malloc(sizeof(PHY_CONFIG));
+  //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   randominit(0);
@@ -63,9 +63,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->tdd_config = 3;
   init_frame_parms(lte_frame_parms);
   
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
+  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(N_tx,lte_frame_parms); //allocation
+  phy_init_top(lte_frame_parms); //allocation
   
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
@@ -428,11 +428,11 @@ int main(int argc, char **argv) {
 		   frame_parms->twiddle_ifft,  // IFFT twiddle factors
 		   frame_parms->rev,           // bit-reversal permutation
 		   CYCLIC_PREFIX);
-    else {
+    else 
       normal_prefix_mod(txdataF2[aa],txdata[aa],2*nsymb,frame_parms);
-    }
-    tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
-			    OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+  }
+  tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
+			  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     
 #else
     write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);

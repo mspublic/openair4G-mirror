@@ -139,7 +139,7 @@ static int __init openair_init_module( void )
   pdev[0] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, NULL);
 
   if(pdev[0]) {
-    printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondate %x\n",i,
+    printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
     i=1;
   }
@@ -153,7 +153,7 @@ static int __init openair_init_module( void )
   while (i<3) {
     pdev[i] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, pdev[i-1]);
     if(pdev[i]) {
-      printk("[openair][INIT_MODULE][INFO]:  openair card %d found, bus %x, primary %x, secondate %x\n",i,
+      printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
       i++;
     }
@@ -207,7 +207,7 @@ static int __init openair_init_module( void )
 		  FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
 		  &res);
     if ((res & FROM_GRLIB_BOOT_GOK) != 0)
-      printk("[openair][INIT_MODULE][INFO]: LEON3 on card %d is ok!\n",i);
+      printk("[openair][INIT_MODULE][INFO]: LEON3 on card %ld is ok!\n",i);
     else {
       printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
       return -ENODEV;
@@ -232,7 +232,7 @@ static int __init openair_init_module( void )
    * refer to [LinuxDeviceDrivers, 3rd edition, by Corbet/Rubini/Kroah-Hartman] pp 35-36). */
   for (i=0;i<number_of_cards;i++) {
     if (!updatefirmware) {
-      printk("[openair][INIT_MODULE][INFO]: Card %d Setting HOK bit with auto jump to user firmware.\n",i);
+      printk("[openair][INIT_MODULE][INFO]: Card %ld Setting HOK bit with auto jump to user firmware.\n",i);
       openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
     } else {
       printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
@@ -290,7 +290,7 @@ static int __init openair_init_module( void )
 
 #endif //BIGPHYSAREA
 
-
+  /*
 #ifdef RTAI_ENABLED
 
 #ifdef PC_TARGET
@@ -326,7 +326,7 @@ static int __init openair_init_module( void )
 
   start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
 #endif //RTAI_ENABLED
-
+  */
 
   openair_daq_vars.mac_registered  = 0;
   openair_daq_vars.node_configured = 0;
@@ -349,31 +349,18 @@ static int __init openair_init_module( void )
     return -1;
   }
 
-/*
 #ifdef OPENAIR_LTE
-  lte_frame_parms = malloc16(sizeof(LTE_DL_FRAME_PARMS));
+  lte_frame_parms_g = malloc16(sizeof(LTE_DL_FRAME_PARMS));
 
-  if (lte_frame_parms) {
-    printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms allocated @ %p\n",lte_frame_parms);
+  if (lte_frame_parms_g) {
+    printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms allocated @ %p\n",lte_frame_parms_g);
   }
   else {
     printk("[OPENAIR][INIT_MODULE][INIT] lte_frame_parms cannot be allocated\n");
     openair_cleanup();
     return -1;
   }
-
-  lte_ue_common_vars = malloc16(sizeof(LTE_UE_COMMON));
-
-  if (lte_ue_common_vars) {
-    printk("[OPENAIR][INIT_MODULE][INIT] lte_ue_common_vars allocated @ %p\n",lte_ue_common_vars);
-  }
-  else {
-    printk("[OPENAIR][INIT_MODULE][INIT] lte_ue_common_vars cannot be allocated\n");
-    openair_cleanup();
-    return -1;
-  }
 #endif
-*/
 
   printk("[openair][MODULE][INFO] OPENAIR_CONFIG %x, OPENAIR_START_1ARY_CLUSTERHEAD %x,OPENAIR_START_NODE %x\n", openair_GET_CONFIG, openair_START_1ARY_CLUSTERHEAD, _IOR('o',3,long));
 
@@ -418,7 +405,7 @@ static void  openair_cleanup(void) {
 
   phy_cleanup();
 
-  remove_openair_stats();
+  //remove_openair_stats();
 
 #endif //PHY_EMUL
 #endif //RTAI_ENABLED
@@ -430,6 +417,7 @@ static void  openair_cleanup(void) {
   }
 #endif //PHY_EMUL
 
+  /*
 #ifdef RTAI_ENABLED
 #ifdef PC_TARGET
     if (PHY_vars)
@@ -438,7 +426,7 @@ static void  openair_cleanup(void) {
     if (PHY_config)
       kfree(PHY_config);
 #endif //RTAI_ENABLED
-
+  */
 
 #ifdef BIGPHYSAREA
   if (bigphys_ptr != (char *)NULL) {
@@ -456,7 +444,7 @@ static void  openair_cleanup(void) {
 
 
 
-
+/*
 #ifdef RTAI_ENABLED
 // Dump PHY Framing configuration
 
@@ -475,9 +463,10 @@ void dump_config() {
 } 
 
 #endif //RTAI_ENABLED
+*/
 
 MODULE_AUTHOR
-  ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>");
+  ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Florian KALTENBERGER <florian.kaltenberger@eurecom.fr>");
 MODULE_DESCRIPTION ("openair CardBus driver");
 MODULE_LICENSE ("GPL");
 module_init (openair_init_module);

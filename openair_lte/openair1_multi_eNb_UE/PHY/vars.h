@@ -9,7 +9,7 @@ unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 #endif
 
-PHY_CONFIG *PHY_config;
+//PHY_CONFIG *PHY_config;
 
 unsigned int slot_count;
 
@@ -41,6 +41,7 @@ int *primary_synch2_time;
 //PHY_VARS *PHY_vars;
 PHY_VARS_UE **PHY_vars_UE_g;
 PHY_VARS_eNB **PHY_vars_eNb_g;
+LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
 short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
 
@@ -88,6 +89,9 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 #endif
 
 #include "PHY/CODING/scrambler.h"
+
+#ifdef USER_MODE
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
+#endif
 
 #endif /*__PHY_VARS_H__ */

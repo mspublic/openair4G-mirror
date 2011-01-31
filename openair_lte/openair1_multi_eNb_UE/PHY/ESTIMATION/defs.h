@@ -154,7 +154,7 @@ Note that RF Hardware is assumed to be calibrated. Support routines for adjustin
 also assumed.  Makes use of the generic call openair_set_rx_gain_cal_openair() which uses a calibration table to adjust the total (RF->DSP)
 gain of the receiver.
 */
-void phy_adjust_gain (unsigned char clear,short coef,unsigned char ind);
+void phy_adjust_gain(unsigned char clear,short coef,unsigned char ind);
 
 /*!\fn  void phy_adjust_gain_mesh(unsigned char clear,short coef)
 This routine performs digital automatic gain control with hysterisis with respect to several measurements. 
