@@ -42,9 +42,9 @@ for est=1:length(estimates_UE)
     
          
         h11_eNB = double(estimates_UE(est).channel(2*z+1:2:end,1,ind)) + 1j*double(estimates_UE(est).channel(2*z+2:2:end,1,ind));
-        h12_eNB = double(estimates_UE(est).channel(2*z+1:2:end,2,ind)) + 1j*double(estimates_UE(est).channel(2*z+1:2:end,2,ind));
-        h21_eNB = double(estimates_UE(est).channel(2*z+1:2:end,3,ind)) + 1j*double(estimates_UE(est).channel(2*z+1:2:end,3,ind));
-        h22_eNB = double(estimates_UE(est).channel(2*z+1:2:end,4,ind)) + 1j*double(estimates_UE(est).channel(2*z+1:2:end,4,ind));
+        h12_eNB = double(estimates_UE(est).channel(2*z+1:2:end,2,ind)) + 1j*double(estimates_UE(est).channel(2*z+2:2:end,2,ind));
+        h21_eNB = double(estimates_UE(est).channel(2*z+1:2:end,3,ind)) + 1j*double(estimates_UE(est).channel(2*z+2:2:end,3,ind));
+        h22_eNB = double(estimates_UE(est).channel(2*z+1:2:end,4,ind)) + 1j*double(estimates_UE(est).channel(2*z+2:2:end,4,ind));
         
         
         %SNR calculation for Alamouti Scheme
