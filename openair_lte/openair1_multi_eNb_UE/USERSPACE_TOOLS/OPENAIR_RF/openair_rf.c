@@ -10,8 +10,8 @@
 #include "daq.h"
 #endif
 
-#include "PHY/CONFIG/vars.h"
-#include "MAC_INTERFACE/vars.h"
+//#include "PHY/CONFIG/vars.h"
+//#include "MAC_INTERFACE/vars.h"
 //#include "PHY/TOOLS/defs.h"
 
 #include <stdio.h>
@@ -38,32 +38,16 @@
 
 #define PAGE_SIZE 4096
 
-PHY_CONFIG PHY_config_mem;
-PHY_CONFIG *PHY_config;
+//PHY_CONFIG PHY_config_mem;
+//PHY_CONFIG *PHY_config;
 
 //float estimate_freq(short *);
 
 //unsigned int revbits(unsigned int x);
 int current_dlsch_cqi;
 
-//-----------------------------------------------------------------------------
+
 int main (int argc, char **argv) {
-  //-----------------------------------------------------------------------------
-  // arg[1] = fpga_file
-  // arg[2] = freq
-
-
-
-  //  int ifreq,target_freq;
-  //  int index, fd, offset;
-  //  char file_name[] = "                                                  ";
-  //  char file_name_start[] = "/opt/eurecom/etc/PLATON_";
-  //  char file_tx_extension[] = "TX.cal";
-  //  char file_rx_extension[] = "RX.cal";
-  //  const char *calibration_file_tx_name;
-  //  const char *calibration_file_rx_name;  //  int frequence;
-  //  int nb_rf_cards;
-  //  int num_slots = 100000;
 
   int openair_fd,rx_sig_fifo_fd,frequency,i;
 
@@ -76,20 +60,13 @@ int main (int argc, char **argv) {
 
   FILE *chbch_file,*rx_frame_file,*tx_frame_file;
   unsigned int fc;
-//#ifdef PHY_EMUL_IOCTL
-  unsigned int Topo_info[100];//H.A
-//#endif //PHY_EMUL_IOCTL
-  int             ifreq, target_freq;
+  int  ifreq, target_freq;
 
   char *chbch_pdu;
   int chbch_size;
 
   TX_VARS *TX_vars;
-
-#ifdef PLATON
-  freq_t          freq;
-#endif 
-
+  LTE_DL_FRAME_PARMS *frame_parms;
 
   if (argc < 3) {
     printf("[openair][INFO] Usage %s  frequency(0,1,2,3)  action (0-14) params . . .  \n" , argv[0]);
@@ -201,63 +178,34 @@ int main (int argc, char **argv) {
     exit(-1);
   }
 
-  if((config = fopen("./config.cfg","r")) == NULL) // this can be configured
-    {
-      printf("[openair][CONFIG][INFO] openair configuration file <config.cfg> could not be found!");
-      exit(0);
-    }
-
-  
-  if ((scenario= fopen("./scenario.scn","r")) ==NULL)
-    {
-      printf("[openair][CONFIG][INFO] openair scenario file <scenario.scn> could not be found!");
-      exit(0);
-    }
-  
-  PHY_config = (PHY_CONFIG *)&PHY_config_mem;
-  PHY_vars = malloc(sizeof(PHY_VARS));
-  mac_xface = malloc(sizeof(MAC_xface));
+  //PHY_config = (PHY_CONFIG *)&PHY_config_mem;
+  //PHY_vars = malloc(sizeof(PHY_VARS));
+  //mac_xface = malloc(sizeof(MAC_xface));
   TX_vars = malloc(sizeof(TX_VARS));
+  frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
 
-  reconfigure_MACPHY(scenario);
-  printf("reconfigure_MACPHY() done.\n");
-
-#ifndef OPENAIR_LTE  
-  phy_init(NB_ANTENNAS_TX);
-#else
-
-  lte_frame_parms = &(PHY_config->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = 25;
-  lte_frame_parms->N_RB_UL            = 25;
-  lte_frame_parms->Ng_times6          = 1;
-  lte_frame_parms->Ncp                = 1;
-  lte_frame_parms->Nid_cell           = 0;
-  lte_frame_parms->nushift            = 0;
-  lte_frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
-  lte_frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
-  lte_frame_parms->first_dlsch_symbol = 4;
-  lte_frame_parms->num_dlsch_symbols  = 6;
-  lte_frame_parms->mode1_flag  = 1; //default == SISO
-  lte_frame_parms->Csrs = 2;
-  lte_frame_parms->Bsrs = 0;
-  lte_frame_parms->kTC = 0;
-  lte_frame_parms->n_RRC = 0;
+  frame_parms->N_RB_DL            = 25;
+  frame_parms->N_RB_UL            = 25;
+  frame_parms->Ng_times6          = 1;
+  frame_parms->Ncp                = 1;
+  frame_parms->Nid_cell           = 0;
+  frame_parms->nushift            = 0;
+  frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
+  frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
+  frame_parms->first_dlsch_symbol = 4;
+  frame_parms->num_dlsch_symbols  = 6;
+  frame_parms->mode1_flag         = 1; //default == SISO
+  frame_parms->tdd_config         = 3;
+  frame_parms->frame_type         = 1; //TDD
+  //frame_parms->Csrs = 2;
+  //frame_parms->Bsrs = 0;
+  //frame_parms->kTC = 0;
+  //frame_parms->n_RRC = 0;
   
-  init_frame_parms(lte_frame_parms);
+  init_frame_parms(frame_parms);
   
-  /*
-  generate_ul_ref_sigs();
-  generate_ul_ref_sigs_rx();
-
-  phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_pbch_vars);
-  */
-#endif
   printf("Initialized PHY variables\n");
 
-
-  //mac_init();
-  //printf("Initialized MAC variables\n");
 
 #ifndef OPENAIR_LTE
   chbch_size = (NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_CHBCH_SYMBOLS)>>3;
@@ -282,7 +230,6 @@ int main (int argc, char **argv) {
 
   case 0 :
 
-
     if (argc<5) {
       printf("Please provide fdd parameter (0/1)\n");
       exit(-1);
@@ -291,22 +238,11 @@ int main (int argc, char **argv) {
       printf("Please provide dual_tx parameter (0/1)\n");
       exit(-1);
     }
-    PHY_config->dual_tx = atoi(argv[3]);
-    PHY_config->tdd = atoi(argv[4]);
+    frame_parms->dual_tx    = atoi(argv[3]);
+    frame_parms->tdd_config = atoi(argv[4]);
+    frame_parms->freq_idx   = frequency;
 
-#ifdef PLATON
-    if (loadFPGA2(openair_fd,argv[3]) < 0) {
-      printf("[openair][LOAD_FPGA][INFO] problem loading fpga firmware, check the filename\n");
-      close(openair_fd);
-      exit(-1);
-    }
-    else
-      printf("[openair][LOAD_FPGA][INFO] fpga firmare loaded successfully\n");
-    if (usr_load_calibration_data(openair_fd,NB_ANTENNAS_RX,argv) <0) {
-      printf("[openair][LOAD_CALIBRATION_DATA][INFO] problem loading RF calibration data, check the filename\n");
-    }
-#endif //PLATON    
-    result=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)PHY_config);
+    result=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)frame_parms);
     if (result == 0) {
       printf ("[openair][CONFIG][INFO] loading openair configuration in kernel space\n");
     } else {
@@ -318,70 +254,8 @@ int main (int argc, char **argv) {
     
   case 1 :
     printf("[openair][START][INFO] Starting clusterhead\n");
-#ifdef CBMIMO1
     fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) | ((atoi(argv[4])&0xFF) << 7);
     printf("[openair][START][INFO] fc = %d\n",fc);
-#endif //CBMIMO1
-#ifdef PLATON
-    fc = atoi(argv[1]);
-    ioctl (openair_fd, DAQ_SET_RF_IDLE, 0);
-    sleep(1);
-    //usleep (10000);
-    ioctl (openair_fd, DAQ_SET_NORMAL_RX, 0);
-    sleep(1);
-
-    freq.synth_id = 0;
-    ioctl (openair_fd, DAQ_RESET_FSYN, &freq);
-    sleep(1);
-
-    freq.synth_id = 1;
-    ioctl (openair_fd, DAQ_RESET_FSYN, &freq);
-    sleep(1);
-
-    freq.synth_id = 2;
-    ioctl (openair_fd, DAQ_RESET_FSYN, &freq);
-    sleep(1);
-
-    freq.synth_id = 3;
-    ioctl (openair_fd, DAQ_RESET_FSYN, &freq);
-    sleep(1);
-
-
-
-    printf (" Philips board detected, set default values for the synths \n");
-    freq.synth_id = 0;
-    target_freq = fc + 190000;
-    ifreq = 1000 * target_freq;
-    freq.freq = ifreq;
-    ioctl (openair_fd, DAQ_SET_FSYN, &freq);
-    usleep (10000);
-    printf ("LO automatically adjusted for LoId = %d to %d Hz \n", freq.synth_id, freq.freq);
-    
-    freq.synth_id = 1;
-    target_freq = 247600;
-    ifreq = 1000 * target_freq;
-    freq.freq = ifreq;
-    ioctl (openair_fd, DAQ_SET_FSYN, &freq);
-    usleep (10000);
-    printf ("LO automatically adjusted for LoId = %d to %d Hz \n", freq.synth_id, freq.freq);
-    
-    freq.synth_id = 2;
-    target_freq = fc;
-    ifreq = 1000 * target_freq;
-    freq.freq = ifreq;
-    ioctl (openair_fd, DAQ_SET_FSYN, &freq);
-    usleep (10000);
-    printf ("LO automatically adjusted for LoId = %d to %d Hz \n", freq.synth_id, freq.freq);
-    
-    freq.synth_id = 3;
-    target_freq = 15360;
-    ifreq = 15363636; //1000 * target_freq; // Adjusted to match CBMIMO1 sampling clock
-    freq.freq = ifreq;
-    ioctl (openair_fd, DAQ_SET_FSYN, &freq);
-    printf ("LO automatically adjusted for LoId = %d to %d Hz \n", freq.synth_id, freq.freq);
-    
-    sleep (1);
-#endif //PLATON    
     result=ioctl(openair_fd,openair_START_1ARY_CLUSTERHEAD, &fc);
     if (result == 0) {
       printf ("[openair][START][INFO] primary clusterhead running\n");
@@ -401,8 +275,6 @@ int main (int argc, char **argv) {
 
     break;
 
-
-#ifdef CBMIMO1
   case 3 :
     printf("[openair][START][INFO] Starting NODE ...(%x)\n",openair_START_NODE);
     fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4) |  ((atoi(argv[4])&0xFF) << 7);
@@ -417,7 +289,7 @@ int main (int argc, char **argv) {
 
 
     break;
-#endif
+
   case 4 : 
     printf("[openair][START][INFO] Stoping ...\n");
     fc = (atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4);
@@ -429,20 +301,21 @@ int main (int argc, char **argv) {
       printf ("[openair][STOP][INFO] not ok! \n");
     }
 
+    /*
     if ((rx_frame_file = fopen("rx_frame.dat","w")) == NULL)
       {
 	printf("[openair][STOP][INFO] Cannot open rx_frame.m data file\n");
 	exit(0);
       }
 
+    read(rx_sig_fifo_fd,(void *)dma_buffer_local,NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
     fwrite(dma_buffer_local,4,NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
     fclose(rx_frame_file);
+    */
 
     break;
-#ifdef CBMIMO1
-//#ifndef PHY_EMUL_IOCTL
-  case 5 : 
 
+  case 5 : 
 
     if ((rx_frame_file = fopen("rx_frame.dat","w")) == NULL)
       {
@@ -563,21 +436,15 @@ int main (int argc, char **argv) {
     printf("[openair][START][INFO] SET RX GAIN\n");
     fc = atoi(argv[3]);
     result=ioctl(openair_fd,openair_SET_CALIBRATED_RX_GAIN,&fc);
-
     break;
 
-
+    /*
   case 17:        // DO SYNCHRONIZATION
     printf("[openair][INFO] Do CHBCH Synchronization\n");
-    
-
-    
     ((unsigned char *)&dma_buffer_local[0])[0] = (unsigned char)((atoi(argv[3])&1) | ((frequency&7)<<1) | ((frequency&7)<<4));
     ((unsigned char *)&dma_buffer_local[0])[1] = (unsigned char)(atoi(argv[4]));
     ioctl(openair_fd,openair_DO_SYNCH,(void *)dma_buffer_local);
-
     break;
-   
 
   case 18:        // GET SIGNALS
 
@@ -612,7 +479,7 @@ int main (int argc, char **argv) {
     
     fclose(rx_frame_file);
     break;
-    
+    */
     
   case 19:        // SET FFT SCALE
     printf("[openair][START][INFO] Set FFT Scale to %d, %d\n",atoi(argv[3]),atoi(argv[4]));
@@ -632,8 +499,9 @@ int main (int argc, char **argv) {
     result=ioctl(openair_fd, openair_UPDATE_FIRMWARE);
     if (result) printf("[openair][START][INFO] NOK, ioctl failed\n");
     break;
-//#else //PHY_EMUL_IOCTL
 
+/*
+//#else //PHY_EMUL_IOCTL
   case 23 :
     printf("[OPENAIR][START][Topology] Configuring Topology,\n",argc);
     unsigned short ri=0,rj=3,Nb_inst,Nb_ch,Nb_ue,kk;
@@ -680,7 +548,7 @@ case 24 :
     }
     break;
 //#endif //PHY_EMUL_IOCTL
-#endif //CBMIMO1
+*/
 
   case 25:
     
@@ -749,11 +617,16 @@ case 24 :
     result = ioctl(openair_fd,openair_SET_ULSCH_ALLOCATION_MODE, &fc);
     break;
 	
+  default: 
+
+    printf("[openair] Action unknown\n");
+    return(-1);
+
   }
   
   close(openair_fd);
   
-  return 0;
+  return(0);
 }
 
 /*

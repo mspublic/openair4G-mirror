@@ -203,7 +203,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       copy_from_user((char *)frame_parms,(char *)arg,sizeof(LTE_DL_FRAME_PARMS));
       //dump_config();
       printk("[openair][IOCTL] Allocating frame_parms\n");
-      
+
 #ifdef OPENAIR_LTE
       openair_daq_vars.node_configured = phy_init_top(frame_parms);
       msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
@@ -225,7 +225,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       else {
 	printk("[openair][IOCTL] PHY Configuration successful\n");
 	
-	
 #ifndef EMOS	  
 	openair_daq_vars.node_configured = mac_init();
 	if (openair_daq_vars.node_configured != 1)
@@ -238,12 +237,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifndef NOCARD_TEST
       // Initialize FPGA PCI registers
       
-      openair_daq_vars.dual_tx = (frame_parms->nb_antennas_tx>1);
+      openair_daq_vars.dual_tx = frame_parms->dual_tx;
       openair_daq_vars.tdd     = frame_parms->frame_type;
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;  //unused for FDD
       
 #ifdef OPENAIR_LTE
-      openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
+      openair_daq_vars.freq = frame_parms->freq_idx;
       printk("[openair][IOCTL] Configuring for frequency %d\n",openair_daq_vars.freq);
 #else
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -269,6 +268,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       mac_xface->is_cluster_head = 0;
 
+      printk("[openair][DUMP][CONFIG] Setting up registers\n");
       for (i=0;i<number_of_cards;i++) { 
 	ret = setup_regs(i,frame_parms);
 	
@@ -278,9 +278,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
       //	usleep(10);
       ret = openair_sched_init();
-      //ret = -1;
       if (ret != 0)
 	printk("[openair][DUMP][CONFIG] Error in starting scheduler\n");
+      else
+	printk("[openair][DUMP][CONFIG] Scheduler started\n");
       
       // add Layer 1 stats in /proc/openair	
       // add_openair1_stats();
@@ -575,7 +576,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.tx_rx_switch_point = TX_RX_SWITCH_SYMBOL;
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
       
-      // turn on AGC
+      PHY_vars_UE_g[0]->rx_total_gain_dB = MIN_RF_GAIN;
+      openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
       
       msg("[openair][START_NODE] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",

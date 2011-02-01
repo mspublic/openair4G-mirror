@@ -290,9 +290,9 @@ static int __init openair_init_module( void )
 
 #endif //BIGPHYSAREA
 
-  /*
 #ifdef RTAI_ENABLED
 
+  /*
 #ifdef PC_TARGET
   // Allocate memory for PHY low-level data structures
   PHY_vars = kmalloc(sizeof(PHY_VARS),GFP_KERNEL);
@@ -321,12 +321,12 @@ static int __init openair_init_module( void )
     openair_cleanup();
     return -ENODEV;
   }
+  */
 
   rt_set_oneshot_mode();
 
   start_rt_timer(0);  //in oneshot mode the argument (period) is ignored
 #endif //RTAI_ENABLED
-  */
 
   openair_daq_vars.mac_registered  = 0;
   openair_daq_vars.node_configured = 0;

@@ -40,7 +40,7 @@ CCC = $(shell rtai-config --cc)
 RTAI_SUBVERSION=$(shell rtai-config --version | sed -e 's/^..\(.\).*$$/\1/')
 IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then echo true ; fi)
 
-EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DCBMIMO1 -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
+EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
@@ -89,6 +89,10 @@ else
 EXTRA_CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DNB_ANTENNAS_TXRX=2 
 endif
 
+ifdef CBMIMO1
+EXTRA_CFLAGS += -DCBMIMO1
+endif
+
 ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 endif
@@ -128,20 +132,20 @@ openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
 
 # Tools
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/memory_routines.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/dB_routines.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/signal_energy.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/sqrt.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/log2_approx.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/dB_routines.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/signal_energy.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/sqrt.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/log2_approx.o
 #openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/8bit_txmux.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/fft.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vv.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_sv.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vvh.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_mm.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_sv.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_vv.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vv.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_sv.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vvh.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_mm.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_sv.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_vv.o
 #openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/angle.o
-openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cdot_prod.o
+#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cdot_prod.o
 
 #include files for MODEM
 ifeq ($(OPENAIR1),1)

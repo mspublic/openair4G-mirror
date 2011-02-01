@@ -20,7 +20,7 @@ export EMOS=0
 endif
 
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) RTAI=1 V=1 -C /usr/src/linux  M=`pwd` && mv openair_rf.ko openair_rf_softmodem.ko)
+	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) RTAI=1 CBMIMO1=1 V=1 -C /usr/src/linux  M=`pwd` && mv openair_rf.ko openair_rf_softmodem.ko)
 
 #Remove all but source files
 cleanall: 

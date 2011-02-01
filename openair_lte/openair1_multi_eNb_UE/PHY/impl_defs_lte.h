@@ -32,6 +32,8 @@ typedef struct {
   unsigned char nushift;                /// shift of pilot position in one RB
   unsigned char frame_type;             /// Frame type (0 FDD, 1 TDD)
   unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
+  unsigned char freq_idx;               /// Frequency index of CBMIMO1 card
+  unsigned char dual_tx;                /// Turns on second TX of CBMIMO1 card
   unsigned char mode1_flag;             /// flag to indicate SISO transmission
   unsigned short ofdm_symbol_size;
   unsigned char log2_symbol_size;

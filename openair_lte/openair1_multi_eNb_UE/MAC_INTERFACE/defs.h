@@ -75,7 +75,7 @@ typedef struct
     void (*macphy_scheduler)(unsigned char); /*!<\brief Pointer to phy scheduling routine in MAC.  Used by the low-level hardware synchronized scheduler*/
     void (*macphy_setparams)(void *);     /*  Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC */
     void (*macphy_init)(void);          /*  Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC */
-    void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
+    void (*macphy_exit)(char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
 #ifdef OPENAIR2
     void (*macphy_data_ind)(unsigned char, unsigned char, unsigned short);
     void (*out_of_sync_ind)(unsigned char,unsigned short);

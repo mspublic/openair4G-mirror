@@ -200,21 +200,6 @@ static void * openair_thread(void *param) {
   
   exit_openair = 0;
   
-  if (mac_xface->is_primary_cluster_head ==1) {
-    PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB = 138;
-    openair_daq_vars.rx_total_gain_dB = 138;
-  }
-  else {
-    PHY_vars_UE_g[0]->rx_total_gain_dB = MIN_RF_GAIN;
-    openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-  }
-
-#ifdef CBMIMO1  
-  for (i=0;i<number_of_cards;i++) 
-    openair_set_rx_gain_cal_openair(i,openair_daq_vars.rx_total_gain_dB);
-#endif
-	
   // Inner thread endless loop
   // exits on error or normally
   
@@ -226,6 +211,7 @@ static void * openair_thread(void *param) {
 		4*SLOT_LENGTH_BYTES_NO_PREFIX);
 
   while (exit_openair == 0){
+    //while (0) {
     
     pthread_mutex_lock(&openair_mutex);
         
@@ -245,7 +231,7 @@ static void * openair_thread(void *param) {
     // msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
 
     //if (mac_xface->frame % 100 == 0)
-    //  msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
+    msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
 
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
@@ -383,8 +369,6 @@ void openair_sync(void) {
 
   for (i=0;i<3*NUMBER_OF_CHUNKS_PER_FRAME;i++) {
     rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
-    //adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
-    //msg("[openair][SCHED][SYNC] adac_cnt for i=%d adac_cnt= %d\n", i,adac_cnt);
   }
   
   time = rt_get_cpu_time_ns();
@@ -611,10 +595,10 @@ static void * top_level_scheduler(void *param) {
 
 
 #ifdef RTAI_ENABLED
-  //  msg("[OPENAIR][SCHED] Sleeping ... MODE = %d\n",openair_daq_vars.mode);
+  msg("[OPENAIR][SCHED] Sleeping %d ns (MODE = %d)\n",2*NS_PER_SLOT,openair_daq_vars.mode);
   rt_sleep(nano2count(2*NS_PER_SLOT));
   //rt_sleep(2*NS_PER_SLOT);
-  //  msg("[OPENAIR][SCHED] Awakening ... MODE = %d\n",openair_daq_vars.mode);
+  msg("[OPENAIR][SCHED] Awakening (MODE = %d)\n",openair_daq_vars.mode);
 #endif //
 
   openair_daq_vars.sync_state=0;
@@ -622,7 +606,7 @@ static void * top_level_scheduler(void *param) {
   while (exit_openair == 0) {
 
 #ifdef CBMIMO1
-    adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
+    adac_cnt = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME; // counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1
 #endif //
 
     openair_daq_vars.sched_cnt++;
@@ -639,10 +623,8 @@ static void * top_level_scheduler(void *param) {
 
 #ifdef CBMIMO1  // Note this code cannot run on PLATON!!!
 	if (openair_daq_vars.tx_test == 0) 
-	  //openair_sync();
+	  openair_sync();
 #endif // CBMIMO1
-
-	msg("[openair][SCHED] adac_cnt = %d\n",adac_cnt);
 
 	if ( (openair_daq_vars.mode != openair_NOT_SYNCHED) &&
 	     (openair_daq_vars.node_running == 1) ){
@@ -662,8 +644,6 @@ static void * top_level_scheduler(void *param) {
 
 	  for (i=0;i<NUMBER_OF_CHUNKS_PER_FRAME;i++) {
 	    rt_sleep(nano2count(NS_PER_SLOT/NUMBER_OF_OFDM_SYMBOLS_PER_SLOT));
-	    //adac_cnt      = (*(unsigned int *)mbox)%NUMBER_OF_CHUNKS_PER_FRAME;                 /* counts from 0 to NUMBER_OF_CHUNKS_PER_FRAME-1  */
-	    //msg("[openair][SCHED][SYNC] adac_cnt for i=%d adac_cnt= %d\n", i,adac_cnt);
 	  }
 	  //rt_sleep(nano2count(NS_PER_SLOT*SLOTS_PER_FRAME));
 	  //rt_sleep(NS_PER_SLOT*SLOTS_PER_FRAME);
@@ -966,11 +946,11 @@ int openair_sched_init(void) {
   
 
   if (error_code!= 0) {
-    printk("[SCHED][OPENAIR_THREAD][INIT] Could not allocate openair_thread, error %d\n",error_code);
+    printk("[OPENAIR][SCHED][INIT] Could not allocate openair_thread, error %d\n",error_code);
     return(error_code);
   }
   else {
-    printk("[SCHED][OPENAIR_THREAD][INIT] Allocate openair_thread successful\n");
+    printk("[OPENAIR][SCHED][INIT] Allocate openair_thread successful\n");
   }
   
   pthread_attr_init (&attr_threads[TOP_LEVEL_SCHEDULER_THREAD_INDEX]);
@@ -1023,7 +1003,9 @@ void openair_sched_cleanup() {
 
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
-  pthread_exit(&threads[TOP_LEVEL_SCHEDULER_THREAD_INDEX]);//H.A
+
+  //pthread_exit(&threads[TOP_LEVEL_SCHEDULER_THREAD_INDEX]);//H.A
+  //pthread_exit(&threads[OPENAIR_THREAD_INDEX]);//F.K
 
 #ifdef NOCARD_TEST
   pthread_cond_destroy(&openair_rx_fifo_cond);
