@@ -523,7 +523,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 		      mac_xface->frame&3);
       }
       else {
-	generate_pbch_emul(phy_vars_eNb);
+	generate_pbch_emul(phy_vars_eNb,pbch_pdu);
       }
     }
   }
@@ -706,11 +706,13 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 					     0);
 	phy_vars_eNb->eNB_UE_stats[(u8)UE_id].dlsch_sliding_cnt++;
 
+	printf("[PHY] eNB DLSCH SDU: \n");
+	for (i=0;i<phy_vars_eNb->dlsch_eNb[(u8)UE_id][0]->harq_processes[harq_pid]->TBS>>3;i++)
+	  printf("%x.",(u8)DLSCH_pdu[i]);
+	printf("\n");
+
 	if (abstraction_flag==0) {
-	  printf("[PHY] eNB DLSCH SDU: \n");
-	  for (i=0;i<16;i++)
-	    printf("%x ",(u8)DLSCH_pdu[i]);
-	  printf("\n");
+
 	  dlsch_encoding(DLSCH_pdu,
 			 &phy_vars_eNb->lte_frame_parms,
 			 num_pdcch_symbols,
@@ -1250,9 +1252,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	  }
 	}
 	else {
-	  msg("ULSCH SDU (RX) :");
-	  for (j=0;j<20;j++)
-	    msg("%x ",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->b[j]);
+	  msg("ULSCH SDU (RX) %d bytes:",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->TBS>>3);
+	  for (j=0;j<phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->TBS>>3;j++)
+	    msg("%x.",phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->b[j]);
 	  msg("\n");
 	  mac_xface->rx_sdu(phy_vars_eNb->Mod_id,phy_vars_eNb->ulsch_eNb[i]->rnti,phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->b);
 	}

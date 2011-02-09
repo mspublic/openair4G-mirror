@@ -720,9 +720,9 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
-  u8 nb_ue_local=1,nb_ue_remote=0;
-  u8 nb_eNB_local=1,nb_eNB_remote=0;
-  u8 first_eNB_local=0,first_UE_local=0;
+  u8 nb_ue_local=0,nb_ue_remote=0;
+  u8 nb_eNB_local=0,nb_eNB_remote=0;
+  u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -746,7 +746,7 @@ int main(int argc, char **argv) {
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "haet:k:x:m:rn:s:f:u:U:v:V:M:")) != -1)
+  while ((c = getopt (argc, argv, "haet:k:x:m:rn:s:f:u:U:b:B:M:")) != -1)
     {
       switch (c)
 	{
@@ -809,6 +809,22 @@ int main(int argc, char **argv) {
 
   NB_UE_INST = nb_ue_local + nb_ue_remote;
   NB_CH_INST = nb_eNB_local + nb_eNB_remote;
+
+  Is_primary_master=0;
+  nb_machine=2;
+  Master_id=ethernet_id;
+  if(!Master_id) 
+    Is_primary_master=1;
+  Master_list=0;
+  j=1;
+  //for(i=0;i<NB_MASTER;i++){
+  for(i=0;i<nb_machine;i++){
+    if(i!=Master_id)
+      Master_list=Master_list+j;
+    //printf("i=%d, MASTER_LIST %d\n",i,Master_list);
+    j*=2;
+  }
+
 
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
@@ -1027,13 +1043,13 @@ int main(int argc, char **argv) {
     }
     
   }
-  else {ret=netlink_init();
+  else {
     if (ethernet_flag == 1) {
-      //ret=netlink_init();
+      ret=netlink_init();
       init_bypass();
     }
   }   
-
+  //ret=netlink_init();
   // initialized channel descriptors
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
@@ -1246,8 +1262,13 @@ int main(int argc, char **argv) {
 	do_forms(form[eNB_id][UE_id],PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,PHY_vars_eNb_g[eNB_id]->lte_eNB_ulsch_vars,eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
 #endif
-
-
+    
+    if (ethernet_flag == 1) { 
+      msg("[EMULATION_CONTROL] run emu transceiver\n"); 
+      emulation_tx_rx();
+      mac_xface->frame=mac_xface->frame+1;
+    }
+  
   }
   if (abstraction_flag==0) {
     /*

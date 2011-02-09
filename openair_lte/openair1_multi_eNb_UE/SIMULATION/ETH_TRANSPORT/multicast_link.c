@@ -35,7 +35,8 @@
 
 #define MULTICAST_LINK_NUM_GROUPS 4
 
-char           *multicast_group_list[MULTICAST_LINK_NUM_GROUPS] = { "224.0.0.161\0",
+char           *multicast_group_list[MULTICAST_LINK_NUM_GROUPS] = { 
+  "224.0.0.161\0",
   "224.0.0.162\0",
   "224.0.0.163\0",
   "224.0.0.164\0"
@@ -178,7 +179,7 @@ multicast_link_read ()
   /* Run through our sockets and check to see if anything
      happened with them, if so 'service' them. */
 
-  for (group = 0; group < MULTICAST_LINK_NUM_GROUPS; group++) {
+  for (group = 2; group < MULTICAST_LINK_NUM_GROUPS; group++) {
     if (FD_ISSET (group_list[group].socket, &socks))
       multicast_link_read_data (group);
   }                             /* for (all entries in queue) */

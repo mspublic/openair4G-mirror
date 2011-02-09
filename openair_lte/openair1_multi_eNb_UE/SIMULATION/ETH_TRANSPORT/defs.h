@@ -36,6 +36,7 @@ typedef struct bypass_msg_header {
   unsigned char  Message_type;
   unsigned char  Nb_flows;
   unsigned int   M_id;
+  char *         data;
 }bypass_msg_header_t;
 
 typedef struct bypass_proto2multicast_header_t {

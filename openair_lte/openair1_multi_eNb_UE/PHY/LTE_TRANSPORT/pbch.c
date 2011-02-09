@@ -236,10 +236,12 @@ int generate_pbch(mod_sym_t **txdataF,
   return(0);
 }
 
-s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb) {
+s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb,u8 *pbch_pdu) {
   
   msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNb->Mod_id);
   eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_flag=1;
+  // Copy PBCH payload 
+  eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
 
 }
 

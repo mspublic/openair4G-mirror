@@ -270,7 +270,7 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
     dlsch0->harq_ids[subframe] = harq_pid;
     dlsch1->harq_ids[subframe] = harq_pid;
     //    printf("Setting DLSCH harq id %d to subframe %d\n",harq_pid,subframe);
-
+    
     dlsch0->rb_alloc[0]                         = conv_rballoc(((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
 							       ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc);
     dlsch1->rb_alloc[0]                         = dlsch0->rb_alloc[0];

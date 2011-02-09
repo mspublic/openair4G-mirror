@@ -13,7 +13,7 @@
 extern unsigned int   Master_list_rx;
 extern unsigned short NODE_ID[1];
 extern unsigned char  NB_INST;
-
+#define DEBUG_CONTROL 1
 /******************************************************************************************************/ 
 char is_node_local_neighbor(unsigned short Node_id){
   /******************************************************************************************************/ 
@@ -42,7 +42,7 @@ void emulation_tx_rx(void){
     Emulation_status=WAIT_PM_CT;// then wait control msg from the PM
     Master_list_rx=Master_list-1; // e.q: waiting just for the PM
 #ifdef DEBUG_CONTROL
-    msg("TX CONTROL SIGNAL TO PRIMARY MASTER\n ");
+    msg("[Emu] TX CONTROL SIGNAL TO PRIMARY MASTER\n ");
     msg("[EMULATION_CONTROL] Status %d (%d)\n",Emulation_status,WAIT_PM_CT) ; 
 #endif
 
@@ -51,7 +51,7 @@ void emulation_tx_rx(void){
 #endif //USER_MODE      
     bypass_rx_data();
 #ifdef DEBUG_CONTROL
-    msg("RX CONTROL SIGNAL FROM PRIMARY MASTER\n ");
+    msg("[Emu] RX CONTROL SIGNAL FROM PRIMARY MASTER\n ");
 #endif //DEBUG_CONTROL
   }
 
@@ -63,11 +63,11 @@ void emulation_tx_rx(void){
     bypass_rx_data();
 #ifdef DEBUG_CONTROL
     msg("[EMULATION_CONTROL] Status %d (%d)\n",Emulation_status,WAIT_EM_CT);  
-    msg("PM: RX CONTROL SIGNAL FROM SECONDARY MASTERS\n ");
+    msg("[Emu] PM: RX CONTROL SIGNAL FROM SECONDARY MASTERS\n ");
 #endif //DEBUG_CONTROL   
     bypass_tx_data(CH_BYPASS_CONTROL);//when the PM receives ctrl msg from all EM, he sends also a CTRL msg to them
 #ifdef DEBUG_CONTROL
-    msg("PM: TX CONTROL SIGNAL TO SECONDARY MASTERS\n ");
+    msg("[Emu]PM: TX CONTROL SIGNAL TO SECONDARY MASTERS\n ");
 #endif //DEBUG_CONTROL   
 
   } 

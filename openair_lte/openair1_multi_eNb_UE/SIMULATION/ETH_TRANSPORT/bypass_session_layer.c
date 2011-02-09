@@ -37,6 +37,7 @@ int bypass_rx_data (void){
 /***************************************************************************/
   bypass_msg_header_t *messg;
   bypass_proto2multicast_header_t *bypass_read_header;
+  eNB_transport_info_t *eNB_transport_info;
   int             tmp_byte_count;
   int             bytes_read = 0;
   int             bytes_data_to_read;
@@ -45,7 +46,7 @@ int bypass_rx_data (void){
 
   pthread_mutex_lock(&emul_low_mutex);
   if(emul_low_mutex_var){
-    //    msg("[BYPASS] WAIT BYPASS_PHY...\n");
+    msg("[Emu] [BYPASS] WAIT BYPASS_PHY...\n");
     pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
   }
   if(num_bytesP==0){
@@ -54,27 +55,30 @@ int bypass_rx_data (void){
     pthread_mutex_unlock(&emul_low_mutex);
   }
   else{
-    // msg("[BYPASS] BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
+    msg("[Emu][BYPASS] BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
     bypass_read_header = (bypass_proto2multicast_header_t *) (&rx_bufferP[bytes_read]);
     bytes_read += sizeof (bypass_proto2multicast_header_t);
     bytes_data_to_read = bypass_read_header->size;
     if(num_bytesP!=bytes_read+bytes_data_to_read) {
-      msg("[BYPASS] WARNINIG BYTES2READ # DELIVERED BYTES!!!\n");
+      msg("[Emu][BYPASS] WARNINIG BYTES2READ # DELIVERED BYTES!!!\n");
     }
     else{
       messg = (bypass_msg_header_t *) (&rx_bufferP[bytes_read]);
       bytes_read += sizeof (bypass_msg_header_t);
+      eNB_transport_info = (eNB_transport_info_t*)messg->data;
+       printf("[navid] rx pbch flag %d\n",eNB_transport_info[0].cntl.pbch_flag);
+       
       //chek if MASTER in my List
       switch(Emulation_status){
       case WAIT_PM_CT:
 	if(messg->M_id == 0){
 	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
-	  //    msg("[BYPASS] RX_PRIMARY_MASTER_CONTROL_MESSAGE \n");
+	  msg("[Emu] [BYPASS] RX_PRIMARY_MASTER_CONTROL_MESSAGE \n");
 	}
 	break;
       case WAIT_EM_CT:
 	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
-	  //msg("[BYPASS] RX_MASTER %d CONTROL_MESSAGE\n",messg->M_id);
+	  msg("[Emu] [BYPASS] RX_MASTER %d CONTROL_MESSAGE\n",messg->M_id);
 	
 	break;
 	
@@ -93,11 +97,11 @@ int bypass_rx_data (void){
 	*/
       case WAIT_CHBCH_DATA:
 	if(messg->Message_type == BYPASS_CHBCH_DATA){
-	  // msg("[BYPASS] RX_CH_DATA_MESSAGE from Master %d \n",messg->M_id);
+	  msg("[Emu][BYPASS] RX_CH_DATA_MESSAGE from Master %d \n",messg->M_id);
 	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  current_flow = 0;
 	  num_flows = messg->Nb_flows;
-	  //msg("[BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
+	  msg("[Emu][BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
 	  while ((num_bytesP > bytes_read) && (current_flow < num_flows)) {
 	    tmp_byte_count = rx_handler (CH_TRAFFIC,&rx_bufferP[bytes_read],num_bytesP-bytes_read);
 	    current_flow += 1;
@@ -107,13 +111,13 @@ int bypass_rx_data (void){
 	}
       case WAIT_UL_DL_DATA:
 	if(messg->Message_type == BYPASS_UL_DL_DATA){
-	  //	  msg("[BYPASS] RX_UE_DATA_MESSAGE from Master%d \n",messg->M_id);
+	  msg("[Emu][BYPASS] RX_UE_DATA_MESSAGE from Master%d \n",messg->M_id);
 	  Master_list_rx=((Master_list_rx) |(1<< messg->M_id));
 	  current_flow = 0;
 	  num_flows = messg->Nb_flows;
-	  //msg("[BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
+	  msg("[Emu][BYPASS] Nb_flows %d,num_bytesP %d, bytes_read %d, Buffer %p\n",num_flows,num_bytesP,bytes_read,rx_bufferP);
 	  while ((num_bytesP > bytes_read) && (current_flow < num_flows)) {
-	    //   msg("[BYPASS] CURRENT_FLOW %d\n",current_flow);
+	    msg("[Emu][BYPASS] CURRENT_FLOW %d\n",current_flow);
 	    tmp_byte_count = rx_handler (UE_TRAFFIC,&rx_bufferP[bytes_read],num_bytesP-bytes_read);
 	    current_flow += 1;
 	    bytes_read = bytes_read + tmp_byte_count;
@@ -232,30 +236,33 @@ void bypass_tx_data(char Type){
   unsigned int         num_flows;
   bypass_msg_header_t *messg;
   unsigned int         byte_tx_count;
+  
   messg = (bypass_msg_header_t *) (&bypass_tx_buffer[sizeof (bypass_proto2multicast_header_t)]);
   num_flows = 0;
-  byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (bypass_proto2multicast_header_t);
-
-
+  printf("navid tx pbch flag %d\n",eNB_transport_info[0].cntl.pbch_flag);
+  messg->data=&eNB_transport_info;
+  
   if(Type==CHBCH_DATA){
     messg->Message_type = BYPASS_CHBCH_DATA;
     tx_handler(CHBCH_DATA,bypass_tx_buffer, &byte_tx_count, &num_flows);
-    //    msg("[BYPASS] [TX_DATA] SEND  %d BYTES OF CH_DATA\n",byte_tx_count);
+    msg("[Emu] [BYPASS] [TX_DATA] SEND  %d BYTES OF CH_DATA\n",byte_tx_count);
   }
   else if(Type==UL_DL_DATA){
     messg->Message_type = BYPASS_UL_DL_DATA;
     tx_handler(UL_DL_DATA,bypass_tx_buffer, &byte_tx_count, &num_flows);
-    //msg("[BYPASS] [TX_DATA] SEND  %d BYTES OF UE_DATA\n",byte_tx_count);
+    msg("[Emu] [BYPASS] [TX_DATA] SEND  %d BYTES OF UE_DATA\n",byte_tx_count);
   }
   else{
     messg->Message_type = BYPASS_MESSAGE_TYPE_CONTROL_BROADCAST;
-    //msg("[BYPASS] [TX_DATA] SEND  %d BYTES OF MASTER_CONTROL\n",byte_tx_count);
+    msg("[Emu] [BYPASS] [TX_DATA] SEND  %d BYTES OF MASTER_CONTROL\n",byte_tx_count);
   } 
   messg->M_id=Master_id;
   messg->Nb_flows = num_flows;
+  byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (bypass_proto2multicast_header_t);
+
   ((bypass_proto2multicast_header_t *) bypass_tx_buffer)->size = byte_tx_count - sizeof (bypass_proto2multicast_header_t);
   //if(mac_xface->frame%1000==0)   
-  multicast_link_write_sock (0, bypass_tx_buffer, byte_tx_count);
+  multicast_link_write_sock (2, bypass_tx_buffer, byte_tx_count);
 }
 
 #ifndef USER_MODE 

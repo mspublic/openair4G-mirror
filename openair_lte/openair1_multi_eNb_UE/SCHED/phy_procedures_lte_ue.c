@@ -317,7 +317,8 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
 #endif
       }      
       input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
-      
+      msg("ULSCH SDU TX  input buffer (%d bytes) : ",phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8);
+
       for (i=0;i<input_buffer_length;i++) {
 	ulsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       }
@@ -347,9 +348,9 @@ void phy_procedures_UE_TX(unsigned char next_slot,PHY_VARS_UE *phy_vars_ue,u8 eN
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
 	  ue_get_sdu(phy_vars_ue->Mod_id,0,ulsch_input_buffer,input_buffer_length);
 #endif
-	msg("ULSCH SDU: ");
-	for (i=0;i<20;i++) 
-	  msg("%x ",ulsch_input_buffer[i]);
+	msg("ULSCH SDU TX  (%d bytes) : ",phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
+	for (i=0;i<phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;i++) 
+	  msg("%x.",ulsch_input_buffer[i]);
 	msg("\n");
 	if (abstraction_flag==0)
 	  ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid);
@@ -1089,7 +1090,7 @@ int phy_procedures_UE_RX(unsigned char last_slot, PHY_VARS_UE *phy_vars_ue,u8 eN
 #ifdef DEBUG_PHY	    	    
 	    printf("dlsch harq_pid %d (rx): \n",phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid);
 	    for (j=0;j<phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->TBS>>3;j++)
-	      printf("%x ",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b[j]);
+	      printf("%x.",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b[j]);
 	    printf("\n");
 #endif 
 #endif	    

@@ -182,7 +182,7 @@ s32 generate_pbch(mod_sym_t **txdataF,
 		  u8 *pbch_pdu,
 		  u8 frame_mod4);
 
-s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb);
+s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb,u8 *pbch_pdu);
 
 /** \fn qpsk_qpsk(s16 *stream0_in,
     s16 *stream1_in,
