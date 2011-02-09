@@ -44,9 +44,9 @@
 #include "rtai_fifos.h"
 #endif
 
-//#define NAS_DEBUG_RECEIVE 1
+#define NAS_DEBUG_RECEIVE 1
 //#define NAS_DEBUG_SEND 1
-//#define NAS_DEBUG_CLASS 1
+#define NAS_DEBUG_CLASS 1
 //#define NAS_ADDRESS_FIX 1
 
 #include <linux/inetdevice.h>
@@ -77,7 +77,7 @@ void nas_COMMON_receive(u16 dlen,
   struct tcphdr *th;
   u16 *cksum,check;
 
-
+  struct iphdr *network_header; 
 
 #ifdef NAS_DEBUG_RECEIVE
 
@@ -94,7 +94,7 @@ void nas_COMMON_receive(u16 dlen,
   memcpy(skb_put(skb, dlen), pdcp_sdu,dlen);
 
   skb->dev = nasdev[inst];
-
+  
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
   skb->mac_header = skb->data;
 #else
@@ -162,40 +162,43 @@ void nas_COMMON_receive(u16 dlen,
 	addr = (unsigned char *)&((struct iphdr *)skb->data)->saddr;
 	if (addr) {
 	  //		  addr[2]^=0x01;
-	  printk("Source %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+	  printk("[NAS][COMMON][RECEIVE] Source %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
 	}
 	addr = (unsigned char *)&((struct iphdr *)skb->data)->daddr;
 	if (addr){
 	  //		  addr[2]^=0x01;
-	  printk("Dest %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
+	  printk("[NAS][COMMON][RECEIVE] Dest %d.%d.%d.%d\n",addr[0],addr[1],addr[2],addr[3]);
 	}
-	printk("protocol %d\n",((struct iphdr *)skb->data)->protocol);
+	printk("[NAS][COMMON][RECEIVE] protocol  %d\n",((struct iphdr *)skb->data)->protocol);
 		  
 #endif
 		  
 #ifdef KERNEL_VERSION_GREATER_THAN_2622
 	skb->network_header = skb->data;
+	network_header = (struct iphdr *)skb_network_header(skb);
+	protocol = network_header->protocol;
+
 #else
 	skb->nh.iph = (struct iphdr *)skb->data;
-
 	protocol=skb->nh.iph->protocol;
+#endif 
 
 #ifdef NAS_DEBUG_RECEIVE
 	switch (protocol) {
 	case IPPROTO_IP:
-	  printk("[NAS][COMMON][RECEIVE] : Received Raw IPv4 packet\n");
+	  printk("[NAS][COMMON][RECEIVE] Received Raw IPv4 packet\n");
 	  break;
 	case IPPROTO_IPV6:
-	  printk("[NAS][COMMON][RECEIVE] : Received Raw IPv6 packet\n");
+	  printk("[NAS][COMMON][RECEIVE] Received Raw IPv6 packet\n");
 	  break;
 	case IPPROTO_ICMP:
-	  printk("[NAS][COMMON][RECEIVE] : Received Raw ICMP packet\n");
+	  printk("[NAS][COMMON][RECEIVE] Received Raw ICMP packet\n");
 	  break;
 	case IPPROTO_TCP:
-	  printk("[NAS][COMMON][RECEIVE] : Received TCP packet\n");
+	  printk("[NAS][COMMON][RECEIVE] Received TCP packet\n");
 	  break;
 	case IPPROTO_UDP:
-	  printk("[NAS][COMMON][RECEIVE] : Received UDP packet\n");
+	  printk("[NAS][COMMON][RECEIVE] Received UDP packet\n");
 	  break;
 	default:
 	  break;
@@ -204,11 +207,19 @@ void nas_COMMON_receive(u16 dlen,
 #endif
 	
 #ifdef NAS_ADDRESS_FIX
+
+#ifdef KERNEL_VERSION_GREATER_THAN_2622
+	network_header->check = 0;
+	network_header->check = ip_fast_csum((unsigned char *) network_header,
+				 network_header->ihl);
+
+	printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
+#else
 	skb->nh.iph->check = 0;
 	skb->nh.iph->check = ip_fast_csum((unsigned char *)skb->data,
 					  skb->nh.iph->ihl);
-		  
-		  
+ 		  
+
 	//	  if (!(skb->nh.iph->frag_off & htons(IP_OFFSET))) {
 		    
 

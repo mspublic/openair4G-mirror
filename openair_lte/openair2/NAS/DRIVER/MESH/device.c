@@ -490,7 +490,9 @@ int init_module (void) {
 
 #ifdef NAS_NETLINK
   if ((err=nas_netlink_init()) == -1)
-    printk("[NAS][INIT] Netlink failed\n");
+    printk("[NAS][INIT] NETLINK failed\n");
+  printk("[NAS][INIT] NETLINK INIT\n");
+
 #endif //NETLINK
 
   return err;
@@ -545,7 +547,7 @@ void cleanup_module(void){
 
 
 
-#define DRV_NAME		"nasmesh"
+#define DRV_NAME		"NASMESH"
 #define DRV_VERSION		"3.0.2"DRV_NAME
 #define DRV_DESCRIPTION	"OPENAIR MESH Device Driver"
 #define DRV_COPYRIGHT	"-Copyright(c) GNU GPL Eurecom 2009"

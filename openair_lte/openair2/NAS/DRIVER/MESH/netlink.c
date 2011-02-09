@@ -46,7 +46,7 @@
 #include "local.h"
 #include "proto_extern.h"
 
-//#define NETLINK_DEBUG 1
+#define NETLINK_DEBUG 1
 
 
 #define NAS_NETLINK_ID 31
@@ -80,14 +80,14 @@ static void nas_nl_data_ready (struct sk_buff *skb)
   //nasmesh_unlock();
 
   struct nlmsghdr *nlh = NULL;
-  
+  int j;  
   if (skb) {
     
 #ifdef NETLINK_DEBUG
     printk("[NAS][NETLINK] Received socket from PDCP\n");
 #endif //NETLINK_DEBUG
     nlh = (struct nlmsghdr *)skb->data;
-    
+  
     nas_COMMON_QOS_receive(nlh);
     
     //kfree_skb(skb); // not required,
