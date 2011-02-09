@@ -41,7 +41,7 @@ extern void *bigphys_malloc(int);
 /***********************************************************************/
 void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index){  //init as MR
 /***********************************************************************/
-  msg("[MAC]Node %d, PHY SYNC to CH_index %d\n",NODE_ID[Mod_id],CH_index);
+  // msg("[MAC]Node %d, PHY SYNC to CH_index %d\n",NODE_ID[Mod_id],CH_index);
   if( (layer2_init_mr(Mod_id)==-1) || (Rrc_xface->openair_rrc_mr_init(Mod_id,CH_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
@@ -226,12 +226,12 @@ int mac_init_global_param(){
   Mac_rlc_xface->pdcp_data_req=pdcp_data_req;	
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
-  
+  msg("[MAC][RLC] interface setup\n");
 
   msg("[MAC][GLOBAL_INIT] RRC_INIT_GLOBAL\n");
   rrc_init_global_param();
   Is_rrc_registered=1;
-
+  pdcp_layer_init ();
  
   mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;  
   msg("[MAC] Init Global Param Done\n");

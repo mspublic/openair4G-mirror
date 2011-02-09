@@ -17,7 +17,7 @@ ________________________________________________________________*/
 #include "defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 #ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
+//#include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL
 #include "PHY_INTERFACE/defs.h"
 

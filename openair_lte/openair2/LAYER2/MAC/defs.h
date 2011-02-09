@@ -56,7 +56,7 @@ ________________________________________________________________*/
 #endif //USER_MODE
 
 
-#define MAX_NUM_RB 11
+#define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
 
 /*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/

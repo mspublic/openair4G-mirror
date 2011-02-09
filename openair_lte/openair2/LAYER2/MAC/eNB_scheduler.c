@@ -328,7 +328,7 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
       for (j=0;j<32;j++)
 	printf("%x ",payload_ptr[j]);
       printf("\n");
-      if (rx_lengths[i]<32) {
+      if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
 	Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
 					DCCH+(UE_id)*MAX_NUM_RB,
 					payload_ptr,
@@ -337,7 +337,23 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
 					NULL);//(unsigned int*)crc_status);
       }
       //      }
+    } else if (rx_lcids[i] >= DTCH) {
+      //      if(CH_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
+      /*  msg("offset: %d\n",(u8)((u8*)payload_ptr-sdu));
+      for (j=0;j<32;j++)
+	printf("%x ",payload_ptr[j]);
+	printf("\n"); */
+      if (rx_lengths[i] <SCH_PAYLOAD_SIZE_MAX) {   // MAX SIZE OF transport block 
+	Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
+					DTCH+(UE_id)*MAX_NUM_RB,
+					payload_ptr,
+					rx_lengths[i],
+					1,
+					NULL);//(unsigned int*)crc_status);
+      }
+      //      }
     }
+
     payload_ptr+=rx_lengths[i];
   }
 
@@ -758,12 +774,14 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
     aggregation = process_ue_cqi(Mod_id,next_ue);
     nCCE-=aggregation; // adjust the remaining nCCE
    
-      
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
    
     // Note this code is for a specific DCI format
     DLSCH_dci = (DCI2_5MHz_2A_M10PRB_TDD_t *)&CH_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[0];
+
+    DLSCH_dci->rah=0;
+
     if (round > 0) {
      
       DLSCH_dci->ndi1 = 0;
@@ -892,7 +910,7 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
 							      DTCH+(MAX_NUM_RB*next_ue),
 							      &dlsch_buffer[sdu_length_total]);
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB %d] Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
+      msg("[MAC][eNB %d] PHY_DATA_REQ Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
 #endif
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
@@ -919,6 +937,8 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
 #ifdef DEBUG_eNB_SCHEDULER  
     msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
 	Mod_id,DLSCH_dci->mcs1,TBS,nb_rb);
+    // msg("[MAC][eNB ] Reminder of DLSCH with random data %d %d %d %d \n",
+    //	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif   
    
     // fill remainder of DLSCH with random data
@@ -926,6 +946,7 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
       CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0][offset+sdu_length_total+j] = (char)(taus()&0xff);
     //CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset+sdu_lengths[0]+j] = (char)(taus()&0xff);
   }
+  
  
 }
 
@@ -947,6 +968,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   case 0:
     //test navid
     Mac_rlc_xface->frame++;
+    Rrc_xface->Frame_index=Mac_rlc_xface->frame;
     Mac_rlc_xface->pdcp_run();
 
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt) 

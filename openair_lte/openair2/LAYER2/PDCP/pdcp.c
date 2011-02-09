@@ -18,8 +18,8 @@
 //#include "mpls.h"
 //#include "w3g4free_extern.h"
 
-//#define PDCP_DATA_REQ_DEBUG 1
-//#define PDCP_DATA_IND_DEBUG 1
+#define PDCP_DATA_REQ_DEBUG 1
+#define PDCP_DATA_IND_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 
@@ -176,7 +176,8 @@ pdcp_run ()
 #endif
   unsigned int diff,i,k,j;
   if((Mac_rlc_xface->frame%128)==0) { 
-    for(i=0;i<NB_INST;i++)
+    //    for(i=0;i<NB_INST;i++)
+    for(i=0;i<NB_UE_INST;i++)
       for (j=0;j<NB_CNX_CH;j++)
 	for(k=0;k<NB_RAB_MAX;k++){
 	  diff = Pdcp_stats_tx_bytes[i][j][k];
@@ -271,10 +272,12 @@ pdcp_layer_init ()
   unsigned int i,j,k; 
     list_init (&pdcp_sdu_list, NULL);
 
+    msg("[PDCP] pdcp_layer_init \n ");
     pdcp_output_sdu_bytes_to_write=0;
     pdcp_output_header_bytes_to_write=0;
     pdcp_input_sdu_remaining_size_to_read=0;
-    for (i=0;i<NB_INST;i++)
+    //    for (i=0;i<NB_INST;i++)
+    for (i=0;i<NB_UE_INST;i++)
       for (k=0;k<NB_CNX_CH;k++)
 	for(j=0;j<NB_RAB_MAX;j++){
 	  Pdcp_stats_tx[i][k][j]=0;
