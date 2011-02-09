@@ -1043,9 +1043,8 @@ int main(int argc, char **argv) {
     }
     
   }
-  else {
+  else {ret=netlink_init();
     if (ethernet_flag == 1) {
-      ret=netlink_init();
       init_bypass();
     }
   }   
