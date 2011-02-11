@@ -692,6 +692,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
 int main(int argc, char **argv) {
 
+ 
   char c;
   s32 i,j;
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
@@ -723,6 +724,8 @@ int main(int argc, char **argv) {
   u8 nb_ue_local=0,nb_ue_remote=0;
   u8 nb_eNB_local=0,nb_eNB_remote=0;
   u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
+
+  u8 NB_MACHINE;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -796,6 +799,7 @@ int main(int argc, char **argv) {
 	  abstraction_flag=1;
 	  ethernet_flag=1;
 	  ethernet_id = atoi(optarg);
+	  Master_id = ethernet_id;
 	  break;
 	case 'e':
 	  extended_prefix_flag=1;
@@ -809,7 +813,7 @@ int main(int argc, char **argv) {
 
   NB_UE_INST = nb_ue_local + nb_ue_remote;
   NB_CH_INST = nb_eNB_local + nb_eNB_remote;
-
+ 
   Is_primary_master=0;
   nb_machine=2;
   Master_id=ethernet_id;
@@ -1046,6 +1050,7 @@ int main(int argc, char **argv) {
   else {ret=netlink_init();
     if (ethernet_flag == 1) {
       init_bypass();
+      //exit(-1);
     }
   }   
   //ret=netlink_init();
@@ -1146,7 +1151,7 @@ int main(int argc, char **argv) {
 #endif 
  
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-
+    
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -1161,7 +1166,7 @@ int main(int argc, char **argv) {
       }
 
       // Call ETHERNET emulation here
-      clear_eNB_transport_info(nb_eNB_local);
+      clear_UE_transport_info(nb_ue_local);
       for (UE_id=first_eNB_local; UE_id<(first_eNB_local+nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 #ifdef DEBUG_SIM
