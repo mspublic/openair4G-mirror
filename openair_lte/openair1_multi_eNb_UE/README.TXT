@@ -78,6 +78,7 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |   |-- pdcchsim.c      // PDCCH (DCI) simulation testbench
 |   |   |-- dlsim.c         // PDSCH simulation testbench
 |   |   |-- ulsim.c         // PUSCH simulation testbench
+|   |   |-- pucchsim.c      // PUCCH simulation testbench
 |   |-- LTE_PHY_L2       // LTE simulation testbench for full system simulation (PHY,MAC,RLC,RRC,PDCP)
 |   |-- PHY              // non-LTE simulation testbenches for openair transport channels
 |   |   |-- CHBCH
