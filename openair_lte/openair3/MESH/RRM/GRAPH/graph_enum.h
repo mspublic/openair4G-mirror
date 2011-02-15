@@ -33,11 +33,11 @@ et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI.
 
 //mod_lor_10_05_12--*/
 
-#define BTS_ID 1  //put -1 in case we are not in SCEN_1
+#define BTS_ID -1  //put -1 in case we are not in SCEN_1
 #define FC_ID 0
 #define CH_COLL_ID -1
 #define NB_SENS_MAX 4
-#define FIRST_SENSOR_ID 2
+#define FIRST_SENSOR_ID 1
 #define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06
 
 #ifdef __cplusplus

@@ -378,7 +378,7 @@ void plot_spectra_CH1(Sens_ch_t *S, unsigned int NB_info, /*FD_sens_CH1_scen_2 *
 
         fl_set_xyplot_data(Sens_form_CH1->Cluster_2_sensing,f,spec_dBm,tot_sub_bands,"","","");
     }else
-        printf("Error! User %d not considered",sensor); //mod_lor_10_12_07
+        printf("Error! User %d not considered 1",sensor); //mod_lor_10_12_07
     fl_check_forms();
     
 }
@@ -432,7 +432,7 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
 
         fl_set_xyplot_data(Sens_form_CH2->User_4,f,spec_dBm,tot_sub_bands,"","","");
     }else 
-        printf("Error! User %d not considered",sensor); //mod_lor_10_12_07
+        printf("Error! User %d not considered 2",sensor); //mod_lor_10_12_07
     fl_check_forms();
 }
 
@@ -493,7 +493,7 @@ void plot_all_chann_scen_2(unsigned int *tx, unsigned int *chann_start, unsigned
         fl_set_xyplot_data(Chann_form->User_4_channels,f,spec_dBm,tot_sub_bands,"","","");
     
     }*/else
-        printf("Error! User %d not considered",rrm_id);
+        printf("Error! User %d not considered 3",rrm_id);
     fl_check_forms();
 }
 //add_lor_10_11_04--
@@ -2570,14 +2570,14 @@ int main( int argc , char **argv )
      }
      //mod_lor_10_06_01--
      //mod_lor_10_11_04++
-     if (SCEN_2_CENTR /*&& COLL_CLUST*/){ 
-         fl_initialize(&argc, argv, "Clusters", 0, 0);  
+     if (SCEN_2_CENTR && COLL_CLUST){  //mod_lor_11_02_14 : splitting in two clusters
+         fl_initialize(&argc, argv, "Cluster 2", 0, 0);  
          Sens_form_CH2 = create_form_sens_scen_2(); 
          fl_show_form(Sens_form_CH2->sens_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 2: Sensing");     
          fl_check_forms();   
-     //} //mod_lor_11_01_07
-     //if (SCEN_2_CENTR && !COLL_CLUST){ 
-         //fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
+     } //mod_lor_11_02_14
+     if (SCEN_2_CENTR && !COLL_CLUST){ 
+         fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
          Sens_form_CH1 = create_form_sens_CH1_scen_2(); 
          fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Sensing");     //Cluster 1:  mod_lor_10_12_07
          fl_check_forms();   

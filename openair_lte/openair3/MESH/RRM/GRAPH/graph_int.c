@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <time.h>
 
-#include "graph_sock.h"
+#include "graph_sock.h" 
 //#include "rrm_sock.h"
 #include "graph_int.h"
 #include "graph_enum.h"
@@ -364,13 +364,13 @@ main(int argc,char **argv) {
                         break ;
                     case RRC_INIT_MON_REQ :
                         {
-                            msg_fct( "[CRRC]>[CRRM]:RRC_INIT_MON_REQ \n ",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:RRC_INIT_MON_REQ \n",Header->inst);
                         }
                         break ;
                      case RRC_UP_FREQ_ASS :
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
-                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED\n ",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED\n",Header->inst);
                             if (p->NB_chan!=0){
 								printf("\e[38;5;%dm",comments);
 								msg_fct( "Channel to use: from ");
@@ -393,7 +393,7 @@ main(int argc,char **argv) {
                     case RRC_UP_FREQ_ASS_SEC : //add_lor_10_11_09
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
-                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED_SEC \n ",Header->inst);
+                            msg_fct( "[CRRC]>[CRRM]:UPDATE_FREQUENCIES_ASSIGNED_SEC \n",Header->inst);
                             for (i=0;i<p->NB_val;i++){
                                 if (p->values[i]){
                                     printf("\e[38;5;%dm",comments);

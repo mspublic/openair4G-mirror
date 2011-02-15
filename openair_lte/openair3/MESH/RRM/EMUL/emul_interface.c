@@ -928,10 +928,10 @@ int main( int argc , char **argv )
             pthread_mutex_unlock( &actdiff_exclu ) ;  //mod_lor: 10_02_09--
         }
         else if (c == 'd'){ //add_lor_10_11_09
-            printf("Select user to disconnect (from 1 to 4)  ... \n");
+            printf("Select user to disconnect (from 1 to 3)  ... \n");
             scanf("%d",&tr);
-            while (tr<1||tr>4){
-                printf(" User id not valid!\nSelect user (from 1 to 4)  ... \n");
+            while (tr<1||tr>3){
+                printf(" User id not valid!\nSelect user (from 1 to 3)  ... \n");
                 scanf("%d",&tr);
             }
             //mod_lor_10_12_07++
@@ -943,19 +943,19 @@ int main( int argc , char **argv )
 
         }
         else if (c == 'l'){ //add_lor_10_11_09
-            printf("Digit id of users involved in the link to remove (from 1 to 4)  ... \n");
+            printf("Digit id of users involved in the link to remove (from 1 to 3)  ... \n");
             scanf("%d",&tr);
-            while (tr<1||tr>4){
-                printf(" User id not valid!\nSelect user (from 1 to 4)  ... \n");
+            while (tr<1||tr>3){
+                printf(" User id not valid!\nSelect user (from 1 to 3)  ... \n");
                 scanf("%d",&tr);
             }
             scanf("%d",&rec);
-            while (rec<1||rec>4||rec==tr){
+            while (rec<1||rec>3||rec==tr){
                 if (rec==tr)
                     printf(" A user cannot have a link with itself!\n");
                 else
                     printf(" User id not valid!\n");
-                printf("Select user (from 1 to 4)  ... \n");
+                printf("Select user (from 1 to 3)  ... \n");
                 scanf("%d",&rec);
             }
             //mod_lor_10_12_07++
@@ -999,20 +999,20 @@ int main( int argc , char **argv )
             //mod_lor_10_10_28++
             //mod_lor_10_10_28--
             else if (SCEN_2_CENTR){
-                printf("Select user that wants to transmit (from 1 to 4)  ... \n");
+                printf("Select user that wants to transmit (from 1 to 3)  ... \n");
                 scanf("%d",&tr);
-                while (tr<1||tr>4){
+                while (tr<1||tr>3){
                     printf(" User id not valid!\nSelect user that wants to transmit (from 1 to 3)  ... \n");
                     scanf("%d",&tr);
                 }
-                printf("Select user destination of the transmission(from 1 to 4)  ... \n");
+                printf("Select user destination of the transmission(from 1 to 3)  ... \n");
                 scanf("%d",&rec);
-                while (rec<1||rec>4||rec==tr){
+                while (rec<1||rec>3||rec==tr){
                     if (rec==tr)
                         printf(" Receiver could not be equal to transmitter!\n");
                     else
                         printf(" User id not valid!\n");
-                    printf("Select user destination (from 1 to 4)  ... \n");
+                    printf("Select user destination (from 1 to 3)  ... \n");
                     scanf("%d",&rec);
                 }
                 //mod_lor_10_12_07++

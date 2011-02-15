@@ -28,9 +28,9 @@
   */
 #define BTS_ID -1
 #define FC_ID 0
-#define CH_COLL_ID 1
-#define FIRST_SENSOR_ID 2
-#define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06
+#define CH_COLL_ID -1
+#define FIRST_SENSOR_ID 1
+#define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06 AAA: if two clusters on two pcs this parameter should be greater than the number of rrm instances
 //mod_lor_10_05_05--
 
 /*! 
@@ -38,7 +38,7 @@
  \brief Parameters about channels:
  * 
 */
-#define NB_OF_SENSORS 5 //!< Number of units that can perform sensing (if scen2_centr it includes secondary users of both clusters)
+#define NB_OF_SENSORS 3 //!< Number of units that can perform sensing (if scen2_centr it includes secondary users of both clusters)
 #define CH_NEEDED_FOR_SN 1 //!< Number of channels needed by secondary network//mod_lor_10_05_17
 #define SB_NEEDED_FOR_SN 25 //mod_lor_10_05_26: 
 #define NB_SENS_MAX    4  //!< Maximum number of channels accepted by the system; AAA: should be low (4) in SCEN_2 otherwise overflow at rrc level
