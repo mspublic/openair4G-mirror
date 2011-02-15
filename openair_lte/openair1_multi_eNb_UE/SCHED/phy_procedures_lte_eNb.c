@@ -19,7 +19,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 //#endif
 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 #ifdef USER_MODE
 #define DEBUG_PHY
@@ -95,7 +95,7 @@ s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNb) {
   return(-1);
 }
 
-void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag) {
+int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag) {
 
   LTE_eNb_DLSCH_t *DLSCH_ptr;  
   LTE_eNb_ULSCH_t *ULSCH_ptr;  
@@ -123,12 +123,12 @@ void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *roun
 	  if (DLSCH_ptr->harq_processes[i]->round == 0) {
 	    *harq_pid = i;
 	    *round = 0;
-	    return;
+	    return(0);
 	  }
 	}
 	else {
 	  msg("[PHY] eNB %d DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
-	  exit(-1);
+	  return(-1);
 	}
       }
     }
@@ -144,29 +144,9 @@ void get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *roun
     *harq_pid = subframe_p4-2;
     *round    = ULSCH_ptr->harq_processes[*harq_pid]->round;
   }
+  return(0);
 }
 
-
-#ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb) {
- 
-  write_output("rxsigF0.m","rxsF0", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][0][0],512*12*2,2,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("srs_seq.m","srs",phy_vars_eNb->lte_eNB_srs_vars[0].srs,2*phy_vars_eNb->lte_frame_parms.ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
-  write_output("drs_est0.m","drsest0",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*12,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",phy_vars_eNb->lte_eNB_ulsch_vars[0]->llr,phy_vars_eNb->ulsch_eNb[0]->harq_processes[2]->nb_rb*12*2*9,1,0);	
-  if (phy_vars_eNb->lte_frame_parms.nb_antennas_rx>1) {
-    write_output("rxsigF1.m","rxsF1", &phy_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*12*2,2,1);
-    write_output("rxsigF1_ext.m","rxsF1_ext", &phy_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0],300*12*2,2,1);
-    write_output("srs_est1.m","srsest1",phy_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
-    write_output("drs_est1.m","drsest1",phy_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
-  }
-  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&phy_vars_eNb->lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*12,1,1);	  
-
-}
-#endif
 
 #ifdef EMOS
 void phy_procedures_emos_eNB_TX(unsigned char next_slot) {
@@ -369,7 +349,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,
     if (max_peak_val>0) {
       if (sect_id==number_of_cards-1) {
 	//	phy_vars_eNb->eNB_UE_stats[UE_id].crnti = 0x1234; 
-	//	phy_vars_eNb->eNB_UE_stats[UE_id].UE_timing_offset = max(max_sync_pos - sync_pos_slot - phy_vars_eNb->lte_frame_parms.nb_prefix_samples/8,0);
+	//	phy_vars_eNb->eNB_UE_stats[UE_id].UE_timing_offset = cmax(max_sync_pos - sync_pos_slot - phy_vars_eNb->lte_frame_parms.nb_prefix_samples/8,0);
 	//	phy_vars_eNb->eNB_UE_stats[UE_id].mode = PRACH;
 	//	phy_vars_eNb->eNB_UE_stats[UE_id].sector = max_sect_id;
 #ifdef DEBUG_PHY
@@ -381,12 +361,13 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,
 	    phy_vars_eNb->eNB_UE_stats[UE_id].UE_timing_offset,
 	    time_in, time_out);
 #endif
-	
+#ifdef OPENAIR2	
 	mac_xface->initiate_ra_proc(phy_vars_eNb->Mod_id,
 				    0,
-				    max(max_sync_pos - sync_pos_slot - phy_vars_eNb->lte_frame_parms.nb_prefix_samples/8,0),
+				    cmax(max_sync_pos - sync_pos_slot - phy_vars_eNb->lte_frame_parms.nb_prefix_samples/8,0),
 				    max_sect_id);
-	
+#endif
+
 	max_peak_val = 0;
 	max_sect_id = 0;
 	max_sync_pos = 0;
@@ -394,7 +375,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,
       }
     }
     else {
-      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d: No user found\n",mac_xface->frame,last_slot);
+      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d: No user found\n",mac_xface->frame,last_slot);
       max_peak_val = 0;
       max_sect_id = 0;
       max_sync_pos = 0;
@@ -473,7 +454,9 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
   u16 input_buffer_length, re_allocated;
   u32 sect_id = 0,i,aa;
   u8 harq_pid;
+#ifdef OPENAIR2
   DCI_PDU *DCI_pdu;
+#endif
   u8 *DLSCH_pdu;
   s8 UE_id;
   u8 num_pdcch_symbols;
@@ -494,13 +477,12 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
        }
      }
     
-
- 
      generate_pilots_slot(phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id],
 			  AMP,
 			  &phy_vars_eNb->lte_frame_parms,
 			  sect_id,
 			  next_slot);
+
    }
    
     
@@ -509,6 +491,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       if ((mac_xface->frame&3) == 0) {
 	*((u8*) pbch_pdu) = (u8)((mac_xface->frame>>2)&0xff);
 	((u8*) pbch_pdu)[1] = openair_daq_vars.dlsch_transmission_mode;
+	/*
+	pbch_pdu[0]=0;
+	pbch_pdu[1]=1;
+	*/
+	pbch_pdu[2]=100;
       }
 
 #ifdef DEBUG_PHY
@@ -525,12 +512,20 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       else {
 	generate_pbch_emul(phy_vars_eNb,pbch_pdu);
       }
-    }
+   }
+   /*
+   if (next_slot==1) {
+       debug_msg("slot %d, txdataF=%p\n",next_slot,&phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)]);
+       for (i=0;i<10;i++) 
+	 debug_msg("%08x\n",((unsigned int*)&phy_vars_eNb->lte_eNB_common_vars.txdataF[sect_id][0][next_slot*(phy_vars_eNb->lte_frame_parms.N_RB_DL*12)*(phy_vars_eNb->lte_frame_parms.symbols_per_tti>>1)])[i]);
+   }
+   */
   }
 
   sect_id=0;
 
   if ((next_slot % 2)==0) {
+#ifdef OPENAIR2
     mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNb->Mod_id,next_slot>>1);
 
 
@@ -817,7 +812,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8
       
     }
     
-#ifdef OPENAIR2
     if (phy_vars_eNb->dlsch_eNb_ra->active == 1) {
       input_buffer_length = phy_vars_eNb->dlsch_eNb_ra->harq_processes[0]->TBS/8;
       phy_vars_eNb->eNB_UE_stats[0].crnti = mac_xface->fill_rar(0,
@@ -1092,7 +1086,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
     }
   }
 
-
+#ifdef OPENAIR2
 #ifdef DEBUG_PHY
   debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d, subframe %d : Running ulsch reception: sect_id %d (RRCConnRequest active %d, RRCConnRequest subframe %d, RRCConnRequest frame %d)\n",mac_xface->frame,last_slot,last_slot>>1,sect_id,phy_vars_eNb->ulsch_eNb[0]->RRCConnRequest_active,phy_vars_eNb->ulsch_eNb[0]->RRCConnRequest_subframe,phy_vars_eNb->ulsch_eNb[0]->RRCConnRequest_frame);
 #endif
@@ -1235,7 +1229,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 	phy_vars_eNb->eNB_UE_stats[i].ulsch_consecutive_errors[harq_pid] = 0;
 
 	if (phy_vars_eNb->ulsch_eNb[i]->RRCConnRequest_flag == 1) {
-	  printf("Terminating ra_proc for harq %d, UE %d\n",harq_pid,i);
+	  //printf("Terminating ra_proc for harq %d, UE %d\n",harq_pid,i);
 	  mac_xface->terminate_ra_proc(phy_vars_eNb->Mod_id,phy_vars_eNb->ulsch_eNb[i]->rnti,phy_vars_eNb->ulsch_eNb[i]->harq_processes[harq_pid]->b);
 
 	  // activate DLSCH for this UE
@@ -1274,13 +1268,16 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNb,u8
 
       }
     }
+  } // loop i=0 ... NUMBER_OF_UE_MAX-1
+#endif //OPENAIR2
 #ifdef EMOS
     phy_procedures_emos_eNB_RX(last_slot);
 #endif
 
-  } // loop i=0 ... NUMBER_OF_UE_MAX-1
 }
   
+#undef DEBUG_PHY
+
 void phy_procedures_eNb_lte(unsigned char last_slot, unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNb,u8 abstraction_flag) {
 
     if (subframe_select_tdd(phy_vars_eNb->lte_frame_parms.tdd_config,next_slot>>1)==SF_DL) {

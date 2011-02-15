@@ -27,14 +27,14 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
   static int max_pos_fil = 0;
   int temp, i, aa, max_val = 0, max_pos = 0;
-  int offset,diff;
+  int diff;
   short Re,Im,ncoef;
 
   ncoef = 32767 - coef;
 
 #ifdef DEBUG_PHY
   if (mac_xface->frame%100 == 0)
-    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,offset);
+    msg("[PHY][Adjust Sync] frame %d: rx_offset (before) = %d\n",mac_xface->frame,phy_vars_ue->rx_offset);
 #endif //DEBUG_PHY
 
   // do ifft of channel estimate
@@ -77,16 +77,16 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   else if (diff < -SYNCH_HYST)
     phy_vars_ue->rx_offset--;
     
-  if ( offset < 0 )
+  if ( phy_vars_ue->rx_offset < 0 )
     phy_vars_ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  if ( offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
+  if ( phy_vars_ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
     phy_vars_ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
 
 
 #ifdef DEBUG_PHY
- if (mac_xface->frame%100 == 0)
+  if (mac_xface->frame%100 == 0)
     msg("[PHY][Adjust Sync] frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d\n",mac_xface->frame,phy_vars_ue->rx_offset,max_pos,max_pos_fil);
 #endif //DEBUG_PHY
 
@@ -94,7 +94,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 #ifndef PHY_EMUL
 #ifndef NOCARD_TEST
 #ifndef PLATON
-    pci_interface[0]->frame_offset = phy_vars_ue->rx_offset;
+  pci_interface[0]->frame_offset = phy_vars_ue->rx_offset;
   //  openair_dma(ADJUST_SYNCH);
 #endif //PLATON
 #endif //PHY_EMUL

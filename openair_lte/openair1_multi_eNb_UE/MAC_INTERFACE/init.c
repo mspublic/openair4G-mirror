@@ -40,12 +40,7 @@ ________________________________________________________________*/
 
 int mac_init(void)
 {
-
-
-
   int i;
-
-
   
 #ifndef USER_MODE
   // mac_xface->macphy_init();
@@ -68,13 +63,12 @@ void mac_cleanup(void)
 
 }
 
-#ifdef OPENAIR2
 void mac_resynch(void) {
 
 }
-#endif //OPENAIR2
 
+/*
 #ifdef OPENAIR2
 EXPORT_SYMBOL(frame);
-
 #endif //OPENAIR2
+*/

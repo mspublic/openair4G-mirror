@@ -76,7 +76,7 @@ void generate_pilots(mod_sym_t **txdataF,
 		     0);
     
 
-    if (frame_parms->nb_antennas_tx > 1) 
+    if (frame_parms->nb_antennas_tx > 1) {
       if (frame_parms->mode1_flag) {
       // antenna 1 symbol 0 slot 0
       lte_dl_cell_spec(&txdataF[1][tti_offset],
@@ -152,6 +152,7 @@ void generate_pilots(mod_sym_t **txdataF,
 		       1+slot_offset,
 		       1,
 		       1);
+      }
     }
   }
 }
@@ -207,7 +208,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
 		     0);
     
 
-    if (frame_parms->nb_antennas_tx > 1) 
+    if (frame_parms->nb_antennas_tx > 1) {
       if (frame_parms->mode1_flag) {
       // antenna 1 symbol 0 slot 0
       lte_dl_cell_spec(&txdataF[1][slot_offset],
@@ -247,7 +248,7 @@ int generate_pilots_slot(mod_sym_t **txdataF,
 		       slot,
 		       1,
 		       1);
-      
+      }
     }
 
     return(0);

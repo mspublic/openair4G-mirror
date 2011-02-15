@@ -4,7 +4,11 @@
  Company : EURECOM
  Emails  : anouar@eurecom.fr
 ________________________________________________________________*/
+#ifdef RTAI_ENABLED
+#include <rtai_posix.h>
+#else
 #include <pthread.h>
+#endif
 #include "defs.h"
 
 #ifndef __BYPASS_SESSION_LAYER_VARS_H__

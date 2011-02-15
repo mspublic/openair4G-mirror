@@ -26,14 +26,16 @@ extern __m128i zero;
 
 #define PBCH_A 24
 
+#ifndef USER_MODE
+#define msg debug_msg
+#endif
+
 u8 pbch_d[96+(3*(16+PBCH_A))], pbch_w[3*3*(16+PBCH_A)],pbch_e[1920];  //one bit per byte
 int generate_pbch(mod_sym_t **txdataF,
 		  int amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  u8 *pbch_pdu,
 		  u8 frame_mod4) {
-
-
 
   int i, l;
 
@@ -199,7 +201,9 @@ int generate_pbch(mod_sym_t **txdataF,
     
     for (rb=0;rb<6;rb++) {
 
-      //      printf("RB %d,jj %d\n",rb,jj);
+#ifdef DEBUG_PBCH
+      msg("RB %d, jj %d, re_offset %d, symbol_offset %d, pilots %d\n",rb,jj,re_offset, symbol_offset, pilots);
+#endif
       allocate_REs_in_RB(txdataF,
 			 &jj,
 			 re_offset,
@@ -231,6 +235,11 @@ int generate_pbch(mod_sym_t **txdataF,
     
     //    }
   }
+#ifdef DEBUG_PBCH
+  msg("[PBCH] txdataF=\n");
+  for (i=0;i<300;i++) 
+    msg("(%d,%d)\n",i,txdataF[0][300*6+i]);
+#endif
   
   
   return(0);
@@ -242,7 +251,7 @@ s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb,u8 *pbch_pdu) {
   eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_flag=1;
   // Copy PBCH payload 
   eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
-
+  return(0);
 }
 
 u16 pbch_extract(int **rxdataF,
@@ -676,7 +685,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 		 symbol,
 		 frame_parms);
 #ifdef DEBUG_PBCH    
-    printf("[PHY] PBCH Symbol %d\n",symbol);
+    msg("[PHY] PBCH Symbol %d\n",symbol);
     msg("[PHY] PBCH starting channel_level\n");
 #endif
     
@@ -779,9 +788,9 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 #endif //DEBUG_PBCH
 
 #ifdef DEBUG_PBCH
-  printf("PBCH CRC %x : %x\n",
-	 crc16(pbch_a,PBCH_A),
-	 ((u16)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
+  msg("PBCH CRC %x : %x\n",
+      crc16(pbch_a,PBCH_A),
+      ((u16)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
 #endif
 
   crc = (crc16(pbch_a,PBCH_A)>>16) ^ 

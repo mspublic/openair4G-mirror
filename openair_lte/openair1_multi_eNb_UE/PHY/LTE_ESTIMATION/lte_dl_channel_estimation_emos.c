@@ -20,7 +20,7 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
   unsigned char nu,aarx;
   unsigned short k;
   unsigned int rb,pilot_cnt;
-  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev,*f,*f2,*fl,*f2l2,*fr,*f2r2;
+  short ch[2],*pil,*rxF,*dl_ch,*dl_ch_prev; //*f,*f2,*fl,*f2l2,*fr,*f2r2;
   int ch_offset,symbol_offset;
   unsigned int n;
   int i;
@@ -60,6 +60,7 @@ int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_AN
     break;
   default:
     msg("lte_dl_channel_estimation_emos: Ns must be  0, 1, 12, or 13\n");
+    return(-1);
     break;
 
   }

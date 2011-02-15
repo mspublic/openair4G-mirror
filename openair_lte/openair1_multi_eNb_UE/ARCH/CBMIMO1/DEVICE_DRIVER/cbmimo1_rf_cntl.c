@@ -44,6 +44,11 @@ void openair_set_tcxo_dac(unsigned char card_id,unsigned int arg) {
   printk("[openair][RF_CNTL] Setting TCXO_DAC to %d\n",arg);
 
   openair_daq_vars.tcxo_dac = arg;
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->tcxo_dac = openair_daq_vars.tcxo_dac;
+  else
+    printk("[openair][RF_CNTL] TCXO_DAC not configured\n");
+
   //  openair_writel(arg,bar[0]+REG_BAR+0x4);
   // PA Gain control line is connected to TCXO tuning frequency input
   //  openair_dma(SET_PA_GAIN);
@@ -62,6 +67,9 @@ void openair_set_tx_gain_openair(unsigned char card_id,unsigned char txgain00,un
     pci_interface[card_id]->tx_gain10 = (unsigned int)txgain10;
     pci_interface[card_id]->tx_gain11 = (unsigned int)txgain11;
   }
+  else
+    printk("[openair][RF_CNTL] TX gains not configured\n");
+
   //  openair_writel((unsigned int)txgain00,bar[0]+REG_BAR+0x4);
   //  openair_writel((unsigned int)txgain10,bar[0]+REG_BAR+0x8);
   //  openair_writel((unsigned int)txgain01,bar[0]+REG_BAR+0xc);
@@ -83,7 +91,10 @@ void openair_set_rx_gain_openair(unsigned char card_id,unsigned char rxgain00,un
 
   // Store the result in shared PCI memory so that the FPGA can detect and read the new value
   openair_daq_vars.rx_gain_val  = rxgain;
-
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->rx_gain_val = openair_daq_vars.rx_gain_val;
+  else
+    printk("[openair][RF_CNTL] rxgainreg not configured\n");
 
 
 #endif
@@ -111,7 +122,11 @@ void openair_set_lo_freq_openair(unsigned char card_id,char freq0,char freq1) {
   //  openair_writel(freq1,bar[0]+0x8);
   //  openair_dma(SET_LO_FREQ);
   openair_daq_vars.freq_info = 1 + (freq0<<1) + (freq1<<4);
-  pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
+  if (pci_interface[card_id]) 
+    pci_interface[card_id]->freq_info = openair_daq_vars.freq_info;
+  else
+    printk("[openair][RF_CNTL] frequency not configures\n");
+
 #endif
 
 }

@@ -27,24 +27,15 @@
 
 #define openair_sched_exit() exit(-1)
 
+/*
 #define max(a,b)  ((a)>(b) ? (a) : (b))
 #define min(a,b)  ((a)<(b) ? (a) : (b))
-
+*/
 
 #else // USER_MODE
-/*
+
 #include "ARCH/COMMON/defs.h"
-
-#include <asm/io.h>
-#include <asm/rtai.h>
-
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#include <rtai_math.h>
-
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-*/
 
 #define msg fifo_printf//rt_printk
 #define msg_nrt printk

@@ -20,15 +20,15 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb) {
 
       for (aarx=0;aarx<desc->nb_rx;aarx++) {
 	for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].r=0.0;
-	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].i=0.0;
+	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].x=0.0;
+	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].y=0.0;
 	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].r+=(desc->a[l][aarx+(aatx*desc->nb_rx)].r*cos(2*M_PI*freq*desc->delays[l])+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].i*sin(2*M_PI*freq*desc->delays[l]));
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].i+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].r*sin(2*M_PI*freq*desc->delays[l])+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].i*cos(2*M_PI*freq*desc->delays[l]));
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*desc->delays[l])+
+						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*desc->delays[l]));
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*desc->delays[l])+
+						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*desc->delays[l]));
 	  }
-	  //	  	  	  printf("chF(%f) => (%f,%f)\n",freq,desc->chF[aarx+(aatx*desc->nb_rx)][f].r,desc->chF[aarx+(aatx*desc->nb_rx)][f].i);
+	  //	  	  	  printf("chF(%f) => (%f,%f)\n",freq,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	}
       }
   }
@@ -52,32 +52,32 @@ double compute_pbch_sinr(channel_desc_t *desc,
   //  printf("nb_rb %d\n",nb_rb);
   for (f=(nb_rb-6);f<(nb_rb+6);f++) {
     S = 0.0;
-    S_i1.r =0.0;
-    S_i1.i =0.0;
-    S_i2.r =0.0;
-    S_i2.i =0.0;
+    S_i1.x =0.0;
+    S_i1.y =0.0;
+    S_i2.x =0.0;
+    S_i2.y =0.0;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	S    += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-	         desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc->chF[aarx+(aatx*desc->nb_rx)][f].i);
-	//	printf("%d %d chF[%d] => (%f,%f)\n",aarx,aatx,f,desc->chF[aarx+(aatx*desc->nb_rx)][f].r,desc->chF[aarx+(aatx*desc->nb_rx)][f].i);
+	S    += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+	         desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	//	printf("%d %d chF[%d] => (%f,%f)\n",aarx,aatx,f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	       
 	if (desc_i1) {
-	  S_i1.r += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].i);
-	  S_i1.i += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].i - 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].r);
+	  S_i1.x += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  S_i1.y += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].y - 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].x);
 	}
 	if (desc_i2) {
-	  S_i2.r += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].i);
-	  S_i2.i += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].i - 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].r);
+	  S_i2.x += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  S_i2.y += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].y - 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].x);
 	}
       }
     } 
-    //    printf("snr %f f %d : S %f, S_i1 %f, S_i2 %f\n",snr,f-nb_rb,S,snr_i1*sqrt(S_i1.r*S_i1.r + S_i1.i*S_i1.i),snr_i2*sqrt(S_i2.r*S_i2.r + S_i2.i*S_i2.i));
-    avg_sinr += (snr*S/(desc->nb_tx+snr_i1*sqrt(S_i1.r*S_i1.r + S_i1.i*S_i1.i)+snr_i2*sqrt(S_i2.r*S_i2.r + S_i2.i*S_i2.i)));
+    //    printf("snr %f f %d : S %f, S_i1 %f, S_i2 %f\n",snr,f-nb_rb,S,snr_i1*sqrt(S_i1.x*S_i1.x + S_i1.y*S_i1.y),snr_i2*sqrt(S_i2.x*S_i2.x + S_i2.y*S_i2.y));
+    avg_sinr += (snr*S/(desc->nb_tx+snr_i1*sqrt(S_i1.x*S_i1.x + S_i1.y*S_i1.y)+snr_i2*sqrt(S_i2.x*S_i2.x + S_i2.y*S_i2.y)));
   }
   //  printf("avg_sinr %f (%f,%f,%f)\n",avg_sinr/12.0,snr,snr_i1,snr_i2);
   return(10*log10(avg_sinr/12.0));
@@ -102,30 +102,30 @@ double compute_sinr(channel_desc_t *desc,
   //  printf("nb_rb %d\n",nb_rb);
   for (f=0;f<2*nb_rb;f++) {
     S = 0.0;
-    S_i1.r =0.0;
-    S_i1.i =0.0;
-    S_i2.r =0.0;
-    S_i2.i =0.0;
+    S_i1.x =0.0;
+    S_i1.y =0.0;
+    S_i2.x =0.0;
+    S_i2.y =0.0;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	S    += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-	         desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc->chF[aarx+(aatx*desc->nb_rx)][f].i);
+	S    += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+	         desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	if (desc_i1) {
-	  S_i1.r += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].i);
-	  S_i1.i += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].i - 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].r);
+	  S_i1.x += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  S_i1.y += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].y - 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i1->chF[aarx+(aatx*desc->nb_rx)][f].x);
 	}
 	if (desc_i2) {
-	  S_i2.r += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].r + 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].i);
-	  S_i2.i += (desc->chF[aarx+(aatx*desc->nb_rx)][f].r*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].i - 
-		     desc->chF[aarx+(aatx*desc->nb_rx)][f].i*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].r);
+	  S_i2.x += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].x + 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  S_i2.y += (desc->chF[aarx+(aatx*desc->nb_rx)][f].x*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].y - 
+		     desc->chF[aarx+(aatx*desc->nb_rx)][f].y*desc_i2->chF[aarx+(aatx*desc->nb_rx)][f].x);
 	}
       }
     }
-    //        printf("f %d : S %f, S_i1 %f, S_i2 %f\n",f-nb_rb,snr*S,snr_i1*sqrt(S_i1.r*S_i1.r + S_i1.i*S_i1.i),snr_i2*sqrt(S_i2.r*S_i2.r + S_i2.i*S_i2.i));
-    avg_sinr += (snr*S/(desc->nb_tx+snr_i1*sqrt(S_i1.r*S_i1.r + S_i1.i*S_i1.i)+snr_i2*sqrt(S_i2.r*S_i2.r + S_i2.i*S_i2.i)));
+    //        printf("f %d : S %f, S_i1 %f, S_i2 %f\n",f-nb_rb,snr*S,snr_i1*sqrt(S_i1.x*S_i1.x + S_i1.y*S_i1.y),snr_i2*sqrt(S_i2.x*S_i2.x + S_i2.y*S_i2.y));
+    avg_sinr += (snr*S/(desc->nb_tx+snr_i1*sqrt(S_i1.x*S_i1.x + S_i1.y*S_i1.y)+snr_i2*sqrt(S_i2.x*S_i2.x + S_i2.y*S_i2.y)));
   }
   //  printf("avg_sinr %f (%f,%f,%f)\n",avg_sinr/12.0,snr,snr_i1,snr_i2);
   return(10*log10(avg_sinr/(nb_rb*2)));

@@ -29,7 +29,7 @@ void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,u8 ncs_cell[20][7]) {
 	j++;
       }
 #ifdef DEBUG_PUCCH
-      printf("[PHY] PUCCH ncs_cell init (j %d): Ns %d, l %d => ncs_cell %d\n",j,ns,l,ncs_cell[ns][l]);
+      msg("[PHY] PUCCH ncs_cell init (j %d): Ns %d, l %d => ncs_cell %d\n",j,ns,l,ncs_cell[ns][l]);
 #endif
     }
 
@@ -96,7 +96,7 @@ void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
   Nprime = Nprime_div_deltaPUCCH_Shift * deltaPUCCH_Shift;
 
 #ifdef DEBUG_PUCCH
-  printf("[PHY] PUCCH: cNcs1/deltaPUCCH_Shift %d, Nprime %d\n",thres,Nprime);
+  msg("[PHY] PUCCH: cNcs1/deltaPUCCH_Shift %d, Nprime %d\n",thres,Nprime);
 #endif
 
   N_UL_symb = (frame_parms->Ncp==0) ? 7 : 6;
@@ -115,7 +115,7 @@ void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_PUCCH
-  printf("[PHY] PUCCH: nprime0 %d nprime1 %d\n",nprime0,nprime1);
+  msg("[PHY] PUCCH: nprime0 %d nprime1 %d\n",nprime0,nprime1);
 #endif
 
   n_oc0 = nprime0/Nprime_div_deltaPUCCH_Shift;
@@ -127,7 +127,7 @@ void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
     n_oc1<<=1;
 
 #ifdef DEBUG_PUCCH
-  printf("[PHY] PUCCH: noc0 %d noc11 %d\n",n_oc0,n_oc1);
+  msg("[PHY] PUCCH: noc0 %d noc11 %d\n",n_oc0,n_oc1);
 #endif
 
   nprime=nprime0;
@@ -205,7 +205,7 @@ void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
       }
 
 #ifdef DEBUG_PUCCH
-      printf("[PHY] PUCCH: ncs[%d][%d]=%d, W_re %d, W_im %d, S %d, refs %d\n",ns,m,n_cs,W_re,W_im,S,refs);
+      msg("[PHY] PUCCH: ncs[%d][%d]=%d, W_re %d, W_im %d, S %d, refs %d\n",ns,m,n_cs,W_re,W_im,S,refs);
 #endif
       alpha_ind=0;
 	// compute output sequence
@@ -290,6 +290,6 @@ void generate_pucch(LTE_DL_FRAME_PARMS *frame_parms,
   m = (n1_pucch < thres) ? NRB2 : (((n1_pucch-thres)/thres)+NRB2+((12*Ncs1_div_deltaPUCCH_Shift)>>3)+rem);
 
 #ifdef DEBUG_PUCCH
-  printf("[PHY] PUCCH: m %d\n",m);
+  msg("[PHY] PUCCH: m %d\n",m);
 #endif
 }

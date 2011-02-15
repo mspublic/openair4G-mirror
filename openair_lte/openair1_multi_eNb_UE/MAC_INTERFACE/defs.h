@@ -20,6 +20,7 @@
 
 
 #include "PHY/types.h"
+#include "PHY/defs.h"
 
 
 /*! \fn void macphy_scheduler(u8 slot)
@@ -48,13 +49,7 @@ void mac_cleanup(void);
 */
 void mac_resynch(void);
 
-
-#ifndef USER_MODE
-#ifdef DEBUG_LEVEL
-#define COMMENT //
-#define msg  (((mac_xface->frame%5==0))? printk : COMMENT) 
-#endif
-#endif
+void l2_init(PHY_VARS_eNB *phy_vars_eNb);
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"

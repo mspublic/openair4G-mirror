@@ -671,7 +671,7 @@ int main(int argc, char **argv) {
 	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][aa][l++]];
 	    else 
 	      txdataF2[aa][i] = 0;
-	  printf("l=%d\n",l);
+	  //printf("l=%d\n",l);
 	}
 	if (n_frames==1) {
 	  write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);

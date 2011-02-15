@@ -83,8 +83,8 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
     for (i = 0; i<nb_taps; i++) {
       chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
       for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	chan_desc->R_sqrt[i][j].r = 1.0;
-	chan_desc->R_sqrt[i][j].i = 0.0;
+	chan_desc->R_sqrt[i][j].x = 1.0;
+	chan_desc->R_sqrt[i][j].y = 0.0;
       }
     }
   }
@@ -94,7 +94,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
 
   for (i = 0; i<nb_taps; i++) {
     for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-      printf("Rsqrt[%d][%d] %f %f\n",i,j,chan_desc->R_sqrt[i][j].r,chan_desc->R_sqrt[i][j].i);
+      printf("Rsqrt[%d][%d] %f %f\n",i,j,chan_desc->R_sqrt[i][j].x,chan_desc->R_sqrt[i][j].y);
     }
   }
 
@@ -181,8 +181,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	  chan_desc->R_sqrt[i][j].r = 1.0;
-	  chan_desc->R_sqrt[i][j].i = 0.0;
+	  chan_desc->R_sqrt[i][j].x = 1.0;
+	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
 	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
@@ -226,8 +226,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	  chan_desc->R_sqrt[i][j].r = 1.0;
-	  chan_desc->R_sqrt[i][j].i = 0.0;
+	  chan_desc->R_sqrt[i][j].x = 1.0;
+	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
 	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
@@ -267,8 +267,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	  chan_desc->R_sqrt[i][j].r = 1.0;
-	  chan_desc->R_sqrt[i][j].i = 0.0;
+	  chan_desc->R_sqrt[i][j].x = 1.0;
+	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
 	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
@@ -308,8 +308,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       for (i = 0; i<6; i++) {
 	chan_desc->R_sqrt[i]    = (struct complex*) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complex));
 	for (j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-	  chan_desc->R_sqrt[i][j].r = 1.0;
-	  chan_desc->R_sqrt[i][j].i = 0.0;
+	  chan_desc->R_sqrt[i][j].x = 1.0;
+	  chan_desc->R_sqrt[i][j].y = 0.0;
 	}
 	msg("correlation matrix only implemented for nb_tx==2 and nb_rx==2, using identity\n");
       }
@@ -345,21 +345,21 @@ int random_channel(channel_desc_t *desc) {
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
 
-	anew[aarx+(aatx*desc->nb_rx)].r = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
-	anew[aarx+(aatx*desc->nb_rx)].i = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
+	anew[aarx+(aatx*desc->nb_rx)].x = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
+	anew[aarx+(aatx*desc->nb_rx)].y = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
 
 	if (i==0) {
 	  // this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. 
 	  // Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so 
 	  // that we can safely assume plane wave propagation.
-	  phase.r = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
-	  phase.i = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
+	  phase.x = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
+	  phase.y = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
 	  
-	  anew[aarx+(aatx*desc->nb_rx)].r += phase.r * sqrt(1-desc->ricean_factor);
-	  anew[aarx+(aatx*desc->nb_rx)].i += phase.i * sqrt(1-desc->ricean_factor);
+	  anew[aarx+(aatx*desc->nb_rx)].x += phase.x * sqrt(1-desc->ricean_factor);
+	  anew[aarx+(aatx*desc->nb_rx)].y += phase.y * sqrt(1-desc->ricean_factor);
 	}
 #ifdef DEBUG_CH
-	printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].r,anew[aarx+(aatx*desc->nb_rx)].i,desc->aoa,desc->ricean_factor,phase.r,phase.i);
+	printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].x,anew[aarx+(aatx*desc->nb_rx)].y,desc->aoa,desc->ricean_factor,phase.x,phase.y);
 #endif	
       } //aatx
     } //aarx
@@ -368,19 +368,19 @@ int random_channel(channel_desc_t *desc) {
     // for debugging set a=anew;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = anew[aarx+(aatx*desc->nb_rx)].r;
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = anew[aarx+(aatx*desc->nb_rx)].i;
- 	printf("anew(%d,%d) = %f+1j*%f\n",aatx,aarx,anew[aarx+(aatx*desc->nb_rx)].r, anew[aarx+(aatx*desc->nb_rx)].i);
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].x = anew[aarx+(aatx*desc->nb_rx)].x;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].y = anew[aarx+(aatx*desc->nb_rx)].y;
+ 	printf("anew(%d,%d) = %f+1j*%f\n",aatx,aarx,anew[aarx+(aatx*desc->nb_rx)].x, anew[aarx+(aatx*desc->nb_rx)].y);
      }
     }
     */
 
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
-    alpha.r = 1.0;
-    alpha.i = 0.0;
-    beta.r = 0.0;
-    beta.i = 0.0;
+    alpha.x = 1.0;
+    alpha.y = 0.0;
+    beta.x = 0.0;
+    beta.y = 0.0;
     cblas_zgemv(CblasRowMajor, CblasNoTrans, desc->nb_tx*desc->nb_rx, desc->nb_tx*desc->nb_rx, 
 		(void*) &alpha, (void*) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
 		(void*) anew, 1, (void*) &beta, (void*) acorr, 1);
@@ -388,9 +388,9 @@ int random_channel(channel_desc_t *desc) {
     /*
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = acorr[aarx+(aatx*desc->nb_rx)].r;
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = acorr[aarx+(aatx*desc->nb_rx)].i;
-	printf("tap %d, acorr1(%d,%d) = %f+1j*%f\n",i,aatx,aarx,acorr[aarx+(aatx*desc->nb_rx)].r, acorr[aarx+(aatx*desc->nb_rx)].i);
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].x = acorr[aarx+(aatx*desc->nb_rx)].x;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].y = acorr[aarx+(aatx*desc->nb_rx)].y;
+	printf("tap %d, acorr1(%d,%d) = %f+1j*%f\n",i,aatx,aarx,acorr[aarx+(aatx*desc->nb_rx)].x, acorr[aarx+(aatx*desc->nb_rx)].y);
       }
     }
     */
@@ -399,23 +399,23 @@ int random_channel(channel_desc_t *desc) {
       cblas_zcopy(desc->nb_tx*desc->nb_rx, (void*) acorr, 1, (void*) desc->a[i], 1);
     }
     else {
-      alpha.r = sqrt(1-desc->forgetting_factor);
-      alpha.i = 0;
-      beta.r = sqrt(desc->forgetting_factor);
-      beta.i = 0;
+      alpha.x = sqrt(1-desc->forgetting_factor);
+      alpha.y = 0;
+      beta.x = sqrt(desc->forgetting_factor);
+      beta.y = 0;
       cblas_zscal(desc->nb_tx*desc->nb_rx, (void*) &alpha, (void*) acorr, 1);
       cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void*) &beta,  (void*) desc->a[i], 1, (void*) acorr, 1);
 
-      //  desc->a[i][aarx+(aatx*desc->nb_rx)].r = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].r) + sqrt(1-desc->forgetting_factor)*anew.r;
-      //  desc->a[i][aarx+(aatx*desc->nb_rx)].i = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].i) + sqrt(1-desc->forgetting_factor)*anew.i;
+      //  desc->a[i][aarx+(aatx*desc->nb_rx)].x = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].x) + sqrt(1-desc->forgetting_factor)*anew.x;
+      //  desc->a[i][aarx+(aatx*desc->nb_rx)].y = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].y) + sqrt(1-desc->forgetting_factor)*anew.y;
     }
 
     /*
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
- 	//desc->a[i][aarx+(aatx*desc->nb_rx)].r = acorr[aarx+(aatx*desc->nb_rx)].r;
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].i = acorr[aarx+(aatx*desc->nb_rx)].i;
-	printf("tap %d, a(%d,%d) = %f+1j*%f\n",i,aatx,aarx,desc->a[i][aarx+(aatx*desc->nb_rx)].r, desc->a[i][aarx+(aatx*desc->nb_rx)].i);
+ 	//desc->a[i][aarx+(aatx*desc->nb_rx)].x = acorr[aarx+(aatx*desc->nb_rx)].x;
+	//desc->a[i][aarx+(aatx*desc->nb_rx)].y = acorr[aarx+(aatx*desc->nb_rx)].y;
+	printf("tap %d, a(%d,%d) = %f+1j*%f\n",i,aatx,aarx,desc->a[i][aarx+(aatx*desc->nb_rx)].x, desc->a[i][aarx+(aatx*desc->nb_rx)].y);
       }
     }
     */
@@ -427,8 +427,8 @@ int random_channel(channel_desc_t *desc) {
   for (aarx=0;aarx<desc->nb_rx;aarx++) {
     for (aatx=0;aatx<desc->nb_tx;aatx++) {
       for (k=0;k<(int)desc->channel_length;k++) {
-	desc->ch[aarx+(aatx*desc->nb_rx)][k].r = 0.0;
-	desc->ch[aarx+(aatx*desc->nb_rx)][k].i = 0.0;
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].x = 0.0;
+	desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
 	
 	for (l=0;l<desc->nb_taps;l++) {
 	  if ((k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
@@ -436,13 +436,13 @@ int random_channel(channel_desc_t *desc) {
 	  else
 	    s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
 	      (M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].r += s*desc->a[l][aarx+(aatx*desc->nb_rx)].r;
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].i += s*desc->a[l][aarx+(aatx*desc->nb_rx)].i;
-	  //	  printf("l %d : desc->ch.r %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].r);
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
+	  desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
+	  //	  printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
 
 	} //nb_taps
 #ifdef DEBUG_CH
-	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
+	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
 #endif
       } //channel_length
     } //aatx
@@ -464,12 +464,12 @@ main(int argc,char **argv) {
   int i;
   
   randominit();
-  phase.r = 1.0;
-  phase.i = 0;
+  phase.x = 1.0;
+  phase.y = 0;
   random_channel(amps,Td, 8,BW,ch,(double)1.0,&phase);
   /*
   for (i=0;i<(11+2*BW*Td);i++){
-    printf("%f + sqrt(-1)*%f\n",ch[i].r,ch[i].i);
+    printf("%f + sqrt(-1)*%f\n",ch[i].x,ch[i].y);
   }
   */
 }

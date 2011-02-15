@@ -13,7 +13,7 @@
 #include "extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
-#define DEBUG_ULSCH_CODING 
+//#define DEBUG_ULSCH_CODING 
 //#define DEBUG_ULSCH_FREE 1
 
 /*
@@ -167,7 +167,7 @@ int ulsch_encoding(unsigned char *a,
 
 
 #ifdef DEBUG_ULSCH_CODING
-  printf("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
+  msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
 	 ulsch->harq_processes[harq_pid]->TBS,
 	 Q_m,
 	 ulsch->harq_processes[harq_pid]->mcs,
@@ -175,13 +175,13 @@ int ulsch_encoding(unsigned char *a,
 	 ulsch->harq_processes[harq_pid]->Ndi);
 
   for (i=0;i<ulsch->O_ACK;i++)
-    printf("ulsch_coding: O_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
+    msg("ulsch_coding: O_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
   for (i=0;i<ulsch->O_RI;i++)
-    printf("ulsch_coding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
-  printf("ulsch_coding: O=%d\n",ulsch->O);
+    msg("ulsch_coding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
+  msg("ulsch_coding: O=%d\n",ulsch->O);
   for (i=0;i<1+((ulsch->O)/8);i++) {
     ulsch->o[i] = i;
-    printf("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
+    msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
   }
 #endif
 
@@ -231,13 +231,13 @@ int ulsch_encoding(unsigned char *a,
     
   
 #ifdef DEBUG_ULSCH_CODING
-  printf("Generating Code Segment %d (%d bits)\n",r,Kr);
+  msg("Generating Code Segment %d (%d bits)\n",r,Kr);
   // generate codewords
   
-  printf("bits_per_codeword (Kr)= %d\n",Kr);
-  printf("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  printf("Ncp %d\n",frame_parms->Ncp);
-  printf("Qm %d\n",Q_m);
+  msg("bits_per_codeword (Kr)= %d\n",Kr);
+  msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  msg("Ncp %d\n",frame_parms->Ncp);
+  msg("Qm %d\n",Q_m);
 #endif
 
   offset=0;
@@ -247,7 +247,7 @@ int ulsch_encoding(unsigned char *a,
 
 
 #ifdef DEBUG_ULSCH_CODING    
-    printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+    msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
 
     threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
@@ -339,7 +339,7 @@ int ulsch_encoding(unsigned char *a,
 
   for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
 #ifdef DEBUG_ULSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+    msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
 	   G,
 	   Kr*3,

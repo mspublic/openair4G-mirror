@@ -35,7 +35,7 @@ int generate_pss(mod_sym_t **txdataF,
 		 unsigned short slot_offset) {
 
   unsigned int Nsymb;
-  unsigned short k,m;
+  unsigned short k,m,aa;
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT
   unsigned char *primary_sync_tab;
@@ -46,7 +46,7 @@ int generate_pss(mod_sym_t **txdataF,
   short *primary_sync;
 #endif
 
-  //msg("[PSS] Using sequence %d\n",eNb_id);
+  //debug_msg("[PSS] Using sequence %d\n",eNb_id);
 
 
   switch (eNb_id) {
@@ -93,6 +93,7 @@ int generate_pss(mod_sym_t **txdataF,
 
   Nsymb = (frame_parms->Ncp==0)?14:12;
 
+  for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
   // The PSS occupies the inner 6 RBs, which start at
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT
@@ -107,20 +108,20 @@ int generate_pss(mod_sym_t **txdataF,
   for (m=5;m<67;m++) {
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT
-    txdataF[0][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + symbol*frame_parms->N_RB_DL*12 + k] = primary_sync_tab[m];
+    txdataF[aa][slot_offset*Nsymb/2*frame_parms->N_RB_DL*12 + symbol*frame_parms->N_RB_DL*12 + k] = primary_sync_tab[m];
 #else
-    ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k)] = 
       (amp * primary_sync[2*m]) >> 15; 
-    ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k) + 1] = 
       (amp * primary_sync[2*m+1]) >> 15;
 #endif
 #else
-    ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k)] = 
       (amp * primary_sync[2*m]) >> 15; 
-    ((short*)txdataF[0])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k) + 1] = 
       (amp * primary_sync[2*m+1]) >> 15;
 #endif	
@@ -142,6 +143,7 @@ int generate_pss(mod_sym_t **txdataF,
     }
 #endif
   }
+  }
   return(0);
 }
 
@@ -149,4 +151,5 @@ int generate_pss_emul(PHY_VARS_eNB *phy_vars_eNb,u8 sect_id) {
   
   msg("[PHY] EMUL eNB generate_pss_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
   eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pss=sect_id;
+  return(0);
 }

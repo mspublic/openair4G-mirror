@@ -76,6 +76,7 @@ void phy_cleanup(void);
 
 #ifdef OPENAIR_LTE
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
+void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 #endif
 
 /** @} */

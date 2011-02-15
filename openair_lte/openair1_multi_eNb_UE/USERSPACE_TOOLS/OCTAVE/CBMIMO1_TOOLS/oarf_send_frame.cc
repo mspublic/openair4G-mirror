@@ -15,22 +15,18 @@
 extern "C" {
 #include "PHY/types.h"
 #include "PHY/defs.h"
-#include "PHY/TOOLS/defs.h"
-#include "PHY/extern.h"
+#include "PHY/impl_defs_lte.h"
+  //#include "PHY/TOOLS/defs.h"
+  //#include "PHY/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
 }
-
-/*#include "openair_device_proto.h"*/
-//#include "config_extern.h"
-/*#include "config_proto.h"*/
-
-/* #include "oarf_common.c" */
+#include "PHY/vars.h"
 
 #define FCNNAME "oarf_send_frame"
 
 #define TRACE 1
 
-extern PHY_CONFIG *PHY_config;
+//extern PHY_CONFIG *PHY_config;
 
 static bool any_bad_argument(const octave_value_list &args)
 {
@@ -65,8 +61,6 @@ static bool any_bad_argument(const octave_value_list &args)
 DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
 {
 
-
-
   if (any_bad_argument(args))
        return octave_value_list();
        
@@ -75,20 +69,14 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
   
   octave_value returnvalue;
   int openair_fd,i;
-
   unsigned int length,aa;//mem_base;
-
   int dummy=0;
-  short txsig[NB_ANTENNAS_TX][FRAME_LENGTH_SAMPLES];
 
- TX_VARS *TX_vars;
- TX_vars = (TX_VARS*)malloc(sizeof(TX_VARS));
+  LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
 
-  printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
-  printf("FRAME_LENGTH_SAMPLES = %d\n",FRAME_LENGTH_SAMPLES);
+  TX_VARS *TX_vars = (TX_VARS*) malloc(sizeof(TX_VARS));
 
-
-  PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
+  //PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
   {
     error(FCNNAME);
@@ -96,15 +84,28 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
     return octave_value_list();
   }
 
+  printf("Getting PHY_config ...\n");
+
+  ioctl(openair_fd,openair_GET_CONFIG,frame_parms);
+
+  dump_frame_parms(frame_parms);
+
+  if ((args(1).columns()!=NB_ANTENNAS_TX) || (args(1).rows()!=FRAME_LENGTH_COMPLEX_SAMPLES))
+  {
+    error(FCNNAME);
+    error("input array must be of size (%d,%d)",FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_TX);
+    return octave_value_list();
+  }
+
+
   ioctl(openair_fd,openair_STOP,(void*)&dummy);
 
-  for (aa=0;aa<NB_ANTENNAS_TX;aa++) 
-    TX_vars->TX_DMA_BUFFER[aa] = (mod_sym_t *)&txsig[aa][0];
+  for (aa=0;aa<NB_ANTENNAS_TX;aa++) {
+    TX_vars->TX_DMA_BUFFER[aa] = (int*) malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 
-  for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
-    for (aa=0;aa<NB_ANTENNAS_TX;aa++) {
-      TX_vars->TX_DMA_BUFFER[aa][2*i]     = (mod_sym_t)short(real(dx(i,aa))); 
-      TX_vars->TX_DMA_BUFFER[aa][1+(2*i)] = (mod_sym_t)short(imag(dx(i,aa))); 
+    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES;i++) {
+      ((short*) TX_vars->TX_DMA_BUFFER[aa])[2*i]     = short(real(dx(i,aa))); 
+      ((short*) TX_vars->TX_DMA_BUFFER[aa])[1+(2*i)] = short(imag(dx(i,aa))); 
 
     }
   }
@@ -112,12 +113,12 @@ DEFUN_DLD (oarf_send_frame, args, nargout,"Send frame")
   ioctl(openair_fd,openair_START_TX_SIG,(void *)TX_vars);
 
 
-
-
-
   close(openair_fd);
 
-  free(PHY_vars);
+  for (aa=0;aa<NB_ANTENNAS_TX;aa++)
+    free(TX_vars->TX_DMA_BUFFER[aa]);
+
+  free(frame_parms);
 
   return octave_value (dx);
 }

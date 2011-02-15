@@ -22,18 +22,32 @@ int lte_dl_cell_spec(mod_sym_t *output,
   mod_sym_t qpsk[4];
 
 #ifdef IFFT_FPGA
+  // new mod table
   qpsk[0] = 1;
   qpsk[1] = 3;
   qpsk[2] = 2;
   qpsk[3] = 4;
+  /* old mod table
+  qpsk[0] = 4;
+  qpsk[1] = 2;
+  qpsk[2] = 3;
+  qpsk[3] = 1;
+  */
 #else
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
   ((short *)&qpsk[0])[1] = a;
+  // new mod table
   ((short *)&qpsk[1])[0] = -a;
   ((short *)&qpsk[1])[1] = a;
   ((short *)&qpsk[2])[0] = a;
   ((short *)&qpsk[2])[1] = -a;
+  /* old mod table
+  ((short *)&qpsk[1])[0] = a;
+  ((short *)&qpsk[1])[1] = -a;
+  ((short *)&qpsk[2])[0] = -a;
+  ((short *)&qpsk[2])[1] = a;
+  */
   ((short *)&qpsk[3])[0] = -a;
   ((short *)&qpsk[3])[1] = -a;
 #endif
@@ -71,9 +85,9 @@ int lte_dl_cell_spec(mod_sym_t *output,
     output[k] = qpsk[(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
-    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+    debug_msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    debug_msg("index = %d (k %d)\n",(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;

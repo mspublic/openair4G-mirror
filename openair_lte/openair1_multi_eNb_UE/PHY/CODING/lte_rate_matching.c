@@ -9,7 +9,7 @@
 #endif
 #include "PHY/defs.h" 
 
-//#define min(a,b) ((a)<(b) ? (a) : (b))
+//#define cmin(a,b) ((a)<(b) ? (a) : (b))
 
 static unsigned int bitrev[32] = {0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30,1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31};
 static unsigned int bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
@@ -376,12 +376,12 @@ unsigned int lte_rate_matching_turbo(unsigned int RTC,
   unsigned int nulled=0;
 #endif
 
-  Nir = Nsoft/Kmimo/min(8,Mdlharq);
-  Ncb = min(Nir/C,3*(RTC<<5));
+  Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
+  Ncb = cmin(Nir/C,3*(RTC<<5));
 
   if (Ncb<(3*(RTC<<5))) {
     msg("Exiting, RM condition (Nir %d, Nsoft %d, Kw %d\n",Nir,Nsoft,3*(RTC<<5));
-    exit(-1);
+    return(0);
   }
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
@@ -507,8 +507,8 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
     return(-1);
   }
 
-  Nir = Nsoft/Kmimo/min(8,Mdlharq);
-  Ncb = min(Nir/C,3*(RTC<<5));
+  Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
+  Ncb = cmin(Nir/C,3*(RTC<<5));
   
 
   Gp = G/Nl/Qm;

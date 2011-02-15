@@ -19,4 +19,4 @@ extern unsigned char ue_power_offsets[25];
 
 extern unsigned short scfdma_amps[26];
 
-extern char dci_format_strings[15][12];
+extern char dci_format_strings[15][13];

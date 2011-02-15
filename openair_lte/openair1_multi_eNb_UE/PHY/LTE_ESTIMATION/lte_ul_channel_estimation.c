@@ -9,6 +9,11 @@ static short temp_out_ifft[2048*4] __attribute__((aligned(16)));
 static short temp_out_fft_0[2048*4] __attribute__((aligned(16)));
 static short temp_out_fft_1[2048*4] __attribute__((aligned(16)));
 
+static int temp_in_ifft[2048*2] __attribute__((aligned(16)));
+static int temp_in_fft_0[2048*2] __attribute__((aligned(16)));
+static int temp_in_fft_1[2048*2] __attribute__((aligned(16)));
+
+
 int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      int **ul_ch_estimates_0,
 			      int **ul_ch_estimates_1,
@@ -25,14 +30,14 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   unsigned short pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
   short alpha, beta;
   int *ul_ch1, *ul_ch2;
-
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
-  int *temp_in_ifft,*temp_in_fft_0,*temp_in_fft_1;
+
+  int *temp_out_ifft_ptr = (int*)0,*in_fft_ptr_0 = (int*)0,*in_fft_ptr_1 = (int*)0,
+    *temp_out_fft_0_ptr = (int*)0,*out_fft_ptr_0 = (int*)0,*temp_out_fft_1_ptr = (int*)0,
+    *out_fft_ptr_1 = (int*)0,*in_ifft_ptr = (int*)0,*temp_in_ifft_ptr = (int*)0;
+  
   Msc_RS = N_rb_alloc*12;
 
-
-  int *temp_out_ifft_ptr = (int*)0,*in_fft_ptr_0 = (int*)0,*in_fft_ptr_1 = (int*)0,*temp_out_fft_0_ptr = (int*)0,*out_fft_ptr_0 = (int*)0,*temp_out_fft_1_ptr = (int*)0,*out_fft_ptr_1 = (int*)0,*in_ifft_ptr = (int*)0,*temp_in_ifft_ptr = (int*)0;
-  
 #ifdef USER_MODE
   Msc_idx_ptr = (unsigned short*) bsearch(&Msc_RS, dftsizes, 33, sizeof(unsigned short), compareints);
   if (Msc_idx_ptr)
@@ -75,13 +80,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
       if((relay_flag == 2) && (diversity_scheme == 2))// Memory Allocation for temporary pointers to Channel Estimates
 	{
-	  temp_in_ifft = (int*)malloc16(frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
-      
-	  temp_in_fft_0 = (int*)malloc16(frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_fft_0,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
-      
-	  temp_in_fft_1 = (int*)malloc16(frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_fft_1,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	}
   
@@ -172,7 +172,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  i=0;
 	  
 	  for(j=0;j<frame_parms->N_RB_UL*12;j++){
-	    out_fft_ptr_1[i] = pow(-1,j+1)*temp_out_fft_1_ptr[2*j];
+	    out_fft_ptr_1[i] = (j%2==0?-1:1)*temp_out_fft_1_ptr[2*j];
 	    i++;
 	  }
 
@@ -259,14 +259,6 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 
       } //if (Ns&1)
-
-      // Freeing temporary pointers to Channel Estimates
-      if((relay_flag == 2) && (diversity_scheme == 2))// For Distributed Alamouti
-	{
-	  free(temp_in_ifft);
-	  free(temp_in_fft_0);
-	  free(temp_in_fft_1);
-	}
 
     } //for(aa=...
     

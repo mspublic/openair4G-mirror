@@ -227,6 +227,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	result = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
+	((short*)sync_corr_ue)[2*n] += ((short*) &result)[0];
+	((short*)sync_corr_ue)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_out)[0] += ((short*) &result)[0];
 	((short*)sync_out)[1] += ((short*) &result)[1];
       }
@@ -239,8 +241,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++) {
 	result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
-	((short*)sync_corr_ue)[2*n] += ((short*) &result)[0];
-	((short*)sync_corr_ue)[2*n+1] += ((short*) &result)[1];
 	((short*)sync_out)[4] += ((short*) &result)[0];
 	((short*)sync_out)[5] += ((short*) &result)[1];
       }
@@ -382,7 +382,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
 }
 
-#ifdef PHY_ABSTRACTION
+//#ifdef PHY_ABSTRACTION
 int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
 			   u8 sect_id,
 			   s32 *sync_val) {
@@ -392,7 +392,7 @@ int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
   msg("[PHY] EMUL lte_sync_time_eNb_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
   *sync_val = 0;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    printf("checking UE %d (PRACH %d)\n",UE_id,PHY_vars_UE_g[UE_id]->generate_prach);
+    msg("checking UE %d (PRACH %d)\n",UE_id,PHY_vars_UE_g[UE_id]->generate_prach);
     if (PHY_vars_UE_g[UE_id]->generate_prach == 1) {
       *sync_val = 1;
       return(0);
@@ -400,4 +400,4 @@ int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
   }
   return(-1);
 }
-#endif
+//#endif

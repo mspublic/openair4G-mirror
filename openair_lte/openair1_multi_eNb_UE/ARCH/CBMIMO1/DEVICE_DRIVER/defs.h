@@ -37,15 +37,16 @@
 #ifdef RTAI_ENABLED
 #include <asm/rtai.h>
 #include <rtai.h>
-//#include <rtai_posix.h>
+#include <rtai_posix.h>
 #include <rtai_fifos.h>
+#include <rtai_math.h>
 #endif //RTAI_ENABLED
 
 #ifdef BIGPHYSAREA
 #include <linux/bigphysarea.h>
 #endif 
 
-#include "PHY/defs.h"
+#include "PHY/impl_defs_lte.h"
 #include "cbmimo1_device.h"
 
 #include "from_grlib_softconfig.h"
@@ -82,8 +83,6 @@ int openair_dma(unsigned char card_id, unsigned int cmd);
 int setup_regs(unsigned char card_id, LTE_DL_FRAME_PARMS *frame_parms);
 
 void dump_config(void);
-
-void l2_init(void);
 
 int add_chbch_stats(void);
 void remove_chbch_stats(void);

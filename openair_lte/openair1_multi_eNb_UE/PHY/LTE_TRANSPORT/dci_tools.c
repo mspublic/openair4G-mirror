@@ -152,9 +152,9 @@ int generate_eNb_dlsch_params_from_dci(unsigned char subframe,
       // see 36-212 V8.6.0 p. 45
       NPRB      = (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC&1) + 2;
 
-            printf("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC);
-            printf("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv);
-            printf("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi);
+      //printf("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC);
+      //printf("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv);
+      //printf("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi);
     }
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
@@ -523,7 +523,7 @@ int generate_ue_dlsch_params_from_dci(unsigned char subframe,
       dlsch[0]->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
 
     dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
-    printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
+    //printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
     if (dlsch[0]->nb_rb > 3) {
       msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
       return(-1);       
@@ -1066,7 +1066,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
   if (dci_format == format0) {
 
-    printf("RIV %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
+    //printf("RIV %d\n",((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
 
     if (rnti == ra_rnti)
       harq_pid = 0;

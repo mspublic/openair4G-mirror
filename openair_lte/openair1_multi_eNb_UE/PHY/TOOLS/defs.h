@@ -20,8 +20,8 @@
 #ifndef _RTAI_MATH_H
 struct complex
 {
-  double r;
-  double i;
+  double x;
+  double y;
 };
 #endif
 
@@ -405,7 +405,7 @@ void bit8_txmux(int length,int offset);
 
 void bit8_rxdemux(int length,int offset);
 
-
+#ifdef USER_MODE
 /*!\fn int write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
 \brief Write output file from signal data
 @param fname output file name
@@ -416,6 +416,7 @@ void bit8_rxdemux(int length,int offset);
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 */
 int write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
+#endif
 
 void Zero_Buffer(void *,unsigned int);
 void Zero_Buffer_nommx(void *buf,unsigned int length);

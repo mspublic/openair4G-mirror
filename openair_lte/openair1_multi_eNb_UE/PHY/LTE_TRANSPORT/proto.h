@@ -839,13 +839,17 @@ s32 generate_eNb_ulsch_params_from_dci(void *dci_pdu,
 				       u16 ra_rnti,
 				       u16 p_rnti);
 
+#ifdef USER_MODE
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
+
+void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb);
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
 void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword);
+#endif
 
 void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
 

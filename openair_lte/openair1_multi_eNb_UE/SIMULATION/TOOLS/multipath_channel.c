@@ -151,34 +151,34 @@ void multipath_channel(channel_desc_t *desc,
 
 #ifdef DEBUG_CH
   for (l = 0;l<(int)desc->channel_length;l++) {
-    printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].r,desc->ch[0][l].i);
+    printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].x,desc->ch[0][l].y);
   }
   printf("\n");
 #endif
 
   for (i=dd;i<((int)length+dd);i++) {
     for (ii=0;ii<desc->nb_rx;ii++) {
-      rx_tmp.r = 0;
-      rx_tmp.i = 0;
+      rx_tmp.x = 0;
+      rx_tmp.y = 0;
       for (j=0;j<desc->nb_tx;j++) {
 	for (l = 0;l<(int)desc->channel_length;l++) {
 	  if ((i>=0) && (i-l)>=0) {
-	    tx.r = tx_sig_re[j][i-l];
-	    tx.i = tx_sig_im[j][i-l];
+	    tx.x = tx_sig_re[j][i-l];
+	    tx.y = tx_sig_im[j][i-l];
 	  }
 	  else {
-	    tx.r =0;
-	    tx.i =0;
+	    tx.x =0;
+	    tx.y =0;
 	  }
-	  rx_tmp.r += (tx.r * desc->ch[ii+(j*desc->nb_rx)][l].r) - (tx.i * desc->ch[ii+(j*desc->nb_rx)][l].i);
-	  rx_tmp.i += (tx.i * desc->ch[ii+(j*desc->nb_rx)][l].r) + (tx.r * desc->ch[ii+(j*desc->nb_rx)][l].i);
+	  rx_tmp.x += (tx.x * desc->ch[ii+(j*desc->nb_rx)][l].x) - (tx.y * desc->ch[ii+(j*desc->nb_rx)][l].y);
+	  rx_tmp.y += (tx.y * desc->ch[ii+(j*desc->nb_rx)][l].x) + (tx.x * desc->ch[ii+(j*desc->nb_rx)][l].y);
 	} //l
       }  // j
-      rx_sig_re[ii][i-dd] = rx_tmp.r*path_loss;
-      rx_sig_im[ii][i-dd] = rx_tmp.i*path_loss;
+      rx_sig_re[ii][i-dd] = rx_tmp.x*path_loss;
+      rx_sig_im[ii][i-dd] = rx_tmp.y*path_loss;
       /*
       if ((ii==0)&&((i%32)==0)) {
-	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.r,rx_tmp.i,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
+	printf("%p %p %f,%f => %e,%e\n",rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
       }
       */
       //rx_sig_re[ii][i] = sqrt(.5)*(tx_sig_re[0][i] + tx_sig_re[1][i]);

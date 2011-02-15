@@ -8,7 +8,11 @@ ________________________________________________________________*/
 #ifndef __BYPASS_SESSION_LAYER_EXTERN_H__
 #    define __BYPASS_SESSION_LAYER_EXTERN_H__
 
+#ifdef RTAI_ENABLED
+#include <rtai_posix.h>
+#else
 #include <pthread.h>
+#endif //RTAI_ENABLED
 
 extern unsigned char Emulation_status;
 extern unsigned int Master_list;

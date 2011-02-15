@@ -10,6 +10,7 @@ freqband=0;            % frequency band used by the openair card (depricated)
 
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
 dual_tx = 0;
+tdd = 1;
 
 fc = 1902600e3+freqband*5e6;   % this has to be the same as in the config file
 fs = 7680e3;
@@ -26,7 +27,7 @@ power_dBm=-70;
 
 %keyboard;
 
-oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
+oarf_config(freqband,tdd,dual_tx)
 
 oarf_set_rx_rfmode(0);
     

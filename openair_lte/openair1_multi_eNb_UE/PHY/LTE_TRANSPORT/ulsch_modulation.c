@@ -4,9 +4,8 @@
 #include "PHY/CODING/extern.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "defs.h"
-#include <math.h>
-//#define OFDMA_ULSCH
 
+//#define OFDMA_ULSCH
 
 //#define DEBUG_ULSCH_MODULATION
 

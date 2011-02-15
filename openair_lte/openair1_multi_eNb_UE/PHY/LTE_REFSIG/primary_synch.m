@@ -52,3 +52,25 @@ fprintf(fd,"unsigned char primary_synch2_tab[72] = {");
 fprintf(fd,"%d,",primary_synch2_tab(1:end-1));
 fprintf(fd,"%d};\n",primary_synch2_tab(end));
 fclose(fd);
+
+% for LEON we need to invert the endianess
+fd = fopen("primary_synch_leon.h","w");
+primary_synch0_tab = reshape(primary_synch0_tab,4,[]);
+primary_synch0_tab = primary_synch0_tab([4 3 2 1],:);
+primary_synch0_tab = primary_synch0_tab(:);
+primary_synch1_tab = reshape(primary_synch0_tab,4,[]);
+primary_synch1_tab = primary_synch1_tab([4 3 2 1],:);
+primary_synch1_tab = primary_synch1_tab(:);
+primary_synch2_tab = reshape(primary_synch0_tab,4,[]);
+primary_synch2_tab = primary_synch2_tab([4 3 2 1],:);
+primary_synch2_tab = primary_synch2_tab(:);
+fprintf(fd,"unsigned char primary_synch0_tab[72] = {");
+fprintf(fd,"%d,",primary_synch0_tab(1:end-1));
+fprintf(fd,"%d};\n",primary_synch0_tab(end));
+fprintf(fd,"unsigned char primary_synch1_tab[72] = {");
+fprintf(fd,"%d,",primary_synch1_tab(1:end-1));
+fprintf(fd,"%d};\n",primary_synch1_tab(end));
+fprintf(fd,"unsigned char primary_synch2_tab[72] = {");
+fprintf(fd,"%d,",primary_synch2_tab(1:end-1));
+fprintf(fd,"%d};\n",primary_synch2_tab(end));
+fclose(fd);

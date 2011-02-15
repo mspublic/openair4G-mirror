@@ -721,8 +721,8 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
-  u8 nb_ue_local=0,nb_ue_remote=0;
-  u8 nb_eNB_local=0,nb_eNB_remote=0;
+  u8 nb_ue_local=1,nb_ue_remote=0;
+  u8 nb_eNB_local=1,nb_eNB_remote=0;
   u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
 
   u8 NB_MACHINE;
@@ -736,11 +736,6 @@ int main(int argc, char **argv) {
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
   
-  
-  NB_CH_INST=1;
-  //    NODE_ID[0]=0;
-  NB_UE_INST=1; // navid 
-
   
   //default parameters
   transmission_mode = 1;

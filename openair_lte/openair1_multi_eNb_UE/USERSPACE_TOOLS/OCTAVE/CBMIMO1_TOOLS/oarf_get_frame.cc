@@ -12,20 +12,19 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+extern "C" {
 #include "PHY/types.h"
 #include "PHY/defs.h"
+#include "PHY/impl_defs_lte.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-/*#include "openair_device_proto.h"*/
-//#include "config_extern.h"
-/*#include "config_proto.h"*/
-
-/* #include "oarf_common.c" */
+}
+#include "PHY/vars.h"
 
 #define FCNNAME "oarf_get_frame"
 
 #define TRACE 1
 
-extern PHY_CONFIG *PHY_config;
+//extern PHY_CONFIG *PHY_config;
 
 static bool any_bad_argument(const octave_value_list &args)
 {
@@ -58,8 +57,6 @@ static bool any_bad_argument(const octave_value_list &args)
 DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 {
 
-
-
   if (any_bad_argument(args))
        return octave_value_list();
        
@@ -67,18 +64,17 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
 
   octave_value returnvalue;
   int openair_fd,i,rx_sig_fifo_fd,rf_cntl_fifo_fd;
-
   unsigned int length;//mem_base;
-
-  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_RX);
-  short dma_buffer_local[2*NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES];
-  PHY_VARS *PHY_vars;
-  PHY_CONFIG *PHY_config;
-
   short *rx_sig[4];
-  PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
 
-  PHY_config = (PHY_CONFIG *)malloc(sizeof(PHY_CONFIG));
+  //PHY_VARS *PHY_vars;
+  //PHY_CONFIG *PHY_config;
+
+  //PHY_vars = (PHY_VARS *)malloc(sizeof(PHY_VARS));
+  //PHY_config = (PHY_CONFIG *)malloc(sizeof(PHY_CONFIG));
+
+
+  LTE_DL_FRAME_PARMS *frame_parms = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
 
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
   {
@@ -101,30 +97,31 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
     return octave_value_list();
   }
 
-
+  /*
   printf("Getting PHY_vars ...\n");
 
   ioctl(openair_fd,openair_GET_VARS,PHY_vars);
 
   //printf("Getting PHY_vars->tx_vars[0].TX_DMA_BUFFER=%p\n",PHY_vars->tx_vars[0].TX_DMA_BUFFER);
   //printf("Getting PHY_vars->rx_vars[0].RX_DMA_BUFFER = %p\n",PHY_vars->rx_vars[0].RX_DMA_BUFFER);
+  */
 
   printf("Getting PHY_config ...\n");
 
-  ioctl(openair_fd,openair_GET_CONFIG,PHY_config);
+  ioctl(openair_fd,openair_GET_CONFIG,frame_parms);
 
-  printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
-  
+  dump_frame_parms(frame_parms);
+
+  ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES,NB_ANTENNAS_RX);
+  short dma_buffer_local[2*NB_ANTENNAS_RX*FRAME_LENGTH_COMPLEX_SAMPLES];
+
   // Flush RX sig fifo
-
   ((unsigned int *)&dma_buffer_local[0])[0] = 1 | ((freq&7)<<1) | ((freq&7)<<4);
   ioctl(openair_fd,openair_GET_BUFFER,(void *)dma_buffer_local);
 
 
-
   // wait for indication from RT process that a new frame is ready
   read(rf_cntl_fifo_fd,(void *)dma_buffer_local,4);
-
   printf("Sched count %d\n",((int *)dma_buffer_local)[0]);
 
   length = read(rx_sig_fifo_fd,(void *)dma_buffer_local,NB_ANTENNAS_RX*FRAME_LENGTH_BYTES);
@@ -166,8 +163,9 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame (Action 5)")
   close(rx_sig_fifo_fd);
   close(rf_cntl_fifo_fd);
 
-  free(PHY_vars);
-  free(PHY_config);
+  //free(PHY_vars);
+  //free(PHY_config);
+  free(frame_parms);
   return octave_value (dx);
 }
 

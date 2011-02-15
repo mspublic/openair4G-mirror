@@ -235,29 +235,28 @@ unsigned char SE2I_TBS(float SE,
 		       unsigned char symbPerRB) {
   unsigned char I_TBS= -1;
   int throughPutGoal = 0;
+  short diffOld = abs(TBStable[0][N_PRB-1] - throughPutGoal);
+  short diffNew = diffOld;
+  int i = 0;
   throughPutGoal = (int)(((SE*1024)*N_PRB*symbPerRB*12)/1024);
 #ifdef OUTPUT_DEBUG
   printf("Throughput goal = %d, from SE = %f\n",throughPutGoal,SE);
 #endif
-    I_TBS = 0;
-    short diffOld = abs(TBStable[0][N_PRB-1] - throughPutGoal);
-    short diffNew = diffOld;
-    I_TBS = 0;
-    int i = 0;
-    for (i = 0; i<TBStable_rowCnt; i++) {
-      diffNew = abs(TBStable[i][N_PRB-1] - throughPutGoal);
-      if (diffNew <= diffOld) {
-	diffOld = diffNew;
-	I_TBS = i;
-      } else {
+  I_TBS = 0;
+  for (i = 0; i<TBStable_rowCnt; i++) {
+    diffNew = abs(TBStable[i][N_PRB-1] - throughPutGoal);
+    if (diffNew <= diffOld) {
+      diffOld = diffNew;
+      I_TBS = i;
+    } else {
 #ifdef OUTPUT_DEBUG
-	printf("diff neglected: %d\n",diffNew);
+      printf("diff neglected: %d\n",diffNew);
 #endif
-	break; // no need to continue, strictly increasing function...
-      }
-#ifdef OUTPUT_DEBUG
-      printf("abs(%d - %d) = %d, --> I_TBS = %d\n",TBStable[i][N_PRB-1],throughPutGoal,diffNew,I_TBS);
-#endif
+      break; // no need to continue, strictly increasing function...
     }
+#ifdef OUTPUT_DEBUG
+    printf("abs(%d - %d) = %d, --> I_TBS = %d\n",TBStable[i][N_PRB-1],throughPutGoal,diffNew,I_TBS);
+#endif
+  }
   return I_TBS;
 }

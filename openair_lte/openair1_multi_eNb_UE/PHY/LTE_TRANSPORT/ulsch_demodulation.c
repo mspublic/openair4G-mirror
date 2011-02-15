@@ -394,7 +394,7 @@ void ulsch_extract_rbs_single(int **rxdataF,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
     
-    nb_rb1 = min(max((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),(int)0),(int)(2*nb_rb));    // 2 times no. RBs before the DC
+    nb_rb1 = cmin(cmax((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),(int)0),(int)(2*nb_rb));    // 2 times no. RBs before the DC
     nb_rb2 = 2*nb_rb - nb_rb1;                                   // 2 times no. RBs after the DC
 #ifdef DEBUG_ULSCH
     msg("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
@@ -1153,7 +1153,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
       avgs_0 = 0;
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	avgs_0 = max(avgs_0,avgU_0[(aarx<<1)]);
+	avgs_0 = cmax(avgs_0,avgU_0[(aarx<<1)]);
   
       log2_maxh_0 = 4+(log2_approx(avgs_0)/2);
 #ifdef DEBUG_ULSCH
@@ -1170,7 +1170,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
       avgs_1 = 0;
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	avgs_1 = max(avgs_1,avgU_1[(aarx<<1)]);
+	avgs_1 = cmax(avgs_1,avgU_1[(aarx<<1)]);
   
       log2_maxh_1 = 4+(log2_approx(avgs_1)/2);
 #ifdef DEBUG_ULSCH
@@ -1189,7 +1189,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 
       avgs = 0;
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-	avgs = max(avgs,avgU[(aarx<<1)]);
+	avgs = cmax(avgs,avgU[(aarx<<1)]);
   
       log2_maxh = 2+(log2_approx(avgs)/2);
 #ifdef DEBUG_ULSCH
@@ -1315,14 +1315,11 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 #ifdef DEBUG_ULSCH
       msg("ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
 #endif //DEBUG_ULSCH
-      return(-1);
       break;
     }
   }
-  if((relay_flag ==2) && (diversity_scheme == 2))
-    return(0);
-  else
-    return(&ulsch_power[0]);
+
+  return(&ulsch_power[0]);
 }
 
 int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNb,
@@ -1334,3 +1331,27 @@ int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNb,
   ulsch_power[1] = 45;
   return(&ulsch_power[0]);
 }
+
+#ifdef USER_MODE
+void dump_ulsch(PHY_VARS_eNB *PHY_vars_eNb) {
+
+  unsigned int nsymb = (PHY_vars_eNb->lte_frame_parms.Ncp == 0) ? 14 : 12;
+
+  write_output("rxsigF0.m","rxsF0", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
+    write_output("rxsigF1.m","rxsF1", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*nsymb*2,2,1);
+  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
+  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
+    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0][0],300*nsymb*2,2,1);
+  write_output("srs_est0.m","srsest0",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
+  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
+    write_output("srs_est1.m","srsest1",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
+  write_output("drs_est0.m","drsest0",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*nsymb,1,1);
+  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
+    write_output("drs_est1.m","drsest1",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*nsymb,1,1);
+  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*nsymb,1,1);
+  write_output("ulsch_rxF_llr.m","ulsch_llr",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->llr,PHY_vars_eNb->ulsch_eNb[0]->harq_processes[0]->nb_rb*12*2*9,1,0);	
+  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&PHY_vars_eNb->lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*nsymb,1,1);	  
+	  
+}
+#endif

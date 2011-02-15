@@ -55,37 +55,11 @@ CHBCH_RX_t rx_mode = ML;
 unsigned short rev[1024],rev_times4[4096],rev_half[512];
 
 #ifdef OPENAIR_LTE
-
-/********NOTE************/
-/*All these variables are now contained in either PHY_VARS_UE or PHY_VARS_eNB*/
-/*
-LTE_UE_COMMON *lte_ue_common_vars;
-LTE_UE_DLSCH **lte_ue_dlsch_vars, **lte_ue_dlsch_vars_cntl,**lte_ue_dlsch_vars_ra,**lte_ue_dlsch_vars_1A;
-LTE_UE_PDCCH **lte_ue_pdcch_vars;
-LTE_UE_PBCH **lte_ue_pbch_vars;
-LTE_eNB_COMMON *lte_eNB_common_vars;
-LTE_eNB_ULSCH **lte_eNB_ulsch_vars;
-LTE_eNb_DLSCH_t **dlsch_eNb;
-LTE_eNb_DLSCH_t *dlsch_eNb_cntl;
-LTE_UE_DLSCH_t **dlsch_ue;
-LTE_eNb_DLSCH_t **dlsch_eNb,*dlsch_eNb_1A,*dlsch_eNb_cntl,*dlsch_eNb_ra;
-LTE_UE_DLSCH_t **dlsch_ue,*dlsch_ue_cntl,*dlsch_ue_ra,*dlsch_ue_1A;
-LTE_eNb_ULSCH_t **ulsch_eNb;
-LTE_UE_ULSCH_t **ulsch_ue;
-
-LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_eNB_MAX];
-*/
-
-//UE_MODE_t UE_mode;
-
-int **txdataF_rep_tmp;
+//int **txdataF_rep_tmp;
 
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
-
-
  
 #include "PHY/LTE_TRANSPORT/vars.h"
-
 #endif
 
 #include "PHY/CODING/scrambler.h"
@@ -93,5 +67,11 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 #ifdef USER_MODE
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 #endif
+
+#ifndef OPENAIR2
+unsigned char NB_CH_INST=1;
+unsigned char NB_UE_INST=1;
+#endif
+
 
 #endif /*__PHY_VARS_H__ */

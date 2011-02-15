@@ -458,7 +458,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
   memset((void *)&dummy_w_cc[0],0,3*(ulsch->Or1+8+32));
 
   O_RCC = generate_dummy_w_cc(ulsch->Or1+8,
-			      &dummy_w_cc[0]);
+			      (char*) &dummy_w_cc[0]);
   
 
 
@@ -521,9 +521,9 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
 #endif
     
-    memset(dummy_w[r],0,3*(6144+64)*sizeof(short));
+    memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       dummy_w[r],
+							       (char*)&dummy_w[r][0],
 							       (r==0) ? ulsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_ULSCH_DECODING    
@@ -538,7 +538,7 @@ unsigned int  ulsch_decoding(short *ulsch_llr,
     if (lte_rate_matching_turbo_rx(ulsch->harq_processes[harq_pid]->RTC[r],
 				   G,
 				   ulsch->harq_processes[harq_pid]->w[r],
-				   dummy_w[r],
+				   (unsigned char*) &dummy_w[r][0],
 				   ulsch->e,
 				   ulsch->harq_processes[harq_pid]->C,
 				   NSOFT,

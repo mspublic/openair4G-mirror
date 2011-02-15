@@ -63,6 +63,7 @@ This section deals with real-time process scheduling for PHY and synchronization
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "defs.h"
 #include "extern.h"
 
 #ifdef CBMIMO1
@@ -230,17 +231,26 @@ static void * openair_thread(void *param) {
 
     // msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
 
-    //if (mac_xface->frame % 100 == 0)
-    msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
-
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
 
+#ifdef DEBUG_PHY
+      if (mac_xface->frame % 100 == 0) {
+	msg("[SCHED][OPENAIR_THREAD] frame = %d, slot_count %d, last %d, next %d\n", mac_xface->frame, openair_daq_vars.slot_count, last_slot, next_slot);
+      }
+#endif
+
       //      mac_xface->macphy_scheduler(last_slot); 
 
-      /*
 #ifdef OPENAIR_LTE
-      phy_procedures_lte(last_slot,next_slot);
+      if (mac_xface->is_cluster_head) {
+	if (PHY_vars_eNb_g && PHY_vars_eNb_g[0])
+	  phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[0],0);
+      }
+      else {
+	if (PHY_vars_UE_g && PHY_vars_UE_g[0])
+	  phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[0],0,0);
+      }
 #else
 #ifdef EMOS
       phy_procedures_emos(last_slot);
@@ -248,7 +258,7 @@ static void * openair_thread(void *param) {
       phy_procedures(last_slot);
 #endif
 #endif 
-      */
+
 
       if (last_slot==SLOTS_PER_FRAME-2)
       	mac_xface->frame++;
@@ -342,13 +352,14 @@ void openair_sync(void) {
   int status;
   int length;
   int ret;
-  static unsigned char clear = 1;
+  static unsigned char clear=1, clear2=1;
   int Nsymb, sync_pos, sync_pos_slot;
   int Ns;
   int l;
   int rx_power;
   unsigned int adac_cnt;
   int pbch_decoded = 0;
+  int frame_mod4,pbch_tx_ant;
 
   RTIME time;
 
@@ -414,36 +425,35 @@ void openair_sync(void) {
 
 #endif
 
-    /*
-    if (openair_daq_vars.node_configured&2) { // the node has been cofigured as a UE
+    if (openair_daq_vars.node_configured == 3) { // the node has been cofigured as a UE
 
       msg("[openair][SCHED][SYNCH] starting sync\n");
 
       // Do initial timing acquisition
-      sync_pos = lte_sync_time(lte_ue_common_vars->rxdata, 
-			       lte_frame_parms, 
-			       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*lte_frame_parms->samples_per_tti,
-			       &lte_ue_common_vars->eNb_id);
+      sync_pos = lte_sync_time(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata, 
+			       &PHY_vars_UE_g[0]->lte_frame_parms, 
+			       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti,
+			       (int*) &PHY_vars_UE_g[0]->lte_ue_common_vars.eNb_id);
       //sync_pos = 0;
 
       // this is only for visualization in the scope
-      lte_ue_common_vars->sync_corr = sync_corr_ue;
+      PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue;
       
       // the sync is in the 3rd (last_ symbol of the special subframe
       // so the position wrt to the start of the frame is 
       sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
       
-      PHY_vars->rx_offset = sync_pos - sync_pos_slot;
+      PHY_vars_UE_g[0]->rx_offset = sync_pos - sync_pos_slot;
       
-      msg("[openair][SCHED][SYNCH] sync_pos = %d, sync_pos_slot =%d\n", sync_pos, sync_pos_slot);
+      msg("[openair][SCHED][SYNCH] eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE_g[0]->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
       
       if (((sync_pos - sync_pos_slot) >=0 ) && 
-	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES/2 - lte_frame_parms->samples_per_tti)) ) {
+	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES/2 - frame_parms->samples_per_tti)) ) {
 	
-	for (l=0;l<lte_frame_parms->symbols_per_tti/2;l++) {
+	for (l=0;l<frame_parms->symbols_per_tti/2;l++) {
 	  
-	  slot_fep(lte_frame_parms,
-		   lte_ue_common_vars,
+	  slot_fep(&PHY_vars_UE_g[0]->lte_frame_parms,
+		   &PHY_vars_UE_g[0]->lte_ue_common_vars,
 		   l,
 		   1,
 		   sync_pos-sync_pos_slot,
@@ -461,26 +471,26 @@ void openair_sync(void) {
 
 	pbch_decoded = 0;
 	for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
-	  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-				PHY_vars_UE->lte_ue_pbch_vars[0],
-				&PHY_vars_UE->lte_frame_parms,
+	  pbch_tx_ant = rx_pbch(&PHY_vars_UE_g[0]->lte_ue_common_vars,
+				PHY_vars_UE_g[0]->lte_ue_pbch_vars[0],
+				&PHY_vars_UE_g[0]->lte_frame_parms,
 				0,
 				SISO,
 				frame_mod4);
-	  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-	    PHY_vars_UE->lte_frame_parms.mode1_flag = 1;
+	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+	    PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = 1;
 	    pbch_decoded = 1;
 	    break;
 	  }
 	  
-	  pbch_tx_ant = rx_pbch(&PHY_vars_UE->lte_ue_common_vars,
-				PHY_vars_UE->lte_ue_pbch_vars[0],
-				&PHY_vars_eNb->lte_frame_parms,
+	  pbch_tx_ant = rx_pbch(&PHY_vars_UE_g[0]->lte_ue_common_vars,
+				PHY_vars_UE_g[0]->lte_ue_pbch_vars[0],
+				&PHY_vars_UE_g[0]->lte_frame_parms,
 				0,
 				ALAMOUTI,
 				frame_mod4);
-	  if ((pbch_tx_ant>0) && (pbch_tx_ant<4)) {
-	    PHY_vars_UE->lte_frame_parms.mode1_flag = 0;
+	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+	    PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = 0;
 	    pbch_decoded = 1;
 	    break;
 	  }
@@ -489,14 +499,14 @@ void openair_sync(void) {
 	  
 	if (pbch_decoded) {
 	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
-	      PHY_vars_UE->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
-	  lte_frame_parms->nb_antennas_tx = pbch_tx_ant;
-	  lte_frame_parms->mode1_flag = (lte_ue_pbch_vars[0]->decoded_output[1] == 1);
-	  openair_daq_vars.dlsch_transmission_mode = lte_ue_pbch_vars[0]->decoded_output[1];
+	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
+	  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx = pbch_tx_ant;
+	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1] == 1);
+	  openair_daq_vars.dlsch_transmission_mode = PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1];
 	  
 	  if (openair_daq_vars.node_running == 1) {
       
-	    pci_interface[0]->frame_offset = PHY_vars->rx_offset;
+	    pci_interface[0]->frame_offset = PHY_vars_UE_g[0]->rx_offset;
 	    
 	    openair_daq_vars.mode = openair_SYNCHED;
 	    mac_xface->frame = 0;
@@ -507,7 +517,7 @@ void openair_sync(void) {
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
 
-	    UE_mode = PRACH;
+	    PHY_vars_UE_g[0]->UE_mode[0] = PRACH;
 #ifdef OPENAIR2
 	    mac_xface->chbch_phy_sync_success(0,0);	    
 #endif
@@ -520,7 +530,7 @@ void openair_sync(void) {
       }
     }
    
-
+    /*
     // Measurements
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
@@ -545,6 +555,7 @@ void openair_sync(void) {
 	pci_interface[0]->tdd,
 	pci_interface[0]->dual_tx);
 
+    */
 #ifdef EMOS
     memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
     emos_dump_UE.timestamp = rt_get_time_ns();
@@ -558,12 +569,21 @@ void openair_sync(void) {
 #endif
 
     // Do AGC
-    if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      phy_adjust_gain(clear, 512, 0);
+    if (openair_daq_vars.node_configured==3 && openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
+      phy_adjust_gain(clear, 512, 0, PHY_vars_UE_g[0]);
       if (clear == 1)
 	clear = 0;
     }
-   */
+
+    if (openair_daq_vars.node_configured==3) {
+      lte_adjust_synch(&PHY_vars_UE_g[0]->lte_frame_parms,
+		       PHY_vars_UE_g[0],
+		       0,
+		       clear2,
+		       16384);
+      if (clear2 == 1)
+	clear2 = 0;
+    }
 
   }
 

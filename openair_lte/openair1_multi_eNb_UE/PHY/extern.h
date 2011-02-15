@@ -6,9 +6,7 @@
 #include "PHY/TOOLS/twiddle_extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
-#ifdef USER_MODE
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
-#endif
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
@@ -51,7 +49,7 @@ extern int *primary_synch2_time;
 extern int *sync_corr_ue;
 
 
-extern short **txdataF_rep_tmp;
+//extern short **txdataF_rep_tmp;
 
 extern char mode_string[4][20];
 
@@ -59,6 +57,10 @@ extern char mode_string[4][20];
 
 #endif
 
+#ifndef OPENAIR2
+extern unsigned char NB_CH_INST;
+extern unsigned char NB_UE_INST;
+#endif
 
 #endif /*__PHY_EXTERN_H__ */
  

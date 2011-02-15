@@ -303,7 +303,11 @@ typedef struct {
 #else //OPENAIR_LTE
 
 #define NUMBER_OF_eNB_MAX 3
+#ifdef USER_MODE
 #define NUMBER_OF_UE_MAX 32
+#else
+#define NUMBER_OF_UE_MAX 2
+#endif
 #define NUMBER_OF_SUBBANDS 7
 
 typedef struct

@@ -8,6 +8,7 @@ IS_KERNEL_SUBVERSION_GREATER_THAN_20=$(shell if [ $(SUBVERSION) -ge 20 ] ; then 
 GRPCI_SOFTCONFIG_H=grpci_softconfig.h
 GRPCI_SOFTREGS_H=grpci_softregs.h
 
+TOP_DIR = ../../..
 OPENAIR1_TOP = ../../..
 OPENAIR2_TOP = ../../../../openair2
 OPENAIR3_TOP = ../../../../openair3
@@ -61,7 +62,7 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAX_MODULES=1 -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP
+EXTRA_CFLAGS += -DMAX_MODULES=1 -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -UDLSCH_THREAD -DPHY_ABSTRACTION
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -102,13 +103,13 @@ EXTRA_CFLAGS += -DOPENAIR2
 endif
 
 
-EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM  
+EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM -I /usr/include
 
 obj-m += openair_rf.o
 
 include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
-
-# files for Soft MODEM implementation
+include $(OPENAIR1_DIR)/SCHED/Makefile.inc
+include $(OPENAIR1_DIR)/PHY/Makefile.inc
 
 # Device driver
 openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/bigphys.o
@@ -125,31 +126,20 @@ openair_rf-objs += $(MAC_XFACE_OBJS)
 
 # Sched 
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
+#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
 
 # Init
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/lte_init.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
 
 # Tools
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/memory_routines.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/dB_routines.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/signal_energy.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/sqrt.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/log2_approx.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/8bit_txmux.o
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/fft.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vv.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_sv.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_vvh.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cmult_mm.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_sv.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cadd_vv.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/angle.o
-#openair_rf-objs += $(OPENAIR1_TOP)/PHY/TOOLS/cdot_prod.o
+openair_rf-objs += $(OPENAIR1_TOP)/SIMULATION/TOOLS/taus.o
 
 #include files for MODEM
 ifeq ($(OPENAIR1),1)
-#todo
+openair_rf-objs += $(SCHED_OBJS)
+openair_rf-objs += $(PHY_OBJS)
 endif
 
 #include files for OPENAIR2

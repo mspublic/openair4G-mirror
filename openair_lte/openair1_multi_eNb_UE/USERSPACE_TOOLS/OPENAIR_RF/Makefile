@@ -2,7 +2,7 @@ CCC = gcc
 
 TOP_DIR = ../..
 
-CFLAGS = -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ 
+CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ 
 #-DICC 
 
 ifdef DEBUGPHY

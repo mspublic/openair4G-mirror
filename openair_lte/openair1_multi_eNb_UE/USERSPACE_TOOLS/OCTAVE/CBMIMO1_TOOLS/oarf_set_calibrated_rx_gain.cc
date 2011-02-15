@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "PHY/vars.h"
 
 #define FCNNAME "oarf_set_calibrated_rx_gain"
 
@@ -25,16 +26,15 @@ static bool any_bad_argument(const octave_value_list &args)
   if (args.length()!=1)
   {
     error(FCNNAME);
-    error("syntax: oarf_set_calibrated_rx_gain(bool)");
-    error("Valid ranges:  0,1");
+    error("syntax: oarf_set_calibrated_rx_gain(gain)");
     return true;
   }
 
   v=args(0);
-  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 1))
+  if ((!v.is_real_scalar()) || (v.scalar_value() < 0.0) || (floor(v.scalar_value()) != v.scalar_value()) || (v.scalar_value() > 255.0))
   {
     error(FCNNAME);
-    error("bool must be a boolean.");
+    error("gain must be >=0 and <=255.");
     return true;
   }
 

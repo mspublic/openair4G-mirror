@@ -190,9 +190,9 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     msg("f1 %d, f2 %d, F %d\n",f1f2mat[2*iind],f1f2mat[1+(2*iind)],(r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 #endif
 
-    memset(dummy_w[r],0,3*(6144+64)*sizeof(short));
+    memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     dlsch->harq_processes[harq_pid]->RTC[r] = generate_dummy_w(4+(Kr_bytes*8), 
-							       dummy_w[r],
+							       (char*) &dummy_w[r][0],
 							       (r==0) ? dlsch->harq_processes[harq_pid]->F : 0);
 
 #ifdef DEBUG_DLSCH_DECODING    
@@ -207,7 +207,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     if (lte_rate_matching_turbo_rx(dlsch->harq_processes[harq_pid]->RTC[r],
 				   G,
 				   dlsch->harq_processes[harq_pid]->w[r],
-				   dummy_w[r],
+				   (unsigned char*)&dummy_w[r][0],
 				   dlsch_llr,
 				   dlsch->harq_processes[harq_pid]->C,
 				   NSOFT,
@@ -377,8 +377,8 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
 
 
-    printf("copying TB0 : harq_pid %d, TBS %d (rnti %x, UE_index %d)\n",harq_pid,dlsch_ue->harq_processes[harq_pid]->TBS>>3,
-	   (s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id]));
+    //printf("copying TB0 : harq_pid %d, TBS %d (rnti %x, UE_index %d)\n",harq_pid,dlsch_ue->harq_processes[harq_pid]->TBS>>3,
+    //	   (s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id]));
     memcpy(dlsch_ue->harq_processes[harq_pid]->b,dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   case 3: // TB1

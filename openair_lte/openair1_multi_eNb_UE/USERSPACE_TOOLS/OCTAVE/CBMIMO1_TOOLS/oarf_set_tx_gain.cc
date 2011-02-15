@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
+#include "PHY/vars.h"
 
 #define FCNNAME "oarf_set_tx_gain"
 
@@ -84,7 +85,7 @@ DEFUN_DLD (oarf_set_tx_gain, args, nargout,"Set TX gains (Action 6) - params 239
   octave_value returnvalue;
   int openair_fd;
 
-error("fixme: oarf_set_tx_gain: check the order of the parameters as received by the kernel");
+  //error("fixme: oarf_set_tx_gain: check the order of the parameters as received by the kernel");
 
   if ((openair_fd = open("/dev/openair0", O_RDWR,0)) <0)
   {

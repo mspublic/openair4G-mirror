@@ -97,7 +97,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 #ifdef USER_MODE
       phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
-      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->fdm_symbol_size);
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size);
 #endif
       phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
       phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];

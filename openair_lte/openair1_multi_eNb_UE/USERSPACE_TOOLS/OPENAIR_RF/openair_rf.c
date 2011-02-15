@@ -190,11 +190,11 @@ int main (int argc, char **argv) {
   frame_parms->Ncp                = 1;
   frame_parms->Nid_cell           = 0;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = NB_ANTENNAS_TX;
-  frame_parms->nb_antennas_rx     = NB_ANTENNAS_RX;
+  frame_parms->nb_antennas_tx     = 2; //NB_ANTENNAS_TX;
+  frame_parms->nb_antennas_rx     = 2; //NB_ANTENNAS_RX;
   frame_parms->first_dlsch_symbol = 4;
   frame_parms->num_dlsch_symbols  = 6;
-  frame_parms->mode1_flag         = 1; //default == SISO
+  frame_parms->mode1_flag         = 0; 
   frame_parms->tdd_config         = 3;
   frame_parms->frame_type         = 1; //TDD
   //frame_parms->Csrs = 2;
@@ -203,7 +203,7 @@ int main (int argc, char **argv) {
   //frame_parms->n_RRC = 0;
   
   init_frame_parms(frame_parms);
-  
+
   printf("Initialized PHY variables\n");
 
 
@@ -238,9 +238,11 @@ int main (int argc, char **argv) {
       printf("Please provide dual_tx parameter (0/1)\n");
       exit(-1);
     }
-    frame_parms->dual_tx    = atoi(argv[3]);
-    frame_parms->tdd_config = atoi(argv[4]);
-    frame_parms->freq_idx   = frequency;
+    frame_parms->dual_tx    = (unsigned char) atoi(argv[3]);
+    frame_parms->frame_type = (unsigned char) atoi(argv[4]);
+    frame_parms->freq_idx   = (unsigned char) frequency;
+
+    dump_frame_parms(frame_parms);
 
     result=ioctl(openair_fd, openair_DUMP_CONFIG,(char *)frame_parms);
     if (result == 0) {

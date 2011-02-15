@@ -32,25 +32,6 @@ PHY_VARS_eNB *PHY_vars_eNb;
 PHY_VARS_UE *PHY_vars_UE;
 
 
-void dump_ulsch(u8 nsymb) {
-
-  write_output("rxsigF0.m","rxsF0", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
-  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_tx>1)
-    write_output("rxsigF1.m","rxsF1", &PHY_vars_eNb->lte_eNB_common_vars.rxdataF[0][1][0],512*nsymb*2,2,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0][0],300*nsymb*2,2,1);
-  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
-    write_output("rxsigF1_ext.m","rxsF1_ext", &PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_ext[1][0][0],300*nsymb*2,2,1);
-  write_output("srs_est0.m","srsest0",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][0],512,1,1);
-  if (PHY_vars_eNb->lte_frame_parms.nb_antennas_rx>1)
-    write_output("srs_est1.m","srsest1",PHY_vars_eNb->lte_eNB_srs_vars[0].srs_ch_estimates[0][1],512,1,1);
-  write_output("drs_est0.m","drsest0",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*nsymb,1,1);
-  //	  write_output("drs_est1.m","drsest1",PHY_vars_eNb->lte_eNB_ulsch_vars[0].drs_ch_estimates[0][1],300*nsymb,1,1);
-  write_output("ulsch_rxF_comp0.m","ulsch0_rxF_comp0",&PHY_vars_eNb->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0][0],300*nsymb,1,1);
-  write_output("ulsch_rxF_llr.m","ulsch_llr",PHY_vars_eNb->lte_eNB_ulsch_vars[0]->llr,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb*12*2*9,1,0);	
-  write_output("ulsch_ch_mag.m","ulsch_ch_mag",&PHY_vars_eNb->lte_eNB_ulsch_vars[0]->ul_ch_mag[0][0][0],300*nsymb,1,1);	  
-	  
-}
-
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
@@ -672,7 +653,7 @@ int main(int argc, char **argv) {
 	if (ret <= MAX_TURBO_ITERATIONS) {
 #ifdef OUTPUT_DEBUG  
 	  printf("No ULSCH errors found\n");
-	  dump_ulsch(nsymb);
+	  dump_ulsch(PHY_vars_eNb);
 	  exit(-1);
 #endif
 	  round=5;
@@ -681,7 +662,7 @@ int main(int argc, char **argv) {
 	  errs[round]++;
 #ifdef OUTPUT_DEBUG  
 	  printf("ULSCH errors found\n");
-	  dump_ulsch(nsymb);
+	  dump_ulsch(PHY_vars_eNb);
 
 
 	  exit(-1);

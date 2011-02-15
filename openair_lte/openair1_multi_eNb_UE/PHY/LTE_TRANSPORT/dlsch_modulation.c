@@ -10,7 +10,7 @@
 
 //#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
-u8 is_not_pilot(pilots,re,nushift,use2ndpilots) {
+u8 is_not_pilot(u8 pilots, u8 re, u8 nushift, u8 use2ndpilots) {
 
   u8 offset = (pilots==2)?3:0;
 
@@ -158,10 +158,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	case 2:  //QPSK
 	  //	  printf("%d : %d,%d => ",tti_offset,((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-	    ((short*)&txdataF[aa][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I
+	    ((short*)&txdataF[aa][tti_offset])[0] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 	  *jj = *jj + 1;
 	  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q
+	    ((short*)&txdataF[aa][tti_offset])[1] += (output[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
 	  *jj = *jj + 1;
 
 	  //	  	  	  printf("%d,%d\n",((short*)&txdataF[0][tti_offset])[0],((short*)&txdataF[0][tti_offset])[1]);
@@ -551,15 +551,15 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 
 #else // ifndef IFFT_FPGA
 
-static mod_sym_t qpsk_precoder[4][4]   = {0,1,2,3, 3,2,1,0, 1,3,0,2, 2,0,3,1};
-static mod_sym_t qam16_precoder[4][16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-                                10,11,8,9,14,15,12,13,2,3,0,1,6,7,4,5,
-                                2,6,10,14,3,7,11,15,0,4,8,12,1,5,9,13,
-                                8,12,0,4,9,13,1,5,10,14,2,6,11,15,3,7};
-static mod_sym_t qam64_precoder[4][64] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
-				36,37,38,39,32,33,34,35,44,45,46,47,40,41,42,43,52,53,54,55,48,49,50,51,60,61,62,63,56,57,58,59,4,5,6,7,0,1,2,3,12,13,14,15,8,9,10,11,20,21,22,23,16,17,18,19,28,29,30,31,24,25,26,27,
-				4,12,20,28,36,44,52,60,5,13,21,29,37,45,53,61,6,14,22,30,38,46,54,62,7,15,23,31,39,47,55,63,0,8,16,24,32,40,48,56,1,9,17,25,33,41,49,57,2,10,18,26,34,42,50,58,3,11,19,27,35,43,51,59,
-				32,40,48,56,0,8,16,24,33,41,49,57,1,9,17,25,34,42,50,58,2,10,18,26,35,43,51,59,3,11,19,27,36,44,52,60,4,12,20,28,37,45,53,61,5,13,21,29,38,46,54,62,6,14,22,30,39,47,55,63,7,15,23,31};
+static mod_sym_t qpsk_precoder[4][4]   = {{0,1,2,3}, {3,2,1,0}, {1,3,0,2}, {2,0,3,1}};
+static mod_sym_t qam16_precoder[4][16] = {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
+					  {10,11,8,9,14,15,12,13,2,3,0,1,6,7,4,5},
+					  {2,6,10,14,3,7,11,15,0,4,8,12,1,5,9,13},
+					  {8,12,0,4,9,13,1,5,10,14,2,6,11,15,3,7}};
+static mod_sym_t qam64_precoder[4][64] = {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63},
+					  {36,37,38,39,32,33,34,35,44,45,46,47,40,41,42,43,52,53,54,55,48,49,50,51,60,61,62,63,56,57,58,59,4,5,6,7,0,1,2,3,12,13,14,15,8,9,10,11,20,21,22,23,16,17,18,19,28,29,30,31,24,25,26,27},
+					  {4,12,20,28,36,44,52,60,5,13,21,29,37,45,53,61,6,14,22,30,38,46,54,62,7,15,23,31,39,47,55,63,0,8,16,24,32,40,48,56,1,9,17,25,33,41,49,57,2,10,18,26,34,42,50,58,3,11,19,27,35,43,51,59},
+					  {32,40,48,56,0,8,16,24,33,41,49,57,1,9,17,25,34,42,50,58,2,10,18,26,35,43,51,59,3,11,19,27,36,44,52,60,4,12,20,28,37,45,53,61,5,13,21,29,38,46,54,62,6,14,22,30,39,47,55,63,7,15,23,31}};
 
 
 int allocate_REs_in_RB(mod_sym_t **txdataF,
@@ -609,9 +609,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
       re_off=re_off - frame_parms->N_RB_DL*12;
 
     tti_offset = symbol_offset + re_off + re;
-    
+
+    //msg("pilots %d, re %d, frame_parms->nushift %d, use2ndpilots %d\n",pilots,re,frame_parms->nushift,use2ndpilots); 
     if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) { 
-      //      printf("dlsch_modulation tti_offset %d (re %d)\n",tti_offset,re);
+      //msg("dlsch_modulation tti_offset %d (re %d)\n",tti_offset,re);
       *re_allocated = *re_allocated + 1;
 
 	if (mimo_mode == SISO) {  //SISO mapping
@@ -619,10 +620,10 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  case 2:  //QPSK
 
 	    qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
-	    if (output[*jj] == 1)
+	    if (output[*jj] == 1) //b_i
 	      qpsk_table_offset+=2;
 	    *jj=*jj+1;
-	    if (output[*jj] == 1) 
+	    if (output[*jj] == 1) //b_{i+1}
 	      qpsk_table_offset+=1;
 	    *jj=*jj+1;
 
@@ -1009,17 +1010,14 @@ int allocate_REs_in_RB(mod_sym_t **txdataF,
 	  return(-1);
 	}
 
-    }
-    else {
-
-    }
-    if (mimo_mode == ALAMOUTI) {
-      re++;  // adjacent carriers are taken care of by precoding
-      *re_allocated = *re_allocated + 1;
-      if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==0) { // if the next position is a pilot, skip it
-	re++;  
-	*re_allocated = *re_allocated + 1;
-      }
+	if (mimo_mode == ALAMOUTI) {
+	  re++;  // adjacent carriers are taken care of by precoding
+	  *re_allocated = *re_allocated + 1;
+	  if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==0) { // if the next position is a pilot, skip it
+	    re++;  
+	    *re_allocated = *re_allocated + 1;
+	  }
+	}
     }
   }
   return(0);

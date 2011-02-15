@@ -3,10 +3,8 @@
 
 extern u8 number_of_cards;
 
-void dump_ue_stats(PHY_VARS_UE *phy_vars_ue) {
-  char buffer[2048];
-  u8 eNB;
-  u16 len;
+void dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
+  u8 eNB=0;
 
   len += sprintf(&buffer[len], "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm (%d dB, %d dB)\neNB1 RSSI %d dBm (%d dB, %d dB)\neNB2 RSSI %d dBm (%d dB, %d dB)\nN0 %d dBm (%d dB, %d dB)\n",
 		 mac_xface->frame,
@@ -25,9 +23,9 @@ void dump_ue_stats(PHY_VARS_UE *phy_vars_ue) {
   len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (rf_mode %d)\n",phy_vars_ue->rx_total_gain_dB, openair_daq_vars.rx_rf_mode);
   if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
     len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
-    len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode);
-    if (phy_vars_ue->UE_mode == PUSCH)
-      len += sprintf(&buffer[len], "[UE PROC] DLSCH FER %d, cqi = %d\n",phy_vars_ue->dlsch_fer,phy_vars_ue->current_dlsch_cqi);
+    len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
+    if (phy_vars_ue->UE_mode[0] == PUSCH)
+      len += sprintf(&buffer[len], "[UE PROC] DLSCH FER %d, cqi = %d\n",phy_vars_ue->dlsch_fer[0],phy_vars_ue->current_dlsch_cqi[0]);
     len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
     len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
   }
@@ -121,18 +119,15 @@ void dump_ue_stats(PHY_VARS_UE *phy_vars_ue) {
     if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) 
       len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %x (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
     
-    len += sprintf(&buffer[len], "[UE PROC] DLSCH FER : %d\n",phy_vars_ue->dlsch_fer);
+    len += sprintf(&buffer[len], "[UE PROC] DLSCH FER : %d\n",phy_vars_ue->dlsch_fer[0]);
     
   }
   buffer[len]='\0';
-  puts(buffer);
 } // is_clusterhead
 
-void dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb) {
+void dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb, char* buffer, int len) {
 
-  char buffer[2048];  
   u8 eNB,i;
-  u16 len;
 
   for (eNB=0;eNB<number_of_cards;eNB++) {
     len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
@@ -204,5 +199,4 @@ void dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNb) {
     
   }
   buffer[len]='\0';
-  puts(buffer);
 }
