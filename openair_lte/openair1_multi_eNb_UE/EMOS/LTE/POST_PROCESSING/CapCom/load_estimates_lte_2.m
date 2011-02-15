@@ -1,4 +1,4 @@
-function [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_2(filename, NFrames_max, decimation, is_eNb, version)
+function [H, H_fq, gps_data, NFrames, minestimates, throughput, SNR] = load_estimates_lte_2(filename, NFrames_max, decimation, is_eNb,mumimo_on, version)
 %
 % EMOS Single User Import Filter
 %
@@ -100,7 +100,7 @@ for n=1:NFiles
         warning('File size not a multiple of buffer size. File might be corrupt or is_eNb flag is wrong.');
     end
 end
-NFrames = min(sum(NFrames_file), NFrames_max);
+NFrames = min(min(NFrames_file), NFrames_max);
 
 if (is_eNb)
     estimates_tmp = repmat(fifo_dump_emos_struct_eNb,NFiles,100);
@@ -120,39 +120,47 @@ if (is_eNb)
 else
     estimates_tmp = repmat(fifo_dump_emos_struct_UE,NFiles,100);
     
-    Ratepersec_4Qam_MUMIMO = zeros(1,floor(NFrames/100));
-%     Ratepersec_16Qam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
-%     Ratepersec_64Qam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
-%     Ratepersec_supportedQam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
-%     
-%     Ratepersec_4Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
-%     Ratepersec_16Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
-%     Ratepersec_64Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
-%     Ratepersec_supportedQam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
-%     
-%     Ratepersec_4Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
-%     Ratepersec_16Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
-%     Ratepersec_64Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
-%     Ratepersec_supportedQam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
-
-SNR=[];
+%%     Ratepersec_4Qam_alamouti = zeros(1,floor(NFrames/100));
+%     Ratepersec_4Qam_siso = zeros(1,floor(NFrames/100));
+%     Ratepersec_16Qam_alamouti = zeros(1,floor(NFrames/100));
+%     Ratepersec_16Qam_siso = zeros(1,floor(NFrames/100));
+%     Ratepersec_64Qam_alamouti = zeros(1,floor(NFrames/100));
+%     Ratepersec_64Qam_siso = zeros(1,floor(NFrames/100));
+     Ratepersec_4Qam_beamforming = zeros(1,floor(NFrames/100));
+%    Ratepersec_4Qam_MUMIMO_ue1 = zeros(1,floor(NFrames/100));
+%    Ratepersec_4Qam_MUMIMO_ue2 = zeros(1,floor(NFrames/100));
+         Ratepersec_16Qam_beamforming = zeros(1,floor(NFrames/100));
+    Ratepersec_64Qam_beamforming = zeros(1,floor(NFrames/100));
+    %     Ratepersec_supportedQam_MUMIMO_1stRx = zeros(1,floor(NFrames/100));
+    %
+    %     Ratepersec_4Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_16Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_64Qam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_supportedQam_MUMIMO_2ndRx = zeros(1,floor(NFrames/100));
+    %
+    %     Ratepersec_4Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_16Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_64Qam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
+    %     Ratepersec_supportedQam_MUMIMO_2Rx = zeros(1,floor(NFrames/100));
+    
+    SNR=[];
     
     minestimates = repmat(min_estimates_struct, NFiles, NFrames);
-
+    
 end
 gps_data = repmat(gps_data_struct,NFiles,NFrames/100);
 
 k = 1;
 l = 1;
 sec = 1;
-%count =0;
+count =1;
 fid = zeros(1,NFiles);
 for n=1:NFiles
     fid(n) = fopen(filename{n},'r');
 end
-    
+
 while (any(~feof_vec(fid)) && (k <= min([NFrames_file,NFrames_max])))
-        
+ %while (sec<70)   
     for n=1:NFiles
         %H = complex(zeros(2,2,2,200)); % NUser * NTx x NRx * Nsymb
         
@@ -175,45 +183,54 @@ while (any(~feof_vec(fid)) && (k <= min([NFrames_file,NFrames_max])))
             minestimates(n,k).eNb_id = estimates_tmp(n,k).eNb_UE_stats.sector;
             
         else
-            estimates_tmp(n,k) = binread(fid(n),fifo_dump_emos_struct_UE,1,4,'l');
+            estimates_tmp(n,count) = binread(fid(n),fifo_dump_emos_struct_UE,1,4,'l');
             
-            minestimates(n,k).mcs = get_mcs(estimates_tmp(n,k).dci_alloc(7,1).dci_pdu);
-            minestimates(n,k).tbs = get_tbs(minestimates(k).mcs,25);
-            minestimates(n,k).rx_rssi_dBm = estimates_tmp(n,k).phy_measurements(1).rx_rssi_dBm(1);
-            minestimates(n,k).frame_tx = estimates_tmp(n,k).frame_tx;
-            minestimates(n,k).frame_rx = estimates_tmp(n,k).frame_rx;
-            minestimates(n,k).pbch_fer = estimates_tmp(n,k).pbch_fer(1);
-            minestimates(n,k).timestamp = estimates_tmp(n,k).timestamp;
-            minestimates(n,k).UE_mode = estimates_tmp(n,k).UE_mode;
-            minestimates(n,k).phy_measurements = estimates_tmp(n,k).phy_measurements(1);
-            minestimates(n,k).dlsch_fer = estimates_tmp(n,k).dlsch_fer;
-            minestimates(n,k).dlsch_errors = estimates_tmp(n,k).dlsch_errors;
-            minestimates(n,k).mimo_mode = estimates_tmp(n,k).mimo_mode;
-            minestimates(n,k).eNb_id = estimates_tmp(n,k).eNb_id;
+            minestimates(n,k).mcs = get_mcs(estimates_tmp(n,count).dci_alloc(7,1).dci_pdu);
+            minestimates(n,k).tbs = get_tbs(minestimates(n,k).mcs,25);
+            minestimates(n,k).rx_rssi_dBm = estimates_tmp(n,count).phy_measurements(1).rx_rssi_dBm(1);
+            minestimates(n,k).frame_tx = estimates_tmp(n,count).frame_tx;
+            minestimates(n,k).frame_rx = estimates_tmp(n,count).frame_rx;
+            minestimates(n,k).pbch_fer = estimates_tmp(n,count).pbch_fer(1);
+            minestimates(n,k).timestamp = estimates_tmp(n,count).timestamp;
+            minestimates(n,k).UE_mode = estimates_tmp(n,count).UE_mode;
+            minestimates(n,k).phy_measurements = estimates_tmp(n,count).phy_measurements(1);
+            minestimates(n,k).dlsch_fer = estimates_tmp(n,count).dlsch_fer;
+            minestimates(n,k).dlsch_errors = estimates_tmp(n,count).dlsch_errors;
+            minestimates(n,k).mimo_mode = estimates_tmp(n,count).mimo_mode;
+            minestimates(n,k).eNb_id = estimates_tmp(n,count).eNb_id;
             
             
         end % if (is_eNb)
         
-        
         %read GPS data and estimates every second
         if ((mod(k,NO_ESTIMATES_DISK)==0) && ~any(feof_vec(fid)))
-  
-            
-                % do MU-MIMO processing
-                [Ratepersec_4Qam_MUMIMO(sec)] = calc_rps_mu_mimo(estimates_tmp);
             
             
             gps_data(n,l) = binread(fid(n),gps_data_struct,1,4,'l');
-            l=l+1;
-            sec = sec +1;
         end
         %k=k+1;
     end %NFiles
     
-    k=k+1;
-end %while
     
-for n=1:NFiles    
+    if ((mod(k,NO_ESTIMATES_DISK)==0) && ~any(feof_vec(fid)))
+        
+        % do MU-MIMO processing
+         [Ratepersec_4Qam_beamforming(sec),Ratepersec_16Qam_beamforming(sec),...
+          Ratepersec_64Qam_beamforming(sec)] = calc_rps_mu_mimo(estimates_tmp,mumimo_on);
+        %plot(Ratepersec_4Qam_MUMIMO(1:sec),'r-x');
+%        [Ratepersec_4Qam_alamouti(sec),Ratepersec_16Qam_alamouti(sec),Ratepersec_64Qam_alamouti(sec)] = calc_rps_alamouti_2(estimates_tmp);
+%        [Ratepersec_4Qam_siso(sec),Ratepersec_16Qam_siso(sec),Ratepersec_64Qam_siso(sec)] = calc_rps_siso_2(estimates_tmp);
+     
+        l=l+1;
+        sec = sec+1
+        count = 0;
+    end
+    count = count+1;
+    k=k+1;
+    
+end %while
+
+for n=1:NFiles
     fclose(fid(n));
 end
 
@@ -231,27 +248,38 @@ if (is_eNb)
     SNR.siso_2Rx = siso_SNR_2Rx;
 else
     
-    throughput.rateps_MUMIMO_4Qam_eNB1 = Ratepersec_4Qam_MUMIMO;
-%     throughput.rateps_MUMIMO_16Qam_eNB1_1stRx = Ratepersec_16Qam_MUMIMO_1stRx;
-%     throughput.rateps_MUMIMO_64Qam_eNB1_1stRx = Ratepersec_64Qam_MUMIMO_1stRx;
-%     throughput.rateps_MUMIMO_supportedQam_eNB1_1stRx = Ratepersec_supportedQam_MUMIMO_1stRx;
-%     
-%     throughput.rateps_MUMIMO_4Qam_eNB1_2ndRx = Ratepersec_4Qam_MUMIMO_2ndRx;
-%     throughput.rateps_MUMIMO_16Qam_eNB1_2ndRx = Ratepersec_16Qam_MUMIMO_2ndRx;
-%     throughput.rateps_MUMIMO_64Qam_eNB1_2ndRx = Ratepersec_64Qam_MUMIMO_2ndRx;
-%     throughput.rateps_MUMIMO_supportedQam_eNB1_2ndRx = Ratepersec_supportedQam_MUMIMO_2ndRx;
-%     
-%     throughput.rateps_MUMIMO_4Qam_eNB1_2Rx = Ratepersec_4Qam_MUMIMO_2Rx;
-%     throughput.rateps_MUMIMO_16Qam_eNB1_2Rx = Ratepersec_16Qam_MUMIMO_2Rx;
-%     throughput.rateps_MUMIMO_64Qam_eNB1_2Rx = Ratepersec_64Qam_MUMIMO_2Rx;
-%     throughput.rateps_MUMIMO_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_MUMIMO_2Rx;    
+%     throughput.rateps_alamouti_4Qam = Ratepersec_4Qam_alamouti;
+%     throughput.rateps_siso_4Qam = Ratepersec_4Qam_siso;
+%     throughput.rateps_alamouti_16Qam = Ratepersec_16Qam_alamouti;
+%     throughput.rateps_siso_16Qam = Ratepersec_16Qam_siso;
+%     throughput.rateps_alamouti_64Qam = Ratepersec_64Qam_alamouti;
+%     throughput.rateps_siso_64Qam = Ratepersec_64Qam_siso;
+%     throughput.rateps_MUMIMO_4Qam_eNB1 = Ratepersec_4Qam_MUMIMO;
+%     throughput.rateps_MUMIMO_4Qam_eNB1_ue1 = Ratepersec_4Qam_MUMIMO_ue1;
+%     throughput.rateps_MUMIMO_4Qam_eNB1_ue2 = Ratepersec_4Qam_MUMIMO_ue2;
+     throughput.rateps_bmfr_4Qam = Ratepersec_4Qam_beamforming;
+    throughput.rateps_bmfr_16Qam = Ratepersec_16Qam_beamforming;
+    throughput.rateps_bmfr_64Qam = Ratepersec_64Qam_beamforming;
+    %     throughput.rateps_MUMIMO_16Qam_eNB1_1stRx = Ratepersec_16Qam_MUMIMO_1stRx;
+    %     throughput.rateps_MUMIMO_64Qam_eNB1_1stRx = Ratepersec_64Qam_MUMIMO_1stRx;
+    %     throughput.rateps_MUMIMO_supportedQam_eNB1_1stRx = Ratepersec_supportedQam_MUMIMO_1stRx;
+    %
+    %     throughput.rateps_MUMIMO_4Qam_eNB1_2ndRx = Ratepersec_4Qam_MUMIMO_2ndRx;
+    %     throughput.rateps_MUMIMO_16Qam_eNB1_2ndRx = Ratepersec_16Qam_MUMIMO_2ndRx;
+    %     throughput.rateps_MUMIMO_64Qam_eNB1_2ndRx = Ratepersec_64Qam_MUMIMO_2ndRx;
+    %     throughput.rateps_MUMIMO_supportedQam_eNB1_2ndRx = Ratepersec_supportedQam_MUMIMO_2ndRx;
+    %
+    %     throughput.rateps_MUMIMO_4Qam_eNB1_2Rx = Ratepersec_4Qam_MUMIMO_2Rx;
+    %     throughput.rateps_MUMIMO_16Qam_eNB1_2Rx = Ratepersec_16Qam_MUMIMO_2Rx;
+    %     throughput.rateps_MUMIMO_64Qam_eNB1_2Rx = Ratepersec_64Qam_MUMIMO_2Rx;
+    %     throughput.rateps_MUMIMO_supportedQam_eNB1_2Rx = Ratepersec_supportedQam_MUMIMO_2Rx;
 end
 end
 
 
 function eof = feof_vec(fid)
-    eof = false(size(fid));
-    for i=1:length(fid)
-        eof(i) = feof(fid(i));
-    end
+eof = false(size(fid));
+for i=1:length(fid)
+    eof(i) = feof(fid(i));
+end
 end
