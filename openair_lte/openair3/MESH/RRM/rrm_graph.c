@@ -2590,13 +2590,13 @@ int main( int argc , char **argv )
              fl_show_form(Chann_form->all_freq_to_users,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Used channels");     
              fl_check_forms();
          }
-         if (COLL_CLUST>=0){  //mod_lor_11_02_14 : splitting in two clusters
+         else if (COLL_CLUST>=0){  //mod_lor_11_02_14 : splitting in two clusters
              fl_initialize(&argc, argv, "Cluster 2", 0, 0);  
              Sens_form_CH2 = create_form_sens_scen_2(); 
              fl_show_form(Sens_form_CH2->sens_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 2: Sensing");     
              fl_check_forms();   
          } //mod_lor_11_02_14
-         if (COLL_CLUST<0){ 
+         else (COLL_CLUST<0){ 
              fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
              Sens_form_CH1 = create_form_sens_CH1_scen_2(); 
              fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Sensing");     //Cluster 1:  mod_lor_10_12_07
