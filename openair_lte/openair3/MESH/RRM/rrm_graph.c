@@ -206,11 +206,14 @@ void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, uns
     
     float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
     //float f[100],spec_dBm[100];
+    float Start_fr, Final_fr;//add_lor_11_02_16
+    Start_fr = st_fr; //add_lor_11_02_16
+    Final_fr = end_fr;//add_lor_11_02_16
     unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
     unsigned int SB_BW;
     int i, j, k=0;
     //printf("nb_info %d tot sub: %d \n",NB_info, tot_sub_bands);//dbg
-    // Compute frequencies and store in f 
+    // Compute frequencies and store in f
     for (i=0;i<NB_info ;i++) {
         SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
         for (j=0; j< MAX_NUM_SB;j++){
@@ -240,17 +243,17 @@ void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, uns
     fl_set_xyplot_data(form->spec_SN1,f,spec_dBm,100,"","","");*/
     //printf("In plot graph of sensor: %d\n", sensor);//dbg
     if (sensor == 1){
-        fl_set_xyplot_xbounds(form->spec_SN1,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_xbounds(form->spec_SN1,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
         fl_set_xyplot_ybounds(form->spec_SN1,-115,-70);
 
         fl_set_xyplot_data(form->spec_SN1,f,spec_dBm,tot_sub_bands,"","","");
     }else if (sensor == 2){
-        fl_set_xyplot_xbounds(form->spec_SN2,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_xbounds(form->spec_SN2,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
         fl_set_xyplot_ybounds(form->spec_SN2,-115,-70);
 
         fl_set_xyplot_data(form->spec_SN2,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
-        fl_set_xyplot_xbounds(form->spec_SN3,(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+        fl_set_xyplot_xbounds(form->spec_SN3,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
         fl_set_xyplot_ybounds(form->spec_SN3,-115,-70);
 
         fl_set_xyplot_data(form->spec_SN3,f,spec_dBm,tot_sub_bands,"","","");
