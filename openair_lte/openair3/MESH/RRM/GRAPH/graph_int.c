@@ -390,6 +390,7 @@ main(int argc,char **argv) {
 								printf("\e[38;5;%dm",colorfg);
                             }
                         }
+                        break;
                     case RRC_UP_FREQ_ASS_SEC : //add_lor_10_11_09
                         {
                             gen_sens_info_t  *p = (gen_sens_info_t  *)Data ;
