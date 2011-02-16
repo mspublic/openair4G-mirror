@@ -726,8 +726,15 @@ main(int argc,char **argv) {
                             msg_fct( "[CMM]>[CRRM]:%d:CMM_ATTACH_CNF\n",Header->inst);
                             printf("\e[38;5;%dm",comments);   //mod_lor_10_04_22
                             msg_fct( "******************************************************************\n");
-                            if (SCEN_1)//mod_lor_10_05_12++
-                                msg_fct( "The sensor is now connected to the fusion center\n");
+                            //mod_lor_10_05_12++
+                            if (SCEN_1){//mod_lor_11_02_15++ : reorganization sendora scen 1
+                                if (BTS_ID>=0 && FC_ID>=0)
+                                    msg_fct( "The sensor is now connected to the fusion center\n"); //AAA to fix
+                                else if (BTS_ID>=0)
+                                    msg_fct( "Secondary User is now connected to the BTS\n");
+                                else if (FC_ID>=0)
+                                    msg_fct( "The sensor is now connected to the fusion center\n");
+                            }//mod_lor_11_02_15--
                             else if(SCEN_2_DISTR)
                                 msg_fct( "Secondary User is now connected to Cluster Head\n");
                             else if(Header->inst < FIRST_SECOND_CLUSTER_USER_ID)

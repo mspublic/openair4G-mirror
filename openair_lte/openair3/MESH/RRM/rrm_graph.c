@@ -2553,30 +2553,35 @@ int main( int argc , char **argv )
         exit(-1) ;
     }
      //mod_eure_lor++
-     if (FC_ID>=0 && SCEN_1){ 
-        fl_initialize(&argc, argv, "Fusion Center Spectral Measurements", 0, 0);
-        form = create_form_sensing_form(); 
-        fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spectral Measurements");     
-        fl_check_forms();    
+     if (SCEN_1){//mod_lor_11_02_15 : reorganization
+         if (FC_ID>=0 && BTS_ID>=0)
+            fl_initialize(&argc, argv, "Fusion Center & Secondary Network", 0, 0);
+         else if(FC_ID>=0)
+            fl_initialize(&argc, argv, "Fusion Center Spectral Measurements", 0, 0);
+         else if(BTS_ID>=0)
+            fl_initialize(&argc, argv, "Secondary Network Frequencies", 0, 0);  
+         if (FC_ID>=0 ){ 
+            form = create_form_sensing_form(); 
+            fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spectral Measurements");     
+            fl_check_forms();    
+         }
+         //mod_eure_lor--
+         //mod_lor_10_06_01++ 
+         if (BTS_ID>=0){
+             SN_form = create_form_Secondary_Network_frequencies(); 
+             fl_show_form(SN_form->Secondary_Network_frequencies,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Secondary Network Frequencies");     
+             fl_check_forms();   
+         }
+         //mod_lor_10_06_01--
      }
-     //mod_eure_lor--
-    
-     //mod_lor_10_06_01++ 
-     if (BTS_ID>=0 && SCEN_1){
-         //fl_initialize(&argc, argv, "Secondary Network Frequencies", 0, 0);  
-         SN_form = create_form_Secondary_Network_frequencies(); 
-         fl_show_form(SN_form->Secondary_Network_frequencies,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Secondary Network Frequencies");     
-         fl_check_forms();   
-     }
-     //mod_lor_10_06_01--
      //mod_lor_10_11_04++
-     if (SCEN_2_CENTR && COLL_CLUST){  //mod_lor_11_02_14 : splitting in two clusters
+     if (SCEN_2_CENTR && COLL_CLUST>=0){  //mod_lor_11_02_14 : splitting in two clusters
          fl_initialize(&argc, argv, "Cluster 2", 0, 0);  
          Sens_form_CH2 = create_form_sens_scen_2(); 
          fl_show_form(Sens_form_CH2->sens_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 2: Sensing");     
          fl_check_forms();   
      } //mod_lor_11_02_14
-     if (SCEN_2_CENTR && !COLL_CLUST){ 
+     if (SCEN_2_CENTR && COLL_CLUST<0){ 
          fl_initialize(&argc, argv, "Cluster 1", 0, 0);  
          Sens_form_CH1 = create_form_sens_CH1_scen_2(); 
          fl_show_form(Sens_form_CH1->sens_CH1_scen_2,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Cluster 1: Sensing");     //Cluster 1:  mod_lor_10_12_07

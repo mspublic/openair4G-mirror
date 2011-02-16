@@ -902,13 +902,19 @@ int main( int argc , char **argv )
     scenario( NUM_SCENARIO, &s_rrc, &s_cmm, &s_sns );
 #endif /* RRC_EMUL */
     sleep(5);
-    printf("Commands: \n    'q' to exit\n    's' to start sensing\n    'e' to end sensing\n" );
-    //mod_lor_10_10_27++
-    if (SCEN_1)
+    //mod_lor_11_02_15 ++: reorganization
+    printf("Commands: \n    'q' to exit\n" );
+    if(SCEN_2_CENTR || (SCEN_1 && FC_ID>=0)){
+        printf("    's' to start sensing\n    'e' to end sensing\n" );
+        if (SCEN_1)
+             printf("\n\n" );
+    }
+    if (SCEN_1 && BTS_ID>=0)
         printf("    'a' to active BTS request\n\n\n" );
     if (SCEN_2_CENTR)
         printf("    'c' to active collaborative sensing\n    'a' to active a secondary user\n    'l' to remove a link between two secondary users\n    'd' to disconnect a secondary user\n\n\n" );
-    //mod_lor_10_10_27--
+    //mod_lor_11_02_15 --
+    
     //getchar() ;//mod_lor_10_04_27
     while (flag_not_exit){
         scanf("%c",&c);
