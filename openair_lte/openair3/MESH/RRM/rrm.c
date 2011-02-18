@@ -71,6 +71,7 @@
 #include "sens_scen_2_form.h"       //mod_lor_10_11_04
 #include "all_freq_to_users_form.h" //mod_lor_10_11_04
 #include "sens_CH1_scen_2.h"        //mod_lor_10_11_04
+#include "sens_sensor.h"        //mod_lor_11_02_18
 
 
 /*
@@ -92,6 +93,7 @@
  FD_sens_scen_2 *Sens_form_CH2;             //mod_lor_10_11_04
  FD_all_freq_to_users *Chann_form;          //mod_lor_10_11_04
  FD_sens_CH1_scen_2 *Sens_form_CH1;         //mod_lor_10_11_04
+ FD_sens_sensor *Sens_sensor_form;          //mod_lor_11_02_18
  static int SN_waiting = 0;                 //mod_lor_10_06_02
 //mod_lor_10_05_18--
 /*

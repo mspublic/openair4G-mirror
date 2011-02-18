@@ -277,7 +277,7 @@ int open_socket_int(
     s->in_dest_addr.sin_addr.s_addr = tmp;
     
     s->s = socket_fd ;
-   // fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
+   //fprintf(stderr,"IP address %X \n", s->in_local_addr.sin_addr.s_addr);//dbg
    // fprintf(stderr,"IP dest %X \n", s->in_dest_addr.sin_addr.s_addr);//dbg
     return socket_fd ; 
 }

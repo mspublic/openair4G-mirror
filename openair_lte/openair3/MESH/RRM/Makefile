@@ -68,6 +68,7 @@ SRC    += SN_freq_form.c
 SRC    += sens_scen_2_form.c 
 SRC    += all_freq_to_users_form.c
 SRC    += sens_CH1_scen_2.c
+SRC    += sens_sensor.c  
 
 SRC_EMUL    = emul_interface.c
 SRC_EMUL   += rrm_sock.c

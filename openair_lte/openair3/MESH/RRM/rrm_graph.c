@@ -59,6 +59,7 @@
 #include "sens_scen_2_form.h"       //mod_lor_10_11_04
 #include "all_freq_to_users_form.h" //mod_lor_10_11_04
 #include "sens_CH1_scen_2.h"        //mod_lor_10_11_04
+#include "sens_sensor.h"        //mod_lor_11_02_18
 
 
 /*
@@ -72,7 +73,7 @@
 \brief Definition of IP @ in main entities. i.e. they have to correspond 
         to the ones in node_info vector in emul_interface.c
 */
- static unsigned char FC_L3id [4]={0x0A,0x00,0x01,0x01};
+ static unsigned char FC_L3id [4]={0xC0,0xA8,0x0C,0x14};
  static unsigned char BTS_L3id [4]={0x0A,0x00,0x02,0x02};
  static unsigned char CH_COLL_L3id [4]={0x0A,0x00,0x02,0x02};
  FD_sensing_form *form;
@@ -80,6 +81,7 @@
  FD_sens_scen_2 *Sens_form_CH2;             //mod_lor_10_11_04
  FD_all_freq_to_users *Chann_form;          //mod_lor_10_11_04
  FD_sens_CH1_scen_2 *Sens_form_CH1;         //mod_lor_10_11_04
+ FD_sens_sensor *Sens_sensor_form;             //mod_lor_11_02_18
  static int SN_waiting = 0; //mod_lor_10_06_02
 //mod_lor_10_05_18--
 /*
@@ -439,6 +441,43 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
     fl_check_forms();
 }
 
+//mod_lor_11_02_18++
+/*!
+*******************************************************************************
+\brief  function to plot the spectrum sensing results of collaborative cluster 2
+
+\return NULL
+*/
+void plot_spectra_sensor(Sens_ch_t *S, unsigned int NB_info) {
+    
+    float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
+    //float f[100],spec_dBm[100];
+    float Start_fr, Final_fr;//add_lor_11_01_10
+    Start_fr = st_fr; //add_lor_11_01_10
+    Final_fr = end_fr;//add_lor_11_01_10
+    unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
+    unsigned int SB_BW;
+    int i, j, k=0;
+
+    for (i=0;i<NB_info ;i++) {
+        SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
+        for (j=0; j< MAX_NUM_SB;j++){
+            f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
+            // Transfer power measurements to spec_dBm (float)
+            spec_dBm[k] = S[i].mu0[j];
+            //printf("S[i].Start_f %d S[i].mu0[j] %d freq: %f spec_dBm %f \n",S[i].Start_f,  S[i].mu0[j], f[k],  spec_dBm[k]); //dbg
+             k++;
+        }
+    }
+
+    fl_set_xyplot_xbounds(Sens_sensor_form->local_sensing_results,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
+    fl_set_xyplot_ybounds(Sens_sensor_form->local_sensing_results,-110,-80);
+
+    fl_set_xyplot_data(Sens_sensor_form->local_sensing_results,f,spec_dBm,tot_sub_bands,"","","");
+
+    fl_check_forms();
+}
+//mod_lor_11_02_18--
 /*!
 *******************************************************************************
 \brief  function to plot the attributed channel
@@ -815,6 +854,7 @@ static void * thread_send_msg_sensing (
 	    no_msg++;
 	  else
             {
+
                 int r =  send_msg( pItem->s, pItem->msg );
                 WARNING(r!=0);
 	      
@@ -1666,8 +1706,10 @@ static void processing_msg_sensing(
                     break;
                 msg_fct( "[SENSING]>[RRM]:%d:SNS_UPDATE_SENS trans %d\n",header->inst, header->Trans_id);
                 //mod_lor_10_11_04++
-                if (SCEN_1)
+                if (SCEN_1 && FC_ID>=0) //mod_lor_18_02_18: sensor case 
                     plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_1) //mod_lor_18_02_18: sensor case 
+                    plot_spectra_sensor(p->Sens_meas, p->NB_info);
                 else if (SCEN_2_CENTR && header->inst<FIRST_SECOND_CLUSTER_USER_ID)
                     plot_spectra_CH1(p->Sens_meas, p->NB_info,  header->inst-FIRST_SENSOR_ID+1);
                 else if (SCEN_2_CENTR && header->inst>=FIRST_SECOND_CLUSTER_USER_ID) //mod_lor_11_01_07
@@ -1705,8 +1747,10 @@ static void processing_msg_sensing(
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
                 //add_lor_11_01_10++
-                if (SCEN_1)
+                if (SCEN_1 && FC_ID>=0) //mod_lor_18_02_18: sensor case 
                     plot_spectra(NULL, 0, form, header->inst-FIRST_SENSOR_ID+1);
+                else if (SCEN_1) //mod_lor_18_02_18: sensor case 
+                    plot_spectra_sensor(NULL, 0);
                 else if (SCEN_2_CENTR && header->inst<FIRST_SECOND_CLUSTER_USER_ID)
                     plot_spectra_CH1(NULL, 0,  header->inst-FIRST_SENSOR_ID+1);
                 else if (SCEN_2_CENTR && header->inst>=FIRST_SECOND_CLUSTER_USER_ID) //mod_lor_11_01_07
@@ -1832,6 +1876,12 @@ static void processing_msg_ip(
                 //mod_lor_10_04_20++
                 int msg_type = header->msg_type + NB_MSG_SNS_RRM + NB_MSG_RRC_RRM + NB_MSG_CMM_RRM ; //mod_lor_10_04_27
                 //mod_lor_10_04_20--
+                
+                //mod_lor_18_02_18++: plot spectra in FC when senosors on different PCs
+                if (SCEN_1 && FC_ID>=0 && nb_inst==1) 
+                    plot_spectra(p->Sens_meas, p->NB_info, form, header->inst-FIRST_SENSOR_ID+1);
+                //mod_lor_18_02_18--
+                
                 unsigned int        channels[2];                //!< Vector of channels
                 unsigned int        free[2]    ;                //!< Vector of values
                 unsigned int    Trans = rrm->ip.trans_cnt;
@@ -2568,6 +2618,15 @@ int main( int argc , char **argv )
             fl_show_form(form->sensing_form,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Spectral Measurements");     
             fl_check_forms();    
          }
+         //mod_lor_11_02_18++
+         if (FC_ID<0 && BTS_ID<0){
+             fl_initialize(&argc, argv, "Sensor", 0, 0);
+             Sens_sensor_form = create_form_sens_sensor();
+             fl_show_form( Sens_sensor_form->sens_sensor,FL_PLACE_HOTSPOT,FL_FULLBORDER,"Sensor");     
+             fl_check_forms(); 
+         }
+         //mod_lor_11_02_18--
+         
          //mod_eure_lor--
          //mod_lor_10_06_01++ 
          if (BTS_ID>=0){

@@ -198,8 +198,9 @@ void rrc_update_sens(
         //mod_lor_10_04_22++
         /*int r =  send_msg_int( rrm->ip.s, msg_update_sens_results_3( inst, rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt));
                     WARNING(r!=0);*/
-        
-        PUT_IP_MSG(msg_update_sens_results_3( inst, rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt)); 
+        fprintf(stderr,"before msg_update_sens %d\n",rrm->L2_id.L2_id[0]);//dbg mod_lor_11_02_17
+        PUT_IP_MSG(msg_update_sens_results_3( (rrm->L2_id.L2_id[0]-FIRST_MR_ID+1), rrm->L2_id, NB_info, Sens_meas, rrm->ip.trans_cnt)); 
+       
         //mod_lor_10_04_22--
         pthread_mutex_unlock( &( rrm->ip.exclu ) ) ;
         

@@ -25,19 +25,19 @@ et des fonctions relatives aux messages RRC-RRM ou RRC-RRCI.
 
 /*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
 */
-#define WSN            0  ///if wsn = 0 -> secondary network, else sensor network 
-#define SCEN_1         0
-#define SCEN_2_CENTR   1
+#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
+#define SCEN_1         1
+#define SCEN_2_CENTR   0
 #define SCEN_2_DISTR   0
 #define COLL_CLUST     0  //mod_lor_10_11_04
 
 //mod_lor_10_05_12--*/
 
 #define BTS_ID -1  //put -1 in case we are not in SCEN_1
-#define FC_ID 0
+#define FC_ID -1
 #define CH_COLL_ID -1
 #define NB_SENS_MAX 4
-#define FIRST_SENSOR_ID 1
+#define FIRST_SENSOR_ID 0
 #define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06
 
 #ifdef __cplusplus

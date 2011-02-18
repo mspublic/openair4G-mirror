@@ -15,9 +15,9 @@
 
 /*! \brief SENDORA scenario active: flags to set at the beginning of the simulation
 */
-#define WSN            0  ///if wsn = 0 -> secondary network, else sensor network 
-#define SCEN_1         0
-#define SCEN_2_CENTR   1
+#define WSN            1  ///if wsn = 0 -> secondary network, else sensor network 
+#define SCEN_1         1
+#define SCEN_2_CENTR   0
 #define SCEN_2_DISTR   0
 #define COLL_CLUST     0  //mod_lor_10_11_04
 
@@ -27,10 +27,11 @@
 \brief Id of different CRRM entities in case of multiple entities on same machine       
   */
 #define BTS_ID -1
-#define FC_ID 0
+#define FC_ID -1
 #define CH_COLL_ID -1
-#define FIRST_SENSOR_ID 1
+#define FIRST_SENSOR_ID 0
 #define FIRST_SECOND_CLUSTER_USER_ID 5 //add_lor_11_01_06 AAA: if two clusters on two pcs this parameter should be greater than the number of rrm instances
+#define FIRST_MR_ID 8 //mod_lor_11_02_18: if cluster on more than 1 pc, this is the ID of first MR
 //mod_lor_10_05_05--
 
 /*! 
