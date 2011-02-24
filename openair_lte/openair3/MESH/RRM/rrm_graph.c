@@ -165,8 +165,8 @@ static pthread_t pthread_recv_rrc_msg_hnd,
 
                  pthread_ttl_hnd ;
 static unsigned int cnt_timer = 0;
-static float st_fr = 2.42e6; //mod_lor_10_06_01
-static float end_fr = 2.46e6; //mod_lor_10_06_01
+static float st_fr = 2.385e6; //mod_lor_10_06_01
+static float end_fr = 2.412e6; //mod_lor_10_06_01
 
 #ifdef TRACE
 static FILE *cmm2rrm_fd  = NULL ;
@@ -246,12 +246,12 @@ void plot_spectra(Sens_ch_t *S, unsigned int NB_info, FD_sensing_form *form, uns
     //printf("In plot graph of sensor: %d\n", sensor);//dbg
     if (sensor == 1){
         fl_set_xyplot_xbounds(form->spec_SN1,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(form->spec_SN1,-115,-70);
+        fl_set_xyplot_ybounds(form->spec_SN1,0,50);
 
         fl_set_xyplot_data(form->spec_SN1,f,spec_dBm,tot_sub_bands,"","","");
     }else if (sensor == 2){
         fl_set_xyplot_xbounds(form->spec_SN2,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(form->spec_SN2,-115,-70);
+        fl_set_xyplot_ybounds(form->spec_SN2,0,50);
 
         fl_set_xyplot_data(form->spec_SN2,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
@@ -358,18 +358,18 @@ void plot_spectra_CH1(Sens_ch_t *S, unsigned int NB_info, /*FD_sens_CH1_scen_2 *
    
     if (sensor == 1){
         fl_set_xyplot_xbounds(Sens_form_CH1->User_1_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_1_sens,-110,-80);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_1_sens,0,50);
 
         fl_set_xyplot_data(Sens_form_CH1->User_1_sens,f,spec_dBm,tot_sub_bands,"","","");
         
     }else if (sensor == 2){
         fl_set_xyplot_xbounds(Sens_form_CH1->User_2_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_2_sens,-110,-80);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_2_sens,0,50);
 
         fl_set_xyplot_data(Sens_form_CH1->User_2_sens,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
         fl_set_xyplot_xbounds(Sens_form_CH1->User_3_sens,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH1->User_3_sens,-110,-80);
+        fl_set_xyplot_ybounds(Sens_form_CH1->User_3_sens,0,50);
 
         fl_set_xyplot_data(Sens_form_CH1->User_3_sens,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 4){
@@ -418,12 +418,12 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
    
     if (sensor == 1){
         fl_set_xyplot_xbounds(Sens_form_CH2->User_1,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_1,-110,-80);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_1,0,50);
 
         fl_set_xyplot_data(Sens_form_CH2->User_1,f,spec_dBm,tot_sub_bands,"","","");
     }else if (sensor == 2){
         fl_set_xyplot_xbounds(Sens_form_CH2->User_2,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-        fl_set_xyplot_ybounds(Sens_form_CH2->User_2,-110,-80);
+        fl_set_xyplot_ybounds(Sens_form_CH2->User_2,0,50);
 
         fl_set_xyplot_data(Sens_form_CH2->User_2,f,spec_dBm,tot_sub_bands,"","","");
     }else if(sensor == 3){
@@ -450,18 +450,22 @@ void plot_spectra_CH2(Sens_ch_t *S, unsigned int NB_info, /*FD_sensing_form *for
 */
 void plot_spectra_sensor(Sens_ch_t *S, unsigned int NB_info) {
     
-    float f[MAX_NUM_SB*NB_info],spec_dBm[MAX_NUM_SB*NB_info];
+    float f[NUM_SB*NB_info],spec_dBm[NUM_SB*NB_info];
     //float f[100],spec_dBm[100];
     float Start_fr, Final_fr;//add_lor_11_01_10
     Start_fr = st_fr; //add_lor_11_01_10
     Final_fr = end_fr;//add_lor_11_01_10
-    unsigned int tot_sub_bands = MAX_NUM_SB*NB_info;
+    unsigned int tot_sub_bands = NUM_SB*NB_info;
     unsigned int SB_BW;
     int i, j, k=0;
+	if (NB_info>0){
+		Start_fr = S[0].Start_f; //add_lor_11_01_10
+		Final_fr = S[NB_info-1].Final_f;//add_lor_11_01_10
+	}
 
     for (i=0;i<NB_info ;i++) {
-        SB_BW = (S[i].Final_f-S[i].Start_f)/MAX_NUM_SB;
-        for (j=0; j< MAX_NUM_SB;j++){
+        SB_BW = (S[i].Final_f-S[i].Start_f)/NUM_SB;
+        for (j=0; j< NUM_SB;j++){
             f[k]=S[i].Start_f+(SB_BW*j)+(SB_BW/2);
             // Transfer power measurements to spec_dBm (float)
             spec_dBm[k] = S[i].mu0[j];
@@ -471,7 +475,7 @@ void plot_spectra_sensor(Sens_ch_t *S, unsigned int NB_info) {
     }
 
     fl_set_xyplot_xbounds(Sens_sensor_form->local_sensing_results,Start_fr,Final_fr);//(float)S[0].Start_f,(float)S[NB_info-1].Final_f);
-    fl_set_xyplot_ybounds(Sens_sensor_form->local_sensing_results,-110,-80);
+    fl_set_xyplot_ybounds(Sens_sensor_form->local_sensing_results,-115,0);
 
     fl_set_xyplot_data(Sens_sensor_form->local_sensing_results,f,spec_dBm,tot_sub_bands,"","","");
 
@@ -1547,9 +1551,10 @@ static void processing_msg_rrc(
                 int r =  send_msg( rrm->graph.s, msg_graph_resp(header->inst,msg_type) );
                     WARNING(r!=0);
                 //mod_lor_10_04_20--
+				fprintf(stdout,"start:%d stop:%d band:%d nb:%d\n",p->Start_fr ,p->Stop_fr,p->Meas_band,p->Nb_channels);//dbg
                 rrc_init_scan_req( header->inst, p->L2_id, p->Start_fr ,p->Stop_fr,p->Meas_band,p->Meas_tpf,
                         p->Nb_channels, p->Overlap,p->Sampl_freq, header->Trans_id ); 
-            //    fprintf(stdout,"sens_database:\n");//dbg
+                
             //    print_sens_db( rrm->rrc.pSensEntry );//dbg
                 
             }

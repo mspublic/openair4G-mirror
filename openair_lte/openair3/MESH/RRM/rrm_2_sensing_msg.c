@@ -118,6 +118,8 @@ msg_t *msg_rrm_scan_ord(
                 memcpy( p->ch_to_scan, ch_to_scan, NB_chan*sizeof(Sens_ch_t) );
                 
             }
+			for (int i=0; i<NB_chan;i++)
+				printf("scan_ord i :%d, start %d, end %d sampl %d\n",i,p->ch_to_scan[i].Start_f,p->ch_to_scan[i].Final_f,Sampl_nb);
        
         }
         msg->data = (char *) p ;

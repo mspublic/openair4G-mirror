@@ -8,14 +8,14 @@ Unit of measure: FL_COORD_PIXEL
 
 =============== FORM ===============
 Name: sens_sensor
-Width: 640
-Height: 180
+Width: 940
+Height: 280
 Number of Objects: 2
 
 --------------------
 class: FL_BOX
 type: UP_BOX
-box: 0 0 640 180
+box: 0 0 940 280
 boxtype: FL_UP_BOX
 colors: FL_COL1 FL_COL1
 alignment: FL_ALIGN_CENTER
@@ -33,7 +33,7 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: IMPULSE_XYPLOT
-box: 30 30 580 110
+box: 30 30 880 210
 boxtype: FL_FLAT_BOX
 colors: FL_BLACK FL_BLUE
 alignment: FL_ALIGN_BOTTOM

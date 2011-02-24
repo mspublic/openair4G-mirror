@@ -291,7 +291,7 @@ void rrc_init_scan_req(
 {
     rrm_t *rrm = &rrm_inst[inst] ;
     Sens_ch_t ch_info_init[Nb_channels];
-    unsigned int Sampl_nb = ((Start_fr - Stop_fr)/Sampl_freq)/Nb_channels; //mod_lor_10_04_01: number of samples per sub-band
+    unsigned int Sampl_nb = 0;//((Start_fr - Stop_fr)/Sampl_freq)/Nb_channels; //mod_lor_10_04_01: number of samples per sub-band
     unsigned int     act_start_fr = Start_fr;
     for (int i = 0; i<Nb_channels; i++){
         ch_info_init[i].Start_f = act_start_fr   ; 
@@ -303,6 +303,7 @@ void rrc_init_scan_req(
         for (int j=0;j<MAX_NUM_SB;j++)
             ch_info_init[i].is_free[j]  = 2  ; ///< Decision about the channel
         //mod_eure_lor--
+		printf("rrc_init i :%d, start %d, end %d MAX %d band %d\n",i,ch_info_init[i].Start_f,ch_info_init[i].Final_f,Sampl_nb,Meas_band);
     }
     
     

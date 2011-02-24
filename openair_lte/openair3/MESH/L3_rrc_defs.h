@@ -43,11 +43,11 @@
 #define CH_NEEDED_FOR_SN 1 //!< Number of channels needed by secondary network//mod_lor_10_05_17
 #define SB_NEEDED_FOR_SN 25 //mod_lor_10_05_26: 
 #define NB_SENS_MAX    4  //!< Maximum number of channels accepted by the system; AAA: should be low (4) in SCEN_2 otherwise overflow at rrc level
-#define MAX_NUM_SB 100//mod_eure_lor
-#define SB_BANDWIDTH   200  //! in khz, bandwidth of each sub-band; AAA -> modify only in relation with NUM_SB and sensing parameters in emul_interface!  //mod_lor_10_05_26
-#define NUM_SB 100//mod_eure_lor
-#define LAMBDA0 -103   //mod_lor_10_05_26: for mu0 that is the averaged value
-#define LAMBDA1 -98   //mod_lor_10_05_26: for mu1 that is the maximum value
+#define MAX_NUM_SB 50//mod_eure_lor
+#define SB_BANDWIDTH   180  //! in khz, bandwidth of each sub-band; AAA -> modify only in relation with NUM_SB and sensing parameters in emul_interface!  //mod_lor_10_05_26
+#define NUM_SB 50//mod_eure_lor
+#define LAMBDA0 -90   //mod_lor_10_05_26: for mu0 that is the averaged value
+#define LAMBDA1 -75   //mod_lor_10_05_26: for mu1 that is the maximum value
 #define MIN_NB_SB_CH 25   //mod_lor_10_05_26: for mu1 that is the maximum value
 #define BG 8 //! sub-bands of protection between channels
 #define MAX_USER_NB 5 //! max number of users //add_lor_10_11_03

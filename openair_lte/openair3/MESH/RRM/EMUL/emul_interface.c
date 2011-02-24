@@ -104,7 +104,7 @@ static char c; //mod_lor_10_04_27
 } ;*/
 //mod_lor_10_01_25++
 node_info_t node_info[10] = {
- { .L2_id={{0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0xC0,0xA8,0x0C,0x09} },
+ { .L2_id={{0x00,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0xC0,0xA8,0x0C,0x43} },
  { .L2_id={{0x01,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0xC0,0xA8,0x0C,0x14} },
  { .L2_id={{0x02,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x03,0x03} },
  { .L2_id={{0x03,0x00,0xAA,0xCC,0x33,0x55,0x00,0x11}}, .L3_info_t=IPv4_ADDR, .L3_info={0x0A,0x00,0x04,0x04} },
@@ -120,8 +120,8 @@ node_info_t node_info[10] = {
  * \brief  Sensing Parameters
  */
 unsigned int     Start_fr   = 2420000; //!< Low frequency limit KHz
-unsigned int     Stop_fr    = 2460000; //!< High frequency limit KHz
-unsigned int     Meas_band  =   20000;  //!< Channel bandwidth KHz
+unsigned int     Stop_fr    = 2438000; //!< High frequency limit KHz
+unsigned int     Meas_band  =   9000;  //!< Channel bandwidth KHz
 unsigned int     Meas_tpf   = 2;    //!< Misuration time per frequency
 unsigned int     Overlap    = 5;    //!< Overlap
 unsigned int     Sampl_freq = 10;   //!< Sample frequency
