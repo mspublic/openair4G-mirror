@@ -153,7 +153,7 @@ void openair1_restart(void) {
 
 #ifdef OPENAIR2
   msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-  mac_resynch();
+  //mac_resynch();
 #endif //OPENAIR2
 
 }
@@ -161,7 +161,7 @@ void openair1_restart(void) {
 //-----------------------------------------------------------------------------
 /** MACPHY Thread */
 static void * openair_thread(void *param) {
-  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------ddd
 
   //------------------------------
 #ifndef USER_MODE
@@ -173,6 +173,10 @@ static void * openair_thread(void *param) {
   int diff;
 
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
+
+  // run on CPU 1, which should be reserved only for this (by adding isolcpus=1 noirqbalance to the kernel options). Also use IsolCpusMaks=0x2 when loading rtai_hal
+  rt_set_runnable_on_cpuid(pthread_self(),1);
+  rt_sleep(nano2count(NS_PER_SLOT));
 
 
 #ifdef SERIAL_IO
@@ -460,12 +464,11 @@ void openair_sync(void) {
 		   0);
 	}
 
-	//lte_ue_measurements(lte_ue_common_vars,
-	//		    lte_frame_parms,
-	//		    &PHY_vars->PHY_measurements,
-	//		    sync_pos-sync_pos_slot,
-	//		    0,
-	//		    0);
+	lte_ue_measurements(PHY_vars_UE_g[0],
+			    &PHY_vars_UE_g[0]->lte_frame_parms,
+			    sync_pos-sync_pos_slot,
+			    0,
+			    0);
 
 	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
 
@@ -512,7 +515,8 @@ void openair_sync(void) {
 	    mac_xface->frame = 0;
 #ifdef OPENAIR2
 	    msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-	    mac_resynch();
+	    //mac_resynch();
+	    mac_xface->chbch_phy_sync_success(0,0);
 #endif //OPENAIR2
 	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	    openair_daq_vars.last_adac_cnt=-1;            
@@ -528,34 +532,33 @@ void openair_sync(void) {
 	  msg("[openair][SCHED][SYNCH] PBCH not decoded!\n");
 	}
       }
-    }
    
-    /*
     // Measurements
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
       // energy[i] = signal_energy(lte_eNB_common_vars->rxdata[i], FRAME_LENGTH_COMPLEX_SAMPLES);
-      PHY_vars->PHY_measurements.wideband_cqi[0][i] = signal_energy((int*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_COMPLEX_SAMPLES);
-      PHY_vars->PHY_measurements.wideband_cqi_dB[0][i] = dB_fixed(PHY_vars->PHY_measurements.wideband_cqi[0][i]);
-      rx_power += PHY_vars->PHY_measurements.wideband_cqi[0][i];
+      PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi[0][i] = signal_energy((int*)RX_DMA_BUFFER[0][i],FRAME_LENGTH_COMPLEX_SAMPLES);
+      PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_dB[0][i] = dB_fixed(PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi[0][i]);
+      rx_power += PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi[0][i];
     }
-    PHY_vars->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
+    PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_tot[0] = dB_fixed(rx_power);
     if (openair_daq_vars.rx_rf_mode == 0)
-      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB + 25;
+      PHY_vars_UE_g[0]->PHY_measurements.rx_rssi_dBm[0] = PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars_UE_g[0]->rx_total_gain_dB + 25;
     else
-      PHY_vars->PHY_measurements.rx_rssi_dBm[0] = PHY_vars->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars->rx_total_gain_dB;
+      PHY_vars_UE_g[0]->PHY_measurements.rx_rssi_dBm[0] = PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_tot[0] -  PHY_vars_UE_g[0]->rx_total_gain_dB;
 
     msg("[openair][SCHED] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB, TDD %d, Dual_tx %d\n",
-	PHY_vars->PHY_measurements.rx_rssi_dBm[0], 
-	PHY_vars->PHY_measurements.wideband_cqi_dB[0][0],
-	PHY_vars->PHY_measurements.wideband_cqi_dB[0][1],
-	PHY_vars->PHY_measurements.wideband_cqi[0][0],
-	PHY_vars->PHY_measurements.wideband_cqi[0][1],
-	PHY_vars->rx_total_gain_dB,
+	PHY_vars_UE_g[0]->PHY_measurements.rx_rssi_dBm[0], 
+	PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_dB[0][0],
+	PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi_dB[0][1],
+	PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi[0][0],
+	PHY_vars_UE_g[0]->PHY_measurements.wideband_cqi[0][1],
+	PHY_vars_UE_g[0]->rx_total_gain_dB,
 	pci_interface[0]->tdd,
 	pci_interface[0]->dual_tx);
 
-    */
+    }
+
 #ifdef EMOS
     memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
     emos_dump_UE.timestamp = rt_get_time_ns();
@@ -1054,7 +1057,7 @@ void openair_sched_cleanup() {
 void openair_sched_exit(char *str) {
 
   msg("%s\n",str);
-  msg("[OPENAIR][SCHED] TTI %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
+  msg("[OPENAIR][SCHED] Frame %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
   
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;

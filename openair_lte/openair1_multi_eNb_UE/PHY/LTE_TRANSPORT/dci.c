@@ -22,6 +22,8 @@
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
+#undef ALL_AGGREGATION
+
 #ifndef __SSE3__
 __m128i zero2;
 #define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero2,(xmmx)))
@@ -1605,6 +1607,8 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 			      lte_ue_pdcch_vars[frame_parms->Nid_cell % 3],
 			      mimo_mode);
 
+  debug_msg("[PDCCH] n_pdcch_symbols =%d\n",n_pdcch_symbols);
+
   //  printf("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
 
   pdcch_demapping(lte_ue_pdcch_vars[eNb_id]->llr,
@@ -2285,6 +2289,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   // First check common search spaces at aggregation 4 (SI_RNTI and RA_RNTI format 1A), 
   // and UE_SPEC format0 (PUSCH) too while we're at it
 
+
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  dci_alloc,
 			  eNb_id,
@@ -2305,7 +2310,8 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   if (CCEmap0==0xffff)
     return(dci_cnt);
 
-  /* Disabled for performance
+#ifdef ALL_AGGREGATION
+  // Disabled for performance
   // Now check common search spaces at aggregation 8 (SI_RNTI and RA_RNTI format 1A), 
   // and UE_SPEC format0 (PUSCH) too while we're at it
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2327,9 +2333,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			  &CCEmap2);
   if (CCEmap0==0xffff)
     return(dci_cnt);
-  */
 
-  /* diabled for performance
   // Now check UE_SPEC search spaces at aggregation 1 
   old_dci_cnt=dci_cnt;
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2463,9 +2467,9 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			  &CCEmap2);
   if (CCEmap0==0xffff)
     return(dci_cnt);
-  */
+#endif
 
-
+  /*
   // Now check UE_SPEC search spaces at aggregation 4 
   old_dci_cnt=dci_cnt;
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2489,6 +2493,8 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
+  */
+
 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  dci_alloc,
@@ -2512,7 +2518,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
 
-  /* Disabled for performance
+#ifdef ALL_AGGREGATION
   // Now check UE_SPEC search spaces at aggregation 8 
   old_dci_cnt=dci_cnt;
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2554,7 +2560,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
-  */
+#endif
   return(dci_cnt);
 }
 

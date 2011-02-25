@@ -19,11 +19,11 @@ fref = fc+fs/4;
 power_dBm=-70;
 
 
-%gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
-%gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
-%gpib_send(gpib_card,gpib_device,['FREQ 1.91860 Ghz']); % set the frequency 
-%gpib_send(gpib_card,gpib_device,['FREQ ' int2str(fref/1e3) 'khz']); % set the frequency 
-%gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); % activate output 
+gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
+gpib_send(gpib_card,gpib_device,['POW ' int2str(power_dBm+cables_loss_dB) 'dBm']);
+gpib_send(gpib_card,gpib_device,['FREQ 1.91860 Ghz']); % set the frequency 
+gpib_send(gpib_card,gpib_device,['FREQ ' int2str(fref/1e3) 'khz']); % set the frequency 
+gpib_send(gpib_card,gpib_device,'OUTP:STAT ON'); % activate output 
 
 %keyboard;
 
@@ -77,6 +77,6 @@ until (size < 1)
 
 write_tcxo
 
-%gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
+gpib_send(gpib_card,gpib_device,'OUTP:STAT OFF');         %  deactivate output
 
 

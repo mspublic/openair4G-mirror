@@ -244,7 +244,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
   // Modulation
 
   Msymb = G/Q_m;
-  if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1))// For Distributed Alamouti Scheme in Collabrative Communication
+  if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1))
+    // For Distributed Alamouti Scheme in Collabrative Communication
+    // TODO: change modulation here (both for IFFT_FPGA on and off)!!! 
     {
       for (i=0,j=Q_m;i<Msymb;i+=2,j+=2*Q_m) {
 
@@ -482,7 +484,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	}//switch
       }//for
-	      }//if
+    }//if
   else
     {
       for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
@@ -490,18 +492,18 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	switch (Q_m) {
 
 	case 2:
-
+	  // TODO: this has to be updated!!!
 #ifndef IFFT_FPGA_UE
 	  ((short*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  ((short*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 0)? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  //      if (i<Msc_PUSCH)
 	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
 #else
-	  qpsk_table_offset = 1;
-	  if (ulsch->b_tilde[j] == 1)
-	    qpsk_table_offset+=1;
-	  if (ulsch->b_tilde[j+1] == 1) 
+	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
+	  if (ulsch->b_tilde[j] == 0)
 	    qpsk_table_offset+=2;
+	  if (ulsch->b_tilde[j+1] == 0) 
+	    qpsk_table_offset+=1;
       
 	  ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
 #endif    
@@ -511,16 +513,16 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	case 4:
 #ifndef IFFT_FPGA_UE
 	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j] == 1)
 	    qam16_table_offset_re+=2;
 
 	  if (ulsch->b_tilde[j+1] == 1)
-	    qam16_table_offset_re+=1;
-      
-      
-	  qam16_table_offset_im = 0;
-	  if (ulsch->b_tilde[j+2] == 1)
 	    qam16_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset_re+=1;
 
 	  if (ulsch->b_tilde[j+3] == 1)
 	    qam16_table_offset_im+=1;
@@ -530,18 +532,18 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam16_table[qam16_table_offset_im])>>15);
 	  //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
 #else
-	  qam16_table_offset = 5;
+	  qam16_table_offset = MOD_TABLE_16QAM_OFFSET;
 	  if (ulsch->b_tilde[j] == 1)
-	    qam16_table_offset+=2;
-
-	  if (ulsch->b_tilde[j+1] == 1)
-	    qam16_table_offset+=1;
-
-	  if (ulsch->b_tilde[j+2] == 1)
 	    qam16_table_offset+=8;
 
-	  if (ulsch->b_tilde[j+3] == 1)
+	  if (ulsch->b_tilde[j+1] == 1)
 	    qam16_table_offset+=4;
+
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam16_table_offset+=2;
+
+	  if (ulsch->b_tilde[j+3] == 1)
+	    qam16_table_offset+=1;
 
       
 	  ulsch->d[i] = (mod_sym_t) qam16_table_offset;
@@ -553,21 +555,22 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 #ifndef IFFT_FPGA_UE
 	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+
 	  if (ulsch->b_tilde[j] == 1)
 	    qam64_table_offset_re+=4;
       
 	  if (ulsch->b_tilde[j+1] == 1)
-	    qam64_table_offset_re+=2;
-      
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  qam64_table_offset_im = 0;
-	  if (ulsch->b_tilde[j+3] == 1)
 	    qam64_table_offset_im+=4;
       
-	  if (ulsch->b_tilde[j+4] == 1)
+	  if (ulsch->b_tilde[j+2] == 1)
+	    qam64_table_offset_re+=2;
+      
+	  if (ulsch->b_tilde[j+3] == 1)
 	    qam64_table_offset_im+=2;
+      
+	  if (ulsch->b_tilde[j+4] == 1)
+	    qam64_table_offset_re+=1;
       
 	  if (ulsch->b_tilde[j+5] == 1)
 	    qam64_table_offset_im+=1;
@@ -577,26 +580,26 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	  ((short*)&ulsch->d[i])[1]=(short)(((int)amp*qam64_table[qam64_table_offset_im])>>15);
 
 #else
-	  qam64_table_offset = 21;
+	  qam64_table_offset = MOD_TABLE_64QAM_OFFSET;
 	  if (ulsch->b_tilde[j] == 1)
-	    qam64_table_offset+=4;
+	    qam64_table_offset+=32;
       
 	  if (ulsch->b_tilde[j+1] == 1)
-	    qam64_table_offset+=2;
+	    qam64_table_offset+=16;
       
 	  if (ulsch->b_tilde[j+2] == 1)
-	    qam64_table_offset+=1;
+	    qam64_table_offset+=8;
       
       
       
 	  if (ulsch->b_tilde[j+3] == 1)
-	    qam64_table_offset+=32;
+	    qam64_table_offset+=4;
       
 	  if (ulsch->b_tilde[j+4] == 1)
-	    qam64_table_offset+=16;
+	    qam64_table_offset+=2;
       
 	  if (ulsch->b_tilde[j+5] == 1)
-	    qam64_table_offset+=8;
+	    qam64_table_offset+=1;
       
       
 	  ulsch->d[i] = (mod_sym_t) qam64_table_offset;

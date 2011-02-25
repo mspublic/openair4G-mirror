@@ -1077,7 +1077,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned short rx_power_correction;
 
 #ifdef DEBUG_ULSCH
-  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNb_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb);
+  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, realy_flag %d, diversity_scheme %d\n",eNb_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb, relay_flag, diversity_scheme);
 #endif //DEBUG_ULSCH
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
@@ -1092,8 +1092,8 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     msg("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
 	ulsch->harq_processes[harq_pid]->first_rb,
 	ulsch->harq_processes[harq_pid]->nb_rb,
-	eNB_common_vars->rxdataF,
-    	eNB_ulsch_vars->rxdataF_ext);
+	eNB_common_vars->rxdataF[eNb_id],
+    	eNB_ulsch_vars->rxdataF_ext[eNb_id]);
 #endif //DEBUG_ULSCH
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNb_id],

@@ -52,7 +52,6 @@ PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o
 PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/lte_init.o
 PHY_OBJS += $(TOP_DIR)/PHY/INIT/init_top.o
-PHY_OBJS += $(TOP_DIR)/MAC_INTERFACE/init.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/file_output.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/fft.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/lte_dfts.o

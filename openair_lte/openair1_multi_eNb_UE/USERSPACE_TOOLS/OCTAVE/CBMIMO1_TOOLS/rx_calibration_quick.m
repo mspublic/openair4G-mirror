@@ -17,9 +17,9 @@ fs = 7680e3;
 %fs = 6500e3;
 fref = fc+fs/4;
 
-dual_tx = 0;
 cables_loss_dB = 6;    % we need to account for the power loss between the signal generator and the card input (splitter, cables)
-
+dual_tx = 0;
+tdd = 1;
 
 gpib_send(gpib_card,gpib_device,'*RST;*CLS');   % reset and configure the signal generator
 gpib_send(gpib_card,gpib_device,'POW -90dBm');
@@ -28,7 +28,7 @@ gpib_send(gpib_card,gpib_device,'POW -90dBm');
 %gpib_send(gpib_card,gpib_device,'FREQ 1.909225GHz');
 gpib_send(gpib_card,gpib_device,sprintf("FREQ %dHz",fref));
 
-oarf_config(freqband,'config.cfg','scenario.scn',dual_tx)
+oarf_config(freqband,tdd,dual_tx)
 #oarf_set_rx_rfmode(1);
 
 saturation_threshold =5;              % min number of samples (real+imaginary) equal to the max per frame to declare saturation

@@ -13,28 +13,6 @@ OPENAIR1_TOP = ../../..
 OPENAIR2_TOP = ../../../../openair2
 OPENAIR3_TOP = ../../../../openair3
 
-COMMON_DIR = $(OPENAIR2_DIR)/COMMON
-L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
-RLC_UM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/UM_v6.1.0_LITE
-RLC_AM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/AM
-RLC_TM_DIR = $(OPENAIR2_DIR)/LAYER2/RLC/TM
-RLC_DIR = $(OPENAIR2_DIR)/LAYER2/RLC
-PDCP_DIR = $(OPENAIR2_DIR)/LAYER2/PDCP
-MEM_DIR = $(OPENAIR2_DIR)/UTIL/MEM
-LIST_DIR = $(OPENAIR2_DIR)/UTIL/LISTS
-MATH_DIR = $(OPENAIR2_DIR)/UTIL/MATH
-TIMER_DIR = $(OPENAIR2_DIR)/UTIL/TIMER
-PHY_INTERFACE_DIR = $(OPENAIR2_DIR)/PHY_INTERFACE
-RRC_DIR = $(OPENAIR2_DIR)/RRC/MESH
-L2_INTERFACE_DIR = $(OPENAIR2_DIR)/RRC/L2_INTERFACE
-SIMULATION_DIR = $(OPENAIR2_DIR)/SIMULATION
-CONTROL_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/CONTROL
-ABSTRACTION_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/ABSTRACTION
-TRANSPORT_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/TRANSPORT
-MAC_DIR = $(OPENAIR2_DIR)/LAYER2/MAC
-DEVICE_DIR = $(OPENAIR2_DIR)/SIMULATION/PHY_EMULATION/DEVICE_DRIVER
-RRC_CELL_DIR = $(OPENAIR2_DIR)/RRC/CELLULAR
-
 ifdef RTAI
 # Get the RTAI variables
 CCC = $(shell rtai-config --cc)
@@ -98,26 +76,27 @@ ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 endif
 
+EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR) -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/RRC/L2_INTERFACE -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0 -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/LAYER2/PDCP -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/TIMER -I$(OPENAIR2_DIR)/PHY_INTERFACE -I$(OPENAIR2_DIR)/RRC/MESH -I$(OPENAIR2_DIR)/RRC/L2_INTERFACE -I$(OPENAIR2_DIR)/LAYER2/MAC -I$(OPENAIR2_DIR)/UTIL/LOG -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM -I/usr/include 
+
+include $(OPENAIR1_DIR)/SCHED/Makefile.inc
+include $(OPENAIR1_DIR)/PHY/Makefile.inc
+
 ifeq ($(OPENAIR2),1)
-EXTRA_CFLAGS += -DOPENAIR2
+include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
+else
+include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
 endif
 
 
-EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3_DIR)/MESH -I$(OPENAIR3_DIR)/MESH/RRM -I /usr/include
-
 obj-m += openair_rf.o
-
-include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
-include $(OPENAIR1_DIR)/SCHED/Makefile.inc
-include $(OPENAIR1_DIR)/PHY/Makefile.inc
 
 # Device driver
 openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/bigphys.o
 openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/reserve_mem.o
 #openair_rf-objs += $(OPENAIR1_TOP)/ARCH/COMMON/amp.o
 
-openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_fileops.o fifo_printf.o 
-#openair_rf-objs += cbmimo1_generate_ofdm.o cbmimo1_generate_fs4.o  cbmimo1_proc.o 
+openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma.o cbmimo1_get_frame.o cbmimo1_fileops.o fifo_printf.o cbmimo1_proc.o 
+#openair_rf-objs += cbmimo1_generate_ofdm.o cbmimo1_generate_fs4.o  
 
 # MAC Interface
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
@@ -144,13 +123,14 @@ endif
 
 #include files for OPENAIR2
 ifeq ($(OPENAIR2),1)
-#todo
+openair_rf-objs += $(L2_OBJS)
 endif
 
 test:
 	echo $(openair_rf-objs)
 	echo $(CFLAGS)
 	echo $(EXTRA_CFLAGS)
+	echo $(L2_incl)
 
 clean:
-	rm $(openair_rf-objs) $(obj-m)
+	rm -f $(openair_rf-objs) $(obj-m)

@@ -30,18 +30,14 @@ cleanall:
 	find -name '*.cmd' -delete -print; \
 	find -name '*~' -delete -print; \
 	find -name octave-core -delete -print; \
-	rm -f USERSPACE_TOOLS/OPENAIR_RF/openair_rf_cbmimo1; \
-	rm -f USERSPACE_TOOLS/SCOPE/chbch_scope; \
-	rm -f USERSPACE_TOOLS/SCOPE/sach_scope; \
-	rm -f SIMULATION/PHY/CHBCH/chbch_sim; \
-	rm -f SIMULATION/PHY/SACH/sach_sim; \
 
 #Remove intermediate files (.o,.bak,~,etc)
 clean:
-	find -name '*.o' -delete -print; \
-	find -name '*.bak' -delete -print; \
-	find -name '*~' -delete -print; \
-	find -name 'octave-core' -delete -print; 
+	cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) clean OPENAIR_LTE=1 OPENAIR1=1 OPENAIR2=1
+#	find -name '*.o' -delete -print; \
+#	find -name '*.bak' -delete -print; \
+#	find -name '*~' -delete -print; \
+#	find -name 'octave-core' -delete -print; 
 
 #Remove files created by SVN, dangerous!!! DO NOT RUN ON YOUR WORKING REPOSITORY!
 #FK: Don't do this! Use svn export instead.
@@ -82,6 +78,14 @@ install_cbmimo1_softmodem:
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
 	fi
 
+install_cbmimo1_softmodem1:
+	make fifos
+	if [ $(updatefirmware) = "1" -o $(updatefirmware) = "yes" ] ; then \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko updatefirmware=1 ; \
+	else \
+		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem_layer1.ko ; \
+	fi
+
 remove_cbmimo1:
 	rmmod openair_rf
 
@@ -89,3 +93,6 @@ remove_cbmimo1_l2:
 	rmmod openair_rrc
 	rmmod openair_l2
 	rmmod openair_rf
+
+test:
+	echo $(MAKE)

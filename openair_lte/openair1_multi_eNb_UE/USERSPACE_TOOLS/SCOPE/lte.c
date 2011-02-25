@@ -45,9 +45,10 @@ PHY_VARS_UE *PHY_vars_UE;
 //char demod_data[2048];
 
 short *channel[8],*channel_f[8],*rx_sig[8],**rx_sig_ptr;
+short *rx_sig_f[8],**rx_sig_f_ptr;
 int *sync_corr;
 char *pbch_llr;
-short *pbch_comp;
+short *pbch_comp, *pdcch_comp;
 short *dlsch_llr,*dlsch_comp;
 
 int length,offset;
@@ -85,10 +86,12 @@ void lte_scope_idle_callback(void) {
   // Channel frequency response
   cum_avg = 0;
   ind = 0;
-  for (j=0; j<4; j++) { 
-    for (i=0;i<nb_ant_rx;i++) {
+  //for (j=0; j<4; j++) { 
+  //  for (i=0;i<nb_ant_rx;i++) {
+  for (j=0; j<1; j++) { 
+    for (i=0;i<1;i++) {
       
-      for (k=0;k<NUMBER_OF_OFDM_CARRIERS;k++){
+      for (k=0;k<frame_parms->symbols_per_tti*NUMBER_OF_OFDM_CARRIERS;k++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_f[(j<<1)+i][2*k]);
 	Im = (float)(channel_f[(j<<1)+i][2*k+1]);
@@ -106,7 +109,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
-
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -115,7 +118,9 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
+  /*
   // channel time resonse
   cum_avg = 0;
   ind = 0;
@@ -133,35 +138,34 @@ void lte_scope_idle_callback(void) {
       }
     }
   }
-
+  
   //fl_set_xyplot_ybounds(form->channel_t_im,10,90);
   fl_set_xyplot_data(form->channel_t_im,sig_time,mag_sig,ind,"","","");
+  */
 
-  /*
   // channel_t_re = rx_sig[0]
   //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
-  for (i=0; i<512*12; i++)  {
-    sig2[i] = (float) (rx_sig[0][2*i]);
+  for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = (float) (rx_sig_f[0][4*i]);
     time2[i] = (float) i;
     } 
 
-  //fl_set_xyplot_ybounds(form->channel_t_im,10,90);
-  //fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  fl_set_xyplot_data(form->channel_t_im,time2,sig2,512*12,"","","");
-  */
+  //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
+  //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
  
-  /*
   // channel_t_im = rx_sig[1]
   if (nb_ant_tx>1) {
-    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+    for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
       sig2[i] = (float) (rx_sig[1][2*i]);
       time2[i] = (float) i;
     }
 
-    fl_set_xyplot_ybounds(form->channel_t_re,0,100);
-    fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+    //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
+    //fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+    fl_set_xyplot_data(form->channel_t_im,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
   }
-  */
 
   // PBCH LLR
   j=0;
@@ -198,6 +202,23 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
   //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
 
+  // PDCCH I/Q
+  j=0;
+  for(i=0;i<12*25*3;i++) {
+    I[j] = pdcch_comp[2*i];
+    Q[j] = pdcch_comp[2*i+1];
+    j++;
+    /*
+    if (i==47)
+      i=96;
+    else if (i==191)
+      i=239;
+    */
+  }
+
+  fl_set_xyplot_data(form->scatter_plot1,I,Q,12*25*3,"","","");
+  //fl_set_xyplot_xbounds(form->scatter_plot,-100,100);
+  //fl_set_xyplot_ybounds(form->scatter_plot,-100,100);
 
   // DLSCH LLR
   for(i=0;i<12*12*7*2;i++) {
@@ -254,6 +275,7 @@ int main(int argc, char *argv[]) {
   char title[20];
 
   LTE_UE_DLSCH     *lte_ue_dlsch;
+  LTE_UE_PDCCH     *lte_ue_pdcch;
   LTE_UE_PBCH      *lte_ue_pbch;
   unsigned int     bigphys_top;
 
@@ -290,6 +312,7 @@ int main(int argc, char *argv[]) {
   printf("PHY_vars->lte_ue_common_vars.dl_ch_estimates[0] = %p\n",PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0]);
   printf("PHY_vars->lte_ue_common_vars.sync_corr = %p\n",PHY_vars_UE->lte_ue_common_vars.sync_corr);
   printf("PHY_vars->lte_ue_pbch_vars[0] = %p\n",PHY_vars_UE->lte_ue_pbch_vars[0]);
+  printf("PHY_vars->lte_ue_pdcch_vars[0] = %p\n",PHY_vars_UE->lte_ue_pdcch_vars[0]);
   printf("PHY_vars->lte_ue_dlsch_vars[0] = %p\n",PHY_vars_UE->lte_ue_dlsch_vars[0]);
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
@@ -334,6 +357,13 @@ int main(int argc, char *argv[]) {
     rx_sig[i] = (short *)(mem_base + 
 			  (unsigned int)rx_sig_ptr[i] -
 			  bigphys_top); 
+
+    rx_sig_f_ptr = (short **)(mem_base + 
+			    (unsigned int)PHY_vars_UE->lte_ue_common_vars.rxdataF -
+			    bigphys_top);
+    rx_sig_f[i] = (short *)(mem_base + 
+			  (unsigned int)rx_sig_f_ptr[i] -
+			  bigphys_top); 
   }
 
   sync_corr = (int*)(mem_base + 
@@ -362,6 +392,20 @@ int main(int argc, char *argv[]) {
   
   printf("pbch_comp = %p\n",pbch_comp);
   printf("pbch_llr= %p\n",pbch_llr);
+
+  lte_ue_pdcch = (LTE_UE_PDCCH *) (mem_base + 
+				   (unsigned int)PHY_vars_UE->lte_ue_pdcch_vars[0] - 
+				   bigphys_top);
+
+  printf("lte_ue_pdcch (kernel) = %p\n",PHY_vars_UE->lte_ue_pdcch_vars[0]);
+  printf("lte_ue_pdcch (local)= %p\n",lte_ue_pdcch);
+
+  pdcch_comp = (short*)(mem_base + 
+			(unsigned int)lte_ue_pdcch->rxdataF_comp + 
+			8*sizeof(int*) -
+			bigphys_top);
+
+  printf("pdcch_comp = %p\n",pdcch_comp);
 
 
   lte_ue_dlsch = (LTE_UE_DLSCH *) (mem_base + 

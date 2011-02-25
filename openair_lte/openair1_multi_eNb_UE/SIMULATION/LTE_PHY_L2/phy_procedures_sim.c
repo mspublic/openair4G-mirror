@@ -69,68 +69,7 @@ void init_bypass() {
   bypass_init(emul_tx_handler,emul_rx_handler);
 }
 
-void l2_init(PHY_VARS_eNB *phy_vars_eNb) {
 
-  s32 ret;
-  s32 ue_id;
-
-  msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
-  //    NB_NODE=2; 
-  //    NB_INST=2;
-
-
-  mac_init_global_param(); 
-  
-  
-  mac_xface->macphy_init=mac_top_init;
-  msg("[MAIN]MAC_INIT IN...\n");
-  ret = mac_init();
-  
-  if (ret >= 0) {
-
-    //eNB MAC functions    
-    mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
-    mac_xface->get_dci_sdu               = get_dci_sdu;
-    mac_xface->fill_rar                  = fill_rar;
-    mac_xface->terminate_ra_proc         = terminate_ra_proc;
-    mac_xface->initiate_ra_proc          = initiate_ra_proc;
-    mac_xface->rx_sdu                    = rx_sdu;
-    mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
-    
-    //UE MAC functions    
-    mac_xface->ue_decode_si              = ue_decode_si;
-    mac_xface->ue_send_sdu               = ue_send_sdu;
-    mac_xface->ue_get_sdu                = ue_get_sdu;
-    mac_xface->ue_get_rach               = ue_get_rach;
-    mac_xface->ue_process_rar            = ue_process_rar;
-
-    // PHY measurement structure
-    mac_xface->eNB_UE_stats    = (LTE_eNB_UE_stats **)malloc(NB_CH_INST*sizeof(LTE_eNB_UE_stats*));
-    for (ue_id=0; ue_id<NB_UE_INST;ue_id++){ // begin navid
-      mac_xface->eNB_UE_stats[ue_id] = &phy_vars_eNb->eNB_UE_stats[ue_id];
-    }// end navid 
-    // PHY Frame configuration
-    mac_xface->lte_frame_parms = &phy_vars_eNb->lte_frame_parms;
-    
-    // PHY Helper functions
-    mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
-    mac_xface->computeRIV             = computeRIV;
-    mac_xface->get_TBS                = get_TBS;
-    mac_xface->get_nCCE_max           = get_nCCE_max;
-
-    msg("ALL INIT OK\n");
-    
-    mac_xface->macphy_exit=exit;
-    
-    
-    
-    mac_xface->frame=0;
-    
-    mac_xface->macphy_init();
-    Mac_rlc_xface->Is_cluster_head[0] = 1;
-    Mac_rlc_xface->Is_cluster_head[1] = 0;
-  }
-}
 #endif
 
 void help(void) {
@@ -208,7 +147,7 @@ void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_
 #endif
 
 
-void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag) {
+void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -216,8 +155,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   int l;
 #endif
   s32 **txdata,**rxdata;
-  LTE_DL_FRAME_PARMS *frame_parms;
-
+  
   u8 eNB_id=0,UE_id=0,aa;
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
@@ -437,7 +375,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   
 }
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -445,7 +383,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   int l;
 #endif
   s32 **txdata,**rxdata;
-  LTE_DL_FRAME_PARMS *frame_parms;
 
   u8 UE_id=0,eNB_id=0,aa;
   double tx_pwr, rx_pwr;
@@ -517,6 +454,9 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	else {
 	  normal_prefix_mod(txdataF2[aa],txdata[aa],7,frame_parms);
 	}
+      if ((next_slot==8) && (mac_xface->frame==4)) {
+	write_output("UEtxsigF20.m","txsF20", txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+      }
 #else //IFFT_FPGA
       
       slot_offset = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
@@ -540,8 +480,16 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 			    frame_parms);
 
 	}
-      }  
+      }
+      if ((next_slot==8) && (mac_xface->frame==4)) {
+	write_output("UEtxsigF0.m","txsF0", &txdataF[0][slot_offset],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNb_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+      }
+  
 #endif //IFFT_FPGA
+      if ((next_slot==8) && (mac_xface->frame==4)) {
+	write_output("UEtxsig0.m","txs0", txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNb_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),1,1);
+      }
+
     }  // UE_id TX loop
   } // abstraction_flag
 
@@ -857,14 +805,14 @@ int main(int argc, char **argv) {
   frame_parms->Ncp                = extended_prefix_flag;
   frame_parms->Nid_cell           = 0;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = 1;
-  frame_parms->nb_antennas_rx     = 1;
+  frame_parms->nb_antennas_tx     = 2;
+  frame_parms->nb_antennas_rx     = 2;
   frame_parms->first_dlsch_symbol = 4;
   frame_parms->num_dlsch_symbols  = (extended_prefix_flag==0) ? 8: 6;
   frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
   //initialize the log generator 
-  logInit();
+  //logInit();
   init_frame_parms(frame_parms);
   //copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
   phy_init_top(frame_parms);
@@ -896,7 +844,7 @@ int main(int argc, char **argv) {
       PHY_vars_eNb_g[eNB_id]->ulsch_eNb = (LTE_eNb_ULSCH_t**) malloc16((1+NUMBER_OF_UE_MAX)*sizeof(LTE_eNb_ULSCH_t*));
     */
 
-    for (i=0;i<NB_UE_INST;i++) {
+    for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
 	PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j] = new_eNb_dlsch(1,8,abstraction_flag);
 	if (!PHY_vars_eNb_g[eNB_id]->dlsch_eNb[i][j]) {
@@ -956,7 +904,7 @@ int main(int argc, char **argv) {
       PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     */
 
-    for (i=0;i<NB_CH_INST;i++) {
+    for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       for (j=0;j<2;j++) {
 	PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]  = new_ue_dlsch(1,8,abstraction_flag);
 	if (!PHY_vars_UE_g[UE_id]->dlsch_ue[i][j]) {
@@ -1132,7 +1080,7 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef OPENAIR2
-  l2_init(PHY_vars_eNb_g[0]);
+  l2_init(&PHY_vars_eNb_g[0]->lte_frame_parms);
 
 
 
@@ -1178,7 +1126,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag);
+	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1193,7 +1141,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1210,7 +1158,7 @@ int main(int argc, char **argv) {
 		
 	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1225,7 +1173,7 @@ int main(int argc, char **argv) {
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)

@@ -8,7 +8,9 @@ CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR      = ../..
-OPENAIR2_DIR = ../../../openair2
+OPENAIR1_TOP = ../..
+OPENAIR2_TOP = ../../../openair2
+OPENAIR3_TOP = ../../../openair3
 OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
@@ -29,10 +31,10 @@ endif
 CFLAGS += -DPHY_ABSTRACTION
 
 
-include $(TOP_DIR)/PHY/Makefile.inc
-include $(TOP_DIR)/SCHED/Makefile.inc
+include $(OPENAIR1_DIR)/PHY/Makefile.inc
+include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
-include $(TOP_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
+include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
@@ -49,16 +51,13 @@ all: physim
 
 
 $(OBJ) : %.o : %.c
-	$(CC) -c $(CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
 
 $(L2_OBJS) : %.o : %.c
-	$(CC) -c $(CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
 
 physim : $(OBJ) $(L2_OBJS) phy_procedures_sim.c phy_procedures_sim_form.c 
-	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
-
-test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
-	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
+	$(CC)  phy_procedures_sim.c phy_procedures_sim_form.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
 
 clean:
 	rm -f physim

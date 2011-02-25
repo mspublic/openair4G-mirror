@@ -10,7 +10,7 @@ CFLAGS = -Wall -g -ggdb -DNODE_RG -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_T
 #CHBCH2_OBJS = chbch_2streams_scope.o chbch_2streams.o 
 #CHBCH2_OBJS = chbch_scope.o chbch_2streams_ml.o 
 LTE_OBJS = lte_scope.o lte.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/INIT/init_top.o $(TOP_DIR)/PHY/TOOLS/fft.o
-LTE_UL_OBJS = lte_scope_ul.o lte_ul.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/INIT/init_top.o
+LTE_UL_OBJS = lte_scope_ul.o lte_ul.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/INIT/init_top.o $(TOP_DIR)/PHY/TOOLS/fft.o
 
 ifdef EMOS
 CFLAGS += -DEMOS

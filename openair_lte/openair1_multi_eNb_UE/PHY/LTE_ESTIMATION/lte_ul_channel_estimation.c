@@ -66,14 +66,13 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
-      //      msg("Componentwise prod aa %d, symbol_offset %d\n",aa,symbol_offset);
+      //msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
       mult_cpx_vector_norep2((short*) &rxdataF_ext[aa][symbol_offset<<1],
 			     (short*) ul_ref_sigs_rx[0][0][Msc_RS_idx],
 			     (short*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
-
-}
+    }
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
 
@@ -287,7 +286,16 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   N_symb = 2*7-frame_parms->Ncp;
   symbol = (sub_frame_number+1)*N_symb-1; //SRS is always in last symbol of subframe
   T_SFC = (SRS_parms->Ssrs<=7 ? 5 : 10);
- 
+
+  /* 
+  msg("SRS channel estimation eNb %d, subframs %d, %d %d %d %d %d\n",eNb_id,sub_frame_number,
+      SRS_parms->Csrs,
+      SRS_parms->Bsrs,
+      SRS_parms->kTC,
+      SRS_parms->n_RRC,
+      SRS_parms->Ssrs);
+  */
+
   if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[SRS_parms->Ssrs]) {
 
     if (generate_srs_rx(frame_parms, 
@@ -313,6 +321,8 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			    (short*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
 			    frame_parms->ofdm_symbol_size,
 			    15);
+
+      //msg("SRS channel estimation cmult out\n");
 #ifdef DEBUG_SRS
 	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
 	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
@@ -320,9 +330,11 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
   }
+  /*
   else {
     for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) 
       bzero(eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size*sizeof(int));
   }
+  */
   return(0);
 }

@@ -163,4 +163,17 @@ unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) 
 }
 
 
+LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
+  s8 UE_id;
+  if ((PHY_vars_eNb_g == NULL) || (PHY_vars_eNb_g[Mod_id] == NULL)) {
+    msg("get_eNB_UE_stats: No phy_vars_eNb found (or not allocated) for Mod_id %d\n",Mod_id);
+    return NULL;
+  }
+  UE_id = find_ue(rnti, PHY_vars_eNb_g[Mod_id]);
+  if (UE_id == -1) {
+    msg("get_eNB_UE_stats: UE with rnti %d not found\n",rnti);
+    return NULL;
+  }
+  return(&PHY_vars_eNb_g[Mod_id]->eNB_UE_stats[UE_id]);
+}
 

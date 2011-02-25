@@ -128,7 +128,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     if (ind==0)
       max_val=0;
 
-    for (aa=0;aa<frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx;aa++) {
+
+    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
       // do ifft of channel estimate
       fft((short*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
 	  (short*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],

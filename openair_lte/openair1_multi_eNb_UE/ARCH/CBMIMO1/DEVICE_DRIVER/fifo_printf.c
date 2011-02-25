@@ -15,7 +15,7 @@ void
 fifo_printf_init (void)
 {
 //-----------------------------------------------------------------------------
-  printk ("[TRACE] INIT\n");
+  printk ("[OPENAIR1] TRACE INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 }
 

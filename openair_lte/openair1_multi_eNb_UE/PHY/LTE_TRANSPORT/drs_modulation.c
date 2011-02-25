@@ -77,26 +77,26 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 	      drs_offset++;
 	      if (re_offset >= frame_parms->N_RB_UL*12)
 		re_offset=0;
-	}
-	  }
-	  else
-	    {
-	      for (k=0;k<12;k++) {
-		if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-		else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-		  txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-		
-		re_offset++;
-		drs_offset++;
-		if (re_offset >= frame_parms->N_RB_UL*12)
-		  re_offset=0;
-	      }
 	    }
+	  }
+	else
+	  {
+	    for (k=0;k<12;k++) {
+	      if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+	      
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->N_RB_UL*12)
+		re_offset=0;
+	    }
+	  }
 #else
 	if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1)) // To implment cyclic pilot shift for Distributed Alamouti
 	  {

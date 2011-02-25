@@ -10,7 +10,6 @@
 #include "../../COMMON/defs.h"
 #include "extern.h"
 
-#ifdef RTAI_ENABLED
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/INIT/defs.h"
@@ -18,7 +17,10 @@
 #include "SCHED/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
-#endif // RTAI_ENABLED
+
+#ifdef OPENAIR2
+#include "LAYER2/MAC/extern.h"
+#endif
 
 #include "from_grlib_softconfig.h"
 #include "from_grlib_softregs.h"
@@ -196,6 +198,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     printk("[openair][IOCTL]     openair_DUMP_CONFIG\n");
     printk("[openair][IOCTL] sizeof(mod_sym_t)=%d\n",sizeof(mod_sym_t));
 
+    set_taus_seed();
+
 #ifdef RTAI_ENABLED
     if (openair_daq_vars.node_configured > 0) {
       printk("[openair][IOCTL] NODE ALREADY CONFIGURED (%d), DYNAMIC RECONFIGURATION NOT SUPPORTED YET!!!!!!!\n",openair_daq_vars.node_configured);
@@ -225,7 +229,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
       else {
 	printk("[openair][IOCTL] PHY Configuration successful\n");
-	
+
+	/*	
 #ifndef EMOS	  
 	openair_daq_vars.mac_registered = mac_init();
 	if (openair_daq_vars.mac_registered != 1)
@@ -233,6 +238,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	else 
 	  printk("[openair][IOCTL] MAC Configuration successful\n");
 #endif	
+	*/
       }
       
 #ifndef NOCARD_TEST
@@ -269,7 +275,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.ue_ul_nb_rb = 2;
       openair_daq_vars.ulsch_allocation_mode = 0;
 
-      mac_xface->slots_per_frame = SLOTS_PER_FRAME;
+      //mac_xface->slots_per_frame = SLOTS_PER_FRAME;
       mac_xface->is_cluster_head = 0;
       mac_xface->is_primary_cluster_head = 0;
       mac_xface->is_secondary_cluster_head = 0;
@@ -292,7 +298,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	printk("[openair][DUMP][CONFIG] Scheduler started\n");
       
       // add Layer 1 stats in /proc/openair	
-      // add_openair1_stats();
+      add_openair1_stats();
       // rt_preempt_always(1);
 #endif //NOCARD_TEST
     }
@@ -312,15 +318,23 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
     if ( (openair_daq_vars.node_configured > 0) && 
-	 (openair_daq_vars.node_running == 0) && 
-	 (openair_daq_vars.mac_registered == 1)) {
+	 (openair_daq_vars.node_running == 0)) {
 
 #ifdef OPENAIR_LTE
       if (openair_daq_vars.node_configured==1) {
 
 	// allocate memory for PHY
 	PHY_vars_eNb_g = (PHY_VARS_eNB**) malloc16(sizeof(PHY_VARS_eNB*));
+	if (PHY_vars_eNb_g == NULL) {
+	  printk("[openair][IOCTL] Cannot allocate PHY_vars_eNb\n");
+	  break;
+	}
 	PHY_vars_eNb_g[0] = (PHY_VARS_eNB*) malloc16(sizeof(PHY_VARS_eNB));
+	if (PHY_vars_eNb_g[0] == NULL) {
+	  printk("[openair][IOCTL] Cannot allocate PHY_vars_eNb\n");
+	  break;
+	}
+	bzero(PHY_vars_eNb_g[0],sizeof(PHY_VARS_eNB));
 
 	//copy frame parms
 	memcpy((void*) &PHY_vars_eNb_g[0]->lte_frame_parms, (void*) frame_parms, sizeof(LTE_DL_FRAME_PARMS));
@@ -341,6 +355,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	else
 	  printk("[openair][IOCTL] phy_init_lte_eNB successful\n");
 
+	PHY_vars_eNb_g[0]->Mod_id = 0;
 
 	// allocate DLSCH structures
 	PHY_vars_eNb_g[0]->dlsch_eNb_SI  = new_eNb_dlsch(1,1,0);
@@ -376,7 +391,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  }
 	}
 
-	for (i=0; i<NUMBER_OF_UE_MAX+1;i++){ 
+	for (i=0; i<NUMBER_OF_UE_MAX+1;i++){ //+1 because 0 is reserved for RA
 	  PHY_vars_eNb_g[0]->ulsch_eNb[i] = new_eNb_ulsch(3,0);
 	  if (!PHY_vars_eNb_g[0]->ulsch_eNb[i]) {
 	    msg("Can't get eNb ulsch structures\n");
@@ -404,17 +419,42 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	// Initialize MAC layer
 
 #ifdef OPENAIR2
-	l2_init();
+	NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
+	NB_CH_INST=1;
+	NB_UE_INST=0;
+	openair_daq_vars.mac_registered = 
+	  l2_init(&PHY_vars_eNb_g[0]->lte_frame_parms);
+	if (openair_daq_vars.mac_registered != 1) {
+	  printk("[openair][IOCTL] Error in configuring MAC\n");
+	  break;
+	}
+	else 
+	  printk("[openair][IOCTL] MAC Configuration successful\n");
+	
 	mac_xface->mrbch_phy_sync_failure(0,0);
+
+	Mac_rlc_xface->Is_cluster_head[0] = 1;
 #endif
+
+	// configure SRS parameters statically
+	for (ue=0;ue<NUMBER_OF_UE_MAX;ue++) {
+	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Csrs = 2;
+	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Bsrs = 0;
+	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.kTC = 0;
+	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.n_RRC = 0;
+	  if (ue>=3) {
+	    msg("This SRS config will only work for 3 users! \n");
+	    break;
+	  }
+	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Ssrs = ue+1;
+	}
       } // eNB Configuration check
 
       mac_xface->is_cluster_head = 1;
       mac_xface->is_primary_cluster_head = 1;
       mac_xface->is_secondary_cluster_head = 0;
       mac_xface->cluster_head_index = 0;
-      NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-      
+
       openair_daq_vars.node_id = PRIMARY_CH;
       //openair_daq_vars.dual_tx = 1;
       
@@ -520,8 +560,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 
     if ( (openair_daq_vars.node_configured > 0) && 
-	 (openair_daq_vars.node_running == 0) &&
-	 (openair_daq_vars.mac_registered == 1)) {
+	 (openair_daq_vars.node_running == 0)) {
 
 #ifdef OPENAIR_LTE
       if (openair_daq_vars.node_configured == 1) {
@@ -537,6 +576,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  printk("[openair][IOCTL] Cannot allocate PHY_vars_UE\n");
 	  break;
 	}
+	bzero(PHY_vars_UE_g[0],sizeof(PHY_VARS_UE));
 
 	//copy frame parms
 	memcpy((void*) &PHY_vars_UE_g[0]->lte_frame_parms, (void*) frame_parms, sizeof(LTE_DL_FRAME_PARMS));
@@ -557,6 +597,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	}
 	else
 	  msg("[openair][IOCTL] phy_init_lte_ue successful\n");
+
+	PHY_vars_UE_g[0]->Mod_id = 0;
   
 	// allocate dlsch structures
 	for (i=0; i<NUMBER_OF_eNB_MAX;i++){ 
@@ -616,16 +658,36 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	
 #endif 
 
-	mac_xface->is_cluster_head = 0;
-	mac_xface->is_primary_cluster_head = 0;
-	mac_xface->is_secondary_cluster_head = 0;
-	mac_xface->cluster_head_index = 0;
-	NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-
 #ifdef OPENAIR2	
-	l2_init();
+	NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
+	NB_CH_INST=0;
+	NB_UE_INST=1;
+	openair_daq_vars.mac_registered =
+	  l2_init(&PHY_vars_UE_g[0]->lte_frame_parms); 
+	if (openair_daq_vars.mac_registered != 1) {
+	  printk("[openair][IOCTL] Error in configuring MAC\n");
+	  break;
+	}
+	else 
+	  printk("[openair][IOCTL] MAC Configuration successful\n");
+
+	Mac_rlc_xface->Is_cluster_head[0] = 0;
 #endif
+
+      // configure SRS parameters (this will only work for one UE)
+      PHY_vars_UE_g[0]->SRS_parameters.Csrs = 2;
+      PHY_vars_UE_g[0]->SRS_parameters.Bsrs = 0;
+      PHY_vars_UE_g[0]->SRS_parameters.kTC = 0;
+      PHY_vars_UE_g[0]->SRS_parameters.n_RRC = 0;
+      PHY_vars_UE_g[0]->SRS_parameters.Ssrs = 1;
+    
       }  
+
+      mac_xface->is_cluster_head = 0;
+      mac_xface->is_primary_cluster_head = 0;
+      mac_xface->is_secondary_cluster_head = 0;
+      mac_xface->cluster_head_index = 0;
+
       openair_daq_vars.node_id = NODE;
       
 #ifdef OPENAIR_LTE
@@ -842,11 +904,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef RTAI_ENABLED
     printk("[openair][IOCTL]     openair_GET_VARS ...(%p)\n",(void *)arg);
     if (openair_daq_vars.node_configured == 3){    
-      printk("[openair][IOCTL]  ... for UE\n");
+      printk("[openair][IOCTL]  ... for UE (%d bytes) \n",sizeof(PHY_VARS_UE));
       copy_to_user((char *)arg,PHY_vars_UE_g[0],sizeof(PHY_VARS_UE));
     }
     else if (openair_daq_vars.node_configured == 5) {
-      printk("[openair][IOCTL]  ... for eNB\n");
+      printk("[openair][IOCTL]  ... for eNB (%d bytes)\n",sizeof(PHY_VARS_eNB));
       copy_to_user((char *)arg,PHY_vars_eNb_g[0],sizeof(PHY_VARS_eNB));
     }
     else 

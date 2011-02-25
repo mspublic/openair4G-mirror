@@ -37,6 +37,8 @@
 
 FD_lte_scope *form;
 
+LTE_DL_FRAME_PARMS *frame_parms;
+PHY_VARS_eNB *PHY_vars_eNB;
 
 //short channel[2048];
 //short channel_f[2048];
@@ -82,10 +84,11 @@ void lte_scope_idle_callback(void) {
   cum_avg = 0;
   ind = 0;
   for (k=0;k<2;k++){
-    for (j=0;j<2;j++) {
+    //for (j=0;j<2;j++) {
+    j=0; {
       
-      s = PHY_config->lte_frame_parms.first_carrier_offset;
-      for (i=0;i<PHY_config->lte_frame_parms.N_RB_UL*12;i++){
+      s = frame_parms->first_carrier_offset;
+      for (i=0;i<frame_parms->N_RB_UL*12;i++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_srs[k+2*j][2*s]);
 	Im = (float)(channel_srs[k+2*j][2*s+1]);
@@ -94,7 +97,7 @@ void lte_scope_idle_callback(void) {
 	cum_avg += (short)sqrt((double)Re*Re + (double)Im*Im) ;
 	ind++;
 	s++;
-	if (s>= PHY_config->lte_frame_parms.ofdm_symbol_size)
+	if (s>= frame_parms->ofdm_symbol_size)
 	  s=1;
       }
       //ind+=16; // spacing for visualization
@@ -103,16 +106,17 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  fl_set_xyplot_ybounds(form->channel_srs,30,90);
+  //fl_set_xyplot_ybounds(form->channel_srs,30,90);
   fl_set_xyplot_data(form->channel_srs,sig_time,mag_sig,ind,"","","");
     
   // channel_srs_time
   cum_avg = 0;
   ind = 0;
-  for (k=0;k<1;k++){
-    for (j=0;j<1;j++) {
+  for (k=0;k<2;k++){
+    //for (j=0;j<1;j++) {
+    j=0; {
       
-      for (i=0;i<PHY_config->lte_frame_parms.ofdm_symbol_size/2;i++){
+      for (i=0;i<frame_parms->ofdm_symbol_size/2;i++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_srs_time[k+2*j][4*i]);
 	Im = (float)(channel_srs_time[k+2*j][4*i+1]);
@@ -127,7 +131,7 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  fl_set_xyplot_ybounds(form->channel_srs_time,30,90);
+  //fl_set_xyplot_ybounds(form->channel_srs_time,30,90);
   fl_set_xyplot_data(form->channel_srs_time,sig_time,mag_sig,ind,"","","");
 
 
@@ -146,7 +150,7 @@ void lte_scope_idle_callback(void) {
   for (k=0;k<1;k++){
     for (j=0;j<1;j++) {
       
-      for (i=0;i<PHY_config->lte_frame_parms.N_RB_UL*12*PHY_config->lte_frame_parms.symbols_per_tti;i++){
+      for (i=0;i<frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti;i++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_drs[k+2*j][2*i]);
 	Im = (float)(channel_drs[k+2*j][2*i+1]);
@@ -220,9 +224,11 @@ int main(int argc, char *argv[]) {
     eNb_id = 0;
   }
 
-  PHY_vars = malloc(sizeof(PHY_VARS));
+  //PHY_vars = malloc(sizeof(PHY_VARS));
+  //PHY_config = malloc(sizeof(PHY_CONFIG));
 
-  PHY_config = malloc(sizeof(PHY_CONFIG));
+  frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
+  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
 
   printf("Opening /dev/openair0\n");
   if ((openair_fd = open("/dev/openair0", O_RDONLY)) <0) {
@@ -230,26 +236,33 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
+  ioctl(openair_fd,openair_GET_CONFIG,frame_parms);
+  dump_frame_parms(frame_parms);
+
   printf("Getting PHY_vars ...\n");
+  ioctl(openair_fd,openair_GET_VARS,PHY_vars_eNB);
 
-  ioctl(openair_fd,openair_GET_VARS,PHY_vars);
+  if (PHY_vars_eNB->lte_eNB_common_vars.txdataF == NULL) {
+    printf("Problem getting PHY_vars. Is UE configured?\n");
+    exit(-1);
+  }
 
-  printf("Getting PHY_config ...\n");
-
-  ioctl(openair_fd,openair_GET_CONFIG,PHY_config);
+  printf("Getting BIGPHYS_top ...\n");
   ioctl(openair_fd,openair_GET_BIGPHYSTOP,(void *)&bigphys_top);
 
   printf("Bigphys_top = %p\n",bigphys_top);
-  printf("TX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.txdataF);
-  printf("RX_DMA_BUFFER = %p\n",PHY_vars->lte_eNB_common_vars.rxdata);
-  printf("PHY_vars->lte_eNB_common_vars.sync_corr[%d] = %p\n",eNb_id,PHY_vars->lte_eNB_common_vars.sync_corr[eNb_id]);
-  printf("PHY_vars->lte_eNB_ulsch_vars[%d] = %p\n",UE_id,PHY_vars->lte_eNB_ulsch_vars[UE_id]);
-  printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[%d] = %p\n",eNb_id,PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id]);
+  printf("TX_DMA_BUFFER = %p\n",PHY_vars_eNB->lte_eNB_common_vars.txdataF);
+  printf("RX_DMA_BUFFER = %p\n",PHY_vars_eNB->lte_eNB_common_vars.rxdata);
+  printf("PHY_vars->lte_eNB_common_vars.sync_corr[%d] = %p\n",eNb_id,PHY_vars_eNB->lte_eNB_common_vars.sync_corr[eNb_id]);
+  printf("PHY_vars->lte_eNB_ulsch_vars[%d] = %p\n",UE_id,PHY_vars_eNB->lte_eNB_ulsch_vars[UE_id]);
+  printf("PHY_vars->lte_eNB_common_vars.srs_ch_estimates[%d] = %p\n",eNb_id,PHY_vars_eNB->lte_eNB_srs_vars[eNb_id].srs_ch_estimates);
+
+  printf("sizeof(PHY_VARS_eNB) = %d\n",sizeof(PHY_VARS_eNB));
 
   printf("NUMBER_OF_OFDM_CARRIERS = %d\n",NUMBER_OF_OFDM_CARRIERS);
 
-  nb_ant_tx = PHY_config->lte_frame_parms.nb_antennas_tx;
-  nb_ant_rx = PHY_config->lte_frame_parms.nb_antennas_rx;
+  nb_ant_tx = PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;
+  nb_ant_rx = PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;
   printf("(TX, RX) ANTENNAS = %d, %d\n",nb_ant_tx,nb_ant_rx);
   
   mem_base = (unsigned int) mmap(0,
@@ -265,52 +278,45 @@ int main(int argc, char *argv[]) {
     msg("Could not map physical memory\n");
 
   sync_corr = (unsigned int*) (mem_base +
-			       (unsigned int)PHY_vars->lte_eNB_common_vars.sync_corr[eNb_id] -
+			       (unsigned int)PHY_vars_eNB->lte_eNB_common_vars.sync_corr[eNb_id] -
 			       bigphys_top);
 
   lte_eNb_ulsch = (LTE_eNB_ULSCH *) (mem_base + 
-				     (unsigned int)PHY_vars->lte_eNB_ulsch_vars[UE_id] - 
+				     (unsigned int)PHY_vars_eNB->lte_eNB_ulsch_vars[UE_id] - 
 				     bigphys_top);
 
   printf("lte_eNb_ulsch = %p\n",lte_eNb_ulsch);
 
 
-  for (i=0;i<nb_ant_tx*nb_ant_rx;i++) {
+  for (i=0;i<nb_ant_rx;i++) {
 
     channel_srs[i] = (short*)(mem_base + 
-			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates[eNb_id] + 
-			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
-			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
+			      (unsigned int)PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates[eNb_id] + 
+			      nb_ant_rx*sizeof(int*) + 
+			      i*(sizeof(int)*frame_parms->ofdm_symbol_size) - 
 			      bigphys_top);
 
     channel_srs_time[i] = (short*)(mem_base + 
-			      (unsigned int)PHY_vars->lte_eNB_common_vars.srs_ch_estimates_time[eNb_id] + 
-			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
-			      i*(sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
-			      bigphys_top);
+			      (unsigned int)PHY_vars_eNB->lte_eNB_srs_vars[UE_id].srs_ch_estimates_time[eNb_id] + 
+			      nb_ant_rx*sizeof(int*) + 
+			      i*(sizeof(int)*frame_parms->ofdm_symbol_size) - 
+				   bigphys_top);
 
     channel_drs[i] = (short*)(mem_base + 
 			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[eNb_id] + 
-			      nb_ant_rx*nb_ant_tx*sizeof(int*) + 
-			      i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
+			      nb_ant_rx*sizeof(int*) + 
+			      i*(frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12) - 
 			      bigphys_top);
 
     ulsch_ext[i] = (short*)(mem_base + 
 			    (unsigned int)lte_eNb_ulsch->rxdataF_ext[eNb_id] + 
 			      nb_ant_rx*sizeof(int*) + 
-			      i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.N_RB_UL*12) - 
+			      i*(frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12) - 
 			    bigphys_top);
-    /*
-    ulsch_ext[i] = (short*)(mem_base + 
-			(unsigned int)PHY_vars->lte_eNB_common_vars.rxdataF[eNb_id] + 
-			nb_ant_rx*sizeof(int*) + 
-			i*(PHY_config->lte_frame_parms.symbols_per_tti*sizeof(int)*PHY_config->lte_frame_parms.ofdm_symbol_size) - 
-			bigphys_top);
-    */
   }
     
   rx_sig_ptr = (short **)(mem_base + 
-			  (unsigned int)PHY_vars->lte_eNB_common_vars.rxdata[eNb_id] -
+			  (unsigned int)PHY_vars_eNB->lte_eNB_common_vars.rxdata[eNb_id] -
 			  bigphys_top);
 
   for (i=0;i<nb_ant_rx;i++) {

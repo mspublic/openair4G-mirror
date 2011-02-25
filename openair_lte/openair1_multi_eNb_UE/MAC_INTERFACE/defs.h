@@ -49,10 +49,10 @@ void mac_cleanup(void);
 */
 void mac_resynch(void);
 
-void l2_init(PHY_VARS_eNB *phy_vars_eNb);
+//void l2_init(PHY_VARS_eNB *phy_vars_eNb);
 
 #ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
+//#include "LAYER2/MAC/defs.h"
 #include "PHY_INTERFACE/defs.h"
 
 
@@ -81,7 +81,7 @@ typedef struct
 
 #endif //OPENAIR2
     unsigned int frame;
-    unsigned char slots_per_frame;
+    //unsigned char slots_per_frame;
     unsigned char is_cluster_head;
     unsigned char is_primary_cluster_head;
     unsigned char is_secondary_cluster_head;

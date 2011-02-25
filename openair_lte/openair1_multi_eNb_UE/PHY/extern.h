@@ -21,8 +21,8 @@ extern unsigned int mchrach_error_cnt[2][8],sach_error_cnt;
 #endif //OPENAIR_LTE
 
 //extern unsigned char synch_source;
-extern unsigned char dual_stream_flag;
-extern unsigned int sync_pos;
+//extern unsigned char dual_stream_flag;
+//extern unsigned int sync_pos;
 #ifndef OPENAIR_LTE
 extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE

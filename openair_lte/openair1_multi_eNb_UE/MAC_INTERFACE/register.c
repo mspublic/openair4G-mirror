@@ -16,7 +16,7 @@ pointer to the macphy_scheduler() routine*/
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "defs.h"
 #include "extern.h"
-
+#include "SCHED/extern.h"
 
 #ifndef USER_MODE
 

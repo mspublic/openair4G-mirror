@@ -1,11 +1,12 @@
 #include "defs.h"
+#include "MAC_INTERFACE/extern.h"
 #ifdef USER_MODE
 #include <stdio.h>
 #endif
 
 #ifndef EXPRESSMIMO_TARGET
 static  __m128i shift     __attribute__ ((aligned(16)));
-static  __m128i m0,m1     __attribute__ ((aligned(16)));
+static  __m128i m0,m1,m2,m3,m4     __attribute__ ((aligned(16)));
 
 //#define DEBUG_CMULT
 
@@ -146,7 +147,7 @@ int mult_cpx_vector(short *x1,
   return(0);
 }
  
-
+//__attribute__ ((force_align_arg_pointer)) 
 int mult_cpx_vector_norep(short *x1, 
 			   short *x2, 
 			   short *y, 
@@ -169,7 +170,7 @@ int mult_cpx_vector_norep(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m3;
+  //register __m128i m0,m1,m2,m3;
 
        
 #ifdef DEBUG_CMULT
@@ -191,7 +192,7 @@ int mult_cpx_vector_norep(short *x1,
   x2_128 = (__m128i *)&x2[0];
   y_128 = (__m128i *)&y[0];
 
-  //  printf("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
+  debug_msg("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
 
   // we compute 4 cpx multiply for each loop
   for(i=0;i<(N>>3);i++)
@@ -348,11 +349,14 @@ int mult_cpx_vector_norep(short *x1,
   return(0);
 }
 
+static __m128i norep_tmp32 __attribute__ ((aligned(16)));
+
+//__attribute__ ((force_align_arg_pointer)) 
 int mult_cpx_vector_norep2(short *x1, 
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   int output_shift)
+			   int output_shift) 
 {
   // Multiply elementwise two complex vectors of N elements with normal formatted output and no loop unrollin
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0 Re1 Im1 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -370,7 +374,7 @@ int mult_cpx_vector_norep2(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m3;
+  //register __m128i m0,m1,m2,m3;
 
   /*
 #ifdef USER_MODE
@@ -382,7 +386,6 @@ int mult_cpx_vector_norep2(short *x1,
 
   __m128i *x1_128; 
   __m128i *x2_128; 
-  __m128i tmp32;
   int     *y_32 = (int*)y; 
 
   //  __m128i temp;
@@ -392,12 +395,11 @@ int mult_cpx_vector_norep2(short *x1,
   x1_128 = (__m128i *)&x1[0];
   x2_128 = (__m128i *)&x2[0];
 
-  //  printf("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d\n",x1,x2,y,output_shift);
+  debug_msg("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d, N %d\n",x1,x2,y,output_shift,N);
 
   // we compute 2 cpx multiply for each loop
   for(i=0;i<(N>>1);i++)
   {
-
     /*    
 #ifdef USER_MODE
     printf("i=%d\n",i);
@@ -426,7 +428,7 @@ int mult_cpx_vector_norep2(short *x1,
     printf("m0 : %d,%d,%d,%d\n",tempd[0],tempd[1],tempd[2],tempd[3]);
     */
 
-    tmp32 = _mm_packs_epi32(m0,m0);        // Re0 Im0 Re1 Im1 Re0 Im0 Re1 Im1
+    norep_tmp32 = _mm_packs_epi32(m0,m0);        // Re0 Im0 Re1 Im1 Re0 Im0 Re1 Im1
 
     /*
 #ifdef USER_MODE
@@ -434,8 +436,8 @@ int mult_cpx_vector_norep2(short *x1,
 #endif
     */
 
-    y_32[0] = ((int *)&tmp32)[0];        // 1- pack in a 128 bit register [re im re im]
-    y_32[1] = ((int *)&tmp32)[1];        // 1- pack in a 128 bit register [re im re im]
+    y_32[0] = ((int *)&norep_tmp32)[0];        // 1- pack in a 128 bit register [re im re im]
+    y_32[1] = ((int *)&norep_tmp32)[1];        // 1- pack in a 128 bit register [re im re im]
 
     x1_128+=1;
     x2_128+=1;
@@ -472,7 +474,7 @@ int mult_cpx_vector_norep_conj(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m4;
+  //register __m128i m0,m1,m2,m4;
 
   /*    
 #ifdef USER_MODE
@@ -646,7 +648,7 @@ int mult_cpx_vector_norep_conj2(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1,m2,m4;
+  //register __m128i m0,m1,m2,m4;
   __m128i tmp32;
 
   /*    
@@ -759,7 +761,7 @@ int mult_cpx_vector2(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1;
+  //register __m128i m0,m1;
 
   /*
 #ifdef USER_MODE
@@ -842,7 +844,7 @@ int mult_cpx_vector_add(short *x1,
 
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1;
+  //register __m128i m0,m1;
 
   /*
 #ifdef USER_MODE
@@ -980,7 +982,7 @@ int mult_cpx_vector_add32(short *x1,
   //
 
   unsigned int i;                 // loop counter
-  register __m128i m0;
+  //register __m128i m0;
 
   /*
 #ifdef USER_MODE
@@ -1280,7 +1282,7 @@ int shift_and_pack(short *y,
 {
   unsigned int i;                 // loop counter
 
-  register __m128i m0,m1;
+  //register __m128i m0,m1;
 
   /*
 #ifdef USER_MODE

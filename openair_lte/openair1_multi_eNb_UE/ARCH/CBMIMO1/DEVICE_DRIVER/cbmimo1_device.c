@@ -23,7 +23,8 @@
 #ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
 #include "RRC/MESH/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "UTIL/LOG/log_if.h"
+//#include "PHY_INTERFACE/vars.h"
 #endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
@@ -337,9 +338,11 @@ static int __init openair_init_module( void )
 
   mac_xface = malloc16(sizeof(MAC_xface));
   if (mac_xface) {
+    /*
     mac_xface->macphy_scheduler = dummy_macphy_scheduler;
     mac_xface->macphy_setparams = dummy_macphy_setparams;
     mac_xface->macphy_init      = dummy_macphy_init;
+    */
 
     printk("[OPENAIR][INIT_MODULE][INIT] mac_xface @ %p\n",mac_xface);
   }
@@ -370,6 +373,11 @@ static int __init openair_init_module( void )
  		
   printk("[openair][MODULE][INFO] Done init\n");
   fifo_printf_init();
+
+#ifdef OPENAIR2
+  //logInit();
+#endif
+
   return 0;
 }
 
@@ -385,6 +393,11 @@ static void __exit openair_cleanup_module(void)
   openair_cleanup();
 
   fifo_printf_clean_up();
+
+#ifdef OPENAIR2
+  //logClean();
+#endif
+
   
 }
 static void  openair_cleanup(void) {
@@ -405,7 +418,12 @@ static void  openair_cleanup(void) {
 
   phy_cleanup();
 
-  //remove_openair_stats();
+  remove_openair_stats();
+
+#ifdef OPENAIR
+  mac_top_cleanup();
+#endif
+
 
 #endif //PHY_EMUL
 #endif //RTAI_ENABLED

@@ -1,4 +1,5 @@
 #include "PHY/defs.h"
+#include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 //#define DEBUG_FEP
 
@@ -19,14 +20,13 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (no_prefix) {
     subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
-    slot_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti>>1 * (Ns&1);
+    slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns%2);
   }
   else {
     subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
-    slot_offset = (frame_parms->samples_per_tti>>1) * (Ns&1);
+    slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
   }
 
-#ifdef DEBUG_FEP
   if (l<0 || l>=7-frame_parms->Ncp) {
     msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);
@@ -35,10 +35,9 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     msg("slot_fep: Ns must be between 0 and 19\n");
     return(-1);
   }
-#endif
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d\n", Ns, symbol, (l==0)?nb_prefix_samples0:nb_prefix_samples,nb_prefix_samples0);
+  debug_msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
 #endif
   
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
@@ -76,7 +75,7 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
       for (eNb_id=0;eNb_id<1;eNb_id++){ //3;eNb_id++){
 #ifdef DEBUG_FEP
-	msg("Channel estimation eNb %d, aatx %d, symbol %d\n",eNb_id,aa,l);
+	debug_msg("Channel estimation eNb %d, aatx %d, slot %d, symbol %d\n",eNb_id,aa,Ns,l);
 #endif
 	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[eNb_id],
 				  ue_common_vars->rxdataF,

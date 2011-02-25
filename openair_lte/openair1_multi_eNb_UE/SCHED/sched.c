@@ -466,7 +466,7 @@ void openair1_restart(void) {
 #ifndef EMOS		
 #ifdef OPENAIR2
 	  //	  msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
-  mac_resynch();
+  //mac_resynch();
 #endif //OPENAIR2
 #endif //EMOS
 

@@ -2,6 +2,7 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/CODING/extern.h"
+#include "SCHED/extern.h"
 
 //#define DEBUG_DLSCH_DECODING
 
