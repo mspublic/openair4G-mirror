@@ -8,6 +8,8 @@
 #include "list.h"
 #include "rrm_config_structs.h"
 #include "LAYER2/MAC/extern.h"
+
+#include "rlc_um_control_primitives.h"
 //-----------------------------------------------------------------------------
 void
 config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP)

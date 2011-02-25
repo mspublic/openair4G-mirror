@@ -41,7 +41,7 @@ ________________________________________________________________*/
  */
 
 #define BCCH_PAYLOAD_SIZE_MAX 128  
-#define CCCH_PAYLOAD_SIZE_MAX 16    
+#define CCCH_PAYLOAD_SIZE_MAX 128    
 #define SCH_PAYLOAD_SIZE_MAX 1024
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311)
 #define BCCH 3
@@ -182,16 +182,16 @@ typedef struct {
 #include "PHY/impl_defs_top.h"
 
 typedef enum {
-  S_UL_NONE = 0,
-  // S_UL_WAITING,
+  S_UL_NONE =0,
+  S_UL_WAITING,
   S_UL_SCHEDULED, 
   S_UL_BUFFERED,  
   S_UL_NUM_STATUS
 } UE_ULSCH_STATUS;
 
 typedef enum {
-  S_DL_NONE = 0,
-  // S_DL_WAITING,
+  S_DL_NONE =0,
+  S_DL_WAITING,
   S_DL_SCHEDULED, 
   S_DL_BUFFERED,  
   S_DL_NUM_STATUS
@@ -311,11 +311,11 @@ typedef struct{
 void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 int mac_top_init(void);
-s8 layer2_init_mr(u8 Mod_id);
-s8 layer2_init_ch(u8 Mod_id, u8 Free_ch_index);
+char layer2_init_mr(u8 Mod_id);
+char layer2_init_ch(u8 Mod_id, u8 Free_ch_index); 
 void mac_switch_node_function(u8 Mod_id);
 int mac_init_global_param(void);
-void mac_top_cleanup(u8 Mod_id);
+void mac_top_cleanup();
 void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 
@@ -349,6 +349,13 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 u8* ue_get_rach(u8 Mod_id,u8 CH_index);
 u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
+int mac_init(void);
+
+s8 add_new_ue(u8 Mod_id, u16 rnti);
+s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
+
+void ue_scheduler(u8 Mod_id, u8 subframe);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

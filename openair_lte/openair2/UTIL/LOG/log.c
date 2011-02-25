@@ -31,7 +31,7 @@
 * \author Navid Nikaein
 * \date 2009
 * \version 0.3
-* \warning This component can be runned only in user-space
+* \warning This component can be run only in user-space
 * @ingroup routing
 
 */
@@ -43,7 +43,18 @@
 
 
 
+//static unsigned char       fifo_print_buffer[FIFO_PRINTF_MAX_STRING_SIZE];
+
 #include "log.h"
+
+#ifndef USER_MODE
+#include "PHY/defs.h"
+
+#    define FIFO_PRINTF_MAX_STRING_SIZE   500
+#    define FIFO_PRINTF_NO              62
+#    define FIFO_PRINTF_SIZE            65536
+
+#endif
 
 // made static and not local to logRecord() for performance reasons
 static char g_buff_info [MAX_LOG_TOTAL];
@@ -53,61 +64,74 @@ static char g_buff_debug[MAX_LOG_ITEM];
 
 static int thread_safe_debug_count = 0;
 
-static char copyright_string[] __attribute__ ((unused)) =
-  "Copyright (c) The www.openairinterface.org  2009, navid nikaein (navid.nikaein@eurecom.fr) All rights reserved.";
+//static char copyright_string[] __attribute__ ((unused)) =
+//  "Copyright (c) The www.openairinterface.org  2009, navid nikaein (navid.nikaein@eurecom.fr) All rights reserved.";
 
-static const char BUILD_VERSION[] = "v0.1";
-static const char BUILD_DATE[] = "2011-01-15 16:42:14";
-static const char BUILD_HOST[] = "LINUX";
-static const char BUILD_TARGET[] = "OAI";
+//static const char BUILD_VERSION[] = "v0.1";
+//static const char BUILD_DATE[] = "2011-01-15 16:42:14";
+//static const char BUILD_HOST[] = "LINUX";
+//static const char BUILD_TARGET[] = "OAI";
 
 
 void logInit ()
 {
-    //printf("[LOG] logInit(%p)\n", this);
+  //#ifdef USER_MODE
+  //printf("[LOG] logInit(%p)\n", this);
+#ifdef USER_MODE
   g_log = calloc(1, sizeof(log_t));
-    memset(g_log, 0, sizeof(log_t));
+#else
+  g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
+#endif
 
-    g_log->log_component[LOG].name = "LOG";
-    g_log->log_component[LOG].level = LOG_TRACE;
-    g_log->log_component[LOG].flag = LOG_DEF;
+  memset(g_log, 0, sizeof(log_t));
 
-    g_log->log_component[MAC].name = "MAC";
-    g_log->log_component[MAC].level = LOG_INFO;
-    g_log->log_component[MAC].flag = LOG_DEF_ONLINE;
-
-    g_log->level2string[LOG_EMERG]         = "G"; //EMERG
-    g_log->level2string[LOG_ALERT]         = "A"; // ALERT
-    g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
-    g_log->level2string[LOG_ERR]           = "E"; // ERROR
-    g_log->level2string[LOG_WARNING]       = "W"; // WARNING
-    g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
-    g_log->level2string[LOG_INFO]          = "I"; //INFO
-    g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
-    g_log->level2string[LOG_TRACE]         = "T"; // TRACE
-
-    g_log->syslog = 0;
-    g_log->level  = LOG_TRACE;
-    g_log->flag    = LOG_DEF;
- 
-    g_log->config.remote_ip      = 0;
-    g_log->config.remote_level   = LOG_EMERG;
-    g_log->config.facility       = LOG_LOCAL7;
-    g_log->config.audit_ip       = 0;
-    g_log->config.audit_facility = LOG_LOCAL6;
-    g_log->config.format         = 0x00; // online debug inactive
-
-    g_log->log_file_name = "openair.log";
+  g_log->log_component[LOG].name = "LOG";
+  g_log->log_component[LOG].level = LOG_TRACE;
+  g_log->log_component[LOG].flag = LOG_MED;
+  
+  g_log->log_component[MAC].name = "MAC";
+  g_log->log_component[MAC].level = LOG_INFO;
+  g_log->log_component[MAC].flag = LOG_MED;
+  
+  g_log->level2string[LOG_EMERG]         = "G"; //EMERG
+  g_log->level2string[LOG_ALERT]         = "A"; // ALERT
+  g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
+  g_log->level2string[LOG_ERR]           = "E"; // ERROR
+  g_log->level2string[LOG_WARNING]       = "W"; // WARNING
+  g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
+  g_log->level2string[LOG_INFO]          = "I"; //INFO
+  g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
+  g_log->level2string[LOG_TRACE]         = "T"; // TRACE
+  
+  g_log->syslog = 0;
+  g_log->level  = LOG_TRACE;
+  g_log->flag    = LOG_MED;
+#ifdef USER_MODE  
+  g_log->config.remote_ip      = 0;
+  g_log->config.remote_level   = LOG_EMERG;
+  g_log->config.facility       = LOG_LOCAL7;
+  g_log->config.audit_ip       = 0;
+  g_log->config.audit_facility = LOG_LOCAL6;
+  g_log->config.format         = 0x00; // online debug inactive
+  
+  g_log->log_file_name = "openair.log";
+#else
+  printk ("[OPENAIR2] TRACE INIT\n");
+  rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
+#endif
+  
 }
 
 void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
+  int len;
   va_list args;
   log_component_t *c;
   
-  thread_safe_debug_count++;
+  //#ifdef USER_MODE
+  //thread_safe_debug_count++;
   g_buff_infos[0] = '\0';
   c = &g_log->log_component[comp];
 
@@ -124,54 +148,56 @@ void logRecord( const char *file, const char *func,
       g_log->level = LOG_DEBUG;
     }  
   }
- 
-    va_start(args, format);
-  vsnprintf(g_buff_info, MAX_LOG_TOTAL, format, args);
+  //#endif 
+
+  va_start(args, format);
+  len=vsnprintf(g_buff_info, MAX_LOG_TOTAL, format, args);
   va_end(args);
 
 
   if ( g_log->flag & FLAG_COLOR )  {
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s",
 	     log_level_highlight_start[g_log->level]);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
   
   if ( g_log->flag & FLAG_COMP ){
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
 	     g_log->log_component[comp].name);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
   
   if ( g_log->flag & FLAG_LEVEL ){
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s]",
 	     g_log->level2string[level]);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
     
   if (  g_log->flag & FLAG_FUNCT )  {
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s ",
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s] ",
 	     func);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
   
   if (  g_log->flag & FLAG_FILE_LINE )  {
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s:%d]",
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
 	     file,line);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
   
   if (  g_log->flag & FLAG_COLOR )  {
-    snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
+    len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "%s", 
 	     log_level_highlight_end[g_log->level]);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
  
   strncat(g_buff_infos, g_buff_info, MAX_LOG_TOTAL);
-  //strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
+  strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
 
+#ifdef USER_MODE
   // OAI printf compatibility 
   if (g_log->flag & FLAG_ONLINE || c->flag & FLAG_ONLINE) 
-    msg("%s",g_buff_infos);
+    printf("%s",g_buff_infos);
 
   if (g_log->syslog) {
     openlog(c->name, LOG_PID, g_log->config.facility);
@@ -184,6 +210,16 @@ void logRecord( const char *file, const char *func,
     close(fd);
   }
   thread_safe_debug_count--;
+#else
+  if (len > MAX_LOG_TOTAL) {
+    rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+  }
+  if (len <= 0) {
+    return 0;
+  }
+  rtf_put (FIFO_PRINTF_NO, g_buff_infos, len);
+#endif
+
 }
 
 int  set_comp_log(int component, int level, int flag) {
@@ -203,6 +239,14 @@ void set_glog(int level, int flag) {
 void set_log_syslog(int enable) {
   g_log->syslog = enable;
 }
+
+void logClean (void)
+{
+#ifndef USER_MODE
+  rtf_destroy (FIFO_PRINTF_NO);
+#endif
+}
+
 
 #ifdef LOG_TEST
 

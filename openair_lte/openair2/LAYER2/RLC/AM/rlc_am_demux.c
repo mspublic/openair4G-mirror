@@ -130,7 +130,7 @@ rlc_info_t Rlc_info_am_config1;
   Rlc_info_am_config1.rlc.rlc_am_info.max_rst               = 500;//500
   Rlc_info_am_config1.rlc.rlc_am_info.timer_mrw             = 0;
   
-  Rlc_info_am_config1.rlc.rlc_am_info.pdu_size              = 32//416; // in bits
+  Rlc_info_am_config1.rlc.rlc_am_info.pdu_size              = 32; //416; // in bits
   //Rlc_info_am.rlc.rlc_am_info.in_sequence_delivery  = 1;//boolean
   Rlc_info_am_config1.rlc.rlc_am_info.max_dat               = 32;//127;
   

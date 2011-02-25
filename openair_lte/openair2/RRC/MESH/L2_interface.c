@@ -86,12 +86,15 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
     if( (Srb_id & RAB_OFFSET ) == CCCH){
       msg("[RRC] CCCH request (Srb_id %d)\n",Srb_id);
 
-      if(CH_rrc_inst[Mod_id].Srb0.Active==0) return 0;
+      if(CH_rrc_inst[Mod_id].Srb0.Active==0) {
+	msg("[RRC] CCCH Not active\n");
+	return -1;
+      }
       Srb_info=&CH_rrc_inst[Mod_id].Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.W_idx>0){//Fill buffer
-	msg("[RRC] CCCH (%p) has %d bytes\n",Srb_info,Srb_info->Tx_buffer.W_idx);
+	msg("[RRC] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Srb_info,Srb_info->Tx_buffer.W_idx,Buffer,Srb_info->Tx_buffer.Payload);
 	memcpy(Buffer,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.W_idx);
 	Sdu_size = Srb_info->Tx_buffer.W_idx;
 	Srb_info->Tx_buffer.W_idx=0;
@@ -106,8 +109,10 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
   
 
   else{   Mod_id-=NB_CH_INST; //This is an UE
-    //      msg("filling rach,SRB_ID %d\n",Srb_id);
-    //      msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
+#ifdef DEBUG_RRC
+    msg("filling rach,SRB_ID %d\n",Srb_id);
+    msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
+#endif
     if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx) ){
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx;
@@ -116,7 +121,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
       return(Ret_size);
     }
     else{
-      //      msg("erooooooooooooooooor\n");
+      msg("erooooooooooooooooor\n");
       return 0;
     }
   }
@@ -133,7 +138,7 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
   if(!Mac_rlc_xface->Is_cluster_head[Mod_id]){
     Mod_id-=NB_CH_INST;
 
-    msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
+    //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];

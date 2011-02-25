@@ -1,6 +1,8 @@
 #define RLC_UM_MODULE
 #define RLC_UM_SEGMENT_C
+#ifdef USER_MODE
 #include <assert.h>
+#endif
 #include "rtos_header.h"
 #include "platform_types.h"
 #include "list.h"
@@ -244,7 +246,9 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
 #ifdef RLC_UM_SEGMENT
                 msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_mngt->sdu_remaining_size, pdu_remaining_size - sdu_mngt->sdu_remaining_size);
 #endif
+#ifdef USER_MODE
                 assert(1!=1);
+#endif
                 memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
                 // free SDU
                 rlcP->buffer_occupancy -= sdu_mngt->sdu_remaining_size;

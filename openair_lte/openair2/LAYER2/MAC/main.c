@@ -27,15 +27,18 @@ ________________________________________________________________*/
 #include "PHY_INTERFACE/extern.h"
 #include "PHY_INTERFACE/defs.h"
 #include "PHY/defs.h"
+#include "SCHED/defs.h"
 #include "LAYER2/PDCP/pdcp.h"
 #include "RRC/MESH/defs.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL
 
-#ifdef BIGPHYSAREA
-extern void *bigphys_malloc(int);
-#endif
+#include "SCHED/defs.h"
+
+//#ifdef BIGPHYSAREA
+//extern void *bigphys_malloc(int);
+//#endif
 
 
 /***********************************************************************/
@@ -100,21 +103,27 @@ int mac_top_init(){
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
 
-  msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d\n",NB_INST);
+  msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
 #if ((PHY_EMUL==1)||(PHYSIM==1))
-  msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
   UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-  msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
+  msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+  bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
   CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
+  msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
+  bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
 #else 
-  if(NODE_ID[0]<NB_CH_MAX){
+  //  if(NODE_ID[0]<NB_CH_MAX){
+  if(NODE_ID[0]<NUMBER_OF_eNB_MAX){
     CH_mac_inst = (CH_MAC_INST*)malloc16(sizeof(CH_MAC_INST));
+    msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
+    bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
     NB_CH_INST=1;
     NB_UE_INST=0;
   }
   else{
-    msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
     UE_mac_inst = (UE_MAC_INST*)malloc16(sizeof(UE_MAC_INST));
+    msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
+    bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
     NB_CH_INST=0;
     NB_UE_INST=1;
   }
@@ -231,8 +240,11 @@ int mac_init_global_param(){
   msg("[MAC][GLOBAL_INIT] RRC_INIT_GLOBAL\n");
   rrc_init_global_param();
   Is_rrc_registered=1;
+#ifdef USER_MODE
   pdcp_layer_init ();
- 
+#else
+  pdcp_module_init ();
+#endif
   mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;  
   msg("[MAC] Init Global Param Done\n");
 
@@ -241,8 +253,71 @@ int mac_init_global_param(){
 
 
 /***********************************************************************/
-void mac_top_cleanup(u8 Mod_id){
+void mac_top_cleanup(void){
 /***********************************************************************/
+#ifndef USER_MODE
+  pdcp_module_cleanup ();
+#endif
 
+}
+
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
+
+  s32 ret;
+  s32 ue_id;
+
+  msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
+  //    NB_NODE=2; 
+  //    NB_INST=2;
+
+
+  mac_init_global_param(); 
+  
+  
+  mac_xface->macphy_init=mac_top_init;
+#ifndef USER_MODE
+  mac_xface->macphy_exit = openair_sched_exit;
+#else
+  mac_xface->macphy_exit=(void (*)(void)) exit;
+#endif
+  
+  //eNB MAC functions    
+  mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
+  mac_xface->get_dci_sdu               = get_dci_sdu;
+  mac_xface->fill_rar                  = fill_rar;
+  mac_xface->terminate_ra_proc         = terminate_ra_proc;
+  mac_xface->initiate_ra_proc          = initiate_ra_proc;
+  mac_xface->rx_sdu                    = rx_sdu;
+  mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
+  mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
+  
+  //UE MAC functions    
+  mac_xface->ue_decode_si              = ue_decode_si;
+  mac_xface->ue_send_sdu               = ue_send_sdu;
+  mac_xface->ue_get_sdu                = ue_get_sdu;
+  mac_xface->ue_get_rach               = ue_get_rach;
+  mac_xface->ue_process_rar            = ue_process_rar;
+  mac_xface->ue_scheduler              = ue_scheduler;  
+
+  
+  // PHY Frame configuration
+  mac_xface->lte_frame_parms = frame_parms;
+  
+  // PHY Helper functions
+  mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
+  mac_xface->computeRIV             = computeRIV;
+  mac_xface->get_TBS                = get_TBS;
+  mac_xface->get_nCCE_max           = get_nCCE_max;
+  
+  msg("ALL INIT OK\n");
+   
+  mac_xface->frame=0;
+  
+  mac_xface->macphy_init();
+
+  //Mac_rlc_xface->Is_cluster_head[0] = 1;
+  //Mac_rlc_xface->Is_cluster_head[1] = 0;
+
+  return(1);
 }
 

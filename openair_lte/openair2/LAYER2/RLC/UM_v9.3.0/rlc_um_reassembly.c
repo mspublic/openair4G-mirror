@@ -3,7 +3,9 @@
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
+#ifdef USER_MODE
 #include <string.h>
+#endif
 #include "rlc.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
@@ -12,7 +14,7 @@
 
 #define DEBUG_RLC_UM_REASSEMBLY 1
 #define DEBUG_RLC_UM_DISPLAY_ASCII_DATA 1
-#define DEBUG_RLC_UM_SEND_SDU
+//#define DEBUG_RLC_UM_SEND_SDU
 
 //-----------------------------------------------------------------------------
 inline void
@@ -98,6 +100,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
       rlcP->rx_sdus += 1;
 #endif
         msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_in_construction->data);
+#ifdef USER_MODE
         if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
         } else if (strncmp(voip_sdu, rlcP->output_sdu_in_construction->data, strlen(voip_sdu)) == 0) {
@@ -107,6 +110,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
         } else {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] UNKNOWN SDU\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
         }
+#endif
       // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->output_sdu_size_to_write);
       rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction, rlcP->data_plane);
       rlcP->output_sdu_in_construction = NULL;

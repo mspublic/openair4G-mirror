@@ -333,7 +333,7 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 #ifdef LOOPBACK_TEST
   int i;
 #endif
-  int bytes_wrote;
+  unsigned int bytes_wrote;
   unsigned char j; 
   // Start debug information
 #ifdef NAS_DEBUG_SEND
@@ -388,8 +388,8 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   bytes_wrote = nas_netlink_send((char *)&pdcph,NAS_PDCPH_SIZE);
 #else
   bytes_wrote = rtf_put(NAS2PDCP_FIFO, &pdcph, NAS_PDCPH_SIZE);
-  //printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",
-  //	       bytes_wrote,skb->len);
+  printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",
+  	       bytes_wrote,skb->len);
 #endif //NAS_NETLINK
   
   if (bytes_wrote != NAS_PDCPH_SIZE)

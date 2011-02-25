@@ -22,6 +22,7 @@ extern UE_MAC_INST *UE_mac_inst;
 extern void *bigphys_malloc(int);
 #endif
 
+extern inline unsigned int taus(void);
 /*------------------------------------------------------------------------------*/
 void rrc_rx_tx(u8 Mod_id){
   /*------------------------------------------------------------------------------*/

@@ -22,14 +22,15 @@
 #        include "rlc_um_structs.h"
 #        include "rlc_um_entity.h"
 #        include "mem_block.h"
-#        include "rlc_um_control_primitives.h"
+//#        include "rlc_um_control_primitives.h"
 #        include "rlc_um_dar.h"
 #        include "rlc_um_fsm.h"
 #        include "rlc_um_reassembly.h"
 #        include "rlc_um_receiver.h"
 #        include "rlc_um_segment.h"
+#ifdef USER_MODE
 #        include "rlc_um_very_simple_test.h"
-
+#endif
 public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
@@ -42,6 +43,6 @@ private_rlc_um(   void     rlc_um_get_pdus (void *argP);)
 protected_rlc_um( void     rlc_um_rx (void *, struct mac_data_ind);)
 public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind tx_statusP);)
 public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (void *rlcP);)
-private_rlc_um(   void     rlc_um_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);)
+public_rlc_um(   void     rlc_um_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);)
 public_rlc_um(    void     rlc_um_data_req (void *rlcP, mem_block_t *sduP);)
 #    endif

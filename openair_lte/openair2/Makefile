@@ -113,7 +113,9 @@ nasmesh_address_fix.ko:
 
 nasmesh.ko:
 
-	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd`)
+	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux M=`pwd`)
+
+#(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd`)
 
 
 nasmesh_netlink.ko:

@@ -3,7 +3,7 @@
                              -------------------
   AUTHOR  : Lionel GAUTHIER
   COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
+  EMlAIL   : Lionel.Gauthier@eurecom.fr
 */
 
 #define RLC_RRC_C
@@ -11,6 +11,8 @@
 #include "rlc_am_control_primitives_proto_extern.h"
 #include "rlc_um.h"
 #include "rlc_tm_control_primitives_proto_extern.h"
+#include "rlc_um_control_primitives.h"
+
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
 rlc_op_status_t

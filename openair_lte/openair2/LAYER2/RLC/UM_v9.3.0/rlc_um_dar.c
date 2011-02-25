@@ -141,8 +141,10 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                         }
 
                         break;
-                    default:
-                        assert(0 != 0);
+#ifdef USER_MODE
+		default:
+		  assert(0 != 0);
+#endif
                 }
             } else {
                 if (rlc_um_read_length_indicators(&data, e_li, li_array, &num_li, &size ) >= 0) {
@@ -246,13 +248,17 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                                 // data is already ok, done by last loop above
                                 rlc_um_reassembly (data, size, rlcP);
                             } else {
-                                assert (5!=5);
+#ifdef USER_MODE
+			      assert (5!=5);
+#endif
                             }
                             rlcP->reassembly_missing_sn_detected = 0;
                             break;
+#ifdef USER_MODE
                         default:
-                            assert(1 != 1);
-                            rlcP->reassembly_missing_sn_detected = 1;
+			  assert(1 != 1);
+#endif
+			  rlcP->reassembly_missing_sn_detected = 1;
                     }
                 }
             }

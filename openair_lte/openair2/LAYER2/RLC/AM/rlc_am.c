@@ -28,9 +28,9 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 #define DEBUG_RLC_AM_DATA_REQUEST
-//#define DEBUG_RLC_AM_TX
-//#define DEBUG_RLC_AM_RX
-//#define DEBUG_RLC_AM_BO
+#define DEBUG_RLC_AM_TX
+#define DEBUG_RLC_AM_RX
+#define DEBUG_RLC_AM_BO
 //-----------------------------------------------------------------------------
 void            display_protocol_vars_rlc_am (struct rlc_am_entity *rlcP);
 u32_t             rlc_am_get_buffer_occupancy_in_pdus_for_ch1 (struct rlc_am_entity *rlcP);
@@ -59,7 +59,7 @@ rlc_am_get_buffer_occupancy_in_bytes_ch1 (struct rlc_am_entity *rlcP)
 
 
 #ifdef DEBUG_RLC_AM_BO
-  msg ("[RLC_AM][RB %d] DTCH BO: TO DO \n", rlcP->rb_id);
+  msg ("[RLC_AM][RB %d] DTCH BO: %d bytes \n", rlcP->rb_id,sum);
 #endif
   return sum;
 }

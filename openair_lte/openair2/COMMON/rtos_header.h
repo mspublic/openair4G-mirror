@@ -2,6 +2,7 @@
 #    define _RTOS_HEADER_H_
 #    if defined(RTAI) && !defined(USER_MODE)
 //       CONVERSION BETWEEN POSIX PTHREAD AND RTAI FUNCTIONS
+/*
 #        define pthread_mutex_init             pthread_mutex_init_rt
 #        define pthread_mutexattr_init         pthread_mutexattr_init_rt
 #        define pthread_mutex_lock             pthread_mutex_lock_rt
@@ -18,6 +19,7 @@
 #        define pthread_delete_np              pthread_cancel_rt
 #        define pthread_attr_setstacksize      pthread_attr_setstacksize_rt
 #        define pthread_self                   rt_whoami
+*/
 #        include <asm/rtai.h>
 #        include <rtai.h>
 #        include <rtai_posix.h>

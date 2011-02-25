@@ -304,7 +304,7 @@ void rrc_reset_buffer(RRC_BUFFER *Rrc_buffer);
 u8 rrc_is_node_isolated(u8 Mod_id);
 SRB_INFO* rrc_find_srb_info(u8 Mod_id,u16 Srb_id);
 #ifndef USER_MODE
-char bcmp(void *x, void *y,int Size );
+//char bcmp(void *x, void *y,int Size );
 #endif
 
 #ifndef NO_RRM

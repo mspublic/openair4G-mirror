@@ -121,7 +121,10 @@ tbs_size_t mac_rlc_data_req     (module_id_t module_idP, chan_id_t channel_idP, 
       } else {
           //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter rb_id out of bounds :%d\n", __FILE__, __LINE__, channel_idP);
           msg("mac_rlc_data_req() : parameter rb_id out of bounds :%d\n", channel_idP);
+	  return(-1);
+#ifdef USER_MODE
 	  exit(-1);
+#endif
       }
   } else {
       //handle_event(ERROR,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);

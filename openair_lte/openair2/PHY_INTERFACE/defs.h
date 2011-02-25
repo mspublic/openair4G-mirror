@@ -85,6 +85,9 @@ typedef struct
     /// Indicate synchronization with valid PBCH
     void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);
 
+    /// Only calls the PDCP for now
+    void (*ue_scheduler)(u8 Mod_id, u8 subframe);
+
     // PHY Helper Functions
 
     /// RIV computation from PHY
@@ -97,15 +100,13 @@ typedef struct
     void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
     u16 (*get_nCCE_max)(u8 Mod_id);
-    //    unsigned char is_cluster_head;
-    //    unsigned char is_primary_cluster_head;
-    //    unsigned char is_secondary_cluster_head;
-    //    unsigned char cluster_head_index;
-
-    // PHY variables/functions
     
-    /// PHY Measurements
-    LTE_eNB_UE_stats **eNB_UE_stats;
+    LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
+
+    unsigned char is_cluster_head;
+    unsigned char is_primary_cluster_head;
+    unsigned char is_secondary_cluster_head;
+    unsigned char cluster_head_index;
 
     /// PHY Frame Configuration
     LTE_DL_FRAME_PARMS *lte_frame_parms;

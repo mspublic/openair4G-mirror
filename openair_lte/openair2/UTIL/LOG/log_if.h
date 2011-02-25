@@ -69,6 +69,8 @@ public_log_if( void logRecord(const char *file, const char *func, int line,int c
 public_log_if( int set_comp_log(int component, int level, int flag);)
 public_log_if( void set_log_flag(int flag);)
 public_log_if( void set_log_syslog(int value);)
+public_log_if( void logClean (void); );
+
 #ifdef __cplusplus
 }
 #endif
