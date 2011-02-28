@@ -1547,7 +1547,8 @@ void phy_procedures_ue_lte(unsigned char last_slot, unsigned char next_slot, PHY
       phy_procedures_UE_RX(last_slot,phy_vars_ue,eNB_id,abstraction_flag);
     }
 
+#ifdef OPENAIR2
     if (last_slot%2==0)
       mac_xface->ue_scheduler(phy_vars_ue->Mod_id, last_slot>>1);
-
+#endif
 }
