@@ -1,6 +1,5 @@
 #!/bin/sh
 echo "setting up UE NAS interface"
-sudo rmmod nasmesh
 cd $OPENAIR2_DIR
 #make nasmesh_netlink_address_fix.ko 
 #make nasmesh_netlink.ko
