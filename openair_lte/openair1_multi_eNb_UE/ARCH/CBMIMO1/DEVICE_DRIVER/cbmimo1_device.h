@@ -95,7 +95,8 @@
 #define openair_SET_DLSCH_RATE_ADAPTATION             _IOR(openair_IOC_MAGIC,53,int)
 #define openair_SET_DLSCH_TRANSMISSION_MODE           _IOR(openair_IOC_MAGIC,54,int)
 #define openair_SET_ULSCH_ALLOCATION_MODE             _IOR(openair_IOC_MAGIC,55,int)
-#define openair_MAXNR         55
+#define openair_SET_RRC_CONN_SETUP                    _IOR(openair_IOC_MAGIC,56,int)
+#define openair_MAXNR         56
 
 
 

@@ -618,6 +618,11 @@ case 24 :
     printf("[openair][START][INFO] SET ULSCH Allocation Mode to %d\n",fc);
     result = ioctl(openair_fd,openair_SET_ULSCH_ALLOCATION_MODE, &fc);
     break;
+
+  case 34:
+
+    result = ioctl(openair_fd,openair_SET_RRC_CONN_SETUP, NULL);
+    break;
 	
   default: 
 

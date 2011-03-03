@@ -1624,6 +1624,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.ulsch_allocation_mode = (unsigned char)(((unsigned int *)arg)[0]);
     break;
 
+  case openair_SET_RRC_CONN_SETUP:
+#ifdef OPENAIR2
+    RRC_CONNECTION_FLAG = 1;
+#endif
+  break;
+
   default:
     //----------------------
     return -EPERM;
