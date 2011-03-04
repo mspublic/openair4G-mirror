@@ -25,7 +25,7 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-#define DEBUG_RRC
+//#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
@@ -113,15 +113,14 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
     msg("filling rach,SRB_ID %d\n",Srb_id);
     msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
 #endif
-    if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx) ){
+    if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx) && (RRC_CONNECTION_FLAG==1)){
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx;
       UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx=0;
-      msg("[RRC][UE %d] Sending rach\n",Mod_id);
+      //      msg("[RRC][UE %d] Sending rach\n",Mod_id);
       return(Ret_size);
     }
     else{
-      msg("erooooooooooooooooor\n");
       return 0;
     }
   }

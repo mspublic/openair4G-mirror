@@ -17,6 +17,7 @@ ________________________________________________________________*/
 
 
 
+u32 RRC_CONNECTION_FLAG;
 
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX]; 
 CH_MAC_INST *CH_mac_inst; //[NB_MODULE_MAX]; 

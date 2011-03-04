@@ -53,6 +53,8 @@ extern EMULATION_VARS *Emul_vars;
 #endif //PHY_EMUL
 
 
+extern u32 RRC_CONNECTION_FLAG;
+
 extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
