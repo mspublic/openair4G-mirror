@@ -40,7 +40,6 @@
 #    define __LOG_H__
 
 /*--- INCLUDES ---------------------------------------------------------------*/
-#ifdef USER_MODE
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,10 +50,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdarg.h>
-#else
-#include "rtai_fifos.h"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -99,15 +94,11 @@ extern "C" {
 /*! \brief Macro used to call tr_log_full_ex with file, function and line information
  *
  */
-#ifdef USER_MODE
-#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
-#else
-#define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
-#endif
+#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+
   typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, OCG, MAX_LOG_COMPONENTS} comp_name_t;
 
 // debugging macros
-//#ifdef USER_MODE
 #define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
 #define LOG_C(c, x...)  logIt(c, LOG_CRIT,  x)
@@ -117,19 +108,6 @@ extern "C" {
 #define LOG_I(c, x...)  logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-/*
-#else
-#define LOG_G(c, x...) msg(x)
-#define LOG_A(c, x...) msg(x)
-#define LOG_C(c, x...) msg(x)
-#define LOG_E(c, x...) msg(x)
-#define LOG_W(c, x...) msg(x)
-#define LOG_N(c, x...) msg(x)
-#define LOG_I(c, x...) msg(x)
-#define LOG_D(c, x...) msg(x)
-#define LOG_T(c, x...) msg(x)
-#endif
-*/
 
 /// Macro to log a message with severity DEBUG when entering a function
 #define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0)
@@ -180,10 +158,9 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 
 
 #define LOG_DISABLE     0x00
-#define LOG_MED         0x34
+#define LOG_MED         0x24
 #define LOG_DEF         0x74
 #define LOG_DEF_ONLINE  0xF4 // compatibility with OAI
-
 
 
 #define OAI_OK 0                        ///< all ok
@@ -192,7 +169,7 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 #define OAI_ERR_NOTFOUND 3              ///< something wasn't found
 
 
-  //#define msg printf
+#define msg printf
 
 
 typedef struct  {
@@ -221,9 +198,7 @@ typedef struct {
   char*                   log_file_name;
 } log_t;
 
-/*--- INCLUDES ---------------------------------------------------------------*/
-#    include "log_if.h"
-/*----------------------------------------------------------------------------*/
+void logInit ();
 #ifdef __cplusplus
 }
 #endif
