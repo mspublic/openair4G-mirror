@@ -119,29 +119,31 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,u8 abstraction_flag) {
 }
 
 
-int ulsch_encoding(unsigned char *a,
+u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
-		   unsigned char harq_pid) {
+		   u8 harq_pid,
+		   u8 control_only_flag) {
   
   unsigned short offset;
   unsigned int crc=1;
   unsigned short iind;
   unsigned short A;
-  unsigned char Q_m;
-  unsigned int Kr,Kr_bytes,r,r_offset=0;
+  unsigned char Q_m=0;
+  unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned char y[6*14*1200];
   unsigned char *columnset;
   unsigned int sumKr=0;
-  unsigned int Qprime,L,G,Q_CQI,Q_RI,Q_ACK,H,Hprime,Hpp,Cmux,Rmux,Rmux_prime;
-  unsigned int Qprime_ACK,Qprime_CQI,Qprime_RI,len_ACK,len_RI;
+  unsigned int Qprime,L,G,Q_CQI=0,Q_RI=0,Q_ACK=0,H=0,Hprime=0,Hpp=0,Cmux=0,Rmux=0,Rmux_prime=0;
+  unsigned int Qprime_ACK=0,Qprime_CQI=0,Qprime_RI=0,len_ACK=0,len_RI=0;
   unsigned int E;
   unsigned char ack_parity;
   unsigned int i,q,j,iprime;
   unsigned short o_RCC;
+  unsigned char o_flip[8];
 
   if (!ulsch) {
-    msg("ulsch_coding.c: Null ulsch ptr\n",ulsch);
+    msg("ulsch_coding.c: Null ulsch ptr\n");
     return(-1);
   }
 
@@ -162,10 +164,27 @@ int ulsch_encoding(unsigned char *a,
     return(-1);
   }
 
-  A=ulsch->harq_processes[harq_pid]->TBS;
-  Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
+  if (ulsch->O<=32) {
+    o_flip[0] = ulsch->o[3];
+    o_flip[1] = ulsch->o[2];
+    o_flip[2] = ulsch->o[1];
+    o_flip[3] = ulsch->o[0];   
+  }
+  else {
+    o_flip[0] = ulsch->o[7];
+    o_flip[1] = ulsch->o[6];
+    o_flip[2] = ulsch->o[5];
+    o_flip[3] = ulsch->o[4];
+    o_flip[4] = ulsch->o[3];
+    o_flip[5] = ulsch->o[2];
+    o_flip[6] = ulsch->o[1];
+    o_flip[7] = ulsch->o[0];
+  }
+  if (control_only_flag == 0) {
+    A=ulsch->harq_processes[harq_pid]->TBS;
+    Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
 
-
+    
 #ifdef DEBUG_ULSCH_CODING
   msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, Ndi %d\n",
 	 ulsch->harq_processes[harq_pid]->TBS,
@@ -180,56 +199,56 @@ int ulsch_encoding(unsigned char *a,
     msg("ulsch_coding: O_RI[%d] %d\n",i,ulsch->o_RI[i]);
   msg("ulsch_coding: O=%d\n",ulsch->O);
   for (i=0;i<1+((ulsch->O)/8);i++) {
-    ulsch->o[i] = i;
-    msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
+    //    ulsch->o[i] = i;
+    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
   }
+  print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
 #endif
-
-  if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
     
-    // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(a,
-		 A)>>8;
-
-
-    a[A>>3] = ((u8*)&crc)[2];
-    a[1+(A>>3)] = ((u8*)&crc)[1];
-    a[2+(A>>3)] = ((u8*)&crc)[0];
-
-    ulsch->harq_processes[harq_pid]->B = A+24;
-    ulsch->harq_processes[harq_pid]->b = a;
-    lte_segmentation(ulsch->harq_processes[harq_pid]->b,
-		     ulsch->harq_processes[harq_pid]->c,
-		     ulsch->harq_processes[harq_pid]->B,
-		     &ulsch->harq_processes[harq_pid]->C,
-		     &ulsch->harq_processes[harq_pid]->Cplus,
-		     &ulsch->harq_processes[harq_pid]->Cminus,
-		     &ulsch->harq_processes[harq_pid]->Kplus,
-		     &ulsch->harq_processes[harq_pid]->Kminus,		     
-		     &ulsch->harq_processes[harq_pid]->F);
-
-    for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
-      if (r<ulsch->harq_processes[harq_pid]->Cminus)
-	Kr = ulsch->harq_processes[harq_pid]->Kminus;
-      else
-	Kr = ulsch->harq_processes[harq_pid]->Kplus;
-      Kr_bytes = Kr>>3;
-
-      // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
-      if (Kr_bytes<=64)
-	iind = (Kr_bytes-5);
-      else if (Kr_bytes <=128)
-	iind = 59 + ((Kr_bytes-64)>>1);
-      else if (Kr_bytes <= 256)
-	iind = 91 + ((Kr_bytes-128)>>2);
-      else if (Kr_bytes <= 768)
-	iind = 123 + ((Kr_bytes-256)>>3);
-      else {
-	msg("ulsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-	return(-1);
-      }
-    
-  
+    if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
+      
+      // Add 24-bit crc (polynomial A) to payload
+      crc = crc24a(a,
+		   A)>>8;
+      
+      a[A>>3] = ((u8*)&crc)[2];
+      a[1+(A>>3)] = ((u8*)&crc)[1];
+      a[2+(A>>3)] = ((u8*)&crc)[0];
+      
+      ulsch->harq_processes[harq_pid]->B = A+24;
+      ulsch->harq_processes[harq_pid]->b = a;
+      lte_segmentation(ulsch->harq_processes[harq_pid]->b,
+		       ulsch->harq_processes[harq_pid]->c,
+		       ulsch->harq_processes[harq_pid]->B,
+		       &ulsch->harq_processes[harq_pid]->C,
+		       &ulsch->harq_processes[harq_pid]->Cplus,
+		       &ulsch->harq_processes[harq_pid]->Cminus,
+		       &ulsch->harq_processes[harq_pid]->Kplus,
+		       &ulsch->harq_processes[harq_pid]->Kminus,		     
+		       &ulsch->harq_processes[harq_pid]->F);
+      
+      for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
+	if (r<ulsch->harq_processes[harq_pid]->Cminus)
+	  Kr = ulsch->harq_processes[harq_pid]->Kminus;
+	else
+	  Kr = ulsch->harq_processes[harq_pid]->Kplus;
+	Kr_bytes = Kr>>3;
+	
+	// get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
+	if (Kr_bytes<=64)
+	  iind = (Kr_bytes-5);
+	else if (Kr_bytes <=128)
+	  iind = 59 + ((Kr_bytes-64)>>1);
+	else if (Kr_bytes <= 256)
+	  iind = 91 + ((Kr_bytes-128)>>2);
+	else if (Kr_bytes <= 768)
+	  iind = 123 + ((Kr_bytes-256)>>3);
+	else {
+	  msg("ulsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
+	  return(-1);
+	}
+	
+	
 #ifdef DEBUG_ULSCH_CODING
   msg("Generating Code Segment %d (%d bits)\n",r,Kr);
   // generate codewords
@@ -239,52 +258,58 @@ int ulsch_encoding(unsigned char *a,
   msg("Ncp %d\n",frame_parms->Ncp);
   msg("Qm %d\n",Q_m);
 #endif
-
-  offset=0;
-  
-
-
-
-
+	
+	offset=0;
+	
+	
+	
+	
+	
 #ifdef DEBUG_ULSCH_CODING    
     msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
-
-    threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
-			      Kr>>3, 
-			      &ulsch->harq_processes[harq_pid]->d[r][96],
-			      (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-			      f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
-			      f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
-			      );
+	
+	threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
+				  Kr>>3, 
+				  &ulsch->harq_processes[harq_pid]->d[r][96],
+				  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
+				  f1f2mat[iind*2],   // f1 (see 36121-820, page 14)
+				  f1f2mat[(iind*2)+1]  // f2 (see 36121-820, page 14)
+				  );
 #ifdef DEBUG_ULSCH_CODING
-    if (r==0)
-      write_output("enc_output0.m","enc0",&ulsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+	if (r==0)
+	  write_output("enc_output0.m","enc0",&ulsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 #endif
-
-      ulsch->harq_processes[harq_pid]->RTC[r] = 
-	sub_block_interleaving_turbo(4+(Kr_bytes*8), 
-				     &ulsch->harq_processes[harq_pid]->d[r][96], 
-				     ulsch->harq_processes[harq_pid]->w[r]);
-  
+	
+	ulsch->harq_processes[harq_pid]->RTC[r] = 
+	  sub_block_interleaving_turbo(4+(Kr_bytes*8), 
+				       &ulsch->harq_processes[harq_pid]->d[r][96], 
+				       ulsch->harq_processes[harq_pid]->w[r]);
+	
+      }
+      
     }
     
-  }
-
-  if (ulsch->harq_processes[harq_pid]->C == 0) {
-    msg("[PHY][UE] FATAL : ulsch_coding.c : null segment\n");
-    return(-1);
-  }
-
-  sumKr = 0;
-  for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
-    if (r<ulsch->harq_processes[harq_pid]->Cminus)
-      Kr = ulsch->harq_processes[harq_pid]->Kminus;
-    else
+    if (ulsch->harq_processes[harq_pid]->C == 0) {
+      msg("[PHY][UE] FATAL : ulsch_coding.c : null segment\n");
+      return(-1);
+    }
+    
+    sumKr = 0;
+    for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
+      if (r<ulsch->harq_processes[harq_pid]->Cminus)
+	Kr = ulsch->harq_processes[harq_pid]->Kminus;
+      else
       Kr = ulsch->harq_processes[harq_pid]->Kplus;
-    sumKr += Kr;
+      sumKr += Kr;
+    }
   }
-  // Compute Q_ri
+  else { // This is a control-only PUSCH, set sumKr to O_CQI-MIN
+
+    sumKr = ulsch->O_CQI_MIN;
+  }
+  // Compute Q_ri (p. 23 36-212)
+
   Qprime = ulsch->O_RI*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
@@ -297,8 +322,7 @@ int ulsch_encoding(unsigned char *a,
   Q_RI = Q_m*Qprime;
   Qprime_RI = Qprime;
 
-  // Compute Q_ack
-
+  // Compute Q_ack (p. 23 36-212)
   Qprime = ulsch->O_ACK*ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
   if ((Qprime % (8*sumKr)) > 0)
     Qprime = 1+(Qprime/(8*sumKr));
@@ -311,59 +335,75 @@ int ulsch_encoding(unsigned char *a,
   Q_ACK = Qprime * Q_m;
   Qprime_ACK = Qprime;
 
-  // Compute Q_cqi
-  L=8;
-  Qprime = (ulsch->O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
-  if ((Qprime % (8*sumKr)) > 0)
-    Qprime = 1+(Qprime/(8*sumKr));
-  else
-    Qprime = Qprime/(8*sumKr);
+  // Compute Q_cqi, assume O>11, p. 26 36-212
+  if (control_only_flag == 0) {
+    L=8;
+    Qprime = (ulsch->O + L) * ulsch->harq_processes[harq_pid]->Msc_initial*ulsch->harq_processes[harq_pid]->Nsymb_initial * ulsch->beta_offset_cqi_times8;
+    if ((Qprime % (8*sumKr)) > 0)
+      Qprime = 1+(Qprime/(8*sumKr));
+    else
+      Qprime = Qprime/(8*sumKr);
+    
+    
+    G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
+    //    printf("G %d, Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
+    if (Qprime > (G - ulsch->O_RI))
+      Qprime = G - ulsch->O_RI;
+    Q_CQI = Q_m * Qprime;
+    Qprime_CQI = Qprime;
+  
+    G = G - Q_RI - Q_CQI;
+    
+    if ((int)G < 0) {
+      msg("[PHY] FATAL: ulsch_coding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
+      return(-1);
+    }
 
-  G = ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch);
 
-  if (Qprime > (G - ulsch->O_RI))
-    Qprime = G - ulsch->O_RI;
+    // Data and control multiplexing (5.2.2.7 36-212)
 
-  Q_CQI = Q_m * Qprime;
-  Qprime_CQI = Qprime;
+    H = G + Q_CQI;
+    Hprime = H/Q_m;
 
-  G = G - Q_RI - Q_CQI;
-  if ((int)G < 0) {
-    return(-1);
-  }
-  H = G + Q_CQI;
-  Hprime = H/Q_m;
 
-  // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
-  // outputs for each code segment, see Section 5.1.5 p.20
 
-  for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
+    // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
+    // outputs for each code segment, see Section 5.1.5 p.20
+    
+    for (r=0;r<ulsch->harq_processes[harq_pid]->C;r++) {
 #ifdef DEBUG_ULSCH_CODING
-    msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
-	   r,
-	   G,
-	   Kr*3,
-	   Q_m,ulsch->harq_processes[harq_pid]->nb_rb);
+      msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+	  r,
+	  G,
+	  Kr*3,
+	  Q_m,ulsch->harq_processes[harq_pid]->nb_rb);
 #endif
-
-
-    r_offset += lte_rate_matching_turbo(ulsch->harq_processes[harq_pid]->RTC[r],
-					G,
-					ulsch->harq_processes[harq_pid]->w[r],
-					&ulsch->e[0],
-					ulsch->harq_processes[harq_pid]->C, // C
-					NSOFT,                    // Nsoft,
-					ulsch->Mdlharq,
-					1,
-					ulsch->harq_processes[harq_pid]->rvidx,
-					get_Qm(ulsch->harq_processes[harq_pid]->mcs),
-					1,
-					r);                       // r
+      
+      
+      r_offset += lte_rate_matching_turbo(ulsch->harq_processes[harq_pid]->RTC[r],
+					  G,
+					  ulsch->harq_processes[harq_pid]->w[r],
+					  &ulsch->e[0],
+					  ulsch->harq_processes[harq_pid]->C, // C
+					  NSOFT,                    // Nsoft,
+					  ulsch->Mdlharq,
+					  1,
+					  ulsch->harq_processes[harq_pid]->rvidx,
+					  get_Qm(ulsch->harq_processes[harq_pid]->mcs),
+					  1,
+					  r);                       // r
 #ifdef DEBUG_ULSCH_CODING
-    if (r==ulsch->harq_processes[harq_pid]->C-1)
-      write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);
+      if (r==ulsch->harq_processes[harq_pid]->C-1)
+	write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);
 #endif
+    }
   }
+  else {  //control-only PUSCH
+    Q_CQI = (ulsch->harq_processes[harq_pid]->nb_rb * (12 * Q_m) * (ulsch->Nsymb_pusch)) - Q_RI;
+    H = Q_CQI;
+    Hprime = H/Q_m;
+  }
+  
 
   //  Do CQI coding
   if (ulsch->O < 12) {
@@ -373,14 +413,14 @@ int ulsch_encoding(unsigned char *a,
   else {
 
     // add 8-bit CRC
-    crc = crc8(ulsch->o,
+    crc = crc8(o_flip,
 	       ulsch->O)>>24;
-
+    //    printf("crc(cqi) tx : %x\n",crc);
     memset((void *)&ulsch->o_d[0],LTE_NULL,96);
     
     ccodelte_encode(ulsch->O,
 		    1,
-		    ulsch->o,
+		    o_flip,
 		    &ulsch->o_d[96],
 		    0);
 
@@ -595,7 +635,11 @@ int ulsch_encoding(unsigned char *a,
 
 
 #ifdef PHY_ABSTRACTION
-int ulsch_encoding_emul(u8 *ulsch_buffer,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 harq_pid) {
+int ulsch_encoding_emul(u8 *ulsch_buffer,
+			PHY_VARS_UE *phy_vars_ue,
+			u8 eNB_id,
+			u8 harq_pid,
+			u8 control_only_flag) {
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
   

@@ -8,25 +8,6 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
-/*
-typedef struct {
-  unsigned char N_RB_DL;
-  unsigned char Nid_cell;
-  unsigned char Ncp;
-  unsigned char nushift;
-  unsigned short ofdm_symbol_size;
-  unsigned char log2_symbol_size;
-  unsigned short nb_prefix_samples;
-  unsigned short first_carrier_offset;
-  unsigned int samples_per_tti;
-  unsigned char nb_antennas_tx;
-  unsigned char nb_antennas_rx;
-  unsigned char first_dlsch_symbol;
-  short *twiddle_fft;
-  unsigned short *rev;
-} LTE_DL_FRAME_PARMS;
-*/
-
 int generate_pss(mod_sym_t **txdataF,
 		 short amp,
 		 LTE_DL_FRAME_PARMS *frame_parms,
@@ -47,7 +28,6 @@ int generate_pss(mod_sym_t **txdataF,
 #endif
 
   //debug_msg("[PSS] Using sequence %d\n",eNb_id);
-
 
   switch (eNb_id) {
   case 0:

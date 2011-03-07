@@ -94,7 +94,7 @@ typedef struct {
   u32 F;                         
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   u8 Nl;                       
-} LTE_DL_eNb_HARQ_t;
+} LTE_DL_eNB_HARQ_t;
 
 typedef struct {
   /// Flag indicating that this ULSCH has a new packet (start of new round) 
@@ -173,7 +173,7 @@ typedef struct {
   /// Current Number of RBs
   u16 nb_rb;
   /// Pointers to 8 HARQ processes for the DLSCH
-  LTE_DL_eNb_HARQ_t *harq_processes[8];     
+  LTE_DL_eNB_HARQ_t *harq_processes[8];     
   /// Number of soft channel bits
   u16 G;
   /// Layer index for this dlsch (0,1)
@@ -186,7 +186,7 @@ typedef struct {
   u8 Mdlharq;  
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   u8 Kmimo;
-} LTE_eNb_DLSCH_t;
+} LTE_eNB_DLSCH_t;
 
 typedef struct {
   /// Current Number of Symbols
@@ -205,6 +205,8 @@ typedef struct {
   u8 o_ACK[4];
   /// Length of ACK information (bits)
   u8 O_ACK;
+  /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
+  u8 O_CQI_MIN;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   u8 e[MAX_NUM_CHANNEL_BITS];
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
@@ -292,13 +294,13 @@ typedef struct {
   u16 Msc_initial;
   /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
   u8 Nsymb_initial;
-} LTE_UL_eNb_HARQ_t;
+} LTE_UL_eNB_HARQ_t;
 
 typedef struct {
   /// Current Number of Symbols
   u8 Nsymb_pusch;
   /// Pointers to 8 HARQ processes for the ULSCH
-  LTE_UL_eNb_HARQ_t *harq_processes[8];     
+  LTE_UL_eNB_HARQ_t *harq_processes[8];     
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18) 
   s16 e[MAX_NUM_CHANNEL_BITS];
   /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)             
@@ -347,7 +349,7 @@ typedef struct {
   u32 RRCConnRequest_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-} LTE_eNb_ULSCH_t;
+} LTE_eNB_ULSCH_t;
 
 typedef struct {
   /// Flag indicating that this DLSCH has a new transport block
@@ -392,13 +394,6 @@ typedef struct {
   u8 Nl;  
 } LTE_DL_UE_HARQ_t;
 
-typedef struct {
-  unsigned char Csrs;                  ///SRS BandwidthConfiguration \in {0,1,...,7}
-  unsigned char Bsrs;                  ///SRS Bandwidth \in {0,1,2,3}
-  unsigned char kTC;                   ///SRS kTC  Transmission Comb \in {0,1}
-  unsigned char n_RRC;                 ///SRS n_RRC Frequency Domain Position \in {0,1,...,23}
-  unsigned char Ssrs;                  ///SRS Subframe configuration \in {0,...,15}
-} SRS_param_t;
 
 typedef struct {
   s32 UL_rssi[NB_ANTENNAS_RX];
@@ -420,7 +415,7 @@ typedef struct {
   u32 ulsch_decoding_attempts[3][4];
   u32 ulsch_round_errors[3][4];
   s8 dlsch_mcs_offset;
-  SRS_param_t SRS_parameters;
+  //  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;
 
 typedef struct {
@@ -428,6 +423,8 @@ typedef struct {
   u8 harq_id;
   /// ACK bits (after decoding)
   u8 ack;
+  /// send status (for PUCCH)
+  u8 send_harq_status;
 } harq_status_t;
 
 typedef struct {
@@ -492,6 +489,8 @@ typedef enum {
   pucch_format2a,
   pucch_format2b
 } PUCCH_FMT_t;
+
+
 typedef struct {
   /// Length of DCI in bits
   u8 dci_length;

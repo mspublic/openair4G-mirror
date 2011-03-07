@@ -18,7 +18,7 @@
 #include "RRC/MESH/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 int* sync_corr_ue = NULL;
 int sync_tmp[2048*4] __attribute__((aligned(16)));
@@ -172,10 +172,22 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
 void lte_sync_time_free(void) {
 
 #ifdef USER_MODE
-  free(sync_corr_ue);
-  free(primary_synch0_time);
-  free(primary_synch1_time);
-  free(primary_synch2_time);
+  if (sync_corr_ue) {
+    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue);
+    free(sync_corr_ue);
+  }
+  if (primary_synch0_time) {
+    msg("Freeing primary_sync0_time ...\n");
+    free(primary_synch0_time);
+  }
+  if (primary_synch1_time) {
+    msg("Freeing primary_sync1_time ...\n");
+    free(primary_synch1_time);
+  }
+  if (primary_synch2_time) {
+    msg("Freeing primary_sync2_time ...\n");
+    free(primary_synch2_time);
+  }
 #endif
   sync_corr_ue = NULL;
 
@@ -188,7 +200,7 @@ inline int abs32(int x) {
 int lte_sync_time(int **rxdata, ///rx data in time domain
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  int length,
-		  int *eNb_id) {
+		  int *eNB_id) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -285,7 +297,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     }
   }
 
-  *eNb_id = sync_source;
+  *eNB_id = sync_source;
 
 #ifdef DEBUG_PHY
   msg("[SYNC TIME] Sync source = %d, Peak found at pos %d, val = %d\n",sync_source,peak_pos,peak_val);
@@ -299,12 +311,12 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 }
 
-int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
+int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      int eNb_id,
+		      int eNB_id,
 		      int length,
 		      int *peak_val_out,
-		      unsigned int *sync_corr_eNb) {
+		      unsigned int *sync_corr_eNB) {
 
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -312,13 +324,13 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
   int result;
   short *primary_synch_time;
 
-  // msg("[SYNC TIME] Calling sync_time_eNb(%p,%p,%d,%d)\n",rxdata,frame_parms,eNb_id,length);
-  if (sync_corr_eNb == NULL) {
-    msg("[SYNC TIME] sync_corr_eNb not yet allocated! Exiting.\n");
+  // msg("[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
+  if (sync_corr_eNB == NULL) {
+    msg("[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
     return(-1);
   }
 
-  switch (eNb_id) {
+  switch (eNB_id) {
   case 0:
     primary_synch_time = (short*)primary_synch0_time;
     break;
@@ -329,7 +341,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
     primary_synch_time = (short*)primary_synch2_time;
     break;
   default:
-    msg("[SYNC TIME] Illegal eNb_id!\n");
+    msg("[SYNC TIME] Illegal eNB_id!\n");
     return (-1);
   }
 
@@ -339,7 +351,7 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 
   for (n=0; n<length; n+=4) {
 
-    sync_corr_eNb[n] = 0;
+    sync_corr_eNB[n] = 0;
 
     if (n<(length-frame_parms->ofdm_symbol_size-frame_parms->nb_prefix_samples)) {
 
@@ -352,15 +364,15 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 #endif
 	//((short*)sync_corr)[2*n]   += ((short*) &result)[0];
 	//((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
-	sync_corr_eNb[n] += abs32(result);
+	sync_corr_eNB[n] += abs32(result);
 
       }
 
     }
-    mean_val += sync_corr_eNb[n]>>10;
+    mean_val += sync_corr_eNB[n]>>10;
 
-    if (sync_corr_eNb[n]>peak_val) {
-      peak_val = sync_corr_eNb[n];
+    if (sync_corr_eNB[n]>peak_val) {
+      peak_val = sync_corr_eNB[n];
       peak_pos = n;
     }
   }
@@ -383,13 +395,13 @@ int lte_sync_time_eNb(int **rxdata, ///rx data in time domain
 }
 
 //#ifdef PHY_ABSTRACTION
-int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
+int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNB,
 			   u8 sect_id,
 			   s32 *sync_val) {
 
   u8 UE_id;
 
-  msg("[PHY] EMUL lte_sync_time_eNb_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
+  msg("[PHY] EMUL lte_sync_time_eNB_emul eNB %d, sect_id %d\n",phy_vars_eNB->Mod_id,sect_id);
   *sync_val = 0;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     msg("checking UE %d (PRACH %d)\n",UE_id,PHY_vars_UE_g[UE_id]->generate_prach);

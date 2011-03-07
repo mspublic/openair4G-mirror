@@ -272,7 +272,7 @@ extern unsigned short transmission_offset_tdd[16];
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,
 			       LTE_eNB_SRS *eNb_srs_vars,
-			       SRS_param_t *SRS_parms,
+			       SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
 			       unsigned char sub_frame_number,
 			       unsigned char eNb_id) {
 
@@ -282,10 +282,11 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   char fname[40], vname[40];
 #endif
 
+  u8 Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
 
   N_symb = 2*7-frame_parms->Ncp;
   symbol = (sub_frame_number+1)*N_symb-1; //SRS is always in last symbol of subframe
-  T_SFC = (SRS_parms->Ssrs<=7 ? 5 : 10);
+  T_SFC = (Ssrs<=7 ? 5 : 10);
 
   /* 
   msg("SRS channel estimation eNb %d, subframs %d, %d %d %d %d %d\n",eNb_id,sub_frame_number,
@@ -296,10 +297,10 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       SRS_parms->Ssrs);
   */
 
-  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[SRS_parms->Ssrs]) {
+  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
 
     if (generate_srs_rx(frame_parms, 
-			SRS_parms,
+			soundingrs_ul_config_dedicated,
 			eNb_srs_vars->srs)==-1) {
       msg("lte_srs_channel_estimation: Error in generate_srs_rx\n");
       return(-1);

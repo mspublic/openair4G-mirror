@@ -81,8 +81,8 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
   u8 skip=0;
 
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
-  Ngroup_PHICH = frame_parms->Ng_times6*(frame_parms->N_RB_DL/48);
-  if (((frame_parms->Ng_times6*frame_parms->N_RB_DL)%48) > 0)
+  Ngroup_PHICH = frame_parms->phich_config_common.phich_resource*(frame_parms->N_RB_DL/48);
+  if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
   // check if Extended prefix
   if (frame_parms->Ncp == 1) {
@@ -90,7 +90,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms) {
   }
   
 #ifdef DEBUG_PHICH
-  msg("[PHY] Ngroup_PHICH %d (Ng_times6 %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),frame_parms->Ng_times6);
+  msg("[PHY] Ngroup_PHICH %d (phich_config_common.phich_resource %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),frame_parms->phich_config_common.phich_resource);
 #endif
 
   // This is the algorithm from Section 6.9.3 in 36-211
@@ -341,26 +341,26 @@ void generate_phich_tdd(LTE_DL_FRAME_PARMS *frame_parms,
 
 void generate_phich_top(LTE_DL_FRAME_PARMS *frame_parms,
 			unsigned char subframe,
-			LTE_eNb_ULSCH_t *ulsch_eNb,
+			LTE_eNB_ULSCH_t *ulsch_eNB,
 			mod_sym_t **txdataF) {
 
   unsigned char harq_pid;
 
   harq_pid = subframe2_ul_harq(frame_parms->tdd_config,subframe);
 
-  if (ulsch_eNb->harq_processes[harq_pid]->phich_active == 1) {
+  if (ulsch_eNB->harq_processes[harq_pid]->phich_active == 1) {
 
     generate_phich_tdd(frame_parms,
 		       0, // nseq_PHICH
 		       0, // ngroup_PHICH,
-		       ulsch_eNb->harq_processes[harq_pid]->phich_ACK,
+		       ulsch_eNB->harq_processes[harq_pid]->phich_ACK,
 		       txdataF);
   }
 }
 
-void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNb,
+void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 subframe,
-			 LTE_eNb_ULSCH_t *ulsch_eNb) {
+			 LTE_eNB_ULSCH_t *ulsch_eNB) {
 
-  msg("[PHY] EMUL eNB %d generate_phich_emul\n",phy_vars_eNb->Mod_id);
+  msg("[PHY] EMUL eNB %d generate_phich_emul\n",phy_vars_eNB->Mod_id);
 }

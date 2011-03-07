@@ -5,7 +5,7 @@
 #ifdef DEBUG_UCI_TOOLS
 #include "PHY/vars.h"
 #endif
-//#define DEBUG_UCI
+#define DEBUG_UCI
 
 unsigned int pmi2hex_2Ar1(unsigned short pmi) {
 

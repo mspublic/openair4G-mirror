@@ -55,8 +55,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->first_dlsch_symbol = 4;
-  lte_frame_parms->num_dlsch_symbols  = (lte_frame_parms->Ncp==0) ? 8: 6;
   lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->tdd_config         = tdd_config;
 

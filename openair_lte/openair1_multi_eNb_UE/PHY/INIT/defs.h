@@ -75,7 +75,7 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *
 void phy_cleanup(void);
 
 #ifdef OPENAIR_LTE
-int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
+int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 #endif
 

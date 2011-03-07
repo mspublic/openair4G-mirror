@@ -17,6 +17,7 @@ pcfich.c             : routines for encoding/decoding and configuration of PCFIC
 phich.c              : routines for encoding/decoding and configuration of PHICH (36-211,36-213)
 print_stats.c        : routines for DLSCH/ULSCH statistics and CQI/PMI information
 pss.c                : routines for generation of PSS (36-211)
+pucch.c		     : routines for generation/detection of PUCCH (36-211)
 rar_tools.c          : routines for generating ulsch/dlsch modulation/demodulation and coding/decoding structures from a RAR pdu (for use only with openair2)
 dci.h                : Data structures for LTE dci formats 0,1,1A,1B,1C,1D,2,2A,2B,3 (36-212)
 dci.c                : Top-level encoding/decoding and modulation/demodulation routines for PDCCH/DCI (36-211,36-212) note: SSE/SSE2/SSE3/SSE4 optimized

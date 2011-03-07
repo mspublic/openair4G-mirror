@@ -35,7 +35,7 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
 
   unsigned int ind;
   LTE_DL_FRAME_PARMS *lte_frame_parms;
@@ -55,17 +55,16 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   
   lte_frame_parms = &(PHY_vars_eNb->lte_frame_parms);
 
-  lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = 25;   
+  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
+  lte_frame_parms->N_RB_UL            = N_RB_DL;   
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->first_dlsch_symbol = 4;
-  lte_frame_parms->num_dlsch_symbols  = (lte_frame_parms->Ncp==0) ? 8: 6;
-  lte_frame_parms->Ng_times6          = 1;
+  lte_frame_parms->phich_config_common.phich_resource = oneSixth;
   lte_frame_parms->tdd_config         = tdd_config;
+  lte_frame_parms->frame_type         = 1;
 
   //  lte_frame_parms->Csrs = 2;
   //  lte_frame_parms->Bsrs = 0;
@@ -73,7 +72,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
 
-  init_frame_parms(lte_frame_parms);
+  init_frame_parms(lte_frame_parms,osf);
   
   //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
@@ -197,6 +196,7 @@ int main(int argc, char **argv) {
   char input_val_str[50],input_val_str2[50];
   double input_val1,input_val2;
   u8 n_rnti=0x1234;
+  u8 osf=1,N_RB_DL=25;
 
   SCM_t channel_model=custom;
 
@@ -216,12 +216,15 @@ int main(int argc, char **argv) {
     rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-  while ((c = getopt (argc, argv, "har:pg:c:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
+  while ((c = getopt (argc, argv, "har:pg:d:c:i:j:n:s:t:x:y:z:L:M:N:I:F:R:")) != -1) {
     switch (c)
       {
       case 'a':
 	printf("Running AWGN simulation\n");
 	awgn_flag = 1;
+	break;
+      case 'd':
+	N_RB_DL = atoi(optarg);
 	break;
       case 'c':
 	tdd_config=atoi(optarg);
@@ -379,6 +382,9 @@ int main(int argc, char **argv) {
 	  break;
 	}
 	break;
+      case 'O':
+	osf = atoi(optarg);
+	break;
       case 'I':
 	Nid_cell = atoi(optarg);
 	break;
@@ -397,6 +403,7 @@ int main(int argc, char **argv) {
 	printf("-h This message\n");
 	printf("-a Use AWGN channel and not multipath\n");
 	printf("-c TDD config\n");
+	printf("-d N_RB_DL\n");
 	printf("-p Use extended prefix mode\n");
 	printf("-n Number of frames to simulate\n");
 	printf("-r Ricean factor (dB, 0 means Rayleigh, 100 is almost AWGN\n");
@@ -422,6 +429,7 @@ int main(int argc, char **argv) {
 	printf("                          12 - format2_2A_M10PRB,\n");
 	printf("                          13 - format2_4A_L10PRB,\n");
 	printf("                          14 - format2_4A_M10PRB\n");  
+	printf("-O Oversampling factor\n");
 	printf("-I Cell Id\n");
 	printf("-F Input sample stream\n");
 	exit(1);
@@ -432,7 +440,14 @@ int main(int argc, char **argv) {
   if ((transmission_mode>1) && (n_tx==1))
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,tdd_config);
+  lte_param_init(n_tx,
+		 n_rx,
+		 transmission_mode,
+		 extended_prefix_flag,
+		 Nid_cell,
+		 tdd_config,
+		 N_RB_DL,
+		 osf);
 
   if (n_frames==1)
     snr1 = snr0+.1;
@@ -629,8 +644,8 @@ int main(int argc, char **argv) {
 	    ((u8 *)&DLSCH_alloc_pdu2)[2]=0xff;
 	    ((u8 *)&DLSCH_alloc_pdu2)[1]=0x60;
 	    ((u8 *)&DLSCH_alloc_pdu2)[0]=0x10;
-	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI1_5MHz_TDD_t));
-	    dci_alloc[num_dci].dci_length = sizeof_DCI1_5MHz_TDD_t;
+	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	    dci_alloc[num_dci].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
 	    dci_alloc[num_dci].L          = log2L;
 	    dci_alloc[num_dci].rnti       = n_rnti;
 	    dci_alloc[num_dci].format     = format1;
@@ -772,7 +787,8 @@ int main(int argc, char **argv) {
 	  ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (.667*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
       }    
-	
+
+      // UE receiver	
       for (l=0;l<PHY_vars_eNb->lte_frame_parms.symbols_per_tti;l++) {
 	  
 	subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;

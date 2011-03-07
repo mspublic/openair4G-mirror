@@ -23,7 +23,7 @@
 #define is_not_pilot(pilots,first_pilot,re) (1)
 
 
-void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
+void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   int i;
   int r;
 
@@ -58,20 +58,20 @@ void free_eNb_dlsch(LTE_eNb_DLSCH_t *dlsch) {
 	      free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+(MAX_DLSCH_PAYLOAD_BYTES));
 	  }
 	}
-	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNb_HARQ_t));
+	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
       }
     }
-    free16(dlsch,sizeof(LTE_eNb_DLSCH_t));
+    free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
   }
   
 }
 
-LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abstraction_flag) {
 
-  LTE_eNb_DLSCH_t *dlsch;
+  LTE_eNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,j,r;
   
-  dlsch = (LTE_eNb_DLSCH_t *)malloc16(sizeof(LTE_eNb_DLSCH_t));
+  dlsch = (LTE_eNB_DLSCH_t *)malloc16(sizeof(LTE_eNB_DLSCH_t));
   if (dlsch) {
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
@@ -79,7 +79,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       dlsch->harq_ids[i] = Mdlharq;
 
     for (i=0;i<Mdlharq;i++) {
-      dlsch->harq_processes[i] = (LTE_DL_eNb_HARQ_t *)malloc16(sizeof(LTE_DL_eNb_HARQ_t));
+      dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
       //printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
@@ -114,8 +114,8 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       return(dlsch);
     }
   }
-  msg("new_eNb_dlsch exit flag %d, size of  %d\n",exit_flag, sizeof(LTE_eNb_DLSCH_t));
-  free_eNb_dlsch(dlsch);
+  msg("new_eNB_dlsch exit flag %d, size of  %d\n",exit_flag, sizeof(LTE_eNB_DLSCH_t));
+  free_eNB_dlsch(dlsch);
   return(NULL);
   
   
@@ -125,7 +125,7 @@ LTE_eNb_DLSCH_t *new_eNb_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
 int dlsch_encoding(unsigned char *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   u8 num_pdcch_symbols,
-		   LTE_eNb_DLSCH_t *dlsch,
+		   LTE_eNB_DLSCH_t *dlsch,
 		   u8 subframe) {
   
   unsigned short offset;
@@ -201,7 +201,6 @@ int dlsch_encoding(unsigned char *a,
       
       printf("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
       printf("N_RB = %d\n",nb_rb);
-      printf("first_dlsch_symbol %d\n",frame_parms->first_dlsch_symbol);
       printf("Ncp %d\n",frame_parms->Ncp);
       printf("mod_order %d\n",mod_order);
 #endif
@@ -267,20 +266,20 @@ int dlsch_encoding(unsigned char *a,
 }
 
 #ifdef PHY_ABSTRACTION
-void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNb,
+void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 *DLSCH_pdu,
-			 LTE_eNb_DLSCH_t *dlsch) {
+			 LTE_eNB_DLSCH_t *dlsch) {
 
   unsigned char harq_pid = dlsch->current_harq_pid;
 
   memcpy(dlsch->harq_processes[harq_pid]->b,
 	 DLSCH_pdu,
 	 dlsch->harq_processes[harq_pid]->TBS>>3);
-  //  msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNb->Mod_id);
+  //  msg("[PHY] EMUL eNB %d dlsch_encoding_emul, dlsch_id %d\n",phy_vars_eNB->Mod_id);
 
-  memcpy(&eNB_transport_info[phy_vars_eNb->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNb->Mod_id]],
+  memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
 	 DLSCH_pdu,
 	 dlsch->harq_processes[harq_pid]->TBS>>3);  
-  eNB_transport_info_TB_index[phy_vars_eNb->Mod_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
+  eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]+=dlsch->harq_processes[harq_pid]->TBS>>3;
 }
 #endif

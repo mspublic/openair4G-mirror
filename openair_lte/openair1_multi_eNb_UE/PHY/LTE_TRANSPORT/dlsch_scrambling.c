@@ -6,7 +6,7 @@
 #include "PHY/extern.h"
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		      u8 num_pdcch_symbols,
-		      LTE_eNb_DLSCH_t *dlsch,
+		      LTE_eNB_DLSCH_t *dlsch,
 		      u16 G,
 		      u8 q,
 		      u8 Ns) {

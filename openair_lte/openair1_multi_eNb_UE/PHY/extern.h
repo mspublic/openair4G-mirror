@@ -28,10 +28,13 @@ extern CHBCH_RX_t rx_mode;
 #endif //OPENAIR_LTE
 
 extern PHY_VARS_UE **PHY_vars_UE_g;
-extern PHY_VARS_eNB **PHY_vars_eNb_g;
+extern PHY_VARS_eNB **PHY_vars_eNB_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
 //extern PHY_LINKS *PHY_links;
+
+extern u8 NB_UE_INST;
+extern u8 NB_CH_INST;
 
 extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
 extern unsigned short rev[1024],rev_times4[4096],rev_half[512];

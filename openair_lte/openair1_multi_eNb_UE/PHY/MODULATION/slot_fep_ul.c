@@ -3,10 +3,10 @@
 //#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
-		LTE_eNB_COMMON *eNb_common_vars,
+		LTE_eNB_COMMON *eNB_common_vars,
 		unsigned char l,
 		unsigned char Ns,
-		unsigned char eNb_id,
+		unsigned char eNB_id,
 		int no_prefix) {
 #ifdef DEBUG_FEP
   char fname[40], vname[40];
@@ -37,22 +37,23 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: offset %d, symbol %d, nb_prefix_samples0 %d nb_prefix_samples %d\n",subframe_offset, symbol, nb_prefix_samples);
+  msg("slot_fep: offset %d, symbol %d, nb_prefix_samples %d\n",subframe_offset, symbol, nb_prefix_samples);
 #endif
 
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 
 #ifdef DEBUG_FEP
-    if ((Ns==5) && (eNb_id==0) && (aa==0)) 
-      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+subframe_offset],((frame_parms->ofdm_symbol_size+nb_prefix_samples)*6),1,1);
-    if ((Ns==7) && (eNb_id==0) && (symbol==11)) 
-      write_output("eNb_rx.m","rxs",&eNb_common_vars->rxdata[0][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+subframe_offset],(frame_parms->ofdm_symbol_size),1,1);
+    if ((Ns==5) && (eNB_id==0) && (aa==0)) 
+      write_output("eNB_rx.m","rxs",&eNB_common_vars->rxdata[0][0][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+subframe_offset],((frame_parms->ofdm_symbol_size+nb_prefix_samples)*6),1,1);
+    if ((Ns==7) && (eNB_id==0) && (symbol==11)) 
+      write_output("eNB_rx.m","rxs",&eNB_common_vars->rxdata[0][aa][nb_prefix_samples + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol+subframe_offset],(frame_parms->ofdm_symbol_size),1,1);
 #endif
     if (l==0) {
-      fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][slot_offset +
+	     
+      fft((short *)&eNB_common_vars->rxdata[eNB_id][aa][slot_offset +
 							nb_prefix_samples0 + 
 							subframe_offset],
-	  (short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+	  (short*)&eNB_common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
 	  frame_parms->log2_symbol_size,
@@ -60,11 +61,11 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 	  0);
     }
     else {
-      fft((short *)&eNb_common_vars->rxdata[eNb_id][aa][slot_offset +
+      fft((short *)&eNB_common_vars->rxdata[eNB_id][aa][slot_offset +
 							(frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
 							(frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
 							subframe_offset],
-	  (short*)&eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+	  (short*)&eNB_common_vars->rxdataF[eNB_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
 	  frame_parms->twiddle_fft,
 	  frame_parms->rev,
 	  frame_parms->log2_symbol_size,

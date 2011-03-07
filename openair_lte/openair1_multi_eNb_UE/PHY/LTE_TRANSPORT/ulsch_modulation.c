@@ -9,7 +9,7 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-__m128i dft_in128[3][300],dft_in128[3][300],dft_out128[3][300],dft_out128[3][300];
+__m128i dft_in128[4][1200],dft_in128[4][1200],dft_out128[4][1200],dft_out128[4][1200];
 
 #ifndef OFDMA_ULSCH
 void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char Nsymb) {
@@ -17,10 +17,11 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
   int *dft_in0=(int*)dft_in128[0],*dft_out0=(int*)dft_out128[0];
   int *dft_in1=(int*)dft_in128[1],*dft_out1=(int*)dft_out128[1];
   int *dft_in2=(int*)dft_in128[2],*dft_out2=(int*)dft_out128[2];
+  int *dft_in3=(int*)dft_in128[3],*dft_out3=(int*)dft_out128[3];
 
-  int *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10;
+  int *d0,*d1,*d2,*d3,*d4,*d5,*d6,*d7,*d8,*d9,*d10,*d11;
 
-  int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10;
+  int *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11;
   int i,ip;
 
   //  printf("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
@@ -34,9 +35,10 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
   d6 = d5+Msc_PUSCH;
   d7 = d6+Msc_PUSCH;
   d8 = d7+Msc_PUSCH;
-  //  d9 = d8+Msc_PUSCH;
-  //  d10 = d9+Msc_PUSCH;
- 
+  d9 = d8+Msc_PUSCH;
+  d10 = d9+Msc_PUSCH;
+  d11 = d10+Msc_PUSCH;
+
   //  printf("symbol 0 (d0 %p, d %p)\n",d0,d);
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
     dft_in0[ip]   =  d0[i];
@@ -48,6 +50,9 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     dft_in1[ip+2] =  d6[i];
     dft_in1[ip+3] =  d7[i];
     dft_in2[ip]   =  d8[i];
+    dft_in2[ip+1] =  d9[i];
+    dft_in2[ip+2] =  d10[i];
+    dft_in2[ip+3] =  d11[i];
     //    printf("dft%d %d: %d,%d,%d,%d\n",Msc_PUSCH,ip,d0[i],d1[i],d2[i],d3[i]);
 
     //    dft_in_re2[ip+1] =  d9[i];
@@ -58,9 +63,14 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
 
   switch (Msc_PUSCH) {
   case 12:
-    //    dft12f(dft_in0,dft_out0,1);
-    //    dft12f(dft_in1,dft_out1,1);
-    //    dft12f(dft_in2,dft_out2,1);
+    /*
+    dft12(dft_in0,dft_out0,1);
+    dft12(dft_in1,dft_out1,1);
+    dft12(dft_in2,dft_out2,1);
+    if (Nsymb>11) {
+      dft12(dft_in3,dft_out3,1);
+    }
+    */
     break;
   case 24:
     dft24(dft_in0,dft_out0,1);
@@ -132,7 +142,6 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     dft300(dft_in1,dft_out1,1);
     dft300(dft_in2,dft_out2,1);
     break;
-    
   }
 
   z0 = z;
@@ -144,8 +153,9 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
   z6 = z5+Msc_PUSCH;
   z7 = z6+Msc_PUSCH;
   z8 = z7+Msc_PUSCH;
-  //  z9 = z8+Msc_PUSCH;
-  //  z10 = z9+Msc_PUSCH;
+  z9 = z8+Msc_PUSCH;
+  z10 = z9+Msc_PUSCH;
+  z11 = z10+Msc_PUSCH;
   //  printf("symbol0 (dft)\n");
   for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
     z0[i]     = dft_out0[ip]; 
@@ -158,8 +168,9 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, unsigned short Msc_PUSCH, unsigned char 
     z6[i]     = dft_out1[ip+2]; 
     z7[i]     = dft_out1[ip+3]; 
     z8[i]     = dft_out2[ip]; 
-    //    z9[i]     = dft_out_re2[ip+1]; 
-    //    z10[i]     = dft_out_re2[ip+2]; 
+    z9[i]     = dft_out2[ip+1]; 
+    z10[i]    = dft_out2[ip+2]; 
+    z11[i]    = dft_out2[ip+3]; 
     //    printf("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
 
   }
@@ -190,7 +201,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   short re_offset,re_offset0,i,Msymb,j,nsymb,Msc_PUSCH,l;
   //  unsigned char harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
-  unsigned char harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  unsigned char harq_pid = subframe2harq_pid(frame_parms,subframe);
   unsigned char Q_m;
   mod_sym_t *txptr;
   unsigned int symbol_offset;

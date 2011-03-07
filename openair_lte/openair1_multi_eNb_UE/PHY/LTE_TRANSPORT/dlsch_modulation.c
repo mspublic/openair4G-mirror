@@ -1038,7 +1038,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 		     unsigned int subframe_offset,
 		     LTE_DL_FRAME_PARMS *frame_parms,
 		     u8 num_pdcch_symbols,
-		     LTE_eNb_DLSCH_t *dlsch){
+		     LTE_eNB_DLSCH_t *dlsch){
 
   unsigned char nsymb,aa;
   unsigned char harq_pid = dlsch->current_harq_pid;
@@ -1121,27 +1121,51 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    skip_half=1;
 	  else if ((subframe_offset==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
 	    skip_half=2;
-	  
-	  //SSS
-	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
-	    rb_alloc_ind = 0;
+	
+	  if (frame_parms->frame_type == 1) { // TDD
+	    //SSS TDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	      rb_alloc_ind = 0;
+	    }
+	    //SSS TDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
+	      skip_half=1;
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	      skip_half=2;
+	    
+	    //PSS TDD
+	    if (((subframe_offset==1) || (subframe_offset==6)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	      rb_alloc_ind = 0;
+	    }
+	    //PSS TDD
+	    if (((subframe_offset==1)||(subframe_offset==6)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
+	      skip_half=1;
+	    else if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
+	      skip_half=2;
 	  }
-	  //SSS 
-	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
-	    skip_half=1;
-	  else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
-	    skip_half=2;
-	  
-	  //PSS
-	  if ((subframe_offset==1) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
-	    rb_alloc_ind = 0;
+	  else {
+
+	    //PSS FDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==(nsymb-1)) ) {
+	      rb_alloc_ind = 0;
+	    }
+	    //PSS FDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
+	      skip_half=1;
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
+	      skip_half=2;
+
+	    //SSS FDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-2) ) {
+	      rb_alloc_ind = 0;
+	    }
+	    //SSS FDD
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-2))
+	      skip_half=1;
+	    else if (((subframe_offset==0)||(subframe_offset==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-2))
+	      skip_half=2;
+
 	  }
-	  //PSS 
-	  if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==2))
-	    skip_half=1;
-	  else if ((subframe_offset==1) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==2))
-	    skip_half=2;
-	  
 	  
 	}
 	else {  // EVEN N_RB_DL
@@ -1150,14 +1174,26 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	    rb_alloc_ind = 0;
 	  skip_dc=0;
 	  skip_half=0;
-	  
-	  //SSS
-	  if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
-	    rb_alloc_ind = 0;
-	  }	    
-	  //PSS
-	  if ((subframe_offset==1) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
-	    rb_alloc_ind = 0;
+
+	  if (frame_parms->frame_type == 1) { // TDD
+	    //SSS
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	      rb_alloc_ind = 0;
+	    }	    
+	    //PSS
+	    if (((subframe_offset==1)||(subframe_offset==6)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==2) ) {
+	      rb_alloc_ind = 0;
+	    }
+	  }
+	  else { // FDD
+	    //SSS
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-2) ) {
+	      rb_alloc_ind = 0;
+	    }	    
+	    //PSS
+	    if (((subframe_offset==0)||(subframe_offset==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
+	      rb_alloc_ind = 0;
+	    }
 	  }
 	}
 	
@@ -1166,6 +1202,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 	  return(-1);
 	}
 	if (rb_alloc_ind > 0)
+	  //	  printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
 	  allocate_REs_in_RB(txdataF,
 			     &jj,
 			     re_offset,

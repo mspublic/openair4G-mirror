@@ -140,7 +140,9 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
     //    if (eNb_id==0)
       memset(dl_ch,0,4*(frame_parms->ofdm_symbol_size));
     
-    if ((frame_parms->N_RB_DL==50) || (frame_parms->N_RB_DL==100)) {
+      if ((frame_parms->N_RB_DL==6)  || 
+	  (frame_parms->N_RB_DL==50) || 
+	  (frame_parms->N_RB_DL==100)) {
       
       //First half of pilots
       // Treat first 2 pilots specially (left edge)
@@ -166,12 +168,12 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       rxF+=24;
       dl_ch+=16;
 
-      for (pilot_cnt=2;pilot_cnt<((frame_parms->N_RB_DL>>1)-1);pilot_cnt+=2) {
+      for (pilot_cnt=2;pilot_cnt<((frame_parms->N_RB_DL)-1);pilot_cnt+=2) {
 	
 	// printf("%d\n",dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);	
 		
-	// printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
-	// printf("rx[%d] -> (%d,%d)\n", k, /[0], rxF[1]);
+	//	printf("pilot[%d][%d] (%d,%d)\n",p,pilot_cnt,pil[0],pil[1]);
+	//	printf("rx[%d] -> (%d,%d)\n", k, rxF[0], rxF[1]);
 	
 	
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15); //Re
@@ -203,7 +205,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	dl_ch+=16;
 	
       }
-      // printf("Second half\n");
+      //       printf("Second half\n");
       // Second half of RBs
       
       k = (nu + frame_parms->nushift+eNb_id);
@@ -212,8 +214,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+k)<<1)]; 
       
-      for (pilot_cnt=0;pilot_cnt<((frame_parms->N_RB_DL>>1)-1);pilot_cnt+=2) {
-	// printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
+      for (pilot_cnt=0;pilot_cnt<((frame_parms->N_RB_DL)-1);pilot_cnt+=2) {
+	//printf("pilot[%d][%d] (%d,%d)\n",p,pilot_cnt,pil[0],pil[1]);
 	// printf("rx[%d][%d] -> (%d,%d)\n",p,first_carrier_offset + nushift + 6*rb+(3*p),rxF[0],rxF[1]);
 	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
 	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
@@ -239,36 +241,12 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
 	rxF+=24;
 	dl_ch+=16;
 	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-	
-	
-	// printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-	multadd_real_vector_complex_scalar(f,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;
-	rxF+=24;
-	dl_ch+=8;
-	
-	ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
-	ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-	
-	// printf("**rb %d %d\n",rb,dl_ch-(short *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-	multadd_real_vector_complex_scalar(f2,
-					   ch,
-					   dl_ch,
-					   24);
-	pil+=2;    // Re Im
-	rxF+=24;   // remember replicated format (Re0 Im0 Re0 Im0) !!!
-	dl_ch+=16;
       }
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      // printf("pilot 49: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      //      printf("pilot 49: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 
-      multadd_real_vector_complex_scalar(f2r2,
+      multadd_real_vector_complex_scalar(fr,
 					 ch,
 					 dl_ch,
 					 24);
@@ -278,8 +256,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
-      // printf("pilot 50: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-      multadd_real_vector_complex_scalar(fr,
+      //       printf("pilot 50: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      multadd_real_vector_complex_scalar(f2r2,
 					 ch,
 					 dl_ch,
 					 24);

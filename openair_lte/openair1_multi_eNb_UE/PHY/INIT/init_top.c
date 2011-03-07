@@ -158,7 +158,7 @@ int init_signal_buffers(unsigned char Nb_eNb,unsigned char Nb_ue, LTE_DL_FRAME_P
 
 }
 #endif // USER_MODE
-
+/*
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
 
   if (frame_parms->Ncp==1) {
@@ -221,6 +221,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms) {
   //  frame_parms->tdd_config=3;
   return(0);
 }
+*/
 
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -380,7 +381,6 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   msg("frame_parms->N_RB_UL=%d\n",frame_parms->N_RB_UL);
   msg("frame_parms->Nid_cell=%d\n",frame_parms->Nid_cell);
   msg("frame_parms->Ncp=%d\n",frame_parms->Ncp);
-  msg("frame_parms->Ng_times6=%d\n",frame_parms->Ng_times6);
   msg("frame_parms->nushift=%d\n",frame_parms->nushift);
   msg("frame_parms->frame_type=%d\n",frame_parms->frame_type);
   msg("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
@@ -391,33 +391,6 @@ void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
   msg("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
 
 
-  /*
-  unsigned char N_RB_DL;                /// Number of resource blocks (RB) in DL
-  unsigned char N_RB_UL;                /// Number of resource blocks (RB) in UL
-  unsigned char Nid_cell;               /// Cell ID 
-  unsigned char Ncp;                    /// Cyclic Prefix (0=Normal CP, 1=Extended CP)
-  unsigned char Ng_times6;              /// Number of PHICH groups (times 6, 1,3,6,12)
-  unsigned char nushift;                /// shift of pilot position in one RB
-  unsigned char frame_type;             /// Frame type (0 FDD, 1 TDD)
-  unsigned char tdd_config;             /// TDD Configuration Number (0-9) (default = 3)
-  unsigned char freq_idx;               /// Frequency index of CBMIMO1 card
-  unsigned char dual_tx;                /// Turbolns on second TX of CBMIMO1 card
-  unsigned char mode1_flag;             /// flag to indicate SISO transmission
-  unsigned short ofdm_symbol_size;
-  unsigned char log2_symbol_size;
-  unsigned short nb_prefix_samples;
-  unsigned short nb_prefix_samples0;
-  unsigned short first_carrier_offset;
-  unsigned int samples_per_tti;
-  unsigned short symbols_per_tti;
-  unsigned char nb_antennas_tx;
-  unsigned char nb_antennas_rx;
-  unsigned char first_dlsch_symbol;   
-  unsigned char num_dlsch_symbols;   
-  short *twiddle_fft;                  ///pointer to twiddle factors for FFT
-  short *twiddle_ifft;                 ///pointer to twiddle factors for IFFT
-  unsigned short *rev;                 ///pointer to FFT permutation
-  */
 }
 
 /*

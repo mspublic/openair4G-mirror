@@ -289,6 +289,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   if (err_flag == 1) {
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
+    dlsch->harq_ack[subframe].send_harq_status = 1;
     //msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
     if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
       dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
@@ -301,6 +302,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     dlsch->harq_processes[harq_pid]->round  = 0;
     dlsch->harq_ack[subframe].ack = 1;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
+    dlsch->harq_ack[subframe].send_harq_status = 1;
     //msg("DLSCH decoding: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
   }
   // Reassembly of Transport block here
@@ -348,28 +350,28 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 eNB_id) {
 
   LTE_UE_DLSCH_t *dlsch_ue;
-  LTE_eNb_DLSCH_t *dlsch_eNB;
+  LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
   
   msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id,dlsch_id);
 
-  //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra->harq_processes[0]);
+  //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
 
   switch (dlsch_id) {
   case 0: // SI
     dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
-    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb_SI;
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
-    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb_ra;
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
     break;
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id])][0];
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])][0];
 
     // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
@@ -378,13 +380,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
 
 
-    //printf("copying TB0 : harq_pid %d, TBS %d (rnti %x, UE_index %d)\n",harq_pid,dlsch_ue->harq_processes[harq_pid]->TBS>>3,
-    //	   (s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNb_g[eNB_id]));
     memcpy(dlsch_ue->harq_processes[harq_pid]->b,dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
-    dlsch_eNB = PHY_vars_eNb_g[eNB_id]->dlsch_eNb[find_ue((s16)dlsch_ue->rnti,PHY_vars_eNb_g[eNB_id])][1];
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)dlsch_ue->rnti,PHY_vars_eNB_g[eNB_id])][1];
     // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
     dlsch_ue->harq_processes[harq_pid]->round  = 0;

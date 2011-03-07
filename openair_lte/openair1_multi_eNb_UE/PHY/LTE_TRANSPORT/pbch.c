@@ -16,7 +16,7 @@ extern __m128i zero;
 #define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmx)))
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
-
+  
 //#define DEBUG_PBCH
 //#define DEBUG_PBCH_ENCODING
 
@@ -245,12 +245,12 @@ int generate_pbch(mod_sym_t **txdataF,
   return(0);
 }
 
-s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNb,u8 *pbch_pdu) {
+s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,u8 *pbch_pdu) {
   
-  msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNb->Mod_id);
-  eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_flag=1;
+  msg("[PHY] EMUL UE generate_pbch_emul eNB %d\n",phy_vars_eNB->Mod_id);
+  eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_flag=1;
   // Copy PBCH payload 
-  eNB_transport_info[phy_vars_eNb->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
+  eNB_transport_info[phy_vars_eNB->Mod_id].cntl.pbch_payload=*(u32 *)pbch_pdu;
   return(0);
 }
 
@@ -635,7 +635,7 @@ static char pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
 u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 	    LTE_UE_PBCH *lte_ue_pbch_vars,
 	    LTE_DL_FRAME_PARMS *frame_parms,
-	    u8 eNb_id,
+	    u8 eNB_id,
 	    MIMO_mode_t mimo_mode,
 	    u8 frame_mod4) {
 
@@ -679,7 +679,7 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
     msg("[PBCH] starting extract\n");
 #endif
     pbch_extract(lte_ue_common_vars->rxdataF,
-		 lte_ue_common_vars->dl_ch_estimates[eNb_id],
+		 lte_ue_common_vars->dl_ch_estimates[eNB_id],
 		 lte_ue_pbch_vars->rxdataF_ext,
 		 lte_ue_pbch_vars->dl_ch_estimates_ext,
 		 symbol,
@@ -823,8 +823,8 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
     // pbch_error = pbch_abstraction();
 
     if (pbch_error == 0) {
-      memcpy(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output,PHY_vars_eNb_g[eNB_id]->pbch_pdu,PBCH_PDU_SIZE);    
-      return(PHY_vars_eNb_g[eNB_id]->lte_frame_parms.nb_antennas_tx);
+      memcpy(phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output,PHY_vars_eNB_g[eNB_id]->pbch_pdu,PBCH_PDU_SIZE);    
+      return(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx);
     }
     else
       return(-1);

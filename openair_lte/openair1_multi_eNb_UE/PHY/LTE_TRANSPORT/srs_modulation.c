@@ -82,7 +82,7 @@ int compareints (const void * a, const void * b)
 
 
 int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
-		    SRS_param_t *SRS_parms,
+		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
 		    mod_sym_t *txdataF,
 		    short amp,
 		    unsigned int sub_frame_number) {
@@ -91,33 +91,38 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned short *Msc_idx_ptr;
   int k0,T_SFC;
   int sub_frame_offset;
+  u8 Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
+  u8 Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
+  u8 Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+  u8 n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
+  u8 kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
   if (frame_parms->N_RB_UL < 41) {
-    msrs0 = msrsb_6_40[SRS_parms->Csrs][0];
-    msrsb = msrsb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_6_40[Csrs][0];
+    msrsb = msrsb_6_40[Csrs][Bsrs];
+    Nb    = Nb_6_40[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL < 61) {
-    msrs0 = msrsb_41_60[SRS_parms->Csrs][0];
-    msrsb = msrsb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_41_60[Csrs][0];
+    msrsb = msrsb_41_60[Csrs][Bsrs];
+    Nb    = Nb_41_60[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL < 81) {
-    msrs0 = msrsb_61_80[SRS_parms->Csrs][0];
-    msrsb = msrsb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_61_80[Csrs][0];
+    msrsb = msrsb_61_80[Csrs][Bsrs];
+    Nb    = Nb_61_80[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL <111) {
-    msrs0 = msrsb_81_110[SRS_parms->Csrs][0];
-    msrsb = msrsb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_81_110[Csrs][0];
+    msrsb = msrsb_81_110[Csrs][Bsrs];
+    Nb    = Nb_81_110[Csrs][Bsrs];
   }
 
   Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + SRS_parms->kTC;
-  nb  = (4*SRS_parms->n_RRC/msrsb)%Nb;
+  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
+  nb  = (4*n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=SRS_parms->Bsrs;b++) {
+  for (b=0;b<=Bsrs;b++) {
     k0 += 2*nb*Msc_RS;
   }
 
@@ -149,8 +154,8 @@ int generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
 
-  T_SFC = (SRS_parms->Ssrs<=7 ? 5 : 10); 
-  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[SRS_parms->Ssrs]) {
+  T_SFC = (Ssrs<=7 ? 5 : 10); 
+  if ((1<<(sub_frame_number%T_SFC))&transmission_offset_tdd[Ssrs]) {
 
 #ifndef IFFT_FPGA_UE
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
@@ -199,39 +204,44 @@ int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,u8 subframe) {
 }
 
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-		    SRS_param_t *SRS_parms,
+		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,		    
 		    int *txdataF) {
 
   unsigned short msrsb,Nb,nb,b,msrs0,k,Msc_RS,Msc_RS_idx,carrier_pos;
   unsigned short *Msc_idx_ptr;
   int k0;
+  u8 Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
+  u8 Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
+  u8 Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
+  u8 n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
+  u8 kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
   if (frame_parms->N_RB_UL < 41) {
-    msrs0 = msrsb_6_40[SRS_parms->Csrs][0];
-    msrsb = msrsb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_6_40[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_6_40[Csrs][0];
+    msrsb = msrsb_6_40[Csrs][Bsrs];
+    Nb    = Nb_6_40[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL < 61) {
-    msrs0 = msrsb_41_60[SRS_parms->Csrs][0];
-    msrsb = msrsb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_41_60[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_41_60[Csrs][0];
+    msrsb = msrsb_41_60[Csrs][Bsrs];
+    Nb    = Nb_41_60[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL < 81) {
-    msrs0 = msrsb_61_80[SRS_parms->Csrs][0];
-    msrsb = msrsb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_61_80[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_61_80[Csrs][0];
+    msrsb = msrsb_61_80[Csrs][Bsrs];
+    Nb    = Nb_61_80[Csrs][Bsrs];
   }
   else if (frame_parms->N_RB_UL <111) {
-    msrs0 = msrsb_81_110[SRS_parms->Csrs][0];
-    msrsb = msrsb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
-    Nb    = Nb_81_110[SRS_parms->Csrs][SRS_parms->Bsrs];
+    msrs0 = msrsb_81_110[Csrs][0];
+    msrsb = msrsb_81_110[Csrs][Bsrs];
+    Nb    = Nb_81_110[Csrs][Bsrs];
   }
 
   Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + SRS_parms->kTC;
-  nb  = (4*SRS_parms->n_RRC/msrsb)%Nb;
+  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
+  nb  = (4*n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=SRS_parms->Bsrs;b++) {
+  for (b=0;b<=Bsrs;b++) {
     k0 += 2*nb*Msc_RS;
   }
 

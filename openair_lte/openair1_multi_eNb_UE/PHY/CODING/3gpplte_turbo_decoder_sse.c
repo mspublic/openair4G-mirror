@@ -852,7 +852,7 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
       ((u8 *)&crc)[2] = ((u8 *)&crc)[0];
       ((u8 *)&crc)[0] = temp;
 
-      //     msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
+      //           msg("CRC24_A = %x, oldcrc = %x (F %d)\n",crc,oldcrc,F);
 
       break;
     case CRC24_B:

@@ -6,120 +6,229 @@
 #include "SCHED/extern.h"
 
 
-void get_RRCConnReq_alloc(unsigned char tdd_config,
+void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 			  unsigned char current_subframe, 
 			  unsigned int current_frame,
 			  unsigned int *frame,
 			  unsigned char *subframe) {
 
-  if (tdd_config == 3) {
-    switch (current_subframe) {
-      
-    case 0:
-    case 5:
-    case 6:
-      *subframe = 2;
-      *frame = current_frame+2;
-      break;
-    case 7:
-      *subframe = 3;
-      *frame = current_frame+2;
-      break;
-    case 8:
-      *subframe = 4;
-      *frame = current_frame+2;
-      break;
-    case 9:
-      *subframe = 2;
-      *frame = current_frame+3;
-      break;
+  if (frame_parms->frame_type == 0) {
+    *subframe = current_subframe+6;
+    if (*subframe>9) {
+      *subframe = *subframe-10;
+      *frame = current_frame+1;
+    }
+    else {
+      *frame=current_frame;
+    }
+  }
+  else {
+    if (frame_parms->tdd_config == 1) {
+      switch (current_subframe) {
+	
+      case 0:
+	*subframe = 7;
+	*frame = current_frame;
+      case 4:
+	*subframe = 2;
+	*frame = current_frame+1;
+      case 5:
+	*subframe = 2;
+	*frame = current_frame+1;
+      case 9:
+	*subframe = 9;
+	*frame = current_frame+1;
+	break;
+      }
+    }
+    else if (frame_parms->tdd_config == 3) {
+      switch (current_subframe) {
+	
+      case 0:
+      case 5:
+      case 6:
+	*subframe = 2;
+	*frame = current_frame+1;
+	break;
+      case 7:
+	*subframe = 3;
+	*frame = current_frame+1;
+	break;
+      case 8:
+	*subframe = 4;
+	*frame = current_frame+1;
+	break;
+      case 9:
+	*subframe = 2;
+	*frame = current_frame+2;
+	break;
+      }
     }
   }
 }
 
-u8 get_RRCConnReq_harq_pid(unsigned char tdd_config,
-			     unsigned char current_subframe) {
+u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
+			   unsigned char current_subframe) {
 
   u8 ul_subframe;
 
-  if (tdd_config == 3) {
-    switch (current_subframe) {
-      
-    case 0:
-    case 5:
-    case 6:
-      ul_subframe = 2;
-      break;
-    case 7:
-      ul_subframe = 3;
-      break;
-    case 8:
-      ul_subframe = 4;
-      break;
-    case 9:
-      ul_subframe = 2;
-      break;
-    }
+  if (frame_parms->frame_type ==0) {
+    ul_subframe = (current_subframe-4)%10;
   }
-  return(subframe2harq_pid_tdd(tdd_config,ul_subframe));
-}
-
-unsigned char ul_ACK_subframe2_dl_subframe(unsigned char tdd_config,unsigned char subframe,unsigned char ACK_index) {
-
-  switch (tdd_config) {
-  case 3:
-    if (subframe == 2) {  // ACK subframes 5 and 6
-      return(5+ACK_index);
-    }
-    else if (subframe == 3) {   // ACK subframes 7 and 8
-      return(7+ACK_index);  // To be updated
-    }
-    else if (subframe == 4) {  // ACK subframes 9 and 0
-      return((9+ACK_index)%10);
+  else {
+    if (frame_parms->tdd_config == 3) {
+      switch (current_subframe) {
+	
+      case 0:
+      case 5:
+      case 6:
+	ul_subframe = 2;
+	break;
+      case 7:
+	ul_subframe = 3;
+	break;
+      case 8:
+	ul_subframe = 4;
+	break;
+      case 9:
+	ul_subframe = 2;
+	break;
+      }
     }
     else {
-      msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
-	  subframe,tdd_config);
-      return(0);
+      msg("get_RRCConnReq_harq_pid: Unsupported TDD configuration %d\n",frame_parms->tdd_config);
     }
-    break;
+  }
     
+  return(subframe2harq_pid(frame_parms,ul_subframe));
+
+}
+
+unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe,unsigned char ACK_index) {
+
+  if (frame_parms->frame_type == 0) {
+    return((subframe+4)%10);
+  }
+  else {
+    switch (frame_parms->tdd_config) {
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	return(5+ACK_index);
+      }
+      else if (subframe == 3) {   // ACK subframes 7 and 8
+	return(7+ACK_index);  // To be updated
+      }
+      else if (subframe == 4) {  // ACK subframes 9 and 0
+	return((9+ACK_index)%10);
+      }
+      else {
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    case 1:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	return(5+ACK_index);
+      }
+      else if (subframe == 3) {   // ACK subframe 9
+	return(9);  // To be updated
+      }
+      else if (subframe == 7) {   // ACK subframes 0 and 1
+	return(ACK_index);  // To be updated
+      }
+      else if (subframe == 8) {   // ACK subframe 4
+	return(4);  // To be updated
+      }
+      else {
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    }
   }
   return(0);
 }
 
-unsigned char get_ack(unsigned char tdd_config,harq_status_t *harq_ack,unsigned char subframe,unsigned char *o_ACK) {
+// This function implements table 10.1-1 of 36-213, p. 69
+u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
+	   harq_status_t *harq_ack,
+	   unsigned char subframe,
+	   unsigned char *o_ACK) {
 
   //  printf("get_ack: SF %d\n",subframe);
+  u8 status=0;
 
-  switch (tdd_config) {
-  case 3:
-    if (subframe == 2) {  // ACK subframes 5 and 6
-      o_ACK[0] = harq_ack[5].ack;  
-      o_ACK[1] = harq_ack[6].ack;
-    }
-    else if (subframe == 3) {   // ACK subframes 7 and 8
-      o_ACK[0] = harq_ack[7].ack;
-      o_ACK[1] = harq_ack[8].ack;
-    }
-    else if (subframe == 4) {  // ACK subframes 9 and 0
-      o_ACK[0] = harq_ack[9].ack;
-      o_ACK[1] = harq_ack[0].ack;
-    }
-    else {
-      msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
-	  subframe,tdd_config);
-      return(0);
-    }
-    break;
-    
+  if (frame_parms->frame_type == 0) {
+    o_ACK[0] = harq_ack[(subframe-4)%10].ack;
+    status = harq_ack[(subframe-4)%10].send_harq_status;
   }
-  return(0);
+  else {
+    switch (frame_parms->tdd_config) {
+    case 1:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	o_ACK[0] = harq_ack[5].ack;  
+	o_ACK[1] = harq_ack[6].ack;
+	status = harq_ack[5].send_harq_status + harq_ack[6].send_harq_status;
+      }
+      else if (subframe == 3) {   // ACK subframe0
+	o_ACK[0] = harq_ack[9].ack;
+	status = harq_ack[9].send_harq_status;
+      }
+      else if (subframe == 4) {  // nothing
+	status = 0;
+      }
+      else if (subframe == 7) {  // ACK subframes 0 and 1
+	o_ACK[0] = harq_ack[0].ack;  
+	o_ACK[1] = harq_ack[1].ack;
+	status = harq_ack[0].send_harq_status + harq_ack[1].send_harq_status;
+      }
+      else if (subframe == 8) {   // ACK subframes 4
+	o_ACK[0] = harq_ack[4].ack;
+	status = harq_ack[4].send_harq_status;
+      }
+      else {
+	msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	o_ACK[0] = harq_ack[5].ack;  
+	o_ACK[1] = harq_ack[6].ack;
+	status = harq_ack[5].send_harq_status + harq_ack[6].send_harq_status;
+      }
+      else if (subframe == 3) {   // ACK subframes 7 and 8
+	o_ACK[0] = harq_ack[7].ack;
+	o_ACK[1] = harq_ack[8].ack;
+	status = harq_ack[7].send_harq_status + harq_ack[8].send_harq_status;
+      }
+      else if (subframe == 4) {  // ACK subframes 9 and 0
+	o_ACK[0] = harq_ack[9].ack;
+	o_ACK[1] = harq_ack[0].ack;
+	status = harq_ack[0].send_harq_status + harq_ack[1].send_harq_status;
+      }
+      else {
+	msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    
+    }
+  }
+  return(status);
 }
 
-lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subframe) {
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
 
-  switch (tdd_config) {
+  // if FDD return dummy value
+  if (frame_parms->frame_type == 0)
+    return(SF_DL);
+
+  switch (frame_parms->tdd_config) {
 
   case 3:
     if  ((subframe<1) || (subframe>=5)) 
@@ -134,30 +243,39 @@ lte_subframe_t subframe_select_tdd(unsigned char tdd_config,unsigned char subfra
     }
     break;
   default:
-    msg("[PHY_PROCEDURES_LTE] Unsupported TDD mode\n");
+    msg("[PHY_PROCEDURES_LTE] phy_procedures_lte_common.c subframe %d Unsupported TDD mode %d\n",subframe,frame_parms->tdd_config);
     return(255);
     
   }
 }
 
-unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) {
+unsigned int is_phich_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
 
-  switch (tdd_config) {
-  case 3:
-    if ((subframe == 0) || (subframe == 8) || (subframe == 9))
-      return(1);
-    break;
-  case 4:
-    if ((subframe == 0) || (subframe == 8) )
-      return(1);
-    break;
-  case 5:
-    if (subframe == 0)
-      return(1);
-    break;
-  default:
-    return(0);
-    break;
+  if (frame_parms->frame_type == 0) {
+    return(1);
+  }
+  else {
+    switch (frame_parms->tdd_config) {
+    case 1:
+      if ((subframe == 2) || (subframe == 3) || (subframe == 7) || (subframe == 8))
+	return(1);
+      break;
+    case 3:
+      if ((subframe == 0) || (subframe == 8) || (subframe == 9))
+	return(1);
+      break;
+    case 4:
+      if ((subframe == 0) || (subframe == 8) )
+	return(1);
+      break;
+    case 5:
+      if (subframe == 0)
+	return(1);
+      break;
+    default:
+      return(0);
+      break;
+    }
   }
   return(0);
 }
@@ -165,15 +283,15 @@ unsigned int is_phich_subframe(unsigned char tdd_config,unsigned char subframe) 
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
   s8 UE_id;
-  if ((PHY_vars_eNb_g == NULL) || (PHY_vars_eNb_g[Mod_id] == NULL)) {
-    msg("get_eNB_UE_stats: No phy_vars_eNb found (or not allocated) for Mod_id %d\n",Mod_id);
+  if ((PHY_vars_eNB_g == NULL) || (PHY_vars_eNB_g[Mod_id] == NULL)) {
+    msg("get_eNB_UE_stats: No phy_vars_eNB found (or not allocated) for Mod_id %d\n",Mod_id);
     return NULL;
   }
-  UE_id = find_ue(rnti, PHY_vars_eNb_g[Mod_id]);
+  UE_id = find_ue(rnti, PHY_vars_eNB_g[Mod_id]);
   if (UE_id == -1) {
     msg("get_eNB_UE_stats: UE with rnti %d not found\n",rnti);
     return NULL;
   }
-  return(&PHY_vars_eNb_g[Mod_id]->eNB_UE_stats[UE_id]);
+  return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[UE_id]);
 }
 

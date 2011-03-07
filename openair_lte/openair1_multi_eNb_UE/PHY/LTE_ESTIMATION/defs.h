@@ -148,7 +148,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,
 			       LTE_eNB_SRS *eNb_srs_vars,
-			       SRS_param_t *SRS_parms,
+			       SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
 			       unsigned char sub_frame_number,
 			       unsigned char eNb_id);
 

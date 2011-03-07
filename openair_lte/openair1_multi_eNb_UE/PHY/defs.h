@@ -27,10 +27,10 @@
 
 #define openair_sched_exit() exit(-1)
 
-/*
+
 #define max(a,b)  ((a)>(b) ? (a) : (b))
 #define min(a,b)  ((a)<(b) ? (a) : (b))
-*/
+
 
 #else // USER_MODE
 
@@ -80,31 +80,21 @@
 #endif //EXPRESSMiMO_TARGET
 
 
-#ifdef OPENAIR_LTE
 #include "spec_defs_top.h"
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
-#else //OPENAIR_LTE
-#include "spec_defs.h"
-#include "impl_defs.h"
-#endif //OPENAIR_LTE
-
 
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 #include "PHY/MODULATION/defs.h"
 
-#ifndef OPENAIR_LTE
-#include "PHY/TRANSPORT/defs.h"
-#include "PHY/ESTIMATION/defs.h"
-#else //OPENAIR_LTE
 //#include "PHY/LTE_ESTIMATION/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
-#endif //OPENAIR_LTE
-
 
 #define NUM_DCI_MAX 32
+
+
 
 /// Top-level PHY Data Structure for eNB 
 typedef struct
@@ -118,37 +108,66 @@ typedef struct
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNb_DLSCH_t  *dlsch_eNb[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
-  // old: LTE_eNb_DLSCH_t  **dlsch_eNb[2];   // Nusers times two spatial streams
-  LTE_eNb_ULSCH_t  *ulsch_eNb[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
-  LTE_eNb_DLSCH_t  *dlsch_eNb_SI,*dlsch_eNb_ra;
+  LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
+  // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
+  LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
+  LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
   u8 pbch_pdu[PBCH_PDU_SIZE];
-  char eNb_generate_rar;
-  char eNb_generate_rag_ack;
+  char eNB_generate_rar;
+  char eNB_generate_rag_ack;
 
   unsigned int max_peak_val; 
-  int max_eNb_id, max_sync_pos;
+  int max_eNB_id, max_sync_pos;
 
 
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
-  unsigned char    is_secondary_eNb; // primary by default
-  unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNb will listen to the PSS from the primary system.
-  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from, and this B/F vector is created.
-  unsigned char    PeNb_id;          /// id of Primary eNb
-  int              rx_offset;        /// Timing offset (used if is_secondary_eNb)
+  unsigned char    is_secondary_eNB; // primary by default
+  unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from, and this B/F vector is created.
+  unsigned char    PeNB_id;          /// id of Primary eNB
+  int              rx_offset;        /// Timing offset (used if is_secondary_eNB)
 
   /// hold the precoder for NULL beam to the primary user
-  int              **dl_precoder_SeNb[3];
+  int              **dl_precoder_SeNB[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
   /// For emulation only (used by UE abstraction to retrieve DCI)
   u8 num_common_dci[2];                         // num_dci in even/odd subframes
   u8 num_ue_spec_dci[2];                         // num_dci in even/odd subframes
   DCI_ALLOC_t dci_alloc[2][NUM_DCI_MAX]; // dci_alloc from even/odd subframes
+
+
+  // PDSCH Varaibles
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
+
+  // PUSCH Varaibles
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_UE_MAX];
+
+  // PUCCH variables
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_UE_MAX];
+
+  // UL-POWER-Control
+  UPLINK_POWER_CONTROL_DEDICATED uplink_power_control_dedicated[NUMBER_OF_UE_MAX];
+
+  // TPC
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_UE_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_UE_MAX];
+
+  // CQI reporting
+  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_UE_MAX];
+
+  // SRS Variables
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_UE_MAX];
+  u8 ncs_cell[20][7];
+
+  // Scheduling Request Config
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config;
+
+
 } PHY_VARS_eNB;
 
 #ifndef USER_MODE
@@ -199,14 +218,40 @@ typedef struct
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
   unsigned char    is_secondary_ue; // primary by default
-  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNb has channel estimates to create NULL-beams from.
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
 
-  /// hold the precoder for NULL beam to the primary eNb
+  /// hold the precoder for NULL beam to the primary eNB
   int              **ul_precoder_S_UE;
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
-  SRS_param_t SRS_parameters;
+  
+  // PDSCH Varaibles
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated;
+
+  // PUSCH Varaibles
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated;
+
+  // PUCCH variables
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
+  u8 ncs_cell[20][7];
+
+  // UL-POWER-Control
+  UPLINK_POWER_CONTROL_DEDICATED uplink_power_control_dedicated;
+
+  // TPC
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch;
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch;
+
+  // CQI reporting
+  CQI_REPORT_CONFIG cqi_report_config;
+
+  // SRS Variables
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated;
+
+  // Scheduling Request Config
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config;
+
 
 } PHY_VARS_UE;
 

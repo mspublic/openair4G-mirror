@@ -48,7 +48,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->first_dlsch_symbol = 2;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
@@ -229,7 +228,6 @@ int ret,ret2;
   lte_frame_parms->nushift            = 1;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
-  lte_frame_parms->first_dlsch_symbol = 2;
   init_frame_parms(lte_frame_parms);
   
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));

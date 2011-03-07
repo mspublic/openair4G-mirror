@@ -5,6 +5,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#include "SCHED/defs.h"
 #endif
 
 extern unsigned int  localRIV2alloc_LUT25[512];
@@ -16,18 +17,18 @@ extern unsigned short RIV_max;
 //#define DEBUG_RAR
 
 #ifdef OPENAIR2
-int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
+int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 				       unsigned char subframe,
-				       LTE_eNb_ULSCH_t *ulsch,
+				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms) {
 
   
 
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
-  u8 harq_pid = get_RRCConnReq_harq_pid(frame_parms->tdd_config,subframe);
+  u8 harq_pid = get_RRCConnReq_harq_pid(frame_parms,subframe);
   
-  msg("[PHY][eNB]generate_eNb_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
+  msg("[PHY][eNB]generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
   
   ulsch->harq_processes[harq_pid]->TPC                = rar->TPC;
 
@@ -64,14 +65,14 @@ int generate_eNb_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->harq_processes[harq_pid]->round++;
   }
 #ifdef DEBUG_RAR
-  msg("ulsch ra (eNb): harq_pid %d\n",harq_pid);
-  msg("ulsch ra (eNb): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("ulsch ra (eNb): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
-  msg("ulsch ra (eNb): harq_pid %d\n",0);
-  msg("ulsch ra (eNb): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
-  msg("ulsch ra (eNb): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
-  msg("ulsch ra (eNb): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
-  msg("ulsch ra (eNb): Or1      %d\n",ulsch->Or1);
+  msg("ulsch ra (eNB): harq_pid %d\n",harq_pid);
+  msg("ulsch ra (eNB): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  msg("ulsch ra (eNB): rballoc  %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+  msg("ulsch ra (eNB): harq_pid %d\n",0);
+  msg("ulsch ra (eNB): Ndi      %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
+  msg("ulsch ra (eNB): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+  msg("ulsch ra (eNB): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+  msg("ulsch ra (eNB): Or1      %d\n",ulsch->Or1);
 #endif
   return(0);
 }
@@ -81,12 +82,12 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
 				      LTE_UE_ULSCH_t *ulsch,
 				      PHY_MEASUREMENTS *meas,
 				      LTE_DL_FRAME_PARMS *frame_parms,
-				      unsigned char eNb_id,
+				      unsigned char eNB_id,
 				      int current_dlsch_cqi) {
   
   //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
   RAR_PDU *rar = (RAR_PDU *)(rar_pdu+1);
-  u8 harq_pid = subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
+  u8 harq_pid = subframe2harq_pid(frame_parms,subframe);
 
 #ifdef DEBUG_RAR
   msg("rar_tools.c: Filling ue ulsch params -> ulsch %p : subframe %d\n",ulsch,subframe);
@@ -118,7 +119,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
     ulsch->O_RI                                  = 1;
-    if (meas->rank[eNb_id] == 1) {
+    if (meas->rank[eNB_id] == 1) {
       ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
       ulsch->o_RI[0]                             = 1;
     }
@@ -128,9 +129,9 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
     }
 
 
-    fill_CQI(ulsch->o,wideband_cqi,meas,eNb_id,current_dlsch_cqi);
+    fill_CQI(ulsch->o,wideband_cqi,meas,eNB_id,current_dlsch_cqi);
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
-      print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNb_id);
+      print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNB_id);
 
     ulsch->O_ACK                                  = 2;
 
