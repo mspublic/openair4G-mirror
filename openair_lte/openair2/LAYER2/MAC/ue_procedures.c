@@ -183,7 +183,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
-  msg("[MAC][UE %d] Sending SI to RRC (Lchan Id %d)\n",Mod_id,BCCH);
+  msg("[MAC][UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
 #endif
 
   Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,BCCH,(char *)pdu,len,0);//CH_index);
@@ -200,7 +200,7 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 				       CCCH,1,
 				       &UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
 				       CH_index);
-    msg("[MAC][UE %d] Requested RRCConnectionRequest, got %d bytes\n",Mod_id,Size);
+    msg("[MAC][UE %d] Frame %d : Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
     if (Size>0)
       return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
   }
