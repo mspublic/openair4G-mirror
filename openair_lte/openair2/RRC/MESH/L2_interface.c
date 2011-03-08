@@ -113,7 +113,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
     msg("filling rach,SRB_ID %d\n",Srb_id);
     msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
 #endif
-    if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx) && (RRC_CONNECTION_FLAG==1)){
+    if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx)) { //&& (RRC_CONNECTION_FLAG==1)){
       memcpy(&Buffer[0],&UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
       u8 Ret_size=UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx;
       UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx=0;
