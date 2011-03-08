@@ -704,7 +704,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	 phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->TBS>>3);
 
   // Do abstraction of PUSCH feedback
-  get_ack(phy_vars_eNB->lte_frame_parms.tdd_config,
+  get_ack(&phy_vars_eNB->lte_frame_parms,
 	  PHY_vars_UE_g[UE_id]->dlsch_ue[phy_vars_eNB->Mod_id][0]->harq_ack,
 	  subframe,
 	  phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK);

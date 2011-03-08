@@ -165,7 +165,7 @@ typedef struct
   u8 ncs_cell[20][7];
 
   // Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config;
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_UE_MAX];
 
 
 } PHY_VARS_eNB;
