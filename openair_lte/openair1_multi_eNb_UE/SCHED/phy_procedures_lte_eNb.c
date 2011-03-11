@@ -119,10 +119,11 @@ int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round
   LTE_eNB_ULSCH_t *ULSCH_ptr;  
   u8 subframe_m4,subframe_p4; 
   u8 i;
-  u8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
+  s8 UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
 
   if (UE_id==-1) {
     msg("[PHY] Cannot find UE with rnti %x\n",rnti);
+    *round=0;
     return(-1);
   }
 
