@@ -241,6 +241,8 @@ typedef struct{
 } UE_TEMPLATE;
 
 typedef struct {
+  /// Flag to indicate this process is active
+  u8 RA_active;
   /// Size of DCI for RA-Response (bytes)
   u8 RA_dci_size_bytes1;
   /// Size of DCI for RA-Response (bits)
@@ -261,6 +263,8 @@ typedef struct {
   u8 generate_rar;
   /// Flag to indicate the eNB should generate RRC.  This is triggered by first ULSCH reception at eNB for new user.
   u8 generate_rrcconnsetup;
+  /// Flag to indicate that eNB is waiting for ACK that UE has received RRCConnectionSetup.
+  u8 wait_ack_rrcconnsetup;
   /// UE RNTI allocated during RAR
   u16 rnti;
   /// Received UE Contention Resolution Identifier (RRCConnectionRequest)

@@ -146,22 +146,44 @@ u8 schedule_next_dlue(u8 Mod_id, u8 UE_id, u8 subframe){
 }
 
 void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id) {
+  u8 i;
   msg("[MAC][eNB Proc] Initiating RA procedure for index %d\n",preamble_index);
-  CH_mac_inst[Mod_id].RA_template[0].generate_rar=1;
-  CH_mac_inst[Mod_id].RA_template[0].generate_rrcconnsetup=0;
-  CH_mac_inst[Mod_id].RA_template[0].timing_offset=timing_offset;
-  CH_mac_inst[Mod_id].RA_template[0].rnti = taus();
+  
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    if (CH_mac_inst[Mod_id].RA_template[i].RA_active==0) {
+      CH_mac_inst[Mod_id].RA_template[i].RA_active=1;
+      CH_mac_inst[Mod_id].RA_template[i].generate_rar=1;
+      CH_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup=0;
+      CH_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup=0;
+      CH_mac_inst[Mod_id].RA_template[i].timing_offset=timing_offset;
+      // Put in random rnti (to be replaced with proper procedure!!)
+      CH_mac_inst[Mod_id].RA_template[i].rnti = taus();
+      return;
+    }
+  }
 }
 
 void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
+  u8 i;
+
   msg("[MAC][eNB Proc] Terminating RA procedure for UE rnti %x, Received RRCConnRequest %x,%x,%x,%x,%x,%x\n",rnti,
       l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5]);
-  memcpy(&CH_mac_inst[Mod_id].RA_template[0].cont_res_id[0],l3msg,6);
 
-  if (Is_rrc_registered == 1)
-    Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,l3msg,6,0);
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    if ((CH_mac_inst[Mod_id].RA_template[i].rnti==rnti) && 
+	(CH_mac_inst[Mod_id].RA_template[i].RA_active==1)) {  
 
-  CH_mac_inst[Mod_id].RA_template[0].generate_rrcconnsetup = 1;
+      memcpy(&CH_mac_inst[Mod_id].RA_template[i].cont_res_id[0],l3msg,6);
+      
+      if (Is_rrc_registered == 1)
+	Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,l3msg,6,0);
+      
+      CH_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup = 1;
+      CH_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup = 0;
+
+      return;
+    }
+  }
 }
 
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe) {
@@ -577,7 +599,7 @@ void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 ag
 void schedule_RA(u8 Mod_id,u8 subframe) {
 
   RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&CH_mac_inst[Mod_id].RA_template[0];
-  u8 i,j;
+  u8 i,j,harq_pid,round;
   DCI_PDU *DCI_pdu= &CH_mac_inst[Mod_id].DCI_pdu;
   u16 rrc_sdu_length;
   u8 lcid,offset;
@@ -588,99 +610,108 @@ void schedule_RA(u8 Mod_id,u8 subframe) {
 #endif
   for (i=0;i<NB_RA_PROC_MAX;i++) {
 
-    if (RA_template[i].generate_rar == 1) {
-      msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generating RAR DCI (proc %d), format 1A\n",mac_xface->frame, subframe,i);
-      add_common_dci(DCI_pdu,
-		     (void*)&RA_template[i].RA_alloc_pdu1[0],
-		     RA_RNTI,
-		     RA_template[i].RA_dci_size_bytes1,
-		     2,
-		     RA_template[i].RA_dci_size_bits1,
-		     RA_template[i].RA_dci_fmt1);
+    if (RA_template[i].RA_active == 1) {
+      msg("[MAC][eNB] RA %d is active (generate_rrcconnsetup %d, wait_ack_rrcconnsetup %d)\n",
+	  i,RA_template[i].generate_rrcconnsetup,RA_template[i].wait_ack_rrcconnsetup);
 
-
-      /*
+      if (RA_template[i].generate_rar == 1) {
+	msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generating RAR DCI (proc %d), format 1A\n",mac_xface->frame, subframe,i);
 	add_common_dci(DCI_pdu,
-	(void*)&RA_alloc_pdu,
-	RA_RNTI,
-	sizeof(DCI1A_5MHz_TDD_1_6_t),
-	3,
-	sizeof_DCI1A_5MHz_TDD_1_6_t,
-	format1A);
-      */
+		       (void*)&RA_template[i].RA_alloc_pdu1[0],
+		       RA_RNTI,
+		       RA_template[i].RA_dci_size_bytes1,
+		       2,
+		       RA_template[i].RA_dci_size_bits1,
+		       RA_template[i].RA_dci_fmt1);
+	
+	
       // Schedule Random-Access Response
 
       RA_template[i].generate_rar=0;
-    }
-
-    if (RA_template[i].generate_rrcconnsetup == 1) {
-
-      // check for RRCConnSetup Message
-
-      if (Is_rrc_registered == 1) {
-	rrc_sdu_length = Rrc_xface->mac_rrc_data_req(0,
-						     0,1,
-						     &CH_mac_inst[Mod_id].CCCH_pdu.payload[0],
-						     0);
-	if (rrc_sdu_length == -1)
-	  mac_xface->macphy_exit("[MAC][eNB Scheduler] CCCH not allocated\n");
-	else {
-	  msg("[MAC][eNB Scheduler] Frame %d, subframe %d: got % bytes from RRC\n",mac_xface->frame, subframe,rrc_sdu_length);
-	}
-
       }
-
-
-      if (rrc_sdu_length>0) {
-	msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generating RRCConnectionSetup (RA proc %d, RNTI %x)\n",mac_xface->frame, subframe,i,
-	    RA_template[i].rnti);
-	// add_user
-	UE_id=add_new_ue(Mod_id,RA_template[i].rnti);
-	if (UE_id==-1) {
-	  mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
+      
+      if (RA_template[i].generate_rrcconnsetup == 1) {
+	
+	// check for RRCConnSetup Message
+	
+	if (Is_rrc_registered == 1) {
+	  rrc_sdu_length = Rrc_xface->mac_rrc_data_req(0,
+						       0,1,
+						       &CH_mac_inst[Mod_id].CCCH_pdu.payload[0],
+						       0);
+	  if (rrc_sdu_length == -1)
+	    mac_xface->macphy_exit("[MAC][eNB Scheduler] CCCH not allocated\n");
+	  else {
+	    msg("[MAC][eNB Scheduler] Frame %d, subframe %d: got % bytes from RRC\n",mac_xface->frame, subframe,rrc_sdu_length);
+	  }
+	  
 	}
-	else {
-	  msg("[MAC][eNB] Added user with rnti %x => UE %d\n",RA_template[i].rnti,UE_id);
+	
+	
+	if (rrc_sdu_length>0) {
+	  msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generating RRCConnectionSetup (RA proc %d, RNTI %x)\n",mac_xface->frame, subframe,i,
+	      RA_template[i].rnti);
+	  // add_user
+	  UE_id=add_new_ue(Mod_id,RA_template[i].rnti);
+	  if (UE_id==-1) {
+	    mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
+	  }
+	  else {
+	    msg("[MAC][eNB] Added user with rnti %x => UE %d\n",RA_template[i].rnti,UE_id);
+	  }
+	  msg("[MAC][eNB] Frame %d, subframe %d: Received %d bytes for RRCConnectionSetup: \n",mac_xface->frame,subframe,rrc_sdu_length);
+	  for (j=0;j<rrc_sdu_length;j++)
+	    msg("%x ",(u8)CH_mac_inst[Mod_id].CCCH_pdu.payload[j]);
+	  msg("\n");
+	  msg("[MAC][eNB] Frame %d, subframe %d: Generated DLSCH (RRCConnectionSetup) DCI, format 1A, for UE %d\n",mac_xface->frame, subframe,UE_id);
+	  
+	  // Schedule Reflection of Connection request
+	  ((DCI1A_5MHz_TDD_1_6_t*)&RA_template[i].RA_alloc_pdu2[0])->ndi=1;
+	  add_ue_spec_dci(DCI_pdu,
+			  (void*)&RA_template[i].RA_alloc_pdu2[0],
+			  RA_template[i].rnti,
+			  RA_template[i].RA_dci_size_bytes2,
+			  2,
+			  RA_template[i].RA_dci_size_bits2,
+			  RA_template[i].RA_dci_fmt2);
+	  
+	  RA_template[i].generate_rrcconnsetup=0;
+	  RA_template[i].wait_ack_rrcconnsetup=1;
+	  lcid=0;
+	  offset = generate_dlsch_header((unsigned char*)CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0],
+					 1,              //num_sdus
+					 &rrc_sdu_length,      //
+					 &lcid,          // sdu_lcid
+					 255,                                   // no drx
+					 0,                                   // no timing advance
+					 RA_template[i].cont_res_id,        // contention res id
+					 0);                                    // no padding
+	  msg("offset %d\n",(u8)offset);
+	  memcpy((void*)&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0][(u8)offset],
+		 &CH_mac_inst[Mod_id].CCCH_pdu.payload[0],
+		 rrc_sdu_length);
 	}
-	msg("[MAC][eNB] Frame %d, subframe %d: Received %d bytes for RRCConnectionSetup: \n",mac_xface->frame,subframe,rrc_sdu_length);
-	for (j=0;j<rrc_sdu_length;j++)
-	  msg("%x ",(u8)CH_mac_inst[Mod_id].CCCH_pdu.payload[j]);
-	msg("\n");
-	msg("[MAC][eNB] Frame %d, subframe %d: Generated DLSCH (RRCConnectionSetup) DCI, format 1A, for UE %d\n",mac_xface->frame, subframe,UE_id);
-
-	// Schedule Reflection of Connection request
-	/*
-	  add_common_dci(DCI_pdu,
-	  (void*)&DLSCH_alloc_pdu1A,
-	  RA_template[i].rnti,
-	  sizeof(DCI1A_5MHz_TDD_1_6_t),
-	  3,
-	  sizeof_DCI1A_5MHz_TDD_1_6_t,
-	  format1A);
-	*/
-
-	add_ue_spec_dci(DCI_pdu,
-			(void*)&RA_template[i].RA_alloc_pdu2[0],
-			RA_template[i].rnti,
-			RA_template[i].RA_dci_size_bytes2,
-			2,
-			RA_template[i].RA_dci_size_bits2,
-			RA_template[i].RA_dci_fmt2);
-
-	RA_template[i].generate_rrcconnsetup=0;
-	lcid=0;
-	offset = generate_dlsch_header((unsigned char*)CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0],
-				       1,              //num_sdus
-				       &rrc_sdu_length,      //
-				       &lcid,          // sdu_lcid
-				       255,                                   // no drx
-				       0,                                   // no timing advance
-				       RA_template[i].cont_res_id,        // contention res id
-				       0);                                    // no padding
-	msg("offset %d\n",(u8)offset);
-	memcpy((void*)&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)UE_id][0].payload[0][(u8)offset],
-	       &CH_mac_inst[Mod_id].CCCH_pdu.payload[0],
-	       rrc_sdu_length);
+      }
+      else if (RA_template[i].wait_ack_rrcconnsetup==1) {
+	// check HARQ status and retransmit if necessary
+	msg("[MAC][eNB] Frame %d, subframe %d: Checking if RRCConnectionSetup was acknowledged :\n",mac_xface->frame,subframe);
+	// Get candidate harq_pid from PHY
+	mac_xface->get_ue_active_harq_pid(Mod_id,RA_template[i].rnti,subframe,&harq_pid,&round,0);
+	msg("harq_pid %d round %d\n",harq_pid,round);
+	if (round>0) {
+	  // we have to schedule a retransmission
+	  ((DCI1A_5MHz_TDD_1_6_t*)&RA_template[i].RA_alloc_pdu2[0])->ndi=0;
+	  add_ue_spec_dci(DCI_pdu,
+			  (void*)&RA_template[i].RA_alloc_pdu2[0],
+			  RA_template[i].rnti,
+			  RA_template[i].RA_dci_size_bytes2,
+			  2,
+			  RA_template[i].RA_dci_size_bits2,
+			  RA_template[i].RA_dci_fmt2);
+	}
+	else 
+	  RA_template[i].wait_ack_rrcconnsetup=0;
+	  RA_template[i].RA_active=0;
       }
     }
   }
@@ -833,7 +864,7 @@ void schedule_dlsch(u8 Mod_id,u8 subframe) {
   
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    printf("Got harq_pid %d, round %d\n",harq_pid,round);
+    //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
     // Note this code is for a specific DCI format
     DLSCH_dci = (DCI2_5MHz_2A_M10PRB_TDD_t *)&CH_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[0];
