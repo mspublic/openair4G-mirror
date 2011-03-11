@@ -1,0 +1,2 @@
+<area shape="rect" href="$structMobility__Type__.html" title="{Mobility_Type_\n|+ selected_option_\l+ fixed_\l+ random_waypoint_\l+ random_walk_\l+ grid_walk_\l|}" alt="" coords="5,7,165,159">
+<area shape="rect" href="$structMoving__Dynamics__.html" title="{Moving_Dynamics_\n|+ min_speed_\l+ max_speed_\l+ min_pause_time_\l+ max_pause_time_\l|}" alt="" coords="189,15,347,151">

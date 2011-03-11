@@ -1,0 +1,24 @@
+digraph G
+{
+  edge [fontname="FreeSans",fontsize="10",labelfontname="FreeSans",labelfontsize="10"];
+  node [fontname="FreeSans",fontsize="10",shape=record];
+  Node1 [label="{App_Config_\n|+ app_type_\l+ traffic_\l|}",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node1 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="traffic_",arrowtail="open"];
+  Node2 [label="{Traffic_\n|+ transport_protocol_\l+ packet_size_\l+ inter_arrival_time_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structTraffic__.html"];
+  Node3 -> Node2 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="inter_arrival_time_",arrowtail="open"];
+  Node3 [label="{Inter_Arrival_Time_\n|+ selected_option_\l+ fixed_\l+ uniform_\l+ poisson_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structInter__Arrival__Time__.html"];
+  Node4 -> Node3 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="poisson_",arrowtail="open"];
+  Node4 [label="{Poisson_\n|+ expected_inter_arrival_time_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structPoisson__.html"];
+  Node5 -> Node3 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="uniform_",arrowtail="open"];
+  Node5 [label="{Uniform_\n|+ min_value_\l+ max_value_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structUniform__.html"];
+  Node6 -> Node3 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="fixed_",arrowtail="open"];
+  Node6 [label="{Fixed_\n|+ fixed_value_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structFixed__.html"];
+  Node7 -> Node2 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="packet_size_",arrowtail="open"];
+  Node7 [label="{Packet_Size_\n|+ selected_option_\l+ fixed_\l+ uniform_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structPacket__Size__.html"];
+  Node5 -> Node7 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="uniform_",arrowtail="open"];
+  Node6 -> Node7 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="fixed_",arrowtail="open"];
+  Node8 -> Node2 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="transport_protocol_",arrowtail="open"];
+  Node8 [label="{Transport_Protocol_\n|+ selected_option_\l+ udp_\l+ tcp_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structTransport__Protocol__.html"];
+  Node9 -> Node1 [dir=back,color="darkorchid3",fontsize="10",style="dashed",label="app_type_",arrowtail="open"];
+  Node9 [label="{App_Type_\n|+ selected_option_\l+ cbr_\l+ gaming_\l+ m2m_\l|}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structApp__Type__.html"];
+}

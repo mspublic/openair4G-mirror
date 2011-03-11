@@ -1,0 +1,8 @@
+<area shape="rect" href="$structTraffic__.html" title="{Traffic_\n|+ transport_protocol_\l+ packet_size_\l+ inter_arrival_time_\l|}" alt="" coords="207,385,375,503">
+<area shape="rect" href="$structInter__Arrival__Time__.html" title="{Inter_Arrival_Time_\n|+ selected_option_\l+ fixed_\l+ uniform_\l+ poisson_\l|}" alt="" coords="215,173,367,309">
+<area shape="rect" href="$structPoisson__.html" title="{Poisson_\n|+ expected_inter_arrival_time_\l|}" alt="" coords="303,15,535,97">
+<area shape="rect" href="$structUniform__.html" title="{Uniform_\n|+ min_value_\l+ max_value_\l|}" alt="" coords="5,5,120,107">
+<area shape="rect" href="$structPacket__Size__.html" title="{Packet_Size_\n|+ selected_option_\l+ fixed_\l+ uniform_\l|}" alt="" coords="39,183,191,300">
+<area shape="rect" href="$structFixed__.html" title="{Fixed_\n|+ fixed_value_\l|}" alt="" coords="161,15,279,97">
+<area shape="rect" href="$structTransport__Protocol__.html" title="{Transport_Protocol_\n|+ selected_option_\l+ udp_\l+ tcp_\l|}" alt="" coords="391,183,543,300">
+<area shape="rect" href="$structApp__Type__.html" title="{App_Type_\n|+ selected_option_\l+ cbr_\l+ gaming_\l+ m2m_\l|}" alt="" coords="399,376,551,512">
