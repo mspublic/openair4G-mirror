@@ -93,6 +93,10 @@ void logInit ()
   g_log->log_component[MAC].level = LOG_INFO;
   g_log->log_component[MAC].flag = LOG_MED;
   
+  g_log->log_component[OCG].name = "OCG";
+  g_log->log_component[OCG].level = LOG_INFO;
+  g_log->log_component[OCG].flag = LOG_MED;
+
   g_log->level2string[LOG_EMERG]         = "G"; //EMERG
   g_log->level2string[LOG_ALERT]         = "A"; // ALERT
   g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
