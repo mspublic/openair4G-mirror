@@ -30,6 +30,9 @@ endif
 
 CFLAGS += -DPHY_ABSTRACTION
 
+#ifdef OCG
+CFLAGS += -I/usr/include/libxml2 -lxml2
+#endif
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc

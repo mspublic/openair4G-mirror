@@ -32,6 +32,10 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#ifdef OCG
+#include "UTIL/OCG/OCG.h"
+#endif
+
 #define DEBUG_PHY
 #define RF
 
@@ -675,6 +679,11 @@ int main(int argc, char **argv) {
 
   u8 NB_MACHINE;
 
+#ifdef OCG
+  int OCG_flag =0;
+  OAI_Emulation_ * emulation_scen;
+#endif
+
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
@@ -692,7 +701,7 @@ int main(int argc, char **argv) {
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "haet:k:x:m:rn:s:f:u:U:b:B:M:")) != -1)
+  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:U:b:B:M:")) != -1)
     {
       switch (c)
 	{
@@ -747,12 +756,32 @@ int main(int argc, char **argv) {
 	case 'e':
 	  extended_prefix_flag=1;
 	  break;
+#ifdef OCG
+	case 'c':
+	  OCG_flag=1;
+	  break;
+#endif
+
 	default:
 	  help ();
 	  exit (-1);
 	  break;
 	}
     }
+
+#ifdef OCG
+  if (OCG_flag==1){ // activate OCG
+    printf("start\n");
+    emulation_scen= OCG_main();
+    LOG_I(MAC,"the area is x %f y %f\n",
+	  emulation_scen->envi_config_.area_.x_,
+		  emulation_scen->envi_config_.area_.y_);
+      abstraction_flag=1;
+    //  nb_ue_local	= emulation_scen->
+     // nb_eNB_local   = emulation_scen->
+     // n_frames  =  emulation_scen->
+   }
+#endif  
 
   NB_UE_INST = nb_ue_local + nb_ue_remote;
   NB_CH_INST = nb_eNB_local + nb_eNB_remote;
