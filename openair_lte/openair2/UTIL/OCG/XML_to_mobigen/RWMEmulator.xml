@@ -9,7 +9,7 @@
 		<separated_flow>false</separated_flow>
 		<max_traffic_lights>500</max_traffic_lights>
 	</extension>
-	<extension class="de.uni_stuttgart.informatik.canu.mobisim.extensions.ReportNodeMobility" output="mobi_XML/root.20110303161013.xml">
+	<extension class="de.uni_stuttgart.informatik.canu.mobisim.extensions.ReportNodeMobility" output="mobi_XML/root.20110309123817.xml">
 		<step>1</step>
 	</extension>
 	<nodegroup car2x="false" id="" n="50" type="car">

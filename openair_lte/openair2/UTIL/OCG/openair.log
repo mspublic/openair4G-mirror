@@ -955,3 +955,52 @@ e.g. 20100201193045 represents in the year 2010, February 1st, 19:30:45
 
 [OCG][I][main src/OCG.c:70]OCG starts ...
 
+[OCG][I][main src/OCG.c:70]OCG starts ...
+
+[OCG][I][detect_file src/OCG_detect_file.c:68]Configuration file "root.20110309123719.xml" is detected
+[OCG][I][main src/OCG.c:115]An emulation for this file is initiated
+[OCG][I][create_dir src/OCG_create_dir.c:62]Directory for current emulation is created
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'OSD'
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'PASSLOSSEXPONENT'
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'PASSLOSS0'
+[OCG][I][parse_XML src/OCG_parse_XML.c:631]The configuration file is parsed
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 5 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 6 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 7 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 8 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 9 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 0 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 5 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 6 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 7 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 8 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 9 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 0 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 5 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 6 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 7 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 8 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 9 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 0 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 5 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 6 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 7 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 8 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 9 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 0 nCCE 21 
+[MAC][I][eNB_dlsch_ulsch_scheduler ../../../openair2/LAYER2/MAC/eNB_scheduler.c:964]eNB inst 0 scheduler subframe 5 nCCE 21 
+[OCG][I][call_emu src/OCG_call_emu.c:125]Emulation finished
+[OCG][I][generate_report src/OCG_generate_report.c:82]A report of OCG is generated in directory "/nfs/emu_results/root/20110309123719/"
+
+[OCG][I][main src/OCG.c:70]OCG starts ...
+
+[OCG][I][detect_file src/OCG_detect_file.c:68]Configuration file "root.20110309123817.xml" is detected
+[OCG][I][main src/OCG.c:115]An emulation for this file is initiated
+[OCG][I][create_dir src/OCG_create_dir.c:62]Directory for current emulation is created
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'OSD'
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'PASSLOSSEXPONENT'
+[OCG][W][start_element src/OCG_parse_XML.c:247]One element could not be parsed : unknown element name 'PASSLOSS0'
+[OCG][I][parse_XML src/OCG_parse_XML.c:631]The configuration file is parsed
+[OCG][I][call_emu src/OCG_call_emu.c:125]Emulation finished
+[OCG][I][generate_report src/OCG_generate_report.c:82]A report of OCG is generated in directory "/nfs/emu_results/root/20110309123817/"
+
