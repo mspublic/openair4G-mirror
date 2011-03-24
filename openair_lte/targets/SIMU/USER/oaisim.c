@@ -932,6 +932,8 @@ int main(int argc, char **argv) {
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.transmissionComb = 0;
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.freqDomainPosition = 0;
 
+    PHY_vars_UE_g[UE_id]->prach_timer=0;
+
     // choose configurations 1 (UE0 SF 1), 3 (UE1 SF 2), 5 (UE2 SF 3)
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.srs_ConfigIndex = 1+(UE_id<<1);
     if (UE_id>=3) {
