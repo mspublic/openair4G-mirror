@@ -194,7 +194,7 @@ typedef struct {
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];     
   /// Pointer to CQI data
-  u8 o[MAX_CQI_BITS];
+  u8 o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
   u8 O;
   /// Rank information 
@@ -308,7 +308,7 @@ typedef struct {
   /// CQI CRC status
   u8 cqi_crc_status;
   /// Pointer to CQI data
-  u8 o[MAX_CQI_BITS+8];
+  u8 o[MAX_CQI_BYTES];
   /// Length of CQI data under RI=1 assumption(bits)
   u8 Or1;
   /// Length of CQI data under RI=2 assumption(bits)

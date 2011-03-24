@@ -114,7 +114,7 @@ typedef struct
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
-  u8 pbch_pdu[PBCH_PDU_SIZE];
+  u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
   char eNB_generate_rag_ack;
 
@@ -259,8 +259,8 @@ typedef struct
 #include "PHY/LTE_TRANSPORT/proto.h"
 
 #ifndef OPENAIR_LTE
-//#include "PHY/TRANSPORT/defs.h"
-//#include "PHY/ESTIMATION/defs.h"
+#include "PHY/TRANSPORT/defs.h"
+#include "PHY/ESTIMATION/defs.h"
 #else //OPENAIR_LTE
 #include "PHY/LTE_ESTIMATION/defs.h"
   //#include "PHY/LTE_REFSIG/defs.h"

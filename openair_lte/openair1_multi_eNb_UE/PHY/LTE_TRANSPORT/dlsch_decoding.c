@@ -378,9 +378,11 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue->harq_processes[harq_pid]->round  = 0;
     dlsch_ue->harq_ack[subframe].ack = 1;
     dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
-
-
-    memcpy(dlsch_ue->harq_processes[harq_pid]->b,dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+    dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+    if (dlsch_ue->harq_processes[harq_pid]->Ndi == 1)
+      memcpy(dlsch_ue->harq_processes[harq_pid]->b,
+	     dlsch_eNB->harq_processes[harq_pid]->b,
+	     dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
@@ -390,8 +392,9 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue->harq_processes[harq_pid]->round  = 0;
     dlsch_ue->harq_ack[subframe].ack = 1;
     dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
-
-    memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+    dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+    if (dlsch_ue->harq_processes[harq_pid]->Ndi == 1)
+      memcpy(dlsch_eNB->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->b,dlsch_ue->harq_processes[harq_pid]->TBS>>3);
     break;
   default:
     msg("dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);

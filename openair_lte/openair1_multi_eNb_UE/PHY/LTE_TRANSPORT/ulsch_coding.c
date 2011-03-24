@@ -143,7 +143,7 @@ u32 ulsch_encoding(u8 *a,
   unsigned char o_flip[8];
 
   if (!ulsch) {
-    msg("ulsch_coding.c: Null ulsch ptr\n");
+    msg("ulsch_coding.c: Null ulsch ptr %p\n",ulsch);
     return(-1);
   }
 
@@ -643,21 +643,30 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
   
-  msg("[PHY] EMUL UE ulsch_encoding for eNB %d, harq_pid %d\n",eNB_id,harq_pid);
+  msg("[PHY] EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
 
-  
-  memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
+     
+  //memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks[UE_transport_info_TB_index[phy_vars_ue->Mod_id]],
+  memcpy(&UE_transport_info[phy_vars_ue->Mod_id].transport_blocks,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);  
-  UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
-
+  //UE_transport_info_TB_index[phy_vars_ue->Mod_id]+=phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3;
+  // navid: currently more than one is not supported in the code 
+  UE_transport_info[phy_vars_ue->Mod_id].num_eNB = 1; 
+  UE_transport_info[phy_vars_ue->Mod_id].rnti[0] = phy_vars_ue->lte_ue_pdcch_vars[0]->crnti; 
+  UE_transport_info[phy_vars_ue->Mod_id].eNB_id[0]  = eNB_id;
+  UE_transport_info[phy_vars_ue->Mod_id].harq_pid[0] = harq_pid;
+  UE_transport_info[phy_vars_ue->Mod_id].tbs[0]     = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
+  // msg("\nphy_vars_ue->Mod_id%d\n",phy_vars_ue->Mod_id);
+  
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u32 *)ulsch->o;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u8 *)ulsch->o;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+(ulsch->o_RI[1]&1)<<1;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack = (ulsch->o_ACK[0]&1) + (ulsch->o_ACK[1]&1)<<1;
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
+  msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
   
 }
 #endif
