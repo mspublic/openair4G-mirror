@@ -72,44 +72,45 @@ static int thread_safe_debug_count = 0;
 //static const char BUILD_HOST[] = "LINUX";
 //static const char BUILD_TARGET[] = "OAI";
 
-
-void logInit ()
-{
-  //#ifdef USER_MODE
-  //printf("[LOG] logInit(%p)\n", this);
+void logInit (int g_log_level) {
+  
 #ifdef USER_MODE
   g_log = calloc(1, sizeof(log_t));
+  memset(g_log, 0, sizeof(log_t));
 #else
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
 
-  memset(g_log, 0, sizeof(log_t));
+    g_log->log_component[LOG].name = "LOG";
+    g_log->log_component[LOG].level = LOG_INFO;
+    g_log->log_component[LOG].flag =  LOG_MED_ONLINE;
 
-  g_log->log_component[LOG].name = "LOG";
-  g_log->log_component[LOG].level = LOG_TRACE;
-  g_log->log_component[LOG].flag = LOG_MED;
-  
-  g_log->log_component[MAC].name = "MAC";
-  g_log->log_component[MAC].level = LOG_INFO;
-  g_log->log_component[MAC].flag = LOG_MED;
-  
-  g_log->log_component[OCG].name = "OCG";
-  g_log->log_component[OCG].level = LOG_INFO;
-  g_log->log_component[OCG].flag = LOG_MED;
+    g_log->log_component[MAC].name = "MAC";
+    g_log->log_component[MAC].level = LOG_INFO;
+    g_log->log_component[MAC].flag =  LOG_MED_ONLINE;
 
-  g_log->level2string[LOG_EMERG]         = "G"; //EMERG
-  g_log->level2string[LOG_ALERT]         = "A"; // ALERT
-  g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
-  g_log->level2string[LOG_ERR]           = "E"; // ERROR
-  g_log->level2string[LOG_WARNING]       = "W"; // WARNING
-  g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
-  g_log->level2string[LOG_INFO]          = "I"; //INFO
-  g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
-  g_log->level2string[LOG_TRACE]         = "T"; // TRACE
-  
-  g_log->syslog = 0;
-  g_log->level  = LOG_TRACE;
-  g_log->flag    = LOG_MED;
+    g_log->log_component[EMU].name = "EMU";
+    g_log->log_component[EMU].level = LOG_INFO;
+    g_log->log_component[EMU].flag =  LOG_MED_ONLINE;
+     
+    g_log->log_component[OCG].name = "OCG";
+    g_log->log_component[OCG].level = LOG_INFO;
+    g_log->log_component[OCG].flag =  LOG_MED_ONLINE;
+
+    g_log->level2string[LOG_EMERG]         = "G"; //EMERG
+    g_log->level2string[LOG_ALERT]         = "A"; // ALERT
+    g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
+    g_log->level2string[LOG_ERR]           = "E"; // ERROR
+    g_log->level2string[LOG_WARNING]       = "W"; // WARNING
+    g_log->level2string[LOG_NOTICE]        = "N"; // NOTICE
+    g_log->level2string[LOG_INFO]          = "I"; //INFO
+    g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
+    g_log->level2string[LOG_TRACE]         = "T"; // TRACE
+
+    g_log->syslog = 0;
+    g_log->level  = g_log_level;
+    g_log->flag   = LOG_MED_ONLINE;
+ 
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
@@ -120,7 +121,7 @@ void logInit ()
   
   g_log->log_file_name = "openair.log";
 #else
-  printk ("[OPENAIR2] TRACE INIT\n");
+  printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
   
@@ -185,7 +186,7 @@ void logRecord( const char *file, const char *func,
   
   if (  g_log->flag & FLAG_FILE_LINE )  {
     len+=snprintf(g_buff_tmp, MAX_LOG_ITEM, "[%s:%d]",
-	     file,line);
+		  file,line);
     strncat(g_buff_infos, g_buff_tmp, MAX_LOG_TOTAL);
   }
   
@@ -242,6 +243,39 @@ void set_glog(int level, int flag) {
 }
 void set_log_syslog(int enable) {
   g_log->syslog = enable;
+}
+
+
+/*
+ * for the two functions below, the passed array must have a final entry
+ * with string value NULL
+ */
+/* map a string to an int. Takes a mapping array and a string as arg */
+int map_str_to_int(log_mapping *map, const char *str)
+{
+    while (1) {
+        if (map->name == NULL) {
+            return(-1);
+        }
+        if (!strcmp(map->name, str)) {
+            return(map->value);
+        }
+        map++;
+    }
+}
+
+/* map an int to a string. Takes a mapping array and a value */
+char *map_int_to_str(log_mapping *map, int val)
+{
+    while (1) {
+        if (map->name == NULL) {
+            return NULL;
+        }
+        if (map->value == val) {
+            return map->name;
+        }
+        map++;
+    }
 }
 
 void logClean (void)

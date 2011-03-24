@@ -96,6 +96,7 @@ extern "C" {
 
 #define NUM_LOG_LEVEL  9
 
+
 /*! \brief Macro used to call tr_log_full_ex with file, function and line information
  *
  */
@@ -104,7 +105,7 @@ extern "C" {
 #else
 #define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
 #endif
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, OCG, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAX_LOG_COMPONENTS} comp_name_t;
 
 // debugging macros
 //#ifdef USER_MODE
@@ -181,6 +182,7 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 
 #define LOG_DISABLE     0x00
 #define LOG_MED         0x34
+#define LOG_MED_ONLINE  0xB4
 #define LOG_DEF         0x74
 #define LOG_DEF_ONLINE  0xF4 // compatibility with OAI
 
@@ -193,6 +195,11 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 
 
   //#define msg printf
+
+typedef struct {
+    char *name;     ///< string name of item
+    int value;      ///< integer value of mapping
+} log_mapping;
 
 
 typedef struct  {
@@ -220,6 +227,7 @@ typedef struct {
   int                     syslog;
   char*                   log_file_name;
 } log_t;
+
 
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log_if.h"
