@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
   OAI_Emulation_ * OCG_main(void){
 #endif  
 	int state = STATE_START_OCG;
-	logInit(); // use loggen remove me later
 
     while(state != STATE_END) {
 	
