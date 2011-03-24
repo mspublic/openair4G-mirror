@@ -11,7 +11,6 @@ void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 			  unsigned int current_frame,
 			  unsigned int *frame,
 			  unsigned char *subframe) {
-
   if (frame_parms->frame_type == 0) {
     *subframe = current_subframe+6;
     if (*subframe>9) {
