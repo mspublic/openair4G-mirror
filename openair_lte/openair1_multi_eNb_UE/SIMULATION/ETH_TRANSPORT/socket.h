@@ -1,3 +1,12 @@
+/*! \file socket.h
+* \brief 
+* \author Lionel Gauthier
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
+*/ 
+
 #ifndef __SOCKET_H__
 #    define __SOCKET_H__
 #    ifdef SOCKET_C

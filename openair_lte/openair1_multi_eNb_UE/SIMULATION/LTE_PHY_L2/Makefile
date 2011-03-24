@@ -25,14 +25,14 @@ CFLAGS += -DDEBUG_PHY
 endif
 
 ifdef NAS_NETLINK
-CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
+CFLAGS += -DNAS_NETLINK -DLINUX
+LINUX=1
 endif
 
 CFLAGS += -DPHY_ABSTRACTION
 
-#ifdef OCG
 CFLAGS += -I/usr/include/libxml2 -lxml2
-#endif
+
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc

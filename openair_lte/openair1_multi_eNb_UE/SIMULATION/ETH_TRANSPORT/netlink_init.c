@@ -1,3 +1,12 @@
+/*! \file netlink_init.c
+* \brief initiate the netlink socket for communication with nas dirver 
+* \author Navid Nikaein and Raymomd Knopp
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: navid.nikaein@eurecom.fr
+*/ 
+
 #include <sys/socket.h>
 #include <linux/netlink.h>
 #include <signal.h>
@@ -11,8 +20,6 @@ struct nlmsghdr *nas_nlh = NULL;
 struct iovec nas_iov;
 int nas_sock_fd;
 struct msghdr nas_msg;
-
-
 
 #define GRAAL_NETLINK_ID 31
 

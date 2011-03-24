@@ -1,70 +1,41 @@
-/*________________________bypass_session_layer_defs.h________________________
+/*! \file phy_emulation.h
+* \brief specifies the data structure and variable for phy emulation
+* \author Navid Nikaein, Raymomd Knopp  and Hicham Anouar
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: navid.nikaein@eurecom.fr
+*/ 
 
- Authors : Hicham Anouar
- Company : EURECOM
- Emails  : anouar@eurecom.fr
-________________________________________________________________*/
 
+#include "SCHED/defs.h"
+#include "proto.h"
 
 #ifndef __BYPASS_SESSION_LAYER_DEFS_H__
 #    define __BYPASS_SESSION_LAYER_DEFS_H__
 //-----------------------------------------------------------------------------
 //#include "openair_defs.h"
-#define  BYPASS_CHBCH_DATA    0x01
-#define  BYPASS_UL_DL_DATA           0x02
-#define  BYPASS_MESSAGE_TYPE_CONTROL_BROADCAST           0x03
 
-#define CH_TRAFFIC 0
-#define UE_TRAFFIC 1
+#define WAIT_TRANSPORT_INFO 0x1
+#define SYNC_TRANSPORT_INFO 0x2
+#define ENB_TRANSPORT_INFO 0X3
+#define UE_TRANSPORT_INFO 0X4
+#define RELEASE_TRANSPORT_INFO 0x5
 
-#define CHBCH_DATA 0
-#define UL_DL_DATA 1
-#define CH_BYPASS_CONTROL 2
+#define WAIT_TRANSPORT 1
+#define SYNC_TRANSPORT 2
+#define ENB_TRANSPORT 3
+#define UE_TRANSPORT 4
+#define RELEASE_TRANSPORT 5
 
-#define NO_WAIT 0
-#define WAIT_CHBCH_DATA 1
-#define WAIT_UL_DL_DATA 2
-#define WAIT_PM_CT 3
-#define WAIT_EM_CT 4
+#define WAIT_SYNC_TRANSPORT 1
+#define SYNCED_TRANSPORT 2
+//#define WAIT_ENB_TRANSPORT 2
+//#define WAIT_UE_TRANSPORT 3
+
 
 #define BYPASS_RX_BUFFER_SIZE 64000
 #define BYPASS_TX_BUFFER_SIZE 64000
-
-
-
-typedef struct bypass_msg_header {
-  unsigned char  Message_type;
-  unsigned char  Nb_flows;
-  unsigned int   M_id;
-  char *         data;
-}bypass_msg_header_t;
-
-typedef struct bypass_proto2multicast_header_t {
-  unsigned int      size;
-} bypass_proto2multicast_header_t;
-
-
-
-
-void bypass_init ( int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),int (*rx_handlerP) (unsigned char,char*,int));
-int bypass_rx_data (void);
-void  bypass_signal_mac_phy(void );
-#ifndef USER_MODE
-int multicast_link_write_sock (int groupP, char *dataP, unsigned int sizeP);
-int bypass_tx_handler(unsigned int fifo, int rw);
-int bypass_rx_handler(unsigned int fifo, int rw);
-#else
-void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer);
-#endif
-
-void bypass_tx_data (char Type);
-
-void emulation_tx_rx(void);
-
-unsigned int emul_tx_handler(unsigned char Mode,char *Tx_buffer,unsigned int* Nbytes,unsigned int *Nb_flows);
-unsigned int emul_rx_handler(unsigned char Mode,char *rx_buffer, unsigned int Nbytes);
-
-unsigned int emul_rx_data(void);
 
 
 /*************************************************************/
@@ -76,39 +47,100 @@ typedef struct  {
   u32 sss:8;
   u32 cfi:2;
   u32 phich:19;
-  u32 pbch_payload:24;
+  //  u32 pbch_payload:24;
+  u32 pbch_payload;
 } eNB_cntl;
 
 typedef struct  {
-  u32 pucch_flag:3;  // 0,7 = none, 1 = type 1, 2=type 1a, 3=type 1b, 4=type 2, 5=type 2a, 6=type 2b
-  u32 pucch_Ncs1:3;  // physical configuration of pucch, for abstraction purposes
-  u32 pucch_uci:13;        // cqi information
-  u32 pucch_ack:2;         // ack/nak information
-  u32 pusch_flag:1;  // 0=none,1=active
+  u8 pucch_flag:3;  // 0,7 = none, 1 = type 1, 2=type 1a, 3=type 1b, 4=type 2, 5=type 2a, 6=type 2b
+  u8 pucch_Ncs1:3;  // physical configuration of pucch, for abstraction purposes
+  u16 pucch_uci:13;        // cqi information
+  u8 pucch_ack:2;         // ack/nak information
+  u8 pusch_flag:1;  // 0=none,1=active
   u32 pusch_uci;     // uci information on pusch
-  u32 pusch_ri:2;    // ri information on pusch
-  u32 pusch_ack:2;   // ack/nak on pusch
-  u32 prach_flag:1;  // 0=none,1=active
-  u32 prach_id:6;    // this is the PHY preamble index for the prach
+  u8 pusch_ri:2;    // ri information on pusch
+  u8 pusch_ack:2;   // ack/nak on pusch
+  u8 prach_flag:1;  // 0=none,1=active
+  u8 prach_id:6;    // this is the PHY preamble index for the prach
 } UE_cntl;
 
 #define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
-
+#define MAX_NUM_DCI 5
 typedef struct {
   eNB_cntl cntl;
   u8 num_common_dci;
   u8 num_ue_spec_dci;
-  DCI_ALLOC_t dci_alloc;
+  DCI_ALLOC_t dci_alloc[MAX_NUM_DCI];
+  u8 dlsch_type[MAX_NUM_DCI];
+  u8 harq_pid[MAX_NUM_DCI];
+  u8 ue_id[MAX_NUM_DCI];
+  u16 tbs[MAX_NUM_DCI*2];    // times 2 for dual-stream MIMO formats
   u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
 } eNB_transport_info_t ;
 
+/*typedef struct {
+  eNB_cntl cntl;
+  u8 num_common_dci;
+  u8 num_ue_spec_dci;
+  DCI_ALLOC_t dci_alloc;
+  u8 dlsch_info[6*MAX_NUM_DCI + MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
+} eNB_transport_info_rx_t ;
+*/
+
 typedef struct {
   UE_cntl cntl;
-  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
+  u16 rnti[NUMBER_OF_eNB_MAX];
+  u8 num_eNB;
+  u8 eNB_id[NUMBER_OF_eNB_MAX]; 
+  u8 harq_pid[NUMBER_OF_eNB_MAX];
+  u16 tbs[NUMBER_OF_eNB_MAX];
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_eNB_MAX];
 } UE_transport_info_t ;
 
-void clear_eNB_transport_info(u8);
-void clear_UE_transport_info(u8);
+/*! \brief */
+typedef struct bypass_msg_header {
+  unsigned char  Message_type; /*! \brief control or data*/
+  //unsigned char  nb_master; /*! \brief */
+  unsigned char  master_id; /*! \brief */
+  unsigned int   nb_enb; /*! \brief */
+  unsigned int   nb_ue; /*! \brief */
+  unsigned int   nb_flow; /*! \brief */
+  unsigned int   last_slot;
+}bypass_msg_header_t;
+
+typedef struct bypass_proto2multicast_header_t {
+  unsigned int      size;
+} bypass_proto2multicast_header_t;
+
+
+
+#define NUMBER_OF_MASTER_MAX   20
+//#define NUMBER_OF_eNB_MAX 3
+//#define NUMBER_OF_UE_MAX 32
+
+typedef struct {
+  unsigned char nb_ue;
+  unsigned char first_ue;
+  unsigned char nb_enb;
+  unsigned char first_enb;
+}master_info_t;
+
+
+typedef struct {
+  master_info_t master[NUMBER_OF_MASTER_MAX];
+  unsigned char nb_ue_local;
+  unsigned char nb_ue_remote;
+  unsigned char nb_enb_local;
+  unsigned char nb_enb_remote;
+  unsigned char first_enb_local;
+  unsigned char first_ue_local;
+  unsigned short master_id;
+  unsigned char nb_master;
+  unsigned int master_list;
+  unsigned int is_primary_master;
+  unsigned int ethernet_flag;
+  unsigned char multicast_group;
+}emu_info_t; 
 
 #endif //
 

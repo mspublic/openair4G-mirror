@@ -1,3 +1,12 @@
+/*! \file multicast.h
+* \brief 
+* \author Lionel Gauthier and Navid Nikaein 
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: navid.nikaein@eurecom.fr
+*/ 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -48,7 +57,7 @@ static fd_set   socks;          /* Socket file descriptors we want to wake up fo
 static int      highsock;       /* Highest #'d file descriptor, needed for select() */
 static pthread_t main_loop_thread;
 static void (*rx_handler) (unsigned int, char*);
-
+static unsigned char multicast_group; 
 //------------------------------------------------------------------------------
 void
 multicast_link_init ()
@@ -178,8 +187,8 @@ multicast_link_read ()
 
   /* Run through our sockets and check to see if anything
      happened with them, if so 'service' them. */
-
-  for (group = 2; group < MULTICAST_LINK_NUM_GROUPS; group++) {
+  
+  for (group = multicast_group; group < MULTICAST_LINK_NUM_GROUPS; group++) {
     if (FD_ISSET (group_list[group].socket, &socks))
       multicast_link_read_data (group);
   }                             /* for (all entries in queue) */
@@ -231,10 +240,11 @@ multicast_link_main_loop (void *param)
 
 //-----------------------------------------------------------------------------
 void
-multicast_link_start (  void (*rx_handlerP) (unsigned int, char*))
+multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char multicast_group)
 {
   //-----------------------------------------------------------------------------
   rx_handler = rx_handlerP;
+  multicast_group = multicast_group;
   msg("[MULTICAST] LINK START: handler=%p\n",rx_handler);
 #ifdef BYPASS_PHY  
   //  pthread_mutex_init(&Bypass_phy_wr_mutex,NULL);

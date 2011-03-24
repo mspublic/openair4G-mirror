@@ -1,3 +1,12 @@
+/*! \file socket.c
+* \brief 
+* \author Lionel Gauthier 
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: lionel.gauthier@eurecom.fr
+*/ 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

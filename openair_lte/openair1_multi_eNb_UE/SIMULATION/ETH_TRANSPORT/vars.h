@@ -1,9 +1,12 @@
-/*________________________bypass_session_layer_vars.h________________________
+/*! \file vars.h
+* \brief specifies the variables for phy emulation
+* \author Navid Nikaein and Raymomd Knopp and Hicham Anouar
+* \date 2011
+* \version 1.0 
+* \company Eurecom
+* \email: navid.nikaein@eurecom.fr
+*/ 
 
- Authors : Hicham Anouar
- Company : EURECOM
- Emails  : anouar@eurecom.fr
-________________________________________________________________*/
 #ifdef RTAI_ENABLED
 #include <rtai_posix.h>
 #else
@@ -15,10 +18,12 @@ ________________________________________________________________*/
 #    define __BYPASS_SESSION_LAYER_VARS_H__
 
 unsigned char Emulation_status;
-unsigned int Master_list=0;
-unsigned short Master_id;
+unsigned char emu_tx_status;
+unsigned char emu_rx_status;
+//unsigned int Master_list=0;
+//unsigned short Master_id;
+//unsigned int Is_primary_master;
 
-unsigned int Is_primary_master;
 pthread_mutex_t emul_low_mutex;
 pthread_cond_t emul_low_cond;
 char emul_low_mutex_var;
@@ -34,5 +39,9 @@ u16 eNB_transport_info_TB_index[NUMBER_OF_eNB_MAX];
 
 UE_transport_info_t UE_transport_info[NUMBER_OF_UE_MAX];
 u16 UE_transport_info_TB_index[NUMBER_OF_UE_MAX];
+
+UE_cntl ue_cntl_delay[2];
+
+emu_info_t emu_info;
 
 #endif
