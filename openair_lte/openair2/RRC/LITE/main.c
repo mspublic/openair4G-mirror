@@ -731,8 +731,7 @@ void rrc_ch_decode_dcch(u8 Mod_id,  u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   u16 Idx,In_idx;
 
   asn_dec_rval_t dec_rval;
-  UL_DCCH_Message_t uldcchmsg;
-  UL_DCCH_Message_t *ul_dcch_msg=&uldcchmsg;
+  UL_DCCH_Message_t *ul_dcch_msg;
 
   int i;
 
