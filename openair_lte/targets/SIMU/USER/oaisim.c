@@ -15,8 +15,6 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
-//#include "SIMULATION/ETH_TRANSPORT/vars.h"
-//#include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -700,7 +698,7 @@ int main(int argc, char **argv) {
   lte_subframe_t direction;
 
   int OCG_flag =0;
-  OAI_Emulation_ * emulation_scen;
+  OAI_Emulation * emulation_scen;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -813,16 +811,16 @@ int main(int argc, char **argv) {
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
   
   //set_comp_log(EMU,  LOG_INFO, LOG_MED);
- 
+ #ifdef OCG
   if (OCG_flag==1){ // activate OCG
     printf("start\n");
     emulation_scen= OCG_main();
     LOG_I(MAC,"the area is x %f y %f\n",
-	  emulation_scen->envi_config_.area_.x_,
-	  emulation_scen->envi_config_.area_.y_);
+	  emulation_scen->envi_config.area.x,
+	  emulation_scen->envi_config.area.y);
     abstraction_flag=1;
   }
- 
+#endif 
   //if ( (ethernet_flag==1) || (abstraction_flag==1) )
   //ret=netlink_init();
   
