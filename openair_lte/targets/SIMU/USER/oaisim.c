@@ -12,7 +12,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "UTIL/LOG/log_if.h"
-#include "RRC/MESH/vars.h"
+#include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
 //#include "SIMULATION/ETH_TRANSPORT/vars.h"
