@@ -793,7 +793,8 @@ void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
   u16 Idx,UE_index,In_idx;
 
   asn_dec_rval_t dec_rval;
-  UL_CCCH_Message_t *ul_ccch_msg;
+  UL_CCCH_Message_t ulccchmsg;
+  UL_CCCH_Message_t *ul_ccch_msg=&ulccchmsg;
   RRCConnectionRequest_r8_IEs_t *rrcConnectionRequest;
 
 
