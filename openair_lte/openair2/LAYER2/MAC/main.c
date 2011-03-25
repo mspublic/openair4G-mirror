@@ -155,8 +155,8 @@ int mac_top_init(){
 ////  add_openair2_stats();
 #endif
 #endif  
-
-  init_transport_channels(2);
+ 
+  init_transport_channels(2); 
 
   // Set up DCIs for TDD 5MHz Config 1..6
   for (i=0;i<NB_CH_INST;i++) {
@@ -219,13 +219,15 @@ int mac_init_global_param(){
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   mac_xface->chbch_phy_sync_success=chbch_phy_sync_success;
   Mac_rlc_xface->macphy_exit=  mac_xface->macphy_exit;
-  Mac_rlc_xface->frame = -1;
+  Mac_rlc_xface->frame = 0;
   //  Mac_rlc_xface->mac_config_req=mac_config_req;
   //  Mac_rlc_xface->mac_meas_req=mac_meas_req;
   Mac_rlc_xface->rrc_rlc_config_req=rrc_rlc_config_req;
   Mac_rlc_xface->rrc_rlc_data_req=rrc_rlc_data_req;
   Mac_rlc_xface->rrc_rlc_register_rrc=rrc_rlc_register_rrc;
-  
+
+  Mac_rlc_xface->rrc_mac_config_req=rrc_mac_config_req;
+
   msg("[MAC]INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc); 
   
   Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
@@ -290,7 +292,10 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
-  
+  mac_xface->get_transmission_mode     = get_transmission_mode;
+  mac_xface->get_rballoc               = get_rballoc;
+  mac_xface->get_nb_rb                 = conv_nprb;
+
   //UE MAC functions    
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
@@ -308,7 +313,16 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS                = get_TBS;
   mac_xface->get_nCCE_max           = get_nCCE_max;
-  
+
+  mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;
+  mac_xface->phy_config_sib1_ue    = phy_config_sib1_ue;
+
+  mac_xface->phy_config_sib2_eNB        = phy_config_sib2_eNB;
+  mac_xface->phy_config_sib2_ue         = phy_config_sib2_ue;
+
+  mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
+  mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
+
   msg("ALL INIT OK\n");
    
   mac_xface->frame=0;

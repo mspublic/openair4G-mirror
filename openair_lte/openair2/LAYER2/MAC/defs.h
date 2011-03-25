@@ -22,18 +22,15 @@ ________________________________________________________________*/
 #include "COMMON/platform_constants.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "PHY/defs.h"
+#include "COMMON/platform_types.h"
+#include "COMMON/platform_constants.h"
+#include "RadioResourceConfigCommon.h"
+#include "RadioResourceConfigDedicated.h"
+#include "TDD-Config.h"
 
 //#ifdef PHY_EMUL
 //#include "SIMULATION/PHY_EMULATION/impl_defs.h"
 //#endif
-
-/** @addtogroup _openair_mac_layer_specs_ 
-* @{
- This subclause gives an overview of the mechanisms and interfaces provided MAC Layer.
-
-* @}
-*/
-
 
 /** @defgroup _mac_impl_ MAC Layer Reference Implementation
  * @ingroup _ref_implementation_
@@ -43,12 +40,12 @@ ________________________________________________________________*/
 #define BCCH_PAYLOAD_SIZE_MAX 128  
 #define CCCH_PAYLOAD_SIZE_MAX 128    
 #define SCH_PAYLOAD_SIZE_MAX 1024
-/// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311)
+/// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 #define BCCH 3
 #define CCCH 0
 #define DCCH 1
 #define DTCH_BD 2
-#define DTCH    4
+#define DTCH    3
 #define DTCH_OFFSET DTCH+NB_RAB_MAX 
 
 #ifdef USER_MODE
@@ -137,7 +134,6 @@ typedef struct {
 
 
 typedef struct {
-
   u8 Num_ue_spec_dci ; 
   u8 Num_common_dci  ; 
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
@@ -209,7 +205,7 @@ typedef struct {
 typedef struct {
   
   u16 rnti;
-  u16 weigth;
+  u16 weight;
   u16 subframe;
   u16 serving_num;  
   UE_DLSCH_STATUS status;
@@ -231,10 +227,13 @@ typedef struct{
   u8 DLSCH_dci_size_bits;
 
   /// DCI buffer for DLSCH
-  u8 DLSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1];
+  u8 DLSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1][8];
+
+  /// Number of Allocated RBs after scheduling (priod to frequency allocation)
+  u16 nb_rb[8];
 
   /// DCI buffer for ULSCH
-  u8 ULSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1];
+  u8 ULSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1][8];
 
   // Logical channel info for link with RLC
 
@@ -261,8 +260,10 @@ typedef struct {
   u8 RA_dci_fmt2;
   /// Flag to indicate the eNB should generate RAR.  This is triggered by detection of PRACH
   u8 generate_rar;
-  /// Flag to indicate the eNB should generate RRC.  This is triggered by first ULSCH reception at eNB for new user.
+  /// Flag to indicate the eNB should generate RRCConnectionSetup upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   u8 generate_rrcconnsetup;
+  /// Flag to indicate the eNB should generate the DCI for RRCConnectionSetup, after getting the SDU from RRC.
+  u8 generate_rrcconnsetup_dci;
   /// Flag to indicate that eNB is waiting for ACK that UE has received RRCConnectionSetup.
   u8 wait_ack_rrcconnsetup;
   /// UE RNTI allocated during RAR
@@ -286,8 +287,10 @@ typedef struct{
   DLSCH_PDU DLSCH_pdu[NB_CNX_CH+1][2];
   /// DCI template and MAC connection parameters for UEs
   UE_TEMPLATE UE_template[NB_CNX_CH];
-  /// DCI template and MAC connection parameters for RA processes
+  /// DCI template and MAC connection for RA processes
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
+  /// BCCH active flag
+  u8 bcch_active;
 }CH_MAC_INST;
 
 
@@ -295,7 +298,9 @@ typedef struct{
 
 typedef struct{
   u16 Node_id;
+  /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
+  /// Incoming DLSCH pdu for PHY
   DLSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
   //ULSCH_PDU DLSCH_pdu[NB_CNX_UE][2];
 }UE_MAC_INST;
@@ -305,9 +310,48 @@ typedef struct{
 
 
 
+int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
+		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       TDD_Config_t *tdd_Config,
+		       u8 *SIwindowsize,
+		       u16 *SIperiod);
 
+/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, RRCConnectionSetup or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For RRCConnectionSetup it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) 
+for the message.
+@param Mod_id Instance ID of eNB
+@param subframe Subframe number on which to act
+@param nprb Pointer to current PRB count
+@param nCCE Pointer to current nCCE count
+*/
+void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE);
 
+/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param Mod_id Instance ID of eNB
+@param subframe Subframe number on which to act
+@param nprb Pointer to current PRB count
+@param nCCE Pointer to current nCCE count
+*/
+void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
 
+/** \brief ULSCH Scheduling.
+@param Mod_id Instance ID of eNB
+@param subframe Subframe number on which to act
+@param nCCE Pointer to current nCCE count
+*/
+void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE);
+
+/** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
+*/
+void fill_DLSCH_dci(u8 Mod_id,u8 subframe);
+
+/** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
+@param Mod_id Instance ID of eNB
+@param subframe Subframe on which to act
+@param nb_rb_used0 Number of PRB used by SI/RA
+@param nCCE_used Number of CCE used by SI/RA
+*/
+void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 
 
 //main.c
@@ -342,8 +386,29 @@ s8 find_active_UEs(u8 Mod_id);
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
+
+/** \brief Round-robin scheduler for ULSCH traffic.
+@param Mod_id Instance ID for eNB
+@param subframe Subframe number on which to act
+@returns UE index that is to be scheduled if needed/room
+*/
 u8 schedule_next_ulue(u8 Mod_id, u8 UE_id,u8 subframe);
-u8 schedule_next_dlue(u8 Mod_id, u8 UE_id,u8 subframe);
+
+/** \brief Round-robin scheduler for DLSCH traffic.
+@param Mod_id Instance ID for eNB
+@param subframe Subframe number on which to act
+@returns UE index that is to be scheduled if needed/room
+*/
+u8 schedule_next_dlue(u8 Mod_id, u8 subframe);
+
+/* \brief Allocates a set of PRBS for a particular UE.  This is a simple function for the moment, later it should process frequency-domain CQI information and/or PMI information.  Currently it just returns the first PRBS that are available in the subframe based on the number requested.
+@param UE_id Index of UE on which to act
+@param nb_rb Number of PRBs allocated to UE by scheduler
+@param rballoc Pointer to bit-map of current PRB allocation given to previous users/control channels.  This is updated for subsequent calls to the routine.
+@returns an rballoc bitmap for resource type 0 allocation (DCI).
+*/
+u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
+
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
