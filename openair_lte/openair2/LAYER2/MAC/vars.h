@@ -31,7 +31,7 @@ RRC_XFACE *Rrc_xface;
 MAC_xface *mac_xface;
 #else
 #include "PHY_INTERFACE/extern.h"
-#include "RRC/MESH/extern.h"
+#include "RRC/LITE/extern.h"
 #endif
 
 u8 Is_rrc_registered;

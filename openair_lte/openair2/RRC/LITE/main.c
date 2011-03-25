@@ -10,7 +10,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/MESH/MESSAGES/asn1_msg.h"
+#include "RRC/LITE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"
 #include "DL-CCCH-Message.h"

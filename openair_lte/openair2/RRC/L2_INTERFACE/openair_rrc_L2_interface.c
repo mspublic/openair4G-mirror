@@ -50,7 +50,7 @@ ________________________________________________________________*/
 #ifdef CELLULAR
 #include "rrc_L2_proto.h"
 #else
-#include "RRC/MESH/defs.h"
+#include "RRC/LITE/defs.h"
 #endif //CELLULAR
 #include "COMMON/mac_rrc_primitives.h"
 #include "openair_rrc_L2_interface.h"

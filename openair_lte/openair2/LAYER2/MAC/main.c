@@ -29,7 +29,7 @@ ________________________________________________________________*/
 #include "PHY/defs.h"
 #include "SCHED/defs.h"
 #include "LAYER2/PDCP/pdcp.h"
-#include "RRC/MESH/defs.h"
+#include "RRC/LITE/defs.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL

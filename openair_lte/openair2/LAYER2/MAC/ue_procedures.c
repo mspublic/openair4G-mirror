@@ -16,7 +16,7 @@
 #include "PHY_INTERFACE/defs.h"
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/MESH/extern.h"
+#include "RRC/LITE/extern.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
