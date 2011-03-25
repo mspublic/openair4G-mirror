@@ -473,8 +473,8 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
   asn_dec_rval_t dec_rval;
   int i;
 
-  msg("[RRC][UE %d] Decoding DL-CCCH message\n",Mod_id);
-  for (i=0;i<30;i++)
+  msg("[RRC][UE %d] Decoding DL-CCCH message (%d bytes)\n",Mod_id,Srb_info->Rx_buffer.W_idx);
+  for (i=0;i<Srb_info->Rx_buffer.W_idx;i++)
     msg("%x.",Srb_info->Rx_buffer.Payload[i]);
   msg("\n");
 
