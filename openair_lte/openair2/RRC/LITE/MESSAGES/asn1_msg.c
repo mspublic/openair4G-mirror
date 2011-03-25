@@ -33,12 +33,12 @@
 #include "PHY/defs.h"
 
 void assign_enum(ENUMERATED_t *x,uint8_t val) {
-  uint8_t *buf=(uint8_t *)malloc(1);
+  uint8_t *buf=(uint8_t *)malloc(4);
   x->buf = buf;
   *buf=val;
   x->size=1;
 }
-
+ 
 
 uint8_t do_SIB1(uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
@@ -61,19 +61,19 @@ uint8_t do_SIB1(uint8_t *buffer,
   asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;  
 
 
-  dummy=2;ASN_SEQUENCE_ADD(PLMN_identity_info.plmn_Identity.mcc,&dummy);
-  dummy=6;ASN_SEQUENCE_ADD(PLMN_identity_info.plmn_Identity.mcc,&dummy);
-  dummy=2;ASN_SEQUENCE_ADD(PLMN_identity_info.plmn_Identity.mcc,&dummy);
+  dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
+  dummy=6;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
+  dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
 
   PLMN_identity_info.plmn_Identity.mnc.list.size=0;
   PLMN_identity_info.plmn_Identity.mnc.list.count=0;
-  dummy=8;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc,&dummy);
-  dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc,&dummy);
+  dummy=8;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
+  dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
   assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved); 
 
 
 
-  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList,&PLMN_identity_info);
+  ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
 
 
   // 16 bits
@@ -95,6 +95,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   assign_enum(&sib1->cellAccessRelatedInfo.cellBarred,SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred);  
 
   assign_enum(&sib1->cellAccessRelatedInfo.intraFreqReselection,SystemInformationBlockType1__cellAccessRelatedInfo__intraFreqReselection_allowed);
+  sib1->cellAccessRelatedInfo.csg_Indication=0;
 
   sib1->cellSelectionInfo.q_RxLevMin=-70;
   sib1->cellSelectionInfo.q_RxLevMinOffset=NULL;
@@ -106,9 +107,9 @@ uint8_t do_SIB1(uint8_t *buffer,
   assign_enum(&sib_type,SIB_Type_sibType3);
   
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&sib1->schedulingInfoList,&schedulingInfo);
-
-  sib1->tdd_Config = calloc(1,sizeof(*sib1->tdd_Config));
+  ASN_SEQUENCE_ADD(&sib1->schedulingInfoList.list,&schedulingInfo);
+ 
+  sib1->tdd_Config = calloc(1,sizeof(struct TDD_Config));
   
   assign_enum(&sib1->tdd_Config->subframeAssignment,TDD_Config__subframeAssignment_sa3);
   assign_enum(&sib1->tdd_Config->specialSubframePatterns,TDD_Config__specialSubframePatterns_ssp0);
@@ -117,7 +118,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->systemInfoValueTag=0;
   //  sib1.nonCriticalExtension = calloc(1,sizeof(*sib1.nonCriticalExtension));
 
-  xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
+  // xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformationBlockType1,
 				   (void*)sib1,
@@ -138,7 +139,7 @@ uint8_t do_SIB23(uint8_t *buffer,
   //  SystemInformationBlockType2_t *sib2;
   //  SystemInformationBlockType3_t *sib3;
 
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member sib2_part,sib3_part;
+  TypeAndInfoStruct sib2_part,sib3_part;
 
 
   asn_enc_rval_t enc_rval;
