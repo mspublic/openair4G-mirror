@@ -118,7 +118,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->systemInfoValueTag=0;
   //  sib1.nonCriticalExtension = calloc(1,sizeof(*sib1.nonCriticalExtension));
 
-  // xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
+  xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformationBlockType1,
 				   (void*)sib1,
@@ -139,8 +139,8 @@ uint8_t do_SIB23(uint8_t *buffer,
   //  SystemInformationBlockType2_t *sib2;
   //  SystemInformationBlockType3_t *sib3;
 
-  TypeAndInfoStruct sib2_part,sib3_part;
 
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member sib2_part,sib3_part;
 
   asn_enc_rval_t enc_rval;
 
@@ -446,6 +446,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   RRCConnectionSetup_t *rrcConnectionSetup;
 
+  memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
   dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
   dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionSetup;
   rrcConnectionSetup          = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionSetup;
@@ -490,7 +491,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
 
 
-  ASN_SEQUENCE_ADD(SRB_list,SRB1_config2);
+  ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
 
   // PhysicalConfigDedicated
 
@@ -704,7 +705,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
 
 
-  ASN_SEQUENCE_ADD(SRB_list,SRB2_config2);
+  ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
 
   // Configure DRB
 
@@ -745,7 +746,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
 
-  ASN_SEQUENCE_ADD(DRB_list,DRB_config2);
+  ASN_SEQUENCE_ADD(&DRB_list->list,DRB_config2);
 
 
   
