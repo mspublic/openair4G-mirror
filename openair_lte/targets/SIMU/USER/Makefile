@@ -1,5 +1,5 @@
-CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
-#CC = gcc-4.3
+#CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
+CC = gcc
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -18,6 +18,7 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/MESH/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
+CFLAGS += -I/usr/include/libxml2 -lxml2
 
 #CFLAGS += -DXFORMS
 

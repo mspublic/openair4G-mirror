@@ -14,6 +14,7 @@
 #include "UTIL/LOG/log_if.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
+#include "UTIL/OCG/OCG.h"
 //#include "SIMULATION/ETH_TRANSPORT/vars.h"
 //#include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif
@@ -69,6 +70,20 @@ void init_bypass() {
   bypass_init(emul_tx_handler,emul_rx_handler);
 }
 
+log_mapping level_names[] =
+{
+    {"emerg", LOG_EMERG},
+    {"alert", LOG_ALERT},
+    {"crit", LOG_CRIT},
+    {"err", LOG_ERR},
+    {"warn", LOG_WARNING},
+    {"notice", LOG_NOTICE},
+    {"info", LOG_INFO},
+    {"debug", LOG_DEBUG},
+    {"trace", LOG_TRACE},
+    {NULL, -1}
+};
+
 
 #endif
 
@@ -83,7 +98,14 @@ void help(void) {
   printf("-s snr_dB set a fixed (average) SNR\n");
   printf("-k Set the Ricean factor (linear)\n");
   printf("-t Set the delay spread (microseconds)\n");
-  printf("-f Set the forgetting factor for time-variation\n");
+  printf("-f Set the forgetting factor for time-variation\n"); 
+  printf("-b Set the number of local eNB\n");
+  printf("-u Set the number of local UE\n");
+  printf("-M Set the machine ID for Ethernet-based emullation\n");
+  printf("-p Set the total number of machine in emulation - valid if M is set\n");
+  printf("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
+  printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
+  printf("-c Activate the config generator (OCG) - used in conjunction with openair emu web portal\n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
 }
 
@@ -627,15 +649,16 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   }
   
 #ifdef IFFT_FPGA
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  free(txdata[0]);
-  free(txdata[1]);
-  free(txdata);
+  if (abstraction_flag==0){
+    free(txdataF2[0]);
+    free(txdataF2[1]);
+    free(txdataF2);
+    free(txdata[0]);
+    free(txdata[1]);
+    free(txdata);
+  }
 #endif 
 }
-
 
 
 int main(int argc, char **argv) {
@@ -669,11 +692,15 @@ int main(int argc, char **argv) {
 #ifdef EMOS
   fifo_dump_emos emos_dump;
 #endif
-  u8 nb_ue_local=1,nb_ue_remote=0;
-  u8 nb_eNB_local=1,nb_eNB_remote=0;
-  u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
+  //u8 nb_ue_local=1,nb_ue_remote=0;
+  //u8 nb_eNB_local=1,nb_eNB_remote=0;
+  //u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
+ 
+  char * g_log_level="trace"; // by default global log level is set to trace 
+  lte_subframe_t direction;
 
-  u8 NB_MACHINE;
+  int OCG_flag =0;
+  OAI_Emulation_ * emulation_scen;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -686,15 +713,29 @@ int main(int argc, char **argv) {
   
   
   //default parameters
+  emu_info.is_primary_master=0;
+  emu_info.master_list=0;
+  emu_info.nb_ue_remote=0;
+  emu_info.nb_enb_remote=0;
+  emu_info.first_ue_local=0;
+  emu_info.first_enb_local=0;
+  emu_info.master_id=0;
+  emu_info.nb_master =0;
+  emu_info.nb_ue_local= 1;
+  emu_info.nb_enb_local= 1;
+  emu_info.ethernet_flag=0;
+  emu_info.multicast_group=0;
+  
   transmission_mode = 1;
   target_dl_mcs = 0;
   rate_adaptation_flag = 1;
   n_frames = 100;
   snr_dB = 30;
 
-  while ((c = getopt (argc, argv, "haet:k:x:m:rn:s:f:u:U:b:B:M:")) != -1)
+  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l")) != -1)
+
     {
-      switch (c)
+       switch (c)
 	{
 	case 'h':
 	  help();
@@ -724,55 +765,101 @@ int main(int argc, char **argv) {
 	  forgetting_factor = atof(optarg);
 	  break;
 	case 'u':
-	  nb_ue_local = atoi(optarg);
+	  emu_info.nb_ue_local = atoi(optarg);
 	  break;
-	case 'U':
-	  nb_ue_remote = atoi(optarg);
-	  break;
+	  //	case 'U':
+	  //nb_ue_remote = atoi(optarg);
+	  //break;
 	case 'b':
-	  nb_eNB_local = atoi(optarg);
+	  emu_info.nb_enb_local = atoi(optarg);
 	  break;
-	case 'B':
-	  nb_eNB_remote = atoi(optarg);
-	  break;
+	  //	case 'B':
+	  // nb_eNB_remote = atoi(optarg);
+	  //break;
 	case 'a':
 	  abstraction_flag=1;
+	  break;
+	case 'p':
+	  emu_info.nb_master = atoi(optarg);
 	  break;
 	case 'M':
 	  abstraction_flag=1;
 	  ethernet_flag=1;
 	  ethernet_id = atoi(optarg);
-	  Master_id = ethernet_id;
+	  emu_info.master_id=ethernet_id;
+	  emu_info.ethernet_flag=1;
 	  break;
 	case 'e':
 	  extended_prefix_flag=1;
 	  break;
+	case 'l':
+	  g_log_level=optarg;
+	  break;
+	case 'c':
+	  OCG_flag=1;
+	  break;
+	case 'g':
+	  emu_info.multicast_group=atoi(optarg);
+	  break;	
 	default:
 	  help ();
 	  exit (-1);
 	  break;
 	}
     }
-
-  NB_UE_INST = nb_ue_local + nb_ue_remote;
-  NB_CH_INST = nb_eNB_local + nb_eNB_remote;
+  
+ //initialize the log generator 
+  logInit(map_str_to_int(level_names, g_log_level));
+  LOG_T(LOG,"global log level is set to %s \n",g_log_level );
+  
+  //set_comp_log(EMU,  LOG_INFO, LOG_MED);
  
-  Is_primary_master=0;
-  nb_machine=2;
-  Master_id=ethernet_id;
-  if(!Master_id) 
-    Is_primary_master=1;
-  Master_list=0;
-  j=1;
-  //for(i=0;i<NB_MASTER;i++){
-  for(i=0;i<nb_machine;i++){
-    if(i!=Master_id)
-      Master_list=Master_list+j;
-    //printf("i=%d, MASTER_LIST %d\n",i,Master_list);
-    j*=2;
+#ifdef OCG 
+  if (OCG_flag==1){ // activate OCG
+    printf("start\n");
+    emulation_scen= OCG_main();
+    LOG_I(MAC,"the area is x %f y %f\n",
+	  emulation_scen->envi_config_.area_.x_,
+	  emulation_scen->envi_config_.area_.y_);
+    abstraction_flag=1;
   }
+#endif
+ 
+  //if ( (ethernet_flag==1) || (abstraction_flag==1) )
+//  ret=netlink_init();
+  
+  if (ethernet_flag==1){
+    emu_info.master[emu_info.master_id].nb_ue=emu_info.nb_ue_local;
+    emu_info.master[emu_info.master_id].nb_enb=emu_info.nb_enb_local;
 
+    if(!emu_info.master_id) 
+      emu_info.is_primary_master=1;
+    j=1;
+    for(i=0;i<emu_info.nb_master;i++){
+      if(i!=emu_info.master_id)
+	emu_info.master_list=emu_info.master_list+j;
+      LOG_T(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,emu_info.master_list);
+      j*=2;
+    }
+    LOG_T(EMU,"nb_ue_local %d nb_enb_local %d nb_master %d master id %d\n", 
+	  emu_info.nb_ue_local, 
+	  emu_info.nb_enb_local,
+	  emu_info.nb_master,
+	  emu_info.master_id);
+    
+    //ret=netlink_init();
+    init_bypass();
+    
+    while (emu_tx_status != SYNCED_TRANSPORT ) {
+      LOG_T(EMU, " Waiting for EMU Transport to be synced\n"); 
+      emu_transport_sync();//emulation_tx_rx();
+    }
+  }// ethernet flag
 
+  NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
+  NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
+   
+   
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
 
@@ -924,6 +1011,7 @@ int main(int argc, char **argv) {
   }
 
   // do the srs init
+  /*
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 
     PHY_vars_UE_g[UE_id]->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
@@ -932,16 +1020,14 @@ int main(int argc, char **argv) {
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.transmissionComb = 0;
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.freqDomainPosition = 0;
 
-    PHY_vars_UE_g[UE_id]->prach_timer=0;
-
-    // choose configurations 1 (UE0 SF 1), 3 (UE1 SF 2), 5 (UE2 SF 3)
+     choose configurations 1 (UE0 SF 1), 3 (UE1 SF 2), 5 (UE2 SF 3)
     PHY_vars_UE_g[UE_id]->soundingrs_ul_config_dedicated.srs_ConfigIndex = 1+(UE_id<<1);
     if (UE_id>=3) {
       printf("This SRS config will only work for 3 users! \n");
      
     }
 
-    /// This is for 3 users (SRS can be transmitted in SF 1,2,3,4
+    // This is for 3 users (SRS can be transmitted in SF 1,2,3,4
     PHY_vars_UE_g[UE_id]->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
     
     for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
@@ -955,7 +1041,7 @@ int main(int argc, char **argv) {
       PHY_vars_eNB_g[eNB_id]->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1+(UE_id<<1);
     }
   }
-
+*/
 
   //  init_transport_channels(transmission_mode);
 
@@ -1003,17 +1089,7 @@ int main(int argc, char **argv) {
     }
     
   }
-  else {
-#ifdef LINUX
-    ret=netlink_init();
-#endif
-    if (ethernet_flag == 1) {
-      init_bypass();
-      //exit(-1);
-    }
-  }   
-  //ret=netlink_init();
-  // initialized channel descriptors
+   // initialized channel descriptors
   for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 #ifdef DEBUG_SIM
@@ -1117,26 +1193,42 @@ int main(int argc, char **argv) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-      clear_eNB_transport_info(nb_eNB_local);
-      for (eNB_id=first_eNB_local;eNB_id<(first_eNB_local+nb_eNB_local);eNB_id++) {
-#ifdef DEBUG_SIM
-	printf("[SIM] PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,slot>>1);
-#endif
+
+      if(next_slot %2 ==0)
+	clear_eNB_transport_info(emu_info.nb_enb_local);
+      for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
+	//#ifdef DEBUG_SIM
+	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,next_slot>>1);
+	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
       }
-
+      direction = subframe_select(frame_parms,next_slot>>1);
+      
+      if (ethernet_flag ==1) {
+	if (( (direction == SF_DL) || (direction == SF_S) ) && ((next_slot%2)== 0)){
+	  emu_transport_DL(last_slot,next_slot);
+	  LOG_I(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	}
+      }
       // Call ETHERNET emulation here
-      clear_UE_transport_info(nb_ue_local);
-      for (UE_id=first_eNB_local; UE_id<(first_eNB_local+nb_ue_local);UE_id++)
+      if((next_slot %2) == 0) 
+	clear_UE_transport_info(emu_info.nb_ue_local);
+      for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
-#ifdef DEBUG_SIM
-	  printf("[SIM] PHY procedures UE %d for frame %d, slot %d\n", UE_id,mac_xface->frame,slot);
-	  printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
-#endif
+	  //#ifdef DEBUG_SIM
+	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
+	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
+	  //#endif
 	  phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
 	}
- 
-      if (subframe_select(frame_parms,next_slot>>1) == SF_DL) {
+      if (ethernet_flag == 1){
+	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
+	  emu_transport_UL(last_slot , next_slot);
+	  LOG_I(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	}
+      }
+    
+      if (direction  == SF_DL) {
 	/*
 	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1151,7 +1243,7 @@ int main(int argc, char **argv) {
 	  printf("DL B(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
       }
-      else if (subframe_select(frame_parms,next_slot>>1) == SF_UL) {
+      else if (direction  == SF_UL) {
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1212,7 +1304,7 @@ int main(int argc, char **argv) {
 	write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_dlsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
 	write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
       }
-      */
+      */ 
     }
 
     if ((mac_xface->frame==1)&&(abstraction_flag==0)) {
@@ -1226,14 +1318,11 @@ int main(int argc, char **argv) {
 	do_forms(form[eNB_id][UE_id],PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
 #endif
-    
-    if (ethernet_flag == 1) { 
-      msg("[EMULATION_CONTROL] run emu transceiver\n"); 
-      emulation_tx_rx();
-      mac_xface->frame=mac_xface->frame+1;
-    }
-  
+      
   }
+  // relase all rx state
+  emu_transport_release();
+  
   if (abstraction_flag==0) {
     /*
 #ifdef IFFT_FPGA
