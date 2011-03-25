@@ -44,9 +44,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include "../include/OCG.h"
-#include "../include/OCG_get_opt.h"
-#include "../include/log.h"
+#include "OCG.h"
+#include "OCG_get_opt.h"
+//#include "log.h"
 /*----------------------------------------------------------------------------*/
 
 char filename[FILENAME_LENGTH_MAX];

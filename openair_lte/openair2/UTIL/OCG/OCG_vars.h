@@ -28,7 +28,7 @@ int call_emu_OK; /*!< \brief value: -9999, -1 or 0 */
 int config_mobi_OK; /*!< \brief value: -9999, -1 or 0 */
 int generate_report_OK; /*!< \brief value: -9999, -1 or 0 */
 
-OAI_Emulation_ oai_emulation_;
+OAI_Emulation oai_emulation;
 
 /* @}*/
 #endif

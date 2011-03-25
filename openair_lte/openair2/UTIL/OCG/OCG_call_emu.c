@@ -46,7 +46,7 @@
 //#include "../include/log.h"
 /*----------------------------------------------------------------------------*/
 
-OAI_Emulation_ oai_emulation_;
+OAI_Emulation oai_emulation;
 
 int call_emu(char dst_dir[DIR_LENGTH_MAX]) {
 
@@ -60,65 +60,65 @@ int call_emu(char dst_dir[DIR_LENGTH_MAX]) {
 	system("../../../openair1/SIMULATION/LTE_PHY_L2/physim --help");
 /*
 	fprintf(file, "\nConfiguration by the user is\n\n");
-	fprintf(file, "- envi_config:area:   x   y = %lf  %lf\n", oai_emulation_.envi_config_.area_.x_, oai_emulation_.envi_config_.area_.y_);
+	fprintf(file, "- envi_config:area:   x   y = %lf  %lf\n", oai_emulation.envi_config.area.x_, oai_emulation.envi_config.area.y_);
 	
-	if (oai_emulation_.emu_config_.performance_.layer_.mac_ == 1) {
+	if (oai_emulation.emu_config.performance.layer.mac == 1) {
 		set_comp_log(MAC, LOG_INFO, LOG_DEF_ONLINE);
 	}
 
-	fprintf(file, "             :geography:   %s \n", oai_emulation_.envi_config_.geography_.selected_option_);
-	fprintf(file, "             :topography:   %s \n", oai_emulation_.envi_config_.topography_.selected_option_);
-	fprintf(file, "             :fading:free_space_propagation:   pathloss_exponent   pathloss_0 = %lf   %lf   \n", oai_emulation_.envi_config_.fading_.free_space_propagation_.pathloss_exponent_, oai_emulation_.envi_config_.fading_.free_space_propagation_.pathloss_0_);
+	fprintf(file, "             :geography:   %s \n", oai_emulation.envi_config.geography.selected_option_);
+	fprintf(file, "             :topography:   %s \n", oai_emulation.envi_config.topography.selected_option_);
+	fprintf(file, "             :fading:free_space_propagation:   pathloss_exponent   pathloss_0 = %lf   %lf   \n", oai_emulation.envi_config.fading.free_space_propagation.pathloss_exponent_, oai_emulation.envi_config.fading.free_space_propagation.pathloss_0_);
 	fprintf(file, "             :fading:   the selected small_scale model is ");
-	if (!strcmp(oai_emulation_.envi_config_.fading_.small_scale_.selected_option_, "rayleigh")) {
+	if (!strcmp(oai_emulation.envi_config.fading.small_scale.selected_option_, "rayleigh")) {
 		fprintf(file, "Rayleigh ");
-		fprintf(file, "with delay spread = %lf\n", oai_emulation_.envi_config_.fading_.small_scale_.rayleigh_.delay_spread_);
-	} else if (!strcmp(oai_emulation_.envi_config_.fading_.small_scale_.selected_option_, "rician")) {
+		fprintf(file, "with delay spread = %lf\n", oai_emulation.envi_config.fading.small_scale.rayleigh.delay_spread_);
+	} else if (!strcmp(oai_emulation.envi_config.fading.small_scale.selected_option_, "rician")) {
 		fprintf(file, "Rician ");
-		fprintf(file, "with delay spread = %lf\n", oai_emulation_.envi_config_.fading_.small_scale_.rician_.delay_spread_);
+		fprintf(file, "with delay spread = %lf\n", oai_emulation.envi_config.fading.small_scale.rician.delay_spread_);
 	}
-	fprintf(file, "             :wall_penetration_loss = %d\n", oai_emulation_.envi_config_.wall_penetration_loss_);
-	fprintf(file, "             :noise_power = %lf   \n\n", oai_emulation_.envi_config_.noise_power_);
-	fprintf(file, "- net_config :net_type: %s\n", oai_emulation_.topo_config_.net_type_.selected_option_);
-	fprintf(file, "             :cell_type:   %s\n", oai_emulation_.topo_config_.cell_type_.selected_option_);
-	fprintf(file, "             :number of relays = %d\n", oai_emulation_.topo_config_.relay_.number_of_relays_);
+	fprintf(file, "             :wall_penetration_loss = %d\n", oai_emulation.envi_config.wall_penetration_loss_);
+	fprintf(file, "             :noise_power = %lf   \n\n", oai_emulation.envi_config.noise_power_);
+	fprintf(file, "- net_config :net_type: %s\n", oai_emulation.topo_config.net_type.selected_option_);
+	fprintf(file, "             :cell_type:   %s\n", oai_emulation.topo_config.cell_type.selected_option_);
+	fprintf(file, "             :number of relays = %d\n", oai_emulation.topo_config.relay.number_of_relays_);
 	fprintf(file, "             :eNB_topology is ");
-	if (!strcmp(oai_emulation_.topo_config_.eNB_topology_.selected_option_, "grid")) {
-		fprintf(file, "Grid with %d * %d \n", oai_emulation_.topo_config_.eNB_topology_.grid_.x_, oai_emulation_.topo_config_.eNB_topology_.grid_.y_);
-	} else if (!strcmp(oai_emulation_.topo_config_.eNB_topology_.selected_option_, "hexagonal")) {
-		fprintf(file, "Hexagonal with %d cells\n", oai_emulation_.topo_config_.eNB_topology_.hexagonal_.number_of_cells_);
-	} else if (!strcmp(oai_emulation_.topo_config_.eNB_topology_.selected_option_, "random")) {
+	if (!strcmp(oai_emulation.topo_config.eNB_topology.selected_option_, "grid")) {
+		fprintf(file, "Grid with %d * %d \n", oai_emulation.topo_config.eNB_topology.grid.x_, oai_emulation.topo_config.eNB_topology.grid.y_);
+	} else if (!strcmp(oai_emulation.topo_config.eNB_topology.selected_option_, "hexagonal")) {
+		fprintf(file, "Hexagonal with %d cells\n", oai_emulation.topo_config.eNB_topology.hexagonal.number_of_cells_);
+	} else if (!strcmp(oai_emulation.topo_config.eNB_topology.selected_option_, "random")) {
 		fprintf(file, "Random\n");
 	}
-	fprintf(file, "             :inter_eNB_distance = %lf\n", oai_emulation_.topo_config_.inter_eNB_distance_);
-	fprintf(file, "             :UE_distribution:   %s\n", oai_emulation_.topo_config_.UE_distribution_.selected_option_);
-	fprintf(file, "             :system_bandwidth = %lf\n", oai_emulation_.topo_config_.system_bandwidth_);
-	fprintf(file, "             :UE_frequency = %lf\n", oai_emulation_.topo_config_.UE_frequency_);
-	fprintf(file, "             :mobility:mobility_type   %s \n", oai_emulation_.topo_config_.mobility_.mobility_type_.selected_option_);
-	fprintf(file, "             :mobility:moving_dynamics   min_speed   max_speed   min_pause_time   max_pause_time = %lf %lf %lf %lf\n\n", oai_emulation_.topo_config_.mobility_.moving_dynamics_.min_speed_, oai_emulation_.topo_config_.mobility_.moving_dynamics_.max_speed_, oai_emulation_.topo_config_.mobility_.moving_dynamics_.min_pause_time_, oai_emulation_.topo_config_.mobility_.moving_dynamics_.max_pause_time_);
-	fprintf(file, "- term_config:app_type:   %s \n", oai_emulation_.app_config_.app_type_.selected_option_);
-	fprintf(file, "             :traffic:transport_protocol:   %s \n", oai_emulation_.app_config_.traffic_.transport_protocol_.selected_option_);
+	fprintf(file, "             :inter_eNB_distance = %lf\n", oai_emulation.topo_config.inter_eNB_distance_);
+	fprintf(file, "             :UE_distribution:   %s\n", oai_emulation.topo_config.UE_distribution.selected_option_);
+	fprintf(file, "             :system_bandwidth = %lf\n", oai_emulation.topo_config.system_bandwidth_);
+	fprintf(file, "             :UE_frequency = %lf\n", oai_emulation.topo_config.UE_frequency_);
+	fprintf(file, "             :mobility:mobility_type   %s \n", oai_emulation.topo_config.mobility.mobility_type.selected_option_);
+	fprintf(file, "             :mobility:moving_dynamics   min_speed   max_speed   min_pause_time   max_pause_time = %lf %lf %lf %lf\n\n", oai_emulation.topo_config.mobility.moving_dynamics.min_speed_, oai_emulation.topo_config.mobility.moving_dynamics.max_speed_, oai_emulation.topo_config.mobility.moving_dynamics.min_pause_time_, oai_emulation.topo_config.mobility.moving_dynamics.max_pause_time_);
+	fprintf(file, "- term_config:app_type:   %s \n", oai_emulation.app_config.app_type.selected_option_);
+	fprintf(file, "             :traffic:transport_protocol:   %s \n", oai_emulation.app_config.traffic.transport_protocol.selected_option_);
 	fprintf(file, "             :traffic:   the packet size is ");
-	if (!strcmp(oai_emulation_.app_config_.traffic_.packet_size_.selected_option_, "fixed")) {
-		fprintf(file, "Fixed with value = %lf\n", oai_emulation_.app_config_.traffic_.packet_size_.fixed_.fixed_value_);
-	} else if (!strcmp(oai_emulation_.app_config_.traffic_.packet_size_.selected_option_, "uniform")) {
-		fprintf(file, "Uniform with min = %lf max = %lf \n", oai_emulation_.app_config_.traffic_.packet_size_.uniform_.min_value_, oai_emulation_.app_config_.traffic_.packet_size_.uniform_.max_value_);
+	if (!strcmp(oai_emulation.app_config.traffic.packet_size.selected_option_, "fixed")) {
+		fprintf(file, "Fixed with value = %lf\n", oai_emulation.app_config.traffic.packet_size.fixed.fixed_value_);
+	} else if (!strcmp(oai_emulation.app_config.traffic.packet_size.selected_option_, "uniform")) {
+		fprintf(file, "Uniform with min = %lf max = %lf \n", oai_emulation.app_config.traffic.packet_size.uniform.min_value_, oai_emulation.app_config.traffic.packet_size.uniform.max_value_);
 	}
 	fprintf(file, "             :traffic:   the inter_arrival_time is ");
-	if (!strcmp(oai_emulation_.app_config_.traffic_.packet_size_.selected_option_, "fixed")) {
-		fprintf(file, "Fixed with value = %lf\n\n", oai_emulation_.app_config_.traffic_.inter_arrival_time_.fixed_.fixed_value_);
-	} else if (!strcmp(oai_emulation_.app_config_.traffic_.packet_size_.selected_option_, "uniform")) {
-		fprintf(file, "Uniform with min = %lf max = %lf\n", oai_emulation_.app_config_.traffic_.inter_arrival_time_.uniform_.min_value_, oai_emulation_.app_config_.traffic_.inter_arrival_time_.uniform_.max_value_);
-	} else if (!strcmp(oai_emulation_.app_config_.traffic_.packet_size_.selected_option_, "poisson")) {
-		fprintf(file, "Poisson with lambda = %lf\n", oai_emulation_.app_config_.traffic_.inter_arrival_time_.poisson_.expected_inter_arrival_time_);
+	if (!strcmp(oai_emulation.app_config.traffic.packet_size.selected_option_, "fixed")) {
+		fprintf(file, "Fixed with value = %lf\n\n", oai_emulation.app_config.traffic.inter_arrival_time.fixed.fixed_value_);
+	} else if (!strcmp(oai_emulation.app_config.traffic.packet_size.selected_option_, "uniform")) {
+		fprintf(file, "Uniform with min = %lf max = %lf\n", oai_emulation.app_config.traffic.inter_arrival_time.uniform.min_value_, oai_emulation.app_config.traffic.inter_arrival_time.uniform.max_value_);
+	} else if (!strcmp(oai_emulation.app_config.traffic.packet_size.selected_option_, "poisson")) {
+		fprintf(file, "Poisson with lambda = %lf\n", oai_emulation.app_config.traffic.inter_arrival_time.poisson.expected_inter_arrival_time_);
 	}
-	fprintf(file, "- emu_config :emu_time = %lf\n", oai_emulation_.emu_config_.emu_time_);
-	fprintf(file, "             :performance:metric:   throughput   latency   signalling_overhead = %d %d %d \n", oai_emulation_.emu_config_.performance_.metric_.throughput_, oai_emulation_.emu_config_.performance_.metric_.latency_, oai_emulation_.emu_config_.performance_.metric_.signalling_overhead_);
-	fprintf(file, "             :performance:layer:    mac   rlc   pdcp = %d %d %d \n", oai_emulation_.emu_config_.performance_.layer_.mac_, oai_emulation_.emu_config_.performance_.layer_.rlc_, oai_emulation_.emu_config_.performance_.layer_.pdcp_);
-	fprintf(file, "             :performance:log_emu:	debug   info   warning   error = %d %d %d %d\n", oai_emulation_.emu_config_.performance_.log_emu_.debug_, oai_emulation_.emu_config_.performance_.log_emu_.info_, oai_emulation_.emu_config_.performance_.log_emu_.warning_, oai_emulation_.emu_config_.performance_.log_emu_.error_);
-	fprintf(file, "             :performance:packet_trace:   mac = %d\n\n", oai_emulation_.emu_config_.performance_.packet_trace_.mac_);
+	fprintf(file, "- emu_config :emu_time = %lf\n", oai_emulation.emu_config.emu_time_);
+	fprintf(file, "             :performance:metric:   throughput   latency   signalling_overhead = %d %d %d \n", oai_emulation.emu_config.performance.metric.throughput_, oai_emulation.emu_config.performance.metric.latency_, oai_emulation.emu_config.performance.metric.signalling_overhead_);
+	fprintf(file, "             :performance:layer:    mac   rlc   pdcp = %d %d %d \n", oai_emulation.emu_config.performance.layer.mac_, oai_emulation.emu_config.performance.layer.rlc_, oai_emulation.emu_config.performance.layer.pdcp_);
+	fprintf(file, "             :performance:log_emu:	debug   info   warning   error = %d %d %d %d\n", oai_emulation.emu_config.performance.log_emu.debug_, oai_emulation.emu_config.performance.log_emu.info_, oai_emulation.emu_config.performance.log_emu.warning_, oai_emulation.emu_config.performance.log_emu.error_);
+	fprintf(file, "             :performance:packet_trace:   mac = %d\n\n", oai_emulation.emu_config.performance.packet_trace.mac_);
 
-	fprintf(file, "- profile = %s\n\n", oai_emulation_.profile_);
+	fprintf(file, "- profile = %s\n\n", oai_emulation.profile_);
 */	
 	fclose(file);
 

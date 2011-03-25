@@ -73,22 +73,22 @@ int config_mobi(char mobigen_filename[FILENAME_LENGTH_MAX], char filename[FILENA
 	xmlTextWriterStartElement(writer, "universe");
 
     /* Write an element named "X_ORDER_ID" as child of HEADER. */
-	xmlTextWriterWriteFormatElement(writer, "dimx", "%lf", oai_emulation_.envi_config_.area_.x_);
+	xmlTextWriterWriteFormatElement(writer, "dimx", "%lf", oai_emulation.envi_config.area.x);
     
     /* Write an element named "X_ORDER_ID" as child of HEADER. */
-	xmlTextWriterWriteFormatElement(writer, "dimy", "%lf", oai_emulation_.envi_config_.area_.y_);
+	xmlTextWriterWriteFormatElement(writer, "dimy", "%lf", oai_emulation.envi_config.area.y);
 
 	xmlTextWriterWriteFormatElement(writer, "seed", "%d", 1);
 	
 	xmlTextWriterStartElement(writer, "extension");
 	xmlTextWriterWriteAttribute(writer, "class", "de.uni_stuttgart.informatik.canu.mobisim.simulations.TimeSimulation");
-	xmlTextWriterWriteFormatAttribute(writer, "param", "%lf", oai_emulation_.emu_config_.emu_time_);
+	xmlTextWriterWriteFormatAttribute(writer, "param", "%lf", oai_emulation.emu_config.emu_time);
 	xmlTextWriterEndElement(writer);	
 	
 	xmlTextWriterStartElement(writer, "extension");
 	xmlTextWriterWriteAttribute(writer, "class", "de.uni_stuttgart.informatik.canu.spatialmodel.core.SpatialModel");
-	xmlTextWriterWriteFormatAttribute(writer, "max_x", "%lf", oai_emulation_.envi_config_.area_.x_);
-	xmlTextWriterWriteFormatAttribute(writer, "max_y", "%lf", oai_emulation_.envi_config_.area_.y_);
+	xmlTextWriterWriteFormatAttribute(writer, "max_x", "%lf", oai_emulation.envi_config.area.x);
+	xmlTextWriterWriteFormatAttribute(writer, "max_y", "%lf", oai_emulation.envi_config.area.y);
 	xmlTextWriterWriteAttribute(writer, "min_x", "0");
 	xmlTextWriterWriteAttribute(writer, "min_y", "0");
 	
@@ -127,16 +127,16 @@ int config_mobi(char mobigen_filename[FILENAME_LENGTH_MAX], char filename[FILENA
 	xmlTextWriterStartElement(writer, "extension");
 	xmlTextWriterWriteAttribute(writer, "class", "de.uni_stuttgart.informatik.canu.mobisim.mobilitymodels.RandomWaypointWalk");
 	
-	if (!strcmp(oai_emulation_.topo_config_.mobility_.mobility_type_.selected_option_, "fixed")) {
+	if (!strcmp(oai_emulation.topo_config.mobility.mobility_type.selected_option, "fixed")) {
 		xmlTextWriterWriteFormatElement(writer, "minspeed", "%d", 0);
 		xmlTextWriterWriteFormatElement(writer, "maxspeed", "%d", 0);
 		xmlTextWriterWriteFormatElement(writer, "minstay", "%d", 9999);
 		xmlTextWriterWriteFormatElement(writer, "maxstay", "%d", 9999);
-	} else if (!strcmp(oai_emulation_.topo_config_.mobility_.mobility_type_.selected_option_, "random_waypoint")) {
-		xmlTextWriterWriteFormatElement(writer, "minspeed", "%lf", oai_emulation_.topo_config_.mobility_.moving_dynamics_.min_speed_);
-		xmlTextWriterWriteFormatElement(writer, "maxspeed", "%lf", oai_emulation_.topo_config_.mobility_.moving_dynamics_.max_speed_);
-		xmlTextWriterWriteFormatElement(writer, "minstay", "%lf", oai_emulation_.topo_config_.mobility_.moving_dynamics_.min_pause_time_);
-		xmlTextWriterWriteFormatElement(writer, "maxstay", "%lf", oai_emulation_.topo_config_.mobility_.moving_dynamics_.max_pause_time_);
+	} else if (!strcmp(oai_emulation.topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
+		xmlTextWriterWriteFormatElement(writer, "minspeed", "%lf", oai_emulation.topo_config.mobility.moving_dynamics.min_speed);
+		xmlTextWriterWriteFormatElement(writer, "maxspeed", "%lf", oai_emulation.topo_config.mobility.moving_dynamics.max_speed);
+		xmlTextWriterWriteFormatElement(writer, "minstay", "%lf", oai_emulation.topo_config.mobility.moving_dynamics.min_pause_time);
+		xmlTextWriterWriteFormatElement(writer, "maxstay", "%lf", oai_emulation.topo_config.mobility.moving_dynamics.max_pause_time);
 	}
     /* Close the element named HEADER. */
 	xmlTextWriterEndElement(writer);

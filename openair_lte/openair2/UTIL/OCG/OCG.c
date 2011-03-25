@@ -60,7 +60,7 @@
 #ifdef TEST_OCG 
 int main(int argc, char *argv[]) {
 #else
-  OAI_Emulation_ * OCG_main(void){
+  OAI_Emulation * OCG_main(void){
 #endif  
 	int state = STATE_START_OCG;
 
@@ -183,6 +183,6 @@ int main(int argc, char *argv[]) {
 #ifdef TEST_OCG
 	return 0;
 #else
-	return &oai_emulation_;
+	return &oai_emulation;
 #endif
 }
