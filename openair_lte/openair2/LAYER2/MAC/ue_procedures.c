@@ -141,7 +141,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 #endif
     if (rx_lcids[i] == CCCH) {
 
-      msg("[MAC][UE %d] RX CCCH -> RRC\n",Mod_id);
+      msg("[MAC][UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
       Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
 				  CCCH,
 				  (char *)payload_ptr,rx_lengths[i],CH_index);
