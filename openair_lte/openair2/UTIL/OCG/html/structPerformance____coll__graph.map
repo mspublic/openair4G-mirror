@@ -1,4 +1,0 @@
-<area shape="rect" href="$structLog__Emu__.html" title="{Log_Emu_\n|+ debug_\l+ info_\l+ warning_\l+ error_\l|}" alt="" coords="5,5,99,141">
-<area shape="rect" href="$structMetric__.html" title="{Metric_\n|+ throughput_\l+ latency_\l+ signalling_overhead_\l|}" alt="" coords="123,15,293,132">
-<area shape="rect" href="$structPacket__Trace__.html" title="{Packet_Trace_\n|+ mac_\l|}" alt="" coords="317,32,435,115">
-<area shape="rect" href="$structLayer__.html" title="{Layer_\n|+ mac_\l+ rlc_\l+ pdcp_\l|}" alt="" coords="463,15,537,132">
