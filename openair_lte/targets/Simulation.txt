@@ -1,0 +1,8 @@
+First, you must have all three openair SW directories, openair1, openair2 and openair3 at the same hierarchical level as this directory.
+
+1. The following packages must be available on your system:
+
+	- libxml2
+	- asn1c and the LTE ASN1 files (for information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
+
+2. Go to SIMU/EXAMPLES and run the one_eNB_two_UE.sh script
