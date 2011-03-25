@@ -446,7 +446,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   RRCConnectionSetup_t *rrcConnectionSetup;
 
-  memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+  memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
   dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
   dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionSetup;
   rrcConnectionSetup          = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionSetup;
