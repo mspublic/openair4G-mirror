@@ -15,7 +15,7 @@
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
-#include "RRC/MESH/extern.h"
+#include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #endif
 #define DEBUG_PHY

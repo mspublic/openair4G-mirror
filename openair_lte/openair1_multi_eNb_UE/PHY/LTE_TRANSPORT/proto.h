@@ -200,20 +200,12 @@ s32 generate_pbch(mod_sym_t **txdataF,
 
 s32 generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,u8 *pbch_pdu);
 
-/** \fn qpsk_qpsk(s16 *stream0_in,
-    s16 *stream1_in,
-    s16 *stream0_out,
-    s16 *rho01,
-    s32 length
-    ) 
-
-    \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
+/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
-    @param length in complex channel outputs
-*/
+    @param length in complex channel outputs*/
 void qpsk_qpsk(s16 *stream0_in,
 	       s16 *stream1_in,
 	       s16 *stream0_out,
@@ -221,8 +213,7 @@ void qpsk_qpsk(s16 *stream0_in,
 	       s32 length
 	       );
 
-/**
-    \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
+/** \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
@@ -232,9 +223,7 @@ void qpsk_qpsk(s16 *stream0_in,
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr
-*/
-
+    @param llr128p pointer to pointer to symbol in dlsch_llr*/
 s32 dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 			s32 **rxdataF_comp,
 			s32 **rxdataF_comp_i,
@@ -591,12 +580,10 @@ u16 rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
 		 u8 eNB_id,
 		 u8 pbch_phase);
 
-/*! \brief PBCH unscrambling
-  This is similar to pbch_scrabling with the difference that inputs are signed s16s (llr values) and instead of flipping bits we change signs.
+/*! \brief PBCH scrambling. Applies 36.211 PBCH scrambling procedure.
   \param frame_parms Pointer to frame descriptor
   \param coded_data Output of the coding and rate matching
-  \param length Length of the sequence
-*/ 
+  \param length Length of the sequence*/ 
 void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		     u8* coded_data,
 		     u32 length);
@@ -606,29 +593,25 @@ void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   \param frame_parms Pointer to frame descriptor
   \param llr Output of the demodulator
   \param length Length of the sequence
-  \param frame_mod4 Frame number modulo 4
-*/ 
+  \param frame_mod4 Frame number modulo 4*/ 
 void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 		       s8* llr,
 		       u32 length,
 		       u8 frame_mod4);
 
-/*! \brief DCI Encoding
-  This routine codes an arbitrary DCI PDU after appending the 8-bit 3GPP CRC.  It then applied sub-block interleaving and rate matching.
+/*! \brief DCI Encoding. This routine codes an arbitrary DCI PDU after appending the 8-bit 3GPP CRC.  It then applied sub-block interleaving and rate matching.
   \param a Pointer to DCI PDU (coded in bytes)
   \param A Length of DCI PDU in bits
   \param E Length of DCI PDU in coded bits
   \param e Pointer to sequence
-  \param rnti RNTI for CRC scrambling
-*/ 
+  \param rnti RNTI for CRC scrambling*/ 
 void dci_encoding(u8 *a,
 		  u8 A,
 		  u16 E,
 		  u8 *e,
 		  u16 rnti);
 
-/*! \brief Top-level DCI entry point.
-  This routine codes an set of DCI PDUs and performs PDCCH modulation, interleaving and mapping.
+/*! \brief Top-level DCI entry point. This routine codes an set of DCI PDUs and performs PDCCH modulation, interleaving and mapping.
   \param num_ue_spec_dci  Number of UE specific DCI pdus to encode
   \param num_common_dci Number of Common DCI pdus to encode
   \param dci_alloc Allocation vectors for each DCI pdu
@@ -660,14 +643,12 @@ void generate_16qam_table(void);
 
 u16 extract_crc(u8 *dci,u8 DCI_LENGTH);
 
-/*! \brief LLR from two streams.
-  This function takes two streams (qpsk modulated) and calculates the LLR, considering one stream as interference.
+/*! \brief LLR from two streams. This function takes two streams (qpsk modulated) and calculates the LLR, considering one stream as interference.
   \param stream0_in pointer to first stream0
   \param stream1_in pointer to first stream1
   \param stream0_out pointer to output stream
-  \param rho pointer to correlation matrix
-  \param length
-*/ 
+  \param rho01 pointer to correlation matrix
+  \param length*/ 
 void qpsk_qpsk(s16 *stream0_in,
 	       s16 *stream1_in,
 	       s16 *stream0_out,
@@ -675,11 +656,28 @@ void qpsk_qpsk(s16 *stream0_in,
 	       s32 length
 	       );
 
+/** \brief Attempt decoding of a particular DCI with given length and format.
+@param DCI_LENGTH length of DCI in bits
+@param DCI_FMT Format of DCI
+@param e e-sequence (soft bits)
+@param decoded_output Output of Viterbi decoder
+*/
 void dci_decoding(u8 DCI_LENGTH,
 		  u8 DCI_FMT,
 		  s8 *e,
 		  u8 *decoded_output);
 
+/** \brief Do 36.213 DCI decoding procedure by searching different RNTI options and aggregation levels.  Currently does
+not employ the complexity reducing procedure based on RNTI.
+@param lte_ue_pdcch_vars PDCCH variables
+@param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
+@param eNB_id eNB Index on which to act
+@param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
+@param mi TDD mi variable from 36.212
+@param si_rnti Value for SI-RNTI
+@param ra_rnti Value for RA-RNTI
+@returns bitmap of occupied CCE positions (i.e. those detected)
+*/
 u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNB_id,
@@ -688,6 +686,7 @@ u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			   u16 si_rnti,
 			   u16 ra_rnti);
 
+
 u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				u8 num_ue_spec_dci,
 				u8 num_common_dci,
@@ -695,11 +694,35 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				DCI_ALLOC_t *dci_alloc_rx,
 				s16 eNB_id);
 
+/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+    @param I_MCS */
 u8 get_Qm(u8 I_MCS);
 
+/** \brief Compute I_TBS (transport-block size) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+    @param I_MCS */
 u8 get_I_TBS(u8 I_MCS);
 
+/** \brief Compute Q (modulation order) based on I_MCS.  Implements table 7.1.7.1-1 from 36.213.
+    @param I_MCS */
 u16 get_TBS(u8 mcs,u16 nb_rb);
+
+/* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
+@param vrb_type VRB type (0=localized,1=distributed)
+@param rb_alloc_dci rballoc field from DCI
+*/
+u32 get_rballoc(u8 vrb_type,u16 rb_alloc_dci);
+
+/* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
+@returns Transmission mode (1-7)
+*/
+u8 get_transmission_mode();
+
+/* \brief 
+@param ra_header Header of resource allocation (0,1) (See sections 7.1.6.1/7.1.6.2 of 36.213 Rel8.6)
+@param rb_alloc Bitmap allocation from DCI (format 1,2) 
+@returns number of physical resource blocks
+*/
+u32 conv_nprb(u8 ra_header,u32 rb_alloc);
 
 u16 get_G(LTE_DL_FRAME_PARMS *frame_parms,u16 nb_rb,u32 *rb_alloc,u8 mod_order,u8 num_pdcch_symbols,u8 subframe);
 
@@ -730,15 +753,11 @@ u8 I_TBS2I_MCS(u8 I_TBS);
 u8 SE2I_TBS(float SE,
 	    u8 N_PRB,
 	    u8 symbPerRB);
-/*!
-  \brief This function generate the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
-  @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
-  @param frame_parms LTE DL Frame Parameters
-  @param txdataF pointer to the frequency domain TX signal
-  @param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
-  @param sub_frame_number  Offset of this subframe in units of subframes
-*/
-
+/** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
+    @param frame_parms LTE DL Frame Parameters
+    @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
+    @param txdataF pointer to the frequency domain TX signal
+    @returns 0 on success*/
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,		    
 		    int *txdataF);

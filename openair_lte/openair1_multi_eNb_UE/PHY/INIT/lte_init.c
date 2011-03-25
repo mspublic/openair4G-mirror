@@ -9,8 +9,12 @@
 //#include "pci_commands.h"
 #endif //CBMIMO1
 #include "defs.h"
+#include "SCHED/defs.h"
 #include "PHY/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
+#include "RadioResourceConfigCommonSIB.h"
+#include "RadioResourceConfigDedicated.h"
+#include "TDD-Config.h"
 
 #define DEBUG_PHY
 
@@ -113,7 +117,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
   return(0);
 }
 
-
+/*
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
 
   //phy_framing->fc_khz;
@@ -130,6 +134,338 @@ void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING 
   phy_framing->Extension_type = CYCLIC_PREFIX;
   phy_framing->log2Nd = frame_parms->log2_symbol_size;
 } 
+*/
+
+void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
+		    u8 N_RB_DL,
+		    u8 Nid_cell,
+		    u8 Ncp,
+		    u8 frame_type,
+		    u8 p_eNB,
+		    PHICH_CONFIG_COMMON *phich_config) {
+
+  lte_frame_parms->N_RB_DL                            = N_RB_DL;
+  lte_frame_parms->Nid_cell                           = Nid_cell;
+  lte_frame_parms->nushift                            = Nid_cell%6;
+  lte_frame_parms->Ncp                                = Ncp;
+  lte_frame_parms->frame_type                         = frame_type;
+  lte_frame_parms->nb_antennas_tx                     = p_eNB;
+  lte_frame_parms->phich_config_common.phich_resource = phich_config->phich_resource;
+  lte_frame_parms->phich_config_common.phich_duration = phich_config->phich_duration;
+}
+
+void phy_config_sib1_eNB(u8 Mod_id,
+			 TDD_Config_t *tdd_Config,
+			 u8 SIwindowsize,
+			 u16 SIPeriod) {
+   
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+
+  lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment.buf[0];
+  lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns.buf[0];  
+  lte_frame_parms->SIwindowsize  = SIwindowsize;
+  lte_frame_parms->SIPeriod      = SIPeriod;
+}
+
+void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
+			 TDD_Config_t *tdd_Config,
+			 u8 SIwindowsize,
+			 u16 SIperiod) {
+
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+
+  lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment.buf[0];
+  lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns.buf[0];  
+  lte_frame_parms->SIwindowsize  = SIwindowsize;  
+  lte_frame_parms->SIPeriod      = SIperiod;
+}
+
+void phy_config_sib2_eNB(u8 Mod_id,
+			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+
+  lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
+  lte_frame_parms->prach_config_common.prach_Config_enabled=1;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+  
+
+
+  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift.buf[0];
+  lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
+  lte_frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
+  lte_frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
+  
+
+
+  lte_frame_parms->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
+  lte_frame_parms->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
+  
+
+  lte_frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  lte_frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode.buf[0];
+  lte_frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+  lte_frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+  
+  
+  lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
+
+  if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
+    lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
+    lte_frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig.buf[0];
+    lte_frame_parms->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig.buf[0];
+    lte_frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+    if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
+      lte_frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
+    else
+      lte_frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
+  }
+
+
+  
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
+  lte_frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha.buf[0];
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
+  lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
+  
+  lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
+  
+}
+
+void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
+			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
+
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
+
+  lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
+
+  lte_frame_parms->prach_config_common.prach_Config_enabled=1;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.highSpeedFlag              =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig  =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset           =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+  
+
+
+  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift.buf[0];
+  lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
+  lte_frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
+  lte_frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
+
+
+
+  lte_frame_parms->pdsch_config_common.referenceSignalPower = radioResourceConfigCommon->pdsch_ConfigCommon.referenceSignalPower;
+  lte_frame_parms->pdsch_config_common.p_b                  = radioResourceConfigCommon->pdsch_ConfigCommon.p_b;
+  
+
+  lte_frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  lte_frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode.buf[0];
+  lte_frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+  lte_frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+  
+  
+  lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
+  if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
+    lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 1;
+    lte_frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig                 = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig.buf[0];
+    lte_frame_parms->soundingrs_ul_config_common.srs_SubframeConfig                  = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig.buf[0];
+    lte_frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission = radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+    if (radioResourceConfigCommon->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
+      lte_frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 1;
+    else
+      lte_frame_parms->soundingrs_ul_config_common.srs_MaxUpPts                      = 0;
+  }
+  
+
+
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUSCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;
+  lte_frame_parms->ul_power_control_config_common.alpha             = radioResourceConfigCommon->uplinkPowerControlCommon.alpha.buf[0];
+  lte_frame_parms->ul_power_control_config_common.p0_NominalPUCCH   = radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUCCH;
+  lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
+  
+
+  lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
+  
+
+}
+
+
+void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
+			      struct PhysicalConfigDedicated *physicalConfigDedicated) {
+
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id];
+  u8 UE_id = find_ue(rnti,phy_vars_eNB);
+  
+
+  
+  if (physicalConfigDedicated) {
+    msg("[PHY][UE %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",Mod_id, mac_xface->frame,UE_id);
+    msg("------------------------------------------------------------------------\n");
+    
+    if (physicalConfigDedicated->pdsch_ConfigDedicated) {
+      phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a=physicalConfigDedicated->pdsch_ConfigDedicated->p_a.buf[0];
+      msg("pdsch_config_dedicated.p_a %d\n",phy_vars_eNB->pdsch_config_dedicated[UE_id].p_a);
+      msg("\n");
+    }
+    
+    if (physicalConfigDedicated->pucch_ConfigDedicated) {
+      if (physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.present==PUCCH_ConfigDedicated__ackNackRepetition_PR_release)
+	phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=0;
+      else {
+	phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=1;
+      }
+    }
+    
+    if (physicalConfigDedicated->pusch_ConfigDedicated) {
+      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
+      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
+      phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+      
+      msg("pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_ACK_Index);
+      msg("pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_RI_Index);
+      msg("pusch_config_dedicated.betaOffset_CQI_Index %d\n",phy_vars_eNB->pusch_config_dedicated[UE_id].betaOffset_CQI_Index);
+      msg("\n");
+      
+      
+    }
+    if (physicalConfigDedicated->uplinkPowerControlDedicated) {
+      
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH = physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUSCH;
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled= physicalConfigDedicated->uplinkPowerControlDedicated->deltaMCS_Enabled.buf[0];
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled= physicalConfigDedicated->uplinkPowerControlDedicated->accumulationEnabled;
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH= physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUCCH;
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset= physicalConfigDedicated->uplinkPowerControlDedicated->pSRS_Offset;
+      phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient= physicalConfigDedicated->uplinkPowerControlDedicated->filterCoefficient->buf[0];
+      msg("ul_power_control_dedicated.p0_UE_PUSCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUSCH);
+      msg("ul_power_control_dedicated.deltaMCS_Enabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled);
+      msg("ul_power_control_dedicated.accumulationEnabled %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].accumulationEnabled);
+      msg("ul_power_control_dedicated.p0_UE_PUCCH %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].p0_UE_PUCCH);
+      msg("ul_power_control_dedicated.pSRS_Offset %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].pSRS_Offset);
+      msg("ul_power_control_dedicated.filterCoefficient %d\n",phy_vars_eNB->ul_power_control_dedicated[UE_id].filterCoefficient);
+      msg("\n");
+    }
+    if (physicalConfigDedicated->antennaInfo) {
+      phy_vars_eNB->transmission_mode[UE_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode.buf[0]);
+      msg("Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+      msg("\n");
+    }
+    
+    if (physicalConfigDedicated->schedulingRequestConfig) {
+      if (physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_setup) {
+	phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex = physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
+	phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex=physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_ConfigIndex;  
+	phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax=physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax.buf[0];
+	
+	msg("scheduling_request_config.sr_PUCCH_ResourceIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex);
+	msg("scheduling_request_config.sr_ConfigIndex %d\n",phy_vars_eNB->scheduling_request_config[UE_id].sr_ConfigIndex);  
+	msg("scheduling_request_config.dsr_TransMax %d\n",phy_vars_eNB->scheduling_request_config[UE_id].dsr_TransMax);
+      }
+      msg("------------------------------------------------------------\n");
+      
+    }
+    
+  }
+  else {
+    msg("[PHY][UE %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,UE_id);
+    return;
+  }
+  
+  
+}
+
+void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
+			     struct PhysicalConfigDedicated *physicalConfigDedicated ) {
+
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];
+
+  
+
+    
+    if (physicalConfigDedicated) {
+      msg("[PHY][UE %d] Frame %d: Received physicalConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,CH_index);
+      msg("------------------------------------------------------------------------\n");
+
+      if (physicalConfigDedicated->pdsch_ConfigDedicated) {
+	phy_vars_ue->pdsch_config_dedicated[CH_index].p_a=physicalConfigDedicated->pdsch_ConfigDedicated->p_a.buf[0];
+	msg("pdsch_config_dedicated.p_a %d\n",phy_vars_ue->pdsch_config_dedicated[CH_index].p_a);
+	msg("\n");
+      }
+
+      if (physicalConfigDedicated->pucch_ConfigDedicated) {
+	if (physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.present==PUCCH_ConfigDedicated__ackNackRepetition_PR_release)
+	  phy_vars_ue->pucch_config_dedicated[CH_index].ackNackRepetition=0;
+	else {
+	  phy_vars_ue->pucch_config_dedicated[CH_index].ackNackRepetition=1;
+	}
+      }
+
+      if (physicalConfigDedicated->pusch_ConfigDedicated) {
+	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_ACK_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
+	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_RI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
+	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_CQI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+
+	msg("pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_ACK_Index);
+	msg("pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_RI_Index);
+	msg("pusch_config_dedicated.betaOffset_CQI_Index %d\n",phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_CQI_Index);
+	msg("\n");
+	
+	
+      }
+      if (physicalConfigDedicated->uplinkPowerControlDedicated) {
+	
+	phy_vars_ue->ul_power_control_dedicated[CH_index].p0_UE_PUSCH = physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUSCH;
+	phy_vars_ue->ul_power_control_dedicated[CH_index].deltaMCS_Enabled= physicalConfigDedicated->uplinkPowerControlDedicated->deltaMCS_Enabled.buf[0];
+	phy_vars_ue->ul_power_control_dedicated[CH_index].accumulationEnabled= physicalConfigDedicated->uplinkPowerControlDedicated->accumulationEnabled;
+	phy_vars_ue->ul_power_control_dedicated[CH_index].p0_UE_PUCCH= physicalConfigDedicated->uplinkPowerControlDedicated->p0_UE_PUCCH;
+	phy_vars_ue->ul_power_control_dedicated[CH_index].pSRS_Offset= physicalConfigDedicated->uplinkPowerControlDedicated->pSRS_Offset;
+	phy_vars_ue->ul_power_control_dedicated[CH_index].filterCoefficient= physicalConfigDedicated->uplinkPowerControlDedicated->filterCoefficient->buf[0];
+	msg("ul_power_control_dedicated.p0_UE_PUSCH %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].p0_UE_PUSCH);
+	msg("ul_power_control_dedicated.deltaMCS_Enabled %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].deltaMCS_Enabled);
+	msg("ul_power_control_dedicated.accumulationEnabled %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].accumulationEnabled);
+	msg("ul_power_control_dedicated.p0_UE_PUCCH %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].p0_UE_PUCCH);
+	msg("ul_power_control_dedicated.pSRS_Offset %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].pSRS_Offset);
+	msg("ul_power_control_dedicated.filterCoefficient %d\n",phy_vars_ue->ul_power_control_dedicated[CH_index].filterCoefficient);
+	msg("\n");
+      }
+      if (physicalConfigDedicated->antennaInfo) {
+	phy_vars_ue->transmission_mode[CH_index] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode.buf[0]);
+	msg("Transmission Mode %d\n",phy_vars_ue->transmission_mode[CH_index]);
+	msg("\n");
+      }
+
+      if (physicalConfigDedicated->schedulingRequestConfig) {
+	if (physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_setup) {
+	  phy_vars_ue->scheduling_request_config[CH_index].sr_PUCCH_ResourceIndex = physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
+	  phy_vars_ue->scheduling_request_config[CH_index].sr_ConfigIndex=physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_ConfigIndex;  
+	  phy_vars_ue->scheduling_request_config[CH_index].dsr_TransMax=physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax.buf[0];
+
+	  msg("scheduling_request_config.sr_PUCCH_ResourceIndex %d\n",phy_vars_ue->scheduling_request_config[CH_index].sr_PUCCH_ResourceIndex);
+	  msg("scheduling_request_config.sr_ConfigIndex %d\n",phy_vars_ue->scheduling_request_config[CH_index].sr_ConfigIndex);  
+	  msg("scheduling_request_config.dsr_TransMax %d\n",phy_vars_ue->scheduling_request_config[CH_index].dsr_TransMax);
+	}
+	msg("------------------------------------------------------------\n");
+
+      }
+
+    }
+    else {
+      msg("[PHY][UE %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,CH_index);
+      return;
+    }
+    
+}
+
 
 void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 

@@ -4,6 +4,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/TOOLS/twiddle_extern.h"
+#include "PHY/LTE_TRANSPORT/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"

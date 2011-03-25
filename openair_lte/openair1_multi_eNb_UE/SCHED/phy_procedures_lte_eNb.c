@@ -99,6 +99,18 @@ s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   return(-1);
 }
 
+s8 find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB) {
+  u8 i;
+
+  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+    if ((phy_vars_eNB->dlsch_eNB[i]) && 
+	(phy_vars_eNB->dlsch_eNB[i][0]) && 
+	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==0)) {
+      return(i);
+    }
+  }
+  return(-1);
+}
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
   u8 i;
@@ -257,7 +269,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
 
   int aa,l,sync_pos,sync_pos_slot;
   unsigned int sync_val;
-  unsigned char sect_id=0, UE_id=0;
+  unsigned char sect_id=0, UE_id=find_next_ue_index(phy_vars_eNB);
   int time_in, time_out;
   short *x, *y;
   //  char fname[100],vname[100];
@@ -350,10 +362,10 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
       
 #ifdef USER_MODE
 #ifdef DEBUG_PHY    
-      if (sect_id==0)
-	write_output("sync_corr_eNB.m","synccorr",phy_vars_eNB->lte_eNB_common_vars.sync_corr[sect_id],
-		     (phy_vars_eNB->lte_frame_parms.symbols_per_tti/2 - PRACH_SYMBOL) * 
-		     (phy_vars_eNB->lte_frame_parms.ofdm_symbol_size+phy_vars_eNB->lte_frame_parms.nb_prefix_samples),1,2);
+      //      if (sect_id==0)
+      //	write_output("sync_corr_eNB.m","synccorr",phy_vars_eNB->lte_eNB_common_vars.sync_corr[sect_id],
+      //		     (phy_vars_eNB->lte_frame_parms.symbols_per_tti/2 - PRACH_SYMBOL) * 
+      //		     (phy_vars_eNB->lte_frame_parms.ofdm_symbol_size+phy_vars_eNB->lte_frame_parms.nb_prefix_samples),1,2);
 #endif    
 #endif
     }
@@ -526,15 +538,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
    if (next_slot == 1) {
       
       if ((mac_xface->frame&3) == 0) {
-	*((u8*) pbch_pdu) = (u8)((mac_xface->frame>>2)&0xff);
-	((u8*) pbch_pdu)[1] = openair_daq_vars.dlsch_transmission_mode;
-	/*
-	pbch_pdu[0]=0;
-	pbch_pdu[1]=1;
-	*/
-	pbch_pdu[2]=100;
+	((u8*) pbch_pdu)[1] = ((mac_xface->frame>>2)<<2)&0xff;
+	((u8*) pbch_pdu)[0] = (mac_xface->frame>>6)&0xff;
       }
-
+   
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch, pdu[0]=%d\n",mac_xface->frame, next_slot,((u8*) pbch_pdu)[0]);
 #endif
@@ -590,6 +597,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   sect_id=0;
 
   if ((next_slot % 2)==0) {
+    printf("UE %d: Mode %s\n",0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
     mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,next_slot>>1);
 
 #ifdef EMOS
@@ -856,20 +864,22 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     if (phy_vars_eNB->dlsch_eNB_SI->active == 1) {
       input_buffer_length = phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->TBS/8;
 
-      for (i=0;i<input_buffer_length;i++)
-	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
-      //dlsch_input_buffer[i]= i;
+
+      DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
+					   SI_RNTI,
+					   0);
+
 
       
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %d, num_pdcch_symbols %d\n",mac_xface->frame, next_slot, input_buffer_length,num_pdcch_symbols);
       for (i=0;i<input_buffer_length;i++)
-	debug_msg("dlsch_input_buffer[%d]=%x\n",i,dlsch_input_buffer[i]);
+	debug_msg("dlsch_input_buffer[%d]=%x\n",i,DLSCH_pdu[i]);
 #endif
 
       if (abstraction_flag == 0) {
 
-	dlsch_encoding(dlsch_input_buffer,
+	dlsch_encoding(DLSCH_pdu,
 		       &phy_vars_eNB->lte_frame_parms,
 		       num_pdcch_symbols,
 		       phy_vars_eNB->dlsch_eNB_SI,
@@ -1022,7 +1032,7 @@ void process_HARQ_feedback(u8 UE_id, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
   LTE_eNB_UE_stats *ue_stats         =  &phy_vars_eNB->eNB_UE_stats[UE_id];
   LTE_DL_eNB_HARQ_t *dlsch_harq_proc;
  
-  for (ACK_index=0;ACK_index<2;ACK_index++) {
+  for (ACK_index=0;ACK_index<2;ACK_index++) {  // Fix this for FDD and other TDD modes
     
     dl_harq_pid     = dlsch->harq_ids[ul_ACK_subframe2_dl_subframe(&phy_vars_eNB->lte_frame_parms,
 								   subframe,
@@ -1038,7 +1048,7 @@ void process_HARQ_feedback(u8 UE_id, u8 subframe, PHY_VARS_eNB *phy_vars_eNB) {
 	// dl_harq_pid of DLSCH is still active
 	
 	msg("[PHY] eNB %d Process %d is active\n",phy_vars_eNB->Mod_id,dl_harq_pid);
-	if (phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[0] == 0) {
+	if (phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[ACK_index] == 0) {
 	  // Received NAK 
 	  
 	  // First increment round-0 NAK counter 

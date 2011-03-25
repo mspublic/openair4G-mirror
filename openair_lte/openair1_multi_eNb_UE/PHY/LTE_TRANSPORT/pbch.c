@@ -657,7 +657,6 @@ u16 rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
   s8 *pbch_e_rx;
   u8 *decoded_output = lte_ue_pbch_vars->decoded_output;
-  //  s16 *channel_output = lte_ue_pbch_vars->channel_output;
   u16 crc;
 
 

@@ -151,7 +151,7 @@ typedef struct
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_UE_MAX];
 
   // UL-POWER-Control
-  UPLINK_POWER_CONTROL_DEDICATED uplink_power_control_dedicated[NUMBER_OF_UE_MAX];
+  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_UE_MAX];
 
   // TPC
   TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_UE_MAX];
@@ -167,6 +167,8 @@ typedef struct
   // Scheduling Request Config
   SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_UE_MAX];
 
+  // Transmission mode per UE
+  u8 transmission_mode[NUMBER_OF_UE_MAX];
 
 } PHY_VARS_eNB;
 
@@ -217,6 +219,7 @@ typedef struct
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
+  u8               prach_timer;
   unsigned char    is_secondary_ue; // primary by default
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
@@ -227,31 +230,33 @@ typedef struct
 
   
   // PDSCH Varaibles
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated;
+  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];
 
   // PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated;
+  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_eNB_MAX];
 
   // PUCCH variables
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
+  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
   u8 ncs_cell[20][7];
 
   // UL-POWER-Control
-  UPLINK_POWER_CONTROL_DEDICATED uplink_power_control_dedicated;
+  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_eNB_MAX];
 
   // TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch;
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch;
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_eNB_MAX];
+  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_eNB_MAX];
 
   // CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config;
+  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_eNB_MAX];
 
   // SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated;
+  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_eNB_MAX];
 
   // Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config;
+  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_eNB_MAX];
 
+  // Transmission mode per eNB
+  u8 transmission_mode[NUMBER_OF_eNB_MAX];
 
 } PHY_VARS_UE;
 

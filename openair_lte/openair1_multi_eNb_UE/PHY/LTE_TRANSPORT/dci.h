@@ -383,30 +383,32 @@ typedef struct __attribute__ ((__packed__)){
 
 /// DCI Format Type 2 (5 MHz, TDD, 2 Antenna Ports, less than 10 PRBs, 41 bits)
 typedef struct __attribute__ ((__packed__)){
-  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
-  unsigned short rballoc:13;
-  /// Power Control
-  unsigned char TPC:2;
-  /// Downlink Assignment Index
-  unsigned char dai:2;
-  /// HARQ Process
-  unsigned char harq_pid:4;
-  /// TB swap
-  unsigned char tb_swap:1;
-  /// Modulation and Coding Scheme and Redundancy Version 1
-  unsigned char mcs1:5;
-  /// New Data Indicator 1
-  unsigned char ndi1:1;
-  /// Redundancy version 1
-  unsigned char rv1:2;
-  /// Modulation and Coding Scheme and Redundancy Version 2
-  unsigned char mcs2:5;
-  /// New Data Indicator 2
-  unsigned char ndi2:1;
+  /// padding to 64bits
+  u64 padding64:22;
   /// Redundancy version 2
-  unsigned char rv2:2;
+  u64 rv2:2;
+  /// New Data Indicator 2
+  u64 ndi2:1;
+  /// Modulation and Coding Scheme and Redundancy Version 2
+  u64 mcs2:5;
   /// TPMI information for precoding
-  unsigned char tpmi:3;
+  u64 tpmi:3;
+  /// Redundancy version 1
+  u64 rv1:2;
+  /// New Data Indicator 1
+  u64 ndi1:1;
+  /// Modulation and Coding Scheme and Redundancy Version 1
+  u64 mcs1:5;
+  /// TB swap
+  u64 tb_swap:1;
+  /// HARQ Process
+  u64 harq_pid:4;
+  /// Downlink Assignment Index
+  u64 dai:2;
+  /// Power Control
+  u64 TPC:2;
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  u64 rballoc:13;
 } DCI2_5MHz_2A_L10PRB_TDD_t;
 #define sizeof_DCI2_5MHz_2A_L10PRB_TDD_t 41
 

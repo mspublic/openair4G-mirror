@@ -424,20 +424,30 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
 #ifdef OPENAIR2
 	if ((phy_vars_ue->RRCConnectionRequest_ptr[eNB_id] = mac_xface->ue_get_rach(phy_vars_ue->Mod_id,0))!=NULL) {
 #endif
-	  phy_vars_ue->generate_prach=0;
-	  // to be replaced with PRACH
-	  if (abstraction_flag == 0) {
-	    generate_pss(phy_vars_ue->lte_ue_common_vars.txdataF,
-			 AMP,
-			 &phy_vars_ue->lte_frame_parms,
-			 0, //lte_ue_common_vars->eNB_id,
-			 PRACH_SYMBOL,
-			 next_slot);
-	  }
-	  else {
-	    phy_vars_ue->generate_prach=1;
-	    UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
-	    printf("[PHY][UE %d]generate_prach\n ", phy_vars_ue->Mod_id);
+	  if (phy_vars_ue->prach_timer==0) {
+	    phy_vars_ue->generate_prach=0;
+	    // to be replaced with PRACH
+	    if (abstraction_flag == 0) {
+	      generate_pss(phy_vars_ue->lte_ue_common_vars.txdataF,
+			   AMP,
+			   &phy_vars_ue->lte_frame_parms,
+			   0, //lte_ue_common_vars->eNB_id,
+			   PRACH_SYMBOL,
+			   next_slot);
+	    }
+	    else {
+	      phy_vars_ue->generate_prach=1;
+	      UE_transport_info[phy_vars_ue->Mod_id].cntl.prach_flag=1;
+	      printf("[PHY][UE %d]generate_prach\n ", phy_vars_ue->Mod_id);
+
+	    }
+	    debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
+		      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,
+		      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]-114,
+		      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]);
+	    phy_vars_ue->prach_timer++;
+	    if (phy_vars_ue->prach_timer==10)
+	      phy_vars_ue->prach_timer=0;
 	  }
 	  debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
 	      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,
@@ -617,7 +627,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
     //printf("Trying PBCH %d\n",pbch_phase);
-    if (abstraction_flag == 0) 
+    if (abstraction_flag == 0) {
       pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
 			    phy_vars_ue->lte_ue_pbch_vars[eNB_id],
 			    &phy_vars_ue->lte_frame_parms,
@@ -625,6 +635,9 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 			    phy_vars_ue->lte_frame_parms.mode1_flag==1?SISO:ALAMOUTI,
 			    pbch_phase);
 
+
+
+    }
     else
       pbch_tx_ant = rx_pbch_emul(phy_vars_ue,
 				 eNB_id,
@@ -636,6 +649,9 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }
 
   if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+    mac_xface->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]>>2))<<2;
+    mac_xface->frame += pbch_phase;
+
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
     emos_dump_UE.frame_tx = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0];
@@ -1009,6 +1025,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       phy_vars_ue->ulsch_no_allocation_counter[eNB_id]++;
 
       if (phy_vars_ue->ulsch_no_allocation_counter[eNB_id] == 10) {
+	printf("[UE %d] no_allocation : setting mode to PRACH\n",phy_vars_ue->Mod_id);
 	phy_vars_ue->UE_mode[eNB_id] = PRACH;
 	phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1234;
       }
@@ -1020,6 +1037,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//	msg("[UE RAR] frame %d: RRCConnReq_timer %d\n",mac_xface->frame,phy_vars_ue->RRCConnReq_timer);
 
 	if (phy_vars_ue->RRCConnReq_timer[eNB_id] == 0) {
+	  printf("[UE %d] RRCConnReq_timer = 0 : setting mode to PRACH\n",phy_vars_ue->Mod_id);
 	  phy_vars_ue->UE_mode[eNB_id] = PRACH;
 	  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti = 0x1234;
 	}
@@ -1385,6 +1403,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->UE_mode[eNB_id] = RA_RESPONSE;
 	    phy_vars_ue->RRCConnReq_timer[eNB_id] = 10;
 	    phy_vars_ue->ulsch_ue[eNB_id]->power_offset = 6;
+	    phy_vars_ue->ulsch_no_allocation_counter[eNB_id] = 0;
 	  } // mode != PUSCH
 	} //ret <= MAX_ITERATIONS
 	

@@ -364,6 +364,7 @@ void openair_sync(void) {
   unsigned int adac_cnt;
   int pbch_decoded = 0;
   int frame_mod4,pbch_tx_ant;
+  u8 char dummy;
 
   RTIME time;
 
@@ -503,10 +504,53 @@ void openair_sync(void) {
 	if (pbch_decoded) {
 	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
 	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
-	  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx = pbch_tx_ant;
-	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1] == 1);
-	  openair_daq_vars.dlsch_transmission_mode = PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1];
 	  
+	  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx = pbch_tx_ant;
+	  //	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1] == 1);
+	  // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
+	  openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
+
+	  // now check for Bandwidth of Cell
+	  dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>5)&7;
+
+	  switch dummy {
+	    case 0 : 
+	      phy_vars_ue->lte_Frame_parms.N_RB_DL = 6;
+	      break;
+	    case 1 : 
+	      phy_vars_ue->lte_Frame_parms.N_RB_DL = 15;
+	      break;
+	    case 2 : 
+	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 25;
+	    break;
+	  case 3 : 
+	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 50;
+	    break;
+	  case 4 : 
+	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 100;
+	    break;
+	  default:
+	    break;
+	  }
+
+	  // now check for PHICH parameters
+	phy_vars_ue->lte_Frame_parms.phich_config_common.phich_duration = (PHICH_DURATION_t)((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
+	dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>2)&3;
+	switch dummy {
+	  case 0:
+	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = oneSixth;
+	    break;
+	  case 1:
+	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = half;
+	    break;
+	  case 2:
+	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = one;
+	    break;
+	  case 3:
+	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = two;
+	    break;
+	  }
+	
 	  if (openair_daq_vars.node_running == 1) {
       
 	    pci_interface[0]->frame_offset = PHY_vars_UE_g[0]->rx_offset;

@@ -1,9 +1,8 @@
-/*! 
-\brief Apply RF impairments to received signal
+/** \brief Apply RF impairments to received signal
 @param r_re Double two-dimensional array of Real part of received signal
 @param r_im Double two-dimensional array of Imag part of received signal
-@param r_re Double two-dimensional array of Real part of received interfering signal
-@param r_im Double two-dimensional array of Imag part of received interfering signal
+@param r_re_i1 Double two-dimensional array of Real part of received interfering signal
+@param r_im_i1 Double two-dimensional array of Imag part of received interfering signal
 @param I0_dB Interference-level with respect to desired signal in dB
 @param nb_rx_antennas Number of receive antennas
 @param length of signal
@@ -17,8 +16,7 @@
 @param pn_cutoff Phase noise cutoff frequency (loop filter)
 @param pn_amp_dBc Phase noise amplitude with respect to carrier
 @param IQ_imb_dB IQ amplitude imbalance in dB
-@param IQ_phase IQ phase imbalance in radians
-*/
+@param IQ_phase IQ phase imbalance in radians*/
 void rf_rx(double **r_re,
 	   double **r_im,
 	   double **r_re_i1,

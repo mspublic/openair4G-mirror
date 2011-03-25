@@ -119,6 +119,19 @@ void generate_RIV_tables() {
   }
 }
 
+u32 get_rballoc(u8 vrb_type,u16 rb_alloc_dci) {
+
+  if (vrb_type == 0)
+    return(localRIV2alloc_LUT25[rb_alloc_dci]);
+  else
+    return(distRIV2alloc_LUT25[rb_alloc_dci]);
+
+}
+
+u8 get_transmission_mode() {
+
+  return(1);
+}
 
 int generate_eNB_dlsch_params_from_dci(u8 subframe,
 				       void *dci_pdu,
@@ -510,7 +523,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     if (NPRB==0)
       return(-1);
 
-    if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 2) {
+    if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 7) {
       msg("dci_tools.c: ERROR: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
       return(-1);       
     }
