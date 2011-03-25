@@ -1,0 +1,2 @@
+uint8_t do_SIB1(uint8_t *buffer);
+uint8_t do_SIB23(uint8_t *buffer);
