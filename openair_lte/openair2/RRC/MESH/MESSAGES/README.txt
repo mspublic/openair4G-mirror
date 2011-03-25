@@ -16,7 +16,7 @@ Instructions to build data structures from ASN1 sources
 
 The three files have already been built using the extract_asn1_from_spec.pl Pearl script.  This should be used again if a newer version
 of the RRC spec is used to synthesize the data structures and encoding/decoding routines.  To do this:
-   1. use Microsoft work to generate a text version of the 3GPP 36.331 document
+   1. use Microsoft WORD to generate a text version of the 3GPP 36.331 document
    2. run the script on the text file to generate the three files.
 
 Now download the asn1c utility from 
