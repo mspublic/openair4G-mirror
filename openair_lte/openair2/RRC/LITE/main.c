@@ -478,11 +478,11 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
     msg("%x.",Srb_info->Rx_buffer.Payload[i]);
   msg("\n");
 
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_DL_CCCH_Message,
-				  (void**)&dl_ccch_msg,
-				  (uint8_t*)Srb_info->Rx_buffer.Payload,
-				  100);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_DL_CCCH_Message,
+			 (void**)&dl_ccch_msg,
+			 (uint8_t*)Srb_info->Rx_buffer.Payload,
+			 100,0,0);
 
   if (dl_ccch_msg->message.present == DL_CCCH_MessageType_PR_c1) {
 
@@ -736,11 +736,11 @@ void rrc_ch_decode_dcch(u8 Mod_id,  u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
 
   msg("[RRC][eNB %d] Frame %d: Decoding UL-DCCH Message\n",
       Mod_id,Mac_rlc_xface->frame);
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_UL_DCCH_Message,
-				  (void**)&ul_dcch_msg,
-				  Rx_sdu,
-				  100);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_UL_DCCH_Message,
+			 (void**)&ul_dcch_msg,
+			 Rx_sdu,
+			 100,0,0);
 
   if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
 
@@ -797,12 +797,19 @@ void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 
   int i;
 
-
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_UL_CCCH_Message,
-				  (void**)&ul_ccch_msg,
-				  (uint8_t*)Srb_info->Rx_buffer.Payload,
-				  100);
+  msg("[RRC][eNB %d] Frame %d: Decoding CCCH %x.%x.%x.%x.%x.%x (%p)\n", Mod_id,Mac_rlc_xface->frame,
+	(uint8_t*)Srb_info->Rx_buffer.Payload[0],
+    (uint8_t*)Srb_info->Rx_buffer.Payload[1],
+    (uint8_t*)Srb_info->Rx_buffer.Payload[2],
+    (uint8_t*)Srb_info->Rx_buffer.Payload[3],
+    (uint8_t*)Srb_info->Rx_buffer.Payload[4],
+    (uint8_t*)Srb_info->Rx_buffer.Payload[5],
+	(uint8_t*)Srb_info->Rx_buffer.Payload);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_UL_CCCH_Message,
+			 (void**)&ul_ccch_msg,
+			 (uint8_t*)Srb_info->Rx_buffer.Payload,
+			 100,0,0);
 
   if (ul_ccch_msg->message.present == UL_CCCH_MessageType_PR_c1) {
 
@@ -986,11 +993,11 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 *Buffer,u8 CH_index){
     msg("%x.",Buffer[i]);
   msg("\n");
 
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_DL_DCCH_Message,
-				  (void**)&dl_dcch_msg,
-				  (uint8_t*)Buffer,
-				  100);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_DL_DCCH_Message,
+			 (void**)&dl_dcch_msg,
+			 (uint8_t*)Buffer,
+			 100,0,0);
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
@@ -1044,11 +1051,11 @@ void decode_SIB1(u8 Mod_id,u8 CH_index) {
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[CH_index];
   int i;
 
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_SystemInformationBlockType1,
-				  (void**)sib1,
-				  (uint8_t*)UE_rrc_inst[Mod_id].SIB1[CH_index],
-				  100);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_SystemInformationBlockType1,
+			 (void**)sib1,
+			 (uint8_t*)UE_rrc_inst[Mod_id].SIB1[CH_index],
+			 100,0,0);
   msg("[RRC][UE %d] Frame %d : Dumping SIB 1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
   for (i=0;i<18;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SIB1[CH_index][i]);
@@ -1182,11 +1189,11 @@ void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window) {
     return;
   }
 
-  dec_rval = uper_decode_complete(NULL,
-				  &asn_DEF_SystemInformation,
-				  (void**)si,
-				  (uint8_t*)UE_rrc_inst[Mod_id].SI[CH_index],
-				  100);
+  dec_rval = uper_decode(NULL,
+			 &asn_DEF_SystemInformation,
+			 (void**)si,
+			 (uint8_t*)UE_rrc_inst[Mod_id].SI[CH_index],
+			 100,0,0);
   msg("[RRC][UE %d] Frame %d : Dumping SI from window %d (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,si_window,dec_rval.consumed);
   for (i=0;i<30;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SI[CH_index][i]);
