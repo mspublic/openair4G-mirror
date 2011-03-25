@@ -782,8 +782,8 @@ ASN_MODULE_HEADERS+=per_decoder.h
 ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/per_decoder.c
 ASN_MODULE_HEADERS+=per_encoder.h
 ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/per_encoder.c
-ASN_MODULE_HEADERS+=per_opentype.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/per_opentype.c
+#ASN_MODULE_HEADERS+=per_opentype.h
+#ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/per_opentype.c
 ASN_CONVERTER_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1_msg.c
 
 
@@ -792,6 +792,6 @@ libsomething_la_SOURCES=$(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS)
 
 # This file may be used as an input for make(3)
 # Remove the lines below to convert it into a pure .am file
-#CFLAGS += -I. -g -ggdb -DEMIT_ASN_DEBUG=1 -Wall
+CFLAGS += -I. -g -ggdb -DEMIT_ASN_DEBUG=1 -Wall
 ASN1_MSG_OBJS=${ASN_MODULE_SOURCES:.c=.o} ${ASN_CONVERTER_SOURCES:.c=.o} 
 

@@ -30,6 +30,8 @@
 
 #include "SIB-Type.h"
 
+#include "PHY/defs.h"
+
 void assign_enum(ENUMERATED_t *x,uint8_t val) {
   uint8_t *buf=(uint8_t *)malloc(1);
   x->buf = buf;
@@ -37,8 +39,6 @@ void assign_enum(ENUMERATED_t *x,uint8_t val) {
   x->size=1;
 }
 
-typedef unsigned int u32;
-typedef unsigned char u8;
 
 uint8_t do_SIB1(uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
@@ -50,9 +50,10 @@ uint8_t do_SIB1(uint8_t *buffer,
   SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
 
-  memset(sib1,0,sizeof(sib1));
-  memset(&PLMN_identity_info,0,sizeof(PLMN_identity_info));
-  memset(&schedulingInfo,0,sizeof(schedulingInfo));
+  memset(sib1,0,sizeof(SystemInformationBlockType1_t));
+  memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
+  memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
+  memset(&sib_type,0,sizeof(SIB_Type_t));
 
   PLMN_identity_info.plmn_Identity.mcc = calloc(1,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
   memset(PLMN_identity_info.plmn_Identity.mcc,0,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
@@ -70,8 +71,6 @@ uint8_t do_SIB1(uint8_t *buffer,
   dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc,&dummy);
   assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved); 
 
-  sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count=0;
-  asn_set_empty(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list);//.size=0;  
 
 
   ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList,&PLMN_identity_info);
@@ -85,7 +84,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->cellAccessRelatedInfo.trackingAreaCode.bits_unused=0;
 
   // 28 bits
-  sib1->cellAccessRelatedInfo.cellIdentity.buf = malloc(4);
+  sib1->cellAccessRelatedInfo.cellIdentity.buf = malloc(8);
   sib1->cellAccessRelatedInfo.cellIdentity.buf[0]=0x01;
   sib1->cellAccessRelatedInfo.cellIdentity.buf[1]=0x48;
   sib1->cellAccessRelatedInfo.cellIdentity.buf[2]=0x0f;
@@ -102,12 +101,8 @@ uint8_t do_SIB1(uint8_t *buffer,
 
   sib1->freqBandIndicator = 2;
 
-  sib1->schedulingInfoList.list.count=0;
-  asn_set_empty(&sib1->schedulingInfoList.list);//.size=0;
   assign_enum(&schedulingInfo.si_Periodicity,SchedulingInfo__si_Periodicity_rf8);
 
-  schedulingInfo.sib_MappingInfo.list.count=0;
-  asn_set_empty(&schedulingInfo.sib_MappingInfo.list);//.size=0;
   assign_enum(&sib_type,SIB_Type_sibType3);
   
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
@@ -122,12 +117,15 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->systemInfoValueTag=0;
   //  sib1.nonCriticalExtension = calloc(1,sizeof(*sib1.nonCriticalExtension));
 
+  xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
+
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformationBlockType1,
 				   (void*)sib1,
 				   buffer,
 				   200);
   printf("SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-
+  if (enc_rval.encoded==-1)
+    exit(-1);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -146,22 +144,16 @@ uint8_t do_SIB23(uint8_t *buffer,
   asn_enc_rval_t enc_rval;
 
 
-  memset((void*)systemInformation,0,sizeof(systemInformation));
 
-  systemInformation->criticalExtensions.present = SystemInformation__criticalExtensions_PR_systemInformation_r8;
+  memset(&sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  memset(&sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;  
-  
   sib2_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
   sib3_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
 
   *sib2 = &sib2_part.choice.sib2;
   *sib3 = &sib3_part.choice.sib3;
 
-  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
 
   // sib2
 
@@ -262,7 +254,7 @@ uint8_t do_SIB23(uint8_t *buffer,
   (*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth=calloc(1,sizeof(*(*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth));
   assign_enum((*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth,AllowedMeasBandwidth_mbw6);
   (*sib3)->intraFreqCellReselectionInfo.presenceAntennaPort1 = 0;
-  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf = calloc(1,1);
+  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf = calloc(8,1);
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.size = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf[0] = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.bits_unused = 6;
@@ -270,14 +262,27 @@ uint8_t do_SIB23(uint8_t *buffer,
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA_SF = (struct SpeedStateScaleFactors *)NULL;
 
 
+  memset((void*)systemInformation,0,sizeof(SystemInformation_t));
+
+  systemInformation->criticalExtensions.present = SystemInformation__criticalExtensions_PR_systemInformation_r8;
+
+  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
+
+  //  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;  
+  //  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
+
+  xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformation,
 				   (void*)systemInformation,
 				   buffer,
 				   100);
 
-  printf("SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-
+  msg("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  if (enc_rval.encoded==-1)
+    exit(-1);
   return((enc_rval.encoded+7)/8);
 }
 
