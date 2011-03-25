@@ -984,7 +984,8 @@ void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,
 void  rrc_ue_decode_dcch(u8 Mod_id,u8 *Buffer,u8 CH_index){
   /*------------------------------------------------------------------------------------------*/
   
-  DL_DCCH_Message_t *dl_dcch_msg;
+  DL_DCCH_Message_t dldcchmsg;
+  DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
   asn_dec_rval_t dec_rval;
   int i;
   
