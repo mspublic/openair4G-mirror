@@ -814,7 +814,6 @@ int main(int argc, char **argv) {
   
   //set_comp_log(EMU,  LOG_INFO, LOG_MED);
  
-#ifdef OCG 
   if (OCG_flag==1){ // activate OCG
     printf("start\n");
     emulation_scen= OCG_main();
@@ -823,7 +822,6 @@ int main(int argc, char **argv) {
 	  emulation_scen->envi_config_.area_.y_);
     abstraction_flag=1;
   }
-#endif
  
   //if ( (ethernet_flag==1) || (abstraction_flag==1) )
 //  ret=netlink_init();
