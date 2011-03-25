@@ -15,7 +15,7 @@ OPENAIR3     = $(OPENAIR3_DIR)
 
 CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
-ASN1_MSG_INC = ../../../openair2/RRC/MESH/MESSAGES
+ASN1_MSG_INC = ../../../openair2/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
 
@@ -33,14 +33,15 @@ endif
 CFLAGS += -DPHY_ABSTRACTION #:wq
 -DEMIT_ASN_DEBUG=1
 
+ifdef OCG
 CFLAGS += -I/usr/include/libxml2 -lxml2
-
+endif
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
-include $(OPENAIR2_DIR)/RRC/MESH/MESSAGES/Makefile.inc
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
