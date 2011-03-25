@@ -808,11 +808,11 @@ void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
     (uint8_t*)Srb_info->Rx_buffer.Payload[4],
     (uint8_t*)Srb_info->Rx_buffer.Payload[5],
 	(uint8_t*)Srb_info->Rx_buffer.Payload);
-  dec_rval = uper_decode(NULL,
-			 &asn_DEF_UL_CCCH_Message,
-			 (void**)&ul_ccch_msg,
-			 (uint8_t*)Srb_info->Rx_buffer.Payload,
-			 100,0,0);
+  dec_rval = uper_decode_complete(NULL,
+				  &asn_DEF_UL_CCCH_Message,
+				  (void**)&ul_ccch_msg,
+				  (uint8_t*)Srb_info->Rx_buffer.Payload,
+				  100);
 
   if (ul_ccch_msg->message.present == UL_CCCH_MessageType_PR_c1) {
 
