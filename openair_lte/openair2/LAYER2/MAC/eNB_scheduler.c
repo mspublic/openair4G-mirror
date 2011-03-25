@@ -624,25 +624,25 @@ void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE) {
 
     msg("[MAC] Received %d bytes from BCCH\n",bcch_sdu_length);
 
-    if (bcch_sdu_length <= (TBStable[0][2]>>3))
+    if (bcch_sdu_length <= (mac_xface->get_TBS(0,3)))
       BCCH_alloc_pdu.mcs=0;
-    else if (bcch_sdu_length <= (TBStable[1][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(1,3)))
       BCCH_alloc_pdu.mcs=1;
-    else if (bcch_sdu_length <= (TBStable[2][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(2,3)))
       BCCH_alloc_pdu.mcs=2;
-    else if (bcch_sdu_length <= (TBStable[3][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(3,3)))
       BCCH_alloc_pdu.mcs=3;
-    else if (bcch_sdu_length <= (TBStable[4][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(4,3)))
       BCCH_alloc_pdu.mcs=4;
-    else if (bcch_sdu_length <= (TBStable[5][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(5,3)))
       BCCH_alloc_pdu.mcs=5;
-    else if (bcch_sdu_length <= (TBStable[6][2]>>3))
+    else if (bcch_sdu_length <= (mac_xface->get_TBS(6,3)))
       BCCH_alloc_pdu.mcs=6;
     msg("[MAC][eNB] Frame %d : Scheduling BCCH for SI %d bytes (mcs %d, TBS %d)\n",
 	mac_xface->frame,
 	bcch_sdu_length,
 	BCCH_alloc_pdu.mcs,
-	TBStable[BCCH_alloc_pdu.mcs][2]);
+	mac_xface->get_TBS(BCCH_alloc_pdu.mcs,3));
     
     CH_mac_inst[Mod_id].bcch_active=1;
     *nprb=3;

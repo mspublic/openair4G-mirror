@@ -19,14 +19,16 @@ of the RRC spec is used to synthesize the data structures and encoding/decoding 
    1. use Microsoft WORD to generate a text version of the 3GPP 36.331 document
    2. run the script on the text file to generate the three files.
 
-Now download the asn1c utility from 
+Now download the asn1c utility (version 0.9.21) from 
 
 http://lionet.info/asn1c/blog/
 
-(the actual file is http://lionet.info/soft/asn1c-0.9.21.tar.gz, but check that the link is valid)
+or via svn from sourceforge (version 0.9.22)
+
+svn co https://asn1c.svn.sourceforge.net/svnroot/asn1c/trunk asn1c
 
 and put it in the asn1c directory (you should have a second asn1c directory now). Compile it according to the instructions given
-by the author. We have validated that it works on Linux and Cygwin. To generate the data structures do the following from the 
+by the author. We have validated that 0.9.22 works on Linux and Cygwin. To generate the data structures do the following from the 
 current directory
 
 ./asn1c/asn1c/asn1c -gen-PER -fcompound-names ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn
