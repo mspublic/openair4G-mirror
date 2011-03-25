@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
   }
  
   //if ( (ethernet_flag==1) || (abstraction_flag==1) )
-//  ret=netlink_init();
+  //ret=netlink_init();
   
   if (ethernet_flag==1){
     emu_info.master[emu_info.master_id].nb_ue=emu_info.nb_ue_local;
@@ -845,7 +845,7 @@ int main(int argc, char **argv) {
 	  emu_info.nb_master,
 	  emu_info.master_id);
     
-    //ret=netlink_init();
+    ret=netlink_init();
     init_bypass();
     
     while (emu_tx_status != SYNCED_TRANSPORT ) {
