@@ -468,8 +468,8 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
   /*------------------------------------------------------------------------------*/
 
   unsigned char ret;
-
-  DL_CCCH_Message_t *dl_ccch_msg;
+  DL_CCCH_Message_t dlccchmsg;
+  DL_CCCH_Message_t *dl_ccch_msg=&dlccchmsg;
   asn_dec_rval_t dec_rval;
   int i;
 
