@@ -29,7 +29,7 @@ and put it in the asn1c directory (you should have a second asn1c directory now)
 by the author. We have validated that it works on Linux and Cygwin. To generate the data structures do the following from the 
 current directory
 
-./asn1c/asn1c -gen-PER -fcompound-names ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn
+./asn1c/asn1c/asn1c -gen-PER -fcompound-names ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn
 
 Note this only uses one of the three files from 36.331 (the core of the RRC).  After this step you should have many .c and .h files 
 and one new Makefile, the latter of which is not used.
