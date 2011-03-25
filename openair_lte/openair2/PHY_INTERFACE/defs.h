@@ -61,6 +61,21 @@ typedef struct
     /// Indicate failure to synch to external source
     void (*mrbch_phy_sync_failure) (u8 Mod_id,u8 Free_ch_index);
 
+    /// Configure Common PHY parameters from SIB1
+    void (*phy_config_sib1_eNB)(u8 Mod_id,
+				TDD_Config_t *tdd_config,
+				u8 SIwindowsize,
+				u16 SIperiod);
+    
+    /// Configure Common PHY parameters from SIB2
+    void (*phy_config_sib2_eNB)(u8 Mod_id,
+			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+
+
+    /// PHY-Config-Dedicated eNB
+    void (*phy_config_dedicated_eNB)(u8 Mod_id,u16 rnti,
+				    struct PhysicalConfigDedicated *physicalConfigDedicated);
+
 
     // UE functions
 
@@ -88,6 +103,24 @@ typedef struct
     /// Only calls the PDCP for now
     void (*ue_scheduler)(u8 Mod_id, u8 subframe);
 
+    /// PHY-Config-Dedicated UE
+    void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,
+				    struct PhysicalConfigDedicated *physicalConfigDedicated);
+
+    /// Configure Common PHY parameters from SIB1
+    void (*phy_config_sib1_ue)(u8 Mod_id,u8 CH_index,
+			       TDD_Config_t *tdd_config,
+			       u8 SIwindowsize,
+			       u16 SIperiod);
+    
+    /// Configure Common PHY parameters from SIB2
+    void (*phy_config_sib2_ue)(u8 Mod_id,u8 CH_index,
+			       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
+
+
+
+
+
     // PHY Helper Functions
 
     /// RIV computation from PHY
@@ -99,8 +132,18 @@ typedef struct
     /// Function to retrieve the HARQ round index for a particular UL/DLSCH and harq_pid
     void (*get_ue_active_harq_pid)(u8 Mod_id, u16 rnti, u8 subframe, u8 *harq_pid, u8 *round, u8 ul_flag);
 
+    /// Function to retrieve number of CCE
     u16 (*get_nCCE_max)(u8 Mod_id);
-    
+
+    /// Function to retrieve number of PRB in an rb_alloc
+    u16 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
+
+    /// Function to retrieve transmission mode for UE
+    u8 (*get_transmission_mode)(u16 rnti);
+
+    /// Function to retrieve rb_alloc bitmap from dci rballoc field and VRB type
+    u32 (*get_rballoc)(u8 vrb_type,u8 rb_alloc_dci);
+
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 
     unsigned char is_cluster_head;

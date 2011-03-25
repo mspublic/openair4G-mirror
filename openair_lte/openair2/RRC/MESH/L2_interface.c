@@ -25,31 +25,11 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-//#define DEBUG_RRC
+#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
-u16 rrc_fill_buffer(RRC_BUFFER *Rx_buffer, char *Data, unsigned short Size){
-  //----------------------------------------------------------------------------------//
 
-  unsigned char tmp=(((Rx_buffer->W_idx+Size)/(Rx_buffer->Tb_size-CH_CCCH_HEADER_SIZE)) );
-  //    msg("FILL BUFFER: W_id %d, Size %d, Header %d, Tb_size %d, Tmp %d\n",Rx_buffer->W_idx,Size,CH_CCCH_HEADER_SIZE,Rx_buffer->Tb_size,tmp);
-  if(( tmp * (Rx_buffer->Tb_size -CH_CCCH_HEADER_SIZE)) < (Rx_buffer->W_idx+Size)  )
-	  tmp++;  
-
-  if(tmp> 256 ){
-    //   msg("buffer overflow\n");
-	  //	  exit(-1);
-    return 0;
-  }
-  //if( ((Rx_buffer->Nb_tb_max * Rx_buffer->Tb_size) - (Rx_buffer->W_idx+CH_CCCH_HEADER_SIZE)) < Size)
-  // return 0;
-  memcpy(&Rx_buffer->Payload[Rx_buffer->W_idx],(char*)Data,Size);  
-   Rx_buffer->W_idx+=Size;
-  //    msg("filling buffer with size %d, ccch_tx_idx %d\n",Size,Rrc_inst[0].Srb0[0].Tx_buffer.W_idx);
-  return Size;
-}
-//------------------------------------------------------------------------------------------------------------------//
 unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, 
 				     unsigned short Srb_id, 
 				     unsigned char Nb_tb,
@@ -70,16 +50,33 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
   if( Mac_rlc_xface->Is_cluster_head[Mod_id]){
 
     if((Srb_id & RAB_OFFSET) == BCCH){
+      if(CH_rrc_inst[Mod_id].Srb3.Active==0) return 0;
+      
+      // All even frames transmit SIB in SF 5
+      if ((Mac_rlc_xface->frame%2) == 0) {
+	memcpy(&Buffer[0],CH_rrc_inst[Mod_id].SIB1,CH_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
-      msg("[RRC] BCCH request\n");
+	msg("[RRC] Frame %d : BCCH request => SIB 1\n",Rrc_xface->Frame_index);
 #endif
-      H_size=CH_BCCH_HEADER_SIZE;
-      if(CH_rrc_inst[Mod_id].Srb0.Active==0) return 0;
-      Srb_info=&CH_rrc_inst[Mod_id].Srb0;
-      H_size = CH_BCCH_HEADER_SIZE;
-      memcpy(&Buffer[0],&Srb_info->Tx_buffer.Header[0],H_size);
+	for (i=0;i<CH_rrc_inst[Mod_id].sizeof_SIB1;i++)
+	  msg("%x.",Buffer[i]);
+	msg("\n");
 
-      return (CH_BCCH_HEADER_SIZE);
+	return (CH_rrc_inst[Mod_id].sizeof_SIB1);
+      } // All RFN mod 8 transmit SIB2-3 in SF 5
+      else if ((Mac_rlc_xface->frame%8) == 1){
+	memcpy(&Buffer[0],CH_rrc_inst[Mod_id].SIB23,CH_rrc_inst[Mod_id].sizeof_SIB23);
+#ifdef DEBUG_RRC
+	msg("[RRC] Frame %d : BCCH request => SIB 2-3\n",Rrc_xface->Frame_index);
+	for (i=0;i<CH_rrc_inst[Mod_id].sizeof_SIB23;i++)
+	  msg("%x.",Buffer[i]);
+	msg("\n");
+
+#endif
+	return(CH_rrc_inst[Mod_id].sizeof_SIB23);
+      }
+      else
+	return(0);
     }
 	
     
@@ -130,23 +127,44 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
 //--------------------------------------------------------------------------------------------//
 u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_len,u8 CH_index ){ 
   //------------------------------------------------------------------------------------------//
-  //  msg("[OPENAIR][RRC]Node =%d: mac_rrc_data_ind to SRB ID=%ld, CH_UE_INDEX %d...\n",NODE_ID[Mod_id],Srb_id,CH_index);
+  //  msg("[OPENAIR][RRC]Node =%d: mac_rrc_data_ind to SRB ID=%ld, CH_UE_INDEX %d...\n",NODE_ID[Mod_id],Srb_id,CH_index); 
 
   SRB_INFO *Srb_info;
   unsigned short Rv_tb_idx_last,Rv_tb_idx,Size,i;
+  int si_window;
   if(!Mac_rlc_xface->Is_cluster_head[Mod_id]){
     Mod_id-=NB_CH_INST;
 
     //msg("[RRC][UE %d] Received SDU for SRB %d\n",Mod_id,Srb_id);
 
     if(Srb_id == BCCH){
-      Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];
-      memcpy(&Srb_info->Rx_buffer.Payload[0],&Sdu[0],Sdu_len);
-      if ((UE_rrc_inst[Mod_id].Info[0].Status == RRC_IDLE) || (UE_rrc_inst[Mod_id].Info[0].Status == RRC_PRE_SYNCHRO)) {
-	if (UE_rrc_inst[Mod_id].Info[0].Status == RRC_IDLE)
+      if ((Mac_rlc_xface->frame %2) == 0) {
+	if (UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status == 0) {
+	  msg("[RRC][UE %d] Frame %d : Received SIB1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,Sdu_len);
+	  memcpy(UE_rrc_inst[Mod_id].SIB1[CH_index],&Sdu[0],Sdu_len);
+	  UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status = 1;
+	  decode_SIB1(Mod_id,CH_index);
+	}
+      }
+      else {
+	if ((UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status == 1) && 
+	    (UE_rrc_inst[Mod_id].Info[CH_index].SIStatus == 0)) {
+	  si_window = (Mac_rlc_xface->frame%UE_rrc_inst[Mod_id].Info[CH_index].SIperiod)/Mac_rlc_xface->frame%UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize;
+	  msg("[RRC][UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,Mac_rlc_xface->frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[CH_index].SIperiod,UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize);
+	  memcpy(UE_rrc_inst[Mod_id].SI[CH_index],&Sdu[0],Sdu_len);
+	  UE_rrc_inst[Mod_id].Info[CH_index].SIStatus = 1;
+	  decode_SI(Mod_id,CH_index,si_window);	  
+	}
+      } 
+
+       
+      if ((UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status == 1) &&
+	  (UE_rrc_inst[Mod_id].Info[CH_index].SIStatus == 1)) {
+	if (UE_rrc_inst[Mod_id].Info[CH_index].Status == RRC_IDLE) {
 	  msg("[RRC][UE %d] Received First System Info Switching to RRC_PRE_SYNCHRO\n",Mod_id);
-	UE_rrc_inst[Mod_id].Info[0].Status = RRC_PRE_SYNCHRO;
-	rrc_ue_generate_RRCConnectionRequest(Mod_id,0);
+	  UE_rrc_inst[Mod_id].Info[CH_index].Status = RRC_PRE_SYNCHRO;
+	}
+	rrc_ue_generate_RRCConnectionRequest(Mod_id,CH_index);
       }
       
 
@@ -166,7 +184,7 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
 	msg("\n");
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.W_idx = Sdu_len;
-	ue_rrc_decode_ccch(Mod_id,Srb_info,CH_index);
+	rrc_ue_decode_ccch(Mod_id,Srb_info,CH_index);
 
       }
 
@@ -177,7 +195,7 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
     Srb_info = &CH_rrc_inst[Mod_id].Srb0;
     //    msg("\n***********************************INST %d Srb_info %p, Srb_id=%d**********************************\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     memcpy(Srb_info->Rx_buffer.Payload,Sdu,6);
-    ch_rrc_decode_ccch(Mod_id,Srb_info);
+    rrc_ch_decode_ccch(Mod_id,Srb_info);
  }
   //  return Nb_tb;
   
@@ -193,120 +211,20 @@ void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Srb_id, u32 sdu_size,u8 *Bu
     //------------------------------------------------------------------------------------------------------------------//
   //msg("[OPENAIR][RRC]Mod_id=%d: rlc_rrc_data_ind to SRB ID=%d, size %d,...\n",Mod_id,Srb_id,sdu_size);
   // usleep(1000000);
-  unsigned short Idx2=(Srb_id-1)/MAX_NUM_RB;
+  u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
 
   //  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
   //      Srb_id,sdu_size);
   if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
-    ch_rrc_decode_dcch(Mod_id,Idx2,Buffer,sdu_size);
+    rrc_ch_decode_dcch(Mod_id,UE_index,Buffer,sdu_size);
   else
-    ue_rrc_decode_dcch(Mod_id-NB_CH_INST,Buffer,Idx2);
+    rrc_ue_decode_dcch(Mod_id-NB_CH_INST,Buffer,UE_index);
   
-}
-
+} 
+ 
 
 #define W_IDX UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.W_idx
 
-/*-------------------------------------------------------------------------------------------*/
-void def_meas_ind(u8 Mod_id,u8 Idx2){
-  /*-----------------------------------------------------------------------------------------*/
-  unsigned char i,j,k=0;
-DEFAULT_MEAS_IND Def_meas_ind;
-//mac_rrc_mesh_meas_ind(Mod_id,UE_rrc_inst[Mod_id].Srb0[Idx2].Meas_entry);
-mac_rrc_mesh_meas_ind(Mod_id,UE_rrc_inst[Mod_id].Srb1[Idx2].Srb_info.Meas_entry);
-mac_rrc_mesh_meas_ind(Mod_id,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Meas_entry);
-for (i=0;i<NB_RAB_MAX;i++)
-  if(UE_rrc_inst[Mod_id].Rab[i][Idx2].Active==1)
-    mac_rrc_mesh_meas_ind(Mod_id,UE_rrc_inst[Mod_id].Rab[i][Idx2].Rb_info.Meas_entry);
-
- Def_meas_ind.UE_index=UE_rrc_inst[Mod_id].Info[Idx2].UE_index;
-
- for(j=0;j<NB_RAB_MAX;j++){
-   if( UE_rrc_inst[Mod_id].Rab[j][Idx2].Active==1)
-     Def_meas_ind.Rb_active[j]=1;
-   else
-     Def_meas_ind.Rb_active[j]=0;
- }
- 
- UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[k++]=(unsigned char)UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.R_idx;
- 
- memcpy(&UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[1],(char*)&Def_meas_ind,DEFAULT_MEAS_IND_SIZE);
- 
-
-
- UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[W_IDX]= 0;
- if((UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.IP_addr_type!=NONE_L3) && ( UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.IP_addr_ok < 20) ){//MR_IP_ADDR sent 20 times
-   //   msg("[RRC] UE inst %d, send attach cfm \n",NODE_ID[Mod_id+NB_CH_INST]);
-
-     UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[W_IDX++]= UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.IP_addr_type;
-     memcpy(&UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[W_IDX],UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.IP_addr,16);
-     W_IDX+=16;
-     UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.IP_addr_ok++;
- }
-
-Mac_rlc_xface->rrc_rlc_data_req(Mod_id+NB_CH_INST,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,mui++,0,W_IDX,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload);
-//  msg("[NODE %d][RRC_MESH_XFACE] Frame %d: SENT MEASUREMENT REOPORT MSG ON DCCH %d, Size=%d, UE_index %d\n",NODE_ID[Mod_id+NB_CH_INST],Rrc_xface->Frame_index,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,W_IDX,Def_meas_ind.UE_index);
-
-// if(W_IDX > (DEFAULT_MEAS_IND_SIZE+1))
-
-//for(j=0;j<W_IDX;j++)
-// msg("%x.",UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[j]);
-//msg("\n");
- W_IDX=DEFAULT_MEAS_IND_SIZE+1;
-UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.R_idx=0;
-}
-
-
-/*-------------------------------------------------------------------------------------------*/
-void mac_rrc_mesh_meas_ind(u8 Mod_id, MAC_MEAS_REQ_ENTRY *Meas_entry){
-  /*-----------------------------------------------------------------------------------------*/
-  if(Meas_entry){
- 
-    if( (Meas_entry-> Rx_activity==1 ) && (Rrc_xface->Frame_index > Meas_entry->Next_check_frame) && (Rrc_xface->Frame_index - Meas_entry->Last_report_frame) >= Meas_entry->Mac_meas_req.Rep_interval){
-      MAC_MEAS_IND Meas_ind;
-      unsigned short Rb_id=Meas_entry->Mac_meas_req.Lchan_id.Index;
-      //local processing ; put data on dcch 
-      unsigned short Idx2=(Rb_id & RAB_OFFSET2) >> RAB_SHIFT2;
-      unsigned short In_idx=(Rb_id & RAB_OFFSET);
-      
-      if(In_idx < DCCH)
-	Meas_ind.Lchan_id.Index=In_idx;
-      else
-	Meas_ind.Lchan_id.Index=(Rb_id & RAB_OFFSET) + (Rrc_xface->UE_index[Mod_id+NB_CH_INST][Idx2] << RAB_SHIFT2) ;
-      //       msg("[OPENAIR][RRC] [Node %d] Frame %d: mac_rrc_meas_ind for LC_ID %d\n",NODE_ID[Mod_id+NB_CH_INST],Rrc_xface->Frame_index,
-      //	    Meas_ind.Lchan_id.Index);
-      //if(!rrc_fill_buffer(&UE_rrc_inst[Mod_id].Srb2[Idx2].Tx_buffer,(char*)&Def_meas_req,DEFAULT_MEAS_REQ_SIZE))
-      
-      // UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[0]=RAB_MEAS_IND;
- 	 Meas_ind.Meas_status=MEAS_REPORT;
-	 memcpy(&Meas_ind.Meas,(MAC_MEAS_T*)&Meas_entry->Mac_meas_req.Mac_meas,MAC_MEAS_T_SIZE);
-	 memcpy(&UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload[W_IDX],(char*)&Meas_ind,MAC_MEAS_IND_SIZE);
-	 W_IDX+=MAC_MEAS_IND_SIZE;
-	 UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.R_idx++;
-	 Meas_entry->Rx_activity=0;
-	 Meas_entry->Next_check_frame+=Meas_entry->Mac_meas_req.Rep_interval;
-	 Meas_entry->Last_report_frame=Rrc_xface->Frame_index;
-	 
-	 
-	 //Mac_rlc_xface->rrc_rlc_data_req(Mod_id+NB_CH_INST,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,mui++,0,MAC_MEAS_IND_SIZE+1,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Tx_buffer.Payload);
-	 //	  msg("[NODE %d][RRC_MESH_XFACE] Meas on LC %d wrote on TX Buffer of SRB %d, W_idx = %d \n",NODE_ID[Mod_id+NB_CH_INST],Meas_ind.Lchan_id.Index,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,W_IDX);
-	 
-	 /*mac_rlc_status_resp_t rlc_status;
-	   rlc_status=mac_rlc_status_ind(Mod_id+NB_CH_INST,UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,40,1);
-	   msg("RLC_STATUS_IND ON RAB %d return %d Bytes\n",UE_rrc_inst[Mod_id].Srb2[Idx2].Srb_info.Srb_id,rlc_status.bytes_in_buffer);
-	   exit(0);
-	 */
-	 //int i;
-	 //   for(i=0;i<MAC_MEAS_IND_SIZE;i++)
-   //   msg("%d.",Rrc_inst[Mod_id].Srb2[UE_CH_index].Srb_info.Tx_buffer.Payload[i]);
-	 //msg("\n");
-	 
-	 
-	 // (module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP) {
-	 
-    }
-  }
-}
 /*-------------------------------------------------------------------------------------------*/
 void rrc_mesh_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
 /*-------------------------------------------------------------------------------------------*/
@@ -317,7 +235,7 @@ void rrc_mesh_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
   rlc_infoP.rlc_mode=RLC_UM;
   MAC_CONFIG_REQ Mac_config_req; 
   //Mod_id-=NB_CH_INST;
-Mac_config_req.UE_CH_index=CH_index;
+  Mac_config_req.UE_CH_index=CH_index;
   msg("______________[NODE %d][RRC] OUT OF SYNC FROM CH %d______________\n ",NODE_ID[Mod_id],CH_index);
   
   UE_rrc_inst[Mod_id].Info[CH_index].Status=RRC_IDLE;
@@ -338,9 +256,6 @@ Mac_config_req.UE_CH_index=CH_index;
   UE_rrc_inst[Mod_id].Srb1[CH_index].Srb_info.Tx_buffer.R_idx=0;
   UE_rrc_inst[Mod_id].Srb1[CH_index].Srb_info.Tx_buffer.W_idx=0;
 
-  ((CH_CCCH_HEADER*)(UE_rrc_inst[Mod_id].Srb0[CH_index].Rx_buffer.Header))->Rv_tb_idx=0;
-  //((CH_CCCH_HEADER*)(UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Header))->Rv_tb_idx=0;
-
   //  Rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.Rv_tb_idx=0;
   if(UE_rrc_inst[Mod_id].Srb2[CH_index].Active==1){
     msg("[RRC Inst %d] CH_index %d, Remove RB %d\n ",Mod_id,CH_index,UE_rrc_inst[Mod_id].Srb2[CH_index].Srb_info.Srb_id);
@@ -348,42 +263,13 @@ Mac_config_req.UE_CH_index=CH_index;
     UE_rrc_inst[Mod_id].Srb2[CH_index].Active=0;
     UE_rrc_inst[Mod_id].Srb2[CH_index].Status=IDLE;
     UE_rrc_inst[Mod_id].Srb2[CH_index].Next_check_frame=0;
-    if(UE_rrc_inst[Mod_id].Srb2[CH_index].Srb_info.Meas_entry)
-      UE_rrc_inst[Mod_id].Srb2[CH_index].Srb_info.Meas_entry->Status=IDLE;
+
     Mac_config_req.Lchan_id.Index=UE_rrc_inst[Mod_id].Srb2[CH_index].Srb_info.Srb_id;
     Mac_config_req.Lchan_type=DCCH;
     Mac_rlc_xface->mac_config_req(Mod_id+NB_CH_INST,REMOVE_LC,&Mac_config_req);
-    if(UE_rrc_inst[Mod_id].Def_meas[CH_index]!= NULL){
-      UE_rrc_inst[Mod_id].Def_meas[CH_index]->Status = IDLE;
-      UE_rrc_inst[Mod_id].Def_meas[CH_index]->Active = 0;
-      UE_rrc_inst[Mod_id].Def_meas[CH_index]->Last_report_frame = 0;
-    }
 
   }
-  // mac_release_req(Mod_id,Rrc_inst[Mod_id].Srb2[CH_index].Srb_info.Srb_id,CH_index);
-//for (i=0;i<NB_RAB_MAX;i++)   
-  //        msg("[RRC][MOD_ID %d] Remove request for RAB %d on In_idx %d, Active=%d, Status %d (%d)\n",Mod_id,UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Rb_id,i,UE_rrc_inst[Mod_id].Rab[i][CH_index].Active,UE_rrc_inst[Mod_id].Rab[i][CH_index].Status,IDLE);
-      
- for (i=0;i<NB_RAB_MAX;i++)
-     if(UE_rrc_inst[Mod_id].Rab[i][CH_index].Active==1 ){
-            msg("[RRC][MOD_ID %d] Remove request for RAB %d on In_idx %d\n",Mod_id,UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Rb_id,i);
-      Mac_rlc_xface->rrc_rlc_config_req(Mod_id+NB_CH_INST,ACTION_REMOVE,UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Rb_id,RADIO_ACCESS_BEARER,Rlc_info_am_config);
-      UE_rrc_inst[Mod_id].Rab[i][CH_index].Active=0;
-      UE_rrc_inst[Mod_id].Rab[i][CH_index].Status=IDLE;
-      UE_rrc_inst[Mod_id].Rab[i][CH_index].Next_check_frame=0;
-      if(UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Meas_entry)
-	UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Meas_entry->Status=IDLE;
-      Mac_config_req.Lchan_id.Index=UE_rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Rb_id;
-      Mac_config_req.Lchan_type=DTCH;
-      Mac_rlc_xface->mac_config_req(Mod_id+NB_CH_INST,REMOVE_LC,&Mac_config_req);
 
-      //mac_release_req(Mod_id,Rrc_inst[Mod_id].Rab[i][CH_index].Rb_info.Rb_id,CH_index);
-    }
-    
-    UE_rrc_inst[Mod_id].Nb_rb[CH_index]=0;//DTCH BROADCAST
-    //mac_release_all_meas_process(Mod_id,CH_index);
-//exit(0);
-    //Rrc_inst[Mod_id].Nb_rb[i] = 0;
 
 }    
 

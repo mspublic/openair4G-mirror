@@ -19,6 +19,9 @@ ________________________________________________________________*/
 #ifndef CELLULAR
 #include "L3_rrc_defs.h"
 #endif
+#include "RadioResourceConfigCommonSIB.h"
+#include "RadioResourceConfigDedicated.h"
+
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
 /** @defgroup _mac_rrc_primitives_ MAC Layer Primitives for Communications with RRC 
@@ -343,6 +346,12 @@ typedef struct{
   void (*pdcp_run)();
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);	
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
+  int (*rrc_mac_config_req)(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
+			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+			    RadioResourceConfigDedicated_t *radioResourceConfigDedicated,
+			    TDD_Config_t *tdd_Config,
+			    u8 *SIwindowsize,
+			    u16 *SIperiod);
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);
   void (*mac_rlc_data_ind)(module_id_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
   mac_rlc_status_resp_t (*mac_rlc_status_ind)   (module_id_t, chan_id_t, tb_size_t, num_tb_t);

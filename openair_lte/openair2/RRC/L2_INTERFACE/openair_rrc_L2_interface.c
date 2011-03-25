@@ -91,7 +91,7 @@ void mac_rrc_meas_ind(unsigned char Mod_id,MAC_MEAS_REQ_ENTRY *Meas_entry){
 #ifdef CELLULAR
   rrc_L2_mac_meas_ind_rx ();
 #else
-  mac_rrc_mesh_meas_ind(Mod_id,Meas_entry);
+  //  mac_rrc_mesh_meas_ind(Mod_id,Meas_entry);
 #endif //CELLULAR
 }
 
