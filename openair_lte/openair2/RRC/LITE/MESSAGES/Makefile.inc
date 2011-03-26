@@ -792,6 +792,6 @@ libsomething_la_SOURCES=$(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS)
 
 # This file may be used as an input for make(3)
 # Remove the lines below to convert it into a pure .am file
-CFLAGS += -I. -I$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/ -g -ggdb -DEMIT_ASN_DEBUG=1 -Wall
+CFLAGS += -I. -I$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/ -g -ggdb #-DEMIT_ASN_DEBUG=1 -Wall
 ASN1_MSG_OBJS=${ASN_MODULE_SOURCES:.c=.o} ${ASN_CONVERTER_SOURCES:.c=.o} 
 

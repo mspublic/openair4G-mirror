@@ -247,12 +247,19 @@ void init_SI(u8 Mod_id) {
 
 void init_SI_UE(u8 Mod_id,u8 CH_index) {
 
+  int i;
+
+
   UE_rrc_inst[Mod_id].sizeof_SIB1[CH_index] = 0;  
   UE_rrc_inst[Mod_id].sizeof_SI[CH_index] = 0;
 
   UE_rrc_inst[Mod_id].SIB1[CH_index] = (u8 *)malloc16(32);
-  
+  UE_rrc_inst[Mod_id].sib1[CH_index] = (SystemInformationBlockType1_t *)malloc16(sizeof(SystemInformationBlockType1_t)); 
   UE_rrc_inst[Mod_id].SI[CH_index] = (u8 *)malloc16(64);
+
+  for (i=0;i<8;i++) {
+     UE_rrc_inst[Mod_id].si[CH_index][i] = (SystemInformation_t *)malloc16(sizeof(SystemInformation_t));
+  }
 
   UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status = 0;
   UE_rrc_inst[Mod_id].Info[CH_index].SIStatus = 0;
@@ -479,11 +486,11 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
     msg("%x.",Srb_info->Rx_buffer.Payload[i]);
   msg("\n");
 
-  dec_rval = uper_decode(NULL,
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_DL_CCCH_Message,
 			 (void**)&dl_ccch_msg,
 			 (uint8_t*)Srb_info->Rx_buffer.Payload,
-			 100,0,0);
+			 100);
 
   if (dl_ccch_msg->message.present == DL_CCCH_MessageType_PR_c1) {
 
@@ -731,17 +738,20 @@ void rrc_ch_decode_dcch(u8 Mod_id,  u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   u16 Idx,In_idx;
 
   asn_dec_rval_t dec_rval;
-  UL_DCCH_Message_t *ul_dcch_msg;
+  UL_DCCH_Message_t uldcchmsg;
+  UL_DCCH_Message_t *ul_dcch_msg=&uldcchmsg;
 
   int i;
 
+  memset(ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
+
   msg("[RRC][eNB %d] Frame %d: Decoding UL-DCCH Message\n",
       Mod_id,Mac_rlc_xface->frame);
-  dec_rval = uper_decode(NULL,
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_UL_DCCH_Message,
 			 (void**)&ul_dcch_msg,
 			 Rx_sdu,
-			 100,0,0);
+			 100);
 
   if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
 
@@ -792,11 +802,14 @@ void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
   u16 Idx,UE_index,In_idx;
 
   asn_dec_rval_t dec_rval;
-  UL_CCCH_Message_t *ul_ccch_msg;
+  UL_CCCH_Message_t ulccchmsg;
+  UL_CCCH_Message_t *ul_ccch_msg=&ulccchmsg;
   RRCConnectionRequest_r8_IEs_t *rrcConnectionRequest;
 
 
   int i;
+
+  memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
   msg("[RRC][eNB %d] Frame %d: Decoding CCCH %x.%x.%x.%x.%x.%x (%p)\n", Mod_id,Mac_rlc_xface->frame,
 	(uint8_t*)Srb_info->Rx_buffer.Payload[0],
@@ -806,11 +819,11 @@ void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
     (uint8_t*)Srb_info->Rx_buffer.Payload[4],
     (uint8_t*)Srb_info->Rx_buffer.Payload[5],
 	(uint8_t*)Srb_info->Rx_buffer.Payload);
-  dec_rval = uper_decode(NULL,
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_UL_CCCH_Message,
 			 (void**)&ul_ccch_msg,
 			 (uint8_t*)Srb_info->Rx_buffer.Payload,
-			 100,0,0);
+			 100);
 
   if (ul_ccch_msg->message.present == UL_CCCH_MessageType_PR_c1) {
 
@@ -988,18 +1001,20 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 *Buffer,u8 CH_index){
   DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
   asn_dec_rval_t dec_rval;
   int i;
-  
+ 
+  memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
+ 
   // decode messages
   msg("[RRC][UE %d] Decoding DL-DCCH message\n",Mod_id);
   for (i=0;i<30;i++)
     msg("%x.",Buffer[i]);
   msg("\n");
 
-  dec_rval = uper_decode(NULL,
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_DL_DCCH_Message,
 			 (void**)&dl_dcch_msg,
 			 (uint8_t*)Buffer,
-			 100,0,0);
+			 100);
 
   if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
 
@@ -1052,12 +1067,13 @@ void decode_SIB1(u8 Mod_id,u8 CH_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[CH_index];
   int i;
-
-  dec_rval = uper_decode(NULL,
+  
+  memset(*sib1,0,sizeof(SystemInformationBlockType1_t));
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_SystemInformationBlockType1,
 			 (void**)sib1,
 			 (uint8_t*)UE_rrc_inst[Mod_id].SIB1[CH_index],
-			 100,0,0);
+			 100);
   msg("[RRC][UE %d] Frame %d : Dumping SIB 1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
   for (i=0;i<18;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SIB1[CH_index][i]);
@@ -1072,14 +1088,14 @@ void decode_SIB1(u8 Mod_id,u8 CH_index) {
   msg("cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
   msg("freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
   msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
-  msg("siSchedulingInfoSIBType[0]         : %s\n",SIBType[(int)(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]->buf[0]]);
+  msg("siSchedulingInfoSIBType[0]         : %s\n",SIBType[(int)*(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]]);
   msg("siSchedulingInfoPeriod[0]          : %s\n",SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity]);
 
   if ((*sib1)->tdd_Config)
     msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(*sib1)->tdd_Config->subframeAssignment,(*sib1)->tdd_Config->specialSubframePatterns);
 
   UE_rrc_inst[Mod_id].Info[CH_index].SIperiod    =8<<((int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity);
-  UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize=siWindowLength_int[(int)(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]->buf[0]];
+  UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize=siWindowLength_int[(int)*(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]];
 
   Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,CH_index,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
@@ -1190,12 +1206,12 @@ void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window) {
     msg("[RRC][UE], not enough windows (%d>8)\n",si_window);
     return;
   }
-
-  dec_rval = uper_decode(NULL,
+  memset(*si,0,sizeof(SystemInformation_t));
+  dec_rval = uper_decode_complete(NULL,
 			 &asn_DEF_SystemInformation,
 			 (void**)si,
 			 (uint8_t*)UE_rrc_inst[Mod_id].SI[CH_index],
-			 100,0,0);
+			 100);
   msg("[RRC][UE %d] Frame %d : Dumping SI from window %d (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,si_window,dec_rval.consumed);
   for (i=0;i<30;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SI[CH_index][i]);

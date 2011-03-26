@@ -424,8 +424,8 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
     msg("[MAC][UE %d] RLC status for DCCH : %d\n",
 	Mod_id,rlc_status.bytes_in_buffer);
 
-    if ((rlc_status.bytes_in_buffer>0)&&(sdu_length_total<(buflen-header_len))) {
-      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len);
+    if (rlc_status.bytes_in_buffer>0) {
+      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len,sdu_length_total);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							DCCH,
@@ -435,9 +435,11 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
       msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
       num_sdus = 1;
       //header_len +=2; 
+	  DCCH_not_empty=0;
     }
-    else
+    else {
       DCCH_not_empty=0;
+    }
   }
 
   if (sdu_length_total < (buflen-header_len)) {
