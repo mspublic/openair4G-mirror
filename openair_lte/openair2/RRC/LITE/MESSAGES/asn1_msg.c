@@ -596,7 +596,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->uplinkPowerControlDedicated->pSRS_Offset = 0; // 0 dB
   physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient = calloc(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient));
   //  assign_enum(physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient,FilterCoefficient_fc4); // fc4 dB
-  physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient=FilterCoefficient_fc4; // fc4 dB
+  *physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient=FilterCoefficient_fc4; // fc4 dB
 
   // TPC-PDCCH-Config
 
@@ -667,7 +667,8 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7+(UE_id%3);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax,
   //SchedulingRequestConfig__setup__dsr_TransMax_n4);
-  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  //  assign_enum(&physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n4;
  
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = RRCConnectionSetup__criticalExtensions_PR_c1;
