@@ -1071,14 +1071,14 @@ void decode_SIB1(u8 Mod_id,u8 CH_index) {
 
   msg("cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
   msg("freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
-  msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength.buf[0]]);
+  msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
   msg("siSchedulingInfoSIBType[0]         : %s\n",SIBType[(int)(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]->buf[0]]);
-  msg("siSchedulingInfoPeriod[0]          : %s\n",SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity.buf[0]]);
+  msg("siSchedulingInfoPeriod[0]          : %s\n",SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity]);
 
   if ((*sib1)->tdd_Config)
-    msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(*sib1)->tdd_Config->subframeAssignment.buf[0],(*sib1)->tdd_Config->specialSubframePatterns.buf[0]);
+    msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(*sib1)->tdd_Config->subframeAssignment,(*sib1)->tdd_Config->specialSubframePatterns);
 
-  UE_rrc_inst[Mod_id].Info[CH_index].SIperiod    =8<<((int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity.buf[0]);
+  UE_rrc_inst[Mod_id].Info[CH_index].SIperiod    =8<<((int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity);
   UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize=siWindowLength_int[(int)(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]->buf[0]];
 
   Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,CH_index,
@@ -1093,20 +1093,20 @@ void decode_SIB1(u8 Mod_id,u8 CH_index) {
 void dump_sib2(SystemInformationBlockType2_t *sib2) {
 
   msg("radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles : %d\n",
-      sib2->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles.buf[0]);
+      sib2->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles);
 
   //  if (radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig)
   //msg("radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig ",sib2->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL; 
 
-  msg("radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep.buf[0]);
+  msg("radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.powerRampingStep);
 
-  msg("radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower.buf[0]);
+  msg("radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.powerRampingParameters.preambleInitialReceivedTargetPower);
   
-  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax  : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax.buf[0]);
+  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax  : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.preambleTransMax);
   
-  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize.buf[0]);
+  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.ra_ResponseWindowSize);
   
-  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer.buf[0]);
+  msg("radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer : %d\n",sib2->radioResourceConfigCommon.rach_ConfigCommon.ra_SupervisionInfo.mac_ContentionResolutionTimer);
 
   msg("radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx : %d\n",
       sib2->radioResourceConfigCommon.rach_ConfigCommon.maxHARQ_Msg3Tx);
@@ -1123,7 +1123,7 @@ void dump_sib2(SystemInformationBlockType2_t *sib2) {
 
   // PUSCH-Config
   msg("radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB  : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
-  msg("radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode  : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode.buf[0]);
+  msg("radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode  : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
   msg("radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
   msg("radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
   msg("radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled : %d\n",sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
@@ -1133,7 +1133,7 @@ void dump_sib2(SystemInformationBlockType2_t *sib2) {
 
   // PUCCH-Config
 
-  msg("radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift : %d\n",sib2->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift.buf[0]);
+  msg("radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift : %d\n",sib2->radioResourceConfigCommon.pucch_ConfigCommon.deltaPUCCH_Shift);
   msg("radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI : %d\n",sib2->radioResourceConfigCommon.pucch_ConfigCommon.nRB_CQI);
   msg("radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN : %d\n",sib2->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN);
   msg("radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN : %d\n",sib2->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN);
@@ -1144,31 +1144,31 @@ void dump_sib2(SystemInformationBlockType2_t *sib2) {
   // uplinkPowerControlCommon
 
   msg("radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUSCH);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.alpha : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.alpha.buf[0]);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.alpha : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.alpha);
 
   msg("radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.p0_NominalPUCCH);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1 : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1.buf[0]);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b.buf[0]);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2  :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2.buf[0]);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a.buf[0]);
-  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b.buf[0]);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1 : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format1b);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2  :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2a);
+  msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b :%d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaFList_PUCCH.deltaF_PUCCH_Format2b);
 
   msg("radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3 : %d\n",sib2->radioResourceConfigCommon.uplinkPowerControlCommon.deltaPreambleMsg3);
 
-  msg("radioResourceConfigCommon.ul_CyclicPrefixLength : %d\n", sib2->radioResourceConfigCommon.ul_CyclicPrefixLength.buf[0]);
+  msg("radioResourceConfigCommon.ul_CyclicPrefixLength : %d\n", sib2->radioResourceConfigCommon.ul_CyclicPrefixLength);
 
-  msg("ue_TimersAndConstants.t300 : %d\n", sib2->ue_TimersAndConstants.t300.buf[0]);
-  msg("ue_TimersAndConstants.t301 : %d\n", sib2->ue_TimersAndConstants.t301.buf[0]);
-  msg("ue_TimersAndConstants.t310 : %d\n", sib2->ue_TimersAndConstants.t310.buf[0]);
-  msg("ue_TimersAndConstants.n310 : %d\n", sib2->ue_TimersAndConstants.n310.buf[0]);
-  msg("ue_TimersAndConstants.t311 : %d\n", sib2->ue_TimersAndConstants.t311.buf[0]);
-  msg("ue_TimersAndConstants.n311 : %d\n", sib2->ue_TimersAndConstants.n311.buf[0]);
+  msg("ue_TimersAndConstants.t300 : %d\n", sib2->ue_TimersAndConstants.t300);
+  msg("ue_TimersAndConstants.t301 : %d\n", sib2->ue_TimersAndConstants.t301);
+  msg("ue_TimersAndConstants.t310 : %d\n", sib2->ue_TimersAndConstants.t310);
+  msg("ue_TimersAndConstants.n310 : %d\n", sib2->ue_TimersAndConstants.n310);
+  msg("ue_TimersAndConstants.t311 : %d\n", sib2->ue_TimersAndConstants.t311);
+  msg("ue_TimersAndConstants.n311 : %d\n", sib2->ue_TimersAndConstants.n311);
 
   msg("freqInfo.additionalSpectrumEmission : %d\n",sib2->freqInfo.additionalSpectrumEmission);
   msg("freqInfo.ul_CarrierFreq : %d\n",sib2->freqInfo.ul_CarrierFreq);
   msg("freqInfo.ul_Bandwidth : %d\n",sib2->freqInfo.ul_Bandwidth);
   msg("mbsfn_SubframeConfigList : %d\n",sib2->mbsfn_SubframeConfigList);
-  msg("timeAlignmentTimerCommon : %d\n",sib2->timeAlignmentTimerCommon.buf[0]);
+  msg("timeAlignmentTimerCommon : %d\n",sib2->timeAlignmentTimerCommon);
 
 
 
