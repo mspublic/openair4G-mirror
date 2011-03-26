@@ -419,12 +419,12 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
   while (DCCH_not_empty==1) {
     rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
 				    DCCH,
-				    (buflen-header_len)/DCCH_LCHAN_DESC.transport_block_size,
+				    (buflen-header_len-sdu_length_total)/DCCH_LCHAN_DESC.transport_block_size,
 				    DCCH_LCHAN_DESC.transport_block_size);
     msg("[MAC][UE %d] RLC status for DCCH : %d\n",
 	Mod_id,rlc_status.bytes_in_buffer);
 
-    if (rlc_status.bytes_in_buffer>0) {
+    if ((rlc_status.bytes_in_buffer>0)&&(sdu_length_total<(buflen-header_len))) {
       msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
@@ -439,14 +439,15 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
     else
       DCCH_not_empty=0;
   }
-  
+
+  if (sdu_length_total < (buflen-header_len)) {
 // now check for other logical channels
 // check for ulsch   
 // rlc UM v 9
     rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
-				  DTCH,
-				  0,
-				  buflen - header_len - sdu_length_total);
+				    DTCH,
+				    0,
+				    buflen - header_len - sdu_length_total);
     
     if (rlc_status.bytes_in_buffer > 0 ) { // get rlc pdu 
       msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
@@ -459,14 +460,14 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 					DTCH,
 					0,
 					buflen - header_len - sdu_length_total); // number of bytes
-  
+	
       }
       sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							      DTCH,
 							      &ulsch_buff[sdu_length_total]);
-
+      
       msg("[MAC][UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
-
+      
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
       num_sdus++;
@@ -476,9 +477,9 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
       
 
     }
-
-  // Generate header
-    if (num_sdus>0) {
+  }
+    // Generate header
+  if (num_sdus>0) {
     payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
 					   num_sdus,      // num sdus
 					   0,            // short pading
@@ -495,25 +496,25 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
-    }
-    else { // send BSR 
-      bsr.LCGID = 0x0;
-      bsr.Buffer_size = 0x3f;
-      
-      payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
-					     num_sdus,      // num sdus
-					     0,            // short pading
-					     sdu_lengths,  // sdu length
-					     sdu_lcids,    // sdu lcid 
-					     NULL,  // power headroom
-					     NULL,  // crnti
-					     NULL,  // truncated bsr
-					     &bsr, // short bsr
-					     NULL); // long_bsr
-      
+  }
+  else { // send BSR 
+    bsr.LCGID = 0x0;
+    bsr.Buffer_size = 0x3f;
+    
+    payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
+					   num_sdus,      // num sdus
+					   0,            // short pading
+					   sdu_lengths,  // sdu length
+					   sdu_lcids,    // sdu lcid 
+					   NULL,  // power headroom
+					   NULL,  // crnti
+					   NULL,  // truncated bsr
+					   &bsr, // short bsr
+					   NULL); // long_bsr
+    
     msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
 	Mod_id,payload_offset, sdu_length_total);
-
+    
     // cycle through SDUs and place in ulsch_buffer
     memcpy(&ulsch_buffer[payload_offset],ulsch_buff,sdu_length_total);
 
