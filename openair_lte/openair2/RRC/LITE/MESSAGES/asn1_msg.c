@@ -32,13 +32,14 @@
 
 #include "PHY/defs.h"
 
+/*
 void assign_enum(ENUMERATED_t *x,uint8_t val) {
   uint8_t *buf=(uint8_t *)malloc(4);
   x->buf = buf;
   *buf=val;
   x->size=1;
 }
- 
+*/ 
 
 uint8_t do_SIB1(uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
