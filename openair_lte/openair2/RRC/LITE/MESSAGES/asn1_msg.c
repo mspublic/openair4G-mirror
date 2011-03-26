@@ -363,10 +363,8 @@ rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Ident
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[3] = rv[3];
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[4] = rv[4];
 
-  ecause = EstablishmentCause_mo_Data;
 
-  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause.buf = (uint8_t*)&ecause;
-  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause.size = 1;
+  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.establishmentCause = EstablishmentCause_mo_Data;
 
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.buf = &buf2;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.size=1;
