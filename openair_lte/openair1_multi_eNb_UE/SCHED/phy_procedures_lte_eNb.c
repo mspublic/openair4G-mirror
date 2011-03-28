@@ -906,7 +906,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       } 
       else {
 	dlsch_encoding_emul(phy_vars_eNB,
-			    dlsch_input_buffer,
+			    DLSCH_pdu,
 			    phy_vars_eNB->dlsch_eNB_SI);
       }
       phy_vars_eNB->dlsch_eNB_SI->active = 0;

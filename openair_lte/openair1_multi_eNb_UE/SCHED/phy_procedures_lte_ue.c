@@ -1273,7 +1273,6 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				      ((last_slot>>1)-1)%10,
 				      0,
 				      eNB_id);
-
 	  }
 
 	  if (ret == (1+MAX_TURBO_ITERATIONS)) {

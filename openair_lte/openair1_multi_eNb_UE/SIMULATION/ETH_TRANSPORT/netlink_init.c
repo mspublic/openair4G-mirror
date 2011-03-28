@@ -33,10 +33,10 @@ int netlink_init() {
   
   nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
   
-  printf("Opened socket with fd %d\n",nas_sock_fd);
+  printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd);
 
   ret = fcntl(nas_sock_fd,F_SETFL,O_NONBLOCK);
-  printf("fcntl returns %d\n",ret);
+  printf("[NETLINK] fcntl returns %d\n",ret);
 
   memset(&nas_src_addr, 0, sizeof(nas_src_addr));
   nas_src_addr.nl_family = AF_NETLINK;
@@ -45,7 +45,7 @@ int netlink_init() {
   ret = bind(nas_sock_fd, (struct sockaddr*)&nas_src_addr,
 	     sizeof(nas_src_addr));
 
-  printf("bind returns %d\n",ret);
+  printf("[NETLINK] bind returns %d\n",ret);
 
   memset(&nas_dest_addr, 0, sizeof(nas_dest_addr));
   nas_dest_addr.nl_family = AF_NETLINK;

@@ -41,6 +41,8 @@
 //#include <rtai.h>
 #define msg printf
 #endif //USER_MODE
+//#include "extern.h"
+extern unsigned short Master_id;
 
 #define MULTICAST_LINK_NUM_GROUPS 4
 
@@ -58,6 +60,7 @@ static int      highsock;       /* Highest #'d file descriptor, needed for selec
 static pthread_t main_loop_thread;
 static void (*rx_handler) (unsigned int, char*);
 static unsigned char multicast_group; 
+
 //------------------------------------------------------------------------------
 void
 multicast_link_init ()
@@ -217,7 +220,7 @@ multicast_link_main_loop (void *param)
 
 #endif //USER_MODE
    highsock = -1;
-  while (1) {
+   while (1) {
     multicast_link_build_select_list ();
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
@@ -252,11 +255,13 @@ multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char
   //Bypass_phy_wr=0;
 #endif //BYPASS_PHY
   multicast_link_init ();
-
+  printf("mcast mink start thread\n");
   if (pthread_create (&main_loop_thread, NULL, multicast_link_main_loop, NULL) != 0) {
-    msg ("[MULTICAST LINK] Thread started");
+    msg ("[MULTICAST LINK] Thread started\n");
     exit (-2);
   } else {
     pthread_detach (main_loop_thread);  // disassociate from parent
+    msg ("[MULTICAST LINK] Thread detached\n");
+   
   }
 }

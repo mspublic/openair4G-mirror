@@ -68,6 +68,7 @@ make_socket_inet (int typeP, uint16_t * portP, struct sockaddr_in *ptr_addressP)
   name.sin_family = AF_INET;
   name.sin_port = htons (*portP);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
+  
   if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
     close (sock);
     fprintf (stderr, "ERROR: %s line %d bind port %d %m", __FILE__, __LINE__, *portP);
