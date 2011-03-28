@@ -809,20 +809,37 @@ int main(int argc, char **argv) {
  //initialize the log generator 
   logInit(map_str_to_int(level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
-  
-  //set_comp_log(EMU,  LOG_INFO, LOG_MED);
- #ifdef OCG
+
+#ifdef OCG  
   if (OCG_flag==1){ // activate OCG
     printf("start\n");
     emulation_scen= OCG_main();
-    LOG_I(MAC,"the area is x %f y %f\n",
+    LOG_I(MAC,"the area is x %f y %f option %s\n",
 	  emulation_scen->envi_config.area.x,
-	  emulation_scen->envi_config.area.y);
-    abstraction_flag=1;
-  }
-#endif 
-  //if ( (ethernet_flag==1) || (abstraction_flag==1) )
-  //ret=netlink_init();
+		  emulation_scen->envi_config.area.y, emulation_scen->topo_config.eNB_topology.selected_option);
+      abstraction_flag=1;
+      extended_prefix_flag=1;
+
+      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE;
+
+      if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
+         emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
+      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
+	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
+      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
+	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
+      } 
+      n_frames  =  (int) emulation_scen->emu_config.emu_time * 60 * 100;
+      transmission_mode = 1;
+      //set_comp_log(EMU,  LOG_INFO, LOG_MED);
+      //set_comp_log(MAC,  LOG_INFO, LOG_MED);
+      //set_comp_log(RLC,  LOG_INFO, LOG_MED);
+      
+      LOG_I(OCG," ue local %d enb local %d frame %d\n",   nb_ue_local,   nb_eNB_local, n_frames );
+   }
+#endif    
+  
+  ret=netlink_init();
   
   if (ethernet_flag==1){
     emu_info.master[emu_info.master_id].nb_ue=emu_info.nb_ue_local;
@@ -843,7 +860,6 @@ int main(int argc, char **argv) {
 	  emu_info.nb_master,
 	  emu_info.master_id);
     
-    ret=netlink_init();
     init_bypass();
     
     while (emu_tx_status != SYNCED_TRANSPORT ) {
@@ -1317,7 +1333,7 @@ int main(int argc, char **argv) {
       
   }
   // relase all rx state
-  emu_transport_release();
+  if (ethernet_flag==1){ emu_transport_release();}
   
   if (abstraction_flag==0) {
     /*
