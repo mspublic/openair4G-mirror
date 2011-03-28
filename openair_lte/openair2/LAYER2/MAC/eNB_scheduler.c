@@ -1094,7 +1094,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
   u16 nCCE;
   u8 aggregation;
   mac_rlc_status_resp_t rlc_status;
-  u8 header_len;
+  u8 header_len_dcch,header_len_dtch;
   u8 lcid,sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,nb_available_rb,TBS,payload_size,i,j,sdu_lengths[11],rrc_sdu_length,rnti;
   u8 dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
@@ -1201,18 +1201,18 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
       TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
       
       // check first for RLC data on DCCH
-      header_len = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
+      header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB %d] Requesting %d bytes from RLC\n",Mod_id,TBS-header_len);
+      msg("[MAC][eNB %d] Requesting %d bytes from RLC\n",Mod_id,TBS-header_len_dcch);
 #endif     
       rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
-				      (TBS-header_len)/DCCH_LCHAN_DESC.transport_block_size,
+				      (TBS-header_len_dcch)/DCCH_LCHAN_DESC.transport_block_size,
 				      DCCH_LCHAN_DESC.transport_block_size); // transport block set size
       
       sdu_lengths[0]=0;
       loop_count=0;
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len);
+      msg("[MAC][eNB %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len_dcch);
 #endif     
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id,
 							DCCH+(MAX_NUM_RB*next_ue),
@@ -1220,13 +1220,13 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 #ifdef DEBUG_eNB_SCHEDULER
       msg("[MAC][eNB %d] Got %d bytes from RLC\n",Mod_id,sdu_lengths[0]);
 #endif     
-      if ((sdu_lengths[0] + header_len )< TBS) {
+      if ((sdu_lengths[0] + header_len_dcch )< TBS) {
 	// repeat to see if additional data generated due to request
 #ifdef DEBUG_eNB_SCHEDULER
-	msg("[MAC][eNB %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len);
+	msg("[MAC][eNB %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len_dcch);
 #endif     
 	rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
-					(TBS-header_len-sdu_lengths[0])/DCCH_LCHAN_DESC.transport_block_size,
+					(TBS-header_len_dcch-sdu_lengths[0])/DCCH_LCHAN_DESC.transport_block_size,
 					DCCH_LCHAN_DESC.transport_block_size);
 	
 	sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id,
@@ -1238,7 +1238,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
       }
 
       if (sdu_lengths[0]>0) {
-	sdu_length_total += sdu_lengths[0];
+	sdu_length_total = sdu_lengths[0] + header_len_dcch;
 	sdu_lcids[0] = DCCH;
 	num_sdus = 1;
 	
@@ -1249,14 +1249,17 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 	msg("\n");
 #endif
       }
-      
+      else {
+	header_len_dcch = 1+1;  // Timing advance subheader+cmd
+	sdu_length_total = header_len_dcch;
+      }
       // check for DTCH (later) and update header information
       // check first for RLC data on DCCH
-      header_len = 3; // 2 bytes DTCH SDU subheader
+      header_len_dtch = 3; // 2 bytes DTCH SDU subheader
       
       rlc_status = mac_rlc_status_ind(Mod_id,DTCH+(MAX_NUM_RB*next_ue),
 				      0,
-				      TBS-header_len-sdu_length_total-header_len);
+				      TBS-header_len_dcch-sdu_length_total-header_len_dtch);
       if (rlc_status.bytes_in_buffer > 0) {
 	
 	sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id,
@@ -1266,8 +1269,11 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 	msg("[MAC][eNB %d] PHY_DATA_REQ Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
 #endif
 	sdu_lcids[num_sdus] = DTCH;
-	sdu_length_total += sdu_lengths[num_sdus];
+	sdu_length_total += (sdu_lengths[num_sdus]+header_len_dtch);
 	num_sdus++;
+      }
+      else {
+	header_len_dtch = 0;
       }
       
       if (sdu_length_total > 0) {
@@ -1281,8 +1287,8 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 				       NULL,                                  // contention res id
 				       0);                                    // no padding
 #ifdef DEBUG_eNB_SCHEDULER   
-	msg("[MAC][eNB %d] Generate header : num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance : %d, next_ue %d\n",
-	    Mod_id,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
+	msg("[MAC][eNB %d] Generate header : sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance : %d, next_ue %d\n",
+	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue);
 #endif   
