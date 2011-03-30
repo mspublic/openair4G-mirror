@@ -1,0 +1,11 @@
+echo start
+echo 
+make clean
+echo
+make mac_sim_mt_cellular
+echo
+make clean
+echo
+make mac_sim_rg_cellular
+echo
+make clean
