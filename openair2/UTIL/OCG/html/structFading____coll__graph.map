@@ -1,0 +1,4 @@
+<area shape="rect" href="$structSmall__Scale__.html" title="{Small_Scale_\n|+ selected_option_\l+ rayleigh_\l+ rician_\l|}" alt="" coords="72,159,224,276">
+<area shape="rect" href="$structRician__.html" title="{Rician_\n|+ delay_spread_\l|}" alt="" coords="5,7,136,89">
+<area shape="rect" href="$structRayleigh__.html" title="{Rayleigh_\n|+ delay_spread_\l|}" alt="" coords="160,7,291,89">
+<area shape="rect" href="$structFree__Space__Propagation__.html" title="{Free_Space_Propagation_\n|+ pathloss_exponent_\l+ pathloss_0_\l|}" alt="" coords="248,167,440,268">

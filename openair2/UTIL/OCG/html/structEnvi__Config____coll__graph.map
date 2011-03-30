@@ -1,0 +1,8 @@
+<area shape="rect" href="$structFading__.html" title="{Fading_\n|+ free_space_propagation_\l+ small_scale_\l|}" alt="" coords="185,361,388,463">
+<area shape="rect" href="$structSmall__Scale__.html" title="{Small_Scale_\n|+ selected_option_\l+ rayleigh_\l+ rician_\l|}" alt="" coords="72,159,224,276">
+<area shape="rect" href="$structRician__.html" title="{Rician_\n|+ delay_spread_\l|}" alt="" coords="5,7,136,89">
+<area shape="rect" href="$structRayleigh__.html" title="{Rayleigh_\n|+ delay_spread_\l|}" alt="" coords="160,7,291,89">
+<area shape="rect" href="$structFree__Space__Propagation__.html" title="{Free_Space_Propagation_\n|+ pathloss_exponent_\l+ pathloss_0_\l|}" alt="" coords="248,167,440,268">
+<area shape="rect" href="$structGeography__.html" title="{Geography_\n|+ selected_option_\l+ home_\l+ urban_\l+ rural_\l|}" alt="" coords="412,344,564,480">
+<area shape="rect" href="$structTopography__.html" title="{Topography_\n|+ selected_option_\l+ flat_\l+ obstructed_\l+ hilly_\l|}" alt="" coords="588,344,740,480">
+<area shape="rect" href="$structArea__.html" title="{Area_\n|+ x_\l+ y_\l|}" alt="" coords="764,361,823,463">

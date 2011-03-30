@@ -1,0 +1,167 @@
+\section{OCG.h File Reference}
+\label{OCG_8h}\index{OCG.h@{OCG.h}}
+Data structure for OCG of OpenAir emulator.  
+
+
+{\tt \#include \char`\"{}UTIL/LOG/log\_\-if.h\char`\"{}}\par
+
+
+Include dependency graph for OCG.h:\subsection*{Data Structures}
+\begin{CompactItemize}
+\item 
+struct {\bf Area\_\-}
+\item 
+struct {\bf Geography\_\-}
+\item 
+struct {\bf Topography\_\-}
+\item 
+struct {\bf Free\_\-Space\_\-Propagation\_\-}
+\item 
+struct {\bf Rayleigh\_\-}
+\item 
+struct {\bf Rician\_\-}
+\item 
+struct {\bf Small\_\-Scale\_\-}
+\item 
+struct {\bf Fading\_\-}
+\item 
+struct {\bf Envi\_\-Config\_\-}
+\item 
+struct {\bf Net\_\-Type\_\-}
+\item 
+struct {\bf Cell\_\-Type\_\-}
+\item 
+struct {\bf Relay\_\-}
+\item 
+struct {\bf Grid\_\-}
+\item 
+struct {\bf Hexagonal\_\-}
+\item 
+struct {\bf Totally\_\-Random\_\-}
+\item 
+struct {\bf eNB\_\-Topology\_\-}
+\item 
+struct {\bf Totally\_\-Random\_\-UE\_\-}
+\item 
+struct {\bf Concentrated\_\-}
+\item 
+struct {\bf Grid\_\-Map\_\-}
+\item 
+struct {\bf UE\_\-Distribution\_\-}
+\item 
+struct {\bf Mobility\_\-Type\_\-}
+\item 
+struct {\bf Moving\_\-Dynamics\_\-}
+\item 
+struct {\bf Mobility\_\-}
+\item 
+struct {\bf Topo\_\-Config\_\-}
+\item 
+struct {\bf App\_\-Type\_\-}
+\item 
+struct {\bf Transport\_\-Protocol\_\-}
+\item 
+struct {\bf Fixed\_\-}
+\item 
+struct {\bf Uniform\_\-}
+\item 
+struct {\bf Poisson\_\-}
+\item 
+struct {\bf Packet\_\-Size\_\-}
+\item 
+struct {\bf Inter\_\-Arrival\_\-Time\_\-}
+\item 
+struct {\bf Traffic\_\-}
+\item 
+struct {\bf App\_\-Config\_\-}
+\item 
+struct {\bf Metric\_\-}
+\item 
+struct {\bf Layer\_\-}
+\item 
+struct {\bf Log\_\-Emu\_\-}
+\item 
+struct {\bf Packet\_\-Trace\_\-}
+\item 
+struct {\bf Performance\_\-}
+\item 
+struct {\bf Emu\_\-Config\_\-}
+\item 
+struct {\bf OAI\_\-Emulation\_\-}
+\end{CompactItemize}
+\subsection*{Defines}
+\begin{CompactItemize}
+\item 
+\#define {\bf MODULE\_\-NOT\_\-PROCESSED}~-9999
+\begin{CompactList}\small\item\em the module state indicator is set to -9999 before the module being processed \item\end{CompactList}\item 
+\#define {\bf MODULE\_\-ERROR}~-1
+\begin{CompactList}\small\item\em the module state indicator is set to -1 for error \item\end{CompactList}\item 
+\#define {\bf MODULE\_\-OK}~0
+\begin{CompactList}\small\item\em the module state indicator is set to 0 when successfully processed \item\end{CompactList}\item 
+\#define {\bf GET\_\-HELP}~1
+\begin{CompactList}\small\item\em the module state indicator is set to 1 for get\_\-opt\_\-OK when the user types -h option \item\end{CompactList}\item 
+\#define {\bf NO\_\-FILE}~-2
+\begin{CompactList}\small\item\em the module state indicator is set to -2 for detect\_\-file\_\-OK when no file is detected \item\end{CompactList}\item 
+\#define {\bf WEB\_\-XML\_\-FOLDER}~\char`\"{}/nfs/webxml/\char`\"{}
+\begin{CompactList}\small\item\em the web portal generates XML files into this folder \item\end{CompactList}\item 
+\#define {\bf LOCAL\_\-XML\_\-FOLDER}~\char`\"{}local\_\-XML/\char`\"{}
+\begin{CompactList}\small\item\em this folder contains some XML files for demo, users could also put their own XML files into this folder for a direct emulation without using the web portal \item\end{CompactList}\item 
+\#define {\bf TEMP\_\-OUTPUT\_\-DIR}~\char`\"{}temp\_\-output/\char`\"{}
+\begin{CompactList}\small\item\em temporary output files will be generated in this folder when folders for an emulation could not be created due to errors \item\end{CompactList}\item 
+\#define {\bf OUTPUT\_\-DIR}~\char`\"{}/nfs/emu\_\-results/\char`\"{}
+\begin{CompactList}\small\item\em this folder contains all the output files when folders for an emulation could be successfully created \item\end{CompactList}\item 
+\#define {\bf FILENAME\_\-LENGTH\_\-MAX}~64
+\begin{CompactList}\small\item\em the maximum length of a filename \item\end{CompactList}\item 
+\#define {\bf DIR\_\-LENGTH\_\-MAX}~64
+\begin{CompactList}\small\item\em the maximum length of the path name \item\end{CompactList}\item 
+\#define {\bf MOBI\_\-XML\_\-FOLDER}~\char`\"{}mobi\_\-XML/\char`\"{}
+\begin{CompactList}\small\item\em the folder that mobigen generate XML files in \item\end{CompactList}\item 
+\#define {\bf DIR\_\-TO\_\-MOBIGEN}~\char`\"{}XML\_\-to\_\-mobigen/\char`\"{}
+\begin{CompactList}\small\item\em the folder that mobigen detects XML file from OCG \item\end{CompactList}\end{CompactItemize}
+\subsection*{Enumerations}
+\begin{CompactItemize}
+\item 
+enum \{ \par
+{\bf STATE\_\-START\_\-OCG}, 
+{\bf STATE\_\-GET\_\-OPT}, 
+{\bf STATE\_\-DETECT\_\-FILE}, 
+{\bf STATE\_\-INI\_\-EMU}, 
+\par
+{\bf STATE\_\-PARSE\_\-FILENAME}, 
+{\bf STATE\_\-CREATE\_\-DIR}, 
+{\bf STATE\_\-PARSE\_\-XML}, 
+{\bf STATE\_\-SAVE\_\-XML}, 
+\par
+{\bf STATE\_\-CALL\_\-EMU}, 
+{\bf STATE\_\-GENERATE\_\-REPORT}, 
+{\bf STATE\_\-END}
+ \}
+\end{CompactItemize}
+\subsection*{Functions}
+\begin{CompactItemize}
+\item 
+{\bf OAI\_\-Emulation\_\-} $\ast$ {\bf OCG\_\-main} (void)
+\end{CompactItemize}
+
+
+\subsection{Detailed Description}
+Data structure for OCG of OpenAir emulator. 
+
+\begin{Desc}
+\item[Author:]Lusheng Wang \end{Desc}
+\begin{Desc}
+\item[Date:]2011 \end{Desc}
+\begin{Desc}
+\item[Version:]0.1  Eurecom : {\tt lusheng.wang@eurecom.fr} \end{Desc}
+\begin{Desc}
+\item[Note:]\end{Desc}
+\begin{Desc}
+\item[Warning:]\end{Desc}
+
+
+\subsection{Function Documentation}
+\index{OCG.h@{OCG.h}!OCG\_\-main@{OCG\_\-main}}
+\index{OCG\_\-main@{OCG\_\-main}!OCG.h@{OCG.h}}
+\subsubsection[{OCG\_\-main}]{\setlength{\rightskip}{0pt plus 5cm}{\bf OAI\_\-Emulation\_\-}$\ast$ OCG\_\-main (void)}\label{OCG_8h_ab0460b1df858b12025dee8bc78056a5}
+
+
