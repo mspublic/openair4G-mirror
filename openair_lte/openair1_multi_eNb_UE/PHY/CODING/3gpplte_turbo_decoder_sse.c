@@ -147,7 +147,7 @@ __m128i mbot_4[6144] __attribute__ ((aligned(16)));
 __m128i *mtop_g[MAX_DECODING_THREADS] = {mtop_0, mtop_1, mtop_2, mtop_3, mtop_4};
 __m128i *mbot_g[MAX_DECODING_THREADS] = {mbot_0, mbot_1, mbot_2, mbot_3, mbot_4};
 
-__m128i mtmp[MAX_DECODING_THREADS],mtmp2[MAX_DECODING_THREADS],lsw[MAX_DECODING_THREADS],msw[MAX_DECODING_THREADS],new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],newcmp[MAX_DECODING_THREADS];
+__m128i mtmp[MAX_DECODING_THREADS],mtmp2[MAX_DECODING_THREADS],lsw[MAX_DECODING_THREADS],msw[MAX_DECODING_THREADS],new[MAX_DECODING_THREADS],mb[MAX_DECODING_THREADS],newcmp[MAX_DECODING_THREADS] __attribute__ ((aligned(16)));
 __m128i TOP,BOT,THRES128;
 
 void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,unsigned char inst)
