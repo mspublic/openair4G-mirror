@@ -58,7 +58,7 @@ void emu_transport_sync(void){
 
 void emu_transport_DL(unsigned int last_slot, unsigned int next_slot) {
 
-  LOG_I(EMU, "navid emu transport DL for last slot is %d\n", last_slot);
+  LOG_T(EMU, "transport DL for last slot is %d\n", last_slot);
   
   if (emu_info.is_primary_master==0){
     //  bypass_rx_data(last_slot);
@@ -82,7 +82,7 @@ void emu_transport_DL(unsigned int last_slot, unsigned int next_slot) {
 
 void emu_transport_UL(unsigned int last_slot, unsigned int next_slot) {
    
-  LOG_I(EMU, "navid emu transport UL for last slot is %d\n", last_slot);
+  LOG_I(EMU, "transport UL for last slot is %d\n", last_slot);
   
   if (emu_info.is_primary_master==0){
     // bypass_rx_data(last_slot, next_slot);
@@ -160,8 +160,15 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int last_slot,unsigned int 
   
   // eNB
   // PBCH : copy payload 
-  *(u32*)PHY_vars_eNB_g[enb_id]->pbch_pdu = eNB_transport_info[enb_id].cntl.pbch_payload;
-    
+  
+  if (next_slot == 1){ 
+    *(u32*)PHY_vars_eNB_g[enb_id]->pbch_pdu = eNB_transport_info[enb_id].cntl.pbch_payload;
+  LOG_T(EMU," RX slot %d ENB TRANSPORT pbch payload %d pdu[0] %d  pdu[0] %d \n", 
+	next_slot ,
+	eNB_transport_info[enb_id].cntl.pbch_payload,
+	((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[0],
+	((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[1]);
+  }
   //CFI
   // not needed yet
   
@@ -201,15 +208,16 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int last_slot,unsigned int 
 	  memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_SI->harq_processes[0]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
-	  LOG_T(EMU, "eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	  LOG_I(EMU, "SI eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
 	case 1: //RA:
 	  
 	  memcpy(PHY_vars_eNB_g[enb_id]->dlsch_eNB_ra->harq_processes[0]->b,
 		 &eNB_transport_info[enb_id].transport_blocks[payload_offset],
 		 eNB_transport_info[enb_id].tbs[n_dci_dl]);
+	  LOG_I(EMU, "RA eNB_transport_info[enb_id].tbs[n_dci_dl]%d \n", eNB_transport_info[enb_id].tbs[n_dci_dl]);
 	  break;
-	  
+  
 	case 2://TB0:
 	  harq_pid  = eNB_transport_info[enb_id].harq_pid[n_dci_dl];
 	  ue_id = eNB_transport_info[enb_id].ue_id[n_dci_dl];
