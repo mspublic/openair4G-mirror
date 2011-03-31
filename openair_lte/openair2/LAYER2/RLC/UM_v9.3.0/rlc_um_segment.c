@@ -42,6 +42,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
     unsigned int       fi_first_byte_pdu_is_first_byte_sdu;
     unsigned int       fi_last_byte_pdu_is_last_byte_sdu;
     unsigned int       fi;
+    unsigned int       max_li_overhead;
 
     msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
     list_init (&pdus, NULL);    // param string identifying the list is NULL
@@ -51,8 +52,13 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT nb_bytes_to_transmit %d BO %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, nb_bytes_to_transmit, rlcP->buffer_occupancy);
         // pdu management
         if (!pdu_mem) {
-            if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes)) {
-                data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes;
+            if (rlcP->nb_sdu <= 1) {
+                max_li_overhead = 0;
+            } else {
+                max_li_overhead = (((rlcP->nb_sdu - 1) * 3) / 2) + ((rlcP->nb_sdu - 1) % 2);
+            }
+            if  (nb_bytes_to_transmit >= (rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes + max_li_overhead)) {
+                data_pdu_size = rlcP->buffer_occupancy + rlcP->header_min_length_in_bytes + max_li_overhead;
 #ifdef RLC_UM_SEGMENT
                 msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, data_pdu_size);
 #endif
@@ -212,7 +218,7 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
                         e_li->b1 = 0;
                     } else {
                         //e_li->e1  = 1;
-                        e_li->b1 =  0x80;                    
+                        e_li->b1 =  0x80;
                     }
                     //e_li->li1 = sdu_mngt->sdu_remaining_size;
                     e_li->b1 = e_li->b1 | (sdu_mngt->sdu_remaining_size >> 4);

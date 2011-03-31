@@ -188,25 +188,18 @@ rlc_um_mac_status_indication (void *rlcP, u16_t tbs_sizeP, struct mac_status_ind
   if (rlcP) {
 
 #ifdef RLC_UM_TEST_TRAFFIC
-    if ((mac_xface->frame % 20) == 0) {
+    if ((mac_xface->frame % 200) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_TCPIP);
     }
-    if ((mac_xface->frame % 4000) == 0) {
+    if ((mac_xface->frame % 40) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_VOIP);
     }
-    if ((mac_xface->frame % 4000) == 0) {
+    if ((mac_xface->frame % 4) == 0) {
         rlc_um_test_send_sdu(rlcP, RLC_UM_TEST_SDU_TYPE_SMALL);
     }
 #endif
 
   ((rlc_um_entity_t *) rlcP)->nb_bytes_requested_by_mac = tbs_sizeP;
-
-  //((rlc_um_entity_t *) rlcP)->nb_pdu_requested_by_mac = no_tbP - ((rlc_um_entity_t *)                                                                       rlcP)->pdus_to_mac_layer.nb_elements;
-  //((rlc_um_entity_t *) rlcP)->nb_pdu_requested_by_mac = 1;
-  //((rlc_um_entity_t *) rlcP)->data_pdu_size = 300;
-  //((rlc_um_entity_t *) rlcP)->data_pdu_size_in_bits = 2400;
-
-
 
   status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (status_resp.buffer_occupancy_in_bytes > 0) {
@@ -253,7 +246,7 @@ rlc_um_mac_data_request (void *rlcP)
   data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy ((rlc_um_entity_t *) rlcP);
   if (data_req.buffer_occupancy_in_bytes > 0) {
     data_req.buffer_occupancy_in_bytes += ((rlc_um_entity_t *) rlcP)->header_min_length_in_bytes;
-  }  //data_req.buffer_occupancy_in_pdus = data_req.buffer_occupancy_in_bytes / ((rlc_um_entity_t *)rlcP)->data_pdu_size;
+  }
   data_req.rlc_info.rlc_protocol_state = ((rlc_um_entity_t *) rlcP)->protocol_state;
   return data_req;
 }
