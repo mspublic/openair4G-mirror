@@ -543,7 +543,11 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }
    
 #ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch, pdu[0]=%d\n",mac_xface->frame, next_slot,((u8*) pbch_pdu)[0]);
+      debug_msg("[PHY_PROCEDURES_eNB] Frame %d, slot %d: Calling generate_pbch, pdu[0]=%d pdu[1]=%d\n",
+		mac_xface->frame, 
+		next_slot,
+		((u8*) pbch_pdu)[0],
+		((u8*) pbch_pdu)[1]);
 #endif
 
       if (abstraction_flag==0) {

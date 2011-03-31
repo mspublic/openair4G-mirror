@@ -649,9 +649,8 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }
 
   if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
-    mac_xface->frame = 	(((phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0]&3)<<6) + (phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]>>2))<<2;
+    mac_xface->frame = 	((phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0]&3)<<6) | (((phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[1]>>2))<<2);
     mac_xface->frame += pbch_phase;
-
     phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 #ifdef EMOS
     emos_dump_UE.frame_tx = phy_vars_ue->lte_ue_pbch_vars[eNB_id]->decoded_output[0];
@@ -1294,7 +1293,11 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    debug_msg("[PHY][UE %d] Frame %d, subframe %d, received SI\n",phy_vars_ue->Mod_id,mac_xface->frame,((last_slot>>1)-1)%10);
 
 #ifdef OPENAIR2
-	    mac_xface->ue_decode_si(phy_vars_ue->Mod_id,0,phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->b,phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3);
+	    mac_xface->ue_decode_si(phy_vars_ue->Mod_id,
+				    0,
+				    phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->b,
+				    phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS>>3);
+	    
 #endif
 	  }
 	}   
