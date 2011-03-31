@@ -1396,14 +1396,14 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   msg("[MAC][eNB] inst %d scheduler subframe %d\n",Mod_id, subframe);
 
   //LOG_I (MAC, "eNB inst %d scheduler subframe %d nCCE %d \n",Mod_id, subframe, mac_xface->get_nCCE_max(Mod_id) );
+  Mac_rlc_xface->frame= mac_xface->frame;
+  Rrc_xface->Frame_index=Mac_rlc_xface->frame;
 
   Mac_rlc_xface->pdcp_run();
  
   switch (subframe) {
   case 0:
     //test navid
-    Mac_rlc_xface->frame++;
-    Rrc_xface->Frame_index=Mac_rlc_xface->frame;
 
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt) 
 
@@ -1411,24 +1411,26 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
     schedule_ulsch(Mod_id,subframe,&nCCE);
     break;
   case 1:
+    // schedule_ulsch(Mod_id,subframe);
     break;
   case 2:
+    // schedule_dlsch(Mod_id,subframe);
     break;
   case 3:
+    //schedule_dlsch(Mod_id,subframe);
     break;
   case 4:
+    //  schedule_dlsch(Mod_id,subframe);
     break;
   case 5:
-    // Schedule transmission of SIB
 
     schedule_SI(Mod_id,&nprb,&nCCE);
     fill_DLSCH_dci(Mod_id,5);    
 
-    
     break;
 
   case 6:
-
+    //schedule_dlsch(Mod_id,subframe);
     break;
 
   case 7:

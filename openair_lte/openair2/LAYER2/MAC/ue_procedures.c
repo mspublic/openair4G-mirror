@@ -28,7 +28,7 @@
 
 //#define DEBUG_RACH_MAC
 //#define DEBUG_RACH_RRC
-//#define DEBUG_SI_RRC
+#define DEBUG_SI_RRC
 //#define DEBUG_HEADER_PARSING
 
 #ifndef USER_MODE
@@ -526,7 +526,11 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
  
 void ue_scheduler(u8 Mod_id, u8 subframe) {
+
+  Mac_rlc_xface->frame=mac_xface->frame;
+  Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
+  
 }
 
 
