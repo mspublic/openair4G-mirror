@@ -1206,7 +1206,7 @@ int main(int argc, char **argv) {
 	last_slot+=20;
       next_slot = (slot + 1)%20;
 
-      if(next_slot %2 ==0)
+      if((next_slot %2) ==0)
 	clear_eNB_transport_info(emu_info.nb_enb_local);
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
 	//#ifdef DEBUG_SIM
@@ -1216,8 +1216,8 @@ int main(int argc, char **argv) {
       }
       direction = subframe_select(frame_parms,next_slot>>1);
       
-      if (ethernet_flag ==1) {
-	if (( (direction == SF_DL) || (direction == SF_S) ) && ((next_slot%2)== 0)){
+      if (ethernet_flag ==1) { // include PBCH
+	if (( (direction == SF_DL) || (direction == SF_S) ) && (((next_slot%2)== 0) || (next_slot==1))){ 
 	  emu_transport_DL(last_slot,next_slot);
 	  LOG_I(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
 	}
