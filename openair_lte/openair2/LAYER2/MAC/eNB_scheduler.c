@@ -433,7 +433,10 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 
   ce_ptr = &mac_header_control_elements[0];
 
+  msg("mac_header_ptr %p\n",mac_header_ptr);
+
   if ((short_padding == 1) || (short_padding == 2)) {
+    msg("short_padding 1/2\n");
     mac_header_ptr->R    = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = SHORT_PADDING;
@@ -441,6 +444,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
     last_size=1;
   }
   if (short_padding == 2) {
+    msg("short_padding 2\n");
     mac_header_ptr->E = 1;
     mac_header_ptr++;
     mac_header_ptr->R = 0;
@@ -464,6 +468,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   }
 
   if (timing_advance_cmd != 0) {
+    msg("Timing advance added\n");
     if (first_element>0) {
       mac_header_ptr->E = 1;
       mac_header_ptr++;
@@ -509,7 +514,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
 
   for (i=0;i<num_sdus;i++) {
-    //    printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+        printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 
     if (first_element>0) {
       mac_header_ptr->E = 1;
@@ -530,7 +535,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
       last_size=2;
-      //      printf("short sdu\n");
+            printf("short sdu\n");
     }
     else {
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
@@ -541,7 +546,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2   = (sdu_lengths[i]>>7)&0xff;
 
       last_size=3;
-      //      printf("long sdu\n");
+            printf("long sdu\n");
     }
   }
 
@@ -570,9 +575,12 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
   }
   else {
     
-    msg("last_size = %d, mac_header_ptr %p\n",last_size,mac_header_ptr);
+
     
     mac_header_ptr+=last_size;
+
+    msg("end: last_size = %d, mac_header_ptr %p\n",last_size,mac_header_ptr);
+
     if ((ce_ptr-mac_header_control_elements) > 0) {
       memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
       mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
@@ -886,11 +894,12 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
   }
 
   if ((mac_xface->lte_frame_parms->N_RB_DL&1)==1) {
-    if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&3)==0) {
-	*rballoc |= (3<<(mac_xface->lte_frame_parms->N_RB_DL-1));
-	rballoc_dci |= (1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
+    if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&1)==0) {
+      *rballoc |= (1<<(mac_xface->lte_frame_parms->N_RB_DL-1));
+      rballoc_dci |= (1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
     }
   }
+  return(rballoc_dci);
 }
 
  void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
@@ -1033,7 +1042,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
   
   // UE specific DCIs 
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
-    printf("UE_id: %d => status %d\n",UE_id,eNB_dlsch_info[Mod_id][UE_id].status);
+    //printf("UE_id: %d => status %d\n",UE_id,eNB_dlsch_info[Mod_id][UE_id].status);
     if (eNB_dlsch_info[Mod_id][UE_id].status == S_DL_SCHEDULED) {
 
       // clear scheduling flag
@@ -1048,7 +1057,9 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
       default:
       case 1:
       case 2:
+	msg("Getting Allocation for %d PRBs, UE_id %d (rb_alloc %x)\n",nb_rb,UE_id,rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);      
+	msg("New rb_alloc %x (DCI %x)\n",rballoc,((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
@@ -1237,7 +1248,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 #endif     
       }
 
-      if (sdu_lengths[0]>0) {
+      if (sdu_lengths[0]>0) {   // There is DCCH to transmit
 	sdu_length_total = sdu_lengths[0] + header_len_dcch;
 	sdu_lcids[0] = DCCH;
 	num_sdus = 1;
@@ -1250,21 +1261,31 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 #endif
       }
       else {
-	header_len_dcch = 1+1;  // Timing advance subheader+cmd
-	sdu_length_total = header_len_dcch;
+	if (eNB_UE_stats->UE_timing_offset/4 != 0) {
+	  header_len_dcch = 1+1;  // Timing advance subheader+cmd
+	  sdu_length_total = header_len_dcch;
+	}
+	else {
+	  header_len_dcch = 0;
+	  sdu_length_total = 0;
+	}
       }
-      // check for DTCH (later) and update header information
-      // check first for RLC data on DCCH
-      header_len_dtch = 3; // 2 bytes DTCH SDU subheader
+      // check for DTCH and update header information
+      
+      header_len_dtch = 3; // 3 bytes DTCH SDU subheader
       
       rlc_status = mac_rlc_status_ind(Mod_id,DTCH+(MAX_NUM_RB*next_ue),
 				      0,
 				      TBS-header_len_dcch-sdu_length_total-header_len_dtch);
+
       if (rlc_status.bytes_in_buffer > 0) {
 	
 	sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id,
 								DTCH+(MAX_NUM_RB*next_ue),
 								&dlsch_buffer[sdu_length_total]);
+	if (sdu_lengths[num_sdus] < 128)
+	  header_len_dtch = 2;
+
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] PHY_DATA_REQ Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
 #endif
@@ -1291,7 +1312,9 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 	    Mod_id,sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue);
-#endif   
+#endif  
+	msg("Payload ptr %p\n",&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0][offset]);
+
 	// cycle through SDUs and place in dlsch_buffer
 	memcpy(&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 	// memcpy(&CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
@@ -1309,6 +1332,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs 
 	    // (can happen if N_RB_DL is odd)
 	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
+	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
 	    break;
 	  }
 	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
