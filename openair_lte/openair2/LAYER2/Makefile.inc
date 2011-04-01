@@ -67,7 +67,7 @@ SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_segment.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_reassembly.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_receiver.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_dar.c
-#SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_very_simple_test.c
+SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_very_simple_test.c
 
 SOURCES_L2 +=  $(RLC_DIR)/rlc_mac.c
 SOURCES_L2 +=  $(RLC_DIR)/rlc.c

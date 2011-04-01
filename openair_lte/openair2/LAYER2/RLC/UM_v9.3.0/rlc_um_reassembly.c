@@ -40,7 +40,7 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
 
   if (rlcP->output_sdu_in_construction == NULL) {
     //    msg("[RLC_UM_LITE] Getting mem_block ...\n");
-    rlcP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE);
+    rlcP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE_DATA_PLANE);
     rlcP->output_sdu_size_to_write = 0;
   }
   if ((rlcP->output_sdu_in_construction)) {
@@ -107,7 +107,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
         }
 #endif
       // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->output_sdu_size_to_write);
-      rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction);
+	rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction,rlcP->data_plane);
       rlcP->output_sdu_in_construction = NULL;
     } else {
 
