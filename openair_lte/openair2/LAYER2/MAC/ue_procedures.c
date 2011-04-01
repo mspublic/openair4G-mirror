@@ -398,7 +398,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
-  u8 header_len;
+  u8 dcch_header_len,dtch_header_len;
   u16 sdu_size_dcch,sdu_lengths[8],i;
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
   u8 DCCH_not_empty;
@@ -410,7 +410,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
   // Compute header length
   // check for UL bandwidth requests and add SR control element
-  header_len = 2;
+  dcch_header_len = 2;
   
     
   // Check for DCCH first
@@ -419,13 +419,13 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
   while (DCCH_not_empty==1) {
     rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
 				    DCCH,
-				    (buflen-header_len-sdu_length_total)/DCCH_LCHAN_DESC.transport_block_size,
+				    (buflen-dcch_header_len-sdu_length_total)/DCCH_LCHAN_DESC.transport_block_size,
 				    DCCH_LCHAN_DESC.transport_block_size);
     msg("[MAC][UE %d] RLC status for DCCH : %d\n",
 	Mod_id,rlc_status.bytes_in_buffer);
 
     if (rlc_status.bytes_in_buffer>0) {
-      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,header_len,sdu_length_total);
+      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							DCCH,
@@ -439,29 +439,31 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
     }
     else {
       DCCH_not_empty=0;
+      dcch_header_len=0;
     }
   }
 
-  if (sdu_length_total < (buflen-header_len)) {
+  dtch_header_len = 3;
+  if ((sdu_length_total +dcch_header_len + dtch_header_len )< buflen) {
 // now check for other logical channels
 // check for ulsch   
 // rlc UM v 9
     rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
 				    DTCH,
 				    0,
-				    buflen - header_len - sdu_length_total);
+				    buflen - dcch_header_len - dtch_header_len - sdu_length_total);
     
     if (rlc_status.bytes_in_buffer > 0 ) { // get rlc pdu 
       msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
-	  Mod_id,rlc_status.bytes_in_buffer,buflen,header_len);
+	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len);
       
       
-      if ( rlc_status.bytes_in_buffer > 128) { // SCH_SUBHEADER_LONG case 
-	header_len ++;
+      if ( rlc_status.bytes_in_buffer < 128) { // SCH_SUBHEADER_LONG case 
+	dtch_header_len=2;
 	rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
 					DTCH,
 					0,
-					buflen - header_len - sdu_length_total); // number of bytes
+					buflen - dcch_header_len - dtch_header_len - sdu_length_total); // number of bytes
 	
       }
       sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
@@ -473,8 +475,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
       num_sdus++;
-      //header_len +=2;
-    }
+     }
     else { // no rlc pdu : generate the dummy header
       
 
