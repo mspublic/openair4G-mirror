@@ -13,9 +13,15 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
 
-  if ((tdd_Config)&&
-      (SIwindowsize)&&
-      (SIperiod)){
+  if (CH_flag==0) 
+    msg("[MAC][UE %d] Frame %d: Configuring MAC/PHY from eNB %d\n",Mod_id,mac_xface->frame,CH_index);
+  else
+    msg("[MAC][eNB %d] Frame %d: Configuring MAC/PHY for UE %d (%x)\n",Mod_id,mac_xface->frame,UE_id,find_UE_RNTI(Mod_id,UE_id));
+
+  if ((tdd_Config!=NULL)||
+      (SIwindowsize!=NULL)||
+      (SIperiod!=NULL)){
+
     if (CH_flag==1)
       mac_xface->phy_config_sib1_eNB(Mod_id,tdd_Config,*SIwindowsize,*SIperiod);
     else

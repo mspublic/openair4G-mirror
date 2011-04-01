@@ -235,6 +235,13 @@ typedef struct{
   /// DCI buffer for ULSCH
   u8 ULSCH_DCI[(MAX_DCI_SIZE_BITS>>3)+1][8];
 
+  /// DL DAI
+  u8 DAI;
+
+  /// UL DAI
+  u8 DAI_ul;
+
+
   // Logical channel info for link with RLC
 
 } UE_TEMPLATE;
