@@ -38,7 +38,23 @@ void mac_resynch(void);
 //#include "LAYER2/MAC/defs.h"
 #include "PHY_INTERFACE/defs.h"
 
-/*@}*/
+#else
+
+/*! \brief MACPHY Interface */
+typedef struct
+  {
+
+    void (*macphy_scheduler)(unsigned char); /*!<\brief Pointer to phy scheduling routine in MAC.  Used by the low-level hardware synchronized scheduler*/
+    void (*macphy_setparams)(void *);     /*  Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC */
+    void (*macphy_init)(void);          /*  Pointer function that reads params for the MAC interface - this function is called when an IOCTL passes parameters to the MAC */
+    void (*macphy_exit)(char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
+
+    unsigned int frame;
+    unsigned char is_cluster_head;
+    unsigned char is_primary_cluster_head;
+    unsigned char is_secondary_cluster_head;
+    unsigned char cluster_head_index;
+  } MAC_xface;
 
 #endif
 

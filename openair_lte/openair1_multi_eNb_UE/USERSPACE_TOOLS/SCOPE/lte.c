@@ -109,7 +109,6 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
-  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -118,7 +117,6 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  */
 
   /*
   // channel time resonse
@@ -143,6 +141,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_t_im,sig_time,mag_sig,ind,"","","");
   */
 
+  /*
   // channel_t_re = rx_sig[0]
   //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
   for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
@@ -153,18 +152,19 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
- 
+  */
+
   // channel_t_im = rx_sig[1]
   if (nb_ant_tx>1) {
-    //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
-    for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+      //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
       sig2[i] = (float) (rx_sig[1][2*i]);
       time2[i] = (float) i;
     }
 
     //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
-    //fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-    fl_set_xyplot_data(form->channel_t_im,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
+    fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+    //fl_set_xyplot_data(form->channel_t_im,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
   }
 
   // PBCH LLR

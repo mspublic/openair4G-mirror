@@ -210,6 +210,10 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0 = dlsch[0];
 
     dlsch[0]->rnti = rnti;
+
+    dlsch[0]->harq_ids[subframe] = harq_pid;
+    if (dlsch[0]->harq_processes[harq_pid]->Ndi == 1)
+      dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
     
     break;
   case format1:
@@ -375,6 +379,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
 
     break;
   default:
+    msg("dci_tools.c: Unknown DCI format\n");
     return(-1);
     break;
   }
@@ -537,7 +542,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
     //printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
-    if (dlsch[0]->nb_rb > 3) {
+    if ((dlsch[0]->nb_rb<=0) || (dlsch[0]->nb_rb > 3)) {
       msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
       return(-1);       
     }
@@ -1168,6 +1173,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 
+    ulsch->cyclic_shift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+
 #ifdef DEBUG_DCI
     msg("ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
@@ -1254,6 +1261,9 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
     ulsch->rnti = rnti;
+
+    ulsch->cyclic_shift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+
 #ifdef DEBUG_DCI
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     msg("ulsch (eNB): rballoc       %d\n",ulsch->harq_processes[harq_pid]->first_rb);

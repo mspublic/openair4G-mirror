@@ -279,6 +279,8 @@ typedef struct {
   u8 cont_res_id[6];
   /// Timing offset indicated by PHY
   s16 timing_offset;
+  /// Timeout for RRC connection 
+  s16 RRC_timer;
 } RA_TEMPLATE;
 
 typedef struct{
@@ -379,6 +381,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8);
 u16  fill_rar(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
 void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
 void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id);
+void cancel_ra_proc(u8 Mod_id, u16 preamble_index);
 void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);

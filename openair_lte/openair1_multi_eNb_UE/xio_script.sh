@@ -11,7 +11,7 @@ XIO_ADAPTER_ID=104c:8231
 # the output should be something like
 # 00:1c.3 PCI bridge [0604]: Intel Corporation 82801I (ICH9 Family) PCI Express Port 4 [8086:2946] (rev 02)
 # from that we can read that the ID of the root port is
-ROOT_PORT_ID=8086:2946
+ROOT_PORT_ID=8086:3b48
 
 
 # Disable ASPM on root port

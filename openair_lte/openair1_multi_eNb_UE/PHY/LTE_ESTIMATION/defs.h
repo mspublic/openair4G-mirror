@@ -49,14 +49,14 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 \param sync_corr_eNb pointer to correlation buffer
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time_eNb(int **rxdata, 
+int lte_sync_time_eNB(int **rxdata, 
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      int eNb_id,
 		      int length,
 		      int* peak_val,
 		      unsigned int* sync_corr_eNb);
 
-int lte_sync_time_eNb_emul(PHY_VARS_eNB *phy_vars_eNb,
+int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 			   u8 sect_id,
 			   s32 *sync_val);
 

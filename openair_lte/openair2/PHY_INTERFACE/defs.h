@@ -49,6 +49,9 @@ typedef struct
     /// Initiate the RA procedure upon reception (hypothetical) of a valid preamble
     void (*initiate_ra_proc)(u8 Mod_id,u16 preamble,s16 timing_offset,u8 sect_id);
 
+    /// cancel an ongoing RA procedure 
+    void (*cancel_ra_proc)(u8 Mod_id,u16 preamble);
+
     /// Get DCI for current subframe from MAC
     DCI_PDU* (*get_dci_sdu)(u8 Mod_id,u8 subframe);
 

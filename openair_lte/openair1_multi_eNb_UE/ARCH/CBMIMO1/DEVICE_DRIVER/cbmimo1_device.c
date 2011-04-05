@@ -22,7 +22,7 @@
 #include "MAC_INTERFACE/vars.h"
 #ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
-#include "RRC/MESH/vars.h"
+#include "RRC/LITE/vars.h"
 #include "UTIL/LOG/log_if.h"
 //#include "PHY_INTERFACE/vars.h"
 #endif

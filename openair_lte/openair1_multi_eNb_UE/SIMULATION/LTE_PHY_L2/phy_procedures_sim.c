@@ -686,7 +686,7 @@ int main(int argc, char **argv) {
   u8 rate_adaptation_flag;
   u8 transmission_mode;
   u8 abstraction_flag=0,ethernet_flag=0;
-  u16 ethernet_id;
+  u16 ethernet_id=0;
   u8 extended_prefix_flag=0;
   s32 UE_id,eNB_id,ret; 
 #ifdef EMOS
@@ -711,6 +711,7 @@ int main(int argc, char **argv) {
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
   
+  RRC_CONNECTION_FLAG = 1;
   
   //default parameters
   emu_info.is_primary_master=0;
@@ -1143,7 +1144,7 @@ int main(int argc, char **argv) {
 					       0,
 					       0);
 
-      UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB + 10;// - 20;
+      UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB + 20;
 #ifdef DEBUG_SIM
       printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
       printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);

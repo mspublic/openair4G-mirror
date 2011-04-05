@@ -18,105 +18,6 @@
 
 #define DEBUG_PHY
 
-int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,u8 osf) {
-
-  u8 log2_osf;
-
-  if (frame_parms->Ncp==1) {
-    frame_parms->nb_prefix_samples0=512;
-    frame_parms->nb_prefix_samples = 512;
-    frame_parms->symbols_per_tti = 12;
-  }
-  else {
-    frame_parms->nb_prefix_samples0 = 160;
-    frame_parms->nb_prefix_samples = 144;
-    frame_parms->symbols_per_tti = 14;
-  }
-
-  switch(osf) {
-  case 1:
-    log2_osf = 0;
-    break;
-  case 2:
-    log2_osf = 1;
-    break;
-  case 4:
-    log2_osf = 2;
-    break;
-  case 8:
-    log2_osf = 3;
-    break;
-  case 16:
-    log2_osf = 4;
-    break;
-  default:
-    msg("Illegal oversampling %d\n",osf);
-    return(-1);
-  }
-
-  switch (frame_parms->N_RB_DL) {
-  case 100:
-    if (osf>1) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
-      return(-1);
-    }
-    frame_parms->ofdm_symbol_size = 2048;
-    frame_parms->log2_symbol_size = 11;
-    frame_parms->samples_per_tti = 30720;
-    frame_parms->first_carrier_offset = 2048-600;
-    break;
-  case 50:
-    if (osf>1) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
-      return(-1);
-    }
-    frame_parms->ofdm_symbol_size = 1024*osf;
-    frame_parms->log2_symbol_size = 10+log2_osf;
-    frame_parms->samples_per_tti = 15360*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300; 
-    frame_parms->nb_prefix_samples>>=(1-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(1-log2_osf);
-   break;
-  case 25:
-    if (osf>2) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
-      return(-1);
-    }
-    frame_parms->ofdm_symbol_size = 512*osf;
-    
-    frame_parms->log2_symbol_size = 9+log2_osf;
-    frame_parms->samples_per_tti = 7680*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150; 
-    frame_parms->nb_prefix_samples>>=(2-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(2-log2_osf);
-    break;
-  case 15:
-    frame_parms->ofdm_symbol_size = 256*osf;
-    frame_parms->log2_symbol_size = 8+log2_osf;
-    frame_parms->samples_per_tti = 3840*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 90;
-    frame_parms->nb_prefix_samples>>=(3-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(3-log2_osf);
-    break;
-  case 6:
-    frame_parms->ofdm_symbol_size = 128*osf;
-    frame_parms->log2_symbol_size = 7+log2_osf;
-    frame_parms->samples_per_tti = 1920*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 36;
-    frame_parms->nb_prefix_samples>>=(4-log2_osf);
-    frame_parms->nb_prefix_samples0>>=(4-log2_osf);
-    break;
-
-  default:
-    msg("init_frame_parms: Error: Number of resource blocks (N_RB_DL %d) undefined, frame_parms = %p \n",frame_parms->N_RB_DL, frame_parms);
-    return(-1);
-    break;
-  }
-
-  //  frame_parms->tdd_config=3;
-  return(0);
-}
-
 /*
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
 
@@ -483,8 +384,13 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
 #endif //EXPRESSMIMO_TARGET
 
   lte_gold(lte_frame_parms);
+
+#ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
-  
+#else
+  // lte_sync_time_init(lte_frame_parms) has to be called from the real-time thread, since it uses SSE instructions.
+#endif
+
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
 
@@ -524,7 +430,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     }
 #else //USER_MODE
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      ue_common_vars->txdataF[i] = TX_DMA_BUFFER[0][i];
+      ue_common_vars->txdataF[i] = (mod_sym_t*) TX_DMA_BUFFER[0][i];
     }
 #endif //USER_MODE
     ue_common_vars->txdata = NULL;
@@ -560,7 +466,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 #ifndef USER_MODE
-      ue_common_vars->rxdata[i] = RX_DMA_BUFFER[0][i];
+      ue_common_vars->rxdata[i] = (int*) RX_DMA_BUFFER[0][i];
 #else //USER_MODE
       ue_common_vars->rxdata[i] = (int*) malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 #endif //USER_MODE
@@ -883,11 +789,11 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
       ue_pbch_vars[eNB_id]->pdu_fer=0;
     
   
-  // Initialize Gold sequence table
-  // lte_gold(frame_parms); --> moved to phy_init_lte_top
+      // Initialize Gold sequence table
+      // lte_gold(frame_parms); --> moved to phy_init_lte_top
       
-  // Initialize Sync
-  // lte_sync_time_init(frame_parms); --> moved to phy_init_lte_top
+      // Initialize Sync
+      // lte_sync_time_init(frame_parms); --> moved to phy_init_lte_top
       
 #ifndef NO_UL_REF 
       // generate_ul_ref_sigs(); --> moved to phy_init_lte_top
@@ -993,8 +899,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     unsigned char is_secondary_eNB,
 		     PHY_VARS_eNB *phy_vars_eNB,
 		     unsigned char relay_flag,// 0 for no relay,1 for 1 relay & 2 for 2 relays
-		     unsigned char diversity_scheme,
-		     unsigned char abstraction_flag)// 0 for no scheme,1 for diversity delay & 2 dor distributed alamouti
+		     unsigned char diversity_scheme,// 0 for no scheme,1 for diversity delay & 2 dor distributed alamouti
+		     unsigned char abstraction_flag)
 {
 
   LTE_eNB_SRS *eNB_srs_vars = phy_vars_eNB->lte_eNB_srs_vars;
@@ -1052,7 +958,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef IFFT_FPGA
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifndef USER_MODE
-	eNB_common_vars->txdataF[eNB_id][i] = TX_DMA_BUFFER[eNB_id][i];
+	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)TX_DMA_BUFFER[eNB_id][i];
 #else //USER_MODE
 	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16(NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
 	bzero(eNB_common_vars->txdataF[eNB_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
@@ -1088,7 +994,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 #ifndef USER_MODE
-	eNB_common_vars->rxdata[eNB_id][i] = RX_DMA_BUFFER[eNB_id][i];
+	eNB_common_vars->rxdata[eNB_id][i] = (int *)RX_DMA_BUFFER[eNB_id][i];
 #else //USER_MODE
 	eNB_common_vars->rxdata[eNB_id][i] = (int *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
 	bzero(eNB_common_vars->rxdata[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int));
@@ -1356,7 +1262,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		memset(eNB_ulsch_vars[UE_id]->drs_ch_estimates_0[eNB_id][i],0,frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12);
 	      }
 	      else {
-		msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_0[%d][%d] not allocated\n",UE_id,eNB_id,(j<<1)+i);
+		msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_0[%d][%d] not allocated\n",UE_id,eNB_id,i);
 		return(-1);
 	      }
 	    }

@@ -12,7 +12,7 @@ ________________________________________________________________*/
 
 #include "types.h"
 #include "spec_defs_top.h"
-#include "defs.h"
+//#include "defs.h"
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_CE_FILTER_LENGTH 5

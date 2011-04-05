@@ -267,7 +267,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 }       
 
 extern unsigned short transmission_offset_tdd[16];
-//#define DEBUG_SRS
+#define DEBUG_SRS
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,
@@ -324,10 +324,12 @@ int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			    15);
 
       //msg("SRS channel estimation cmult out\n");
+#ifdef USER_MODE
 #ifdef DEBUG_SRS
 	sprintf(fname,"eNB_id%d_an%d_srs_ch_est.m",eNb_id,aa);
 	sprintf(vname,"eNB%d_%d_srs_ch_est",eNb_id,aa);
 	write_output(fname,vname,eNb_srs_vars->srs_ch_estimates[eNb_id][aa],frame_parms->ofdm_symbol_size,1,1);
+#endif
 #endif
     }
   }

@@ -175,7 +175,7 @@ static void * openair_thread(void *param) {
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
   // run on CPU 1, which should be reserved only for this (by adding isolcpus=1 noirqbalance to the kernel options). Also use IsolCpusMaks=0x2 when loading rtai_hal
-  rt_set_runnable_on_cpuid(pthread_self(),1);
+  // rt_set_runnable_on_cpuid(pthread_self(),1);
   rt_sleep(nano2count(NS_PER_SLOT));
 
 
@@ -203,6 +203,7 @@ static void * openair_thread(void *param) {
     msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
   }
   
+
   exit_openair = 0;
   
   // Inner thread endless loop
@@ -215,8 +216,8 @@ static void * openair_thread(void *param) {
     Zero_Buffer((void*)TX_DMA_BUFFER[i][0],
 		4*SLOT_LENGTH_BYTES_NO_PREFIX);
 
-  while (exit_openair == 0){
-    //while (0) {
+  while (exit_openair == 0)
+    {
     
     pthread_mutex_lock(&openair_mutex);
         
@@ -233,7 +234,7 @@ static void * openair_thread(void *param) {
     else
       last_slot = (openair_daq_vars.slot_count - 1 ) % SLOTS_PER_FRAME; 
 
-    // msg("[SCHED][Thread] In, Synched ? %d, %d\n",openair_daq_vars.mode,SYNCHED);	
+    //msg("[SCHED][Thread] Mode = %d (openair_NOT_SYNCHED=%d), slot_count = %d, instance_cnt = %d\n",openair_daq_vars.mode,openair_NOT_SYNCHED,openair_daq_vars.slot_count,openair_daq_vars.instance_cnt);
 
     if ((openair_daq_vars.mode != openair_NOT_SYNCHED) && (openair_daq_vars.node_running == 1)) {
       time_in = openair_get_mbox();
@@ -244,16 +245,14 @@ static void * openair_thread(void *param) {
       }
 #endif
 
-      //      mac_xface->macphy_scheduler(last_slot); 
-
 #ifdef OPENAIR_LTE
       if (mac_xface->is_cluster_head) {
-	if (PHY_vars_eNb_g && PHY_vars_eNb_g[0])
-	  phy_procedures_eNb_lte(last_slot,next_slot,PHY_vars_eNb_g[0],0);
+	if (PHY_vars_eNB_g && PHY_vars_eNB_g[0])
+	  phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[0],0);
       }
       else {
 	if (PHY_vars_UE_g && PHY_vars_UE_g[0])
-	  phy_procedures_ue_lte(last_slot,next_slot,PHY_vars_UE_g[0],0,0);
+	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[0],0,0);
       }
 #else
 #ifdef EMOS
@@ -279,11 +278,6 @@ static void * openair_thread(void *param) {
 	//openair1_restart();
 	exit_openair = 1;
       }
-
-      /*
-      if (mac_xface->frame >= 10)
-      	exit_openair = 1;
-      */
 
       /*
 #ifdef CBMIMO1
@@ -364,7 +358,7 @@ void openair_sync(void) {
   unsigned int adac_cnt;
   int pbch_decoded = 0;
   int frame_mod4,pbch_tx_ant;
-  u8 char dummy;
+  u8  dummy;
 
   RTIME time;
 
@@ -482,7 +476,6 @@ void openair_sync(void) {
 				SISO,
 				frame_mod4);
 	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
-	    PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = 1;
 	    pbch_decoded = 1;
 	    break;
 	  }
@@ -494,7 +487,6 @@ void openair_sync(void) {
 				ALAMOUTI,
 				frame_mod4);
 	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
-	    PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = 0;
 	    pbch_decoded = 1;
 	    break;
 	  }
@@ -502,54 +494,69 @@ void openair_sync(void) {
 
 	  
 	if (pbch_decoded) {
-	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, frame_mod4 %d, tx_ant %d!\n",
-	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,frame_mod4,pbch_tx_ant);
 	  
 	  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx = pbch_tx_ant;
-	  //	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1] == 1);
+
 	  // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
-	  openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
+	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (pbch_tx_ant==1);
+	  // openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
 
 	  // now check for Bandwidth of Cell
-	  dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>5)&7;
-
-	  switch dummy {
-	    case 0 : 
-	      phy_vars_ue->lte_Frame_parms.N_RB_DL = 6;
-	      break;
-	    case 1 : 
-	      phy_vars_ue->lte_Frame_parms.N_RB_DL = 15;
-	      break;
-	    case 2 : 
-	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 25;
+	  dummy = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>5)&7;
+	  switch (dummy) {
+	    /*
+	  case 0 : 
+	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 6;
 	    break;
+	  case 1 : 
+	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 15;
+	    break;
+	    */
+	  case 2 : 
+	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 25;
+	    break;
+	    /*
 	  case 3 : 
-	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 50;
+	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 50;
 	    break;
 	  case 4 : 
-	    phy_vars_ue->lte_Frame_parms.N_RB_DL = 100;
+	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 100;
 	    break;
+	    */
 	  default:
+	    openair_sched_exit("[openair][SCHED][SYNCH] PBCH decoding: Unknown N_RB_DL\n");
 	    break;
 	  }
 
 	  // now check for PHICH parameters
-	phy_vars_ue->lte_Frame_parms.phich_config_common.phich_duration = (PHICH_DURATION_t)((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
-	dummy = (phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>2)&3;
-	switch dummy {
+	  PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_duration = (PHICH_DURATION_t)((PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
+	  dummy = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>2)&3;
+	  switch (dummy) {
 	  case 0:
-	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = oneSixth;
+	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
 	    break;
 	  case 1:
-	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = half;
+	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = half;
 	    break;
 	  case 2:
-	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = one;
+	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = one;
 	    break;
 	  case 3:
-	    phy_vars_ue->lte_Frame_parms.phich_config_common.phich_resource = two;
+	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = two;
 	    break;
 	  }
+
+	  mac_xface->frame = 	(((PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]&3)<<6) + (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
+	  mac_xface->frame += frame_mod4;
+
+	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
+	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,
+	      pbch_tx_ant,
+	      mac_xface->frame,
+	      PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,
+	      PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_duration,
+	      PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource);
+
 	
 	  if (openair_daq_vars.node_running == 1) {
       
@@ -659,7 +666,8 @@ static void * top_level_scheduler(void *param) {
   msg("[openair][SCHED][top_level_scheduler] SLOTS_PER_FRAME=%d, NUMBER_OF_CHUNKS_PER_SLOT=%d,  NUMBER_OF_CHUNKS_PER_FRAME=%d, PHY_vars->mbox %p\n",
       SLOTS_PER_FRAME,NUMBER_OF_CHUNKS_PER_SLOT, NUMBER_OF_CHUNKS_PER_FRAME, (void*)mbox);
 
-
+  // Do initialization routines that use SSE here. They should not be run from the main kernel module because they might screw up the floating point unit when interrupted.
+  lte_sync_time_init(frame_parms);
 
 #ifdef RTAI_ENABLED
   msg("[OPENAIR][SCHED] Sleeping %d ns (MODE = %d)\n",2*NS_PER_SLOT,openair_daq_vars.mode);
@@ -735,7 +743,6 @@ static void * top_level_scheduler(void *param) {
       //rt_sleep(NS_PER_SLOT));
 
     }
-
     else {    // We're in synch with the CH or are a 1ary clusterhead
 #ifndef NOCARD_TEST
 
@@ -943,7 +950,7 @@ int rx_sig_fifo_handler(unsigned int fifo, int rw) {
 
 
 
-int openair_sched_init(void) {
+s32 openair_sched_init(void) {
   
   int error_code;
   
@@ -1005,7 +1012,6 @@ int openair_sched_init(void) {
   openair_daq_vars.instance_cnt = -1;
 
   // Create openair_thread
-  
   error_code = pthread_create(&threads[OPENAIR_THREAD_INDEX],
   			      &attr_threads[OPENAIR_THREAD_INDEX],
   			      openair_thread,
@@ -1043,7 +1049,6 @@ int openair_sched_init(void) {
 
   // Done by pthread_create in rtai_posix.h
   //  rt_task_use_fpu(threads[TOP_LEVEL_SCHEDULER_THREAD_INDEX],1);
-  
 
 #ifdef NOCARD_TEST
   /*RX Signal FIFOS HANDLER*/
@@ -1099,12 +1104,16 @@ void openair_sched_cleanup() {
 
 
 void openair_sched_exit(char *str) {
+  u8 i;
 
   msg("%s\n",str);
   msg("[OPENAIR][SCHED] Frame %d: openair_sched_exit() called, preparing to exit ...\n",mac_xface->frame);
   
   exit_openair = 1;
   openair_daq_vars.mode = openair_SCHED_EXIT;
+  for (i=0;i<number_of_cards;i++)
+    openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+
 }
 
 

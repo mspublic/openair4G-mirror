@@ -14,6 +14,8 @@
  */
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
+void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag);
+
 /** \fn new_eNB_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at eNB
     @returns Pointer to DLSCH to be removed
@@ -34,6 +36,8 @@ LTE_UE_DLSCH_t *new_ue_dlsch(u8 Kmimo,u8 Mdlharq,u8 abstraction_flag);
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 LTE_eNB_ULSCH_t *new_eNB_ulsch(u8 Mdlharq,u8 abstraction_flag);
+
+void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
@@ -715,7 +719,7 @@ u32 get_rballoc(u8 vrb_type,u16 rb_alloc_dci);
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
 @returns Transmission mode (1-7)
 */
-u8 get_transmission_mode();
+u8 get_transmission_mode(void);
 
 /* \brief 
 @param ra_header Header of resource allocation (0,1) (See sections 7.1.6.1/7.1.6.2 of 36.213 Rel8.6)
@@ -772,9 +776,11 @@ s32 generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,
   @param txdataF pointer to the frequency domain TX signal
 */
 
-s32 generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
+s32 generate_srs_tx(LTE_DL_FRAME_PARMS *frame_parms,
 		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-		    s32 *txdataF);
+		    mod_sym_t *txdataF,
+		    short amp,
+		    unsigned int sub_frame_number);
 
 /*!
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.

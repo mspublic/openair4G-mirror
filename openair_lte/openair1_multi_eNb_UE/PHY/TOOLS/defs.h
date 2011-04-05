@@ -91,7 +91,7 @@ int mult_cpx_vector(short *x1,
 		    short *x2, 
 		    short *y, 
 		    unsigned int N, 
-		    unsigned short output_shift);
+		    int output_shift);
 
 /*!\fn int mult_cpx_vector_norep(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
@@ -105,10 +105,10 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 int mult_cpx_vector_norep(short *x1, 
-			   short *x2, 
-			   short *y, 
-			   unsigned int N, 
-			  unsigned short output_shift); // __attribute__ ((force_align_arg_pointer));
+			  short *x2, 
+			  short *y, 
+			  unsigned int N, 
+			  int output_shift); // __attribute__ ((force_align_arg_pointer));
 
 
 /*!\fn int mult_cpx_vector_norep2(short *x1,short *x2,short *y,unsigned int N,int output_shift)
@@ -126,19 +126,19 @@ int mult_cpx_vector_norep2(short *x1,
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   int output_shift); // __attribute__ ((force_align_arg_pointer));
+			   int output_shift); //__attribute__ ((force_align_arg_pointer));
  
 int mult_cpx_vector_norep_conj(short *x1, 
 			       short *x2, 
 			       short *y, 
 			       unsigned int N, 
-			       unsigned short output_shift);
+			       int output_shift);
 
 int mult_cpx_vector_norep_conj2(short *x1, 
 				short *x2, 
 				short *y, 
 				unsigned int N, 
-				unsigned short output_shift);
+				int output_shift);
 
 /*!\fn int mult_cpx_vector2(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors.
@@ -155,7 +155,7 @@ int mult_cpx_vector2(short *x1,
 		     short *x2, 
 		     short *y, 
 		     unsigned int N, 
-		     unsigned short output_shift);
+		     int output_shift);
 
 /*!\fn int mult_cpx_vector_add(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -173,7 +173,7 @@ int mult_cpx_vector_add(short *x1,
 			short *x2, 
 			short *y, 
 			unsigned int N, 
-			unsigned short output_shift);
+			int output_shift);
 
 
 int mult_cpx_vector_h_add32(short *x1, 
@@ -208,7 +208,7 @@ int mult_cpx_vector32_real(short *x1,
 
 int shift_and_pack(short *y, 
 		   unsigned int N, 
-		   unsigned short output_shift);
+		   int output_shift);
 
 /*!\fn int mult_cpx_vector_h(short *x1,short *x2,short *y,unsigned int N,unsigned short output_shift,short sign)
 This function performs optimized componentwise multiplication of the vector x1 with the conjugate of the vector x2. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -226,7 +226,7 @@ int mult_cpx_vector_h(short *x1,
 		      short *x2, 
 		      short *y, 
 		      unsigned int N, 
-		      unsigned short output_shift,
+		      int output_shift,
 		      short sign);
 
 /*!\fn int mult_cpx_matrix_h(short *x1[2][2],short *x2[2][2],short *y[2][2],unsigned int N,unsigned short output_shift,short hermitian)

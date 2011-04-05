@@ -14,7 +14,7 @@ int mult_cpx_vector(short *x1,
 		    short *x2, 
 		    short *y, 
 		    unsigned int N, 
-		    unsigned short output_shift)
+		    int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements with repeated formatted output
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -152,7 +152,7 @@ int mult_cpx_vector_norep(short *x1,
 			   short *x2, 
 			   short *y, 
 			   unsigned int N, 
-			   unsigned short output_shift)
+			   int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements with normal formatted output
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -398,7 +398,7 @@ int mult_cpx_vector_norep2(short *x1,
   x2_128 = (__m128i *)&x2[0];
 
 #ifndef USER_MODE
-  debug_msg("mult_cpx_vector_norep: x1 %p, x2 %p, y %p, shift %d, N %d\n",x1,x2,y,output_shift,N);
+  debug_msg("mult_cpx_vector_norep2: x1 %p, x2 %p, y %p, shift %d, N %d\n",x1,x2,y,output_shift,N);
 #endif
 
   // we compute 2 cpx multiply for each loop
@@ -460,7 +460,7 @@ int mult_cpx_vector_norep_conj(short *x1,
 			       short *x2, 
 			       short *y, 
 			       unsigned int N, 
-			       unsigned short output_shift)
+			       int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements after conjugating and shuffling x1
   // x1       - input 1    in the format  |Re0  -Im0 Im0 Re0|,......,|Re(N-1)  -Im(N-1) Im(N-1) Re(N-1)|
@@ -634,7 +634,7 @@ int mult_cpx_vector_norep_conj2(short *x1,
 				short *x2, 
 				short *y, 
 				unsigned int N, 
-				unsigned short output_shift)
+				int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements after conjugating and shuffling x1
   // x1       - input 1    in the format  |Re0  -Im0 Im0 Re0|,......,|Re(N-1)  -Im(N-1) Im(N-1) Re(N-1)|
@@ -747,7 +747,7 @@ int mult_cpx_vector2(short *x1,
 		     short *x2, 
 		     short *y, 
 		     unsigned int N, 
-		     unsigned short output_shift)
+		     int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -830,7 +830,7 @@ int mult_cpx_vector_add(short *x1,
 		    short *x2, 
 		    short *y, 
 		    unsigned int N, 
-		    unsigned short output_shift)
+		    int output_shift)
 {
   // Multiply elementwise two complex vectors of N elements and add it to y
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -1282,7 +1282,7 @@ int mult_cpx_vector32_conj(short *x,
 
 int shift_and_pack(short *y, 
 		   unsigned int N, 
-		   unsigned short output_shift)
+		   int output_shift)
 {
   unsigned int i;                 // loop counter
 

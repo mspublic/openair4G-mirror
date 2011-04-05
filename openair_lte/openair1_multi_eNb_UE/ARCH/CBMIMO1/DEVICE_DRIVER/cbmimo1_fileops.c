@@ -230,7 +230,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       else {
 	printk("[openair][IOCTL] PHY Configuration successful\n");
 
-	/*	
 #ifndef EMOS	  
 	openair_daq_vars.mac_registered = mac_init();
 	if (openair_daq_vars.mac_registered != 1)
@@ -238,9 +237,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	else 
 	  printk("[openair][IOCTL] MAC Configuration successful\n");
 #endif	
-	*/
       }
-      
 #ifndef NOCARD_TEST
       // Initialize FPGA PCI registers
       
@@ -255,7 +252,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
       printk("[openair][IOCTL] Configuring for frequency %d kHz (%d)\n",(unsigned int)PHY_config->PHY_framing.fc_khz,openair_daq_vars.freq);
 #endif
-
       openair_daq_vars.freq_info = 1 + (openair_daq_vars.freq<<1) + (openair_daq_vars.freq<<4);
       openair_daq_vars.rx_gain_val = 0;
       openair_daq_vars.tcxo_dac = 256;       // PUT the card in calibrated frequency mode by putting a value > 255 in tcxo register
@@ -290,16 +286,17 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       }
       
-      //	usleep(10);
+      // usleep(10);
       ret = openair_sched_init();
       if (ret != 0)
 	printk("[openair][DUMP][CONFIG] Error in starting scheduler\n");
       else
 	printk("[openair][DUMP][CONFIG] Scheduler started\n");
-      
+
       // add Layer 1 stats in /proc/openair	
       add_openair1_stats();
       // rt_preempt_always(1);
+
 #endif //NOCARD_TEST
     }
 #endif // RTAI_ENABLED
@@ -324,28 +321,28 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       if (openair_daq_vars.node_configured==1) {
 
 	// allocate memory for PHY
-	PHY_vars_eNb_g = (PHY_VARS_eNB**) malloc16(sizeof(PHY_VARS_eNB*));
-	if (PHY_vars_eNb_g == NULL) {
+	PHY_vars_eNB_g = (PHY_VARS_eNB**) malloc16(sizeof(PHY_VARS_eNB*));
+	if (PHY_vars_eNB_g == NULL) {
 	  printk("[openair][IOCTL] Cannot allocate PHY_vars_eNb\n");
 	  break;
 	}
-	PHY_vars_eNb_g[0] = (PHY_VARS_eNB*) malloc16(sizeof(PHY_VARS_eNB));
-	if (PHY_vars_eNb_g[0] == NULL) {
+	PHY_vars_eNB_g[0] = (PHY_VARS_eNB*) malloc16(sizeof(PHY_VARS_eNB));
+	if (PHY_vars_eNB_g[0] == NULL) {
 	  printk("[openair][IOCTL] Cannot allocate PHY_vars_eNb\n");
 	  break;
 	}
-	bzero(PHY_vars_eNb_g[0],sizeof(PHY_VARS_eNB));
+	bzero(PHY_vars_eNB_g[0],sizeof(PHY_VARS_eNB));
 
 	//copy frame parms
-	memcpy((void*) &PHY_vars_eNb_g[0]->lte_frame_parms, (void*) frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+	memcpy((void*) &PHY_vars_eNB_g[0]->lte_frame_parms, (void*) frame_parms, sizeof(LTE_DL_FRAME_PARMS));
 
-	dump_frame_parms(&PHY_vars_eNb_g[0]->lte_frame_parms);
+	dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);
  
-	if (  phy_init_lte_eNB(&PHY_vars_eNb_g[0]->lte_frame_parms,
-			       &PHY_vars_eNb_g[0]->lte_eNB_common_vars,
-			       PHY_vars_eNb_g[0]->lte_eNB_ulsch_vars,
+	if (  phy_init_lte_eNB(&PHY_vars_eNB_g[0]->lte_frame_parms,
+			       &PHY_vars_eNB_g[0]->lte_eNB_common_vars,
+			       PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
 			       0,
-			       PHY_vars_eNb_g[0],
+			       PHY_vars_eNB_g[0],
 			       0,
 			       0,
 			       0)) {
@@ -355,50 +352,50 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	else
 	  printk("[openair][IOCTL] phy_init_lte_eNB successful\n");
 
-	PHY_vars_eNb_g[0]->Mod_id = 0;
+	PHY_vars_eNB_g[0]->Mod_id = 0;
 
 	// allocate DLSCH structures
-	PHY_vars_eNb_g[0]->dlsch_eNb_SI  = new_eNb_dlsch(1,1,0);
-	if (!PHY_vars_eNb_g[0]->dlsch_eNb_SI) {
+	PHY_vars_eNB_g[0]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,0);
+	if (!PHY_vars_eNB_g[0]->dlsch_eNB_SI) {
 	  msg("Can't get eNb dlsch SI structures\n");
 	  break;
 	}
 	else {
-	  msg("dlsch_eNb_SI => %p\n",PHY_vars_eNb_g[0]->dlsch_eNb_SI);
-	  PHY_vars_eNb_g[0]->dlsch_eNb_SI->rnti  = SI_RNTI;
+	  msg("dlsch_eNB_SI => %p\n",PHY_vars_eNB_g[0]->dlsch_eNB_SI);
+	  PHY_vars_eNB_g[0]->dlsch_eNB_SI->rnti  = SI_RNTI;
 	}
-	PHY_vars_eNb_g[0]->dlsch_eNb_ra  = new_eNb_dlsch(1,1,0);
-	if (!PHY_vars_eNb_g[0]->dlsch_eNb_ra) {
+	PHY_vars_eNB_g[0]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,0);
+	if (!PHY_vars_eNB_g[0]->dlsch_eNB_ra) {
 	  msg("Can't get eNb dlsch RA structures\n");
 	  break;
 	}
 	else {
-	  msg("dlsch_eNb_ra => %p\n",PHY_vars_eNb_g[0]->dlsch_eNb_ra);
-	  PHY_vars_eNb_g[0]->dlsch_eNb_ra->rnti  = RA_RNTI;
+	  msg("dlsch_eNB_ra => %p\n",PHY_vars_eNB_g[0]->dlsch_eNB_ra);
+	  PHY_vars_eNB_g[0]->dlsch_eNB_ra->rnti  = RA_RNTI;
 	}
 
 	for (i=0; i<NUMBER_OF_UE_MAX;i++){ 
 	  for (j=0;j<2;j++) {
-	    PHY_vars_eNb_g[0]->dlsch_eNb[i][j] = new_eNb_dlsch(1,8,0);
-	    if (!PHY_vars_eNb_g[0]->dlsch_eNb[i][j]) {
+	    PHY_vars_eNB_g[0]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,0);
+	    if (!PHY_vars_eNB_g[0]->dlsch_eNB[i][j]) {
 	      msg("Can't get eNb dlsch structures\n");
 	      break;
 	    }
 	    else {
-	      msg("dlsch_eNb[%d][%d] => %p\n",i,j,PHY_vars_eNb_g[0]->dlsch_eNb[i][j]);
-	      PHY_vars_eNb_g[0]->dlsch_eNb[i][j]->rnti=0;
+	      msg("dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[0]->dlsch_eNB[i][j]);
+	      PHY_vars_eNB_g[0]->dlsch_eNB[i][j]->rnti=0;
 	    }
 	  }
 	}
 
 	for (i=0; i<NUMBER_OF_UE_MAX+1;i++){ //+1 because 0 is reserved for RA
-	  PHY_vars_eNb_g[0]->ulsch_eNb[i] = new_eNb_ulsch(3,0);
-	  if (!PHY_vars_eNb_g[0]->ulsch_eNb[i]) {
+	  PHY_vars_eNB_g[0]->ulsch_eNB[i] = new_eNB_ulsch(3,0);
+	  if (!PHY_vars_eNB_g[0]->ulsch_eNB[i]) {
 	    msg("Can't get eNb ulsch structures\n");
 	    break;
 	  }
 	  else {
-	    msg("ulsch_eNb[%d] => %p\n",i,PHY_vars_eNb_g[0]->ulsch_eNb[i]);
+	    msg("ulsch_eNB[%d] => %p\n",i,PHY_vars_eNB_g[0]->ulsch_eNB[i]);
 	  }
 	}
 
@@ -413,7 +410,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     
 
 	for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	  Zero_Buffer(TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+	  bzero((void*) TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
 	udelay(10000);
 		
 	// Initialize MAC layer
@@ -423,7 +420,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	NB_CH_INST=1;
 	NB_UE_INST=0;
 	openair_daq_vars.mac_registered = 
-	  l2_init(&PHY_vars_eNb_g[0]->lte_frame_parms);
+	  l2_init(&PHY_vars_eNB_g[0]->lte_frame_parms);
 	if (openair_daq_vars.mac_registered != 1) {
 	  printk("[openair][IOCTL] Error in configuring MAC\n");
 	  break;
@@ -436,18 +433,20 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	Mac_rlc_xface->Is_cluster_head[0] = 1;
 #endif
 
+	/*
 	// configure SRS parameters statically
 	for (ue=0;ue<NUMBER_OF_UE_MAX;ue++) {
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Csrs = 2;
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Bsrs = 0;
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.kTC = 0;
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.n_RRC = 0;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].SRS_parameters.Csrs = 2;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].SRS_parameters.Bsrs = 0;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].SRS_parameters.kTC = 0;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].SRS_parameters.n_RRC = 0;
 	  if (ue>=3) {
 	    msg("This SRS config will only work for 3 users! \n");
 	    break;
 	  }
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].SRS_parameters.Ssrs = ue+1;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].SRS_parameters.Ssrs = ue+1;
 	}
+	*/
       } // eNB Configuration check
 
       mac_xface->is_cluster_head = 1;
@@ -472,15 +471,15 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       for (i=0;i<number_of_cards;i++) 
 	ret = setup_regs(i,frame_parms);
 
-      PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB = 138;
+      PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB = 138;
       for (i=0;i<number_of_cards;i++)
-	openair_set_rx_gain_cal_openair(i,PHY_vars_eNb_g[0]->rx_total_gain_eNB_dB);
+	openair_set_rx_gain_cal_openair(i,PHY_vars_eNB_g[0]->rx_total_gain_eNB_dB);
 
       if (ret == 0) {
 #ifdef OPENAIR_LTE
 	openair_daq_vars.mode = openair_SYNCHED;
 	for (ue=0;ue<NUMBER_OF_UE_MAX;ue++)
-	  PHY_vars_eNb_g[0]->eNB_UE_stats[ue].mode = PRACH;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].mode = PRACH;
 #else
 	openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
 #endif
@@ -674,13 +673,14 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	Mac_rlc_xface->Is_cluster_head[0] = 0;
 #endif
 
-      // configure SRS parameters (this will only work for one UE)
-      PHY_vars_UE_g[0]->SRS_parameters.Csrs = 2;
-      PHY_vars_UE_g[0]->SRS_parameters.Bsrs = 0;
-      PHY_vars_UE_g[0]->SRS_parameters.kTC = 0;
-      PHY_vars_UE_g[0]->SRS_parameters.n_RRC = 0;
-      PHY_vars_UE_g[0]->SRS_parameters.Ssrs = 1;
-    
+	/*
+	// configure SRS parameters (this will only work for one UE)
+	PHY_vars_UE_g[0]->SRS_parameters.Csrs = 2;
+	PHY_vars_UE_g[0]->SRS_parameters.Bsrs = 0;
+	PHY_vars_UE_g[0]->SRS_parameters.kTC = 0;
+	PHY_vars_UE_g[0]->SRS_parameters.n_RRC = 0;
+	PHY_vars_UE_g[0]->SRS_parameters.Ssrs = 1;
+	*/
       }  
 
       mac_xface->is_cluster_head = 0;
@@ -689,6 +689,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       mac_xface->cluster_head_index = 0;
 
       openair_daq_vars.node_id = NODE;
+
+#ifdef OPENAIR2
+      RRC_CONNECTION_FLAG = 0;
+#endif
       
 #ifdef OPENAIR_LTE
       openair_daq_vars.freq = ((*((unsigned int *)arg_ptr))>>1)&7;
@@ -787,7 +791,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifndef NOCARD_TEST
 
       for (aa=0;aa<NB_ANTENNAS_TX; aa++)
-	Zero_Buffer(TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+	bzero((void*) TX_DMA_BUFFER[0][aa],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
       udelay(1000);
 
 
@@ -909,7 +913,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     }
     else if (openair_daq_vars.node_configured == 5) {
       printk("[openair][IOCTL]  ... for eNB (%d bytes)\n",sizeof(PHY_VARS_eNB));
-      copy_to_user((char *)arg,PHY_vars_eNb_g[0],sizeof(PHY_VARS_eNB));
+      copy_to_user((char *)arg,PHY_vars_eNB_g[0],sizeof(PHY_VARS_eNB));
     }
     else 
       printk("[openair][IOCTL] neither UE or eNb configured yet (%d)\n",openair_daq_vars.node_configured);
@@ -1067,8 +1071,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
 
-    Zero_Buffer((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-    Zero_Buffer((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    bzero((void*)TX_DMA_BUFFER[0][0],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    bzero((void*)TX_DMA_BUFFER[0][1],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
     copy_from_user((unsigned char*)&dummy_tx_vars,
 		   (unsigned char*)arg,
 		   sizeof(TX_VARS));
@@ -1627,6 +1631,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_RRC_CONN_SETUP:
 #ifdef OPENAIR2
     RRC_CONNECTION_FLAG = 1;
+    printk("[IOCTL] Setting RRC_CONNECTION_FLAG\n");
 #endif
   break;
 

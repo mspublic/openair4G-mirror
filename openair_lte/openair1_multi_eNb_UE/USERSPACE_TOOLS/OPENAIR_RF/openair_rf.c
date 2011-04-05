@@ -186,23 +186,24 @@ int main (int argc, char **argv) {
 
   frame_parms->N_RB_DL            = 25;
   frame_parms->N_RB_UL            = 25;
-  frame_parms->Ng_times6          = 1;
+  //frame_parms->Ng_times6          = 1;
   frame_parms->Ncp                = 1;
   frame_parms->Nid_cell           = 0;
   frame_parms->nushift            = 0;
   frame_parms->nb_antennas_tx     = 2; //NB_ANTENNAS_TX;
   frame_parms->nb_antennas_rx     = 2; //NB_ANTENNAS_RX;
-  frame_parms->first_dlsch_symbol = 4;
-  frame_parms->num_dlsch_symbols  = 6;
+  //frame_parms->first_dlsch_symbol = 4;
+  //frame_parms->num_dlsch_symbols  = 6;
   frame_parms->mode1_flag         = 0; 
   frame_parms->tdd_config         = 3;
+  frame_parms->tdd_config_S       = 0;
   frame_parms->frame_type         = 1; //TDD
   //frame_parms->Csrs = 2;
   //frame_parms->Bsrs = 0;
   //frame_parms->kTC = 0;
   //frame_parms->n_RRC = 0;
   
-  init_frame_parms(frame_parms);
+  init_frame_parms(frame_parms,1);
 
   printf("Initialized PHY variables\n");
 

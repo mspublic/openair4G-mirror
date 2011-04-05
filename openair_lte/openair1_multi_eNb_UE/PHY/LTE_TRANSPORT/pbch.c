@@ -93,15 +93,19 @@ int generate_pbch(mod_sym_t **txdataF,
     for (i=0;i<(PBCH_A>>3);i++) 
       msg("[PBCH] pbch_data[%d] = %x\n",i,pbch_a[i]);
 #endif
-    switch (frame_parms->nb_antennas_tx) {
-    case 1:
+    if (frame_parms->mode1_flag == 1)
       amask = 0x0000;
-      break;
-    case 2:
-      amask = 0xffff;
-      break;
-    case 4:
-      amask = 0x5555;
+    else {
+      switch (frame_parms->nb_antennas_tx) {
+      case 1:
+	amask = 0x0000;
+	break;
+      case 2:
+	amask = 0xffff;
+	break;
+      case 4:
+	amask = 0x5555;
+      }
     }
     ccodelte_encode(PBCH_A,2,pbch_a,pbch_d+96,amask);
 

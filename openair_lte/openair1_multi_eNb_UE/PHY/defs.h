@@ -211,10 +211,11 @@ typedef struct
   int dlsch_errors[NUMBER_OF_eNB_MAX];
   int dlsch_errors_last[NUMBER_OF_eNB_MAX];
   int dlsch_received[NUMBER_OF_eNB_MAX];
-  int dlsch_SI_received[NUMBER_OF_eNB_MAX];
   int dlsch_received_last[NUMBER_OF_eNB_MAX];
   int dlsch_fer[NUMBER_OF_eNB_MAX];
+  int dlsch_SI_received[NUMBER_OF_eNB_MAX];
   int dlsch_SI_errors[NUMBER_OF_eNB_MAX];
+  int dlsch_ra_received[NUMBER_OF_eNB_MAX];
   int dlsch_ra_errors[NUMBER_OF_eNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_eNB_MAX];
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
@@ -273,7 +274,7 @@ typedef struct
 #endif //OPENAIR_LTE
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
-#endif // USER_MODE
+#endif //  __PHY_DEFS__H__
 
 
 

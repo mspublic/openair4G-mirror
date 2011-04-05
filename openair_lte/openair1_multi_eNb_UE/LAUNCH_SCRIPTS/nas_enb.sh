@@ -5,8 +5,8 @@ cd $OPENAIR2_DIR
 rmmod nasmesh
 #make nasmesh_netlink_address_fix.ko
 #make nasmesh_netlink.ko
-make nasmesh.ko
-make rb_tool
+#make nasmesh.ko
+#make rb_tool
 #route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 cd -
 

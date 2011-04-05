@@ -31,9 +31,11 @@
 #define DEBUG_SI_RRC
 //#define DEBUG_HEADER_PARSING
 
+/*
 #ifndef USER_MODE
 #define msg debug_msg
 #endif
+*/
 
 unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned char *num_ce,
@@ -106,11 +108,11 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 
       switch (rx_ces[i]) {
       case UE_CONT_RES:
-	//#ifdef DEBUG_HEADER_PARSING
+#ifdef DEBUG_HEADER_PARSING
 	msg("[MAC][UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
 	msg("%x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	// Send to RRC here
-	//#endif
+#endif
 	payload_ptr+=6;
 	break;
       case TIMING_ADV_CMD: 
@@ -148,7 +150,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
       
     }
     else if (rx_lcids[i] == DCCH) {
-      msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
+      debug_msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
 				      DCCH,
 				      (u8 *)payload_ptr,
@@ -156,7 +158,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 				      rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
 				      NULL);
     }else if (rx_lcids[i] == DTCH) {
-      msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
+      debug_msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
 				      DTCH,
 				      (u8 *)payload_ptr,
@@ -200,7 +202,7 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 				       CCCH,1,
 				       &UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
 				       CH_index);
-    msg("[MAC][UE %d] Frame %d : Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
+    msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
     if (Size>0)
       return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
   }
@@ -421,21 +423,21 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 				    DCCH,
 				    (buflen-dcch_header_len-sdu_length_total)/DCCH_LCHAN_DESC.transport_block_size,
 				    DCCH_LCHAN_DESC.transport_block_size);
-    msg("[MAC][UE %d] RLC status for DCCH : %d\n",
+    debug_msg("[MAC][UE %d] RLC status for DCCH : %d\n",
 	Mod_id,rlc_status.bytes_in_buffer);
 
     if (rlc_status.bytes_in_buffer>0) {
-      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total);
+      debug_msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total);
       
       sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
 							DCCH,
 							&ulsch_buff[sdu_lengths[0]]);
       sdu_length_total += sdu_lengths[0];
       sdu_lcids[0] = DCCH;
-      msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
+      debug_msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
       num_sdus = 1;
       //header_len +=2; 
-	  DCCH_not_empty=0;
+      DCCH_not_empty=0;
     }
     else {
       DCCH_not_empty=0;
@@ -454,7 +456,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 				    buflen - dcch_header_len - dtch_header_len - sdu_length_total);
     
     if (rlc_status.bytes_in_buffer > 0 ) { // get rlc pdu 
-      msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
+      debug_msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
 	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len);
       
       
@@ -470,7 +472,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 							      DTCH,
 							      &ulsch_buff[sdu_length_total]);
       
-      msg("[MAC][UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
+      debug_msg("[MAC][UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
       
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
@@ -494,7 +496,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 					   NULL, // short bsr
 					   NULL); // long_bsr
 
-    msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
+    debug_msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
 	Mod_id,payload_offset, sdu_length_total);
 
     // cycle through SDUs and place in ulsch_buffer
@@ -515,7 +517,7 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 					   &bsr, // short bsr
 					   NULL); // long_bsr
     
-    msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
+    debug_msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
 	Mod_id,payload_offset, sdu_length_total);
     
     // cycle through SDUs and place in ulsch_buffer

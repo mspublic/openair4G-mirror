@@ -70,7 +70,7 @@ typedef struct {
   u32  scheduler_interval_ns;
   u32  last_adac_cnt;
   u8 first_sync_call;
-  u32  instance_cnt;
+  s32  instance_cnt;
   u8 one_shot_get_frame;
   u8 node_configured;  // &1..basic config, &3..ue config &5..eNb config
   u8 node_running;
@@ -81,7 +81,7 @@ typedef struct {
   u32  rx_gain_val;
   u32  rx_gain_mode;
   u32  tcxo_dac;
-  u32  freq_offset;
+  s32  freq_offset;
   u32  tx_rx_switch_point;
   u32  manual_timing_advance;  /// 1 to override automatic timing advance
   u32  timing_advance;
@@ -101,7 +101,7 @@ typedef struct {
 } OPENAIR_DAQ_VARS;
 
 #ifndef USER_MODE
-u32 openair_sched_init(void);
+s32 openair_sched_init(void);
 void openair_sched_cleanup(void);
 void openair_sched_exit(char *);
 void openair1_restart(void);
@@ -122,7 +122,7 @@ typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNb_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
+void phy_procedures_eNB_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 /*!
   \brief Top-level entry routine for UE procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
   @param last_slot Index of last slot (0-19)
@@ -131,7 +131,7 @@ void phy_procedures_eNb_lte(u8 last_slot, u8 next_slot,PHY_VARS_eNB *phy_vars_eN
   @param eNB_id ID of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_ue_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
+void phy_procedures_UE_lte(u8 last_slot, u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag);
 
 /*!
   \brief Scheduling for UE TX procedures in normal subframes.  
@@ -258,7 +258,7 @@ u8 ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe,u8 A
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
-s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
+s32 remove_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB,u8 abstraction_flag);
 
 void process_timing_advance(u8 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);

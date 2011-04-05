@@ -76,6 +76,30 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(u8 Mdlharq,u8 abstraction_flag) {
   return(NULL);
 }
 
+void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, u8 abstraction_flag) {
+
+  unsigned char Mdlharq;
+  unsigned char exit_flag = 0,i,r;
+
+  ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
+  if (ulsch) {
+    Mdlharq = ulsch->Mdlharq;
+    ulsch->rnti = 0;
+    for (i=0;i<Mdlharq;i++) {
+      if (ulsch->harq_processes[i]) {
+	  ulsch->harq_processes[i]->Ndi = 0;
+	  ulsch->harq_processes[i]->status = 0;
+	  ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
+	  ulsch->harq_processes[i]->phich_active = 0;
+	  ulsch->harq_processes[i]->phich_ACK = 0;
+	  ulsch->harq_processes[i]->round = 0;
+      }
+    }
+
+  }
+}
+
+
 u8 extract_cqi_crc(u8 *cqi,u8 CQI_LENGTH) {
 
   u8 crc;

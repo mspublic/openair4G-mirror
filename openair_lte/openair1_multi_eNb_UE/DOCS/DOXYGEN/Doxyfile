@@ -571,6 +571,7 @@ INPUT                  = ../../PHY/impl_defs_top.h \
                          ../../PHY/TOOLS/defs.h \
                          ../../PHY/LTE_TRANSPORT/defs.h \
                          ../../PHY/LTE_TRANSPORT/proto.h \
+                         ../../PHY/LTE_TRANSPORT/dci.h \
                          ../../PHY/MODULATION/defs.h \
                          ../../PHY/LTE_ESTIMATION/defs.h \
                          ../../PHY/INIT/defs.h \

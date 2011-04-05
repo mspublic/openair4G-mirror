@@ -73,6 +73,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
   
   dlsch = (LTE_eNB_DLSCH_t *)malloc16(sizeof(LTE_eNB_DLSCH_t));
   if (dlsch) {
+    bzero(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
     for (i=0;i<10;i++)
@@ -82,6 +83,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
       //printf("dlsch->harq_processes[%d] %p\n",i,dlsch->harq_processes[i]);
       if (dlsch->harq_processes[i]) {
+	bzero(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	dlsch->harq_processes[i]->b          = (unsigned char*)malloc16(MAX_DLSCH_PAYLOAD_BYTES);
 	if (!dlsch->harq_processes[i]->b) {
 	  msg("Can't get b\n");
@@ -119,6 +121,34 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,u8 abst
   return(NULL);
   
   
+}
+
+void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, u8 abstraction_flag) {
+
+  unsigned char Kmimo, Mdlharq;
+  unsigned char i,j,r;
+  
+  if (dlsch) {
+    Kmimo = dlsch->Kmimo;
+    Mdlharq = dlsch->Mdlharq;
+    dlsch->rnti = 0;
+    dlsch->active = 0;
+    for (i=0;i<10;i++)
+      dlsch->harq_ids[i] = Mdlharq;
+
+    for (i=0;i<Mdlharq;i++) {
+      if (dlsch->harq_processes[i]) {
+	dlsch->harq_processes[i]->Ndi    = 0;
+	dlsch->harq_processes[i]->status = 0;
+	dlsch->harq_processes[i]->round  = 0;
+	if (abstraction_flag==0) {
+	  for (j=0;j<96;j++)
+	    for (r=0;r<MAX_NUM_DLSCH_SEGMENTS;r++)
+	      dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
+	}
+      }
+    }
+  }
 }
 
 

@@ -164,6 +164,21 @@ void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id
   }
 }
 
+void cancel_ra_proc(u8 Mod_id, u16 preamble_index) {
+  u8 i=0;
+  msg("[MAC][eNB Proc] Cancelling RA procedure for index %d\n",preamble_index);
+  
+  //for (i=0;i<NB_RA_PROC_MAX;i++) {
+  CH_mac_inst[Mod_id].RA_template[i].RA_active=0;
+  CH_mac_inst[Mod_id].RA_template[i].generate_rar=0;
+  CH_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup=0;
+  CH_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup=0;
+  CH_mac_inst[Mod_id].RA_template[i].timing_offset=0;
+  CH_mac_inst[Mod_id].RA_template[i].RRC_timer=20;
+  CH_mac_inst[Mod_id].RA_template[i].rnti = 0;
+  //}
+}
+
 void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
   u8 i;
 
@@ -849,6 +864,8 @@ void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
 						 6 + (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
 						 4);//openair_daq_vars.ue_ul_nb_rb);
 
+      // if Alamouti cooperation is used
+      // ULSCH_dci->cshift = 1; //see also Table 5.5.2.1.1-1 of 3GPP TS 36.211 v8.6
 
       add_ue_spec_dci(DCI_pdu,
 		      ULSCH_dci,

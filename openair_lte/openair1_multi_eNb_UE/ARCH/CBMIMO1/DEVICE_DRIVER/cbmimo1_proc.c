@@ -62,8 +62,8 @@ int chbch_stats_read(char *buffer, char **my_buffer, off_t off, int length)
       len += dump_ue_stats(PHY_vars_UE_g[0],buffer,len);
   } // is_clusterhead
   else {
-    if (PHY_vars_eNb_g) 
-      len += dump_eNB_stats(PHY_vars_eNb_g[0],buffer,len);
+    if (PHY_vars_eNB_g) 
+      len += dump_eNB_stats(PHY_vars_eNB_g[0],buffer,len);
   }
 
   return len;

@@ -1,8 +1,9 @@
 CCC = gcc
 
 TOP_DIR = ../..
+OPENAIR2_DIR = ../../../openair2
 
-CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ 
+CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 #-DICC 
 
 ifdef DEBUGPHY
@@ -52,59 +53,8 @@ endif
 
 # PHY TOOLS routines
 PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o 
-#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/cmult_vv.o $(TOP_DIR)/PHY/TOOLS/cmult_sv.o $(TOP_DIR)/PHY/TOOLS/cmult_mm.o $(TOP_DIR)/PHY/TOOLS/cmult_vvh.o $(TOP_DIR)/PHY/TOOLS/cadd_vv.o 
-#ifdef CBMIMO1
-#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/8bit_txmux.o
-#endif
-
-# PHY MODULATION routines
-#PHY_OBJS +=$(TOP_DIR)/PHY/MODULATION/ofdm_mod.o
-
-# PHY Transport routines
-#ifndef OPENAIR_LTE
-#PHY_OBJS += $(TOP_DIR)/PHY/TRANSPORT/chsch.o $(TOP_DIR)/PHY/TRANSPORT/chbch.o $(TOP_DIR)/PHY/TRANSPORT/sch.o $(TOP_DIR)/PHY/TRANSPORT/sach.o $(TOP_DIR)/PHY/TRANSPORT/mrbch.o
-#else
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pss.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pilots.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pbch.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o
-#PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
-#endif
-
-# PHY Coding routines
-#PHY_OBJS+=$(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/rate_matching.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o
-#PHY_OBJS += $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o
-#PHY_OBJS += $(TOP_DIR)/PHY/CODING/lte_rate_matching.o
-#PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi_lte.o
-
-# PHY Synch routines
-#ifndef OPENAIR_LTE
-#PHY_OBJS +=$(TOP_DIR)/PHY/ESTIMATION/synch_time.o 
-#else
-#PHY_OBJS +=$(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o 
-#endif
-
-# Utility routines
-#PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/dB_routines.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/TOOLS/memory_routines.o $(TOP_DIR)/PHY/TOOLS/signal_energy.o $(TOP_DIR)/PHY/TOOLS/sqrt.o $(TOP_DIR)/PHY/TOOLS/log2_approx.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
-
-#PHY_OBJS +=$(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o 
-
-# CONFIG routines
-#PHY_OBJS +=$(TOP_DIR)/PHY/CONFIG/openair_configure.o $(TOP_DIR)/PHY/CONFIG/openair_readconfigfile.o
-
-#PHY_OBJS +=$(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_generate_ofdm.o
 
 USERRFOBJS += $(PHY_OBJS) openair_rf.o #openair_generate_ofdm.o
-
-
 
 all:	openair_rf
 

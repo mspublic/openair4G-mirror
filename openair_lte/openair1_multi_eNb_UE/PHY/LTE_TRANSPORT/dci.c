@@ -1730,7 +1730,7 @@ u8 get_num_pdcch_symbols(u8 num_dci,
   //for (i=0;i<num_dci;i++) {
   //  printf("dci_alloc[%d].L = %d\n",i,dci_alloc[i].L);
   //}  
-  exit(-1);
+  //exit(-1);
   return(0);
 }
 
