@@ -144,19 +144,16 @@ void generate_pcfich(u8 num_pdcch_symbols,
       ((s16*)(&(pcfich_d[0][i])))[0]   = ((pcfich_bt[2*i] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
       ((s16*)(&(pcfich_d[0][i])))[1]   = ((pcfich_bt[2*i+1] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
       // second antenna position n -> -x1*
-      ((s16*)(&(pcfich_d[1][i+1])))[0]   = ((pcfich_bt[2*i+2] == 1) ? gain_lin_QPSK : -gain_lin_QPSK);
-      ((s16*)(&(pcfich_d[1][i+1])))[1]   = ((pcfich_bt[2*i+3] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[1][i])))[0]   = ((pcfich_bt[2*i+2] == 1) ? gain_lin_QPSK : -gain_lin_QPSK);
+      ((s16*)(&(pcfich_d[1][i])))[1]   = ((pcfich_bt[2*i+3] == 1) ? -gain_lin_QPSK : gain_lin_QPSK);
       // fill in the rest of the ALAMOUTI precoding
       ((s16*)&pcfich_d[0][i+1])[0] = -((s16*)&pcfich_d[1][i])[0];
       ((s16*)&pcfich_d[0][i+1])[1] =  ((s16*)&pcfich_d[1][i])[1];
       ((s16*)&pcfich_d[1][i+1])[0] =  ((s16*)&pcfich_d[0][i])[0];
       ((s16*)&pcfich_d[1][i+1])[1] = -((s16*)&pcfich_d[0][i])[1];
-    }
-      /*
-      printf("pcfich_d %d => (%d,%d,%d,%d) (%d %d %d %d)\n",
-	     i,pcfich_d[0][i],pcfich_d[0][i+1],pcfich_d[0][i+2],pcfich_d[0][i+3],
-	     pcfich_d[1][i],pcfich_d[1][i+1],pcfich_d[1][i+2],pcfich_d[1][i+3]);
-      */
+    
+      
+    }  
 #else
     for (i=0;i<16;i+=2) {
       qpsk_table_offset =  MOD_TABLE_QPSK_OFFSET;  //x0
@@ -220,7 +217,7 @@ void generate_pcfich(u8 num_pdcch_symbols,
     if (reg_offset>=frame_parms->ofdm_symbol_size)
       reg_offset=1 + reg_offset-frame_parms->ofdm_symbol_size;
 #endif
-
+    //    printf("mapping pcfich reg_offset %d\n",reg_offset);
     for (i=0;i<6;i++) {
       if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
 
@@ -250,20 +247,19 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	     LTE_UE_PDCCH *lte_ue_pdcch_vars,
 	     MIMO_mode_t mimo_mode) {
 
-  u8 pcfich_bt[32],nsymb,pcfich_quad;
-  s16 pcfich_d[2][32];
+  u8 nsymb,pcfich_quad;
   u8 i,j;
   u16 symbol_offset,m,re_offset,reg_offset;
 
   s32 **rxdataF_comp = lte_ue_pdcch_vars->rxdataF_comp;
-  s16 phich_d[32],*phich_d_ptr;
-  s16 metric,old_metric=-16384;
+  s16 pcfich_d[32],*pcfich_d_ptr;
+  s32 metric,old_metric=-16384;
   u8 num_pdcch_symbols=3;
 
   // demapping
   // loop over 4 quadruplets and lookup REGs
   m=0;
-  phich_d_ptr = phich_d;
+  pcfich_d_ptr = pcfich_d;
 
   for (pcfich_quad=0;pcfich_quad<4;pcfich_quad++) {
     reg_offset = (pcfich_reg[pcfich_quad]*4);
@@ -273,44 +269,48 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 	//	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d)\n",pcfich_quad,i,reg_offset+i,m,
 	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
 	//	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1]);
-	phich_d_ptr[0] = 0;
-	phich_d_ptr[1] = 0;
+	pcfich_d_ptr[0] = 0;
+	pcfich_d_ptr[1] = 0;
 	for (j=0;j<frame_parms->nb_antennas_rx;j++) {
-	  phich_d_ptr[0] += ((s16*)&rxdataF_comp[j][reg_offset+i])[0]; // RE component
-	  phich_d_ptr[1] += ((s16*)&rxdataF_comp[j][reg_offset+i])[1]; // IM component
+	  pcfich_d_ptr[0] += ((s16*)&rxdataF_comp[j][reg_offset+i])[0]; // RE component
+	  pcfich_d_ptr[1] += ((s16*)&rxdataF_comp[j][reg_offset+i])[1]; // IM component
 	} 
-	/*	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => phich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	/*
+			printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
-	       phich_d_ptr[0]);
+	       pcfich_d_ptr[0]);
 	*/
-	phich_d_ptr+=2;
+	pcfich_d_ptr+=2;
       }
     }
     else { // ALAMOUTI
       for (i=0;i<4;i+=2) {
-	phich_d_ptr[0] = 0;
-	phich_d_ptr[1] = 0;
-	phich_d_ptr[2] = 0;
-	phich_d_ptr[3] = 0;
+	pcfich_d_ptr[0] = 0;
+	pcfich_d_ptr[1] = 0;
+	pcfich_d_ptr[2] = 0;
+	pcfich_d_ptr[3] = 0;
 	for (j=0;j<frame_parms->nb_antennas_rx;j++) {
-	  phich_d_ptr[0] += (((s16*)&rxdataF_comp[j][reg_offset+i])[0]+
+
+	  pcfich_d_ptr[0] += (((s16*)&rxdataF_comp[j][reg_offset+i])[0]+
 			     ((s16*)&rxdataF_comp[j+2][reg_offset+i+1])[0]); // RE component
-	  phich_d_ptr[1] += (((s16*)&rxdataF_comp[j][reg_offset+i])[1] -
+	  pcfich_d_ptr[1] += (((s16*)&rxdataF_comp[j][reg_offset+i])[1] -
 			     ((s16*)&rxdataF_comp[j+2][reg_offset+i+1])[1]);// IM component
 	  
-	  phich_d_ptr[2] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[0]-
+	  pcfich_d_ptr[2] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[0]-
 			     ((s16*)&rxdataF_comp[j+2][reg_offset+i])[0]); // RE component
-	  phich_d_ptr[3] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[1] +
+	  pcfich_d_ptr[3] += (((s16*)&rxdataF_comp[j][reg_offset+i+1])[1] +
 			     ((s16*)&rxdataF_comp[j+2][reg_offset+i])[1]);// IM component
+
+
 	}
-	/*
-	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => phich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
+	/*	
+	printf("rx_pcfich: quad %d, i %d, offset %d => m%d (%d,%d) => pcfich_d_ptr[0] %d \n",pcfich_quad,i,reg_offset+i,m,
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[0],
 	       ((s16*)&rxdataF_comp[0][reg_offset+i])[1],
-	       phich_d_ptr[0]);
+	       pcfich_d_ptr[0]);
 	*/
-	phich_d_ptr+=4;
+	pcfich_d_ptr+=4;
 
       }
     }
@@ -318,15 +318,15 @@ u8 rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
   // pcfhich unscrambling
 
-  pcfich_unscrambling(frame_parms,subframe,phich_d);
+  pcfich_unscrambling(frame_parms,subframe,pcfich_d);
 
   // pcfich detection
 
   for (i=0;i<3;i++) {
     metric = 0;
     for (j=0;j<32;j++) {
-      //      printf("pcfich_b[%d][%d] %d => phich_d[%d] %d]\n",i,j,pcfich_b[i][j],j,phich_d[j]);
-      metric += ((pcfich_b[i][j]==0) ? (phich_d[j]) : (-phich_d[j]));
+      //printf("pcfich_b[%d][%d] %d => pcfich_d[%d] %d\n",i,j,pcfich_b[i][j],j,pcfich_d[j]);
+      metric += (s32)(((pcfich_b[i][j]==0) ? (pcfich_d[j]) : (-pcfich_d[j])));
     }
 #ifdef DEBUG_PCFICH
     msg("metric %d : %d\n",i,metric);
