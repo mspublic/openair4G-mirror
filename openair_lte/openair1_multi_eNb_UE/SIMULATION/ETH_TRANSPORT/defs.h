@@ -54,8 +54,8 @@ typedef struct  {
 typedef struct  {
   u8 pucch_flag:3;  // 0,7 = none, 1 = type 1, 2=type 1a, 3=type 1b, 4=type 2, 5=type 2a, 6=type 2b
   u8 pucch_Ncs1:3;  // physical configuration of pucch, for abstraction purposes
-  u16 pucch_uci:13;        // cqi information
-  u8 pucch_ack:2;         // ack/nak information
+  u32 pucch_payload:21;        // ack/nak/cqi information
+  u8 sr:1;
   u8 pusch_flag:1;  // 0=none,1=active
   u32 pusch_uci;     // uci information on pusch
   u8 pusch_ri:2;    // ri information on pusch

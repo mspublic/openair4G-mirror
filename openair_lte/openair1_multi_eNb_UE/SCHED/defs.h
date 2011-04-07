@@ -255,6 +255,18 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,harq_status_t *harq_ack,u8 subframe,u
 */
 u8 ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe,u8 ACK_index);
 
+/*!
+  \brief Computes number of DL subframes represented by a particular ACK received on UL (M from Table 10.1-1 in 36.213, p. 69 in version 8.6)
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @param subframe Subframe for UE transmission (n in 36.213)
+  @returns Number of DL subframes (M)
+*/
+u8 ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe);
+
+
+u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
+
+
 
 s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB);
 s32 add_ue(s16 rnti, PHY_VARS_eNB *phy_vars_eNB);
@@ -264,14 +276,58 @@ void process_timing_advance(u8 timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance);
 
 
+/** \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in 
+subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For
+TDD, this routine computes the complex procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
+@param phy_vars_ue Pointer to UE variables
+@param eNB_id Index of eNB
+@param subframe Index of subframe
+@param b Pointer to PUCCH payload (b[0],b[1])
+@returns n1_pucch
+*/
+u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
+		u8 eNB_id,
+		u8 subframe,
+		u8 *b);
+
+/** \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in 
+subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For
+TDD, this routine computes the procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
+@param phy_vars_eNB Pointer to UE variables
+@param eNB_id Index of eNB
+@param subframe Index of subframe
+@param b Pointer to PUCCH payload (b[0],b[1])
+@param n1_pucch0 Pointer to n1_pucch0
+@param n1_pucch1 Pointer to n1_pucch1
+@param n1_pucch2 Pointer to n1_pucch2
+@param n1_pucch3 Pointer to n1_pucch3
+*/
+void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
+		      u8 UE_id,
+		      u8 subframe,
+		      s16 *n1_pucch0,
+		      s16 *n1_pucch1,
+		      s16 *n1_pucch2,
+		      s16 *n1_pucch3);
+
 
 /*!
   \brief This function retrieves the harq_pid of the corresponding DLSCH process and updates the error statistics of the DLSCH based on the received ACK info from UE along with the round index.  It also performs the fine-grain rate-adaptation based on the error statistics derived from the ACK/NAK process.
   @param UE_id Local UE index on which to act
   @param subframe Index of subframe
   @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param pusch_flag Indication that feedback came from PUSCH
+  @param pucch_payload Resulting payload from pucch
+  @param pucch_sel Selection of n1_pucch0 or n1_pucch1 (TDD specific)
+  @param SR_payload Indication of SR presence (TDD specific)
 */
-void process_HARQ_feedback(u8 UE_id, u8 subframe, PHY_VARS_eNB *phy_vars_eNB);
+void process_HARQ_feedback(u8 UE_id, 
+			   u8 subframe, 
+			   PHY_VARS_eNB *phy_vars_eNB,
+			   u8 pusch_flag, 
+			   u8 *pucch_payload, 
+			   u8 pucch_sel,
+			   u8 SR_payload);
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);

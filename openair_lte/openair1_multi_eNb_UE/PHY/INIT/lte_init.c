@@ -86,6 +86,8 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
 
+  msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,mac_xface->frame);
+
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
   lte_frame_parms->prach_config_common.prach_Config_enabled=1;
   lte_frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex          =radioResourceConfigCommon->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
@@ -95,7 +97,7 @@ void phy_config_sib2_eNB(u8 Mod_id,
   
 
 
-  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
+  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
   lte_frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
   lte_frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
@@ -137,7 +139,15 @@ void phy_config_sib2_eNB(u8 Mod_id,
   lte_frame_parms->ul_power_control_config_common.deltaPreambleMsg3 = radioResourceConfigCommon->uplinkPowerControlCommon.deltaPreambleMsg3;
   
   lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
-  
+
+
+  // Now configure some of the Physical Channels
+
+  // PUCCH
+
+  init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->ncs_cell);
+
+
 }
 
 void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
@@ -145,6 +155,8 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
 
+  msg("[PHY][UE%d] Frame %d: Applying radioResourceConfigCommon from eNB%d\n",Mod_id,mac_xface->frame,CH_index);
+
   lte_frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
 
   lte_frame_parms->prach_config_common.prach_Config_enabled=1;
@@ -155,7 +167,7 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
   
 
 
-  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
+  lte_frame_parms->pucch_config_common.deltaPUCCH_Shift = 1+radioResourceConfigCommon->pucch_ConfigCommon.deltaPUCCH_Shift;
   lte_frame_parms->pucch_config_common.nRB_CQI          = radioResourceConfigCommon->pucch_ConfigCommon.nRB_CQI;
   lte_frame_parms->pucch_config_common.nCS_AN           = radioResourceConfigCommon->pucch_ConfigCommon.nCS_AN;
   lte_frame_parms->pucch_config_common.n1PUCCH_AN       = radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN;
@@ -198,6 +210,10 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 
   lte_frame_parms->maxHARQ_Msg3Tx = radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx;
   
+  // Now configure some of the Physical Channels
+
+  // PUCCH
+  init_ncs_cell(lte_frame_parms,PHY_vars_UE_g[Mod_id]->ncs_cell);
 
 }
 
@@ -211,7 +227,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
 
   
   if (physicalConfigDedicated) {
-    msg("[PHY][UE %d] Frame %d: Sent physicalConfigDedicated for UE %d\n",Mod_id, mac_xface->frame,UE_id);
+    msg("[PHY][eNB %d] Frame %d: Sent physicalConfigDedicated for UE %d (%x)\n",Mod_id, mac_xface->frame,UE_id,rnti);
     msg("------------------------------------------------------------------------\n");
     
     if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -226,6 +242,17 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
       else {
 	phy_vars_eNB->pucch_config_dedicated[UE_id].ackNackRepetition=1;
       }
+
+      if (physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode)
+	phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = *physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode;
+      else
+	phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode = bundling;
+
+      if ( phy_vars_eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode == multiplexing)
+	msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = multiplexing\n");
+      else
+	msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = bundling\n");
+ 
     }
     
     if (physicalConfigDedicated->pusch_ConfigDedicated) {
@@ -278,7 +305,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
     
   }
   else {
-    msg("[PHY][UE %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,UE_id);
+    msg("[PHY][eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, mac_xface->frame,UE_id);
     return;
   }
   
@@ -309,12 +336,22 @@ void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 	else {
 	  phy_vars_ue->pucch_config_dedicated[CH_index].ackNackRepetition=1;
 	}
+	if (physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode)
+	  phy_vars_ue->pucch_config_dedicated[CH_index].tdd_AckNackFeedbackMode = *physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode;
+	else
+	  phy_vars_ue->pucch_config_dedicated[CH_index].tdd_AckNackFeedbackMode = bundling;
+
+	if ( phy_vars_ue->pucch_config_dedicated[CH_index].tdd_AckNackFeedbackMode == multiplexing)
+	  msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = multiplexing\n");
+	else
+	  msg("pucch_config_dedicated.tdd_AckNackFeedbackMode = bundling\n");
       }
 
       if (physicalConfigDedicated->pusch_ConfigDedicated) {
 	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_ACK_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
 	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_RI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
 	phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_CQI_Index = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+
 
 	msg("pusch_config_dedicated.betaOffset_ACK_Index %d\n",phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_ACK_Index);
 	msg("pusch_config_dedicated.betaOffset_RI_Index %d\n",phy_vars_ue->pusch_config_dedicated[CH_index].betaOffset_RI_Index);

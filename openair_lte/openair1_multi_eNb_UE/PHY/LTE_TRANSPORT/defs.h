@@ -152,6 +152,10 @@ typedef struct {
   u16 rnti; 
   /// Active flag for baseband transmitter processing
   u8 active;
+  /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
+  u8 subframe_tx[10];
+  /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK. 
+  u8 nCCE[10];
   /// Current HARQ process id
   u8 current_harq_pid;
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
@@ -419,10 +423,6 @@ typedef struct {
   u32 ulsch_decoding_attempts[3][4];
   u32 ulsch_round_errors[3][4];
   s8 dlsch_mcs_offset;
-  /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
-  u8 dlsch_mcs1;
-  /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
-  u8 dlsch_mcs2;
   //  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;
 
@@ -433,6 +433,8 @@ typedef struct {
   u8 ack;
   /// send status (for PUCCH)
   u8 send_harq_status;
+  /// nCCE (for PUCCH)
+  u8 nCCE;
 } harq_status_t;
 
 typedef struct {

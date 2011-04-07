@@ -16,6 +16,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+#include "LAYER2/MAC/vars.h"
 
 #define BW 10.0
 #define N_TRIALS 100
@@ -644,8 +645,8 @@ int main(int argc, char **argv) {
 	    ((u8 *)&DLSCH_alloc_pdu2)[2]=0xff;
 	    ((u8 *)&DLSCH_alloc_pdu2)[1]=0x60;
 	    ((u8 *)&DLSCH_alloc_pdu2)[0]=0x10;
-	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
-	    dci_alloc[num_dci].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI1_5MHz_TDD_t));
+	    dci_alloc[num_dci].dci_length = sizeof_DCI1_5MHz_TDD_t;
 	    dci_alloc[num_dci].L          = log2L;
 	    dci_alloc[num_dci].rnti       = n_rnti;
 	    dci_alloc[num_dci].format     = format1;
@@ -673,7 +674,8 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
 	if (n_frames==1) {
 	  write_output("txsigF0.m","txsF0", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][0],300*120,1,4);
-	//write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],300*120,1,4);
+	  if (nb_tx > 1)
+	    write_output("txsigF1.m","txsF1", PHY_vars_eNb->lte_eNB_common_vars.txdataF[eNb_id][1],300*120,1,4);
 	}
 
 	// do talbe lookup and write results to txdataF2
@@ -746,8 +748,7 @@ int main(int argc, char **argv) {
 	
 	tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
       }
-      //  write_output("txsig0.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
-      //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+
 	
 	
       for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
@@ -808,8 +809,7 @@ int main(int argc, char **argv) {
 	  // do PDCCH procedures here
 	  PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = n_rnti;
 	    
-	  //PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols = num_pdcch_symbols;
-	    
+	  //	  printf("Doing RX : num_pdcch_symbols at TX %d\n",num_pdcch_symbols);
 	  rx_pdcch(&PHY_vars_UE->lte_ue_common_vars,
 		   PHY_vars_UE->lte_ue_pdcch_vars,
 		   &PHY_vars_UE->lte_frame_parms,
@@ -817,11 +817,12 @@ int main(int argc, char **argv) {
 		   0,
 		   (PHY_vars_UE->lte_frame_parms.mode1_flag == 1) ? SISO : ALAMOUTI,
 		   PHY_vars_UE->is_secondary_ue); 
-	  dci_cnt = dci_decoding_procedure(PHY_vars_UE->lte_ue_pdcch_vars,
+	  //	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
+	  //	    break;
+	  dci_cnt = dci_decoding_procedure(PHY_vars_UE,
 					   dci_alloc_rx,
-					   0,
-					   &PHY_vars_UE->lte_frame_parms,
-					   get_mi(&PHY_vars_UE->lte_frame_parms,0),SI_RNTI,RA_RNTI);
+					   0,0,
+					   SI_RNTI,RA_RNTI);
 	  common_rx=0;
 	  ul_rx=0;
 	  dl_rx=0;
@@ -854,9 +855,14 @@ int main(int argc, char **argv) {
 	  if (PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols != num_pdcch_symbols)
 	    n_errors_cfi++;
 
+	  if (n_errors_cfi > 0)
+	    break;
 	}
+
       } // symbol loop
 
+      if (n_errors_cfi > 0)
+	break;
       if ((n_errors_ul>100) && (n_errors_dl>100) && (n_errors_common>100))
 	break;
 
@@ -870,8 +876,14 @@ int main(int argc, char **argv) {
   } // NSR
   
   if (n_frames==1) {
+    write_output("txsig0.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
+    if (n_tx>1)
+      write_output("txsig1.m","txs1", txdata[1],2*frame_parms->samples_per_tti,1,1);
     write_output("rxsig0.m","rxs0", PHY_vars_UE->lte_ue_common_vars.rxdata[0],2*frame_parms->samples_per_tti,1,1);
     write_output("rxsigF0.m","rxsF0", PHY_vars_UE->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);   
+    write_output("H00.m","h00",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
+    if (n_tx==2)
+      write_output("H10.m","h10",&(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNb->lte_frame_parms.ofdm_symbol_size),1,1);
     write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],3*300,1,1); 
     write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
     write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);    

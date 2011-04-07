@@ -16,6 +16,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+#include "LAYER2/MAC/vars.h"
 
 #define BW 5.0
 
@@ -96,8 +97,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   
 
-  init_ncs_cell(lte_frame_parms,PHY_vars_eNB->ncs_cell);
-  init_ncs_cell(lte_frame_parms,PHY_vars_UE->ncs_cell);
 
   printf("Done lte_param_init\n");
 
@@ -160,6 +159,7 @@ int main(int argc, char **argv) {
   u32 pucch_payload_tx,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
+  u8 subframe=3;
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -420,26 +420,30 @@ int main(int argc, char **argv) {
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     bzero(r_im[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
-  
+ 
+  init_ncs_cell(&PHY_vars_eNB->lte_frame_parms,PHY_vars_eNB->ncs_cell);
+
+  init_ncs_cell(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ncs_cell);
+ 
   PHY_vars_eNB->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
   PHY_vars_eNB->lte_frame_parms.pucch_config_common.nRB_CQI          = 1;
-  PHY_vars_eNB->lte_frame_parms.pucch_config_common.nCS_AN           = 1;
+  PHY_vars_eNB->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
 
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nRB_CQI          = 1;
-  PHY_vars_UE->lte_frame_parms.pucch_config_common.nCS_AN           = 1;
+  PHY_vars_UE->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
 
   generate_pucch(PHY_vars_UE->lte_ue_common_vars.txdataF,
 		 frame_parms,
 		 PHY_vars_UE->ncs_cell,
 		 pucch_format,
 		 &pucch_config_dedicated,
-		 0, //n1_pucch,
+		 37, //n1_pucch,
 		 0, //n2_pucch,
 		 0, //shortened_format,
 		 1, //payload,
 		 scfdma_amps[1], //amp,
-		 2); //subframe
+		 subframe); //subframe
 #ifdef IFFT_FPGA_UE  
   tx_lev=0;
   
@@ -470,8 +474,8 @@ int main(int argc, char **argv) {
     
     for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
       if (frame_parms->Ncp == 1) 
-	PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input,
-		     &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*2],         // output
+	PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input,
+		     &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],         // output
 		     frame_parms->log2_symbol_size,                // log2_fft_size
 		     nsymb,                 // number of symbols
 		     frame_parms->nb_prefix_samples,               // number of prefix samples
@@ -479,13 +483,13 @@ int main(int argc, char **argv) {
 		     frame_parms->rev,           // bit-reversal permutation
 		     CYCLIC_PREFIX);
       else {
-	normal_prefix_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[eNB_id][2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],
-			  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*2],
+	normal_prefix_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[eNB_id][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],
+			  &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],
 			  nsymb,
 			  frame_parms);
       }
       
-      tx_lev += signal_energy(&txdata[aa][2*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
+      tx_lev += signal_energy(&txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
 			      OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     }
 #endif
@@ -501,18 +505,18 @@ int main(int argc, char **argv) {
   for (i=0;i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES;i++) {
     for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
       if (awgn_flag == 0) {
-	s_re[aa][i] = ((double)(((short *)&txdata[aa][2*frame_parms->samples_per_tti]))[(i<<1)]);
-	s_im[aa][i] = ((double)(((short *)&txdata[aa][2*frame_parms->samples_per_tti]))[(i<<1)+1]);
+	s_re[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
+	s_im[aa][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
       }
       else {
 	for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
 	  if (aa==0) {
-	    r_re[aarx][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-	    r_im[aarx][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+	    r_re[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
+	    r_im[aarx][i] = ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
 	  }
 	  else {
-	    r_re[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)]);
-	    r_im[aarx][i] += ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+	    r_re[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)]);
+	    r_im[aarx][i] += ((double)(((short *)&txdata[aa][subframe*frame_parms->samples_per_tti]))[(i<<1)+1]);
 	  }
 	}
       }
@@ -594,12 +598,12 @@ int main(int argc, char **argv) {
 
 
 	    if (sig==1) {
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][2*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][2*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	    }
 	    else {
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][2*frame_parms->samples_per_tti])[2*i] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][2*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	      ((short*) &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*frame_parms->samples_per_tti])[2*i+1] = (short) (.167*(sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 
 	    }
 	  }
@@ -610,14 +614,14 @@ int main(int argc, char **argv) {
 	  slot_fep_ul(&PHY_vars_eNB->lte_frame_parms,
 		      &PHY_vars_eNB->lte_eNB_common_vars,
 		      l,
-		      4,// slot
+		      subframe*2,// slot
 		      0, 
 		      0
 		      );
 	  slot_fep_ul(&PHY_vars_eNB->lte_frame_parms,
 		      &PHY_vars_eNB->lte_eNB_common_vars,
 		      l,
-		      5,//slot
+		      1+(subframe*2),//slot
 		      0, 
 		      0
 		      );
@@ -631,11 +635,11 @@ int main(int argc, char **argv) {
 	       PHY_vars_eNB->ncs_cell,
 	       pucch_format,
 	       &pucch_config_dedicated,
-	       0, //n1_pucch,
+	       37, //n1_pucch,
 	       0, //n2_pucch,
 	       0, //shortened_format,
 	       &pucch_payload_rx, //payload,
-	       2); //subframe	       
+	       subframe); //subframe	       
       if (pucch_format==pucch_format1) {
 	pucch1_missed = (pucch_payload_rx == 0) && (sig==1) ? (pucch1_missed+1) : pucch1_missed;
 	pucch1_false  = (pucch_payload_rx == 1) && (sig==0) ? (pucch1_false+1) : pucch1_false;
@@ -654,8 +658,8 @@ int main(int argc, char **argv) {
 
   }
   if (n_frames==1) {
-    write_output("txsig0.m","txs0", &txdata[0][2*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-    write_output("rxsig0.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][2*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+    write_output("txsig0.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+    write_output("rxsig0.m","rxs0", &PHY_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
     write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   }
 

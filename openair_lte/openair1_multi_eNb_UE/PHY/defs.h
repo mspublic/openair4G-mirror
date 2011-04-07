@@ -198,6 +198,9 @@ typedef struct
   LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
+  u8               sr;
+  u8               pucch_payload[22];
+
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
 
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
@@ -238,6 +241,7 @@ typedef struct
 
   // PUCCH variables
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
+
   u8 ncs_cell[20][7];
 
   // UL-POWER-Control

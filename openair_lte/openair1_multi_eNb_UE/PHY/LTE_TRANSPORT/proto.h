@@ -673,20 +673,18 @@ void dci_decoding(u8 DCI_LENGTH,
 
 /** \brief Do 36.213 DCI decoding procedure by searching different RNTI options and aggregation levels.  Currently does
 not employ the complexity reducing procedure based on RNTI.
-@param lte_ue_pdcch_vars PDCCH variables
+@param phy_vars_ue UE variables
 @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
 @param eNB_id eNB Index on which to act
-@param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
-@param mi TDD mi variable from 36.212
+@param subframe Index of subframe
 @param si_rnti Value for SI-RNTI
 @param ra_rnti Value for RA-RNTI
 @returns bitmap of occupied CCE positions (i.e. those detected)
 */
-u16 dci_decoding_procedure(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			   DCI_ALLOC_t *dci_alloc,
 			   s16 eNB_id,
-			   LTE_DL_FRAME_PARMS *frame_parms,
-			   u8 mi,
+			   u8 subframe,
 			   u16 si_rnti,
 			   u16 ra_rnti);
 
@@ -1054,20 +1052,34 @@ void generate_pucch(mod_sym_t **txdataF,
 		    u16 n1_pucch,
 		    u16 n2_pucch,
 		    u8 shortened_format,
-		    u32 payload,
+		    u8 *payload,
 		    s16 amp,
 		    u8 subframe);
 
-void rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
-	      LTE_DL_FRAME_PARMS *frame_parms,
-	      u8 ncs_cell[20][7],
-	      PUCCH_FMT_t fmt,
-	      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-	      u16 n1_pucch,
-	      u16 n2_pucch,
-	      u8 shortened_format,
-	      u32 *payload,
-	      u8 subframe);
+void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
+			 PUCCH_FMT_t format,
+			 u8 ncs1,
+			 u8 *pucch_ack_payload,
+			 u8 sr,
+			 u8 subframe);
+
+
+s32 rx_pucch(LTE_eNB_COMMON *eNB_common_vars,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     u8 ncs_cell[20][7],
+	     PUCCH_FMT_t fmt,
+	     PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+	     u16 n1_pucch,
+	     u16 n2_pucch,
+	     u8 shortened_format,
+	     u8 *payload,
+	     u8 subframe);
+
+s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
+		   u8 UE_index,
+		   PUCCH_FMT_t fmt,
+		   u8 *payload,
+		   u8 subframe);
 
 /**@}*/
 #endif

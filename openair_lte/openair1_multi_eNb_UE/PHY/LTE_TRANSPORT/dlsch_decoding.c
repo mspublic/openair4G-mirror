@@ -290,8 +290,9 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
-    //msg("DLSCH: Setting NACK for subframe %d (pid %d)\n",subframe,harq_pid);
-    if (dlsch->harq_processes[harq_pid]->round++ >= dlsch->Mdlharq) {
+    dlsch->harq_processes[harq_pid]->round++;
+    //    msg("DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",subframe,harq_pid,dlsch->harq_processes[harq_pid]->round);
+    if (dlsch->harq_processes[harq_pid]->round >= dlsch->Mdlharq) {
       dlsch->harq_processes[harq_pid]->status = SCH_IDLE;
     }
     
@@ -303,7 +304,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
     dlsch->harq_ack[subframe].ack = 1;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
-    //msg("DLSCH decoding: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
+    //    msg("DLSCH decoding: Setting ACK for subframe %d (pid %d)\n",subframe,harq_pid);
   }
   // Reassembly of Transport block here
   offset = 0;

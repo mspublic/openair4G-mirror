@@ -571,6 +571,8 @@ typedef struct {
   u32 dci_false;           
   /// Total number of DCI missed (diagnostic mode)
   u32 dci_missed;          
+  /// nCCE for PUCCH per subframe
+  u8 nCCE[10];
 } LTE_UE_PDCCH;
 
 typedef struct {

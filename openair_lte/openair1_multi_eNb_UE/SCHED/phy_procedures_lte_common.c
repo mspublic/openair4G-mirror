@@ -106,12 +106,14 @@ u8 get_RRCConnReq_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
 unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe,unsigned char ACK_index) {
 
   if (frame_parms->frame_type == 0) {
-    return((subframe+4)%10);
+    return((subframe<4) ? subframe+6 : subframe-4);
   }
   else {
     switch (frame_parms->tdd_config) {
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
+	if (ACK_index==2)
+	  return(1);
 	return(5+ACK_index);
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
@@ -150,6 +152,53 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
   return(0);
 }
 
+unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
+
+  if (frame_parms->frame_type == 0) {
+    return(1);
+  }
+  else {
+    switch (frame_parms->tdd_config) {
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	return(2); // should be 3
+      }
+      else if (subframe == 3) {   // ACK subframes 7 and 8
+	return(2);  // To be updated
+      }
+      else if (subframe == 4) {  // ACK subframes 9 and 0
+	return(2);
+      }
+      else {
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    case 1:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+	return(2);
+      }
+      else if (subframe == 3) {   // ACK subframe 9
+	return(1);  // To be updated
+      }
+      else if (subframe == 7) {   // ACK subframes 0 and 1
+	return(2);  // To be updated
+      }
+      else if (subframe == 8) {   // ACK subframe 4
+	return(1);  // To be updated
+      }
+      else {
+	msg("phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+	    subframe,frame_parms->tdd_config);
+	return(0);
+      }
+      break;
+    }
+  }
+  return(0);
+}
+
 // This function implements table 10.1-1 of 36-213, p. 69
 u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	   harq_status_t *harq_ack,
@@ -158,7 +207,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
   //  printf("get_ack: SF %d\n",subframe);
   u8 status=0;
-
+  
   if (frame_parms->frame_type == 0) {
     o_ACK[0] = harq_ack[(subframe-4)%10].ack;
     status = harq_ack[(subframe-4)%10].send_harq_status;
@@ -197,17 +246,18 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
       if (subframe == 2) {  // ACK subframes 5 and 6
 	o_ACK[0] = harq_ack[5].ack;  
 	o_ACK[1] = harq_ack[6].ack;
-	status = harq_ack[5].send_harq_status + harq_ack[6].send_harq_status;
+	status = harq_ack[5].send_harq_status + (harq_ack[6].send_harq_status<<1);
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
 	o_ACK[0] = harq_ack[7].ack;
 	o_ACK[1] = harq_ack[8].ack;
-	status = harq_ack[7].send_harq_status + harq_ack[8].send_harq_status;
+	status = harq_ack[7].send_harq_status + (harq_ack[8].send_harq_status<<1);
+	printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
       }
       else if (subframe == 4) {  // ACK subframes 9 and 0
 	o_ACK[0] = harq_ack[9].ack;
 	o_ACK[1] = harq_ack[0].ack;
-	status = harq_ack[0].send_harq_status + harq_ack[1].send_harq_status;
+	status = harq_ack[9].send_harq_status + (harq_ack[0].send_harq_status<<1);
       }
       else {
 	msg("phy_procedures_lte.c: get_ack, illegal subframe %d for tdd_config %d\n",
@@ -218,7 +268,51 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
     
     }
   }
+  printf("status %d\n",status);
+
   return(status);
+}
+
+u8 Np6[4]={0,1,3,5};
+u8 Np15[4]={0,3,8,13};
+u8 Np25[4]={0,5,13,22};
+u8 Np50[4]={0,11,27,44};
+u8 Np75[4]={0,16,41,66};
+u8 Np100[4]={0,22,55,88};
+// This is part of the PUCCH allocation procedure (see Section 10.1 36.213)
+u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1) {
+  u8 *Np;
+  switch (N_RB_DL) {
+    case 6:
+      Np=Np6;
+      break;
+    case 15:
+      Np=Np15;
+      break;
+    case 25:
+      Np=Np25;
+      break;
+    case 50:
+      Np=Np50;
+      break;
+    case 75:
+      Np=Np75;
+      break;
+    case 100:
+      Np=Np100;
+      break;
+    default:
+      msg("[PHY] get_Np() FATAL: unsupported N_RB_DL %d\n",N_RB_DL);
+      return(0);
+      break;
+    }
+
+  if (nCCE>=Np[2])
+    return(Np[2+plus1]);
+  else if (nCCE>=Np[1])
+    return(Np[1+plus1]);
+  else
+    return(Np[0+plus1]);
 }
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) {
