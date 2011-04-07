@@ -1,365 +1,365 @@
 ASN_MODULE_SOURCES=	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BCCH-BCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BCCH-BCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BCCH-DL-SCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BCCH-DL-SCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PCCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PCCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-CCCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-CCCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-DCCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-DCCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-CCCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-CCCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-DCCH-Message.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-DCCH-MessageType.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CounterCheck.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CounterCheck-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-CountMSB-InfoList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-CountMSB-Info.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CounterCheckResponse.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CounterCheckResponse-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-CountInfoList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-CountInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CSFBParametersRequestCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CSFBParametersRequestCDMA2000-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CSFBParametersResponseCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CSFBParametersResponseCDMA2000-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DLInformationTransfer.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DLInformationTransfer-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/HandoverFromEUTRAPreparationRequest.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/HandoverFromEUTRAPreparationRequest-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MasterInformationBlock.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasurementReport.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasurementReport-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MobilityFromEUTRACommand.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MobilityFromEUTRACommand-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Handover.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellChangeOrder.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SI-OrPSI-GERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInfoListGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Paging.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PagingRecordList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PagingRecord.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PagingUE-Identity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IMSI.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IMSI-Digit.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReconfiguration.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReconfiguration-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityConfigHO.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReconfigurationComplete.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReconfigurationComplete-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishment.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishment-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentComplete.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentComplete-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentReject.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentReject-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentRequest.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReestablishmentRequest-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReestabUE-Identity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReestablishmentCause.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReject.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionReject-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionRelease.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionRelease-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReleaseCause.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RedirectedCarrierInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IdleModeMobilityControlInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityListEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqsPriorityListGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqsPriorityGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityListUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityListUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FreqPriorityUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassPriorityListHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassPriorityHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassPriorityList1XRTT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassPriority1XRTT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionRequest.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionRequest-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InitialUE-Identity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/EstablishmentCause.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionSetup.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionSetup-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionSetupComplete.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRCConnectionSetupComplete-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RegisteredMME.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeCommand.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeCommand-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityConfigSMC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeComplete.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeComplete-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeFailure.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityModeFailure-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformation.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformation-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType1.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PLMN-IdentityList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PLMN-IdentityInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SchedulingInfoList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SchedulingInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SIB-MappingInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SIB-Type.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UECapabilityEnquiry.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UECapabilityEnquiry-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UE-CapabilityRequest.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UECapabilityInformation.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UECapabilityInformation-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ULHandoverPreparationTransfer.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ULHandoverPreparationTransfer-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ULInformationTransfer.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ULInformationTransfer-r8-IEs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType2.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AC-BarringConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MBSFN-SubframeConfigList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MBSFN-SubframeConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType3.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType4.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IntraFreqNeighCellList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IntraFreqNeighCellInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IntraFreqBlackCellList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType5.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqCarrierFreqList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqCarrierFreqInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqNeighCellList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqNeighCellInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqBlackCellList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType6.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqListUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqListUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType7.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqsInfoListGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqsInfoGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType8.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellReselectionParametersCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NeighCellListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NeighCellCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NeighCellsPerBandclassListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NeighCellsPerBandclassCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandClassInfoCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType9.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType10.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemInformationBlockType11.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AntennaInfoCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AntennaInfoDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CQI-ReportConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CQI-ReportPeriodic.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-Identity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/LogicalChannelConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MAC-MainConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRX-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PDCP-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PDSCH-ConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PDSCH-ConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PHICH-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysicalConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/P-Max.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PRACH-ConfigSIB.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PRACH-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PRACH-ConfigInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PresenceAntennaPort1.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PUCCH-ConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PUCCH-ConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PUSCH-ConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PUSCH-ConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-ReferenceSignalsPUSCH.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RACH-ConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RACH-ConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RadioResourceConfigCommonSIB.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RadioResourceConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BCCH-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PCCH-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-CyclicPrefixLength.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RadioResourceConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SRB-ToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SRB-ToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-ToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-ToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DRB-ToReleaseList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RLC-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-AM-RLC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-AM-RLC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UL-UM-RLC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DL-UM-RLC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SN-FieldLength.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/T-PollRetransmit.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PollPDU.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PollByte.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/T-Reordering.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/T-StatusProhibit.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SchedulingRequestConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SoundingRS-UL-ConfigCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SoundingRS-UL-ConfigDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SPS-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SPS-ConfigDL.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SPS-ConfigUL.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/N1-PUCCH-AN-PersistentList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TDD-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TimeAlignmentTimer.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TPC-PDCCH-Config.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TPC-Index.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UplinkPowerControlCommon.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UplinkPowerControlDedicated.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DeltaFList-PUCCH.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NextHopChainingCount.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecurityAlgorithmConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ShortMAC-I.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AdditionalSpectrumEmission.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ARFCN-ValueCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ARFCN-ValueEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ARFCN-ValueGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ARFCN-ValueUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandclassCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandIndicatorGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqsGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ExplicitListOfARFCNs.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CDMA2000-Type.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellIdentity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellIndexList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellIndex.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellReselectionPriority.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CSFB-RegistrationParam1XRTT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellGlobalIdEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellGlobalIdUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellGlobalIdGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellGlobalIdCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MobilityControlInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierBandwidthEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CarrierFreqEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MobilityParametersCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MobilityStateParameters.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellId.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdRange.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhysCellIdUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PLMN-Identity.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MCC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MNC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MCC-MNC-Digit.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PreRegistrationInfoHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SecondaryPreRegistrationZoneIdListHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PreRegistrationZoneIdHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Q-RxLevMin.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Q-OffsetRange.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Q-OffsetRangeInterRAT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReselectionThreshold.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SpeedStateScaleFactors.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SystemTimeInfoCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TrackingAreaCode.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/T-Reselection.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AllowedMeasBandwidth.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Hysteresis.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasIdToRemoveList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectToRemoveList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigToRemoveList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasGapConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasId.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasIdToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasIdToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BlackCellsToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BlackCellsToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectId.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasObjectUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModListUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModListUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/CellsToAddModUTRA-TDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResults.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultListEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultListUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultListGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultsCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultListCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasResultCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PLMN-IdentityList2.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/QuantityConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/QuantityConfigEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/QuantityConfigUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/QuantityConfigGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/QuantityConfigCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ThresholdEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigId.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigInterRAT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ThresholdUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ThresholdGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ThresholdCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigToAddModList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportConfigToAddMod.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/ReportInterval.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RSRP-Range.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RSRQ-Range.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/TimeToTrigger.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/C-RNTI.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DedicatedInfoCDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/DedicatedInfoNAS.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/FilterCoefficient.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MMEC.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/NeighCellConfig.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RAND-CDMA2000.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RAT-Type.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RRC-TransactionIdentifier.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/S-TMSI.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UE-CapabilityRAT-ContainerList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UE-CapabilityRAT-Container.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UE-EUTRA-Capability.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/AccessStratumRelease.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PDCP-Parameters.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/PhyLayerParameters.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/RF-Parameters.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/MeasParameters.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandListEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/BandInfoEUTRA.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqBandList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterFreqBandInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterRAT-BandList.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/InterRAT-BandInfo.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandUTRA-FDD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersUTRA-TDD128.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListUTRA-TDD128.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandUTRA-TDD128.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersUTRA-TDD384.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListUTRA-TDD384.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandUTRA-TDD384.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersUTRA-TDD768.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListUTRA-TDD768.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandUTRA-TDD768.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandGERAN.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersCDMA2000-HRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandListHRPD.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/IRAT-ParametersCDMA2000-1XRTT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/SupportedBandList1XRTT.c	\
-	$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/UE-TimersAndConstants.c
+	BCCH-BCH-Message.c	\
+	BCCH-BCH-MessageType.c	\
+	BCCH-DL-SCH-Message.c	\
+	BCCH-DL-SCH-MessageType.c	\
+	PCCH-Message.c	\
+	PCCH-MessageType.c	\
+	DL-CCCH-Message.c	\
+	DL-CCCH-MessageType.c	\
+	DL-DCCH-Message.c	\
+	DL-DCCH-MessageType.c	\
+	UL-CCCH-Message.c	\
+	UL-CCCH-MessageType.c	\
+	UL-DCCH-Message.c	\
+	UL-DCCH-MessageType.c	\
+	CounterCheck.c	\
+	CounterCheck-r8-IEs.c	\
+	DRB-CountMSB-InfoList.c	\
+	DRB-CountMSB-Info.c	\
+	CounterCheckResponse.c	\
+	CounterCheckResponse-r8-IEs.c	\
+	DRB-CountInfoList.c	\
+	DRB-CountInfo.c	\
+	CSFBParametersRequestCDMA2000.c	\
+	CSFBParametersRequestCDMA2000-r8-IEs.c	\
+	CSFBParametersResponseCDMA2000.c	\
+	CSFBParametersResponseCDMA2000-r8-IEs.c	\
+	DLInformationTransfer.c	\
+	DLInformationTransfer-r8-IEs.c	\
+	HandoverFromEUTRAPreparationRequest.c	\
+	HandoverFromEUTRAPreparationRequest-r8-IEs.c	\
+	MasterInformationBlock.c	\
+	MeasurementReport.c	\
+	MeasurementReport-r8-IEs.c	\
+	MobilityFromEUTRACommand.c	\
+	MobilityFromEUTRACommand-r8-IEs.c	\
+	Handover.c	\
+	CellChangeOrder.c	\
+	SI-OrPSI-GERAN.c	\
+	SystemInfoListGERAN.c	\
+	Paging.c	\
+	PagingRecordList.c	\
+	PagingRecord.c	\
+	PagingUE-Identity.c	\
+	IMSI.c	\
+	IMSI-Digit.c	\
+	RRCConnectionReconfiguration.c	\
+	RRCConnectionReconfiguration-r8-IEs.c	\
+	SecurityConfigHO.c	\
+	RRCConnectionReconfigurationComplete.c	\
+	RRCConnectionReconfigurationComplete-r8-IEs.c	\
+	RRCConnectionReestablishment.c	\
+	RRCConnectionReestablishment-r8-IEs.c	\
+	RRCConnectionReestablishmentComplete.c	\
+	RRCConnectionReestablishmentComplete-r8-IEs.c	\
+	RRCConnectionReestablishmentReject.c	\
+	RRCConnectionReestablishmentReject-r8-IEs.c	\
+	RRCConnectionReestablishmentRequest.c	\
+	RRCConnectionReestablishmentRequest-r8-IEs.c	\
+	ReestabUE-Identity.c	\
+	ReestablishmentCause.c	\
+	RRCConnectionReject.c	\
+	RRCConnectionReject-r8-IEs.c	\
+	RRCConnectionRelease.c	\
+	RRCConnectionRelease-r8-IEs.c	\
+	ReleaseCause.c	\
+	RedirectedCarrierInfo.c	\
+	IdleModeMobilityControlInfo.c	\
+	FreqPriorityListEUTRA.c	\
+	FreqPriorityEUTRA.c	\
+	FreqsPriorityListGERAN.c	\
+	FreqsPriorityGERAN.c	\
+	FreqPriorityListUTRA-FDD.c	\
+	FreqPriorityUTRA-FDD.c	\
+	FreqPriorityListUTRA-TDD.c	\
+	FreqPriorityUTRA-TDD.c	\
+	BandClassPriorityListHRPD.c	\
+	BandClassPriorityHRPD.c	\
+	BandClassPriorityList1XRTT.c	\
+	BandClassPriority1XRTT.c	\
+	RRCConnectionRequest.c	\
+	RRCConnectionRequest-r8-IEs.c	\
+	InitialUE-Identity.c	\
+	EstablishmentCause.c	\
+	RRCConnectionSetup.c	\
+	RRCConnectionSetup-r8-IEs.c	\
+	RRCConnectionSetupComplete.c	\
+	RRCConnectionSetupComplete-r8-IEs.c	\
+	RegisteredMME.c	\
+	SecurityModeCommand.c	\
+	SecurityModeCommand-r8-IEs.c	\
+	SecurityConfigSMC.c	\
+	SecurityModeComplete.c	\
+	SecurityModeComplete-r8-IEs.c	\
+	SecurityModeFailure.c	\
+	SecurityModeFailure-r8-IEs.c	\
+	SystemInformation.c	\
+	SystemInformation-r8-IEs.c	\
+	SystemInformationBlockType1.c	\
+	PLMN-IdentityList.c	\
+	PLMN-IdentityInfo.c	\
+	SchedulingInfoList.c	\
+	SchedulingInfo.c	\
+	SIB-MappingInfo.c	\
+	SIB-Type.c	\
+	UECapabilityEnquiry.c	\
+	UECapabilityEnquiry-r8-IEs.c	\
+	UE-CapabilityRequest.c	\
+	UECapabilityInformation.c	\
+	UECapabilityInformation-r8-IEs.c	\
+	ULHandoverPreparationTransfer.c	\
+	ULHandoverPreparationTransfer-r8-IEs.c	\
+	ULInformationTransfer.c	\
+	ULInformationTransfer-r8-IEs.c	\
+	SystemInformationBlockType2.c	\
+	AC-BarringConfig.c	\
+	MBSFN-SubframeConfigList.c	\
+	MBSFN-SubframeConfig.c	\
+	SystemInformationBlockType3.c	\
+	SystemInformationBlockType4.c	\
+	IntraFreqNeighCellList.c	\
+	IntraFreqNeighCellInfo.c	\
+	IntraFreqBlackCellList.c	\
+	SystemInformationBlockType5.c	\
+	InterFreqCarrierFreqList.c	\
+	InterFreqCarrierFreqInfo.c	\
+	InterFreqNeighCellList.c	\
+	InterFreqNeighCellInfo.c	\
+	InterFreqBlackCellList.c	\
+	SystemInformationBlockType6.c	\
+	CarrierFreqListUTRA-FDD.c	\
+	CarrierFreqUTRA-FDD.c	\
+	CarrierFreqListUTRA-TDD.c	\
+	CarrierFreqUTRA-TDD.c	\
+	SystemInformationBlockType7.c	\
+	CarrierFreqsInfoListGERAN.c	\
+	CarrierFreqsInfoGERAN.c	\
+	SystemInformationBlockType8.c	\
+	CellReselectionParametersCDMA2000.c	\
+	NeighCellListCDMA2000.c	\
+	NeighCellCDMA2000.c	\
+	NeighCellsPerBandclassListCDMA2000.c	\
+	NeighCellsPerBandclassCDMA2000.c	\
+	PhysCellIdListCDMA2000.c	\
+	BandClassListCDMA2000.c	\
+	BandClassInfoCDMA2000.c	\
+	SystemInformationBlockType9.c	\
+	SystemInformationBlockType10.c	\
+	SystemInformationBlockType11.c	\
+	AntennaInfoCommon.c	\
+	AntennaInfoDedicated.c	\
+	CQI-ReportConfig.c	\
+	CQI-ReportPeriodic.c	\
+	DRB-Identity.c	\
+	LogicalChannelConfig.c	\
+	MAC-MainConfig.c	\
+	DRX-Config.c	\
+	PDCP-Config.c	\
+	PDSCH-ConfigCommon.c	\
+	PDSCH-ConfigDedicated.c	\
+	PHICH-Config.c	\
+	PhysicalConfigDedicated.c	\
+	P-Max.c	\
+	PRACH-ConfigSIB.c	\
+	PRACH-Config.c	\
+	PRACH-ConfigInfo.c	\
+	PresenceAntennaPort1.c	\
+	PUCCH-ConfigCommon.c	\
+	PUCCH-ConfigDedicated.c	\
+	PUSCH-ConfigCommon.c	\
+	PUSCH-ConfigDedicated.c	\
+	UL-ReferenceSignalsPUSCH.c	\
+	RACH-ConfigCommon.c	\
+	RACH-ConfigDedicated.c	\
+	RadioResourceConfigCommonSIB.c	\
+	RadioResourceConfigCommon.c	\
+	BCCH-Config.c	\
+	PCCH-Config.c	\
+	UL-CyclicPrefixLength.c	\
+	RadioResourceConfigDedicated.c	\
+	SRB-ToAddModList.c	\
+	SRB-ToAddMod.c	\
+	DRB-ToAddModList.c	\
+	DRB-ToAddMod.c	\
+	DRB-ToReleaseList.c	\
+	RLC-Config.c	\
+	UL-AM-RLC.c	\
+	DL-AM-RLC.c	\
+	UL-UM-RLC.c	\
+	DL-UM-RLC.c	\
+	SN-FieldLength.c	\
+	T-PollRetransmit.c	\
+	PollPDU.c	\
+	PollByte.c	\
+	T-Reordering.c	\
+	T-StatusProhibit.c	\
+	SchedulingRequestConfig.c	\
+	SoundingRS-UL-ConfigCommon.c	\
+	SoundingRS-UL-ConfigDedicated.c	\
+	SPS-Config.c	\
+	SPS-ConfigDL.c	\
+	SPS-ConfigUL.c	\
+	N1-PUCCH-AN-PersistentList.c	\
+	TDD-Config.c	\
+	TimeAlignmentTimer.c	\
+	TPC-PDCCH-Config.c	\
+	TPC-Index.c	\
+	UplinkPowerControlCommon.c	\
+	UplinkPowerControlDedicated.c	\
+	DeltaFList-PUCCH.c	\
+	NextHopChainingCount.c	\
+	SecurityAlgorithmConfig.c	\
+	ShortMAC-I.c	\
+	AdditionalSpectrumEmission.c	\
+	ARFCN-ValueCDMA2000.c	\
+	ARFCN-ValueEUTRA.c	\
+	ARFCN-ValueGERAN.c	\
+	ARFCN-ValueUTRA.c	\
+	BandclassCDMA2000.c	\
+	BandIndicatorGERAN.c	\
+	CarrierFreqCDMA2000.c	\
+	CarrierFreqGERAN.c	\
+	CarrierFreqsGERAN.c	\
+	ExplicitListOfARFCNs.c	\
+	CDMA2000-Type.c	\
+	CellIdentity.c	\
+	CellIndexList.c	\
+	CellIndex.c	\
+	CellReselectionPriority.c	\
+	CSFB-RegistrationParam1XRTT.c	\
+	CellGlobalIdEUTRA.c	\
+	CellGlobalIdUTRA.c	\
+	CellGlobalIdGERAN.c	\
+	CellGlobalIdCDMA2000.c	\
+	MobilityControlInfo.c	\
+	CarrierBandwidthEUTRA.c	\
+	CarrierFreqEUTRA.c	\
+	MobilityParametersCDMA2000.c	\
+	MobilityStateParameters.c	\
+	PhysCellId.c	\
+	PhysCellIdRange.c	\
+	PhysCellIdCDMA2000.c	\
+	PhysCellIdGERAN.c	\
+	PhysCellIdUTRA-FDD.c	\
+	PhysCellIdUTRA-TDD.c	\
+	PLMN-Identity.c	\
+	MCC.c	\
+	MNC.c	\
+	MCC-MNC-Digit.c	\
+	PreRegistrationInfoHRPD.c	\
+	SecondaryPreRegistrationZoneIdListHRPD.c	\
+	PreRegistrationZoneIdHRPD.c	\
+	Q-RxLevMin.c	\
+	Q-OffsetRange.c	\
+	Q-OffsetRangeInterRAT.c	\
+	ReselectionThreshold.c	\
+	SpeedStateScaleFactors.c	\
+	SystemTimeInfoCDMA2000.c	\
+	TrackingAreaCode.c	\
+	T-Reselection.c	\
+	AllowedMeasBandwidth.c	\
+	Hysteresis.c	\
+	MeasConfig.c	\
+	MeasIdToRemoveList.c	\
+	MeasObjectToRemoveList.c	\
+	ReportConfigToRemoveList.c	\
+	MeasGapConfig.c	\
+	MeasId.c	\
+	MeasIdToAddModList.c	\
+	MeasIdToAddMod.c	\
+	MeasObjectCDMA2000.c	\
+	CellsToAddModListCDMA2000.c	\
+	CellsToAddModCDMA2000.c	\
+	MeasObjectEUTRA.c	\
+	CellsToAddModList.c	\
+	CellsToAddMod.c	\
+	BlackCellsToAddModList.c	\
+	BlackCellsToAddMod.c	\
+	MeasObjectGERAN.c	\
+	MeasObjectId.c	\
+	MeasObjectToAddModList.c	\
+	MeasObjectToAddMod.c	\
+	MeasObjectUTRA.c	\
+	CellsToAddModListUTRA-FDD.c	\
+	CellsToAddModUTRA-FDD.c	\
+	CellsToAddModListUTRA-TDD.c	\
+	CellsToAddModUTRA-TDD.c	\
+	MeasResults.c	\
+	MeasResultListEUTRA.c	\
+	MeasResultEUTRA.c	\
+	MeasResultListUTRA.c	\
+	MeasResultUTRA.c	\
+	MeasResultListGERAN.c	\
+	MeasResultGERAN.c	\
+	MeasResultsCDMA2000.c	\
+	MeasResultListCDMA2000.c	\
+	MeasResultCDMA2000.c	\
+	PLMN-IdentityList2.c	\
+	QuantityConfig.c	\
+	QuantityConfigEUTRA.c	\
+	QuantityConfigUTRA.c	\
+	QuantityConfigGERAN.c	\
+	QuantityConfigCDMA2000.c	\
+	ReportConfigEUTRA.c	\
+	ThresholdEUTRA.c	\
+	ReportConfigId.c	\
+	ReportConfigInterRAT.c	\
+	ThresholdUTRA.c	\
+	ThresholdGERAN.c	\
+	ThresholdCDMA2000.c	\
+	ReportConfigToAddModList.c	\
+	ReportConfigToAddMod.c	\
+	ReportInterval.c	\
+	RSRP-Range.c	\
+	RSRQ-Range.c	\
+	TimeToTrigger.c	\
+	C-RNTI.c	\
+	DedicatedInfoCDMA2000.c	\
+	DedicatedInfoNAS.c	\
+	FilterCoefficient.c	\
+	MMEC.c	\
+	NeighCellConfig.c	\
+	RAND-CDMA2000.c	\
+	RAT-Type.c	\
+	RRC-TransactionIdentifier.c	\
+	S-TMSI.c	\
+	UE-CapabilityRAT-ContainerList.c	\
+	UE-CapabilityRAT-Container.c	\
+	UE-EUTRA-Capability.c	\
+	AccessStratumRelease.c	\
+	PDCP-Parameters.c	\
+	PhyLayerParameters.c	\
+	RF-Parameters.c	\
+	SupportedBandListEUTRA.c	\
+	SupportedBandEUTRA.c	\
+	MeasParameters.c	\
+	BandListEUTRA.c	\
+	BandInfoEUTRA.c	\
+	InterFreqBandList.c	\
+	InterFreqBandInfo.c	\
+	InterRAT-BandList.c	\
+	InterRAT-BandInfo.c	\
+	IRAT-ParametersUTRA-FDD.c	\
+	SupportedBandListUTRA-FDD.c	\
+	SupportedBandUTRA-FDD.c	\
+	IRAT-ParametersUTRA-TDD128.c	\
+	SupportedBandListUTRA-TDD128.c	\
+	SupportedBandUTRA-TDD128.c	\
+	IRAT-ParametersUTRA-TDD384.c	\
+	SupportedBandListUTRA-TDD384.c	\
+	SupportedBandUTRA-TDD384.c	\
+	IRAT-ParametersUTRA-TDD768.c	\
+	SupportedBandListUTRA-TDD768.c	\
+	SupportedBandUTRA-TDD768.c	\
+	IRAT-ParametersGERAN.c	\
+	SupportedBandListGERAN.c	\
+	SupportedBandGERAN.c	\
+	IRAT-ParametersCDMA2000-HRPD.c	\
+	SupportedBandListHRPD.c	\
+	IRAT-ParametersCDMA2000-1XRTT.c	\
+	SupportedBandList1XRTT.c	\
+	UE-TimersAndConstants.c
 
 ASN_MODULE_HEADERS=	\
 	BCCH-BCH-Message.h	\
@@ -725,66 +725,66 @@ ASN_MODULE_HEADERS=	\
 	UE-TimersAndConstants.h
 
 ASN_MODULE_HEADERS+=BOOLEAN.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/BOOLEAN.c
-ASN_MODULE_HEADERS+=ENUMERATED.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/ENUMERATED.c
+ASN_MODULE_SOURCES+=BOOLEAN.c
+#ASN_MODULE_HEADERS+=ENUMERATED.h
+#ASN_MODULE_SOURCES+=ENUMERATED.c
 ASN_MODULE_HEADERS+=INTEGER.h
 ASN_MODULE_HEADERS+=NativeEnumerated.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/INTEGER.c
+ASN_MODULE_SOURCES+=INTEGER.c
 ASN_MODULE_HEADERS+=NULL.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//NULL.c
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//NativeEnumerated.c
+ASN_MODULE_SOURCES+=NULL.c
+ASN_MODULE_SOURCES+=NativeEnumerated.c
 ASN_MODULE_HEADERS+=NativeInteger.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//NativeInteger.c
+ASN_MODULE_SOURCES+=NativeInteger.c
 ASN_MODULE_HEADERS+=asn_SEQUENCE_OF.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//asn_SEQUENCE_OF.c
+ASN_MODULE_SOURCES+=asn_SEQUENCE_OF.c
 ASN_MODULE_HEADERS+=asn_SET_OF.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//asn_SET_OF.c
+ASN_MODULE_SOURCES+=asn_SET_OF.c
 ASN_MODULE_HEADERS+=constr_CHOICE.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constr_CHOICE.c
+ASN_MODULE_SOURCES+=constr_CHOICE.c
 ASN_MODULE_HEADERS+=constr_SEQUENCE.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constr_SEQUENCE.c
+ASN_MODULE_SOURCES+=constr_SEQUENCE.c
 ASN_MODULE_HEADERS+=constr_SEQUENCE_OF.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constr_SEQUENCE_OF.c
+ASN_MODULE_SOURCES+=constr_SEQUENCE_OF.c
 ASN_MODULE_HEADERS+=constr_SET_OF.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constr_SET_OF.c
+ASN_MODULE_SOURCES+=constr_SET_OF.c
 ASN_MODULE_HEADERS+=asn_application.h
 ASN_MODULE_HEADERS+=asn_system.h
 ASN_MODULE_HEADERS+=asn_codecs.h
 ASN_MODULE_HEADERS+=asn_internal.h
 ASN_MODULE_HEADERS+=OCTET_STRING.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//OCTET_STRING.c
+ASN_MODULE_SOURCES+=OCTET_STRING.c
 ASN_MODULE_HEADERS+=BIT_STRING.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//BIT_STRING.c
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//asn_codecs_prim.c
+ASN_MODULE_SOURCES+=BIT_STRING.c
+ASN_MODULE_SOURCES+=asn_codecs_prim.c
 ASN_MODULE_HEADERS+=asn_codecs_prim.h
 ASN_MODULE_HEADERS+=ber_tlv_length.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//ber_tlv_length.c
+ASN_MODULE_SOURCES+=ber_tlv_length.c
 ASN_MODULE_HEADERS+=ber_tlv_tag.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//ber_tlv_tag.c
+ASN_MODULE_SOURCES+=ber_tlv_tag.c
 ASN_MODULE_HEADERS+=ber_decoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//ber_decoder.c
+ASN_MODULE_SOURCES+=ber_decoder.c
 ASN_MODULE_HEADERS+=der_encoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//der_encoder.c
+ASN_MODULE_SOURCES+=der_encoder.c
 ASN_MODULE_HEADERS+=constr_TYPE.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constr_TYPE.c
+ASN_MODULE_SOURCES+=constr_TYPE.c
 ASN_MODULE_HEADERS+=constraints.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//constraints.c
+ASN_MODULE_SOURCES+=constraints.c
 ASN_MODULE_HEADERS+=xer_support.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//xer_support.c
+ASN_MODULE_SOURCES+=xer_support.c
 ASN_MODULE_HEADERS+=xer_decoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//xer_decoder.c
+ASN_MODULE_SOURCES+=xer_decoder.c
 ASN_MODULE_HEADERS+=xer_encoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//xer_encoder.c
+ASN_MODULE_SOURCES+=xer_encoder.c
 ASN_MODULE_HEADERS+=per_support.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//per_support.c
+ASN_MODULE_SOURCES+=per_support.c
 ASN_MODULE_HEADERS+=per_decoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//per_decoder.c
+ASN_MODULE_SOURCES+=per_decoder.c
 ASN_MODULE_HEADERS+=per_encoder.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//per_encoder.c
+ASN_MODULE_SOURCES+=per_encoder.c
 ASN_MODULE_HEADERS+=per_opentype.h
-ASN_MODULE_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons//per_opentype.c
-ASN_CONVERTER_SOURCES+=$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1_msg.c
+ASN_MODULE_SOURCES+=per_opentype.c
+ASN_CONVERTER_SOURCES+=asn1_msg.c
 
 
 lib_LTLIBRARIES=libsomething.la
@@ -792,6 +792,6 @@ libsomething_la_SOURCES=$(ASN_MODULE_SOURCES) $(ASN_MODULE_HEADERS)
 
 # This file may be used as an input for make(3)
 # Remove the lines below to convert it into a pure .am file
-CFLAGS += -I. -I$(OPENAIR2_TOP)/RRC/LITE/MESSAGES/asn1c/asn1c/skeletons/ -g -ggdb #-DEMIT_ASN_DEBUG=1 -Wall
+EXTRA_CFLAGS += -I. -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES -g -ggdb -DEMIT_ASN_DEBUG=0 #-Wall
 ASN1_MSG_OBJS=${ASN_MODULE_SOURCES:.c=.o} ${ASN_CONVERTER_SOURCES:.c=.o} 
 

@@ -1,3 +1,4 @@
+#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>	/* for atoi(3) */
@@ -5,6 +6,9 @@
 #include <string.h>	/* for strerror(3) */
 #include <sysexits.h>	/* for EX_* exit codes */
 #include <errno.h>	/* for errno */
+#else
+#include <linux/module.h>  /* Needed by all modules */
+#endif
 
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
@@ -30,7 +34,12 @@
 
 #include "SIB-Type.h"
 
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
+#ifndef USER_MODE
+#ifndef errno
+int errno;
+#endif
+#endif
 
 /*
 void assign_enum(ENUMERATED_t *x,uint8_t val) {
@@ -73,7 +82,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
-  PLMN_identity_info.plmn_Identity.mcc = calloc(1,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
+  PLMN_identity_info.plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
   memset(PLMN_identity_info.plmn_Identity.mcc,0,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
 
   asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;  
@@ -95,14 +104,14 @@ uint8_t do_SIB1(uint8_t *buffer,
 
 
   // 16 bits
-  sib1->cellAccessRelatedInfo.trackingAreaCode.buf = malloc(2);
+  sib1->cellAccessRelatedInfo.trackingAreaCode.buf = MALLOC(2);
   sib1->cellAccessRelatedInfo.trackingAreaCode.buf[0]=0x00;
   sib1->cellAccessRelatedInfo.trackingAreaCode.buf[1]=0x10;
   sib1->cellAccessRelatedInfo.trackingAreaCode.size=2;
   sib1->cellAccessRelatedInfo.trackingAreaCode.bits_unused=0;
 
   // 28 bits
-  sib1->cellAccessRelatedInfo.cellIdentity.buf = malloc(8);
+  sib1->cellAccessRelatedInfo.cellIdentity.buf = MALLOC(8);
   sib1->cellAccessRelatedInfo.cellIdentity.buf[0]=0x01;
   sib1->cellAccessRelatedInfo.cellIdentity.buf[1]=0x48;
   sib1->cellAccessRelatedInfo.cellIdentity.buf[2]=0x0f;
@@ -131,7 +140,7 @@ uint8_t do_SIB1(uint8_t *buffer,
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
   ASN_SEQUENCE_ADD(&sib1->schedulingInfoList.list,&schedulingInfo);
  
-  sib1->tdd_Config = calloc(1,sizeof(struct TDD_Config));
+  sib1->tdd_Config = CALLOC(1,sizeof(struct TDD_Config));
   
   //assign_enum(&sib1->tdd_Config->subframeAssignment,TDD_Config__subframeAssignment_sa3);
   sib1->tdd_Config->subframeAssignment=TDD_Config__subframeAssignment_sa3;
@@ -144,15 +153,20 @@ uint8_t do_SIB1(uint8_t *buffer,
   sib1->systemInfoValueTag=0;
   //  sib1.nonCriticalExtension = calloc(1,sizeof(*sib1.nonCriticalExtension));
 
+#ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformationBlockType1, (void*)sib1);
+#endif
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformationBlockType1,
 				   (void*)sib1,
 				   buffer,
 				   200);
-  msg("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#ifdef USER_MODE
+  printf("[RRC][eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
   if (enc_rval.encoded==-1)
-    exit(-1);
+    return(-1);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -315,15 +329,15 @@ uint8_t do_SIB23(uint8_t *buffer,
 
   (*sib3)->intraFreqCellReselectionInfo.q_RxLevMin = -70;
   (*sib3)->intraFreqCellReselectionInfo.p_Max = NULL;
-  (*sib3)->intraFreqCellReselectionInfo.s_IntraSearch = calloc(1,sizeof((*sib3)->intraFreqCellReselectionInfo.s_IntraSearch));
+  (*sib3)->intraFreqCellReselectionInfo.s_IntraSearch = CALLOC(1,sizeof((*sib3)->intraFreqCellReselectionInfo.s_IntraSearch));
   *(*sib3)->intraFreqCellReselectionInfo.s_IntraSearch = 31;
-  (*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth=calloc(1,sizeof(*(*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth));
+  (*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth=CALLOC(1,sizeof(*(*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth));
 
   //  assign_enum((*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth,AllowedMeasBandwidth_mbw6);
   (*sib3)->intraFreqCellReselectionInfo.allowedMeasBandwidth=AllowedMeasBandwidth_mbw6;
 
   (*sib3)->intraFreqCellReselectionInfo.presenceAntennaPort1 = 0;
-  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf = calloc(8,1);
+  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf = CALLOC(8,1);
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.size = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf[0] = 1;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.bits_unused = 6;
@@ -342,20 +356,23 @@ uint8_t do_SIB23(uint8_t *buffer,
   ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
   ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
 
+#ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
-
+#endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_SystemInformation,
 				   (void*)systemInformation,
 				   buffer,
 				   100);
+#ifdef USER_MODE
+  printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
-  msg("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   if (enc_rval.encoded==-1)
-    exit(-1);
+    return(-1);
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCConnectionRequest(uint8_t *buffer,u8 *rv) {
+uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
@@ -373,7 +390,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,u8 *rv) {
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.present = InitialUE_Identity_PR_randomValue;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.size = 5;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.bits_unused = 0;
-rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf = buf;
+  rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf = buf;
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[0] = rv[0];
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[1] = rv[1];
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Identity.choice.randomValue.buf[2] = rv[2];
@@ -393,8 +410,9 @@ rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.ue_Ident
 				   buffer,
 				   100);
 
-
+#ifdef USER_MODE
   printf("[RRC][UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+#endif
 
   return((enc_rval.encoded+7)/8);
 
@@ -417,7 +435,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
   rrcConnectionSetupComplete->criticalExtensions.present = RRCConnectionSetupComplete__criticalExtensions_PR_c1;
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.present = RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8;
 
-  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
 
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity=2;
 
@@ -449,7 +467,9 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer) {
 				   100);
 
 
+#ifdef USER_MODE
   printf("RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
   return((enc_rval.encoded+7)/8);
 
@@ -476,8 +496,9 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 				   buffer,
 				   100);
 
-
+#ifdef USER_MODE
   printf("RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -517,14 +538,14 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   // RRCConnectionSetup
   // Configure SRB1
 
-  SRB_list = calloc(1,sizeof(*SRB_list));
+  SRB_list = CALLOC(1,sizeof(*SRB_list));
 
   /// SRB1
-  SRB1_config2 = calloc(1,sizeof(*SRB1_config2));
+  SRB1_config2 = CALLOC(1,sizeof(*SRB1_config2));
   *SRB1_config = SRB1_config2;
 
   SRB1_config2->srb_Identity = 1;
-  SRB1_rlc_config = calloc(1,sizeof(*SRB1_rlc_config));
+  SRB1_rlc_config = CALLOC(1,sizeof(*SRB1_rlc_config));
   SRB1_config2->rlc_Config   = SRB1_rlc_config;
   
   SRB1_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
@@ -547,11 +568,11 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit,T_StatusProhibit_ms0);
   SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
   
-  SRB1_lchan_config = calloc(1,sizeof(*SRB1_lchan_config));
+  SRB1_lchan_config = CALLOC(1,sizeof(*SRB1_lchan_config));
   SRB1_config2->logicalChannelConfig   = SRB1_lchan_config;
 
   SRB1_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-  SRB1_ul_SpecificParameters = calloc(1,sizeof(*SRB1_ul_SpecificParameters));
+  SRB1_ul_SpecificParameters = CALLOC(1,sizeof(*SRB1_ul_SpecificParameters));
 
   SRB1_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB1_ul_SpecificParameters;
 
@@ -564,7 +585,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   //assign_enum(&SRB1_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
   SRB1_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
 
-  logicalchannelgroup = calloc(1,sizeof(long));
+  logicalchannelgroup = CALLOC(1,sizeof(long));
   *logicalchannelgroup=0;
   SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
 
@@ -573,19 +594,19 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   // PhysicalConfigDedicated
 
-  physicalConfigDedicated2 = calloc(1,sizeof(*physicalConfigDedicated2));
+  physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
   *physicalConfigDedicated = physicalConfigDedicated2;
 
-  physicalConfigDedicated2->pdsch_ConfigDedicated         = calloc(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
-  physicalConfigDedicated2->pucch_ConfigDedicated         = calloc(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
-  physicalConfigDedicated2->pusch_ConfigDedicated         = calloc(1,sizeof(*physicalConfigDedicated2->pusch_ConfigDedicated));
-  physicalConfigDedicated2->uplinkPowerControlDedicated   = calloc(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));  
-  physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = calloc(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
-  physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = calloc(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
-  physicalConfigDedicated2->cqi_ReportConfig              = NULL;//calloc(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
-  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//calloc(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
-  physicalConfigDedicated2->antennaInfo                   = calloc(1,sizeof(*physicalConfigDedicated2->antennaInfo));
-  physicalConfigDedicated2->schedulingRequestConfig       = calloc(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
+  physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
+  physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));
+  physicalConfigDedicated2->pusch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_ConfigDedicated));
+  physicalConfigDedicated2->uplinkPowerControlDedicated   = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated));  
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH));
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH         = CALLOC(1,sizeof(*physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH));
+  physicalConfigDedicated2->cqi_ReportConfig              = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig));
+  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
+  physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+  physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
@@ -608,7 +629,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->uplinkPowerControlDedicated->accumulationEnabled = 0;  // FALSE
   physicalConfigDedicated2->uplinkPowerControlDedicated->p0_UE_PUCCH = 0; // 0 dB
   physicalConfigDedicated2->uplinkPowerControlDedicated->pSRS_Offset = 0; // 0 dB
-  physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient = calloc(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient));
+  physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient = CALLOC(1,sizeof(*physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient));
   //  assign_enum(physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient,FilterCoefficient_fc4); // fc4 dB
   *physicalConfigDedicated2->uplinkPowerControlDedicated->filterCoefficient=FilterCoefficient_fc4; // fc4 dB
 
@@ -617,7 +638,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->present=TPC_PDCCH_Config_PR_setup;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_Index.present = TPC_Index_PR_indexOfFormat3;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_Index.choice.indexOfFormat3 = 1;
-  physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_RNTI.buf=calloc(1,2);
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_RNTI.buf=CALLOC(1,2);
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_RNTI.size=2;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_RNTI.buf[0]=0x12;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUCCH->choice.setup.tpc_RNTI.buf[1]=0x34+UE_id;
@@ -626,7 +647,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->present=TPC_PDCCH_Config_PR_setup;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_Index.present = TPC_Index_PR_indexOfFormat3;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_Index.choice.indexOfFormat3 = 1;
-  physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf=calloc(1,2);
+  physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf=CALLOC(1,2);
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.size=2;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[0]=0x22;
   physicalConfigDedicated2->tpc_PDCCH_ConfigPUSCH->choice.setup.tpc_RNTI.buf[1]=0x34+UE_id;
@@ -634,11 +655,11 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   // CQI ReportConfig
   /*
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=calloc(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic));
   assign_enum(physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportModeAperiodic,
 	      CQI_ReportConfig__cqi_ReportModeAperiodic_rm30); // HLC CQI, no PMI
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=calloc(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic=CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present =  CQI_ReportPeriodic_PR_setup;
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex = 0;  // n2_pucch
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex = 0;  // Icqi/pmi
@@ -666,7 +687,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   //AntennaInfoDedicated
-  physicalConfigDedicated2->antennaInfo = calloc(1,sizeof(*physicalConfigDedicated2->antennaInfo));
+  physicalConfigDedicated2->antennaInfo = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->antennaInfo->present = PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
@@ -701,10 +722,11 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 				   buffer,
 				   100);
 
-
+#ifdef USER_MODE
   printf("RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+#endif
 
-  free(SRB_list);
+  FREEMEM(SRB_list);
   //  free(SRB1_config);
   //  free(SRB1_rlc_config);
   //  free(SRB1_lchan_config);
@@ -749,14 +771,14 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   // RRCConnectionReconfiguration
   // Configure SRB2
 
-  SRB_list = calloc(1,sizeof(*SRB_list));
+  SRB_list = CALLOC(1,sizeof(*SRB_list));
 
   /// SRB2
-  SRB2_config2 = calloc(1,sizeof(*SRB2_config2));
+  SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
   *SRB2_config = SRB2_config2;
 
   SRB2_config2->srb_Identity = 1;
-  SRB2_rlc_config = calloc(1,sizeof(*SRB2_rlc_config));
+  SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
   SRB2_config2->rlc_Config   = SRB2_rlc_config;
   
   SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
@@ -776,11 +798,11 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
   
 
-  SRB2_lchan_config = calloc(1,sizeof(*SRB2_lchan_config));
+  SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
   SRB2_config2->logicalChannelConfig   = SRB2_lchan_config;
 
   SRB2_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-  SRB2_ul_SpecificParameters = calloc(1,sizeof(*SRB2_ul_SpecificParameters));
+  SRB2_ul_SpecificParameters = CALLOC(1,sizeof(*SRB2_ul_SpecificParameters));
 
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
 
@@ -792,7 +814,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   //  assign_enum(&SRB2_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
   SRB2_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
 
-  logicalchannelgroup = calloc(1,sizeof(long));
+  logicalchannelgroup = CALLOC(1,sizeof(long));
   *logicalchannelgroup=0;
 
   SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
@@ -802,17 +824,17 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   // Configure DRB
 
-  DRB_list = calloc(1,sizeof(*DRB_list));
+  DRB_list = CALLOC(1,sizeof(*DRB_list));
 
   /// DRB
-  DRB_config2 = calloc(1,sizeof(*DRB_config2));
+  DRB_config2 = CALLOC(1,sizeof(*DRB_config2));
   *DRB_config = DRB_config2;
 
   DRB_config2->drb_Identity = 1;
-  lcid = calloc(1,sizeof(*lcid));
+  lcid = CALLOC(1,sizeof(*lcid));
   *lcid = 3;
   DRB_config2->logicalChannelIdentity = lcid;
-  DRB_rlc_config = calloc(1,sizeof(*DRB_rlc_config));
+  DRB_rlc_config = CALLOC(1,sizeof(*DRB_rlc_config));
   DRB_config2->rlc_Config   = DRB_rlc_config;
   
   DRB_rlc_config->present=RLC_Config_PR_um_Bi_Directional;
@@ -824,10 +846,10 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength=SN_FieldLength_size5;
   DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering=T_Reordering_ms35;
-  DRB_lchan_config = calloc(1,sizeof(*DRB_lchan_config));
+  DRB_lchan_config = CALLOC(1,sizeof(*DRB_lchan_config));
   DRB_config2->logicalChannelConfig   = DRB_lchan_config;
 
-  DRB_ul_SpecificParameters = calloc(1,sizeof(*DRB_ul_SpecificParameters));
+  DRB_ul_SpecificParameters = CALLOC(1,sizeof(*DRB_ul_SpecificParameters));
 
   DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
 
@@ -839,7 +861,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   //  assign_enum(&DRB_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
   DRB_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
 
-  logicalchannelgroup_drb = calloc(1,sizeof(long));
+  logicalchannelgroup_drb = CALLOC(1,sizeof(long));
   *logicalchannelgroup_drb=0;
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
@@ -852,7 +874,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   rrcConnectionReconfiguration->criticalExtensions.present = RRCConnectionReconfiguration__criticalExtensions_PR_c1;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.present =RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8 ;
 
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = calloc(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated));
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = CALLOC(1,sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated));
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList = SRB_list;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList = DRB_list;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList = NULL;
@@ -870,13 +892,36 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 				   buffer,
 				   100);
 
-
+#ifdef USER_MODE
   printf("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
-  free(SRB_list);
-  free(DRB_list);
+  FREEMEM(SRB_list);
+  FREEMEM(DRB_list);
 
   return((enc_rval.encoded+7)/8);
 }
 
+#ifndef USER_MODE
+int init_module(void)
+{
+   printk("Init asn1_msg module\n");
+        
+   // A non 0 return means init_module failed; module can't be loaded.
+   return 0;
+}
 
+
+void cleanup_module(void)
+{
+  printk("Stopping asn1_msg module\n");
+} 
+
+EXPORT_SYMBOL(do_SIB1);
+EXPORT_SYMBOL(do_SIB23);
+EXPORT_SYMBOL(do_RRCConnectionRequest);
+EXPORT_SYMBOL(do_RRCConnectionSetupComplete);
+EXPORT_SYMBOL(do_RRCConnectionReconfigurationComplete);
+EXPORT_SYMBOL(do_RRCConnectionSetup);
+EXPORT_SYMBOL(do_RRCConnectionReconfiguration);
+#endif
