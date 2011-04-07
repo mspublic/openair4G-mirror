@@ -56,6 +56,9 @@
 u16 NODE_ID[1];
 u8 NB_INST=2;
 
+char stats_buffer[2048];
+
+#ifndef CYGWIN
 void init_bypass() {
 
   msg("[PHYSIM] INIT BYPASS\n");      
@@ -67,6 +70,7 @@ void init_bypass() {
   emul_low_mutex_var=1; 
   bypass_init(emul_tx_handler,emul_rx_handler);
 }
+#endif
 
 log_mapping level_names[] =
 {
@@ -665,9 +669,9 @@ int main(int argc, char **argv) {
   char c;
   s32 i,j;
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
-  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.001,Td=1.0,forgetting_factor=.5,maxDoppler=0;
-  u8 channel_length,nb_taps=8;
+  double amps[1] = {1};//{0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  double aoa=.03,ricean_factor=.0000000000001,Td=.8,forgetting_factor=.999,maxDoppler=0;
+  u8 channel_length,nb_taps=1;
 
 
   s32 n_frames,n_errors;
@@ -724,7 +728,7 @@ int main(int argc, char **argv) {
   emu_info.ethernet_flag=0;
   emu_info.multicast_group=0;
   
-  transmission_mode = 1;
+  transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 1;
   n_frames = 100;
@@ -838,8 +842,9 @@ int main(int argc, char **argv) {
       LOG_I(OCG," ue local %d enb local %d frame %d\n",   nb_ue_local,   nb_eNB_local, n_frames );
    }
 #endif    
-  
+#ifndef CYGWIN 
   ret=netlink_init();
+#endif
   
   if (ethernet_flag==1){
     emu_info.master[emu_info.master_id].nb_ue=emu_info.nb_ue_local;
@@ -859,8 +864,9 @@ int main(int argc, char **argv) {
 	  emu_info.nb_enb_local,
 	  emu_info.nb_master,
 	  emu_info.master_id);
-    
+#ifndef CYGWIN    
     init_bypass();
+#endif
     
     while (emu_tx_status != SYNCED_TRANSPORT ) {
       LOG_T(EMU, " Waiting for EMU Transport to be synced\n"); 
@@ -904,7 +910,7 @@ int main(int argc, char **argv) {
   frame_parms->Ncp                = extended_prefix_flag;
   frame_parms->Nid_cell           = 0;
   frame_parms->nushift            = 0;
-  frame_parms->nb_antennas_tx     = 2;
+  frame_parms->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   frame_parms->nb_antennas_rx     = 2;
   frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 
@@ -1141,7 +1147,7 @@ int main(int argc, char **argv) {
 					       0,
 					       0);
 
-      UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB + 10;// - 20;
+      UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;// - 20;
 #ifdef DEBUG_SIM
       printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
       printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
@@ -1213,6 +1219,11 @@ int main(int argc, char **argv) {
 	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,next_slot>>1);
 	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
+
+	if ((mac_xface->frame % 10) == 0) {
+	  dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
+	  printf("%s",stats_buffer);
+	}
       }
       direction = subframe_select(frame_parms,next_slot>>1);
       
@@ -1232,6 +1243,11 @@ int main(int argc, char **argv) {
 	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
 	  //#endif
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
+
+	  if ((mac_xface->frame % 10) == 0) {
+	    dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
+	    printf("%s",stats_buffer);
+	  }
 	}
       if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
