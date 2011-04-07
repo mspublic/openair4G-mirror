@@ -840,7 +840,7 @@ void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
       mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
 
       // Note this code is still for a specific DCI format
-      ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)&CH_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[0][harq_pid];
+      ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)CH_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
       ULSCH_dci->type=0;
       if (round > 0) {
 	ULSCH_dci->ndi = 0;
@@ -874,10 +874,10 @@ void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
 		      aggregation,
 		      sizeof_DCI0_5MHz_TDD_1_6_t,
 		      format0);
-#ifdef DEBUG_eNB_SCHEDULER
-      dump_dci(mac_xface->lte_frame_parms,
-	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
-#endif      
+      //#ifdef DEBUG_eNB_SCHEDULER
+      //      dump_dci(mac_xface->lte_frame_parms,
+      //	       &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
+      //#endif      
       add_ue_ulsch_info(Mod_id, 
 			next_ue,
 			subframe,
@@ -1080,15 +1080,14 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
       mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
       nb_rb = CH_mac_inst[Mod_id].UE_template[UE_id].nb_rb[harq_pid];
 
-      DLSCH_dci = (void *)&CH_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[0][harq_pid];
+      DLSCH_dci = (void *)CH_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
 
       switch(mac_xface->get_transmission_mode(rnti)) {
       default:
       case 1:
       case 2:
-	msg("Getting Allocation for %d PRBs, UE_id %d (rb_alloc %x)\n",nb_rb,UE_id,rballoc);
+
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);      
-	msg("New rb_alloc %x (DCI %x)\n",rballoc,((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc);
 	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
@@ -1214,10 +1213,10 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
     
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    //    printf("Got harq_pid %d, round %d\n",harq_pid,round);
+    printf("Got harq_pid %d, round %d\n",harq_pid,round);
     
     // Note this code is for a specific DCI format
-    DLSCH_dci = (void *)&CH_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[0][harq_pid];
+    DLSCH_dci = (void *)CH_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
 
     if (round > 0) {
       
@@ -1234,10 +1233,11 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	case 1:
 	case 2:
 	default:
-	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi      = 0;
-	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round&3;
-	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi      = 0;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round&3;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  msg("[MAC] Retransmission : harq_pid %d, round %d, dai %d, mcs %d\n",harq_pid,round,(CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1),((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs);
 	  break;
 	case 4:
 	  if (nb_rb>10) {
@@ -1274,12 +1274,13 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
-      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+      TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_available_rb);
       
       // check first for RLC data on DCCH
       header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB %d] Requesting %d bytes from RLC\n",Mod_id,TBS-header_len_dcch);
+      msg("[MAC][eNB %d] Requesting %d bytes from RLC (mcs %d, nb_available_rb %d)\n",Mod_id,TBS-header_len_dcch,
+	  eNB_UE_stats->DL_cqi[0],nb_available_rb);
 #endif     
       rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
 				      (TBS-header_len_dcch)/DCCH_LCHAN_DESC.transport_block_size,
@@ -1378,34 +1379,30 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	    eNB_UE_stats->UE_timing_offset/4,
 	    next_ue);
 #endif  
-	msg("Payload ptr %p\n",&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0][offset]);
 
 	// cycle through SDUs and place in dlsch_buffer
 	memcpy(&CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0][offset],dlsch_buffer,sdu_length_total);
 	// memcpy(&CH_mac_inst[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
 	
 	// Now compute number of required RBs for total sdu length
-
-
-
 	// Assume RAH format 2
 	nb_rb = 2;
-	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 
-	while (TBS < sdu_length_total)  {
+	while (TBS < (sdu_length_total + offset))  {
 	  nb_rb += 2;  // to be replaced with RA allocation size for other than 25 PRBs!!!!!!! 
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs 
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
+	    TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],mac_xface->lte_frame_parms->N_RB_DL);
 	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
 	    break;
 	  }
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	  TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 	}
 
 #ifdef DEBUG_eNB_SCHEDULER  
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
-	    Mod_id,eNB_UE_stats->dlsch_mcs1,TBS,nb_rb);
+	    Mod_id,eNB_UE_stats->DL_cqi[0],TBS,nb_rb);
 	// msg("[MAC][eNB ] Reminder of DLSCH with random data %d %d %d %d \n",
 	//	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif   
@@ -1429,7 +1426,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	case 1:
 	case 2:
 	default:
-	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->dlsch_mcs1;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0];
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi = 1;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv = 0;
@@ -1437,7 +1434,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  break;
 	case 4:
 	  if (nb_rb>10) {
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
+	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
 	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
 	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
@@ -1445,7 +1442,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 
 	  }	
 	  else {
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
+	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
 	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
 	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
@@ -1469,8 +1466,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
     }
 
     DAI = (CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+#ifdef DEBUG_eNB_SCHEDULER
     msg("[MAC][eNB %d] Frame %d: DAI %d for UE %d\n",Mod_id,mac_xface->frame,DAI,next_ue);
-
+#endif
     // Save DAI for Format 0 DCI
     switch (mac_xface->lte_frame_parms->tdd_config) {
     case 0:
@@ -1570,6 +1568,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
   case 8:
 
     schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+    //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
     fill_DLSCH_dci(Mod_id,subframe);    
     // Schedule UL subframe
     //schedule_ulsch(Mod_id,subframe,&nCCE);

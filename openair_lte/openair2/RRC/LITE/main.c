@@ -499,23 +499,23 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 CH_index){
       switch (dl_ccch_msg->message.choice.c1.present) {
       
       case DL_CCCH_MessageType__c1_PR_NOTHING :
-	msg("[RRC][eNB %d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
+	msg("[RRC][UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	return;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
-	msg("[RRC][eNB %d] Frame %d : Received RRCConnectionReestablishment on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
+	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReestablishment on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	return;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
-	msg("[RRC][eNB %d] Frame %d : Received RRCConnectionReestablishmentReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
+	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReestablishmentReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	return;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
-	msg("[RRC][eNB %d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
+	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	return;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
-	msg("[RRC][eNB %d] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
+	msg("[RRC][UE%d] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
 	// Get configuration
 	
 
@@ -563,8 +563,8 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u8 CH_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
 
 
-  msg("[RRC][UE] Frame %d: Configuring DRB %d\n",
-      Mac_rlc_xface->frame,*DRB_config->logicalChannelIdentity);
+  msg("[RRC][UE] Frame %d: Configuring DRB %d/LCID %d\n",
+      Mac_rlc_xface->frame,DRB_config->drb_Identity,*DRB_config->logicalChannelIdentity);
 
   switch (DRB_config->rlc_Config->present) {
   case RLC_Config_PR_NOTHING:
@@ -916,19 +916,21 @@ void rrc_ch_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
   Mac_rlc_xface->rrc_rlc_data_req(Mod_id,(UE_index*MAX_NUM_RB)+DCCH,rrc_mui++,0,size,(char*)buffer);
 
 
+
 }
 
 void rrc_ch_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
 
   
-  // process information
-
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,NULL,
-				    CH_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],NULL,NULL,NULL);
 
   // initiate RRCConnectionReconfiguration on SRB1
   rrc_ch_generate_RRCConnectionReconfiguration(Mod_id,UE_index);
 
+  // process information
+
+  Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,NULL,
+				    CH_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],NULL,NULL,NULL);
+  
 }
 
 void rrc_ch_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){
@@ -1228,7 +1230,7 @@ void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window) {
     switch(typeandinfo->present) {
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
       UE_rrc_inst[Mod_id].sib2[CH_index] = &typeandinfo->choice.sib2;
-      msg("[RRC][UE] Found SIB2\n");
+      msg("[RRC][UE %d] Found SIB2 from eNB %d\n",Mod_id,CH_index);
       dump_sib2(UE_rrc_inst[Mod_id].sib2[CH_index]);
       Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,CH_index,
 					&UE_rrc_inst[Mod_id].sib2[CH_index]->radioResourceConfigCommon,
@@ -1239,40 +1241,40 @@ void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window) {
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3:
       UE_rrc_inst[Mod_id].sib3[CH_index] = &typeandinfo->choice.sib3;
-      msg("[RRC][UE] Found SIB3\n");
+      msg("[RRC][UE %d] Found SIB3 from eNB %d\n",Mod_id,CH_index);
       dump_sib3(UE_rrc_inst[Mod_id].sib3[CH_index]);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4:
       UE_rrc_inst[Mod_id].sib4[CH_index] = &typeandinfo->choice.sib4;
-      msg("[RRC][UE] Found SIB4\n");
+      msg("[RRC][UE %d] Found SIB4 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5:
       UE_rrc_inst[Mod_id].sib5[CH_index] = &typeandinfo->choice.sib5;
-      msg("[RRC][UE] Found SIB5\n");
+      msg("[RRC][UE %d] Found SIB5 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6:
       UE_rrc_inst[Mod_id].sib6[CH_index] = &typeandinfo->choice.sib6;
-      msg("[RRC][UE] Found SIB6\n");
+      msg("[RRC][UE %d] Found SIB6 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7:
       UE_rrc_inst[Mod_id].sib7[CH_index] = &typeandinfo->choice.sib7;
-      msg("[RRC][UE] Found SIB7\n");
+      msg("[RRC][UE %d] Found SIB7 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8:
       UE_rrc_inst[Mod_id].sib8[CH_index] = &typeandinfo->choice.sib8;
-      msg("[RRC][UE] Found SIB8\n");
+      msg("[RRC][UE %d] Found SIB8 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9:
       UE_rrc_inst[Mod_id].sib9[CH_index] = &typeandinfo->choice.sib9;
-      msg("[RRC][UE] Found SIB9\n");
+      msg("[RRC][UE %d] Found SIB9 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10:
       UE_rrc_inst[Mod_id].sib10[CH_index] = &typeandinfo->choice.sib10;
-      msg("[RRC][UE] Found SIB10\n");
+      msg("[RRC][UE %d] Found SIB10 from eNB %d\n",Mod_id,CH_index);
       break;
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11:
       UE_rrc_inst[Mod_id].sib11[CH_index] = &typeandinfo->choice.sib11;
-      msg("[RRC][UE] Found SIB11\n");
+      msg("[RRC][UE %d] Found SIB11 from eNB %d\n",Mod_id,CH_index);
       break;
     default:
       break;

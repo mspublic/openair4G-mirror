@@ -13,35 +13,15 @@
 #include "config.h"
 #endif
 
-#ifdef USER_MODE
-#include <stdio.h>	// For snprintf(3)
-#include <stdlib.h>	// For *alloc(3)
-#include <string.h>	// For memcpy(3)
-#include <sys/types.h>	// For size_t
-#include <limits.h>	// For LONG_MAX
-#include <stdarg.h>	// For va_start
-#include <stddef.h>	// for offsetof and ptrdiff_t
-#else
-typedef char FILE;
-#include <linux/types.h>
-//#include <linux/init.h>
-//#include <linux/module.h>
-//#include <linux/pci.h>
-//#include <linux/mm.h>
-//#include <linux/mman.h>
+#include <stdio.h>	/* For snprintf(3) */
+#include <stdlib.h>	/* For *alloc(3) */
+#include <string.h>	/* For memcpy(3) */
+#include <sys/types.h>	/* For size_t */
+#include <limits.h>	/* For LONG_MAX */
+#include <stdarg.h>	/* For va_start */
+#include <stddef.h>	/* for offsetof and ptrdiff_t */
 
-#include <linux/slab.h> // For snprintf
-//#include <linux/config.h>
-//#include <linux/version.h>
-//#include <linux/kernel.h>
-//#include <linux/fs.h>
-
-#include <linux/sort.h>
-#define qsort(base,num,size,cmp_func) sort(base,num,size,cmp_func,NULL)
-#include <linux/bsearch.h>
-#endif
-
-#ifdef	WIN32
+#ifdef	_WIN32
 
 #include <malloc.h>
 #define	 snprintf	_snprintf
@@ -77,15 +57,13 @@ typedef	unsigned int	uint32_t;
 #include <stdint.h>
 #endif	/* _MSC_VER */
 
-#else	/* !WIN32 */
+#else	/* !_WIN32 */
 
 #if defined(__vxworks)
 #include <types/vxTypes.h>
 #else	/* !defined(__vxworks) */
 
-#ifdef USER_MODE
-#include <inttypes.h>	 /*C99 specifies this file */
-#endif
+#include <inttypes.h>	/* C99 specifies this file */
 /*
  * 1. Earlier FreeBSD version didn't have <stdint.h>,
  * but <inttypes.h> was present.
@@ -103,18 +81,16 @@ typedef	unsigned int	uint32_t;
 #define inline
 #endif	/* __GNUC__ */
 #else
-#ifdef USER_MODE
-#include <stdint.h>	 /*SUSv2+ and C99 specify this file, for uintXX_t */
-#endif
+#include <stdint.h>	/* SUSv2+ and C99 specify this file, for uintXX_t */
 #endif	/* defined(sun) */
 #endif
 
-/*#include <netinet/in.h>  for ntohl() */
+#include <netinet/in.h> /* for ntohl() */
 #define	sys_ntohl(foo)	ntohl(foo)
 
 #endif	/* defined(__vxworks) */
 
-#endif	/* WIN32 */
+#endif	/* _WIN32 */
 
 #if	__GNUC__ >= 3
 #ifndef	GCC_PRINTFLIKE

@@ -9,7 +9,7 @@
 #include "mac_primitives.h"
 #include "LAYER2/MAC/extern.h"
 
-//#define RLC_UM_TEST_TRAFFIC
+#define RLC_UM_TEST_TRAFFIC
 
 #define DEBUG_RLC_UM_DATA_REQUEST
 #define DEBUG_RLC_UM_MAC_DATA_REQUEST

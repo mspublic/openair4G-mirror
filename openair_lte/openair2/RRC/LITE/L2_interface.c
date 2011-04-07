@@ -56,7 +56,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
       if ((Mac_rlc_xface->frame%2) == 0) {
 	memcpy(&Buffer[0],CH_rrc_inst[Mod_id].SIB1,CH_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
-	msg("[RRC] Frame %d : BCCH request => SIB 1\n",Rrc_xface->Frame_index);
+	msg("[RRC][eNB%d] Frame %d : BCCH request => SIB 1\n",Mod_id,Rrc_xface->Frame_index);
 #endif
 	for (i=0;i<CH_rrc_inst[Mod_id].sizeof_SIB1;i++)
 	  msg("%x.",Buffer[i]);
@@ -67,7 +67,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
       else if ((Mac_rlc_xface->frame%8) == 1){
 	memcpy(&Buffer[0],CH_rrc_inst[Mod_id].SIB23,CH_rrc_inst[Mod_id].sizeof_SIB23);
 #ifdef DEBUG_RRC
-	msg("[RRC] Frame %d : BCCH request => SIB 2-3\n",Rrc_xface->Frame_index);
+	msg("[RRC][eNB%d] Frame %d : BCCH request => SIB 2-3\n",Mod_id,Rrc_xface->Frame_index);
 	for (i=0;i<CH_rrc_inst[Mod_id].sizeof_SIB23;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
@@ -81,17 +81,17 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
 	
     
     if( (Srb_id & RAB_OFFSET ) == CCCH){
-      msg("[RRC] CCCH request (Srb_id %d)\n",Srb_id);
+      msg("[RRC][eNB%d] CCCH request (Srb_id %d)\n",Mod_id,Srb_id);
 
       if(CH_rrc_inst[Mod_id].Srb0.Active==0) {
-	msg("[RRC] CCCH Not active\n");
+	msg("[RRC][eNB%d] CCCH Not active\n",Mod_id);
 	return -1;
       }
       Srb_info=&CH_rrc_inst[Mod_id].Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.W_idx>0){//Fill buffer
-	msg("[RRC] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Srb_info,Srb_info->Tx_buffer.W_idx,Buffer,Srb_info->Tx_buffer.Payload);
+	msg("[RRC][eNB%d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_id,Srb_info,Srb_info->Tx_buffer.W_idx,Buffer,Srb_info->Tx_buffer.Payload);
 	memcpy(Buffer,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.W_idx);
 	Sdu_size = Srb_info->Tx_buffer.W_idx;
 	Srb_info->Tx_buffer.W_idx=0;
@@ -107,7 +107,7 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
 
   else{   Mod_id-=NB_CH_INST; //This is an UE
 #ifdef DEBUG_RRC
-    msg("filling rach,SRB_ID %d\n",Srb_id);
+    msg("[RRC][UE%d] Filling rach,SRB_ID %d\n",Mod_id,Srb_id);
     msg("Buffers status %d,\n",UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx);
 #endif
     if( (UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.W_idx != UE_rrc_inst[Mod_id].Srb0[CH_index].Tx_buffer.R_idx)) { //&& (RRC_CONNECTION_FLAG==1)){
