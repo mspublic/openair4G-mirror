@@ -4,23 +4,28 @@
 
 
 ifndef OPENAIR_LTE
-export OPENAIR_LTE=1
+OPENAIR_LTE=1
 endif
 
 ifndef OPENAIR1
-export OPENAIR1=0
+OPENAIR1=1
 endif
 
 ifndef OPENAIR2
-export OPENAIR2=0
+OPENAIR2=0
 endif
 
 ifndef EMOS
-export EMOS=0
+EMOS=0
 endif
 
+RTAI=1
+CBMIMO1=1
+
+include $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/Makefile.inc
+
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) RTAI=1 CBMIMO1=1 V=1 -C /usr/src/linux  M=`pwd` && mv openair_rf.ko openair_rf_softmodem.ko)
+	($(MAKE) -C /usr/src/linux V=0 M=`pwd` && mv openair_rf.ko openair_rf_softmodem.ko)
 
 #Remove all but source files
 cleanall: 
@@ -30,14 +35,6 @@ cleanall:
 	find -name '*.cmd' -delete -print; \
 	find -name '*~' -delete -print; \
 	find -name octave-core -delete -print; \
-
-#Remove intermediate files (.o,.bak,~,etc)
-clean:
-	cd ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) clean OPENAIR_LTE=1 OPENAIR1=1 OPENAIR2=1
-#	find -name '*.o' -delete -print; \
-#	find -name '*.bak' -delete -print; \
-#	find -name '*~' -delete -print; \
-#	find -name 'octave-core' -delete -print; 
 
 #Remove files created by SVN, dangerous!!! DO NOT RUN ON YOUR WORKING REPOSITORY!
 #FK: Don't do this! Use svn export instead.
@@ -76,7 +73,7 @@ install_cbmimo1_softmodem:
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko updatefirmware=1 ; \
 	else \
 		insmod ARCH/CBMIMO1/DEVICE_DRIVER/openair_rf_softmodem.ko ; \
-	fi
+		fi
 
 install_cbmimo1_softmodem1:
 	make fifos
@@ -96,3 +93,9 @@ remove_cbmimo1_l2:
 
 test:
 	echo $(MAKE)
+	echo $(openair_rf-objs)
+	echo $(CFLAGS)
+	echo $(EXTRA_CFLAGS)
+
+clean:
+	rm -f $(openair_rf-objs) $(obj-m)
