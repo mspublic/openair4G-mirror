@@ -89,6 +89,38 @@ void logInit (int g_log_level) {
     g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag =  LOG_MED_ONLINE;
 
+    g_log->log_component[MAC_RA].name = "MAC_RA";
+    g_log->log_component[MAC_RA].level = LOG_INFO;
+    g_log->log_component[MAC_RA].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_UL].name = "MAC_UL";
+    g_log->log_component[MAC_UL].level = LOG_INFO;
+    g_log->log_component[MAC_UL].flag = LOG_DEF_ONLINE;
+
+    g_log->log_component[MAC_DL].name = "MAC_DL";
+    g_log->log_component[MAC_DL].level = LOG_INFO;
+    g_log->log_component[MAC_DL].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_UE].name = "MAC_UE";
+    g_log->log_component[MAC_UE].level = LOG_INFO;
+    g_log->log_component[MAC_UE].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_RAR].name = "MAC_RAR";
+    g_log->log_component[MAC_RAR].level = LOG_INFO;
+    g_log->log_component[MAC_RAR].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_L2].name = "MAC_L2";
+    g_log->log_component[MAC_L2].level = LOG_INFO;
+    g_log->log_component[MAC_L2].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[OPT].name = "OPT";
+    g_log->log_component[OPT].level = LOG_INFO;
+    g_log->log_component[OPT].flag = LOG_DEF_ONLINE;
+
+    g_log->log_component[RLC].name = "RLC";
+    g_log->log_component[RLC].level = LOG_INFO;
+    g_log->log_component[RLC].flag = LOG_DEF_ONLINE;
+    
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
     g_log->log_component[EMU].flag =  LOG_MED_ONLINE;

@@ -23,6 +23,7 @@
 
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 1
+//#define DEBUG_PACKET_TRACE 1
 
 /*
 #ifndef USER_MODE
@@ -378,9 +379,14 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
   msg("[MAC][eNB RX] Received ulsch sdu from L1 (rnti %x, UE_id %d), parsing header\n",rnti,UE_id);
 #endif
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
-
+#ifdef DEBUG_PACKET_TRACE
+	trace_pdu(3,sdu,(payload_ptr - sdu), Mod_id, rnti, 8);
+#endif	
 #ifdef DEBUG_HEADER_PARSING
   msg("Num CE %d, Num SDU %d\n",num_ce,num_sdu);
+#ifdef DEBUG_PACKET_TRACE
+	//trace_pdu(3,sdu,(payload_ptr - sdu), Mod_id, rnti, 8);
+#endif
 #endif
   // control element 
   for (i=0;i<num_ce;i++) {
@@ -772,7 +778,18 @@ void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
 	  *nprb= (*nprb) + 3;
 	  *nCCE = (*nCCE) + 4;
 	}
+	    //try here
+     _Send_Ra_Mac_Pdu ( 1/*PDU TYPE*/,0/*Extension*/, 1 /*TypeRaPid*/,
+   00/* RaPid*/, CH_mac_inst[Mod_id].RA_template[0].timing_offset /*TA*/,
+    0/*Hopping_flag*/,25 /* rar->rb_allocmac_xface->computeRIV(100,0,2) fsrba*/, 
+ 2 /*tmcs*/, 0 /*tcsp*/, 0 /*ul_delay*/, 1/* cqi_request*/,
+ CH_mac_inst[Mod_id].RA_template[0].rnti/* crnti_temporary*/,
+  1 /*radioType=TDD_RADIO*/, 0 /*direction=DIRECTION_DOWNLINK*/, 
+  2/* rntiType=WS_RA_RNTI*/,  CH_mac_inst[Mod_id].RA_template[0].rnti /*rnti*/, 
+   UE_id/*UE_id*/,0/* subframeNumber*/,
+  0 /*isPredefinedData*/, 0 /*retx*/, 1 /*crcStatus*/);    
       } // rrcconnectionsetup=1
+      
       else if (CH_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup==1) {
 	// check HARQ status and retransmit if necessary
 #ifdef DEBUG_eNB_SCHEDULER
@@ -1081,7 +1098,10 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
       nb_rb = CH_mac_inst[Mod_id].UE_template[UE_id].nb_rb[harq_pid];
 
       DLSCH_dci = (void *)CH_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
-
+#ifdef    DEBUG_PACKET_TRACE
+    //trace_pdu(4,CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0],TBS/*sdu_length_total+offset offset*/, UE_id, rnti, subframe);
+	//TODO
+#endif
       switch(mac_xface->get_transmission_mode(rnti)) {
       default:
       case 1:
@@ -1421,7 +1441,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 			  subframe,
 			  S_DL_SCHEDULED);
 	CH_mac_inst[Mod_id].UE_template[next_ue].DAI++;
-
+#ifdef    DEBUG_PACKET_TRACE
+    trace_pdu(4,CH_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0],TBS/*sdu_length_total+offset offset*/, next_ue, rnti, subframe);
+#endif
 	switch (mac_xface->get_transmission_mode(rnti)) {
 	case 1:
 	case 2:

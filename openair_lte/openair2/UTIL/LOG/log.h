@@ -105,7 +105,8 @@ extern "C" {
 #else
 #define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
 #endif
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAX_LOG_COMPONENTS} comp_name_t;
+
+typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL, MAC_UE, RLC, MAC_L2,OPT, MAC_DL, MAX_LOG_COMPONENTS} comp_name_t;
 
 // debugging macros
 //#ifdef USER_MODE
@@ -184,7 +185,7 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 #define LOG_MED         0x34
 #define LOG_MED_ONLINE  0xB4
 #define LOG_DEF         0x74
-#define LOG_DEF_ONLINE  0xF4 // compatibility with OAI
+#define LOG_DEF_ONLINE  0xB4 // compatibility with OAI
 
 
 
