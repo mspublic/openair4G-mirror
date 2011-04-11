@@ -5,6 +5,30 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
+  if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 5) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%5) == 0)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 14) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%10) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 34) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%20) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 74) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%40) == 5)
+      return(1);
+  }
+  else if (phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex < 154) {
+    if (((10*mac_xface->frame+subframe-phy_vars_ue->scheduling_request_config[eNB_id].sr_ConfigIndex)%80) == 5)
+      return(1);
+  }
+
+  return(0);
+}
 
 void get_RRCConnReq_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 			  unsigned char current_subframe, 

@@ -263,6 +263,14 @@ u8 ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,u8 subframe,u8 A
 */
 u8 ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe);
 
+/*!
+  \brief Indicates the SR TXOp in current subframe.  Implements Table 10.1-5 from 36.213.
+  @param phy_vars_ue Pointer to UE variables
+  @param eNB_id ID of eNB which is to receive the SR
+  @param subframe index of next subframe
+  @returns 1 if TXOp is active.
+*/
+u8 is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe);
 
 u16 get_Np(u8 N_RB_DL,u8 nCCE,u8 plus1);
 
@@ -283,12 +291,14 @@ TDD, this routine computes the complex procedure described in Section 10.1 of 36
 @param eNB_id Index of eNB
 @param subframe Index of subframe
 @param b Pointer to PUCCH payload (b[0],b[1])
+@param SR 1 means there's a positive SR in parallel to ACK/NAK
 @returns n1_pucch
 */
 u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
-		u8 eNB_id,
-		u8 subframe,
-		u8 *b);
+		 u8 eNB_id,
+		 u8 subframe,
+		 u8 *b,
+		 u8 SR);
 
 /** \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in 
 subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For

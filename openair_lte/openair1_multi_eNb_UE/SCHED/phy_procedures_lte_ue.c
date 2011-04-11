@@ -204,7 +204,8 @@ void process_timing_advance(u8 timing_advance) {
 u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 		 u8 eNB_id,
 		 u8 subframe,
-		 u8 *b) {
+		 u8 *b,
+		 u8 SR) {
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   u8 nCCE0,nCCE1,harq_ack1,harq_ack0;
@@ -212,7 +213,10 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
   u16 n1_pucch0,n1_pucch1;
 
   if (frame_parms->frame_type ==0 ) { // FDD
-    return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[(subframe-4)%10]);
+    if (SR == 0) 
+      return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[(subframe-4)%10]);
+    else
+      return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
   }
   else {
 
@@ -259,20 +263,30 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 	  
 	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[6];
 	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if (bundling_flag==bundling) {
+	  if ((bundling_flag==bundling)&&(SR == 0)) {
 	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack;
 	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].send_harq_status>0)
 	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
 	    return(n1_pucch1);
+	  }
+	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
+	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
+	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 	  }
 	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[6].ack;
 	}
 	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].send_harq_status>0) {// n-7
 	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[5];
 	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0+ frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if (bundling_flag==bundling) {
+	  if ((bundling_flag==bundling)&&(SR == 0)) {
 	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
 	    return(n1_pucch0);
+	  }
+	  else { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
+	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
+	    b[1]=b[0];
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 	  }
 	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[5].ack;
 	}
@@ -283,23 +297,33 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].send_harq_status>0) { // n-6 
 	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[8];
 	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN;
-	  msg("nCCE1 %d, n1_pucch1 %d\n",nCCE1,n1_pucch1);
-	  if (bundling_flag==bundling) {
+	  //	  msg("nCCE1 %d, n1_pucch1 %d\n",nCCE1,n1_pucch1);
+	  if ((bundling_flag==bundling)&&(SR==0)) {
 	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
 	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].send_harq_status>0)
 	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
 	    return(n1_pucch1);
 	  }
+	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
+	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
+	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
+	  }
 	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[8].ack;
-	  msg("harq_ack1 %d\n",harq_ack1);
+	  //	  msg("harq_ack1 %d\n",harq_ack1);
 	}
 	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].send_harq_status>0) {// n-7
 	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[7];
 	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 +frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  msg("nCCE0 %d, n1_pucch0 %d\n",nCCE0,n1_pucch0);
-	  if (bundling_flag==bundling) {
+	  //msg("nCCE0 %d, n1_pucch0 %d\n",nCCE0,n1_pucch0);
+	  if ((bundling_flag==bundling)&&(SR==0)) {
 	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
 	    return(n1_pucch0);
+	  }
+	  else { // SR and only 0 or 1 ACKs (first 2 entries in Table 7.3-1 of 36.213)
+	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
+	    b[1]=b[0];
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 	  }
 	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[7].ack;
 	  msg("harq_ack0 %d\n",harq_ack0);
@@ -309,23 +333,32 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 	if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].send_harq_status>0) { // n-6 
 	  nCCE1 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[0];
 	  n1_pucch1 = get_Np(frame_parms->N_RB_DL,nCCE1,1) + nCCE1 + frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if (bundling_flag==bundling) {
+	  if ((bundling_flag==bundling) && (SR==0)) {
 	    b[0] = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
 	    if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].send_harq_status>0)
 	      b[0]=b[0]&phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
 	    return(n1_pucch1);
+	  }
+	  else { // SR and 0,1,or 2 ACKS, (first 3 entries in Table 7.3-1 of 36.213)
+	    b[0]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack | phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
+	    b[1]= phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack ^ phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
 	  }
 	  harq_ack1 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[0].ack;
 	}
 	else if (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].send_harq_status>0) {// n-7
 	  nCCE0 = phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[9];
 	  n1_pucch0 = get_Np(frame_parms->N_RB_DL,nCCE0,0) + nCCE0 +frame_parms->pucch_config_common.n1PUCCH_AN; 
-	  if (bundling_flag==bundling) {
+	  if ((bundling_flag==bundling)&&(SR==0)) {
 	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
 	    return(n1_pucch0);
 	  }
+	  else {
+	    b[0]=phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
+	    b[1]=b[0];
+	    return(phy_vars_ue->scheduling_request_config[eNB_id].sr_PUCCH_ResourceIndex);
+	  }
 	  harq_ack0 = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[9].ack;
-	  
 	}
       }
       else {
@@ -335,7 +368,8 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
       }
       break;
     }  // switch tdd_config     
-    // Now fill b(0),b(1) fields (assume single TB for now).  This is Table 10.1.2 from 36.213
+    // Now fill b(0),b(1) fields (assume single TB for now).  
+    // If there is no SR and multiplexing. This is Table 10.1.2 from 36.213.
     msg("harq_ack0 %d, harq_ack1 %d\n",harq_ack0,harq_ack1);
     if ((harq_ack0 == 1) && (harq_ack1 == 1)) {
       b[0] = 1; b[1]=1;
@@ -365,6 +399,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
     
   }
 }
+
 
 #ifdef EMOS
 void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
@@ -405,6 +440,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   u8 n1_pucch,harq_status;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
+  u8 SR_payload;
 
 #ifdef EMOS
   phy_procedures_emos_UE_TX(next_slot);
@@ -545,7 +581,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       }
 
     } // ULSCH is active
-    else {  // check if we need to use PUCCH 1a/1b
+    else if (phy_vars_ue->UE_mode[eNB_id] == PUSCH){  // check if we need to use PUCCH 1a/1b
       debug_msg("[PHY][UE%d] Frame %d, subframe %d: Checking for PUCCH 1a/1b\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1);
       bundling_flag = phy_vars_ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 
@@ -559,13 +595,23 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       }
 
       // Check for SR and do ACK/NACK accordingly
+      if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
+	SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
+					  eNB_id,
+					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti);
+      }
+      else
+	SR_payload=0;
+
       if (get_ack(&phy_vars_ue->lte_frame_parms,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack,(next_slot>>1),pucch_ack_payload) > 0) {
+	// we need to transmit ACK/NAK
 	n1_pucch = get_n1_pucch(phy_vars_ue,
 				eNB_id,
 				next_slot>>1,
-				pucch_ack_payload); 
-	msg("Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d\n",n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],
-	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
+				pucch_ack_payload,
+				SR_payload); 
+	//msg("Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d\n",n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],
+	//   n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
 	
 	if (abstraction_flag == 0)
 	  generate_pucch(phy_vars_ue->lte_ue_common_vars.txdataF,
@@ -573,10 +619,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			 phy_vars_ue->ncs_cell,
 			 format,
 			 &phy_vars_ue->pucch_config_dedicated,
-			 get_n1_pucch(phy_vars_ue,
-				      eNB_id,
-				      next_slot>>1,
-				      pucch_ack_payload),
+			 n1_pucch,
 			 0,  // n2_pucch
 			 1,  // shortened format
 			 pucch_ack_payload,
@@ -587,7 +630,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			      format,
 			      phy_vars_ue->lte_frame_parms.pucch_config_common.nCS_AN,
 			      pucch_ack_payload,
-			      0,
+			      SR_payload,
 			      next_slot>>1);
       }
     }
