@@ -66,7 +66,7 @@ void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){/
 /***********************************************************************/
 char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
 /***********************************************************************/
-  unsigned char  i,j,k,Nb_mod;
+
   Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
   
   msg("\nMAC: INIT CH %d Successful \n\n",NODE_ID[Mod_id]);
@@ -78,7 +78,7 @@ char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
 /***********************************************************************/
 char layer2_init_mr(unsigned char Mod_id){
   /***********************************************************************/
-  unsigned char  i,j,k,Nb_mod,CH_index;
+  unsigned char Nb_mod;
   Nb_mod=Mod_id-NB_CH_INST;
   Mac_rlc_xface->Is_cluster_head[Mod_id]=0;
   
@@ -89,7 +89,6 @@ char layer2_init_mr(unsigned char Mod_id){
 void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
 /***********************************************************************/
 
-  unsigned char j;
   Mod_id-=NB_CH_INST;
 
   Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,CH_index);
@@ -189,13 +188,6 @@ int mac_top_init(){
 int mac_init_global_param(){
   /***********************************************************************/
 
-  int i; 
-  //  msg("[MAC] Init Global Param In, CHBCH_PDU_SIZE %d ...\n",sizeof(CHBCH_PDU));
-  //  if(sizeof(CHBCH_PDU) > 140){
-  //    msg("Size of CHBCH_PDU= %d, fix this !!!\n",sizeof(CHBCH_PDU));
-  //    return -1;
-  //  }  
-
   Is_rrc_registered=0;  
   Mac_rlc_xface = NULL;
   msg("[MAC] CALLING RLC_MODULE_INIT...\n");	
@@ -276,16 +268,16 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_init_global_param(); 
   
   
-  mac_xface->macphy_init=mac_top_init;
+  mac_xface->macphy_init=(void (*)(void))mac_top_init;
 #ifndef USER_MODE
   mac_xface->macphy_exit = openair_sched_exit;
 #else
-  mac_xface->macphy_exit=(void (*)(void)) exit;
+  mac_xface->macphy_exit=(void (*)(const char*)) exit;
 #endif
   
   //eNB MAC functions    
-  mac_xface->eNB_dlsch_ulsch_scheduler = eNB_dlsch_ulsch_scheduler;
-  mac_xface->get_dci_sdu               = get_dci_sdu;
+  mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
+  mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;
@@ -293,14 +285,15 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->rx_sdu                    = rx_sdu;
   mac_xface->get_dlsch_sdu             = get_dlsch_sdu;
   mac_xface->get_eNB_UE_stats          = get_eNB_UE_stats;
-  mac_xface->get_transmission_mode     = get_transmission_mode;
-  mac_xface->get_rballoc               = get_rballoc;
-  mac_xface->get_nb_rb                 = conv_nprb;
+  mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
+  mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
+  mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
 
   //UE MAC functions    
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
-  mac_xface->ue_get_sdu                = ue_get_sdu;
+  mac_xface->ue_get_SR                 = ue_get_SR;
+  mac_xface->ue_get_sdu                = (void *)ue_get_sdu;
   mac_xface->ue_get_rach               = ue_get_rach;
   mac_xface->ue_process_rar            = ue_process_rar;
   mac_xface->ue_scheduler              = ue_scheduler;  

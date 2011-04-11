@@ -194,7 +194,7 @@ typedef struct{
   SystemInformationBlockType1_t sib1;
   SystemInformation_t systemInformation;
   SystemInformationBlockType2_t *sib2;
-  SystemInformationBlockType2_t *sib3;
+  SystemInformationBlockType3_t *sib3;
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_CH];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_CH];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_CH][8];

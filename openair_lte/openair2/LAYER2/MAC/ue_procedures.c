@@ -91,6 +91,10 @@ unsigned char *parse_header(unsigned char *mac_header,
 
 
 
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti) {
+
+  return(0);
+}
 
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 
@@ -153,7 +157,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
       debug_msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
 				      DCCH,
-				      (u8 *)payload_ptr,
+				      (char *)payload_ptr,
 				      DCCH_LCHAN_DESC.transport_block_size,
 				      rx_lengths[i]/DCCH_LCHAN_DESC.transport_block_size,
 				      NULL);
@@ -161,7 +165,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
       debug_msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
 				      DTCH,
-				      (u8 *)payload_ptr,
+				      (char *)payload_ptr,
 				      rx_lengths[i],
 				      1,
 				      NULL);
@@ -195,12 +199,12 @@ void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
 unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
 
 
-  u8 Size=0,W_idx=2,j;
+  u8 Size=0;
 
   if (Is_rrc_registered == 1) {
     Size = Rrc_xface->mac_rrc_data_req(Mod_id+NB_CH_INST,
 				       CCCH,1,
-				       &UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
+				       (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
 				       CH_index);
     msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
     if (Size>0)

@@ -348,7 +348,7 @@ typedef struct{
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   int (*rrc_mac_config_req)(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
 			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-			    RadioResourceConfigDedicated_t *radioResourceConfigDedicated,
+			    struct PhysicalConfigDedicated *physicalConfigDedicated,
 			    TDD_Config_t *tdd_Config,
 			    u8 *SIwindowsize,
 			    u16 *SIperiod);

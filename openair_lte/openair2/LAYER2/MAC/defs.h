@@ -419,6 +419,15 @@ u8 schedule_next_dlue(u8 Mod_id, u8 subframe);
 */
 u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 
+
+/* \brief Get SR payload (0,1) from UE MAC
+@param Mod_id Instance id of UE in machine
+@param eNB_id Index of eNB that UE is attached to
+@param rnti C_RNTI of UE
+@returns 0 for no SR, 1 for SR
+*/
+u8 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
+
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
