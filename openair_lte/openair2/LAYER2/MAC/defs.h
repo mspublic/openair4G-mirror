@@ -426,7 +426,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 @param rnti C_RNTI of UE
 @returns 0 for no SR, 1 for SR
 */
-u8 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
