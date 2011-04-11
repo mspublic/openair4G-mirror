@@ -38,4 +38,4 @@ and one new Makefile, the latter of which is not used.
 
 If you want to compile the ASN1 sources as a kernel module you need to apply the patch asn1_patch 
 
-patch -p1 -R < asn1_patch
+patch -p1 < asn1_patch
