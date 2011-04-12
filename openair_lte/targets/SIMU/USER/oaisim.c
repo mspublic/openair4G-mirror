@@ -103,7 +103,7 @@ void help(void) {
   printf("-f Set the forgetting factor for time-variation\n"); 
   printf("-b Set the number of local eNB\n");
   printf("-u Set the number of local UE\n");
-  printf("-M Set the machine ID for Ethernet-based emullation\n");
+  printf("-M Set the machine ID for Ethernet-based emulation\n");
   printf("-p Set the total number of machine in emulation - valid if M is set\n");
   printf("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
@@ -674,8 +674,8 @@ int main(int argc, char **argv) {
   u8 channel_length,nb_taps=1;
 
 
-  s32 n_frames,n_errors;
-
+  s32 n_errors;
+  u16 n_frames, n_frames_flag;
   s32 slot,last_slot, next_slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
@@ -731,7 +731,8 @@ int main(int argc, char **argv) {
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 1;
-  n_frames = 100;
+  n_frames =  0xffff; //100; 
+  n_frames_flag = 0;
   snr_dB = 30;
 
   while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l")) != -1)
@@ -752,7 +753,8 @@ int main(int argc, char **argv) {
 	  rate_adaptation_flag = 1;
 	  break;
 	case 'n':
-	  n_frames = atoi(optarg);
+	  n_frames = atoi(optarg); 
+	  n_frames_flag=1;
 	  break;
 	case 's':
 	  snr_dB = atoi(optarg);
@@ -859,9 +861,7 @@ int main(int argc, char **argv) {
       LOG_T(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,emu_info.master_list);
       j*=2;
     }
-    LOG_T(EMU,"nb_ue_local %d nb_enb_local %d nb_master %d master id %d\n", 
-	  emu_info.nb_ue_local, 
-	  emu_info.nb_enb_local,
+    LOG_T(EMU," Total number of master %d my master id %d\n", 
 	  emu_info.nb_master,
 	  emu_info.master_id);
 #ifndef CYGWIN    
@@ -876,7 +876,9 @@ int main(int argc, char **argv) {
 
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
-   
+    
+  LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
+  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_CH_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
    
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
@@ -1205,7 +1207,9 @@ int main(int argc, char **argv) {
 #endif 
  
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-    
+    if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
+      mac_xface->frame %=(n_frames-1);
+   
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
