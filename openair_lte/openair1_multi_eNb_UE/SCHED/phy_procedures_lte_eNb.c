@@ -1082,6 +1082,10 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 void process_RRCConnRequest(PHY_VARS_eNB *phy_vars_eNB,u8 last_slot,u8 UE_id, u8 harq_pid) {
   // this prepares the demodulation of the first PUSCH of a new user, containing RRC connection request
 
+  msg("[PHY][eNB] frame %d : subframe %d (last_slot %d): process_RRCConnRequest UE_id %d (active %d, subframe %d, frame %d)\n",
+      mac_xface->frame,last_slot>>1,last_slot,UE_id,phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_active,
+      phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_subframe,
+      phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_frame);
   phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_flag = 0;
 
   if ((phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_active == 1) && 
@@ -1360,7 +1364,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
 
-  //  debug_msg("Running phy_procedures_eNB_RX(%d), eNB_mode = %s\n",last_slot,mode_string[phy_vars_eNB->eNB_UE_stats.mode[UE_id]]);
+  msg("Running phy_procedures_eNB_RX(%d)\n",last_slot);
   if (abstraction_flag == 0) {
     for (l=0;l<phy_vars_eNB->lte_frame_parms.symbols_per_tti/2;l++) {
       
@@ -1446,7 +1450,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
     if (phy_vars_eNB->eNB_UE_stats[i].mode == RA_RESPONSE)
       process_RRCConnRequest(phy_vars_eNB,last_slot,i,harq_pid);
-
+    msg("eNB ULSCH checking UE %d : rnti %x, mode %s, subframe_scheduling %d\n",i,
+	phy_vars_eNB->ulsch_eNB[i]->rnti,
+	mode_string[phy_vars_eNB->eNB_UE_stats[i].mode],
+	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag);
     if ((phy_vars_eNB->ulsch_eNB[i]) &&
 	(phy_vars_eNB->ulsch_eNB[i]->rnti>0) &&
 	(phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && 
@@ -1502,7 +1509,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				  last_slot>>1,
 				  i);
       }
-      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
+      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
 
     
       phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round]++;
@@ -1625,8 +1632,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		       &n1_pucch2,
 		       &n1_pucch3);
 
-      if ((n1_pucch0==-1) && (n1_pucch1==-1) && (do_SR==0))  // no TX PDSCH that have to be checked and no SR for this UE_id
-	return;
+      if ((n1_pucch0==-1) && (n1_pucch1==-1) && (do_SR==0)) {  // no TX PDSCH that have to be checked and no SR for this UE_id
+      }
+      else {
       // otherwise we have some PUCCH detection to do
       
       if (do_SR == 1) {
@@ -1783,7 +1791,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				SR_payload);
 	}
       }
-    } // PUCCH processing
+      } // PUCCH processing
+    }
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 #endif //OPENAIR2
 #ifdef EMOS
