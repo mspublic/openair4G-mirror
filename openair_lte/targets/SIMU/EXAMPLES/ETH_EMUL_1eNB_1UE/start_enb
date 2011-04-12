@@ -2,6 +2,7 @@
 echo "Bringup eNB interface"
 
 sudo rmmod nasmesh
+make nasmesh
 sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko 
 
 sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
@@ -10,5 +11,5 @@ sudo ifconfig nasmesh0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.2 -r 3
 
-
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u0 -M0 -p2
 echo "End"
