@@ -806,7 +806,7 @@ void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
   }
 }
 
-void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
+void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 
   u8 UE_id;
   u8 next_ue;
@@ -881,10 +881,16 @@ void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
 						 (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
 						 4);//openair_daq_vars.ue_ul_nb_rb);
 
-      // if Alamouti cooperation is used
-      // ULSCH_dci->cshift = 1; //see also Table 5.5.2.1.1-1 of 3GPP TS 36.211 v8.6
-
-      add_ue_spec_dci(DCI_pdu,
+      // Cyclic shift for DM RS
+      if(cooperation_flag == 2)
+	{if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
+	    ULSCH_dci->cshift = 1;
+	  else
+	    ULSCH_dci->cshift = 0;
+	}
+      else
+	ULSCH_dci->cshift = 0;
+        add_ue_spec_dci(DCI_pdu,
 		      ULSCH_dci,
 		      rnti,
 		      sizeof(DCI0_5MHz_TDD_1_6_t),
@@ -1529,7 +1535,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 
 
 
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
 
   u8 nprb=0,nCCE=0;
 
@@ -1555,7 +1561,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 subframe) {
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt) 
 
     
-    schedule_ulsch(Mod_id,subframe,&nCCE);
+    schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
   case 1:
     break;

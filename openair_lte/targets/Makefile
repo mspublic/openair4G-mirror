@@ -17,7 +17,7 @@ check1:
 
 check2:
 	@echo Doing 1 eNB 4 UE test
-	(cd SIMU/EXAMPLES/VIRT_EMUL_1ENB && make one_eNB_four_UE )  #cygwin=$(cyg))
+	(cd SIMU/EXAMPLES/VIRT_EMUL_1eNB && make one_eNB_four_UE )  #cygwin=$(cyg))
 
 
 check: check1 check2

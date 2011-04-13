@@ -790,9 +790,7 @@ s32 generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 		       u32 sub_frame_number,
 		       u32 first_rb,
 		       u32 nb_rb,
-		       u8 n_ue,
-		       u8 relay_flag,
-		       u8 diversity_scheme);
+		       u32 cyclic_shift);
 
 s32 compareints (const void * a, const void * b);
 

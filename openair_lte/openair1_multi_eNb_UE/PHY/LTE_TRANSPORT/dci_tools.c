@@ -1155,6 +1155,24 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
+    //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
+    if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
+      ulsch->cshift = 0;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 1)
+      ulsch->cshift = 6;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 2)
+      ulsch->cshift = 3;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 3)
+      ulsch->cshift = 4;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 4)
+      ulsch->cshift = 2;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 5)
+      ulsch->cshift = 8;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
+      ulsch->cshift = 10;
+    else
+      ulsch->cshift = 9;
+
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
     
@@ -1212,7 +1230,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 
-    ulsch->cyclic_shift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+    ulsch->cshift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
     msg("ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
@@ -1222,6 +1240,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->harq_processes[harq_pid]->Nsymb_initial);
+    msg("ulsch (eNB): cshift        %d\n",ulsch->cshift);
 #endif
     return(0);
   }
@@ -1280,6 +1299,25 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
 
+    
+    if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
+      ulsch->cshift = 0;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 1)
+      ulsch->cshift = 1;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 2)
+      ulsch->cshift = 2;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 3)
+      ulsch->cshift = 3;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 4)
+      ulsch->cshift = 4;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 5)
+      ulsch->cshift = 5;
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
+      ulsch->cshift = 6;
+    else
+      ulsch->cshift = 7;
+
+
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -1301,7 +1339,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
     ulsch->rnti = rnti;
 
-    ulsch->cyclic_shift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+    ulsch->cshift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
@@ -1312,6 +1350,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (eNB): mcs           %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("ulsch (eNB): Or1           %d\n",ulsch->Or1);
     msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
+    msg("ulsch (eNB): cshift        %d\n",ulsch->cshift);
 #endif
     return(0);
   }

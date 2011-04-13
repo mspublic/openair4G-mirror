@@ -441,6 +441,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
   u8 SR_payload;
+  u32 cyclic_shift; // cyclic shift for DM RS
 
 #ifdef EMOS
   phy_procedures_emos_UE_TX(next_slot);
@@ -523,13 +524,16 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       
       first_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb;
       nb_rb = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb;
+
+      cyclic_shift = phy_vars_ue->ulsch_ue[eNB_id]->cshift; // n_DMRS2 ( n_DMRS1 and n_PRS are currently 0, so cyclic shift is dependent on just n_DMRS2 from the DCI)
+
       msg("[PHY][UE %d] Subframe %d Generating PUSCH (harq_pid %d): first_rb %d, nb_rb %d, ACK (%d,%d)\n",phy_vars_ue->Mod_id,next_slot>>1,harq_pid,first_rb,nb_rb,phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1]);
       
       if (abstraction_flag==0) {
 #ifdef OFDMA_ULSCH      
-	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb,0,0,0);
+	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1,first_rb,nb_rb,cyclic_shift);
 #else
-	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb,0,0,0);
+	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb,cyclic_shift);
 #endif
       }      
       input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;

@@ -648,7 +648,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
   if ((next_slot % 2)==0) {
     msg("UE %d: Mode %s\n",0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
-    mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,next_slot>>1);
+    mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,next_slot>>1);
 
 #ifdef EMOS
     emos_dump_eNB.dci_cnt[next_slot>>1] = DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci; //nb_dci_common+nb_dci_ue_spec;

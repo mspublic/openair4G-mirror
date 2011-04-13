@@ -90,7 +90,7 @@ log_mapping level_names[] =
 #endif
 
 void help(void) {
-  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor\n");
+  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -d cooperation_flag\n");
   printf("-h provides this help message!\n");
   printf("-a Activates PHY abstraction mode\n");
   printf("-e Activates extended prefix mode\n");
@@ -109,6 +109,7 @@ void help(void) {
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
   printf("-c Activate the config generator (OCG) - used in conjunction with openair emu web portal\n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
+  printf("-d Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
 }
 
 #ifdef XFORMS
@@ -681,7 +682,7 @@ int main(int argc, char **argv) {
   double nf[2] = {3.0,3.0}; //currently unused
   double snr_dB;
 
-
+  unsigned char cooperation_flag; // for cooperative communication
 
   u8 target_dl_mcs=4;
   u8 target_ul_mcs=2;
@@ -734,8 +735,9 @@ int main(int argc, char **argv) {
   n_frames =  0xffff; //100; 
   n_frames_flag = 0;
   snr_dB = 30;
+  cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l")) != -1)
+  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -805,6 +807,9 @@ int main(int argc, char **argv) {
 	case 'g':
 	  emu_info.multicast_group=atoi(optarg);
 	  break;	
+	case 'd':
+	  cooperation_flag=atoi(optarg);
+	  break;
 	default:
 	  help ();
 	  exit (-1);
@@ -892,6 +897,8 @@ int main(int argc, char **argv) {
   for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
     PHY_vars_eNB_g[eNB_id]->Mod_id=eNB_id;
+    PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
+
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
@@ -937,8 +944,7 @@ int main(int argc, char **argv) {
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
 		     0,
 		     PHY_vars_eNB_g[eNB_id],
-		     0,
-		     0,
+		     //0,
 		     abstraction_flag);
     
     /*

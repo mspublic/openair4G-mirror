@@ -348,7 +348,7 @@ void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
 @param subframe Subframe number on which to act
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE);
+void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 */
@@ -377,7 +377,7 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 
 // eNB functions
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8); 
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe); 
 u16  fill_rar(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
 void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
 void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id);

@@ -241,8 +241,8 @@ typedef struct {
   u8 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// cyclic_shift
-  u8 cyclic_shift;
+  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
+  u32 cshift;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -355,8 +355,8 @@ typedef struct {
   u32 RRCConnRequest_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// cyclic_shift
-  u8 cyclic_shift;
+  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
+  u32 cshift;
 } LTE_eNB_ULSCH_t;
 
 typedef struct {

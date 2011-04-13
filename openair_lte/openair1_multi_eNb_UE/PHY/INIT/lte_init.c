@@ -935,8 +935,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_ULSCH **eNB_ulsch_vars,
 		     unsigned char is_secondary_eNB,
 		     PHY_VARS_eNB *phy_vars_eNB,
-		     unsigned char relay_flag,// 0 for no relay,1 for 1 relay & 2 for 2 relays
-		     unsigned char diversity_scheme,// 0 for no scheme,1 for diversity delay & 2 dor distributed alamouti
+		     // unsigned char cooperation_flag,// 0 for no cooperation,1 for Delay Diversity and 2 for Distributed Alamouti
 		     unsigned char abstraction_flag)
 {
 
@@ -1268,10 +1267,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
-	
+/*	
 	
 	// In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
-	if((relay_flag == 2)&&(diversity_scheme == 2))
+	if(cooperation_flag == 2)
 	  {
 	    //UE 0 DRS estimates
 	    eNB_ulsch_vars[UE_id]->drs_ch_estimates_0[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
@@ -1334,7 +1333,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		return(-1);
 	      }
 	    }
-	  }// relay_flag == 2 && diversity_scheme == 2
+	  }// cooperation_flag
+*/
 	
 	eNB_ulsch_vars[UE_id]->rxdataF_comp[eNB_id] = malloc16(frame_parms->nb_antennas_rx*sizeof(int**));
 	if (eNB_ulsch_vars[UE_id]->rxdataF_comp[eNB_id]) {
@@ -1366,9 +1366,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	}
 	
 	
-	
+	/*
 	// Compensated data for the case of Distributed Alamouti Scheme
-	if((relay_flag == 2) && (diversity_scheme == 2))
+	if(cooperation_flag == 2)
 	  {
 	    
 	    // it will contain(y)*(h0*)
@@ -1431,7 +1431,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		return(-1);
 	      }
 	    }
-	  }// relay_flag ==2 && diversity_scheme == 2
+	  }// cooperation_flag
+*/
 	
 	
 	
@@ -1493,7 +1494,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
-	if((relay_flag == 2) && (diversity_scheme == 2)) // for Distributed Alamouti Scheme
+/*	if(cooperation_flag == 2) // for Distributed Alamouti Scheme
 	  {
 	    // UE 0
 	    eNB_ulsch_vars[UE_id]->ul_ch_mag_0[eNB_id] = malloc16(frame_parms->nb_antennas_rx*sizeof(int**));
@@ -1614,7 +1615,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		return(-1);
 	      }
 	    }
-	  }// relay_flag ==2 && diversity_scheme == 2
+	  }//cooperation_flag */
 	
       
 

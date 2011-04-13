@@ -38,7 +38,7 @@ typedef struct
 
     // eNB functions
     /// Invoke dlsch/ulsch scheduling procedure for new subframe
-    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 subframe);
+    void (*eNB_dlsch_ulsch_scheduler)(u8 Mod_id, u8 cooperation_flag, u8 subframe);
 
     /// Fill random access response sdu, passing timing advance
     u16 (*fill_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
