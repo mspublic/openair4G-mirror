@@ -872,13 +872,13 @@ void schedule_ulsch(u8 Mod_id,u8 subframe,u8 *nCCE) {
 	ULSCH_dci->mcs = round + 28;
 
 #ifdef DEBUG_eNB_SCHEDULER
-      msg("[MAC][eNB Scheduler] got harq_pid %d, round %d, ndi %d, mcs %d\n",
-	  harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs);
+      msg("[MAC][eNB Scheduler] UE %d: got harq_pid %d, round %d, ndi %d, mcs %d, using 4 RBs starting at %d\n",UE_id,
+	  harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs,next_ue*4);
 #endif
 
       // schedule 4 RBs for UL
       ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						 6 + (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
+						 (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
 						 4);//openair_daq_vars.ue_ul_nb_rb);
 
       // if Alamouti cooperation is used
