@@ -5,4 +5,6 @@ First, you must have all three openair SW directories, openair1, openair2 and op
 	- libxml2
 	- asn1c and the LTE ASN1 files (for information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
 
-2. Go to SIMU/EXAMPLES and run the one_eNB_two_UE.sh script
+2. To test the installation type:
+   make check or make check cygwin=1
+   

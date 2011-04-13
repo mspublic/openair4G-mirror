@@ -1,4 +1,3 @@
-#CC = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "gcc-4";  else echo "gcc"; fi)
 CC = gcc
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
@@ -6,6 +5,7 @@ SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`)
 CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
+cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -31,9 +31,7 @@ CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
-ifdef cygwin 
-CFLAGS += -DCYGWIN
-endif
+CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ; fi)
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc

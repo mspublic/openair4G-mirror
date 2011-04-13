@@ -56,7 +56,7 @@
 u16 NODE_ID[1];
 u8 NB_INST=2;
 
-char stats_buffer[2048];
+char stats_buffer[16384];
 
 #ifndef CYGWIN
 void init_bypass() {
