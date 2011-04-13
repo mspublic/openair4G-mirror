@@ -558,7 +558,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  ulsch_encoding_emul(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],phy_vars_ue,eNB_id,harq_pid,0);
 	}
       else {
-	debug_msg("[PHY][UE %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
+	msg("[PHY][UE %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 #ifdef OPENAIR2
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
 	  mac_xface->ue_get_sdu(phy_vars_ue->Mod_id,0,ulsch_input_buffer,input_buffer_length);
@@ -1396,13 +1396,16 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
+	    /*
 	    if (mac_xface->frame > 3) {
 	      printf("[PHY][UE %d] Frame %d, subframe %d : DLSCH in error (rv %d,mcs %d) \n",phy_vars_ue->Mod_id,
 		     mac_xface->frame,last_slot>>1,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
 		     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
 	      dump_dlsch(phy_vars_ue,eNB_id,((last_slot>>1)-1)%10);
 	      exit(-1);
+	    
 	    }
+	    */
 #endif
 	    
 	    //	    if (phy_vars_ue->current_dlsch_cqi[eNB_id]>0)

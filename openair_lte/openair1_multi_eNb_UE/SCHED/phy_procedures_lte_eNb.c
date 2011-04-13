@@ -1509,7 +1509,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				  last_slot>>1,
 				  i);
       }
-      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
+      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d), decoding ret %d\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],ret);
 
     
       phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round]++;
