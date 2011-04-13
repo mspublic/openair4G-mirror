@@ -11,7 +11,10 @@ nasmesh:
 one_eNB_two_UE_nas: oaisim nasmesh
 
 one_eNB_one_UE : oaisim
-	../USER/oaisim -n1000 | egrep SEND_SDU
+	../../USER/oaisim -n1000 | egrep SEND_SDU
 
-one_eNB_two_UE : oaisim
-	../USER/oaisim -n30 -u2 | egrep RRC	
+one_eNB_four_UE : oaisim
+	../../USER/oaisim -n60 -u4 | egrep RRC	
+
+clean:
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make clean)
