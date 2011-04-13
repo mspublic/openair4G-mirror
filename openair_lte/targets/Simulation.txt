@@ -6,5 +6,5 @@ First, you must have all three openair SW directories, openair1, openair2 and op
 	- asn1c and the LTE ASN1 files (for information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
 
 2. To test the installation type:
-   make check or make check cygwin=1
+   make check 
    
