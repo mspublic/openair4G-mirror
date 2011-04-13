@@ -6,3 +6,5 @@ SIMU    - Simulator/Emulator target for x86
 DOCS    - Doxygen documentation generation for openair1/openair2
 
 Simulation.txt - This file describes the installation procedure for Simulation/Emulation
+
+Makefile - This Makefile does basic checks of the code to verify that everything is properly installed, just run make to see what your options are.
