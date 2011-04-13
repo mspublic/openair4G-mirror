@@ -5,7 +5,7 @@ SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`)
 CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
-cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; fi)
+cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; else echo "0" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -62,6 +62,7 @@ $(L2_OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
+	echo CYGWIN variable is $(cygwin)
 	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
 
 
