@@ -1,4 +1,4 @@
-ifndef cygwin 
+ifeq ($(cygwin),0) 
 ETHERNET_TRANSPORT_OBJS  = $(TOP_DIR)/SIMULATION/ETH_TRANSPORT/netlink_init.o  
 endif
 ETHERNET_TRANSPORT_OBJS += $(TOP_DIR)/SIMULATION/ETH_TRANSPORT/multicast_link.o  
