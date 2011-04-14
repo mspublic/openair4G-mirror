@@ -261,6 +261,7 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
   unsigned short rnti;
   unsigned int harq_pid;
   LTE_UE_ULSCH_t *ulsch;
+  PUCCH_FMT_t pucch_format;
   u8 ue_transport_info_index[NUMBER_OF_eNB_MAX];
   u8 subframe = last_slot>>1;
  
@@ -273,13 +274,27 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
    LOG_T(EMU, "Fill phy UE %d vars PRACH is (%d, %d)!\n", 
 	ue_id,
 	UE_transport_info[ue_id].cntl.prach_flag,
-	ue_cntl_delay[subframe%2].prach_flag );
+	ue_cntl_delay[subframe%2].prach_flag);
   
 
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
     LOG_T(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
 
+    LOG_I(EMU,"PUCCH flag %d ncs1 %d sr %d payload %d \n", 
+	  UE_transport_info[ue_id].cntl.pucch_flag,
+	  UE_transport_info[ue_id].cntl.pucch_Ncs1,
+	  UE_transport_info[ue_id].cntl.sr,
+	  UE_transport_info[ue_id].cntl.pucch_payload);
+
+    pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
+    
+    PHY_vars_UE_g[ue_id]->sr=UE_transport_info[ue_id].cntl.sr;
+    
+    if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
+      PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
+    }
+    
     rnti = UE_transport_info[ue_id].rnti[n_enb];
     enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
 

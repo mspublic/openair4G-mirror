@@ -347,6 +347,9 @@ void bypass_tx_data(char Type, unsigned int last_slot){
 	  UE_transport_info[0].cntl.prach_flag,
 	  UE_transport_info[0].cntl.pusch_ack & 0x1,
 	  (UE_transport_info[0].cntl.pusch_ack>>1)& 0x1);
+    LOG_T(EMU," TX ue pucch flag %d payload %d \n", 
+	  UE_transport_info[0].cntl.pucch_flag,
+	  UE_transport_info[0].cntl.pucch_payload);
   } 
   else if (Type == RELEASE_TRANSPORT){
     messg->Message_type = RELEASE_TRANSPORT_INFO;

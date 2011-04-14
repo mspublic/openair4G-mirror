@@ -34,8 +34,10 @@
 //#define WAIT_UE_TRANSPORT 3
 
 
-#define BYPASS_RX_BUFFER_SIZE 64000
-#define BYPASS_TX_BUFFER_SIZE 64000
+//#define BYPASS_RX_BUFFER_SIZE 64000
+//#define BYPASS_TX_BUFFER_SIZE 64000
+#define BYPASS_RX_BUFFER_SIZE 4000
+#define BYPASS_TX_BUFFER_SIZE 4000
 
 
 /*************************************************************/
@@ -64,7 +66,8 @@ typedef struct  {
   u8 prach_id:6;    // this is the PHY preamble index for the prach
 } UE_cntl;
 
-#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
+//#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
+#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 4048
 #define MAX_NUM_DCI 5
 typedef struct {
   eNB_cntl cntl;
@@ -75,7 +78,7 @@ typedef struct {
   u8 harq_pid[MAX_NUM_DCI];
   u8 ue_id[MAX_NUM_DCI];
   u16 tbs[MAX_NUM_DCI*2];    // times 2 for dual-stream MIMO formats
-  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];
+  u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE]; 
 } eNB_transport_info_t ;
 
 /*typedef struct {
