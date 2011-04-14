@@ -877,9 +877,18 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 #endif
 
       // schedule 4 RBs for UL
+      if((cooperation_flag ==2) && (next_ue == 1))// Allocation on same set of RBs
+	{
+      ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						 ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
+						 4);//openair_daq_vars.ue_ul_nb_rb);
+	}
+      else
+	{
       ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 						 (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
 						 4);//openair_daq_vars.ue_ul_nb_rb);
+	}
 
       // Cyclic shift for DM RS
       if(cooperation_flag == 2)
@@ -889,7 +898,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 	    ULSCH_dci->cshift = 0;
 	}
       else
-	ULSCH_dci->cshift = 0;
+	ULSCH_dci->cshift = 0;// values from 0 to 6 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
         add_ue_spec_dci(DCI_pdu,
 		      ULSCH_dci,
 		      rnti,

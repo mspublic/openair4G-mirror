@@ -19,8 +19,8 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
   u32 cs;
   u32 alpha; // phase shift for cyclic delay in DM RS
 
-  cs = (cyclic_shift)%12;
-  alpha = (2*M_PI*cs)/12;
+ 
+  alpha = (2*M_PI*cyclic_shift)/12;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
