@@ -38,6 +38,12 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
   msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, lengthP);
 #endif
 
+  if ((rlcP->data_plane)) {
+    sdu_max_size = RLC_SDU_MAX_SIZE_DATA_PLANE;
+  } else {
+    sdu_max_size = RLC_SDU_MAX_SIZE_CONTROL_PLANE;
+  }
+
   if (rlcP->output_sdu_in_construction == NULL) {
     //    msg("[RLC_UM_LITE] Getting mem_block ...\n");
     rlcP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE_DATA_PLANE);
@@ -60,12 +66,12 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
       rlcP->output_sdu_in_construction->data[rlcP->output_sdu_size_to_write] = 0;
 #endif
     } else {
-      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+      msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] [max_sdu size %d] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sdu_max_size);
       // erase  SDU
       rlcP->output_sdu_size_to_write = 0;
     }
   } else {
-    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+    msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY]ERROR  OUTPUT SDU IS NULL\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
   }
 }
 //-----------------------------------------------------------------------------
