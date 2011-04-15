@@ -90,7 +90,7 @@ void IAL_NAS_ioctl_init(int inst)
   struct nas_msg_statistic_reply *msgrep;
   int err,rc;
 
-  sprintf(gifr.name, "nasmesh%d",inst);
+  sprintf(gifr.name, "oai%d",inst);
 
   // Get an UDP IPv6 socket ??
 	fd=socket(AF_INET6, SOCK_DGRAM, 0);
@@ -99,7 +99,7 @@ void IAL_NAS_ioctl_init(int inst)
 	  exit(1);
 	}
 	
-	sprintf(gifr.name, "nasmesh%d",inst);
+	sprintf(gifr.name, "oai%d",inst);
 
 	gifr.type =  NAS_MSG_STATISTIC_REQUEST;
 	memset ((void *)dummy_buffer,0,800);
