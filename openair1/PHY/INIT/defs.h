@@ -60,8 +60,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 @param eNB_ulsch Pointer to ULSCH RX data structures
 @param is_secondary_eNb Flag to indicate this eNB gets synch from another
 @param phy_vars_eNb Pointer to eNB Variables
-@param relay_flag
-@param diversity_scheme
+@param cooperation_flag
 @param abstraction_flag 1 indicates memory should be allocated for abstracted MODEM
 @returns 0 on success
 */
@@ -70,7 +69,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_ULSCH **eNB_ulsch,
 		     unsigned char is_secondary_eNb,
 		     PHY_VARS_eNB *phy_vars_eNb,
-		     //unsigned char cooperation_flag,
+		     unsigned char cooperation_flag,
 		     unsigned char abstraction_flag);
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).  The basically allows configuration of \f$N_{\mathrm{RB}}^{\mathrm{DL}}\f$, the cell id  \f$N_{\mathrm{ID}}^{\mathrm{cell}}\f$, the normal/extended prefix mode, the frame type (FDD/TDD), \f$N_{\mathrm{cp}}\f$, the number of TX antennas at eNB (\f$p\f$) and the number of PHICH groups, \f$N_{\mathrm{group}}^{\mathrm{PHICH}}\f$ 

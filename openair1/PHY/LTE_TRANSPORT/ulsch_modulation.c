@@ -183,9 +183,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
-		      unsigned char relay_flag,
-		      unsigned char diversity_scheme,
-		      unsigned char n_ue) {
+		      u8 cooperation_flag) {
 
 #ifdef IFFT_FPGA_UE
   unsigned char qam64_table_offset = 0;
@@ -255,7 +253,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   // Modulation
 
   Msymb = G/Q_m;
-  if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1))
+  if(cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
     // TODO: change modulation here (both for IFFT_FPGA on and off)!!! 
     {
@@ -495,7 +493,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	}//switch
       }//for
-    }//if
+    }//cooperation_flag == 2
   else
     {
       for (i=0,j=0;i<Msymb;i++,j+=Q_m) {

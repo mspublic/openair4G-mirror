@@ -922,6 +922,7 @@ int main(int argc, char **argv) {
   frame_parms->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   frame_parms->nb_antennas_rx     = 2;
   frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(frame_parms,1);
   //copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
@@ -944,7 +945,7 @@ int main(int argc, char **argv) {
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
 		     0,
 		     PHY_vars_eNB_g[eNB_id],
-		     //0,
+		     cooperation_flag,
 		     abstraction_flag);
     
     /*

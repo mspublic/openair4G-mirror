@@ -935,7 +935,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_ULSCH **eNB_ulsch_vars,
 		     unsigned char is_secondary_eNB,
 		     PHY_VARS_eNB *phy_vars_eNB,
-		     // unsigned char cooperation_flag,// 0 for no cooperation,1 for Delay Diversity and 2 for Distributed Alamouti
+		     unsigned char cooperation_flag,// 0 for no cooperation,1 for Delay Diversity and 2 for Distributed Alamouti
 		     unsigned char abstraction_flag)
 {
 
@@ -1267,7 +1267,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
-/*	
+	
 	
 	// In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
 	if(cooperation_flag == 2)
@@ -1334,7 +1334,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	      }
 	    }
 	  }// cooperation_flag
-*/
+
 	
 	eNB_ulsch_vars[UE_id]->rxdataF_comp[eNB_id] = malloc16(frame_parms->nb_antennas_rx*sizeof(int**));
 	if (eNB_ulsch_vars[UE_id]->rxdataF_comp[eNB_id]) {
@@ -1366,7 +1366,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	}
 	
 	
-	/*
+	
 	// Compensated data for the case of Distributed Alamouti Scheme
 	if(cooperation_flag == 2)
 	  {
@@ -1432,7 +1432,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	      }
 	    }
 	  }// cooperation_flag
-*/
+
 	
 	
 	
@@ -1494,7 +1494,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
-/*	if(cooperation_flag == 2) // for Distributed Alamouti Scheme
+	if(cooperation_flag == 2) // for Distributed Alamouti Scheme
 	  {
 	    // UE 0
 	    eNB_ulsch_vars[UE_id]->ul_ch_mag_0[eNB_id] = malloc16(frame_parms->nb_antennas_rx*sizeof(int**));
@@ -1615,7 +1615,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		return(-1);
 	      }
 	    }
-	  }//cooperation_flag */
+	  }//cooperation_flag 
 	
       
 

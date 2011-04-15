@@ -10,17 +10,16 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 		       unsigned int sub_frame_number,
 		       unsigned int first_rb,
 		       unsigned int nb_rb,
-		       u32 cyclic_shift) {
+		       u8 cyclic_shift) {
 
   unsigned short b,j,k,l,Msc_RS,Msc_RS_idx,rb,re_offset,symbol_offset,drs_offset;
   unsigned short * Msc_idx_ptr;
   int sub_frame_offset;
 
-  u32 cs;
-  u32 alpha; // phase shift for cyclic delay in DM RS
+  u32 phase_shift; // phase shift for cyclic delay in DM RS
 
  
-  alpha = (2*M_PI*cyclic_shift)/12;
+  phase_shift = (2*M_PI*cyclic_shift)/12;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
@@ -82,8 +81,8 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
       
 #else
 	for (k=0;k<12;k++) {
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*cos(alpha)- (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*sin(alpha));
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*cos(alpha)+(((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*sin(alpha));
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*cos(phase_shift)- (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*sin(phase_shift));
+	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*cos(phase_shift)+(((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*sin(phase_shift));
 	  re_offset++;
 	  drs_offset++;
 	  if (re_offset >= frame_parms->ofdm_symbol_size)

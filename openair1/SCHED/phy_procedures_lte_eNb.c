@@ -1355,7 +1355,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   unsigned int l, ret,i,j;
   unsigned int sect_id=0,UE_id=0;
   int *ulsch_power;
-  unsigned char harq_pid,relay_flag=0,diversity_scheme=0;
+  unsigned char harq_pid;
   int sync_pos;
   u8 SR_payload,*pucch_payload,pucch_payload0[2],pucch_payload1[2];
   s16 n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3;
@@ -1363,6 +1363,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   s16 metric0,metric1;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
+  u8 nPRS;
 
   msg("Running phy_procedures_eNB_RX(%d)\n",last_slot);
   if (abstraction_flag == 0) {
@@ -1472,15 +1473,17 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	    mac_xface->frame,last_slot,last_slot>>1,i,mode_string[phy_vars_eNB->eNB_UE_stats[i].mode],phy_vars_eNB->eNB_UE_stats[i].sector);
       //#endif
 
+      nPRS = 0;
+      phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
+      
       if (abstraction_flag==0) {
 	ulsch_power = rx_ulsch(&phy_vars_eNB->lte_eNB_common_vars,
-			       phy_vars_eNB->lte_eNB_ulsch_vars[i],  
+			       phy_vars_eNB->lte_eNB_ulsch_vars[i-1],  
 			       &phy_vars_eNB->lte_frame_parms,
 			       last_slot>>1,
-			       phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
+			       phy_vars_eNB->eNB_UE_stats[i-1].sector,  // this is the effective sector id
 			       phy_vars_eNB->ulsch_eNB[i],
-			       relay_flag,
-			       diversity_scheme);
+			       phy_vars_eNB->cooperation_flag);
       }
       else {
 	ulsch_power = rx_ulsch_emul(phy_vars_eNB,
