@@ -790,7 +790,7 @@ s32 generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 		       u32 sub_frame_number,
 		       u32 first_rb,
 		       u32 nb_rb,
-		       u32 cyclic_shift);
+		       u8 cyclic_shift);
 
 s32 compareints (const void * a, const void * b);
 
@@ -800,9 +800,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      u32 subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
-		      u8 relay_flag,
-		      u8 diversity_scheme,
-		      u8 n_ue);
+		      u8 cooperation_flag);
 
 
 void ulsch_extract_rbs_single(s32 **rxdataF,
@@ -928,8 +926,7 @@ s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      u32 subframe,
 	      u8 eNB_id,  // this is the effective sector id
 	      LTE_eNB_ULSCH_t *ulsch,
-	      u8 relay_flag,
-	      u8 diversity_scheme);
+	      u8 cooperation_flag);
 
 int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 subframe,
