@@ -1461,7 +1461,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	((last_slot%2)==1)) {
 
 #ifdef DEBUG_PHY
-      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH %d Reception for rnti %x harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,i,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid);
+      msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH %d Reception for rnti %x harq_pid %d, rxdataF_ext %p\n",mac_xface->frame,last_slot,last_slot>>1,i,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid,
+	  phy_vars_eNB->lte_eNB_ulsch_vars[0]->rxdataF_ext);
 #endif
 
       //#ifdef DEBUG_PHY
@@ -1478,10 +1479,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
       if (abstraction_flag==0) {
 	ulsch_power = rx_ulsch(&phy_vars_eNB->lte_eNB_common_vars,
-			       phy_vars_eNB->lte_eNB_ulsch_vars[i-1],  
+			       phy_vars_eNB->lte_eNB_ulsch_vars[i],  
 			       &phy_vars_eNB->lte_frame_parms,
 			       last_slot>>1,
-			       phy_vars_eNB->eNB_UE_stats[i-1].sector,  // this is the effective sector id
+			       phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
 			       phy_vars_eNB->ulsch_eNB[i],
 			       phy_vars_eNB->cooperation_flag);
       }
