@@ -9,9 +9,16 @@ EXMIMO  - ExpressMIMO Hardware target for x86/RTAI
 SIMU    - Simulator/Emulator target for x86
 DOCS    - Doxygen documentation generation for openair1/openair2
 
-Simulation.txt - This file describes the installation procedure for Simulation/Emulation
+First, you must have all four openair SW directories, openair1, openair2, openair3, and targets at the same hierarchical level as this directory.
+
+1. The following packages must be available on your system:
+
+        - libblas and libblas-dev
+        - libxml2 and libxml2-dev
+        - asn1c and the LTE ASN1 files (for information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
 
 Makefile - This Makefile does basic checks of the code to verify that everything is properly installed, just run make to see what your options are.
+
 ----------------------------------------------------
 2) Organization of the folders and their dependancies
 ----------------------------------------------------
@@ -31,10 +38,11 @@ The 3 folders have the following structures
 3. Now, please check the following:
    
    - the env variables in .bashrc the following lines, and source them if necessaary :
-    export OPENAIR1_DIR=/homes/$USER/openair4G/openair1
-    export OPENAIR2_DIR=/homes/$USER/openair4G/openair2
-    export OPENAIR3_DIR=/homes/$USER/openair4G/openair3
-    export OPENAIR_TARGETS=/homes/$USER/openair4G/targets/
+    set OPENAIR_HOME variable and export the following:
+    export OPENAIR1_DIR=$OPENAIR_HOME/openair4G/openair1
+    export OPENAIR2_DIR=$OPENAIR_HOME/openair4G/openair2
+    export OPENAIR3_DIR=$OPENAIR_HOME/openair4G/openair3
+    export OPENAIR_TARGETS=$OPENAIR_HOME/openair4G/targets/
     
    - checkout and compile the asn1 messages : 
      cd $OPENAIR2_DIR/RRC/LITE/MESSAGES, follow the readme guidelines, checkout and install asn1 messages 
