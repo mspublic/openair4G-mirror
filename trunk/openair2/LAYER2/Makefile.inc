@@ -6,7 +6,7 @@ COMMON_DIR = $(OPENAIR2_TOP)/COMMON
 L2_INTERFACE_DIR = $(OPENAIR2_TOP)/RRC/L2_INTERFACE
 #RLC_UM_DIR = $(OPENAIR2_TOP)/LAYER2/RLC/UM_v6.1.0_LITE
 RLC_UM_DIR = $(OPENAIR2_TOP)/LAYER2/RLC/UM_v9.3.0
-RLC_AM_DIR = $(OPENAIR2_TOP)/LAYER2/RLC/AM
+RLC_AM_DIR = $(OPENAIR2_TOP)/LAYER2/RLC/AM_v9.3.0
 RLC_TM_DIR = $(OPENAIR2_TOP)/LAYER2/RLC/TM
 RLC_DIR = $(OPENAIR2_TOP)/LAYER2/RLC
 PDCP_DIR = $(OPENAIR2_TOP)/LAYER2/PDCP
@@ -37,23 +37,39 @@ SOURCES_L2 +=  $(TIMER_DIR)/umts_timer.c
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp.c
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp_fifo.c
 
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_fsm.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mux.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_retrans.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_util.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mac_status.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_demux.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_receiver.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reassembly.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_rx.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_control_primitives.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reset.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_status.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timers.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_notif.c
+#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_tx.c
+
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_init.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timer_poll_retransmit.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timer_reordering.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timer_status_prohibit.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_fsm.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mux.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_retrans.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_util.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mac_status.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_demux.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segments_holes.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_in_sdu.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_receiver.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_retransmit.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_windows.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_rx_list.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reassembly.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_rx.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_control_primitives.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reset.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_status.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timers.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_notif.c
-SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_tx.c
+SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_status_report.c
+
 
 SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm.c
 SOURCES_L2 +=  $(RLC_TM_DIR)/rlc_tm_control_primitives.c
@@ -101,7 +117,7 @@ OPT_OBJS =  $(OPT_DIR)/probe.o
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
-L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS) $(LOG_OBJS) $(OPT_OBJS) 
+L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS) $(LOG_OBJS) $(OPT_OBJS)
 ifndef CBMIMO1
 L2_OBJS+=$(OCG_OBJS)
 endif
