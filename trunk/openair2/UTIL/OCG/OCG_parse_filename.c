@@ -47,14 +47,14 @@
 /*----------------------------------------------------------------------------*/
 
 int parse_filename(char filename[FILENAME_LENGTH_MAX]) {
-	char *delim = ".";
+	char *delim = "._";
 	char *result;
 	char tmp_filename[FILENAME_LENGTH_MAX];
 	char *fd_tmp;
 	char *un_tmp;
 	char *ex_tmp;
 
-	delim = "._";
+        //delim = "._";
 	strcpy(tmp_filename, filename);
 	
 	un_tmp = strtok(tmp_filename, delim);
@@ -67,7 +67,7 @@ int parse_filename(char filename[FILENAME_LENGTH_MAX]) {
 	} else {
 		strcpy(file_date, fd_tmp);
 		strcpy(user_name, un_tmp);
-		LOG_D(OCG, "File name is parsed as user_name = %s, file_date = %s\n", user_name, file_date);
+		LOG_I(OCG, "File name is parsed as user_name = %s, file_date = %s\n", user_name, file_date);
 		return MODULE_OK;
 	}
 }

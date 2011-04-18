@@ -33,11 +33,12 @@
 * \version 0.3
 * \warning This component can be runned only in user-space
 * @ingroup routing
-
 */
 #ifndef __LOG_IF_H__
 #    define __LOG_IF_H__
 
+/* for any problem of doxygen in this file, 
+contact Lusheng Wang by lusheng.wang@eurecom.fr */
 
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log.h"
@@ -62,6 +63,8 @@ extern "C" {
 #        define public_log_if(x) extern x
 #    endif
 
+/** @defgroup _log_if Interfaces of LOG
+ * @{*/ 
 friend_log_if( log_t *g_log;)
 
 public_log_if( void logInit (int g_log_level);)
@@ -72,9 +75,11 @@ public_log_if( void set_log_syslog(int value);)
 public_log_if( int   map_str_to_int(log_mapping *map, const char *str);)
 public_log_if( char *map_int_to_str(log_mapping *map, int val);)
 public_log_if( void logClean (void); );
+/* @}*/ 
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+
