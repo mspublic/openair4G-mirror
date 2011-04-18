@@ -65,9 +65,7 @@ typedef struct  {
   u8 prach_flag:1;  // 0=none,1=active
   u8 prach_id:6;    // this is the PHY preamble index for the prach
 } UE_cntl;
-
-//#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
-#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 4048
+#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
 #define MAX_NUM_DCI 5
 typedef struct {
   eNB_cntl cntl;
@@ -92,8 +90,8 @@ typedef struct {
 
 typedef struct {
   UE_cntl cntl;
-  u16 rnti[NUMBER_OF_eNB_MAX];
   u8 num_eNB;
+  u16 rnti[NUMBER_OF_eNB_MAX];
   u8 eNB_id[NUMBER_OF_eNB_MAX]; 
   u8 harq_pid[NUMBER_OF_eNB_MAX];
   u16 tbs[NUMBER_OF_eNB_MAX];
@@ -144,10 +142,10 @@ typedef struct {
   unsigned int ethernet_flag;
   unsigned int local_server;
   unsigned char multicast_group;
-  unsigned char ocg_enable;
-  unsigned char opt_enable;
-  unsigned char otg_enable;
-  unsigned char omg_enable;
+  unsigned char ocg_enabled;
+  unsigned char opt_enabled;
+  unsigned char otg_enabled;
+  unsigned char omg_enabled;
 }emu_info_t; 
 
 #endif //

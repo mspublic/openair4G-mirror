@@ -255,7 +255,7 @@ multicast_link_start (  void (*rx_handlerP) (unsigned int, char*), unsigned char
   //Bypass_phy_wr=0;
 #endif //BYPASS_PHY
   multicast_link_init ();
-  printf("mcast mink start thread\n");
+  printf("multicast link start thread\n");
   if (pthread_create (&main_loop_thread, NULL, multicast_link_main_loop, NULL) != 0) {
     msg ("[MULTICAST LINK] Thread started\n");
     exit (-2);
