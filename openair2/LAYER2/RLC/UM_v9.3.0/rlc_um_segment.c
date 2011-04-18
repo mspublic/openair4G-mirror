@@ -279,14 +279,15 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         if (!fi_last_byte_pdu_is_last_byte_sdu) {
             fi = fi + 1;
         }
-        pdu->b1 = pdu->b1 | (fi << 3);
+        //pdu->b1 = pdu->b1 | (fi << 3);
+        pdu->b1 = (fi << 3);
 
         // set fist e bit
         if (fill_num_li > 0) {
             pdu->b1 = pdu->b1 | 0x04;
         }
         //pdu->sn = rlcP->vt_us;
-        pdu->b1 = pdu->b1 | (rlcP->vt_us >> 8);
+        pdu->b1 = pdu->b1 | ((rlcP->vt_us >> 8) & 0x03);
         pdu->b2 = rlcP->vt_us & 0xFF;
         rlcP->vt_us = rlcP->vt_us+1;
 

@@ -71,10 +71,6 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
     tb = list_remove_head (&transport_blocksP);
     if (tb != NULL) {
        tb_size = ((struct mac_tb_req *) (tb->data))->tb_size_in_bits>>3;
-      // printf("mac_rlc_serialize_tb() tb size %d\n", tb_size);
-       memcpy(&bufferP[tbs_size], &((struct mac_tb_req *) (tb->data))->data_ptr[0], tb_size);
-       //msg("[RLC-MAC] if RAB UM TB SN %d\n", (unsigned int)(bufferP[tbs_size] >> 1) & 0x7F);
-       tbs_size = tbs_size + tb_size;
 #ifdef DEBUG_MAC_INTERFACE
         int tb_size_in_bytes;
         msg ("[MAC-RLC] DUMP TX PDU(%d bytes):", tb_size);
@@ -83,6 +79,10 @@ tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP) {
         }
         msg ("\n");
 #endif
+      // printf("mac_rlc_serialize_tb() tb size %d\n", tb_size);
+       memcpy(&bufferP[tbs_size], &((struct mac_tb_req *) (tb->data))->data_ptr[0], tb_size);
+       //msg("[RLC-MAC] if RAB UM TB SN %d\n", (unsigned int)(bufferP[tbs_size] >> 1) & 0x7F);
+       tbs_size = tbs_size + tb_size;
        free_mem_block(tb);
     }
   }
