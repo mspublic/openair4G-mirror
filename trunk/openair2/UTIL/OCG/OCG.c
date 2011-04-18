@@ -42,6 +42,7 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "OCG.h"
 #include "OCG_vars.h"
@@ -64,13 +65,17 @@ OAI_Emulation * OCG_main(int is_local_server) {
 	int state = STATE_START_OCG;
 	char web_XML_folder[DIR_LENGTH_MAX] = "";
 	char output_dir[DIR_LENGTH_MAX] = "";
-
+	char *OPENAIR_TARGETS=getenv("OPENAIR_TARGETS");
 	if (is_local_server == 1) {
-		strcat(web_XML_folder, "../../../targets/SIMU/USER/webxml/");
-		strcat(output_dir, "../../../targets/SIMU/USER/emu_results/");
+	  
+	  strcat(web_XML_folder, OPENAIR_TARGETS);
+	  strcat(web_XML_folder, "SIMU/EXAMPLES/OSD/WEBXML/");
+	 
+	  strcat(output_dir, OPENAIR_TARGETS);
+	  strcat(output_dir, "SIMU/EXAMPLES/OSD/RESULTS/");
 	} else {
-		strcat(web_XML_folder, WEB_XML_FOLDER);
-		strcat(output_dir, OUTPUT_DIR);
+	  strcat(web_XML_folder, WEB_XML_FOLDER);
+	  strcat(output_dir, OUTPUT_DIR);
 	} 
 
 
