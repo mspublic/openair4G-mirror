@@ -730,10 +730,10 @@ int main(int argc, char **argv) {
   emu_info.ethernet_flag=0;
   emu_info.local_server= 0; // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
-  emu_info.ocg_enable=0;// flag c
-  emu_info.opt_enable=0; // P flag
-  emu_info.omg_enable=0; //O flag 
-  emu_info.otg_enable=0;// T flag
+  emu_info.ocg_enabled=0;// flag c
+  emu_info.opt_enabled=0; // P flag
+  emu_info.omg_enabled=0; //O flag 
+  emu_info.otg_enabled=0;// T flag
   
   transmission_mode = 2;
   target_dl_mcs = 0;
@@ -822,13 +822,13 @@ int main(int argc, char **argv) {
 	  cooperation_flag=atoi(optarg);
 	  break;
 	case 'O':
-	  emu_info.omg_enable=1;
+	  emu_info.omg_enabled=1;
 	  break;
 	case 'T':
-	  emu_info.otg_enable=1;
+	  emu_info.otg_enabled=1;
 	  break;
 	case 'P':
-	  emu_info.opt_enable=1;
+	  emu_info.opt_enabled=1;
 	  break;
 	default:
 	  help ();
@@ -871,7 +871,7 @@ int main(int argc, char **argv) {
       set_comp_log(OCG,  LOG_TRACE, 1);
        
       LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
-      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, NULL);
+      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, 0);
 
       LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
    }
