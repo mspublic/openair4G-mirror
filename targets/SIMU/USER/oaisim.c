@@ -15,6 +15,7 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
+#include "UTIL/OPT/opt.h" // to test OPT
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -107,7 +108,7 @@ void help(void) {
   printf("-p Set the total number of machine in emulation - valid if M is set\n");
   printf("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
-  printf("-c Activate the config generator (OCG) - used in conjunction with openair emu web portal\n");
+  printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
   printf("-d Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
 }
@@ -702,7 +703,7 @@ int main(int argc, char **argv) {
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
 
-  int OCG_flag =0;
+  int OCG_enabled =0;
   OAI_Emulation * emulation_scen;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -727,7 +728,12 @@ int main(int argc, char **argv) {
   emu_info.nb_ue_local= 1;
   emu_info.nb_enb_local= 1;
   emu_info.ethernet_flag=0;
+  emu_info.local_server= 0; // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
+  emu_info.ocg_enable=0;// flag c
+  emu_info.opt_enable=0; // P flag
+  emu_info.omg_enable=0; //O flag 
+  emu_info.otg_enable=0;// T flag
   
   transmission_mode = 2;
   target_dl_mcs = 0;
@@ -737,7 +743,7 @@ int main(int argc, char **argv) {
   snr_dB = 30;
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haeOPTt:k:x:m:rn:s:f:u:b:c:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -802,13 +808,27 @@ int main(int argc, char **argv) {
 	  g_log_level=optarg;
 	  break;
 	case 'c':
-	  OCG_flag=1;
+          emu_info.local_server = atoi(optarg);
+	  emu_info.ocg_enabled=1;
+	  abstraction_flag=1;
+	  extended_prefix_flag=1;
+	  n_frames_flag=1; 
+	  transmission_mode = 1;
 	  break;
 	case 'g':
 	  emu_info.multicast_group=atoi(optarg);
 	  break;	
 	case 'd':
 	  cooperation_flag=atoi(optarg);
+	  break;
+	case 'O':
+	  emu_info.omg_enable=1;
+	  break;
+	case 'T':
+	  emu_info.otg_enable=1;
+	  break;
+	case 'P':
+	  emu_info.opt_enable=1;
 	  break;
 	default:
 	  help ();
@@ -821,34 +841,43 @@ int main(int argc, char **argv) {
   logInit(map_str_to_int(level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
-#ifdef OCG  
-  if (OCG_flag==1){ // activate OCG
-    printf("start\n");
-    emulation_scen= OCG_main();
-    LOG_I(MAC,"the area is x %f y %f option %s\n",
+  //#ifdef OCG_FLAG
+  if ( emu_info.ocg_enabled==1){ // activate OCG: xml-based scenario parser 
+    emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
+    // here is to check if OCG is successful, otherwise, we might not run the emulation
+    if (emulation_scen->useful_info.OCG_OK != 1) { 
+      LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: A common reason for this error is a mistake made in the XML configuration file if you use a file written by yourself.\n");
+      exit(EXIT_FAILURE);
+      }
+
+    LOG_T(OCG,"the area is x %f y %f option %s\n",
 	  emulation_scen->envi_config.area.x,
-		  emulation_scen->envi_config.area.y, emulation_scen->topo_config.eNB_topology.selected_option);
-      abstraction_flag=1;
-      extended_prefix_flag=1;
+	  emulation_scen->envi_config.area.y, 
+	  emulation_scen->topo_config.eNB_topology.selected_option);
+      
+      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
 
-      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE;
-
-      if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
+      if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) { // configure the number of eNB
          emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
       } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
 	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
       } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
 	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
       } 
-      n_frames  =  (int) emulation_scen->emu_config.emu_time * 60 * 100;
-      transmission_mode = 1;
-      //set_comp_log(EMU,  LOG_INFO, LOG_MED);
-      //set_comp_log(MAC,  LOG_INFO, LOG_MED);
-      //set_comp_log(RLC,  LOG_INFO, LOG_MED);
+      n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
       
-      LOG_I(OCG," ue local %d enb local %d frame %d\n",   nb_ue_local,   nb_eNB_local, n_frames );
+      set_comp_log(OCG,  LOG_ERR, 1);
+      set_comp_log(OCG,  LOG_INFO, 1);
+      set_comp_log(OCG,  LOG_TRACE, 1);
+       
+      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
+      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, NULL);
+
+      LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
    }
-#endif    
+  //#endif
+
+ 
 #ifndef CYGWIN 
   ret=netlink_init();
 #endif

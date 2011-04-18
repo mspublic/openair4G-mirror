@@ -389,14 +389,25 @@ typedef struct {
  *  @brief OAI Emulation struct for OSD_basic
  * @{*/ 
 typedef struct {
+	char *output_path;	/*!< \brief The path where we generate all the emulation results */
+	int OCG_OK;
+}Useful_Info;
+/* @}*/
+
+/** @defgroup  _OSD_basic Basic OpenAirInterface Scenario Descriptor
+ *  @ingroup _OCG
+ *  @brief OAI Emulation struct for OSD_basic
+ * @{*/ 
+typedef struct {
 	Envi_Config envi_config;	/*!< \brief Evironment configuration */
 	Topo_Config topo_config;	/*!< \brief Topology configuration */
 	App_Config app_config;	/*!< \brief Applications configuration */
 	Emu_Config emu_config;	/*!< \brief Emulation configuration */
-
+	Useful_Info useful_info;	/*!< \brief Some important information which should be able to be reached by OAISIM */
 	char *profile;
 }OAI_Emulation;
 /* @}*/
+
 
 /** @defgroup _fn Functions in OCG
  *  @ingroup _OCG
@@ -419,10 +430,9 @@ typedef struct {
 //#define LOG_T printf("OCG: "); printf /*!< \brief trace */
 /* @}*/ 
 
-OAI_Emulation * OCG_main(void);
+OAI_Emulation * OCG_main(int is_local_server);
 
-#include "UTIL/LOG/log_if.h"
-
+#include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus
 }

@@ -36,6 +36,10 @@
 * @ingroup routing
 
 */
+
+/* for any problem of doxygen in this file, 
+contact Lusheng Wang by lusheng.wang@eurecom.fr */
+
 #ifndef __LOG_H__
 #    define __LOG_H__
 
@@ -61,62 +65,86 @@
 extern "C" {
 #endif
 
+/** @defgroup _LOG LOG Generator
+ * @{*/ 
+/* @}*/ 
 
-#define MAX_LOG_ITEM 50
-#define MAX_LOG_TOTAL 1000
+/** @defgroup _macro Macro Definition
+ *  @ingroup _LOG
+ *  @brief these macros are used in the code of LOG
+ * @{*/
+/* @}*/ 
 
+/** @defgroup _max_length Maximum Length of LOG
+ *  @ingroup _macro
+ *  @brief the macros that describe the maximum length of LOG
+ * @{*/
+#define MAX_LOG_ITEM 50 /*!< \brief the maximum length of a LOG item, what is LOG_ITEM ??? */
+#define MAX_LOG_TOTAL 1000 /*!< \brief the maximum length of a log */
+/* @}*/ 
 
+/** @defgroup _log_level Message levels defined by LOG
+ *  @ingroup _macro
+ *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
+ * @{*/
 #ifndef LOG_EMERG
-#	define	LOG_EMERG	0	/* system is unusable */
+#	define	LOG_EMERG	0	/*!< \brief system is unusable */
 #endif
 #ifndef LOG_ALERT
-#	define	LOG_ALERT	1	/* action must be taken immediately */
+#	define	LOG_ALERT	1	/*!< \brief action must be taken immediately */
 #endif
 #ifndef LOG_CRIT
-#	define	LOG_CRIT	2	/* critical conditions */
+#	define	LOG_CRIT	2	/*!< \brief critical conditions */
 #endif
 #ifndef LOG_ERR
-#	define	LOG_ERR		3	/* error conditions */
+#	define	LOG_ERR		3	/*!< \brief error conditions */
 #endif
 #ifndef LOG_WARNING
-#	define	LOG_WARNING	4	/* warning conditions */
+#	define	LOG_WARNING	4	/*!< \brief warning conditions */
 #endif
 #ifndef LOG_NOTICE
-#	define	LOG_NOTICE	5	/* normal but significant condition */
+#	define	LOG_NOTICE	5	/*!< \brief normal but significant condition */
 #endif
 #ifndef LOG_INFO
-#	define	LOG_INFO	6	/* informational */
+#	define	LOG_INFO	6	/*!< \brief informational */
 #endif
 #ifndef LOG_DEBUG
-#	define	LOG_DEBUG	7	/* debug-level messages */
+#	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
 #endif
 #ifndef LOG_TRACE
-#	define	LOG_TRACE	8	/* debug-level messages */
+#	define	LOG_TRACE	8	/*!< \brief debug-level messages */
 #endif
 
-#define NUM_LOG_LEVEL  9
+#define NUM_LOG_LEVEL  9	/*!< \brief the number of message levels users have with LOG */
+/* @}*/ 
 
 
-/*! \brief Macro used to call tr_log_full_ex with file, function and line information
- *
- */
+/** @defgroup _logIt logIt function
+ *  @ingroup _macro
+ *  @brief Macro used to call tr_log_full_ex with file, function and line information
+ * @{*/
 #ifdef USER_MODE
-#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #else
-#define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component,level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) do {logRecord(NULL,	 __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #endif
+/* @}*/ 
 
-typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL, MAC_UE, RLC, MAC_L2,OPT, MAC_DL, MAX_LOG_COMPONENTS} comp_name_t;
+
+/** @defgroup _debugging debugging macros
+ *  @ingroup _macro
+ *  @brief Macro used to call logIt function with different message levels
+ * @{*/
 
 // debugging macros
 //#ifdef USER_MODE
 #define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#define LOG_C(c, x...)  logIt(c, LOG_CRIT,  x)
+#define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
 #define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#define LOG_W(c, x...)  logIt(c, LOG_WARNING, x)
-#define LOG_N(c, x...)logIt(c, LOG_NOTICE, x)
-#define LOG_I(c, x...)  logIt(c, LOG_INFO, x)
+#define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
+#define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
+#define LOG_I(c, x...) logIt(c, LOG_INFO, x)
 #define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 /*
@@ -132,74 +160,78 @@ typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL,
 #define LOG_T(c, x...) msg(x)
 #endif
 */
-
-/// Macro to log a message with severity DEBUG when entering a function
-#define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0)
-/// Macro to log a message with severity TRACE when exiting a function
-#define LOG_EXIT(c) do {LOG_T(c,"Exiting\n"); return;}while(0)
-/// Macro to log a function exit, including integer value, then to return a value to the calling function
-#define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)
+/* @}*/ 
 
 
+/** @defgroup _useful_functions useful functions in LOG
+ *  @ingroup _macro
+ *  @brief Macro of some useful functions defined by LOG
+ * @{*/
+#define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0)	/*!< \brief Macro to log a message with severity DEBUG when entering a function */
+#define LOG_EXIT(c) do {LOG_T(c,"Exiting\n"); return;}while(0)	/*!< \brief Macro to log a message with severity TRACE when exiting a function */
+#define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)	/*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
+/* @}*/
+
+
+/** @defgroup _log_format Defined log format
+ *  @ingroup _macro
+ *  @brief Macro of log formats defined by LOG
+ * @{*/
 
 /* .log_format = 0x13 uncolored standard messages
  * .log_format = 0x93 colored standard messages */
 
-/// VT100 sequence for bold red foreground
-#define LOG_RED "\033[1;31m"
+#define LOG_RED "\033[1;31m"	/*!< \brief VT100 sequence for bold red foreground */
+#define LOG_GREEN "\033[32m"	/*!< \brief VT100 sequence for green foreground */
+#define LOG_BLUE "\033[34m"	/*!< \brief VT100 sequence for blue foreground */
+#define LOG_CYBL "\033[40;36m"	/*!< \brief VT100 sequence for cyan foreground on black background */
+#define LOG_RESET "\033[0m"	/*!< \brief VT100 sequence for reset (black) foreground */
+/* @}*/
 
-/// VT100 sequence for green foreground
-#define LOG_GREEN "\033[32m"
 
-/// VT100 sequence for blue foreground
-#define LOG_BLUE "\033[34m"
-
-/// VT100 sequence for cyan foreground on black background
-#define LOG_CYBL "\033[40;36m"
-
-/// VT100 sequence for reset (black) foreground
-#define LOG_RESET "\033[0m"
-
-/// Optional start-format strings for highlighting
-static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};
-
-/// Optional end-format strings for highlighting
-static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};
-
-/*** used to write lines (local/remote) in syslog.conf***/
+/** @defgroup _syslog_conf Macros for write in syslog.conf
+ *  @ingroup _macro
+ *  @brief Macros used to write lines (local/remote) in syslog.conf
+ * @{*/
 #define LOG_LOCAL      0x01
 #define LOG_REMOTE     0x02
 
-#define FLAG_COLOR     0x001 //* defaults
-#define FLAG_PID       0x002 //* defaults
+#define FLAG_COLOR     0x001	/*!< \brief defaults */
+#define FLAG_PID       0x002	/*!< \brief defaults */
 #define FLAG_COMP      0x004
-#define FLAG_THREAD    0x008 // all : 255/511
+#define FLAG_THREAD    0x008	/*!< \brief all : 255/511 */
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
-#define FLAG_ONLINE    0X080 // online printing 
+#define FLAG_ONLINE    0X080	/*!< \brief online printing */
 #define FLAG_LOG_TRACE 0x100 
-
 
 #define LOG_DISABLE     0x00
 #define LOG_MED         0x34
 #define LOG_MED_ONLINE  0xB4
 #define LOG_DEF         0x74
-#define LOG_DEF_ONLINE  0xB4 // compatibility with OAI
+
+#define LOG_DEF_ONLINE  0xB4	/*!< \brief compatibility with OAI */
 
 
+#define OAI_OK 0		/*!< \brief all ok */
+#define OAI_ERR 1		/*!< \brief generic error */
+#define OAI_ERR_READ_ONLY 2	/*!< \brief tried to write to read-only item */
+#define OAI_ERR_NOTFOUND 3	/*!< \brief something wasn't found */
+/* @}*/
 
-#define OAI_OK 0                        ///< all ok
-#define OAI_ERR 1                       ///< generic error
-#define OAI_ERR_READ_ONLY 2             ///< tried to write to read-only item
-#define OAI_ERR_NOTFOUND 3              ///< something wasn't found
 
+static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
+
+static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
+
+typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL, MAC_UE, RLC, MAC_L2,OPT, MAC_DL, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 
 typedef struct {
-    char *name;     ///< string name of item
-    int value;      ///< integer value of mapping
+    char *name;	/*!< \brief string name of item */
+    int value;	/*!< \brief integer value of mapping */
 } log_mapping;
 
 

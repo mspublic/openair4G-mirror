@@ -46,10 +46,10 @@
 #include "OCG_create_dir.h"
 /*----------------------------------------------------------------------------*/
 
-int create_dir(char user_name[FILENAME_LENGTH_MAX / 2], char file_date[FILENAME_LENGTH_MAX / 2]) {
+int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_MAX / 2], char file_date[FILENAME_LENGTH_MAX / 2]) {
 
 	char directory[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX] = "";
-	strcat(directory, OUTPUT_DIR);
+	strcat(directory, output_dir);
 	strcat(directory, user_name);
 	
 	mkdir(directory, 0777);
@@ -58,6 +58,28 @@ int create_dir(char user_name[FILENAME_LENGTH_MAX / 2], char file_date[FILENAME_
 	strcat(directory, file_date);
 
 	mkdir(directory, 0777);
+
+	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 32] = "";
+
+	strcat(directory_extension, directory); // to create some more folders
+	strcat(directory_extension, "/LOGS");
+	mkdir(directory_extension, 0777);
+
+	strcpy(directory_extension, directory);
+	strcat(directory_extension, "/PACKET_TRACE");
+	mkdir(directory_extension, 0777);
+
+	strcpy(directory_extension, directory);
+	strcat(directory_extension, "/SCENARIO");
+	mkdir(directory_extension, 0777);
+
+	strcpy(directory_extension, directory);
+	strcat(directory_extension, "/SCENARIO/XML");
+	mkdir(directory_extension, 0777);
+
+	strcpy(directory_extension, directory);
+	strcat(directory_extension, "/SCENARIO/STATE");
+	mkdir(directory_extension, 0777);
 
 	LOG_I(OCG, "Directory for current emulation is created\n");
 	return MODULE_OK;

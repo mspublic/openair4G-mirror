@@ -142,7 +142,12 @@ typedef struct {
   unsigned int master_list;
   unsigned int is_primary_master;
   unsigned int ethernet_flag;
+  unsigned int local_server;
   unsigned char multicast_group;
+  unsigned char ocg_enable;
+  unsigned char opt_enable;
+  unsigned char otg_enable;
+  unsigned char omg_enable;
 }emu_info_t; 
 
 #endif //

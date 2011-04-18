@@ -30,6 +30,10 @@ ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
+ifdef OCG_FLAG
+CFLAGS += -DOCG_FLAG 
+endif
+
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ; fi)
 

@@ -54,6 +54,7 @@ int generate_report(char dst_dir[DIR_LENGTH_MAX], char filename[FILENAME_LENGTH_
 	
 	char dst_file[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX] = "";
 	strcat(dst_file, dst_dir);
+	strcat(dst_file, "SCENARIO/STATE/");
 	strcat(dst_file, filename);
 	
 	xmlTextWriterPtr writer;
