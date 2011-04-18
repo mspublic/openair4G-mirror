@@ -13,6 +13,7 @@
 #    include "platform_constants.h"
 #    include "rlc_am_proto_extern.h"
 #    include "rlc_tm_proto_extern.h"
+#    include "rlc_am.h"
 #    include "rlc_um.h"
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
@@ -78,30 +79,12 @@
 
 
 typedef volatile struct {
-  u32_t             e_r;//establissement action ()
-  int             timer_poll;//
-  int             timer_poll_prohibit;
-  int             timer_discard;
-  int             timer_poll_periodic;
-  int             timer_status_prohibit;
-  int             timer_status_periodic;//500
-  int             timer_rst;//100
-  int             timer_mrw;//0
-  int             missing_pdu_indicator;
-  u32_t             pdu_size;//TB
-//      int                                 in_sequence_delivery; // not implemented
-  u8_t              max_rst;//16
-  u8_t              max_dat;
-  u16_t             poll_pdu;//16 peridic Nb of Tb to ask status
-  u16_t             poll_sdu;//1 idem For ip packet
-  u8_t              poll_window;//50, Nb of Tb in Tx window before asking status
-  u32_t             tx_window_size;//128
-  u32_t             rx_window_size;//128
-  u8_t              max_mrw;//8 NB_max control for ReTx
-  u8_t              last_transmission_pdu_poll_trigger;//1
-  u8_t              last_retransmission_pdu_poll_trigger;//1
-  enum RLC_SDU_DISCARD_MODE sdu_discard_mode;//0
-  u32_t             send_mrw;
+  u16_t max_retx_threshold;
+  u16_t poll_pdu;
+  u16_t poll_byte;
+  u32_t t_poll_retransmit;
+  u32_t t_reordering;
+  u32_t t_status_prohibit;
 } rlc_am_info_t;
 
 typedef volatile struct {
@@ -148,7 +131,7 @@ typedef struct {
 //-----------------------------------------------------------------------------
 //   PRIVATE INTERNALS OF RLC
 //-----------------------------------------------------------------------------
-#define  RLC_MAX_NUM_INSTANCES_RLC_AM  MAX_RB
+#define  RLC_MAX_NUM_INSTANCES_RLC_AM  MAX_RB/2
 #define  RLC_MAX_NUM_INSTANCES_RLC_UM  MAX_RB
 #define  RLC_MAX_NUM_INSTANCES_RLC_TM  MAX_RB
 
@@ -164,7 +147,7 @@ typedef struct rlc_pointer_t {
 
 typedef struct rlc_t {
     rlc_pointer_t        m_rlc_pointer[MAX_RB];
-    struct rlc_am_entity m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];
+    rlc_am_entity_t      m_rlc_am_array[RLC_MAX_NUM_INSTANCES_RLC_AM];
     rlc_um_entity_t      m_rlc_um_array[RLC_MAX_NUM_INSTANCES_RLC_UM];
     struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];
 }rlc_t;
@@ -195,7 +178,7 @@ public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_
 //-----------------------------------------------------------------------------
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (module_id_t, chan_id_t, char*);)
 public_rlc_mac(void                  mac_rlc_data_ind     (module_id_t, chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );)
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_t, tb_size_t, num_tb_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_t, tb_size_t );)
 
 //-----------------------------------------------------------------------------
 //   PUBLIC RLC CONSTANTS

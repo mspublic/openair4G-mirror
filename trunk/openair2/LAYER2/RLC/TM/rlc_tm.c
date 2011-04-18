@@ -273,12 +273,12 @@ rlc_tm_rx_segment (void *argP, struct mac_data_ind data_indP)
 
 //-----------------------------------------------------------------------------
 struct mac_status_resp
-rlc_tm_mac_status_indication (void *rlcP, u16_t no_tbP, u16 tb_sizeP, struct mac_status_ind tx_statusP)
+rlc_tm_mac_status_indication (void *rlcP, u16 tb_sizeP, struct mac_status_ind tx_statusP)
 {
 //-----------------------------------------------------------------------------
   struct mac_status_resp status_resp;
 
-  ((struct rlc_tm_entity *) rlcP)->nb_pdu_requested_by_mac = no_tbP;
+  ((struct rlc_tm_entity *) rlcP)->nb_pdu_requested_by_mac = 1;
   ((struct rlc_tm_entity *) rlcP)->rlc_pdu_size = tb_sizeP;
 
   status_resp.buffer_occupancy_in_bytes = ((struct rlc_tm_entity *) rlcP)->buffer_occupancy;

@@ -187,7 +187,7 @@ void mac_rlc_data_ind     (module_id_t module_idP, chan_id_t rb_idP, char* buffe
   }
 }
 //-----------------------------------------------------------------------------
-mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, chan_id_t channel_idP, tb_size_t tb_sizeP, num_tb_t num_tbP) {
+mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, chan_id_t channel_idP, tb_size_t tb_sizeP) {
 //-----------------------------------------------------------------------------
   mac_rlc_status_resp_t mac_rlc_status_resp;
   mac_rlc_status_resp.bytes_in_buffer = 0;
@@ -201,23 +201,23 @@ mac_rlc_status_resp_t mac_rlc_status_ind     (module_id_t module_idP, chan_id_t 
                         break;
 
                     case RLC_AM:
-                        status_resp = rlc_am_mac_status_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], num_tbP, tb_sizeP<<3, tx_status);
+                        status_resp = rlc_am_mac_status_indication(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], tb_sizeP, tx_status);
                         mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
                         mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
                         return mac_rlc_status_resp;
                         break;
 
                     case RLC_UM:
-                        msg("[RLC_UM][MOD %d] mac_rlc_status_ind  tb_size %d num_tb %d\n", module_idP,  tb_sizeP, num_tbP);
+                        msg("[RLC_UM][MOD %d] mac_rlc_status_ind  tb_size %d\n", module_idP,  tb_sizeP);
 
-                        status_resp = rlc_um_mac_status_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index],  num_tbP, tx_status);
+                        status_resp = rlc_um_mac_status_indication(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index],  tb_sizeP, tx_status);
                         mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
                         //mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
                         return mac_rlc_status_resp;
                         break;
 
                     case RLC_TM:
-                        status_resp = rlc_tm_mac_status_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], num_tbP, tb_sizeP<<3, tx_status);
+                        status_resp = rlc_tm_mac_status_indication(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[channel_idP].rlc_index], tb_sizeP, tx_status);
                         mac_rlc_status_resp.bytes_in_buffer = status_resp.buffer_occupancy_in_bytes;
                         mac_rlc_status_resp.pdus_in_buffer = status_resp.buffer_occupancy_in_pdus;
                         return mac_rlc_status_resp;

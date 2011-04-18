@@ -8,7 +8,7 @@
 
 #define RLC_RRC_C
 #include "rlc.h"
-#include "rlc_am_control_primitives_proto_extern.h"
+#include "rlc_am.h"
 #include "rlc_um.h"
 #include "rlc_tm_control_primitives_proto_extern.h"
 #include "rlc_um_control_primitives.h"
@@ -51,17 +51,8 @@ rlc_op_status_t
 rb_release_rlc_am (struct rlc_am_entity *rlcP, module_id_t module_idP)
 {
 //-----------------------------------------------------------------------------
-  mem_block_t      *mb;
-
-  if ((mb = get_free_mem_block (sizeof (struct crlc_primitive)))) {
-    ((struct crlc_primitive *) mb->data)->type = CRLC_CONFIG_REQ;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.am_parameters.e_r = RLC_E_R_RELEASE;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.am_parameters.stop = 1;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.am_parameters.cont = 0;
-    send_rlc_am_control_primitive (rlcP, module_idP, mb);
-    return RLC_OP_STATUS_OK;
-  }
-  return RLC_OP_STATUS_OUT_OF_RESSOURCES;
+  rlc_am_cleanup(rlcP);
+  return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP) {
@@ -124,7 +115,8 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
                     rlc[module_idP].m_rlc_am_array[index].allocation = 1;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
-                   msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, index);
+                    rlc_am_init(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index]);
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, index);
                     return RLC_OP_STATUS_OK;
                 } else {
                  msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX %d IS ALREADY ALLOCATED\n", module_idP, rb_idP, index);
