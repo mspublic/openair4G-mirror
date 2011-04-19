@@ -131,6 +131,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                         list_add_tail_eurecom (pdu, &rlcP->pdus_to_mac_layer);
                         rlcP->status_requested = 0;
                         rlc_am_start_timer_status_prohibit(rlcP);
+                        return;
                     }
                 }
 #ifdef TRACE_RLC_AM_TX
@@ -176,6 +177,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                         rlcP->nb_bytes_requested_by_mac = rlcP->nb_bytes_requested_by_mac - tx_data_pdu_management->header_and_payload_size;
 
                         tx_data_pdu_management->retx_count += 1;
+                        return;
                     } else if ((tx_data_pdu_management->retx_count >= 0) && (rlcP->nb_bytes_requested_by_mac >= RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
                         msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d MAC BYTES %d SIZE %d RTX COUNT %d  nack_so_start %d nack_so_stop %04X(hex)\n", mac_xface->frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id,
                         rlcP->first_retrans_pdu_sn,
@@ -216,20 +218,25 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                         msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] UPDATED first_retrans_pdu_sn %04d\n", mac_xface->frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, rlcP->first_retrans_pdu_sn);
                     }
 #endif
+                    return;
+
+/* ONLY ONE TB PER TTI
                     if ((tx_data_pdu_management->retx_count >= 0) && (rlcP->nb_bytes_requested_by_mac < RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
 #ifdef TRACE_RLC_AM_TX
                       msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BREAK LOOP ON RETRANSMISSION BECAUSE ONLY %d BYTES ALLOWED TO TRANSMIT BY MAC\n",mac_xface->frame,  ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, rlcP->nb_bytes_requested_by_mac);
 #endif
                       break;
-                    }
+                    }*/
                 }
             }
             if (rlcP->nb_bytes_requested_by_mac > 2) {
                 rlc_am_segment_10 (rlcP);
                 list_add_list (&rlcP->segmentation_pdu_list, &rlcP->pdus_to_mac_layer);
+                return;
             }
             if ((rlcP->pdus_to_mac_layer.head == NULL) && (rlc_am_is_timer_poll_retransmit_timed_out(rlcP)) && (rlcP->nb_bytes_requested_by_mac > 2)) {
                 rlc_am_retransmit_any_pdu(rlcP);
+                return;
             }
             break;
 
