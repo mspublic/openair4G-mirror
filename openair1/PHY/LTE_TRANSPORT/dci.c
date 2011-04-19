@@ -2028,6 +2028,7 @@ u8 generate_dci_top(u8 num_ue_spec_dci,
   return(num_pdcch_symbols);
 }
 
+#ifdef PHY_ABSTRACTION
 u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 num_ue_spec_dci,
 			 u8 num_common_dci,
@@ -2090,6 +2091,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   return(num_pdcch_symbols);
 }
+#endif 
 
 static u8 dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
 static char w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
@@ -2623,6 +2625,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   return(dci_cnt);
 }
 
+#ifdef PHY_ABSTRACTION
 u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 				u8 num_ue_spec_dci,
 				u8 num_common_dci,
@@ -2647,3 +2650,4 @@ u16 dci_decoding_procedure_emul(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 
   return(dci_cnt);
 }
+#endif
