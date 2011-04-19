@@ -13,6 +13,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
+#include "LAYER2/MAC/vars.h"
 
 //#define AWGN
 //#define NO_DCI
@@ -92,7 +93,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNB,
 		   0,
-		   0,
 		   0);
 
   
@@ -101,10 +101,12 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
+/*
 DCI0_5MHz_TDD_1_6_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+*/
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
@@ -127,7 +129,6 @@ int main(int argc, char **argv) {
   int **txdataF2;
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
-  //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03;
@@ -138,11 +139,9 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0;
 
   int eNB_id = 0, eNB_id_i = 1;
+  int UE_id = 0;
   unsigned char nb_rb=2,first_rb=0,mcs,dual_stream_UE = 0,awgn_flag=0,round=0;
   unsigned char Ns,l,m;
-
-
-  //  unsigned char *input_data,*decoded_output;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -154,8 +153,6 @@ int main(int argc, char **argv) {
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[20];
-
-  //  unsigned char pbch_pdu[6];
 
   //  FILE *rx_frame_file;
 
@@ -171,6 +168,8 @@ int main(int argc, char **argv) {
 
   u8 N_RB_DL=25,osf=1;
 
+  u8 cyclic_shift = 0;
+  u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
 
   channel_length = (int) 11+2*BW*Td;
 
@@ -329,9 +328,9 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.srs_Bandwidth = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.transmissionComb = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.freqDomainPosition = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
 
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
@@ -388,7 +387,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
-
+  UL_alloc_pdu.cshift  = 0;
 
 
   generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
@@ -462,12 +461,12 @@ int main(int argc, char **argv) {
 	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->rvidx = round>>1;
 	}
 #ifdef OFDMA_ULSCH
-	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe);
-	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe,first_rb,nb_rb,0,0,0);
+	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id],PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe);
+	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe,first_rb,nb_rb,cyclic_shift);
 
 #else
-	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe);
-	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->first_rb,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb,0,0,0);
+	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id],PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe);
+	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->first_rb,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb,cyclic_shift);
 #endif	
 
 	ulsch_encoding(input_buffer,
@@ -477,10 +476,10 @@ int main(int argc, char **argv) {
 		       control_only_flag);
       
 #ifdef OFDMA_ULSCH
-	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],0,0,0);
+	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #else  
 	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],subframe,&PHY_vars_UE->lte_frame_parms,
-			 PHY_vars_UE->ulsch_ue[0],0,0,0);
+			 PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #endif
       
 #ifdef IFFT_FPGA_UE
@@ -618,8 +617,7 @@ int main(int argc, char **argv) {
 			       subframe,
 			       0,  // this is the effective sector id
 			       PHY_vars_eNB->ulsch_eNB[0],
-			       0,
-			       0);
+			       cooperation_flag);
       
 	
 	ret= ulsch_decoding(PHY_vars_eNB->lte_eNB_ulsch_vars[0]->llr,

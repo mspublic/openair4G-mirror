@@ -97,7 +97,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNB,
 		   0,
-		   0,
 		   0);
 
   

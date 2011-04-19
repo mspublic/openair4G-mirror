@@ -16,6 +16,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+#include "LAYER2/MAC/vars.h"
 
 #define BW 5.0
 
@@ -90,7 +91,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNb,
 		   0,
-		   0,
 		   0);
 
   memcpy((void*)&PHY_vars_eNb1->lte_frame_parms,(void*)&PHY_vars_eNb->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
@@ -106,7 +106,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   PHY_vars_eNb1->lte_eNB_ulsch_vars,
                    0,
 		   PHY_vars_eNb1,
-		   0,
                    0,
 		   0);
  
@@ -115,7 +114,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   PHY_vars_eNb2->lte_eNB_ulsch_vars,
 		   0,
 		   PHY_vars_eNb2,
-		   0,
 		   0,
 		   0);
  

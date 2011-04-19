@@ -3,7 +3,7 @@ CC = $(shell if [ $(OSTYPE) = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; f
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32 -mssse3 -msse4
+CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
@@ -14,7 +14,10 @@ OPENAIR3 = $(OPENAIR3_DIR)
 
 CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) 
 
-#CFLAGS = -Wall -Wno-packed-bitfield-compat -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS)
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
+ifeq "$(GCCVERSION)" "4.4.3"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 CFLAGS += -DOPENAIR_LTE #-DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE
 #CFLAGS += -DTBS_FIX
@@ -50,7 +53,7 @@ ifdef PBS_SIM
 CFLAGS += -DPBS_SIM
 endif
 
-CFLAGS += -DOPENAIR2 
+CFLAGS += -DOPENAIR2 -DNO_RRM -DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
 
@@ -61,7 +64,7 @@ include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(TOP_DIR)/../openair2/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
-CFLAGS += $(L2_incl) -DPHY_ABSTRACTION
+CFLAGS += -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3)
 
 #STATS_OBJS += $(TOP_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_proc.o
 
@@ -73,40 +76,40 @@ OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)
 all: dlsim pbchsim pdcchsim ulsim pucchsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
-	$(CC)  test.c -I$(TOP_DIR) -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
+	$(CC)  test.c -o test $(CFLAGS) $(SIMULATION_OBJS) $(TOOLS_OBJS) -lm 
 
 $(OBJ) : %.o : %.c
-	$(CC) -c $(CFLAGS) -DOPENAIR2 -I$(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) -o $@ $<
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
-	$(CC) dlsim.c -I$(TOP_DIR) -I$(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3) -o dlsim $(CFLAGS) $(OBJ) -lm -lblas 
+	$(CC) dlsim.c -o dlsim $(CFLAGS) $(OBJ) -lm -lblas 
 
 framegen: $(OBJ) $(SCHED_OBJS) framegen.c
-	$(CC) framegen.c -I$(TOP_DIR) -o framegen $(CFLAGS) $(OBJ) -lm -lblas
+	$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) -lm -lblas
 
 pbchsim : $(OBJ) pbchsim.c
-	$(CC) pbchsim.c -I$(TOP_DIR) -o pbchsim $(CFLAGS) $(OBJ) -lm -lblas
+	$(CC) pbchsim.c -o pbchsim $(CFLAGS) $(OBJ) -lm -lblas
 
 pdcchsim : $(OBJ) pdcchsim.c
-	$(CC) pdcchsim.c -I$(TOP_DIR) -I$(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3) -o pdcchsim $(CFLAGS) $(OBJ) -lm -lblas
+	$(CC) pdcchsim.c -o pdcchsim $(CFLAGS) $(OBJ) -lm -lblas
 
 pucchsim : $(OBJ) $(SCHED_OBJS)  pucchsim.c
-	$(CC) pucchsim.c -I$(TOP_DIR) -I$(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR3) -o pucchsim $(CFLAGS) $(OBJ) -lm -lblas
+	$(CC) pucchsim.c -o pucchsim $(CFLAGS) $(OBJ) -lm -lblas
 
 dlsim_secsys : $(OBJ2) dlsim_secsys.c
-	$(CC) dlsim_secsys.c -I$(TOP_DIR) -o dlsim_secsys $(CFLAGS) $(OBJ2) -lm -lblas
+	$(CC) dlsim_secsys.c -o dlsim_secsys $(CFLAGS) $(OBJ2) -lm -lblas
 
 ulsim : $(OBJ) ulsim.c #ulsim_form.c
-	$(CC) ulsim.c -I$(TOP_DIR) -o ulsim $(CFLAGS) $(OBJ) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas
+	$(CC) ulsim.c -o ulsim $(CFLAGS) $(OBJ) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas
 
 ulsim2 : $(OBJ2) ulsim2.c
-	$(CC) ulsim2.c -I$(TOP_DIR) -o ulsim2 $(CFLAGS) $(OBJ2) -lm
+	$(CC) ulsim2.c -o ulsim2 $(CFLAGS) $(OBJ2) -lm
 
 physim : $(OBJ) phy_procedures_sim.c 
-	$(CC)  phy_procedures_sim.c -I$(TOP_DIR) -o physim $(CFLAGS) $(OBJ) -lm
+	$(CC)  phy_procedures_sim.c -o physim $(CFLAGS) $(OBJ) -lm
 
 physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
-	$(CC)  phy_procedures_sim_secsys.c -I$(TOP_DIR) -o physim_secsys $(CFLAGS) $(OBJ) -lm
+	$(CC)  phy_procedures_sim_secsys.c -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
 clean:
 	rm -f dlsim dlsim2 dlsim_secsys

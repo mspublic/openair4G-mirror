@@ -90,7 +90,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNB,
 		   0,
-		   0,
 		   0);
 
   phy_init_lte_top(lte_frame_parms);
@@ -156,7 +155,7 @@ int main(int argc, char **argv) {
   u8 abstraction_flag=0,calibration_flag=0;
   double pucch_sinr;
   u8 osf=1,N_RB_DL=25;
-  u32 pucch_payload_tx,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
+  u32 pucch_payload_tx=0,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
   u8 subframe=3;
@@ -441,7 +440,7 @@ int main(int argc, char **argv) {
 		 37, //n1_pucch,
 		 0, //n2_pucch,
 		 0, //shortened_format,
-		 1, //payload,
+		 (u8*) &pucch_payload_tx, //payload,
 		 scfdma_amps[1], //amp,
 		 subframe); //subframe
 #ifdef IFFT_FPGA_UE  
@@ -638,7 +637,7 @@ int main(int argc, char **argv) {
 	       37, //n1_pucch,
 	       0, //n2_pucch,
 	       0, //shortened_format,
-	       &pucch_payload_rx, //payload,
+	       (u8*) &pucch_payload_rx, //payload,
 	       subframe); //subframe	       
       if (pucch_format==pucch_format1) {
 	pucch1_missed = (pucch_payload_rx == 0) && (sig==1) ? (pucch1_missed+1) : pucch1_missed;
