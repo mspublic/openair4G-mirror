@@ -111,7 +111,7 @@ $(L2_OBJS) : %.o : %.c
 
 testam : $(OBJ) $(L2_OBJS) oaisim.c
 	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o testam $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o testam $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lcurses
 
 
 clean:
