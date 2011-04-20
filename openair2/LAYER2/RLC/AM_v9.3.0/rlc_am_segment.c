@@ -199,12 +199,21 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
                 test_remaining_num_li_to_substract = 0;
                 pdu_remaining_size = pdu_remaining_size - (test_li_length_in_bytes ^ 3);
             } else if ((sdu_mngt->sdu_remaining_size + (test_li_length_in_bytes ^ 3)) < test_pdu_remaining_size ) {
-                test_num_li += 1;
-                num_fill_sdu += 1;
-                test_pdu_remaining_size = test_pdu_remaining_size - (sdu_mngt->sdu_remaining_size + (test_li_length_in_bytes ^ 3));
-                test_remaining_size_to_substract = test_li_length_in_bytes ^ 3;
-                test_remaining_num_li_to_substract = 1;
-                test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
+                if (test_num_li == RLC_AM_MAX_SDU_IN_PDU) {
+                    continue_fill_pdu_with_sdu = 0;
+                    //num_fill_sdu += 1;
+                    test_pdu_remaining_size = 0;
+                    test_remaining_size_to_substract = 0;
+                    test_remaining_num_li_to_substract = 0;
+                    pdu_remaining_size = pdu_remaining_size - 1;
+                } else {
+                    test_num_li += 1;
+                    num_fill_sdu += 1;
+                    test_pdu_remaining_size = test_pdu_remaining_size - (sdu_mngt->sdu_remaining_size + (test_li_length_in_bytes ^ 3));
+                    test_remaining_size_to_substract = test_li_length_in_bytes ^ 3;
+                    test_remaining_num_li_to_substract = 1;
+                    test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
+                }
             } else {
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
                 msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] sdu_mngt->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, test_pdu_remaining_size, test_li_length_in_bytes ^ 3);
@@ -295,53 +304,71 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
                 continue_fill_pdu_with_sdu = 0;
                 pdu_remaining_size = 0;
             } else if ((sdu_mngt->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
+                if (fill_num_li == RLC_AM_MAX_SDU_IN_PDU) {
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
-                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] Filling  PDU with %d all remaining bytes of SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
 #endif
-                memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
-                pdu_mngt->payload_size += sdu_mngt->sdu_remaining_size;
-                data = &data[sdu_mngt->sdu_remaining_size];
-                li_length_in_bytes = li_length_in_bytes ^ 3;
-                fill_num_li += 1;
-                if (li_length_in_bytes  == 2) {
-                    if (fill_num_li == test_num_li) {
-                        //e_li->e1  = 0;
-                        e_li->b1 = 0;
-                    } else {
-                        //e_li->e1  = 1;
-                        e_li->b1 =  0x80;
-                    }
-                    //e_li->li1 = sdu_mngt->sdu_remaining_size;
-                    e_li->b1 = e_li->b1 | (sdu_mngt->sdu_remaining_size >> 4);
-                    e_li->b2 = sdu_mngt->sdu_remaining_size << 4;
-#ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] set e_li->b1=0x%02X set e_li->b2=0x%02X fill_num_li=%d test_num_li=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, e_li->b1, e_li->b2, fill_num_li, test_num_li);
-#endif
+                    memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
+                    pdu_mngt->payload_size += sdu_mngt->sdu_remaining_size;
+                    pdu_remaining_size = 0; //Forced to 0 pdu_remaining_size - sdu_mngt->sdu_remaining_size;
+                    // free SDU
+                    rlcP->sdu_buffer_occupancy -= sdu_mngt->sdu_remaining_size;
+                    rlc_am_free_in_sdu_data(rlcP, rlcP->current_sdu_index);
+                    //rlcP->input_sdus[rlcP->current_sdu_index] = NULL;
+                    //rlcP->nb_sdu -= 1;
+                    rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
+
+                    // reduce the size of the PDU
+                    continue_fill_pdu_with_sdu = 0;
+                    fi_last_byte_pdu_is_last_byte_sdu = 1;
                 } else {
-                    if (fill_num_li != test_num_li) {
-                        //e_li->e2  = 1;
-                        e_li->b2  = e_li->b2 | 0x08;
-                    }
-                    //e_li->li2 = sdu_mngt->sdu_remaining_size;
-                    e_li->b2 = e_li->b2 | (sdu_mngt->sdu_remaining_size >> 8);
-                    e_li->b3 = sdu_mngt->sdu_remaining_size & 0xFF;
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] set e_li->b2=0x%02X set e_li->b3=0x%02X fill_num_li=%d test_num_li=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, e_li->b2, e_li->b3, fill_num_li, test_num_li);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] Filling  PDU with %d all remaining bytes of SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
 #endif
-                    e_li++;
+                    memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
+                    pdu_mngt->payload_size += sdu_mngt->sdu_remaining_size;
+                    data = &data[sdu_mngt->sdu_remaining_size];
+                    li_length_in_bytes = li_length_in_bytes ^ 3;
+                    fill_num_li += 1;
+                    if (li_length_in_bytes  == 2) {
+                        if (fill_num_li == test_num_li) {
+                            //e_li->e1  = 0;
+                            e_li->b1 = 0;
+                        } else {
+                            //e_li->e1  = 1;
+                            e_li->b1 =  0x80;
+                        }
+                        //e_li->li1 = sdu_mngt->sdu_remaining_size;
+                        e_li->b1 = e_li->b1 | (sdu_mngt->sdu_remaining_size >> 4);
+                        e_li->b2 = sdu_mngt->sdu_remaining_size << 4;
+#ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] set e_li->b1=0x%02X set e_li->b2=0x%02X fill_num_li=%d test_num_li=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, e_li->b1, e_li->b2, fill_num_li, test_num_li);
+#endif
+                    } else {
+                        if (fill_num_li != test_num_li) {
+                            //e_li->e2  = 1;
+                            e_li->b2  = e_li->b2 | 0x08;
+                        }
+                        //e_li->li2 = sdu_mngt->sdu_remaining_size;
+                        e_li->b2 = e_li->b2 | (sdu_mngt->sdu_remaining_size >> 8);
+                        e_li->b3 = sdu_mngt->sdu_remaining_size & 0xFF;
+#ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] set e_li->b2=0x%02X set e_li->b3=0x%02X fill_num_li=%d test_num_li=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, e_li->b2, e_li->b3, fill_num_li, test_num_li);
+#endif
+                        e_li++;
+                    }
+
+                    pdu_remaining_size = pdu_remaining_size - (sdu_mngt->sdu_remaining_size + li_length_in_bytes);
+                    // free SDU
+                    rlcP->sdu_buffer_occupancy  -= sdu_mngt->sdu_remaining_size;
+                    sdu_mngt->sdu_remaining_size = 0;
+
+                    rlc_am_free_in_sdu_data(rlcP, rlcP->current_sdu_index);
+                    //free_mem_block (rlcP->input_sdus[rlcP->current_sdu_index]);
+                    //rlcP->input_sdus[rlcP->current_sdu_index] = NULL;
+                    //rlcP->nb_sdu -= 1;
+                    rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
                 }
-
-                pdu_remaining_size = pdu_remaining_size - (sdu_mngt->sdu_remaining_size + li_length_in_bytes);
-                // free SDU
-                rlcP->sdu_buffer_occupancy  -= sdu_mngt->sdu_remaining_size;
-                sdu_mngt->sdu_remaining_size = 0;
-
-                rlc_am_free_in_sdu_data(rlcP, rlcP->current_sdu_index);
-                //free_mem_block (rlcP->input_sdus[rlcP->current_sdu_index]);
-                //rlcP->input_sdus[rlcP->current_sdu_index] = NULL;
-                //rlcP->nb_sdu -= 1;
-                rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
-
             } else {
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
                 msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size, pdu_remaining_size - sdu_mngt->sdu_remaining_size);

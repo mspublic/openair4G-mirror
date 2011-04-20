@@ -232,7 +232,9 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
             if (rlcP->nb_bytes_requested_by_mac > 2) {
                 rlc_am_segment_10 (rlcP);
                 list_add_list (&rlcP->segmentation_pdu_list, &rlcP->pdus_to_mac_layer);
-                return;
+                if (rlcP->pdus_to_mac_layer.head != NULL) {
+                    return;
+                }
             }
             if ((rlcP->pdus_to_mac_layer.head == NULL) && (rlc_am_is_timer_poll_retransmit_timed_out(rlcP)) && (rlcP->nb_bytes_requested_by_mac > 2)) {
                 rlc_am_retransmit_any_pdu(rlcP);
