@@ -388,7 +388,8 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
           // -------------------------------------------------------------------------------
           // simple case, PDU(s) is/are missing
           // -------------------------------------------------------------------------------
-          while ((((previous_sn_cursor + 1) & RLC_AM_SN_MASK) != sn_cursor) && (nb_bits_to_transmit > 12)) {
+          while (((previous_sn_cursor + 1) & RLC_AM_SN_MASK) != sn_cursor) {
+              if (nb_bits_to_transmit > 12) {
               previous_sn_cursor = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
               control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = previous_sn_cursor;
               control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = 0;
@@ -401,6 +402,14 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
               msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING NACK %04d\n",
                        mac_xface->frame, rlcP->module_id, rlcP->rb_id, previous_sn_cursor);
 #endif
+              } else {
+                  control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
+#ifdef TRACE_STATUS_CREATION
+                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %\n",
+                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn);
+#endif
+                  goto end_push_nack;
+              }
           }
           // -------------------------------------------------------------------------------
           // not so simple case, a resegmented PDU(s) is missing

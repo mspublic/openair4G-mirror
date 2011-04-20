@@ -659,6 +659,9 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
     mem_block_t*         pdu;
     rlc_am_pdu_sn_10_t*  pdu_sn_10;
 
+#ifdef TRACE_RLC_AM_FORCE_TRAFFIC
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][FORCE-TRAFFIC] rlc_am_retransmit_any_pdu()\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id);
+#endif
     while (sn != sn_end) {
         if (rlcP->pdu_retrans_buffer[sn].mem_block != NULL) {
             if (!found_pdu) {
@@ -673,6 +676,7 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
                 // no need for update rlcP->nb_bytes_requested_by_mac
                 pdu = rlc_am_retransmit_get_copy(rlcP, sn);
                 pdu_sn_10 = (rlc_am_pdu_sn_10_t*) (&pdu->data[sizeof(struct mac_tb_req)]);
+                rlc_am_pdu_polling(rlcP, pdu_sn_10, rlcP->pdu_retrans_buffer[sn].header_and_payload_size);
                 pdu_sn_10->b1 = pdu_sn_10->b1 | 0x20;
                 rlcP->c_pdu_without_poll     = 0;
                 rlcP->c_byte_without_poll    = 0;
@@ -694,12 +698,14 @@ void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)
             rlc_am_nack_pdu (rlcP, found_pdu_sn, 0, 0x7FFF);
             pdu = rlc_am_retransmit_get_subsegment(rlcP, found_pdu_sn, &rlcP->nb_bytes_requested_by_mac);
             pdu_sn_10 = (rlc_am_pdu_sn_10_t*) (&pdu->data[sizeof(struct mac_tb_req)]);
+            rlc_am_pdu_polling(rlcP, pdu_sn_10, rlcP->pdu_retrans_buffer[found_pdu_sn].header_and_payload_size);
             pdu_sn_10->b1 = pdu_sn_10->b1 | 0x20;
             rlcP->c_pdu_without_poll     = 0;
             rlcP->c_byte_without_poll    = 0;
             //rlcP->poll_sn = (rlcP->vt_s -1) & RLC_AM_SN_MASK;
             rlc_am_start_timer_poll_retransmit(rlcP);
             list_add_tail_eurecom (pdu, &rlcP->pdus_to_mac_layer);
+            return;
         }
 #ifdef TRACE_RLC_AM_FORCE_TRAFFIC
         else {

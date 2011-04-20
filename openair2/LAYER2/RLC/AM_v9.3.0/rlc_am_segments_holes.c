@@ -70,6 +70,16 @@ void rlc_am_remove_hole (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_
                     i = i - 1;
                 } else {
                     rlcP->pdu_retrans_buffer[snP].hole_so_start[i] = so_stopP;
+                    if (rlcP->pdu_retrans_buffer[snP].num_holes == 0) {
+                        rlcP->pdu_retrans_buffer[snP].nack_so_start = 0;
+                        rlcP->pdu_retrans_buffer[snP].nack_so_stop  = 0x7FFF;
+                    } else {
+                        rlcP->pdu_retrans_buffer[snP].nack_so_start = rlcP->pdu_retrans_buffer[snP].hole_so_start[0];
+                        rlcP->pdu_retrans_buffer[snP].nack_so_stop  = rlcP->pdu_retrans_buffer[snP].hole_so_stop[rlcP->pdu_retrans_buffer[snP].num_holes - 1];
+                    }
+#ifdef TRACE_RLC_AM_HOLE
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n", mac_xface->frame,rlcP->module_id, rlcP->rb_id, snP, rlcP->pdu_retrans_buffer[snP].nack_so_start, rlcP->pdu_retrans_buffer[snP].nack_so_stop, rlcP->pdu_retrans_buffer[snP].num_holes);
+#endif
                     return;
                 }
             } else if (so_startP > rlcP->pdu_retrans_buffer[snP].hole_so_start[i]) {

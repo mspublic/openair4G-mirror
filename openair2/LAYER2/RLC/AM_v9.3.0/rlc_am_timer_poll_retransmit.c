@@ -37,7 +37,7 @@ void rlc_am_check_timer_poll_retransmit(rlc_am_entity_t *rlcP)
 int rlc_am_is_timer_poll_retransmit_timed_out(rlc_am_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 {
-    return rlcP->t_poll_retransmit.frame_time_out;
+    return rlcP->t_poll_retransmit.timed_out;
 }
 //-----------------------------------------------------------------------------
 void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP)
