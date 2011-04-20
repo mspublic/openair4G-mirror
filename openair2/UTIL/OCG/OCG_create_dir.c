@@ -53,34 +53,38 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 	strcat(directory, output_dir);
 	strcat(directory, user_name);
 	
-	mkdir(directory, S_IRWXG);
+	mode_t process_mask = umask(0);
+
+	mkdir(directory, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	strcat(directory, "/");
 	strcat(directory, file_date);
 
-	mkdir(directory, S_IRWXG);
+	mkdir(directory, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 32] = "";
 
 	strcat(directory_extension, directory); // to create some more folders
 	strcat(directory_extension, "/LOGS");
-	mkdir(directory_extension, S_IRWXG);
+	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	strcpy(directory_extension, directory);
 	strcat(directory_extension, "/PACKET_TRACE");
-	mkdir(directory_extension, S_IRWXG);
+	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	strcpy(directory_extension, directory);
 	strcat(directory_extension, "/SCENARIO");
-	mkdir(directory_extension, S_IRWXG);
+	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	strcpy(directory_extension, directory);
 	strcat(directory_extension, "/SCENARIO/XML");
-	mkdir(directory_extension, S_IRWXG);
+	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	strcpy(directory_extension, directory);
 	strcat(directory_extension, "/SCENARIO/STATE");
-	mkdir(directory_extension, S_IRWXG);
+	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
+
+	umask(process_mask);
 
 	LOG_I(OCG, "Directory for current emulation is created\n");
 	return MODULE_OK;
