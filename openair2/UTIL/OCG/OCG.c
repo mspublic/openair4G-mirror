@@ -69,10 +69,10 @@ OAI_Emulation * OCG_main(int is_local_server) {
 	if (is_local_server == 1) {
 	  
 	  strcat(web_XML_folder, OPENAIR_TARGETS);
-	  strcat(web_XML_folder, "SIMU/EXAMPLES/OSD/WEBXML/");
+	  strcat(web_XML_folder, "/SIMU/EXAMPLES/OSD/WEBXML/");
 	 
 	  strcat(output_dir, OPENAIR_TARGETS);
-	  strcat(output_dir, "SIMU/EXAMPLES/OSD/RESULTS/");
+	  strcat(output_dir, "/SIMU/EXAMPLES/OSD/RESULTS/");
 	} else {
 	  strcat(web_XML_folder, WEB_XML_FOLDER);
 	  strcat(output_dir, OUTPUT_DIR);
@@ -116,7 +116,6 @@ OAI_Emulation * OCG_main(int is_local_server) {
 
 			case STATE_DETECT_FILE :
 				strcpy(src_file, web_XML_folder);
-				//detect_file_OK = detect_file(argc, argv, src_file);
 				detect_file_OK = detect_file(src_file);
 				if (detect_file_OK == MODULE_OK) {
 					local_or_web = 2;

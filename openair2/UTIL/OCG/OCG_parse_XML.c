@@ -591,17 +591,20 @@ void characters(void *user_data, const xmlChar *ch, int len) { // called once wh
 						oai_emulation.topo_config.eNB_topology.grid.x = atoi(ch);
 					} else if (y_) {
 						oai_emulation.topo_config.eNB_topology.grid.y = atoi(ch);
+						oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.grid.x * oai_emulation.topo_config.eNB_topology.grid.y;
 					}
 				} else if (hexagonal_) {
 					oai_emulation.topo_config.eNB_topology.selected_option = "hexagonal";
 					if (number_of_cells_) {
 						oai_emulation.topo_config.eNB_topology.hexagonal.number_of_cells = atoi(ch);
 					}
+					oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.hexagonal.number_of_cells;
 				} else if (totally_random_) {
 					oai_emulation.topo_config.eNB_topology.selected_option = "random";
 					if (number_of_eNB_) {
 						oai_emulation.topo_config.eNB_topology.totally_random.number_of_eNB = atoi(ch);
 					}
+					oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.totally_random.number_of_eNB;
 				}
 			} else if (inter_eNB_distance_) {
 				oai_emulation.topo_config.inter_eNB_distance = atof(ch);

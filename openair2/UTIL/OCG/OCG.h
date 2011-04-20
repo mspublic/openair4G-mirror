@@ -61,8 +61,8 @@ extern "C" {
 #define LOCAL_XML_FOLDER "local_XML/" /*!< \brief this folder contains some XML files for demo, users could also put their own XML files into this folder for a direct emulation without using the web portal*/
 #define TEMP_OUTPUT_DIR "temp_output/" /*!< \brief temporary output files will be generated in this folder when folders for an emulation could not be created due to errors */
 #define OUTPUT_DIR "/nfs/emu_results/" /*!< \brief this folder contains all the output files when folders for an emulation could be successfully created */
-#define FILENAME_LENGTH_MAX 64 /*!< \brief the maximum length of a filename */
-#define DIR_LENGTH_MAX 64 /*!< \brief the maximum length of the path name */
+#define FILENAME_LENGTH_MAX 128 /*!< \brief the maximum length of a filename */
+#define DIR_LENGTH_MAX 128 /*!< \brief the maximum length of the path name */
 #define MOBI_XML_FOLDER "mobi_XML/" /*!< \brief the folder that mobigen generate XML files in */
 #define DIR_TO_MOBIGEN "XML_to_mobigen/" /*!< \brief the folder that mobigen detects XML file from OCG */
 /* @}*/ 
@@ -104,7 +104,6 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  *     e [ label = " create directory"];
  *     f [ label = " parse XML"];
  *     g [ label = " save XML"];
- *     h [ label = " call OAI emulator"];
  *     i [ label = " generate report"];
  *     j [ label = " end OCG"];
  *		a->b1;
@@ -120,9 +119,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  *    e->i [ label = "error" ];
  *		f->g [ label = "OK" ];
  *    f->i [ label = "error" ];
- *    g->h [ label = "OK" ];
+ *    g->i [ label = "OK" ];
  *    g->i [ label = "error" ];
- *    h->i;
  *    i->b2;
  *	label = "OCG Flow Chart"
  *		
@@ -237,6 +235,7 @@ typedef struct {
 			
 		typedef struct {
 			char *selected_option;
+			int *eNB_positions; // to be revised based on OMG
 			Grid grid;
 			Hexagonal hexagonal;
 			Totally_Random totally_random;
@@ -248,6 +247,7 @@ typedef struct {
 
 		typedef struct {
 			char *selected_option;
+			int *UE_positions; // to be revised based on OMG
 			Grid_Map grid_map;
 		}UE_Distribution;
 
@@ -282,6 +282,7 @@ typedef struct {
 	eNB_Topology eNB_topology;
 	double inter_eNB_distance;
 	UE_Distribution UE_distribution;
+	int number_of_eNB; // to be calculated in OCG_parse_XML.c
 	int number_of_UE;
 	double system_bandwidth;
 	double UE_frequency;
