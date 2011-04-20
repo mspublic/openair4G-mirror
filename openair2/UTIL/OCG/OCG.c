@@ -65,6 +65,11 @@ OAI_Emulation * OCG_main(int is_local_server) {
 	int state = STATE_START_OCG;
 	char web_XML_folder[DIR_LENGTH_MAX] = "";
 	char output_dir[DIR_LENGTH_MAX] = "";
+
+	/*if (OPENAIR_TARGETS == NULL) {
+		LOG_E(OCG, "please set the PATH for OPENAIR_TARGETS");
+		exit(EXIT_FAILURE);
+	}*/
 	char *OPENAIR_TARGETS=getenv("OPENAIR_TARGETS");
 	if (is_local_server == 1) {
 	  
