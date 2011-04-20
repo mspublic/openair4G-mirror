@@ -141,9 +141,6 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
   if (phy_vars_eNB==NULL)
     return 0;
 
-  if ((UE_id < 0) || (UE_id >= NUMBER_OF_UE_MAX))
-    return 0; 
-
   for (eNB=0;eNB<number_of_cards;eNB++) {
     len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
 		   eNB,number_of_cards,

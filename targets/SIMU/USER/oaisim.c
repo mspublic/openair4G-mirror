@@ -308,10 +308,8 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] tx_pwr eNB %d %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
-	//     printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 	
-	
-	
+	eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
 	
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
@@ -570,6 +568,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
       
+	UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
+	
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
 	/*
@@ -681,7 +681,7 @@ int main(int argc, char **argv) {
   s32 slot,last_slot, next_slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
-  double snr_dB;
+  double snr_dB, snr_dB2;
 
   unsigned char cooperation_flag; // for cooperative communication
 
@@ -714,7 +714,10 @@ int main(int argc, char **argv) {
   char title[255];
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
-  
+
+  FILE *UE_stats, *eNB_stats; 
+  int len; 
+  int mod_path_loss=0;
   
   //default parameters
   emu_info.is_primary_master=0;
@@ -740,10 +743,10 @@ int main(int argc, char **argv) {
   rate_adaptation_flag = 1;
   n_frames =  0xffff; //100; 
   n_frames_flag = 0;
-  snr_dB = 30;
+  snr_dB = 30; 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haeOPTt:k:x:m:rn:s:f:u:b:c:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:f:u:b:c:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -823,12 +826,15 @@ int main(int argc, char **argv) {
 	  break;
 	case 'O':
 	  emu_info.omg_enabled=1;
-	  break;
+	  break; 
 	case 'T':
 	  emu_info.otg_enabled=1;
 	  break;
 	case 'P':
 	  emu_info.opt_enabled=1;
+	  break;
+	case 'o':
+	  mod_path_loss = 1;
 	  break;
 	default:
 	  help ();
@@ -907,6 +913,10 @@ int main(int argc, char **argv) {
       emu_transport_sync();//emulation_tx_rx();
     }
   }// ethernet flag
+
+  UE_stats = fopen("UE_stats.txt", "w");
+  eNB_stats = fopen("eNB_stats.txt", "w");
+  printf("UE_stats=%d, eNB_stats=%d\n",UE_stats,eNB_stats);
 
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
@@ -1260,10 +1270,11 @@ int main(int argc, char **argv) {
 	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
 
-	if ((mac_xface->frame % 10) == 0) {
-	  dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
-	  printf("%s",stats_buffer);
-	}
+	//if ((mac_xface->frame % 10) == 0) {
+	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
+	rewind(eNB_stats);
+	fwrite(stats_buffer,1,len,eNB_stats);
+	//}
       }
       direction = subframe_select(frame_parms,next_slot>>1);
       
@@ -1284,10 +1295,11 @@ int main(int argc, char **argv) {
 	  //#endif
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
 
-	  if ((mac_xface->frame % 10) == 0) {
-	    dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
-	    printf("%s",stats_buffer);
-	  }
+	  //if ((mac_xface->frame % 10) == 0) {
+	  len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
+	  rewind(UE_stats);
+	  fwrite(stats_buffer,1,len,UE_stats);
+	  //}
 	}
       if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
@@ -1295,7 +1307,12 @@ int main(int argc, char **argv) {
 	  LOG_I(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
 	}
       }
-    
+
+      if (mod_path_loss && ((mac_xface->frame % 150) >= 100))
+	snr_dB2 = -20;
+      else
+	snr_dB2 = snr_dB;
+
       if (direction  == SF_DL) {
 	/*
 	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
@@ -1303,7 +1320,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1318,7 +1335,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1335,7 +1352,7 @@ int main(int argc, char **argv) {
 		
 	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1350,7 +1367,7 @@ int main(int argc, char **argv) {
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1416,6 +1433,10 @@ int main(int argc, char **argv) {
     
     lte_sync_time_free();
   }
+
+  fclose(UE_stats);
+  fclose(eNB_stats);
+
   return(n_errors);
 }
    
