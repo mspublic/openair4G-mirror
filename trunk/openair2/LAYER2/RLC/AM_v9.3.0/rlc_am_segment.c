@@ -52,7 +52,7 @@ void rlc_am_pdu_polling (rlc_am_entity_t *rlcP, rlc_am_pdu_sn_10_t *pduP, s16_t 
     if (
         (rlcP->c_pdu_without_poll >= rlcP->poll_pdu) ||
         (rlcP->c_byte_without_poll >= rlcP->poll_byte) ||
-        ((rlc_am_in_sdu_is_empty(rlcP)) && (rlcP->retrans_num_pdus <= 1)) ||
+        ((rlcP->sdu_buffer_occupancy == 0) && (rlcP->retrans_num_bytes_to_retransmit == 0)) ||
         (rlcP->vt_s == rlcP->vt_ms)
         ) {
 

@@ -95,8 +95,8 @@ void rlc_window(WINDOW *win, int starty, int startx, int lines, int cols, int ti
 #define TEST7
 
 #define TEST_MAX_SEND_SDU 8192
-#define TARGET_RX_ERROR_RATE 2
-#define TARGET_TX_ERROR_RATE 2
+#define TARGET_RX_ERROR_RATE 8
+#define TARGET_TX_ERROR_RATE 8
 static int  random_sdu;
 static int  random_nb_frames;
 static int  random_tx_pdu_size;
@@ -1058,6 +1058,7 @@ void rlc_am_v9_3_0_test_tx_rx()
         rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
         assert (send_id_read_index[1] == send_id_write_index[0]);
     }
+    sleep(1);
 #endif
 #ifdef TEST7
   srand (0);
@@ -1100,11 +1101,12 @@ void rlc_am_v9_3_0_test_tx_rx()
       random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
       rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
   }
+  sleep(1);
+  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM TX RX WITH ERRORS ON PHY LAYER\n\n\n\n");
   rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
   assert (send_id_read_index[1] == send_id_write_index[0]);
   assert (send_id_read_index[0] == send_id_write_index[1]);
-  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM TX RX WITH ERRORS ON PHY LAYER\n\n\n\n");
 #endif
 }
 //-----------------------------------------------------------------------------

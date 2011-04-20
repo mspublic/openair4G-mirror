@@ -171,7 +171,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                     if ((tx_data_pdu_management->header_and_payload_size <= rlcP->nb_bytes_requested_by_mac) && (tx_data_pdu_management->retx_count >= 0) && (tx_data_pdu_management->nack_so_start == 0) && (tx_data_pdu_management->nack_so_stop == 0x7FFF)) {
                         mem_block_t* copy = rlc_am_retransmit_get_copy(rlcP, rlcP->first_retrans_pdu_sn);
 #ifdef TRACE_RLC_AM_TX
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RE-SEND DATA PDU SN %04d   %d BYTES\n",mac_xface->frame,  ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->header_and_payload_size);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] RE-SEND DATA PDU SN %04d   %d BYTES\n",mac_xface->frame,  rlcP->module_id,rlcP->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->header_and_payload_size);
 #endif
                         list_add_tail_eurecom (copy, &rlcP->pdus_to_mac_layer);
                         rlcP->nb_bytes_requested_by_mac = rlcP->nb_bytes_requested_by_mac - tx_data_pdu_management->header_and_payload_size;
@@ -179,7 +179,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                         tx_data_pdu_management->retx_count += 1;
                         return;
                     } else if ((tx_data_pdu_management->retx_count >= 0) && (rlcP->nb_bytes_requested_by_mac >= RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d MAC BYTES %d SIZE %d RTX COUNT %d  nack_so_start %d nack_so_stop %04X(hex)\n", mac_xface->frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id,
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d MAC BYTES %d SIZE %d RTX COUNT %d  nack_so_start %d nack_so_stop %04X(hex)\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id,
                         rlcP->first_retrans_pdu_sn,
                         rlcP->nb_bytes_requested_by_mac,
                         tx_data_pdu_management->header_and_payload_size,
@@ -189,7 +189,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
 
                         mem_block_t* copy = rlc_am_retransmit_get_subsegment(rlcP, rlcP->first_retrans_pdu_sn, &rlcP->nb_bytes_requested_by_mac);
 #ifdef TRACE_RLC_AM_TX
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d (NEW SO %05d)\n", mac_xface->frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->nack_so_start);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] SEND SEGMENT OF DATA PDU SN %04d (NEW SO %05d)\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->first_retrans_pdu_sn, tx_data_pdu_management->nack_so_start);
 #endif
                         list_add_tail_eurecom (copy, &rlcP->pdus_to_mac_layer);
                     } else {
@@ -210,12 +210,12 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                         rlcP->first_retrans_pdu_sn = -1;
                         display_flag = 0;
 #ifdef TRACE_RLC_AM_TX
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] CLEAR first_retrans_pdu_sn\n",mac_xface->frame,  ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] CLEAR first_retrans_pdu_sn\n",mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 #endif
                     }
 #ifdef TRACE_RLC_AM_TX
                     if (display_flag > 0) {
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] UPDATED first_retrans_pdu_sn %04d\n", mac_xface->frame, ((rlc_am_entity_t *) rlcP)->module_id,((rlc_am_entity_t *) rlcP)->rb_id, rlcP->first_retrans_pdu_sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] UPDATED first_retrans_pdu_sn %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->first_retrans_pdu_sn);
                     }
 #endif
                     return;
@@ -240,6 +240,22 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                 rlc_am_retransmit_any_pdu(rlcP);
                 return;
             }
+#ifdef TRACE_RLC_AM_TX
+            else {
+                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] COULD NOT RETRANSMIT ANY PDU BECAUSE ",mac_xface->frame,  rlcP->module_id, rlcP->rb_id);
+                if (rlcP->pdus_to_mac_layer.head != NULL) {
+                    msg ("THERE ARE SOME PDUS READY TO TRANSMIT ");
+                }
+                if (!(rlc_am_is_timer_poll_retransmit_timed_out(rlcP))) {
+                    msg ("TIMER POLL DID NOT TIMED OUT (RUNNING = %d NUM PDUS TO RETRANS = %d  NUM BYTES TO RETRANS = %d) ", rlcP->t_poll_retransmit.running, rlcP->retrans_num_pdus, rlcP->retrans_num_bytes_to_retransmit);
+                }
+                if (rlcP->nb_bytes_requested_by_mac <= 2) {
+                    msg ("NUM BYTES REQUESTED BY MAC = %d", rlcP->nb_bytes_requested_by_mac);
+                }
+                msg ("\n");
+            }
+#endif
+
             break;
 
         default:
