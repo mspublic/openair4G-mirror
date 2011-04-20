@@ -898,7 +898,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 	    ULSCH_dci->cshift = 0;
 	}
       else
-	ULSCH_dci->cshift = 0;// values from 0 to 6 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+	ULSCH_dci->cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
 
         add_ue_spec_dci(DCI_pdu,
 		      ULSCH_dci,

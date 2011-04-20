@@ -935,7 +935,7 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 		     LTE_eNB_ULSCH **eNB_ulsch_vars,
 		     unsigned char is_secondary_eNB,
 		     PHY_VARS_eNB *phy_vars_eNB,
-		     unsigned char cooperation_flag,// 0 for no cooperation,1 for Delay Diversity and 2 for Distributed Alamouti
+		     u8 cooperation_flag,// 0 for no cooperation,1 for Delay Diversity and 2 for Distributed Alamouti
 		     unsigned char abstraction_flag)
 {
 

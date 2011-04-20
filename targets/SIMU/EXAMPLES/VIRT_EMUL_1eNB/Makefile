@@ -26,3 +26,9 @@ one_eNB_four_UE : oaisim
 
 clean:
 	(cd $(OPENAIR_TARGETS)/SIMU/USER && make clean)
+
+echo_vars:
+	echo $(OPENAIR1_DIR)
+	echo $(OPENAIR2_DIR)
+	echo $(OPENAIR3_DIR)
+	echo $(OPENAIR_TARGETS)

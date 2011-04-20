@@ -681,12 +681,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
-
-
 #endif 
-#endif
-
-#ifndef OFDMA_ULSCH
+# else
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
@@ -716,7 +712,6 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
-
 #endif
 
 }

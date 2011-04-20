@@ -1177,6 +1177,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     //reserved for cooperative communication
     if(ulsch->n_DMRS2 == 6)
       ulsch->cooperation_flag = 2;
+    else
+      ulsch->cooperation_flag = 0;
 
 
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
