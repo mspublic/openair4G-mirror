@@ -91,7 +91,7 @@ log_mapping level_names[] =
 #endif
 
 void help(void) {
-  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -d cooperation_flag\n");
+  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag\n");
   printf("-h provides this help message!\n");
   printf("-a Activates PHY abstraction mode\n");
   printf("-e Activates extended prefix mode\n");
@@ -110,7 +110,7 @@ void help(void) {
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
   printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
-  printf("-d Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
+  printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
 }
 
 #ifdef XFORMS
@@ -683,7 +683,7 @@ int main(int argc, char **argv) {
   double nf[2] = {3.0,3.0}; //currently unused
   double snr_dB, snr_dB2;
 
-  unsigned char cooperation_flag; // for cooperative communication
+  u8 cooperation_flag; // for cooperative communication
 
   u8 target_dl_mcs=4;
   u8 target_ul_mcs=2;
@@ -746,7 +746,7 @@ int main(int argc, char **argv) {
   snr_dB = 30; 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:f:u:b:c:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:f:z:u:b:c:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -778,6 +778,9 @@ int main(int argc, char **argv) {
 	  break;
 	case 'f':
 	  forgetting_factor = atof(optarg);
+	  break;
+	case 'z':
+	  cooperation_flag=atoi(optarg);
 	  break;
 	case 'u':
 	  emu_info.nb_ue_local = atoi(optarg);
@@ -821,9 +824,6 @@ int main(int argc, char **argv) {
 	case 'g':
 	  emu_info.multicast_group=atoi(optarg);
 	  break;	
-	case 'd':
-	  cooperation_flag=atoi(optarg);
-	  break;
 	case 'O':
 	  emu_info.omg_enabled=1;
 	  break; 

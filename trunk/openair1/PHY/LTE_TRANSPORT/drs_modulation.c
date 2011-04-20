@@ -16,10 +16,14 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned short * Msc_idx_ptr;
   int sub_frame_offset;
 
-  u32 phase_shift; // phase shift for cyclic delay in DM RS
+  //u32 phase_shift; // phase shift for cyclic delay in DM RS
+  //u8 alpha_ind;
+
+  s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
+  s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
  
-  phase_shift = (2*M_PI*cyclic_shift)/12;
+  //phase_shift = (2*M_PI*cyclic_shift)/12;
   Msc_RS = 12*nb_rb;    
 
 #ifdef USER_MODE
@@ -81,8 +85,23 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
       
 #else
 	for (k=0;k<12;k++) {
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*cos(phase_shift)- (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*sin(phase_shift));
-	  ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) ((((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15)*cos(phase_shift)+(((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15)*sin(phase_shift));
+	  if(cyclic_shift == 0){
+	    ((short*) txdataF)[2*(symbol_offset + re_offset)]   = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
+	    ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
+	    
+	  }
+	  else // Cyclic Shift to DMRS
+	    {
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = 
+		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
+			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
+			  ((int) amp))>>15);
+	      
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1]   = 
+		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
+			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
+			  ((int) amp))>>15);
+	    }
 	  re_offset++;
 	  drs_offset++;
 	  if (re_offset >= frame_parms->ofdm_symbol_size)

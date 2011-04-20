@@ -31,10 +31,13 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   short alpha, beta;
   int *ul_ch1, *ul_ch2;
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
-  s8 phase_shift;
-  phase_shift = -(2*M_PI*cyclicShift)/12;
-  short ul_ch_estimates_temp0,ul_ch_estimates_temp1;
-  short *ul_ch_estimates_out0,*ul_ch_estimates_out1;
+  //s8 phase_shift;
+  //phase_shift = -(2*M_PI*cyclicShift)/12;
+  short ul_ch_estimates_re,ul_ch_estimates_im;
+
+
+  s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
+  s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
   int *temp_out_ifft_ptr = (int*)0,*in_fft_ptr_0 = (int*)0,*in_fft_ptr_1 = (int*)0,
     *temp_out_fft_0_ptr = (int*)0,*out_fft_ptr_0 = (int*)0,*temp_out_fft_1_ptr = (int*)0,
@@ -77,20 +80,20 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			     (short*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
-
+             
       if((cyclicShift != 0) &&(cooperation_flag != 2)){
 	// Compemsating for the phase shift introduced at the transmitter
-	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i+=2){
-	  ul_ch_estimates_temp0 = (short)(ul_ch_estimates[aa][i])*cos(phase_shift)-(short)(ul_ch_estimates[aa][i<<1])*sin(phase_shift);
-	  ul_ch_estimates_temp1 = (short)(ul_ch_estimates[aa][i])*cos(phase_shift)-(short)(ul_ch_estimates[aa][i<<1])*sin(phase_shift);
-	  ul_ch_estimates_out0 = (short*) &ul_ch_estimates[aa][i];
-	  ul_ch_estimates_out1 = (short*) &ul_ch_estimates[aa][i<<1];
-	  ul_ch_estimates_out0 = ul_ch_estimates_temp0;
-	  ul_ch_estimates_out1 = ul_ch_estimates_temp1;
+	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i++){
+	  ul_ch_estimates_re = (short*) (ul_ch_estimates[aa][i]);
+	  ul_ch_estimates_im = (short*)(ul_ch_estimates[aa][(i<<1)+1]);
+	  ((short*) ul_ch_estimates[aa])[i] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) +
+							(int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
+	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -
+							       (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
 	}
       }
     }
-
+    
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
 
 

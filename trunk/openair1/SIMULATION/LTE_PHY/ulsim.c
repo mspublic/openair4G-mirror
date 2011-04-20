@@ -62,6 +62,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->kTC = 0;
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
+  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(lte_frame_parms,osf);
   
@@ -102,15 +103,16 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 }
 
 /*
-DCI0_5MHz_TDD_1_6_t          UL_alloc_pdu;
+DCI0_5MHz_TDD_1_6_t         UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 */
 
+//#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,18);
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
-#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+#define DLSCH_RB_ALLOC 0x1fff // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x1f0f // igore DC component,RB13
 
 
@@ -339,7 +341,7 @@ int main(int argc, char **argv) {
   PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
   PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
   PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
-
+  PHY_vars_eNB->cooperation_flag = cooperation_flag;
   //  PHY_vars_eNB->eNB_UE_stats[0].SRS_parameters = PHY_vars_UE->SRS_parameters;
   
   UE2eNB = new_channel_desc(1,
@@ -610,7 +612,8 @@ int main(int argc, char **argv) {
 		      0,
 		      0);
 	}
-      
+
+	PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
 	ulsch_power = rx_ulsch(&PHY_vars_eNB->lte_eNB_common_vars,
 			       PHY_vars_eNB->lte_eNB_ulsch_vars[0],
 			       &PHY_vars_eNB->lte_frame_parms,
