@@ -66,7 +66,7 @@ signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_si
                 }
                 sum_li += pdu_infoP->li_list[pdu_infoP->num_li];
                 pdu_infoP->num_li = pdu_infoP->num_li + 1;
-                if (pdu_infoP->num_li == RLC_AM_MAX_SDU_IN_PDU) {
+                if (pdu_infoP->num_li > RLC_AM_MAX_SDU_IN_PDU) {
                     printf("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
                     return -2;
                 }

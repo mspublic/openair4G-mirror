@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
-//#define TRACE_RLC_AM_RESEGMENT
+#define TRACE_RLC_AM_RESEGMENT
 #define TRACE_RLC_AM_FORCE_TRAFFIC
 #define TRACE_RLC_AM_NACK
 #define TRACE_RLC_AM_ACK

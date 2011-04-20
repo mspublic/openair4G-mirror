@@ -6,6 +6,11 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <curses.h>
+
+
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
@@ -14,13 +19,80 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 
-//#define TEST1
-//#define TEST2
-//#define TEST3
-//#define TEST4
-//#define TEST5
+
+
+
+
+
+int print();
+void rlc_window(WINDOW *win, int starty, int startx, int lines, int cols,
+       int tile_width, int tile_height);
+
+
+//-----------------------------------------------------------------------------
+int print(void)
+//-----------------------------------------------------------------------------
+{   int count;
+    int y = 2, x = 2, w = 4, h = 2;
+    static int solution = 1;
+
+    mvprintw(0, 0, "AM 1: VT(A) %04d VT(S) %04d VR(R) %04d VR(H) %04d", am_tx.vt_a, am_tx.vt_s, am_tx.vr_r, am_tx.vr_h);
+    mvprintw(2, 0, "AM 2: VT(A) %04d VT(S) %04d VR(R) %04d VR(H) %04d", am_rx.vt_a, am_rx.vt_s, am_rx.vr_r, am_rx.vr_h);
+    wrefresh(stdscr);
+    /*rlc_window(stdscr, y, x, 2, 32, w, h);
+    for(count = 1; count <= 1024; ++count)
+    {   int tempy = y + (count - 1) * h + h / 2;
+        int tempx = x + (count - 1) * w + w / 2;
+        mvaddch(tempy, tempx, QUEEN_CHAR);
+    }*/
+    refresh();
+    mvprintw(LINES - 2, 0, "Press Any Key to See next solution (F1 to Exit)");
+}
+
+//-----------------------------------------------------------------------------
+void rlc_window(WINDOW *win, int starty, int startx, int lines, int cols, int tile_width, int tile_height)
+//-----------------------------------------------------------------------------
+{   int endy, endx, i, j;
+
+    endy = starty + lines * tile_height;
+    endx = startx + cols  * tile_width;
+
+    for(j = starty; j <= endy; j += tile_height)
+        for(i = startx; i <= endx; ++i)
+            mvwaddch(win, j, i, ACS_HLINE);
+    for(i = startx; i <= endx; i += tile_width)
+        for(j = starty; j <= endy; ++j)
+            mvwaddch(win, j, i, ACS_VLINE);
+    mvwaddch(win, starty, startx, ACS_ULCORNER);
+    mvwaddch(win, endy, startx, ACS_LLCORNER);
+    mvwaddch(win, starty, endx, ACS_URCORNER);
+    mvwaddch(win,   endy, endx, ACS_LRCORNER);
+    for(j = starty + tile_height; j <= endy - tile_height; j += tile_height)
+    {   mvwaddch(win, j, startx, ACS_LTEE);
+        mvwaddch(win, j, endx, ACS_RTEE);
+        for(i = startx + tile_width; i <= endx - tile_width; i += tile_width)
+            mvwaddch(win, j, i, ACS_PLUS);
+    }
+    for(i = startx + tile_width; i <= endx - tile_width; i += tile_width)
+    {   mvwaddch(win, starty, i, ACS_TTEE);
+        mvwaddch(win, endy, i, ACS_BTEE);
+    }
+    wrefresh(win);
+}
+
+
+
+
+
+
+
+#define TEST1
+#define TEST2
+#define TEST3
+#define TEST4
+#define TEST5
 #define TEST6
-//#define TEST7
+#define TEST7
 
 #define TEST_MAX_SEND_SDU 8192
 #define TARGET_RX_ERROR_RATE 2
@@ -76,6 +148,9 @@ static s8_t *sdus[] = {"En dépit de son volontarisme affiché, le premier minis
 "fleurs tubuleuses",
 ", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
 };
+
+/*  Returns the x-y size of the terminal  */
+
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_windows()
 //-----------------------------------------------------------------------------
@@ -458,6 +533,7 @@ void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP)
 
   if (sdu != NULL) {
       // PROCESS OF COMPRESSION HERE:
+      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",mac_xface->frame,am_txP->module_id, am_txP->rb_id, sdu_indexP, strlen(sdus[sdu_indexP]) + 1);
       memset (sdu->data, 0, sizeof (struct rlc_am_data_req_alloc));
       strcpy (&sdu->data[sizeof (struct rlc_am_data_req_alloc)],sdus[sdu_indexP]);
 
@@ -536,6 +612,7 @@ void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,
   struct mac_status_resp mac_rlc_status_resp_tx;
   struct mac_status_resp mac_rlc_status_resp_rx;
 
+
   memset(&data_request_tx, 0, sizeof(struct mac_data_req));
   memset(&data_request_rx, 0, sizeof(struct mac_data_req));
   memset(&data_ind_tx,     0, sizeof(struct mac_data_ind));
@@ -552,7 +629,6 @@ void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,
   rlc_am_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &drop_rx);
   rlc_am_mac_data_indication(am_rxP, data_ind_rx);
   rlc_am_mac_data_indication(am_txP, data_ind_tx);
-  Mac_rlc_xface->frame += 1;
   mac_xface->frame += 1;
 
   rlc_am_tx_buffer_display(am_txP,NULL);
@@ -619,8 +695,8 @@ void rlc_am_v9_3_0_test_tx_rx()
 
   rlc_am_init(&am_tx);
   rlc_am_init(&am_rx);
-  rlc_am_set_debug_infos(&am_tx, 0, 0);
-  rlc_am_set_debug_infos(&am_rx, 1, 1);
+  rlc_am_set_debug_infos(&am_tx, 0, 0, 1);
+  rlc_am_set_debug_infos(&am_rx, 1, 1, 1);
 
   rlc_am_configure(&am_tx, max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);
   rlc_am_configure(&am_rx, max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);
@@ -669,11 +745,9 @@ void rlc_am_v9_3_0_test_tx_rx()
         rlc_am_v9_3_0_test_send_sdu(&am_tx, 4);
         rlc_am_v9_3_0_test_send_sdu(&am_tx, 5);
         rlc_am_v9_3_0_test_send_sdu(&am_tx, 6);
-        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 1000, 200);
-        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 1000, 200);
-        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 1000, 200);
-        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 1000, 200);
-        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 1000, 200);
+        for (i = 0; i < 50; i++) {
+            rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 200, 200);
+        }
         assert (send_id_read_index[1] == send_id_write_index[0]);
     }
     rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
@@ -752,12 +826,9 @@ void rlc_am_v9_3_0_test_tx_rx()
   rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 58, 200);
   rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 59, 200);
   //rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 60, 200); if uncomment: error because too many segments of SDU
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
-  rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
+  for (i = 0; i < 24; i++) {
+      rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 2000, 200);
+  }
   rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
   assert (send_id_read_index[1] == send_id_write_index[0]);
@@ -991,7 +1062,7 @@ void rlc_am_v9_3_0_test_tx_rx()
 #ifdef TEST7
   srand (0);
   rlc_am_v9_3_0_test_reset_sdus();
-  for (i = send_id_write_index; send_id_write_index < TEST_MAX_SEND_SDU-1; i++) {
+  for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
       if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
           random_sdu = rand() % 37;
           rlc_am_v9_3_0_test_send_sdu(&am_tx, random_sdu);
@@ -1019,14 +1090,14 @@ void rlc_am_v9_3_0_test_tx_rx()
       }
       random_nb_frames   = rand() % 4;
       for (j = 0; j < random_nb_frames; j++) {
-          random_tx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
-          random_rx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
+          random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+          random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
           rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
       }
   }
   for (j = 0; j < 100; j++) {
-      random_tx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
-      random_rx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
+      random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+      random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
       rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
   }
   rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
@@ -1060,13 +1131,20 @@ void rlc_am_v9_3_0_test_print_trace (void)
 void rlc_am_v9_3_0_test(void)
 //-----------------------------------------------------------------------------
 {
+//     initscr();
+//     cbreak();
+//     keypad(stdscr, TRUE);
+
+
+
     // under test
-    rlc_module_init(); // call mem block init()
+    pool_buffer_init();
     rlc_am_v9_3_0_test_tx_rx();
 
     // already tested
     rlc_am_v9_3_0_test_windows();
     rlc_am_v9_3_0_test_read_write_bit_field();
     printf("rlc_am_v9_3_0_test: END OF TESTS\n");
+    endwin();
     exit(0);
 }
