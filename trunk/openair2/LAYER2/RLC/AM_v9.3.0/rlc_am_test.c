@@ -95,14 +95,20 @@ void rlc_window(WINDOW *win, int starty, int startx, int lines, int cols, int ti
 #define TEST7
 
 #define TEST_MAX_SEND_SDU 8192
-#define TARGET_RX_ERROR_RATE 8
-#define TARGET_TX_ERROR_RATE 8
+#define TARGET_MAX_RX_ERROR_RATE 15
+#define TARGET_MAX_TX_ERROR_RATE 15
 static int  random_sdu;
 static int  random_nb_frames;
 static int  random_tx_pdu_size;
 static int  random_rx_pdu_size;
-static int  drop_tx = 0;
+static int  target_tx_error_rate;
+static int  target_rx_error_rate;
+static int  tx_packets = 0;
+static int  dropped_tx_packets = 0;
+static int  rx_packets = 0;
+static int  dropped_rx_packets = 0;
 static int  drop_rx = 0;
+static int  drop_tx = 0;
 static int  mui = 0;
 static int  send_sdu_ids[TEST_MAX_SEND_SDU][2];
 static int  send_id_write_index[2];
@@ -551,7 +557,7 @@ void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP)
   }
 }
 //-----------------------------------------------------------------------------
-void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP) //-----------------------------------------------------------------------------
+void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP) //-----------------------------------------------------------------------------
 {
 
 
@@ -568,6 +574,7 @@ void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
                    ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
                    tb_size, sizeof (mac_rlc_max_rx_header_size_t));
 
+        *tx_packetsP = *tx_packetsP + 1;
         if (*drop_countP == 0) {
             tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
             if (tb_dst != NULL) {
@@ -589,6 +596,7 @@ void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
         } else {
             printf("[RLC-LOOP] DROPPING 1 TB\n");
             *drop_countP = *drop_countP - 1;
+            *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
         }
         free_mem_block(tb_src);
         if (data_indP->no_tb > 0) {
@@ -625,15 +633,18 @@ void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,
   data_request_tx        = rlc_am_mac_data_request(am_txP);
   mac_rlc_status_resp_rx = rlc_am_mac_status_indication(am_rxP, bytes_rxP, tx_status);
   data_request_rx        = rlc_am_mac_data_request(am_rxP);
-  rlc_am_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &drop_tx);
-  rlc_am_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &drop_rx);
+
+
+  rlc_am_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &drop_tx, &tx_packets, &dropped_tx_packets);
+  rlc_am_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &drop_rx, &rx_packets, &dropped_rx_packets);
   rlc_am_mac_data_indication(am_rxP, data_ind_rx);
   rlc_am_mac_data_indication(am_txP, data_ind_tx);
   mac_xface->frame += 1;
 
   rlc_am_tx_buffer_display(am_txP,NULL);
-  assert(am_txP->t_status_prohibit.time_out != 1);
-  assert(am_rxP->t_status_prohibit.time_out != 1);
+  //assert(am_txP->t_status_prohibit.time_out != 1);
+  //assert(am_rxP->t_status_prohibit.time_out != 1);
+  assert(!((am_txP->vt_a == 954) && (am_txP->vt_s == 53)));
   //assert(mac_xface->frame <= 151);
   //check_mem_area(NULL);
   //display_mem_load();
@@ -1023,90 +1034,117 @@ void rlc_am_v9_3_0_test_tx_rx()
   printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 5: END OF TEST RANDOM TX ONLY  WITH NO ERRORS ON PHY LAYER\n\n\n\n");
 #endif
 #ifdef TEST6
-    for (r = 0; r < 128; r++) {
-        srand (r);
-        rlc_am_v9_3_0_test_reset_sdus();
-        // RANDOM TESTS
-        for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-            printf("AM.TX SDU %d\n", am_tx.nb_sdu);
-            if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-                random_sdu = rand() % 37;
-                rlc_am_v9_3_0_test_send_sdu(&am_tx, random_sdu);
-            }
-            drop_tx = (rand() % 100);
-            if (drop_tx >= TARGET_TX_ERROR_RATE) {
-                drop_tx = 0;
-            }
-            drop_rx = (rand() % 100);
-            if (drop_rx >= TARGET_RX_ERROR_RATE) {
-                drop_rx = 0;
-            }
-            drop_rx = 0;
-            random_nb_frames   = (rand() % 10) + 1;
-            //random_nb_frames   = 1;
-            for (j = 0; j < random_nb_frames; j++) {
-                random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
+
+    for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
+        for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
+            tx_packets = 0;
+            dropped_tx_packets = 0;
+            rx_packets = 0;
+            dropped_rx_packets = 0;
+            for (r = 0; r < 128; r++) {
+                srand (r);
+                rlc_am_v9_3_0_test_reset_sdus();
+                // RANDOM TESTS
+                for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+                    printf("AM.TX SDU %d\n", am_tx.nb_sdu);
+                    if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+                        random_sdu = rand() % 37;
+                        rlc_am_v9_3_0_test_send_sdu(&am_tx, random_sdu);
+                    }
+                    random_nb_frames   = (rand() % 10) + 1;
+                    //random_nb_frames   = 1;
+                    for (j = 0; j < random_nb_frames; j++) {
+                        random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                        random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
+                    }
+                    int dropped = (rand() % 3);
+                    if ((dropped == 0) && (tx_packets > 0)){
+                        if ((((dropped_tx_packets + 1)*100) / tx_packets) <= target_tx_error_rate) {
+                            drop_tx = 1;
+                        }
+                    }
+                    dropped = (rand() % 3);
+                    if ((dropped == 0) && (rx_packets > 0)){
+                        if ((((dropped_rx_packets + 1)*100) / rx_packets) <= target_rx_error_rate) {
+                            drop_rx = 1;
+                        }
+                    }
+                }
+                for (j = 0; j < 400; j++) {
+                    rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 500, 500);
+                }
+                printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 6: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d) TX ONLY WITH ERRORS ON PHY LAYER:\n\n\n\n",r, target_tx_error_rate, target_rx_error_rate);
+                rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
+                rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
+                assert (send_id_read_index[1] == send_id_write_index[0]);
+                printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(dropped_tx_packets*100)/tx_packets, target_tx_error_rate, (dropped_rx_packets*100)/rx_packets, target_rx_error_rate);
             }
         }
-        for (j = 0; j < 400; j++) {
-            rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, 500, 500);
-        }
-        printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 6: END OF TEST RANDOM (SEED=%d) TX ONLY WITH ERRORS ON PHY LAYER:\n\n\n\n",r);
-        rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
-        rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
-        assert (send_id_read_index[1] == send_id_write_index[0]);
     }
-    sleep(1);
 #endif
 #ifdef TEST7
-  srand (0);
-  rlc_am_v9_3_0_test_reset_sdus();
-  for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-      if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-          random_sdu = rand() % 37;
-          rlc_am_v9_3_0_test_send_sdu(&am_tx, random_sdu);
-          if (am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-              random_sdu = rand() % 37;
-              rlc_am_v9_3_0_test_send_sdu(&am_rx, random_sdu);
-          } else {
-              i = i-1;
-          }
-      } else {
-          if (am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-              random_sdu = rand() % 37;
-              rlc_am_v9_3_0_test_send_sdu(&am_rx, random_sdu);
-          } else {
-              i = i-1;
-          }
-      }
-      drop_tx = (rand() % 100);
-      if (drop_tx >= TARGET_TX_ERROR_RATE) {
-          drop_tx = 0;
-      }
-      drop_rx = (rand() % 100);
-      if (drop_rx >= TARGET_RX_ERROR_RATE) {
-          drop_rx = 0;
-      }
-      random_nb_frames   = rand() % 4;
-      for (j = 0; j < random_nb_frames; j++) {
-          random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-          random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-          rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
-      }
-  }
-  for (j = 0; j < 100; j++) {
-      random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-      random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-      rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
-  }
-  sleep(1);
-  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM TX RX WITH ERRORS ON PHY LAYER\n\n\n\n");
-  rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
-  rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
-  assert (send_id_read_index[1] == send_id_write_index[0]);
-  assert (send_id_read_index[0] == send_id_write_index[1]);
+    for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
+        for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
+            tx_packets = 0;
+            dropped_tx_packets = 0;
+            rx_packets = 0;
+            dropped_rx_packets = 0;
+            for (r = 0; r < 128; r++) {
+                srand (r);
+                rlc_am_v9_3_0_test_reset_sdus();
+                for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+                    if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+                        random_sdu = rand() % 37;
+                        rlc_am_v9_3_0_test_send_sdu(&am_tx, random_sdu);
+                        if (am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+                            random_sdu = rand() % 37;
+                            rlc_am_v9_3_0_test_send_sdu(&am_rx, random_sdu);
+                        } else {
+                            i = i-1;
+                        }
+                    } else {
+                        if (am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+                            random_sdu = rand() % 37;
+                            rlc_am_v9_3_0_test_send_sdu(&am_rx, random_sdu);
+                        } else {
+                            i = i-1;
+                        }
+                    }
+                    random_nb_frames   = rand() % 4;
+                    for (j = 0; j < random_nb_frames; j++) {
+                        random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                        random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                        rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
+                    }
+                    int dropped = (rand() % 3);
+                    if ((dropped == 0) && (tx_packets > 0)){
+                        if ((((dropped_tx_packets + 1)*100) / tx_packets) <= target_tx_error_rate) {
+                            drop_tx = 1;
+                        }
+                    }
+                    dropped = (rand() % 3);
+                    if ((dropped == 0) && (rx_packets > 0)){
+                        if ((((dropped_rx_packets + 1)*100) / rx_packets) <= target_rx_error_rate) {
+                            drop_rx = 1;
+                        }
+                    }
+                }
+                for (j = 0; j < 100; j++) {
+                    random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    rlc_am_v9_3_0_test_exchange_pdus(&am_tx, &am_rx, random_tx_pdu_size, random_rx_pdu_size);
+                }
+                printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",r, target_tx_error_rate, target_rx_error_rate);
+                rlc_am_rx_list_display(&am_tx, "RLC-AM TX:");
+                rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
+                assert (send_id_read_index[1] == send_id_write_index[0]);
+                assert (send_id_read_index[0] == send_id_write_index[1]);
+            }
+            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(dropped_tx_packets*100)/tx_packets, target_tx_error_rate, (dropped_rx_packets*100)/rx_packets, target_rx_error_rate);
+
+        }
+    }
 #endif
 }
 //-----------------------------------------------------------------------------

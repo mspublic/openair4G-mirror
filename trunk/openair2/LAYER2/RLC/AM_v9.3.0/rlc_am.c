@@ -229,7 +229,7 @@ rlc_am_get_pdus (rlc_am_entity_t *rlcP)
                     }*/
                 }
             }
-            if (rlcP->nb_bytes_requested_by_mac > 2) {
+            if ((rlcP->nb_bytes_requested_by_mac > 2) && (rlcP->vt_s != rlcP->vt_ms)) {
                 rlc_am_segment_10 (rlcP);
                 list_add_list (&rlcP->segmentation_pdu_list, &rlcP->pdus_to_mac_layer);
                 if (rlcP->pdus_to_mac_layer.head != NULL) {
