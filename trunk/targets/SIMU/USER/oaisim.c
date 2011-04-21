@@ -847,7 +847,7 @@ int main(int argc, char **argv) {
   logInit(map_str_to_int(level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
-  //#ifdef OCG_FLAG
+#ifdef OCG_FLAG
   if ( emu_info.ocg_enabled==1){ // activate OCG: xml-based scenario parser 
     emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
     // here is to check if OCG is successful, otherwise, we might not run the emulation
@@ -881,7 +881,7 @@ int main(int argc, char **argv) {
 
       LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
    }
-  //#endif
+#endif
 
  
 #ifndef CYGWIN 
