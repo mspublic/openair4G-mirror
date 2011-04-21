@@ -50,10 +50,17 @@
 int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_MAX / 2], char file_date[FILENAME_LENGTH_MAX / 2]) {
 
 	char directory[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX] = "";
-	strcat(directory, output_dir);
-	strcat(directory, user_name);
-	
 	mode_t process_mask = umask(0);
+
+	strcpy(directory, output_dir);
+
+	struct stat st;
+	if(stat("output_dir", &st) != 0) { // if output_dir does not exist, we create it here
+		mkdir(directory, S_IRWXU | S_IRWXG | S_IRWXO);
+		LOG_I(OCG, "output_dir %s is created", directory);
+	}
+
+	strcat(directory, user_name);
 
 	mkdir(directory, S_IRWXU | S_IRWXG | S_IRWXO);
 
@@ -62,9 +69,8 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 
 	mkdir(directory, S_IRWXU | S_IRWXG |S_IRWXO);
 
-	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 32] = "";
-
-	strcat(directory_extension, directory); // to create some more folders
+	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 64] = "";
+	strcpy(directory_extension, directory); // to create some more folders
 	strcat(directory_extension, "/LOGS");
 	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 

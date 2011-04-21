@@ -83,6 +83,8 @@ OAI_Emulation * OCG_main(int is_local_server) {
 	  strcat(output_dir, OUTPUT_DIR);
 	} 
 
+	LOG_I(OCG, "Folder for detecting the XML configuration file is %s\n", web_XML_folder);
+	LOG_I(OCG, "Folder for generating the results is %s\n", output_dir);
 
 	while(state != STATE_END) {
 	
