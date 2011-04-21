@@ -18,7 +18,11 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
-CFLAGS += -I/usr/include/libxml2 -lxml2
+ifndef cygwin # forget about OCG, libxml doesn't work the same way as under linux
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2
+OCG_FLAG = 1
+endif
+
 
 #CFLAGS += -DXFORMS
 
