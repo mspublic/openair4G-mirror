@@ -53,7 +53,7 @@ int detect_file(char src_dir[DIR_LENGTH_MAX]) {
 	struct dirent *file = NULL;
 
 	if((dir = opendir(src_dir)) == NULL) {
-		LOG_E(OCG, "directory %s not found\n", src_dir);
+		LOG_E(OCG, "Folder %s for detecting the XML configuration file is not found\n", src_dir);
 		return MODULE_ERROR;
 	}
 
