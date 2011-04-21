@@ -57,7 +57,18 @@ void rlc_am_pdu_polling (rlc_am_entity_t *rlcP, rlc_am_pdu_sn_10_t *pduP, s16_t 
         ) {
 
 #ifdef TRACE_RLC_AM_POLL
-        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][POLL] SET POLL\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+        if (rlcP->c_pdu_without_poll >= rlcP->poll_pdu) {
+            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][POLL] SET POLL BECAUSE TX NUM PDU THRESHOLD %d  HAS BEEN REACHED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->poll_pdu);
+        }
+        if (rlcP->c_pdu_without_poll >= rlcP->poll_pdu) {
+            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][POLL] SET POLL BECAUSE TX NUM BYTES THRESHOLD %d  HAS BEEN REACHED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->poll_byte);
+        }
+        if ((rlcP->sdu_buffer_occupancy == 0) && (rlcP->retrans_num_bytes_to_retransmit == 0)) {
+            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][POLL] SET POLL BECAUSE TX BUFFERS ARE EMPTY\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+        }
+        if (rlcP->vt_s == rlcP->vt_ms) {
+            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][POLL] SET POLL BECAUSE OF WINDOW STALLING\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+        }
 #endif
         pduP->b1 = pduP->b1 | 0x20;
         rlcP->c_pdu_without_poll     = 0;

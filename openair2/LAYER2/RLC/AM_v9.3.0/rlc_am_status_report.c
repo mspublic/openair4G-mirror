@@ -342,7 +342,7 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
           pdu_info_cursor       = &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
           sn_cursor             = pdu_info_cursor->sn;
 #ifdef TRACE_STATUS_CREATION
-          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] FIND VR(R) <= SN sn_cursor %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, previous_sn_cursor, sn_cursor);
+          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d FIND VR(R) <= SN sn_cursor %04d -> %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, previous_sn_cursor, sn_cursor);
 #endif
       }
 
@@ -353,7 +353,7 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
           all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received;
           sn_cursor             = pdu_info_cursor->sn;
 #ifdef TRACE_STATUS_CREATION
-          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LOOPING sn_cursor %04d previous sn_cursor %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor, previous_sn_cursor);
+          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d LOOPING sn_cursor %04d previous sn_cursor %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor, previous_sn_cursor);
 #endif
 
           // -------------------------------------------------------------------------------
@@ -367,18 +367,18 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
                       all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor->data))->all_segments_received;
                       sn_cursor             = pdu_info_cursor->sn;
 #ifdef TRACE_STATUS_CREATION
-                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] NOW sn_cursor %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor);
+                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d NOW sn_cursor %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor);
 #endif
                   } else {
                     if (all_segments_received) {
                         control_pdu_info.ack_sn = (sn_cursor + 1) & RLC_AM_SN_MASK;
 #ifdef TRACE_STATUS_CREATION
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING ACK SN %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn);
 #endif
                     } else {
                         control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
 #ifdef TRACE_STATUS_CREATION
-                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING ACK SN %04d (CASE PREVIOUS SN)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d (CASE PREVIOUS SN)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn);
 #endif
                     }
                     goto end_push_nack;
@@ -399,14 +399,14 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
               control_pdu_info.num_nack += 1;
               nb_bits_to_transmit = nb_bits_to_transmit - 12;
 #ifdef TRACE_STATUS_CREATION
-              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING NACK %04d\n",
-                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, previous_sn_cursor);
+              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING NACK %04d\n",
+                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, previous_sn_cursor);
 #endif
               } else {
                   control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
 #ifdef TRACE_STATUS_CREATION
-                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %\n",
-                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn);
+                  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %\n",
+                       mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn);
 #endif
                   goto end_push_nack;
               }
@@ -430,19 +430,19 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
                           control_pdu_info.num_nack += 1;
                           nb_bits_to_transmit = nb_bits_to_transmit - 42;
 #ifdef TRACE_STATUS_CREATION
-                          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING NACK %04d SO START %05d SO END %05d (CASE SO %d > WAITED SO %d)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor, waited_so, pdu_info_cursor->so - 1, pdu_info_cursor->so, waited_so);
+                          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d (CASE SO %d > WAITED SO %d)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor, waited_so, pdu_info_cursor->so - 1, pdu_info_cursor->so, waited_so);
 #endif
                           if (pdu_info_cursor->lsf == 1) { // last segment flag
                               //waited_so = 0x7FF;
                               waited_so = 0x7FFF;
 #ifdef TRACE_STATUS_CREATION
-                              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] SN %04d SET WAITED SO 0x7FFF)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor);
+                              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d SN %04d SET WAITED SO 0x7FFF)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor);
 #endif
                               //break;
                           } else {
                               waited_so = pdu_info_cursor->so + pdu_info_cursor->payload_size;
 #ifdef TRACE_STATUS_CREATION
-                              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] SN %04d SET WAITED SO %d @1\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor, waited_so);
+                              msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @1\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor, waited_so);
 #endif
                           }
                       } else {
@@ -457,7 +457,7 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
                       }
 
 #ifdef TRACE_STATUS_CREATION
-                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] SN %04d SET WAITED SO %d @2\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sn_cursor, waited_so);
+                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @2\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, sn_cursor, waited_so);
 #endif
                   }
 
@@ -468,7 +468,8 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
                       previous_sn_cursor    = sn_cursor;
                       sn_cursor             = pdu_info_cursor->sn;
                   } else {
-                    control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
+                    // LG control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
+                    control_pdu_info.ack_sn = previous_sn_cursor;
                     goto end_push_nack;
                   }
               } while ((cursor != NULL) && (sn_cursor == previous_sn_cursor));
@@ -486,7 +487,7 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
                       control_pdu_info.num_nack += 1;
                       nb_bits_to_transmit = nb_bits_to_transmit - 42;
 #ifdef TRACE_STATUS_CREATION
-                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING NACK %04d SO START %05d SO END %05d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, previous_sn_cursor, waited_so, 0x7FFF);
+                      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, previous_sn_cursor, waited_so, 0x7FFF);
 #endif
                   } else {
                       control_pdu_info.ack_sn = previous_sn_cursor;
@@ -504,8 +505,8 @@ void rlc_am_send_status_pdu(rlc_am_entity_t* rlcP)
   } else {
       control_pdu_info.ack_sn = rlcP->vr_r;
 #ifdef TRACE_STATUS_CREATION
-      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING ACK %04d  = VR(R)\n",
-        mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn);
+      msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING ACK %04d  = VR(R)\n",
+        mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn);
 #endif
   }
 
@@ -517,15 +518,15 @@ end_push_nack:
   //     rlcP->module_id, rlcP->rb_id, mac_xface->frame,nb_bits_to_transmit);
 
 #ifdef TRACE_STATUS_CREATION
-  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] PREPARE SENDING ACK %04d NUM NACK %d\n",
-        mac_xface->frame, rlcP->module_id, rlcP->rb_id, control_pdu_info.ack_sn, control_pdu_info.num_nack);
+  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d PREPARE SENDING ACK %04d NUM NACK %d\n",
+        mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, control_pdu_info.ack_sn, control_pdu_info.num_nack);
 #endif
   // encode the control pdu
   pdu_size = rlcP->nb_bytes_requested_by_mac - ((nb_bits_to_transmit - 7 )>> 3);
 
 #ifdef TRACE_STATUS_CREATION
-  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] forecast pdu_size %d\n",
-       mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_size);
+  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEND-STATUS] LINE %d forecast pdu_size %d\n",
+       mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_size);
 #endif
        tb = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size);
   memset(tb->data, 0, sizeof(struct mac_tb_req) + pdu_size);
