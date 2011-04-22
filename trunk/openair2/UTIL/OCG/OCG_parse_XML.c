@@ -107,6 +107,10 @@ static int min_speed_;
 static int max_speed_;
 static int min_pause_time_;
 static int max_pause_time_;
+static int random_seed_;
+static int oai_seed_;
+static int user_seed_;
+static int seed_value_;
 static int app_config_;		/*!< \brief indicating that the parsing position is now within App_Config_*/
 static int app_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
 static int cbr_;
@@ -270,6 +274,14 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		min_pause_time_ = 1;
 	} else if (!xmlStrcmp(name, "MAXPAUSETIME")) {
 		max_pause_time_ = 1;
+	} else if (!xmlStrcmp(name, "RANDOMSEED")) {
+		random_seed_ = 1;
+	} else if (!xmlStrcmp(name, "OAISEED")) {
+		oai_seed_ = 1;
+	} else if (!xmlStrcmp(name, "USERSEED")) {
+		user_seed_ = 1;
+	} else if (!xmlStrcmp(name, "SEEDVALUE")) {
+		seed_value_ = 1;
 	} else if (!xmlStrcmp(name, "APPCONFIG")) {
 		app_config_ = 1;
 	} else if (!xmlStrcmp(name, "APPTYPE")) {
@@ -464,6 +476,14 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		min_pause_time_ = 0;
 	} else if (!xmlStrcmp(name, "MAXPAUSETIME")) {
 		max_pause_time_ = 0;
+	} else if (!xmlStrcmp(name, "RANDOMSEED")) {
+		random_seed_ = 0;
+	} else if (!xmlStrcmp(name, "OAISEED")) {
+		oai_seed_ = 0;
+	} else if (!xmlStrcmp(name, "USERSEED")) {
+		user_seed_ = 0;
+	} else if (!xmlStrcmp(name, "SEEDVALUE")) {
+		seed_value_ = 0;
 	} else if (!xmlStrcmp(name, "APPCONFIG")) {
 		app_config_ = 0;
 	} else if (!xmlStrcmp(name, "APPTYPE")) {
@@ -637,6 +657,15 @@ void characters(void *user_data, const xmlChar *ch, int len) { // called once wh
 						oai_emulation.topo_config.mobility.moving_dynamics.min_pause_time = atof(ch);
 					} else if (max_pause_time_) {
 						oai_emulation.topo_config.mobility.moving_dynamics.max_pause_time = atof(ch);
+					}
+				} else if (random_seed_) {
+					if (oai_seed_) {
+						oai_emulation.topo_config.mobility.random_seed.selected_option = "oaiseed";
+					} else if (user_seed_) {
+						oai_emulation.topo_config.mobility.random_seed.selected_option = "userseed";
+						if (seed_value_) {
+							oai_emulation.topo_config.mobility.random_seed.user_seed.seed_value = atoi(ch);
+						}
 					}
 				}
 			}
