@@ -23,25 +23,44 @@
 //#define TRACE_RLC_AM_TX_STATUS
 #define TRACE_RLC_AM_TX
 #define TRACE_RLC_AM_RX
-//#define TRACE_RLC_AM_BO
+#define TRACE_RLC_AM_BO
 //-----------------------------------------------------------------------------
 u32_t
 rlc_am_get_buffer_occupancy_in_bytes (rlc_am_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
   u32_t max_li_overhead;
+  u32_t header_overhead;
+
+  // priority of control trafic
+  if (rlcP->status_requested) {
+      if (rlcP->t_status_prohibit.running == 0) {
+#ifdef TRACE_RLC_AM_BO
+          msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BO : CONTROL PDU %d bytes \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, ((15  +  rlcP->num_nack_sn*(10+1)  +  rlcP->num_nack_so*(15+15+1) + 7) >> 3));
+#endif
+          return ((15  +  rlcP->num_nack_sn*(10+1)  +  rlcP->num_nack_so*(15+15+1) + 7) >> 3);
+      }
+  }
+
+  // data traffic
   if (rlcP->nb_sdu_no_segmented <= 1) {
       max_li_overhead = 0;
   } else {
       max_li_overhead = (((rlcP->nb_sdu_no_segmented - 1) * 3) / 2) + ((rlcP->nb_sdu_no_segmented - 1) % 2);
   }
+  if (rlcP->sdu_buffer_occupancy == 0) {
+      header_overhead = 0;
+  } else {
+      header_overhead = 2;
+  }
+
 
 #ifdef TRACE_RLC_AM_BO
   msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BO : STATUS  BUFFER %d bytes \n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->status_buffer_occupancy);
   msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BO : RETRANS BUFFER %d bytes \n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->retransmission_buffer_occupancy);
-  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BO : SDU     BUFFER %d bytes + overhead %d bytes\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->sdu_buffer_occupancy + max_li_overhead);
+  msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d] BO : SDU     BUFFER %d bytes + li_overhead %d bytes header_overhead %d bytes (nb sdu not segmented %d)\n", mac_xface->frame, rlcP->module_id,rlcP->rb_id, rlcP->sdu_buffer_occupancy, max_li_overhead, header_overhead, rlcP->nb_sdu_no_segmented);
 #endif
-  return rlcP->status_buffer_occupancy + rlcP->retransmission_buffer_occupancy + rlcP->sdu_buffer_occupancy + max_li_overhead;
+  return rlcP->status_buffer_occupancy + rlcP->retransmission_buffer_occupancy + rlcP->sdu_buffer_occupancy + max_li_overhead + header_overhead;
 }
 //-----------------------------------------------------------------------------
 void rlc_am_release (rlc_am_entity_t *rlcP)
