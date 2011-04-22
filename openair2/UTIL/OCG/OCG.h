@@ -264,9 +264,18 @@ typedef struct {
 					double max_pause_time;
 				}Moving_Dynamics;
 
+					typedef struct {
+						int seed_value;
+					}User_Seed;
+				typedef struct {
+					char *selected_option;
+					int oai_seed;
+					User_Seed user_seed;
+				}Random_Seed;
 		typedef struct {
 			Mobility_Type mobility_type;
 			Moving_Dynamics moving_dynamics;
+			Random_Seed random_seed;
 		}Mobility;
 
 /** @defgroup _topo_config Topology Configuration
