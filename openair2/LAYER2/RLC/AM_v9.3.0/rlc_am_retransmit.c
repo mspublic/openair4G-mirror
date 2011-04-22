@@ -116,6 +116,8 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
 
         for (pdu_sdu_index = 0; pdu_sdu_index < rlcP->pdu_retrans_buffer[snP].nb_sdus; pdu_sdu_index++) {
             sdu_index = rlcP->pdu_retrans_buffer[snP].sdus_index[pdu_sdu_index];
+            assert(sdu_index >= 0);
+            assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
             rlcP->input_sdus[sdu_index].nb_pdus_ack += 1;
             if ((rlcP->input_sdus[sdu_index].nb_pdus_ack == rlcP->input_sdus[sdu_index].nb_pdus) &&
                 (rlcP->input_sdus[sdu_index].sdu_remaining_size == 0)) {

@@ -210,7 +210,7 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
                 test_remaining_num_li_to_substract = 0;
                 pdu_remaining_size = pdu_remaining_size - (test_li_length_in_bytes ^ 3);
             } else if ((sdu_mngt->sdu_remaining_size + (test_li_length_in_bytes ^ 3)) < test_pdu_remaining_size ) {
-                if (test_num_li == RLC_AM_MAX_SDU_IN_PDU) {
+                if (pdu_mngt->nb_sdus >= (RLC_AM_MAX_SDU_IN_PDU-1)) {
                     continue_fill_pdu_with_sdu = 0;
                     //num_fill_sdu += 1;
                     test_pdu_remaining_size = 0;
@@ -315,7 +315,7 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
                 continue_fill_pdu_with_sdu = 0;
                 pdu_remaining_size = 0;
             } else if ((sdu_mngt->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
-                if (fill_num_li == RLC_AM_MAX_SDU_IN_PDU) {
+                if (fill_num_li == (RLC_AM_MAX_SDU_IN_PDU - 1)) {
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
                     msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
 #endif
