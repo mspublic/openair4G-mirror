@@ -18,7 +18,7 @@
 
 #    define RLC_AM_HEADER_MIN_SIZE                2
 #    define RLC_AM_MIN_SEGMENT_SIZE_REQUEST       8
-#    define RLC_AM_MAX_SDU_IN_PDU                 16
+#    define RLC_AM_MAX_SDU_IN_PDU                 32
 #    define RLC_AM_MAX_SDU_FRAGMENTS              32
 
 #    define RLC_AM_MAX_NACK_IN_STATUS_PDU         1023

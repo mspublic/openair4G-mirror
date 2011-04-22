@@ -95,8 +95,8 @@ void rlc_window(WINDOW *win, int starty, int startx, int lines, int cols, int ti
 #define TEST7
 
 #define TEST_MAX_SEND_SDU 8192
-#define TARGET_MAX_RX_ERROR_RATE 15
-#define TARGET_MAX_TX_ERROR_RATE 15
+#define TARGET_MAX_RX_ERROR_RATE 10
+#define TARGET_MAX_TX_ERROR_RATE 10
 static int  random_sdu;
 static int  random_nb_frames;
 static int  random_tx_pdu_size;
@@ -641,10 +641,10 @@ void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,
   rlc_am_mac_data_indication(am_txP, data_ind_tx);
   mac_xface->frame += 1;
 
-  rlc_am_tx_buffer_display(am_txP,NULL);
+  //rlc_am_tx_buffer_display(am_txP,NULL);
   //assert(am_txP->t_status_prohibit.time_out != 1);
   //assert(am_rxP->t_status_prohibit.time_out != 1);
-  assert(!((am_txP->vt_a == 954) && (am_txP->vt_s == 53)));
+  //assert(!((am_txP->vt_a == 954) && (am_txP->vt_s == 53)));
   //assert(mac_xface->frame <= 151);
   //check_mem_area(NULL);
   //display_mem_load();
@@ -1033,16 +1033,16 @@ void rlc_am_v9_3_0_test_tx_rx()
   assert (send_id_read_index[1] == send_id_write_index[0]);
   printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 5: END OF TEST RANDOM TX ONLY  WITH NO ERRORS ON PHY LAYER\n\n\n\n");
 #endif
+    for (r = 0; r < 128; r++) {
+        srand (r);
 #ifdef TEST6
 
-    for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
-        for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
-            tx_packets = 0;
-            dropped_tx_packets = 0;
-            rx_packets = 0;
-            dropped_rx_packets = 0;
-            for (r = 0; r < 128; r++) {
-                srand (r);
+        for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
+            for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
+                tx_packets = 0;
+                dropped_tx_packets = 0;
+                rx_packets = 0;
+                dropped_rx_packets = 0;
                 rlc_am_v9_3_0_test_reset_sdus();
                 // RANDOM TESTS
                 for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
@@ -1081,17 +1081,14 @@ void rlc_am_v9_3_0_test_tx_rx()
                 printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(dropped_tx_packets*100)/tx_packets, target_tx_error_rate, (dropped_rx_packets*100)/rx_packets, target_rx_error_rate);
             }
         }
-    }
 #endif
 #ifdef TEST7
-    for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
-        for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
-            tx_packets = 0;
-            dropped_tx_packets = 0;
-            rx_packets = 0;
-            dropped_rx_packets = 0;
-            for (r = 0; r < 128; r++) {
-                srand (r);
+        for (target_tx_error_rate = 0; target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; target_tx_error_rate++) {
+            for (target_rx_error_rate = 0; target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; target_rx_error_rate++) {
+                tx_packets = 0;
+                dropped_tx_packets = 0;
+                rx_packets = 0;
+                dropped_rx_packets = 0;
                 rlc_am_v9_3_0_test_reset_sdus();
                 for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
                     if (am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
@@ -1140,12 +1137,12 @@ void rlc_am_v9_3_0_test_tx_rx()
                 rlc_am_rx_list_display(&am_rx, "RLC-AM RX:");
                 assert (send_id_read_index[1] == send_id_write_index[0]);
                 assert (send_id_read_index[0] == send_id_write_index[1]);
-            }
-            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(dropped_tx_packets*100)/tx_packets, target_tx_error_rate, (dropped_rx_packets*100)/rx_packets, target_rx_error_rate);
+                printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(dropped_tx_packets*100)/tx_packets, target_tx_error_rate, (dropped_rx_packets*100)/rx_packets, target_rx_error_rate);
 
+            }
         }
-    }
 #endif
+    }
 }
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_print_trace (void)
