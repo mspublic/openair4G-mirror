@@ -9,6 +9,7 @@
 void rlc_am_init(rlc_am_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 {
+    msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", mac_xface->frame);
     memset(rlcP, 0, sizeof(rlc_am_entity_t));
 
     list2_init(&rlcP->receiver_buffer,      "RX BUFFER");
@@ -38,6 +39,7 @@ void rlc_am_init(rlc_am_entity_t *rlcP)
 void rlc_am_cleanup(rlc_am_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 {
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CLEANUP]\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
 
     list2_free(&rlcP->receiver_buffer);
     list_free(&rlcP->pdus_to_mac_layer);
@@ -73,7 +75,7 @@ void rlc_am_configure(rlc_am_entity_t *rlcP,
                       u32_t t_status_prohibitP)
 //-----------------------------------------------------------------------------
 {
-    msg ("\n\n\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_retx_thresholdP, poll_pduP, poll_byteP, t_poll_retransmitP, t_reorderingP, t_status_prohibitP);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][CONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, max_retx_thresholdP, poll_pduP, poll_byteP, t_poll_retransmitP, t_reorderingP, t_status_prohibitP);
 
     rlcP->max_retx_threshold = max_retx_thresholdP;
     rlcP->poll_pdu           = poll_pduP;
@@ -88,6 +90,8 @@ void rlc_am_configure(rlc_am_entity_t *rlcP,
 void rlc_am_set_debug_infos(rlc_am_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP)
 //-----------------------------------------------------------------------------
 {
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SET DEBUG INFOS] module_id %d rb_id %d rb_type %d\n", mac_xface->frame, module_idP, rb_idP, module_idP, rb_idP, rb_typeP);
+
     rlcP->module_id = module_idP;
     rlcP->rb_id     = rb_idP;
     if (rb_typeP != SIGNALLING_RADIO_BEARER) {
