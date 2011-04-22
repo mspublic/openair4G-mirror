@@ -32,6 +32,7 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t s
     int          sdu_index;
 
     if (mb != NULL) {
+        rlcP->num_nack_sn += 1;
         assert(so_startP <= so_endP);
         //-----------------------------------------
         // allow holes in reports
@@ -42,6 +43,9 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t s
         if (rlcP->pdu_retrans_buffer[snP].last_nack_time != mac_xface->frame) {
             rlcP->pdu_retrans_buffer[snP].last_nack_time = mac_xface->frame;
             rlc_am_clear_holes(rlcP, snP);
+        }
+        if (!((so_startP == 0) && (so_endP == 0x7FFF))) {
+            rlcP->num_nack_so += 1;
         }
         rlc_am_add_hole(rlcP, snP, so_startP, so_endP);
         //rlcP->pdu_retrans_buffer[snP].nack_so_start = so_startP;

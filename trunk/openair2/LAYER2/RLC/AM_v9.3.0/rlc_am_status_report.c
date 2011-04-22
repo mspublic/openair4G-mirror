@@ -201,6 +201,9 @@ void rlc_am_receive_process_control_pdu(rlc_am_entity_t* rlcP, mem_block_t*  tbP
       assert(g_rlc_am_control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
 
       if (rlc_am_in_tx_window(rlcP, ack_sn) > 0) {
+          rlcP->num_nack_so = 0;
+          rlcP->num_nack_sn = 0;
+
           if (g_rlc_am_control_pdu_info.num_nack == 0) {
               while (sn_cursor != ack_sn) {
                   if (sn_cursor == rlcP->poll_sn) {

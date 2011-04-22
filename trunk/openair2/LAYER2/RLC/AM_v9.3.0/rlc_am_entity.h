@@ -42,6 +42,8 @@ typedef struct rlc_am_entity {
   signed int      retrans_num_pdus;
   signed int      retrans_num_bytes; // num bytes in the retransmission buffer
   signed int      retrans_num_bytes_to_retransmit; // num bytes of the retransmission buffer to retransmit
+  unsigned int    num_nack_so;
+  unsigned int    num_nack_sn;
 
   //---------------------------------------------------------------------
   // RX BUFFERS
