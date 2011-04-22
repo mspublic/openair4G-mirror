@@ -72,6 +72,8 @@ void rlc_am_release (rlc_am_entity_t *rlcP)
 void config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
+    rlc_am_init(rlcP);
+    rlc_am_set_debug_infos(rlcP, module_idP, rb_idP, rb_typeP);
     rlc_am_configure(rlcP,
                       config_amP->max_retx_threshold,
                       config_amP->poll_pdu,
@@ -80,7 +82,6 @@ void config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_in
                       config_amP->t_reordering,
                       config_amP->t_status_prohibit);
 
-    rlc_am_set_debug_infos(rlcP, module_idP, rb_idP, rb_typeP);
 }
 //-----------------------------------------------------------------------------
 void rlc_am_stat_req     (rlc_am_entity_t *rlcP,

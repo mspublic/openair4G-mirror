@@ -115,17 +115,6 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
                     rlc[module_idP].m_rlc_am_array[index].allocation = 1;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
-                    u16_t                 max_retx_threshold = 255;
-                    u16_t                 poll_pdu           = 8;
-                    u16_t                 poll_byte          = 255;
-                    u32_t                 t_poll_retransmit  = 15;
-                    u32_t                 t_reordering       = 5000;
-                    u32_t                 t_status_prohibit  = 10;
-
-                    rlc_am_init(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index]);
-                    rlc_am_set_debug_infos(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP, rb_idP, SIGNALLING_RADIO_BEARER);
-                    rlc_am_configure(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);
-
                     msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB AM INDEX IS %d\n", module_idP, rb_idP, index);
                     return RLC_OP_STATUS_OK;
                 } else {
@@ -183,6 +172,7 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t ac
         case ACTION_MODIFY:
             switch (rlc_infoP.rlc_mode) {
                 case RLC_AM:
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] MODIFY RB AM\n", module_idP, rb_idP);
                     config_req_rlc_am(                               &rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
                                     module_idP,
                                     &rlc_infoP.rlc.rlc_am_info,
