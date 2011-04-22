@@ -1112,7 +1112,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   u8 harq_pid;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue ulsch params (dci %x) -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",*(u32 *)dci_pdu,ulsch,rnti,dci_format,subframe);
+  msg("dci_tools.c: Filling ue ulsch params for rnti %x, dci_format %d, dci %x, subframe %d\n",
+      rnti,dci_format,*(u32 *)dci_pdu,subframe);
   msg("type %d, hopping %d, rballoc %d, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type,
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping,
@@ -1218,7 +1219,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(generate_srs==0?0:1);
-;
+
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -1248,7 +1249,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->harq_processes[harq_pid]->Nsymb_initial);
-    msg("ulsch (eNB): cshift        %d\n",ulsch->n_DMRS2);
+    msg("ulsch (ue): cshift      %d\n",ulsch->n_DMRS2);
 #endif
     return(0);
   }
@@ -1275,8 +1276,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   u32 rb_alloc;
 
 #ifdef DEBUG_DCI
-  msg("[PHY][eNB] Subframe %d : filling ulsch params for dci format %d, dci %x\n",
-      subframe,dci_format,*(u32*)dci_pdu);
+  msg("dci_tools.c: filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
+      rnti,dci_format,*(u32*)dci_pdu,subframe);
 #endif
 
   if (dci_format == format0) {
@@ -1356,7 +1357,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
 #ifdef DEBUG_DCI
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("ulsch (eNB): rballoc       %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch (eNB): harq_pid      %d\n",harq_pid);
     msg("ulsch (eNB): Ndi           %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
     msg("ulsch (eNB): TBS           %d\n",ulsch->harq_processes[harq_pid]->TBS);
