@@ -34,10 +34,8 @@
 //#define WAIT_UE_TRANSPORT 3
 
 
-//#define BYPASS_RX_BUFFER_SIZE 64000
-//#define BYPASS_TX_BUFFER_SIZE 64000
-#define BYPASS_RX_BUFFER_SIZE 4000
-#define BYPASS_TX_BUFFER_SIZE 4000
+#define BYPASS_RX_BUFFER_SIZE 64000
+#define BYPASS_TX_BUFFER_SIZE 64000
 
 
 /*************************************************************/
@@ -106,7 +104,8 @@ typedef struct bypass_msg_header {
   unsigned int   nb_enb; /*! \brief */
   unsigned int   nb_ue; /*! \brief */
   unsigned int   nb_flow; /*! \brief */
-  unsigned int   last_slot;
+  unsigned int   frame;
+  unsigned int subframe;
 }bypass_msg_header_t;
 
 typedef struct bypass_proto2multicast_header_t {
@@ -141,12 +140,14 @@ typedef struct {
   unsigned int is_primary_master;
   unsigned int ethernet_flag;
   char local_server[128]; // for the oaisim -c option : 0 = EURECOM web portal; 1 = local; filename = running a specific XML configuration file 
+  unsigned int offset_ue_inst;
   unsigned char multicast_group;
   unsigned char ocg_enabled;
   unsigned char opt_enabled;
   unsigned char otg_enabled;
   unsigned char omg_enabled;
 }emu_info_t; 
+
 
 #endif //
 

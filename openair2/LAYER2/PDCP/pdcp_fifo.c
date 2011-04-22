@@ -24,7 +24,7 @@
 #include "../MAC/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
-#define PDCP_DEBUG 1
+//#define PDCP_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 
@@ -68,7 +68,7 @@ pdcp_fifo_flush_sdus ()
 
     // asjust the instance id when passing sdu to IP 
     ((pdcp_data_ind_header_t *)(sdu->data))->inst = (((pdcp_data_ind_header_t *)(sdu->data))->inst >= NB_CH_INST) ? 
-      ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_CH_INST - emu_info.first_ue_local :// UE
+      ((pdcp_data_ind_header_t *)(sdu->data))->inst - NB_CH_INST + emu_info.nb_enb_local - emu_info.first_ue_local  :// UE
       ((pdcp_data_ind_header_t *)(sdu->data))->inst - emu_info.first_ue_local; // ENB
 
 #ifdef PDCP_DEBUG
@@ -418,8 +418,8 @@ pdcp_fifo_read_input_sdus ()
 	pdcp_read_header.inst = 0;
 #endif
 	pdcp_read_header.inst = (pdcp_read_header.inst >= emu_info.nb_enb_local) ? 
-	  pdcp_read_header.inst - emu_info.nb_enb_local+ NB_CH_INST + emu_info.first_ue_local :
-	  pdcp_read_header.inst +  emu_info.first_enb_local;
+	  pdcp_read_header.inst - emu_info.nb_enb_local+ NB_CH_INST + emu_info.first_ue_local : // ue
+	  pdcp_read_header.inst +  emu_info.first_enb_local; // enb
 
 	  
 	pdcp_data_req(pdcp_read_header.inst,

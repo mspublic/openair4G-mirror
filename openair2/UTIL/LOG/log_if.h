@@ -72,8 +72,8 @@ public_log_if( void logRecord(const char *file, const char *func, int line,int c
 public_log_if( int set_comp_log(int component, int level, int flag);)
 public_log_if( void set_log_flag(int flag);)
 public_log_if( void set_log_syslog(int value);)
-public_log_if( int   map_str_to_int(log_mapping *map, const char *str);)
-public_log_if( char *map_int_to_str(log_mapping *map, int val);)
+public_log_if( int   map_str_to_int(mapping *map, const char *str);)
+public_log_if( char *map_int_to_str(mapping *map, int val);)
 public_log_if( void logClean (void); );
 /* @}*/ 
 
