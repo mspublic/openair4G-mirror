@@ -140,7 +140,7 @@ typedef struct {
   unsigned int master_list;
   unsigned int is_primary_master;
   unsigned int ethernet_flag;
-  unsigned int local_server;
+  char local_server[128]; // for the oaisim -c option : 0 = EURECOM web portal; 1 = local; filename = running a specific XML configuration file 
   unsigned char multicast_group;
   unsigned char ocg_enabled;
   unsigned char opt_enabled;

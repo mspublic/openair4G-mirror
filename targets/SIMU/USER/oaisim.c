@@ -703,7 +703,6 @@ int main(int argc, char **argv) {
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
 
-  int OCG_enabled =0;
   OAI_Emulation * emulation_scen;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -731,7 +730,7 @@ int main(int argc, char **argv) {
   emu_info.nb_ue_local= 1;
   emu_info.nb_enb_local= 1;
   emu_info.ethernet_flag=0;
-  emu_info.local_server= 0; // this is the web portal version, ie. the httpd server is remote 
+  strcpy(emu_info.local_server, ""); // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
   emu_info.ocg_enabled=0;// flag c
   emu_info.opt_enabled=0; // P flag
@@ -814,7 +813,7 @@ int main(int argc, char **argv) {
 	  g_log_level=optarg;
 	  break;
 	case 'c':
-          emu_info.local_server = atoi(optarg);
+          strcpy(emu_info.local_server, optarg);
 	  emu_info.ocg_enabled=1;
 	  abstraction_flag=1;
 	  extended_prefix_flag=1;
@@ -852,25 +851,51 @@ int main(int argc, char **argv) {
     emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
     // here is to check if OCG is successful, otherwise, we might not run the emulation
     if (emulation_scen->useful_info.OCG_OK != 1) { 
-      LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: A common reason for this error is a mistake made in the XML configuration file if you use a file written by yourself.\n");
+      LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: please check the name of the XML configuration file and its content if you use a self-specified file.\n");
       exit(EXIT_FAILURE);
       }
 
-    LOG_T(OCG,"the area is x %f y %f option %s\n",
+    /*LOG_T(OCG,"the area is x %f y %f option %s\n",
 	  emulation_scen->envi_config.area.x,
 	  emulation_scen->envi_config.area.y, 
-	  emulation_scen->topo_config.eNB_topology.selected_option);
+	  emulation_scen->topo_config.eNB_topology.selected_option);*/
       
       emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
-
-      if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) { // configure the number of eNB
-         emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
-      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
-      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
-      } 
+printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
+      emu_info.nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
       n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
+
+/*
+// inputs for OMG
+	emulation_scen->envi_config.area.x;
+	emulation_scen->envi_config.area.y;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
+
+	emulation_scen->topo_config.number_of_UE;
+	if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "concentrated")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "grid_map")) {
+	}
+
+	emulation_scen->topo_config.number_of_eNB;
+	if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
+	}
+
+	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
+	}
+
+// outputs from OMG : the positions of eNBs and UEs
+	emulation_scen->topo_config.positions = OMG();
+	
+*/
       
       set_comp_log(OCG,  LOG_ERR, 1);
       set_comp_log(OCG,  LOG_INFO, 1);
@@ -883,7 +908,6 @@ int main(int argc, char **argv) {
    }
 #endif
 
- 
 #ifndef CYGWIN 
   ret=netlink_init();
 #endif

@@ -5,7 +5,7 @@ SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`)
 CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 #-msse4
 CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
-cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; else echo "0" ; fi)
+cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; else echo false ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -18,11 +18,12 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
+
+# does not work under linux
 ifndef cygwin # forget about OCG, libxml doesn't work the same way as under linux
-CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 
 OCG_FLAG = 1
 endif
-
 
 #CFLAGS += -DXFORMS
 
@@ -31,15 +32,16 @@ CFLAGS += -DDEBUG_PHY
 endif
 
 ifdef NAS_NETLINK
-CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
+CFLAGS += -DNAS_NETLINK -DLINUX 
 endif
 
 ifdef OCG_FLAG
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2
 CFLAGS += -DOCG_FLAG 
 endif
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
-CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ; fi)
+CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
@@ -75,16 +77,20 @@ oaisim : $(OBJ) $(L2_OBJS) oaisim.c
 
 
 clean:
-	rm -f physim
+	rm -f oaisim
 	rm -f $(OBJ)
 	rm -f $(L2_OBJS)
 	rm -f *.o
 	rm -f *.exe*
 
 cleanl1:
-	rm -f physim
+	rm -f oaisim
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe
 cleanl2:
 	rm -f $(L2_OBJS)
+
+print:
+	@echo $(cygwin)
+	@echo $(OCG_FLAG)

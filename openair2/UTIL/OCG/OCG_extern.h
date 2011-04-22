@@ -6,7 +6,7 @@ extern char user_name[]; /*!< \brief user_name  */
 extern char file_date[]; /*!< \brief file_date */
 extern char src_file[]; /*!< \brief USER_XML_FOLDER/user_name.file_date.xml or DEMO_XML_FOLDER/user_name.file_date.xml */
 extern char dst_dir[]; /*!< \brief user_name/file_date/ */
-extern int local_or_web; /*!< \brief indicating if the current emulation is with a local XML or an XML generated from the web portal */
+extern int copy_or_move; /*!< \brief indicating if the current emulation is with a local XML or an XML generated from the web portal */
 extern int file_detected; /*!< \brief indicate whether a new file is detected */
 /* @}*/ 
 
