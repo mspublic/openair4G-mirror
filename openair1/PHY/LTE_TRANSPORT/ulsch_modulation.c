@@ -664,7 +664,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
   for (j=0,l=0;l<(nsymb-1);l++) {
     re_offset = re_offset0;
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-    //    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+#ifdef DEBUG_ULSCH_MODULATION
+        printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+#endif
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -674,7 +676,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
       //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
-	//	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
+#ifdef DEBUG_ULSCH_MODULATION
+	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
+#endif
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)
 	  re_offset = 0;                                 
