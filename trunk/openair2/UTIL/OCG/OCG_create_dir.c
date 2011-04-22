@@ -55,7 +55,7 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 	strcpy(directory, output_dir);
 
 	struct stat st;
-	if(stat("output_dir", &st) != 0) { // if output_dir does not exist, we create it here
+	if(stat(directory, &st) != 0) { // if output_dir does not exist, we create it here
 		mkdir(directory, S_IRWXU | S_IRWXG | S_IRWXO);
 		LOG_I(OCG, "output_dir %s is created", directory);
 	}

@@ -235,7 +235,6 @@ typedef struct {
 			
 		typedef struct {
 			char *selected_option;
-			int *eNB_positions; // to be revised based on OMG
 			Grid grid;
 			Hexagonal hexagonal;
 			Totally_Random totally_random;
@@ -247,7 +246,6 @@ typedef struct {
 
 		typedef struct {
 			char *selected_option;
-			int *UE_positions; // to be revised based on OMG
 			Grid_Map grid_map;
 		}UE_Distribution;
 
@@ -282,11 +280,12 @@ typedef struct {
 	eNB_Topology eNB_topology;
 	double inter_eNB_distance;
 	UE_Distribution UE_distribution;
-	int number_of_eNB; // to be calculated in OCG_parse_XML.c
+	int number_of_eNB; // calculated in OCG_parse_XML.c, not from the web portal directly
 	int number_of_UE;
 	double system_bandwidth;
 	double UE_frequency;
 	Mobility mobility;
+	int *positions; // to be revised based on OMG. should have a structure {eNB_pos, UE_pos}
 }Topo_Config;
 /* @}*/
 
@@ -431,7 +430,7 @@ typedef struct {
 //#define LOG_T printf("OCG: "); printf /*!< \brief trace */
 /* @}*/ 
 
-OAI_Emulation * OCG_main(int is_local_server);
+OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
 #include "UTIL/LOG/log.h"
 
