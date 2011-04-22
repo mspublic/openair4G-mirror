@@ -1172,7 +1172,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->n_DMRS2 = 8;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
       ulsch->n_DMRS2 = 10;
-    else
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 7)
       ulsch->n_DMRS2 = 9;
 
     //reserved for cooperative communication
@@ -1324,7 +1324,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
       ulsch->n_DMRS2 = 8;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
       ulsch->n_DMRS2 = 10;
-    else
+    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 7)
       ulsch->n_DMRS2 = 9;
 
     //ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;

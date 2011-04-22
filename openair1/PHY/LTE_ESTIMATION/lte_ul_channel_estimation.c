@@ -33,7 +33,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
   //s8 phase_shift;
   //phase_shift = -(2*M_PI*cyclicShift)/12;
-  short ul_ch_estimates_re,ul_ch_estimates_im;
+  short *ul_ch_estimates_re,*ul_ch_estimates_im;
+
+  //msg("cyclic shift %d\n",cyclicShift);
 
 
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
@@ -80,16 +82,15 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			     (short*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
-             
+               
+
       if((cyclicShift != 0) &&(cooperation_flag != 2)){
 	// Compemsating for the phase shift introduced at the transmitter
 	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i++){
-	  ul_ch_estimates_re = (short*) (ul_ch_estimates[aa][i]);
-	  ul_ch_estimates_im = (short*)(ul_ch_estimates[aa][(i<<1)+1]);
-	  ((short*) ul_ch_estimates[aa])[i] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) +
-							(int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
-	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -
-							       (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
+	  ul_ch_estimates_re = ((short*) ul_ch_estimates[aa])[i<<1];
+	  ul_ch_estimates_im = ((short*) ul_ch_estimates[aa])[(i<<1)+1];
+	  ((short*) ul_ch_estimates[aa])[i<<1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) + (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
+	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -  (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
 	}
       }
     }
@@ -268,7 +269,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    multadd_complex_vector_real_scalar((short*) ul_ch2_1,0x3FFF,(short*) ul_ch2_1,1,N_rb_alloc*12);
 	  }
 
-
+	//write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
 		/*if(cooperation_flag == 2)// For Distributed Alamouti
 		{
 		write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
