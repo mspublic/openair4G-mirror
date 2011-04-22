@@ -18,8 +18,8 @@
 //#include "mpls.h"
 //#include "w3g4free_extern.h"
 
-#define PDCP_DATA_REQ_DEBUG 1
-#define PDCP_DATA_IND_DEBUG 1
+//#define PDCP_DATA_REQ_DEBUG 1
+//#define PDCP_DATA_IND_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 

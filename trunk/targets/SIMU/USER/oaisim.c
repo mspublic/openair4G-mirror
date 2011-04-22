@@ -1,6 +1,10 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
@@ -73,7 +77,7 @@ void init_bypass() {
 }
 #endif
 
-log_mapping level_names[] =
+mapping log_level_names[] =
 {
     {"emerg", LOG_EMERG},
     {"alert", LOG_ALERT},
@@ -718,12 +722,16 @@ int main(int argc, char **argv) {
   int len; 
   int mod_path_loss=0;
   
+  //time_t t0,t1;
+  clock_t start, stop;
+  
   //default parameters
   emu_info.is_primary_master=0;
   emu_info.master_list=0;
   emu_info.nb_ue_remote=0;
   emu_info.nb_enb_remote=0;
   emu_info.first_ue_local=0;
+  emu_info.offset_ue_inst=0;
   emu_info.first_enb_local=0;
   emu_info.master_id=0;
   emu_info.nb_master =0;
@@ -843,7 +851,7 @@ int main(int argc, char **argv) {
     }
   
  //initialize the log generator 
-  logInit(map_str_to_int(level_names, g_log_level));
+  logInit(map_str_to_int(log_level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
 #ifdef OCG_FLAG
@@ -944,7 +952,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
-    
+      
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_CH_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
    
@@ -1279,7 +1287,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-   
+    
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -1288,12 +1296,10 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(emu_info.nb_enb_local);
+      
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
-	//#ifdef DEBUG_SIM
 	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p)\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext);
-	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
-
 	//if ((mac_xface->frame % 10) == 0) {
 	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
 	rewind(eNB_stats);
@@ -1304,8 +1310,11 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
       
       if (ethernet_flag ==1) { // include PBCH
 	if (( (direction == SF_DL) || (direction == SF_S) ) && (((next_slot%2)== 0) || (next_slot==1))){ 
-	  emu_transport_DL(last_slot,next_slot);
-	  LOG_I(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	  //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+	  //assert((start = clock())!=-1);// t0= time(NULL);
+	  emu_transport_DL(mac_xface->frame, last_slot,next_slot);
+	  //stop = clock(); //t1= time(NULL);
+	  //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
 	}
       }
       // Call ETHERNET emulation here
@@ -1313,22 +1322,24 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	clear_UE_transport_info(emu_info.nb_ue_local);
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
-	  //#ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
 	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
-	  //#endif
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
-
 	  //if ((mac_xface->frame % 10) == 0) {
 	  len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
 	  rewind(UE_stats);
 	  fwrite(stats_buffer,1,len,UE_stats);
 	  //}
 	}
+      
       if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
-	  emu_transport_UL(last_slot , next_slot);
-	  LOG_I(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	  //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+	  //assert((start = clock())!=-1);//t0= time(NULL);
+	  emu_transport_UL(mac_xface->frame, last_slot , next_slot);
+	  // stop = clock(); // t1= time(NULL);
+	  //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
+	   
 	}
       }
 

@@ -225,14 +225,14 @@ static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, 
 
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL, MAC_UE, RLC, MAC_L2,OPT, MAC_DL, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, MAC_RA, MAC_RAR, MAC_UL, MAC_UE, RLC, MAC_L2,OPT, MAC_DL, PERF, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 
 typedef struct {
     char *name;	/*!< \brief string name of item */
     int value;	/*!< \brief integer value of mapping */
-} log_mapping;
+} mapping;
 
 
 typedef struct  {
