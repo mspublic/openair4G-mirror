@@ -172,7 +172,9 @@ double signal_energy_fp2(struct complex *s,unsigned int length) {
   double V=0.0;
 
   for (i=0;i<length;i++) {
-      V= V + (s[i].y*s[i].x) + (s[i].y*s[i].x); 
+    //    printf("signal_energy_fp2 : %f,%f => %f\n",s[i].x,s[i].y,V);
+    //      V= V + (s[i].y*s[i].x) + (s[i].y*s[i].x); 
+      V= V + (s[i].x*s[i].x) + (s[i].y*s[i].y); 
     }
   return(V/length);
 }

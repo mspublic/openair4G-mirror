@@ -3,7 +3,8 @@
 #include "defs.h"
 //#define DEBUG_FEP
 
-int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
+int slot_fep(u8 eNB_id,
+	     LTE_DL_FRAME_PARMS *frame_parms,
 	     LTE_UE_COMMON *ue_common_vars,
 	     unsigned char l,
 	     unsigned char Ns,
@@ -11,7 +12,6 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
 	     int no_prefix) {
  
   unsigned char aa;
-  unsigned char eNb_id;
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
@@ -72,32 +72,45 @@ int slot_fep(LTE_DL_FRAME_PARMS *frame_parms,
     
 
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
-    for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-      for (eNb_id=0;eNb_id<1;eNb_id++){ //3;eNb_id++){
-#ifdef DEBUG_FEP
-	debug_msg("Channel estimation eNb %d, aatx %d, slot %d, symbol %d\n",eNb_id,aa,Ns,l);
-#endif
-	lte_dl_channel_estimation(ue_common_vars->dl_ch_estimates[eNb_id],
-				  ue_common_vars->rxdataF,
-				  eNb_id,
-				  frame_parms,
-				  Ns,
-				  aa,
-				  l,
-				  symbol);
-      }
-    // do frequency offset estimation here!
-    // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
-#ifdef DEBUG_FEP
-    msg("Frequency offset estimation\n");
-#endif   
-    if ((Ns == 0) & (l==(4-frame_parms->Ncp))) 
-      lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
-			  frame_parms,
-			  l,
-			  &ue_common_vars->freq_offset);
-  }
+    for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
 
+#ifdef DEBUG_FEP
+      debug_msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+#endif
+      lte_dl_channel_estimation(0,ue_common_vars->dl_ch_estimates[eNB_id],
+				ue_common_vars->rxdataF,
+				frame_parms,
+				Ns,
+				aa,
+				l,
+				symbol);
+      lte_dl_channel_estimation(1,ue_common_vars->dl_ch_estimates[(eNB_id+1)%3],
+				ue_common_vars->rxdataF,
+				frame_parms,
+				Ns,
+				aa,
+				l,
+				symbol);
+      lte_dl_channel_estimation(2,ue_common_vars->dl_ch_estimates[(eNB_id+2)%3],
+				ue_common_vars->rxdataF,
+				frame_parms,
+				Ns,
+				aa,
+				l,
+				symbol);
+      
+      // do frequency offset estimation here!
+      // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
+#ifdef DEBUG_FEP
+      msg("Frequency offset estimation\n");
+#endif   
+      if ((Ns == 0) & (l==(4-frame_parms->Ncp))) 
+	lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
+			    frame_parms,
+			    l,
+			    &ue_common_vars->freq_offset);
+    }
+  }
 #ifdef DEBUG_FEP
   msg("slot_fep: done\n");
 #endif

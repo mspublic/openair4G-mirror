@@ -110,7 +110,7 @@ void generate_RIV_tables() {
       if (RIV>RIV_max)
 	RIV_max = RIV;
 
-      //printf("RIV %d (%d)\n",RIV,localRIV2alloc_LUT25[RIV]);
+      //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
       localRIV2alloc_LUT25[RIV] = alloc;
       distRIV2alloc_LUT25[RIV]  = alloc_dist;
       RIV2nb_rb_LUT25[RIV]      = Lcrbs;
@@ -513,7 +513,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
+    msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
 #endif
   switch (dci_format) {
 
@@ -1134,7 +1134,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = 0;
     else 
       harq_pid = subframe2harq_pid(frame_parms,(subframe+4)%10);
-    //msg("harq_pid = %d\n",harq_pid);
+    //    msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
@@ -1156,7 +1156,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
-
+    printf("DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
+	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
       ulsch->n_DMRS2 = 0;
@@ -1248,8 +1249,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (ue): Ndi         %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
     msg("ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->harq_processes[harq_pid]->Nsymb_initial);
-    msg("ulsch (ue): cshift      %d\n",ulsch->n_DMRS2);
+    msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
+    msg("ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
 #endif
     return(0);
   }

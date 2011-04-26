@@ -93,8 +93,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
+
+
 /*
-DCI0_5MHz_TDD_1_6_t         UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
@@ -363,6 +364,7 @@ int main(int argc, char **argv) {
   
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+  printf("rballoc %d (dci %x)\n",UL_alloc_pdu.rballoc,*(u32 *)&UL_alloc_pdu);
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
@@ -370,9 +372,9 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.cshift  = 0;
 
 
-  generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
+  generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
 				    C_RNTI,
-				    8,
+				    (subframe<4)?(subframe+6):(subframe-4),
 				    format0,
 				    PHY_vars_UE->ulsch_ue[0],
 				    PHY_vars_UE->dlsch_ue[0],
@@ -389,7 +391,7 @@ int main(int argc, char **argv) {
 
   generate_eNB_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				     SI_RNTI,
-				     8,
+				     (subframe<4)?(subframe+6):(subframe-4),
 				     format0,
 				     PHY_vars_eNB->ulsch_eNB[0],
 				     &PHY_vars_eNB->lte_frame_parms,
@@ -463,7 +465,9 @@ int main(int argc, char **argv) {
 #ifdef OFDMA_ULSCH
 	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #else  
-	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],subframe,&PHY_vars_UE->lte_frame_parms,
+	printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
+	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],
+			 subframe,&PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #endif
       

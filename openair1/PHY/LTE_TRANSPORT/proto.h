@@ -190,13 +190,13 @@ s32 generate_pilots_slot(mod_sym_t **txdataF,
 s32 generate_pss(mod_sym_t **txdataF,
 		 s16 amp,
 		 LTE_DL_FRAME_PARMS *frame_parms,
-		 u16 eNB_id,
 		 u16 l,
 		 u16 Ns);
 
 s32 generate_pss_emul(PHY_VARS_eNB *phy_vars_eNB,u8 sect_id);
 
-s32 generate_pbch(mod_sym_t **txdataF,
+s32 generate_pbch(LTE_eNB_PBCH *eNB_pbch,
+		  mod_sym_t **txdataF,
 		  s32 amp,
 		  LTE_DL_FRAME_PARMS *frame_parms,
 		  u8 *pbch_pdu,

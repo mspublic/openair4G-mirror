@@ -107,6 +107,7 @@ typedef struct
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PBCH     lte_eNB_pbch;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
   // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
@@ -116,7 +117,6 @@ typedef struct
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
-  char eNB_generate_rag_ack;
 
   unsigned int max_peak_val; 
   int max_eNB_id, max_sync_pos;

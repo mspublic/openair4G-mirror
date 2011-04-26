@@ -64,16 +64,15 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 \brief This function performs channel estimation including frequency and temporal interpolation
 \param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
 \param rxdataF pointer to received data in freq domain
-\param eNb_id
 \param frame_parms pointer to LTE frame parameters
 \param Ns slot number (0..19)
 \param p antenna port 
 \param l symbol within slot
 \param symbol symbol within frame
 */
-int lte_dl_channel_estimation(int **dl_ch_estimates,
+int lte_dl_channel_estimation(u8 eNB_offset,
+			      int **dl_ch_estimates,
 			      int **rxdataF,
-			      unsigned char eNb_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char Ns,
 			      unsigned char p,

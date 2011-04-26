@@ -575,6 +575,13 @@ typedef struct {
   u8 nCCE[10];
 } LTE_UE_PDCCH;
 
+#define PBCH_A 24
+typedef struct {
+  u8 pbch_d[96+(3*(16+PBCH_A))];
+  u8 pbch_w[3*3*(16+PBCH_A)];
+  u8 pbch_e[1920]; 
+} LTE_eNB_PBCH;
+
 typedef struct {
   /// Pointers to extracted PBCH symbols in frequency-domain
   s32 **rxdataF_ext;
