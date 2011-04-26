@@ -23,7 +23,7 @@ ________________________________________________________________*/
 
 
 extern UE_MAC_INST *UE_mac_inst;
-extern CH_MAC_INST *CH_mac_inst;
+extern eNB_MAC_INST *eNB_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern u8 Is_rrc_registered;
 
@@ -44,7 +44,7 @@ extern u8 Is_rrc_registered;
 #else
 extern unsigned char NB_INST;
 #endif
-extern unsigned char NB_CH_INST;
+extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 
@@ -55,7 +55,7 @@ extern EMULATION_VARS *Emul_vars;
 
 extern u32 RRC_CONNECTION_FLAG;
 
-extern DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+extern DCI0_5MHz_TDD_1_6_t          UL_alloc_pdu;
 //extern DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 extern DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;

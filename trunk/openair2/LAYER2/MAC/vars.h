@@ -20,7 +20,7 @@ ________________________________________________________________*/
 u32 RRC_CONNECTION_FLAG;
 
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX]; 
-CH_MAC_INST *CH_mac_inst; //[NB_MODULE_MAX]; 
+eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX]; 
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
@@ -37,13 +37,13 @@ MAC_xface *mac_xface;
 u8 Is_rrc_registered;
 
 #ifndef PHY_EMUL
-unsigned char NB_CH_INST;
+unsigned char NB_eNB_INST;
 unsigned char NB_UE_INST;
 #endif
 
 DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
 
-DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 //DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      DLSCH_alloc_pdu1A;

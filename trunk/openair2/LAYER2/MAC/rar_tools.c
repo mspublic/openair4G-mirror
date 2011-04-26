@@ -27,14 +27,14 @@ unsigned short fill_rar(u8 Mod_id,
   rarh->T                     = 0; // Preamble ID RAR
   rarh->RAPID                 = 0; // Respond to Preamble 0 only for the moment
   rar->R                      = 0;
-  rar->Timing_Advance_Command = CH_mac_inst[Mod_id].RA_template[0].timing_offset;
+  rar->Timing_Advance_Command = eNB_mac_inst[Mod_id].RA_template[0].timing_offset;
   rar->hopping_flag           = 0;
   rar->rb_alloc               = mac_xface->computeRIV(N_RB_UL,0,2);
   rar->mcs                    = 2;
   rar->TPC                    = 0;
   rar->UL_delay               = 0;
   rar->cqi_req                = 1;
-  rar->t_crnti                = CH_mac_inst[Mod_id].RA_template[0].rnti;
+  rar->t_crnti                = eNB_mac_inst[Mod_id].RA_template[0].rnti;
 
 #ifdef DEBUG_RAR
   debug_msg("[MAC][eNB %d] Generating RAR for CRNTI %x\n",Mod_id,rar->t_crnti);

@@ -87,13 +87,13 @@ typedef struct{
 typedef struct{
   char Rssi;                        /*!< \brief RSSI (dBm) on physical resources corresponding to logical channel*/
   char Sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];                        /*!< \brief Average SINR (dB) on physical resources corresponding to logical channel*/
-  unsigned char Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with 
+  u8 Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with 
 				      logical channel*/
   unsigned short Bler;              /*!< \brief Average block error rate (times 1000) on transport channel associated with logical channel*/
-  unsigned char Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
- unsigned char Qdepth;
- //unsigned char Tx_rate;
- //unsigned char Rx_rate;
+  u8 Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
+ u8 Qdepth;
+ //u8 Tx_rate;
+ //u8 Rx_rate;
 }__attribute__ ((__packed__)) MAC_MEAS_T;
 #define MAC_MEAS_T_SIZE sizeof(MAC_MEAS_T)
 
@@ -102,11 +102,11 @@ typedef struct{
 typedef struct{
   char Rssi;                        /*!< \brief RSSI (dBm) on physical resources corresponding to logical channel*/
   char Sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];                        /*!< \brief Average SINR (dB) on physical resources corresponding to logical channel*/
-  unsigned char Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with 
+  u8 Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with 
 				      logical channel*/
   unsigned short Bler;              /*!< \brief Average block error rate (times 1000) on transport channel associated with logical channel*/
-  unsigned char Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
-  unsigned char  rlc_sdu_buffer_occ;    /*!< \brief RLC SDU buffer occupancy */
+  u8 Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
+  u8  rlc_sdu_buffer_occ;    /*!< \brief RLC SDU buffer occupancy */
   unsigned short rlc_sdu_loss_indicator; /*!< \brief RLC SDU Loss indicator */
 }__attribute__ ((__packed__)) MAC_RLC_MEAS_T;
 #define MAC_RLC_MEAS_T_SIZE sizeof(MAC_RLC_MEAS_T)
@@ -161,7 +161,7 @@ typedef struct {
  */
 typedef struct {
   LCHAN_ID Lchan_id;            /*!< \brief Logical Channel ID*/
-  unsigned short  UE_CH_index;
+  unsigned short  UE_eNB_index;
   unsigned short Process_id;         /*!< \brief Id of new MAC measurement process*/
   //  MAC_MEAS_DESC Meas_desc;/*!< \brief Measurement descriptor associated with Logical channel*/
   MAC_MEAS_T Meas_trigger;      /*!< \brief Thresholds to trigger event driven measurement reports*/
@@ -176,10 +176,10 @@ typedef struct MEAS_REQ_TABLE_ENTRY{
   MAC_MEAS_REQ Mac_meas_req;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
-  unsigned char Status;
-  unsigned char Meas_req_status;
-  unsigned char Rx_activity;
-  //unsigned char Meas_Direction;//???
+  u8 Status;
+  u8 Meas_req_status;
+  u8 Rx_activity;
+  //u8 Meas_Direction;//???
   struct MEAS_REQ_TABLE_ENTRY *Next_entry;
   struct MEAS_REQ_TABLE_ENTRY *Prev_entry;
 }__attribute__ ((__packed__)) MAC_MEAS_REQ_ENTRY;
@@ -206,9 +206,9 @@ typedef struct {
   unsigned short max_transport_blocks;                  /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
   unsigned long  Guaranteed_bit_rate;           /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
   unsigned long  Max_bit_rate;                  /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
-  unsigned char  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
-  unsigned char  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
-  unsigned char  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
+  u8  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
+  u8  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
+  u8  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
 }__attribute__ ((__packed__))  LCHAN_DESC;
 
 #define LCHAN_DESC_SIZE sizeof(LCHAN_DESC) 
@@ -232,13 +232,13 @@ typedef struct MAC_OUT_OF_SYNC {
  */
 typedef struct{ 
   LCHAN_ID   Lchan_id;              /*!< \brief Logical Channel ID*/
-  //   unsigned short UE_CH_index; //ID of CH who configued the LC (Need this to identify LC in the UE side)
-  unsigned char Lchan_type; // DCCH_LCHAN, DTCH_LCHAN
+  //   unsigned short UE_eNB_index; //ID of CH who configued the LC (Need this to identify LC in the UE side)
+  u8 Lchan_type; // DCCH_LCHAN, DTCH_LCHAN
    LCHAN_DESC  Lchan_desc[2];  /*!< \brief Logical Channel QoS Descriptor (MAC component) */
-   unsigned char L3_info_type;
-   unsigned char L3_info[16]; 
+   u8 L3_info_type;
+   u8 L3_info[16]; 
 //#ifndef CELLULAR
-   unsigned short UE_CH_index;
+   unsigned short UE_eNB_index;
 //#endif
 }__attribute__ ((__packed__))  MAC_CONFIG_REQ; 
 #define MAC_CONFIG_REQ_SIZE sizeof(MAC_CONFIG_REQ)
@@ -248,7 +248,7 @@ typedef struct{
 */
 typedef struct {
   LCHAN_ID Lchan_id;        /*!< \brief Logical Channel ID*/
-  unsigned char    Config_status;   /*!< \brief Configuration status (0-positive, 1-negative)*/
+  u8    Config_status;   /*!< \brief Configuration status (0-positive, 1-negative)*/
 }__attribute__ ((__packed__))  MAC_CONFIG_CONFIRM;
 
 /**@}*/
@@ -266,18 +266,18 @@ typedef struct {
 typedef struct {
   char Sinr_meas[NB_CNX_CH+1][NUMBER_OF_MEASUREMENT_SUBBANDS];
   char Wideband_sinr;
-  unsigned char Forg_fact;
+  u8 Forg_fact;
   unsigned short Rep_interval;
-  unsigned char Status;
+  u8 Status;
   unsigned int Last_report_frame; 
   unsigned int Next_check_frame;
-  unsigned char Active;
+  u8 Active;
 }__attribute__ ((__packed__)) DEFAULT_UE_MEAS;
 #define DEFAULT_UE_MEAS_SIZE sizeof(DEFAULT_UE_MEAS)
 
 typedef struct {  //From RRC
   unsigned short UE_index;
-  unsigned char Forg_fact;
+  u8 Forg_fact;
   unsigned short Rep_interval;;
 }__attribute__ ((__packed__)) DEFAULT_MEAS_REQ;
 #define DEFAULT_MEAS_REQ_SIZE sizeof(DEFAULT_MEAS_REQ)
@@ -285,7 +285,7 @@ typedef struct {  //From RRC
 typedef struct {  //To RRC
   unsigned short UE_index __attribute__ ((packed));
   char Sinr_meas[NB_CNX_CH+1];
-  unsigned char Rb_active[NB_RAB_MAX];	
+  u8 Rb_active[NB_RAB_MAX];	
 }__attribute__ ((__packed__)) DEFAULT_MEAS_IND;
 #define DEFAULT_MEAS_IND_SIZE sizeof(DEFAULT_MEAS_IND)
 
@@ -294,14 +294,14 @@ typedef struct {
   char Sinr_meas[NB_CNX_CH+1][NUMBER_OF_MEASUREMENT_SUBBANDS];
   char Wideband_sinr;
   unsigned int cqi;
-  unsigned char Forg_fact;
+  u8 Forg_fact;
   unsigned short Rep_interval;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame; 
-  unsigned char Status; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
-  unsigned char Active;
+  u8 Status; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
+  u8 Active;
 }__attribute__ ((__packed__)) DEFAULT_CH_MEAS;
-#define DEFAULT_CH_MEAS_SIZE sizeof(DEFAULT_CH_MEAS)
+#define DEFAULT_eNB_MEAS_SIZE sizeof(DEFAULT_eNB_MEAS)
 
 
 
@@ -310,19 +310,19 @@ typedef struct {
 typedef struct{   //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
-  unsigned char  CH_id[NB_MODULES_MAX][NB_CNX_UE];
+  u8  eNB_id[NB_MODULES_MAX][NB_CNX_UE];
 #ifndef CELLULAR
   //  L2_ID UE_id[NB_MODULES_MAX][NB_CNX_CH];
-  unsigned char UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
+  u8 UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
 #endif
   void (*openair_rrc_top_init)(void); 
-  char (*openair_rrc_ch_init)(unsigned char ); 
-  char (*openair_rrc_mr_init)(unsigned char, unsigned char); 
-  void (*rrc_rx_tx)(unsigned char ); 
-  unsigned char (*mac_rrc_data_ind)(unsigned char,unsigned short,char *,unsigned short,unsigned char);
-  unsigned char (*mac_rrc_data_req)(unsigned char,unsigned short,unsigned char,char *,unsigned char);
-  void (*mac_rrc_meas_ind)(unsigned char,MAC_MEAS_REQ_ENTRY*);
-  void  (*def_meas_ind)(unsigned char, unsigned char);
+  char (*openair_rrc_eNB_init)(u8 ); 
+  char (*openair_rrc_UE_init)(u8, u8); 
+  void (*rrc_rx_tx)(u8 ); 
+  u8 (*mac_rrc_data_ind)(u8,unsigned short,char *,unsigned short,u8 eNB_flag, u8 eNB_index);
+  u8 (*mac_rrc_data_req)(u8,unsigned short,u8,char *,u8 eNB_flag, u8 eNB_index);
+  void (*mac_rrc_meas_ind)(u8,MAC_MEAS_REQ_ENTRY*);
+  void  (*def_meas_ind)(u8, u8);
   void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*);
   void (*fn_rrc)  (void);
 }RRC_XFACE;
@@ -334,19 +334,19 @@ typedef struct{
   unsigned short Node_id[NB_MODULES_MAX];
   char Is_cluster_head[NB_MODULES_MAX];
   void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
-  unsigned short (*mac_config_req)(unsigned char,unsigned char,MAC_CONFIG_REQ*);
-  MAC_MEAS_REQ_ENTRY* (*mac_meas_req)(unsigned char ,  MAC_MEAS_REQ*);
-  void (*mac_out_of_sync_ind)(unsigned char,unsigned short);
-  //unsigned char (*mac_rrc_data_ind)(unsigned char,unsigned short,char *,unsigned char);
-  //unsigned char (*mac_rrc_data_req)( unsigned char, unsigned short, unsigned char,char *);
-  //void (*mac_switch_node_function)(unsigned char);
+  unsigned short (*mac_config_req)(u8,u8,MAC_CONFIG_REQ*);
+  MAC_MEAS_REQ_ENTRY* (*mac_meas_req)(u8 ,  MAC_MEAS_REQ*);
+  void (*mac_out_of_sync_ind)(u8,unsigned short);
+  //u8 (*mac_rrc_data_ind)(u8,unsigned short,char *,u8);
+  //u8 (*mac_rrc_data_req)( u8, unsigned short, u8,char *);
+  //void (*mac_switch_node_function)(u8);
   //  void (*mac_rlc_exit)(void);
   //RLC_INTERFACE_FUNCTIONS
   //  void (*pdcp_run)(unsigned int);
   void (*pdcp_run)();
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);	
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
-  int (*rrc_mac_config_req)(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
+  int (*rrc_mac_config_req)(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated,
 			    TDD_Config_t *tdd_Config,
@@ -361,8 +361,8 @@ typedef struct{
   //rlc_op_status_t rrc_rlc_config_req   (module_id_t, rb_id_t, rb_type_t, rlc_info_t );
   //rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
   //void   rrc_rlc_register_rrc ( void(*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , mem_block_t*),void(*rrc_data_conf) (module_id_t , rb_id_t , mui_t) );
-  void (*mrbch_phy_sync_failure) (unsigned char Mod_id, unsigned char Free_ch_index);
-  void (*chbch_phy_sync_success) (unsigned char Mod_id, unsigned char CH_index);
+  void (*mrbch_phy_sync_failure) (u8 Mod_id, u8 Free_ch_index);
+  void (*chbch_phy_sync_success) (u8 Mod_id, u8 eNB_index);
 }MAC_RLC_XFACE;
 
 

@@ -300,7 +300,7 @@ typedef struct{
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// BCCH active flag
   u8 bcch_active;
-}CH_MAC_INST;
+}eNB_MAC_INST;
 
 
 
@@ -368,8 +368,8 @@ void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 int mac_top_init(void);
-char layer2_init_mr(u8 Mod_id);
-char layer2_init_ch(u8 Mod_id, u8 Free_ch_index); 
+char layer2_init_UE(u8 Mod_id);
+char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
 void mac_switch_node_function(u8 Mod_id);
 int mac_init_global_param(void);
 void mac_top_cleanup();

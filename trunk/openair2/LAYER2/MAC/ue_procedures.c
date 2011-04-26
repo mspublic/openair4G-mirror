@@ -96,7 +96,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti) {
   return(0);
 }
 
-void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
+void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
@@ -105,7 +105,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("[MAC][UE %d] ue_send_sdu : CH_index %d : num_ce %d num_sdu %d\n",Mod_id,CH_index,num_ce,num_sdu);
+  msg("[MAC][UE %d] ue_send_sdu : eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,eNB_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -148,14 +148,14 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
     if (rx_lcids[i] == CCCH) {
 
       msg("[MAC][UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
-      Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,
+      Rrc_xface->mac_rrc_data_ind(Mod_id,
 				  CCCH,
-				  (char *)payload_ptr,rx_lengths[i],CH_index);
+				  (char *)payload_ptr,rx_lengths[i],0,eNB_index);
 
     }
     else if (rx_lcids[i] == DCCH) {
-      debug_msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+      msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DCCH,
 				      (char *)payload_ptr,
 				      rx_lengths[i],
@@ -163,7 +163,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 				      NULL);
     }else if (rx_lcids[i] == DTCH) {
       debug_msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DTCH,
 				      (char *)payload_ptr,
 				      rx_lengths[i],
@@ -171,7 +171,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 				      NULL);
     }
     /* else if (rx_lcids[i] == DTCH) {
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_CH_INST,
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
 				      DTCH,
 				      (u8 *)payload_ptr,
 				      rx_lengths[i],
@@ -186,26 +186,26 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index) {
 	*/
 }
 
-void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu,u16 len) {
+void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
   msg("[MAC][UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
 #endif
 
-  Rrc_xface->mac_rrc_data_ind(Mod_id+NB_CH_INST,BCCH,(char *)pdu,len,0);//CH_index);
+  Rrc_xface->mac_rrc_data_ind(Mod_id,BCCH,(char *)pdu,len,0,eNB_index);
 
 }
 
-unsigned char *ue_get_rach(u8 Mod_id,u8 CH_index){
+unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
 
 
   u8 Size=0;
 
   if (Is_rrc_registered == 1) {
-    Size = Rrc_xface->mac_rrc_data_req(Mod_id+NB_CH_INST,
+    Size = Rrc_xface->mac_rrc_data_req(Mod_id,
 				       CCCH,1,
-				       (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],
-				       CH_index);
+				       (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],0,
+				       eNB_index);
     msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
     if (Size>0)
       return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
@@ -401,7 +401,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 // generate BSR
-void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
+void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len,dtch_header_len;
@@ -422,17 +422,17 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
   // Check for DCCH first
   DCCH_not_empty=1;
   sdu_lengths[0]=0;
-  while (DCCH_not_empty==1) {
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
+  //  while (DCCH_not_empty==1) {
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 				    DCCH,
 				    (buflen-dcch_header_len-sdu_length_total));
     msg("[MAC][UE %d] RLC status for DCCH : %d\n",
 	Mod_id,rlc_status.bytes_in_buffer);
 
     if (rlc_status.bytes_in_buffer>0) {
-      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d)\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total);
+      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total,Mod_id+NB_eNB_INST);
 
-      sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
+      sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
 							DCCH,
 							&ulsch_buff[sdu_lengths[0]]);
       sdu_length_total += sdu_lengths[0];
@@ -446,16 +446,16 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
       DCCH_not_empty=0;
       dcch_header_len=0;
     }
-  }
+    //  }
 
   dtch_header_len = 3;
   if ((sdu_length_total +dcch_header_len + dtch_header_len )< buflen) {
 // now check for other logical channels
 // check for ulsch
 // rlc UM v 9
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
+    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 				    DTCH,
-                    buflen - dcch_header_len - dtch_header_len - sdu_length_total);
+				    buflen - dcch_header_len - dtch_header_len - sdu_length_total);
 
     if (rlc_status.bytes_in_buffer > 0 ) { // get rlc pdu
       msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
@@ -464,12 +464,12 @@ void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen) {
 
       if ( rlc_status.bytes_in_buffer < 128) { // SCH_SUBHEADER_LONG case
 	dtch_header_len=2;
-	rlc_status = mac_rlc_status_ind(Mod_id+NB_CH_INST,
+	rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 					DTCH,
-                    buflen - dcch_header_len - dtch_header_len - sdu_length_total); // number of bytes
+					buflen - dcch_header_len - dtch_header_len - sdu_length_total); // number of bytes
 
       }
-      sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_CH_INST,
+      sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
 							      DTCH,
 							      &ulsch_buff[sdu_length_total]);
 
