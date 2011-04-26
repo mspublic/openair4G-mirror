@@ -36,7 +36,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
-#define DEBUG_PHY
+
 #define RF
 
 //#define DEBUG_SIM 
@@ -177,7 +177,7 @@ void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_
 #endif
 
 
-void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -210,7 +210,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif
     
     
-    for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+    for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       
       frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
       
@@ -218,7 +218,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifndef IFFT_FPGA
       txdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0];
 #endif
-      
+
 #ifdef IFFT_FPGA
       
       slot_offset = (next_slot)*(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.N_RB_DL*12)*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7);
@@ -240,7 +240,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	    txdataF2[aa][i] = 0;
 	
       }
-      
+
       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 	if (frame_parms->Ncp == 1)
 	  PHY_ofdm_mod(txdataF2[aa],        // input
@@ -255,7 +255,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  normal_prefix_mod(txdataF2[aa],txdata[aa],7,frame_parms);
 	}
       }
-	
+      	
 #else //IFFT_FPGA
       
 	slot_offset = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
@@ -279,13 +279,14 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  }
 	}  
 #endif //IFFT_FPGA
+      
     }
   }
 
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     
     if (abstraction_flag!=0) {
-      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++)
+      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++)
 	random_channel(eNB2UE[eNB_id][UE_id]);
     }
     else {
@@ -298,8 +299,9 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       // Compute RX signal for UE = UE_id
-      for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+      for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 	frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
+	txdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0];
 	tx_pwr = dac_fixed_gain(s_re,
 				s_im,
 				txdata,
@@ -312,20 +314,25 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] tx_pwr eNB %d %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
-	
-	eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
-	
+	if (eNB_id == (UE_id % 3))
+	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
+	else
+	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB;
+
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
 	
 	rx_pwr = signal_energy_fp2(eNB2UE[eNB_id][UE_id]->ch[0],eNB2UE[eNB_id][UE_id]->channel_length);
 #ifdef DEBUG_SIM
-	printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB\n",eNB_id,UE_id,10*log10(rx_pwr));  
+	//		for (i=0;i<eNB2UE[eNB_id][UE_id]->channel_length;i++)
+	//		  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
+
+	printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
 	printf("[SIM][DL] Channel eNB %d => UE %d : path_loss %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
 #endif
 	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM      
-	printf("[SIM][DL] UE %d : CH out %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
+	printf("[SIM][DL] UE %d : eNB out %f dB for slot %d (subframe %d)\n",UE_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
 #endif      
 	
 	if (eNB2UE[eNB_id][UE_id]->first_run == 1)
@@ -354,7 +361,11 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	      -500.0,            // pn_amp (dBc) default: 50
 	      0.0,               // IQ imbalance (dB),
 	      0.0);              // IQ phase imbalance (rad)
-	
+
+	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
+#ifdef DEBUG_SIM    
+	printf("[SIM][DL] UE %d : ADC in (eNB %d) %f dB for slot %d (subframe %d)\n",UE_id,eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1);  
+#endif    	
 	for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
 	  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
 	    r_re[aa][i]+=r_re0[aa][i]; 
@@ -386,7 +397,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
       rx_pwr2 = signal_energy(rxdata[0]+slot_offset,frame_parms->samples_per_tti>>1);
 #ifdef DEBUG_SIM    
-      printf("[SIM][DL] rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d)\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1);  
+      printf("[SIM][DL] rx_pwr (ADC out) %f dB (%d) for slot %d (subframe %d), writing to %p\n",10*log10((double)rx_pwr2),rx_pwr2,next_slot,next_slot>>1,rxdata);  
 #endif
     } // abstraction_flag==0    
   } // UE_index loop
@@ -403,7 +414,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   
 }
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -483,7 +494,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  normal_prefix_mod(txdataF2[aa],txdata[aa],7,frame_parms);
 	}
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsigF20.m","txsF20", txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+	//	write_output("UEtxsigF20.m","txsF20", txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
       }
 #else //IFFT_FPGA
       
@@ -510,19 +521,19 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsigF0.m","txsF0", &txdataF[0][slot_offset],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+	//	write_output("UEtxsigF0.m","txsF0", &txdataF[0][slot_offset],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
       }
   
 #endif //IFFT_FPGA
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsig0.m","txs0", txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),1,1);
+	//	write_output("UEtxsig0.m","txs0", txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),1,1);
       }
 
     }  // UE_id TX loop
   } // abstraction_flag
 
  
-  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 
     if (abstraction_flag!=0) {
       for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
@@ -562,7 +573,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	
 	rx_pwr = signal_energy_fp(s_re,s_im,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-	printf("[SIM][UL] CH %d : CH in %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
+	printf("[SIM][UL] eNB %d : eNB in %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
 #endif
 	/*
 	u8 aarx,aatx,k;
@@ -571,9 +582,12 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
-      
-	UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
-	
+    
+	if (eNB_id == (UE_id % 3))
+	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
+	else
+	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - 10;
+
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
 	/*
@@ -589,7 +603,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif
 	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM    
-	printf("[SIM][UL] CH %d : CH out %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
+	printf("[SIM][UL] eNB %d : eNB out %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
 #endif
 	if (UE2eNB[UE_id][eNB_id]->first_run == 1)
 	  UE2eNB[UE_id][eNB_id]->first_run = 0;
@@ -685,8 +699,8 @@ int main(int argc, char **argv) {
   s32 slot,last_slot, next_slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
-  double snr_dB, snr_dB2;
-
+  double snr_dB, sinr_dB,snr_dB2,sinr_dB2;
+  u8 set_sinr = 0;
   u8 cooperation_flag; // for cooperative communication
 
   u8 target_dl_mcs=4;
@@ -747,13 +761,14 @@ int main(int argc, char **argv) {
   
   transmission_mode = 2;
   target_dl_mcs = 0;
-  rate_adaptation_flag = 1;
+  rate_adaptation_flag = 0;
   n_frames =  0xffff; //100; 
   n_frames_flag = 0;
-  snr_dB = 30; 
+  snr_dB = 30;
+
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:f:z:u:b:c:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -776,6 +791,10 @@ int main(int argc, char **argv) {
 	  break;
 	case 's':
 	  snr_dB = atoi(optarg);
+	  break;
+	case 'S':
+	  sinr_dB = atoi(optarg);
+	  set_sinr = 1;
 	  break;
 	case 'k': 
 	  ricean_factor = atof(optarg);
@@ -849,7 +868,9 @@ int main(int argc, char **argv) {
 	  break;
 	}
     }
-  
+  if (set_sinr==0)
+    sinr_dB = snr_dB-20;
+
  //initialize the log generator 
   logInit(map_str_to_int(log_level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
@@ -951,10 +972,10 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
   printf("UE_stats=%d, eNB_stats=%d\n",UE_stats,eNB_stats);
 
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
-  NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
+  NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
-  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_CH_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
+  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
    
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
@@ -964,8 +985,8 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
   //PHY_vars = malloc(sizeof(PHY_VARS));
   //  PHY_VARS_eNB *PHY_vars_eNB; 
 
-  PHY_vars_eNB_g = malloc(NB_CH_INST*sizeof(PHY_VARS_eNB*));
-  for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
+  PHY_vars_eNB_g = malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB*));
+  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
     PHY_vars_eNB_g[eNB_id]->Mod_id=eNB_id;
     PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
@@ -1009,8 +1030,10 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
   // init all eNB vars
 
-  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = eNB_id;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = eNB_id%6;
     phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,
 		     &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars,
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
@@ -1064,7 +1087,10 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-    
+    // Do this until SSS detection is finished
+    PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = UE_id%3;
+    PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = UE_id%3;
+
     phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,
 		    PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
@@ -1106,6 +1132,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
       PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
       PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
     }
+
   }
 
   // do the srs init
@@ -1128,7 +1155,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
     // This is for 3 users (SRS can be transmitted in SF 1,2,3,4
     PHY_vars_UE_g[UE_id]->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
     
-    for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+    for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 
       PHY_vars_eNB_g[eNB_id]->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
       PHY_vars_eNB_g[eNB_id]->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
@@ -1188,7 +1215,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
     
   }
    // initialized channel descriptors
-  for (eNB_id=0;eNB_id<NB_CH_INST;eNB_id++) {
+  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
 #ifdef DEBUG_SIM
       printf("[SIM] Initializing channel from eNB %d to UE %d\n",eNB_id,UE_id);
@@ -1263,7 +1290,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 #ifdef XFORMS
   fl_initialize(&argc, argv, NULL, 0, 0);
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
-    for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++) {
+    for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++) {
       form[eNB_id][UE_id] = create_form_phy_procedures_sim();                 
       sprintf(title,"LTE SIM UE %d eNB %d",UE_id,eNB_id);   
       fl_show_form(form[eNB_id][UE_id]->phy_procedures_sim,FL_PLACE_HOTSPOT,FL_FULLBORDER,title);
@@ -1275,13 +1302,13 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
 
 
-  if (NB_CH_INST>0)
-    mac_xface->mrbch_phy_sync_failure(0,0);
+  for (i=0;i<NB_eNB_INST;i++)
+    mac_xface->mrbch_phy_sync_failure(i,i);
 #ifdef DEBUG_SIM
   printf("[SIM] Synching to eNB\n");
 #endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
-    mac_xface->chbch_phy_sync_success(1+UE_id,0);
+    mac_xface->chbch_phy_sync_success(UE_id,0);
 #endif 
  
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
@@ -1298,7 +1325,9 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	clear_eNB_transport_info(emu_info.nb_enb_local);
       
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
+#ifdef DEBUG_SIM
 	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p)\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext);
+#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
 	//if ((mac_xface->frame % 10) == 0) {
 	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
@@ -1320,6 +1349,8 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
       // Call ETHERNET emulation here
       if((next_slot %2) == 0) 
 	clear_UE_transport_info(emu_info.nb_ue_local);
+
+
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
@@ -1343,11 +1374,14 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	}
       }
 
-      if (mod_path_loss && ((mac_xface->frame % 150) >= 100))
+      if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
 	snr_dB2 = -20;
-      else
+	sinr_dB2 = -40;
+      }
+      else {
 	snr_dB2 = snr_dB;
-
+	sinr_dB2 = sinr_dB;
+      }
       if (direction  == SF_DL) {
 	/*
 	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
@@ -1355,7 +1389,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
+	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1370,7 +1404,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1387,7 +1421,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 		
 	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1402,7 +1436,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1412,12 +1446,13 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	}
       }
       if ((last_slot==1) && (mac_xface->frame==1) && (abstraction_flag==0)) {
+	/*
 	write_output("UErxsigF0.m","rxsF0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
 	write_output("eNBrxsigF0.m","rxsF0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
 	write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
 	write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-
+	*/
       }
       /*
       if ((last_slot==1) && (mac_xface->frame==1)) {
@@ -1434,7 +1469,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 
 #ifdef XFORMS
     for (UE_id=0; UE_id<NB_UE_INST;UE_id++)
-      for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++) {
+      for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++) {
 	do_forms(form[eNB_id][UE_id],PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
 #endif
