@@ -13,7 +13,7 @@ ________________________________________________________________*/
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
-CH_RRC_INST *CH_rrc_inst;
+eNB_RRC_INST *eNB_rrc_inst;
 UE_RRC_INST *UE_rrc_inst;
 RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
@@ -40,7 +40,6 @@ unsigned short Data_to_read;
 
 //CONSTANTS
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
-//u8 RACH_TIME_ALLOC;
 u16 RACH_FREQ_ALLOC;
 //u8 NB_RACH;
 LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;

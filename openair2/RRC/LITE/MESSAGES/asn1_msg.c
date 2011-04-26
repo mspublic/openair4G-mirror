@@ -10,6 +10,8 @@
 #include <linux/module.h>  /* Needed by all modules */
 #endif
 
+#include "RRC/LITE/defs.h"
+#include "COMMON/mac_rrc_primitives.h"
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -180,20 +182,21 @@ uint8_t do_SIB23(uint8_t *buffer,
   //  SystemInformationBlockType3_t *sib3;
 
 
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member sib2_part,sib3_part;
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
 
   asn_enc_rval_t enc_rval;
 
 
+  sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  memset(sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  memset(sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  memset(&sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(&sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  sib2_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
+  sib3_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
 
-  sib2_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
-  sib3_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
-
-  *sib2 = &sib2_part.choice.sib2;
-  *sib3 = &sib3_part.choice.sib3;
+  *sib2 = &sib2_part->choice.sib2;
+  *sib3 = &sib3_part->choice.sib3;
 
 
   // sib2
@@ -353,8 +356,8 @@ uint8_t do_SIB23(uint8_t *buffer,
 
   //  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;  
   //  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib2_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib3_part);
 
 #ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
@@ -367,8 +370,10 @@ uint8_t do_SIB23(uint8_t *buffer,
   printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
-  if (enc_rval.encoded==-1)
+  if (enc_rval.encoded==-1) {
+    msg("[RRC] ASN1 : SI encoding failed for SIB23\n");
     return(-1);
+  }
   return((enc_rval.encoded+7)/8);
 }
 
