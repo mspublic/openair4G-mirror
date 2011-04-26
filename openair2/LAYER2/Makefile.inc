@@ -93,7 +93,7 @@ SOURCES_L2 +=  $(RLC_DIR)/rlc_mpls.c
 
 SOURCES_L2 +=  $(MEM_DIR)/mem_block.c
 
-RRC_OBJS =  $(RRC_DIR)/main.o $(RRC_DIR)/L2_interface.o #$(RRC_DIR)/utils.o
+RRC_OBJS =  $(RRC_DIR)/rrc_UE.o $(RRC_DIR)/rrc_eNB.o $(RRC_DIR)/rrc_common.o $(RRC_DIR)/L2_interface.o 
 
 
 MAC_OBJS =  $(MAC_DIR)/lte_transport_init.o

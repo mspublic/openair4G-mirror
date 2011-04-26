@@ -42,56 +42,48 @@ ________________________________________________________________*/
 
 
 /***********************************************************************/
-void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index){  //init as MR
+void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //init as MR
 /***********************************************************************/
-  // msg("[MAC]Node %d, PHY SYNC to CH_index %d\n",NODE_ID[Mod_id],CH_index);
-  if( (layer2_init_mr(Mod_id)==-1) || (Rrc_xface->openair_rrc_mr_init(Mod_id,CH_index)==-1) )
+  // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
+  if( (layer2_init_UE(Mod_id)==-1) || (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
-  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Active=1;
-  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=BCCH;
-  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Active=1;  
-  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=CCCH;
 }
 
 /***********************************************************************/
 void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){//init as CH 
   /***********************************************************************/
-  msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to CH\n",mac_xface->frame,NODE_ID[Mod_id]);
-  if((layer2_init_ch(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_ch_init(Mod_id)==-1))
+  msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
+  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
   
 }
 
 /***********************************************************************/
-char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
+char layer2_init_eNB(unsigned char Mod_id, unsigned char eNB_index){
 /***********************************************************************/
 
   Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
   
-  msg("\nMAC: INIT CH %d Successful \n\n",NODE_ID[Mod_id]);
+  //  msg("\nMAC: INIT eNB %d Successful \n\n",Mod_id);
 
   return 0;
   
 }
 
 /***********************************************************************/
-char layer2_init_mr(unsigned char Mod_id){
+char layer2_init_UE(unsigned char Mod_id){
   /***********************************************************************/
-  unsigned char Nb_mod;
-  Nb_mod=Mod_id-NB_CH_INST;
-  Mac_rlc_xface->Is_cluster_head[Mod_id]=0;
+  Mac_rlc_xface->Is_cluster_head[NB_eNB_INST + Mod_id]=0;
   
   return 0;
 }
 
 /***********************************************************************/
-void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
+void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short eNB_index){
 /***********************************************************************/
 
-  Mod_id-=NB_CH_INST;
-
-  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,CH_index);
+  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,eNB_index);
 }
  
 
@@ -107,23 +99,23 @@ int mac_top_init(){
   UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
   msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
   bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-  CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
-  msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
-  bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
+  eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
+  msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
+  bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
 #else 
-  //  if(NODE_ID[0]<NB_CH_MAX){
+  //  if(NODE_ID[0]<NB_eNB_MAX){
   if(NODE_ID[0]<NUMBER_OF_eNB_MAX){
-    CH_mac_inst = (CH_MAC_INST*)malloc16(sizeof(CH_MAC_INST));
-    msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
-    bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
-    NB_CH_INST=1;
+    eNB_mac_inst = (eNB_MAC_INST*)malloc16(sizeof(eNB_MAC_INST));
+    msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
+    bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
+    NB_eNB_INST=1;
     NB_UE_INST=0;
   }
   else{
     UE_mac_inst = (UE_MAC_INST*)malloc16(sizeof(UE_MAC_INST));
     msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-    NB_CH_INST=0;
+    NB_eNB_INST=0;
     NB_UE_INST=1;
   }
 #endif
@@ -158,22 +150,23 @@ int mac_top_init(){
   init_transport_channels(2); 
 
   // Set up DCIs for TDD 5MHz Config 1..6
-  for (i=0;i<NB_CH_INST;i++) {
-    RA_template = (RA_TEMPLATE *)&CH_mac_inst[i].RA_template[0];
+  for (i=0;i<NB_eNB_INST;i++) {
+    msg("[MAC][eNB %d] initializing RA_template\n",i);
+    RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
       memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
       memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      RA_template[i].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[i].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[i].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[i].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[i].RA_dci_fmt1        = format1A;
-      RA_template[i].RA_dci_fmt2        = format1A;
+      RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[j].RA_dci_fmt1        = format1A;
+      RA_template[j].RA_dci_fmt2        = format1A;
     }
 
 
-    UE_template = (UE_TEMPLATE *)&CH_mac_inst[i].UE_template[0];
-    for (j=0;j<NB_CNX_CH;j++) {
+    UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
+    for (j=0;j<NB_CNX_eNB;j++) {
       UE_template->rnti=0;
     }    
   }
