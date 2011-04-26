@@ -14,7 +14,7 @@ ________________________________________________________________*/
 #include "LAYER2/RLC/rlc.h"
 
 extern UE_RRC_INST *UE_rrc_inst;
-extern CH_RRC_INST *CH_rrc_inst;
+extern eNB_RRC_INST *eNB_rrc_inst;
 extern RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
 extern MAC_RLC_XFACE *Mac_rlc_xface;
@@ -43,7 +43,7 @@ extern unsigned short Data_to_read;
 #else
 extern unsigned char NB_INST;
 #endif
-extern unsigned char NB_CH_INST;
+extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 

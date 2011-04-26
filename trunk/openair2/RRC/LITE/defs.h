@@ -45,20 +45,8 @@ ________________________________________________________________*/
  * @ingroup _ref_implementation_
  * @{
  */
-#define NB_WAIT_CH_BCCH 4000000000 //max wait time(in frame) for CH BCCH 
-#define NB_WAIT_MR_BCCH 20 //max wait time(in frame) for MR BCCH 
 
-//#define NB_CH_CX 2  //max number of simulatneous connexions to CHs
-//#define NB_UE_CX 16  //max number of simulatneous connexions to UEs
-
-#define NB_TX_RACH_MAX 4000000000
 //#define NUM_PRECONFIGURED_LCHAN (NB_CH_CX*2)  //BCCH, CCCH
-
-#define RRC_WAIT_MEAS_CNT 150
-
-
-#define NB_UE_BRDCAST 2
-
 
 #define CH_READY 0
 #define RRC_IDLE 1
@@ -67,6 +55,7 @@ ________________________________________________________________*/
 #define RRC_ASSOCIATED 4
 #define RRC_CONNECTED 5
 
+#define NB_CNX_eNB MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
 #define RRM_MALLOC(t,n)   (t *) malloc16( sizeof(t) * n ) 
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n) 
@@ -84,41 +73,35 @@ ________________________________________________________________*/
 #define MAX_ALLOWED_BCCH_MISS 10
 
 typedef struct{
-unsigned char  Status;
- unsigned int Next_check_frame;
-}DTCH_BD_CONFIG;
-
-typedef struct{
-  unsigned char Status;
+  u8 Status;
   u8 SIB1Status;
   u8 SIStatus;
   u8 SIwindowsize;
   u16 SIperiod;
-  unsigned char CH_id;
+  u8 CH_id;
   unsigned short UE_index;
   unsigned int Rach_tx_cnt;
   unsigned int Nb_bcch_wait;
   unsigned int Nb_bcch_miss;
-  unsigned char Nb_rach_res; 
-  unsigned char Rach_time_alloc;
+  u8 Nb_rach_res; 
+  u8 Rach_time_alloc;
   unsigned short Rach_freq_alloc;
   L2_ID CH_mac_id;
 }UE_RRC_INFO;
 
 typedef struct{
-unsigned char Status;
-unsigned char Nb_ue;
-//unsigned short UE_index_list[NB_CNX_CH];
-//L2_ID UE_list[NB_CNX_CH];
-unsigned char UE_list[NB_CNX_CH][5];
-DTCH_BD_CONFIG Dtch_bd_config[NB_CNX_CH];
-}__attribute__ ((__packed__)) CH_RRC_INFO;
+  u8 Status;
+  u8 Nb_ue;
+  //unsigned short UE_index_list[NB_CNX_eNB];
+  //L2_ID UE_list[NB_CNX_eNB];
+  u8 UE_list[NB_CNX_eNB][5];
+}__attribute__ ((__packed__)) eNB_RRC_INFO;
 
 typedef struct{
   int Status;
 union{
 	UE_RRC_INFO UE_info;
-	CH_RRC_INFO CH_info;
+	eNB_RRC_INFO CH_info;
  }Info;
 }RRC_INFO;
 
@@ -130,34 +113,23 @@ union{
 typedef struct{
   char Payload[RRC_BUFFER_SIZE_MAX];
   char Header[RRC_HEADER_SIZE_MAX];  
-  unsigned short R_idx;
-  unsigned short W_idx;
-  unsigned short Nb_tb_max;
-  unsigned short Tb_size;
-  //LCHAN_DESC *Lchan_desc[2];
-  void (*generate_fun)(u8);
-  void (*decode_fun)(u8);
+  char payload_size;
 }RRC_BUFFER; 
 #define RRC_BUFFER_SIZE sizeof(RRC_BUFFER)
 
 typedef struct{
   u16 Rb_id;  //=Lchan_id
-  // u8 UE_id;
-  //u8 Lchan_type;
   LCHAN_DESC Lchan_desc[2];
-   MAC_MEAS_REQ_ENTRY *Meas_entry;
-  //u32 Next_check_frame
-  //u16 Backlog_size;//from rlc
+  MAC_MEAS_REQ_ENTRY *Meas_entry;
 }RB_INFO;
 
 typedef struct SRB_INFO{
   u16 Srb_id;  //=Lchan_id
-  //  u8 UE_id;
   RRC_BUFFER Rx_buffer; 
   RRC_BUFFER Tx_buffer; 
   LCHAN_DESC Lchan_desc[2];
   unsigned int Trans_id;
-  unsigned char Active;
+  u8 Active;
 }SRB_INFO;
 
 typedef struct{
@@ -176,17 +148,13 @@ u32 Next_check_frame;
 
 
 
-//#define NB_SRB_MAX 20
-//#define NB_RB_MAX 100
-
 
 typedef struct{
-  u16 Node_id;
-  CH_RRC_INFO Info;
-  SRB_INFO Srb3;
+  eNB_RRC_INFO Info;
+  SRB_INFO SI;
   SRB_INFO Srb0;
-  SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_CH+1];
-  SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_CH+1];
+  SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_eNB+1];
+  SRB_INFO_TABLE_ENTRY Srb2[NB_CNX_eNB+1];
   u8 *SIB1;
   u8 sizeof_SIB1;
   u8 *SIB23;
@@ -195,17 +163,16 @@ typedef struct{
   SystemInformation_t systemInformation;
   SystemInformationBlockType2_t *sib2;
   SystemInformationBlockType3_t *sib3;
-  struct SRB_ToAddMod             *SRB1_config[NB_CNX_CH];
-  struct SRB_ToAddMod             *SRB2_config[NB_CNX_CH];
-  struct DRB_ToAddMod             *DRB_config[NB_CNX_CH][8];
-  struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_CH];
-  struct SPS_Config               *sps_Config[NB_CNX_CH];
-  MAC_MainConfig_t                *mac_MainConfig[NB_CNX_CH];
-}CH_RRC_INST;
+  struct SRB_ToAddMod             *SRB1_config[NB_CNX_eNB];
+  struct SRB_ToAddMod             *SRB2_config[NB_CNX_eNB];
+  struct DRB_ToAddMod             *DRB_config[NB_CNX_eNB][8];
+  struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_eNB];
+  struct SPS_Config               *sps_Config[NB_CNX_eNB];
+  MAC_MainConfig_t                *mac_MainConfig[NB_CNX_eNB];
+}eNB_RRC_INST;
 
 
 typedef struct{
-  u16 Node_id;
   UE_RRC_INFO Info[NB_SIG_CNX_UE];
   SRB_INFO Srb0[NB_SIG_CNX_UE];
   SRB_INFO_TABLE_ENTRY Srb1[NB_CNX_UE];
@@ -240,8 +207,8 @@ typedef struct{
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(void);
-char openair_rrc_ch_init(u8 Mod_id);
-char openair_rrc_mr_init(u8 Mod_id,u8 CH_IDX);
+char openair_rrc_eNB_init(u8 Mod_id);
+char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id);
 
@@ -296,39 +263,39 @@ void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CH_index,
 /**\brief Entry routine to decode a UL-CCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
-void rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
+void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param UE_index Index of UE sending the message
    \param Rx_sdu Pointer Received Message
    \param sdu_size Size of incoming SDU*/
-void rrc_ch_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
+void rrc_eNB_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
 
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE receiving the message*/
-void rrc_ch_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
+void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
 
 /**\brief Process the RRCConnectionSetupComplete based on information coming from UE
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the message
    \param rrcConnectionSetupComplete Pointer to RRCConnectionSetupComplete message*/
-void rrc_ch_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
+void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the messages
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
-void rrc_ch_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
+void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
 
 
 //L2_interface.c
-unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id, unsigned short Srb_id, unsigned char Nb_tb,char *Buffer,u8);
-unsigned char mac_rrc_mesh_data_ind( unsigned char Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,unsigned char Mui);
-void mac_mesh_sync_ind( unsigned char Mod_id, unsigned char status);
-void rlcrrc_mesh_data_ind( unsigned char Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
-void rrc_mesh_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index);
+u8 mac_rrc_lite_data_req( u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
+u8 mac_rrc_lite_data_ind( u8 Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
+void mac_sync_ind( u8 Mod_id, u8 status);
+void rlcrrc_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+void rrc_out_of_sync_ind(u8 Mod_id, unsigned short CH_index);
 
 //MESSAGES/asn1_msg.c
 /** 
