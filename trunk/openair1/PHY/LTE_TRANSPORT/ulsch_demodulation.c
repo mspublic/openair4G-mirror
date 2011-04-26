@@ -1105,8 +1105,8 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     msg("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
 	ulsch->harq_processes[harq_pid]->first_rb,
 	ulsch->harq_processes[harq_pid]->nb_rb,
-	eNB_common_vars->rxdataF[eNb_id],
-    	eNB_ulsch_vars->rxdataF_ext[eNb_id]);
+	eNB_common_vars->rxdataF[eNB_id],
+    	eNB_ulsch_vars->rxdataF_ext[eNB_id]);
 #endif //DEBUG_ULSCH
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNB_id],

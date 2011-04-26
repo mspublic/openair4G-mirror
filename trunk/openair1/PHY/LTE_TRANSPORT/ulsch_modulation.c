@@ -238,8 +238,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
   Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
 
 #ifdef DEBUG_ULSCH_MODULATION
-  msg("ulsch_modulation.c: Doing modulation for G=%d bits, nb_rb %d, Q_m %d, Nsymb_pusch %d\n",
-      G,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch);
+  msg("ulsch_modulation.c: Doing modulation for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d)\n",
+      G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb);
 #endif
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
   for (i=0;i<G;i++) {

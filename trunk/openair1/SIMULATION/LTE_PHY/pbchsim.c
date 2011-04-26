@@ -567,7 +567,6 @@ int main(int argc, char **argv) {
     generate_pss(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 		 1024,
 		 &PHY_vars_eNb->lte_frame_parms,
-		 0,
 		 2,
 		 2);
     
@@ -609,7 +608,8 @@ int main(int argc, char **argv) {
       exit(-1);
     }
     */
-    generate_pbch(PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
+    generate_pbch(&PHY_vars_eNb->lte_eNB_pbch,
+		  PHY_vars_eNb->lte_eNB_common_vars.txdataF[0],
 		  1024,
 		  &PHY_vars_eNb->lte_frame_parms,
 		  pbch_pdu,
@@ -626,7 +626,6 @@ int main(int argc, char **argv) {
       generate_pss(PHY_vars_eNb1->lte_eNB_common_vars.txdataF[0],
 		   1024,
 		   &PHY_vars_eNb1->lte_frame_parms,
-		   0,
 		   (PHY_vars_eNb1->lte_frame_parms.Ncp==0)?6:5,
 		   0);
       
@@ -641,7 +640,8 @@ int main(int argc, char **argv) {
 		      2);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
       
       
-      generate_pbch(PHY_vars_eNb1->lte_eNB_common_vars.txdataF[0],
+      generate_pbch(&PHY_vars_eNb1->lte_eNB_pbch,
+		    PHY_vars_eNb1->lte_eNB_common_vars.txdataF[0],
 		    1024,
 		    &PHY_vars_eNb1->lte_frame_parms,
 		    pbch_pdu,
@@ -653,7 +653,6 @@ int main(int argc, char **argv) {
       generate_pss(PHY_vars_eNb2->lte_eNB_common_vars.txdataF[0],
 		   1024,
 		   &PHY_vars_eNb2->lte_frame_parms,
-		   0,
 		   (PHY_vars_eNb2->lte_frame_parms.Ncp==0)?6:5,
 		   0);
       
@@ -668,7 +667,8 @@ int main(int argc, char **argv) {
 		      2);//LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
       
       
-      generate_pbch(PHY_vars_eNb2->lte_eNB_common_vars.txdataF[0],
+      generate_pbch(&PHY_vars_eNb2->lte_eNB_pbch,
+		    PHY_vars_eNb2->lte_eNB_common_vars.txdataF[0],
 		    1024,
 		    &PHY_vars_eNb2->lte_frame_parms,
 		    pbch_pdu,
@@ -942,8 +942,8 @@ int main(int argc, char **argv) {
 	for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	  for (aa=0;aa<PHY_vars_eNb->lte_frame_parms.nb_antennas_rx;aa++) {
 	    if (n_trials==0) {
-	      //		r_re[aa][i] += (pow(10.0,.05*interf1)*r_re1[aa][i] + pow(10.0,.05*interf2)*r_re2[aa][i]);
-	      //		r_im[aa][i] += (pow(10.0,.05*interf1)*r_im1[aa][i] + pow(10.0,.05*interf2)*r_im2[aa][i]);
+	      r_re[aa][i] += (pow(10.0,.05*interf1)*r_re1[aa][i] + pow(10.0,.05*interf2)*r_re2[aa][i]);
+	      r_im[aa][i] += (pow(10.0,.05*interf1)*r_im1[aa][i] + pow(10.0,.05*interf2)*r_im2[aa][i]);
 	    }
 	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));

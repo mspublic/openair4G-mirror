@@ -313,8 +313,8 @@ char dB_fixed(unsigned int x) {
   } else {
     dB_power = dB_table[(x&255)-1];
   }
-
-
+  if (dB_power > 90)
+    return(0);
   return dB_power;
 }
 

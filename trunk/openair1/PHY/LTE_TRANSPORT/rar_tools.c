@@ -49,7 +49,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   ulsch->beta_offset_harqack_times8            = 16;
 
   
-  ulsch->Nsymb_pusch                           = 9;
+  ulsch->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1);
   
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     ulsch->harq_processes[harq_pid]->status = ACTIVE;
@@ -139,7 +139,7 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
     ulsch->beta_offset_ri_times8                   = 10;
     ulsch->beta_offset_harqack_times8              = 16;
     
-    ulsch->Nsymb_pusch                             = 9;
+    ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;

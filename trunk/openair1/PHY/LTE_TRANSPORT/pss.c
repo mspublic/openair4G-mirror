@@ -11,12 +11,12 @@
 int generate_pss(mod_sym_t **txdataF,
 		 short amp,
 		 LTE_DL_FRAME_PARMS *frame_parms,
-		 unsigned short eNb_id,
 		 unsigned short symbol,
 		 unsigned short slot_offset) {
 
   unsigned int Nsymb;
   unsigned short k,m,aa;
+  u8 Nid2;
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT
   unsigned char *primary_sync_tab;
@@ -28,8 +28,8 @@ int generate_pss(mod_sym_t **txdataF,
 #endif
 
   //debug_msg("[PSS] Using sequence %d\n",eNb_id);
-
-  switch (eNb_id) {
+  Nid2 = frame_parms->Nid_cell % 3;
+  switch (Nid2) {
   case 0:
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT

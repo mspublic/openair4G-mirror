@@ -36,13 +36,13 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,LTE_eNB_UE_stats *st
 
   case wideband_cqi: //and subband pmi
     if (rank == 0) {
-      stats->DL_cqi[0]     = (((wideband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
+      stats->DL_cqi[0]     = 4;//(((wideband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
       if (stats->DL_cqi[0] > 28)
 	stats->DL_cqi[0] = 28;
       stats->DL_pmi_single = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[0]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
+      stats->DL_cqi[0]     = 4;//(((wideband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
       if (stats->DL_cqi[0] > 28)
 	stats->DL_cqi[0] = 28;      
       stats->DL_cqi[1]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi2)<<1;
@@ -53,14 +53,14 @@ void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,LTE_eNB_UE_stats *st
     break;
   case hlc_cqi:
     if (rank == 0) {
-      stats->DL_cqi[0]     = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
+      stats->DL_cqi[0]     = 4;//(((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
       if (stats->DL_cqi[0] > 28)
 	stats->DL_cqi[0] = 28;      
       stats->DL_diffcqi[0] = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1)<<1;      
       stats->DL_pmi_single = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[0]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
+      stats->DL_cqi[0]     = 4;//(((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
       if (stats->DL_cqi[0] > 28)
 	stats->DL_cqi[0] = 28;      
       stats->DL_cqi[1]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2)<<1;

@@ -5,9 +5,9 @@
 #include "PHY/defs.h"
 #include "filt96_32.h"
 //#define DEBUG_CH
-int lte_dl_channel_estimation(int **dl_ch_estimates,
+int lte_dl_channel_estimation(u8 eNB_offset,
+			      int **dl_ch_estimates,
 			      int **rxdataF,
-			      unsigned char eNb_id,
 			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char Ns,
 			      unsigned char p,
@@ -24,7 +24,8 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   int ch_offset,symbol_offset;
   unsigned int n;
   int i;
-  
+  u8 nushift = (frame_parms->nushift + eNB_offset)%6;
+
   if ((p==0) && (l==0) )
     nu = 0;
   else if ((p==0) && (l>0))
@@ -42,7 +43,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
   ch_offset     = (l*(frame_parms->ofdm_symbol_size));
   symbol_offset = frame_parms->ofdm_symbol_size*symbol;
 
-  k = (nu + frame_parms->nushift+eNb_id);
+  k = (nu + nushift)%6;
   if (k > 6)
     k -=6;
   
@@ -208,7 +209,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       //       printf("Second half\n");
       // Second half of RBs
       
-      k = (nu + frame_parms->nushift+eNb_id);
+      k = (nu + nushift)%6;
       if (k > 6)
 	k -=6;
       
@@ -510,7 +511,7 @@ int lte_dl_channel_estimation(int **dl_ch_estimates,
       
       //printf("Second half\n");
       //Second half of RBs
-      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+frame_parms->nushift +eNb_id+ (3*p))<<1)]; 
+      rxF   = (short *)&rxdataF[aarx][((symbol_offset+1+nushift + (3*p))<<1)]; 
       
       ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
       ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
