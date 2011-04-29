@@ -27,7 +27,8 @@ or via svn from sourceforge (version 0.9.22)
 
 svn co https://asn1c.svn.sourceforge.net/svnroot/asn1c/trunk asn1c
 
-and put it in the asn1c directory (you should have a second asn1c directory now). Compile it according to the instructions given (see INSTALL file)
+and put it in the asn1c directory (you should have a second asn1c directory now). Compile it and install it locally 
+(or make sure your $PATH can find the asn1c executable) according to the instructions given (see INSTALL file)
 by the author. We have validated that 0.9.22 works on Linux and Cygwin. To generate the data structures do the following from the 
 current directory
 
