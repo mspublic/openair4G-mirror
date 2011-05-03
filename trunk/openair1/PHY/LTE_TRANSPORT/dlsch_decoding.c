@@ -345,6 +345,12 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 }
 
 #ifdef PHY_ABSTRACTION
+#include "SIMULATION/TOOLS/defs.h"
+extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+int dlsch_abstraction(struct complex **channel_f, double snr_dB, u32 rb_alloc[4], u8 mcs) {
+  return(1);
+}
+
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 			u8 subframe,
 			u8 dlsch_id,
@@ -352,12 +358,17 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
+  struct complex **channel_f;
+  double snr_dB;
   u8 harq_pid;
   int i;
 
   msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
+
+  channel_f = eNB2UE[eNB_id][phy_vars_ue->Mod_id]->chF;
+  snr_dB = eNB2UE[eNB_id][phy_vars_ue->Mod_id]->snr_dB;
 
   switch (dlsch_id) {
   case 0: // SI
@@ -379,16 +390,29 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     harq_pid = dlsch_ue->current_harq_pid;
     dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])][0];
 
-    // reset HARQ 
-    dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
-    dlsch_ue->harq_processes[harq_pid]->round  = 0;
-    dlsch_ue->harq_ack[subframe].ack = 1;
-    dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
-    dlsch_ue->harq_ack[subframe].send_harq_status = 1;
-    if (dlsch_ue->harq_processes[harq_pid]->Ndi == 1)
-      memcpy(dlsch_ue->harq_processes[harq_pid]->b,
-	     dlsch_eNB->harq_processes[harq_pid]->b,
-	     dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+    if (dlsch_abstraction(channel_f, snr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
+      // reset HARQ 
+      dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
+      dlsch_ue->harq_processes[harq_pid]->round  = 0;
+      dlsch_ue->harq_ack[subframe].ack = 1;
+      dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
+      dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+      if (dlsch_ue->harq_processes[harq_pid]->Ndi == 1)
+	memcpy(dlsch_ue->harq_processes[harq_pid]->b,
+	       dlsch_eNB->harq_processes[harq_pid]->b,
+	       dlsch_ue->harq_processes[harq_pid]->TBS>>3);
+      return(1);
+    }
+    else {
+      // retransmission
+      dlsch_ue->harq_processes[harq_pid]->status = ACTIVE;
+      dlsch_ue->harq_processes[harq_pid]->round++;
+      dlsch_ue->harq_ack[subframe].ack = 0;
+      dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
+      dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+      return(1+MAX_TURBO_ITERATIONS);
+    }
+
     break;
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
@@ -407,6 +431,5 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     return(1+MAX_TURBO_ITERATIONS);
   }
 
-  return(1);
 }
 #endif
