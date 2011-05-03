@@ -105,10 +105,13 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
+/*
 DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
-//DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+*/
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu[2];
+
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
@@ -132,8 +135,8 @@ int main(int argc, char **argv) {
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
   double **s_re,**s_im,**r_re,**r_im;
-  //double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double amps[1] = {1};
+  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  //double amps[1] = {1};
   double aoa=.03;
   double ricean_factor=0.0000005;
   //double ricean_factor=1;
@@ -141,7 +144,7 @@ int main(int argc, char **argv) {
   double hold_channel=0; //use hold_channel=1 instead of forgetting_factor=1 (more efficient)
   double Td=0.8;
   double iqim=0.0;
-  u8 channel_length,nb_taps=1;
+  u8 channel_length,nb_taps=8;
   u8 extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
   u16 Nid_cell=0;
 
@@ -985,7 +988,7 @@ int main(int argc, char **argv) {
 	  
 	  else{ //ABStraction
 	    if (awgn_flag == 0) {	
-	      
+
 	      multipath_channel(eNB2UE,s_re,s_im,r_re,r_im,
 				2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	    }
@@ -1010,6 +1013,18 @@ int main(int argc, char **argv) {
 	    //    lte_sync_time_init(PHY_vars_eNB->lte_frame_parms,lte_ue_common_vars);
 	    //    lte_sync_time(lte_ue_common_vars->rxdata, PHY_vars_eNB->lte_frame_parms);
 	    //    lte_sync_time_free();
+
+	    /*
+	    // estimate pmi and skip one round of the while loop
+	    if (estimate_pmi == 1) {
+	      estimate_pmi = 0;
+	      //estimate pmi
+	      continue;
+	    }					
+	    else {
+	      estimate_pmi = 1;
+	    }
+	    */
 
 	    /*
 	    // optional: read rx_frame from file
@@ -1050,7 +1065,8 @@ int main(int argc, char **argv) {
 	      for (l=0;l<pilot2;l++) {
 		if (n_frames==1)
 		  printf("Ns %d, l %d\n",Ns,l);
-		slot_fep(&PHY_vars_UE->lte_frame_parms,
+		slot_fep(eNB_id,
+			 &PHY_vars_UE->lte_frame_parms,
 			 &PHY_vars_UE->lte_ue_common_vars,
 			 l,
 			 Ns%20,
