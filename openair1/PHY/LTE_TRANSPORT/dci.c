@@ -2535,7 +2535,6 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     return(dci_cnt);
 #endif
 
-  /*
   // Now check UE_SPEC search spaces at aggregation 4 
   old_dci_cnt=dci_cnt;
   dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
@@ -2559,7 +2558,6 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
-  */
 
 
   dci_decoding_procedure0(lte_ue_pdcch_vars,subframe,
@@ -2572,9 +2570,9 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  2,
 			  format1A,
 			  format1A,
-			  format1,//format2_2A_M10PRB,
-			  sizeof_DCI1_5MHz_TDD_t,//sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			  sizeof(DCI1_5MHz_TDD_t),//sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			  format2_2A_M10PRB,
+			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
 			  &dci_cnt,
 			  &CCEmap0,
 			  &CCEmap1,
