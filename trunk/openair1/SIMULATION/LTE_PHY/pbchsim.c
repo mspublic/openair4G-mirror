@@ -20,12 +20,10 @@
 
 #define BW 5.0
 
-int current_dlsch_cqi; //FIXME! 
 
 PHY_VARS_eNB *PHY_vars_eNb,*PHY_vars_eNb1,*PHY_vars_eNb2;
 PHY_VARS_UE *PHY_vars_UE;
 
-DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
 
@@ -995,12 +993,13 @@ int main(int argc, char **argv) {
 	    subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
 	    //	    printf("subframe_offset = %d\n",subframe_offset);
 	      
-	      slot_fep(&PHY_vars_UE->lte_frame_parms,
-		       &PHY_vars_UE->lte_ue_common_vars,
-		       l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
-		       l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
-		       sync_pos-sync_pos_slot,
-		       0);
+	    slot_fep(eNb_id,
+		     &PHY_vars_UE->lte_frame_parms,
+		     &PHY_vars_UE->lte_ue_common_vars,
+		     l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
+		     l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
+		     sync_pos-sync_pos_slot,
+		     0);
 	      
 
 	      if (l==0) {

@@ -21,15 +21,8 @@
 #define BW 10.0
 #define N_TRIALS 100
 
-int current_dlsch_cqi; //FIXME! 
-
 PHY_VARS_eNB *PHY_vars_eNb,*PHY_vars_eNb1,*PHY_vars_eNb2;;
 PHY_VARS_UE *PHY_vars_UE;
-
-DCI0_5MHz_TDD0_t          UL_alloc_pdu;
-DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
-DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
-DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNb->lte_frame_parms.N_RB_UL,0,2)
@@ -792,7 +785,8 @@ int main(int argc, char **argv) {
 	subframe_offset = (l/PHY_vars_eNb->lte_frame_parms.symbols_per_tti)*PHY_vars_eNb->lte_frame_parms.samples_per_tti;
 	//	    printf("subframe_offset = %d\n",subframe_offset);
 	  
-	slot_fep(&PHY_vars_UE->lte_frame_parms,
+	slot_fep(eNb_id,
+		 &PHY_vars_UE->lte_frame_parms,
 		 &PHY_vars_UE->lte_ue_common_vars,
 		 l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
 		 l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
