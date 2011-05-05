@@ -29,8 +29,6 @@
   #define RBmask3 0x0
 */
 
-unsigned char dlsch_cqi;
-
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 

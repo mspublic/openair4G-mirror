@@ -84,7 +84,7 @@ $(OBJ) : %.o : %.c
 dlsim : $(OBJ) dlsim.c
 	$(CC) dlsim.c -o dlsim $(CFLAGS) $(OBJ) -lm -lblas 
 
-framegen: $(OBJ) $(SCHED_OBJS) framegen.c
+framegen: $(OBJ) framegen.c
 	$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) -lm -lblas
 
 pbchsim : $(OBJ) pbchsim.c
@@ -93,7 +93,7 @@ pbchsim : $(OBJ) pbchsim.c
 pdcchsim : $(OBJ) pdcchsim.c
 	$(CC) pdcchsim.c -o pdcchsim $(CFLAGS) $(OBJ) -lm -lblas
 
-pucchsim : $(OBJ) $(SCHED_OBJS)  pucchsim.c
+pucchsim : $(OBJ)  pucchsim.c
 	$(CC) pucchsim.c -o pucchsim $(CFLAGS) $(OBJ) -lm -lblas
 
 dlsim_secsys : $(OBJ2) dlsim_secsys.c
