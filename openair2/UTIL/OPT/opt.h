@@ -31,7 +31,7 @@ Authors: Ben Romdhanne Bilel, Navid NIKAIEN
 Company: EURECOM
 Emails:
 *This file include all defined structures & function headers of this module
-This header file must be include  
+This header file must be included */ 
 /**
  * Include bloc
  * */
