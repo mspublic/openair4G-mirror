@@ -175,7 +175,9 @@ int main(int argc, char **argv) {
   s8 interf1=-128,interf2=-128;
   u8 dci_cnt=0;
   LTE_DL_FRAME_PARMS *frame_parms;
-  u8 log2L=2, log2Lcommon=2, N=3, dci_length=sizeof_DCI1B_5MHz_2A_TDD_t;
+  u8 log2L=2, log2Lcommon=2, N=3, dci_length=sizeof_DCI1_5MHz_TDD_t;
+  DCI_format_t format=format1;
+  u8 dci_length_bytes=sizeof(DCI1_5MHz_TDD_t);
   u8 numCCE,nCCE_max,common_active,ul_active,dl_active,num_dci,num_common_dci,num_ue_spec_dci;
   u32 rv;
 
@@ -325,49 +327,79 @@ int main(int argc, char **argv) {
 	switch (atoi(optarg)) {
 	  
 	case 0:
+	  format     = format1;
 	  dci_length = sizeof_DCI1_5MHz_TDD_t;
+	  dci_length_bytes = sizeof(DCI1_5MHz_TDD_t);
 	  break;
 	case 1:
+	  format     = format1A;
 	  dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	  dci_length_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
 	  break;
 	case 2:
+	  format     = format1B;
 	  dci_length = sizeof_DCI1B_5MHz_2A_TDD_t;
+	  dci_length_bytes = sizeof(DCI1B_5MHz_2A_TDD_t);
 	  break;
 	case 3:
+	  format     = format1B;
 	  dci_length = sizeof_DCI1B_5MHz_4A_TDD_t;
+	  dci_length_bytes = sizeof(DCI1B_5MHz_4A_TDD_t);
 	  break;
 	case 4:
+	  format     = format1C;
 	  dci_length = sizeof_DCI1C_5MHz_t;
+	  dci_length_bytes = sizeof(DCI1C_5MHz_t);
 	  break;
 	case 5:
+	  format     = format1D;
 	  dci_length = sizeof_DCI1D_5MHz_2A_TDD_t;
+	  dci_length_bytes = sizeof(DCI1D_5MHz_2A_TDD_t);
 	  break;
 	case 6:
+	  format     = format1D;
 	  dci_length = sizeof_DCI1D_5MHz_4A_TDD_t;
+	  dci_length_bytes = sizeof(DCI1D_5MHz_4A_TDD_t);
 	  break;
 	case 7:
+	  format     = format2A_2A_L10PRB;
 	  dci_length = sizeof_DCI2A_5MHz_2A_L10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2A_5MHz_2A_L10PRB_TDD_t);
 	  break;
 	case 8:
+	  format     = format2A_2A_M10PRB;
 	  dci_length = sizeof_DCI2A_5MHz_2A_M10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2A_5MHz_2A_M10PRB_TDD_t);
 	  break;
 	case 9:
+	  format     = format2A_4A_L10PRB;
 	  dci_length = sizeof_DCI2A_5MHz_4A_L10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2A_5MHz_4A_L10PRB_TDD_t);
 	  break;
 	case 10:
+	  format     = format2A_4A_M10PRB;
 	  dci_length = sizeof_DCI2A_5MHz_4A_M10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2A_5MHz_4A_M10PRB_TDD_t);
 	  break;
 	case 11:
+	  format     = format2_2A_L10PRB;
 	  dci_length = sizeof_DCI2_5MHz_2A_L10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2_5MHz_2A_L10PRB_TDD_t);
 	  break;
 	case 12:
+	  format     = format2_2A_M10PRB;
 	  dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2_5MHz_2A_M10PRB_TDD_t);
 	  break;
 	case 13:
+	  format     = format2_4A_L10PRB;
 	  dci_length = sizeof_DCI2_5MHz_4A_L10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2_5MHz_4A_L10PRB_TDD_t);
 	  break;
 	case 14:
+	  format     = format2_4A_M10PRB;
 	  dci_length = sizeof_DCI2_5MHz_4A_M10PRB_TDD_t;
+	  dci_length_bytes = sizeof(DCI2_5MHz_4A_M10PRB_TDD_t);
 	  break;
 	default:
 	  break;
@@ -635,11 +667,11 @@ int main(int argc, char **argv) {
 	    ((u8 *)&DLSCH_alloc_pdu2)[2]=0xff;
 	    ((u8 *)&DLSCH_alloc_pdu2)[1]=0x60;
 	    ((u8 *)&DLSCH_alloc_pdu2)[0]=0x10;
-	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,sizeof(DCI1_5MHz_TDD_t));
-	    dci_alloc[num_dci].dci_length = sizeof_DCI1_5MHz_TDD_t;
+	    memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2,dci_length_bytes);
+	    dci_alloc[num_dci].dci_length = dci_length;
 	    dci_alloc[num_dci].L          = log2L;
 	    dci_alloc[num_dci].rnti       = n_rnti;
-	    dci_alloc[num_dci].format     = format1;
+	    dci_alloc[num_dci].format     = format;
 	    num_dci++;
 	    num_ue_spec_dci++;
 	    numCCE+=(1<<log2L);

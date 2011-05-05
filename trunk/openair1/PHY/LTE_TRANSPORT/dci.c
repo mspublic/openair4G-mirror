@@ -1459,7 +1459,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   u8 n_pdcch_symbols = 3; //lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols;
   u8 mi = get_mi(frame_parms,subframe);
 
-  printf("In rx_pdcch, subframe %d,  eNB_id %d\n",subframe,eNB_id);
+  //printf("In rx_pdcch, subframe %d,  eNB_id %d\n",subframe,eNB_id);
 
   for (s=0;s<n_pdcch_symbols;s++) {
       if (is_secondary_ue == 1) {
