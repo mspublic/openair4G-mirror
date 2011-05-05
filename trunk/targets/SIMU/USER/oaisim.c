@@ -190,6 +190,74 @@ channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
 
+void set_envi(OAI_Emulation * emulation_scen) {
+	/*LOG_T(OCG,"the area is x %f y %f option %s\n",
+	emulation_scen->envi_config.area.x,
+	emulation_scen->envi_config.area.y, 
+	emulation_scen->topo_config.eNB_topology.selected_option);*/
+	LOG_I(OCG, "environment is set\n");
+}
+
+void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info) {
+	emu_info->nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
+	emu_info->nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
+
+
+/*
+// inputs for OMG : TODO
+	emulation_scen->envi_config.area.x;
+	emulation_scen->envi_config.area.y;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
+
+	emulation_scen->topo_config.number_of_UE;
+	if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "concentrated")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "grid_map")) {
+	}
+
+	emulation_scen->topo_config.number_of_eNB;
+	if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
+	}
+
+	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
+	}
+	
+	if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "oaiseed")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "userseed")) {
+		emulation_scen->topo_config.mobility.random_seed.user_seed.seed_value;
+	}
+
+// outputs from OMG : the positions of eNBs and UEs
+	emulation_scen->topo_config.positions = OMG();
+	
+*/
+	LOG_I(OCG, "topology is set\n");
+}
+
+void set_app(OAI_Emulation * emulation_scen) {
+
+	LOG_I(OCG, "application is set\n");
+}
+
+void set_emu(OAI_Emulation * emulation_scen, u16 * n_frames) {
+	*n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
+
+	set_comp_log(OCG,  LOG_ERR, 1);
+	set_comp_log(OCG,  LOG_INFO, 1);
+	set_comp_log(OCG,  LOG_TRACE, 1);
+
+	LOG_I(OCG, "emulation is set\n");
+}
+
+
 int main(int argc, char **argv) {
 
  
@@ -380,7 +448,7 @@ int main(int argc, char **argv) {
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
 #ifdef OCG_FLAG
-  if ( emu_info.ocg_enabled==1){ // activate OCG: xml-based scenario parser 
+  if (emu_info.ocg_enabled == 1){ // activate OCG: xml-based scenario parser 
     emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
     // here is to check if OCG is successful, otherwise, we might not run the emulation
     if (emulation_scen->useful_info.OCG_OK != 1) { 
@@ -388,56 +456,17 @@ int main(int argc, char **argv) {
       exit(EXIT_FAILURE);
       }
 
-    /*LOG_T(OCG,"the area is x %f y %f option %s\n",
-	  emulation_scen->envi_config.area.x,
-	  emulation_scen->envi_config.area.y, 
-	  emulation_scen->topo_config.eNB_topology.selected_option);*/
-      
-      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
-printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
-      emu_info.nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
-      n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
-
-/*
-// inputs for OMG
-	emulation_scen->envi_config.area.x;
-	emulation_scen->envi_config.area.y;
-	emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
-	emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
-	emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
-	emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
-
-	emulation_scen->topo_config.number_of_UE;
-	if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "random")) {
-	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "concentrated")) {
-	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "grid_map")) {
-	}
-
-	emulation_scen->topo_config.number_of_eNB;
-	if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
-	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
-	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
-	}
-
-	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
-	}
-
-// outputs from OMG : the positions of eNBs and UEs
-	emulation_scen->topo_config.positions = OMG();
-	
-*/
-      
-      set_comp_log(OCG,  LOG_ERR, 1);
-      set_comp_log(OCG,  LOG_INFO, 1);
-      set_comp_log(OCG,  LOG_TRACE, 1);
-       
-      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
-      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, 0);
+      set_envi(emulation_scen);
+      set_topo(emulation_scen, &emu_info);
+      set_app(emulation_scen);
+      set_emu(emulation_scen, &n_frames);
 
       LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
+
+     /* : TODO
+      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
+      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, 0);*/
+
    }
 #endif
 
