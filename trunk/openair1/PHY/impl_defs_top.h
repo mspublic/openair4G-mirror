@@ -363,8 +363,7 @@ typedef struct
   /// Wideband Rank indication
   unsigned char  rank[NUMBER_OF_eNB_MAX];                                             
   /// DLSCH error counter
-  short          dlsch_errors;                                                        
-
+  // short          dlsch_errors;                                                        
 } PHY_MEASUREMENTS;
 
 typedef struct

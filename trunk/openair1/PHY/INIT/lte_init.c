@@ -938,9 +938,11 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
     ue_dlsch_vars[NUMBER_OF_eNB_MAX]->llr128 = (short **)malloc16(sizeof(short **));
     
-    
-    
   }
+  else { //abstraction == 1
+    phy_vars_ue->sinr_dB = (short*) malloc16(frame_parms->N_RB_DL*2*sizeof(short));
+  }
+
   return(0);
 }
 
