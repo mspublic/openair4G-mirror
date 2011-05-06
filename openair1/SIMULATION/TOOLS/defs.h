@@ -56,8 +56,6 @@ typedef struct {
   u8 first_run;
   /// initial phase for frequency offset simulation 
   double ip;
-  /// snr of the current link (used only for abstraction)
-  double snr_dB;
 } channel_desc_t;
 
 typedef struct {
