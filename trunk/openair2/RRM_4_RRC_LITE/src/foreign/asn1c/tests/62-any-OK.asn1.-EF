@@ -1,0 +1,37 @@
+ModuleTestANYSyntax { iso org(3) dod(6) internet(1) private(4) enterprise(1)
+	spelio(9363) software(1) asn1c(5) test(1) 62 }
+DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+T ::= CHOICE {
+    s1	 T1-ext,
+    s2	 T2,
+    s3	 T3,
+    s4	 T4
+}
+
+T1-ext ::= SEQUENCE {
+    i	 INTEGER OPTIONAL,
+    any	 [1] EXPLICIT ANY,
+    ...
+}
+
+T2 ::= [16] IMPLICIT SEQUENCE {
+    m1	 [0] IMPLICIT NumericString,
+    m2	 [1] IMPLICIT BOOLEAN,
+    m3	 [3] IMPLICIT SEQUENCE OF NumericString,
+    o4	 [4] IMPLICIT BOOLEAN OPTIONAL,
+    o5	 [5] IMPLICIT BOOLEAN OPTIONAL,
+    o6	 [6] IMPLICIT BOOLEAN OPTIONAL
+}
+
+T3 ::= SET {
+    m1	 [0] IMPLICIT NumericString,
+    m2	 [1] IMPLICIT BOOLEAN
+}
+
+T4 ::= [53] EXPLICIT CHOICE {
+    m1	 [1] IMPLICIT OCTET STRING
+}
+
+END

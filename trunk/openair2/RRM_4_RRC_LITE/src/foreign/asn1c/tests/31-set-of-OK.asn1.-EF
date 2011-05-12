@@ -1,0 +1,26 @@
+ModuleTestSetOfSimple { iso org(3) dod(6) internet(1) private(4) enterprise(1)
+	spelio(9363) software(1) asn1c(5) test(1) 31 }
+DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+Forest ::= SET OF Tree
+
+Tree ::= SEQUENCE {
+    height	 INTEGER,
+    width	 INTEGER
+}
+
+Stuff ::= SET {
+    trees	 [1] IMPLICIT SET OF Forest OPTIONAL,
+    anything	 [2] IMPLICIT SET OF SEQUENCE {
+            cup-of-coffee	 BIT STRING,        
+            ...
+        } OPTIONAL,
+    ...,
+    other	 CHOICE {
+        a	 [0] IMPLICIT INTEGER,    
+        b	 [3] IMPLICIT INTEGER
+    }
+}
+
+END

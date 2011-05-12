@@ -1,0 +1,581 @@
+
+/*** <<< INCLUDES [Test-structure-1] >>> ***/
+
+#include <INTEGER.h>
+#include <asn_SET_OF.h>
+#include <constr_SET_OF.h>
+#include <asn_SEQUENCE_OF.h>
+#include <constr_SEQUENCE_OF.h>
+#include <constr_SEQUENCE.h>
+
+/*** <<< FWD-DECLS [Test-structure-1] >>> ***/
+
+struct Test_structure_1;
+
+/*** <<< TYPE-DECLS [Test-structure-1] >>> ***/
+
+typedef struct Test_structure_1 {
+	struct t_member1 {
+		A_SET_OF(struct Test_structure_1) list;
+		
+		/* Context for parsing across buffer boundaries */
+		asn_struct_ctx_t _asn_ctx;
+	} t_member1;
+	struct t_member2 {
+		A_SEQUENCE_OF(struct Test_structure_1) list;
+		
+		/* Context for parsing across buffer boundaries */
+		asn_struct_ctx_t _asn_ctx;
+	} t_member2;
+	struct Test_structure_1	*t_member3	/* OPTIONAL */;
+	INTEGER_t	 t_member4;
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} Test_structure_1_t;
+
+/*** <<< FUNC-DECLS [Test-structure-1] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Test_structure_1;
+
+/*** <<< POST-INCLUDE [Test-structure-1] >>> ***/
+
+#include "Test-structure-1.h"
+
+/*** <<< STAT-DEFS [Test-structure-1] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_t_member1_2[] = {
+	{ ATF_POINTER, 0, 0,
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Test_structure_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = ""
+		},
+};
+static ber_tlv_tag_t asn_DEF_t_member1_tags_2[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (17 << 2))
+};
+static asn_SET_OF_specifics_t asn_SPC_t_member1_specs_2 = {
+	sizeof(struct t_member1),
+	offsetof(struct t_member1, _asn_ctx),
+	0,	/* XER encoding is XMLDelimitedItemList */
+};
+static /* Use -fall-defs-global to expose */
+asn_TYPE_descriptor_t asn_DEF_t_member1_2 = {
+	"t-member1",
+	"t-member1",
+	SET_OF_free,
+	SET_OF_print,
+	SET_OF_constraint,
+	SET_OF_decode_ber,
+	SET_OF_encode_der,
+	SET_OF_decode_xer,
+	SET_OF_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_t_member1_tags_2,
+	sizeof(asn_DEF_t_member1_tags_2)
+		/sizeof(asn_DEF_t_member1_tags_2[0]), /* 1 */
+	asn_DEF_t_member1_tags_2,	/* Same as above */
+	sizeof(asn_DEF_t_member1_tags_2)
+		/sizeof(asn_DEF_t_member1_tags_2[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_t_member1_2,
+	1,	/* Single element */
+	&asn_SPC_t_member1_specs_2	/* Additional specs */
+};
+
+static asn_TYPE_member_t asn_MBR_t_member2_4[] = {
+	{ ATF_POINTER, 0, 0,
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Test_structure_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = ""
+		},
+};
+static ber_tlv_tag_t asn_DEF_t_member2_tags_4[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+static asn_SET_OF_specifics_t asn_SPC_t_member2_specs_4 = {
+	sizeof(struct t_member2),
+	offsetof(struct t_member2, _asn_ctx),
+	0,	/* XER encoding is XMLDelimitedItemList */
+};
+static /* Use -fall-defs-global to expose */
+asn_TYPE_descriptor_t asn_DEF_t_member2_4 = {
+	"t-member2",
+	"t-member2",
+	SEQUENCE_OF_free,
+	SEQUENCE_OF_print,
+	SEQUENCE_OF_constraint,
+	SEQUENCE_OF_decode_ber,
+	SEQUENCE_OF_encode_der,
+	SEQUENCE_OF_decode_xer,
+	SEQUENCE_OF_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_t_member2_tags_4,
+	sizeof(asn_DEF_t_member2_tags_4)
+		/sizeof(asn_DEF_t_member2_tags_4[0]), /* 1 */
+	asn_DEF_t_member2_tags_4,	/* Same as above */
+	sizeof(asn_DEF_t_member2_tags_4)
+		/sizeof(asn_DEF_t_member2_tags_4[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_t_member2_4,
+	1,	/* Single element */
+	&asn_SPC_t_member2_specs_4	/* Additional specs */
+};
+
+static asn_TYPE_member_t asn_MBR_Test_structure_1_1[] = {
+	{ ATF_NOFLAGS, 0, offsetof(struct Test_structure_1, t_member1),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_t_member1_2,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "t-member1"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct Test_structure_1, t_member2),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_t_member2_4,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "t-member2"
+		},
+	{ ATF_POINTER, 1, offsetof(struct Test_structure_1, t_member3),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Test_structure_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "t-member3"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct Test_structure_1, t_member4),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_INTEGER,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "t-member4"
+		},
+};
+static ber_tlv_tag_t asn_DEF_Test_structure_1_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+static asn_TYPE_tag2member_t asn_MAP_Test_structure_1_tag2el_1[] = {
+    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 3, 0, 0 }, /* t-member4 at 19 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 1, 0, 1 }, /* t-member2 at 16 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 2, -1, 0 }, /* t-member3 at 17 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)), 0, 0, 0 } /* t-member1 at 15 */
+};
+static asn_SEQUENCE_specifics_t asn_SPC_Test_structure_1_specs_1 = {
+	sizeof(struct Test_structure_1),
+	offsetof(struct Test_structure_1, _asn_ctx),
+	asn_MAP_Test_structure_1_tag2el_1,
+	4,	/* Count of tags in the map */
+	0, 0, 0,	/* Optional elements (not needed) */
+	-1,	/* Start extensions */
+	-1	/* Stop extensions */
+};
+asn_TYPE_descriptor_t asn_DEF_Test_structure_1 = {
+	"Test-structure-1",
+	"Test-structure-1",
+	SEQUENCE_free,
+	SEQUENCE_print,
+	SEQUENCE_constraint,
+	SEQUENCE_decode_ber,
+	SEQUENCE_encode_der,
+	SEQUENCE_decode_xer,
+	SEQUENCE_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_Test_structure_1_tags_1,
+	sizeof(asn_DEF_Test_structure_1_tags_1)
+		/sizeof(asn_DEF_Test_structure_1_tags_1[0]), /* 1 */
+	asn_DEF_Test_structure_1_tags_1,	/* Same as above */
+	sizeof(asn_DEF_Test_structure_1_tags_1)
+		/sizeof(asn_DEF_Test_structure_1_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_Test_structure_1_1,
+	4,	/* Elements count */
+	&asn_SPC_Test_structure_1_specs_1	/* Additional specs */
+};
+
+
+/*** <<< INCLUDES [Choice-1] >>> ***/
+
+#include <INTEGER.h>
+#include <asn_SET_OF.h>
+#include <constr_SET_OF.h>
+#include <constr_CHOICE.h>
+
+/*** <<< DEPS [Choice-1] >>> ***/
+
+typedef enum Choice_1_PR {
+	Choice_1_PR_NOTHING,	/* No components present */
+	Choice_1_PR_and,
+	Choice_1_PR_or,
+	Choice_1_PR_not,
+	Choice_1_PR_other
+} Choice_1_PR;
+
+/*** <<< FWD-DECLS [Choice-1] >>> ***/
+
+struct Choice_1;
+
+/*** <<< TYPE-DECLS [Choice-1] >>> ***/
+
+typedef struct Choice_1 {
+	Choice_1_PR present;
+	union Choice_1_u {
+		struct Choice_1	*and;
+		struct or {
+			A_SET_OF(struct Choice_1) list;
+			
+			/* Context for parsing across buffer boundaries */
+			asn_struct_ctx_t _asn_ctx;
+		} or;
+		struct Choice_1	*not;
+		INTEGER_t	 other;
+	} choice;
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} Choice_1_t;
+
+/*** <<< FUNC-DECLS [Choice-1] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Choice_1;
+
+/*** <<< POST-INCLUDE [Choice-1] >>> ***/
+
+#include "Choice-1.h"
+
+/*** <<< STAT-DEFS [Choice-1] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_or_3[] = {
+	{ ATF_POINTER, 0, 0,
+		.tag = -1 /* Ambiguous tag (CHOICE?) */,
+		.tag_mode = 0,
+		.type = &asn_DEF_Choice_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = ""
+		},
+};
+static ber_tlv_tag_t asn_DEF_or_tags_3[] = {
+	(ASN_TAG_CLASS_CONTEXT | (2 << 2)),
+	(ASN_TAG_CLASS_UNIVERSAL | (17 << 2))
+};
+static asn_SET_OF_specifics_t asn_SPC_or_specs_3 = {
+	sizeof(struct or),
+	offsetof(struct or, _asn_ctx),
+	2,	/* XER encoding is XMLValueList */
+};
+static /* Use -fall-defs-global to expose */
+asn_TYPE_descriptor_t asn_DEF_or_3 = {
+	"or",
+	"or",
+	SET_OF_free,
+	SET_OF_print,
+	SET_OF_constraint,
+	SET_OF_decode_ber,
+	SET_OF_encode_der,
+	SET_OF_decode_xer,
+	SET_OF_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_or_tags_3,
+	sizeof(asn_DEF_or_tags_3)
+		/sizeof(asn_DEF_or_tags_3[0]) - 1, /* 1 */
+	asn_DEF_or_tags_3,	/* Same as above */
+	sizeof(asn_DEF_or_tags_3)
+		/sizeof(asn_DEF_or_tags_3[0]), /* 2 */
+	0,	/* No PER visible constraints */
+	asn_MBR_or_3,
+	1,	/* Single element */
+	&asn_SPC_or_specs_3	/* Additional specs */
+};
+
+static asn_TYPE_member_t asn_MBR_Choice_1_1[] = {
+	{ ATF_POINTER, 0, offsetof(struct Choice_1, choice.and),
+		.tag = (ASN_TAG_CLASS_CONTEXT | (1 << 2)),
+		.tag_mode = +1,	/* EXPLICIT tag at current level */
+		.type = &asn_DEF_Choice_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "and"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct Choice_1, choice.or),
+		.tag = (ASN_TAG_CLASS_CONTEXT | (2 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_or_3,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "or"
+		},
+	{ ATF_POINTER, 0, offsetof(struct Choice_1, choice.not),
+		.tag = (ASN_TAG_CLASS_CONTEXT | (3 << 2)),
+		.tag_mode = +1,	/* EXPLICIT tag at current level */
+		.type = &asn_DEF_Choice_1,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "not"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct Choice_1, choice.other),
+		.tag = (ASN_TAG_CLASS_CONTEXT | (4 << 2)),
+		.tag_mode = +1,	/* EXPLICIT tag at current level */
+		.type = &asn_DEF_INTEGER,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "other"
+		},
+};
+static asn_TYPE_tag2member_t asn_MAP_Choice_1_tag2el_1[] = {
+    { (ASN_TAG_CLASS_CONTEXT | (1 << 2)), 0, 0, 0 }, /* and at 22 */
+    { (ASN_TAG_CLASS_CONTEXT | (2 << 2)), 1, 0, 0 }, /* or at 23 */
+    { (ASN_TAG_CLASS_CONTEXT | (3 << 2)), 2, 0, 0 }, /* not at 24 */
+    { (ASN_TAG_CLASS_CONTEXT | (4 << 2)), 3, 0, 0 } /* other at 26 */
+};
+static asn_CHOICE_specifics_t asn_SPC_Choice_1_specs_1 = {
+	sizeof(struct Choice_1),
+	offsetof(struct Choice_1, _asn_ctx),
+	offsetof(struct Choice_1, present),
+	sizeof(((struct Choice_1 *)0)->present),
+	asn_MAP_Choice_1_tag2el_1,
+	4,	/* Count of tags in the map */
+	.canonical_order = 0,
+	.ext_start = -1	/* Extensions start */
+};
+asn_TYPE_descriptor_t asn_DEF_Choice_1 = {
+	"Choice-1",
+	"Choice-1",
+	CHOICE_free,
+	CHOICE_print,
+	CHOICE_constraint,
+	CHOICE_decode_ber,
+	CHOICE_encode_der,
+	CHOICE_decode_xer,
+	CHOICE_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	CHOICE_outmost_tag,
+	0,	/* No effective tags (pointer) */
+	0,	/* No effective tags (count) */
+	0,	/* No tags (pointer) */
+	0,	/* No tags (count) */
+	0,	/* No PER visible constraints */
+	asn_MBR_Choice_1_1,
+	4,	/* Elements count */
+	&asn_SPC_Choice_1_specs_1	/* Additional specs */
+};
+
+
+/*** <<< INCLUDES [Test-structure-2] >>> ***/
+
+#include <constr_SET.h>
+
+/*** <<< DEPS [Test-structure-2] >>> ***/
+
+
+/*
+ * Method of determining the components presence
+ */
+typedef enum Test_structure_2_PR {
+	Test_structure_2_PR_m1,	/* Member m1 is present */
+} Test_structure_2_PR;
+
+/*** <<< FWD-DECLS [Test-structure-2] >>> ***/
+
+struct Test_structure_3;
+
+/*** <<< TYPE-DECLS [Test-structure-2] >>> ***/
+
+typedef struct Test_structure_2 {
+	struct Test_structure_3	*m1	/* OPTIONAL */;
+	
+	/* Presence bitmask: ASN_SET_ISPRESENT(pTest_structure_2, Test_structure_2_PR_x) */
+	unsigned int _presence_map
+		[((1+(8*sizeof(unsigned int))-1)/(8*sizeof(unsigned int)))];
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} Test_structure_2_t;
+
+/*** <<< FUNC-DECLS [Test-structure-2] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Test_structure_2;
+
+/*** <<< POST-INCLUDE [Test-structure-2] >>> ***/
+
+#include "Test-structure-3.h"
+
+/*** <<< STAT-DEFS [Test-structure-2] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_Test_structure_2_1[] = {
+	{ ATF_POINTER, 1, offsetof(struct Test_structure_2, m1),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Test_structure_3,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "m1"
+		},
+};
+static ber_tlv_tag_t asn_DEF_Test_structure_2_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (17 << 2))
+};
+static asn_TYPE_tag2member_t asn_MAP_Test_structure_2_tag2el_1[] = {
+    { (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)), 0, 0, 0 } /* m1 at 28 */
+};
+static uint8_t asn_MAP_Test_structure_2_mmap_1[(1 + (8 * sizeof(unsigned int)) - 1) / 8] = {
+	(0 << 7)
+};
+static asn_SET_specifics_t asn_SPC_Test_structure_2_specs_1 = {
+	sizeof(struct Test_structure_2),
+	offsetof(struct Test_structure_2, _asn_ctx),
+	offsetof(struct Test_structure_2, _presence_map),
+	asn_MAP_Test_structure_2_tag2el_1,
+	1,	/* Count of tags in the map */
+	asn_MAP_Test_structure_2_tag2el_1,	/* Same as above */
+	1,	/* Count of tags in the CXER map */
+	0,	/* Whether extensible */
+	(unsigned int *)asn_MAP_Test_structure_2_mmap_1	/* Mandatory elements map */
+};
+asn_TYPE_descriptor_t asn_DEF_Test_structure_2 = {
+	"Test-structure-2",
+	"Test-structure-2",
+	SET_free,
+	SET_print,
+	SET_constraint,
+	SET_decode_ber,
+	SET_encode_der,
+	SET_decode_xer,
+	SET_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_Test_structure_2_tags_1,
+	sizeof(asn_DEF_Test_structure_2_tags_1)
+		/sizeof(asn_DEF_Test_structure_2_tags_1[0]), /* 1 */
+	asn_DEF_Test_structure_2_tags_1,	/* Same as above */
+	sizeof(asn_DEF_Test_structure_2_tags_1)
+		/sizeof(asn_DEF_Test_structure_2_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_Test_structure_2_1,
+	1,	/* Elements count */
+	&asn_SPC_Test_structure_2_specs_1	/* Additional specs */
+};
+
+
+/*** <<< INCLUDES [Test-structure-3] >>> ***/
+
+#include <constr_SET.h>
+
+/*** <<< DEPS [Test-structure-3] >>> ***/
+
+
+/*
+ * Method of determining the components presence
+ */
+typedef enum Test_structure_3_PR {
+	Test_structure_3_PR_m1,	/* Member m1 is present */
+} Test_structure_3_PR;
+
+/*** <<< FWD-DECLS [Test-structure-3] >>> ***/
+
+struct Test_structure_2;
+
+/*** <<< TYPE-DECLS [Test-structure-3] >>> ***/
+
+typedef struct Test_structure_3 {
+	struct Test_structure_2	*m1	/* OPTIONAL */;
+	
+	/* Presence bitmask: ASN_SET_ISPRESENT(pTest_structure_3, Test_structure_3_PR_x) */
+	unsigned int _presence_map
+		[((1+(8*sizeof(unsigned int))-1)/(8*sizeof(unsigned int)))];
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} Test_structure_3_t;
+
+/*** <<< FUNC-DECLS [Test-structure-3] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Test_structure_3;
+
+/*** <<< POST-INCLUDE [Test-structure-3] >>> ***/
+
+#include "Test-structure-2.h"
+
+/*** <<< STAT-DEFS [Test-structure-3] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_Test_structure_3_1[] = {
+	{ ATF_POINTER, 1, offsetof(struct Test_structure_3, m1),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Test_structure_2,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "m1"
+		},
+};
+static ber_tlv_tag_t asn_DEF_Test_structure_3_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (17 << 2))
+};
+static asn_TYPE_tag2member_t asn_MAP_Test_structure_3_tag2el_1[] = {
+    { (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)), 0, 0, 0 } /* m1 at 29 */
+};
+static uint8_t asn_MAP_Test_structure_3_mmap_1[(1 + (8 * sizeof(unsigned int)) - 1) / 8] = {
+	(0 << 7)
+};
+static asn_SET_specifics_t asn_SPC_Test_structure_3_specs_1 = {
+	sizeof(struct Test_structure_3),
+	offsetof(struct Test_structure_3, _asn_ctx),
+	offsetof(struct Test_structure_3, _presence_map),
+	asn_MAP_Test_structure_3_tag2el_1,
+	1,	/* Count of tags in the map */
+	asn_MAP_Test_structure_3_tag2el_1,	/* Same as above */
+	1,	/* Count of tags in the CXER map */
+	0,	/* Whether extensible */
+	(unsigned int *)asn_MAP_Test_structure_3_mmap_1	/* Mandatory elements map */
+};
+asn_TYPE_descriptor_t asn_DEF_Test_structure_3 = {
+	"Test-structure-3",
+	"Test-structure-3",
+	SET_free,
+	SET_print,
+	SET_constraint,
+	SET_decode_ber,
+	SET_encode_der,
+	SET_decode_xer,
+	SET_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_Test_structure_3_tags_1,
+	sizeof(asn_DEF_Test_structure_3_tags_1)
+		/sizeof(asn_DEF_Test_structure_3_tags_1[0]), /* 1 */
+	asn_DEF_Test_structure_3_tags_1,	/* Same as above */
+	sizeof(asn_DEF_Test_structure_3_tags_1)
+		/sizeof(asn_DEF_Test_structure_3_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_Test_structure_3_1,
+	1,	/* Elements count */
+	&asn_SPC_Test_structure_3_specs_1	/* Additional specs */
+};
+
