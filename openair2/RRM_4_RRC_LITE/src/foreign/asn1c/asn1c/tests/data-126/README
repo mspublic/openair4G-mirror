@@ -1,0 +1,12 @@
+Mode of operation:
+
+	Each of the *.in files is XER-decoded, then converted into PER,
+	then compared with the .out file, then decoded back into XER
+	and compared to the original .in file content.
+
+Naming conventions:
+
+*-C.in  -       Comparison of .out might fail, but decoding succeeds
+*-P.in  -       PER decoding of .out file must fail.
+*-X.in	-	Final XER comparison must fail.
+

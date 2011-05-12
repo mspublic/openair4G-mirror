@@ -1,0 +1,13 @@
+Mode of operation:
+
+	Each of the *.in files is XER-decoded, then converted into PER,
+	then decoded back from PER, then encoded into XER again,
+	and finally compared to the original encoding.
+
+Naming conventions:
+
+*-B.in	-	The file is intentionally broken
+*-P.in	-	Is not PER compatible, PER encoding must fail.
+*-E.in  -	CXER reconstruction should yield byte-wise identical data.
+
+Otherwise, a reconstructed buffer should loosely match the original.

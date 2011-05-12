@@ -1,0 +1,21 @@
+ModuleTestANY { iso org(3) dod(6) internet(1) private(4) enterprise(1)
+	spelio(9363) software(1) asn1c(5) test(1) 60 }
+DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+T1 ::= SEQUENCE {
+    i	 INTEGER,
+    any	 ANY
+}
+
+T2 ::= SEQUENCE {
+    i	 INTEGER,
+    any	 [0] EXPLICIT ANY OPTIONAL
+}
+
+T3 ::= SEQUENCE {
+    any1	 ANY,
+    any2	 ANY
+}
+
+END

@@ -1,0 +1,524 @@
+
+/*** <<< INCLUDES [SIGNED] >>> ***/
+
+#include <OBJECT_IDENTIFIER.h>
+#include <BIT_STRING.h>
+#include <INTEGER.h>
+#include "Name.h"
+#include <constr_SEQUENCE.h>
+
+/*** <<< TYPE-DECLS [SIGNED] >>> ***/
+
+typedef struct SIGNED_15P0 {
+	struct toBeSigned {
+		INTEGER_t	 version;
+		OBJECT_IDENTIFIER_t	 signature;
+		Name_t	 issuer;
+		
+		/* Context for parsing across buffer boundaries */
+		asn_struct_ctx_t _asn_ctx;
+	} toBeSigned;
+	OBJECT_IDENTIFIER_t	 algorithm;
+	BIT_STRING_t	 signature;
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} SIGNED_15P0_t;
+
+/*** <<< FUNC-DECLS [SIGNED] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_SIGNED_15P0;
+
+/*** <<< CODE [SIGNED] >>> ***/
+
+static int
+memb_signature_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
+			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
+	const BIT_STRING_t *st = (const BIT_STRING_t *)sptr;
+	size_t size;
+	
+	if(!sptr) {
+		_ASN_CTFAIL(app_key, td, sptr,
+			"%s: value not given (%s:%d)",
+			td->name, __FILE__, __LINE__);
+		return -1;
+	}
+	
+	if(st->size > 0) {
+		/* Size in bits */
+		size = 8 * st->size - (st->bits_unused & 0x07);
+	} else {
+		size = 0;
+	}
+	
+	if((size <= 256)) {
+		/* Constraint check succeeded */
+		return 0;
+	} else {
+		_ASN_CTFAIL(app_key, td, sptr,
+			"%s: constraint failed (%s:%d)",
+			td->name, __FILE__, __LINE__);
+		return -1;
+	}
+}
+
+
+/*** <<< STAT-DEFS [SIGNED] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_toBeSigned_2[] = {
+	{ ATF_NOFLAGS, 0, offsetof(struct toBeSigned, version),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_INTEGER,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "version"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct toBeSigned, signature),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (6 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_OBJECT_IDENTIFIER,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "signature"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct toBeSigned, issuer),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_Name,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "issuer"
+		},
+};
+static ber_tlv_tag_t asn_DEF_toBeSigned_tags_2[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+static asn_TYPE_tag2member_t asn_MAP_toBeSigned_tag2el_2[] = {
+    { (ASN_TAG_CLASS_UNIVERSAL | (2 << 2)), 0, 0, 0 }, /* version at 21 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (6 << 2)), 1, 0, 0 }, /* signature at 22 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 2, 0, 0 } /* issuer at 24 */
+};
+static asn_SEQUENCE_specifics_t asn_SPC_toBeSigned_specs_2 = {
+	sizeof(struct toBeSigned),
+	offsetof(struct toBeSigned, _asn_ctx),
+	asn_MAP_toBeSigned_tag2el_2,
+	3,	/* Count of tags in the map */
+	0, 0, 0,	/* Optional elements (not needed) */
+	-1,	/* Start extensions */
+	-1	/* Stop extensions */
+};
+static /* Use -fall-defs-global to expose */
+asn_TYPE_descriptor_t asn_DEF_toBeSigned_2 = {
+	"toBeSigned",
+	"toBeSigned",
+	SEQUENCE_free,
+	SEQUENCE_print,
+	SEQUENCE_constraint,
+	SEQUENCE_decode_ber,
+	SEQUENCE_encode_der,
+	SEQUENCE_decode_xer,
+	SEQUENCE_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_toBeSigned_tags_2,
+	sizeof(asn_DEF_toBeSigned_tags_2)
+		/sizeof(asn_DEF_toBeSigned_tags_2[0]), /* 1 */
+	asn_DEF_toBeSigned_tags_2,	/* Same as above */
+	sizeof(asn_DEF_toBeSigned_tags_2)
+		/sizeof(asn_DEF_toBeSigned_tags_2[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_toBeSigned_2,
+	3,	/* Elements count */
+	&asn_SPC_toBeSigned_specs_2	/* Additional specs */
+};
+
+static asn_TYPE_member_t asn_MBR_SIGNED_15P0_1[] = {
+	{ ATF_NOFLAGS, 0, offsetof(struct SIGNED_15P0, toBeSigned),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_toBeSigned_2,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "toBeSigned"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct SIGNED_15P0, algorithm),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (6 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_OBJECT_IDENTIFIER,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "algorithm"
+		},
+	{ ATF_NOFLAGS, 0, offsetof(struct SIGNED_15P0, signature),
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (3 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_BIT_STRING,
+		.memb_constraints = memb_signature_constraint_1,
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = "signature"
+		},
+};
+static ber_tlv_tag_t asn_DEF_SIGNED_15P0_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+static asn_TYPE_tag2member_t asn_MAP_SIGNED_15P0_tag2el_1[] = {
+    { (ASN_TAG_CLASS_UNIVERSAL | (3 << 2)), 2, 0, 0 }, /* signature at 17 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (6 << 2)), 1, 0, 0 }, /* algorithm at 16 */
+    { (ASN_TAG_CLASS_UNIVERSAL | (16 << 2)), 0, 0, 0 } /* toBeSigned at 21 */
+};
+static asn_SEQUENCE_specifics_t asn_SPC_SIGNED_15P0_specs_1 = {
+	sizeof(struct SIGNED_15P0),
+	offsetof(struct SIGNED_15P0, _asn_ctx),
+	asn_MAP_SIGNED_15P0_tag2el_1,
+	3,	/* Count of tags in the map */
+	0, 0, 0,	/* Optional elements (not needed) */
+	-1,	/* Start extensions */
+	-1	/* Stop extensions */
+};
+asn_TYPE_descriptor_t asn_DEF_SIGNED_15P0 = {
+	"SIGNED",
+	"SIGNED",
+	SEQUENCE_free,
+	SEQUENCE_print,
+	SEQUENCE_constraint,
+	SEQUENCE_decode_ber,
+	SEQUENCE_encode_der,
+	SEQUENCE_decode_xer,
+	SEQUENCE_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_SIGNED_15P0_tags_1,
+	sizeof(asn_DEF_SIGNED_15P0_tags_1)
+		/sizeof(asn_DEF_SIGNED_15P0_tags_1[0]), /* 1 */
+	asn_DEF_SIGNED_15P0_tags_1,	/* Same as above */
+	sizeof(asn_DEF_SIGNED_15P0_tags_1)
+		/sizeof(asn_DEF_SIGNED_15P0_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_SIGNED_15P0_1,
+	3,	/* Elements count */
+	&asn_SPC_SIGNED_15P0_specs_1	/* Additional specs */
+};
+
+
+/*** <<< INCLUDES [Certificate] >>> ***/
+
+#include "SIGNED.h"
+
+/*** <<< TYPE-DECLS [Certificate] >>> ***/
+
+typedef SIGNED_15P0_t	 Certificate_t;
+
+/*** <<< FUNC-DECLS [Certificate] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Certificate;
+asn_struct_free_f Certificate_free;
+asn_struct_print_f Certificate_print;
+asn_constr_check_f Certificate_constraint;
+ber_type_decoder_f Certificate_decode_ber;
+der_type_encoder_f Certificate_encode_der;
+xer_type_decoder_f Certificate_decode_xer;
+xer_type_encoder_f Certificate_encode_xer;
+
+/*** <<< CODE [Certificate] >>> ***/
+
+int
+Certificate_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
+			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
+	/* Replace with underlying type checker */
+	td->check_constraints = asn_DEF_SIGNED_15P0.check_constraints;
+	return td->check_constraints(td, sptr, ctfailcb, app_key);
+}
+
+/*
+ * This type is implemented using SIGNED_15P0,
+ * so here we adjust the DEF accordingly.
+ */
+static void
+Certificate_1_inherit_TYPE_descriptor(asn_TYPE_descriptor_t *td) {
+	td->free_struct    = asn_DEF_SIGNED_15P0.free_struct;
+	td->print_struct   = asn_DEF_SIGNED_15P0.print_struct;
+	td->ber_decoder    = asn_DEF_SIGNED_15P0.ber_decoder;
+	td->der_encoder    = asn_DEF_SIGNED_15P0.der_encoder;
+	td->xer_decoder    = asn_DEF_SIGNED_15P0.xer_decoder;
+	td->xer_encoder    = asn_DEF_SIGNED_15P0.xer_encoder;
+	td->uper_decoder   = asn_DEF_SIGNED_15P0.uper_decoder;
+	td->uper_encoder   = asn_DEF_SIGNED_15P0.uper_encoder;
+	if(!td->per_constraints)
+		td->per_constraints = asn_DEF_SIGNED_15P0.per_constraints;
+	td->elements       = asn_DEF_SIGNED_15P0.elements;
+	td->elements_count = asn_DEF_SIGNED_15P0.elements_count;
+	td->specifics      = asn_DEF_SIGNED_15P0.specifics;
+}
+
+void
+Certificate_free(asn_TYPE_descriptor_t *td,
+		void *struct_ptr, int contents_only) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	td->free_struct(td, struct_ptr, contents_only);
+}
+
+int
+Certificate_print(asn_TYPE_descriptor_t *td, const void *struct_ptr,
+		int ilevel, asn_app_consume_bytes_f *cb, void *app_key) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	return td->print_struct(td, struct_ptr, ilevel, cb, app_key);
+}
+
+asn_dec_rval_t
+Certificate_decode_ber(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
+		void **structure, const void *bufptr, size_t size, int tag_mode) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	return td->ber_decoder(opt_codec_ctx, td, structure, bufptr, size, tag_mode);
+}
+
+asn_enc_rval_t
+Certificate_encode_der(asn_TYPE_descriptor_t *td,
+		void *structure, int tag_mode, ber_tlv_tag_t tag,
+		asn_app_consume_bytes_f *cb, void *app_key) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	return td->der_encoder(td, structure, tag_mode, tag, cb, app_key);
+}
+
+asn_dec_rval_t
+Certificate_decode_xer(asn_codec_ctx_t *opt_codec_ctx, asn_TYPE_descriptor_t *td,
+		void **structure, const char *opt_mname, const void *bufptr, size_t size) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	return td->xer_decoder(opt_codec_ctx, td, structure, opt_mname, bufptr, size);
+}
+
+asn_enc_rval_t
+Certificate_encode_xer(asn_TYPE_descriptor_t *td, void *structure,
+		int ilevel, enum xer_encoder_flags_e flags,
+		asn_app_consume_bytes_f *cb, void *app_key) {
+	Certificate_1_inherit_TYPE_descriptor(td);
+	return td->xer_encoder(td, structure, ilevel, flags, cb, app_key);
+}
+
+
+/*** <<< STAT-DEFS [Certificate] >>> ***/
+
+static ber_tlv_tag_t asn_DEF_Certificate_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+asn_TYPE_descriptor_t asn_DEF_Certificate = {
+	"Certificate",
+	"Certificate",
+	Certificate_free,
+	Certificate_print,
+	Certificate_constraint,
+	Certificate_decode_ber,
+	Certificate_encode_der,
+	Certificate_decode_xer,
+	Certificate_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_Certificate_tags_1,
+	sizeof(asn_DEF_Certificate_tags_1)
+		/sizeof(asn_DEF_Certificate_tags_1[0]), /* 1 */
+	asn_DEF_Certificate_tags_1,	/* Same as above */
+	sizeof(asn_DEF_Certificate_tags_1)
+		/sizeof(asn_DEF_Certificate_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	0, 0,	/* Defined elsewhere */
+	0	/* No specifics */
+};
+
+
+/*** <<< INCLUDES [Name] >>> ***/
+
+#include <asn_SEQUENCE_OF.h>
+#include <constr_SEQUENCE_OF.h>
+
+/*** <<< FWD-DECLS [Name] >>> ***/
+
+struct RelativeDistinguishedName;
+
+/*** <<< TYPE-DECLS [Name] >>> ***/
+
+typedef struct Name {
+	A_SEQUENCE_OF(struct RelativeDistinguishedName) list;
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} Name_t;
+
+/*** <<< FUNC-DECLS [Name] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_Name;
+
+/*** <<< POST-INCLUDE [Name] >>> ***/
+
+#include "RelativeDistinguishedName.h"
+
+/*** <<< STAT-DEFS [Name] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_Name_1[] = {
+	{ ATF_POINTER, 0, 0,
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (17 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_RelativeDistinguishedName,
+		.memb_constraints = 0,	/* Defer constraints checking to the member type */
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = ""
+		},
+};
+static ber_tlv_tag_t asn_DEF_Name_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (16 << 2))
+};
+static asn_SET_OF_specifics_t asn_SPC_Name_specs_1 = {
+	sizeof(struct Name),
+	offsetof(struct Name, _asn_ctx),
+	0,	/* XER encoding is XMLDelimitedItemList */
+};
+asn_TYPE_descriptor_t asn_DEF_Name = {
+	"Name",
+	"Name",
+	SEQUENCE_OF_free,
+	SEQUENCE_OF_print,
+	SEQUENCE_OF_constraint,
+	SEQUENCE_OF_decode_ber,
+	SEQUENCE_OF_encode_der,
+	SEQUENCE_OF_decode_xer,
+	SEQUENCE_OF_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_Name_tags_1,
+	sizeof(asn_DEF_Name_tags_1)
+		/sizeof(asn_DEF_Name_tags_1[0]), /* 1 */
+	asn_DEF_Name_tags_1,	/* Same as above */
+	sizeof(asn_DEF_Name_tags_1)
+		/sizeof(asn_DEF_Name_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_Name_1,
+	1,	/* Single element */
+	&asn_SPC_Name_specs_1	/* Additional specs */
+};
+
+
+/*** <<< INCLUDES [RelativeDistinguishedName] >>> ***/
+
+#include <IA5String.h>
+#include <asn_SET_OF.h>
+#include <constr_SET_OF.h>
+
+/*** <<< TYPE-DECLS [RelativeDistinguishedName] >>> ***/
+
+typedef struct RelativeDistinguishedName {
+	A_SET_OF(IA5String_t) list;
+	
+	/* Context for parsing across buffer boundaries */
+	asn_struct_ctx_t _asn_ctx;
+} RelativeDistinguishedName_t;
+
+/*** <<< FUNC-DECLS [RelativeDistinguishedName] >>> ***/
+
+extern asn_TYPE_descriptor_t asn_DEF_RelativeDistinguishedName;
+
+/*** <<< CTABLES [RelativeDistinguishedName] >>> ***/
+
+static int permitted_alphabet_table_2[256] = {
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/*                  */
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/*                  */
+ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0,	/*             ,-.  */
+ 4, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0,	/* 0        9       */
+ 0, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,	/*  ABCDEFGHIJKLMNO */
+21,22,23,24,25,26,27,28,29,30,31, 0, 0, 0, 0, 0,	/* PQRSTUVWXYZ      */
+ 0,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,	/*  abcdefghijklmno */
+47,48,49,50,51,52,53,54,55,56,57, 0, 0, 0, 0, 0,	/* pqrstuvwxyz      */
+};
+
+static int check_permitted_alphabet_2(const void *sptr) {
+	int *table = permitted_alphabet_table_2;
+	/* The underlying type is IA5String */
+	const IA5String_t *st = (const IA5String_t *)sptr;
+	const uint8_t *ch = st->buf;
+	const uint8_t *end = ch + st->size;
+	
+	for(; ch < end; ch++) {
+		uint8_t cv = *ch;
+		if(!table[cv]) return -1;
+	}
+	return 0;
+}
+
+
+/*** <<< CODE [RelativeDistinguishedName] >>> ***/
+
+static int
+memb_IA5String_constraint_1(asn_TYPE_descriptor_t *td, const void *sptr,
+			asn_app_constraint_failed_f *ctfailcb, void *app_key) {
+	const IA5String_t *st = (const IA5String_t *)sptr;
+	
+	if(!sptr) {
+		_ASN_CTFAIL(app_key, td, sptr,
+			"%s: value not given (%s:%d)",
+			td->name, __FILE__, __LINE__);
+		return -1;
+	}
+	
+	
+	if(!check_permitted_alphabet_2(st)) {
+		/* Constraint check succeeded */
+		return 0;
+	} else {
+		_ASN_CTFAIL(app_key, td, sptr,
+			"%s: constraint failed (%s:%d)",
+			td->name, __FILE__, __LINE__);
+		return -1;
+	}
+}
+
+
+/*** <<< STAT-DEFS [RelativeDistinguishedName] >>> ***/
+
+static asn_TYPE_member_t asn_MBR_RelativeDistinguishedName_1[] = {
+	{ ATF_POINTER, 0, 0,
+		.tag = (ASN_TAG_CLASS_UNIVERSAL | (22 << 2)),
+		.tag_mode = 0,
+		.type = &asn_DEF_IA5String,
+		.memb_constraints = memb_IA5String_constraint_1,
+		.per_constraints = 0,	/* PER is not compiled, use -gen-PER */
+		.default_value = 0,
+		.name = ""
+		},
+};
+static ber_tlv_tag_t asn_DEF_RelativeDistinguishedName_tags_1[] = {
+	(ASN_TAG_CLASS_UNIVERSAL | (17 << 2))
+};
+static asn_SET_OF_specifics_t asn_SPC_RelativeDistinguishedName_specs_1 = {
+	sizeof(struct RelativeDistinguishedName),
+	offsetof(struct RelativeDistinguishedName, _asn_ctx),
+	0,	/* XER encoding is XMLDelimitedItemList */
+};
+asn_TYPE_descriptor_t asn_DEF_RelativeDistinguishedName = {
+	"RelativeDistinguishedName",
+	"RelativeDistinguishedName",
+	SET_OF_free,
+	SET_OF_print,
+	SET_OF_constraint,
+	SET_OF_decode_ber,
+	SET_OF_encode_der,
+	SET_OF_decode_xer,
+	SET_OF_encode_xer,
+	0, 0,	/* No PER support, use "-gen-PER" to enable */
+	0,	/* Use generic outmost tag fetcher */
+	asn_DEF_RelativeDistinguishedName_tags_1,
+	sizeof(asn_DEF_RelativeDistinguishedName_tags_1)
+		/sizeof(asn_DEF_RelativeDistinguishedName_tags_1[0]), /* 1 */
+	asn_DEF_RelativeDistinguishedName_tags_1,	/* Same as above */
+	sizeof(asn_DEF_RelativeDistinguishedName_tags_1)
+		/sizeof(asn_DEF_RelativeDistinguishedName_tags_1[0]), /* 1 */
+	0,	/* No PER visible constraints */
+	asn_MBR_RelativeDistinguishedName_1,
+	1,	/* Single element */
+	&asn_SPC_RelativeDistinguishedName_specs_1	/* Additional specs */
+};
+

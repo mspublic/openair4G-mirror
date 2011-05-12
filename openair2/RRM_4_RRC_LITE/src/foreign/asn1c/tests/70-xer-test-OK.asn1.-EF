@@ -1,0 +1,93 @@
+ModuleTestXERDecoding { iso org(3) dod(6) internet(1) private(4) enterprise(1)
+	spelio(9363) software(1) asn1c(5) test(1) 70 }
+DEFINITIONS AUTOMATIC TAGS ::=
+BEGIN
+
+PDU ::= CHOICE {
+    sequence	 [0] IMPLICIT Sequence,
+    set	 [1] IMPLICIT Set,
+    sequenceOf	 [2] IMPLICIT SequenceOf,
+    extensibleSet	 [3] IMPLICIT ExtensibleSet,
+    extensibleSequence	 [4] IMPLICIT ExtensibleSequence,
+    extensibleSequence2	 [5] IMPLICIT ExtensibleSequence2,
+    setOfNULL	 [6] IMPLICIT SetOfNULL,
+    setOfREAL	 [7] IMPLICIT SetOfREAL,
+    setOfEnums	 [8] IMPLICIT SetOfEnums,
+    namedSetOfNULL	 [9] IMPLICIT NamedSetOfNULL,
+    namedSetOfREAL	 [10] IMPLICIT NamedSetOfREAL,
+    namedSetOfEnums	 [11] IMPLICIT NamedSetOfEnums,
+    seqOfZuka	 [12] IMPLICIT SeqOfZuka,
+    setOfChoice	 [13] IMPLICIT SetOfChoice,
+    namedSetOfChoice	 [14] IMPLICIT NamedSetOfChoice,
+    ...
+}
+
+Sequence ::= SEQUENCE {
+    integer	 [0] IMPLICIT INTEGER,
+    sequence	 [1] IMPLICIT Sequence OPTIONAL,
+    bits	 [2] IMPLICIT BIT STRING OPTIONAL,
+    string	 [3] IMPLICIT UTF8String
+}
+
+Set ::= SET {
+    roid	 [0] IMPLICIT RELATIVE-OID,
+    opaque	 [1] IMPLICIT OCTET STRING OPTIONAL
+}
+
+ExtensibleSet ::= SET {
+    string	 [0] IMPLICIT UTF8String OPTIONAL,
+    ...,
+    enum	 [1] IMPLICIT ENUMERATED {
+        b(0),    
+        a(1)
+    }
+}
+
+ExtensibleSequence ::= SEQUENCE {
+    string	 [0] IMPLICIT UTF8String OPTIONAL,
+    ...,
+    integer	 [1] IMPLICIT INTEGER OPTIONAL,
+    gtime	 [2] IMPLICIT GeneralizedTime
+}
+
+ExtensibleSequence2 ::= SEQUENCE {
+    string	 [0] IMPLICIT UTF8String OPTIONAL,
+    ...,
+    integer	 [1] IMPLICIT INTEGER OPTIONAL
+}
+
+SetOfNULL ::= SET OF NULL
+
+SetOfREAL ::= SET OF REAL
+
+SetOfEnums ::= SET OF ENUMERATED {
+        one(0),    
+        oneMore(1)
+    }
+
+NamedSetOfNULL ::= SET OF    y	 NULL
+
+NamedSetOfREAL ::= SET OF    name	 REAL
+
+NamedSetOfEnums ::= SET OF    name	 ENUMERATED {
+        one(0),    
+        oneMore(1)
+    }
+
+SequenceOf ::= SEQUENCE OF    id	 INTEGER {
+        one(1),    
+        two(2)
+    }
+
+SeqOfZuka ::= SEQUENCE OF    zuka	 NULL
+
+SetOfChoice ::= SET OF SimpleChoice
+
+NamedSetOfChoice ::= SET OF    whatever	 SimpleChoice
+
+SimpleChoice ::= CHOICE {
+    a	 [0] IMPLICIT NULL,
+    b	 [1] IMPLICIT INTEGER
+}
+
+END
