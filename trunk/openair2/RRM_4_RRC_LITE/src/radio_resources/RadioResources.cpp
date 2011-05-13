@@ -83,6 +83,28 @@ RRM2RRCMessageUserReconfiguration*  RadioResources::Request(RRC2RRMMessageAddUse
     }
 }
 //-----------------------------------------------------------------
+void  RadioResources::Request(RRC2RRMMessageUserReconfigurationComplete &completeP)
+//-----------------------------------------------------------------
+{
+    cell_id_t e_node_b_id = completeP.GetENodeBId();
+    if (IsENodeBRegistered(e_node_b_id)) {
+        mobile_id_t mobile_id  = completeP.GetMobileId();
+        if (!IsMobileRegistered(e_node_b_id, mobile_id)) {
+            throw mobile_not_connected_error() << mobile_id_info(mobile_id);
+        } else {
+            fprintf(stderr, "[RadioResources] Confirming    new Mobile %d\n", mobile_id);
+            fprintf(stderr, "[RadioResources] Reconfiguring new Mobile %d\n", mobile_id);
+            ENodeB* const e_Node_b = this->GetENodeB(e_node_b_id);
+
+            Mobile* mobile = GetMobile(e_node_b_id, mobile_id);
+
+            e_Node_b->UserReconfigurationComplete(mobile, completeP.GetTransactionId());
+        }
+    } else {
+        throw enodeb_not_connected_error() << enodeb_id_info(e_node_b_id);
+    }
+}
+//-----------------------------------------------------------------
 Transaction*  RadioResources::Request(RRC2RRMMessageRemoveUserRequest &requestP)
 //-----------------------------------------------------------------
 {

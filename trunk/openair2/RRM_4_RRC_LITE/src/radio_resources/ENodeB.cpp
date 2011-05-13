@@ -91,6 +91,15 @@ ENodeB::ENodeB(cell_id_t idP)
     return message;
 }
 //-----------------------------------------------------------------
+ void ENodeB::UserReconfigurationComplete(Mobile* mobileP,  transaction_id_t transaction_idP)
+//-----------------------------------------------------------------
+{
+    //----------------------------------------------------------------------
+    // Commit transaction here
+    mobileP->CommitTransaction(transaction_idP);
+    CommitTransaction(transaction_idP);
+}
+//-----------------------------------------------------------------
  RRM_RRC_Message_t* ENodeB::RemoveUserRequest(Mobile* mobileP, transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
