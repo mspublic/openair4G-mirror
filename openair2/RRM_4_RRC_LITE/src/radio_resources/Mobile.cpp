@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "Asn1Utils.h"
 #include "Mobile.h"
 #include "Exceptions.h"
 
@@ -125,8 +126,8 @@ void Mobile::AddSignallingRadioBearer1(signed int cell_indexP, transaction_id_t 
     srb->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     srb->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_srb_to_add_mod[srb->srb_Identity][cell_indexP]       = srb;
-    m_tx_id_pending_srb_to_add_mod[srb->srb_Identity][cell_indexP] = transaction_idP;
+    m_pending_srb_to_add_mod[srb->srb_Identity-1][cell_indexP]       = srb;
+    m_tx_id_pending_srb_to_add_mod[srb->srb_Identity-1][cell_indexP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void Mobile::AddSignallingRadioBearer2(signed int cell_indexP, transaction_id_t transaction_idP)
@@ -155,8 +156,8 @@ void Mobile::AddSignallingRadioBearer2(signed int cell_indexP, transaction_id_t 
     srb->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     srb->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_srb_to_add_mod[srb->srb_Identity][cell_indexP]       = srb;
-    m_tx_id_pending_srb_to_add_mod[srb->srb_Identity][cell_indexP] = transaction_idP;
+    m_pending_srb_to_add_mod[srb->srb_Identity-1][cell_indexP]       = srb;
+    m_tx_id_pending_srb_to_add_mod[srb->srb_Identity-1][cell_indexP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void Mobile::AddDefaultDataRadioBearer(signed int cell_indexP, transaction_id_t transaction_idP)
@@ -184,8 +185,8 @@ void Mobile::AddDefaultDataRadioBearer(signed int cell_indexP, transaction_id_t 
     drb->logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     drb->logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_drb_to_add_mod[drb->drb_Identity][cell_indexP]       = drb;
-    m_tx_id_pending_drb_to_add_mod[drb->drb_Identity][cell_indexP] = transaction_idP;
+    m_pending_drb_to_add_mod[drb->drb_Identity-1][cell_indexP]       = drb;
+    m_tx_id_pending_drb_to_add_mod[drb->drb_Identity-1][cell_indexP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void Mobile::CommitTransaction(transaction_id_t transaction_idP)
@@ -212,6 +213,7 @@ void Mobile::CommitTransaction(transaction_id_t transaction_idP)
                 } else {
                     throw transaction_overwrite_error();
                 }
+                m_tx_id_pending_drb_to_add_mod[i][j] = -1;
             }
         }
     }
@@ -225,6 +227,7 @@ void Mobile::CommitTransaction(transaction_id_t transaction_idP)
                 } else {
                     throw transaction_overwrite_error();
                 }
+                m_tx_id_pending_srb_to_add_mod[i][j] = -1;
             }
         }
     }
@@ -233,9 +236,12 @@ void Mobile::CommitTransaction(transaction_id_t transaction_idP)
 RadioResourceConfigDedicated_t* Mobile::GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
-    // for alloc - dealloc reasons, first create the mesage with already existing structures, then serialise, and deserialize for creating new structures
-    // that can be released
     RadioResourceConfigDedicated_t* config = static_cast<RadioResourceConfigDedicated_t*>(CALLOC(1,sizeof(RadioResourceConfigDedicated_t)));
+
+    config->srb_ToAddModList = NULL;
+    config->drb_ToReleaseList = NULL;
+    config->drb_ToAddModList  = NULL;
+
     for (int i = 0 ; i < MAX_DRB; i++) {
         for (int j = 0 ; j < MAX_ENODE_B_PER_MOBILE; j++) {
             // Look if there is a transaction for removing a DRB
@@ -243,13 +249,15 @@ RadioResourceConfigDedicated_t* Mobile::GetASN1RadioResourceConfigDedicated(tran
                 if (config->drb_ToReleaseList == NULL) {
                     config->drb_ToReleaseList = static_cast<DRB_ToReleaseList_t*>(CALLOC(1,sizeof(DRB_ToReleaseList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->drb_ToReleaseList->list,&m_pending_drb_to_release[i][j]);
+                cerr << "[RRM] Mobile::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Releasing DRB "<< m_pending_drb_to_release[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->drb_ToReleaseList->list,Asn1Utils::Clone(&m_pending_drb_to_release[i][j]));
             }
             if (m_tx_id_pending_drb_to_add_mod[i][j] == transaction_idP) {
                 if (config->drb_ToAddModList == NULL) {
                     config->drb_ToAddModList = static_cast<DRB_ToAddModList_t*>(CALLOC(1,sizeof(DRB_ToAddModList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->drb_ToAddModList->list, m_pending_drb_to_add_mod[i][j]);
+                cerr << "[RRM] Mobile::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Adding DRB "<< m_pending_drb_to_add_mod[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->drb_ToAddModList->list, Asn1Utils::Clone(m_pending_drb_to_add_mod[i][j]));
             }
         }
     }
@@ -259,15 +267,14 @@ RadioResourceConfigDedicated_t* Mobile::GetASN1RadioResourceConfigDedicated(tran
                 if (config->srb_ToAddModList == NULL) {
                     config->srb_ToAddModList = static_cast<SRB_ToAddModList_t*>(CALLOC(1,sizeof(SRB_ToAddModList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->srb_ToAddModList->list, m_pending_srb_to_add_mod[i][j]);
+                cerr << "[RRM] Mobile::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Adding SRB "<< m_pending_srb_to_add_mod[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->srb_ToAddModList->list, Asn1Utils::Clone(m_pending_srb_to_add_mod[i][j]));
             }
         }
     }
 
     config->mac_MainConfig                = static_cast<RadioResourceConfigDedicated::RadioResourceConfigDedicated__mac_MainConfig*>(CALLOC(1,sizeof(RadioResourceConfigDedicated::RadioResourceConfigDedicated__mac_MainConfig)));
     config->mac_MainConfig->present       = RadioResourceConfigDedicated__mac_MainConfig_PR_defaultValue;
-    //config->mac_MainConfig->explicitValue = &m_mac_main_config;
-
     return config;
 }
 //-----------------------------------------------------------------
