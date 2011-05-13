@@ -7,8 +7,9 @@
 
 #include "ENodeB.h"
 #include "Exceptions.h"
+#include "Asn1Utils.h"
 
-static uint8_t    g_message_serialize_buffer[MESSAGE_SERIALIZE_BUFFER_SIZE];
+//static uint8_t    g_message_serialize_buffer[MESSAGE_SERIALIZE_BUFFER_SIZE];
 
 //-----------------------------------------------------------------
 ENodeB::ENodeB(cell_id_t idP)
@@ -54,74 +55,7 @@ ENodeB::ENodeB(cell_id_t idP)
 
     //xer_fprint(stdout, &asn_DEF_RRM_RRC_Message, (void*)message);
 
-    //----------------------------------------------------------------------
-    // encode the message then partially free structs then decode the message
-    asn_enc_rval_t enc_rval;
-    memset(&g_message_serialize_buffer[0], 0, MESSAGE_SERIALIZE_BUFFER_SIZE);
-    enc_rval = uper_encode_to_buffer(&asn_DEF_RRM_RRC_Message,
-                (void*)message,
-                &g_message_serialize_buffer[0],
-                MESSAGE_SERIALIZE_BUFFER_SIZE);
-    cout <<"[RRM][ENodeB::AddUserRequest] asn_DEF_RRM_RRC_Message Encoded "<< enc_rval.encoded <<" bits (" << (enc_rval.encoded+7)/8 << " bytes)" << endl;
-
-    if (enc_rval.encoded==-1) {
-        cerr << "[RRM][ENodeB::AddUserRequest] ASN1 : asn_DEF_RRM_RRC_Message encoding FAILED, EXITING" << endl;
-        throw asn1_encoding_error();
-    }
-    //----------------------------------------------------------------------
-    // free some structs
-    if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB != NULL) {
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->drb_ToReleaseList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->drb_ToReleaseList);
-        }
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->drb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->drb_ToAddModList);
-        }
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->srb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB->srb_ToAddModList);
-        }
-        free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedE_NodeB);
-    }
-
-    if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile != NULL) {
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->drb_ToReleaseList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->drb_ToReleaseList);
-        }
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->drb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->drb_ToAddModList);
-        }
-        if (message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->srb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile->srb_ToAddModList);
-        }
-        free(message->message.choice.c1.choice.rrcAddUserResponse.radioResourceConfigDedicatedMobile);
-    }
-
-    free(message);
-    //----------------------------------------------------------------------
-    asn_dec_rval_t     rval;
-    asn_codec_ctx_t   *opt_codec_ctx = 0;
-    RRM_RRC_Message_t  *asn1_message = 0;
-
-    rval = uper_decode(opt_codec_ctx,
-                       &asn_DEF_RRM_RRC_Message,/* Type to decode */
-                       (void **)&asn1_message,     /* Pointer to a target structure's pointer */
-                       &g_message_serialize_buffer[0],              /* Data to be decoded */
-                       MESSAGE_SERIALIZE_BUFFER_SIZE,              /* Size of data buffer */
-                       0,                       /* Number of unused leading bits, 0..7 */
-                       0);   /* Number of unused tailing bits, 0..7 */
-
-    if (rval.code != RC_OK) {
-        cerr << "[RRM][ENodeB::AddUserRequest] ASN1 :  ERROR IN ASN1 DECODING" << endl;
-        throw asn1_encoding_error();
-    }
-
-    return asn1_message;
+    return message;
 }
 //-----------------------------------------------------------------
  RRM_RRC_Message_t* ENodeB::AddUserConfirm(Mobile* mobileP,  transaction_id_t transaction_idP)
@@ -134,14 +68,12 @@ ENodeB::ENodeB(cell_id_t idP)
     //----------------------------------------------------------------------
     // Then send a reconfiguration message to the RRC
     //
-    RRM_RRC_Message_t*                    message;
-
     AddSignallingRadioBearer2(mobileP->GetId(), transaction_idP);
     AddDefaultDataRadioBearer(mobileP->GetId(), transaction_idP);
     mobileP->AddSignallingRadioBearer2(m_id, transaction_idP);
     mobileP->AddDefaultDataRadioBearer(m_id, transaction_idP);
 
-    message                               = static_cast<RRM_RRC_Message_t*>(CALLOC(1,sizeof(RRM_RRC_Message_t)));
+    RRM_RRC_Message_t*                    message                                        = static_cast<RRM_RRC_Message_t*>(CALLOC(1,sizeof(RRM_RRC_Message_t)));
 
     message->message.present                                                             = RRM_RRC_MessageType_PR_c1;
     message->message.choice.c1.present                                                   = RRM_RRC_MessageType__c1_PR_rrcUserReconfiguration;
@@ -150,102 +82,12 @@ ENodeB::ENodeB(cell_id_t idP)
     message->message.choice.c1.choice.rrcUserReconfiguration.rrm_Response_Reason         = OpenAir_RRM_Response_Reason_ok;
     message->message.choice.c1.choice.rrcUserReconfiguration.e_NodeB_Identity.physCellId = m_id;
     message->message.choice.c1.choice.rrcUserReconfiguration.c_RNTI                      = mobileP->GetId();
-
-
     // ENodeB
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.present           = RRCUserReconfiguration__criticalExtensionsE_NodeB_PR_c1;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.present = RRCUserReconfiguration__criticalExtensionsE_NodeB__c1_PR_spare7;
-    /*message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.present           = RRCUserReconfiguration__criticalExtensionsE_NodeB_PR_c1;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.present = RRCUserReconfiguration__criticalExtensionsE_NodeB__c1_PR_rrcConnectionReconfiguration_r8;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = GetASN1RadioResourceConfigDedicated(transaction_idP);
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;*/
+    message->message.choice.c1.choice.rrcUserReconfiguration.radioResourceConfigDedicatedE_NodeB = GetASN1RadioResourceConfigDedicated(transaction_idP);
+    // Mobile
+    message->message.choice.c1.choice.rrcUserReconfiguration.radioResourceConfigDedicatedMobile  = mobileP->GetASN1RadioResourceConfigDedicated(transaction_idP);
+    xer_fprint(stdout, &asn_DEF_RRM_RRC_Message, (void*)message);
 
-
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.present           = RRCUserReconfiguration__criticalExtensionsMobile_PR_c1;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.present = RRCUserReconfiguration__criticalExtensionsMobile__c1_PR_NOTHING;
-    /*message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.present           = RRCUserReconfiguration__criticalExtensionsMobile_PR_c1;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.present = RRCUserReconfiguration__criticalExtensionsMobile__c1_PR_rrcConnectionReconfiguration_r8;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated = mobileP->GetASN1RadioResourceConfigDedicated(transaction_idP);
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = NULL;
-    message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
-
-
-
-    //xer_fprint(stdout, &asn_DEF_RRM_RRC_Message, (void*)message);
-
-    //----------------------------------------------------------------------
-    // encode the message then partially free structs then decode the message
-    asn_enc_rval_t enc_rval;
-    memset(&g_message_serialize_buffer[0], 0, MESSAGE_SERIALIZE_BUFFER_SIZE);
-    enc_rval = uper_encode_to_buffer(&asn_DEF_RRM_RRC_Message,
-                (void*)message,
-                &g_message_serialize_buffer[0],
-                MESSAGE_SERIALIZE_BUFFER_SIZE);
-    cout <<"[RRM][ENodeB::AddUserConfirm] asn_DEF_RRM_RRC_Message Encoded "<< enc_rval.encoded <<" bits (" << (enc_rval.encoded+7)/8 << " bytes)" << endl;
-
-    if (enc_rval.encoded==-1) {
-        cerr << "[RRM][ENodeB::AddUserConfirm] ASN1 : asn_DEF_RRM_RRC_Message encoding FAILED, EXITING" << endl;
-        throw asn1_encoding_error();
-    }
-    //----------------------------------------------------------------------
-    // free some structs
-    if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated != NULL) {
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList);
-        }
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList);
-        }
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList);
-        }
-        free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsE_NodeB.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-    }
-
-    if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated != NULL) {
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToReleaseList);
-        }
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList);
-        }
-        if (message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList != NULL) {
-            // do not free elements of the list
-            free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->srb_ToAddModList);
-        }
-        free(message->message.choice.c1.choice.rrcUserReconfiguration.criticalExtensionsMobile.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-    }
-
-    free(message);
-    //----------------------------------------------------------------------
-    asn_dec_rval_t     rval;
-    asn_codec_ctx_t   *opt_codec_ctx = 0;
-    RRM_RRC_Message_t  *asn1_message = 0;
-
-    rval = uper_decode(opt_codec_ctx,
-                       &asn_DEF_RRM_RRC_Message,// Type to decode
-                       (void **)&asn1_message,     // Pointer to a target structure's pointer
-                       &g_message_serialize_buffer[0],              // Data to be decoded
-                       MESSAGE_SERIALIZE_BUFFER_SIZE,              // Size of data buffer
-                       0,                       // Number of unused leading bits, 0..7
-                       0);   // Number of unused tailing bits, 0..7
-
-    if (rval.code != RC_OK) {
-        cerr << "[RRM][ENodeB::AddUserRequest] ASN1 :  ERROR IN ASN1 DECODING" << endl;
-        throw asn1_encoding_error();
-    }
-
-    return asn1_message;*/
     return message;
 }
 //-----------------------------------------------------------------
@@ -259,6 +101,7 @@ ENodeB::ENodeB(cell_id_t idP)
 void ENodeB::AddSignallingRadioBearer1(mobile_id_t mobile_idP, transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
+    cout << "[RRM] ENodeB::AddSignallingRadioBearer1(mobile="<< mobile_idP << " transaction_id="<< transaction_idP << endl;
     SRB_ToAddMod_t* srb1 = static_cast<SRB_ToAddMod_t*>(CALLOC(1,sizeof(SRB_ToAddMod_t)));
     srb1->srb_Identity   = 1;
     srb1->rlc_Config     = static_cast<SRB_ToAddMod::SRB_ToAddMod__rlc_Config*>(CALLOC(1,sizeof(SRB_ToAddMod::SRB_ToAddMod__rlc_Config)));
@@ -282,13 +125,14 @@ void ENodeB::AddSignallingRadioBearer1(mobile_id_t mobile_idP, transaction_id_t 
     srb1->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     srb1->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_srb_to_add_mod[srb1->srb_Identity][mobile_idP]       = srb1;
-    m_tx_id_pending_srb_to_add_mod[srb1->srb_Identity][mobile_idP] = transaction_idP;
+    m_pending_srb_to_add_mod[srb1->srb_Identity-1][mobile_idP]       = srb1;
+    m_tx_id_pending_srb_to_add_mod[srb1->srb_Identity-1][mobile_idP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void ENodeB::AddSignallingRadioBearer2(mobile_id_t mobile_idP, transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
+    cout << "[RRM] ENodeB::AddSignallingRadioBearer2(mobile="<< mobile_idP << " transaction_id="<< transaction_idP << endl;
     SRB_ToAddMod_t* srb2 = static_cast<SRB_ToAddMod_t*>(CALLOC(1,sizeof(SRB_ToAddMod_t)));
     srb2->srb_Identity   = 2;
     srb2->rlc_Config     = static_cast<SRB_ToAddMod::SRB_ToAddMod__rlc_Config*>(CALLOC(1,sizeof(SRB_ToAddMod::SRB_ToAddMod__rlc_Config)));
@@ -312,13 +156,14 @@ void ENodeB::AddSignallingRadioBearer2(mobile_id_t mobile_idP, transaction_id_t 
     srb2->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     srb2->logicalChannelConfig->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_srb_to_add_mod[srb2->srb_Identity][mobile_idP]       = srb2;
-    m_tx_id_pending_srb_to_add_mod[srb2->srb_Identity][mobile_idP] = transaction_idP;
+    m_pending_srb_to_add_mod[srb2->srb_Identity-1][mobile_idP]       = srb2;
+    m_tx_id_pending_srb_to_add_mod[srb2->srb_Identity-1][mobile_idP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void ENodeB::AddDefaultDataRadioBearer(mobile_id_t mobile_idP, transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
+    cout << "[RRM] ENodeB::AddDefaultDataRadioBearer(mobile="<< mobile_idP << " transaction_id="<< transaction_idP << endl;
 
     DRB_ToAddMod_t* drb = static_cast<DRB_ToAddMod_t*>(CALLOC(1,sizeof(DRB_ToAddMod_t)));
     drb->drb_Identity   = 3;
@@ -341,8 +186,8 @@ void ENodeB::AddDefaultDataRadioBearer(mobile_id_t mobile_idP, transaction_id_t 
     drb->logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration  = LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     drb->logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup = 0;
 
-    m_pending_drb_to_add_mod[drb->drb_Identity][mobile_idP]       = drb;
-    m_tx_id_pending_drb_to_add_mod[drb->drb_Identity][mobile_idP] = transaction_idP;
+    m_pending_drb_to_add_mod[drb->drb_Identity-1][mobile_idP]       = drb;
+    m_tx_id_pending_drb_to_add_mod[drb->drb_Identity-1][mobile_idP] = transaction_idP;
 }
 //-----------------------------------------------------------------
 void ENodeB::RemoveAllDataRadioBearers(Mobile* mobileP, transaction_id_t transaction_idP)
@@ -416,6 +261,7 @@ void ENodeB::CommitTransaction(transaction_id_t transaction_idP)
                 } else {
                     throw transaction_overwrite_error();
                 }
+                m_tx_id_pending_drb_to_add_mod[i][j] = -1;
             }
         }
     }
@@ -429,6 +275,7 @@ void ENodeB::CommitTransaction(transaction_id_t transaction_idP)
                 } else {
                     throw transaction_overwrite_error();
                 }
+                m_tx_id_pending_srb_to_add_mod[i][j] = -1;
             }
         }
     }
@@ -437,9 +284,12 @@ void ENodeB::CommitTransaction(transaction_id_t transaction_idP)
 RadioResourceConfigDedicated_t* ENodeB::GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP)
 //-----------------------------------------------------------------
 {
-    // for alloc - dealloc reasons, first create the mesage with already existing structures, then serialise, and deserialize for creating new structures
-    // that can be released
     RadioResourceConfigDedicated_t* config = static_cast<RadioResourceConfigDedicated_t*>(CALLOC(1,sizeof(RadioResourceConfigDedicated_t)));
+
+    config->srb_ToAddModList = NULL;
+    config->drb_ToReleaseList = NULL;
+    config->drb_ToAddModList  = NULL;
+
     for (int i = 0 ; i < MAX_DRB; i++) {
         for (int j = 0 ; j < MAX_MOBILE_PER_ENODE_B; j++) {
             // Look if there is a transaction for removing a DRB
@@ -447,13 +297,15 @@ RadioResourceConfigDedicated_t* ENodeB::GetASN1RadioResourceConfigDedicated(tran
                 if (config->drb_ToReleaseList == NULL) {
                     config->drb_ToReleaseList = static_cast<DRB_ToReleaseList_t*>(CALLOC(1,sizeof(DRB_ToReleaseList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->drb_ToReleaseList->list,&m_pending_drb_to_release[i][j]);
+                cerr << "[RRM] ENodeB::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Releasing DRB "<< m_pending_drb_to_release[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->drb_ToReleaseList->list,Asn1Utils::Clone(&m_pending_drb_to_release[i][j]));
             }
             if (m_tx_id_pending_drb_to_add_mod[i][j] == transaction_idP) {
                 if (config->drb_ToAddModList == NULL) {
                     config->drb_ToAddModList = static_cast<DRB_ToAddModList_t*>(CALLOC(1,sizeof(DRB_ToAddModList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->drb_ToAddModList->list, m_pending_drb_to_add_mod[i][j]);
+                cerr << "[RRM] ENodeB::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Adding DRB "<< m_pending_drb_to_add_mod[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->drb_ToAddModList->list, Asn1Utils::Clone(m_pending_drb_to_add_mod[i][j]));
             }
         }
     }
@@ -463,7 +315,8 @@ RadioResourceConfigDedicated_t* ENodeB::GetASN1RadioResourceConfigDedicated(tran
                 if (config->srb_ToAddModList == NULL) {
                     config->srb_ToAddModList = static_cast<SRB_ToAddModList_t*>(CALLOC(1,sizeof(SRB_ToAddModList_t)));
                 }
-                ASN_SEQUENCE_ADD(&config->srb_ToAddModList->list, m_pending_srb_to_add_mod[i][j]);
+                cerr << "[RRM] ENodeB::GetASN1RadioResourceConfigDedicated(" << transaction_idP << ") Adding SRB "<< m_pending_srb_to_add_mod[i][j] << endl;
+                ASN_SEQUENCE_ADD(&config->srb_ToAddModList->list, Asn1Utils::Clone(m_pending_srb_to_add_mod[i][j]));
             }
         }
     }
