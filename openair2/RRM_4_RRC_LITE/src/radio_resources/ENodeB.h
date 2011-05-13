@@ -54,6 +54,7 @@ class ENodeB  {
         RRM_RRC_Message_t* AddUserRequest   (Mobile* mobileP, transaction_id_t transaction_idP);
         RRM_RRC_Message_t* AddUserConfirm   (Mobile* mobileP, transaction_id_t transaction_idP);
         RRM_RRC_Message_t* RemoveUserRequest(Mobile* mobileP, transaction_id_t transaction_idP);
+        void               UserReconfigurationComplete(Mobile* mobileP,  transaction_id_t transaction_idP);
         void RemoveAllDataRadioBearers      (Mobile* mobileP, transaction_id_t transaction_idP);
 
         /*void AddDataRadioBearer(Mobile* mobileP,

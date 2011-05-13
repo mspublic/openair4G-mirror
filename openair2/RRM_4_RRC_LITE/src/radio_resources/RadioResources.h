@@ -13,6 +13,7 @@
 #    include "RRM2RRCMessageAddUserResponse.h"
 #    include "RRC2RRMMessageAddUserConfirm.h"
 #    include "RRM2RRCMessageUserReconfiguration.h"
+#    include "RRC2RRMMessageUserReconfigurationComplete.h"
 #    include "RRC2RRMMessageRemoveUserRequest.h"
 #    include "RRC2RRMMessageAddRadioAccessBearerRequest.h"
 #    include "RRC2RRMMessageAddRadioAccessBearerConfirm.h"
@@ -45,6 +46,7 @@ class RadioResources  {
         RRM2RRCMessageConnectionResponse*  Request(RRC2RRMMessageConnectionRequest &requestP);
         RRM2RRCMessageAddUserResponse*     Request(RRC2RRMMessageAddUserRequest    &requestP);
         RRM2RRCMessageUserReconfiguration* Request(RRC2RRMMessageAddUserConfirm    &requestP);
+        void                               Request(RRC2RRMMessageUserReconfigurationComplete &confirmP);
         Transaction*                       Request(RRC2RRMMessageRemoveUserRequest    &requestP);
         Transaction*                       Request(RRC2RRMMessageAddRadioAccessBearerRequest    &requestP);
         Transaction*                       Request(RRC2RRMMessageAddRadioAccessBearerConfirm    &confirmP);
