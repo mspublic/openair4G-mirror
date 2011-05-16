@@ -484,10 +484,10 @@ int main(int argc, char **argv) {
     for(i=0;i<emu_info.nb_master;i++){
       if(i!=emu_info.master_id)
 	emu_info.master_list=emu_info.master_list+j;
-      LOG_T(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,emu_info.master_list);
+      LOG_I(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,emu_info.master_list);
       j*=2;
     }
-    LOG_T(EMU," Total number of master %d my master id %d\n", 
+    LOG_I(EMU," Total number of master %d my master id %d\n", 
 	  emu_info.nb_master,
 	  emu_info.master_id);
 #ifndef CYGWIN    
@@ -495,7 +495,7 @@ int main(int argc, char **argv) {
 #endif
     
     while (emu_tx_status != SYNCED_TRANSPORT ) {
-      LOG_T(EMU, " Waiting for EMU Transport to be synced\n"); 
+      LOG_I(EMU, " Waiting for EMU Transport to be synced\n"); 
       emu_transport_sync();//emulation_tx_rx();
     }
   }// ethernet flag
@@ -509,10 +509,9 @@ int main(int argc, char **argv) {
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
-  exit(); 
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
-
+  
   channel_length = (u8) (11+2*BW*Td);
 
 
