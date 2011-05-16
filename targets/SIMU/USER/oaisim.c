@@ -509,7 +509,7 @@ int main(int argc, char **argv) {
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
-   
+  exit(); 
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
   	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
 
@@ -630,7 +630,9 @@ int main(int argc, char **argv) {
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-
+      
+      direction = subframe_select(frame_parms,next_slot>>1);
+      
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(emu_info.nb_enb_local);
       
@@ -645,9 +647,10 @@ int main(int argc, char **argv) {
 	fwrite(stats_buffer,1,len,eNB_stats);
 	//}
       }
-      direction = subframe_select(frame_parms,next_slot>>1);
-      
-      if (ethernet_flag ==1) { // include PBCH
+
+      emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
+
+      /* if (ethernet_flag ==1) { // include PBCH
 	if (( (direction == SF_DL) || (direction == SF_S) ) && (((next_slot%2)== 0) || (next_slot==1))){ 
 	  //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
 	  //assert((start = clock())!=-1);// t0= time(NULL);
@@ -655,11 +658,10 @@ int main(int argc, char **argv) {
 	  //stop = clock(); //t1= time(NULL);
 	  //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
 	}
-      }
+	}*/
       // Call ETHERNET emulation here
       if((next_slot %2) == 0) 
 	clear_UE_transport_info(emu_info.nb_ue_local);
-
 
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
@@ -672,8 +674,9 @@ int main(int argc, char **argv) {
 	  fwrite(stats_buffer,1,len,UE_stats);
 	  //}
 	}
-      
-      if (ethernet_flag == 1){
+      emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
+
+      /*  if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
 	  //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
 	  //assert((start = clock())!=-1);//t0= time(NULL);
@@ -682,7 +685,7 @@ int main(int argc, char **argv) {
 	  //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
 	   
 	}
-      }
+	}*/
 
       if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
 	snr_dB2 = -20;
