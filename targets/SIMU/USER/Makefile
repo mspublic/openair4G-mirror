@@ -39,7 +39,7 @@ CFLAGS += -DOCG_FLAG
 endif
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
-CFLAGS += $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "-DCYGWIN" ;fi)
+CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
