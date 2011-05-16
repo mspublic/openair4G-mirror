@@ -1,6 +1,0 @@
-<PDU>
-	<extensibleSequence>
-		<integer>123</integer>
-		<string>one <nul/> two</string>
-	</extensibleSequence>
-</PDU>
