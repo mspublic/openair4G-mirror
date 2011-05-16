@@ -30,7 +30,7 @@ char is_node_local_neighbor(unsigned short Node_id){
 
 void emu_transport_sync(void){
  
-  
+  //I am not the primary master  
   if (emu_info.is_primary_master==0){
 
     bypass_tx_data(WAIT_TRANSPORT,0,0);
@@ -55,6 +55,30 @@ void emu_transport_sync(void){
   }
   
 }
+
+void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next_slot,lte_subframe_t direction, int ethernet_flag ){
+  
+  if (ethernet_flag == 0)
+    return;
+  // DL 
+  if ( ((direction == SF_DL) && ((next_slot%2)== 0)) && ((direction == SF_S) || (next_slot==1))){ 
+    //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+    //assert((start = clock())!=-1);// t0= time(NULL);
+    emu_transport_DL(mac_xface->frame, last_slot,next_slot);
+    //stop = clock(); //t1= time(NULL);
+    //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
+  }
+  // UL
+  if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
+    //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+    //assert((start = clock())!=-1);//t0= time(NULL);
+    emu_transport_UL(mac_xface->frame, last_slot , next_slot);
+    // stop = clock(); // t1= time(NULL);
+    //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
+    
+  }
+}
+
 
 void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int next_slot) {
 
