@@ -1,11 +1,9 @@
 CC = gcc
 
-SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
-SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32  #-mssse3 -msse4
-CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
-cygwin = $(shell if [ $(OSTYPE) = "cygwin" ] ; then echo "1" ; else echo false ; fi)
+CPUFLAGS = -mmmx -msse -msse2 -m32  #-msse4
+CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi)
+CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
+cygwin = $(shell if [ `uname -o` = "Cygwin" ] ; then echo "1" ; else echo "0" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
