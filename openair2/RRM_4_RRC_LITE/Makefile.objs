@@ -495,8 +495,10 @@ RRM_OBJS =  \
 		$(COM_DIR)/rrc/RRC2RRMMessageRemoveRadioAccessBearerRequest.o \
 		$(COM_DIR)/rrc/RRM2RRCMessageRemoveRadioAccessBearerResponse.o \
 		$(COM_DIR)/rrc/RRM2RRCMessageUserReconfiguration.o \
+		$(COM_DIR)/rrc/RRC2RRMMessageUserReconfigurationComplete.o \
 		$(COM_DIR)/rrc/RRCUdpSocket.o \
 		$(TCPIP_DIR)/storage.o \
+		$(RADIO_RESOURCES_DIR)/Asn1Utils.o \
 		$(RADIO_RESOURCES_DIR)/ENodeB.o \
 		$(RADIO_RESOURCES_DIR)/Mobile.o \
 		$(RADIO_RESOURCES_DIR)/RadioBearer.o \
@@ -529,9 +531,11 @@ TEST_OBJS =  \
 		$(COM_DIR)/rrc/RRC2RRMMessageRemoveRadioAccessBearerRequest.o \
 		$(COM_DIR)/rrc/RRM2RRCMessageRemoveRadioAccessBearerResponse.o \
 		$(COM_DIR)/rrc/RRM2RRCMessageUserReconfiguration.o \
+		$(COM_DIR)/rrc/RRC2RRMMessageUserReconfigurationComplete.o \
 		$(COM_DIR)/rrc/RRCUdpSocket.o \
 		$(COM_DIR)/rrm/RRMUdpSocket.o \
 		$(TCPIP_DIR)/storage.o \
+		$(RADIO_RESOURCES_DIR)/Asn1Utils.o \
 		$(RADIO_RESOURCES_DIR)/ENodeB.o \
 		$(RADIO_RESOURCES_DIR)/Mobile.o \
 		$(RADIO_RESOURCES_DIR)/RadioBearer.o \
