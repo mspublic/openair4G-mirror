@@ -51,7 +51,7 @@ make_socket_inet (int typeP, uint16_t * portP, struct sockaddr_in *ptr_addressP)
 //------------------------------------------------------------------------------
 
   int             sock;
-  int             length = sizeof (struct sockaddr_in);
+  unsigned int             length = sizeof (struct sockaddr_in);
   struct sockaddr_in name;
 
 
