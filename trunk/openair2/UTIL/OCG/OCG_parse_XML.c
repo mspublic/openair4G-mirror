@@ -49,6 +49,7 @@
 /*----------------------------------------------------------------------------*/
 
 static int oai_emulation_;	/*!< \brief indicating that the parsing position is now within OAI_Emulation_*/
+static int osd_;
 static int envi_config_;		/*!< \brief indicating that the parsing position is now within Envi_Config_*/
 static int area_;				/*!< \brief indicating that the parsing position is now within Area_*/
 static int x_;
@@ -158,6 +159,8 @@ void end_document(void *user_data) {
 void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) { // called once at the beginning of each element 
 	if (!xmlStrcmp(name, "OPENAIRINTERFACE")) {
 		oai_emulation_ = 1;
+	} else if (!xmlStrcmp(name, "OSD")) {
+		osd_ = 1;
 	} else if (!xmlStrcmp(name, "ENVICONFIG")) {
 		envi_config_ = 1;
 	} else if (!xmlStrcmp(name, "AREA")) {
@@ -360,6 +363,8 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 void end_element(void *user_data, const xmlChar *name) { // called once at the end of each element 
 	if (!xmlStrcmp(name, "OPENAIRINTERFACE")) {
 		oai_emulation_ = 0;
+	} else if (!xmlStrcmp(name, "OSD")) {
+		osd_ = 0;
 	} else if (!xmlStrcmp(name, "ENVICONFIG")) {
 		envi_config_ = 0;
 	} else if (!xmlStrcmp(name, "AREA")) {
@@ -559,7 +564,9 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 
 void characters(void *user_data, const xmlChar *ch, int len) { // called once when there is content in each element 
 	if (oai_emulation_) {
-		if (envi_config_) {
+		if (osd_) {
+			// doing nothing at this moment
+		} else if (envi_config_) {
 			if (area_) {
 				if (x_) {
 					oai_emulation.envi_config.area.x = atof(ch);
