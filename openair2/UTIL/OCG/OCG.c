@@ -65,7 +65,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 #endif  
 	int state = STATE_START_OCG;
 	char web_XML_folder[DIR_LENGTH_MAX] = "";
-	char output_dir[DIR_LENGTH_MAX] = "";
+	char output_dir[DIR_LENGTH_MAX] = ""; // the output folder during the OCG procedure. Change step by step
 
 	char *OPENAIR_TARGETS=getenv("OPENAIR_TARGETS");
 	if (OPENAIR_TARGETS == NULL) {
@@ -168,11 +168,11 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 			case STATE_CREATE_DIR :
 				if ((create_dir_OK = create_dir(output_dir, user_name, file_date)) == MODULE_OK) {
 					state = STATE_PARSE_XML;
+					strcat(output_dir, user_name);
+					strcat(output_dir, "/");
+					strcat(output_dir, file_date);
+					strcat(output_dir, "/");
 					strcpy(dst_dir, output_dir);
-					strcat(dst_dir, user_name);
-					strcat(dst_dir, "/");
-					strcat(dst_dir, file_date);
-					strcat(dst_dir, "/");
 					oai_emulation.useful_info.output_path = &dst_dir; // information for other modules within OAI
 				} else state = STATE_GENERATE_REPORT;
 				break;
@@ -186,7 +186,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				break;
 				
 			case STATE_SAVE_XML :
-			  if ((save_XML_OK = save_XML(copy_or_move, src_file, dst_dir, filename)) == MODULE_OK) 
+			  if ((save_XML_OK = save_XML(copy_or_move, src_file, output_dir, filename)) == MODULE_OK) 
 				state = STATE_CALL_EMU;
 			  else state = STATE_GENERATE_REPORT;
 			  break;
@@ -198,7 +198,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 					oai_emulation.useful_info.OCG_OK = 1;
 				}
 #ifdef TEST_OCG				
-				call_emu_OK = call_emu(dst_dir);
+				call_emu_OK = call_emu(output_dir);
 				config_mobi_OK = config_mobi("RWMEmulator.xml", filename); // generate the XML for Mobigen
 #endif
 				state = STATE_GENERATE_REPORT;
@@ -207,19 +207,19 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 			case STATE_GENERATE_REPORT :
 				if (create_dir_OK != MODULE_OK) {
 					// a temp folder is required when the output folder could not be correctly generated
-					strcpy(dst_dir, OPENAIR_TARGETS);
-					strcat(dst_dir, "SIMU/EXAMPLES/OSD/");
-					strcat(dst_dir, TEMP_OUTPUT_DIR);
+					strcpy(output_dir, OPENAIR_TARGETS);
+					strcat(output_dir, "SIMU/EXAMPLES/OSD/");
+					strcat(output_dir, TEMP_OUTPUT_DIR);
 					struct stat st;
-					if(stat(dst_dir, &st) != 0) { // if temp output directory does not exist, we create it here
-						mkdir(dst_dir, S_IRWXU | S_IRWXG | S_IRWXO);
-						LOG_I(OCG, "temp output directory %s is created", dst_dir);
+					if(stat(output_dir, &st) != 0) { // if temp output directory does not exist, we create it here
+						mkdir(output_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+						LOG_I(OCG, "temp output directory %s is created", output_dir);
 					}
 				} else {
-					strcat(dst_dir, "SCENARIO/STATE/");
+					strcat(output_dir, "SCENARIO/STATE/");
 				}
 
-				generate_report(dst_dir, "OCG_report.xml");
+				generate_report(output_dir, "OCG_report.xml");
 				if (copy_or_move == 1) state = STATE_END;
 				else state = STATE_END;
 				//else state = STATE_DETECT_FILE;
