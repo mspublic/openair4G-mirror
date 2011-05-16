@@ -317,7 +317,7 @@ void rlc_am_segment_10 (rlc_am_entity_t *rlcP)
             } else if ((sdu_mngt->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
                 if (fill_num_li == (RLC_AM_MAX_SDU_IN_PDU - 1)) {
 #ifdef TRACE_RLC_AM_SEGMENT_DETAILLED
-                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][SEGMENT] [SIZE %d] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, sdu_mngt->sdu_remaining_size);
 #endif
                     memcpy(data, data_sdu, sdu_mngt->sdu_remaining_size);
                     pdu_mngt->payload_size += sdu_mngt->sdu_remaining_size;
