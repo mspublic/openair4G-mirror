@@ -1,14 +1,17 @@
 #ifndef RWP_H_
 #define RWP_H_
 
-#include "common.h"
-#include "global_parameters.h"
-#include "OMG_constants.h"
-#include "OMG.h"
+#include "omg.h"
+int start_rwp_generator(omg_global_param omg_param_list);
 
-
-Pair move_rwp_node(NodePtr node, m_global_param param_list, double cur_time) ;
+Pair move_rwp_node(NodePtr node, double cur_time) ;
 
 void update_rwp_nodes(double cur_time);
+
+void get_rwp_positions_updated(double cur_time);
+
+void place_rwp_node(NodePtr node) ;
+
+Pair sleep_rwp_node(NodePtr node, double cur_time);
 
 #endif /* RWP_H_ */

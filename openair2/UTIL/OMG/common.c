@@ -1,20 +1,17 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "common.h"
-#include "log.h"
 
-#include "global_parameters.h"
-#include "OMG.h"
+#include "omg.h"
 
 #define frand() ((double) rand() / (RAND_MAX+1))
 
 NodePtr create_node(void) {
 	NodePtr ptr;
-	ptr = malloc(sizeof(node_structure));
+	ptr = malloc(sizeof(node_struct));
 	return ptr;
 }
-inline double randomGen(double a, double b){
+double randomGen(double a, double b){
 
     return ( rand()/(double)RAND_MAX ) * (b-a) + a;
 }
@@ -22,7 +19,7 @@ inline double randomGen(double a, double b){
 
 MobilityPtr create_mobility(void) {
 	MobilityPtr ptr;
-	ptr = malloc(sizeof(mobility_structure));
+	ptr = malloc(sizeof(mobility_struct));
 	return ptr;
 }
 
@@ -32,8 +29,8 @@ Node_list add_entry(NodePtr node, Node_list Node_Vector){
     entry->node = node;
     entry->next = NULL;
     if (Node_Vector == NULL) {
-        LOG_D("\nempty Node_list");
-	LOG_D("\nadded elmt ID %d\n", entry->node->ID);
+       // LOG_D("\nempty Node_list");
+	//LOG_D("\nadded elmt ID %d\n", entry->node->ID);
         return entry;
     }
     else {
@@ -42,8 +39,8 @@ Node_list add_entry(NodePtr node, Node_list Node_Vector){
             tmp = tmp->next;
         }
         tmp->next = entry;
-        LOG_D("\nnon empty Node_list");
-	LOG_D("\nadded elmt ID %d\n", entry->node->ID);
+        //LOG_D(OMG,"\nnon empty Node_list");
+	//LOG_D(OMG,"\nadded elmt ID %d\n", entry->node->ID);
 	
         return Node_Vector;
     }
@@ -57,10 +54,10 @@ void display_node_list(Node_list Node_Vector, int r){
 	//int i=0;
     while (tmp != NULL){
 	if (r == 1 ){
-        	LOG_D("\nnode number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos );
+	  LOG_D(OMG,"\nnode number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos );
 	}
 	else {
-        LOG_D("\nnode_number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\nmob->X_from %.3f\nmob->Y_from %.3f\nmob->X_to %.3f\nmob->Y_to %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
+	  LOG_D(OMG,"\nnode_number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\nmob->X_from %.3f\nmob->Y_from %.3f\nmob->X_to %.3f\nmob->Y_to %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
 	}
         tmp = tmp->next;
 	//i++;
