@@ -87,9 +87,9 @@ void init_mobility_generator(omg_global_param omg_param_list) {
   }
 }
 
-void update_nodes(double cur_time){
+void update_nodes(int mobility_type, double cur_time){
   set_time(cur_time);
-  switch (omg_param_list.mobility_type) {
+  switch (mobility_type) {
   case RWP:
     update_rwp_nodes(cur_time);
     /*LOG_D("\n  **********DISPLAY NODE LIST**********"); 
@@ -113,9 +113,9 @@ void update_nodes(double cur_time){
   }
 }
 
-Node_list get_current_positions(double cur_time){
+Node_list get_current_positions(int mobility_type,double cur_time){
   Node_list Node_Vector = NULL;
-  switch (omg_param_list.mobility_type) {
+  switch (mobility_type) {
   case RWP:
     get_rwp_positions_updated(cur_time);
     //LOG_D("\n  **********DISPLAY NODE LIST**********"); 
@@ -146,9 +146,9 @@ Node_list get_current_positions(double cur_time){
 }
 
 // get the position for a specific node 
-NodePtr get_node_position(int nID){
+NodePtr get_node_position(int mobility_type, int nID){
   Node_list Node_Vector = NULL;
-  switch (omg_param_list.mobility_type) {
+  switch (mobility_type) {
   case RWP:
     Node_Vector = Node_Vector_Rwp;
     break;

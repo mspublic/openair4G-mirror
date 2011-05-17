@@ -8,7 +8,7 @@ Node_list Node_Vector_Static;
 Node_list Node_Vector_Rwalk;
 Node_list Node_Vector_Rwp;
 
-Job_list Job_Vector;
+//Job_list Job_Vector;
 Job_list Job_Vector_Rwp;
 Job_list Job_Vector_Rwalk;
 
