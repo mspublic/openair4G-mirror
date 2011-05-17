@@ -123,7 +123,11 @@ void logInit (int g_log_level) {
     
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
-    g_log->log_component[EMU].flag =  LOG_MED_ONLINE;
+    g_log->log_component[EMU].flag =  LOG_MED_ONLINE; 
+
+    g_log->log_component[OMG].name = "OMG";
+    g_log->log_component[OMG].level = LOG_INFO;
+    g_log->log_component[OMG].flag =  LOG_MED_ONLINE;
      
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
@@ -155,7 +159,7 @@ void logInit (int g_log_level) {
   g_log->config.audit_facility = LOG_LOCAL6;
   g_log->config.format         = 0x00; // online debug inactive
   
-  g_log->log_file_name = "openair.log";
+  g_log->log_file_name = "/tmp/openair.log";
 #else
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
