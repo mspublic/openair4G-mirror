@@ -20,6 +20,7 @@
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
+#include "UTIL/OMG/omg.h"
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -202,15 +203,25 @@ void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info, int * mobil
 	emu_info->nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
 	emu_info->nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
 
+	init_omg_global_params();
+
+	// init OMG for eNB
+	omg_param_list.nodes = emulation_scen->topo_config.number_of_eNB; 
+	omg_param_list.mobility_type = 0; // set eNB to be static
+
+	// init OMG for UE
+	omg_param_list.nodes = emulation_scen->topo_config.number_of_UE;
 	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
-		*mobility_type = 0;
+	  omg_param_list.mobility_type = 0;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
-		*mobility_type = 1;
+	  omg_param_list.mobility_type = 1;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
-		*mobility_type = 2;
+	  omg_param_list.mobility_type = 2;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
-		*mobility_type = 3;
+	  omg_param_list.mobility_type = 3;
 	}
+
+	
 /*
 // inputs for OMG : TODO: in the future
 
