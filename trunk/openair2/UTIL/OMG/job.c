@@ -1,23 +1,26 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "job.h"
-#include "OMG.h"
-#include "common.h"
-#include "log.h"
 
+#include "omg.h"
 
-
-Job_list add(Pair job, Job_list Job_Vector){
+Job_list add(Pair job, Job_list Job_Vector, int mobility_type){
     Job_list entry = malloc(sizeof(Job_list));
     entry->pair = job;
-    Job_Vector_len++;
+    switch (mobility_type){
+    case RWP:
+      Job_Vector_Rwp_len++;
+      break;
+    case RWALK:
+      Job_Vector_Rwalk_len++;
+      break;
+    }
     //LOG_D("\n  Job_Vector_len %d", Job_Vector_len); 
     entry->next = NULL;
 
     if (Job_Vector == NULL) {
-        LOG_D("\nempty Job_Vector");
-	LOG_D("\nadded elmt ID %d\n", entry->pair->b->ID);
+      LOG_D(OMG, "\nempty Job_Vector");
+      LOG_D(OMG,"\nadded elmt ID %d\n", entry->pair->b->ID);
         return entry;
     }
     else {
@@ -26,8 +29,8 @@ Job_list add(Pair job, Job_list Job_Vector){
             tmp = tmp->next;
         }
         tmp->next = entry;
-        LOG_D("\nnon empty Job_Vector");
-	LOG_D("\nadded elmt ID %d\n", entry->pair->b->ID);
+        LOG_D(OMG,"\nnon empty Job_Vector");
+	LOG_D(OMG,"\nadded elmt ID %d\n", entry->pair->b->ID);
 
         return Job_Vector;
     }
@@ -38,7 +41,7 @@ void display_job_list(Job_list Job_Vector){
     	Job_list tmp = Job_Vector;
 
    while (tmp != NULL){
-        LOG_D("\nnode %d \ntime %.3f\n", tmp->pair->b->ID, tmp->pair->a);
+     LOG_D(OMG,"\nnode %d \ntime %.3f\n", tmp->pair->b->ID, tmp->pair->a);
         tmp = tmp->next;
 	//i++;
 

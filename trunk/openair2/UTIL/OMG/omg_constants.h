@@ -1,12 +1,12 @@
 /*
- * vanetmobisim_constants.h
+ * omg_constants.h
  *
  *  Created on: Jan 28, 2011
  *      Author: jerome haerri
  */
 
-#ifndef VANETMOBISIM_CONSTANTS_H_
-#define VANETMOBISIM_CONSTANTS_H_
+#ifndef __OMG_CONSTANTS_H_
+#define __OMG_CONSTANTS_H_
 
 // ****************************************
 // MOBILITY GENERATOR
@@ -23,6 +23,7 @@
 // undefined
 #define UNDEF 0xFF
 
-#define eps 0.00000095367431649629
+//#define eps 0.00000095367431649629
+#define eps 0.99
 
-#endif /* VANETMOBISIM_CONSTANTS_H_ */
+#endif /* __OMG_H_ */
