@@ -26,13 +26,13 @@ Pair sleep_node(NodePtr node, double cur_time);
 
 Pair move_node(NodePtr node, double cur_time) ;
 
-void update_nodes(double cur_time) ;
+void update_nodes(int mobility_type, double cur_time) ;
 
-void get_current_positions_updated(double cur_time);
+void get_current_positions_updated(int mobility_type, double cur_time);
 
-Node_list get_current_positions(double cur_time);
+Node_list get_current_positions(int mobility_type, double cur_time);
 
-NodePtr get_node_position(int nID);
+NodePtr get_node_position(int mobility_type, int nID);
 
 Node_list add_entry(NodePtr node, Node_list Node_Vector);
 
