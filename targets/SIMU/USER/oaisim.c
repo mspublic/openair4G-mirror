@@ -199,58 +199,68 @@ void set_envi(OAI_Emulation * emulation_scen) {
 	LOG_I(OCG, "environment is set\n");
 }
 
-void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info, int * mobility_type) {
+void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info) {
 	emu_info->nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
 	emu_info->nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
 
 	init_omg_global_params();
 
+	omg_param_list.min_X = 0;
+	omg_param_list.max_Y = emulation_scen->envi_config.area.x;
+	omg_param_list.min_Y = 0;
+	omg_param_list.max_Y = emulation_scen->envi_config.area.y;
+
 	// init OMG for eNB
-	omg_param_list.nodes = emulation_scen->topo_config.number_of_eNB; 
+	omg_param_list.nodes = emulation_scen->topo_config.number_of_eNB;
+	omg_param_list.min_speed = 0;
+	omg_param_list.max_speed = 0;
+	omg_param_list.min_journey_time = 0;
+	omg_param_list.max_journey_time = 0;
+	omg_param_list.min_azimuth = 0; // ???
+	omg_param_list.max_azimuth = 360; // ???
+	omg_param_list.min_sleep = 0;
+	omg_param_list.max_sleep = 0;
 	omg_param_list.mobility_type = 0; // set eNB to be static
+	// omg_param_list.seed = ;
+
+	init_mobility_generator(omg_param_list);
+
 
 	// init OMG for UE
-	omg_param_list.nodes = emulation_scen->topo_config.number_of_UE;
+	omg_param_list.nodes = emulation_scen->topo_config.number_of_UE;  
+	omg_param_list.min_speed = (emulation_scen->topo_config.mobility.moving_dynamics.min_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
+	omg_param_list.max_speed = (emulation_scen->topo_config.mobility.moving_dynamics.max_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
+	omg_param_list.min_journey_time = 0.1; // TODO to be added into OSD and OCG
+	omg_param_list.max_journey_time = 10;
+	omg_param_list.min_azimuth = 0.1;
+	omg_param_list.max_azimuth = 360;
+	omg_param_list.min_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
+	omg_param_list.max_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
+	//input of OMG: SATIC: 0, RWP: 1 or RWALK 2
+
 	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
-	  omg_param_list.mobility_type = 0;
+		omg_param_list.mobility_type = 0;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
-	  omg_param_list.mobility_type = 1;
+		omg_param_list.mobility_type = 1;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
-	  omg_param_list.mobility_type = 2;
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
-	  omg_param_list.mobility_type = 3;
+		omg_param_list.mobility_type = 2;
+	//} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
+	//	omg_param_list.mobility_type = 3;
+	} else {
+		omg_param_list.mobility_type = 0;
 	}
+	// omg_param_list.seed = ;
 
-	
+	init_mobility_generator(omg_param_list);
+
 /*
-// inputs for OMG : TODO: in the future
+// inputs for OMG : TODO: seed
 
-	emulation_scen->envi_config.area.x;
-	emulation_scen->envi_config.area.y;
-	emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
-	emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
-	emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
-	emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
-
-	emulation_scen->topo_config.number_of_UE;
-	if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "random")) {
-	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "concentrated")) {
-	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "grid_map")) {
-	}
-
-	emulation_scen->topo_config.number_of_eNB;
-	if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
-	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
-	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
-	}
 
 	if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "oaiseed")) {
 	} else if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "userseed")) {
 		emulation_scen->topo_config.mobility.random_seed.user_seed.seed_value;
 	}
-
-// outputs from OMG : the positions of eNBs and UEs
-	emulation_scen->topo_config.positions = OMG();
 	
 */
 	LOG_I(OCG, "topology is set\n");
@@ -354,7 +364,6 @@ int main(int argc, char **argv) {
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  int mobility_type; // input of OMG: SATIC: 0, RWP: 1 or RWALK 2
 
   while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d")) != -1)
 
@@ -473,7 +482,7 @@ int main(int argc, char **argv) {
       }
 
       set_envi(emulation_scen);
-      set_topo(emulation_scen, &emu_info, &mobility_type);
+      set_topo(emulation_scen, &emu_info);
       set_app(emulation_scen);
       set_emu(emulation_scen, &n_frames);
 
@@ -642,19 +651,11 @@ int main(int argc, char **argv) {
     
     for (slot=0 ; slot<20 ; slot++) {
 
-/* call OMG_main();
+/* check if there is a new job to do at this time
 // input the OAI_time TODO
-// return me the pointer to the new positions TODO
 
-emulation_scen->topo_config.positions = OMG_main(
-		0, emulation_scen->envi_config.area.x, 
-		0, emulation_scen->envi_config.area.y, 
-		emulation_scen->topo_config.mobility.moving_dynamics.min_speed, emulation_scen->topo_config.mobility.moving_dynamics.max_speed, 
-		emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time, emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time, 
-		emulation_scen->topo_config.number_of_UE, 
-		NULL, NULL, // journey time should be generated by OMG itself
-		mobility_type, 
-		OAI_time);
+update_nodes(0, OAI_time);
+//update_nodes(1, OAI_time);
 */
 
       last_slot = (slot - 1)%20;
