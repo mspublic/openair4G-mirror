@@ -441,6 +441,7 @@ typedef struct {
 
 OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
+void init_oai_emulation(void);
 #include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus

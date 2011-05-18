@@ -49,7 +49,7 @@ int start_rwp_generator(omg_global_param omg_param_list) {
   }
 
   LOG_I(OMG, "*****DISPLAY NODE LIST********\n"); 
-  display_node_list(Node_Vector_Rwp, 2);
+  display_node_list(Node_Vector_Rwp, 1);
   LOG_T(OMG, "********DISPLAY JOB LIST********\n"); 
   display_job_list(Job_Vector_Rwp);
   Job_Vector_Rwp = quick_sort (Job_Vector_Rwp);

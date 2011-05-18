@@ -150,6 +150,9 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				call_emu_OK = MODULE_NOT_PROCESSED;
 				config_mobi_OK = MODULE_NOT_PROCESSED;
 				generate_report_OK = MODULE_NOT_PROCESSED;
+
+				init_oai_emulation(); // to initialize the oai_emulation structure
+
 				LOG_I(OCG, "An emulation for file %s is initiated\n", filename);
 				state = STATE_PARSE_FILENAME;
 				break;
@@ -236,4 +239,51 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 #else
 	return &oai_emulation;
 #endif
+}
+
+void init_oai_emulation() {
+	oai_emulation.envi_config.area.x = 100;
+	oai_emulation.envi_config.area.y = 100;
+	oai_emulation.envi_config.fading.free_space_propagation.pathloss_exponent = 2;
+	oai_emulation.envi_config.fading.free_space_propagation.pathloss_0 = 0;
+	oai_emulation.envi_config.fading.small_scale.selected_option = "rayleigh";
+	oai_emulation.envi_config.fading.small_scale.rayleigh.delay_spread = 0;
+	oai_emulation.envi_config.wall_penetration_loss = 0;
+	oai_emulation.envi_config.noise_power = -90;
+	oai_emulation.topo_config.net_type.selected_option = "homogeneous";
+	oai_emulation.topo_config.relay.number_of_relays = 0;
+	oai_emulation.topo_config.eNB_topology.selected_option = "random";
+	oai_emulation.topo_config.eNB_topology.totally_random.number_of_eNB = 1;
+	oai_emulation.topo_config.inter_eNB_distance = 10;
+	oai_emulation.topo_config.UE_distribution.selected_option = "random";
+	oai_emulation.topo_config.UE_distribution.grid_map.inter_block_distance = 1;
+	oai_emulation.topo_config.number_of_UE = 1;
+	oai_emulation.topo_config.system_bandwidth = 20;
+	oai_emulation.topo_config.UE_frequency = 900;
+	oai_emulation.topo_config.mobility.mobility_type.selected_option = "fixed";
+	oai_emulation.topo_config.mobility.moving_dynamics.min_speed = 0.2;
+	oai_emulation.topo_config.mobility.moving_dynamics.max_speed = 10;
+	oai_emulation.topo_config.mobility.moving_dynamics.min_pause_time = 0.1;
+	oai_emulation.topo_config.mobility.moving_dynamics.max_pause_time = 10;
+	oai_emulation.topo_config.mobility.random_seed.selected_option = "oaiseed";
+	oai_emulation.topo_config.mobility.random_seed.user_seed.seed_value = 1;
+	oai_emulation.app_config.app_type.selected_option = "CBR";
+	oai_emulation.app_config.traffic.transport_protocol.selected_option = "TCP";
+	oai_emulation.app_config.traffic.packet_size.selected_option = "fixed";
+	oai_emulation.app_config.traffic.packet_size.fixed.fixed_value = 10;
+	oai_emulation.app_config.traffic.inter_arrival_time.selected_option = "fixed";
+	oai_emulation.app_config.traffic.inter_arrival_time.fixed.fixed_value = 10;
+	oai_emulation.emu_config.emu_time = 20;
+	oai_emulation.emu_config.performance.metric.throughput = 0;
+	oai_emulation.emu_config.performance.metric.latency = 0;
+	oai_emulation.emu_config.performance.metric.signalling_overhead = 0;
+	oai_emulation.emu_config.performance.layer.mac = 0;
+	oai_emulation.emu_config.performance.layer.rlc = 0;
+	oai_emulation.emu_config.performance.layer.pdcp = 0;
+	oai_emulation.emu_config.performance.log_emu.debug = 0;
+	oai_emulation.emu_config.performance.log_emu.info = 0;
+	oai_emulation.emu_config.performance.log_emu.warning = 0;
+	oai_emulation.emu_config.performance.log_emu.error = 0;
+	oai_emulation.emu_config.performance.packet_trace.mac = 0;
+	oai_emulation.profile = "EURECOM";
 }
