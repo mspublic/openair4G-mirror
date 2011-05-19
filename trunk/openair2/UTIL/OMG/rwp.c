@@ -31,7 +31,7 @@ int start_rwp_generator(omg_global_param omg_param_list) {
     mobility = (MobilityPtr) create_mobility();
     
     node->ID = n_id;
-    node->type = 0; 
+    node->type = omg_param_list.nodes_type; 
     node->generator = omg_param_list.mobility_type; 
     node->mob = mobility;
     
@@ -172,7 +172,7 @@ void update_rwp_nodes(double cur_time) {
 			}
 			//sorting the new entries
 			LOG_D(OMG,"\n  **********DISPLAY NODE LIST**********"); 
-			display_node_list(Node_Vector_Rwp,2);
+			display_node_list(Node_Vector_Rwp,1);
 			LOG_D(OMG,"\n\n **********DISPLAY JOB LIST********** "); 
 			display_job_list(Job_Vector_Rwp);
 			Job_Vector_Rwp = quick_sort (Job_Vector_Rwp);

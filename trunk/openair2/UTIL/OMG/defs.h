@@ -51,7 +51,8 @@ typedef struct job_list_struct* Job_list;
 
 
 typedef struct omg_global_param{
-	int nodes;
+	int nodes; // num nodes 
+        int nodes_type;
 	double min_X;
 	double max_X;
 	double min_Y;

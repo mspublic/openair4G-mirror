@@ -13,7 +13,7 @@ void start_static_generator(omg_global_param omg_param_list) {
   
   if (omg_param_list.nodes <= 0){
     LOG_W(OMG,"Number of nodes has not been set\n");
-    return(-1);
+    return;
   }
   LOG_I(OMG, "\nStart STATIC Mobility MODEL\n");
 
@@ -24,14 +24,14 @@ void start_static_generator(omg_global_param omg_param_list) {
     mobility = (MobilityPtr) create_mobility();
     
     node->ID = n_id;
-    node->type = 0; 
+    node->type = omg_param_list.nodes_type; 
     node->generator = omg_param_list.mobility_type; 
     node->mob = mobility;
     
     place_static_node(node);	//initial positions
     
   }
-  return(0);
+  return;
 }
   
 void place_static_node(NodePtr node) {
@@ -49,7 +49,11 @@ void place_static_node(NodePtr node) {
 
 	LOG_D(OMG, "\n ********INITIALIZE NODE******** ");
     	LOG_D(OMG, "\nID: %d\nX = %.3f\nY = %.3f\nspeed = 0.0", node->ID, node->X_pos, node->Y_pos);  
-	Node_Vector_Static = (Node_list) add_entry(node, Node_Vector_Static);
- 
-}
+	if 	(node->type == eNB)
+		Node_Vector_Static_eNB = (Node_list) add_entry(node, Node_Vector_Static_eNB);
+	else if (node->type == UE)
+		Node_Vector_Static_UE = (Node_list) add_entry(node, Node_Vector_Static_UE);
+	else
+		LOG_W(OMG, "not supported node type")
+ }
 

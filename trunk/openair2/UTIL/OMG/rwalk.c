@@ -33,7 +33,7 @@ int start_rwalk_generator(omg_global_param omg_param_list) {
     mobility = (MobilityPtr) create_mobility();
     
     node->ID = n_id;
-    node->type = 0; 
+    node->type = omg_param_list.nodes_type; 
     node->generator = omg_param_list.mobility_type; 
     node->mob = mobility;
     
