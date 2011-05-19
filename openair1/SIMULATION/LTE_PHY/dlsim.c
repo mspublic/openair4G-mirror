@@ -108,7 +108,7 @@ DCI0_5MHz_TDD0_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 */
-DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu[2];
+DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
 
 
 #define UL_RB_ALLOC 0x1ff;
@@ -470,29 +470,29 @@ int main(int argc, char **argv) {
   CCCH_alloc_pdu.mcs      = 1;
   CCCH_alloc_pdu.harq_pid = 0;
 
-  DLSCH_alloc_pdu[0].rah              = 0;
-  DLSCH_alloc_pdu[0].rballoc          = DLSCH_RB_ALLOC;
-  DLSCH_alloc_pdu[0].TPC              = 0;
-  DLSCH_alloc_pdu[0].dai              = 0;
-  DLSCH_alloc_pdu[0].harq_pid         = 0;
-  DLSCH_alloc_pdu[0].tb_swap          = 0;
-  DLSCH_alloc_pdu[0].mcs1             = mcs;  
-  DLSCH_alloc_pdu[0].ndi1             = 1;
-  DLSCH_alloc_pdu[0].rv1              = 0;
+  DLSCH_alloc_pdu2_2A[0].rah              = 0;
+  DLSCH_alloc_pdu2_2A[0].rballoc          = DLSCH_RB_ALLOC;
+  DLSCH_alloc_pdu2_2A[0].TPC              = 0;
+  DLSCH_alloc_pdu2_2A[0].dai              = 0;
+  DLSCH_alloc_pdu2_2A[0].harq_pid         = 0;
+  DLSCH_alloc_pdu2_2A[0].tb_swap          = 0;
+  DLSCH_alloc_pdu2_2A[0].mcs1             = mcs;  
+  DLSCH_alloc_pdu2_2A[0].ndi1             = 1;
+  DLSCH_alloc_pdu2_2A[0].rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu[0].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
+  DLSCH_alloc_pdu2_2A[0].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
 
-  DLSCH_alloc_pdu[1].rah              = 0;
-  DLSCH_alloc_pdu[1].rballoc          = DLSCH_RB_ALLOC;
-  DLSCH_alloc_pdu[1].TPC              = 0;
-  DLSCH_alloc_pdu[1].dai              = 0;
-  DLSCH_alloc_pdu[1].harq_pid         = 0;
-  DLSCH_alloc_pdu[1].tb_swap          = 0;
-  DLSCH_alloc_pdu[1].mcs1             = mcs;  
-  DLSCH_alloc_pdu[1].ndi1             = 1;
-  DLSCH_alloc_pdu[1].rv1              = 0;
+  DLSCH_alloc_pdu2_2A[1].rah              = 0;
+  DLSCH_alloc_pdu2_2A[1].rballoc          = DLSCH_RB_ALLOC;
+  DLSCH_alloc_pdu2_2A[1].TPC              = 0;
+  DLSCH_alloc_pdu2_2A[1].dai              = 0;
+  DLSCH_alloc_pdu2_2A[1].harq_pid         = 0;
+  DLSCH_alloc_pdu2_2A[1].tb_swap          = 0;
+  DLSCH_alloc_pdu2_2A[1].mcs1             = mcs;  
+  DLSCH_alloc_pdu2_2A[1].ndi1             = 1;
+  DLSCH_alloc_pdu2_2A[1].rv1              = 0;
   // Forget second codeword
-  DLSCH_alloc_pdu[1].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
+  DLSCH_alloc_pdu2_2A[1].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
 
   // Create transport channel structures for SI pdus
   PHY_vars_eNB->dlsch_eNB_SI   = new_eNB_dlsch(1,1,0);
@@ -560,7 +560,7 @@ int main(int argc, char **argv) {
     PHY_vars_UE->dlsch_ue[0][i]->rnti   = n_rnti;
   }
   
-  if (DLSCH_alloc_pdu[0].tpmi == 5) {
+  if (DLSCH_alloc_pdu2_2A[0].tpmi == 5) {
 
     PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
     if (n_users>1)
@@ -578,7 +578,7 @@ int main(int argc, char **argv) {
     for(k=0;k<n_users;k++) {
       printf("Generating dlsch params for user %d\n",k);
       generate_eNB_dlsch_params_from_dci(0,
-					 &DLSCH_alloc_pdu[k],
+					 &DLSCH_alloc_pdu2_2A[k],
 					 0x1234+k,
 					 format2_2A_M10PRB,
 					 PHY_vars_eNB->dlsch_eNB[k],
@@ -590,7 +590,7 @@ int main(int argc, char **argv) {
     }
     // DCI
   
-    memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+    memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2_2A[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
     dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
     dci_alloc[0].L          = 1;
     dci_alloc[0].rnti       = n_rnti;
@@ -606,7 +606,7 @@ int main(int argc, char **argv) {
     dci_alloc[1].rnti       = n_rnti;
 
 
-    memcpy(&dci_alloc[2].dci_pdu[0],&DLSCH_alloc_pdu[1],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+    memcpy(&dci_alloc[2].dci_pdu[0],&DLSCH_alloc_pdu2_2A[1],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
     dci_alloc[2].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
     dci_alloc[2].L          = 1;
     dci_alloc[2].rnti       = n_rnti+1;
@@ -691,16 +691,16 @@ int main(int argc, char **argv) {
 	    if (round == 0) {
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 1;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
-	      DLSCH_alloc_pdu[0].ndi1             = 1;
-	      DLSCH_alloc_pdu[0].rv1              = 0;
-	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	      DLSCH_alloc_pdu2_2A[0].ndi1             = 1;
+	      DLSCH_alloc_pdu2_2A[0].rv1              = 0;
+	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2_2A[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
 	    }
 	    else {
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->Ndi = 0;
 	      PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->rvidx = round>>1;
-	      DLSCH_alloc_pdu[0].ndi1             = 0;
-	      DLSCH_alloc_pdu[0].rv1              = round>>1;
-	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
+	      DLSCH_alloc_pdu2_2A[0].ndi1             = 0;
+	      DLSCH_alloc_pdu2_2A[0].rv1              = round>>1;
+	      memcpy(&dci_alloc[0].dci_pdu[0],&DLSCH_alloc_pdu2_2A[0],sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
 	    }
 	    
 	    num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci,
@@ -750,7 +750,7 @@ int main(int argc, char **argv) {
 	      */
 
 	      // use the PMI from previous trial
-	      if (DLSCH_alloc_pdu[0].tpmi == 5) {
+	      if (DLSCH_alloc_pdu2_2A[0].tpmi == 5) {
 		PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
 		PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
 		if (n_users>1) 
@@ -1163,7 +1163,7 @@ int main(int argc, char **argv) {
 		  }  // if dci_flag==1
 		  else { //dci_flag == 0
 		    generate_ue_dlsch_params_from_dci(0,
-						      &DLSCH_alloc_pdu[0],
+						      &DLSCH_alloc_pdu2_2A[0],
 						      C_RNTI,
 						      format2_2A_M10PRB,
 						      PHY_vars_UE->dlsch_ue[0],
