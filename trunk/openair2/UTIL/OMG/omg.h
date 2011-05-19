@@ -18,6 +18,8 @@ void set_time(double time);
 
 double get_time();
 
+void init_mobility_generator(omg_global_param omg_param_list);
+
 void update_nodes(int mobility_type, double cur_time) ;
 
 Node_list get_current_positions(int mobility_type, int nodes_type,double cur_time);
