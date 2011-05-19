@@ -29,7 +29,7 @@
 
 /*! \file OMG.c
 * \brief Main function containing theOMG interface
-* \author J. Harri, M. Marhashi, L. Wamg, and N. Nikaein
+* \author J. Harri, M. Marhashi, and N. Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom
@@ -58,7 +58,8 @@ void init_omg_global_params(void){
   Job_Vector_Rwp_len=0;
   Job_Vector_Rwalk_len=0;
 
-  Node_Vector_Static = NULL;
+  Node_Vector_Static_eNB = NULL;
+  Node_Vector_Static_UE = NULL;
   Node_Vector_Rwalk = NULL;
   Node_Vector_Rwp= NULL ;
 
@@ -113,7 +114,7 @@ void update_nodes(int mobility_type, double cur_time){
   }
 }
 
-Node_list get_current_positions(int mobility_type,double cur_time){
+Node_list get_current_positions(int mobility_type, int nodes_type, double cur_time){
   Node_list Node_Vector = NULL;
   switch (mobility_type) {
   case RWP:
@@ -126,7 +127,7 @@ Node_list get_current_positions(int mobility_type,double cur_time){
     break;
     
   case STATIC:
-    Node_Vector = Node_Vector_Static;
+    Node_Vector = ((nodes_type == 0) ? Node_Vector_Static_eNB : Node_Vector_Static_UE);
     break;
   case RWALK:
     get_rwalk_positions_updated(cur_time);
@@ -146,14 +147,14 @@ Node_list get_current_positions(int mobility_type,double cur_time){
 }
 
 // get the position for a specific node 
-NodePtr get_node_position(int mobility_type, int nID){
+NodePtr get_node_position(int mobility_type, int nodes_type, int nID){
   Node_list Node_Vector = NULL;
   switch (mobility_type) {
   case RWP:
     Node_Vector = Node_Vector_Rwp;
     break;
   case STATIC:
-    Node_Vector = Node_Vector_Static;
+    Node_Vector = ((nodes_type == 0) ? Node_Vector_Static_eNB : Node_Vector_Static_UE);
     break;
   case RWALK:
     Node_Vector = Node_Vector_Rwalk;

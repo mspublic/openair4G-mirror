@@ -11,16 +11,14 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
+#include "oaisim_config.h"
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
-#include "UTIL/LOG/log_if.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OPT/opt.h" // to test OPT
-#include "UTIL/OMG/omg.h"
+#include "oaisim_config.h"
 #endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -87,20 +85,6 @@ void init_bypass() {
 }
 #endif
 
-mapping log_level_names[] =
-{
-    {"emerg", LOG_EMERG},
-    {"alert", LOG_ALERT},
-    {"crit", LOG_CRIT},
-    {"err", LOG_ERR},
-    {"warn", LOG_WARNING},
-    {"notice", LOG_NOTICE},
-    {"info", LOG_INFO},
-    {"debug", LOG_DEBUG},
-    {"trace", LOG_TRACE},
-    {NULL, -1}
-};
-
 
 #endif
 
@@ -125,6 +109,8 @@ void help(void) {
   printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
   printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
+  printf("-O Set the mobility model for UE: 0 for static, 1 for RWP, and 2 for RWalk\n");
+ 
 }
 
 #ifdef XFORMS
@@ -189,97 +175,6 @@ void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_
 
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
-
-
-void set_envi(OAI_Emulation * emulation_scen) {
-	/*LOG_T(OCG,"the area is x %f y %f option %s\n",
-	emulation_scen->envi_config.area.x,
-	emulation_scen->envi_config.area.y, 
-	emulation_scen->topo_config.eNB_topology.selected_option);*/
-	LOG_I(OCG, "environment is set\n");
-}
-
-void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info) {
-	emu_info->nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
-	emu_info->nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
-
-	init_omg_global_params();
-
-	omg_param_list.min_X = 0;
-	omg_param_list.max_Y = emulation_scen->envi_config.area.x;
-	omg_param_list.min_Y = 0;
-	omg_param_list.max_Y = emulation_scen->envi_config.area.y;
-
-	// init OMG for eNB
-	omg_param_list.nodes = emulation_scen->topo_config.number_of_eNB;
-	omg_param_list.min_speed = 0;
-	omg_param_list.max_speed = 0;
-	omg_param_list.min_journey_time = 0;
-	omg_param_list.max_journey_time = 0;
-	omg_param_list.min_azimuth = 0; // ???
-	omg_param_list.max_azimuth = 360; // ???
-	omg_param_list.min_sleep = 0;
-	omg_param_list.max_sleep = 0;
-	omg_param_list.mobility_type = 0; // set eNB to be static
-	// omg_param_list.seed = ;
-
-	init_mobility_generator(omg_param_list);
-
-
-	// init OMG for UE
-	omg_param_list.nodes = emulation_scen->topo_config.number_of_UE;  
-	omg_param_list.min_speed = (emulation_scen->topo_config.mobility.moving_dynamics.min_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
-	omg_param_list.max_speed = (emulation_scen->topo_config.mobility.moving_dynamics.max_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
-	omg_param_list.min_journey_time = 0.1; // TODO to be added into OSD and OCG
-	omg_param_list.max_journey_time = 10;
-	omg_param_list.min_azimuth = 0.1;
-	omg_param_list.max_azimuth = 360;
-	omg_param_list.min_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
-	omg_param_list.max_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
-	//input of OMG: SATIC: 0, RWP: 1 or RWALK 2
-
-	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
-		omg_param_list.mobility_type = 0;
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
-		omg_param_list.mobility_type = 1;
-	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
-		omg_param_list.mobility_type = 2;
-	//} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
-	//	omg_param_list.mobility_type = 3;
-	} else {
-		omg_param_list.mobility_type = 0;
-	}
-	// omg_param_list.seed = ;
-
-	init_mobility_generator(omg_param_list);
-
-/*
-// inputs for OMG : TODO: seed
-
-
-	if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "oaiseed")) {
-	} else if (!strcmp(emulation_scen->topo_config.mobility.random_seed.selected_option, "userseed")) {
-		emulation_scen->topo_config.mobility.random_seed.user_seed.seed_value;
-	}
-	
-*/
-	LOG_I(OCG, "topology is set\n");
-}
-
-void set_app(OAI_Emulation * emulation_scen) {
-
-	LOG_I(OCG, "application is set\n");
-}
-
-void set_emu(OAI_Emulation * emulation_scen, u16 * n_frames) {
-	*n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
-
-	set_comp_log(OCG,  LOG_ERR, 1);
-	set_comp_log(OCG,  LOG_INFO, 1);
-	set_comp_log(OCG,  LOG_TRACE, 1);
-
-	LOG_I(OCG, "emulation is set\n");
-}
 
 
 int main(int argc, char **argv) {
@@ -354,7 +249,8 @@ int main(int argc, char **argv) {
   emu_info.opt_enabled=0; // P flag
   emu_info.omg_enabled=0; //O flag 
   emu_info.otg_enabled=0;// T flag
-  
+  emu_info.time = 0.0;	// time of emulation 
+
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -365,7 +261,7 @@ int main(int argc, char **argv) {
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
 
-  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haePTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1)
 
     {
        switch (c)
@@ -448,7 +344,8 @@ int main(int argc, char **argv) {
 	  emu_info.multicast_group=atoi(optarg);
 	  break;	
 	case 'O':
-	  emu_info.omg_enabled=1;
+	  emu_info.omg_enabled = 1;
+	  emu_info.omg_model = atoi(optarg); 
 	  break; 
 	case 'T':
 	  emu_info.otg_enabled=1;
@@ -468,32 +365,8 @@ int main(int argc, char **argv) {
   if (set_sinr==0)
     sinr_dB = snr_dB-20;
 
- //initialize the log generator 
-  logInit(map_str_to_int(log_level_names, g_log_level));
-  LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
-#ifdef OCG_FLAG
-  if (emu_info.ocg_enabled == 1){ // activate OCG: xml-based scenario parser 
-    emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
-    // here is to check if OCG is successful, otherwise, we might not run the emulation
-    if (emulation_scen->useful_info.OCG_OK != 1) { 
-      LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: please check the name of the XML configuration file and its content if you use a self-specified file.\n");
-      exit(EXIT_FAILURE);
-      }
-
-      set_envi(emulation_scen);
-      set_topo(emulation_scen, &emu_info);
-      set_app(emulation_scen);
-      set_emu(emulation_scen, &n_frames);
-
-      LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
-
-     /* : TODO
-      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
-      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, 0);*/
-
-   }
-#endif
+  oaisim_config(emulation_scen, &n_frames, g_log_level); // config OMG and OCG, OPT, OTG, OLG
 
 #ifndef CYGWIN 
   ret=netlink_init();
@@ -646,23 +519,25 @@ int main(int argc, char **argv) {
  
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-    if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
+    if (n_frames_flag == 0) // if n_frames not set by the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-    
+
+   emu_info.time += 1.0/100; // emu time in ms 
+   if (omg_param_list.mobility_type > STATIC) { // update positions for non static nodes
+     update_nodes(omg_param_list.mobility_type, emu_info.time );
+     LOG_D(OMG,"updating\n");	
+   } 
+    display_node_list(get_current_positions(STATIC, eNB, emu_info.time), 1);
+    display_node_list(get_current_positions(omg_param_list.mobility_type, UE, emu_info.time), 1);
+
+   
     for (slot=0 ; slot<20 ; slot++) {
 
-/* check if there is a new job to do at this time
-// input the OAI_time TODO
-
-update_nodes(0, OAI_time);
-//update_nodes(1, OAI_time);
-*/
-
-      last_slot = (slot - 1)%20;
+     last_slot = (slot - 1)%20;
       if (last_slot <0)
 	last_slot+=20;
       next_slot = (slot + 1)%20;
-      
+  
       direction = subframe_select(frame_parms,next_slot>>1);
       
       if((next_slot %2) ==0)
@@ -682,15 +557,6 @@ update_nodes(0, OAI_time);
 
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
 
-      /* if (ethernet_flag ==1) { // include PBCH
-	if (( (direction == SF_DL) || (direction == SF_S) ) && (((next_slot%2)== 0) || (next_slot==1))){ 
-	  //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
-	  //assert((start = clock())!=-1);// t0= time(NULL);
-	  emu_transport_DL(mac_xface->frame, last_slot,next_slot);
-	  //stop = clock(); //t1= time(NULL);
-	  //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
-	}
-	}*/
       // Call ETHERNET emulation here
       if((next_slot %2) == 0) 
 	clear_UE_transport_info(emu_info.nb_ue_local);
@@ -707,17 +573,6 @@ update_nodes(0, OAI_time);
 	  //}
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
-
-      /*  if (ethernet_flag == 1){
-	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
-	  //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
-	  //assert((start = clock())!=-1);//t0= time(NULL);
-	  emu_transport_UL(mac_xface->frame, last_slot , next_slot);
-	  // stop = clock(); // t1= time(NULL);
-	  //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
-	   
-	}
-	}*/
 
       if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
 	snr_dB2 = -20;

@@ -7,6 +7,12 @@
 
 #ifndef __OMG_CONSTANTS_H_
 #define __OMG_CONSTANTS_H_
+// ****************************************
+// Node Type 
+// ****************************************
+
+#define eNB 0x0
+#define UE 0x1
 
 // ****************************************
 // MOBILITY GENERATOR

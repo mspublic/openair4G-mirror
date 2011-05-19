@@ -6,6 +6,20 @@
 
 #define frand() ((double) rand() / (RAND_MAX+1))
 
+mapping nodes_type[] =
+{
+    {"eNB", eNB},
+    {"UE", UE},
+    {NULL, -1}
+};
+
+mapping nodes_status[] =
+{
+    {"sleeping", 0},
+    {"moving", 1},
+    {NULL, -1}
+};
+
 NodePtr create_node(void) {
 	NodePtr ptr;
 	ptr = malloc(sizeof(node_struct));
@@ -54,10 +68,15 @@ void display_node_list(Node_list Node_Vector, int r){
 	//int i=0;
     while (tmp != NULL){
 	if (r == 1 ){
-	  LOG_D(OMG,"\nnode number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos );
+	  LOG_I(OMG," %s id %d %s X_pos %.3f Y_pos %.3f \n", 
+		map_int_to_str(nodes_type, tmp->node->type), 
+		tmp->node->ID,
+		map_int_to_str(nodes_status, tmp->node->mobile), 
+		tmp->node->X_pos,
+		tmp->node->Y_pos );
 	}
 	else {
-	  LOG_D(OMG,"\nnode_number %d\nmobility_type %d\nX_pos %.3f\nY_pos %.3f\nmob->X_from %.3f\nmob->Y_from %.3f\nmob->X_to %.3f\nmob->Y_to %.3f\n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
+	  LOG_I(OMG,"node_number %d status (sleep/move) %d X_pos %.3f Y_pos %.3f mob->X_from %.3f mob->Y_from %.3f mob->X_to %.3f mob->Y_to %.3f \n", tmp->node->ID,tmp->node->mobile, tmp->node->X_pos,tmp->node->Y_pos, tmp->node->mob->X_from,tmp->node->mob->Y_from, tmp->node->mob->X_to, tmp->node->mob->Y_to );
 	}
         tmp = tmp->next;
 	//i++;

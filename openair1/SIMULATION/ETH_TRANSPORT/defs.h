@@ -146,6 +146,9 @@ typedef struct {
   unsigned char opt_enabled;
   unsigned char otg_enabled;
   unsigned char omg_enabled;
+  unsigned char omg_model;
+  double time;	
+
 }emu_info_t; 
 
 

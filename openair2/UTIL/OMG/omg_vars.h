@@ -3,8 +3,10 @@
 
 #include "omg.h"
 
+#define MAX_NODE_TYPES 2 
 //Node_list Node_Vector;
-Node_list Node_Vector_Static;
+Node_list Node_Vector_Static_eNB;
+Node_list Node_Vector_Static_UE;
 Node_list Node_Vector_Rwalk;
 Node_list Node_Vector_Rwp;
 
