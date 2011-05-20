@@ -411,6 +411,7 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
+    harq_pid = dlsch_ue->current_harq_pid;
     dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)dlsch_ue->rnti,PHY_vars_eNB_g[eNB_id])][1];
     // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
