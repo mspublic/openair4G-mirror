@@ -2407,7 +2407,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				      first_symbol_flag,
 				      i_mod, 
 				      nb_rb,
-				      lte_ue_dlsch_vars[eNB_id_i]->log2_maxh);
+				      lte_ue_dlsch_vars[eNB_id]->log2_maxh);
   
 
       // compute correlation between precoded channel and channel precoded with opposite PMI
