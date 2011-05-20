@@ -19,8 +19,7 @@ Job_list add(Pair job, Job_list Job_Vector, int mobility_type){
     entry->next = NULL;
 
     if (Job_Vector == NULL) {
-      LOG_D(OMG, "\nempty Job_Vector");
-      LOG_D(OMG,"\nadded elmt ID %d\n", entry->pair->b->ID);
+      LOG_D(OMG,"Job list empty, added new element ID %d\n", entry->pair->b->ID);
         return entry;
     }
     else {
@@ -29,8 +28,7 @@ Job_list add(Pair job, Job_list Job_Vector, int mobility_type){
             tmp = tmp->next;
         }
         tmp->next = entry;
-        LOG_D(OMG,"\nnon empty Job_Vector");
-	LOG_D(OMG,"\nadded elmt ID %d\n", entry->pair->b->ID);
+      	LOG_D(OMG,"Find a job list, add elementID %d to the job list\n", entry->pair->b->ID);
 
         return Job_Vector;
     }

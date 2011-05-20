@@ -84,7 +84,7 @@ void init_mobility_generator(omg_global_param omg_param_list) {
   
   case UNDEF:
   default:
-    printf("Unsupported generator %c \n", omg_param_list.mobility_type);
+    LOG_E(OMG, "Unsupported generator %c \n", omg_param_list.mobility_type);
   }
 }
 
@@ -93,19 +93,9 @@ void update_nodes(int mobility_type, double cur_time){
   switch (mobility_type) {
   case RWP:
     update_rwp_nodes(cur_time);
-    /*LOG_D("\n  **********DISPLAY NODE LIST**********"); 
-      display_node_list(Node_Vector,2);
-      LOG_D("\n\n **********DISPLAY JOB LIST********** "); 
-      display_job_list(Job_Vector);*/
     break;
-    
-    
   case RWALK:
     update_rwalk_nodes(cur_time);
-    /*LOG_D("\n  **********DISPLAY NODE LIST**********"); 
-      display_node_list(Node_Vector,2);
-      LOG_D("\n\n **********DISPLAY JOB LIST********** "); 
-      display_job_list(Job_Vector);*/
     break;
     
   case UNDEF:
@@ -119,10 +109,6 @@ Node_list get_current_positions(int mobility_type, int nodes_type, double cur_ti
   switch (mobility_type) {
   case RWP:
     get_rwp_positions_updated(cur_time);
-    //LOG_D("\n  **********DISPLAY NODE LIST**********"); 
-    //display_node_list(Node_Vector,2);
-    //LOG_D("\n\n **********DISPLAY JOB LIST********** "); 
-    //display_job_list(Job_Vector);
     Node_Vector = Node_Vector_Rwp;
     break;
     
@@ -131,17 +117,13 @@ Node_list get_current_positions(int mobility_type, int nodes_type, double cur_ti
     break;
   case RWALK:
     get_rwalk_positions_updated(cur_time);
-    //	LOG_D("\n  **********DISPLAY NODE LIST**********"); 
-    //	display_node_list(Node_Vector,2);
-    //	LOG_D("\n\n **********DISPLAY JOB LIST********** "); 
-    //	display_job_list(Job_Vector);
     Node_Vector = Node_Vector_Rwalk;
     break;
     
   case UNDEF:
   default:
     Node_Vector = NULL;
-    LOG_N(OMG, "\n Static or Unsupported generator %c \n", omg_param_list.mobility_type);
+    LOG_E(OMG, "Static or Unsupported generator %c \n", omg_param_list.mobility_type);
   }
   return Node_Vector;
 }

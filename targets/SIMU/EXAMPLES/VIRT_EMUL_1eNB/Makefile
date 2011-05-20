@@ -13,13 +13,19 @@ all: help
 oaisim: 
 	(cd $(OPENAIR_TARGETS)/SIMU/USER && make ) 
 oaisim_nas: 
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && make NAS_NETLINK=1) 
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make clean && make NAS_NETLINK=1) 
 nasmesh:
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
 
+one_eNB_one_UE_nas: oaisim_nas nasmesh
+	./start_one_eNB_multi_UE_nas 1
+
 one_eNB_two_UE_nas: oaisim_nas nasmesh
-	./start_one_eNB_two_UE_nas
+	./start_one_eNB_multi_UE_nas 2
+
+one_eNB_three_UE_nas: oaisim_nas nasmesh
+	./start_one_eNB_multi_UE_nas 3
 
 one_eNB_one_UE : oaisim
 	../../USER/oaisim -n30 | egrep SEND_SDU

@@ -31,6 +31,7 @@ endif
 
 ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
+OCG_FLAG=1
 endif
 
 ifdef OCG_FLAG

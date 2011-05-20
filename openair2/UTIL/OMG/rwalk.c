@@ -25,7 +25,7 @@ int start_rwalk_generator(omg_global_param omg_param_list) {
     return(-1);
   }
   set_time(cur_time);
-  
+  LOG_I(OMG, "\nStart Random Walk Mobility MODEL\n");
   
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
@@ -50,13 +50,10 @@ int start_rwalk_generator(omg_global_param omg_param_list) {
     // LOG_T(OMG,"\nJob_Vector_Rwalk->pair->b->ID %d\n", Job_Vector_Rwalk->pair->b->ID);
   }
 
-  LOG_I(OMG, "*****DISPLAY NODE LIST********\n"); 
-  display_node_list(Node_Vector_Rwalk, 2);
-  LOG_T(OMG, "********DISPLAY JOB LIST********\n"); 
-  display_job_list(Job_Vector_Rwalk);
+  //display_node_list(Node_Vector_Rwalk, 2);
+  //display_job_list(Job_Vector_Rwalk);
   Job_Vector_Rwalk = quick_sort (Job_Vector_Rwalk);
-  LOG_T(OMG, "**********DISPLAY JOB LIST AFTER SORTING**********\n"); 
-  display_job_list(Job_Vector_Rwalk);
+  //display_job_list(Job_Vector_Rwalk);
   return(0);
 }
 void place_rwalk_node(NodePtr node) {
@@ -72,9 +69,7 @@ void place_rwalk_node(NodePtr node) {
 	node->mob->speed = 0.0;
 	node->mob->journey_time = 0.0;
 
-	LOG_D(OMG, "\n ********INITIALIZE NODE******** ");
-    	LOG_D(OMG, "\nID: %d\nX = %.3f\nY = %.3f\nspeed = 0.0", node->ID, node->X_pos, node->Y_pos);   
-	Node_Vector_Rwalk = (Node_list) add_entry(node, Node_Vector_Rwalk);
+    	Node_Vector_Rwalk = (Node_list) add_entry(node, Node_Vector_Rwalk);
 }
 
 Pair sleep_rwalk_node(NodePtr node, double cur_time){
@@ -87,11 +82,13 @@ Pair sleep_rwalk_node(NodePtr node, double cur_time){
 	Pair pair = malloc(sizeof(Pair)) ;
 
 	node->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*1000))/ 1000;
-	LOG_D(OMG, "\nnode: %d \nsleep duration : %.3f",node->ID, node->mob->sleep_duration);
 
 	node->mob->start_journey = cur_time;
 	pair->a = node->mob->start_journey + node->mob->sleep_duration; //when to wake up
-	LOG_D(OMG, "\nto wake up at time: cur_time + sleep_duration : %.3f", pair->a);
+	/*	LOG_D(OMG, "node: %d sleep duration  %.3f, wake up at time: cur_time + sleep_duration : %.3f", 
+	      node->ID, 
+	      node->mob->sleep_duration,
+	      pair->a);*/
 	pair->b = node;
 
 	return pair;
@@ -100,35 +97,34 @@ Pair sleep_rwalk_node(NodePtr node, double cur_time){
  
 Pair move_rwalk_node(NodePtr node, double cur_time) {
 	Pair pair = malloc(sizeof(Pair));
-	LOG_D(OMG,"\n\nMOVE RWALK NODE\n ID: %d",node->ID);
 	
 	node->mob->X_from = node->X_pos;
 	node->mob->Y_from = node->Y_pos;
 
 	double speed_next = randomGen(omg_param_list.min_speed, omg_param_list.max_speed);
 	node->mob->speed = speed_next;
-    	LOG_D(OMG,"\nspeed_next: %f", speed_next); //m/s
+	//	LOG_D(OMG,"\nspeed_next: %f", speed_next); //m/s
 
 	double azimuth_next = randomGen(omg_param_list.min_azimuth, omg_param_list.max_azimuth);
 	node->mob->azimuth = azimuth_next;
-    	LOG_D(OMG,"\nazimuth_next: %f", node->mob->azimuth); 
+	//	LOG_D(OMG,"\nazimuth_next: %f", node->mob->azimuth); 
 
 	double journeyTime_next = randomGen(omg_param_list.min_journey_time, omg_param_list.max_journey_time);
 	node->mob->journey_time = journeyTime_next;
-    	LOG_D(OMG,"\njourney_time_next: %f", node->mob->journey_time); 
+	//	LOG_D(OMG,"\njourney_time_next: %f", node->mob->journey_time); 
 
 	double distance = node->mob->speed * node->mob->journey_time;
-	LOG_D(OMG,"\ndistance = speed * journey_time: %f", distance); 
+	//	LOG_D(OMG,"\ndistance = speed * journey_time: %f", distance); 
 
 	double dX = distance * cos(node->mob->azimuth*M_PI/180);
-	LOG_D(OMG,"\ndX = distance * cos(azimuth): %f", dX); 
+	//	LOG_D(OMG,"\ndX = distance * cos(azimuth): %f", dX); 
 	double dY = distance * sin(node->mob->azimuth*M_PI/180);
-	LOG_D(OMG,"\ndY = distance * sin(azimuth): %f", dY); 
+	//	LOG_D(OMG,"\ndY = distance * sin(azimuth): %f", dY); 
 	
-	LOG_D(OMG,"\nfrom: (%.3f, %.3f)", node->X_pos, node->Y_pos);
+	//	LOG_D(OMG,"\nfrom: (%.3f, %.3f)", node->X_pos, node->Y_pos);
 	double X_next = (double) ((int)((node->X_pos + dX) *1000))/ 1000;
 	double Y_next = (double) ((int)((node->X_pos + dY) *1000))/ 1000;
-	LOG_D(OMG,"\ntheoritical_destination: (%f, %f)", X_next, Y_next);
+	//LOG_D(OMG,"\ntheoritical_destination: (%f, %f)", X_next, Y_next);
 
 	/*if (X_next<param_list.min_X){ 
 		node->mob->X_to = param_list.min_X;  
@@ -172,10 +168,10 @@ Pair move_rwalk_node(NodePtr node, double cur_time) {
 	LOG_D(OMG,"\ndestination: (%.3f, %.3f)", node->mob->X_to, node->mob->Y_to);
 
 	node->mob->start_journey = cur_time;
-   	LOG_D(OMG,"\nstart_journey %.3f", node->mob->start_journey );
+   	//LOG_D(OMG,"\nstart_journey %.3f", node->mob->start_journey );
 	
 	pair->a = (double) ((int) ( (node->mob->start_journey + journeyTime_next) *1000))/ 1000 ;
-	LOG_D(OMG,"\npair->a= start journey + journeyTime_next next %lf\n", pair->a);
+	//LOG_D(OMG,"\npair->a= start journey + journeyTime_next next %lf\n", pair->a);
 
 	pair->b = node;
 	return pair;
@@ -186,57 +182,52 @@ Pair move_rwalk_node(NodePtr node, double cur_time) {
 
 void update_rwalk_nodes(double cur_time) {// need to implement an out-of-area check as well as a rebound function to stay in the area
 
-	LOG_D(OMG,"\n\n**********UPDATE**********");
-	int l = 0;
-	double X_now=0.0;
-	double Y_now=0.0;
-	
-	while (l < Job_Vector_Rwalk_len){
-		LOG_D(OMG,"\n		l == %d \n", l); 
-		//LOG_D(OMG,"\n		length == %d \n", Job_Vector_Rwalk_len); 
-		Pair my_pair = Job_Vector_Rwalk->pair;
-		if((my_pair !=NULL) && ( (double)my_pair->a >= cur_time - eps) && ( (double)my_pair->a <= cur_time + eps)) { 
-			LOG_D(OMG,"\n %.3f == %.3f ",my_pair->a, cur_time );
- 	
-			NodePtr my_node= (NodePtr)my_pair->b;
-			if(my_node->mobile == 1) {
- 				LOG_D(OMG,"\n stop node and let it sleep " );
-				// stop node and let it sleep
-				my_node->mobile = 0;
-				Pair pair = malloc(sizeof(Pair));
-				pair = sleep_rwalk_node(my_node, cur_time);
-				Job_Vector_Rwalk->pair = pair;
-			}
-			else if (my_node->mobile ==0) {
-				LOG_D(OMG,"\n node slept enough...let's move again " );
-				// node slept enough...let's move again
-				my_node->mobile = 1;
-				Pair pair = malloc(sizeof(Pair));
-				pair = move_rwalk_node(my_node, cur_time);
-				Job_Vector_Rwalk->pair = pair;
-			}
-			else
-			  {LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);}
-			//sorting the new entries
-			LOG_D(OMG,"\n  **********DISPLAY NODE LIST**********"); 
-			display_node_list(Node_Vector_Rwalk,2);
-			LOG_D(OMG,"\n\n **********DISPLAY JOB LIST********** "); 
-			display_job_list(Job_Vector_Rwalk);
-			Job_Vector_Rwalk = quick_sort (Job_Vector_Rwalk);
-			LOG_D(OMG,"\n\n **********DISPLAY JOB LIST AFTER SORTING**********"); 
-			display_job_list(Job_Vector_Rwalk);
-			l++;
-			
-		}
-		else if ( (my_pair !=NULL) && (cur_time < my_pair->a ) ){
-		    LOG_D(OMG,"\n\n %.3f < %.3f ",cur_time, my_pair->a);
-		    l = Job_Vector_Rwalk_len;
-		    LOG_D(OMG,"\nNothing to do");
-		}
-		else {
-			LOG_D(OMG,"\nERROR current time > first job_time" );
-		}	
-}	
+  int l = 0;
+  double X_now=0.0;
+  double Y_now=0.0;
+  
+  while (l < Job_Vector_Rwalk_len){
+    // LOG_D(OMG,"\n		l == %d \n", l); 
+    //LOG_D(OMG,"\n		length == %d \n", Job_Vector_Rwalk_len); 
+    Pair my_pair = Job_Vector_Rwalk->pair;
+    if((my_pair !=NULL) && ( (double)my_pair->a >= cur_time - eps) && ( (double)my_pair->a <= cur_time + eps)) { 
+      //LOG_D(OMG,"\n %.3f == %.3f ",my_pair->a, cur_time );
+      
+      NodePtr my_node= (NodePtr)my_pair->b;
+      if(my_node->mobile == 1) {
+	//LOG_D(OMG,"stop node and let it sleep\n" );
+	// stop node and let it sleep
+	my_node->mobile = 0;
+	Pair pair = malloc(sizeof(Pair));
+	pair = sleep_rwalk_node(my_node, cur_time);
+	Job_Vector_Rwalk->pair = pair;
+      }
+      else if (my_node->mobile ==0) {
+	//LOG_D(OMG,"node slept enough...let's move again \n" );
+	// node slept enough...let's move again
+	my_node->mobile = 1;
+	Pair pair = malloc(sizeof(Pair));
+	pair = move_rwalk_node(my_node, cur_time);
+	Job_Vector_Rwalk->pair = pair;
+      }
+      else {
+	LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
+      }
+      //sorting the new entries
+      //display_node_list(Node_Vector_Rwalk,2);
+      //display_job_list(Job_Vector_Rwalk);
+      Job_Vector_Rwalk = quick_sort (Job_Vector_Rwalk);
+      display_job_list(Job_Vector_Rwalk);
+      l++;
+    }
+    else if ( (my_pair !=NULL) && (cur_time < my_pair->a ) ){
+      LOG_D(OMG,"Nothing to do %.3f < %.3f ", cur_time, my_pair->a);
+      l = Job_Vector_Rwalk_len;
+    }
+    else {
+      LOG_E(OMG," current time  %.3f > first job_time %.3f\n",cur_time, my_pair->a );
+    }	
+  }	
 }
 
 

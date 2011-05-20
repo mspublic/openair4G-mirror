@@ -23,7 +23,7 @@ int start_rwp_generator(omg_global_param omg_param_list) {
     return(-1);
   }
   set_time(cur_time);
-  
+  LOG_I(OMG, "\nStart Random Way Point Mobility MODEL\n");
   
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
@@ -48,13 +48,10 @@ int start_rwp_generator(omg_global_param omg_param_list) {
     // LOG_T(OMG,"\nJob_Vector_Rwp->pair->b->ID %d\n", Job_Vector_Rwp->pair->b->ID);
   }
 
-  LOG_I(OMG, "*****DISPLAY NODE LIST********\n"); 
-  display_node_list(Node_Vector_Rwp, 1);
-  LOG_T(OMG, "********DISPLAY JOB LIST********\n"); 
-  display_job_list(Job_Vector_Rwp);
+  //display_node_list(Node_Vector_Rwp, 1);
+  //display_job_list(Job_Vector_Rwp);
   Job_Vector_Rwp = quick_sort (Job_Vector_Rwp);
-  LOG_T(OMG, "**********DISPLAY JOB LIST AFTER SORTING**********\n"); 
-  display_job_list(Job_Vector_Rwp);
+  //display_job_list(Job_Vector_Rwp);
   return(0);
 }
 void place_rwp_node(NodePtr node) {
@@ -70,8 +67,6 @@ void place_rwp_node(NodePtr node) {
 	node->mob->speed = 0.0;
 	node->mob->journey_time = 0.0;
 
-	LOG_D(OMG, "\n ********INITIALIZE NODE******** ");
-    	LOG_D(OMG, "\nID: %d\nX = %.3f\nY = %.3f\nspeed = 0.0", node->ID, node->X_pos, node->Y_pos);   
 	Node_Vector_Rwp = (Node_list) add_entry(node, Node_Vector_Rwp);
 }
 
@@ -85,11 +80,13 @@ Pair sleep_rwp_node(NodePtr node, double cur_time){
 	Pair pair = malloc(sizeof(Pair)) ;
 
 	node->mob->sleep_duration = (double) ((int) (randomGen(omg_param_list.min_sleep, omg_param_list.max_sleep)*1000))/ 1000;
-	LOG_D(OMG, "\nnode: %d \nsleep duration : %.3f",node->ID, node->mob->sleep_duration);
-
+	
 	node->mob->start_journey = cur_time;
 	pair->a = node->mob->start_journey + node->mob->sleep_duration; //when to wake up
-	LOG_D(OMG, "\nto wake up at time: cur_time + sleep_duration : %.3f", pair->a);
+	LOG_D(OMG, "node: %d sleep duration : %.3f, wake up at time: cur_time + sleep_duration : %.3f",
+	      node->ID, 
+	      node->mob->sleep_duration, 
+	      pair->a);
 	pair->b = node;
 
 	return pair;
@@ -99,35 +96,35 @@ Pair sleep_rwp_node(NodePtr node, double cur_time){
 Pair move_rwp_node(NodePtr node, double cur_time) {
 	
 	Pair pair = malloc(sizeof(Pair));
-	LOG_D(OMG,"\n\nMOVE RWP NODE");
+	//	LOG_D(OMG,"\n\nMOVE RWP NODE");
 
-	LOG_D(OMG,"\nnode: %d",node->ID );
+	//	LOG_D(OMG,"\nnode: %d",node->ID );
 	node->mob->X_from = node->X_pos;
 	node->mob->Y_from = node->Y_pos;
-	LOG_D(OMG,"\nCurrent Position: (%.3f, %.3f)", node->mob->X_from, node->mob->Y_from);
+	//	LOG_D(OMG,"\nCurrent Position: (%.3f, %.3f)", node->mob->X_from, node->mob->Y_from);
 
 
 	double X_next = (double) ((int)(randomGen(omg_param_list.min_X,omg_param_list.max_X)*1000))/ 1000;
 	node->mob->X_to = X_next;
 	double Y_next = (double) ((int)(randomGen(omg_param_list.min_Y,omg_param_list.max_Y)*1000))/ 1000;
 	node->mob->Y_to = Y_next;
-	LOG_D(OMG,"\ndestination: (%.3f, %.3f)", node->mob->X_to, node->mob->Y_to);
+	//	LOG_D(OMG,"\ndestination: (%.3f, %.3f)", node->mob->X_to, node->mob->Y_to);
 
 	double speed_next = (double) ((int)(randomGen(omg_param_list.min_speed, omg_param_list.max_speed)*1000))/ 1000;
 	node->mob->speed = speed_next;
-    	LOG_D(OMG,"\nspeed_next %.3f", speed_next); //m/s
+	//    	LOG_D(OMG,"\nspeed_next %.3f", speed_next); //m/s
 	double distance = (double) ((int)(sqrtf(pow(node->mob->X_from - X_next, 2) + pow(node->mob->Y_from - Y_next, 2))*1000))/ 1000;
-	LOG_D(OMG,"\ndistance %f", distance); //m
+	//	LOG_D(OMG,"\ndistance %f", distance); //m
 
 	double journeyTime_next =  (double) ((int)(distance/speed_next*1000))/ 1000;   //duration to get to dest
 	////node->mob->journey_time = journeyTime_next;
 	node->mobile = 1;
-    	LOG_D(OMG,"\n mob->journey_time_next %f",journeyTime_next );
+	// 	LOG_D(OMG,"mob->journey_time_next %f\n",journeyTime_next );
 	
 	node->mob->start_journey = cur_time;
-   	LOG_D(OMG,"\nstart_journey %.3f", node->mob->start_journey );
+	//	LOG_D(OMG,"\nstart_journey %.3f", node->mob->start_journey );
 	pair->a = node->mob->start_journey + journeyTime_next;      //when to reach the destination
-	LOG_D(OMG,"\nwhen to reach the destination: pair->a= start journey + journey_time next =%.3f\n", pair->a);
+	//LOG_D(OMG,"when to reach the destination: pair->a= start journey + journey_time next =%.3f\n", pair->a);
 
 	pair->b = node;
 	return pair;
@@ -137,66 +134,55 @@ Pair move_rwp_node(NodePtr node, double cur_time) {
 
 //second method
 void update_rwp_nodes(double cur_time) {
-	LOG_D(OMG,"\n\n**********UPDATE**********");
-	int l = 0;
-	double X_now=0.0;
-	double Y_now=0.0;
-
-	while (l < Job_Vector_Rwp_len){
-		//LOG_D(OMG,"\n		l == %d \n", l); 
-		//LOG_D(OMG,"\n		length == %d \n", Job_Vector_Rwp_len); 
-		Pair my_pair = Job_Vector_Rwp->pair;
-		if((my_pair !=NULL) && ( (double)my_pair->a >= cur_time - eps) && ( (double)my_pair->a <= cur_time + eps)) { 
-			LOG_D(OMG,"\n %.3f == %.3f ",my_pair->a, cur_time );
- 			//LOG_D(OMG,"\n OKiiiiiiiiiiiiiiiiiiiiiii " );
-			NodePtr my_node= (NodePtr)my_pair->b;
-			if(my_node->mobile == 1) {
- 				LOG_D(OMG,"\n stop node and let it sleep " );
-				// stop node and let it sleep
-				my_node->mobile = 0;
-				Pair pair = malloc(sizeof(Pair));
-				pair = sleep_rwp_node(my_node, cur_time);
-				Job_Vector_Rwp->pair = pair;
-			}
-			else if (my_node->mobile ==0) {
-				LOG_D(OMG,"\n node %d slept enough...let's move again ",  my_node->ID);
-				// node slept enough...let's move again
-				my_node->mobile = 1;
-				Pair pair = malloc(sizeof(Pair));
-				pair = move_rwp_node(my_node, cur_time);
-				Job_Vector_Rwp->pair = pair;
-			}
-			else
-			{
-			  LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
-			}
-			//sorting the new entries
-			LOG_D(OMG,"\n  **********DISPLAY NODE LIST**********"); 
-			display_node_list(Node_Vector_Rwp,1);
-			LOG_D(OMG,"\n\n **********DISPLAY JOB LIST********** "); 
-			display_job_list(Job_Vector_Rwp);
-			Job_Vector_Rwp = quick_sort (Job_Vector_Rwp);
-			LOG_D(OMG,"\n\n **********DISPLAY JOB LIST AFTER SORTING**********"); 
-			display_job_list(Job_Vector_Rwp);
-			l++;
-			
-		}
-		else if ( (my_pair !=NULL) && (cur_time < my_pair->a ) ){
-		    LOG_D(OMG,"\n\n %.3f < %.3f ",cur_time, my_pair->a);
-		    l = Job_Vector_Rwp_len;
-		    LOG_D(OMG,"\nNothing to do");
-		}
-		else {
-			LOG_D(OMG,"\n %.3f > %.3f", cur_time,my_pair->a   );
-			LOG_D(OMG,"\nERROR current time > first job_time" );
-		}	
-}	
+  int l = 0;
+  double X_now=0.0;
+  double Y_now=0.0;
+  
+  while (l < Job_Vector_Rwp_len){
+    //LOG_D(OMG,"\n		l == %d \n", l); 
+    //LOG_D(OMG,"\n		length == %d \n", Job_Vector_Rwp_len); 
+    Pair my_pair = Job_Vector_Rwp->pair;
+    if((my_pair !=NULL) && ( (double)my_pair->a >= cur_time - eps) && ( (double)my_pair->a <= cur_time + eps)) { 
+      NodePtr my_node= (NodePtr)my_pair->b;
+      if(my_node->mobile == 1) {
+	LOG_D(OMG,"stop node and let it sleep\n" );
+	my_node->mobile = 0;
+	Pair pair = malloc(sizeof(Pair));
+	pair = sleep_rwp_node(my_node, cur_time);
+	Job_Vector_Rwp->pair = pair;
+      }
+      else if (my_node->mobile ==0) {
+	LOG_D(OMG,"node %d slept enough...let's move again ",  my_node->ID);
+	my_node->mobile = 1;
+	Pair pair = malloc(sizeof(Pair));
+	pair = move_rwp_node(my_node, cur_time);
+	Job_Vector_Rwp->pair = pair;
+      }
+      else
+	{
+	  LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
+	}
+      //sorting the new entries
+      //display_node_list(Node_Vector_Rwp,1);
+      //display_job_list(Job_Vector_Rwp);
+      Job_Vector_Rwp = quick_sort (Job_Vector_Rwp);
+      //display_job_list(Job_Vector_Rwp);
+      l++;
+      
+    }
+    else if ( (my_pair !=NULL) && (cur_time < my_pair->a ) ){
+      l = Job_Vector_Rwp_len;
+      LOG_D(OMG,"\n\n %.3f < %.3f do nothing ",cur_time, my_pair->a);
+    }
+    else {
+      LOG_E(OMG,"\n current time %.3f > first job_time  %.3f", cur_time,my_pair->a  );
+    }	
+  }	
 }
-void get_rwp_positions_updated(double cur_time){
+void get_rwp_positions_updated(double cur_time){
 	int l = 0;
 	double X_now=0.0;
 	double Y_now=0.0;
-	LOG_D(OMG,"\n\n**********GET POSITIONS**********");
 	//while (l < Job_Vector_Rwp_len){
 	//	LOG_D(OMG,"\n		l == %d \n", l); 
 		//LOG_D(OMG,"\n		length == %d \n", Job_Vector_Rwp_len); 
