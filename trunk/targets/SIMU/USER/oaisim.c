@@ -525,10 +525,9 @@ int main(int argc, char **argv) {
    emu_info.time += 1.0/100; // emu time in ms 
    if (omg_param_list.mobility_type > STATIC) { // update positions for non static nodes
      update_nodes(omg_param_list.mobility_type, emu_info.time );
-     LOG_D(OMG,"updating\n");	
    } 
-    display_node_list(get_current_positions(STATIC, eNB, emu_info.time), 1);
-    display_node_list(get_current_positions(omg_param_list.mobility_type, UE, emu_info.time), 1);
+   display_node_list(get_current_positions(STATIC, eNB, emu_info.time), 1);
+   display_node_list(get_current_positions(omg_param_list.mobility_type, UE, emu_info.time), 1);
 
    
     for (slot=0 ; slot<20 ; slot++) {

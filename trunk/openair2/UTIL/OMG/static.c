@@ -15,6 +15,7 @@ void start_static_generator(omg_global_param omg_param_list) {
     LOG_W(OMG,"Number of nodes has not been set\n");
     return;
   }
+  set_time(cur_time);
   LOG_I(OMG, "\nStart STATIC Mobility MODEL\n");
 
   srand(omg_param_list.seed); 
@@ -47,8 +48,6 @@ void place_static_node(NodePtr node) {
 	node->mob->speed = 0.0;
 	node->mob->journey_time = 0.0;
 
-	LOG_D(OMG, "\n ********INITIALIZE NODE******** ");
-    	LOG_D(OMG, "\nID: %d\nX = %.3f\nY = %.3f\nspeed = 0.0", node->ID, node->X_pos, node->Y_pos);  
 	if 	(node->type == eNB)
 		Node_Vector_Static_eNB = (Node_list) add_entry(node, Node_Vector_Static_eNB);
 	else if (node->type == UE)

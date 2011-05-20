@@ -10,6 +10,7 @@ sudo route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.2 -r 3
-
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u0 -M0 -p2 > /dev/null
+echo "to see eNB stats, pleasae run : watch_enb script"
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  > /dev/null"
+$OPENAIR_TARGETS/SIMU/USER/oaisim  -u0 -M0 -p2  > /dev/null
 echo "End"

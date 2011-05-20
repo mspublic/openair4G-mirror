@@ -27,7 +27,8 @@ unsigned int Master_list_rx, Seq_nb;
 /***************************************************************************/
 mapping transport_names[] =
 {
-    {"WAIT TRANSPORT INFO", WAIT_TRANSPORT_INFO},
+    {"WAIT PM TRANSPORT INFO", WAIT_PM_TRANSPORT_INFO},
+    {"WAIT SM TRANSPORT INFO", WAIT_SM_TRANSPORT_INFO},
     {"SYNC TRANSPORT INFO", SYNC_TRANSPORT_INFO},
     {"ENB_TRANSPORT INFO", ENB_TRANSPORT_INFO},
     {"UE TRANSPORT INFO", UE_TRANSPORT_INFO},
@@ -54,16 +55,17 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
   bypass_proto2multicast_header_t *bypass_read_header;
   eNB_transport_info_t *eNB_info;
   UE_transport_info_t  *UE_info;
+  int ue_info_ix, enb_info_ix;
   int             tmp_byte_count;
   int             bytes_read = 0;
   int             bytes_data_to_read;
   int             num_flows;
   int             current_flow; 
   int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
-
+  
   pthread_mutex_lock(&emul_low_mutex);
   if(emul_low_mutex_var){
-    // LOG_T(EMU, " WAIT BYPASS_PHY...\n");
+    //LOG_T(EMU, " WAIT BYPASS_PHY...\n");
     pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
   }
   if(num_bytesP==0){
@@ -92,7 +94,12 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
       switch(messg->Message_type){	
 	//case WAIT_SYNC_TRANSPORT:
       
-      case WAIT_TRANSPORT_INFO:
+      case WAIT_PM_TRANSPORT_INFO:
+	if (messg->master_id==0 )
+	  Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
+	break;
+      
+      case WAIT_SM_TRANSPORT_INFO:
 	Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
 	break;
       case SYNC_TRANSPORT_INFO:
@@ -111,57 +118,63 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    emu_info.master[messg->master_id].first_enb+=emu_info.master[m_id].nb_enb;
 	  }
-	  LOG_T(EMU, "WAIT_SYNC_TRANSPORT state:  for master %d the first enb index is %d\n",
-	  	messg->master_id, emu_info.master[messg->master_id].first_enb);	  
+	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state:  for master %d (first enb %d, totan enb %d)\n",
+	  	messg->master_id, 
+		emu_info.master[messg->master_id].first_enb,
+		emu_info.master[messg->master_id].nb_enb);	  
 	}
 	// store param fo ue per master
 	if ((emu_info.master[messg->master_id].nb_ue  = messg->nb_ue) > 0){
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    emu_info.master[messg->master_id].first_ue+=emu_info.master[m_id].nb_ue;
 	  }
-	  LOG_T(EMU, "WAIT_SYNC_TRANSPORT state: for master %d the first ue index is %d\n",
-		messg->master_id, emu_info.master[messg->master_id].first_ue);	
+	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state: for master %d (first ue %d, total ue%d)\n",
+		messg->master_id, 
+		emu_info.master[messg->master_id].first_ue,
+		emu_info.master[messg->master_id].nb_ue );	
 	}      
 	
 	Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
 	if (Master_list_rx == emu_info.master_list) {
 	  emu_rx_status = SYNCED_TRANSPORT;
 	}
-	LOG_T(EMU,"WAIT_SYNC_TRANSPORT state: m_id %d total enb remote %d total ue remote %d first enb index %d first ue index %d emu_rx_status %d\n", 
-	     messg->master_id,   emu_info.nb_enb_remote, emu_info.nb_ue_remote,
-	      emu_info.first_enb_local, emu_info.first_ue_local, emu_rx_status  );
+	LOG_I(EMU,"WAIT_SYNC_TRANSPORT state: m_id %d total enb remote %d total ue remote %d \n", 
+	     messg->master_id,emu_info.nb_enb_remote, emu_info.nb_ue_remote );
 
 	break;
 
 	//case WAIT_ENB_TRANSPORT:
       case ENB_TRANSPORT_INFO:
-	clear_UE_transport_info(emu_info.nb_ue_local+emu_info.nb_ue_remote);
+	//LOG_D(EMU," RX ENB_TRANSPORT INFO from master %d \n",messg->master_id);
+	clear_eNB_transport_info(emu_info.nb_enb_local+emu_info.nb_enb_remote);
 	
 	if (emu_info.master[messg->master_id].nb_enb > 0 ){
+	  enb_info_ix =0;
 	  total_header=0;
-	  total_tbs=0;
 	  total_header += sizeof(eNB_transport_info_t)-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
 	  
 	  eNB_info = (eNB_transport_info_t *) (&rx_bufferP[bytes_read]);
 	  for (n_enb = emu_info.master[messg->master_id].first_enb; 
-	       n_enb < emu_info.master[messg->master_id].nb_enb ;
-	       n_enb ++) 
+	       n_enb < emu_info.master[messg->master_id].first_enb+emu_info.master[messg->master_id].nb_enb ;
+	       n_enb ++) {
+	    total_tbs=0;
 	    for (n_dci = 0 ; 
-		 n_dci < (eNB_info[n_enb].num_ue_spec_dci+eNB_info[n_enb].num_common_dci);
-		 n_dci ++) 
-	      total_tbs+=eNB_info[n_enb].tbs[n_dci];
+		 n_dci < (eNB_info[enb_info_ix].num_ue_spec_dci+eNB_info[enb_info_ix].num_common_dci);
+		 n_dci ++) { 
+	      total_tbs+=eNB_info[enb_info_ix].tbs[n_dci];
+	    }
+	    enb_info_ix++;
+	    if ( (total_tbs + total_header) > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){ 
+	      LOG_W(EMU,"RX eNB Transport buffer total size %d (header%d,tbs %d) \n",
+		    total_header+total_tbs, total_header,total_tbs);
+	    }
+	    memcpy (&eNB_transport_info[n_enb],eNB_info, total_header+total_tbs);
+	    eNB_info = (eNB_transport_info_t *)((unsigned int)eNB_info + total_header+total_tbs);
+	    bytes_read+=total_header+total_tbs;
+	  }
 	    
-	  if ( (total_tbs + total_header) > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){ 
-	    LOG_W(EMU,"RX eNB Transport buffer total size %d (header%d,tbs %d) \n",
-		  total_header+total_tbs, total_header,total_tbs);
-	  } else
-	    memcpy (&eNB_transport_info,eNB_info, total_header+total_tbs);
-	  
-	  bytes_read+=total_header+total_tbs;
-	   
-	  
 	  for (n_enb = emu_info.master[messg->master_id].first_enb; 
-	       n_enb < emu_info.master[messg->master_id].nb_enb ;
+	       n_enb < emu_info.master[messg->master_id].first_enb+emu_info.master[messg->master_id].nb_enb ;
 	       n_enb ++) 
 	    fill_phy_enb_vars(n_enb,next_slot);
 	}
@@ -176,29 +189,33 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	break;
 	
       case UE_TRANSPORT_INFO:
-	clear_eNB_transport_info(emu_info.nb_enb_local+emu_info.nb_enb_remote);
+	//LOG_D(EMU," RX UE TRANSPORT INFO from master %d\n",messg->master_id);
+	clear_UE_transport_info(emu_info.nb_ue_local+emu_info.nb_ue_remote);	
+
 	
-	if (emu_info.master[messg->master_id].nb_ue > 0 ){
+	if (emu_info.master[messg->master_id].nb_ue > 0 ){ //&& emu_info.nb_enb_local >0 ){
 	  // get the header first 
+	  ue_info_ix =0;
 	  total_header=0;
-	  total_tbs=0;
 	  total_header += sizeof(UE_transport_info_t)-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
 	  UE_info = (UE_transport_info_t *) (&rx_bufferP[bytes_read]);
 	  // get the total size of the transport blocks
 	  for (n_ue = emu_info.master[messg->master_id].first_ue; 
-	       n_ue < emu_info.master[messg->master_id].nb_ue ;
-	       n_ue ++) 
-	    for (n_enb = 0;n_enb < UE_info[n_ue].num_eNB; n_enb ++) 
-	      total_tbs+=UE_info[n_ue].tbs[n_enb];
-	  
-	  if (total_tbs + total_header > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){
-	    LOG_W(EMU,"RX Total size of buffer is %d (header%d,tbs %d) \n",
-		  total_header+total_tbs,total_header,total_tbs);
-	  } else
-	    memcpy (&UE_transport_info, UE_info, total_header+total_tbs);
-	  
-	  bytes_read+=total_header+total_tbs;
-	  
+	       n_ue < emu_info.master[messg->master_id].first_ue+emu_info.master[messg->master_id].nb_ue ;
+	       n_ue ++) {
+	    total_tbs=0;
+	    for (n_enb = 0;n_enb < UE_info[ue_info_ix].num_eNB; n_enb ++) { 
+	      total_tbs+=UE_info[ue_info_ix].tbs[n_enb];
+	    }
+	    ue_info_ix++;
+	    if (total_tbs + total_header > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){
+	      LOG_W(EMU,"RX [UE %d] Total size of buffer is %d (header%d,tbs %d) \n",
+		    n_ue, total_header+total_tbs,total_header,total_tbs);
+	    }
+	    memcpy (&UE_transport_info[n_ue], UE_info, total_header+total_tbs);
+	    UE_info = (UE_transport_info_t *)((unsigned int)UE_info + total_header+total_tbs);
+	    bytes_read+=total_header+total_tbs;
+	  }
 	  /*for (n_enb=0; n_enb < UE_info[0].num_eNB; n_enb ++ )
 	    LOG_T(EMU,"dump ue transport info rnti %x enb_id %d, harq_id %d tbs %d\n", 
 		  UE_transport_info[0].rnti[n_enb],
@@ -207,7 +224,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 		  UE_transport_info[0].tbs[n_enb]);
 	  */
 	  for (n_ue = emu_info.master[messg->master_id].first_ue; 
-	       n_ue < emu_info.master[messg->master_id].nb_ue ;
+	       n_ue < emu_info.master[messg->master_id].first_ue + emu_info.master[messg->master_id].nb_ue ;
 	       n_ue ++) {
 	    fill_phy_ue_vars(n_ue,last_slot);
 	  }
@@ -351,42 +368,48 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
 
   byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (bypass_proto2multicast_header_t);
   
-  if(Type==WAIT_TRANSPORT){
-    messg->Message_type = WAIT_TRANSPORT_INFO;
-    //LOG_T(EMU,"[TX_DATA] WAIT SYNC TRANSPORT\n");
+  if(Type==WAIT_PM_TRANSPORT){
+    messg->Message_type = WAIT_PM_TRANSPORT_INFO;
+    LOG_T(EMU,"[TX_DATA] WAIT SYNC PM TRANSPORT\n");
+  }
+  else if(Type==WAIT_SM_TRANSPORT){
+    messg->Message_type = WAIT_SM_TRANSPORT_INFO;
+    LOG_T(EMU,"[TX_DATA] WAIT SYNC SM TRANSPORT\n");
   }
   else if(Type==SYNC_TRANSPORT){
     messg->Message_type = SYNC_TRANSPORT_INFO;
-    //LOG_T(EMU,"[TX_DATA] SYNC TRANSPORT\n");
+    LOG_T(EMU,"[TX_DATA] SYNC TRANSPORT\n");
   }
   else if(Type==ENB_TRANSPORT){
-    messg->Message_type = ENB_TRANSPORT_INFO;
-    //memcpy(&bypass_tx_buffer[byte_tx_count], (char*)eNB_transport_info, sizeof(eNB_transport_info_t));
-    //byte_tx_count +=sizeof(eNB_transport_info_t);
+    // LOG_T(EMU,"[TX_DATA] ENB TRANSPORT\n");
+     messg->Message_type = ENB_TRANSPORT_INFO;
      total_size=0;
      total_tbs=0;
-    for (n_enb=emu_info.first_enb_local;n_enb<(emu_info.first_enb_local+emu_info.nb_enb_local);n_enb++) 
-      for (n_dci =0 ; 
-	   n_dci < (eNB_transport_info[n_enb].num_ue_spec_dci+ eNB_transport_info[n_enb].num_common_dci);
-	   n_dci++) 
-	total_tbs+=eNB_transport_info[n_enb].tbs[n_dci];
-    total_size = sizeof(eNB_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
-    memcpy(&bypass_tx_buffer[byte_tx_count], (char*)eNB_transport_info, total_size);
-    byte_tx_count +=total_size;
+     for (n_enb=emu_info.first_enb_local;n_enb<(emu_info.first_enb_local+emu_info.nb_enb_local);n_enb++) {
+       total_tbs=0;
+       for (n_dci =0 ; 
+	    n_dci < (eNB_transport_info[n_enb].num_ue_spec_dci+ eNB_transport_info[n_enb].num_common_dci);
+	    n_dci++) {
+	 total_tbs +=eNB_transport_info[n_enb].tbs[n_dci];
+       }
+       total_size = sizeof(eNB_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+       memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&eNB_transport_info[n_enb], total_size);
+       byte_tx_count +=total_size;
+     }
   }
   else if (Type == UE_TRANSPORT){ 
+    //LOG_T(EMU,"[TX_DATA] UE TRANSPORT\n");
     messg->Message_type = UE_TRANSPORT_INFO;
-    // memcpy(&bypass_tx_buffer[byte_tx_count], (char*)UE_transport_info, sizeof(UE_transport_info_t)); 
-    //byte_tx_count +=total_tbs;
     total_size=0;
-    total_tbs=0; // compute the actual size of transport_blocks
-    for (n_ue = emu_info.first_ue_local; n_ue < (emu_info.first_ue_local+emu_info.nb_ue_local);n_ue++)
-      for (n_enb=0;n_enb<UE_transport_info[n_ue].num_eNB;n_enb++) 
+    for (n_ue = emu_info.first_ue_local; n_ue < (emu_info.first_ue_local+emu_info.nb_ue_local);n_ue++){
+      total_tbs=0; // compute the actual size of transport_blocks
+      for (n_enb=0;n_enb<UE_transport_info[n_ue].num_eNB;n_enb++) {
 	total_tbs+=UE_transport_info[n_ue].tbs[n_enb];
-    total_size = sizeof(UE_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
-    memcpy(&bypass_tx_buffer[byte_tx_count], (char*)UE_transport_info, total_size);
-    byte_tx_count +=total_size;
-    
+      }
+      total_size = sizeof(UE_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+      memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&UE_transport_info[n_ue], total_size);
+      byte_tx_count +=total_size;
+    }
   } 
   else if (Type == RELEASE_TRANSPORT){
     messg->Message_type = RELEASE_TRANSPORT_INFO;
