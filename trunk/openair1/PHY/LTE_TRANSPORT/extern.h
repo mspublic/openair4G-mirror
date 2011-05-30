@@ -20,3 +20,5 @@ extern unsigned char ue_power_offsets[25];
 extern unsigned short scfdma_amps[26];
 
 extern char dci_format_strings[15][13];
+
+extern s16 d0_sss[504*62],d5_sss[504*62];

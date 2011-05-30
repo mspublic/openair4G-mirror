@@ -408,24 +408,43 @@ typedef struct {
 
 
 typedef struct {
+  /// UL RSSI per receive antenna
   s32 UL_rssi[NB_ANTENNAS_RX];
+  /// DL CQI (2 TBs)
   u8 DL_cqi[2];
+  /// DL Differential CQI
   u8 DL_diffcqi[2];
+  /// DL PMI Single Stream
   u16 DL_pmi_single;
+  /// DL PMI Dual Stream
   u16 DL_pmi_dual;
+  /// Current RI
   u8 rank;
+  /// CRNTI of UE
   u16 crnti; ///user id (rnti) of connected UEs
+  /// Timing offset
   s32 UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
+  /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
+  /// Current sector where UE is attached
   u8 sector;
+  /// 
   u32 dlsch_sliding_cnt;
+  ///
   u32 dlsch_NAK[8];
+  ///
   u32 dlsch_l2_errors;
+  ///
   u32 dlsch_trials[4];
+  ///
   u32 ulsch_errors[3];
+  ///
   u32 ulsch_consecutive_errors[3];
+  ///
   u32 ulsch_decoding_attempts[3][4];
+  ///
   u32 ulsch_round_errors[3][4];
+  ///
   s8 dlsch_mcs_offset;
   //  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;

@@ -123,6 +123,7 @@ u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid,
+		   u8 tmode,
 		   u8 control_only_flag) {
   
   unsigned short offset;
@@ -202,7 +203,10 @@ u32 ulsch_encoding(u8 *a,
     //    ulsch->o[i] = i;
     msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
   }
-  print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
+  if ((tmode != 4))
+    print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
+  else
+    print_CQI(ulsch->o,ulsch->o_RI,hlc_cqi,0);
 #endif
     
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet

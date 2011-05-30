@@ -434,7 +434,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-  lte_gold(lte_frame_parms);
+
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
@@ -449,8 +449,6 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   generate_16qam_table();
   generate_RIV_tables();
   
-  generate_pcfich_reg_mapping(lte_frame_parms);
-  generate_phich_reg_mapping(lte_frame_parms);
 
   //set_taus_seed(1328);
   
@@ -959,6 +957,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i, j, eNB_id, UE_id;
 
+
+  lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
+  generate_pcfich_reg_mapping(frame_parms);
+  generate_phich_reg_mapping(frame_parms);
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.

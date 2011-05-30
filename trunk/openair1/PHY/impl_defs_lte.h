@@ -25,6 +25,7 @@ ________________________________________________________________*/
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 
+#define SSS_AMP 1148
 typedef enum {
   normal=0,
   extended=1
