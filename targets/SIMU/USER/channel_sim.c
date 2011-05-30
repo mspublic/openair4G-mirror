@@ -176,7 +176,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] tx_pwr eNB %d %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
-	if (eNB_id == (UE_id % 3))
+	if (eNB_id == (UE_id % NB_eNB_INST))
 	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
 	else
 	  eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + sinr_dB;
@@ -445,7 +445,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
     
-	if (eNB_id == (UE_id % 3))
+	if (eNB_id == (UE_id % NB_eNB_INST))
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
 	else
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - 10;

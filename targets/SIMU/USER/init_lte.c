@@ -39,7 +39,13 @@
 
 #define RF
 
-void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
+void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
+		   u8 frame_type,
+		   u8 tdd_config,
+		   u8 extended_prefix_flag, 
+		   u8 N_RB_DL,
+		   u16 Nid_cell,
+		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
 
   u8 eNB_id,UE_id;
   int i,j;
@@ -62,14 +68,14 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8
   mac_xface = malloc(sizeof(MAC_xface));
  
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
-  (*frame_parms)->frame_type         = 1;
-  (*frame_parms)->tdd_config         = 3;
-  (*frame_parms)->N_RB_DL            = 25;
-  (*frame_parms)->N_RB_UL            = 25;
+  (*frame_parms)->frame_type         = frame_type;
+  (*frame_parms)->tdd_config         = tdd_config;
+  (*frame_parms)->N_RB_DL            = N_RB_DL;
+  (*frame_parms)->N_RB_UL            = (*frame_parms)->N_RB_DL;
   (*frame_parms)->phich_config_common.phich_resource = oneSixth;
   (*frame_parms)->Ncp                = extended_prefix_flag;
-  (*frame_parms)->Nid_cell           = 0;
-  (*frame_parms)->nushift            = 0;
+  (*frame_parms)->Nid_cell           = Nid_cell;
+  (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   (*frame_parms)->nb_antennas_rx     = 2;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
@@ -82,8 +88,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8
   (*frame_parms)->twiddle_fft      = twiddle_fft;
   (*frame_parms)->twiddle_ifft     = twiddle_ifft;
   (*frame_parms)->rev              = rev;
-  // navid 
-  (*frame_parms)->tdd_config = 3;
+
 
   phy_init_lte_top((*frame_parms));
 
@@ -91,8 +96,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8
 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = eNB_id;
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = eNB_id%6;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+eNB_id;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
     phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,
 		     &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars,
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
