@@ -412,8 +412,8 @@ typedef struct {
   s32 UL_rssi[NB_ANTENNAS_RX];
   /// DL CQI (2 TBs)
   u8 DL_cqi[2];
-  /// DL Differential CQI
-  u8 DL_diffcqi[2];
+  /// DL Subband CQI (from HLC feedback)
+  u8 DL_subband_cqi[2][13];
   /// DL PMI Single Stream
   u16 DL_pmi_single;
   /// DL PMI Dual Stream
