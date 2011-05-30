@@ -69,7 +69,13 @@ extern void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,
 
 extern void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms);
 
-extern void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag);
+extern void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
+			  u8 frame_type,
+			  u8 tdd_config,
+			  u8 extended_prefix_flag, 
+			  u8 N_RB_DL,
+			  u16 Nid_cell,
+			  u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag);
 
 #ifndef CYGWIN
 void init_bypass() {
@@ -89,9 +95,12 @@ void init_bypass() {
 #endif
 
 void help(void) {
-  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag\n");
+  printf("Usage: physim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag\n");
   printf("-h provides this help message!\n");
   printf("-a Activates PHY abstraction mode\n");
+  printf("-F Activates FDD transmission (TDD is default)\n");
+  printf("-C [0-6] Sets TDD configuration\n");
+  printf("-R [6,15,25,50,75,100] Sets N_RB_DL\n");
   printf("-e Activates extended prefix mode\n");
   printf("-m Gives a fixed DL mcs\n");
   printf("-r Activates rate adaptation (DL for now)\n");
@@ -182,40 +191,44 @@ int main(int argc, char **argv) {
  
   char c;
   s32 i,j;
+
+  // pointers signal buffers (s = transmit, r,r0 = receive) 
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
+
+  // channel parameters
   double amps[1] = {1};//{0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03,ricean_factor=.0000000000001,Td=.8,forgetting_factor=.999,maxDoppler=0;
   u8 channel_length,nb_taps=1;
+  double nf[2] = {3.0,3.0}; //currently unused
+  double snr_dB, sinr_dB,snr_dB2,sinr_dB2;
 
+  // Pairwise Channel Descriptors
+  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+  channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
-  s32 n_errors;
+  // Framing variables
   u16 n_frames, n_frames_flag;
   s32 slot,last_slot, next_slot;
 
-  double nf[2] = {3.0,3.0}; //currently unused
-  double snr_dB, sinr_dB,snr_dB2,sinr_dB2;
+
+  // variables/flags which are set by user on command-line
   u8 set_sinr = 0;
   u8 cooperation_flag; // for cooperative communication
-
   u8 target_dl_mcs=4;
   u8 target_ul_mcs=2;
   u8 rate_adaptation_flag;
   u8 transmission_mode;
   u8 abstraction_flag=0,ethernet_flag=0;
   u16 ethernet_id;
-  u8 extended_prefix_flag=0;
+  u8 frame_type=1, tdd_config=3, extended_prefix_flag=0, N_RB_DL=25;
+  u16 Nid_cell=0;
   s32 UE_id,eNB_id,ret; 
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
-  //u8 nb_ue_local=1,nb_ue_remote=0;
-  //u8 nb_eNB_local=1,nb_eNB_remote=0;
-  //u8 first_eNB_local=0,first_UE_local=0, nb_machine=0;
- 
+
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
 
   OAI_Emulation * emulation_scen;
+
 
 #ifdef XFORMS
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -230,7 +243,7 @@ int main(int argc, char **argv) {
   //time_t t0,t1;
   clock_t start, stop;
   
-  //default parameters
+  //default ethernet emulation parameters
   emu_info.is_primary_master=0;
   emu_info.master_list=0;
   emu_info.nb_ue_remote=0;
@@ -259,115 +272,133 @@ int main(int argc, char **argv) {
   snr_dB = 30;
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
-
-
-  while ((c = getopt (argc, argv, "haePTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1)
-
-    {
-       switch (c)
-	{
-	case 'h':
-	  help();
-	  exit(1);
-	case 'x':
-	  transmission_mode = atoi(optarg);
-	  break;
-	case 'm':
-	  target_dl_mcs = atoi(optarg);
-	  break;
-	case 'r':
-	  rate_adaptation_flag = 1;
-	  break;
-	case 'n':
-	  n_frames = atoi(optarg); 
-	  n_frames_flag=1;
-	  break;
-	case 's':
-	  snr_dB = atoi(optarg);
-	  break;
-	case 'S':
-	  sinr_dB = atoi(optarg);
-	  set_sinr = 1;
-	  break;
-	case 'k': 
-	  ricean_factor = atof(optarg);
-	  break;
-	case 't':
-    	  Td = atof(optarg);
-	  break;
-	case 'f':
-	  forgetting_factor = atof(optarg);
-	  break;
-	case 'z':
-	  cooperation_flag=atoi(optarg);
-	  break;
-	case 'u':
-	  emu_info.nb_ue_local = atoi(optarg);
-	  break;
-	  //	case 'U':
-	  //nb_ue_remote = atoi(optarg);
-	  //break;
-	case 'b':
-	  emu_info.nb_enb_local = atoi(optarg);
-	  break;
-	  //	case 'B':
-	  // nb_eNB_remote = atoi(optarg);
-	  //break;
-	case 'a':
-	  abstraction_flag=1;
-	  break;
-	case 'p':
-	  emu_info.nb_master = atoi(optarg);
-	  break;
-	case 'M':
-	  abstraction_flag=1;
-	  ethernet_flag=1;
-	  ethernet_id = atoi(optarg);
-	  emu_info.master_id=ethernet_id;
-	  emu_info.ethernet_flag=1;
-	  break;
-	case 'e':
-	  extended_prefix_flag=1;
-	  break;
-	case 'l':
-	  g_log_level=optarg;
-	  break;
-	case 'c':
-          strcpy(emu_info.local_server, optarg);
-	  emu_info.ocg_enabled=1;
-	  abstraction_flag=1;
-	  extended_prefix_flag=1;
-	  n_frames_flag=1; 
-	  transmission_mode = 1;
-	  break;
-	case 'g':
-	  emu_info.multicast_group=atoi(optarg);
-	  break;	
-	case 'O':
-	  emu_info.omg_enabled = 1;
-	  emu_info.omg_model = atoi(optarg); 
-	  break; 
-	case 'T':
-	  emu_info.otg_enabled=1;
-	  break;
-	case 'P':
-	  emu_info.opt_enabled=1;
-	  break;
-	case 'o':
-	  mod_path_loss = 1;
-	  break;
-	default:
-	  help ();
-	  exit (-1);
-	  break;
-	}
+  // get command-line options
+  while ((c = getopt (argc, argv, "haeOPToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d")) != -1) {
+    switch (c) {
+    case 'F':   // set FDD
+      frame_type=0;
+      break;
+    case 'C':
+      tdd_config=atoi(optarg);
+      if (tdd_config>6) {
+	msg("Illegal tdd_config %d (should be 0-6)\n",tdd_config);
+	exit(-1);
+      }
+      break;
+    case 'R': 
+      N_RB_DL=atoi(optarg);
+      if ((N_RB_DL!=6)||(N_RB_DL!=15)||(N_RB_DL!=25)||(N_RB_DL!=50)||(N_RB_DL!=75)||(N_RB_DL!=100)) {
+	msg("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n",N_RB_DL);
+	exit(-1);
+      }
+    case 'N':
+      Nid_cell = atoi(optarg);
+      if (Nid_cell > 503)
+	msg("Illegal Nid_cell %d (should be 0 ... 503)\n",Nid_cell);
+      break;
+    case 'h':
+      help();
+      exit(1);
+    case 'x':
+      transmission_mode = atoi(optarg);
+      break;
+    case 'm':
+      target_dl_mcs = atoi(optarg);
+      break;
+    case 'r':
+      rate_adaptation_flag = 1;
+      break;
+    case 'n':
+      n_frames = atoi(optarg); 
+      n_frames_flag=1;
+      break;
+    case 's':
+      snr_dB = atoi(optarg);
+      break;
+    case 'S':
+      sinr_dB = atoi(optarg);
+      set_sinr = 1;
+      break;
+    case 'k': 
+      ricean_factor = atof(optarg);
+      break;
+    case 't':
+      Td = atof(optarg);
+      break;
+    case 'f':
+      forgetting_factor = atof(optarg);
+      break;
+    case 'z':
+      cooperation_flag=atoi(optarg);
+      break;
+    case 'u':
+      emu_info.nb_ue_local = atoi(optarg);
+      break;
+      //	case 'U':
+      //nb_ue_remote = atoi(optarg);
+      //break;
+    case 'b':
+      emu_info.nb_enb_local = atoi(optarg);
+      break;
+      //	case 'B':
+      // nb_eNB_remote = atoi(optarg);
+      //break;
+    case 'a':
+      abstraction_flag=1;
+      break;
+    case 'p':
+      emu_info.nb_master = atoi(optarg);
+      break;
+    case 'M':
+      abstraction_flag=1;
+      ethernet_flag=1;
+      ethernet_id = atoi(optarg);
+      emu_info.master_id=ethernet_id;
+      emu_info.ethernet_flag=1;
+      break;
+    case 'e':
+      extended_prefix_flag=1;
+      break;
+    case 'l':
+      g_log_level=optarg;
+      break;
+    case 'c':
+      strcpy(emu_info.local_server, optarg);
+      emu_info.ocg_enabled=1;
+      abstraction_flag=1;
+      extended_prefix_flag=1;
+      n_frames_flag=1; 
+      transmission_mode = 1;
+      break;
+    case 'g':
+      emu_info.multicast_group=atoi(optarg);
+      break;	
+    case 'O':
+      emu_info.omg_enabled=1;
+      break; 
+    case 'T':
+      emu_info.otg_enabled=1;
+      break;
+    case 'P':
+      emu_info.opt_enabled=1;
+      break;
+    case 'o':
+      mod_path_loss = 1;
+      break;
+    default:
+      help ();
+      exit (-1);
+      break;
     }
+  }
+
   if (set_sinr==0)
     sinr_dB = snr_dB-20;
 
 
   oaisim_config(emulation_scen, &n_frames, g_log_level); // config OMG and OCG, OPT, OTG, OLG
 
+  // setup netdevice interface (netlink socket)
 #ifndef CYGWIN 
   ret=netlink_init();
 #endif
@@ -407,13 +438,13 @@ int main(int argc, char **argv) {
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
-  printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
-  	 transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
+  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
+  	 1+frame_type, Nid_cell, N_RB_DL, extended_prefix_flag, transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
   
   channel_length = (u8) (11+2*BW*Td);
 
 
-  init_lte_vars(&frame_parms, extended_prefix_flag, cooperation_flag, transmission_mode, abstraction_flag);
+  init_lte_vars(&frame_parms, frame_type, tdd_config, extended_prefix_flag, N_RB_DL, Nid_cell, cooperation_flag, transmission_mode, abstraction_flag);
 
 
   if (abstraction_flag==0)
@@ -486,7 +517,7 @@ int main(int argc, char **argv) {
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
-    PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
+    PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0]=4;
   }// end navid 
@@ -513,8 +544,10 @@ int main(int argc, char **argv) {
 #ifdef DEBUG_SIM
   printf("[SIM] Synching to eNB\n");
 #endif
-  for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
-    mac_xface->chbch_phy_sync_success(UE_id,0);
+  if (abstraction_flag==1) {
+    for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
+      mac_xface->chbch_phy_sync_success(UE_id,UE_id%NB_eNB_INST);
+  }
 #endif 
  
 
@@ -563,13 +596,16 @@ int main(int argc, char **argv) {
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
-	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
-	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
-	  //if ((mac_xface->frame % 10) == 0) {
-	  len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
-	  rewind(UE_stats);
-	  fwrite(stats_buffer,1,len,UE_stats);
-	  //}
+	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
+	    phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
+	    len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
+	    rewind(UE_stats);
+	    fwrite(stats_buffer,1,len,UE_stats);
+	  }
+	  else {
+	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1)))
+	      initial_sync(PHY_vars_UE_g[UE_id]);
+	  }
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
 
@@ -582,76 +618,25 @@ int main(int argc, char **argv) {
 	sinr_dB2 = sinr_dB;
       }
       if (direction  == SF_DL) {
-	/*
-	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
-	/*
-	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	  printf("DL B(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
       }
       else if (direction  == SF_UL) {
-	/*
-	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
 	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
-	/*
-	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	  printf("UL B(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
       }
       else {//it must be a special subframe
 	if (next_slot%2==0) {//DL part
-	  /*
-	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-		
-	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	  */
 	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
-	  /*
-	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	    printf("SB(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	  */
 	}
 	else {// UL part
-	  /*
-	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	  */
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
-	  /*
-	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	    printf("SD(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	  */
 	}
       }
-      if ((last_slot==1) && (mac_xface->frame==1) && (abstraction_flag==0)) {
-	/*
-	write_output("UErxsigF0.m","rxsF0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
-	write_output("eNBrxsigF0.m","rxsF0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti,2,1);
+      if ((last_slot==1) && (mac_xface->frame==0) && (abstraction_flag==0) && (n_frames==1)) {
 	write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	write_output("dlchan1.m","dlch1",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	write_output("dlchan2.m","dlch2",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
 	write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-	*/
       }
       /*
       if ((last_slot==1) && (mac_xface->frame==1)) {
@@ -706,7 +691,7 @@ int main(int argc, char **argv) {
   fclose(UE_stats);
   fclose(eNB_stats);
 
-  return(n_errors);
+  return(0);
 }
    
 
