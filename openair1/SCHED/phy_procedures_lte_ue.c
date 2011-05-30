@@ -579,7 +579,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][4],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][5]);
 	if (abstraction_flag==0)
-	  ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
+	  ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0);
 
 	else
 	  ulsch_encoding_emul(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],phy_vars_ue,eNB_id,harq_pid,0);
@@ -595,7 +595,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	//	  msg("%x.",ulsch_input_buffer[i]);
 	//	msg("\n");
 	if (abstraction_flag==0)
-	  ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
+	  ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0);
 	else
 	  ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
       }
@@ -766,7 +766,6 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     if (abstraction_flag==0) {
       printf("Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
       lte_ue_measurements(phy_vars_ue,
-			  &phy_vars_ue->lte_frame_parms,
 #ifndef USER_MODE
 			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,
 #else
@@ -1191,6 +1190,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
       if (generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
 					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
 					    last_slot>>1,
+					    phy_vars_ue->transmission_mode[eNB_id],
 					    format0,
 					    phy_vars_ue->ulsch_ue[eNB_id],
 					    phy_vars_ue->dlsch_ue[eNB_id],
@@ -1284,9 +1284,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   for (l=0;l<n_symb;l++) {
 
     if (abstraction_flag == 0) {
-      slot_fep(eNB_id,
-	       &phy_vars_ue->lte_frame_parms,
-	       &phy_vars_ue->lte_ue_common_vars,
+      slot_fep(phy_vars_ue,
 	       l,
 	       last_slot,
 	       0,

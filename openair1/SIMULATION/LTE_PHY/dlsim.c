@@ -36,6 +36,7 @@ PHY_VARS_UE *PHY_vars_UE;
 void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,u8 extended_prefix_flag,u16 Nid_cell,u8 tdd_config,u8 N_RB_DL,u8 osf) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
+  int i;
 
   printf("Start lte_param_init\n");
   PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
@@ -79,6 +80,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   PHY_vars_eNB->lte_frame_parms = *lte_frame_parms;
 
   phy_init_lte_top(lte_frame_parms);
+  for (i=0;i<3;i++)
+    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],i);    
 
   phy_init_lte_ue(&PHY_vars_UE->lte_frame_parms,
 		  &PHY_vars_UE->lte_ue_common_vars,
@@ -809,10 +812,9 @@ int main(int argc, char **argv) {
 						PHY_vars_eNB->dlsch_eNB[k][1]);
 	    } //n_users
 	
-	    generate_pilots(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
+	    generate_pilots(PHY_vars_eNB,
+			    PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
 			    1024,
-			    &PHY_vars_eNB->lte_frame_parms,
-			    eNB_id,
 			    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
 	  
 	  
@@ -1063,16 +1065,13 @@ int main(int argc, char **argv) {
 	      for (l=0;l<pilot2;l++) {
 		if (n_frames==1)
 		  printf("Ns %d, l %d\n",Ns,l);
-		slot_fep(eNB_id,
-			 &PHY_vars_UE->lte_frame_parms,
-			 &PHY_vars_UE->lte_ue_common_vars,
+		slot_fep(PHY_vars_UE,
 			 l,
 			 Ns%20,
 			 0,
 			 0);
 		if (l==0) {
 		  lte_ue_measurements(PHY_vars_UE,
-				      &PHY_vars_UE->lte_frame_parms,
 				      subframe*PHY_vars_UE->lte_frame_parms.symbols_per_tti*(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size+PHY_vars_UE->lte_frame_parms.nb_prefix_samples),
 				      1,
 				      0);

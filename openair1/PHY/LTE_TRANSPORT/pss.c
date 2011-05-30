@@ -98,6 +98,8 @@ int generate_pss(mod_sym_t **txdataF,
       (amp * primary_sync[2*m+1]) >> 15;
 #endif
 #else
+    //    printf("generate_pss: offset is %d (Nsymb %d)\n",slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    //	   symbol*frame_parms->ofdm_symbol_size,Nsymb);
     ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k)] = 
       (amp * primary_sync[2*m]) >> 15; 

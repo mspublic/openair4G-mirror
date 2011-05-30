@@ -6,13 +6,12 @@
 #include "defs.h"
 #include "PHY/defs.h"
 
-extern unsigned int lte_gold_table[20][2][14];
+extern unsigned int lte_gold_table[3][20][2][14];
 //#define DEBUG_DL_CELL_SPEC
 
-int lte_dl_cell_spec(mod_sym_t *output,
+int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
+		     mod_sym_t *output,
 		     short amp,
-		     LTE_DL_FRAME_PARMS *frame_parms,
-		     unsigned char eNb_id,
 		     unsigned char Ns,
 		     unsigned char l,
 		     unsigned char p) {
@@ -65,29 +64,29 @@ int lte_dl_cell_spec(mod_sym_t *output,
     return(-1);
   }
 
-  mprime = 110 - frame_parms->N_RB_DL;
+  mprime = 110 - phy_vars_eNB->lte_frame_parms.N_RB_DL;
   
-  k = (nu + frame_parms->nushift+eNb_id);
+  k = (nu + phy_vars_eNB->lte_frame_parms.nushift);
   if (k > 6)
     k -=6;
 
 #ifdef IFFT_FPGA
-  k+=frame_parms->N_RB_DL*6;
+  k+=phy_vars_eNB->lte_frame_parms.N_RB_DL*6;
 #else  
-  k+=frame_parms->first_carrier_offset;
+  k+=phy_vars_eNB->lte_frame_parms.first_carrier_offset;
 #endif
-  for (m=0;m<frame_parms->N_RB_DL<<1;m++) {
+  for (m=0;m<phy_vars_eNB->lte_frame_parms.N_RB_DL<<1;m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2 
-    output[k] = qpsk[(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-    //output[k] = (lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
+    output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
     debug_msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    debug_msg("index = %d (k %d)\n",(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    debug_msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;
@@ -97,13 +96,13 @@ int lte_dl_cell_spec(mod_sym_t *output,
 #endif
     k+=6;
 #ifdef IFFT_FPGA
-    if (k >= frame_parms->N_RB_DL*12) {
-      k-=frame_parms->N_RB_DL*12;
+    if (k >= phy_vars_eNB->lte_frame_parms.N_RB_DL*12) {
+      k-=phy_vars_eNB->lte_frame_parms.N_RB_DL*12;
     }
 #else
-    if (k >= frame_parms->ofdm_symbol_size) {
+    if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
-      k-=frame_parms->ofdm_symbol_size;
+      k-=phy_vars_eNB->lte_frame_parms.ofdm_symbol_size;
     }
 #endif
     //    printf("** k %d\n",k);
@@ -111,17 +110,18 @@ int lte_dl_cell_spec(mod_sym_t *output,
   return(0);
 }
 
-int lte_dl_cell_spec_rx(int *output,
-			 LTE_DL_FRAME_PARMS *frame_parms,
-			 unsigned char Ns,
-			 unsigned char l,
-			 unsigned char p) {
-
+int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
+			u8 eNB_offset,
+			int *output,
+			unsigned char Ns,
+			unsigned char l,
+			unsigned char p) {
+  
 
   unsigned char mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0;
   unsigned int qpsk[4];
-  
+
   // This includes complex conjugate for channel estimation
 
   ((short *)&qpsk[0])[0] = ONE_OVER_SQRT2_Q15;
@@ -133,19 +133,19 @@ int lte_dl_cell_spec_rx(int *output,
   ((short *)&qpsk[3])[0] = -ONE_OVER_SQRT2_Q15;
   ((short *)&qpsk[3])[1] = ONE_OVER_SQRT2_Q15;
 
-  mprime = 110 - frame_parms->N_RB_DL;
+  mprime = 110 - phy_vars_ue->lte_frame_parms.N_RB_DL;
   
-  for (m=0;m<frame_parms->N_RB_DL<<1;m++) {
+  for (m=0;m<phy_vars_ue->lte_frame_parms.N_RB_DL<<1;m++) {
 
     mprime_dword     = mprime>>4;
     mprime_qpsk_symb = mprime&0xf;
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2 
-    output[k] = qpsk[(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
+    output[k] = qpsk[(phy_vars_ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
 #ifdef DEBUG_DL_CELL_SPEC
     printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
 	   Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(phy_vars_ue->lte_gold_table[eNB_id][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif 
 
     mprime++;

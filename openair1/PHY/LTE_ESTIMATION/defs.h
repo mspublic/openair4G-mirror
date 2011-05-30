@@ -31,12 +31,12 @@ void lte_sync_time_free(void);
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
-\param length Length for correlation
 \param eNb_id return value with the eNb_id
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length, int* eNb_id);
-
+int lte_sync_time(int **rxdata, ///rx data in time domain
+		  LTE_DL_FRAME_PARMS *frame_parms,
+		  int *eNB_id);
 
 /*! 
 \brief This function performs detection of the PRACH (=SRS) at the eNb to estimate the timing advance
@@ -70,10 +70,10 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 \param l symbol within slot
 \param symbol symbol within frame
 */
-int lte_dl_channel_estimation(u8 eNB_offset,
+int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
+			      u8 eNB_offset,
 			      int **dl_ch_estimates,
 			      int **rxdataF,
-			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char Ns,
 			      unsigned char p,
 			      unsigned char l,
@@ -119,7 +119,6 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 //! \brief this function fills the PHY_VARS_UE->PHY_measurement structure
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
-			 LTE_DL_FRAME_PARMS *frame_parms,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
 			 unsigned char init_averaging);

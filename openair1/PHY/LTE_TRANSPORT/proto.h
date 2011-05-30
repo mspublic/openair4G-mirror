@@ -153,37 +153,28 @@ s32 dlsch_modulation(mod_sym_t **txdataF,
 		     LTE_eNB_DLSCH_t *dlsch);
 
 
-/** \fn generate_pilots(mod_sym_t **txdataF,
-    s16 amp,
-    LTE_DL_FRAME_PARMS *frame_parms,
-    u8 eNB_id,
-    u16 N);
-    \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
+/** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     for N subframes.
+    @param phy_vars_eNB Pointer to eNB variables
     @param txdataF Table of pointers for frequency-domain TX signals
     @param amp Amplitude of signal
-    @param frame_parms Pointer to frame descriptor
-    @param eNB_id Nid2 (0,1,2)
     @param N Number of sub-frames to generate
 */
-void generate_pilots(mod_sym_t **txdataF,
+void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
+		     mod_sym_t **txdataF,
 		     s16 amp,
-		     LTE_DL_FRAME_PARMS *frame_parms,
-		     u8 eNB_id,
 		     u16 N);
 
 /**
    \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals) for one slot only
+   @param phy_vars_eNB Pointer to eNB variables
    @param txdataF Table of pointers for frequency-domain TX signals
    @param amp Amplitude of signal
-   @param frame_parms Pointer to frame descriptor
-   @param eNB_id Nid2 (0,1,2)
    @param slot index (0..19)
 */
-s32 generate_pilots_slot(mod_sym_t **txdataF,
+s32 generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
+			 mod_sym_t **txdataF,
 			 s16 amp,
-			 LTE_DL_FRAME_PARMS *frame_parms,
-			 u8 eNB_id,
 			 u16 slot);
 
 
@@ -194,6 +185,12 @@ s32 generate_pss(mod_sym_t **txdataF,
 		 u16 Ns);
 
 s32 generate_pss_emul(PHY_VARS_eNB *phy_vars_eNB,u8 sect_id);
+
+s32 generate_sss(mod_sym_t **txdataF,
+		 short amp,
+		 LTE_DL_FRAME_PARMS *frame_parms,
+		 unsigned short symbol,
+		 unsigned short slot_offset);
 
 s32 generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 		  mod_sym_t **txdataF,
@@ -569,6 +566,15 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 	     u8 eNB_id,
 	     MIMO_mode_t mimo_mode,
 	     u8 is_secondary_ue);
+/*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
+@param phy_vars_ue Pointer to UE variables
+@param tot_metric Pointer to variable containing maximum metric under framing hypothesis (to be compared to other hypotheses
+@param flip_max Pointer to variable indicating if start of frame is in second have of RX buffer (i.e. PSS/SSS is flipped)
+@param phase_max Pointer to variable (0 ... 6) containing rought phase offset between PSS and SSS (can be used for carrier
+frequency adjustment. 0 means -pi/3, 6 means pi/3.
+@returns 0 on success
+*/
+int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max);
 
 /*! \brief receiver for the PBCH
 \returns number of tx antennas or -1 if error
@@ -843,6 +849,7 @@ s32 generate_eNB_ulsch_params_from_rar(u8 *rar_pdu,
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 rnti,
 				      u8 subframe,
+				      u8 transmisison_mode,
 				      DCI_format_t dci_format,
 				      LTE_UE_ULSCH_t *ulsch,
 				      LTE_UE_DLSCH_t **dlsch,
@@ -866,6 +873,7 @@ s32 generate_ue_ulsch_params_from_rar(u8 *rar_pdu,
 s32 generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
+				       u8 transmission_mode,
 				       DCI_format_t dci_format,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms,
@@ -919,6 +927,14 @@ void init_transport_channels(u8);
 
 void generate_RIV_tables(void);
 
+/*!
+  \brief This function performs the initial cell search procedure - PSS detection, SSS detection and PBCH detection.  At the 
+end, the basic frame parameters are known (Frame configuration - TDD/FDD and cyclic prefix length, 
+N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
+parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
+  @param phy_vars_ue Pointer to UE variables
+*/
+void initial_sync(PHY_VARS_UE *phy_vars_ue);
 
 s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH *eNB_ulsch_vars,
@@ -939,12 +955,14 @@ int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
   @param frame_parms Pointer to Frame parameters
   @param ulsch Pointer to ulsch descriptor
   @param harq_pid HARQ process ID
+  @param tmode Transmission mode (1-7)
   @param control_only_flag Generate PUSCH with control information only
 */
 u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid,
+		   u8 tmode,
 		   u8 control_only_flag);
 
 /*!
@@ -980,11 +998,11 @@ void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 subframe,
 			 LTE_eNB_ULSCH_t *ulsch_eNB);
 
-void print_CQI(void *o,u8 *o_RI,UCI_format fmt,u8 eNB_id);
+void print_CQI(void *o,u8 *o_RI,u8 transmission_mode,u8 eNB_id);
 
-void extract_CQI(void *o,u8 *o_RI,UCI_format fmt,LTE_eNB_UE_stats *stats);
+void extract_CQI(void *o,u8 *o_RI,u8 transmission_mode,LTE_eNB_UE_stats *stats);
 
-void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,u8 eNB_id, s32 current_dlsch_cqi);
+void fill_CQI(void *o,u8 transmission_mode,PHY_MEASUREMENTS *meas,u8 eNB_id, s32 current_dlsch_cqi);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);
