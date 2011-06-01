@@ -517,7 +517,10 @@ int main(int argc, char **argv) {
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
-    PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
+    if (abstraction_flag ==0)	
+      PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
+    else
+      PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;		
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0]=4;
   }// end navid 
