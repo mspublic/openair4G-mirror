@@ -260,7 +260,8 @@ int main(int argc, char **argv) {
   emu_info.multicast_group=0;
   emu_info.ocg_enabled=0;// flag c
   emu_info.opt_enabled=0; // P flag
-  emu_info.omg_enabled=0; //O flag 
+  emu_info.omg_enabled=1; //by default enable the OMG 
+  emu_info.omg_model=1; //default to RWP model
   emu_info.otg_enabled=0;// T flag
   emu_info.time = 0.0;	// time of emulation 
 
@@ -273,7 +274,7 @@ int main(int argc, char **argv) {
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   // get command-line options
-  while ((c = getopt (argc, argv, "haeOPToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d")) != -1) {
+  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1) {
     switch (c) {
     case 'F':   // set FDD
       frame_type=0;
@@ -375,6 +376,7 @@ int main(int argc, char **argv) {
       break;	
     case 'O':
       emu_info.omg_enabled=1;
+      emu_info.omg_model = atoi(optarg);
       break; 
     case 'T':
       emu_info.otg_enabled=1;
