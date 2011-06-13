@@ -20,13 +20,13 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
-
-#include "SIMULATION/simulation_defs.h"
+  
+//#include "SIMULATION/simulation_defs.h"
 //extern EMULATION_VARS *Emul_vars;
 //extern CH_MAC_INST *CH_mac_inst;
 //extern UE_MAC_INST *UE_mac_inst;
 //-----------------------------------------------------------------------------
-
+ 
 /********************
 // RRC includes
  ********************/
@@ -138,7 +138,7 @@ int rrc_init_global_param(void){
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
 #endif //USRE_MODE
-  Rrc_xface->openair_rrc_ch_init = rrc_rg_init;
+  Rrc_xface->openair_rrc_eNB_init = rrc_rg_init;
   Rrc_xface->mac_rrc_data_ind = mac_rrc_data_ind;
   Rrc_xface->mac_rrc_data_req = mac_rrc_data_req;
   Rrc_xface->rrc_data_indP    = rlcrrc_data_ind;
@@ -202,20 +202,20 @@ void rrc_rg_init_mac_config(void){
   MAC_CONFIG_REQ Mac_config_req;
 
   // Configure BCCH
-  Mac_config_req.Lchan_type = BCCH;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.UE_CH_index=0;
-  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + BCCH;
+  //  Mac_config_req.Lchan_type = BCCH;
+  //  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
+  //  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&BCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
+  //  Mac_config_req.UE_CH_index=0;
+  //  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + BCCH;
   printk("Calling mac_config_req for BCCH\n");
-  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
+  //  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);
 
   // Configure CCCH
-  Mac_config_req.Lchan_type = CCCH;
-  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
-  Mac_config_req.UE_CH_index=1;
-  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + CCCH;
+  //  Mac_config_req.Lchan_type = CCCH;
+  //  memcpy(&Mac_config_req.Lchan_desc[0],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
+  //  memcpy(&Mac_config_req.Lchan_desc[1],(LCHAN_DESC*)&CCCH_LCHAN_DESC,LCHAN_DESC_SIZE); //0 rx, 1 tx
+  //  Mac_config_req.UE_CH_index=1;
+  //  Mac_config_req.Lchan_id.Index=(0 << RAB_SHIFT2) + CCCH;
   printk("Calling mac_config_req for CCCH\n");
-  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);      
+  //  Mac_rlc_xface->mac_config_req(0,ADD_LC,&Mac_config_req);      
 }

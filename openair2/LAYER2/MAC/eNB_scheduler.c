@@ -22,7 +22,7 @@
 //static char eNB_generate_rrcconnsetup = 0;  // flag to indicate termination of RA procedure (mirror response)
 
 #define DEBUG_eNB_SCHEDULER 1
-#define DEBUG_HEADER_PARSING 1
+//#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
 /*
@@ -184,9 +184,12 @@ void cancel_ra_proc(u8 Mod_id, u16 preamble_index) {
 }
 
 void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
-  u8 i;
-
-  msg("[MAC][eNB %d] Terminating RA procedure for UE rnti %x, Received RRCConnRequest %x,%x,%x,%x,%x,%x\n",Mod_id,rnti,
+  
+  u8 rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr,j;
+  u8 rx_lcids[MAX_NUM_RB];
+  u16 rx_lengths[MAX_NUM_RB];
+  
+  msg("[MAC][eNB %d] Terminating RA procedure for UE rnti %x, Received l3msg %x,%x,%x,%x,%x,%x\n",Mod_id,rnti,
       l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5]);
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
@@ -194,17 +197,26 @@ void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
     if ((eNB_mac_inst[Mod_id].RA_template[i].rnti==rnti) &&
 	(eNB_mac_inst[Mod_id].RA_template[i].RA_active==1)) {
 
-      memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],l3msg,6);
+      payload_ptr = parse_ulsch_header(l3msg,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
-      if (Is_rrc_registered == 1)
-	Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,(char *)l3msg,6,1,Mod_id);
-
+      if ((num_ce == 0) && (num_sdu==1) && (rx_lcids[0] == CCCH)) { // This is an RRCConnectionRequest
+	msg("[MAC][eNB] : Received CCCH: length %d, offset %d\n",rx_lengths[0],payload_ptr-l3msg); 
+	memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],payload_ptr,6);
+	
+	if (Is_rrc_registered == 1)
+	  Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
+      }
+      else if (num_ce >0) {  // handle l3msg which is not RRCConnectionRequest
+	//	process_ra_message(l3msg,num_ce,rx_lcids,rx_ces);
+      }
+     
       eNB_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup = 1;
       eNB_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup = 0;
-
+	
       return;
-    }
-  }
+    } // if process is active
+    
+  } // loop on RA processes
 }
 
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe) {
@@ -404,18 +416,21 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
 #ifdef DEBUG_HEADER_PARSING
     msg("SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
 #endif
-    if (rx_lcids[i] == DCCH) {
+    if ((rx_lcids[i] == DCCH)||(rx_lcids[i] == DCCH1)) {
       //      if(eNB_mac_inst[Mod_id].Dcch_lchan[UE_id].Active==1){
+      /*
       msg("offset: %d\n",(u8)((u8*)payload_ptr-sdu));
       for (j=0;j<32;j++)
 	msg("%x ",payload_ptr[j]);
       msg("\n");
+      */
+      //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
       if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
 	Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
-					DCCH+(UE_id)*MAX_NUM_RB,
+					rx_lcids[i]+(UE_id)*MAX_NUM_RB,
 					(char *)payload_ptr,
-                      rx_lengths[i],
-                      1,
+					rx_lengths[i],
+					1,
 					NULL);//(unsigned int*)crc_status);
       }
       //      }
@@ -976,7 +991,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
   memset(vrb_map,0,100);
 
   // SI DLSCH
-  printf("BCCH check\n");
+  //  printf("BCCH check\n");
   if (eNB_mac_inst[Mod_id].bcch_active == 1) {
     eNB_mac_inst[Mod_id].bcch_active = 0;
 
@@ -1380,7 +1395,29 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  sdu_length_total = 0;
 	}
       }
+
+      // check for DCCH1 and update header information (assume 2 byte sub-header)
+      rlc_status = mac_rlc_status_ind(Mod_id,DCCH+1+(MAX_NUM_RB*next_ue),
+				      (TBS-header_len_dcch-2)); // transport block set size
+
+#ifdef DEBUG_eNB_SCHEDULER
+      msg("[MAC][eNB %d] DCCH1 has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len_dcch+2);
+#endif
+      if (rlc_status.bytes_in_buffer > 0) {
+
+	sdu_lengths[num_sdus] += Mac_rlc_xface->mac_rlc_data_req(Mod_id,
+								 DCCH+1+(MAX_NUM_RB*next_ue),
+								 (char *)&dlsch_buffer[sdu_lengths[0]]);
+	sdu_lcids[num_sdus] = DCCH1;
+	sdu_length_total += sdu_lengths[num_sdus];
+	header_len_dcch += 2;
+	num_sdus++;
+#ifdef DEBUG_eNB_SCHEDULER
+	msg("[MAC][eNB %d] Got %d bytes from RLC\n",Mod_id,sdu_lengths[0]);
+#endif
+      }
       // check for DTCH and update header information
+      // here we should loop over all possible DTCH
 
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
 

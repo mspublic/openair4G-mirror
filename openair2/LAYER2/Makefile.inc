@@ -17,13 +17,9 @@ TIMER_DIR = $(OPENAIR2_TOP)/UTIL/TIMER
 PHY_INTERFACE_DIR = $(OPENAIR2_TOP)/PHY_INTERFACE
 RRC_DIR = $(OPENAIR2_TOP)/RRC/LITE
 L2_INTERFACE_DIR = $(OPENAIR2_TOP)/RRC/L2_INTERFACE
-#SIMULATION_DIR = $(OPENAIR2_TOP)/SIMULATION
 #CONTROL_DIR = $(OPENAIR2_TOP)/SIMULATION/PHY_EMULATION/CONTROL
-#ABSTRACTION_DIR = $(OPENAIR2_TOP)/SIMULATION/PHY_EMULATION/ABSTRACTION
-#TRANSPORT_DIR = $(OPENAIR2_TOP)/SIMULATION/PHY_EMULATION/TRANSPORT
 MAC_DIR = $(OPENAIR2_TOP)/LAYER2/MAC
-#DEVICE_DIR = $(OPENAIR2_TOP)/SIMULATION/PHY_EMULATION/DEVICE_DRIVER
-#RRC_CELL_DIR = $(OPENAIR2_TOP)/RRC/CELLULAR
+RRC_CELL_DIR = $(OPENAIR2_TOP)/RRC/CELLULAR
 LOG_DIR=$(OPENAIR2_TOP)/UTIL/LOG
 OCG_DIR=$(OPENAIR2_TOP)/UTIL/OCG
 OPT_DIR=$(OPENAIR2_TOP)/UTIL/OPT
@@ -37,24 +33,6 @@ SOURCES_L2 +=  $(TIMER_DIR)/umts_timer.c
 
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp.c
 SOURCES_L2 +=  $(PDCP_DIR)/pdcp_fifo.c
-
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_segment.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_fsm.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mux.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_retrans.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_util.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_mac_status.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_demux.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_receiver.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reassembly.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_rx.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_control_primitives.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_reset.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_status.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_timers.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_notif.c
-#SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_discard_tx.c
 
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am.c
 SOURCES_L2 +=  $(RLC_AM_DIR)/rlc_am_init.c
@@ -127,13 +105,36 @@ OMG_OBJS +=  $(OMG_DIR)/rwalk.o
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
-L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(RRC_OBJS) $(LOG_OBJS) $(OPT_OBJS) $(OMG_OBJS)
+L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(LOG_OBJS) $(OPT_OBJS) $(OMG_OBJS)
+include $(RRC_CELL_DIR)/Makefile.inc
+L2_incl = -I$(OPENAIR2_TOP)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH  -I$(OPENAIR2_TOP)/RRC/LITE/MESSAGES -I$(OPENAIR3)/MESH/RRM -I$(OPT_DIR) -I$(OMG_DIR)
+
+ifeq ($(rrc_cellular),1)
+  L2_OBJS += $(RRC_CELLULAR_OBJS)
+  L2_incl += -I$(OPENAIR2_TOP)/RRC/CELLULAR
+  EXTRA_CFLAGS += -DRRC_CELLULAR -DCELLULAR
+else
+  L2_OBJS += $(RRC_OBJS)
+  L2_incl += -I$(OPENAIR2_TOP)/RRC/LITE
+endif
+
 #ifndef CBMIMO1
 ifdef OCG_FLAG
 L2_OBJS+=$(OCG_OBJS)
 endif
 #endif
 
-L2_incl = -I$(OPENAIR2_TOP)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH -I$(OPENAIR2_TOP)/RRC/MESH -I$(OPENAIR2_TOP)/RRC/MESH/MESSAGES -I$(OPENAIR3)/MESH/RRM -I$(OPT_DIR) -I$(OMG_DIR)
+
+
+
 
 #EXTRA_CFLAGS += $(L2_incl)
+
+printl2objs:
+	@echo $(L2_OBJS)
+	@echo rrc_cellular variable is $(rrc_cellular)
+	@echo eNB_flag is $(eNB_flag)
+	@echo UE_flag is $(UE_flag)
+
+printl2incl:
+	@echo $(L2_incl)

@@ -128,7 +128,10 @@ unsigned char mac_rrc_lite_data_req( unsigned char Mod_id,
 //--------------------------------------------------------------------------------------------//
 u8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 eNB_index ){ 
   //------------------------------------------------------------------------------------------//
-  msg("[OPENAIR][RRC]Node =%d: mac_rrc_data_ind to SRB ID=%ld, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
+  if (Srb_id == 3)
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
+  else
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%ld, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
 
   SRB_INFO *Srb_info;
   unsigned short i;
@@ -215,16 +218,15 @@ void mac_lite_sync_ind(u8 Mod_id,u8 Status){
 //------------------------------------------------------------------------------------------------------------------//
 void rlcrrc_lite_data_ind( unsigned char Mod_id, u32 Srb_id, u32 sdu_size,u8 *Buffer){
     //------------------------------------------------------------------------------------------------------------------//
-  //msg("[OPENAIR][RRC]Mod_id=%d: rlc_rrc_data_ind to SRB ID=%d, size %d,...\n",Mod_id,Srb_id,sdu_size);
-  // usleep(1000000);
+
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
 
   msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
         Srb_id,sdu_size);
   if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
-    rrc_eNB_decode_dcch(Mod_id,UE_index,Buffer,sdu_size);
+    rrc_eNB_decode_dcch(Mod_id,Srb_id,UE_index,Buffer,sdu_size);
   else
-    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,Buffer,UE_index);
+    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,Srb_id,Buffer,UE_index);
   
 } 
  

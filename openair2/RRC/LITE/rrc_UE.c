@@ -1,6 +1,6 @@
-/*________________________openair_rrc_main.c________________________
+/*________________________rrc_UE.c________________________
 
-  Authors : Hicham Anouar, Raymond Knopp
+  Authors : Raymond Knopp
   Company : EURECOM
   Emails  : knopp@eurecom.fr
   ________________________________________________________________*/
@@ -229,6 +229,31 @@ s32 rrc_ue_establish_srb1(u8 Mod_id,u8 eNB_index,
   return(0);
 }
 
+s32 rrc_ue_establish_srb2(u8 Mod_id,u8 eNB_index,
+			 struct SRB_ToAddMod *SRB_config) { // add descriptor from RRC PDU
+
+  u8 lchan_id = DCCH1;
+
+  UE_rrc_inst[Mod_id].Srb2[eNB_index].Active = 1;
+  UE_rrc_inst[Mod_id].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Srb_id = 2;
+
+    // copy default configuration for now
+  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+  memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+
+
+  msg("[RRC][UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",
+      Mod_id,
+      lchan_id,
+      eNB_index);
+
+  Mac_rlc_xface->rrc_rlc_config_req(Mod_id+NB_eNB_INST,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
+
+
+  return(0);
+}
 
 s32 rrc_ue_establish_drb(u8 Mod_id,u8 eNB_index,
 			 struct DRB_ToAddMod *DRB_config) { // add descriptor from RRC PDU
@@ -297,7 +322,9 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
   if (radioResourceConfigDedicated->srb_ToAddModList) {
 
     for (cnt=0;cnt<radioResourceConfigDedicated->srb_ToAddModList->list.count;cnt++) {
+
       SRB_id = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]->srb_Identity;
+      msg("[RRC][UE%d]: SRB config cnt %d (SRB%d)\n",Mod_id,cnt,SRB_id);
       if (SRB_id == 1) {
 	if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]) {
 	  memcpy(UE_rrc_inst[Mod_id].SRB1_config[eNB_index],radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt],
@@ -315,10 +342,9 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 		 sizeof(struct SRB_ToAddMod));
 	}
 	else {
-	  UE_rrc_inst[Mod_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
+	  UE_rrc_inst[Mod_id].SRB2_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
 	  //	  ret = rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
-	  msg("[RRC][UE] Can't establish SRB2 yet\n");
 	}
 
       }
@@ -368,13 +394,18 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 }
 
 /*------------------------------------------------------------------------------------------*/
-void  rrc_ue_decode_dcch(u8 Mod_id,u8 *Buffer,u8 eNB_index){
+void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
   DL_DCCH_Message_t dldcchmsg;
   DL_DCCH_Message_t *dl_dcch_msg=&dldcchmsg;
   asn_dec_rval_t dec_rval;
   int i;
+
+  if (Srb_id != 1) {
+    msg("[RRC][eNB %d] Frame %d: Received message on SRB2, should not have ...\n",Mod_id,Mac_rlc_xface->frame);
+    return;
+  }
 
   memset(dl_dcch_msg,0,sizeof(DL_DCCH_Message_t));
 
