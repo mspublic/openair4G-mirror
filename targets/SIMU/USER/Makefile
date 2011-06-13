@@ -11,7 +11,7 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
@@ -24,6 +24,19 @@ OCG_FLAG = 1
 endif
 
 #CFLAGS += -DXFORMS
+
+ifndef rrc_cellular
+rrc_cellular = 0
+rrc_cellular_eNB = 0
+rrc_cellular_UE = 0
+else
+  ifeq ($(eNB_flag),1)
+    rrc_cellular_eNB=1
+  endif
+  ifeq ($(UE_flag),1)
+    rrc_cellular_UE=1
+  endif
+endif
 
 ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
@@ -68,9 +81,10 @@ OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(
 
 all: oaisim
 
-cygprint:
+printvars:
 	@echo CYGWIN variable is $(cygwin)
-
+	@echo rrc_cellular variable is $(rrc_cellular)
+	@echo EXTRA_CFLAGS = $(EXTRA_CFLAGS)
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
@@ -80,7 +94,12 @@ $(L2_OBJS) : %.o : %.c
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
 	echo CYGWIN variable is $(cygwin)
 	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
-
+ifeq ($(rrc_cellular_eNB),1)
+	mv oaisim oaisim_eNB
+endif
+ifeq ($(rrc_cellular_UE),1)
+	mv oaisim oaisim_UE
+endif
 
 clean:
 	rm -f oaisim

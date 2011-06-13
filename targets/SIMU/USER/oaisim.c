@@ -394,6 +394,13 @@ int main(int argc, char **argv) {
     }
   }
 
+  // fix ethernet and abstraction with RRC_CELLULAR Flag
+#ifdef RRC_CELLULAR
+  abstraction_flag=1;
+  ethernet_flag=0;
+  
+#endif
+
   if (set_sinr==0)
     sinr_dB = snr_dB-20;
 
@@ -519,10 +526,12 @@ int main(int argc, char **argv) {
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
-    if (abstraction_flag ==0)	
+
+    // update UE_mode for each eNB_id not just 0
+    if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
     else
-      PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;		
+      PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0]=4;
   }// end navid 
