@@ -410,9 +410,9 @@ typedef struct {
 typedef struct {
   /// UL RSSI per receive antenna
   s32 UL_rssi[NB_ANTENNAS_RX];
-  /// DL CQI (2 TBs)
+  /// DL Wideband CQI index (2 TBs)
   u8 DL_cqi[2];
-  /// DL Subband CQI (from HLC feedback)
+  /// DL Subband CQI index (from HLC feedback)
   u8 DL_subband_cqi[2][13];
   /// DL PMI Single Stream
   u16 DL_pmi_single;
