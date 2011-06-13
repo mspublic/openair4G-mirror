@@ -44,6 +44,7 @@ ________________________________________________________________*/
 #define BCCH 3
 #define CCCH 0
 #define DCCH 1
+#define DCCH1 2
 #define DTCH_BD 2
 #define DTCH    3
 #define DTCH_OFFSET DTCH+NB_RAB_MAX 
@@ -434,9 +435,65 @@ u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 void out_of_sync_ind(u8 Mod_id,u16);
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
+
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
-u8* ue_get_rach(u8 Mod_id,u8 CH_index);
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH
+mode for a particular eNB index, this is assumed to be an RRCConnectionRequest message and MAC attempts to retrieves the CCCH
+message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not
+activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 
+36.321)
+@param Mod_id Index of UE instance
+@param eNB_index Index of eNB from which to act
+ */
+u8* ue_get_rach(u8 Mod_id,u8 eNB_index);
+
 u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
+
+/* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
+in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
+in the ULSCH buffer.
+@param mac_header Pointer to the first byte of the MAC header (UL-SCH buffer)
+@param num_sdus Number of SDUs in the payload
+@param short_padding Number of bytes for short padding (0,1,2)
+@param sdu_lengths Pointer to array of SDU lengths
+@param sdu_lcids Pointer to array of LCIDs (the order must be the same as the SDU length array)
+@param power_headroom Pointer to power headroom command (NULL means not present in payload)
+@param crnti Pointer to CRNTI command (NULL means not present in payload)
+@param truncated_bsr Pointer to Truncated BSR command (NULL means not present in payload)
+@param short_bsr Pointer to Short BSR command (NULL means not present in payload)
+@param long_bsr Pointer to Long BSR command (NULL means not present in payload)
+@returns Number of bytes used for header
+*/
+unsigned char generate_ulsch_header(u8 *mac_header,
+				    u8 num_sdus,
+				    u8 short_padding,
+				    u16 *sdu_lengths,
+				    u8 *sdu_lcids,
+				    POWER_HEADROOM_CMD *power_headroom,
+				    u16 *crnti,
+				    BSR_SHORT *truncated_bsr,
+				    BSR_SHORT *short_bsr,
+				    BSR_LONG *long_bsr);
+
+/* \brief Parse header for UL-SCH.  This function parses the received UL-SCH header as described
+in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
+in the ULSCH buffer.
+@param mac_header Pointer to the first byte of the MAC header (UL-SCH buffer)
+@param num_ces Number of SDUs in the payload
+@param num_sdu Number of SDUs in the payload
+@param rx_ces Pointer to received CEs in the header
+@param rx_lcids Pointer to array of LCIDs (the order must be the same as the SDU length array)
+@param rx_lengths Pointer to array of SDU lengths
+@returns Pointer to payload following header
+*/
+u8 *parse_ulsch_header(u8 *mac_header,
+		       u8 *num_ce,
+		       u8 *num_sdu,
+		       u8 *rx_ces,
+		       u8 *rx_lcids,
+		       u16 *rx_lengths);
+
+
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
 int mac_init(void);
 

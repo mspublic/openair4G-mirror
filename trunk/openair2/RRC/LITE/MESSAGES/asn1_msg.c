@@ -513,6 +513,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,
+			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated) {
 
 
@@ -523,10 +524,10 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   long *logicalchannelgroup;
   
-  struct SRB_ToAddMod *SRB1_config2;
-  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config;
-  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
+  struct SRB_ToAddMod *SRB1_config2,*SRB2_config2;
+  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config,*SRB2_rlc_config;
+  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config,*SRB2_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters,*SRB2_ul_SpecificParameters;
   SRB_ToAddModList_t *SRB_list;
 
   PhysicalConfigDedicated_t *physicalConfigDedicated2;
@@ -596,6 +597,58 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
+
+  /// SRB2
+  SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
+  *SRB2_config = SRB2_config2;
+
+  SRB2_config2->srb_Identity = 2;
+  SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
+  SRB2_config2->rlc_Config   = SRB2_rlc_config;
+  
+  SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
+  SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit,T_PollRetransmit_ms45);
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit=T_PollRetransmit_ms45;
+ 
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU,PollPDU_pInfinity);
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU=PollPDU_pInfinity;
+
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte,PollPDU_pInfinity);
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte=PollPDU_pInfinity;
+
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold,UL_AM_RLC__maxRetxThreshold_t4);
+  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold=UL_AM_RLC__maxRetxThreshold_t4;
+
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering,T_Reordering_ms35);
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering=T_Reordering_ms35;
+
+  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit,T_StatusProhibit_ms0);
+  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
+  
+  SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
+  SRB2_config2->logicalChannelConfig   = SRB2_lchan_config;
+
+  SRB2_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
+  SRB2_ul_SpecificParameters = CALLOC(1,sizeof(*SRB2_ul_SpecificParameters));
+
+  SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
+
+
+  SRB2_ul_SpecificParameters->priority = 1;
+
+  //assign_enum(&SRB2_ul_SpecificParameters->prioritisedBitRate,LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity);
+  SRB2_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+
+  //assign_enum(&SRB2_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
+  SRB2_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+
+  logicalchannelgroup = CALLOC(1,sizeof(long));
+  *logicalchannelgroup=0;
+  SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
+
+
+  ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
 
   // PhysicalConfigDedicated
 

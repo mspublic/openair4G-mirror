@@ -28,7 +28,7 @@
 
 //#define DEBUG_RACH_MAC
 //#define DEBUG_RACH_RRC
-#define DEBUG_SI_RRC
+//#define DEBUG_SI_RRC
 //#define DEBUG_HEADER_PARSING
 
 /*
@@ -161,7 +161,17 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 				      rx_lengths[i],
 				      1,
 				      NULL);
-    }else if (rx_lcids[i] == DTCH) {
+    }
+    else if (rx_lcids[i] == DCCH1) {
+      msg("[MAC][UE %d] RX  DCCH1 \n",Mod_id);
+      Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
+				      DCCH1,
+				      (char *)payload_ptr,
+				      rx_lengths[i],
+				      1,
+				      NULL);
+    }
+    else if (rx_lcids[i] == DTCH) {
       debug_msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DTCH,
@@ -170,20 +180,8 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 				      1,
 				      NULL);
     }
-    /* else if (rx_lcids[i] == DTCH) {
-      Mac_rlc_xface->mac_rlc_data_ind(Mod_id,
-				      DTCH,
-				      (u8 *)payload_ptr,
-				      rx_lengths[i],
-				      1,
-				      NULL);
-				      }*/
-    payload_ptr+=rx_lengths[i];
+
   }
-  /*
-
-
-	*/
 }
 
 void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
@@ -200,18 +198,39 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
 
 
   u8 Size=0;
+  UE_MODE_t UE_mode = mac_xface->get_ue_mode(Mod_id,eNB_index);
+  u8 lcid = CCCH,payload_offset;
+  u16 Size16;
 
-  if (Is_rrc_registered == 1) {
-    Size = Rrc_xface->mac_rrc_data_req(Mod_id,
-				       CCCH,1,
-				       (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],0,
-				       eNB_index);
-    msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
-    if (Size>0)
-      return((char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
+  if (UE_mode == PRACH) {
+    if (Is_rrc_registered == 1) {
+      Size = Rrc_xface->mac_rrc_data_req(Mod_id,
+					 CCCH,1,
+					 (char*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[sizeof(SCH_SUBHEADER_SHORT)],0,
+					 eNB_index);
+      Size16 = (u16)Size;
+
+      msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
+      if (Size>0) {
+	payload_offset = generate_ulsch_header((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],  // mac header
+					       1,      // num sdus
+					       0,            // short pading
+					       &Size16,  // sdu length
+					       &lcid,    // sdu lcid
+					       NULL,  // power headroom
+					       NULL,  // crnti
+					       NULL,  // truncated bsr
+					       NULL, // short bsr
+					       NULL); // long_bsr
+	return((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0]);
+      }
+    }
   }
+  else if (UE_mode == PUSCH) {
+    msg("[MAC][UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...",Mod_id);
+    mac_xface->macphy_exit("");
+  } 
   return(NULL);
-
 }
 
 unsigned char generate_ulsch_header(u8 *mac_header,
@@ -405,9 +424,8 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len,dtch_header_len;
-  u16 sdu_size_dcch,sdu_lengths[8],i;
+  u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
-  u8 DCCH_not_empty;
 
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
   u16 sdu_length_total=0;
@@ -420,33 +438,51 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
 
   // Check for DCCH first
-  DCCH_not_empty=1;
+
   sdu_lengths[0]=0;
-  //  while (DCCH_not_empty==1) {
-    rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
-				    DCCH,
-				    (buflen-dcch_header_len-sdu_length_total));
-    msg("[MAC][UE %d] RLC status for DCCH : %d\n",
-	Mod_id,rlc_status.bytes_in_buffer);
 
-    if (rlc_status.bytes_in_buffer>0) {
-      msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total,Mod_id+NB_eNB_INST);
+  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+				  DCCH,
+				  (buflen-dcch_header_len-sdu_length_total));
+  msg("[MAC][UE %d] RLC status for DCCH : %d\n",
+      Mod_id,rlc_status.bytes_in_buffer);
+  
+  if (rlc_status.bytes_in_buffer>0) {
+    msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total,Mod_id+NB_eNB_INST);
+    
+    sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
+						      DCCH,
+						      (char *)&ulsch_buff[sdu_lengths[0]]);
+    sdu_length_total += sdu_lengths[0];
+    sdu_lcids[0] = DCCH;
+    msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
+    num_sdus = 1;
+    //header_len +=2;
+  }
+  else {
+    dcch_header_len=0;
+    num_sdus = 0;
+  }
 
-      sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
-							DCCH,
-							&ulsch_buff[sdu_lengths[0]]);
-      sdu_length_total += sdu_lengths[0];
-      sdu_lcids[0] = DCCH;
-      msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
-      num_sdus = 1;
-      //header_len +=2;
-      DCCH_not_empty=0;
-    }
-    else {
-      DCCH_not_empty=0;
-      dcch_header_len=0;
-    }
-    //  }
+  // DCCH1
+  rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+				  DCCH1,
+				  (buflen-dcch_header_len-2-sdu_length_total));
+  msg("[MAC][UE %d] RLC status for DCCH1 : %d\n",
+      Mod_id,rlc_status.bytes_in_buffer);
+  
+  if (rlc_status.bytes_in_buffer>0) {
+    msg("[MAC][UE %d] DCCH1 has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len+2,sdu_length_total,Mod_id+NB_eNB_INST);
+    
+    sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
+						     DCCH,
+							    (char *)&ulsch_buff[sdu_lengths[0]]);
+    sdu_length_total += sdu_lengths[num_sdus];
+    sdu_lcids[num_sdus] = DCCH1;
+    msg("[MAC][UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
+    num_sdus++;
+    dcch_header_len +=2;
+  }
 
   dtch_header_len = 3;
   if ((sdu_length_total +dcch_header_len + dtch_header_len )< buflen) {
@@ -471,7 +507,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
       }
       sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
 							      DTCH,
-							      &ulsch_buff[sdu_length_total]);
+							      (char *)&ulsch_buff[sdu_length_total]);
 
       msg("[MAC][UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
 
@@ -535,6 +571,12 @@ void ue_scheduler(u8 Mod_id, u8 subframe) {
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
 
+  // Get RLC status info for all lcids that are active
+
+  // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
+  // outlined in Sections 5.4.4 an 5.4.5 of 36.321
+
+  // Call PHR procedure as described in Section 5.4.6 in 36.321
 }
 
 

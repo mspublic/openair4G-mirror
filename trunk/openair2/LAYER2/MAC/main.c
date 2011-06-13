@@ -300,7 +300,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS                = get_TBS;
   mac_xface->get_nCCE_max           = get_nCCE_max;
-
+  mac_xface->get_ue_mode            = get_ue_mode;
   mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;
   mac_xface->phy_config_sib1_ue    = phy_config_sib1_ue;
 

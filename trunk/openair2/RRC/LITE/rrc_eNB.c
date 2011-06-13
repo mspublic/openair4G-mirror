@@ -1,6 +1,6 @@
-/*________________________openair_rrc_main.c________________________
+/*________________________rrc_eNB.c________________________
 
-  Authors : Hicham Anouar, Raymond Knopp
+  Authors : Raymond Knopp
   Company : EURECOM
   Emails  : knopp@eurecom.fr
   ________________________________________________________________*/
@@ -155,13 +155,16 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 }
 
 /*------------------------------------------------------------------------------*/
-void rrc_eNB_decode_dcch(u8 Mod_id,  u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
+void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
   UL_DCCH_Message_t uldcchmsg;
   UL_DCCH_Message_t *ul_dcch_msg=&uldcchmsg;
 
+  if (Srb_id != 1) {
+    msg("[RRC][eNB %d] Frame %d: Received message on SRB%d, should not have ...\n",Mod_id,Mac_rlc_xface->frame,Srb_id);
+  }
 
   memset(ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
 
@@ -289,19 +292,28 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 
 
 	Idx = (UE_index * MAX_NUM_RB) + DCCH;
+	// SRB1
 	eNB_rrc_inst[Mod_id].Srb1[UE_index].Active = 1;
 	eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Srb_id = Idx;
 	memcpy(&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 	memcpy(&eNB_rrc_inst[Mod_id].Srb1[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
-
+	// SRB2
+	eNB_rrc_inst[Mod_id].Srb2[UE_index].Active = 1;
+	eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Srb_id = Idx;
+	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
+	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 	rrc_eNB_generate_RRCConnectionSetup(Mod_id,UE_index);
 
 	msg("[OPENAIR][RRC] CALLING RLC CONFIG SRB1 (rbid %d) for UE %d\n",
 	    Idx,UE_index);
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
-
+	/*
+	msg("[OPENAIR][RRC] CALLING RLC CONFIG SRB2 (rbid %d) for UE %d\n",
+	    Idx,UE_index);
+	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx+1,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+	*/
 
 #endif //NO_RRM
 	break;
@@ -372,6 +384,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
   eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size = do_RRCConnectionSetup((u8 *)eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.Payload,
 								   UE_index,0,
 								   &eNB_rrc_inst[Mod_id].SRB1_config[UE_index],
+								   &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
 								   &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
   msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH : 0 ",Mod_id,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,UE_index);

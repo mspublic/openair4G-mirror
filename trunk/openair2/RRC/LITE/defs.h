@@ -1,8 +1,8 @@
-/*________________________openair_rrc_defs.h________________________
+/*________________________defs.h________________________
 
- Authors : Hicham Anouar
+ Authors : Raymond Knopp
  Company : EURECOM
- Emails  : anouar@eurecom.fr
+ Emails  : knopp@eurecom.fr
 ________________________________________________________________*/
 
 
@@ -223,12 +223,14 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info,u8 CH_index);
 
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param Mod_id Instance ID of UE
+    \param Srb_id Index of Srb (1,2)
     \param Buffer Pointer to received SDU
     \param CH_index Index of corresponding CH/eNB*/
-void rrc_ue_decode_dcch(u8 Mod_id, u8* Buffer,u8 CH_index);
+void rrc_ue_decode_dcch(u8 Mod_id, u8 Srb_id, u8* Buffer,u8 CH_index);
 
 /** \brief Generate/Encodes RRCConnnectionRequest message at UE 
     \param Mod_id Instance ID of UE
+    \param Srb_id Index of Srb (1,2)
     \param CH_index Index of corresponding eNB/CH*/
 void rrc_ue_generate_RRCConnectionRequest(u8 Mod_id, u8 CH_index);
 
@@ -243,6 +245,13 @@ void rrc_ue_generate_RRCConnectionSetupComplete(u8 Mod_id,u8 CH_index);
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
 s32  rrc_ue_establish_srb1(u8 Mod_id,u8 CH_index,struct SRB_ToAddMod *SRB_config);
+
+/** \brief Establish SRB2 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
+    \param Mod_id Instance ID of UE
+    \param CH_index Index of corresponding eNB/CH
+    \param SRB_config Pointer to SRB_ToAddMod IE from configuration
+    @returns 0 on success*/
+s32  rrc_ue_establish_srb2(u8 Mod_id,u8 CH_index,struct SRB_ToAddMod *SRB_config);
 
 /** \brief Establish a DRB according to DRB_ToAddMod structure
     \param Mod_id Instance ID of UE
@@ -270,7 +279,7 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
    \param UE_index Index of UE sending the message
    \param Rx_sdu Pointer Received Message
    \param sdu_size Size of incoming SDU*/
-void rrc_eNB_decode_dcch(u8 Mod_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
+void rrc_eNB_decode_dcch(u8 Mod_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
 
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param Mod_id Instance ID for eNB/CH
@@ -336,7 +345,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t *buffer);
 uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer);
 
 /** 
-\brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1) and 
+\brief Generate an RRCConnectionSetup DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and 
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param UE_id UE index for this message
@@ -348,6 +357,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,
+			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
 /** 

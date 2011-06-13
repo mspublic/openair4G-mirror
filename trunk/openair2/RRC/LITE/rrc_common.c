@@ -7,6 +7,8 @@
 
 #include "defs.h"
 #include "extern.h"
+#include "LAYER2/MAC/extern.h"
+#include "COMMON/openair_defs.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"

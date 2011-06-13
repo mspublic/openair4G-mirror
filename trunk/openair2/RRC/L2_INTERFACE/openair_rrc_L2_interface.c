@@ -54,7 +54,7 @@ ________________________________________________________________*/
 #endif //CELLULAR
 #include "COMMON/mac_rrc_primitives.h"
 #include "openair_rrc_L2_interface.h"
-
+ 
 /********************************************************************************************************************/
 u8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
 /********************************************************************************************************************/
@@ -63,8 +63,8 @@ u8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 e
 #else 
   mac_rrc_lite_data_req(Mod_id,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index);
 #endif //CELLULAR
-}
-
+}   
+   
 /********************************************************************************************************************/
 u8 mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
