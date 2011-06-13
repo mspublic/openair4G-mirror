@@ -1027,6 +1027,8 @@ u8 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
     diff_cqi = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]) - sinr2cqi(meas->subband_cqi_dB[eNB_id][i][0]);
+
+    // Note, this is Table 7.2.1-2 from 36.213
     if (diff_cqi<=-1)
       diff_cqi = 3;
     else if (diff_cqi>2)

@@ -157,7 +157,11 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
 }
 #endif
 
+UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 
+  return(PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index]);
+
+}
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,u16 timing_advance) {
   
   u8 card_id;
@@ -570,14 +574,17 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
       
       if (RRCConnReq_flag == 1) {
-	msg("[PHY][UE %d] Frame %d, Subframe %d next slot %d Generating RRCConnReq (nb_rb %d, first_rb %d) : %x,%x,%x,%x,%x,%x\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1, next_slot, 
+	msg("[PHY][UE %d] Frame %d, Subframe %d next slot %d Generating RRCConnReq (nb_rb %d, first_rb %d) : %x.%x.%x.%x.%x.%x.%x.%x.%x\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1, next_slot, 
 	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,		     
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][0],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][1],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][2],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][3],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][4],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][5]);
+	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][5],
+	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][6],
+	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][7],
+	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][8]);
 	if (abstraction_flag==0)
 	  ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,phy_vars_ue->transmission_mode[eNB_id],0);
 
