@@ -45,7 +45,7 @@ unsigned char mac_rrc_lite_data_req( unsigned char Mod_id,
   u16 tmp;
 
 #ifdef DEBUG_RRC
-  msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%ld\n",Mod_id,Srb_id);
+  msg("[RRC] Mod_id=%d: mac_rrc_data_req to SRB ID=%d\n",Mod_id,Srb_id);
 #endif
 
   if( eNB_flag == 1){
@@ -131,7 +131,7 @@ u8 mac_rrc_lite_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
   if (Srb_id == 3)
     msg("[RRC]Node =%d: mac_rrc_data_ind to SI, eNB_UE_INDEX %d...\n",Mod_id,eNB_index); 
   else
-    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%ld, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
+    msg("[RRC]Node =%d: mac_rrc_data_ind to SRB ID=%d, eNB_UE_INDEX %d...\n",Mod_id,Srb_id,eNB_index); 
 
   SRB_INFO *Srb_info;
   unsigned short i;
