@@ -5,6 +5,7 @@
 #include "rtos_header.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
+#include "rlc.h"
 #include "LAYER2/MAC/extern.h"
 #define TRACE_RLC_AM_RESEGMENT
 #define TRACE_RLC_AM_FORCE_TRAFFIC
