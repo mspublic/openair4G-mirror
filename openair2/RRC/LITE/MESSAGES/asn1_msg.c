@@ -518,7 +518,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   asn_enc_rval_t enc_rval;
-  uint8_t ecause;
+  uint8_t ecause=0;
   
 
 
