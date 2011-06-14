@@ -61,25 +61,25 @@ void init_SI(u8 Mod_id) {
 
     msg("SIB2/3 Contents (partial)\n");
       
-    msg("pusch_config_common.n_SB = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+    msg("pusch_config_common.n_SB = %l\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
     
     
-    msg("pusch_config_common.hoppingMode = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+    msg("pusch_config_common.hoppingMode = %l\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
     
-    msg("pusch_config_common.pusch_HoppingOffset = %d\n",  eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+    msg("pusch_config_common.pusch_HoppingOffset = %l\n",  eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
     
     msg("pusch_config_common.enable64QAM = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
     
     msg("pusch_config_common.groupHoppingEnabled = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
     
     
-    msg("pusch_config_common.groupAssignmentPUSCH = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+    msg("pusch_config_common.groupAssignmentPUSCH = %l\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
     
     
     msg("pusch_config_common.sequenceHoppingEnabled = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
     
     
-    msg("pusch_config_common.cyclicShift  = %d\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);  
+    msg("pusch_config_common.cyclicShift  = %l\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);  
     
     Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,0,0,
 				      (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
