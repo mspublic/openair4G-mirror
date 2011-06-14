@@ -381,7 +381,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
-  uint8_t ecause;
+  uint8_t ecause=0;
 
   UL_CCCH_Message_t ul_ccch_msg;
 
