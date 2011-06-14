@@ -324,7 +324,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
     for (cnt=0;cnt<radioResourceConfigDedicated->srb_ToAddModList->list.count;cnt++) {
 
       SRB_id = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]->srb_Identity;
-      msg("[RRC][UE%d]: SRB config cnt %d (SRB%d)\n",Mod_id,cnt,SRB_id);
+      msg("[RRC][UE%d]: SRB config cnt %d (SRB%ld)\n",Mod_id,cnt,SRB_id);
       if (SRB_id == 1) {
 	if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]) {
 	  memcpy(UE_rrc_inst[Mod_id].SRB1_config[eNB_index],radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt],
