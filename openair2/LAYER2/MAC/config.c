@@ -36,25 +36,25 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     if (eNB_flag==1) {
       msg("SIB2/3 Contents (partial)\n");
       
-      msg("pusch_config_common.n_SB = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+      msg("pusch_config_common.n_SB = %l\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
       
       
-      msg("pusch_config_common.hoppingMode = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+      msg("pusch_config_common.hoppingMode = %l\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
       
-      msg("pusch_config_common.pusch_HoppingOffset = %d\n",  radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+      msg("pusch_config_common.pusch_HoppingOffset = %l\n",  radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
       
       msg("pusch_config_common.enable64QAM = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
       
       msg("pusch_config_common.groupHoppingEnabled = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
       
       
-      msg("pusch_config_common.groupAssignmentPUSCH = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+      msg("pusch_config_common.groupAssignmentPUSCH = %l\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
       
       
       msg("pusch_config_common.sequenceHoppingEnabled = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
       
       
-      msg("pusch_config_common.cyclicShift  = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift); 
+      msg("pusch_config_common.cyclicShift  = %l\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift); 
       mac_xface->phy_config_sib2_eNB(Mod_id,radioResourceConfigCommon);
     }
     else
