@@ -20,4 +20,5 @@ protected_rlc_am_timer_status_prohibit(void rlc_am_check_timer_poll_retransmit(r
 protected_rlc_am_timer_status_prohibit(void rlc_am_stop_and_reset_timer_poll_retransmit(rlc_am_entity_t *rlcP);)
 protected_rlc_am_timer_status_prohibit(void rlc_am_start_timer_status_prohibit(rlc_am_entity_t *rlcP);)
 protected_rlc_am_timer_status_prohibit(void rlc_am_init_timer_status_prohibit(rlc_am_entity_t *rlcP, u32_t time_outP);)
+protected_rlc_am_timer_status_prohibit(void rlc_am_check_timer_status_prohibit(rlc_am_entity_t *rlcP);)
 #endif
