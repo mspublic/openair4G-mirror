@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #define rtf_put write
 #define rtf_get read
 
