@@ -50,6 +50,31 @@ void init_ue_sched_info(void){
     }
   }
 }
+
+
+//added for ALU icic purpose
+
+u8 get_sb_size(u8 n_rb_dl){
+
+	if(n_rb_dl<27)
+		return 4;
+	else
+		if(n_rb_dl<64)
+			return 6;
+		else
+			return 8;
+	}
+
+void* Get_Cell_SBMAP(u8 Mod_id){
+
+	u8 SB_id;
+	for(SB_id=0;SB_id<13;SB_id++)
+		PHY_vars_UE_g[Mod_id]->lte_frame_parms.sbmap_conf.sbmap[SB_id]=1;	
+	
+}
+
+//end ALU's algo
+
 void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe, UE_ULSCH_STATUS status){
 
   eNB_ulsch_info[Mod_id][UE_id].rnti             = find_UE_RNTI(Mod_id,UE_id);

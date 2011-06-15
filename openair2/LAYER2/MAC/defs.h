@@ -398,6 +398,12 @@ u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
 
+//ICIC algos
+u8 get_sb_size(u8 n_rb_dl);
+void* Get_Cell_SBMAP(u8 Mod_id);
+
+//end ALU's algo
+
 /** \brief Round-robin scheduler for ULSCH traffic.
 @param Mod_id Instance ID for eNB
 @param subframe Subframe number on which to act
