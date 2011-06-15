@@ -353,6 +353,22 @@ typedef struct {
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
 
+
+
+///subband bitmap coniguration (for ALU icic algo purpose), in test phase
+
+typedef struct{
+	void (*get_cell_sbmap)(u8 Mod_id);
+	u8* sbmap;
+	u8 periodicity;
+	u8 first_subframe;
+	u8 sb_size;
+	u8 nb_active_sb;
+
+}SBMAP_CONF;
+
+//end ALU's algo
+
 typedef struct {
   /// Number of resource blocks (RB) in DL
   u8 N_RB_DL;                
@@ -422,6 +438,9 @@ typedef struct {
   u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
   u16 SIPeriod;
+  ///subband bitmap configuration
+  SBMAP_CONF sbmap_conf;
+
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
