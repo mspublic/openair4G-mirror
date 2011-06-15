@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   // get command-line options
-  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1) {
+  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:R:r:n:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1) {
     switch (c) {
     case 'F':   // set FDD
       frame_type=0;
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
       break;
     case 'R': 
       N_RB_DL=atoi(optarg);
-      if ((N_RB_DL!=6)||(N_RB_DL!=15)||(N_RB_DL!=25)||(N_RB_DL!=50)||(N_RB_DL!=75)||(N_RB_DL!=100)) {
+      if ((N_RB_DL!=6)&&(N_RB_DL!=15)&&(N_RB_DL!=25)&&(N_RB_DL!=50)&&(N_RB_DL!=75)&&(N_RB_DL!=100)) {
 	msg("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n",N_RB_DL);
 	exit(-1);
       }
