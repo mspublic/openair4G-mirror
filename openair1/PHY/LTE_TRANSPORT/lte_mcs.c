@@ -302,12 +302,5 @@ u8 Get_SB_size(u8 n_rb_dl){
 			return 8;
 	}
 
-void* Get_Cell_SBMap(u8 Mod_id){
-
-	u8 SB_id;
-	for(SB_id=0;SB_id<13;SB_id++)
-		 eNB_mac_inst[Mod_id].sbmap_conf.sbmap[SB_id]=1;
-
-}
 
 //end ALU's algo
