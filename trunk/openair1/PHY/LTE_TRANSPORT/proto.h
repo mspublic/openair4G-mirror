@@ -1096,8 +1096,6 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 //ICIC algos
 u8 Get_SB_size(u8 n_rb_dl);
-void* Get_Cell_SBMap(u8 Mod_id);
-
 //end ALU's algo
 
 
