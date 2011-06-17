@@ -174,7 +174,7 @@ int mac_top_init(){
 
   //ICIC init param
 
-  u8 SB_size=mac_xface->get_sb_size(mac_xface->lte_frame_parms.N_RB_DL);
+u8 SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
   srand (time(NULL));
 
   for(j=0;j<NB_eNB_INST;j++){
@@ -301,7 +301,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
   mac_xface->get_SB_size			   = Get_SB_size;
-  mac_xface->get_Cell_SBMap            = Get_Cell_SBMap;
+
 
 
   //UE MAC functions    
