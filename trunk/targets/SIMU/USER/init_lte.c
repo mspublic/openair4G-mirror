@@ -81,23 +81,6 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
-  //ICIC init param
-
-  (*frame_parms)->sbmap_conf.first_subframe=0;
-  (*frame_parms)->sbmap_conf.periodicity=10;
-  (*frame_parms)->sbmap_conf.sb_size=get_sb_size(N_RB_DL);
-  (*frame_parms)->sbmap_conf.nb_active_sb=1;
-
-  u8* sbmap=malloc(13*sizeof(u8));
-  for(i=0;i<13;i++)
-	  sbmap[i]=0;
-  srand (time(NULL));
-  sbmap[rand()%14]=1;
-  (*frame_parms)->sbmap_conf.sbmap=sbmap;
-  (*frame_parms)->sbmap_conf.get_cell_sbmap=Get_Cell_SBMAP;
-
-  //end ALU's algo
-
 
   init_frame_parms(*frame_parms,1);
   //copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
