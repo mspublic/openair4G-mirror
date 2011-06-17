@@ -405,6 +405,11 @@ void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
 u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
+//added for ALU icic purpose
+void Get_Cell_SBMap(u8 Mod_id);
+//end ALU's algo
+
+
 
 void init_ue_sched_info(void);
 void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_ULSCH_STATUS status);
