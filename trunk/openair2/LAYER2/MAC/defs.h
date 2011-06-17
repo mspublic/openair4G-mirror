@@ -284,6 +284,21 @@ typedef struct {
   s16 RRC_timer;
 } RA_TEMPLATE;
 
+
+///subband bitmap coniguration (for ALU icic algo purpose), in test phase
+
+typedef struct{
+	u8 sbmap[13]; //13 = number of SB MAX for 100 PRB
+	u8 periodicity;
+	u8 first_subframe;
+	u8 sb_size;
+	u8 nb_active_sb;
+
+}SBMAP_CONF;
+
+//end ALU's algo
+
+
 typedef struct{
   /// 
   u16 Node_id;
@@ -301,6 +316,9 @@ typedef struct{
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// BCCH active flag
   u8 bcch_active;
+  ///subband bitmap configuration
+  SBMAP_CONF sbmap_conf;
+
 }eNB_MAC_INST;
 
 
@@ -397,12 +415,6 @@ s8 find_active_UEs(u8 Mod_id);
 u16 find_ulgranted_UEs(u8 Mod_id);
 u16 find_dlgranted_UEs(u8 Mod_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
-
-//ICIC algos
-u8 get_sb_size(u8 n_rb_dl);
-void* Get_Cell_SBMAP(u8 Mod_id);
-
-//end ALU's algo
 
 /** \brief Round-robin scheduler for ULSCH traffic.
 @param Mod_id Instance ID for eNB
