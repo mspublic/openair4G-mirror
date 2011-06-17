@@ -166,6 +166,11 @@ typedef struct
     /// PHY Frame Configuration
     LTE_DL_FRAME_PARMS *lte_frame_parms;
 
+    //ICIC algos
+    u8 (*get_SB_size)(u8 n_rb_dl);
+    void* (*get_Cell_SBMap)(u8 Mod_id);
+
+    //end ALU's algo
     
   } MAC_xface;
 
