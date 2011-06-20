@@ -9,8 +9,10 @@
 void rlc_am_init(rlc_am_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 {
+    int saved_allocation = rlcP->allocation;
     msg ("[FRAME %05d][RLC_AM][MOD XX][RB XX][INIT] STATE VARIABLES, BUFFERS, LISTS\n", mac_xface->frame);
     memset(rlcP, 0, sizeof(rlc_am_entity_t));
+    rlcP->allocation = saved_allocation;
 
     list2_init(&rlcP->receiver_buffer,      "RX BUFFER");
     list_init(&rlcP->pdus_to_mac_layer,     "PDUS TO MAC");

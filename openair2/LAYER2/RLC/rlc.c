@@ -22,7 +22,7 @@ extern void pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t d
 #define DEBUG_RLC_DATA_REQ 1
 
 //-----------------------------------------------------------------------------
-rlc_op_status_t rlc_stat_req     (module_id_t module_idP, 
+rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                                               rb_id_t        rb_idP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,
@@ -32,7 +32,7 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 							  unsigned int* tx_data_pdu,
 							  unsigned int* tx_control_pdu,
 							  unsigned int* rx_sdu,
-							  unsigned int* rx_error_pdu,  
+							  unsigned int* rx_error_pdu,
 							  unsigned int* rx_data_pdu,
 							  unsigned int* rx_data_pdu_out_of_window,
 							  unsigned int* rx_control_pdu) {
@@ -57,7 +57,7 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
                         break;
 
                     case RLC_AM:
-                          rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], 
+                          rlc_am_stat_req     (&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 							  tx_pdcp_sdu,
 							  tx_pdcp_sdu_discarded,
 							  tx_retransmit_pdu_unblock,
@@ -66,7 +66,7 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 							  tx_data_pdu,
 							  tx_control_pdu,
 							  rx_sdu,
-							  rx_error_pdu,  
+							  rx_error_pdu,
 							  rx_data_pdu,
 							  rx_data_pdu_out_of_window,
 							  rx_control_pdu);
@@ -86,12 +86,12 @@ rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
             			*rx_data_pdu = 0;
             			*rx_data_pdu_out_of_window = 0;
             			*rx_control_pdu = 0;
-                    rlc_um_stat_req     (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], 
+                    rlc_um_stat_req     (&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
 							  tx_pdcp_sdu,
 							  tx_pdcp_sdu_discarded,
 							  tx_data_pdu,
 							  rx_sdu,
-							  rx_error_pdu,  
+							  rx_error_pdu,
 							  rx_data_pdu,
 							  rx_data_pdu_out_of_window);
                         return RLC_OP_STATUS_OK;
@@ -262,7 +262,7 @@ void rlc_data_ind     (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_si
 	  sduP,
 	  sdu_sizeP,
           rb_idP);
-#endif //DEBUG_RLC_PDCP_INTERFACE    
+#endif //DEBUG_RLC_PDCP_INTERFACE
        pdcp_data_ind (module_idP, rb_idP, sdu_sizeP, sduP);
     } else {
         if (rlc_rrc_data_ind != NULL) {
@@ -272,7 +272,7 @@ void rlc_data_ind     (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sdu_si
 	    sduP,
 	    sdu_sizeP,
             rb_idP);
-#endif //DEBUG_RLC_PDCP_INTERFACE    
+#endif //DEBUG_RLC_PDCP_INTERFACE
 	  // msg("[RLC] RRC DATA IND\n");
             rlc_rrc_data_ind(module_idP , rb_idP , sdu_sizeP , sduP->data);
 	  //msg("[RLC] Freeing SDU\n");
@@ -294,6 +294,7 @@ int
 rlc_module_init ()
 {
 //-----------------------------------------------------------------------------
+   msg("[RLC] MODULE INIT\n");
    rlc_rrc_data_ind  = NULL;
    rlc_rrc_data_conf = NULL;
    memset(rlc, sizeof(rlc_t) * MAX_MODULES, 0);
