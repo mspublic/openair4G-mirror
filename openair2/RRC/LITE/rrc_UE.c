@@ -242,13 +242,14 @@ s32 rrc_ue_establish_srb2(u8 Mod_id,u8 eNB_index,
   memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
   memcpy(&UE_rrc_inst[Mod_id].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
-
+  
   msg("[RRC][UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",
       Mod_id,
       lchan_id,
       eNB_index);
 
   Mac_rlc_xface->rrc_rlc_config_req(Mod_id+NB_eNB_INST,ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
+  
   //  UE_rrc_inst[Mod_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size=DEFAULT_MEAS_IND_SIZE+1;
 
 
@@ -283,16 +284,20 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u8 eNB_index,
   return(0);
 }
 
+
+
+
 void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
 
   long SRB_id,DRB_id;
   int i,ret,cnt;
+  LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
 
   // Save physicalConfigDedicated if present
   if (radioResourceConfigDedicated->physicalConfigDedicated) {
     if (UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index]) {
-      memcpy(UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],radioResourceConfigDedicated->physicalConfigDedicated,
+      memcpy((char*)UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],(char*)radioResourceConfigDedicated->physicalConfigDedicated,
 	     sizeof(struct PhysicalConfigDedicated));
 
     }
@@ -302,9 +307,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
   }
   // Apply macMainConfig if present
   if (radioResourceConfigDedicated->mac_MainConfig) {
-    if (radioResourceConfigDedicated->mac_MainConfig->present == RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue)
-      memcpy(&UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],&radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue,
-	     sizeof(MAC_MainConfig_t));
+    if (radioResourceConfigDedicated->mac_MainConfig->present == RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue) {
+      if (UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index]) {
+	memcpy((char*)UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],(char*)&radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue,
+	       sizeof(MAC_MainConfig_t));
+      }
+      else
+	UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index] = &radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
+    }
   }
 
   // Apply spsConfig if present
@@ -320,7 +330,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
-
+  
     for (cnt=0;cnt<radioResourceConfigDedicated->srb_ToAddModList->list.count;cnt++) {
 
       SRB_id = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -334,6 +344,27 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	  UE_rrc_inst[Mod_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
 	  ret = rrc_ue_establish_srb1(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig) {
+	    if (UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+	      SRB1_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB1_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
+	    }
+	    else {
+	      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	    }
+	  }
+	  else {
+	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	  }
+	  
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+					    (RadioResourceConfigCommonSIB_t *)NULL,
+					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+					    1,
+					    SRB1_logicalChannelConfig,
+					    NULL,
+					    NULL,
+					    NULL);
 	}
       }
       else {
@@ -342,11 +373,32 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 		 sizeof(struct SRB_ToAddMod));
 	}
 	else {
+	  
 	  UE_rrc_inst[Mod_id].SRB2_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
 
-	  //	  ret = rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  ret = rrc_ue_establish_srb2(Mod_id,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
+	  if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig) {
+	    if (UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->present == SRB_ToAddMod__logicalChannelConfig_PR_explicitValue){
+	      SRB2_logicalChannelConfig = &UE_rrc_inst[Mod_id].SRB2_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
+	    }
+	    else {
+	      SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
+	    }
+	  }
+	  else {
+	    SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
+	  }
+	  
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+					    (RadioResourceConfigCommonSIB_t *)NULL,
+					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+					    2,
+					    SRB2_logicalChannelConfig,
+					    (TDD_Config_t *)NULL,
+					    (u8 *)NULL,
+					    (u16 *)NULL);
 	}
-
       }
     }
   }
@@ -355,7 +407,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
   if (radioResourceConfigDedicated->drb_ToAddModList) {
 
     for (i=0;i<radioResourceConfigDedicated->drb_ToAddModList->list.count;i++) {
-      DRB_id = radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity-1;
+      DRB_id   = radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity-1;
       if (UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]) {
 	memcpy(UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id],radioResourceConfigDedicated->drb_ToAddModList->list.array[i],
 	       sizeof(struct DRB_ToAddMod));
@@ -364,17 +416,26 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id] = radioResourceConfigDedicated->drb_ToAddModList->list.array[i];
 
 	ret = rrc_ue_establish_drb(Mod_id,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
+	// MAC/PHY Configuration
+	Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+					  (RadioResourceConfigCommonSIB_t *)NULL,
+					  UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
+					  UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
+					  *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
+					  UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+					  (TDD_Config_t*)NULL,
+					  (u8 *)NULL,
+					  (u16 *)NULL);
+
       }
     }
   }
 
   UE_rrc_inst[Mod_id].Info[eNB_index].Status = RRC_CONNECTED;
 
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,NULL,
-				    radioResourceConfigDedicated->physicalConfigDedicated,NULL,NULL,NULL);
 
 }
-
+  
 
 void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
@@ -392,7 +453,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
     // check other fields for
   }
 }
-
+  
 /*------------------------------------------------------------------------------------------*/
 void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
@@ -443,7 +504,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
 
 	msg("[RRC][UE] Frame %d: Processing RRCConnectionReconfiguration from eNB %d\n",
 	    Mac_rlc_xface->frame,eNB_index);
-	ue_rrc_process_rrcConnectionReconfiguration(Mod_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
@@ -469,7 +530,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
     send_msg(&S_rrc,msg_rrc_end_scan_req(Mod_id,eNB_index));
 #endif
 }
-
+  
 const char siWindowLength[7][5] = {"1ms\0","2ms\0","5ms\0","10ms\0","15ms\0","20ms\0","40ms\0"};
 const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 
@@ -513,12 +574,15 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
   Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
 				    (struct PhysicalConfigDedicated *)NULL,
+				    (MAC_MainConfig_t *)NULL,
+				    0,
+				    (struct LogicalChannelConfig *)NULL,
 				    UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
 }
 
-
+  
 void dump_sib2(SystemInformationBlockType2_t *sib2) {
 
   msg("radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles : %ld\n",
@@ -645,7 +709,10 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
       dump_sib2(UE_rrc_inst[Mod_id].sib2[eNB_index]);
       Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
 					&UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
-					(struct PhysicalConfigDedicated_t *)NULL,
+					(struct PhysicalConfigDedicated *)NULL,
+					(MAC_MainConfig_t *)NULL,
+					0,
+					(struct LogicalChannelConfig *)NULL,
 					(TDD_Config_t *)NULL,
 					NULL,
 					NULL);
@@ -690,7 +757,7 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
     default:
       break;
     }
-
+    
     typeandinfo=(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[1+i];
 
   }

@@ -93,6 +93,7 @@ int mac_top_init(){
   unsigned char  Mod_id,i,j;  
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
+  u8 SB_size;
 
   msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
 #if ((PHY_EMUL==1)||(PHYSIM==1))
@@ -174,7 +175,8 @@ int mac_top_init(){
 
   //ICIC init param
 
-u8 SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
+
   srand (time(NULL));
 
   for(j=0;j<NB_eNB_INST;j++){
@@ -300,7 +302,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size			   = Get_SB_size;
+  mac_xface->get_SB_size	       = Get_SB_size;
 
 
 

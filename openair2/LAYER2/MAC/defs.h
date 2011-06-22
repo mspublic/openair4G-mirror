@@ -57,52 +57,52 @@ ________________________________________________________________*/
 #define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
 
-/*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
-
 #define NB_RA_PROC_MAX 4
 
 typedef struct {
-  u8 E:1;
-  u8 T:1;
   u8 RAPID:6;
+  u8 T:1;
+  u8 E:1;
 } __attribute__((__packed__))RA_HEADER_RAPID;
 
 typedef struct {
-  u8 E:1;
-  u8 T:1;
-  u8 R:2;
   u8 BI:4;
+  u8 R:2;
+  u8 T:1;
+  u8 E:1;
 } __attribute__((__packed__))RA_HEADER_BI;
 
 typedef struct {
-  u8 R:1;
-  u16 Timing_Advance_Command:11;
-  u8 hopping_flag:1;
-  u16 rb_alloc:10;
-  u8 mcs:4;
-  u8 TPC:3;
-  u8 UL_delay:1;
-  u8 cqi_req:1;
-  u16 t_crnti;
+  u64 t_crnti:16;
+  u64 hopping_flag:1;
+  u64 rb_alloc:10;
+  u64 mcs:4;
+  u64 TPC:3;
+  u64 UL_delay:1;
+  u64 cqi_req:1;
+  u64 Timing_Advance_Command:11;  // first/2nd octet LSB
+  u64 R:1;                        // octet MSB
+  u64 padding:16;
 } __attribute__((__packed__))RAR_PDU;
+#define sizeof_RAR_PDU 6
 
 typedef struct {
-  u8 LCID:5;
-  u8 E:1;
-  u8 R:2;
-  u8 L:7;
-  u8 F:1;
+  u16 LCID:5;  // octet 1 LSB
+  u16 E:1;
+  u16 R:2;     // octet 1 MSB
+  u16 L:7;     // octet 2 LSB
+  u16 F:1;     // octet 2 MSB
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
-  u8 LCID:5;
-  u8 E:1;
-  u8 R:2;
-  u16 L:7;
-  u8 F:1;
-  u8 L2:8;
+  u32 LCID:5;   // octet 1 LSB
+  u32 E:1;
+  u32 R:2;      // octet 1 MSB
+  u32 L:15;      // octet 3/2 LSB
+  u32 F:1;      // octet 2 MSB     
+  u32 padding:8; 
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
-
+ 
 typedef struct {
   u8 LCID:5;
   u8 E:1;
@@ -110,17 +110,18 @@ typedef struct {
 } __attribute__((__packed__))SCH_SUBHEADER_FIXED;
 
 typedef struct {
-  u8 Buffer_size:6;
-  u8 LCGID:2;
+  u8 Buffer_size:6;  // octet 1 LSB
+  u8 LCGID:2;        // octet 1 MSB
 } __attribute__((__packed__))BSR_SHORT;
 
 typedef BSR_SHORT BSR_TRUNCATED;
 
 typedef struct {
-  u8 Buffer_size0:6;
-  u8 Buffer_size1:6;
-  u8 Buffer_size2:6;
-  u8 Buffer_size3:6;
+  u32 Buffer_size3:6;
+  u32 Buffer_size2:6;
+  u32 Buffer_size1:6;
+  u32 Buffer_size0:6;
+  u32 padding:8;
 } __attribute__((__packed__))BSR_LONG;
 
 typedef struct {
@@ -321,11 +322,27 @@ typedef struct{
 
 }eNB_MAC_INST;
 
-
-
+typedef struct {
+  /// Pointer to RRC MAC configuration
+  MAC_MainConfig_t *config;
+  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
+  LogicalChannelConfig_t *logicalChannelConfig[11];
+  /// LCHAN buffer status
+  u16 buffer_status[16];
+  /// SR pending as defined in 36.321
+  u8 SR_pending;
+  /// SR_COUNTER as defined in 36.321
+  u16 SR_COUNTER;
+  /// retxBSR-Timer
+  u16 retxBSR_Timer;
+  /// periodicBSR-Timer
+  u16 periodicBSR_Timer;
+} UE_SCHEDULING_INFO;
 
 typedef struct{
   u16 Node_id;
+  /// Scheduling Information 
+  UE_SCHEDULING_INFO scheduling_info;
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
@@ -341,6 +358,9 @@ typedef struct{
 int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
+		       MAC_MainConfig_t *mac_MainConfig,
+		       long logicalChannelIdentity,
+		       LogicalChannelConfig_t *logicalChannelConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);

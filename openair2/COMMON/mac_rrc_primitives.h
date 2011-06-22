@@ -349,6 +349,9 @@ typedef struct{
   int (*rrc_mac_config_req)(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated,
+			    MAC_MainConfig_t *mac_MainConfig,
+			    long logicalChannelIdentity,
+			    LogicalChannelConfig_t *logicalChannelConfig,
 			    TDD_Config_t *tdd_Config,
 			    u8 *SIwindowsize,
 			    u16 *SIperiod);
