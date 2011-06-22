@@ -36,6 +36,11 @@ extern unsigned short Header_read_idx,Data_read_idx,Header_size;
 extern unsigned short Data_to_read;
 #endif //NO_RRM
 
+extern u8 DRB2LCHAN[8];
+
+extern LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue;
+extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
+
 
 #ifndef PHY_EMUL
 #ifndef PHYSIM

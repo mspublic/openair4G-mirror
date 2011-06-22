@@ -152,7 +152,8 @@ typedef struct rlc_t {
     struct rlc_tm_entity m_rlc_tm_array[RLC_MAX_NUM_INSTANCES_RLC_TM];
 }rlc_t;
 
-protected_rlc(rlc_t rlc[MAX_MODULES];)
+// RK-LG was protected, public for debug
+public_rlc(rlc_t rlc[MAX_MODULES];)
 
 private_rlc_mac(tbs_size_t            mac_rlc_serialize_tb   (char*, list_t);)
 private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t *);)

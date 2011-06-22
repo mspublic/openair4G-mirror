@@ -22,7 +22,7 @@
 //static char eNB_generate_rrcconnsetup = 0;  // flag to indicate termination of RA procedure (mirror response)
 
 #define DEBUG_eNB_SCHEDULER 1
-//#define DEBUG_HEADER_PARSING 1
+#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
 /*
@@ -194,7 +194,7 @@ void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
       l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5]);
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
-    msg("Checking proc %d : rnti %x, active %d\n",i,eNB_mac_inst[Mod_id].RA_template[i].rnti,eNB_mac_inst[Mod_id].RA_template[i].RA_active);
+    msg("Checking proc %d (%x) : rnti %x, active %d\n",i,eNB_mac_inst[Mod_id].RA_template[i].rnti,eNB_mac_inst[Mod_id].RA_template[i].rnti,eNB_mac_inst[Mod_id].RA_template[i].RA_active);
     if ((eNB_mac_inst[Mod_id].RA_template[i].rnti==rnti) &&
 	(eNB_mac_inst[Mod_id].RA_template[i].RA_active==1)) {
 
@@ -344,7 +344,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   unsigned char not_done=1,num_ces=0,num_sdus=0,lcid;
   unsigned char *mac_header_ptr = mac_header;
   unsigned short length;
-
+ 
   while (not_done==1) {
 
     if (((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E == 0)
@@ -358,7 +358,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 	mac_header_ptr += sizeof(SCH_SUBHEADER_SHORT);
       }
       else {
-	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L + ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2)<<7);
+	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
 	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
       }
 #ifdef DEBUG_HEADER_PARSING
@@ -575,8 +575,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7f;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2   = (sdu_lengths[i]>>7)&0xff;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7fff;
 
       last_size=3;
             printf("long sdu\n");

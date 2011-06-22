@@ -29,7 +29,7 @@
 //#define DEBUG_RACH_MAC
 //#define DEBUG_RACH_RRC
 //#define DEBUG_SI_RRC
-//#define DEBUG_HEADER_PARSING
+#define DEBUG_HEADER_PARSING
 
 /*
 #ifndef USER_MODE
@@ -61,7 +61,7 @@ unsigned char *parse_header(unsigned char *mac_header,
 	mac_header_ptr += sizeof(SCH_SUBHEADER_SHORT);
       }
       else {
-	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L + ((((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2)<<7);
+	length = ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L;
 	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
       }
 #ifdef DEBUG_HEADER_PARSING
@@ -248,6 +248,11 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   unsigned char first_element=0,last_size=0,i;
   unsigned char mac_header_control_elements[16],*ce_ptr;
 
+#ifdef DEBUG_HEADER_PARSING
+  msg("[UE][MAC] Generate ULSCH : num_sdus %d\n",num_sdus);
+  for (i=0;i<num_sdus;i++)
+    msg("sdu %d : lcid %d length %d\n",i,sdu_lcids[i],sdu_lengths[i]);
+#endif
   ce_ptr = &mac_header_control_elements[0];
 
   if ((short_padding == 1) || (short_padding == 2)) {
@@ -284,7 +289,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   }
 
   if (crnti) {
-    //    printf("Timing advance : %d (first_element %d)\n",timing_advance_cmd,first_element);
+#ifdef DEBUG_HEADER_PARSING
+    msg("CRNTI : %x (first_element %d)\n",*crnti,first_element);
+#endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
       mac_header_ptr++;
@@ -315,7 +322,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    //    msg("[MAC][UE %d] Scheduler Truncated BSR Header\n",Mod_id);
+#ifdef DEBUG_HEADER_PARSING
+    msg("[MAC][UE] Scheduler Truncated BSR Header\n");
+#endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = TRUNCATED_BSR;
@@ -339,7 +348,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    //    msg("[MAC][UE %d] Scheduler SHORT BSR Header\n",Mod_id);
+#ifdef DEBUG_HEADER_PARSING
+    msg("[MAC][UE] Scheduler SHORT BSR Header\n");
+#endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = SHORT_BSR;
@@ -363,7 +374,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
     else {
       first_element=1;
     }
-    //    msg("[MAC][UE %d] Scheduler Long BSR Header\n",Mod_id);
+#ifdef DEBUG_HEADER_PARSING
+    msg("[MAC][UE] Scheduler Long BSR Header\n");
+#endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
     mac_header_ptr->LCID = LONG_BSR;
@@ -376,39 +389,53 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
 
   for (i=0;i<num_sdus;i++) {
-    //    printf("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
-
+#ifdef DEBUG_HEADER_PARSING
+    msg("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+#endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
-      //      printf("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
-      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
-      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
-      //	     ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+#ifdef DEBUG_HEADER_PARSING
+      msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
+	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
+	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
+#endif
       mac_header_ptr+=last_size;
       //      printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
     }
     else {
       first_element=1;
-    }
+ 
+    } 
     if (sdu_lengths[i] < 128) {
-      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 0;
+      ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R    = 3;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F    = 0;
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID = sdu_lcids[i];
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
       last_size=2;
-      //printf("short sdu\n");
+#ifdef DEBUG_HEADER_PARSING
+      msg("short sdu\n");
+      msg("last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
+	  ((u16*)mac_header_ptr)[0],
+	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R,
+	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E,
+	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->LCID,
+	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->F,
+	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L);
+#endif
     }
     else {
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->R    = 0;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->E    = 0;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->F    = 1;
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->LCID = sdu_lcids[i];
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7f;
-      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L2   = (sdu_lengths[i]>>7)&0xff;
+      ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7fff;
 
       last_size=3;
-      //printf("long sdu\n");
+#ifdef DEBUG_HEADER_PARSING
+      msg("long sdu\n");
+#endif
     }
   }
 
@@ -416,6 +443,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   memcpy((void*)mac_header_ptr,mac_header_control_elements,ce_ptr-mac_header_control_elements);
   mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
 
+#ifdef DEBUG_HEADER_PARSING
+  msg("MAC header : ");
+  for (i=0;i<((unsigned char*)mac_header_ptr - mac_header);i++) 
+    msg("%2x.",mac_header[i]);
+  msg("\n");
+#endif
   return((unsigned char*)mac_header_ptr - mac_header);
 
 }

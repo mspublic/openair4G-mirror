@@ -166,6 +166,7 @@ typedef struct{
   struct SRB_ToAddMod             *SRB1_config[NB_CNX_eNB];
   struct SRB_ToAddMod             *SRB2_config[NB_CNX_eNB];
   struct DRB_ToAddMod             *DRB_config[NB_CNX_eNB][8];
+  u8                               DRB_active[NB_CNX_eNB][8];
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_eNB];
   struct SPS_Config               *sps_Config[NB_CNX_eNB];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_eNB];
@@ -200,7 +201,7 @@ typedef struct{
   struct DRB_ToAddMod             *DRB_config[NB_CNX_UE][8];
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
   struct SPS_Config               *sps_Config[NB_CNX_UE];
-  MAC_MainConfig_t                mac_MainConfig[NB_CNX_UE];
+  MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
 }UE_RRC_INST;
 
 //main.c
