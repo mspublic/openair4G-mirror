@@ -35,7 +35,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
-
+ 
 #define RF
 
 //#define DEBUG_SIM 
@@ -455,7 +455,7 @@ int main(int argc, char **argv) {
 
   init_lte_vars(&frame_parms, frame_type, tdd_config, extended_prefix_flag, N_RB_DL, Nid_cell, cooperation_flag, transmission_mode, abstraction_flag);
 
-
+ 
   if (abstraction_flag==0)
     init_channel_vars(frame_parms,&s_re,&s_im,&r_re,&r_im,&r_re0,&r_im0);
 
@@ -609,7 +609,9 @@ int main(int argc, char **argv) {
 
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
+#ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
+#endif
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
 	    len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
