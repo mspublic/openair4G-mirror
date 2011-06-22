@@ -204,12 +204,13 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 	dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][8];
 	dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][8];
-	
+#ifdef DEBUG_PHY	
 	if(eNB_id==0){
 	  print_shorts("Ch0",dl_ch0_128);
-	print_shorts("Ch1",dl_ch1_128);
-	printf("eNB_ID = %d\n",eNB_id);
+	  print_shorts("Ch1",dl_ch1_128);
+	  printf("eNB_ID = %d\n",eNB_id);
 	}
+#endif
 	for (subband=0;subband<7;subband++) {
 	  
 	  
