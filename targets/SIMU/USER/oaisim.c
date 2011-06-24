@@ -334,12 +334,20 @@ int main(int argc, char **argv) {
       break;
     case 'u':
       emu_info.nb_ue_local = atoi(optarg);
+      if (emu_info.nb_ue_local > 8) {
+	printf("Enter fewer than 8 UEs for the moment\n");
+	exit(-1);
+      }
       break;
       //	case 'U':
       //nb_ue_remote = atoi(optarg);
       //break;
     case 'b':
       emu_info.nb_enb_local = atoi(optarg);
+      if (emu_info.nb_enb_local > 3) {
+	printf("Enter fewer than 4 eNBs for the moment\n");
+	exit(-1);
+      }
       break;
       //	case 'B':
       // nb_eNB_remote = atoi(optarg);
@@ -455,7 +463,8 @@ int main(int argc, char **argv) {
 
   init_lte_vars(&frame_parms, frame_type, tdd_config, extended_prefix_flag, N_RB_DL, Nid_cell, cooperation_flag, transmission_mode, abstraction_flag);
 
- 
+  printf("Nid_cell %d\n",frame_parms->Nid_cell);
+
   if (abstraction_flag==0)
     init_channel_vars(frame_parms,&s_re,&s_im,&r_re,&r_im,&r_re0,&r_im0);
 
@@ -560,7 +569,7 @@ int main(int argc, char **argv) {
 #endif
   if (abstraction_flag==1) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
-      mac_xface->chbch_phy_sync_success(UE_id,UE_id%NB_eNB_INST);
+      mac_xface->chbch_phy_sync_success(UE_id,0);//UE_id%NB_eNB_INST);
   }
 #endif 
  
@@ -590,9 +599,9 @@ int main(int argc, char **argv) {
 	clear_eNB_transport_info(emu_info.nb_enb_local);
       
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
-#ifdef DEBUG_SIM
-	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p)\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext);
-#endif
+	//#ifdef DEBUG_SIM
+	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
+	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
 	//if ((mac_xface->frame % 10) == 0) {
 	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
