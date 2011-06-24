@@ -27,8 +27,9 @@ int generate_pss(mod_sym_t **txdataF,
   short *primary_sync;
 #endif
 
-  //debug_msg("[PSS] Using sequence %d\n",eNb_id);
   Nid2 = frame_parms->Nid_cell % 3;
+  msg("[PHY][PSS] Using sequence %d\n",Nid2);
+
   switch (Nid2) {
   case 0:
 #ifdef IFFT_FPGA

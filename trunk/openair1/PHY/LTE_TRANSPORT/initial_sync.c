@@ -323,7 +323,7 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
 #ifdef OPENAIR2
     msg("[openair][SCHED][SYNCH] Sending synch status to higher layers\n");
     //mac_resynch();
-    mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->lte_ue_common_vars.eNb_id);
+    mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
     phy_vars_ue->UE_mode[0] = PRACH;
 #endif //OPENAIR2
   }

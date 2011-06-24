@@ -20,7 +20,7 @@
 //#endif
 
 
-//#define DEBUG_PHY_PROC
+#define DEBUG_PHY_PROC
 
 
 #ifdef OPENAIR2
@@ -714,17 +714,17 @@ void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 a
 
 	    }
 #ifdef DEBUG_PHY_PROC
-	    debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
-		      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,
-		      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]-114,
-		      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]);
+	    msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
+		phy_vars_ue->Mod_id,mac_xface->frame,next_slot,
+		43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]-114,
+		43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]);
 #endif
 	    phy_vars_ue->prach_timer++;
 	    if (phy_vars_ue->prach_timer==10)
 	      phy_vars_ue->prach_timer=0;
 	  }
 #ifdef DEBUG_PHY_PROC
-	  debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
+	  msg("[PHY][UE %d] Frame %d, slot %d: Generating PRACH for UL, TX power %d dBm (PL %d dB)\n",
 	      phy_vars_ue->Mod_id,mac_xface->frame,next_slot,
 	      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]-114,
 	      43-phy_vars_ue->PHY_measurements.rx_rssi_dBm[0]);
@@ -903,7 +903,7 @@ void lte_ue_pbch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   u16 frame_tx;
 
   for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
-    printf("[PHY][UE %d] Trying PBCH %d (NidCell %d)\n",phy_vars_ue->Mod_id,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell);
+    //    printf("[PHY][UE %d] Trying PBCH %d (NidCell %d)\n",phy_vars_ue->Mod_id,pbch_phase,phy_vars_ue->lte_frame_parms.Nid_cell);
     if (abstraction_flag == 0) {
       pbch_tx_ant = rx_pbch(&phy_vars_ue->lte_ue_common_vars,
 			    phy_vars_ue->lte_ue_pbch_vars[eNB_id],
