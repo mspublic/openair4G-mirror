@@ -66,7 +66,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
- 
+
+  printf("init lte parms: Nid_cell %d\n",Nid_cell);
+
   *frame_parms = malloc(sizeof(LTE_DL_FRAME_PARMS));
   (*frame_parms)->frame_type         = frame_type;
   (*frame_parms)->tdd_config         = tdd_config;
@@ -97,7 +99,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+eNB_id;
+    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
     PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
     phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,
 		     &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars,
