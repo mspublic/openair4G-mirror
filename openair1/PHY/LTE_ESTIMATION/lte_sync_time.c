@@ -108,12 +108,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
 
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    //    primary_synch0_time[i+frame_parms->nb_prefix_samples] = sync_tmp[2*i];
     primary_synch0_time[i] = sync_tmp[2*i];
-  // this is the CP
-  /*  for (i=0; i<frame_parms->nb_prefix_samples; i++)
-    primary_synch0_time[i] = sync_tmp[2*(frame_parms->ofdm_symbol_size-frame_parms->nb_prefix_samples+i)];
-  */
 
   k=frame_parms->ofdm_symbol_size-36;
   for (i=0; i<72; i++) {
@@ -135,13 +130,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
       0) ;                           /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    //    primary_synch1_time[i+frame_parms->nb_prefix_samples] = sync_tmp[2*i];
     primary_synch1_time[i] = sync_tmp[2*i];
-  // this is the CP
-  /*
-  for (i=0; i<frame_parms->nb_prefix_samples; i++)
-    primary_synch1_time[i] = sync_tmp[2*(frame_parms->ofdm_symbol_size-frame_parms->nb_prefix_samples+i)];
-  */
+
   k=frame_parms->ofdm_symbol_size-36;
   for (i=0; i<72; i++) {
     syncF_tmp[2*k] = primary_synch2[2*i]>>2;  //we need to shift input to avoid overflow in fft
@@ -162,19 +152,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *com
       0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
-    //primary_synch2_time[i+frame_parms->nb_prefix_samples] = sync_tmp[2*i];
     primary_synch2_time[i] = sync_tmp[2*i];
-  // this is the CP
-  /*  for (i=0; i<frame_parms->nb_prefix_samples; i++)
-    primary_synch2_time[i] = sync_tmp[2*(frame_parms->ofdm_symbol_size-frame_parms->nb_prefix_samples+i)];
-  */
+
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
-  /*
-  write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples,1,1);
-  write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples,1,1);
-  write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples,1,1);
-  */
   write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
   write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
@@ -351,9 +332,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 }
 
+#define DEBUG_PHY
+
 int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      int eNB_id,
 		      int length,
 		      int *peak_val_out,
 		      unsigned int *sync_corr_eNB) {
@@ -363,6 +345,7 @@ int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
   unsigned int n, ar, peak_val, peak_pos, mean_val;
   int result;
   short *primary_synch_time;
+  int eNB_id = frame_parms->Nid_cell%3;
 
   // msg("[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
   if (sync_corr_eNB == NULL) {
@@ -397,11 +380,11 @@ int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0;ar<frame_parms->nb_antennas_rx;ar++)  {
-#ifndef USER_MODE
-      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 15);
-#else
-      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 12);
-#endif
+	//#ifndef USER_MODE
+      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
+	//#else
+	//      	result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 12);
+	//#endif
 	//((short*)sync_corr)[2*n]   += ((short*) &result)[0];
 	//((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
 	sync_corr_eNB[n] += abs32(result);
@@ -409,7 +392,13 @@ int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
       }
 
     }
-    mean_val += sync_corr_eNB[n]>>10;
+    /*
+    if (eNB_id == 2) {
+      printf("sync_time_eNB %d : %d,%d (%d)\n",n,sync_corr_eNB[n],mean_val,
+	     peak_val);
+    }
+    */
+    mean_val += (sync_corr_eNB[n]>>10);
 
     if (sync_corr_eNB[n]>peak_val) {
       peak_val = sync_corr_eNB[n];
@@ -421,13 +410,13 @@ int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 
   if (peak_val <= (40*mean_val)) {
 #ifdef DEBUG_PHY
-    debug_msg("[SYNC TIME] No peak found (%u,%u,%u)\n",peak_pos,peak_val,mean_val);
+    msg("[SYNC TIME] No peak found (%u,%u,%u,%u)\n",peak_pos,peak_val,mean_val,40*mean_val);
 #endif
     return(-1);
   }
   else {
 #ifdef DEBUG_PHY
-    debug_msg("[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
+    msg("[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %u\n",peak_pos,peak_val,mean_val);
 #endif
     return(peak_pos);
   }

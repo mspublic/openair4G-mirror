@@ -1,4 +1,4 @@
-/*________________________phy_procedures_lte.c________________________
+/*________________________phy_procedures_lte_eNB.c________________
 
   Authors : Raymond Knopp, Florian Kaltenberger
   Company : EURECOM
@@ -14,23 +14,20 @@
 #include "SCHED/extern.h"
 
 //#define DEBUG_PHY_PROC
-//#ifdef CBMIMO1
+
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
-//#endif
 
 
-#ifdef USER_MODE
-//#define DEBUG_PHY
-#endif
+
  
 #ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #endif
 
-#define DIAG_PHY
+//#define DIAG_PHY
 
 #define NS_PER_SLOT 500000
 
@@ -361,7 +358,6 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
       
       sync_pos = lte_sync_time_eNB(eNB_sync_buffer, 
 				   &phy_vars_eNB->lte_frame_parms, 
-				   eNB_id,
 				   (phy_vars_eNB->lte_frame_parms.symbols_per_tti/2 - PRACH_SYMBOL) * 
 				   (phy_vars_eNB->lte_frame_parms.ofdm_symbol_size+phy_vars_eNB->lte_frame_parms.nb_prefix_samples),
 				   &sync_val,
@@ -435,8 +431,8 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
     }
     else {
 #ifdef DEBUG_PHY_PROC
-      debug_msg("[PHY][eNB%d] Frame %d, slot %d: No user found\n",
-		phy_vars_eNB->Mod_id,mac_xface->frame,last_slot);
+      msg("[PHY][eNB%d] Frame %d, slot %d: No user found\n",
+	  phy_vars_eNB->Mod_id,mac_xface->frame,last_slot);
 #endif
       max_peak_val = 0;
       max_sect_id = 0;
@@ -1372,8 +1368,8 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 	  *n1_pucch0 = -1;
       }
       else if (subframe == 3) {   // ACK subframes 7 and 8
-	printf("********get_n1_pucch_eNB : subframe 3, subframe_tx[7] %d, subframe_tx[8] %d\n",
-	       phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[7],phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[8]);
+	//	printf("********get_n1_pucch_eNB : subframe 3, subframe_tx[7] %d, subframe_tx[8] %d\n",
+	//	       phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[7],phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[8]);
 
 	if (phy_vars_eNB->dlsch_eNB[UE_id][0]->subframe_tx[8]>0) {
 	  nCCE1 = phy_vars_eNB->dlsch_eNB[UE_id][0]->nCCE[8];

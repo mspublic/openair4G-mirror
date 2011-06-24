@@ -43,7 +43,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
-\param eNb_id return value with the eNb_id
 \param length Length for correlation
 \param peak_val pointer to value of returned peak 
 \param sync_corr_eNb pointer to correlation buffer
@@ -51,7 +50,6 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 */
 int lte_sync_time_eNB(int **rxdata, 
 		      LTE_DL_FRAME_PARMS *frame_parms,
-		      int eNb_id,
 		      int length,
 		      int* peak_val,
 		      unsigned int* sync_corr_eNb);
