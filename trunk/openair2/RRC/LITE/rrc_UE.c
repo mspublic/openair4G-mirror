@@ -57,7 +57,7 @@ char openair_rrc_ue_init(u8 Mod_id, unsigned char eNB_index){
   /*-----------------------------------------------------------------------------*/
 
 
-  msg("[OPENAIR][RRC] INIT UE %d\n",Mod_id);
+  msg("[OPENAIR][RRC] INIT UE %d (eNB %d)\n",Mod_id,eNB_index);
 
   UE_rrc_inst[Mod_id].Info[eNB_index].Status=RRC_IDLE;
   UE_rrc_inst[Mod_id].Info[eNB_index].Rach_tx_cnt=0;
