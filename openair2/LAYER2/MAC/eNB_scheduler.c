@@ -800,15 +800,16 @@ void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
 	  *nCCE = (*nCCE) + 4;
 	}
 	    //try here
-     _Send_Ra_Mac_Pdu ( 1/*PDU TYPE*/,0/*Extension*/, 1 /*TypeRaPid*/,
-   00/* RaPid*/, eNB_mac_inst[Mod_id].RA_template[0].timing_offset /*TA*/,
-    0/*Hopping_flag*/,25 /* rar->rb_allocmac_xface->computeRIV(100,0,2) fsrba*/,
- 2 /*tmcs*/, 0 /*tcsp*/, 0 /*ul_delay*/, 1/* cqi_request*/,
- eNB_mac_inst[Mod_id].RA_template[0].rnti/* crnti_temporary*/,
-  1 /*radioType=TDD_RADIO*/, 0 /*direction=DIRECTION_DOWNLINK*/,
-  2/* rntiType=WS_RA_RNTI*/,  eNB_mac_inst[Mod_id].RA_template[0].rnti /*rnti*/,
-   UE_id/*UE_id*/,0/* subframeNumber*/,
-  0 /*isPredefinedData*/, 0 /*retx*/, 1 /*crcStatus*/);
+	
+	//	_Send_Ra_Mac_Pdu ( 1/*PDU TYPE*/,0/*Extension*/, 1 /*TypeRaPid*/,
+			   //			   00/* RaPid*/, eNB_mac_inst[Mod_id].RA_template[0].timing_offset /*TA*/,
+	//		   0/*Hopping_flag*/,25 /* rar->rb_allocmac_xface->computeRIV(100,0,2) fsrba*/,
+	//		   2 /*tmcs*/, 0 /*tcsp*/, 0 /*ul_delay*/, 1/* cqi_request*/,
+	//		   eNB_mac_inst[Mod_id].RA_template[0].rnti/* crnti_temporary*/,
+	//		   1 /*radioType=TDD_RADIO*/, 0 /*direction=DIRECTION_DOWNLINK*/,
+	//		   2/* rntiType=WS_RA_RNTI*/,  eNB_mac_inst[Mod_id].RA_template[0].rnti /*rnti*/,
+	//		   UE_id/*UE_id*/,0/* subframeNumber*/,
+	//		   0 /*isPredefinedData*/, 0 /*retx*/, 1 /*crcStatus*/);
       } // rrcconnectionsetup=1
 
       else if (eNB_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup==1) {
