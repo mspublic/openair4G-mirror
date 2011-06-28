@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  sprintf(bler_fname,"bler_tx%d_mcs%d.csv",transmission_mode,mcs);
+  sprintf(bler_fname,"second_bler_tx%d_mcs%d.csv",transmission_mode,mcs);
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
 
@@ -677,7 +677,9 @@ int main(int argc, char **argv) {
 	while (round < num_rounds) {
 	  round_trials[round]++;
 
-	  pmi_feedback=1;
+	  // if(transmission_mode>=5)
+	    pmi_feedback=1;
+	    // else pmi_feedback=0;
 	PMI_FEEDBACK:
 	
 	  //  printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
@@ -759,8 +761,9 @@ int main(int argc, char **argv) {
 		if (n_users>1) 
 		  PHY_vars_eNB->dlsch_eNB[1][0]->pmi_alloc = (PHY_vars_eNB->dlsch_eNB[0][0]->pmi_alloc ^ 0x1555);
 		// if ((trials<10) && (round==0))
-		printf("tx PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
-	      }
+		//	printf("tx PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
+		//	printf("tx PMI_alloc %x\n",pmi2hex_2Ar1(PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc));
+  }
 	      
 	      /*    if (DLSCH_alloc_pdu2_2A[0].tpmi == 5) {
 		      
@@ -1045,87 +1048,119 @@ int main(int argc, char **argv) {
 	  
 	  //AWGN
 	  sigma2 = pow(10,sigma2_dB/10);
-	
+	  	
 	    //	n0_pow_dB = tx_lev_dB + 10*log10(512/(NB_RB*12)) + SNR;
 	    //	printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
-	    for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+	  if(pmi_feedback==0 && transmission_mode>=5){  
+
+	  	    for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
 	      for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
 		//		printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
 		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 		((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
 	      }
-	    }    
-	    //    lte_sync_time_init(PHY_vars_eNB->lte_frame_parms,lte_ue_common_vars);
-	    //    lte_sync_time(lte_ue_common_vars->rxdata, PHY_vars_eNB->lte_frame_parms);
-	    //    lte_sync_time_free();
-
-	    /*
-	    // estimate pmi and skip one round of the while loop
-	    if (estimate_pmi == 1) {
-	      estimate_pmi = 0;
-	      //estimate pmi
-	      continue;
-	    }					
-	    else {
-	      estimate_pmi = 1;
+	    }   
+	 
+	  }
+	  else
+	    { if(transmission_mode<5){
+		for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+		  for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+		    //		printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
+		    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+		    ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) (r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+		  }
+		}  
+	      }
+	      else {
+		
+		for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
+	    for (aa=0;aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++) {
+	      //		printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) (r_re[aa][i]);
+	      ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) (r_im[aa][i]);
 	    }
-	    */
-
-	    /*
-	    // optional: read rx_frame from file
-	    if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
+	    
+		}
+		
+	      }
+	    }
+	  
+	  //    lte_sync_time_init(PHY_vars_eNB->lte_frame_parms,lte_ue_common_vars);
+	  //    lte_sync_time(lte_ue_common_vars->rxdata, PHY_vars_eNB->lte_frame_parms);
+	  //    lte_sync_time_free();
+	  
+	  /*
+	  // estimate pmi and skip one round of the while loop
+	  if (estimate_pmi == 1) {
+	  estimate_pmi = 0;
+	  //estimate pmi
+	  continue;
+	  }					
+	  else {
+	  estimate_pmi = 1;
+	    }
+	  */
+	  
+	  /*
+	  // optional: read rx_frame from file
+	  if ((rx_frame_file = fopen("rx_frame.dat","r")) == NULL)
 	    {
 	    printf("Cannot open rx_frame.m data file\n");
 	    exit(0);
 	    }
-  
+	    
 	    result = fread((void *)PHY_vars->rx_vars[0].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
 	    printf("Read %d bytes\n",result);
 	    result = fread((void *)PHY_vars->rx_vars[1].RX_DMA_BUFFER,4,FRAME_LENGTH_COMPLEX_SAMPLES,rx_frame_file);
 	    printf("Read %d bytes\n",result);
-	
+	    
 	    fclose(rx_frame_file);
-	    */
-
-	    if (n_frames==1) {
+	  */
+	  
+	  if (n_frames==1) {
 	      printf("RX level in null symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	      printf("RX level in data symbol %d\n",dB_fixed(signal_energy(&PHY_vars_UE->lte_ue_common_vars.rxdata[0][160+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES)],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2)));
 	      printf("rx_level Null symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
 	      printf("rx_level data symbol %f\n",10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES/2,256+(2*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES))));
-	    }
-	
-	    if (PHY_vars_eNB->lte_frame_parms.Ncp == 0) {  // normal prefix
-	      pilot1 = 4;
-	      pilot2 = 7;
-	      pilot3 = 11;
-	    }
+	  }
+	  
+	  if (PHY_vars_eNB->lte_frame_parms.Ncp == 0) {  // normal prefix
+	    pilot1 = 4;
+	    pilot2 = 7;
+	    pilot3 = 11;
+	  }
 	    else {  // extended prefix
 	      pilot1 = 3;
 	      pilot2 = 6;
 	      pilot3 = 9;
 	    }
 	  
-	    
-	    // Inner receiver scheduling for 3 slots
+	  
+	  // Inner receiver scheduling for 3 slots
 	    for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
 	      for (l=0;l<pilot2;l++) {
 		if (n_frames==1)
 		  printf("Ns %d, l %d\n",Ns,l);
-	  /*
-	      This function implements the OFDM front end processor (FEP).
-	      
-	      Parameters:
-	      frame_parms 	LTE DL Frame Parameters
-	      ue_common_vars 	LTE UE Common Vars
-	      l 	symbol within slot (0..6/7)
-	      Ns 	Slot number (0..19)
-	      sample_offset 	offset within rxdata (points to beginning of subframe)
-	      no_prefix 	if 1 prefix is removed by HW 
-	      
-	    */
-		slot_fep(eNB_id,
-			 &PHY_vars_UE->lte_frame_parms,
-			 &PHY_vars_UE->lte_ue_common_vars,
+		/*
+		  This function implements the OFDM front end processor (FEP).
+		  
+		  Parameters:
+		  frame_parms 	LTE DL Frame Parameters
+		  ue_common_vars 	LTE UE Common Vars
+		  l 	symbol within slot (0..6/7)
+		  Ns 	Slot number (0..19)
+		  sample_offset 	offset within rxdata (points to beginning of subframe)
+		  no_prefix 	if 1 prefix is removed by HW 
+		  
+		*/
+		//	slot_fep(eNB_id,
+		// &PHY_vars_UE->lte_frame_parms,
+		// &PHY_vars_UE->lte_ue_common_vars,
+		// l,
+		// Ns%20,
+		// 0);
+		slot_fep(PHY_vars_UE,
 			 l,
 			 Ns%20,
 			 0,
@@ -1144,14 +1179,16 @@ int main(int argc, char **argv) {
 		  //	printf("rx_avg_power_dB %d\n",PHY_vars_UE->PHY_measurements.rx_avg_power_dB[0]);
 		  //	printf("n0_power_dB %d\n",PHY_vars->PHY_measurements.n0_power_dB[0]);
 		  //if (trials%100==0)
-		  printf("measured PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
+		 
+		  //  PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0));
+		  // printf("measured PMI %x\n",pmi2hex_2Ar1(PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc));
 		
 		}
 
-		if (transmission_mode==5) {
+		if (transmission_mode==5 || transmission_mode==6) {
 		    if (pmi_feedback==1) {
 		      pmi_feedback= 0;
-		      printf("before goto PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
+		      // printf("before goto PMI %x\n",pmi2hex_2Ar1(quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0)));
 		      goto PMI_FEEDBACK;
 		    }
 		  }
