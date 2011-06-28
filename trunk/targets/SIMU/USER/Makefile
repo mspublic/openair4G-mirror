@@ -44,13 +44,12 @@ endif
 
 ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
+#CFLAGS += -DDEBUG_OMG
 OCG_FLAG=1
-endif
-
-ifdef OCG_FLAG
 CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2
 CFLAGS += -DOCG_FLAG 
 endif
+
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)

@@ -31,6 +31,8 @@
 #include "SCHED/vars.h"
 
 #ifdef XFORMS
+
+
 #include "forms.h"
 #include "phy_procedures_sim_form.h"
 #endif
@@ -118,8 +120,8 @@ void help(void) {
   printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
   printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
-  printf("-O Set the mobility model for UE: 0 for static, 1 for RWP, and 2 for RWalk\n");
- 
+  printf("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk\n");
+  printf("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk\n");
 }
 
 #ifdef XFORMS
@@ -191,7 +193,7 @@ int main(int argc, char **argv) {
  
   char c;
   s32 i,j;
-
+ int new_omg_model;	
   // pointers signal buffers (s = transmit, r,r0 = receive) 
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
 
@@ -253,18 +255,18 @@ int main(int argc, char **argv) {
   emu_info.first_enb_local=0;
   emu_info.master_id=0;
   emu_info.nb_master =0;
-  emu_info.nb_ue_local= 1;
-  emu_info.nb_enb_local= 1;
+  emu_info.nb_ue_local= 1;//default 1 UE
+  emu_info.nb_enb_local= 1;//default 1 eNB
   emu_info.ethernet_flag=0;
   strcpy(emu_info.local_server, ""); // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
   emu_info.ocg_enabled=0;// flag c
   emu_info.opt_enabled=0; // P flag
-  emu_info.omg_enabled=1; //by default enable the OMG 
-  emu_info.omg_model=1; //default to RWP model
+  emu_info.omg_model_enb=STATIC; //default to static mobility model
+  emu_info.omg_model_ue=STATIC; //default to static mobility model
   emu_info.otg_enabled=0;// T flag
   emu_info.time = 0.0;	// time of emulation 
-
+ 
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -274,7 +276,7 @@ int main(int argc, char **argv) {
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   // get command-line options
-  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:R:r:n:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1) {
+  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:")) != -1) {
     switch (c) {
     case 'F':   // set FDD
       frame_type=0;
@@ -382,9 +384,11 @@ int main(int argc, char **argv) {
     case 'g':
       emu_info.multicast_group=atoi(optarg);
       break;	
-    case 'O':
-      emu_info.omg_enabled=1;
-      emu_info.omg_model = atoi(optarg);
+    case 'B':
+      emu_info.omg_model_enb = atoi(optarg);
+      break; 
+    case 'U':
+      emu_info.omg_model_ue = atoi(optarg);
       break; 
     case 'T':
       emu_info.otg_enabled=1;
@@ -535,7 +539,6 @@ int main(int argc, char **argv) {
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
-
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
@@ -577,14 +580,29 @@ int main(int argc, char **argv) {
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     if (n_frames_flag == 0) // if n_frames not set by the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-
-   emu_info.time += 1.0/100; // emu time in ms 
-   if (omg_param_list.mobility_type > STATIC) { // update positions for non static nodes
-     update_nodes(omg_param_list.mobility_type, emu_info.time );
-   } 
-   display_node_list(get_current_positions(STATIC, eNB, emu_info.time), 1);
-   display_node_list(get_current_positions(omg_param_list.mobility_type, UE, emu_info.time), 1);
-
+    if (mac_xface->frame == n_frames-1 ) exit(-1);
+    
+    // set the emulation time based on 1ms subframe number
+    emu_info.time += 1.0/100; // emu time in ms 
+    // update the position of all the nodes (eNB/CH, and UE/MR) every second 
+    if (((int)emu_info.time % 100) == 0) 
+      update_nodes(emu_info.time); 
+    
+#ifdef DEBUG_OMG
+    display_node_list((Node_list)get_current_positions(RWP, ALL, emu_info.time));
+    display_node_list((Node_list)get_current_positions(RWALK, ALL, emu_info.time));
+    display_node_list((Node_list)get_current_positions(STATIC, ALL, emu_info.time));
+    if ((((int)emu_info.time) % 100) == 0) {  
+      for(UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++){
+	new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
+	LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	// reset the mobility model for a specific node
+	set_new_mob_type(UE_id, UE, new_omg_model, emu_info.time);
+	// get the position of a specific node
+	get_node_position(UE, UE_id);
+      }
+    }
+#endif 
    
     for (slot=0 ; slot<20 ; slot++) {
 
@@ -633,7 +651,6 @@ int main(int argc, char **argv) {
 	  }
 	}
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
-
       if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
 	snr_dB2 = -20;
 	sinr_dB2 = -40;
@@ -719,4 +736,4 @@ int main(int argc, char **argv) {
   return(0);
 }
    
-
+// could be per mobility type : void update_node_vector(int mobility_type, double cur_time) ;

@@ -55,7 +55,7 @@
 #include "../MAC/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
-//#define PDCP_DEBUG 1
+#define PDCP_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 

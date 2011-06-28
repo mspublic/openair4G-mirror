@@ -49,35 +49,30 @@ void omg_config(){
 	// setup params for openair mobility generator
 	//common params
 	omg_param_list.min_X = 0;
-	omg_param_list.max_X = 100;
+	omg_param_list.max_X = 1000;
 	omg_param_list.min_Y = 0;
-	omg_param_list.max_Y = 100;
-	omg_param_list.min_speed = 0.1;
+	omg_param_list.max_Y = 1000;
+	omg_param_list.min_speed = 1.0;
 	omg_param_list.max_speed = 20.0;
-	omg_param_list.min_journey_time = 0.1;
+	omg_param_list.min_journey_time = 1.0;
 	omg_param_list.max_journey_time = 10.0;
 	omg_param_list.min_azimuth = 0; 
 	omg_param_list.max_azimuth = 360; 
-	omg_param_list.min_sleep = 0.1;
+	omg_param_list.min_sleep = 1.0;
 	omg_param_list.max_sleep = 5.0;
 	
 	// enb 
-	omg_param_list.mobility_type = STATIC; // set eNB to be static
+	omg_param_list.mobility_type = emu_info.omg_model_enb; 
 	omg_param_list.nodes_type = eNB;//enb
 	omg_param_list.nodes = emu_info.nb_enb_local;	
  	omg_param_list.seed = emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
 	init_mobility_generator(omg_param_list);
 	
 	//ue 
-	if (emu_info.omg_enabled == 1)
-	  omg_param_list.mobility_type = emu_info.omg_model;
-	else
-	  omg_param_list.mobility_type = STATIC; 
-	
-	omg_param_list.nodes = emu_info.nb_ue_local;
+	omg_param_list.mobility_type = emu_info.omg_model_ue; 
 	omg_param_list.nodes_type = UE;
+	omg_param_list.nodes = emu_info.nb_ue_local;
 	omg_param_list.seed = emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
-	
 	init_mobility_generator(omg_param_list);
 
 }
@@ -127,6 +122,7 @@ void set_envi(OAI_Emulation * emulation_scen) {
 void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info) {
 	emu_info->nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
 	emu_info->nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
+ 
 
 	omg_param_list.min_X = 0;
 	omg_param_list.max_X = emulation_scen->envi_config.area.x;
@@ -135,49 +131,53 @@ void set_topo(OAI_Emulation * emulation_scen, emu_info_t * emu_info) {
 
 	// init OMG for eNB
 	omg_param_list.nodes = emulation_scen->topo_config.number_of_eNB;
-	omg_param_list.min_speed = 0;
-	omg_param_list.max_speed = 0;
-	omg_param_list.min_journey_time = 0;
-	omg_param_list.max_journey_time = 0;
+	omg_param_list.min_speed = 1.0;
+	omg_param_list.max_speed = 50.0;
+	omg_param_list.min_journey_time = 1.0;
+	omg_param_list.max_journey_time = 10.0;
 	omg_param_list.min_azimuth = 0; // ???
 	omg_param_list.max_azimuth = 360; // ???
-	omg_param_list.min_sleep = 0;
-	omg_param_list.max_sleep = 0;
-	omg_param_list.mobility_type = 0; // set eNB to be static
-	// omg_param_list.seed = ;
+	omg_param_list.min_sleep = 0.1;
+	omg_param_list.max_sleep = 8.0;
+	omg_param_list.mobility_type = STATIC; // set eNB to be static
+	omg_param_list.nodes_type = eNB;  //eNB
+	omg_param_list.seed = eNB ; // specific seed for enb and ue to avoid node overlapping
+	
 
+
+	init_omg_global_params();
 	init_mobility_generator(omg_param_list);
 
 
 	// init OMG for UE
 	omg_param_list.nodes = emulation_scen->topo_config.number_of_UE;  
-	omg_param_list.min_speed = (emulation_scen->topo_config.mobility.moving_dynamics.min_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
-	omg_param_list.max_speed = (emulation_scen->topo_config.mobility.moving_dynamics.max_speed == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
-	omg_param_list.min_journey_time = 0.1; // TODO to be added into OSD and OCG
+	omg_param_list.min_speed = (emulation_scen->topo_config.mobility.moving_dynamics.min_speed == 0) ? 1 : emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
+	omg_param_list.max_speed = (emulation_scen->topo_config.mobility.moving_dynamics.max_speed == 0) ? 1 : emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
+	omg_param_list.min_journey_time = 1.0; // TODO to be added into OSD and OCG
 	omg_param_list.max_journey_time = 10;
 	omg_param_list.min_azimuth = 0.1;
 	omg_param_list.max_azimuth = 360;
-	omg_param_list.min_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
-	omg_param_list.max_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time == 0) ? 0.1 : emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
-	
+	omg_param_list.min_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time == 0) ? 1 : emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
+	omg_param_list.max_sleep = (emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time == 0) ? 1 : emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
+	omg_param_list.nodes_type = UE;//UE
+	omg_param_list.seed = UE ; // specific seed for enb and ue to avoid node overlapping
 
 	//input of OMG: STATIC: 0, RWP: 1 or RWALK 2
 	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
-		omg_param_list.mobility_type = 0;
+		omg_param_list.mobility_type = STATIC;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
-		omg_param_list.mobility_type = 1;
+		omg_param_list.mobility_type = RWP;
 	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
-		omg_param_list.mobility_type = 2;
+		omg_param_list.mobility_type = RWALK;
 	//} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
 	//	omg_param_list.mobility_type = 3;
 	} else {
-		omg_param_list.mobility_type = 0;
+		omg_param_list.mobility_type = STATIC;
 	}
-	// omg_param_list.seed = ;
+	 omg_param_list.seed = 3;
 
 	init_mobility_generator(omg_param_list);
 
-	emu_info->omg_enabled = 1; // TODO omg always enabled ???
 /*
 // inputs for OMG : TODO: seed
 
