@@ -147,8 +147,8 @@ typedef struct {
   unsigned char ocg_enabled;
   unsigned char opt_enabled;
   unsigned char otg_enabled;
-  unsigned char omg_enabled;
-  unsigned char omg_model;
+  unsigned char omg_model_enb;
+  unsigned char omg_model_ue;
   double time;	
 
 }emu_info_t; 

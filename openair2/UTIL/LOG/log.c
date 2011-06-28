@@ -268,7 +268,7 @@ void logRecord( const char *file, const char *func,
 }
 
 int  set_comp_log(int component, int level, int flag) {
-  if (component >=MIN_LOG_COMPONENTS && component < MAX_LOG_COMPONENTS){
+  if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
     g_log->log_component[component].flag = flag;
     g_log->log_component[component].level = level;
     return 0;
