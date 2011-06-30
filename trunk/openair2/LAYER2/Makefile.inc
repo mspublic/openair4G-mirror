@@ -83,7 +83,6 @@ MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 MAC_OBJS += $(MAC_DIR)/config.o
 
 OCG_OBJS  =  $(OCG_DIR)/OCG.o
-OCG_OBJS +=  $(OCG_DIR)/OCG_config_mobi.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_create_dir.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_detect_file.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_generate_report.o

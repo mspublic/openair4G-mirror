@@ -48,91 +48,90 @@
 #include "OCG_parse_XML.h"
 /*----------------------------------------------------------------------------*/
 
+
 static int oai_emulation_;	/*!< \brief indicating that the parsing position is now within OAI_Emulation_*/
-static int osd_;
-static int envi_config_;		/*!< \brief indicating that the parsing position is now within Envi_Config_*/
+
+static int environment_system_config_;		/*!< \brief indicating that the parsing position is now within Envi_Config_*/
+static int fading_;
+static int freespace_propagation_;
+static int pathloss_model_;
+static int pathloss_parameters_;
+static int pathloss_exponent_;
+static int pathloss_0_;
+static int small_scale_;
+static int wall_penetration_loss_;
+static int system_bandwidth_;
+static int UE_frequency_;
+static int antenna_;
+static int eNB_antenna_;
+static int UE_antenna_;
+static int number_of_sectors_;
+static int beam_width_;
+static int antenna_gain_dBi_;
+static int tx_power_dBm_;
+static int rx_noise_level_;
+
+static int topology_config_;
 static int area_;				/*!< \brief indicating that the parsing position is now within Area_*/
 static int x_;
 static int y_;
-static int geography_;			/*!< \brief indicating that the parsing position is now within Geography_*/
-static int home_;
-static int urban_;
-static int rural_;
-static int topography_;		/*!< \brief indicating that the parsing position is now within Topography_*/
-static int flat_;
-static int obstructed_;
-static int hilly_;
-static int fading_;				/*!< \brief indicating that the parsing position is now within Fading_*/
-static int free_space_propagation_;	/*!< \brief indicating that the parsing position is now within Free_Space_Propagation_*/
-static int pathloss_exponent_;
-static int pathloss_0_;
-static int small_scale_;		/*!< \brief indicating that the parsing position is now within Small_Scale_*/
-static int rayleigh_;
-static int delay_spread_;
-static int rician_;
-static int wall_penetration_loss_;
-static int noise_power_;
-static int topo_config_;		/*!< \brief indicating that the parsing position is now within Topo_Config_*/
-static int net_type_;
-static int homogeneous_;
-static int heterogeneous_;
-static int cell_type_;			/*!< \brief indicating that the parsing position is now within Cell_Type_*/
-static int macrocell_;
-static int microcell_;
-static int picocell_;
-static int femtocell_;
+static int network_type_;
+static int cell_type_;
 static int relay_;
 static int number_of_relays_;
-static int eNB_topology_;		/*!< \brief indicating that the parsing position is now within eNB_Topology_*/
-static int grid_;
-static int hexagonal_;
-static int number_of_cells_;
-static int number_of_eNB_;
-static int number_of_UE_;
-static int totally_random_; 	/*!< \brief to take the place of 'random' which is reserved for C*/ 
-static int inter_eNB_distance_;
-static int UE_distribution_;	/*!< \brief indicating that the parsing position is now within UE_Distribution_*/
-static int concentrated_;
-static int grid_map_;
-static int inter_block_distance_;
-static int system_bandwidth_;
-static int UE_frequency_;
-static int mobility_;			/*!< \brief indicating that the parsing position is now within Mobility_*/
-static int mobility_type_;	/*!< \brief indicating that the parsing position is now within Mobility_Type_*/
-static int fixed_;
-static int random_waypoint_;
-static int random_walk_;
+static int mobility_;
+static int UE_mobility_;
+static int UE_mobility_type_;
 static int grid_walk_;
-static int moving_dynamics_;	/*!< \brief indicating that the parsing position is now within Moving_Dynamics_*/
+static int grid_map_;
+static int horizontal_grid_;
+static int vertical_grid_;
+static int grid_trip_type_;
+static int UE_initial_distribution_;
+static int random_UE_distribution_;
+static int number_of_nodes_;
+static int concentrated_UE_distribution_;
+static int grid_UE_distribution_;
+static int random_grid_;
+static int border_grid_;
+static int UE_moving_dynamics_;
 static int min_speed_;
 static int max_speed_;
 static int min_pause_time_;
 static int max_pause_time_;
-static int random_seed_;
-static int oai_seed_;
-static int user_seed_;
-static int seed_value_;
-static int app_config_;		/*!< \brief indicating that the parsing position is now within App_Config_*/
-static int app_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
-static int cbr_;
-static int gaming_;
-static int m2m_;
+static int min_journey_time_;
+static int max_journey_time_;
+static int eNB_mobility_;
+static int eNB_mobility_type_;
+static int eNB_initial_distribution_;
+static int random_eNB_distribution_;
+static int number_of_cells_;
+static int hexagonal_eNB_distribution_;
+static int inter_eNB_distance_;
+static int grid_eNB_distribution_;
+static int number_of_grid_x_;
+static int number_of_grid_y_;
+
+static int application_config_;		/*!< \brief indicating that the parsing position is now within App_Config_*/
+static int application_type_;			/*!< \brief indicating that the parsing position is now within App_Type_*/
 static int traffic_;			/*!< \brief indicating that the parsing position is now within Traffic_*/
 static int transport_protocol_;	/*!< \brief indicating that the parsing position is now within Transport_Protocol_*/
-static int udp_;
-static int tcp_;
 static int packet_size_;		/*!< \brief indicating that the parsing position is now within Packet_Size_*/
+static int fixed_packet_size_;
 static int fixed_value_;
-static int uniform_;
+static int uniform_packet_size_;
 static int min_value_;
 static int max_value_;
-static int inter_arrival_time_;	/*!< \brief indicating that the parsing position is now within Inter_Arrival_Time_*/
-static int poisson_;
-static int expected_inter_arrival_time_;
-static int emu_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
-static int emu_time_;
+static int inter_arrival_time_;
+static int fixed_inter_arrival_time_;
+static int uniform_inter_arrival_time_;
+static int poisson_inter_arrival_time_;
+static int expected_inter_arrival_time_;	/*!< \brief indicating that the parsing position is now within Inter_Arrival_Time_*/
+
+static int emulation_config_;		/*!< \brief indicating that the parsing position is now within Emu_Config_*/
+static int emulation_time_;
 static int performance_;		/*!< \brief indicating that the parsing position is now within Performance_*/
-static int metric_;
+static int metrics_;
 static int throughput_;
 static int latency_;
 static int signalling_overhead_;
@@ -146,7 +145,12 @@ static int info_;
 static int warning_;
 static int error_;
 static int packet_trace_;
+static int seed_;
+static int user_seed_;
+static int seed_value_;
+
 static int profile_;
+
 
 void start_document(void *user_data) {
 	//printf("Start parsing ............ \n");
@@ -157,181 +161,173 @@ void end_document(void *user_data) {
 }
 
 void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) { // called once at the beginning of each element 
-	if (!xmlStrcmp(name, "OPENAIRINTERFACE")) {
+	if (!xmlStrcmp(name, "OAI_EMULATION")) {
 		oai_emulation_ = 1;
-	} else if (!xmlStrcmp(name, "OSD")) {
-		osd_ = 1;
-	} else if (!xmlStrcmp(name, "ENVICONFIG")) {
-		envi_config_ = 1;
+
+	} else if (!xmlStrcmp(name, "ENVIRONMENT_SYSTEM_CONFIG")) {
+		environment_system_config_ = 1;
+	} else if (!xmlStrcmp(name, "FADING")) {
+		fading_ = 1;
+	} else if (!xmlStrcmp(name, "FREESPACE_PROPAGATION")) {
+		freespace_propagation_ = 1;
+	} else if (!xmlStrcmp(name, "PATHLOSS_MODEL")) {
+		pathloss_model_ = 1;
+	} else if (!xmlStrcmp(name, "PATHLOSS_PARAMETERS")) {
+		pathloss_parameters_ = 1;
+	} else if (!xmlStrcmp(name, "PATHLOSS_EXPONENT")) {
+		pathloss_exponent_ = 1;
+	} else if (!xmlStrcmp(name, "PATHLOSS_0")) {
+		pathloss_0_ = 1;
+	} else if (!xmlStrcmp(name, "SMALL_SCALE")) {
+		small_scale_ = 1;
+	} else if (!xmlStrcmp(name, "WALL_PENETRATION_LOSS")) {
+		wall_penetration_loss_ = 1;
+	} else if (!xmlStrcmp(name, "SYSTEM_BANDWIDTH")) {
+		system_bandwidth_ = 1;
+	} else if (!xmlStrcmp(name, "UE_FREQUENCY")) {
+		UE_frequency_ = 1;
+	} else if (!xmlStrcmp(name, "ANTENNA")) {
+		antenna_ = 1;
+	} else if (!xmlStrcmp(name, "eNB_ANTENNA")) {
+		eNB_antenna_ = 1;
+	} else if (!xmlStrcmp(name, "UE_ANTENNA")) {
+		UE_antenna_ = 1;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_SECTORS")) {
+		number_of_sectors_ = 1;
+	} else if (!xmlStrcmp(name, "BEAM_WIDTH")) {
+		beam_width_ = 1;
+	} else if (!xmlStrcmp(name, "ANTENNA_GAIN_dBi")) {
+		antenna_gain_dBi_ = 1;
+	} else if (!xmlStrcmp(name, "TX_POWER_dBm")) {
+		tx_power_dBm_ = 1;
+	} else if (!xmlStrcmp(name, "RX_NOISE_LEVEL")) {
+		rx_noise_level_ = 1;
+
+	} else if (!xmlStrcmp(name, "TOPOLOGY_CONFIG")) {
+		topology_config_ = 1;
 	} else if (!xmlStrcmp(name, "AREA")) {
 		area_ = 1;
 	} else if (!xmlStrcmp(name, "X")) {
 		x_ = 1;
 	} else if (!xmlStrcmp(name, "Y")) {
 		y_ = 1;
-	} else if (!xmlStrcmp(name, "GEOGRAPHY")) {
-		geography_ = 1;
-	} else if (!xmlStrcmp(name, "HOME")) {
-		home_ = 1;
-	} else if (!xmlStrcmp(name, "URBAN")) {
-		urban_ = 1;
-	} else if (!xmlStrcmp(name, "RURAL")) {
-		rural_ = 1;
-	} else if (!xmlStrcmp(name, "TOPOGRAPHY")) {
-		topography_ = 1;
-	} else if (!xmlStrcmp(name, "FLAT")) {
-		flat_ = 1;
-	} else if (!xmlStrcmp(name, "OBSTRUCTED")) {
-		obstructed_ = 1;
-	} else if (!xmlStrcmp(name, "HILLY")) {
-		hilly_ = 1;
-	} else if (!xmlStrcmp(name, "FADING")) {
-		fading_ = 1;
-	} else if (!xmlStrcmp(name, "FREESPACEPROPAGATION")) {
-		free_space_propagation_ = 1;
-	} else if (!xmlStrcmp(name, "PATHLOSSEXPONENT")) {
-		pathloss_exponent_ = 1;
-	} else if (!xmlStrcmp(name, "PATHLOSS0")) {
-		pathloss_0_ = 1;
-	} else if (!xmlStrcmp(name, "SMALLSCALE")) {
-		small_scale_ = 1;
-	} else if (!xmlStrcmp(name, "RAYLEIGH")) {
-		rayleigh_ = 1;
-	} else if (!xmlStrcmp(name, "DELAYSPREAD")) {
-		delay_spread_ = 1;
-	} else if (!xmlStrcmp(name, "RICIAN")) {
-		rician_ = 1;
-	} else if (!xmlStrcmp(name, "WALLPENETRATIONLOSS")) {
-		wall_penetration_loss_ = 1;
-	} else if (!xmlStrcmp(name, "NOISEPOWER")) {
-		noise_power_ = 1;
-	} else if (!xmlStrcmp(name, "TOPOCONFIG")) {
-		topo_config_ = 1;
-	} else if (!xmlStrcmp(name, "TYPE")) {
-		net_type_ = 1;
-	} else if (!xmlStrcmp(name, "HOMOGENEOUS")) {
-		homogeneous_ = 1;
-	} else if (!xmlStrcmp(name, "HETEROGENEOUS")) {
-		heterogeneous_ = 1;
-	} else if (!xmlStrcmp(name, "CELLTYPE")) {
+	} else if (!xmlStrcmp(name, "NETWORK_TYPE")) {
+		network_type_ = 1;
+	} else if (!xmlStrcmp(name, "CELL_TYPE")) {
 		cell_type_ = 1;
-	} else if (!xmlStrcmp(name, "MACROCELL")) {
-		macrocell_ = 1;
-	} else if (!xmlStrcmp(name, "MICROCELL")) {
-		microcell_ = 1;
-	} else if (!xmlStrcmp(name, "PICOCELL")) {
-		picocell_ = 1;
-	} else if (!xmlStrcmp(name, "FEMTOCELL")) {
-		femtocell_ = 1;
 	} else if (!xmlStrcmp(name, "RELAY")) {
 		relay_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBEROFRELAYS")) {
+	} else if (!xmlStrcmp(name, "NUMBER_OF_RELAYS")) {
 		number_of_relays_ = 1;
-	} else if (!xmlStrcmp(name, "ENBTOPOLOGY")) {
-		eNB_topology_ = 1;
-	} else if (!xmlStrcmp(name, "GRID")) {
-		grid_ = 1;
-	} else if (!xmlStrcmp(name, "HEXAGONAL")) {
-		hexagonal_ = 1;
-	} else if (!xmlStrcmp(name, "NBCELLS")) {
-		number_of_cells_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBEROFENB")) {
-		number_of_eNB_ = 1;
-	} else if (!xmlStrcmp(name, "NBUES")) {
-		number_of_UE_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOM")) {
-		totally_random_ = 1;
-	} else if (!xmlStrcmp(name, "INTERENBDISTANCE")) {
-		inter_eNB_distance_ = 1;
-	} else if (!xmlStrcmp(name, "UEDISTRIBUTION")) {
-		UE_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "CONCENTRATED")) {
-		concentrated_ = 1;
-	} else if (!xmlStrcmp(name, "GRIDMAP")) {
-		grid_map_ = 1;
-	} else if (!xmlStrcmp(name, "INTERBLOCKDISTANCE")) {
-		inter_block_distance_ = 1;
-	} else if (!xmlStrcmp(name, "SYSTEMBANDWIDTH")) {
-		system_bandwidth_ = 1;
-	} else if (!xmlStrcmp(name, "UEFREQUENCY")) {
-		UE_frequency_ = 1;
 	} else if (!xmlStrcmp(name, "MOBILITY")) {
 		mobility_ = 1;
-	} else if (!xmlStrcmp(name, "MOBILITYTYPE")) {
-		mobility_type_ = 1;
-	} else if (!xmlStrcmp(name, "FIXED")) {
-		fixed_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOMWAYPOINT")) {
-		random_waypoint_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOMWALK")) {
-		random_walk_ = 1;
-	} else if (!xmlStrcmp(name, "GRIDWALK")) {
+	} else if (!xmlStrcmp(name, "UE_MOBILITY")) {
+		UE_mobility_ = 1;
+	} else if (!xmlStrcmp(name, "UE_MOBILITY_TYPE")) {
+		UE_mobility_type_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_WALK")) {
 		grid_walk_ = 1;
-	} else if (!xmlStrcmp(name, "MOVINGDYNAMICS")) {
-		moving_dynamics_ = 1;
-	} else if (!xmlStrcmp(name, "MINSPEED")) {
+	} else if (!xmlStrcmp(name, "GRID_MAP")) {
+		grid_map_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_HORIZONTAL_NUMBER")) {
+		horizontal_grid_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_VERTICAL_NUMBER")) {
+		vertical_grid_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_TRIP_TYPE")) {
+		grid_trip_type_ = 1;
+	} else if (!xmlStrcmp(name, "UE_INITIAL_DISTRIBUTION")) {
+		UE_initial_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "RANDOM_UE_DISTRIBUTION")) {
+		random_UE_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_NODES")) {
+		number_of_nodes_ = 1;
+	} else if (!xmlStrcmp(name, "CONCENTRATED_UE_DISTRIBUTION")) {
+		concentrated_UE_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_UE_DISTRIBUTION")) {
+		grid_UE_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "RANDOM_GRID")) {
+		random_grid_ = 1;
+	} else if (!xmlStrcmp(name, "BORDER_GRID")) {
+		border_grid_ = 1;
+	} else if (!xmlStrcmp(name, "UE_MOVING_DYNAMICS")) {
+		UE_moving_dynamics_ = 1;
+	} else if (!xmlStrcmp(name, "MIN_SPEED")) {
 		min_speed_ = 1;
-	} else if (!xmlStrcmp(name, "MAXSPEED")) {
+	} else if (!xmlStrcmp(name, "MAX_SPEED")) {
 		max_speed_ = 1;
-	} else if (!xmlStrcmp(name, "MINPAUSETIME")) {
+	} else if (!xmlStrcmp(name, "MIN_PAUSE_TIME")) {
 		min_pause_time_ = 1;
-	} else if (!xmlStrcmp(name, "MAXPAUSETIME")) {
+	} else if (!xmlStrcmp(name, "MAX_PAUSE_TIME")) {
 		max_pause_time_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOMSEED")) {
-		random_seed_ = 1;
-	} else if (!xmlStrcmp(name, "OAISEED")) {
-		oai_seed_ = 1;
-	} else if (!xmlStrcmp(name, "USERSEED")) {
-		user_seed_ = 1;
-	} else if (!xmlStrcmp(name, "SEEDVALUE")) {
-		seed_value_ = 1;
-	} else if (!xmlStrcmp(name, "APPCONFIG")) {
-		app_config_ = 1;
-	} else if (!xmlStrcmp(name, "APPTYPE")) {
-		app_type_ = 1;
-	} else if (!xmlStrcmp(name, "CBR")) {
-		cbr_ = 1;
-	} else if (!xmlStrcmp(name, "GAMING")) {
-		gaming_ = 1;
-	} else if (!xmlStrcmp(name, "M2M")) {
-		m2m_ = 1;
+	} else if (!xmlStrcmp(name, "MIN_JOURNEY_TIME")) {
+		min_journey_time_ = 1;
+	} else if (!xmlStrcmp(name, "MAX_JOURNEY_TIME")) {
+		max_journey_time_ = 1;
+	} else if (!xmlStrcmp(name, "eNB_MOBILITY")) {
+		eNB_mobility_ = 1;
+	} else if (!xmlStrcmp(name, "eNB_MOBILITY_TYPE")) {
+		eNB_mobility_type_ = 1;
+	} else if (!xmlStrcmp(name, "eNB_INITIAL_DISTRIBUTION")) {
+		eNB_initial_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "RANDOM_eNB_DISTRIBUTION")) {
+		random_eNB_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_CELLS")) {
+		number_of_cells_ = 1;
+	} else if (!xmlStrcmp(name, "HEXAGONAL_eNB_DISTRIBUTION")) {
+		hexagonal_eNB_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "INTER_eNB_DISTANCE")) {
+		inter_eNB_distance_ = 1;
+	} else if (!xmlStrcmp(name, "GRID_eNB_DISTRIBUTION")) {
+		grid_eNB_distribution_ = 1;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_X")) {
+		number_of_grid_x_ = 1;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_Y")) {
+		number_of_grid_y_ = 1;
+
+	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
+		application_config_ = 1;
+	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
+		application_type_ = 1;
 	} else if (!xmlStrcmp(name, "TRAFFIC")) {
 		traffic_ = 1;
-	} else if (!xmlStrcmp(name, "TRANSPORTPROTOCOL")) {
+	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 1;
-	} else if (!xmlStrcmp(name, "UDP")) {
-		udp_ = 1;
-	} else if (!xmlStrcmp(name, "TCP")) {
-		tcp_ = 1;
-	} else if (!xmlStrcmp(name, "PACKETSIZE")) {
+	} else if (!xmlStrcmp(name, "PACKET_SIZE")) {
 		packet_size_ = 1;
-	} else if (!xmlStrcmp(name, "FIXEDVALUE")) {
+	} else if (!xmlStrcmp(name, "FIXED_PACKET_SIZE")) {
+		fixed_packet_size_ = 1;
+	} else if (!xmlStrcmp(name, "FIXED_VALUE")) {
 		fixed_value_ = 1;
-	} else if (!xmlStrcmp(name, "UNIFORM")) {
-		uniform_ = 1;
-	} else if (!xmlStrcmp(name, "MINVALUE")) {
+	} else if (!xmlStrcmp(name, "UNIFORM_PACKET_SIZE")) {
+		uniform_packet_size_ = 1;
+	} else if (!xmlStrcmp(name, "MIN_VALUE")) {
 		min_value_ = 1;
-	} else if (!xmlStrcmp(name, "MAXVALUE")) {
+	} else if (!xmlStrcmp(name, "MAX_VALUE")) {
 		max_value_ = 1;
-	} else if (!xmlStrcmp(name, "INTERARRIVALTIME")) {
+	} else if (!xmlStrcmp(name, "INTER_ARRIVAL_TIME")) {
 		inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "POISSON")) {
-		poisson_ = 1;
-	} else if (!xmlStrcmp(name, "EXPECTEDINTERARRIVALTIME")) {
+	} else if (!xmlStrcmp(name, "FIXED_INTER_ARRIVAL_TIME")) {
+		fixed_inter_arrival_time_ = 1;
+	} else if (!xmlStrcmp(name, "UNIFORM_INTER_ARRIVAL_TIME")) {
+		uniform_inter_arrival_time_ = 1;
+	} else if (!xmlStrcmp(name, "POISSON_INTER_ARRIVAL_TIME")) {
+		poisson_inter_arrival_time_ = 1;
+	} else if (!xmlStrcmp(name, "EXPECTED_INTER_ARRIVAL_TIME")) {
 		expected_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "EMUCONFIG")) {
-		emu_config_ = 1;
-	} else if (!xmlStrcmp(name, "EMUTIME")) {
-		emu_time_ = 1;
+
+	} else if (!xmlStrcmp(name, "EMULATION_CONFIG")) {
+		emulation_config_ = 1;
+	} else if (!xmlStrcmp(name, "EMULATION_TIME")) {
+		emulation_time_ = 1;
 	} else if (!xmlStrcmp(name, "PERFORMANCE")) {
 		performance_ = 1;
-	} else if (!xmlStrcmp(name, "METRIC")) {
-		metric_ = 1;
+	} else if (!xmlStrcmp(name, "METRICS")) {
+		metrics_ = 1;
 	} else if (!xmlStrcmp(name, "THROUGHPUT")) {
 		throughput_ = 1;
 	} else if (!xmlStrcmp(name, "LATENCY")) {
 		latency_ = 1;
-	} else if (!xmlStrcmp(name, "SIGNALLINGOVERHEAD")) {
+	} else if (!xmlStrcmp(name, "SIGNALLING_OVERHEAD")) {
 		signalling_overhead_ = 1;
 	} else if (!xmlStrcmp(name, "LAYER")) {
 		layer_ = 1;
@@ -341,7 +337,7 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		rlc_ = 1;
 	} else if (!xmlStrcmp(name, "PDCP")) {
 		pdcp_ = 1;
-	} else if (!xmlStrcmp(name, "LOGEMUL")) {
+	} else if (!xmlStrcmp(name, "LOG_EMU")) {
 		log_emu_ = 1;
 	} else if (!xmlStrcmp(name, "DEBUG")) {
 		debug_ = 1;
@@ -351,8 +347,15 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		warning_ = 1;
 	} else if (!xmlStrcmp(name, "ERROR")) {
 		error_ = 1;
-	} else if (!xmlStrcmp(name, "PACKETTRACE")) {
+	} else if (!xmlStrcmp(name, "PACKET_TRACE")) {
 		packet_trace_ = 1;
+	} else if (!xmlStrcmp(name, "SEED")) {
+		seed_ = 1;
+	} else if (!xmlStrcmp(name, "USER_SEED")) {
+		user_seed_ = 1;
+	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
+		seed_value_ = 1;
+
 	} else if (!xmlStrcmp(name, "PROFILE")) {
 		profile_ = 1;
 	} else {
@@ -361,181 +364,173 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 }
 
 void end_element(void *user_data, const xmlChar *name) { // called once at the end of each element 
-	if (!xmlStrcmp(name, "OPENAIRINTERFACE")) {
+	if (!xmlStrcmp(name, "OAI_EMULATION")) {
 		oai_emulation_ = 0;
-	} else if (!xmlStrcmp(name, "OSD")) {
-		osd_ = 0;
-	} else if (!xmlStrcmp(name, "ENVICONFIG")) {
-		envi_config_ = 0;
+
+	} else if (!xmlStrcmp(name, "ENVIRONMENT_SYSTEM_CONFIG")) {
+		environment_system_config_ = 0;
+	} else if (!xmlStrcmp(name, "FADING")) {
+		fading_ = 0;
+	} else if (!xmlStrcmp(name, "FREESPACE_PROPAGATION")) {
+		freespace_propagation_ = 0;
+	} else if (!xmlStrcmp(name, "PATHLOSS_MODEL")) {
+		pathloss_model_ = 0;
+	} else if (!xmlStrcmp(name, "PATHLOSS_PARAMETERS")) {
+		pathloss_parameters_ = 0;
+	} else if (!xmlStrcmp(name, "PATHLOSS_EXPONENT")) {
+		pathloss_exponent_ = 0;
+	} else if (!xmlStrcmp(name, "PATHLOSS_0")) {
+		pathloss_0_ = 0;
+	} else if (!xmlStrcmp(name, "SMALL_SCALE")) {
+		small_scale_ = 0;
+	} else if (!xmlStrcmp(name, "WALL_PENETRATION_LOSS")) {
+		wall_penetration_loss_ = 0;
+	} else if (!xmlStrcmp(name, "SYSTEM_BANDWIDTH")) {
+		system_bandwidth_ = 0;
+	} else if (!xmlStrcmp(name, "UE_FREQUENCY")) {
+		UE_frequency_ = 0;
+	} else if (!xmlStrcmp(name, "ANTENNA")) {
+		antenna_ = 0;
+	} else if (!xmlStrcmp(name, "eNB_ANTENNA")) {
+		eNB_antenna_ = 0;
+	} else if (!xmlStrcmp(name, "UE_ANTENNA")) {
+		UE_antenna_ = 0;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_SECTORS")) {
+		number_of_sectors_ = 0;
+	} else if (!xmlStrcmp(name, "BEAM_WIDTH")) {
+		beam_width_ = 0;
+	} else if (!xmlStrcmp(name, "ANTENNA_GAIN_dBi")) {
+		antenna_gain_dBi_ = 0;
+	} else if (!xmlStrcmp(name, "TX_POWER_dBm")) {
+		tx_power_dBm_ = 0;
+	} else if (!xmlStrcmp(name, "RX_NOISE_LEVEL")) {
+		rx_noise_level_ = 0;
+
+	} else if (!xmlStrcmp(name, "TOPOLOGY_CONFIG")) {
+		topology_config_ = 0;
 	} else if (!xmlStrcmp(name, "AREA")) {
 		area_ = 0;
 	} else if (!xmlStrcmp(name, "X")) {
 		x_ = 0;
 	} else if (!xmlStrcmp(name, "Y")) {
 		y_ = 0;
-	} else if (!xmlStrcmp(name, "GEOGRAPHY")) {
-		geography_ = 0;
-	} else if (!xmlStrcmp(name, "HOME")) {
-		home_ = 0;
-	} else if (!xmlStrcmp(name, "URBAN")) {
-		urban_ = 0;
-	} else if (!xmlStrcmp(name, "RURAL")) {
-		rural_ = 0;
-	} else if (!xmlStrcmp(name, "TOPOGRAPHY")) {
-		topography_ = 0;
-	} else if (!xmlStrcmp(name, "FLAT")) {
-		flat_ = 0;
-	} else if (!xmlStrcmp(name, "OBSTRUCTED")) {
-		obstructed_ = 0;
-	} else if (!xmlStrcmp(name, "HILLY")) {
-		hilly_ = 0;
-	} else if (!xmlStrcmp(name, "FADING")) {
-		fading_ = 0;
-	} else if (!xmlStrcmp(name, "FREESPACEPROPAGATION")) {
-		free_space_propagation_ = 0;
-	} else if (!xmlStrcmp(name, "PATHLOSSEXPONENT")) {
-		pathloss_exponent_ = 0;
-	} else if (!xmlStrcmp(name, "PATHLOSS0")) {
-		pathloss_0_ = 0;
-	} else if (!xmlStrcmp(name, "SMALLSCALE")) {
-		small_scale_ = 0;
-	} else if (!xmlStrcmp(name, "RAYLEIGH")) {
-		rayleigh_ = 0;
-	} else if (!xmlStrcmp(name, "DELAYSPREAD")) {
-		delay_spread_ = 0;
-	} else if (!xmlStrcmp(name, "RICIAN")) {
-		rician_ = 0;
-	} else if (!xmlStrcmp(name, "WALLPENETRATIONLOSS")) {
-		wall_penetration_loss_ = 0;
-	} else if (!xmlStrcmp(name, "NOISEPOWER")) {
-		noise_power_ = 0;
-	} else if (!xmlStrcmp(name, "TOPOCONFIG")) {
-		topo_config_ = 0;
-	} else if (!xmlStrcmp(name, "TYPE")) {
-		net_type_ = 0;
-	} else if (!xmlStrcmp(name, "HOMOGENEOUS")) {
-		homogeneous_ = 0;
-	} else if (!xmlStrcmp(name, "HETEROGENEOUS")) {
-		heterogeneous_ = 0;
-	} else if (!xmlStrcmp(name, "CELLTYPE")) {
+	} else if (!xmlStrcmp(name, "NETWORK_TYPE")) {
+		network_type_ = 0;
+	} else if (!xmlStrcmp(name, "CELL_TYPE")) {
 		cell_type_ = 0;
-	} else if (!xmlStrcmp(name, "MACROCELL")) {
-		macrocell_ = 0;
-	} else if (!xmlStrcmp(name, "MICROCELL")) {
-		microcell_ = 0;
-	} else if (!xmlStrcmp(name, "PICOCELL")) {
-		picocell_ = 0;
-	} else if (!xmlStrcmp(name, "FEMTOCELL")) {
-		femtocell_ = 0;
 	} else if (!xmlStrcmp(name, "RELAY")) {
 		relay_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBEROFRELAYS")) {
+	} else if (!xmlStrcmp(name, "NUMBER_OF_RELAYS")) {
 		number_of_relays_ = 0;
-	} else if (!xmlStrcmp(name, "ENBTOPOLOGY")) {
-		eNB_topology_ = 0;
-	} else if (!xmlStrcmp(name, "GRID")) {
-		grid_ = 0;
-	} else if (!xmlStrcmp(name, "HEXAGONAL")) {
-		hexagonal_ = 0;
-	} else if (!xmlStrcmp(name, "NBCELLS")) {
-		number_of_cells_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBEROFENB")) {
-		number_of_eNB_ = 0;
-	} else if (!xmlStrcmp(name, "NBUES")) {
-		number_of_UE_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOM")) {
-		totally_random_ = 0;
-	} else if (!xmlStrcmp(name, "INTERENBDISTANCE")) {
-		inter_eNB_distance_ = 0;
-	} else if (!xmlStrcmp(name, "UEDISTRIBUTION")) {
-		UE_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "CONCENTRATED")) {
-		concentrated_ = 0;
-	} else if (!xmlStrcmp(name, "GRIDMAP")) {
-		grid_map_ = 0;
-	} else if (!xmlStrcmp(name, "INTERBLOCKDISTANCE")) {
-		inter_block_distance_ = 0;
-	} else if (!xmlStrcmp(name, "SYSTEMBANDWIDTH")) {
-		system_bandwidth_ = 0;
-	} else if (!xmlStrcmp(name, "UEFREQUENCY")) {
-		UE_frequency_ = 0;
 	} else if (!xmlStrcmp(name, "MOBILITY")) {
 		mobility_ = 0;
-	} else if (!xmlStrcmp(name, "MOBILITYTYPE")) {
-		mobility_type_ = 0;
-	} else if (!xmlStrcmp(name, "FIXED")) {
-		fixed_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOMWAYPOINT")) {
-		random_waypoint_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOMWALK")) {
-		random_walk_ = 0;
-	} else if (!xmlStrcmp(name, "GRIDWALK")) {
+	} else if (!xmlStrcmp(name, "UE_MOBILITY")) {
+		UE_mobility_ = 0;
+	} else if (!xmlStrcmp(name, "UE_MOBILITY_TYPE")) {
+		UE_mobility_type_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_WALK")) {
 		grid_walk_ = 0;
-	} else if (!xmlStrcmp(name, "MOVINGDYNAMICS")) {
-		moving_dynamics_ = 0;
-	} else if (!xmlStrcmp(name, "MINSPEED")) {
+	} else if (!xmlStrcmp(name, "GRID_MAP")) {
+		grid_map_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_HORIZONTAL_NUMBER")) {
+		horizontal_grid_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_VERTICAL_NUMBER")) {
+		vertical_grid_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_TRIP_TYPE")) {
+		grid_trip_type_ = 0;
+	} else if (!xmlStrcmp(name, "UE_INITIAL_DISTRIBUTION")) {
+		UE_initial_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "RANDOM_UE_DISTRIBUTION")) {
+		random_UE_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_NODES")) {
+		number_of_nodes_ = 0;
+	} else if (!xmlStrcmp(name, "CONCENTRATED_UE_DISTRIBUTION")) {
+		concentrated_UE_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_UE_DISTRIBUTION")) {
+		grid_UE_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "RANDOM_GRID")) {
+		random_grid_ = 0;
+	} else if (!xmlStrcmp(name, "BORDER_GRID")) {
+		border_grid_ = 0;
+	} else if (!xmlStrcmp(name, "UE_MOVING_DYNAMICS")) {
+		UE_moving_dynamics_ = 0;
+	} else if (!xmlStrcmp(name, "MIN_SPEED")) {
 		min_speed_ = 0;
-	} else if (!xmlStrcmp(name, "MAXSPEED")) {
+	} else if (!xmlStrcmp(name, "MAX_SPEED")) {
 		max_speed_ = 0;
-	} else if (!xmlStrcmp(name, "MINPAUSETIME")) {
+	} else if (!xmlStrcmp(name, "MIN_PAUSE_TIME")) {
 		min_pause_time_ = 0;
-	} else if (!xmlStrcmp(name, "MAXPAUSETIME")) {
+	} else if (!xmlStrcmp(name, "MAX_PAUSE_TIME")) {
 		max_pause_time_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOMSEED")) {
-		random_seed_ = 0;
-	} else if (!xmlStrcmp(name, "OAISEED")) {
-		oai_seed_ = 0;
-	} else if (!xmlStrcmp(name, "USERSEED")) {
-		user_seed_ = 0;
-	} else if (!xmlStrcmp(name, "SEEDVALUE")) {
-		seed_value_ = 0;
-	} else if (!xmlStrcmp(name, "APPCONFIG")) {
-		app_config_ = 0;
-	} else if (!xmlStrcmp(name, "APPTYPE")) {
-		app_type_ = 0;
-	} else if (!xmlStrcmp(name, "CBR")) {
-		cbr_ = 0;
-	} else if (!xmlStrcmp(name, "GAMING")) {
-		gaming_ = 0;
-	} else if (!xmlStrcmp(name, "M2M")) {
-		m2m_ = 0;
+	} else if (!xmlStrcmp(name, "MIN_JOURNEY_TIME")) {
+		min_journey_time_ = 0;
+	} else if (!xmlStrcmp(name, "MAX_JOURNEY_TIME")) {
+		max_journey_time_ = 0;
+	} else if (!xmlStrcmp(name, "eNB_MOBILITY")) {
+		eNB_mobility_ = 0;
+	} else if (!xmlStrcmp(name, "eNB_MOBILITY_TYPE")) {
+		eNB_mobility_type_ = 0;
+	} else if (!xmlStrcmp(name, "eNB_INITIAL_DISTRIBUTION")) {
+		eNB_initial_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "RANDOM_eNB_DISTRIBUTION")) {
+		random_eNB_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_CELLS")) {
+		number_of_cells_ = 0;
+	} else if (!xmlStrcmp(name, "HEXAGONAL_eNB_DISTRIBUTION")) {
+		hexagonal_eNB_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "INTER_eNB_DISTANCE")) {
+		inter_eNB_distance_ = 0;
+	} else if (!xmlStrcmp(name, "GRID_eNB_DISTRIBUTION")) {
+		grid_eNB_distribution_ = 0;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_X")) {
+		number_of_grid_x_ = 0;
+	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_Y")) {
+		number_of_grid_y_ = 0;
+
+	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
+		application_config_ = 0;
+	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
+		application_type_ = 0;
 	} else if (!xmlStrcmp(name, "TRAFFIC")) {
 		traffic_ = 0;
-	} else if (!xmlStrcmp(name, "TRANSPORTPROTOCOL")) {
+	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 0;
-	} else if (!xmlStrcmp(name, "UDP")) {
-		udp_ = 0;
-	} else if (!xmlStrcmp(name, "TCP")) {
-		tcp_ = 0;
-	} else if (!xmlStrcmp(name, "PACKETSIZE")) {
+	} else if (!xmlStrcmp(name, "PACKET_SIZE")) {
 		packet_size_ = 0;
-	} else if (!xmlStrcmp(name, "FIXEDVALUE")) {
+	} else if (!xmlStrcmp(name, "FIXED_PACKET_SIZE")) {
+		fixed_packet_size_ = 0;
+	} else if (!xmlStrcmp(name, "FIXED_VALUE")) {
 		fixed_value_ = 0;
-	} else if (!xmlStrcmp(name, "UNIFORM")) {
-		uniform_ = 0;
-	} else if (!xmlStrcmp(name, "MINVALUE")) {
+	} else if (!xmlStrcmp(name, "UNIFORM_PACKET_SIZE")) {
+		uniform_packet_size_ = 0;
+	} else if (!xmlStrcmp(name, "MIN_VALUE")) {
 		min_value_ = 0;
-	} else if (!xmlStrcmp(name, "MAXVALUE")) {
+	} else if (!xmlStrcmp(name, "MAX_VALUE")) {
 		max_value_ = 0;
-	} else if (!xmlStrcmp(name, "INTERARRIVALTIME")) {
+	} else if (!xmlStrcmp(name, "INTER_ARRIVAL_TIME")) {
 		inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "POISSON")) {
-		poisson_ = 0;
-	} else if (!xmlStrcmp(name, "EXPECTEDINTERARRIVALTIME")) {
+	} else if (!xmlStrcmp(name, "FIXED_INTER_ARRIVAL_TIME")) {
+		fixed_inter_arrival_time_ = 0;
+	} else if (!xmlStrcmp(name, "UNIFORM_INTER_ARRIVAL_TIME")) {
+		uniform_inter_arrival_time_ = 0;
+	} else if (!xmlStrcmp(name, "POISSON_INTER_ARRIVAL_TIME")) {
+		poisson_inter_arrival_time_ = 0;
+	} else if (!xmlStrcmp(name, "EXPECTED_INTER_ARRIVAL_TIME")) {
 		expected_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "EMUCONFIG")) {
-		emu_config_ = 0;
-	} else if (!xmlStrcmp(name, "EMUTIME")) {
-		emu_time_ = 0;
+
+	} else if (!xmlStrcmp(name, "EMULATION_CONFIG")) {
+		emulation_config_ = 0;
+	} else if (!xmlStrcmp(name, "EMULATION_TIME")) {
+		emulation_time_ = 0;
 	} else if (!xmlStrcmp(name, "PERFORMANCE")) {
 		performance_ = 0;
-	} else if (!xmlStrcmp(name, "METRIC")) {
-		metric_ = 0;
+	} else if (!xmlStrcmp(name, "METRICS")) {
+		metrics_ = 0;
 	} else if (!xmlStrcmp(name, "THROUGHPUT")) {
 		throughput_ = 0;
 	} else if (!xmlStrcmp(name, "LATENCY")) {
 		latency_ = 0;
-	} else if (!xmlStrcmp(name, "SIGNALLINGOVERHEAD")) {
+	} else if (!xmlStrcmp(name, "SIGNALLING_OVERHEAD")) {
 		signalling_overhead_ = 0;
 	} else if (!xmlStrcmp(name, "LAYER")) {
 		layer_ = 0;
@@ -545,7 +540,7 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		rlc_ = 0;
 	} else if (!xmlStrcmp(name, "PDCP")) {
 		pdcp_ = 0;
-	} else if (!xmlStrcmp(name, "LOGEMUL")) {
+	} else if (!xmlStrcmp(name, "LOG_EMU")) {
 		log_emu_ = 0;
 	} else if (!xmlStrcmp(name, "DEBUG")) {
 		debug_ = 0;
@@ -555,209 +550,253 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		warning_ = 0;
 	} else if (!xmlStrcmp(name, "ERROR")) {
 		error_ = 0;
-	} else if (!xmlStrcmp(name, "PACKETTRACE")) {
+	} else if (!xmlStrcmp(name, "PACKET_TRACE")) {
 		packet_trace_ = 0;
+	} else if (!xmlStrcmp(name, "SEED")) {
+		seed_ = 0;
+	} else if (!xmlStrcmp(name, "USER_SEED")) {
+		user_seed_ = 0;
+	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
+		seed_value_ = 0;
+
 	} else if (!xmlStrcmp(name, "PROFILE")) {
 		profile_ = 0;
 	}
 }
 
 void characters(void *user_data, const xmlChar *ch, int len) { // called once when there is content in each element 
+
 	if (oai_emulation_) {
-		if (osd_) {
-			// doing nothing at this moment
-		} else if (envi_config_) {
-			if (area_) {
-				if (x_) {
-					oai_emulation.envi_config.area.x = atof(ch);
-				} else if (y_) {
-					oai_emulation.envi_config.area.y = atof(ch);
-				}
-			} else if (geography_) {
-				oai_emulation.envi_config.geography.selected_option = strndup(ch, len);
-			} else if (topography_) {
-				oai_emulation.envi_config.topography.selected_option = strndup(ch, len);
-			} else if (fading_) {
-				if (free_space_propagation_) {
-					if (pathloss_exponent_) {
-							oai_emulation.envi_config.fading.free_space_propagation.pathloss_exponent = atof(ch);
-					} else if (pathloss_0_) {
-							oai_emulation.envi_config.fading.free_space_propagation.pathloss_0 = atof(ch);
+		if (environment_system_config_) {
+			if (fading_) {
+				if (freespace_propagation_) {
+					if (pathloss_model_) {
+						oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_model.selected_option = strndup(ch, len);
+					} else if (pathloss_parameters_) {
+						if (pathloss_exponent_) {
+							oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_exponent = atof(ch);
+						} else if (pathloss_0_) {
+							oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_0 = atof(ch);
+						}
 					}
 				} else if (small_scale_) {
-					if (rayleigh_) {
-						oai_emulation.envi_config.fading.small_scale.selected_option = "rayleigh";
-						if (delay_spread_) {
-							oai_emulation.envi_config.fading.small_scale.rayleigh.delay_spread = atof(ch);
-						}
-					} else if (rician_) {
-						oai_emulation.envi_config.fading.small_scale.selected_option = "rician";
-						if (delay_spread_) {
-							oai_emulation.envi_config.fading.small_scale.rician.delay_spread = atof(ch);
-						}
-					}
+					oai_emulation.environment_system_config.fading.small_scale.selected_option = strndup(ch, len);
 				}
 			} else if (wall_penetration_loss_) {
-				oai_emulation.envi_config.wall_penetration_loss = atof(ch);
-			} else if (noise_power_) {
-				oai_emulation.envi_config.noise_power = atof(ch);
+				oai_emulation.environment_system_config.wall_penetration_loss = atof(ch);
+			} else if (system_bandwidth_) {
+				oai_emulation.environment_system_config.system_bandwidth = atof(ch);
+			} else if (UE_frequency_) {
+				oai_emulation.environment_system_config.UE_frequency = atof(ch);
+			} else if (antenna_) {
+				if (eNB_antenna_) {
+					if (number_of_sectors_) {
+							oai_emulation.environment_system_config.antenna.eNB_antenna.number_of_sectors = atoi(ch);
+					} else if (beam_width_) {
+							oai_emulation.environment_system_config.antenna.eNB_antenna.beam_width = atof(ch);
+					} else if (antenna_gain_dBi_) {
+							oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_gain_dBi = atof(ch);
+					} else if (tx_power_dBm_) {
+							oai_emulation.environment_system_config.antenna.eNB_antenna.tx_power_dBm = atof(ch);
+					} else if (rx_noise_level_) {
+							oai_emulation.environment_system_config.antenna.eNB_antenna.rx_noise_level = atof(ch);
+					}
+				} else if (UE_antenna_) {
+					if (number_of_sectors_) {
+							oai_emulation.environment_system_config.antenna.UE_antenna.number_of_sectors = atoi(ch);
+					} else if (beam_width_) {
+							oai_emulation.environment_system_config.antenna.UE_antenna.beam_width = atof(ch);
+					} else if (antenna_gain_dBi_) {
+							oai_emulation.environment_system_config.antenna.UE_antenna.antenna_gain_dBi = atof(ch);
+					} else if (tx_power_dBm_) {
+							oai_emulation.environment_system_config.antenna.UE_antenna.tx_power_dBm = atof(ch);
+					} else if (rx_noise_level_) {
+							oai_emulation.environment_system_config.antenna.UE_antenna.rx_noise_level = atof(ch);
+					}
+				}
 			}
-		} else if (topo_config_) {
-			if (net_type_) {
-				oai_emulation.topo_config.net_type.selected_option = strndup(ch, len);
+
+		} else if (topology_config_) {
+			if (area_) {
+				if (x_) {
+					oai_emulation.topology_config.area.x = atof(ch);
+				} else if (y_) {
+					oai_emulation.topology_config.area.y = atof(ch);
+				}
+			} else if (network_type_) {
+				oai_emulation.topology_config.network_type.selected_option = strndup(ch, len);
 			} else if (cell_type_) {
-				oai_emulation.topo_config.cell_type.selected_option = strndup(ch, len);
+				oai_emulation.topology_config.cell_type.selected_option = strndup(ch, len);
 			} else if (relay_) {
 				if (number_of_relays_) {
-					oai_emulation.topo_config.relay.number_of_relays = atoi(ch);
+					oai_emulation.topology_config.relay.number_of_relays = atoi(ch);
 				}
-			} else if (eNB_topology_) {
-				if (grid_) {
-					oai_emulation.topo_config.eNB_topology.selected_option = "grid";
-					if (x_) {
-						oai_emulation.topo_config.eNB_topology.grid.x = atoi(ch);
-					} else if (y_) {
-						oai_emulation.topo_config.eNB_topology.grid.y = atoi(ch);
-						oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.grid.x * oai_emulation.topo_config.eNB_topology.grid.y;
-					}
-				} else if (hexagonal_) {
-					oai_emulation.topo_config.eNB_topology.selected_option = "hexagonal";
-					if (number_of_cells_) {
-						oai_emulation.topo_config.eNB_topology.hexagonal.number_of_cells = atoi(ch);
-					}
-					oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.hexagonal.number_of_cells;
-				} else if (totally_random_) {
-					oai_emulation.topo_config.eNB_topology.selected_option = "random";
-					if (number_of_eNB_) {
-						oai_emulation.topo_config.eNB_topology.totally_random.number_of_eNB = atoi(ch);
-					}
-					oai_emulation.topo_config.number_of_eNB = oai_emulation.topo_config.eNB_topology.totally_random.number_of_eNB;
-				}
-			} else if (inter_eNB_distance_) {
-				oai_emulation.topo_config.inter_eNB_distance = atof(ch);
-			} else if (UE_distribution_) {
-				if (totally_random_) {
-					oai_emulation.topo_config.UE_distribution.selected_option = "random";
-				} else if (concentrated_) {
-					oai_emulation.topo_config.UE_distribution.selected_option = "concentrated";
-				} else if (grid_map_) {
-					oai_emulation.topo_config.UE_distribution.selected_option = "grid_map";
-					if (inter_block_distance_) {
-						oai_emulation.topo_config.UE_distribution.grid_map.inter_block_distance = atof(ch);
-					}
-				}
-			} else if (number_of_UE_) {
-				oai_emulation.topo_config.number_of_UE = atoi(ch);
-			} else if (system_bandwidth_) {
-				oai_emulation.topo_config.system_bandwidth = atof(ch);
-			} else if (UE_frequency_) {
-				oai_emulation.topo_config.UE_frequency = atof(ch);
 			} else if (mobility_) {
-				if (mobility_type_) {
-					oai_emulation.topo_config.mobility.mobility_type.selected_option = strndup(ch, len);
-				} else if (moving_dynamics_) {
-					if (min_speed_) {
-						oai_emulation.topo_config.mobility.moving_dynamics.min_speed = atof(ch);
-					} else if (max_speed_) {
-						oai_emulation.topo_config.mobility.moving_dynamics.max_speed = atof(ch);
-					} else if (min_pause_time_) {
-						oai_emulation.topo_config.mobility.moving_dynamics.min_pause_time = atof(ch);
-					} else if (max_pause_time_) {
-						oai_emulation.topo_config.mobility.moving_dynamics.max_pause_time = atof(ch);
-					}
-				} else if (random_seed_) {
-					if (oai_seed_) {
-						oai_emulation.topo_config.mobility.random_seed.selected_option = "oaiseed";
-					} else if (user_seed_) {
-						oai_emulation.topo_config.mobility.random_seed.selected_option = "userseed";
-						if (seed_value_) {
-							oai_emulation.topo_config.mobility.random_seed.user_seed.seed_value = atoi(ch);
+				if (UE_mobility_) {
+					if (UE_mobility_type_) {
+						oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = strndup(ch, len);
+					} else if (grid_walk_) {
+						if (grid_map_) {
+							if (horizontal_grid_) {
+								oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = atoi(ch);
+							} else if (vertical_grid_) {
+								oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = atoi(ch);
+							}
+						} else if (grid_trip_type_) {
+							oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = strndup(ch, len);
+						}	
+					} else if (UE_initial_distribution_) {
+						oai_emulation.topology_config.mobility.UE_mobility.UE_initial_distribution.selected_option = strndup(ch, len);
+					} else if (random_UE_distribution_) {
+						if (number_of_nodes_) {
+							oai_emulation.topology_config.mobility.UE_mobility.random_UE_distribution.number_of_nodes = atoi(ch);
+							oai_emulation.info.number_of_UE = oai_emulation.topology_config.mobility.UE_mobility.random_UE_distribution.number_of_nodes;
+						}
+					} else if (concentrated_UE_distribution_) {
+						if (number_of_nodes_) {
+							oai_emulation.topology_config.mobility.UE_mobility.concentrated_UE_distribution.number_of_nodes = atoi(ch);
+							oai_emulation.info.number_of_UE = oai_emulation.topology_config.mobility.UE_mobility.concentrated_UE_distribution.number_of_nodes;
+						}
+					} else if (grid_UE_distribution_) {
+						if (random_grid_) {
+							if (number_of_nodes_) {
+								oai_emulation.topology_config.mobility.UE_mobility.grid_UE_distribution.random_grid.number_of_nodes = atoi(ch);
+								oai_emulation.info.number_of_UE = oai_emulation.topology_config.mobility.UE_mobility.grid_UE_distribution.random_grid.number_of_nodes;
+							}
+						} else if (border_grid_) {
+							if (number_of_nodes_) {
+								oai_emulation.topology_config.mobility.UE_mobility.grid_UE_distribution.border_grid.number_of_nodes = atoi(ch);
+								oai_emulation.info.number_of_UE = oai_emulation.topology_config.mobility.UE_mobility.grid_UE_distribution.border_grid.number_of_nodes;
+							}
+						}
+					} else if (UE_moving_dynamics_) {
+						if (min_speed_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed = atoi(ch);
+						} else if (max_speed_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed = atoi(ch);
+						} else if (min_pause_time_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time = atoi(ch);
+						} else if (max_pause_time_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time = atoi(ch);
+						} else if (min_journey_time_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_journey_time = atoi(ch);
+						} else if (max_journey_time_) {
+							oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_journey_time = atoi(ch);
 						}
 					}
-				}
+				} else if (eNB_mobility_) {
+					if (eNB_mobility_type_) {
+						oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = strndup(ch, len);
+					} else if (eNB_initial_distribution_) {
+						oai_emulation.topology_config.mobility.eNB_mobility.eNB_initial_distribution.selected_option = strndup(ch, len);
+					} else if (random_eNB_distribution_) {
+						if (number_of_cells_) {
+							oai_emulation.topology_config.mobility.eNB_mobility.random_eNB_distribution.number_of_cells = atoi(ch);
+							oai_emulation.info.number_of_eNB = oai_emulation.topology_config.mobility.eNB_mobility.random_eNB_distribution.number_of_cells;
+						}
+					} else if (hexagonal_eNB_distribution_) {
+						if (number_of_cells_) {
+							oai_emulation.topology_config.mobility.eNB_mobility.hexagonal_eNB_distribution.number_of_cells = atoi(ch);
+							oai_emulation.info.number_of_eNB = oai_emulation.topology_config.mobility.eNB_mobility.hexagonal_eNB_distribution.number_of_cells;
+						} else if (inter_eNB_distance_) {
+							oai_emulation.topology_config.mobility.eNB_mobility.hexagonal_eNB_distribution.inter_eNB_distance = atof(ch);
+						}
+					} else if (grid_eNB_distribution_) {
+						if (number_of_grid_x_) {
+							oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x = atoi(ch);
+						} else if (number_of_grid_y_) {
+							oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y = atof(ch);
+							oai_emulation.info.number_of_eNB = oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_x * oai_emulation.topology_config.mobility.eNB_mobility.grid_eNB_distribution.number_of_grid_y;
+						}
+					}
+				} 
 			}
-		} else if (app_config_) {
-			if (app_type_) {
-				oai_emulation.app_config.app_type.selected_option = strndup(ch, len);
+
+		} else if (application_config_) {
+			if (application_type_) {
+				oai_emulation.application_config.application_type.selected_option = strndup(ch, len);
 			} else if (traffic_) {
 				if (transport_protocol_) {
-					oai_emulation.app_config.traffic.transport_protocol.selected_option = strndup(ch, len);
+					oai_emulation.application_config.traffic.transport_protocol.selected_option = strndup(ch, len);
 				} else if (packet_size_) {
-					if (fixed_) {
-						oai_emulation.app_config.traffic.packet_size.selected_option = "fixed";
-						if (fixed_value_) {
-							oai_emulation.app_config.traffic.packet_size.fixed.fixed_value = atof(ch);
-						}
-					} else if (uniform_) {
-						oai_emulation.app_config.traffic.packet_size.selected_option = "uniform";
-						if (min_value_) {
-							oai_emulation.app_config.traffic.packet_size.uniform.min_value = atof(ch);
-						} else if (max_value_) {
-							oai_emulation.app_config.traffic.packet_size.uniform.max_value = atof(ch);
-						}
+					oai_emulation.application_config.traffic.packet_size.selected_option = strndup(ch, len);
+				} else if (fixed_packet_size_) {
+					if (fixed_value_) {
+						oai_emulation.application_config.traffic.fixed_packet_size.fixed_value = atof(ch);
+					}
+				} else if (uniform_packet_size_) {
+					if (min_value_) {
+						oai_emulation.application_config.traffic.uniform_packet_size.min_value = atof(ch);
+					} else if (max_value_) {
+						oai_emulation.application_config.traffic.uniform_packet_size.max_value = atof(ch);
 					}
 				} else if (inter_arrival_time_) {
-					if (fixed_) {
-						oai_emulation.app_config.traffic.inter_arrival_time.selected_option = "fixed";
-						if (fixed_value_) {
-							oai_emulation.app_config.traffic.inter_arrival_time.fixed.fixed_value = atof(ch);
-						}
-					} else if (uniform_) {
-						oai_emulation.app_config.traffic.inter_arrival_time.selected_option = "uniform";
-						if (min_value_) {
-							oai_emulation.app_config.traffic.inter_arrival_time.uniform.min_value = atof(ch);
-						} else if (max_value_) {
-							oai_emulation.app_config.traffic.inter_arrival_time.uniform.max_value = atof(ch);
-						}
-					} else if (poisson_) {
-						oai_emulation.app_config.traffic.inter_arrival_time.selected_option = "poisson";
-						if (expected_inter_arrival_time_) {
-							oai_emulation.app_config.traffic.inter_arrival_time.poisson.expected_inter_arrival_time = atof(ch);
-						}
+					oai_emulation.application_config.traffic.inter_arrival_time.selected_option = strndup(ch, len);
+				} else if (fixed_inter_arrival_time_) {
+					if (fixed_value_) {
+						oai_emulation.application_config.traffic.fixed_inter_arrival_time.fixed_value = atof(ch);
+					}
+				} else if (uniform_inter_arrival_time_) {
+					if (min_value_) {
+						oai_emulation.application_config.traffic.uniform_inter_arrival_time.min_value = atof(ch);
+					} else if (max_value_) {
+						oai_emulation.application_config.traffic.uniform_inter_arrival_time.max_value = atof(ch);
+					}
+				} else if (poisson_inter_arrival_time_) {
+					if (expected_inter_arrival_time_) {
+						oai_emulation.application_config.traffic.poisson_inter_arrival_time.expected_inter_arrival_time = atof(ch);
 					}
 				}
 			}
-		} else if (emu_config_) {
-			if (emu_time_) {
-				oai_emulation.emu_config.emu_time = atof(ch);
+
+		} else if (emulation_config_) {
+			if (emulation_time_) {
+				oai_emulation.emulation_config.emulation_time = atof(ch);
 			} else if (performance_) {
-				if (metric_) {
+				if (metrics_) {
 					if (throughput_) {
-						oai_emulation.emu_config.performance.metric.throughput = atoi(ch);
+						oai_emulation.emulation_config.performance.metrics.throughput = atoi(ch);
 					} else if (latency_) {
-						oai_emulation.emu_config.performance.metric.latency = atoi(ch);
+						oai_emulation.emulation_config.performance.metrics.latency = atoi(ch);
 					} else if (signalling_overhead_) {
-						oai_emulation.emu_config.performance.metric.signalling_overhead = atoi(ch);
+						oai_emulation.emulation_config.performance.metrics.signalling_overhead = atoi(ch);
 					}
 				} else if (layer_) {
 					if (mac_) {
-						oai_emulation.emu_config.performance.layer.mac = atoi(ch);
+						oai_emulation.emulation_config.performance.layer.mac = atoi(ch);
 					} else if (rlc_) {
-						oai_emulation.emu_config.performance.layer.rlc = atoi(ch);
+						oai_emulation.emulation_config.performance.layer.rlc = atoi(ch);
 					} else if (pdcp_) {
-						oai_emulation.emu_config.performance.layer.pdcp = atoi(ch);
+						oai_emulation.emulation_config.performance.layer.pdcp = atoi(ch);
 					}
 				} else if (log_emu_) {
 					if (debug_) {
-						oai_emulation.emu_config.performance.log_emu.debug = atoi(ch);
+						oai_emulation.emulation_config.performance.log_emu.debug = atoi(ch);
 					} else if (info_) {
-						oai_emulation.emu_config.performance.log_emu.info = atoi(ch);
+						oai_emulation.emulation_config.performance.log_emu.info = atoi(ch);
 					} else if (warning_) {
-						oai_emulation.emu_config.performance.log_emu.warning = atoi(ch);
+						oai_emulation.emulation_config.performance.log_emu.warning = atoi(ch);
 					} else if (error_) {
-						oai_emulation.emu_config.performance.log_emu.error = atoi(ch);
+						oai_emulation.emulation_config.performance.log_emu.error = atoi(ch);
 					}
 				} else if (packet_trace_) {
 					if (mac_) {
-						oai_emulation.emu_config.performance.packet_trace.mac = atoi(ch);
+						oai_emulation.emulation_config.performance.packet_trace.mac = atoi(ch);
 					}
 				}
+			} else if (seed_) {
+				oai_emulation.emulation_config.seed.selected_option = strndup(ch, len);
+			} else if (user_seed_) {
+				oai_emulation.emulation_config.user_seed.seed_value = atoi(ch);
 			}
+
 		} else if (profile_) {
 			oai_emulation.profile = strndup(ch, len);
 		}
+
 	}
 }
+
 
 int parse_XML(char src_file[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX]){
 	// config the parser, refer to 'http://www.saxproject.org/apidoc/org/xml/sax/ContentHandler.html'

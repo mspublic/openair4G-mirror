@@ -60,6 +60,14 @@ void start_static_generator(omg_global_param omg_param_list) {
 
   srand(omg_param_list.seed + STATIC); 
   // for (n_id = omg_param_list.first_ix; n_id< omg_param_list.first_ix + omg_param_list.nodes; n_id++) {
+
+	if (omg_param_list.nodes_type == eNB) {
+		LOG_I(OMG, "Node type has been set to eNB\n");
+	} else if (omg_param_list.nodes_type == UE) {
+		LOG_I(OMG, "Node type has been set to UE\n");
+	}
+ 	LOG_I(OMG, "Number of static nodes has been set to %d\n", omg_param_list.nodes);
+
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
     node = (NodePtr) create_node();
@@ -89,7 +97,7 @@ void place_static_node(NodePtr node) {
 	node->mob->journey_time = 0.0;
 
 	LOG_D(OMG, " --------INITIALIZE STATIC NODE--------\n ");
-   LOG_T(OMG, "ID: %d\ttype(UE, eNB): %d\tX = %.2f\tY = %.2f\tspeed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
+   LOG_I(OMG, "Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
 	Node_Vector[STATIC] = (Node_list) add_entry(node, Node_Vector[STATIC]);
    Node_Vector_len[STATIC]++;
 	//Initial_Node_Vector_len[STATIC]++;
