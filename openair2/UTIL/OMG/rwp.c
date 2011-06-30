@@ -60,7 +60,13 @@ int start_rwp_generator(omg_global_param omg_param_list) {
     LOG_W(OMG, "Number of nodes has not been set\n");
     return(-1);
   }
- 
+
+	if (omg_param_list.nodes_type == eNB) {
+		LOG_I(OMG, "Node type has been set to eNB\n");
+	} else if (omg_param_list.nodes_type == UE) {
+		LOG_I(OMG, "Node type has been set to UE\n");
+	}
+ 	LOG_I(OMG, "Number of random waypoint nodes has been set to %d\n", omg_param_list.nodes);
   
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
@@ -102,7 +108,7 @@ void place_rwp_node(NodePtr node) {
 	node->mob->journey_time = 0.0;
 
 	LOG_D(OMG, "--------INITIALIZE RWP NODE-------- \n ");
-  	LOG_D(OMG, "ID: %d\ttype: %d\tX = %.2f\tY = %.2f\tspeed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);   
+  	LOG_I(OMG, "Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n ", node->ID, node->type, node->X_pos, node->Y_pos);   
 	Node_Vector[RWP] = (Node_list) add_entry(node, Node_Vector[RWP]);
    Node_Vector_len[RWP]++;
 	//Initial_Node_Vector_len[RWP]++;
@@ -137,14 +143,14 @@ Pair move_rwp_node(NodePtr node, double cur_time) {
 	LOG_D(OMG, "node: %d\n",node->ID );
 	node->mob->X_from = node->X_pos;
 	node->mob->Y_from = node->Y_pos;
-	LOG_D(OMG, "Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
+	LOG_I(OMG, "Current Position: (%.2f, %.2f)\n", node->mob->X_from, node->mob->Y_from);
 
 	node->mobile = 0;
 	double X_next = (double) ((int)(randomGen(omg_param_list.min_X,omg_param_list.max_X)*100))/ 100;
 	node->mob->X_to = X_next;
 	double Y_next = (double) ((int)(randomGen(omg_param_list.min_Y,omg_param_list.max_Y)*100))/ 100;
 	node->mob->Y_to = Y_next;
-	LOG_D(OMG, "destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
+	LOG_I(OMG, "destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
 
 	double speed_next = (double) ((int)(randomGen(omg_param_list.min_speed, omg_param_list.max_speed)*100))/ 100;
 	node->mob->speed = speed_next;
@@ -241,12 +247,12 @@ void get_rwp_positions_updated(double cur_time){
     while (tmp != NULL){
       if (tmp->pair->b->generator == RWP){
         if (tmp->pair->b->mobile == 0){ //node is sleeping
-          LOG_D(OMG, "node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
-          LOG_D(OMG, "nothing to do\n");
+          LOG_T(OMG, "node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_T(OMG, "nothing to do\n");
         } 
         else if (tmp->pair->b->mobile == 1){ //node is moving
-          LOG_D(OMG, "Node_number %d\n", tmp->pair->b->ID);
-          LOG_D(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_T(OMG, "Node_number %d\n", tmp->pair->b->ID);
+          LOG_T(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 
           double len = sqrtf(pow(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to,2)+pow(tmp->pair->b->mob->Y_from - tmp->pair->b->mob->Y_to,2));
           double dx = fabs(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to) / len;
@@ -273,7 +279,7 @@ void get_rwp_positions_updated(double cur_time){
           //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
           //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 	  //tmp->pair->b->mob->start_journey = cur_time;
-          LOG_D(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+          LOG_I(OMG, "Updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
         }	
         else{
           LOG_E(OMG, "Update_generator: unsupported node state - mobile : %d \n", tmp->pair->b->mobile);

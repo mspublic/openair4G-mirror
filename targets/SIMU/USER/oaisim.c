@@ -187,6 +187,7 @@ void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
+  OAI_Emulation * emulation_scen;
 
 int main(int argc, char **argv) {
 
@@ -228,8 +229,6 @@ int main(int argc, char **argv) {
 
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
-
-  OAI_Emulation * emulation_scen;
 
 
 #ifdef XFORMS
@@ -378,7 +377,7 @@ int main(int argc, char **argv) {
       emu_info.ocg_enabled=1;
       abstraction_flag=1;
       extended_prefix_flag=1;
-      n_frames_flag=1; 
+      n_frames_flag=1;
       transmission_mode = 1;
       break;
     case 'g':
@@ -580,7 +579,6 @@ int main(int argc, char **argv) {
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     if (n_frames_flag == 0) // if n_frames not set by the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-    if (mac_xface->frame == n_frames-1 ) exit(-1);
     
     // set the emulation time based on 1ms subframe number
     emu_info.time += 1.0/100; // emu time in ms 

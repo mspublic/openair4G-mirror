@@ -60,6 +60,13 @@ int start_rwalk_generator(omg_global_param omg_param_list) {
     return(-1);
   }
   
+	if (omg_param_list.nodes_type == eNB) {
+		LOG_I(OMG, "Node type has been set to eNB\n");
+	} else if (omg_param_list.nodes_type == UE) {
+		LOG_I(OMG, "Node type has been set to UE\n");
+	}
+ 	LOG_I(OMG, "Number of random walk nodes has been set to %d\n", omg_param_list.nodes);
+
   
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
@@ -100,7 +107,7 @@ void place_rwalk_node(NodePtr node) {
 	node->mob->journey_time = 0.0;
 
 	LOG_D(OMG, " INITIALIZE RWALK NODE\n ");
-    LOG_D(OMG, "ID: %d\ttype: %d\tX = %.2f\tY = %.2f\tspeed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);   
+    LOG_I(OMG, "Initial position of node ID: %d type: %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);   
 	Node_Vector[RWALK] = (Node_list) add_entry(node, Node_Vector[RWALK]);
    Node_Vector_len[RWALK]++;
    //Initial_Node_Vector_len[RWALK]++;
@@ -212,7 +219,7 @@ Pair move_rwalk_node(NodePtr node, double cur_time) {
 		node->mob->Y_to = Y_next;
 	}
 	
-	LOG_D(OMG, "destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
+	LOG_I(OMG, "destination: (%.2f, %.2f)\n", node->mob->X_to, node->mob->Y_to);
 
 	node->mob->start_journey = cur_time;
    	LOG_D(OMG, "start_journey %.2f\n", node->mob->start_journey );
@@ -304,12 +311,12 @@ void get_rwalk_positions_updated(double cur_time){
       while (tmp != NULL){
 		  if (tmp->pair->b->generator == RWALK){
 			 if (tmp->pair->b->mobile == 0){ //node is sleeping
-			    LOG_D(OMG,"node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
-			    LOG_D(OMG,"Nothing to do, node is sleeping\n");
+			    LOG_T(OMG,"node number %d is sleeping at location: (%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+			    LOG_T(OMG,"Nothing to do, node is sleeping\n");
 			 } 
 			else if (tmp->pair->b->mobile == 1){ //node is moving
-			    LOG_D(OMG,"Node_number %d\n", tmp->pair->b->ID);
-			    LOG_D(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+			    LOG_T(OMG,"Node_number %d\n", tmp->pair->b->ID);
+			    LOG_T(OMG, "destination not yet reached\tfrom (%.2f, %.2f)\tto (%.2f, %.2f)\tspeed %.2f\t(X_pos %.2f\tY_pos %.2f)\n", tmp->pair->b->mob->X_from, tmp->pair->b->mob->Y_from,tmp->pair->b->mob->X_to, tmp->pair->b->mob->Y_to,tmp->pair->b->mob->speed, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 
 			    double len = sqrtf(pow(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to,2)+pow(tmp->pair->b->mob->Y_from - tmp->pair->b->mob->Y_to,2));
 			    double dx = fabs(tmp->pair->b->mob->X_from - tmp->pair->b->mob->X_to) / len;
@@ -368,7 +375,7 @@ void get_rwalk_positions_updated(double cur_time){
  				   //tmp->pair->b->mob->X_from = tmp->pair->b->X_pos;
 				   //tmp->pair->b->mob->Y_from = tmp->pair->b->Y_pos;
 				   //tmp->pair->b->mob->start_journey = cur_time;
-			LOG_D(OMG,"updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
+			LOG_I(OMG,"updated_position of node number %d is :(%.2f, %.2f)\n", tmp->pair->b->ID, tmp->pair->b->X_pos, tmp->pair->b->Y_pos);
 			}
 				
 			else{
