@@ -1,6 +1,5 @@
 #ifndef __MODULATION_DEFS__H__
 #define __MODULATION_DEFS__H__
-#include "PHY/defs.h"
 /** @addtogroup _PHY_MODULATION_
  * @{
 */
@@ -42,7 +41,9 @@ void PHY_ofdm_mod(int *input,
 \param no_prefix if 1 prefix is removed by HW 
 */
 
-int slot_fep(PHY_VARS_UE *phy_vars_ue,
+int slot_fep(u8 eNB_id,
+	     LTE_DL_FRAME_PARMS *frame_parms,
+	     LTE_UE_COMMON *ue_common_vars,
 	     unsigned char l,
 	     unsigned char Ns,
 	     int sample_offset,

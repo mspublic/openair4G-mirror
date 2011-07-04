@@ -25,69 +25,9 @@ unsigned int cqi2hex(unsigned short cqi) {
           (((cqi>>8)&3)<<16) + (((cqi>>10)&3)<<20) + (((cqi>>12)&3)<<24));
 }
 
-void do_diff_cqi(u8 N_RB_DL,
-		 u8 *DL_subband_cqi,
-		 u8 DL_cqi,
-		 u32 diffcqi1) {
-
-  u8 nb_sb,i,offset;
-
-  // This is table 7.2.1-3 from 36.213 (with k replaced by the number of subbands, nb_sb)
-  switch (N_RB_DL) {
-  case 6:
-    nb_sb=0;
-    break;
-  case 15:
-    nb_sb = 4;
-  case 25:
-    nb_sb = 7;
-    break;
-  case 50:
-    nb_sb = 9;
-    break;
-  case 75:
-    nb_sb = 10;
-    break;
-  case 100:
-    nb_sb = 13;
-    break;
-  default:
-    nb_sb=0;
-    break;
-  }
-
-  memset(DL_subband_cqi,0,13);
-
-  for (i=0;i<nb_sb;i++) {
-    offset = (DL_cqi>>(2*i))&3;
-    if (offset == 3)
-      DL_subband_cqi[i] = DL_cqi - 1;
-    else 
-      DL_subband_cqi[i] = DL_cqi + offset;
-  }
-}      
-void extract_CQI(void *o,unsigned char *o_RI,u8 tmode,LTE_eNB_UE_stats *stats) {
+void extract_CQI(void *o,unsigned char *o_RI,UCI_format fmt,LTE_eNB_UE_stats *stats) {
 
   unsigned char rank;
-  UCI_format fmt;
-  u8 N_RB_DL = 25;
-
-
-  switch (tmode) {
-
-  case 1:
-  case 2:
-  case 3:
-  case 5:
-  case 6:
-  case 7:
-  default:
-    fmt = hlc_cqi;
-    break;
-  case 4:
-    fmt = wideband_cqi;
-    break;
-  }
 
   rank = o_RI[0];
   //printf("extract_CQI: rank = %d\n",rank);
@@ -96,49 +36,39 @@ void extract_CQI(void *o,unsigned char *o_RI,u8 tmode,LTE_eNB_UE_stats *stats) {
 
   case wideband_cqi: //and subband pmi
     if (rank == 0) {
-      stats->DL_cqi[0]     = (((wideband_cqi_rank1_2A_5MHz *)o)->cqi1);
-      if (stats->DL_cqi[0] > 15)
-	stats->DL_cqi[0] = 15;
+      stats->DL_cqi[0]     = 4;//(((wideband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;
       stats->DL_pmi_single = ((wideband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[0]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi1);
-      if (stats->DL_cqi[0] > 15)
-	stats->DL_cqi[0] = 15;      
-      stats->DL_cqi[1]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi2);
-      if (stats->DL_cqi[1] > 15)
-	stats->DL_cqi[1] = 15;      
+      stats->DL_cqi[0]     = 4;//(((wideband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_cqi[1]     = (((wideband_cqi_rank2_2A_5MHz *)o)->cqi2)<<1;
+      if (stats->DL_cqi[1] > 28)
+	stats->DL_cqi[1] = 28;      
       stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;      
     }
     break;
   case hlc_cqi:
-    if (tmode > 2) {
-      if (rank == 0) {
-	stats->DL_cqi[0]     = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
-	if (stats->DL_cqi[0] > 15)
-	  stats->DL_cqi[0] = 15;     
-	do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));      
-	stats->DL_pmi_single = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
-      }
-      else {
-	stats->DL_cqi[0]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1);
-	if (stats->DL_cqi[0] > 15)
-	  stats->DL_cqi[0] = 15;      
-	stats->DL_cqi[1]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2);
-	if (stats->DL_cqi[1] > 15)
-	  stats->DL_cqi[1] = 15;      
-	do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));      
-	do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[1],stats->DL_cqi[1],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));      
-	stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;      
-      }
+    if (rank == 0) {
+      stats->DL_cqi[0]     = 4;//(((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1)<<1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_diffcqi[0] = (((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1)<<1;      
+      stats->DL_pmi_single = ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi;      
     }
     else {
-      stats->DL_cqi[0]     = (((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1);
-      if (stats->DL_cqi[0] > 15)
-	stats->DL_cqi[0] = 15;      
-
-      do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1);      
-      
+      stats->DL_cqi[0]     = 4;//(((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1)<<1;
+      if (stats->DL_cqi[0] > 28)
+	stats->DL_cqi[0] = 28;      
+      stats->DL_cqi[1]     = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2)<<1;
+      if (stats->DL_cqi[1] > 28)
+	stats->DL_cqi[1] = 28;      
+      stats->DL_diffcqi[0] = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1)<<1;      
+      stats->DL_diffcqi[1] = (((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2)<<1;      
+      stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;      
     }
     break;
   default:
@@ -148,30 +78,12 @@ void extract_CQI(void *o,unsigned char *o_RI,u8 tmode,LTE_eNB_UE_stats *stats) {
 }
 									     
 
-void print_CQI(void *o,unsigned char *o_RI,u8 tmode,unsigned char eNB_id) {
+void print_CQI(void *o,unsigned char *o_RI,UCI_format fmt,unsigned char eNB_id) {
 
 
   unsigned char rank;
-  UCI_format fmt;
-
 
   rank = o_RI[0];
-
-  switch (tmode) {
-
-  case 1:
-  case 2:
-  case 3:
-  case 5:
-  case 6:
-  case 7:
-  default:
-    fmt = hlc_cqi;
-    break;
-  case 4:
-    fmt = wideband_cqi;
-    break;
-  }
 
   switch (fmt) {
 
@@ -191,28 +103,20 @@ void print_CQI(void *o,unsigned char *o_RI,u8 tmode,unsigned char eNB_id) {
     }
     break;
   case hlc_cqi:
-    if (tmode > 2) {
-      if (rank == 0) {
+    if (rank == 0) {
 #ifdef DEBUG_UCI
-	msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
-	msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));
-	msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi);
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));
+      msg("[PRINT CQI] hlc_cqi rank 1: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi);
 #endif //DEBUG_UCI
-      }
-      else {
-#ifdef DEBUG_UCI
-	msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1);
-	msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi2 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2);
-	msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));
-	msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi2 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));
-	msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi);
-#endif //DEBUG_UCI
-      }
     }
     else {
 #ifdef DEBUG_UCI
-      msg("[PRINT CQI] hlc_cqi (no pmi) : eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1);
-      msg("[PRINT CQI] hlc_cqi (no pmi) : eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1));
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi1 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1);
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, cqi2 %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2);
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi1 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, diffcqi2 %8x\n",eNB_id,cqi2hex(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));
+      msg("[PRINT CQI] hlc_cqi rank 2: eNB %d, pmi %d\n",eNB_id,((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi);
 #endif //DEBUG_UCI
     }
     break;

@@ -16,19 +16,17 @@
 //-----------------------------------------------------------------------------
 //#include "openair_defs.h"
 
-#define WAIT_PM_TRANSPORT_INFO 0x1
-#define WAIT_SM_TRANSPORT_INFO 0x2
-#define SYNC_TRANSPORT_INFO 0x3
-#define ENB_TRANSPORT_INFO 0X4
-#define UE_TRANSPORT_INFO 0X5
-#define RELEASE_TRANSPORT_INFO 0x6
+#define WAIT_TRANSPORT_INFO 0x1
+#define SYNC_TRANSPORT_INFO 0x2
+#define ENB_TRANSPORT_INFO 0X3
+#define UE_TRANSPORT_INFO 0X4
+#define RELEASE_TRANSPORT_INFO 0x5
 
-#define WAIT_PM_TRANSPORT 1
-#define WAIT_SM_TRANSPORT 2
-#define SYNC_TRANSPORT 3
-#define ENB_TRANSPORT 4
-#define UE_TRANSPORT 5
-#define RELEASE_TRANSPORT 6
+#define WAIT_TRANSPORT 1
+#define SYNC_TRANSPORT 2
+#define ENB_TRANSPORT 3
+#define UE_TRANSPORT 4
+#define RELEASE_TRANSPORT 5
 
 #define WAIT_SYNC_TRANSPORT 1
 #define SYNCED_TRANSPORT 2
@@ -77,7 +75,7 @@ typedef struct {
   u8 ue_id[MAX_NUM_DCI];
   u16 tbs[MAX_NUM_DCI*2];    // times 2 for dual-stream MIMO formats
   u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE]; 
-} __attribute__ ((__packed__)) eNB_transport_info_t ;
+} eNB_transport_info_t ;
 
 /*typedef struct {
   eNB_cntl cntl;
@@ -96,7 +94,7 @@ typedef struct {
   u8 harq_pid[NUMBER_OF_eNB_MAX];
   u16 tbs[NUMBER_OF_eNB_MAX];
   u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_eNB_MAX];
-} __attribute__ ((__packed__)) UE_transport_info_t ;
+} UE_transport_info_t ;
 
 /*! \brief */
 typedef struct bypass_msg_header {
@@ -108,7 +106,7 @@ typedef struct bypass_msg_header {
   unsigned int   nb_flow; /*! \brief */
   unsigned int   frame;
   unsigned int subframe;
-}__attribute__ ((__packed__)) bypass_msg_header_t;
+}bypass_msg_header_t;
 
 typedef struct bypass_proto2multicast_header_t {
   unsigned int      size;
@@ -147,8 +145,8 @@ typedef struct {
   unsigned char ocg_enabled;
   unsigned char opt_enabled;
   unsigned char otg_enabled;
-  unsigned char omg_model_enb;
-  unsigned char omg_model_ue;
+  unsigned char omg_enabled;
+  unsigned char omg_model;
   double time;	
 
 }emu_info_t; 
