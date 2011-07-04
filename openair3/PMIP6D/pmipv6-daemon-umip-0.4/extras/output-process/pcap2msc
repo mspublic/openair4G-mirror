@@ -47,8 +47,8 @@ BROADCAST_IPV4_ETH_ADDR = 'ff:ff:ff:ff:ff:ff'
 
 
 #TIME ALIGNEMENT VARIABLES
-g_lma_mag1_diff_time = datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 0, 0, 0, 0) 
-g_lma_mag2_diff_time = datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 0, 0, 0, 0) 
+g_lma_mag1_diff_time = datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
+g_lma_mag2_diff_time = datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
 
 NULL_TIME_DELTA              = datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 1, 1, 1, 1)
 ADJUST_TIME_INTER_NODE_MICRO_TIME_DELTA = datetime.datetime(2000, 1, 1, 1, 1, 1, INITIAL_ADJUST_TIME_INTER_NODE) - datetime.datetime(2000, 1, 1, 1, 1, 1, 0)
@@ -322,9 +322,9 @@ def load_messages(entity_str, pcap_file):
 			while (dtime in g_messages_by_entity[entity_str]):
 				# add 1 micro second
 				dtime = dtime + (datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 1, 1, 1, 0))
-				print >>sys.stderr, "Warning Incrementing time by 1 microsecond for entity %s Message %s" % (str(dtime), message['msg'])	
+				print >>sys.stderr, "Warning Incrementing time by 1 microsecond for entity %s Message %s" % (str(dtime), message['msg'])
 				#test only, to remove
-				sys.exit(1)			
+				sys.exit(1)
 			g_messages_by_entity[entity_str][dtime] = 	message
 
 ################################################################################
@@ -382,7 +382,7 @@ def load_time_sync_message(entity_str, pcap_file, message_shift_filter_string, m
 					msg['datetime'] = dtime
 					g_sync_messages_by_entity[entity_str][msg['date']] = msg
 
-			
+
 		else:
 			print >>sys.stderr, "line '%s' not handled by regex !" % line
 			#break
@@ -581,7 +581,7 @@ def compute_initial_clock_diff_between_entities():
 		print >>sys.stderr, "ERROR could not compute clock shifts"
 		sys.exit(1)
 
-		
+
 ################################################################################
 def merge_messages_and_apply_time_shift(message_drift_adjust):
 ################################################################################
@@ -601,7 +601,7 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 	sync_messages_by_entity           = {}
 	sync_messages_by_entity[MAG1_STR] = {}
 	sync_messages_by_entity[MAG2_STR] = {}
-	
+
 	#--------------------------------------------------------------------------------------
 	messages_by_entity[LMA_STR].update(g_messages_by_entity[LMA_STR])
 	g_messages_by_entity[LMA_STR] = {}
@@ -614,7 +614,7 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 		while (message_time in g_messages):
 			# add 1 micro second
 			message_time = message_time + (datetime.datetime(2000, 1, 1, 1, 1, 1, 1) - datetime.datetime(2000, 1, 1, 1, 1, 1, 0))
-			print >>sys.stderr, "[MAG1] Warning Incrementing time by 1 microsecond for  '%s'" % message['msg']				
+			print >>sys.stderr, "[MAG1] Warning Incrementing time by 1 microsecond for  '%s'" % message['msg']
 		#if message['msg'].count(message_drift_adjust) > 0:
 		#	if message['msg'] not in g_sync_messages_by_entity[LMA_STR]:
 		#		g_sync_messages_by_entity[MAG1_STR][message['msg']]   = message_time
@@ -622,7 +622,7 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 	g_messages_by_entity[MAG1_STR] = {}
 
 	#--------------------------------------------------------------------------------------
-	print >>sys.stderr, "Applying initial diff time to MAG1 Sync Messages", g_lma_mag2_diff_time
+	print >>sys.stderr, "Applying initial diff time to MAG1 Sync Messages", g_lma_mag1_diff_time
 	for key in g_sync_messages_by_entity[MAG1_STR].iterkeys():
 		message =  g_sync_messages_by_entity[MAG1_STR][key]
 		message_time = key + g_lma_mag1_diff_time
@@ -666,6 +666,9 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 	lma_time_key  = datetime.datetime(2000, 1, 1, 0, 0, 0, 0)
 	mag1_time_key = datetime.datetime(2000, 1, 1, 0, 0, 0, 1)
 	mag2_time_key = datetime.datetime(2000, 1, 1, 0, 0, 0, 2)
+	keys_to_add_mag1 = {}
+	keys_to_add_mag2 = {}
+
 
 	for lma_time_key in sorted(messages_by_entity[LMA_STR].iterkeys()):
 		message_lma =  messages_by_entity[LMA_STR][lma_time_key ]
@@ -678,7 +681,7 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 				if (message_lma['entity_src'] == LMA_STR) and (message_lma['entity_dst'] == MAG1_STR):
 					if (mag1_time_key + time_drift_mag1) <= lma_time_key:
 						time_drift_mag1 = lma_time_key - mag1_time_key + ADJUST_TIME_INTER_NODE_MICRO_TIME_DELTA
-						print >>sys.stderr, "Found LMA-MAG1 drift for ", message_lma['msg'], " ", time_drift_mag1
+						print >>sys.stderr, "Found LMA-MAG1 drift for ", message_lma['msg'], " ", time_drift_mag1, "\tTime MAG 1:", mag1_time_key, "/Time LMA:", lma_time_key
 					#else:
 					#	# null drift
 					#	if time_drift_mag1 != NULL_TIME_DELTA:
@@ -714,45 +717,83 @@ def merge_messages_and_apply_time_shift(message_drift_adjust):
 					#	if time_drift_mag2 != NULL_TIME_DELTA:
 					#		print >>sys.stderr, "Reseting LMA-MAG2 drift to 0 for ", message_lma['msg']
 					#		time_drift_mag2 = NULL_TIME_DELTA
-			
+
+		if time_drift_mag1 != NULL_TIME_DELTA:
+			for mag_key in sorted(keys_to_add_mag1.iterkeys()):
+				if mag_key < mag1_time_key:
+					g_messages[mag_key] = keys_to_add_mag1[mag_key]
+				else:
+					print >>sys.stderr, "Retro-Applying MAG1 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag1), keys_to_add_mag1[mag_key]['msg'], keys_to_add_mag1[mag_key]['entity_src'], keys_to_add_mag1[mag_key]['entity_dst'], str(mag_key), str(mag_key + time_drift_mag1) )
+					g_messages[mag_key + time_drift_mag1] = keys_to_add_mag1[mag_key]
+			keys_to_add_mag1 = {}
+
+		if time_drift_mag2 != NULL_TIME_DELTA:
+			for mag_key in sorted(keys_to_add_mag2.iterkeys()):
+				if mag_key < mag2_time_key:
+					g_messages[mag_key] = keys_to_add_mag2[mag_key]
+				else:
+					print >>sys.stderr, "Retro-Applying MAG2 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag2), keys_to_add_mag2[mag_key]['msg'], keys_to_add_mag2[mag_key]['entity_src'], keys_to_add_mag2[mag_key]['entity_dst'], str(mag_key), str(mag_key + time_drift_mag2) )
+					g_messages[mag_key + time_drift_mag2] = keys_to_add_mag2[mag_key]
+			keys_to_add_mag2 = {}
+
 
 		keys_to_delete = []
+		keys_to_add    = {}
 		for mag1_key in sorted(messages_by_entity[MAG1_STR].iterkeys()):
 			if (mag1_key + time_drift_mag1) <= lma_time_key:
 				message_mag1 =  messages_by_entity[MAG1_STR][mag1_key]
-				print >>sys.stderr, "Applying MAG1 drift %s for %s  %s -> %s" % (str(time_drift_mag1), message_mag1['msg'], message_mag1['entity_src'], message_mag1['entity_dst'] )
+				print >>sys.stderr, "Applying MAG1 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag1), message_mag1['msg'], message_mag1['entity_src'], message_mag1['entity_dst'], str(mag1_key), str(mag1_key + time_drift_mag1) )
 				new_key = mag1_key + time_drift_mag1
-				g_messages[new_key] = message_mag1
+				keys_to_add_mag1[new_key] = message_mag1
 				keys_to_delete.append(mag1_key)
 			else:
-				break
+				new_key = mag1_key + time_drift_mag1
+				keys_to_add[new_key] = messages_by_entity[MAG1_STR][mag1_key]
+				keys_to_delete.append(mag1_key)
+				#break
 		for a_key_to_del in keys_to_delete:
 			del messages_by_entity[MAG1_STR][a_key_to_del]
-			
-	
+		for key in sync_messages_by_entity[MAG1_STR].iterkeys():
+			message_time =  sync_messages_by_entity[MAG1_STR][key]
+			message_time =  message_time + time_drift_mag1
+			sync_messages_by_entity[MAG1_STR][key]   = message_time
+		messages_by_entity[MAG1_STR].update(keys_to_add)
+		time_drift_mag1 = NULL_TIME_DELTA
+
 		keys_to_delete = []
+		keys_to_add = {}
 		for mag2_key in sorted(messages_by_entity[MAG2_STR].iterkeys()):
 			if (mag2_key + time_drift_mag2) <= lma_time_key:
 				message_mag2 =  messages_by_entity[MAG2_STR][mag2_key]
-				print >>sys.stderr, "Applying MAG2 drift %s for %s  %s -> %s" % (str(time_drift_mag2), message_mag2['msg'], message_mag2['entity_src'], message_mag2['entity_dst'])
+				print >>sys.stderr, "Applying MAG2 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag2), message_mag2['msg'], message_mag2['entity_src'], message_mag2['entity_dst'], str(mag2_key), str(mag2_key + time_drift_mag2) )
 				new_key = mag2_key + time_drift_mag2
-				g_messages[new_key] = message_mag2
+				keys_to_add_mag2[new_key] = message_mag2
 				del messages_by_entity[MAG2_STR][mag2_key]
 			else:
-				break
+				new_key = mag2_key + time_drift_mag2
+				keys_to_add[new_key] = messages_by_entity[MAG2_STR][mag2_key]
+				keys_to_delete.append(mag2_key)
+				#break
 		for a_key_to_del in keys_to_delete:
 			del messages_by_entity[MAG2_STR][a_key_to_del]
+		for key in sync_messages_by_entity[MAG2_STR].iterkeys():
+			message_time =  sync_messages_by_entity[MAG2_STR][key]
+			message_time =  message_time + time_drift_mag2
+			sync_messages_by_entity[MAG2_STR][key]   = message_time
+
+		messages_by_entity[MAG2_STR].update(keys_to_add)
+		time_drift_mag2 = NULL_TIME_DELTA
 
 	#finally, flush remaining messages
 	for mag1_key in sorted(messages_by_entity[MAG1_STR].iterkeys()):
 		message_mag1 =  messages_by_entity[MAG1_STR][mag1_key]
-		print >>sys.stderr, "Applying MAG1 drift %s for %s  %s -> %s" % (str(time_drift_mag1), message_mag1['msg'], message_mag1['entity_src'], message_mag1['dst'] )
+		print >>sys.stderr, "Applying MAG1 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag1), message_mag1['msg'], message_mag1['entity_src'], message_mag1['dst'], str(mag1_key), str(mag1_key + time_drift_mag1) )
 		new_key = mag1_key + time_drift_mag1
 		g_messages[new_key] = message_mag1
 
 	for mag2_key in sorted(messages_by_entity[MAG2_STR].iterkeys()):
 		message_mag2 =  messages_by_entity[MAG2_STR][mag2_key]
-		print >>sys.stderr, "Applying MAG2 drift %s for %s  %s -> %s" % (str(time_drift_mag2), message_mag2['msg'], message_mag2['entity_src'], message_mag2['dst'])
+		print >>sys.stderr, "Applying MAG2 drift %s for %s\t%s -> %s\tTime %s -> %s" % (str(time_drift_mag2), message_mag2['msg'], message_mag2['entity_src'], message_mag2['dst'], str(mag2_key), str(mag2_key + time_drift_mag2) )
 		new_key = mag2_key + time_drift_mag2
 		g_messages[new_key] = message_mag2
 
@@ -814,7 +855,7 @@ G_lma_mag2_tunnel = False
 
 for key in sorted(g_messages.iterkeys()):
 	message =  g_messages[key]
-	
+
 
 	#print >>sys.stderr, "key  '%s'" % key
 
