@@ -24,19 +24,21 @@ mapping log_level_names[] =
 
 void oaisim_config(OAI_Emulation * emulation_scen, u16 * n_frames, char * g_log_level) {
  
-	olg_config(g_log_level);
+  olg_config(g_log_level);
 
 #ifdef OCG_FLAG
   if (emu_info.ocg_enabled == 1){ // activate OCG: xml-based scenario parser 
     emulation_scen = OCG_main(emu_info.local_server);// eurecom or portable
   }
-#endif
 
 	ocg_config(emulation_scen, n_frames);
-	omg_config(emulation_scen);
-	opt_config();
-	otg_config();
+	ocg_config_omg(emulation_scen);// mobility gen
+	ocg_config_opt(emulation_scen); // packet tracer using wireshark
+	ocg_config_otg(emulation_scen); // packet generator 
 
+#else
+	config_omg();
+#endif
 
 }
 
@@ -44,17 +46,47 @@ void olg_config(char * g_log_level) {
 
  //initialize the log generator 
   logInit(map_str_to_int(log_level_names, g_log_level));
-
-
-	set_comp_log(OCG,  LOG_INFO, 1);
-	
-	set_comp_log(OMG,  LOG_INFO, 1);
-	
+  set_comp_log(OCG,  LOG_INFO, 1);
+  set_comp_log(OMG,  LOG_INFO, 1);
+  
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
+  
+}
+void config_omg(){
+
+	init_omg_global_params();
+	// setup params for openair mobility generator
+	//common params
+	omg_param_list.min_X = 0;
+	omg_param_list.max_X = 1000;
+	omg_param_list.min_Y = 0;
+	omg_param_list.max_Y = 1000;
+	omg_param_list.min_speed = 1.0;
+	omg_param_list.max_speed = 20.0;
+	omg_param_list.min_journey_time = 1.0;
+	omg_param_list.max_journey_time = 10.0;
+	omg_param_list.min_azimuth = 0; 
+	omg_param_list.max_azimuth = 360; 
+	omg_param_list.min_sleep = 1.0;
+	omg_param_list.max_sleep = 5.0;
+	
+	// enb 
+	omg_param_list.mobility_type = emu_info.omg_model_enb; 
+	omg_param_list.nodes_type = eNB;//enb
+	omg_param_list.nodes = emu_info.nb_enb_local;	
+ 	omg_param_list.seed = emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
+	init_mobility_generator(omg_param_list);
+	
+	//ue 
+	omg_param_list.mobility_type = emu_info.omg_model_ue; 
+	omg_param_list.nodes_type = UE;
+	omg_param_list.nodes = emu_info.nb_ue_local;
+	omg_param_list.seed = emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
+	init_mobility_generator(omg_param_list);
 
 }
 
-void omg_config(OAI_Emulation * emulation_scen){
+void ocg_config_omg(OAI_Emulation * emulation_scen){
 
 	init_omg_global_params();
 	// setup params for openair mobility generator
@@ -148,11 +180,11 @@ void ocg_config(OAI_Emulation * emulation_scen, u16 * n_frames){
 
 }
 
-void opt_config(){
+void ocg_config_opt(OAI_Emulation * emulation_scen){
 
 }
 
-void otg_config(){
+void ocg_config_otg(OAI_Emulation * emulation_scen){
 
 }
 
