@@ -21,9 +21,17 @@
 
 #define	SA(p)	((struct sockaddr *)(p))
 
+
 static void rc_random_vector (unsigned char *);
 static int rc_check_reply (AUTH_HDR *, int, char *, unsigned char *, unsigned char);
 
+static int						g_radius_sockfd = -1;
+static struct sockaddr_in6 		g_sinlocal;
+static struct sockaddr_in6 		g_sinremote;
+static char						g_secret[MAX_SECRET_LENGTH + 1];
+static char						*g_server_name;	/* Name of server to query */
+static struct in6_addr 			g_auth_ipaddr;
+static char 					g_str_addr[INET6_ADDRSTRLEN];
 /*
  * Function: rc_pack_list
  *
@@ -62,6 +70,7 @@ static int rc_pack_list (VALUE_PAIR *vp, char *secret, AUTH_HDR *auth)
 		switch (vp->attribute)
 		{
 		 case PW_USER_PASSWORD:
+            //rc_log(LOG_NOTICE,"rc_pack_list: PW_USER_PASSWORD name %s length %d string %s\n", vp->name, vp->lvalue, vp->strvalue);
 
 		  /* Encrypt the password */
 
@@ -139,6 +148,7 @@ static int rc_pack_list (VALUE_PAIR *vp, char *secret, AUTH_HDR *auth)
 		  switch (vp->type)
 		  {
 		    case PW_TYPE_STRING:
+            //rc_log(LOG_NOTICE,"rc_pack_list: PW_TYPE_STRING name %s\n", vp->name);
 			length = vp->lvalue;
 			*buf++ = length + 2;
 			if (vsa_length_ptr != NULL) *vsa_length_ptr += length + 2;
@@ -148,7 +158,17 @@ static int rc_pack_list (VALUE_PAIR *vp, char *secret, AUTH_HDR *auth)
 			break;
 
 		    case PW_TYPE_INTEGER:
-		    case PW_TYPE_IPADDR:
+            //rc_log(LOG_NOTICE,"rc_pack_list: PW_TYPE_INTEGER name %s\n", vp->name);
+            *buf++ = sizeof (uint32_t) + 2;
+            if (vsa_length_ptr != NULL) *vsa_length_ptr += sizeof(uint32_t) + 2;
+            lvalue = htonl (vp->lvalue);
+            memcpy (buf, (char *) &lvalue, sizeof (uint32_t));
+            buf += sizeof (uint32_t);
+            total_length += sizeof (uint32_t) + 2;
+            break;
+
+            case PW_TYPE_IPADDR:
+            //rc_log(LOG_NOTICE,"rc_pack_list: PW_TYPE_IPADDR name %s\n", vp->name);
 			*buf++ = sizeof (uint32_t) + 2;
 			if (vsa_length_ptr != NULL) *vsa_length_ptr += sizeof(uint32_t) + 2;
 			lvalue = htonl (vp->lvalue);
@@ -156,6 +176,15 @@ static int rc_pack_list (VALUE_PAIR *vp, char *secret, AUTH_HDR *auth)
 			buf += sizeof (uint32_t);
 			total_length += sizeof (uint32_t) + 2;
 			break;
+
+            case PW_TYPE_IPV6ADDR:
+            //rc_log(LOG_NOTICE,"rc_pack_list: PW_TYPE_IPV6ADDR name %s %x:%x:%x:%x:%x:%x:%x:%x\n", vp->name, NIP6ADDR(&vp->in6addrvalue));
+            *buf++ = 16 + 2;
+            if (vsa_length_ptr != NULL) *vsa_length_ptr += 16 + 2;
+            memcpy (buf, (char *) &vp->in6addrvalue, 16);
+            buf += 16;
+            total_length += 16 + 2;
+            break;
 
 		    default:
 			break;
@@ -176,99 +205,120 @@ static int rc_pack_list (VALUE_PAIR *vp, char *secret, AUTH_HDR *auth)
 
 int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 {
-	int             sockfd;
-	struct sockaddr_in sinlocal;
-	struct sockaddr_in sinremote;
+
 	struct timeval  authtime;
 	fd_set          readfds;
 	AUTH_HDR       *auth, *recv_auth;
-	uint32_t           auth_ipaddr, nas_ipaddr;
-	char           *server_name;	/* Name of server to query */
+	struct in6_addr nas_ipaddr;
 	socklen_t       salen;
 	int             result;
 	int             total_length;
 	int             length;
 	int             retry_max;
 	size_t			secretlen;
-	char            secret[MAX_SECRET_LENGTH + 1];
 	unsigned char   vector[AUTH_VECTOR_LEN];
 	char            recv_buffer[BUFFER_LEN];
 	char            send_buffer[BUFFER_LEN];
 	int		retries;
 	VALUE_PAIR 	*vp;
 
-	server_name = data->server;
-	if (server_name == NULL || server_name[0] == '\0')
-		return ERROR_RC;
+	if (g_radius_sockfd < 0) {
+	  g_server_name = data->server;
+	  if (g_server_name == NULL || g_server_name[0] == '\0') {
+		  rc_log(LOG_ERR, "rc_send_server: server_name == NULL || server_name[0] == '\0'");
+		  return ERROR_RC;
+	  }
 
-	if ((vp = rc_avpair_get(data->send_pairs, PW_SERVICE_TYPE, 0)) && \
-	    (vp->lvalue == PW_ADMINISTRATIVE))
-	{
-		strcpy(secret, MGMT_POLL_SECRET);
-		if ((auth_ipaddr = rc_get_ipaddr(server_name)) == 0)
-			return ERROR_RC;
+	  if ((vp = rc_avpair_get(data->send_pairs, PW_SERVICE_TYPE, 0)) && \
+		  (vp->lvalue == PW_ADMINISTRATIVE))
+	  {
+		  strcpy(g_secret, MGMT_POLL_SECRET);
+		  if (rc_get_ipaddr(g_server_name, &g_auth_ipaddr) == 0) {
+			  rc_log(LOG_ERR, "rc_send_server: rc_get_ipaddr failed");
+			  return ERROR_RC;
+		  }
+	  }
+	  else
+	  {
+		  if(data->secret != NULL)
+		  {
+			  strncpy(g_secret, data->secret, MAX_SECRET_LENGTH);
+		  }
+		  /*
+		  else
+		  {
+		  */
+		  if (rc_find_server (rh, g_server_name, &g_auth_ipaddr, g_secret) != 0)
+		  {
+			  rc_log(LOG_ERR, "rc_send_server: unable to find server: %s", g_server_name);
+			  return ERROR_RC;
+		  }
+		  //rc_log(LOG_NOTICE,"rc_send_server: g_auth_ipaddr %x:%x:%x:%x:%x:%x:%x:%x secret %s",
+			//	NIP6ADDR(&g_auth_ipaddr), g_secret);
+		  /*}*/
+	  }
+
+	  //rc_log(LOG_NOTICE, "DEBUG: rc_send_server: creating socket to: %s", g_server_name);
+
+	  g_radius_sockfd = socket (AF_INET6, SOCK_DGRAM, 0);
+	  if (g_radius_sockfd < 0)
+	  {
+		  memset (g_secret, '\0', sizeof (g_secret));
+		  rc_log(LOG_ERR, "rc_send_server: socket: %s", strerror(errno));
+		  return ERROR_RC;
+	  }
+
+	  memset((char *)&g_sinlocal, '\0', sizeof(struct sockaddr_in6));
+	  g_sinlocal.sin6_family = AF_INET6;
+	  rc_own_bind_ipaddress(rh, &g_sinlocal.sin6_addr);
+	  g_sinlocal.sin6_port = htons((unsigned short) 0);
+	  //rc_log(LOG_NOTICE,"rc_send_server: before bind: address sinlocal %x:%x:%x:%x:%x:%x:%x:%x", NIP6ADDR(&g_sinlocal.sin6_addr));
+	  if (bind(g_radius_sockfd, SA(&g_sinlocal), sizeof(g_sinlocal)) < 0)
+	  {
+		  close (g_radius_sockfd);
+          g_radius_sockfd = -1;
+		  memset (g_secret, '\0', sizeof (g_secret));
+		  rc_log(LOG_ERR, "rc_send_server: bind : %s: %s", g_server_name, strerror(errno));
+		  //rc_log(LOG_ERR,"rc_send_server: bind address %x:%x:%x:%x:%x:%x:%x:%x", NIP6ADDR(&g_sinlocal.sin6_addr));
+		  return ERROR_RC;
+	  }
+
+	  retry_max = data->retries;	/* Max. numbers to try for reply */
+	  retries = 0;			/* Init retry cnt for blocking call */
+
+	  memset ((char *)&g_sinremote, '\0', sizeof(struct sockaddr_in6));
+	  g_sinremote.sin6_family = AF_INET6;
+	  memcpy(&g_sinremote.sin6_addr, &g_auth_ipaddr, sizeof(struct in6_addr));
+	  g_sinremote.sin6_port = htons ((unsigned short) data->svc_port);
+	  //rc_log(LOG_NOTICE,"rc_send_server: sinremote = %x:%x:%x:%x:%x:%x:%x:%x", NIP6ADDR(&g_sinremote.sin6_addr));
+
+	  /*
+	  * Fill in NAS-IP-Address
+	  */
+	  if (IN6_ARE_ADDR_EQUAL(&g_sinlocal.sin6_addr, &in6addr_any)) {
+		  //rc_log(LOG_NOTICE,"rc_send_server: sinlocal ==  in6addr_any");
+		  if (rc_get_srcaddr(&g_sinlocal, &g_sinremote) != 0) {
+			  close (g_radius_sockfd);
+              g_radius_sockfd = -1;
+			  memset (g_secret, '\0', sizeof (g_secret));
+			  rc_log(LOG_ERR, "rc_send_server: rc_get_srcaddr failed");
+			  return ERROR_RC;
+		  }
+		  //rc_log(LOG_NOTICE,"rc_send_server: sinlocal = rc_get_srcaddr(sinremote) =  %x:%x:%x:%x:%x:%x:%x:%x", NIP6ADDR(&g_sinlocal.sin6_addr));
+	  }
+	  memcpy(&nas_ipaddr, &g_sinlocal.sin6_addr, sizeof(struct in6_addr));
+	  if (inet_ntop(AF_INET6, &nas_ipaddr, g_str_addr, INET6_ADDRSTRLEN) == NULL) {
+			  close (g_radius_sockfd);
+              g_radius_sockfd = -1;
+			  rc_log(LOG_ERR, "rc_send_server: inet_ntop failed");
+			  return ERROR_RC;
+	  }
 	}
-	else
-	{
-		if(data->secret != NULL)
-		{
-			strncpy(secret, data->secret, MAX_SECRET_LENGTH);
-		}
-		/*
-		else
-		{
-		*/
-		if (rc_find_server (rh, server_name, &auth_ipaddr, secret) != 0)
-		{
-			rc_log(LOG_ERR, "rc_send_server: unable to find server: %s", server_name);
-			return ERROR_RC;
-		}
-		/*}*/
-	}
-
-	DEBUG(LOG_ERR, "DEBUG: rc_send_server: creating socket to: %s", server_name);
-
-	sockfd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0)
-	{
-		memset (secret, '\0', sizeof (secret));
-		rc_log(LOG_ERR, "rc_send_server: socket: %s", strerror(errno));
-		return ERROR_RC;
-	}
-
-	memset((char *)&sinlocal, '\0', sizeof(sinlocal));
-	sinlocal.sin_family = AF_INET;
-	sinlocal.sin_addr.s_addr = htonl(rc_own_bind_ipaddress(rh));
-	sinlocal.sin_port = htons((unsigned short) 0);
-	if (bind(sockfd, SA(&sinlocal), sizeof(sinlocal)) < 0)
-	{
-		close (sockfd);
-		memset (secret, '\0', sizeof (secret));
-		rc_log(LOG_ERR, "rc_send_server: bind: %s: %s", server_name, strerror(errno));
-		return ERROR_RC;
-	}
-
-	retry_max = data->retries;	/* Max. numbers to try for reply */
-	retries = 0;			/* Init retry cnt for blocking call */
-
-	memset ((char *)&sinremote, '\0', sizeof(sinremote));
-	sinremote.sin_family = AF_INET;
-	sinremote.sin_addr.s_addr = htonl (auth_ipaddr);
-	sinremote.sin_port = htons ((unsigned short) data->svc_port);
-
-	/*
-	 * Fill in NAS-IP-Address
-	 */
-	if (sinlocal.sin_addr.s_addr == htonl(INADDR_ANY)) {
-		if (rc_get_srcaddr(SA(&sinlocal), SA(&sinremote)) != 0) {
-			close (sockfd);
-			memset (secret, '\0', sizeof (secret));
-			return ERROR_RC;
-		}
-	}
-	nas_ipaddr = ntohl(sinlocal.sin_addr.s_addr);
-	rc_avpair_add(rh, &(data->send_pairs), PW_NAS_IP_ADDRESS,
-	    &nas_ipaddr, 0, 0);
+    //rc_log(LOG_NOTICE,"rc_send_server: filling PW_NAS_IPV6_ADDRESS %s", g_str_addr);
+    rc_avpair_add(rh, &(data->send_pairs), PW_NAS_IPV6_ADDRESS,
+        g_str_addr, 0, 0);
+    /*rc_avpair_add(rh, &(data->send_pairs), PW_NAS_IP_ADDRESS,
+        &nas_ipaddr, 0, 0);*/
 
 	/* Build a request */
 	auth = (AUTH_HDR *) send_buffer;
@@ -277,13 +327,13 @@ int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 
 	if (data->code == PW_ACCOUNTING_REQUEST)
 	{
-		total_length = rc_pack_list(data->send_pairs, secret, auth) + AUTH_HDR_LEN;
+		total_length = rc_pack_list(data->send_pairs, g_secret, auth) + AUTH_HDR_LEN;
 
 		auth->length = htons ((unsigned short) total_length);
 
 		memset((char *) auth->vector, 0, AUTH_VECTOR_LEN);
-		secretlen = strlen (secret);
-		memcpy ((char *) auth + total_length, secret, secretlen);
+		secretlen = strlen (g_secret);
+		memcpy ((char *) auth + total_length, g_secret, secretlen);
 		rc_md5_calc (vector, (unsigned char *) auth, total_length + secretlen);
 		memcpy ((char *) auth->vector, (char *) vector, AUTH_VECTOR_LEN);
 	}
@@ -292,35 +342,41 @@ int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 		rc_random_vector (vector);
 		memcpy ((char *) auth->vector, (char *) vector, AUTH_VECTOR_LEN);
 
-		total_length = rc_pack_list(data->send_pairs, secret, auth) + AUTH_HDR_LEN;
+		total_length = rc_pack_list(data->send_pairs, g_secret, auth) + AUTH_HDR_LEN;
 
 		auth->length = htons ((unsigned short) total_length);
 	}
 
-	DEBUG(LOG_ERR, "DEBUG: local %s : 0, remote %s : %u\n", 
-		inet_ntoa(sinlocal.sin_addr),
-		inet_ntoa(sinremote.sin_addr), data->svc_port);
+	//DEBUG(LOG_ERR, "DEBUG: local %s : 0, remote %s : %u\n",
+	//	inet_ntoa(g_sinlocal.sin_addr),
+	//	inet_ntoa(g_sinremote.sin_addr), data->svc_port);
 
 	for (;;)
 	{
-		sendto (sockfd, (char *) auth, (unsigned int) total_length, (int) 0,
-			SA(&sinremote), sizeof (struct sockaddr_in));
+        //rc_log(LOG_NOTICE,"rc_send_server: sendto");
+		if (sendto (g_radius_sockfd, (char *) auth, (unsigned int) total_length, (int) 0,
+			SA(&g_sinremote), sizeof (struct sockaddr_in6)) < 0) {
+			rc_log(LOG_ERR, "rc_send_server: sendto: %s", strerror(errno));
+		}
 
 		authtime.tv_usec = 0L;
 		authtime.tv_sec = (long) data->timeout;
 		FD_ZERO (&readfds);
-		FD_SET (sockfd, &readfds);
-		if (select (sockfd + 1, &readfds, NULL, NULL, &authtime) < 0)
+		FD_SET (g_radius_sockfd, &readfds);
+		if (select (g_radius_sockfd + 1, &readfds, NULL, NULL, &authtime) < 0)
 		{
 			if (errno == EINTR)
 				continue;
 			rc_log(LOG_ERR, "rc_send_server: select: %s", strerror(errno));
-			memset (secret, '\0', sizeof (secret));
-			close (sockfd);
+			memset (g_secret, '\0', sizeof (g_secret));
+			close (g_radius_sockfd);
+			g_radius_sockfd = -1;
+			rc_log(LOG_ERR, "rc_send_server: select failed");
 			return ERROR_RC;
 		}
-		if (FD_ISSET (sockfd, &readfds))
+		if (FD_ISSET (g_radius_sockfd, &readfds))
 			break;
+
 
 		/*
 		 * Timed out waiting for response.  Retry "retry_max" times
@@ -328,25 +384,31 @@ int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 		 */
 		if (++retries >= retry_max)
 		{
+			char remote_str[INET6_ADDRSTRLEN];
+			inet_ntop(AF_INET6, &g_sinremote.sin6_addr, remote_str, sizeof(g_sinremote.sin6_addr));
 			rc_log(LOG_ERR,
 				"rc_send_server: no reply from RADIUS server %s:%u, %s",
-				 rc_ip_hostname (auth_ipaddr), data->svc_port, inet_ntoa(sinremote.sin_addr));
-			close (sockfd);
-			memset (secret, '\0', sizeof (secret));
+				   rc_ip_hostname (&g_auth_ipaddr), data->svc_port, remote_str);
+			close (g_radius_sockfd);
+			g_radius_sockfd = -1;
+			memset (g_secret, '\0', sizeof (g_secret));
 			return TIMEOUT_RC;
 		}
 	}
-	salen = sizeof(sinremote);
-	length = recvfrom (sockfd, (char *) recv_buffer,
+	salen = sizeof(g_sinremote);
+	length = recvfrom (g_radius_sockfd, (char *) recv_buffer,
 			   (int) sizeof (recv_buffer),
-			   (int) 0, SA(&sinremote), &salen);
+			   (int) 0, SA(&g_sinremote), &salen);
+	//rc_log(LOG_NOTICE,"rc_send_server: received %d bytes", length);
 
 	if (length <= 0)
 	{
-		rc_log(LOG_ERR, "rc_send_server: recvfrom: %s:%d: %s", server_name,\
+		rc_log(LOG_ERR, "rc_send_server: recvfrom: %s:%d: %s", g_server_name,\
 			 data->svc_port, strerror(errno));
-		close (sockfd);
-		memset (secret, '\0', sizeof (secret));
+		close (g_radius_sockfd);
+		g_radius_sockfd = -1;
+		memset (g_secret, '\0', sizeof (g_secret));
+		rc_log(LOG_ERR, "rc_send_server: recvfrom failed");
 		return ERROR_RC;
 	}
 
@@ -354,13 +416,16 @@ int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 
 	if (length < AUTH_HDR_LEN || length < ntohs(recv_auth->length)) {
 		rc_log(LOG_ERR, "rc_send_server: recvfrom: %s:%d: reply is too short",
-		    server_name, data->svc_port);
-		close(sockfd);
-		memset(secret, '\0', sizeof(secret));
+		    g_server_name, data->svc_port);
+		close(g_radius_sockfd);
+		g_radius_sockfd = -1;
+		memset(g_secret, '\0', sizeof(g_secret));
 		return ERROR_RC;
 	}
 
-	result = rc_check_reply (recv_auth, BUFFER_LEN, secret, vector, data->seq_nbr);
+	//rc_log(LOG_NOTICE,"rc_send_server: checking reply");
+	result = rc_check_reply (recv_auth, BUFFER_LEN, g_secret, vector, data->seq_nbr);
+	//rc_log(LOG_NOTICE,"rc_send_server: reply checked");
 
 	length = ntohs(recv_auth->length)  - AUTH_HDR_LEN;
 	if (length > 0) {
@@ -370,8 +435,8 @@ int rc_send_server (rc_handle *rh, SEND_DATA *data, char *msg)
 		data->receive_pairs = NULL;
 	}
 
-	close (sockfd);
-	memset (secret, '\0', sizeof (secret));
+	//close (g_radius_sockfd);
+	//memset (g_secret, '\0', sizeof (g_secret));
 
 	if (result != OK_RC) return result;
 

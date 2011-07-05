@@ -23,7 +23,7 @@ unsigned char rc_get_seqnbr(rc_handle *);
  *
  */
 
-void rc_buildreq(rc_handle *rh, SEND_DATA *data, int code, char *server, unsigned short port, 
+void rc_buildreq(rc_handle *rh, SEND_DATA *data, int code, char *server, unsigned short port,
 		 char *secret, int timeout, int retries)
 {
 	data->server = server;
@@ -150,8 +150,10 @@ int rc_aaa(rc_handle *rh, uint32_t client_port, VALUE_PAIR *send, VALUE_PAIR **r
 		 * Fill in NAS-Port
 		 */
 		if (rc_avpair_add(rh, &(data.send_pairs), PW_NAS_PORT,
-		    &client_port, 0, 0) == NULL)
+		    &client_port, 0, 0) == NULL) {
+			rc_log(LOG_ERR,"rc_aaa: PW_NAS_PORT ");
 			return ERROR_RC;
+		}
 	}
 
 	if (request_type == PW_ACCOUNTING_REQUEST) {
@@ -160,8 +162,10 @@ int rc_aaa(rc_handle *rh, uint32_t client_port, VALUE_PAIR *send, VALUE_PAIR **r
 		 */
 		dtime = 0;
 		if ((adt_vp = rc_avpair_add(rh, &(data.send_pairs),
-		    PW_ACCT_DELAY_TIME, &dtime, 0, 0)) == NULL)
+		    PW_ACCT_DELAY_TIME, &dtime, 0, 0)) == NULL) {
+			rc_log(LOG_ERR,"rc_aaa: PW_ACCOUNTING_REQUEST");
 			return ERROR_RC;
+		}
 	}
 
 	start_time = rc_getctime();

@@ -29,10 +29,13 @@
  * inttypes.h instead.  Comment out the stdint include if you get an error,
  * and uncomment the inttypes.h include.
  */
-#include	<stdint.h> 
+#include	<stdint.h>
 /* #include	<inttypes.h> */
 #include	<stdio.h>
 #include	<time.h>
+#include	<netinet/in.h>
+#include	<arpa/inet.h>
+#include	<netdb.h>
 
 #undef __BEGIN_DECLS
 #undef __END_DECLS
@@ -92,8 +95,6 @@ typedef struct pw_auth_hdr
 struct rc_conf
 {
 	struct _option		*config_options;
-	uint32_t 			this_host_ipaddr;
-	uint32_t			*this_host_bind_ipaddr;
 	struct map2id_s		*map2id_list;
 	struct dict_attr	*dictionary_attributes;
 	struct dict_value	*dictionary_values;
@@ -102,6 +103,9 @@ struct rc_conf
 	char			buf1[14];
 	char			ifname[512];
 	char			*ppbuf;
+    struct in6_addr     this_host_ipaddr;
+    struct in6_addr     *this_host_bind_ipaddr;
+    char            dummy[512];
 };
 
 typedef struct rc_conf rc_handle;
@@ -114,8 +118,9 @@ typedef struct rc_conf rc_handle;
 
 #define PW_TYPE_STRING			0
 #define PW_TYPE_INTEGER			1
-#define PW_TYPE_IPADDR			2
+#define PW_TYPE_IPADDR          2
 #define PW_TYPE_DATE			3
+#define PW_TYPE_IPV6ADDR        4
 
 /* standard RADIUS codes */
 
@@ -357,8 +362,9 @@ typedef struct value_pair
 	char               name[NAME_LENGTH + 1];
 	int                attribute;
 	int                type;
-	uint32_t           lvalue;
+    uint32_t           lvalue;
 	char               strvalue[AUTH_STRING_LEN + 1];
+    struct in6_addr    in6addrvalue;
 	struct value_pair *next;
 } VALUE_PAIR;
 
@@ -379,7 +385,7 @@ typedef struct send_data /* Used to pass information to sendserver() function */
 	uint8_t        seq_nbr;		/* Packet sequence number */
 	char           *server;		/* Name/addrress of RADIUS server */
 	int            svc_port;	/* RADIUS protocol destination port */
-	char	       *secret;		/* Shared secret of RADIUS server */	
+	char	       *secret;		/* Shared secret of RADIUS server */
 	int            timeout;		/* Session timeout in seconds */
 	int	       retries;
 	VALUE_PAIR     *send_pairs;     /* More a/v pairs to send */
@@ -445,7 +451,7 @@ rc_handle *rc_read_config(char *);
 char *rc_conf_str(rc_handle *, char *);
 int rc_conf_int(rc_handle *, char *);
 SERVER *rc_conf_srv(rc_handle *, char *);
-int rc_find_server(rc_handle *, char *, uint32_t *, char *);
+int rc_find_server(rc_handle *, char *, struct in6_addr *, char *);
 void rc_config_free(rc_handle *);
 int rc_add_config(rc_handle *, const char *, const char *, const char *, const int);
 rc_handle *rc_config_init(rc_handle *);
@@ -463,18 +469,26 @@ DICT_VALUE * rc_dict_getval(const rc_handle *, uint32_t, const char *);
 void rc_dict_free(rc_handle *);
 
 /*	ip_util.c		*/
+#define NIP6ADDR(addr) \
+ntohs((addr)->s6_addr16[0]), \
+ntohs((addr)->s6_addr16[1]), \
+ntohs((addr)->s6_addr16[2]), \
+ntohs((addr)->s6_addr16[3]), \
+ntohs((addr)->s6_addr16[4]), \
+ntohs((addr)->s6_addr16[5]), \
+ntohs((addr)->s6_addr16[6]), \
+ntohs((addr)->s6_addr16[7])
 
 struct hostent *rc_gethostbyname(const char *);
-struct hostent *rc_gethostbyaddr(const char *, size_t, int);
-uint32_t rc_get_ipaddr(char *);
+int rc_get_ipaddr (char *host, struct in6_addr* rval);
 int rc_good_ipaddr(char *);
-const char *rc_ip_hostname(uint32_t);
+const char *rc_ip_hostname(struct in6_addr*);
 unsigned short rc_getport(int);
 int rc_own_hostname(char *, int);
-uint32_t rc_own_ipaddress(rc_handle *);
-uint32_t rc_own_bind_ipaddress(rc_handle *);
+void rc_own_ipaddress(rc_handle *rh, struct in6_addr* rval);
+void rc_own_bind_ipaddress(rc_handle *rh, struct in6_addr* rval);
 struct sockaddr;
-int rc_get_srcaddr(struct sockaddr *, struct sockaddr *);
+int rc_get_srcaddr(struct sockaddr_in6 *, struct sockaddr_in6 *);
 
 
 /*	log.c			*/

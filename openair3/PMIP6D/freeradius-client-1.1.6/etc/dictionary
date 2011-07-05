@@ -29,7 +29,7 @@
 ATTRIBUTE	User-Name		1	string
 ATTRIBUTE	Password		2	string
 ATTRIBUTE	CHAP-Password		3	string
-ATTRIBUTE	NAS-IP-Address		4	ipaddr
+ATTRIBUTE   NAS-IP-Address      4   ipaddr
 ATTRIBUTE	NAS-Port-Id		5	integer
 ATTRIBUTE	Service-Type		6	integer
 ATTRIBUTE	Framed-Protocol		7	integer
@@ -85,7 +85,7 @@ ATTRIBUTE	Connect-Info		77	string
 #
 #	RFC3162 IPv6 attributes
 #
-ATTRIBUTE	NAS-IPv6-Address	95	string
+ATTRIBUTE   NAS-IPv6-Address    95  string
 ATTRIBUTE	Framed-Interface-Id	96	string
 ATTRIBUTE	Framed-IPv6-Prefix	97	string
 ATTRIBUTE	Login-IPv6-Host		98	string
