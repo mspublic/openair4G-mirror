@@ -3,7 +3,7 @@ CC = gcc
 CPUFLAGS = -mmmx -msse -msse2 -m32  #-msse4
 CPUFLAGS += $(shell if grep --silent ssse3 /proc/cpuinfo ; then echo "-mssse3" ; else echo ""; fi)
 CPUFLAGS += $(shell if grep --silent sse4 /proc/cpuinfo ; then echo "-msse4" ; else echo ""; fi)
-cygwin = $(shell if [ `uname -o` = "Cygwin" ] ; then echo "1" ; else echo "0" ; fi)
+linux = $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -17,10 +17,16 @@ ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
 
-# does not work under linux
-ifndef cygwin # forget about OCG, libxml doesn't work the same way as under linux
+# activate OCG and libxml only under linux
+ifdef linux 
 CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 
 OCG_FLAG = 1
+CFLAGS += -DOCG_FLAG 
+cygwin=0
+else
+cygwin=1
+OCG_FLAG = 0
+CFLAGS += -DCYGWIN
 endif
 
 #CFLAGS += -DXFORMS
@@ -44,12 +50,16 @@ endif
 
 ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
+NAS_FLAG=1
 #CFLAGS += -DDEBUG_OMG
-OCG_FLAG=1
-CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2
-CFLAGS += -DOCG_FLAG 
+else
+NAS_FLAG=0
 endif
 
+#require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)
+ifdef ADDCONF
+CFLAGS+=-DADDRCONF
+endif
 
 CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
@@ -59,6 +69,7 @@ include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
 include $(OPENAIR1_DIR)/SIMULATION/ETH_TRANSPORT/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
+include $(OPENAIR2_DIR)/RRC/NAS/Makefile.inc
 
 SIMULATION_OBJS  = $(TOP_DIR)/SIMULATION/TOOLS/gauss.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o  
@@ -75,15 +86,20 @@ OAISIM_OBJS  = channel_sim.o
 OAISIM_OBJS += init_lte.o 
 OAISIM_OBJS += oaisim_config.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS)
 #oaisim_config.o 
 
 all: oaisim
 
 printvars:
+	@echo LINUX variable is $(linux)
 	@echo CYGWIN variable is $(cygwin)
 	@echo rrc_cellular variable is $(rrc_cellular)
 	@echo EXTRA_CFLAGS = $(EXTRA_CFLAGS)
+	@echo OAI Config generator is $(OCG_FLAG)	
+	@echo OAI NETLINK FLAG is $(NAS_FLAG)
+	@echo SSE3 proc is $(SSE3PROC)
+
 $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
@@ -100,6 +116,15 @@ ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
 
+nasmesh_fix:
+	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
+nasmesh:
+	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)
+rb_tool:
+	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
+install_nasmesh:
+	(sudo rmmod nasmesh)
+	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 clean:
 	rm -f oaisim
 	rm -f $(OBJ)

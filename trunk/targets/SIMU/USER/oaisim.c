@@ -79,7 +79,7 @@ extern void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 			  u16 Nid_cell,
 			  u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag);
 
-#ifndef CYGWIN
+#ifdef LINUX
 void init_bypass() {
 
   msg("[PHYSIM] INIT BYPASS\n");      
@@ -97,7 +97,7 @@ void init_bypass() {
 #endif
 
 void help(void) {
-  printf("Usage: physim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag\n");
+  printf("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag -u nb_local_ue -U omg_model_ue -b nb_local_enb -B omg_model_enb -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable \n");
   printf("-h provides this help message!\n");
   printf("-a Activates PHY abstraction mode\n");
   printf("-F Activates FDD transmission (TDD is default)\n");
@@ -117,7 +117,7 @@ void help(void) {
   printf("-p Set the total number of machine in emulation - valid if M is set\n");
   printf("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
-  printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
+  printf("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
   printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk\n");
@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
     LOG_I(EMU," Total number of master %d my master id %d\n", 
 	  emu_info.nb_master,
 	  emu_info.master_id);
-#ifndef CYGWIN    
+#ifdef LINUX    
     init_bypass();
 #endif
     
@@ -448,11 +448,11 @@ int main(int argc, char **argv) {
       emu_transport_sync();//emulation_tx_rx();
     }
   }// ethernet flag
-
+#ifndef NAS_NETLINK  
   UE_stats = fopen("UE_stats.txt", "w");
   eNB_stats = fopen("eNB_stats.txt", "w");
   printf("UE_stats=%d, eNB_stats=%d\n",UE_stats,eNB_stats);
-
+#endif 
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
       
@@ -619,11 +619,13 @@ int main(int argc, char **argv) {
 	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	//#endif
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
-	//if ((mac_xface->frame % 10) == 0) {
-	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
-	rewind(eNB_stats);
-	fwrite(stats_buffer,1,len,eNB_stats);
-	//}
+#ifndef NAS_NETLINK	
+	if ((mac_xface->frame % 10) == 0) {
+	  len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
+	  rewind(eNB_stats);
+	  fwrite(stats_buffer,1,len,eNB_stats);
+	}
+#endif 
       }
 
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
@@ -639,9 +641,13 @@ int main(int argc, char **argv) {
 #endif
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
 	    phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
-	    len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
-	    rewind(UE_stats);
-	    fwrite(stats_buffer,1,len,UE_stats);
+#ifndef NAS_NETLINK	   
+	    if ((mac_xface->frame % 10) == 0) {
+	      len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
+	      rewind(UE_stats);
+	      fwrite(stats_buffer,1,len,UE_stats);
+	    }
+#endif
 	  }
 	  else {
 	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1)))
@@ -727,10 +733,10 @@ int main(int argc, char **argv) {
     
     lte_sync_time_free();
   }
-
+#ifndef NAS_NETLINK
   fclose(UE_stats);
   fclose(eNB_stats);
-
+#endif
   return(0);
 }
    

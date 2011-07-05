@@ -29,17 +29,17 @@ void oaisim_config(OAI_Emulation * emulation_scen, u16 * n_frames, char * g_log_
 #ifdef OCG_FLAG
   if (emu_info.ocg_enabled == 1){ // activate OCG: xml-based scenario parser 
     emulation_scen = OCG_main(emu_info.local_server);// eurecom or portable
+    
+    
+    ocg_config(emulation_scen, n_frames);
+    ocg_config_omg(emulation_scen);// mobility gen
+    ocg_config_opt(emulation_scen); // packet tracer using wireshark
+    ocg_config_otg(emulation_scen); // packet generator 
   }
-
-	ocg_config(emulation_scen, n_frames);
-	ocg_config_omg(emulation_scen);// mobility gen
-	ocg_config_opt(emulation_scen); // packet tracer using wireshark
-	ocg_config_otg(emulation_scen); // packet generator 
-
 #else
-	config_omg();
+  config_omg();
 #endif
-
+  
 }
 
 void olg_config(char * g_log_level) {
@@ -160,22 +160,23 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 void ocg_config(OAI_Emulation * emulation_scen, u16 * n_frames){
 
 #ifdef OCG_FLAG
-    // here is to check if OCG is successful, otherwise, we might not run the emulation
+  if ( emu_info.ocg_enabled ==1){    // here is to check if OCG is successful, otherwise, we might not run the emulation
+    
     if (emulation_scen->info.ocg_ok != 1) { 
       LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: please check the name of the XML configuration file and its content if you use a self-specified file.\n");
       exit(EXIT_FAILURE);
-      }
-
-      set_envi(emulation_scen);
-      set_topo(emulation_scen);
-      set_app(emulation_scen);
-      set_emu(emulation_scen, n_frames);
-      LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
-
-     /* : TODO
-      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->info.output_path);
-      Init_OPT(2, emulation_scen->info.output_path, NULL, 0);*/
-
+    }
+    
+    set_envi(emulation_scen);
+    set_topo(emulation_scen);
+    set_app(emulation_scen);
+    set_emu(emulation_scen, n_frames);
+    LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
+    
+    /* : TODO
+       LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->info.output_path);
+       Init_OPT(2, emulation_scen->info.output_path, NULL, 0);*/
+  }
 #endif
 
 }

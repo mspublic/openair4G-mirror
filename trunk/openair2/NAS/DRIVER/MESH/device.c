@@ -29,7 +29,7 @@
 
 /*! \file device.c
 * \brief Networking Device Driver for OpenAirInterface MESH
-* \author  yan.moret(no longer valid), michelle.wetterwald, raymond.knopp, navid.nikaein
+* \author  navid.nikaein, yan.moret(no longer valid), michelle.wetterwald, raymond.knopp
 * \company Eurecom
 * \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr, michelle.wetterwald@eurecom.fr,
 
@@ -346,7 +346,7 @@ void nas_init(struct net_device *dev){
     dev->tx_timeout = nas_tx_timeout;
     //
 #endif 
-    dev->type = ARPHRD_EUROPENAIRMESH;
+    // dev->type = ARPHRD_EUROPENAIRMESH;
     //dev->type = ARPHRD_ETHER;
     //  dev->features = NETIF_F_NO_CSUM;
     dev->hard_header_len = 0;
@@ -396,7 +396,8 @@ void nas_init(struct net_device *dev){
       //
     }
     spin_lock_init(&priv->lock);
-    
+//this requires kernel patch for OAI driver: typically for RF/hard realtime emu experimentation
+#ifdef ADDRCONF    
     #ifdef NETLINK
         nas_TOOL_imei2iid(IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
         nas_TOOL_imei2iid(IMEI, (u8 *)priv->cx[0].iid6);
@@ -404,20 +405,20 @@ void nas_init(struct net_device *dev){
         nas_TOOL_imei2iid(nas_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
         nas_TOOL_imei2iid(nas_IMEI, (u8 *)priv->cx[0].iid6);
     #endif
+// this is more appropriate for user space soft realtime emulation    
+#else
     
-
-    
-    /*    memcpy(dev->dev_addr,&nas_IMEI[0],8);
+        memcpy(dev->dev_addr,&nas_IMEI[0],8);
      printk("Setting HW addr to : %X%X\n",*((unsigned int *)&dev->dev_addr[0]),*((unsigned int *)&dev->dev_addr[4]));
 
     ((unsigned char*)dev->dev_addr)[7] = (unsigned char)find_inst(dev);
 
-    */
+   
 
-    //    memcpy((u8 *)priv->cx[0].iid6,&nas_IMEI[0],8);
+        memcpy((u8 *)priv->cx[0].iid6,&nas_IMEI[0],8);
     
-    //    printk("INIT: init IMEI to IID\n");
-    
+        printk("INIT: init IMEI to IID\n");
+#endif  
     printk("INIT: end\n");
     return;
   }  // instance value check
