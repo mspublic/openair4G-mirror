@@ -18,6 +18,8 @@
 #include "DL-DCCH-Message.h"
 #include "TDD-Config.h"
 #include "rlc.h"
+#include "RRC/NAS/nas_config.h"
+#include "SIMULATION/ETH_TRANSPORT/extern.h"
 #define DEBUG_RRC 1
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
@@ -430,7 +432,21 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
 					  (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 					  RADIO_ACCESS_BEARER,Rlc_info_um);
-	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;	
+	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
+
+#ifdef NAS_NETLINK
+	nas_config(Mod_id,// interface index
+		   Mod_id+1, // thrid octet
+		   Mod_id+1);// fourth octet 
+	 
+	rb_conf_ipv4(0,//add
+		     UE_index, //cx
+		     Mod_id,//inst
+		     (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
+		     0,//dscp
+		     ipv4_address(Mod_id+1,Mod_id+1),//saddr
+		     ipv4_address(Mod_id+1,NB_eNB_INST+UE_index+1));//daddr
+#endif 	
       }
 
       DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;

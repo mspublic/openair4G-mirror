@@ -137,6 +137,10 @@ void logInit (int g_log_level) {
     g_log->log_component[PERF].level = LOG_INFO;
     g_log->log_component[PERF].flag =  LOG_MED_ONLINE;
 
+    g_log->log_component[RB].name = "RB";
+    g_log->log_component[RB].level = LOG_INFO;
+    g_log->log_component[RB].flag =  LOG_MED_ONLINE;
+
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC

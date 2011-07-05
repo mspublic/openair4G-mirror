@@ -434,7 +434,7 @@ void nas_set_msg_class_add_reply(struct nas_msg_class_add_reply *msgrep,
   printk("[NAS][CLASS] nas_set_msg_class_add_reply\n");
     
 
-  if (msgreq->dscp>NAS_DSCP_DEFAULT){
+  if (msgreq->dscp>NAS_DSCP_MAX){
     printk("NAS_SET_MSG_CLASS_ADD_REPLY: Incoherent parameter value\n");
     msgrep->status=-NAS_ERROR_NOTCORRECTDSCP;
     return;
