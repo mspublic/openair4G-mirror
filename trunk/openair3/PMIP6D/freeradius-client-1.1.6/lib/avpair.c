@@ -73,10 +73,13 @@ int rc_avpair_assign (VALUE_PAIR *vp, void *pval, int len)
 
 		case PW_TYPE_DATE:
 		case PW_TYPE_INTEGER:
-	        case PW_TYPE_IPADDR:
+        case PW_TYPE_IPADDR:
 			vp->lvalue = * (uint32_t *) pval;
 			break;
-
+        case PW_TYPE_IPV6ADDR:
+            memcpy(&vp->in6addrvalue, pval, sizeof(struct in6_addr));
+            //rc_log(LOG_NOTICE, "rc_avpair_assign: PW_TYPE_IPV6ADDR %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&vp->in6addrvalue));
+            break;
 		default:
 			rc_log(LOG_ERR, "rc_avpair_assign: unknown attribute %d", vp->type);
 			return -1;
@@ -271,15 +274,25 @@ rc_avpair_gen(const rc_handle *rh, VALUE_PAIR *pair, unsigned char *ptr,
 			    "attribute with invalid length");
 			goto shithappens;
 		}
-	case PW_TYPE_IPADDR:
-		if (attrlen != 4) {
-			rc_log(LOG_ERR, "rc_avpair_gen: received IPADDR"
-			    " attribute with invalid length");
-			goto shithappens;
-		}
-		memcpy((char *)&lvalue, (char *)ptr, 4);
-		pair->lvalue = ntohl(lvalue);
-		break;
+    case PW_TYPE_IPADDR:
+        if (attrlen != 4) {
+            rc_log(LOG_ERR, "rc_avpair_gen: received IPADDR"
+                " attribute with invalid length");
+            goto shithappens;
+        }
+        memcpy((char *)&lvalue, (char *)ptr, 4);
+        pair->lvalue = ntohl(lvalue);
+        break;
+
+    case PW_TYPE_IPV6ADDR:
+        if (attrlen != 16) {
+            rc_log(LOG_ERR, "rc_avpair_gen: received IPV6ADDR"
+                " attribute with invalid length %d (should be %d)", attrlen, 16);
+            goto shithappens;
+        }
+        memcpy(&pair->in6addrvalue, ptr, 16);
+        //rc_log(LOG_NOTICE, "rc_avpair_gen: PW_TYPE_IPV6ADDR %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&pair->in6addrvalue));
+        break;
 
 	default:
 		rc_log(LOG_WARNING, "rc_avpair_gen: %s has unknown type",
@@ -558,8 +571,14 @@ int rc_avpair_parse (const rc_handle *rh, char *buffer, VALUE_PAIR **first_pair)
 				}
 				break;
 
-			    case PW_TYPE_IPADDR:
-                                pair->lvalue = rc_get_ipaddr(valstr);
+                case PW_TYPE_IPADDR:
+                    rc_log(LOG_ERR, "rc_avpair_parse: PW_TYPE_IPADDR not allowed");
+                    //rc_get_ipaddr(valstr, (struct in6_addr*)&pair->lvalue);
+                break;
+
+                case PW_TYPE_IPV6ADDR:
+                    //rc_log(LOG_NOTICE, "rc_avpair_parse: PW_TYPE_IPV6ADDR");
+					rc_get_ipaddr(valstr, (struct in6_addr*)&pair->in6addrvalue);
 				break;
 
 			    case PW_TYPE_DATE:
@@ -649,7 +668,8 @@ int rc_avpair_tostr (const rc_handle *rh, VALUE_PAIR *pair, char *name, int ln, 
 {
 	DICT_VALUE     *dval;
 	char            buffer[32];
-	struct in_addr  inad;
+    struct in_addr  inad;
+    struct in6_addr  in6ad;
 	unsigned char         *ptr;
 
 	*name = *value = '\0';
@@ -702,10 +722,18 @@ int rc_avpair_tostr (const rc_handle *rh, VALUE_PAIR *pair, char *name, int ln, 
 		}
 		break;
 
-	    case PW_TYPE_IPADDR:
-		inad.s_addr = htonl(pair->lvalue);
-		strncpy (value, inet_ntoa (inad), (size_t) lv-1);
-		break;
+        case PW_TYPE_IPADDR:
+        //rc_log(LOG_NOTICE, "rc_avpair_tostr: PW_TYPE_IPADDR ");
+        inad.s_addr = htonl(pair->lvalue);
+        strncpy (value, inet_ntoa (inad), (size_t) lv-1);
+        break;
+
+        case PW_TYPE_IPV6ADDR:
+        //rc_log(LOG_NOTICE, "rc_avpair_tostr: PW_TYPE_IPV6ADDR ");
+        if (!inet_ntop(AF_INET6, (const void *) &pair->in6addrvalue, value, (size_t) lv-1)) {
+            rc_log(LOG_ERR, "rc_avpair_tostr: PW_TYPE_IPV6ADDR error inet_ntop: %s", strerror(errno));
+        }
+        break;
 
 	    case PW_TYPE_DATE:
 		strftime (buffer, sizeof (buffer), "%m/%d/%y %H:%M:%S",

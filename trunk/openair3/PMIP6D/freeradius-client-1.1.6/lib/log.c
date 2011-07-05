@@ -50,7 +50,7 @@ void rc_log(int prio, const char *format, ...)
 	va_start(ap,format);
     vsnprintf(buff, sizeof(buff), format, ap);
     va_end(ap);
-
+    printf("%s\n", buff);
 #ifndef _MSC_VER /* TODO: Fix me */
 	syslog(prio, "%s", buff);
 #endif

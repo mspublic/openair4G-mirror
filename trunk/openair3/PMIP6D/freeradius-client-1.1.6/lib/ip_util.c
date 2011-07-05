@@ -34,94 +34,11 @@
 
 struct hostent *rc_gethostbyname(const char *hostname)
 {
-	struct 	hostent *hp;
-#ifdef GETHOSTBYNAME_R
-#if defined (GETHOSTBYNAMERSTYLE_SYSV) || defined (GETHOSTBYNAMERSTYLE_GNU)
-	struct 	hostent hostbuf;
-	size_t	hostbuflen;
-	char	*tmphostbuf;
-	int	res;
-	int	herr;
-	
-	hostbuflen = 1024;
-	tmphostbuf = malloc(hostbuflen);
-#endif
-#endif
-
-#ifdef GETHOSTBYNAME_R
-#if defined (GETHOSTBYNAMERSTYLE_GNU)
-	while ((res = gethostbyname_r(hostname, &hostbuf, tmphostbuf, hostbuflen, &hp, &herr)) == ERANGE)
-	{
-		/* Enlarge the buffer */
-		hostbuflen *= 2;
-		tmphostbuf = realloc(tmphostbuf, hostbuflen);
-	}
-	free(tmphostbuf);
-#elif defined (GETHOSTBYNAMERSTYLE_SYSV)
-	hp = gethostbyname_r(hostname, &hostbuf, tmphostbuf, hostbuflen, &herr);
-	free(tmphostbuf);
-#else
-	hp = gethostbyname(hostname);
-#endif
-#else
-	hp = gethostbyname(hostname);
-#endif
-
-	if (hp == NULL) {
-		return NULL;
-	}
+	struct hostent *hp;
+	hp = gethostbyname2(hostname, AF_INET6);
 	return hp;
-} 
+}
 
-/*
- * Function: rc_gethostbyname
- *
- * Purpose: threadsafe replacement for gethostbyname.
- *
- * Returns: NULL on failure, hostent pointer on success
- */
-
-struct hostent *rc_gethostbyaddr(const char *addr, size_t length, int format)
-{
-	struct 	hostent *hp;
-#ifdef GETHOSTBYADDR_R
-#if defined (GETHOSTBYADDRRSTYLE_SYSV) || defined (GETHOSTBYADDRRSTYLE_GNU)
-	struct	hostent hostbuf;
-	size_t	hostbuflen;
-	char	*tmphostbuf;
-	int	res;
-	int	herr;
-	
-	hostbuflen = 1024;
-	tmphostbuf = malloc(hostbuflen);
-#endif
-#endif
-
-#ifdef GETHOSTBYADDR_R
-#if defined (GETHOSTBYADDRRSTYLE_GNU)
-	while ((res = gethostbyaddr_r(addr, length, format, &hostbuf, tmphostbuf, hostbuflen, 
-					&hp, &herr)) == ERANGE)
-	{
-		/* Enlarge the buffer */
-		hostbuflen *= 2;
-		tmphostbuf = realloc(tmphostbuf, hostbuflen);
-	}
-	free(tmphostbuf);
-#elif GETHOSTBYADDRSTYLE_SYSV
-	hp = gethostbyaddr_r(addr, length, format, &hostbuf, tmphostbuf, hostbuflen, &herr);
-	free(tmphostbuf);
-#else
-	hp = gethostbyaddr((char *)&addr, sizeof(struct in_addr), AF_INET);
-#endif
-#else
-	hp = gethostbyaddr((char *)&addr, sizeof(struct in_addr), AF_INET);
-#endif
-
-	if (hp == NULL) {
-		return NULL;
-	}
-	return hp;
-} 
 
 /*
  * Function: rc_get_ipaddr
@@ -132,21 +49,86 @@ struct hostent *rc_gethostbyaddr(const char *addr, size_t length, int format)
  * Returns: 0 on failure
  */
 
-uint32_t rc_get_ipaddr (char *host)
+int rc_get_ipaddr (char *host, struct in6_addr* rval)
 {
+
 	struct 	hostent *hp;
+	unsigned char buf[sizeof(struct in6_addr)];
 
 	if (rc_good_ipaddr (host) == 0)
 	{
-		return ntohl(inet_addr (host));
+		if ( inet_pton(AF_INET6, host, rval) <= 0) {
+			rc_log(LOG_ERR,"rc_get_ipaddr: error inet_pton(%s)", host);
+			return 0;
+		}
+	    //rc_log(LOG_NOTICE,"rc_get_ipaddr (inet_pton) %s->%x:%x:%x:%x:%x:%x:%x:%x\n", host, NIP6ADDR(rval));
+		return 1;
 	}
-	else if ((hp = rc_gethostbyname(host)) == NULL)
-	{
-		rc_log(LOG_ERR,"rc_get_ipaddr: couldn't resolve hostname: %s", host);
-		return (uint32_t)0;
+
+	struct addrinfo hints;
+	struct addrinfo *result, *rp;
+	int             s, sfd;
+	*rval = in6addr_any;
+
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET6;	// Allow IPv4 or IPv6
+	hints.ai_socktype = 0;			// SOCK_DGRAM; Datagram socket
+	hints.ai_flags = 0;
+	hints.ai_protocol = 0;          // Any protocol
+
+	s = getaddrinfo(host, NULL, &hints, &result);
+	if (s != 0) {
+		rc_log(LOG_ERR,"rc_get_ipaddr(%s) getaddrinfo: %s", host, gai_strerror(s));
+		return 0;
 	}
-	return ntohl((*(uint32_t *) hp->h_addr));
+
+	// getaddrinfo() returns a list of address structures.
+	//Try each address until we successfully connect(2).
+	//If socket(2) (or connect(2)) fails, we (close the socket
+	//and) try the next address.
+
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		if (rp->ai_canonname) {
+			;//rc_log(LOG_NOTICE,"rc_get_ipaddr(%s) getaddrinfo() Canonical name:\n%s\nAdresses:\n", host, rp->ai_canonname);
+		}
+		if (rp->ai_family == AF_INET6) {
+			char dst[INET6_ADDRSTRLEN];
+
+
+			sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			if (sfd == -1) {
+				continue;
+			}
+			memcpy(rval, &((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr, sizeof(struct in6_addr));
+
+            //rc_log(LOG_NOTICE,"rc_get_ipaddr(%s) try connect to address : %x:%x:%x:%x:%x:%x:%x:%x socktype %d protocol %d\n",
+                   //host, NIP6ADDR(rval), rp->ai_socktype, rp->ai_protocol);
+			if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+
+				//memcpy( rval, rp->ai_addr, sizeof(struct in6_addr));
+				//rc_log(LOG_NOTICE,"rc_get_ipaddr(%s) success : %x:%x:%x:%x:%x:%x:%x:%x\n", host, NIP6ADDR(rval));
+				if (!inet_ntop(AF_INET6, (const void *) rval, dst, sizeof(dst))) {
+					rc_log(LOG_ERR,"inet_ntop: %s\n", strerror(errno));
+					break;
+				}
+				//rc_log(LOG_NOTICE,"rc_get_ipaddr() inet_ntop %s->%s\n", host, dst);
+				close(sfd);
+				break;                  // Success
+			}
+			close(sfd);
+		}
+	}
+
+	if (rp == NULL) {               // No address succeeded
+		rc_log(LOG_ERR,"rc_get_ipaddr(%s) Could not connect", host);
+		return 0;
+	}
+	freeaddrinfo(result);           // No longer needed
+	//rc_log(LOG_NOTICE,"rc_get_ipaddr (getaddrinfo) %s->%x:%x:%x:%x:%x:%x:%x:%x\t return 1", host, NIP6ADDR(rval));
+	return 1;
 }
+
 
 /*
  * Function: rc_good_ipaddr
@@ -159,43 +141,56 @@ uint32_t rc_get_ipaddr (char *host)
 
 int rc_good_ipaddr (char *addr)
 {
-	int             dot_count;
-	int             digit_count;
+	int		qc = 0;
+	int		qd = 0;
+	int		str_index;
+	char		ip_number_str[4];
+	int		ip_number_index;
+	size_t i;
 
-	if (addr == NULL)
-		return -1;
-
-	dot_count = 0;
-	digit_count = 0;
-	while (*addr != '\0' && *addr != ' ')
+	for (i = 0; i < strlen(addr); ++i)
 	{
-		if (*addr == '.')
-		{
-			dot_count++;
-			digit_count = 0;
-		}
-		else if (!isdigit (*addr))
-		{
-			dot_count = 5;
-		}
-		else
-		{
-			digit_count++;
-			if (digit_count > 3)
-			{
-				dot_count = 5;
+		qc += (addr[i] == ':') ? 1 : 0;
+		qd += (addr[i] == '.') ? 1 : 0;
+	}
+	if (qc > 7)
+	{
+		//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @1", addr);
+		return -1;
+	}
+	if (qd && qd != 3)
+	{
+		//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @2", addr);
+		return -1;
+	}
+
+	ip_number_index = 0;
+	for ( str_index = 0 ; str_index < strlen(addr); str_index++) {
+		if ((addr[str_index] != '.') && (addr[str_index] != ':')) {
+			if (ip_number_index < 4) {
+				ip_number_str[ip_number_index] = addr[str_index];
+				ip_number_index = ip_number_index + 1;
+			} else {
+				//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @3", addr);
+				return -1;
 			}
+		} else {
+			if (ip_number_index != 0) {
+				for (i = 0; i < ip_number_index; ++i)
+				{
+					if ((ip_number_str[i]) < '0' || (ip_number_str[i] > '9' && ip_number_str[i] < 'A') ||
+						(ip_number_str[i] > 'F' && ip_number_str[i] < 'a') || ip_number_str[i] > 'f')
+					{
+						//rc_log(LOG_ERR,"rc_good_ipaddr(%s): false @4", addr);
+						return -1;
+					}
+				}
+			}
+			ip_number_index = 0;
 		}
-		addr++;
 	}
-	if (dot_count != 3)
-	{
-		return -1;
-	}
-	else
-	{
-		return 0;
-	}
+	//rc_log(LOG_ERR,"rc_good_ipaddr(%s): true", addr);
+	return 0;
 }
 
 /*
@@ -206,17 +201,26 @@ int rc_good_ipaddr (char *addr)
  *
  */
 
-const char *rc_ip_hostname (uint32_t h_ipaddr)
+const char *rc_ip_hostname (struct in6_addr* h_ipaddr)
 {
-	struct hostent  *hp;
-	uint32_t           n_ipaddr = htonl (h_ipaddr);
+/*
+struct hostent  *hp;
+uint32_t           n_ipaddr = htonl (h_ipaddr);
 
-	if ((hp = rc_gethostbyaddr ((char *) &n_ipaddr, sizeof (struct in_addr),
-			    AF_INET)) == NULL) {
+if ((hp = rc_gethostbyaddr ((char *) &n_ipaddr, sizeof (struct in_addr),
+	AF_INET)) == NULL) {
 		rc_log(LOG_ERR,"rc_ip_hostname: couldn't look up host by addr: %08lX", h_ipaddr);
+}
+
+return (hp == NULL) ? "unknown" : hp->h_name;
+*/
+	static char host[INET6_ADDRSTRLEN];
+	if (inet_ntop(AF_INET6, h_ipaddr, host, INET6_ADDRSTRLEN) == NULL) {
+		return "unknown";
+	} else {
+		return host;
 	}
 
-	return (hp == NULL) ? "unknown" : hp->h_name;
 }
 
 /*
@@ -289,26 +293,29 @@ rc_own_hostname(char *hostname, int len)
  *
  */
 
-uint32_t rc_own_ipaddress(rc_handle *rh)
+void rc_own_ipaddress(rc_handle *rh, struct in6_addr* rval)
 {
 	char hostname[256];
+	*rval = in6addr_any;
 
-	if (!rh->this_host_ipaddr) {
+	if (!IN6_ARE_ADDR_EQUAL(&rh->this_host_ipaddr, &in6addr_any)) {
 		if (rc_conf_str(rh, "bindaddr") == NULL ||
 		    strcmp(rc_conf_str(rh, "bindaddr"), "*") == 0) {
 			if (rc_own_hostname(hostname, sizeof(hostname)) < 0)
-				return 0;
+				//rc_log(LOG_NOTICE,"rc_own_ipaddress %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(rval));
+				return ;
 		} else {
 			strncpy(hostname, rc_conf_str(rh, "bindaddr"), sizeof(hostname));
 			hostname[sizeof(hostname) - 1] = '\0';
 		}
-		if ((rh->this_host_ipaddr = rc_get_ipaddr (hostname)) == 0) {
+		if (rc_get_ipaddr (hostname, &rh->this_host_ipaddr) == 0) {
 			rc_log(LOG_ERR, "rc_own_ipaddress: couldn't get own IP address");
-			return 0;
+			//rc_log(LOG_NOTICE,"rc_own_ipaddress %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(rval));
+			return ;
 		}
 	}
-
-	return rh->this_host_ipaddr;
+	memcpy(rval, &rh->this_host_ipaddr, sizeof (struct in6_addr));
+	//rc_log(LOG_NOTICE,"rc_own_ipaddress %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(rval));
 }
 
 /*
@@ -321,32 +328,38 @@ uint32_t rc_own_ipaddress(rc_handle *rh)
  *
  */
 
-uint32_t rc_own_bind_ipaddress(rc_handle *rh)
+void rc_own_bind_ipaddress(rc_handle *rh, struct in6_addr* rval)
 {
 	char hostname[256];
-	uint32_t rval;
 
-	if (rh->this_host_bind_ipaddr != NULL)
-		return *rh->this_host_bind_ipaddr;
+	if (rh->this_host_bind_ipaddr != NULL) {
+		memcpy(rval, rh->this_host_bind_ipaddr, sizeof (struct in6_addr));
+		//rc_log(LOG_NOTICE,"rc_own_bind_ipaddress %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(rval));
+		return;
+	}
 
-	rh->this_host_bind_ipaddr = malloc(sizeof(*rh->this_host_bind_ipaddr));
+	rh->this_host_bind_ipaddr = malloc(sizeof (struct in6_addr));
 	if (rh->this_host_bind_ipaddr == NULL)
 		rc_log(LOG_CRIT, "rc_own_bind_ipaddress: out of memory");
 	if (rc_conf_str(rh, "bindaddr") == NULL ||
-	    strcmp(rc_conf_str(rh, "bindaddr"), "*") == 0) {
-		rval = INADDR_ANY;
+		strcmp(rc_conf_str(rh, "bindaddr"), "*") == 0) {
+		*rval = in6addr_any;
+		//rc_log(LOG_NOTICE,"rc_own_bind_ipaddress: in6addr_any\n");
 	} else {
 		strncpy(hostname, rc_conf_str(rh, "bindaddr"), sizeof(hostname));
 		hostname[sizeof(hostname) - 1] = '\0';
-		if ((rval = rc_get_ipaddr (hostname)) == 0) {
+		if (rc_get_ipaddr (hostname, rval) == 0) {
 			rc_log(LOG_ERR, "rc_own_ipaddress: couldn't get IP address from bindaddr");
-			rval = INADDR_ANY;
+			*rval = in6addr_any;
+			//rc_log(LOG_NOTICE,"rc_own_bind_ipaddress: in6addr_any\n");
 		}
 	}
-	if (rh->this_host_bind_ipaddr != NULL)
-		*rh->this_host_bind_ipaddr = rval;
+	if (rh->this_host_bind_ipaddr != NULL) {
+        memcpy(rh->this_host_bind_ipaddr, rval, sizeof (struct in6_addr));
+        //rc_log(LOG_NOTICE,"rc_own_bind_ipaddress assign rh->this_host_bind_ipaddr to %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(rh->this_host_bind_ipaddr));
+		//*rh->this_host_bind_ipaddr = *rval;
+	}
 
-	return rval;
 }
 
 /*
@@ -361,26 +374,26 @@ uint32_t rc_own_bind_ipaddress(rc_handle *rh)
  *
  */
 int
-rc_get_srcaddr(struct sockaddr *lia, struct sockaddr *ria)
+rc_get_srcaddr(struct sockaddr_in6 *lia, struct sockaddr_in6 *ria)
 {
 	int temp_sock;
 	socklen_t namelen;
 
-	temp_sock = socket(ria->sa_family, SOCK_DGRAM, 0);
+	temp_sock = socket(ria->sin6_family, SOCK_DGRAM, 0);
 	if (temp_sock == -1) {
 		rc_log(LOG_ERR, "rc_get_srcaddr: socket: %s", strerror(errno));
 		return -1;
 	}
 
-	if (connect(temp_sock, ria, SA_LEN(ria)) != 0) {
+	if (connect(temp_sock, (struct sockaddr*)ria, sizeof(struct sockaddr_in6)) != 0) {
 		rc_log(LOG_ERR, "rc_get_srcaddr: connect: %s",
 		    strerror(errno));
 		close(temp_sock);
 		return -1;
 	}
 
-	namelen = SA_LEN(ria);
-	if (getsockname(temp_sock, lia, &namelen) != 0) {
+	namelen = sizeof(struct sockaddr_in6);
+	if (getsockname(temp_sock, (struct sockaddr*)lia, &namelen) != 0) {
 		rc_log(LOG_ERR, "rc_get_srcaddr: getsockname: %s",
 		    strerror(errno));
 		close(temp_sock);

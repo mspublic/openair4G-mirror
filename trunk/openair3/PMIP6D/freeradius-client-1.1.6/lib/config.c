@@ -34,7 +34,7 @@ static OPTION *find_option(rc_handle *rh, const char *optname, unsigned int type
 	/* there're so few options that a binary search seems not necessary */
 	for (i = 0; i < NUM_OPTIONS; i++) {
 		if (!strcmp(rh->config_options[i].name, optname) &&
-		    (rh->config_options[i].type & type)) 
+		    (rh->config_options[i].type & type))
 		{
 		    	return &rh->config_options[i];
 		}
@@ -105,7 +105,7 @@ static int set_option_srv(const char *filename, int line, OPTION *option, const 
 
 	serv = (SERVER *) option->val;
 	if (serv == NULL) {
-		DEBUG(LOG_ERR, "option->val / server is NULL, allocating memory");
+		rc_log(LOG_ERR, "[freeradius-client] option->val / server is NULL, allocating memory");
 		serv = malloc(sizeof(*serv));
 		if (serv == NULL) {
 			rc_log(LOG_CRIT, "read_config: out of memory");
@@ -121,12 +121,12 @@ static int set_option_srv(const char *filename, int line, OPTION *option, const 
 	if ((q = strchr(p_pointer,':')) != NULL) {
 		*q = '\0';
 		q++;
-		
+
 		/* Check to see if we have 'servername:port:secret' syntax */
 		if((s = strchr(q,':')) != NULL) {
 			*s = '\0';
 			s++;
-			serv->secret[serv->max] = strdup(s);			
+			serv->secret[serv->max] = strdup(s);
 			if (serv->secret[serv->max] == NULL) {
 				rc_log(LOG_CRIT, "read_config: out of memory");
 				if (option->val == NULL) {
@@ -161,6 +161,9 @@ static int set_option_srv(const char *filename, int line, OPTION *option, const 
 	}
 
 	serv->name[serv->max] = strdup(p_pointer);
+    //rc_log(LOG_NOTICE,"set_option_srv filename %s serv->name %s, serv->port[%d]=%d serv->secret[%d]=%s",
+    //       filename, serv->name[serv->max], serv->max, serv->port[serv->max], serv->max,serv->secret[serv->max]);
+
 	if (serv->name[serv->max] == NULL) {
 		rc_log(LOG_CRIT, "read_config: out of memory");
 		if (option->val == NULL) {
@@ -236,9 +239,9 @@ static int set_option_auo(const char *filename, int line, OPTION *option, const 
 
 
 /* Function: rc_add_config
- * 
+ *
  * Purpose: allow a config option to be added to rc_handle from inside a program
- * 
+ *
  * Returns: 0 on success, -1 on failure
  */
 
@@ -246,13 +249,13 @@ int rc_add_config(rc_handle *rh, const char *option_name, const char *option_val
 {
 	OPTION *option;
 
-	if ((option = find_option(rh, option_name, OT_ANY)) == NULL) 
+	if ((option = find_option(rh, option_name, OT_ANY)) == NULL)
 	{
 		rc_log(LOG_ERR, "ERROR: unrecognized option: %s", option_name);
 		return -1;
 	}
 
-	if (option->status != ST_UNDEF) 
+	if (option->status != ST_UNDEF)
 	{
 		rc_log(LOG_ERR, "ERROR: duplicate option: %s", option_name);
 		return -1;
@@ -288,10 +291,10 @@ int rc_add_config(rc_handle *rh, const char *option_name, const char *option_val
 
 /*
  * Function: rc_config_init
- * 
+ *
  * Purpose: initialize the configuration structure from an external program.  For use when not
  * running a standalone client that reads from a config file.
- * 
+ *
  * Returns: rc_handle on success, NULL on failure
  */
 
@@ -303,7 +306,7 @@ rc_config_init(rc_handle *rh)
 	SERVER *acctservers;
 
         rh->config_options = malloc(sizeof(config_options_default));
-        if (rh->config_options == NULL) 
+        if (rh->config_options == NULL)
 	{
                 rc_log(LOG_CRIT, "rc_config_init: out of memory");
 		rc_destroy(rh);
@@ -311,7 +314,7 @@ rc_config_init(rc_handle *rh)
         }
         memcpy(rh->config_options, &config_options_default, sizeof(config_options_default));
 
-        authservers = rc_conf_srv(rh, "authserver"); 
+        authservers = rc_conf_srv(rh, "authserver");
 	acctservers = rc_conf_srv(rh, "acctserver");
 	authservers = malloc(sizeof(SERVER));
 	acctservers = malloc(sizeof(SERVER));
@@ -327,13 +330,13 @@ rc_config_init(rc_handle *rh)
 	authservers->max = 0;
 	acctservers->max = 0;
 
-	for(i=0; i < SERVER_MAX; i++) 
-	{	
+	for(i=0; i < SERVER_MAX; i++)
+	{
 		authservers->name[i] = NULL;
 		authservers->secret[i] = NULL;
 		acctservers->name[i] = NULL;
 		acctservers->secret[i] = NULL;
-	} 
+	}
 	return rh;
 }
 
@@ -628,35 +631,47 @@ int test_config(rc_handle *rh, char *filename)
  *
  */
 
-static int find_match (uint32_t *ip_addr, char *hostname)
+static int find_match (struct in6_addr *ip_addr, char *hostname)
 {
 
-	uint32_t           addr;
-	char          **paddr;
-	struct hostent *hp;
+	struct in6_addr  addr;
+	char           **paddr;
+	struct hostent  *hp;
 
+	//rc_log(LOG_NOTICE,"find_match(%x:%x:%x:%x:%x:%x:%x:%x/%s)\n", NIP6ADDR(ip_addr), hostname);
 	if (rc_good_ipaddr (hostname) == 0)
 	{
-		if (*ip_addr == ntohl(inet_addr (hostname)))
-		{
+		if (rc_get_ipaddr(hostname, &addr) == 0) {
+			//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Success@1\n", NIP6ADDR(ip_addr), hostname);
 			return 0;
 		}
+		if (IN6_ARE_ADDR_EQUAL(ip_addr, &addr))
+		{
+			//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Success@2\n", NIP6ADDR(ip_addr), hostname);
+			return 0;
+		}
+		//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Failed@3\n", NIP6ADDR(ip_addr), hostname);
 		return -1;
 	}
 
 	if ((hp = rc_gethostbyname(hostname)) == NULL)
 	{
+		//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Failed@4\n", NIP6ADDR(ip_addr), hostname);
 		return -1;
 	}
-		
+
 	for (paddr = hp->h_addr_list; *paddr; paddr++)
 	{
-		addr = ** (uint32_t **) paddr;
-		if (ntohl(addr) == *ip_addr)
+		addr = ** (struct in6_addr **) paddr;
+
+		//rc_log(LOG_NOTICE,"find_match Compare %x:%x:%x:%x:%x:%x:%x:%x/%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(ip_addr), NIP6ADDR(&addr));
+		if (IN6_ARE_ADDR_EQUAL(ip_addr, &addr))
 		{
+			//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Success@5\n", NIP6ADDR(ip_addr), hostname);
 			return 0;
 		}
 	}
+	//rc_log(LOG_NOTICE,"find_match %x:%x:%x:%x:%x:%x:%x:%x/%s Failed@6\n", NIP6ADDR(ip_addr), hostname);
 	return -1;
 }
 
@@ -670,18 +685,18 @@ static int find_match (uint32_t *ip_addr, char *hostname)
  */
 
 static int
-rc_ipaddr_local(uint32_t ip_addr)
+rc_ipaddr_local(struct in6_addr *ip_addr)
 {
 	int temp_sock, res, serrno;
-	struct sockaddr_in sin;
+	struct sockaddr_in6 sin;
 
-	temp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	temp_sock = socket(AF_INET6, SOCK_DGRAM, 0);
 	if (temp_sock == -1)
 		return -1;
 	memset(&sin, '\0', sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(ip_addr);
-	sin.sin_port = htons(0);
+	sin.sin6_family = AF_INET6;
+	memcpy (sin.sin6_addr.s6_addr, ip_addr->s6_addr, 16);
+	sin.sin6_port = htons(0);
 	res = bind(temp_sock, (struct sockaddr *)&sin, sizeof(sin));
 	serrno = errno;
 	close(temp_sock);
@@ -704,22 +719,30 @@ rc_ipaddr_local(uint32_t ip_addr)
 static int
 rc_is_myname(char *hostname)
 {
-	uint32_t 	addr;
-	char 	**paddr;
+	struct in6_addr 	addr;
+	struct in6_addr 	**paddr;
 	struct 	hostent *hp;
 	int	res;
 
-	if (rc_good_ipaddr(hostname) == 0)
-		return rc_ipaddr_local(ntohl(inet_addr(hostname)));
-
+	//rc_log(LOG_NOTICE,"rc_is_myname(%s)", hostname);
+	if (rc_good_ipaddr(hostname) == 0) {
+		if (rc_get_ipaddr(hostname, &addr) == 0) {
+			//rc_log(LOG_NOTICE,"rc_is_myname(%s) return false", hostname);
+			return -1;
+		}
+		return rc_ipaddr_local(&addr);
+	}
 	if ((hp = rc_gethostbyname(hostname)) == NULL)
 		return -1;
-	for (paddr = hp->h_addr_list; *paddr; paddr++) {
-		addr = **(uint32_t **)paddr;
-		res = rc_ipaddr_local(ntohl(addr));
-		if (res == 0 || res == -1)
+	for (paddr = (struct in6_addr**)hp->h_addr_list; *paddr; paddr++) {
+		addr = **(struct in6_addr **)paddr;
+		res = rc_ipaddr_local(&addr);
+		if (res == 0 || res == -1) {
+			//rc_log(LOG_NOTICE,"rc_is_myname(%s) return %d", hostname, res);
 			return res;
+		}
 	}
+	//rc_log(LOG_NOTICE,"rc_is_myname(%s) return 1", hostname);
 	return 1;
 }
 
@@ -732,7 +755,7 @@ rc_is_myname(char *hostname)
  *
  */
 
-int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *secret)
+int rc_find_server (rc_handle *rh, char *server_name, struct in6_addr *ip_addr, char *secret)
 {
 	int		i;
 	size_t          len;
@@ -748,14 +771,20 @@ int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *s
 	SERVER	       *acctservers;
 
 	/* Lookup the IP address of the radius server */
-	if ((*ip_addr = rc_get_ipaddr (server_name)) == (uint32_t) 0)
+	if (rc_get_ipaddr (server_name, ip_addr) == (uint32_t) 0) {
+		//rc_log(LOG_NOTICE,"rc_find_server(%s)/rc_get_ipaddr() Failed\n", server_name);
 		return -1;
+	}
+	//rc_log(LOG_NOTICE,"rc_find_server(%s)/rc_get_ipaddr success : %x:%x:%x:%x:%x:%x:%x:%x\n", server_name, NIP6ADDR(ip_addr));
 
 	/* Check to see if the server secret is defined in the rh config */
-	if( (authservers = rc_conf_srv(rh, "authserver")) != NULL ) 
+	if( (authservers = rc_conf_srv(rh, "authserver")) != NULL )
 	{
+	    //rc_log(LOG_NOTICE,"rc_find_server(%s) parsing config authserver", server_name);
 		for( i = 0; i < authservers->max; i++ )
 		{
+	        //rc_log(LOG_NOTICE,"rc_find_server(%s) parsing %s  (secret=%s)",
+			//	   server_name, authservers->name[i], authservers->secret[i]);
 			if( (strncmp(server_name, authservers->name[i], strlen(server_name)) == 0) &&
 			    (authservers->secret[i] != NULL) )
 			{
@@ -767,12 +796,14 @@ int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *s
 				}
 				strncpy (secret, authservers->secret[i], (size_t) len);
 				secret[MAX_SECRET_LENGTH] = '\0';
+                //rc_log(LOG_NOTICE,"rc_find_server(%s) authservers secret: %s\n", server_name, secret);
 				return 0;
 			}
 		}
 	}
+	//rc_log(LOG_NOTICE,"rc_find_server(%s) parsed config authserver", server_name);
 
-	if( (acctservers = rc_conf_srv(rh, "acctserver")) != NULL ) 
+	if( (acctservers = rc_conf_srv(rh, "acctserver")) != NULL )
 	{
 		for( i = 0; i < acctservers->max; i++ )
 		{
@@ -787,12 +818,14 @@ int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *s
 				}
 				strncpy (secret, acctservers->secret[i], (size_t) len);
 				secret[MAX_SECRET_LENGTH] = '\0';
+                //rc_log(LOG_NOTICE,"rc_find_server(%s) acctservers secret: %s\n", server_name, secret);
 				return 0;
 			}
 		}
 	}
+	//rc_log(LOG_NOTICE,"rc_find_server(%s) parsed config acctserver", server_name);
 
-	/* We didn't find it in the rh_config or the servername is too long so look for a 
+	/* We didn't find it in the rh_config or the servername is too long so look for a
 	 * servers file to define the secret(s)
 	 */
 
@@ -801,6 +834,7 @@ int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *s
 		rc_log(LOG_ERR, "rc_find_server: couldn't open file: %s: %s", strerror(errno), rc_conf_str(rh, "servers"));
 		return -1;
 	}
+	//rc_log(LOG_NOTICE,"rc_find_server(%s) opened file: %s", server_name, rc_conf_str(rh, "servers"));
 
 	while (fgets (buffer, sizeof (buffer), clientfd) != NULL)
 	{
@@ -861,6 +895,9 @@ int rc_find_server (rc_handle *rh, char *server_name, uint32_t *ip_addr, char *s
 		}
 	}
 	fclose (clientfd);
+	//rc_log(LOG_NOTICE,"rc_find_server() finished parsing file: %s", rc_conf_str(rh, "servers"));
+	//rc_log(LOG_NOTICE,"rc_find_server() closed file: %s", rc_conf_str(rh, "servers"));
+
 	if (result == 0)
 	{
 		memset (buffer, '\0', sizeof (buffer));

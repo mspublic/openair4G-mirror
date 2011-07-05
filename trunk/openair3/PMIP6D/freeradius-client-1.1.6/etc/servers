@@ -7,4 +7,5 @@
 ## uncomment the following line for simple testing of radlogin
 ## with freeradius-server
 #
-#localhost/localhost				testing123
+#
+radius6server  testing123
