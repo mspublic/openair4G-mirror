@@ -36,6 +36,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#include "oaisim.h"
 
 #define RF
 

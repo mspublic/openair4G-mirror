@@ -35,6 +35,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#include "oaisim.h"
 
 #define RF
 
@@ -67,21 +68,6 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX]; 
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][9];
-
-extern void init_channel_vars(LTE_DL_FRAME_PARMS *frame_parms, double ***s_re,double ***s_im,double ***r_re,double ***r_im,double ***r_re0,double ***r_im0);
-
-extern void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms);
-
-extern void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,
-channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],u16 next_slot,double *nf,
-u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms);
-
-extern void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms, u8 extended_prefix_flag, u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag);
-
-extern void init_ue(node_desc_t  *ue_data);//Abstraction changes
-extern void init_enb(node_desc_t  *enb_data);//Abstraction changes
-extern void extract_position(Node_list input_node_list, node_desc_t*);//Abstraction changes
-extern void get_beta_map();//Abstraction changes
 
 
 #ifndef CYGWIN
@@ -632,7 +618,7 @@ int main(int argc, char **argv) {
 	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data,
-                  ue_data,next_slot,nf,abstraction_flag,frame_parms);
+                  ue_data,next_slot,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -653,7 +639,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -670,7 +656,7 @@ int main(int argc, char **argv) {
 		
 	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data, ue_data,next_slot,nf,abstraction_flag,frame_parms);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,enb_data, ue_data,next_slot,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -691,7 +677,7 @@ int main(int argc, char **argv) {
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)

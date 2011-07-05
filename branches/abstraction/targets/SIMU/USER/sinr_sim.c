@@ -37,6 +37,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#include "oaisim.h"
 
 #define RF
 
@@ -53,7 +54,7 @@ extern double sinr_bler_map[MCS_COUNT][2][9];
 
 // Extract the positions of UE and ENB from the mobility model 
 
-void extract_position (Node_list input_node_list, node_desc_t *node_data[]) {    
+void extract_position (Node_list input_node_list, node_desc_t **node_data) {    
     
   int index = 0;
   while (input_node_list != NULL) {

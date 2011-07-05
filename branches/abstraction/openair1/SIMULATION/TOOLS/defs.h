@@ -1,3 +1,5 @@
+#ifndef __SIMULATION_TOOLS_DEFS_H__
+#define __SIMULATION_TOOLS_DEFS_H__
 #include "PHY/TOOLS/defs.h"
 
 /** @defgroup _numerical_ Useful Numerical Functions
@@ -295,9 +297,10 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
+void freq_channel(channel_desc_t *desc,u16 nb_rb);
 
 /**@} */
 /**@} */
-
+#endif
 
 

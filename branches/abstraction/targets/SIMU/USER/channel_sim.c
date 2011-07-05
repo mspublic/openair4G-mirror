@@ -36,16 +36,10 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#include "oaisim.h"
 
 #define RF
 
-extern void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, s32, s32);//Abstraction changes
-extern void calculate_sinr(channel_desc_t *, double *sinr_dB ,s32, s32,s32);//Abstraction changes
-//extern double sinr[NUMBER_OF_eNB_MAX][2*25];//Abstraction changes
-extern void get_beta_map(); 
-extern int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs); //temporary testing for PHY abstraction
-u32 rb_alloc[4] = { 299, 0 , 0, 0};
-//scenario_desc parameter removed from  do_Dl_sig()..hav to include later
 void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX], u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
@@ -297,7 +291,7 @@ s32 att_eNB_id;//Abstraction changes
 }
 
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -311,6 +305,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   s32 rx_pwr2;
   u32 i;
   u32 slot_offset;
+  double nf[2] = {3.0,3.0}; //currently unused
 
   if (abstraction_flag==0) {
 #ifdef IFFT_FPGA
