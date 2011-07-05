@@ -291,7 +291,7 @@ s32 att_eNB_id;//Abstraction changes
 }
 
 
-void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
+void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX],u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
 
   mod_sym_t **txdataF;
 #ifdef IFFT_FPGA
@@ -461,10 +461,12 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
     
+	/*
 	if (eNB_id == (UE_id % 3))
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
 	else
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - 10;
+	*/
 
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);

@@ -352,7 +352,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 //extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];
 //extern  double ABS_beta[MCS_COUNT];
 extern double sinr_bler_map[MCS_COUNT][2][9];
-double beta[MCS_COUNT] = {0, 0, 0, 0, 0, 0.9459960937499999, 1.2912109374999994, 1.0133789062499998, 1.000390625,
+double beta[MCS_COUNT] = {1, 1, 1, 1, 1, 0.9459960937499999, 1.2912109374999994, 1.0133789062499998, 1.000390625,
                           1.02392578125, 1.8595703124999998, 2.424389648437498, 2.3946533203124982, 2.5790039062499988,
                           2.4084960937499984, 2.782617187499999, 2.7868652343749996, 3.92099609375, 4.0392578125,
                           4.56109619140625, 5.03338623046875, 5.810888671875, 6.449108886718749};
@@ -372,13 +372,13 @@ int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
       //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
 
       sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta[mcs]);
-      printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+      //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
     }
   }       
-  printf("sinr_eff1 = %f\n",sinr_eff);
+  //printf("sinr_eff1 = %f\n",sinr_eff);
   sinr_eff =  -beta[mcs] *log((sinr_eff)/(2*rb_count));
   sinr_eff = 10 * log10(sinr_eff);
-  printf("sinr_eff2 = %f\n",sinr_eff);
+  //printf("sinr_eff2 = %f\n",sinr_eff);
 
   // table lookup
   sinr_eff *= 10;

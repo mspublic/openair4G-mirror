@@ -88,9 +88,9 @@ void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *
   dist = sqrt(pow((node_tx->x - node_rx->x), 2) + pow((node_tx->y - node_rx->y), 2));
   
   /* conversion of distance into KM 3gpp (36-942) */
-  ch_desc->path_loss_dB = (128.1 + 37.6 * log10(dist/10)); 
+  ch_desc->path_loss_dB = -(128.1 + 37.6 * log10(dist/1000)); 
   //ch_desc->path_loss_dB = (128.1 + 10*(scenario->path_loss_exponent) * log10(dist/1000)); 
-  printf("*****Path Loss %f\n",ch_desc->path_loss_dB);
+  printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
 }
 
 
@@ -143,8 +143,8 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
   if (0 == return_value) {
     //freq_channel(ul_channel[UE_id][eNB_id], nb_rb);
     freq_channel(eNB2UE, nb_rb);
-    coupling = MCL > (eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max)) ?
-               MCL : (eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max));   
+    coupling = MCL > (-eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max)) ?
+               MCL : (-eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max));   
     //printf ("coupling factor is %lf\n", coupling); 
     for (count = 0; count < (2 * nb_rb); count++) {
       sinr[eNB_id][count] = enb_data->tx_power_dBm 
@@ -152,7 +152,6 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
                             - (thermal_noise + ue_data->rx_noise_level)  
                             + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
                             + pow(eNB2UE->chF[0][count].y, 2));
-      sinr[eNB_id][count] *= 0.1; //tweak in order to work with one antenna (to force the value to be in range)
       //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
     }
   } 
@@ -178,7 +177,7 @@ void calculate_sinr(channel_desc_t* eNB2UE,double *sinr_dB, s32 UE_id, s32 eNB_i
       }
     }
     sinr_dB[count] -= 10*log10(1 + interference);
-    printf("*****sinr% lf \n",sinr_dB[count]);
+    //printf("*****sinr% lf \n",sinr_dB[count]);
   }
 }
 void get_beta_map() {
