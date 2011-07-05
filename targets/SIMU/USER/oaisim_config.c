@@ -49,9 +49,9 @@ void omg_config(){
 	// setup params for openair mobility generator
 	//common params
 	omg_param_list.min_X = 0;
-	omg_param_list.max_X = 100;
+	omg_param_list.max_X = 500;
 	omg_param_list.min_Y = 0;
-	omg_param_list.max_Y = 100;
+	omg_param_list.max_Y = 500;
 	omg_param_list.min_speed = 0.1;
 	omg_param_list.max_speed = 20.0;
 	omg_param_list.min_journey_time = 0.1;

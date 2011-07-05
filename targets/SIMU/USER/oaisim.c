@@ -186,9 +186,8 @@ int main(int argc, char **argv) {
   u16 n_frames, n_frames_flag;
   s32 slot,last_slot, next_slot;
 
-  double nf[2] = {3.0,3.0}; //currently unused
-  double snr_dB, sinr_dB,snr_dB2,sinr_dB2;
-  u8 set_sinr = 0;
+  double snr_dB, sinr_dB;
+  u8 set_snr=0,set_sinr=0;
   u8 cooperation_flag; // for cooperative communication
 
   u8 target_dl_mcs=4;
@@ -219,7 +218,6 @@ int main(int argc, char **argv) {
 
   FILE *UE_stats, *eNB_stats; 
   int len; 
-  int mod_path_loss=0;
   
   //time_t t0,t1;
   clock_t start, stop;
@@ -259,7 +257,7 @@ int main(int argc, char **argv) {
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
 
-  while ((c = getopt (argc, argv, "haePTot:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1)
+  while ((c = getopt (argc, argv, "haePTt:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:O:")) != -1)
 
     {
        switch (c)
@@ -282,6 +280,7 @@ int main(int argc, char **argv) {
 	  break;
 	case 's':
 	  snr_dB = atoi(optarg);
+	  set_snr = 1;
 	  break;
 	case 'S':
 	  sinr_dB = atoi(optarg);
@@ -351,9 +350,6 @@ int main(int argc, char **argv) {
 	case 'P':
 	  emu_info.opt_enabled=1;
 	  break;
-	case 'o':
-	  mod_path_loss = 1;
-	  break;
 	default:
 	  help ();
 	  exit (-1);
@@ -418,18 +414,18 @@ int main(int argc, char **argv) {
     init_channel_vars(frame_parms,&s_re,&s_im,&r_re,&r_im,&r_re0,&r_im0);
   
   /* Added for PHY abstraction */
-  if (abstraction_flag) {
+  if (abstraction_flag) 
     get_beta_map();
-    for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-      enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
-      init_enb(enb_data[eNB_id]);
-    }
+
+  for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+    enb_data[eNB_id] = (node_desc_t *)malloc(sizeof(node_desc_t)); 
+    init_enb(enb_data[eNB_id]);
+  }
   
-    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-      ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
-      init_ue(ue_data[UE_id]);
-    } 
-  } // End of PHY abstraction changes
+  for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+    ue_data[UE_id] = (node_desc_t *)malloc(sizeof(node_desc_t));
+    init_ue(ue_data[UE_id]);
+  } 
   
   // initialize channel descriptors
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
@@ -453,8 +449,6 @@ int main(int argc, char **argv) {
 					       0,
 					       0);
       
-      eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
-
       UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
 					       nb_taps,
@@ -542,21 +536,25 @@ int main(int argc, char **argv) {
    display_node_list(enb_node_list = get_current_positions(STATIC, eNB, emu_info.time), 1);
    display_node_list(ue_node_list = get_current_positions(omg_param_list.mobility_type, UE, emu_info.time), 1);
 
-     /* Added for PHY abstraction */
-     if (abstraction_flag)
-     {
-       extract_position(enb_node_list, enb_data);
-       extract_position(ue_node_list, ue_data);
+   /* Added for PHY abstraction */
+   extract_position(enb_node_list, enb_data);
+   extract_position(ue_node_list, ue_data);
 
-       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-         for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-           printf("Pathloss bw enB %d at (%f,%f  )and UE%d at (%f,%f  )is",eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y);
-           calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id]);
-           //calc_path_loss (ue_data[UE_id], enb_data[eNB_id], UE2eNB[UE_id][eNB_id]);
-         }
-      }
-    } // End of PHY abstraction changes
-    for (slot=0 ; slot<20 ; slot++) {
+   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
+     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
+       if (set_snr==0) {
+	 printf("Pathloss bw enB %d at (%f,%f  )and UE%d at (%f,%f  )is",eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y);
+	 calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id]);
+	 calc_path_loss (ue_data[UE_id], enb_data[eNB_id], UE2eNB[UE_id][eNB_id]);
+       }
+       else {
+	 eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
+	 UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
+       }
+     }
+   }
+
+   for (slot=0 ; slot<20 ; slot++) {
 
      last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -600,16 +598,6 @@ int main(int argc, char **argv) {
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
 
  
-     /*
-      if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
-	snr_dB2 = -20;
-	sinr_dB2 = -40;
-      }
-      else {
-	snr_dB2 = snr_dB;
-	sinr_dB2 = sinr_dB;
-      }
-      */
       if (direction  == SF_DL) {
 	/*
 	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
@@ -639,7 +627,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -677,7 +665,7 @@ int main(int argc, char **argv) {
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
