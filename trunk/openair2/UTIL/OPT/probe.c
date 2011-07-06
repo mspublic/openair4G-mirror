@@ -112,6 +112,7 @@ void trace_pdu(int type,unsigned char *pdu_buffer, int pdu_length, int ue_id,int
 	 * Copy the PDu buffer into local buffer
 	 * 
 	 * */
+	LOG_I(OPT,"Trace_PDU in\n\r");
 	for(i=0;i<pdu_length;i++)
 	{
 	LOG_I(OPT,"VAR i=%d,val=%x\n",i,(unsigned char)pdu_buffer[g_PDUOffset]);
@@ -251,7 +252,7 @@ void _Send_Ra_Mac_Pdu( int PDU_type ,guint8 Extension, guint8 TypeRaPid,
   guint8 isPredefinedData, guint8 retx, guint8 crcStatus)
   
   {
-  LOG_I(MAC_RA,"call here for Send_Ra_Mac_Pdu\n");
+  LOG_I(OPT,"call here for Send_Ra_Mac_Pdu\n");
  
   struct hostent *hp;
     /***********************************/
@@ -294,7 +295,7 @@ close (g_sockfd);
 void test_ra_header(unsigned char *MAC_PDU,u8 length, int ue_id,int rnti,int subframe)
 {}
 /*---------------------------------------------------*/
-void Init_OPT(int trace_mode, char *in_path,char* in_ip, int in_port)
+void Init_OPT(int trace_mode, char *in_path,char* in_ip, int in_port)//, int frame_num)
 {
 // trace_mode
 mode=trace_mode;
@@ -302,6 +303,24 @@ ip=in_ip;
 port=in_port;
 path=in_path;
 int i;
+int pid;
+char *dumpfile= "outfile.dump";
+char *argument ="-w";
+char *end= NULL;
+char *app="tcpdump";
+if(trace_mode > 1)// for trace_mode 2& upper we creat a new thread where we ran tcpdump using specified filter
+		{
+
+	if ((pid = fork()) == -1)
+	        perror("fork error");
+	     else if (pid == 0) {
+		execlp(app,"tcpdump",argument,dumpfile,end);
+	 	printf("Return not expected. Must be an execlp error.n");
+	     }
+
+
+
+		}
 for(i=0;i<250;i++)
 {
 	timing_perf[i]=0;
@@ -346,7 +365,7 @@ int pdu_format_convert(int type)
 /************************************************************/
  int send_dl_mac_pdu( unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe)
 {
-	LOG_I(MAC_RA,"call here for Send_Ra_Mac_Pdu\n");
+	LOG_I(OPT,"call here for Send_Ra_Mac_Pdu\n");
  
   struct hostent *hp;
     /***********************************/
@@ -390,7 +409,7 @@ int pdu_format_convert(int type)
 }
 int send_ul_mac_pdu( unsigned char *pdu_buffer, int pdu_length, int ue_id,int rnti,int subframe)
 {
-	LOG_I(MAC_RA,"call here for Send_Ra_Mac_Pdu\n");
+	LOG_I(OPT,"call here for Send_Ra_Mac_Pdu\n");
  
   struct hostent *hp;
     /***********************************/

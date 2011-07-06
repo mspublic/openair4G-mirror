@@ -230,7 +230,7 @@ int main(int argc, char **argv) {
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
 
-
+  Init_OPT(1,"outfile.dump","127.0.0.1",1234);
 #ifdef XFORMS
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   char title[255];
