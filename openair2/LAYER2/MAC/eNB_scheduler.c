@@ -398,14 +398,12 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
 #endif
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 #ifdef DEBUG_PACKET_TRACE
-  rack=(payload_ptr - sdu +(int)((SCH_SUBHEADER_LONG *)sdu)->L);
+	if((sdu!=NULL)&&(sdu!=0))
 	trace_pdu(3,sdu,rx_lengths[1]/*(payload_ptr - sdu )*/, Mod_id, rnti, 8);
 #endif
 #ifdef DEBUG_HEADER_PARSING
   msg("Num CE %d, Num SDU %d\n",num_ce,num_sdu);
-#ifdef DEBUG_PACKET_TRACE
-	//trace_pdu(3,sdu,(payload_ptr - sdu), Mod_id, rnti, 8);
-#endif
+
 #endif
   // control element
   for (i=0;i<num_ce;i++) {
@@ -986,7 +984,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
   u32 rballoc=0;
   u8 round;
   u8 harq_pid;
-  void *DLSCH_dci;
+  void *DLSCH_dci=NULL;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   int i;
 
@@ -1019,7 +1017,11 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
     msg("[MAC][eNB] Frame %d: Adding common dci for SI\n",mac_xface->frame);
 #endif
 #ifdef    DEBUG_PACKET_TRACE
-    trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+     if((DCI_pdu!=NULL)&&(DCI_pdu!=0))
+{
+      LOG_I(OPT,"Trace_PDU_4578\n\r");
+    trace_pdu(4,DCI_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t), UE_id, SI_RNTI, subframe);
+}
 #endif
   }
 
@@ -1058,9 +1060,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	// Schedule Random-Access Response
 
 	eNB_mac_inst[Mod_id].RA_template[i].generate_rar=0;
-#ifdef    DEBUG_PACKET_TRACE
-  //  trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
-#endif
+
     }
     if (eNB_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup_dci == 1) {
 
@@ -1089,7 +1089,11 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 #endif
       eNB_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup_dci=0;
 #ifdef    DEBUG_PACKET_TRACE
+if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
+{
+     LOG_I(OPT,"Trace_PDU_4\n\r");
     trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+}
 #endif
     }
     else if (eNB_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup==1) {
@@ -1135,7 +1139,11 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	eNB_mac_inst[Mod_id].RA_template[i].RA_active=0;
       }
 #ifdef    DEBUG_PACKET_TRACE
-   // trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+      if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
+      {
+           LOG_I(OPT,"Trace_PDU_456\n\r");
+          trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+      }
 #endif
     }
   }
@@ -1193,8 +1201,13 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  break;
       }
 #ifdef    DEBUG_PACKET_TRACE
+
+    if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
+    {
+    	LOG_I(OPT,"Trace_PDU_444\n\r");
     trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
-#endif
+    }
+    #endif
     }
 
 
@@ -1519,7 +1532,11 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 			  S_DL_SCHEDULED);
 	eNB_mac_inst[Mod_id].UE_template[next_ue].DAI++;
 #ifdef    DEBUG_PACKET_TRACE
+    if((eNB_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0]!=NULL)&&(eNB_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0]!=0))
+    {
+    	LOG_I(OPT,"Trace_PDU_474\n\r");
     trace_pdu(4,eNB_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0],TBS/*sdu_length_total+offset offset*/, next_ue, rnti, subframe);
+    }
 #endif
 	switch (mac_xface->get_transmission_mode(rnti)) {
 	case 1:
