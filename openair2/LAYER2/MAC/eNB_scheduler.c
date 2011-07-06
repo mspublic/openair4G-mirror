@@ -23,7 +23,7 @@
 
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 1
-//#define DEBUG_PACKET_TRACE 1
+#define DEBUG_PACKET_TRACE 1
 
 /*
 #ifndef USER_MODE
@@ -391,13 +391,15 @@ void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
   u8 UE_id = find_UE_id(Mod_id,rnti);
+  int rack;
 
 #ifdef DEBUG_HEADER_PARSING
   msg("[MAC][eNB RX] Received ulsch sdu from L1 (rnti %x, UE_id %d), parsing header\n",rnti,UE_id);
 #endif
   payload_ptr = parse_ulsch_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 #ifdef DEBUG_PACKET_TRACE
-	trace_pdu(3,sdu,(payload_ptr - sdu), Mod_id, rnti, 8);
+  rack=(payload_ptr - sdu +(int)((SCH_SUBHEADER_LONG *)sdu)->L);
+	trace_pdu(3,sdu,rx_lengths[1]/*(payload_ptr - sdu )*/, Mod_id, rnti, 8);
 #endif
 #ifdef DEBUG_HEADER_PARSING
   msg("Num CE %d, Num SDU %d\n",num_ce,num_sdu);
@@ -1016,6 +1018,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 #ifdef DEBUG_eNB_SCHEDULER
     msg("[MAC][eNB] Frame %d: Adding common dci for SI\n",mac_xface->frame);
 #endif
+#ifdef    DEBUG_PACKET_TRACE
+    trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+#endif
   }
 
   for (i=0;i<NB_RA_PROC_MAX;i++) {
@@ -1053,6 +1058,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	// Schedule Random-Access Response
 
 	eNB_mac_inst[Mod_id].RA_template[i].generate_rar=0;
+#ifdef    DEBUG_PACKET_TRACE
+  //  trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+#endif
     }
     if (eNB_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup_dci == 1) {
 
@@ -1080,6 +1088,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
       msg("[MAC][eNB] Frame %d: Adding ue specific dci (rnti %x) for RA (ConnectionSetup)\n",mac_xface->frame,eNB_mac_inst[Mod_id].RA_template[i].rnti);
 #endif
       eNB_mac_inst[Mod_id].RA_template[i].generate_rrcconnsetup_dci=0;
+#ifdef    DEBUG_PACKET_TRACE
+    trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+#endif
     }
     else if (eNB_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup==1) {
       // check HARQ status and retransmit if necessary
@@ -1123,6 +1134,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	eNB_mac_inst[Mod_id].RA_template[i].wait_ack_rrcconnsetup=0;
 	eNB_mac_inst[Mod_id].RA_template[i].RA_active=0;
       }
+#ifdef    DEBUG_PACKET_TRACE
+   // trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+#endif
     }
   }
 
@@ -1138,10 +1152,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
       nb_rb = eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb[harq_pid];
 
       DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
-#ifdef    DEBUG_PACKET_TRACE
-    //trace_pdu(4,eNB_mac_inst[Mod_id].DLSCH_pdu[(u8)next_ue][0].payload[0],TBS/*sdu_length_total+offset offset*/, UE_id, rnti, subframe);
-	//TODO
-#endif
+
       switch(mac_xface->get_transmission_mode(rnti)) {
       default:
       case 1:
@@ -1181,7 +1192,12 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  }
 	  break;
       }
+#ifdef    DEBUG_PACKET_TRACE
+    trace_pdu(4,DLSCH_dci,eNB_mac_inst[Mod_id].RA_template[i].RA_dci_size_bytes1, UE_id, rnti, subframe);
+#endif
     }
+
+
   }
 }
 
