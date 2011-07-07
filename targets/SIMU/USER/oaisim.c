@@ -120,8 +120,9 @@ void help(void) {
   printf("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
   printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
-  printf("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk\n");
-  printf("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk\n");
+  printf("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
+  printf("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
+  printf("-E Random number generator seed\n");
 }
 
 #ifdef XFORMS
@@ -264,8 +265,8 @@ int main(int argc, char **argv) {
   emu_info.omg_model_enb=STATIC; //default to static mobility model
   emu_info.omg_model_ue=STATIC; //default to static mobility model
   emu_info.otg_enabled=0;// T flag
-  emu_info.time = 0.0;	// time of emulation 
- 
+  emu_info.time = 1.0;	// time of emulation 
+  emu_info.seed = time(NULL); // time-based random seed 
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -275,7 +276,7 @@ int main(int argc, char **argv) {
 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
   // get command-line options
-  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:")) != -1) {
+  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:")) != -1) {
     switch (c) {
     case 'F':   // set FDD
       frame_type=0;
@@ -394,6 +395,9 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       emu_info.opt_enabled=1;
+      break;
+    case 'E':
+      emu_info.seed=atoi(optarg);
       break;
     case 'o':
       mod_path_loss = 1;
@@ -577,26 +581,42 @@ int main(int argc, char **argv) {
  
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
-    if (n_frames_flag == 0) // if n_frames not set by the user then let the emulation run to infinity
+    
+    if (n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-    
-    // set the emulation time based on 1ms subframe number
-    emu_info.time += 1.0/100; // emu time in ms 
-    // update the position of all the nodes (eNB/CH, and UE/MR) every second 
-    if (((int)emu_info.time % 100) == 0) 
-      update_nodes(emu_info.time); 
-    
+      // set the emulation time based on 1ms subframe number
+      emu_info.time += 0.01; // emu time in s 
+    }
+    else { // user set the number of frames for the emulation
+      // let the time go faster to see the effect of mobility
+      emu_info.time += 0.1; 
+    } 
+    update_nodes(emu_info.time);  
+    // update the position of all the nodes (eNB/CH, and UE/MR) every frame 
+    if (((int)emu_info.time % 10) == 0 ) {
+      display_node_list((Node_list)get_current_positions(RWP, ALL, emu_info.time));
+      display_node_list((Node_list)get_current_positions(RWALK, ALL, emu_info.time));
+      display_node_list((Node_list)get_current_positions(STATIC, ALL, emu_info.time));
+      if (emu_info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
+	for(UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++){
+	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
+	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	  // reset the mobility model for a specific node
+	  set_new_mob_type(UE_id, UE, new_omg_model, emu_info.time);
+	}
+      }
+      if (emu_info.omg_model_enb >= MAX_NUM_MOB_TYPES){ // mix mobility model
+	for(eNB_id=emu_info.first_enb_local; eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++){
+	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
+	  LOG_D(OMG, "[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
+	  // reset the mobility model for a specific node
+	  set_new_mob_type(eNB_id, eNB, new_omg_model, emu_info.time);
+	}
+      }
+    }
 #ifdef DEBUG_OMG
-    display_node_list((Node_list)get_current_positions(RWP, ALL, emu_info.time));
-    display_node_list((Node_list)get_current_positions(RWALK, ALL, emu_info.time));
-    display_node_list((Node_list)get_current_positions(STATIC, ALL, emu_info.time));
     if ((((int)emu_info.time) % 100) == 0) {  
       for(UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++){
-	new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
-	LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
-	// reset the mobility model for a specific node
-	set_new_mob_type(UE_id, UE, new_omg_model, emu_info.time);
-	// get the position of a specific node
 	get_node_position(UE, UE_id);
       }
     }

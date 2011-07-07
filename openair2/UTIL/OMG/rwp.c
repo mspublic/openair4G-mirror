@@ -179,59 +179,59 @@ void update_rwp_nodes(double cur_time) {
    Job_list tmp = Job_Vector;
    int done = 0; //
    while ((tmp != NULL) && (done == 0)){
-    //  if 	(tmp->pair == NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair ==NULL\n" );}
-    //  if 	(tmp->pair != NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair !=NULL\n" );}
-	   LOG_D(OMG, "cur_time %f\n", cur_time );
-		LOG_D(OMG, "tmp->pair->a  %f\n", tmp->pair->a  );
-
-      if((tmp->pair !=NULL) && ( (double)tmp->pair->a >= cur_time - eps) && ( (double)tmp->pair->a <= cur_time + eps) ) { 
-		   if (tmp->pair->b->generator == RWP){
-				LOG_D(OMG, " (first_job_time) %.2f == %.2f (cur_time) \n ",tmp->pair->a, cur_time );
- 				LOG_D(OMG, " UPDATE RWP \n ");
-				NodePtr my_node = (NodePtr)tmp->pair->b;
-				if(my_node->mobile == 1) {
- 					LOG_D(OMG, " stop node and let it sleep \n" );
-					my_node->mobile = 0;
-					Pair pair = malloc(sizeof(Pair));
-					pair = sleep_rwp_node(my_node, cur_time);
-					tmp->pair = pair;
-					tmp = tmp->next;
-				}
-				else if (my_node->mobile ==0) {
-					LOG_D(OMG, " node %d slept enough...let's move again \n",  my_node->ID);
-					my_node->mobile = 1;
-					Pair pair = malloc(sizeof(Pair));
-					pair = move_rwp_node(my_node, cur_time);
-					tmp->pair = pair;
-					tmp = tmp->next;
-				}
-				else{
-			  		LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
-					exit(-1);
-				}
-         }
-         else {
-            LOG_D(OMG, " (first_job_time) %.2f == %.2f(cur_time) but (generator=%d) != (RWP=%d)\n ",tmp->pair->a, cur_time, tmp->pair->b->generator, RWP );
-            tmp = tmp->next;
-         }
-      }
-		else if ( (tmp->pair != NULL) && (cur_time < tmp->pair->a ) ){  //&& (tmp->pair->b->generator == RWP)
-		    LOG_D(OMG, " %.2f < %.2f \n",cur_time, tmp->pair->a);
-		    LOG_D(OMG, "Nothing to do\n");
-			 done = 1;  //quit the loop
-		}
-      else {
-			LOG_E(OMG, "\n %.2f > %.2f", cur_time,tmp->pair->a   );   //LOG_D(OMG, " (generator=%d) != (RWP=%d) \n", tmp->pair->b->generator,  RWP );
-		   done = 1;  //quit the loop
-         exit(-1);
-		}	
+     //  if 	(tmp->pair == NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair ==NULL\n" );}
+     //  if 	(tmp->pair != NULL){LOG_E(OMG, "UPDATE RWP : tmp->pair !=NULL\n" );}
+     LOG_D(OMG, "cur_time %f\n", cur_time );
+     LOG_D(OMG, "tmp->pair->a  %f\n", tmp->pair->a  );
+     
+     if((tmp->pair !=NULL) && ( (double)tmp->pair->a >= cur_time - eps) && ( (double)tmp->pair->a <= cur_time + eps) ) { 
+       if (tmp->pair->b->generator == RWP){
+	 LOG_D(OMG, " (first_job_time) %.2f == %.2f (cur_time) \n ",tmp->pair->a, cur_time );
+	 LOG_D(OMG, " UPDATE RWP \n ");
+	 NodePtr my_node = (NodePtr)tmp->pair->b;
+	 if(my_node->mobile == 1) {
+	   LOG_D(OMG, " stop node and let it sleep \n" );
+	   my_node->mobile = 0;
+	   Pair pair = malloc(sizeof(Pair));
+	   pair = sleep_rwp_node(my_node, cur_time);
+	   tmp->pair = pair;
+	   tmp = tmp->next;
+	 }
+	 else if (my_node->mobile ==0) {
+	   LOG_D(OMG, " node %d slept enough...let's move again \n",  my_node->ID);
+	   my_node->mobile = 1;
+	   Pair pair = malloc(sizeof(Pair));
+	   pair = move_rwp_node(my_node, cur_time);
+	   tmp->pair = pair;
+	   tmp = tmp->next;
+	 }
+	 else{
+	   LOG_E(OMG, "update_generator: unsupported node state - mobile : %d \n", my_node->mobile);
+	   exit(-1);
+	 }
+       }
+       else {
+	 LOG_D(OMG, " (first_job_time) %.2f == %.2f(cur_time) but (generator=%d) != (RWP=%d)\n ",tmp->pair->a, cur_time, tmp->pair->b->generator, RWP );
+	 tmp = tmp->next;
+       }
+     }
+     else if ( (tmp->pair != NULL) && (cur_time < tmp->pair->a ) ){  //&& (tmp->pair->b->generator == RWP)
+       LOG_D(OMG, "%.2f < %.2f \n",cur_time, tmp->pair->a);
+       LOG_D(OMG, "Nothing to do\n");
+       done = 1;  //quit the loop
+     }
+     else {
+       LOG_E(OMG, "%.2f > %.2f\n", cur_time,tmp->pair->a   );   //LOG_D(OMG, " (generator=%d) != (RWP=%d) \n", tmp->pair->b->generator,  RWP );
+       done = 1;  //quit the loop
+       exit(-1);
+     }	
  }
-			//sorting the new entries
-			LOG_D(OMG, "--------DISPLAY JOB LIST--------\n"); //LOG_T
-  			display_job_list(Job_Vector);
- 			Job_Vector = quick_sort (Job_Vector);///////////
-  			LOG_D(OMG, "--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
- 			display_job_list(Job_Vector);
+   //sorting the new entries
+   LOG_D(OMG, "--------DISPLAY JOB LIST--------\n"); //LOG_T
+   display_job_list(Job_Vector);
+   Job_Vector = quick_sort (Job_Vector);///////////
+   LOG_D(OMG, "--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
+   display_job_list(Job_Vector);
 }
 
 void get_rwp_positions_updated(double cur_time){

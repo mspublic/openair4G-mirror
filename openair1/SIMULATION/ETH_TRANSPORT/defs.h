@@ -149,6 +149,7 @@ typedef struct {
   unsigned char otg_enabled;
   unsigned char omg_model_enb;
   unsigned char omg_model_ue;
+  unsigned int seed;
   double time;	
 
 }emu_info_t; 

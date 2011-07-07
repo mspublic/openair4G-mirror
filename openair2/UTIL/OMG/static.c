@@ -47,7 +47,7 @@
 void start_static_generator(omg_global_param omg_param_list) {
   
   int n_id=0;
-  double cur_time = 0.5; 
+  double cur_time = 1.0; 
   NodePtr node = NULL;
   MobilityPtr mobility = NULL;
   
@@ -97,7 +97,7 @@ void place_static_node(NodePtr node) {
 	node->mob->journey_time = 0.0;
 
 	LOG_D(OMG, " --------INITIALIZE STATIC NODE--------\n ");
-   LOG_I(OMG, "Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
+	LOG_I(OMG, "Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
 	Node_Vector[STATIC] = (Node_list) add_entry(node, Node_Vector[STATIC]);
    Node_Vector_len[STATIC]++;
 	//Initial_Node_Vector_len[STATIC]++;

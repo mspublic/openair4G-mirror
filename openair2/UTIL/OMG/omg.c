@@ -74,22 +74,22 @@ void init_mobility_generator(omg_global_param omg_param_list) {
   
   case RWP: 
     start_rwp_generator(omg_param_list);
-      LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
-		display_job_list(Job_Vector);
-	 Job_Vector = quick_sort (Job_Vector);
-		LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
-		display_job_list(Job_Vector);
+    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
+    display_job_list(Job_Vector);
+    Job_Vector = quick_sort (Job_Vector);
+    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
+    display_job_list(Job_Vector);
     break;
-  
-  
+    
+    
   case RWALK: 
     start_rwalk_generator(omg_param_list);
-		LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
-		display_job_list(Job_Vector);
-	 Job_Vector = quick_sort (Job_Vector);
-		LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
-		display_job_list(Job_Vector);
-
+    LOG_D(OMG," --------DISPLAY JOB LIST-------- \n"); 
+    display_job_list(Job_Vector);
+    Job_Vector = quick_sort (Job_Vector);
+    LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
+    display_job_list(Job_Vector);
+    
     break;
   
   default:

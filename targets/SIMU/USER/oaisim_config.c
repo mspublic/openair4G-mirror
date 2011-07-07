@@ -36,6 +36,8 @@ void oaisim_config(OAI_Emulation * emulation_scen, u16 * n_frames, char * g_log_
     ocg_config_opt(emulation_scen); // packet tracer using wireshark
     ocg_config_otg(emulation_scen); // packet generator 
   }
+  else
+    config_omg();
 #else
   config_omg();
 #endif
@@ -70,18 +72,18 @@ void config_omg(){
 	omg_param_list.min_sleep = 1.0;
 	omg_param_list.max_sleep = 5.0;
 	
-	// enb 
-	omg_param_list.mobility_type = emu_info.omg_model_enb; 
+	// if mixed mobility, then initiallize with static and change later 
+	omg_param_list.mobility_type = (emu_info.omg_model_enb >= MAX_NUM_MOB_TYPES) ? STATIC : emu_info.omg_model_enb ; 
 	omg_param_list.nodes_type = eNB;//enb
 	omg_param_list.nodes = emu_info.nb_enb_local;	
- 	omg_param_list.seed = emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
+ 	omg_param_list.seed = emu_info.seed + emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
 	init_mobility_generator(omg_param_list);
 	
 	//ue 
-	omg_param_list.mobility_type = emu_info.omg_model_ue; 
+	omg_param_list.mobility_type = (emu_info.omg_model_ue >= MAX_NUM_MOB_TYPES)  ? STATIC : emu_info.omg_model_ue; 
 	omg_param_list.nodes_type = UE;
 	omg_param_list.nodes = emu_info.nb_ue_local;
-	omg_param_list.seed = emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
+	omg_param_list.seed = emu_info.seed + emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
 	init_mobility_generator(omg_param_list);
 
 }

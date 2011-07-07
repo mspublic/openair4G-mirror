@@ -26,7 +26,6 @@ cygwin=0
 else
 cygwin=1
 OCG_FLAG = 0
-CFLAGS += -DCYGWIN
 endif
 
 #CFLAGS += -DXFORMS
@@ -116,13 +115,16 @@ ifeq ($(rrc_cellular_UE),1)
 	mv oaisim oaisim_UE
 endif
 
-nasmesh_fix:
+nasmesh1:
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
-nasmesh:
-	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)
+	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+nasmesh2:
+	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)	
+	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 rb_tool:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)
-install_nasmesh:
+
+nasmesh_install:
 	(sudo rmmod nasmesh)
 	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
 clean:
