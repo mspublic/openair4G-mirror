@@ -463,7 +463,7 @@ int init_module (void) {
     printk("[NAS][INIT] nasmesh_init_module: begin init instance %d\n",inst);
 
 
-    sprintf(devicename,"nasmesh%d",inst);
+    sprintf(devicename,"oai%d",inst);
     nasdev[inst]  = alloc_netdev(sizeof(struct nas_priv),devicename, nas_init);
     priv = netdev_priv(nasdev[inst]);
 
@@ -551,7 +551,7 @@ void cleanup_module(void){
 #define DRV_VERSION		"3.0.2"DRV_NAME
 #define DRV_DESCRIPTION	"OPENAIR MESH Device Driver"
 #define DRV_COPYRIGHT	"-Copyright(c) GNU GPL Eurecom 2009"
-#define DRV_AUTHOR      "Michelle Wetterwald, Raymond Knopp, and Navid Nikaein: <firstname.name@eurecom.fr>"DRV_COPYRIGHT
+#define DRV_AUTHOR      "Raymond Knopp, and Navid Nikaein: <firstname.name@eurecom.fr>"DRV_COPYRIGHT
 
 
 

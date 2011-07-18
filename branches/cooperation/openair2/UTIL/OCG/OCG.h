@@ -61,8 +61,8 @@ extern "C" {
 #define LOCAL_XML_FOLDER "local_XML/" /*!< \brief this folder contains some XML files for demo, users could also put their own XML files into this folder for a direct emulation without using the web portal*/
 #define TEMP_OUTPUT_DIR "temp_output/" /*!< \brief temporary output files will be generated in this folder when folders for an emulation could not be created due to errors */
 #define OUTPUT_DIR "/nfs/emu_results/" /*!< \brief this folder contains all the output files when folders for an emulation could be successfully created */
-#define FILENAME_LENGTH_MAX 64 /*!< \brief the maximum length of a filename */
-#define DIR_LENGTH_MAX 64 /*!< \brief the maximum length of the path name */
+#define FILENAME_LENGTH_MAX 128 /*!< \brief the maximum length of a filename */
+#define DIR_LENGTH_MAX 128 /*!< \brief the maximum length of the path name */
 #define MOBI_XML_FOLDER "mobi_XML/" /*!< \brief the folder that mobigen generate XML files in */
 #define DIR_TO_MOBIGEN "XML_to_mobigen/" /*!< \brief the folder that mobigen detects XML file from OCG */
 /* @}*/ 
@@ -104,7 +104,6 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  *     e [ label = " create directory"];
  *     f [ label = " parse XML"];
  *     g [ label = " save XML"];
- *     h [ label = " call OAI emulator"];
  *     i [ label = " generate report"];
  *     j [ label = " end OCG"];
  *		a->b1;
@@ -120,9 +119,8 @@ The following diagram is based on graphviz (http://www.graphviz.org/), you need 
  *    e->i [ label = "error" ];
  *		f->g [ label = "OK" ];
  *    f->i [ label = "error" ];
- *    g->h [ label = "OK" ];
+ *    g->i [ label = "OK" ];
  *    g->i [ label = "error" ];
- *    h->i;
  *    i->b2;
  *	label = "OCG Flow Chart"
  *		
@@ -266,9 +264,18 @@ typedef struct {
 					double max_pause_time;
 				}Moving_Dynamics;
 
+					typedef struct {
+						int seed_value;
+					}User_Seed;
+				typedef struct {
+					char *selected_option;
+					int oai_seed;
+					User_Seed user_seed;
+				}Random_Seed;
 		typedef struct {
 			Mobility_Type mobility_type;
 			Moving_Dynamics moving_dynamics;
+			Random_Seed random_seed;
 		}Mobility;
 
 /** @defgroup _topo_config Topology Configuration
@@ -282,10 +289,12 @@ typedef struct {
 	eNB_Topology eNB_topology;
 	double inter_eNB_distance;
 	UE_Distribution UE_distribution;
+	int number_of_eNB; // calculated in OCG_parse_XML.c, not from the web portal directly
 	int number_of_UE;
 	double system_bandwidth;
 	double UE_frequency;
 	Mobility mobility;
+	int *positions; // to be revised based on OMG. should have a structure {eNB_pos, UE_pos}
 }Topo_Config;
 /* @}*/
 
@@ -389,14 +398,25 @@ typedef struct {
  *  @brief OAI Emulation struct for OSD_basic
  * @{*/ 
 typedef struct {
+	char *output_path;	/*!< \brief The path where we generate all the emulation results */
+	int OCG_OK;
+}Useful_Info;
+/* @}*/
+
+/** @defgroup  _OSD_basic Basic OpenAirInterface Scenario Descriptor
+ *  @ingroup _OCG
+ *  @brief OAI Emulation struct for OSD_basic
+ * @{*/ 
+typedef struct {
 	Envi_Config envi_config;	/*!< \brief Evironment configuration */
 	Topo_Config topo_config;	/*!< \brief Topology configuration */
 	App_Config app_config;	/*!< \brief Applications configuration */
 	Emu_Config emu_config;	/*!< \brief Emulation configuration */
-
+	Useful_Info useful_info;	/*!< \brief Some important information which should be able to be reached by OAISIM */
 	char *profile;
 }OAI_Emulation;
 /* @}*/
+
 
 /** @defgroup _fn Functions in OCG
  *  @ingroup _OCG
@@ -419,10 +439,9 @@ typedef struct {
 //#define LOG_T printf("OCG: "); printf /*!< \brief trace */
 /* @}*/ 
 
-OAI_Emulation * OCG_main(void);
+OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
-#include "UTIL/LOG/log_if.h"
-
+#include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus
 }

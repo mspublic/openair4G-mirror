@@ -51,11 +51,11 @@ int save_XML(int copy_or_move, char *src_file, char *dst_dir, char *filename) {
 
 	FILE *fs, *ft;
 	char ch;
-	char dst_file[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX] = "";
+	char dst_file[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 32] = "";
 	
-	strcat(dst_file, dst_dir);
+	strcpy(dst_file, dst_dir);
+	strcat(dst_file, "SCENARIO/XML/");
 	strcat(dst_file, filename);
-
 	fs = fopen(src_file, "r");
 	ft = fopen(dst_file, "w");
 
@@ -73,6 +73,6 @@ int save_XML(int copy_or_move, char *src_file, char *dst_dir, char *filename) {
 
 	if (copy_or_move == 2) remove(src_file);
 	
-	LOG_D(OCG, "The file is saved in directory \"%s\"\n", dst_dir);
+	LOG_I(OCG, "The file is saved in directory \"%s\"\n", dst_dir);
 	return MODULE_OK;
 }

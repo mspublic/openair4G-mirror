@@ -26,15 +26,6 @@
   Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
-/***************************************************************************
-                          nas_iocontrol.c  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : yan.moret@eurecom.fr
-                           michelle.wetterwald@eurecom.fr
-			   ***************************************************************************
-
-***************************************************************************/
 
 #include "local.h"
 #include "ioctl.h"

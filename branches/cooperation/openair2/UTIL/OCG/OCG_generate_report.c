@@ -57,6 +57,7 @@ int generate_report(char dst_dir[DIR_LENGTH_MAX], char filename[FILENAME_LENGTH_
 	strcat(dst_file, filename);
 	
 	xmlTextWriterPtr writer;
+
 	writer = xmlNewTextWriterFilename(dst_file, 0);
 	
 	// set the output format of the XML file 

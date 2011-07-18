@@ -1,1 +1,0 @@
-../asn1c/asn1c/../skeletons/asn_system.h

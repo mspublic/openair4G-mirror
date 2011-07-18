@@ -57,7 +57,7 @@ int call_emu(char dst_dir[DIR_LENGTH_MAX]) {
 	strcat(dst_file, dst_dir);
 	strcat(dst_file, "emulation_result.txt");
 	file = fopen(dst_file,"w");
-	system("../../../openair1/SIMULATION/LTE_PHY_L2/physim --help");
+	//system("../../../openair1/SIMULATION/LTE_PHY_L2/physim --help");
 /*
 	fprintf(file, "\nConfiguration by the user is\n\n");
 	fprintf(file, "- envi_config:area:   x   y = %lf  %lf\n", oai_emulation.envi_config.area.x_, oai_emulation.envi_config.area.y_);

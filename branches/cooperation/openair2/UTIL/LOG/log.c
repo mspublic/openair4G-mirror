@@ -129,6 +129,10 @@ void logInit (int g_log_level) {
     g_log->log_component[OCG].level = LOG_INFO;
     g_log->log_component[OCG].flag =  LOG_MED_ONLINE;
 
+    g_log->log_component[PERF].name = "PERF";
+    g_log->log_component[PERF].level = LOG_INFO;
+    g_log->log_component[PERF].flag =  LOG_MED_ONLINE;
+
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -283,7 +287,7 @@ void set_log_syslog(int enable) {
  * with string value NULL
  */
 /* map a string to an int. Takes a mapping array and a string as arg */
-int map_str_to_int(log_mapping *map, const char *str)
+int map_str_to_int(mapping *map, const char *str)
 {
     while (1) {
         if (map->name == NULL) {
@@ -297,7 +301,7 @@ int map_str_to_int(log_mapping *map, const char *str)
 }
 
 /* map an int to a string. Takes a mapping array and a value */
-char *map_int_to_str(log_mapping *map, int val)
+char *map_int_to_str(mapping *map, int val)
 {
     while (1) {
         if (map->name == NULL) {

@@ -19,6 +19,9 @@ check2:
 	@echo Doing 1 eNB 4 UE test
 	(cd SIMU/EXAMPLES/VIRT_EMUL_1eNB && make one_eNB_four_UE )
 
+install:
+	@echo Generating ASN1 files
+	@sh SCRIPTS/install_asn1.sh 
 
 check: check1 check2
 

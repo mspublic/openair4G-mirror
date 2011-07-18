@@ -27,11 +27,11 @@ or via svn from sourceforge (version 0.9.22)
 
 svn co https://asn1c.svn.sourceforge.net/svnroot/asn1c/trunk asn1c
 
-and put it in the asn1c directory (you should have a second asn1c directory now). Compile it according to the instructions given
+and put it in the asn1c directory (you should have a second asn1c directory now). Compile it according to the instructions given (see INSTALL file)
 by the author. We have validated that 0.9.22 works on Linux and Cygwin. To generate the data structures do the following from the 
 current directory
 
-./asn1c/asn1c/asn1c/asn1c -gen-PER -fcompound-names -fnative-types -fskeletons-copy ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn
+asn1c -gen-PER -fcompound-names -fnative-types -fskeletons-copy ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn
 
 Note this only uses one of the three files from 36.331 (the core of the RRC).  After this step you should have many .c and .h files 
 and one new Makefile, the latter of which is not used.

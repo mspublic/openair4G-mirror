@@ -8,6 +8,7 @@
  ***************************************************************************/
 #define LIST2_C
 #include "list.h"
+#include <assert.h>
 #define NULL 0
 
 //-----------------------------------------------------------------------------
@@ -82,6 +83,13 @@ list2_remove_element (mem_block_t * elementP, list2_t * listP)
     listP->nb_elements = listP->nb_elements - 1;
   }
   return elementP;
+}
+//-----------------------------------------------------------------------------
+mem_block_t *
+list2_get_head (list2_t * listP)
+{
+//-----------------------------------------------------------------------------
+  return listP->head;
 }
 
 //-----------------------------------------------------------------------------
@@ -268,6 +276,7 @@ list2_display (list2_t * listP)
         nb_elements++;
       }
       msg (" found nb_elements %d nb_elements %d\n", nb_elements, listP->nb_elements);
+      assert(nb_elements == listP->nb_elements);
     }
   } else {
     msg ("[SDU_MNGT][WARNING] display_cnt_dbl_lk_list_up() : list is NULL\n");
