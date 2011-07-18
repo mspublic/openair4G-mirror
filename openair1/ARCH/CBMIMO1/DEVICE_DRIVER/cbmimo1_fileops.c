@@ -17,6 +17,8 @@
 #include "SCHED/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
+#include "RRC/LITE/defs.h"
+#include "RRC/LITE/extern.h"
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
@@ -180,6 +182,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   TX_VARS dummy_tx_vars;
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
+  u8 buffer[100];
+  u8 size;
+
   scale = &scale_mem;
 
   printk("[openair][IOCTL] In ioctl(), ioctl = %x (%x,%x)\n",cmd,openair_START_1ARY_CLUSTERHEAD,openair_START_NODE);
@@ -230,7 +235,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       else {
 	printk("[openair][IOCTL] PHY Configuration successful\n");
 
-#ifndef EMOS	  
+#ifndef OPENAIR2	  
 	openair_daq_vars.mac_registered = mac_init();
 	if (openair_daq_vars.mac_registered != 1)
 	  printk("[openair][IOCTL] Error in configuring MAC\n");
@@ -265,7 +270,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.dlsch_transmission_mode = 1;
       else
 	openair_daq_vars.dlsch_transmission_mode = 2;
-      openair_daq_vars.target_ue_dl_mcs = 0;
+      openair_daq_vars.target_ue_dl_mcs = 4;
       openair_daq_vars.target_ue_ul_mcs = 0;
       openair_daq_vars.dlsch_rate_adaptation = 0;
       openair_daq_vars.ue_ul_nb_rb = 2;
@@ -343,8 +348,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 			       PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
 			       0,
 			       PHY_vars_eNB_g[0],
-			       0,
-			       0,
 			       0)) {
 	  printk("[openair][IOCTL] phy_init_lte_eNB error\n");
 	  break;
@@ -428,7 +431,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	else 
 	  printk("[openair][IOCTL] MAC Configuration successful\n");
 	
-	mac_xface->mrbch_phy_sync_failure(0,0);
+	//mac_xface->mrbch_phy_sync_failure(0,0);
 
 	Mac_rlc_xface->Is_cluster_head[0] = 1;
 #endif
@@ -651,7 +654,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_false  = 0;    
 	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_received = 0;    
 
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = 0x1234;
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = 0x1235;
 	  PHY_vars_UE_g[0]->UE_mode[i] = NOT_SYNCHED;
 	} 
 	
@@ -1618,7 +1621,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     if ( ((((unsigned int *)arg)[0]) > 0) && 
 	 ((((unsigned int *)arg)[0]) < 7) )
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
-    frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
+    if  ((PHY_vars_eNB_g != NULL) && (PHY_vars_eNB_g[0] != NULL))
+      // if eNb is already configured, frame parms are local to it
+      PHY_vars_eNB_g[0]->lte_frame_parms.mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
+    else
+      // global frame parms have not been copied yet to eNB vars
+      frame_parms->mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
     break;
 
   case openair_SET_ULSCH_ALLOCATION_MODE:
@@ -1632,6 +1640,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef OPENAIR2
     RRC_CONNECTION_FLAG = 1;
     printk("[IOCTL] Setting RRC_CONNECTION_FLAG\n");
+
+    size = do_RRCConnectionReconfiguration(buffer,
+					   0,
+					   0,
+					   &CH_rrc_inst[0].SRB2_config[0],
+					   &CH_rrc_inst[0].DRB_config[0][0],
+					   &CH_rrc_inst[0].physicalConfigDedicated[0]);
+    
+    rrc_ue_decode_dcch(0,&buffer[0],0);
+
 #endif
   break;
 

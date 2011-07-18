@@ -103,30 +103,21 @@ int mac_top_init(){
   UE_TEMPLATE *UE_template;
 
   msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
-#if ((PHY_EMUL==1)||(PHYSIM==1))
-  UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-  msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
-  bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-  CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
-  msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
-  bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
-#else 
-  //  if(NODE_ID[0]<NB_CH_MAX){
-  if(NODE_ID[0]<NUMBER_OF_eNB_MAX){
-    CH_mac_inst = (CH_MAC_INST*)malloc16(sizeof(CH_MAC_INST));
+  if (NB_UE_INST>0) {
+    UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
+    msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+    bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
+  }
+  else 
+    UE_mac_inst = NULL;
+  if (NB_CH_INST>0) {
+    CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
     msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
     bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
-    NB_CH_INST=1;
-    NB_UE_INST=0;
   }
-  else{
-    UE_mac_inst = (UE_MAC_INST*)malloc16(sizeof(UE_MAC_INST));
-    msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
-    bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-    NB_CH_INST=0;
-    NB_UE_INST=1;
-  }
-#endif
+  else
+    CH_mac_inst = NULL;
+  
   msg("init---------------------\n");
   for(Mod_id=0;Mod_id<NB_INST;Mod_id++){
 
@@ -198,6 +189,7 @@ int mac_init_global_param(){
   msg("[MAC] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
   
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
+  bzero(Mac_rlc_xface,sizeof(MAC_RLC_XFACE));
   
   if(Mac_rlc_xface == NULL){
     msg("[MAC] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");

@@ -173,12 +173,12 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
 
       if (harq_pid>1) {
-	msg("dci_tools.c: ERROR: harq_pid > 1\n");
+	msg("dci_tools.c: ERROR: Format 1A: harq_pid > 1\n");
 	return(-1);
       }
       rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
       if (rballoc>RIV_max) {
-	msg("dci_tools.c: ERROR: rb_alloc (%x) > RIV_max (%x)\n",rballoc,RIV_max);
+	msg("dci_tools.c: ERROR: Format 1A: rb_alloc (%x) > RIV_max (%x)\n",rballoc,RIV_max);
 	return(-1);
       }
       NPRB      = RIV2nb_rb_LUT25[rballoc];
@@ -228,7 +228,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
   case format1:
     harq_pid  = ((DCI1_5MHz_TDD_t *)dci_pdu)->harq_pid;    
     if (harq_pid>1) {
-      msg("dci_tools.c: ERROR: harq_pid > 1\n");
+      msg("dci_tools.c: ERROR: Format 1: harq_pid > 1\n");
       return(-1);
     }
 
@@ -284,7 +284,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: harq_pid >= 8\n");
+      msg("dci_tools.c: ERROR: Format 2_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
 
@@ -526,7 +526,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     // harq_pid field is reserved
     rballoc = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
     if (rballoc>RIV_max) {
-      msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+      msg("dci_tools.c: ERROR: Format 1A: rb_alloc > RIV_max\n");
       return(-1);
     }
 
@@ -538,7 +538,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     else {
       harq_pid  = ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid;
       if (harq_pid>1) {
-	msg("dci_tools.c: ERROR: harq_pid > 8\n");
+	msg("dci_tools.c: ERROR: Format 1A: harq_pid > 8\n");
 	return(-1);
       }
 
@@ -549,7 +549,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       return(-1);
 
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 7) {
-      msg("dci_tools.c: ERROR: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
+      msg("dci_tools.c: ERROR: Format 1A: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
       return(-1);       
     }
 
@@ -563,7 +563,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch[0]->nb_rb                               = NPRB; //RIV2nb_rb_LUT25[rballoc];
     //printf("DCI 1A : nb_rb %d\n",dlsch[0]->nb_rb);
     if ((dlsch[0]->nb_rb<=0) || (dlsch[0]->nb_rb > 3)) {
-      msg("dci_tools.c: ERROR: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
+      msg("dci_tools.c: ERROR:  Format 1A: unlikely nb_rb for format 1A (%d)\n",dlsch[0]->nb_rb);
       return(-1);       
     }
     
@@ -586,7 +586,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     harq_pid  = ((DCI1_5MHz_TDD_t *)dci_pdu)->harq_pid;
     
     if (harq_pid>8) {
-      msg("dci_tools.c: ERROR: harq_pid > 8\n");
+      msg("dci_tools.c: ERROR: Format 1: harq_pid > 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -648,7 +648,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   
     harq_pid  = ((DCI2_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->harq_pid;
     if (harq_pid>=8) {
-      msg("dci_tools.c: ERROR: harq_pid >= 8\n");
+      msg("dci_tools.c: ERROR: Format 2_2A_M10PRB: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -1141,7 +1141,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       return(-1);
     }
     if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc > RIV_max) {
-      msg("dci_tools.c: ERROR: rb_alloc > RIV_max for ULSCH allocation\n");
+      msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, rb_alloc > RIV_max\n", 	  
+	  mac_xface->frame, subframe, rnti, dci_format);
       return(-1);
     }
 
@@ -1277,7 +1278,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     harq_pid = subframe2harq_pid(frame_parms,(subframe+4)%10);
     rb_alloc = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc;
     if (rb_alloc>RIV_max) {
-      msg("dci_tools.c: ERROR: rb_alloc > RIV_max\n");
+      msg("dci_tools.c: ERROR: Format 0: rb_alloc > RIV_max\n");
       return(-1);
     }
 

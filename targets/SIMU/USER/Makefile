@@ -2,10 +2,10 @@ CC = gcc
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -m32  -mssse3 #-msse4
-CPUFLAGS += $(shell if [ -z $$SSE3PROC]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $$SSE4PROC]; then echo "" ; else echo "-msse4"; fi)
-cygwin = $(shell if [ $$OSTYPE = "cygwin" ] ; then echo "1" ; else echo "0" ; fi)
+CPUFLAGS = -mmmx -msse -msse2 -m32  #-mssse3 -msse4
+CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
+CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
+cygwin = $(shell if [ $(OSTYPE) = "cygwin" ] ; then echo "1" ; else echo "0" ; fi)
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -17,7 +17,7 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
+CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH #-DIFFT_FPGA -DIFFT_FPGA_UE #-DOPENAIR2
 CFLAGS += -I/usr/include/libxml2 -lxml2
 
 #CFLAGS += -DXFORMS
@@ -48,22 +48,23 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
-ASN1_MSG_OBJS2 := $(foreach file, $(ASN1_MSG_OBJS), $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/$(file))
+ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
+#L2_OBJS =
+#EXTRA_CFLAGS =
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1)
 
 all: oaisim
 
 
-$(OBJ) : %.o : %.c
+$(OBJ): %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-$(L2_OBJS) : %.o : %.c
+$(L2_OBJS): %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
-	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
+oaisim: $(OBJ) $(L2_OBJS) oaisim.c  
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread #-lforms -L/usr/local/lib -lX11 -L/usr/X11R6/lib -lXpm 
 
 
 clean:
@@ -78,5 +79,6 @@ cleanl1:
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe
+
 cleanl2:
 	rm -f $(L2_OBJS)

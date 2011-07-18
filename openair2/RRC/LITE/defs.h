@@ -400,9 +400,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 					struct DRB_ToAddMod **DRB_config,
 					struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
-void decode_SIB1(u8 Mod_id,u8 CH_index);
+int decode_SIB1(u8 Mod_id,u8 CH_index);
 
-void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
+int decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
 
 #endif
 

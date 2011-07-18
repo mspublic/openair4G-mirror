@@ -25,7 +25,7 @@ extern UE_MAC_INST *UE_mac_inst;
 #endif
 
 //#define RRC_DATA_REQ_DEBUG
-#define DEBUG_RRC
+//#define DEBUG_RRC
 
 u32 mui=0;
 //---------------------------------------------------------------------------------------------//
@@ -57,10 +57,10 @@ unsigned char mac_rrc_mesh_data_req( unsigned char Mod_id,
 	memcpy(&Buffer[0],CH_rrc_inst[Mod_id].SIB1,CH_rrc_inst[Mod_id].sizeof_SIB1);
 #ifdef DEBUG_RRC
 	msg("[RRC][eNB%d] Frame %d : BCCH request => SIB 1\n",Mod_id,Rrc_xface->Frame_index);
-#endif
 	for (i=0;i<CH_rrc_inst[Mod_id].sizeof_SIB1;i++)
 	  msg("%x.",Buffer[i]);
 	msg("\n");
+#endif
 
 	return (CH_rrc_inst[Mod_id].sizeof_SIB1);
       } // All RFN mod 8 transmit SIB2-3 in SF 5
@@ -142,8 +142,10 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
 	if (UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status == 0) {
 	  msg("[RRC][UE %d] Frame %d : Received SIB1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,Sdu_len);
 	  memcpy(UE_rrc_inst[Mod_id].SIB1[CH_index],&Sdu[0],Sdu_len);
-	  UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status = 1;
-	  decode_SIB1(Mod_id,CH_index);
+	  if (decode_SIB1(Mod_id,CH_index)==0) {
+	    msg("[RRC][UE %d] Frame %d : Decoded SIB1 successfully\n",Mod_id,Mac_rlc_xface->frame);
+	    UE_rrc_inst[Mod_id].Info[CH_index].SIB1Status = 1;
+	  }
 	}
       }
       else {
@@ -152,8 +154,10 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
 	  si_window = (Mac_rlc_xface->frame%UE_rrc_inst[Mod_id].Info[CH_index].SIperiod)/Mac_rlc_xface->frame%UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize;
 	  msg("[RRC][UE %d] Frame %d : Received SI (%d bytes), in window %d (SIperiod %d, SIwindowsize %d)\n",Mod_id,Mac_rlc_xface->frame,Sdu_len,si_window,UE_rrc_inst[Mod_id].Info[CH_index].SIperiod,UE_rrc_inst[Mod_id].Info[CH_index].SIwindowsize);
 	  memcpy(UE_rrc_inst[Mod_id].SI[CH_index],&Sdu[0],Sdu_len);
-	  UE_rrc_inst[Mod_id].Info[CH_index].SIStatus = 1;
-	  decode_SI(Mod_id,CH_index,si_window);	  
+	  if (decode_SI(Mod_id,CH_index,si_window)==0) {
+	    msg("[RRC][UE %d] Frame %d :Decoded SI successfully\n",Mod_id,Mac_rlc_xface->frame);
+	    UE_rrc_inst[Mod_id].Info[CH_index].SIStatus = 1;
+	  }
 	}
       } 
 
@@ -177,11 +181,13 @@ u8 mac_rrc_mesh_data_ind(u8 Mod_id, u16 Srb_id, char *Sdu, unsigned short Sdu_le
     if((Srb_id & RAB_OFFSET) == CCCH){
       Srb_info = &UE_rrc_inst[Mod_id].Srb0[CH_index];
       
-      //      msg("[RRC] RX_CCCH_DATA %d bytes: ",Sdu_len);
+#ifdef DEBUG_RRC
+      msg("[RRC] RX_CCCH_DATA %d bytes: ",Sdu_len);
+      for (i=0;i<Sdu_len;i++)
+	msg("%x ",(unsigned char)Sdu[i]);
+      msg("\n");
+#endif
       if (Sdu_len>0) {
-	for (i=0;i<Sdu_len;i++)
-	  msg("%x ",(unsigned char)Sdu[i]);
-	msg("\n");
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.W_idx = Sdu_len;
 	rrc_ue_decode_ccch(Mod_id,Srb_info,CH_index);
