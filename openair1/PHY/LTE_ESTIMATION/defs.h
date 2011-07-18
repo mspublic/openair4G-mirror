@@ -142,8 +142,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char l,
 			      unsigned char Ns,
 			      unsigned int N_rb_alloc,
-			      unsigned char relay_flag,
-			      unsigned char diversity_scheme);
+			      u8 cyclicShift,
+			      u8 cooperation_flag);
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,

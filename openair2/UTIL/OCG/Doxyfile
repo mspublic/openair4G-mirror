@@ -75,7 +75,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = OCG.h OCG_get_opt.h OCG_detect_file.h OCG_parse_filename.h OCG_create_dir.h OCG_parse_XML.h OCG_save_XML.h OCG_call_emu.h OCG_generate_report.h Readme.doxy
+INPUT                  = OCG.h OCG_vars.h OCG_extern.h OCG_get_opt.h OCG_detect_file.h OCG_parse_filename.h OCG_create_dir.h OCG_parse_XML.h OCG_save_XML.h OCG_generate_report.h Readme.doxy
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = 
 RECURSIVE              = NO

@@ -1,1 +1,0 @@
-../asn1c/asn1c/../skeletons/constr_TYPE.h

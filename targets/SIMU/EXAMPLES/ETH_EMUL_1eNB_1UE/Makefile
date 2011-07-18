@@ -7,7 +7,8 @@ nasmesh:
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL/ && make)
 
-one_eNB_two_UE: oaisim nasmesh
+all: oaisim nasmesh
+one_eNB_one_UE: oaisim nasmesh
 
 userclean: clean oaisim nasmesh	
 

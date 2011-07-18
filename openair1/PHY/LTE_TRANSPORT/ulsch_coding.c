@@ -627,8 +627,10 @@ u32 ulsch_encoding(u8 *a,
       for (q=0;q<Q_m;q++) 
 	ulsch->h[j++] = y[q+(Q_m*((r*Cmux)+i))];
 
-  if (j!=(H+Q_RI))
+  if (j!=(H+Q_RI)) {
     msg("ulsch_coding.c: Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
+    return(-1);
+  }
 
   return(0);
 }

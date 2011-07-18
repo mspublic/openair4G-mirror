@@ -241,8 +241,10 @@ typedef struct {
   u8 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
-  u32 cshift;
+  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  u8 n_DMRS2;
+  // for cooperative communication
+  u8 cooperation_flag;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -355,8 +357,10 @@ typedef struct {
   u32 RRCConnRequest_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
-  u32 cshift;
+  /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
+  u8 n_DMRS2;
+  /// cyclic shift for DM RS
+  u8 cyclicShift;
 } LTE_eNB_ULSCH_t;
 
 typedef struct {

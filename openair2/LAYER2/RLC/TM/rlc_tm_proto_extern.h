@@ -25,7 +25,7 @@ extern void     rlc_tm_rx_no_segment (void *argP, struct mac_data_ind data_indP)
 extern void     rlc_tm_rx_segment (void *argP, struct mac_data_ind data_indP);
 extern void     send_rlc_tm_control_primitive (struct rlc_tm_entity *rlcP, module_id_t module_idP, mem_block_t *cprimitiveP);
 
-extern struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u16_t no_tbP, u16 tb_sizeP, struct mac_status_ind tx_statusP);
+extern struct mac_status_resp rlc_tm_mac_status_indication (void *rlcP, u16 tb_sizeP, struct mac_status_ind tx_statusP);
 extern struct mac_data_req rlc_tm_mac_data_request (void *rlcP);
 extern void     rlc_tm_mac_data_indication (void *rlcP, struct mac_data_ind data_indP);
 extern void     rlc_tm_data_req (void *rlcP, mem_block_t *sduP);

@@ -44,9 +44,9 @@
 #include "rtai_fifos.h"
 #endif
 
-#define NAS_DEBUG_RECEIVE 1
+//#define NAS_DEBUG_RECEIVE 1
 //#define NAS_DEBUG_SEND 1
-#define NAS_DEBUG_CLASS 1
+//#define NAS_DEBUG_CLASS 1
 //#define NAS_ADDRESS_FIX 1
 
 #include <linux/inetdevice.h>
@@ -213,7 +213,7 @@ void nas_COMMON_receive(u16 dlen,
 	network_header->check = ip_fast_csum((unsigned char *) network_header,
 				 network_header->ihl);
 
-	printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
+	//printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
 #else
 	skb->nh.iph->check = 0;
 	skb->nh.iph->check = ip_fast_csum((unsigned char *)skb->data,

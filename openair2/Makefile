@@ -122,7 +122,7 @@ nasmesh_netlink.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules)
+	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C /usr/src/linux M=`pwd` modules)
 
 nasmesh_netlink_loopback.ko:
 	(cd NAS/DRIVER/MESH && $(MAKE) NAS_NETLINK=1 LOOPBACK=1 V=1 -C /usr/src/linux-$(shell echo `uname -r`) M=`pwd` modules)

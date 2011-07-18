@@ -1,6 +1,10 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
@@ -15,6 +19,7 @@
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
+#include "UTIL/OPT/opt.h" // to test OPT
 //#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
@@ -72,7 +77,7 @@ void init_bypass() {
 }
 #endif
 
-log_mapping level_names[] =
+mapping log_level_names[] =
 {
     {"emerg", LOG_EMERG},
     {"alert", LOG_ALERT},
@@ -90,7 +95,7 @@ log_mapping level_names[] =
 //#endif
 
 void help(void) {
-  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -d cooperation_flag\n");
+  printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag\n");
   printf("-h provides this help message!\n");
   printf("-a Activates PHY abstraction mode\n");
   printf("-e Activates extended prefix mode\n");
@@ -107,9 +112,9 @@ void help(void) {
   printf("-p Set the total number of machine in emulation - valid if M is set\n");
   printf("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
   printf("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
-  printf("-c Activate the config generator (OCG) - used in conjunction with openair emu web portal\n");
+  printf("-c Activate the config generator (OCG) to porcess the scenario- 0: remote web server 1: local web server \n");
   printf("-x Set the transmission mode (1,2,6 supported for now)\n");
-  printf("-d Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
+  printf("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
 }
 
 #ifdef XFORMS
@@ -307,10 +312,8 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] tx_pwr eNB %d %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
-	//     printf("channel for slot %d (subframe %d)\n",next_slot,next_slot>>1);
 	
-	
-	
+	eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
 	
 	multipath_channel(eNB2UE[eNB_id][UE_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
@@ -571,6 +574,8 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/ 
       
+	UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;
+	
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
 	/*
@@ -682,9 +687,9 @@ int main(int argc, char **argv) {
   s32 slot,last_slot, next_slot;
 
   double nf[2] = {3.0,3.0}; //currently unused
-  double snr_dB;
+  double snr_dB, snr_dB2;
 
-  unsigned char cooperation_flag; // for cooperative communication
+  u8 cooperation_flag; // for cooperative communication
 
   u8 target_dl_mcs=4;
   u8 target_ul_mcs=2;
@@ -704,7 +709,6 @@ int main(int argc, char **argv) {
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
 
-  int OCG_flag =0;
   OAI_Emulation * emulation_scen;
 
   channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -715,7 +719,13 @@ int main(int argc, char **argv) {
   char title[255];
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
+
+  FILE *UE_stats, *eNB_stats; 
+  int len; 
+  int mod_path_loss=0;
   
+  //time_t t0,t1;
+  clock_t start, stop;
   
   //default parameters
   emu_info.is_primary_master=0;
@@ -723,23 +733,29 @@ int main(int argc, char **argv) {
   emu_info.nb_ue_remote=0;
   emu_info.nb_enb_remote=0;
   emu_info.first_ue_local=0;
+  emu_info.offset_ue_inst=0;
   emu_info.first_enb_local=0;
   emu_info.master_id=0;
   emu_info.nb_master =0;
   emu_info.nb_ue_local= 1;
   emu_info.nb_enb_local= 1;
   emu_info.ethernet_flag=0;
+  strcpy(emu_info.local_server, ""); // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
+  emu_info.ocg_enabled=0;// flag c
+  emu_info.opt_enabled=0; // P flag
+  emu_info.omg_enabled=0; //O flag 
+  emu_info.otg_enabled=0;// T flag
   
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 1;
   n_frames =  0xffff; //100; 
   n_frames_flag = 0;
-  snr_dB = 30;
+  snr_dB = 30; 
   cooperation_flag = 0; // default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  while ((c = getopt (argc, argv, "haect:k:x:m:rn:s:f:u:b:M:p:g:l:d")) != -1)
+  while ((c = getopt (argc, argv, "haeOPTot:k:x:m:rn:s:f:z:u:b:c:M:p:g:l:d")) != -1)
 
     {
        switch (c)
@@ -771,6 +787,9 @@ int main(int argc, char **argv) {
 	  break;
 	case 'f':
 	  forgetting_factor = atof(optarg);
+	  break;
+	case 'z':
+	  cooperation_flag=atoi(optarg);
 	  break;
 	case 'u':
 	  emu_info.nb_ue_local = atoi(optarg);
@@ -804,13 +823,27 @@ int main(int argc, char **argv) {
 	  g_log_level=optarg;
 	  break;
 	case 'c':
-	  OCG_flag=1;
+          strcpy(emu_info.local_server, optarg);
+	  emu_info.ocg_enabled=1;
+	  abstraction_flag=1;
+	  extended_prefix_flag=1;
+	  n_frames_flag=1; 
+	  transmission_mode = 1;
 	  break;
 	case 'g':
 	  emu_info.multicast_group=atoi(optarg);
 	  break;	
-	case 'd':
-	  cooperation_flag=atoi(optarg);
+	case 'O':
+	  emu_info.omg_enabled=1;
+	  break; 
+	case 'T':
+	  emu_info.otg_enabled=1;
+	  break;
+	case 'P':
+	  emu_info.opt_enabled=1;
+	  break;
+	case 'o':
+	  mod_path_loss = 1;
 	  break;
 	default:
 	  help ();
@@ -820,37 +853,71 @@ int main(int argc, char **argv) {
     }
   
  //initialize the log generator 
-  logInit(map_str_to_int(level_names, g_log_level));
+  logInit(map_str_to_int(log_level_names, g_log_level));
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
 
-#ifdef OCG  
-  if (OCG_flag==1){ // activate OCG
-    printf("start\n");
-    emulation_scen= OCG_main();
-    LOG_I(MAC,"the area is x %f y %f option %s\n",
+#ifdef OCG_FLAG
+  if ( emu_info.ocg_enabled==1){ // activate OCG: xml-based scenario parser 
+    emulation_scen= OCG_main(emu_info.local_server);// eurecom or portable
+    // here is to check if OCG is successful, otherwise, we might not run the emulation
+    if (emulation_scen->useful_info.OCG_OK != 1) { 
+      LOG_E(OCG, "Error found by OCG; emulation not launched. Please find more information in the OCG_report.xml. \nRemind: please check the name of the XML configuration file and its content if you use a self-specified file.\n");
+      exit(EXIT_FAILURE);
+      }
+
+    /*LOG_T(OCG,"the area is x %f y %f option %s\n",
 	  emulation_scen->envi_config.area.x,
-		  emulation_scen->envi_config.area.y, emulation_scen->topo_config.eNB_topology.selected_option);
-      abstraction_flag=1;
-      extended_prefix_flag=1;
-
-      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE;
-
-      if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
-         emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
-      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
-      } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
-      } 
-      n_frames  =  (int) emulation_scen->emu_config.emu_time * 60 * 100;
-      transmission_mode = 1;
-      //set_comp_log(EMU,  LOG_INFO, LOG_MED);
-      //set_comp_log(MAC,  LOG_INFO, LOG_MED);
-      //set_comp_log(RLC,  LOG_INFO, LOG_MED);
+	  emulation_scen->envi_config.area.y, 
+	  emulation_scen->topo_config.eNB_topology.selected_option);*/
       
-      LOG_I(OCG," ue local %d enb local %d frame %d\n",   nb_ue_local,   nb_eNB_local, n_frames );
+      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE; // configure the number of UE
+printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
+      emu_info.nb_enb_local = emulation_scen->topo_config.number_of_eNB; // configure the number of eNB
+      n_frames  =  (int) emulation_scen->emu_config.emu_time / 10; // configure the number of frame
+
+/*
+// inputs for OMG
+	emulation_scen->envi_config.area.x;
+	emulation_scen->envi_config.area.y;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_speed;
+	emulation_scen->topo_config.mobility.moving_dynamics.min_pause_time;
+	emulation_scen->topo_config.mobility.moving_dynamics.max_pause_time;
+
+	emulation_scen->topo_config.number_of_UE;
+	if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "concentrated")) {
+	} else if (!strcmp(emulation_scen->topo_config.UE_distribution.selected_option, "grid_map")) {
+	}
+
+	emulation_scen->topo_config.number_of_eNB;
+	if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
+	} else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
+	}
+
+	if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "fixed")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_waypoint")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "random_walk")) {
+	} else if (!strcmp(emulation_scen->topo_config.mobility.mobility_type.selected_option, "grid_walk")) {
+	}
+
+// outputs from OMG : the positions of eNBs and UEs
+	emulation_scen->topo_config.positions = OMG();
+	
+*/
+      
+      set_comp_log(OCG,  LOG_ERR, 1);
+      set_comp_log(OCG,  LOG_INFO, 1);
+      set_comp_log(OCG,  LOG_TRACE, 1);
+       
+      LOG_I(OCG, "OPT output file directory = %s\n", emulation_scen->useful_info.output_path);
+      Init_OPT(2, emulation_scen->useful_info.output_path, NULL, 0);
+
+      LOG_T(OCG," ue local %d enb local %d frame %d\n",   emu_info.nb_ue_local,   emu_info.nb_enb_local, n_frames );
    }
-#endif    
+#endif
+
 #ifndef CYGWIN 
   ret=netlink_init();
 #endif
@@ -881,9 +948,13 @@ int main(int argc, char **argv) {
     }
   }// ethernet flag
 
+  UE_stats = fopen("UE_stats.txt", "w");
+  eNB_stats = fopen("eNB_stats.txt", "w");
+  printf("UE_stats=%d, eNB_stats=%d\n",UE_stats,eNB_stats);
+
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
-    
+      
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_CH_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
    
@@ -924,6 +995,7 @@ int main(int argc, char **argv) {
   frame_parms->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
   frame_parms->nb_antennas_rx     = 2;
   frame_parms->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+  frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(frame_parms,1);
   //copy_lte_parms_to_phy_framing(frame_parms, &(PHY_config->PHY_framing));
@@ -946,7 +1018,7 @@ int main(int argc, char **argv) {
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
 		     0,
 		     PHY_vars_eNB_g[eNB_id],
-		     //0,
+		     cooperation_flag,
 		     abstraction_flag);
     
     /*
@@ -1217,7 +1289,7 @@ int main(int argc, char **argv) {
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
-   
+    
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
@@ -1226,23 +1298,25 @@ int main(int argc, char **argv) {
 
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(emu_info.nb_enb_local);
+      
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
-	//#ifdef DEBUG_SIM
-	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,next_slot>>1);
-	//#endif
+	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p)\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext);
 	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
-
-	if ((mac_xface->frame % 10) == 0) {
-	  dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
-	  printf("%s",stats_buffer);
-	}
+	//if ((mac_xface->frame % 10) == 0) {
+	len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
+	rewind(eNB_stats);
+	fwrite(stats_buffer,1,len,eNB_stats);
+	//}
       }
       direction = subframe_select(frame_parms,next_slot>>1);
       
       if (ethernet_flag ==1) { // include PBCH
 	if (( (direction == SF_DL) || (direction == SF_S) ) && (((next_slot%2)== 0) || (next_slot==1))){ 
-	  emu_transport_DL(last_slot,next_slot);
-	  LOG_I(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	  //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+	  //assert((start = clock())!=-1);// t0= time(NULL);
+	  emu_transport_DL(mac_xface->frame, last_slot,next_slot);
+	  //stop = clock(); //t1= time(NULL);
+	  //LOG_T(PERF,"emu_transport_DL diff time %f (ms)\n",	(double) (stop-start)/1000);
 	}
       }
       // Call ETHERNET emulation here
@@ -1250,19 +1324,32 @@ int main(int argc, char **argv) {
 	clear_UE_transport_info(emu_info.nb_ue_local);
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
-	  //#ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);
 	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
-	  //#endif
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
+	  //if ((mac_xface->frame % 10) == 0) {
+	  len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
+	  rewind(UE_stats);
+	  fwrite(stats_buffer,1,len,UE_stats);
+	  //}
 	}
+      
       if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){
-	  emu_transport_UL(last_slot , next_slot);
-	  LOG_I(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot)
+	  //  LOG_T(EMU, "UL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
+	  //assert((start = clock())!=-1);//t0= time(NULL);
+	  emu_transport_UL(mac_xface->frame, last_slot , next_slot);
+	  // stop = clock(); // t1= time(NULL);
+	  //LOG_T(PERF,"emu_transport_UL diff time %f (ms)\n",	(double) (stop-start)/1000);
+	   
 	}
       }
-    
+
+      if (mod_path_loss && ((mac_xface->frame % 150) >= 100))
+	snr_dB2 = -20;
+      else
+	snr_dB2 = snr_dB;
+
       if (direction  == SF_DL) {
 	/*
 	  u8 aarx,aatx,k;	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
@@ -1270,7 +1357,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("DL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1285,7 +1372,7 @@ int main(int argc, char **argv) {
 	  for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	  printf("UL A(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	*/
-	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	/*
 	  for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	  for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1302,7 +1389,7 @@ int main(int argc, char **argv) {
 		
 	    printf("SA(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	  do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1317,7 +1404,7 @@ int main(int argc, char **argv) {
 	    for (k=0;k<UE2eNB[1][0]->channel_length;k++)
 	    printf("SC(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
 	  */
-	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB,abstraction_flag,frame_parms);
+	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,abstraction_flag,frame_parms);
 	  /*
 	    for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
 	    for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
@@ -1383,6 +1470,10 @@ int main(int argc, char **argv) {
     
     lte_sync_time_free();
   }
+
+  fclose(UE_stats);
+  fclose(eNB_stats);
+
   return(n_errors);
 }
    

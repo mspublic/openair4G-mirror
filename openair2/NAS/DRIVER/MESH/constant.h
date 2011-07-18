@@ -26,16 +26,7 @@
   Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
-/***************************************************************************
-                          constant.h  -  description
-                             -------------------
-    copyright            : (C) 2002 by Eurecom
-    email                : michelle.wetterwald@eurecom.fr
-                           yan.moret@eurecom.fr
-                           knopp@eurecom.fr
- ***************************************************************************
 
- ***************************************************************************/
 
 #ifndef _NAS_CST
 #define _NAS_CST

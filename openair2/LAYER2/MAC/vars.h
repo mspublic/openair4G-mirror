@@ -44,6 +44,7 @@ unsigned char NB_UE_INST;
 DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 
 DCI1A_5MHz_TDD_1_6_t      RA_alloc_pdu;
+//DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      BCCH_alloc_pdu;
 
