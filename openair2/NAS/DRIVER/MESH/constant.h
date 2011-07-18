@@ -26,7 +26,16 @@
   Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
+/***************************************************************************
+                          constant.h  -  description
+                             -------------------
+    copyright            : (C) 2002 by Eurecom
+    email                : michelle.wetterwald@eurecom.fr
+                           yan.moret@eurecom.fr
+                           knopp@eurecom.fr
+ ***************************************************************************
 
+ ***************************************************************************/
 
 #ifndef _NAS_CST
 #define _NAS_CST
@@ -35,7 +44,7 @@
 #define NAS_MAX_LENGTH 180
 
 //Debug flags
-//#define NAS_DEBUG_DC
+#define NAS_DEBUG_DC
 //#define NAS_DEBUG_SEND
 //#define NAS_DEBUG_RECEIVE
 //#define NAS_DEBUG_CLASS
@@ -148,7 +157,7 @@
 #define NAS_DSCP_NCONTROL 56   //0x38
 // default codepoint 1000000
 #define NAS_DSCP_DEFAULT 64
-#define NAS_DSCP_MAX 193
+#define NAS_DSCP_MAX 65
 
 #define NAS_PROTOCOL_DEFAULT 0
 #define NAS_PROTOCOL_TCP IPPROTO_TCP

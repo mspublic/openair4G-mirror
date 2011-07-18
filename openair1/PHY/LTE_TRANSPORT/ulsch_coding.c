@@ -123,7 +123,6 @@ u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid,
-		   u8 tmode,
 		   u8 control_only_flag) {
   
   unsigned short offset;
@@ -203,10 +202,7 @@ u32 ulsch_encoding(u8 *a,
     //    ulsch->o[i] = i;
     msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
   }
-  if ((tmode != 4))
-    print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
-  else
-    print_CQI(ulsch->o,ulsch->o_RI,hlc_cqi,0);
+  print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
 #endif
     
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
@@ -631,10 +627,8 @@ u32 ulsch_encoding(u8 *a,
       for (q=0;q<Q_m;q++) 
 	ulsch->h[j++] = y[q+(Q_m*((r*Cmux)+i))];
 
-  if (j!=(H+Q_RI)) {
+  if (j!=(H+Q_RI))
     msg("ulsch_coding.c: Error in output buffer length (j %d, H+Q_RI %d)\n",j,H+Q_RI); 
-    return(-1);
-  }
 
   return(0);
 }
@@ -670,10 +664,9 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u8 *)ulsch->o;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+(ulsch->o_RI[1]&1)<<1;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
   msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
-  return(0);
   
 }
 #endif

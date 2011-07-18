@@ -1,0 +1,58 @@
+sudo killall xterm
+sudo rmmod nasmesh
+sleep 2
+
+
+cd $OPENAIR2_DIR
+sudo insmod NAS/DRIVER/MESH/nasmesh.ko
+
+
+# Clusterhead
+sudo ifconfig nasmesh0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255 
+
+# UE 1
+sudo ifconfig nasmesh1 10.0.2.2 netmask 255.255.255.0 broadcast 10.0.2.255
+
+# UE 2
+sudo ifconfig nasmesh2 10.0.3.3 netmask 255.255.255.0 broadcast 10.0.3.255
+
+# Classification rules
+
+
+# CH <-> UE1 on DSCP 0 (RB 12)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.2 -r 12
+# CH <-> UE1 on DSCP 4 (RB 13)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i0 -z4 -s 10.0.1.1 -t 10.0.1.2 -r 13
+
+
+# CH <-> UE2 on DSCP 0 (RB 20)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c2 -i0 -z0 -s 10.0.1.1 -t 10.0.1.3 -r 20
+# CH <-> UE1 on DSCP 4 (RB 21)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c3 -i0 -z4 -s 10.0.1.1 -t 10.0.1.3 -r 21
+
+
+# UE1 <-> CH on DSCP 0 (RB 4)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i1 -z0 -s 10.0.2.2 -t 10.0.2.1 -r 4
+# UE1 <-> CH on DSCP 4 (RB 5)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i1 -z4 -s 10.0.2.2 -t 10.0.2.1 -r 5
+
+
+# UE2 <-> CH on DSCP 0 (RB 4)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i2 -z0 -s 10.0.3.3 -t 10.0.3.1 -r 4
+# UE2 <-> CH on DSCP 4 (RB 5)
+$OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c1 -i2 -z4 -s 10.0.3.3 -t 10.0.3.1 -r 5
+
+
+sudo rm /tmp/*socket*  
+cd $OPENAIR3_DIR/MESH/RRM/
+sudo xterm -T RRM -hold -e sh rrm.sh &
+sleep 5
+
+cd $OPENAIR2_DIR/SIMULATION/USER_TOOLS/LAYER2_SIM
+
+sudo ./mac_sim_rrm -m0 -t ../../TOPOLOGIES/virtual_3nodes.top
+
+
+
+
+

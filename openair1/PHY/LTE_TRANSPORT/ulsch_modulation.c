@@ -183,7 +183,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
 		      unsigned int subframe,
 		      LTE_DL_FRAME_PARMS *frame_parms,
 		      LTE_UE_ULSCH_t *ulsch,
-		      u8 cooperation_flag) {
+		      unsigned char relay_flag,
+		      unsigned char diversity_scheme,
+		      unsigned char n_ue) {
 
 #ifdef IFFT_FPGA_UE
   unsigned char qam64_table_offset = 0;
@@ -238,8 +240,8 @@ void ulsch_modulation(mod_sym_t **txdataF,
   Msc_PUSCH = ulsch->harq_processes[harq_pid]->nb_rb*12;
 
 #ifdef DEBUG_ULSCH_MODULATION
-  msg("ulsch_modulation.c: Doing modulation for G=%d bits, harq_pid %d , nb_rb %d, Q_m %d, Nsymb_pusch %d (nsymb %d)\n",
-      G,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch,nsymb);
+  msg("ulsch_modulation.c: Doing modulation for G=%d bits, nb_rb %d, Q_m %d, Nsymb_pusch %d\n",
+      G,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch);
 #endif
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
   for (i=0;i<G;i++) {
@@ -253,7 +255,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   // Modulation
 
   Msymb = G/Q_m;
-  if(cooperation_flag == 2)
+  if((relay_flag == 2) && (diversity_scheme == 2) && (n_ue == 1))
     // For Distributed Alamouti Scheme in Collabrative Communication
     // TODO: change modulation here (both for IFFT_FPGA on and off)!!! 
     {
@@ -493,7 +495,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
 	}//switch
       }//for
-    }//cooperation_flag == 2
+    }//if
   else
     {
       for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
@@ -664,9 +666,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   for (j=0,l=0;l<(nsymb-1);l++) {
     re_offset = re_offset0;
     symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
-#ifdef DEBUG_ULSCH_MODULATION
-        printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
-#endif
+    //    printf("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
     txptr = &txdataF[0][symbol_offset];
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
 	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
@@ -676,17 +676,19 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
       //      printf("copying %d REs\n",Msc_PUSCH);
       for (i=0;i<Msc_PUSCH;i++,j++) {
-#ifdef DEBUG_ULSCH_MODULATION
-	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
-#endif
+	//	printf("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((short*)&ulsch->z[j])[0],((short*)&ulsch->z[j])[1]);
 	txptr[re_offset++] = ulsch->z[j];
 	if (re_offset==frame_parms->ofdm_symbol_size)
 	  re_offset = 0;                                 
       }
     }
   }
+
+
 #endif 
-# else
+#endif
+
+#ifndef OFDMA_ULSCH
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
@@ -716,6 +718,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
       }
     }
   }
+
 #endif
 
 }

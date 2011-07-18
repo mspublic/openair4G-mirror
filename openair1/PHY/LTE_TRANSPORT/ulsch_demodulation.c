@@ -1073,7 +1073,8 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      unsigned int subframe,
 	      unsigned char eNB_id,  // this is the effective sector id
 	      LTE_eNB_ULSCH_t *ulsch,
-	      u8 cooperation_flag) {
+	      unsigned char relay_flag,
+	      unsigned char diversity_scheme) {
 
   unsigned int l,i;
   int avgs;
@@ -1105,8 +1106,8 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     msg("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
 	ulsch->harq_processes[harq_pid]->first_rb,
 	ulsch->harq_processes[harq_pid]->nb_rb,
-	eNB_common_vars->rxdataF[eNB_id],
-    	eNB_ulsch_vars->rxdataF_ext[eNB_id]);
+	eNB_common_vars->rxdataF[eNb_id],
+    	eNB_ulsch_vars->rxdataF_ext[eNb_id]);
 #endif //DEBUG_ULSCH
 
     ulsch_extract_rbs_single(eNB_common_vars->rxdataF[eNB_id],
@@ -1125,8 +1126,8 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			      l%(frame_parms->symbols_per_tti/2),
 			      l/(frame_parms->symbols_per_tti/2),
 			      ulsch->harq_processes[harq_pid]->nb_rb,
-			      ulsch->cyclicShift,
-			      cooperation_flag);
+			      relay_flag,
+			      diversity_scheme);
 
 
 
@@ -1136,7 +1137,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 		      frame_parms,
 		      ulsch->harq_processes[harq_pid]->nb_rb);  
     
-    if(cooperation_flag == 2)
+    if((relay_flag == 2) && (diversity_scheme == 2))
       {
 	for (i=0;i<frame_parms->nb_antennas_rx;i++){
 	  ulsch_power_0[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_0[eNB_id][i],
@@ -1154,7 +1155,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   }
 
 
-  if(cooperation_flag == 2)
+  if((relay_flag ==2) && (diversity_scheme == 2))
     {
       ulsch_channel_level(eNB_ulsch_vars->drs_ch_estimates_0[eNB_id],
 			  frame_parms,
@@ -1217,7 +1218,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
       l++;
     }    
 
-    if(cooperation_flag == 2)
+    if((relay_flag == 2) && (diversity_scheme == 2))
       {
 
 	ulsch_channel_compensation_alamouti(eNB_ulsch_vars->rxdataF_ext2[eNB_id],

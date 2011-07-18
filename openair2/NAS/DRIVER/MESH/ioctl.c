@@ -26,6 +26,15 @@
   Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
 
 *******************************************************************************/
+/***************************************************************************
+                          nas_iocontrol.c  -  description
+                             -------------------
+    copyright            : (C) 2002 by Eurecom
+    email                : yan.moret@eurecom.fr
+                           michelle.wetterwald@eurecom.fr
+			   ***************************************************************************
+
+***************************************************************************/
 
 #include "local.h"
 #include "ioctl.h"
@@ -434,7 +443,7 @@ void nas_set_msg_class_add_reply(struct nas_msg_class_add_reply *msgrep,
   printk("[NAS][CLASS] nas_set_msg_class_add_reply\n");
     
 
-  if (msgreq->dscp>NAS_DSCP_MAX){
+  if (msgreq->dscp>NAS_DSCP_DEFAULT){
     printk("NAS_SET_MSG_CLASS_ADD_REPLY: Incoherent parameter value\n");
     msgrep->status=-NAS_ERROR_NOTCORRECTDSCP;
     return;

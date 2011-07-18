@@ -39,7 +39,7 @@ ________________________________________________________________*/
 Table of contents
 -------------------------
 
-The content of this README is the following: 
+The content of this readme is the following: 
 
   1) What is this block about in OpenAirInterface
   2) Folders and files description
@@ -51,76 +51,88 @@ The content of this README is the following:
 1) What is this block about in OpenAirInterface ?
 -----------------------------------------------
      
-	Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility management protocol standardized by IETF. It is a protocol for building a common and access technology independent of mobile core networks, accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 and WLAN based access architectures. Proxy Mobile IPv6 is the only network-based mobility management protocol standardized by IETF.
+	Proxy Mobile IPv6 (PMIPv6) is a network-based mobility management protocol for localized domains, which has been actively standardized by the IETF NETLMM Working Group. PMIPv6 is starting to attract much attention among telecommunication and internet communities due to its salient features and it is expected to expedite the real deployment of IP-based mobility management.
+
+     More information about PMIP6D can be found on the Twiki:
+     https://twiki.eurecom.fr/twiki/bin/view/OpenAirInterface/WebHome
 
 -----------------------------------------
 2) Folders and files description
 -----------------------------------------
 
    File/Folder     		   Description
-    -----------       		   ----------- 
+    -----------       		   -----------
     
-    - freeradius-client-1.1.6.eurecom/  	 contains files for the Radius client
-		- examples							contains FreeRADIUS server configuration file examples
-            	
-	- mipv6-daemon-umip-0.4.eurecom/	 contains files distributed with MIPL linux package 
-		- extras/							 contains example configuration files
-		- include/							 contains files distributed with MIPL linux package 
-		- libmissing/  							 contains files distributed with MIPL linux package 
-		- libnetlink/     						 contains files distributed with MIPL linux package
-		- man/								 contains manual files of MIPL and PMIP
-		- src/								 contains files distributed with MIPL linux package
-		- src/pmip/							 contains PMIP files 
+    - Doxygen/      		 contains files for Doxygen format
+    
+    - freeradius-client-1.1.6/   contains files for the Radius client
+    
+    - html/     	  	 contains Html files for Doxygen documentation 
+    
+    - latex/    		 contains Latex files for Doxygen documentation 
+    
+    - libmissing/  		 contains files distributed with MIPL linux package
+   
+    - libnetlink/     		 contains files distributed with MIPL linux package
+    
+    - mipl/      		 contains files distributed with MIPL linux package 
     
 
 ----------------------------------------------------
 3) Organization of the folders and their dependencies
 ----------------------------------------------------
 
-     The 2 folders have the following structures :
+     The 3 folders have the following structures
 
-		- freeradius-client-1.1.6.eurecom/	 	is the FreeRADIUS client v1.1.6 source code that we modified.
+     - pmip6d/	 	contains all the files for the PMIP6D tool
 
-		- pmipv6-daemon-umip-0.4.eurecom/  		is the Proxy Mobile IPv6 code built on top of UMIP 0.4
+     - /etc/match	is a text file, used like a database which contains the link between a MN's MAC Address and its PMIP network prefix 
 
       PMIP6D is quite independent from the other OpenAirInterface blocks.
     
 -----------------------------------------
   4) Hardware requirement and How to build PMIP6D
 -----------------------------------------
-	4.1) HARDWARE REQUIREMENT
+	4.1) HARWARE REQUIREMENT
  
 		In our PMIP6D implementation, the Mobile Node's attachment and detachment phases are done at layer 2 using SYSLOG messages exchanged between the Access Point and the MAG.
-		Thus, it's mandatory for your Access Point to act as SYSLOG client.  
+		WARNING ! : For this reason, you do need to use these CISCO ACCESS POINTs -> Aironet 1100 series. AIR-AP 1120 B SERIES 
+		We will soon more test about the compatibility with other kind of APs. 
 
 	4.2) HOW TO BUILD PMIP6D
-
-		WARNING: The PMIP6D has been developped and validated under Linux UBUNTU 10.04 LTS distribution. 
-			 We can not confirm it will work with other systems.
- 
-	  		 In this document, "$THEGOODPATH" indicates the directory path where you place the PMIP6D code.			
 	
-		4.2.1) Installation of the required packages on MAG and LMA machines : 
-			libpcap-dev / indent / bison / flex / iproute-dev / macchanger / libc6-dev / libssl-dev / autoconf / libtool 
+		4.2.1) Installation of the required packages  : 
+			libpcap-dev / indent / bison / flex / iproute-dev / macchanger / libc6-dev
 			Open a new shell and type :
-				$ apt-get install libpcap-dev indent bison flex iproute-dev libc6-dev libssl-dev autoconf libtool macchanger
+				$ apt-get install libpcap-dev indent bison flex iproute-dev
 
 		4.2.2) Kernel recompilation
-			PMIP6D does not require to modify/patch the kernel, however some features are by default disabled inside the official Ubuntu kernels and we need to enable them.
-			Follow the "INSTALL.kernel" text file to know how to set up correctly your kernel. 
+			PMIP6D does not require to modify/patch the kernel, however some features are by default disable and we need to enable them.
+			Follow the "INSTALL.kernel" text file to know how to set up correctly your kernel.
 		
-		4.2.3) Proxy Mobile-IPv6 Daemon and FreeRADIUS installation
-			Follow the "INSTALL" text file to know how to build PMIP6D tool.
+		4.2.3) Proxy Mobile-IPv6 Daemon compilation
+			Follow the "INSTALL" text file to know hot to build PMIP6D tool.
 		
+		4.2.4) Mobile Nodes network prefixes 
+			In this PMIP6D directory, you will find a file called "match". This file makes the link between the MNs MAC Address and the Network prefix they should receive inside the PMIP domain.
+			First of all, copy this "match" file to "/etc" path on your system.
+				$ cp pmip6d/match /etc/
+			Each line of this "match" file is one MOBILE NODE's MAC ADDRESS authorised to connect the PMIP domain.
+			So edit this file and customise it according to your settings.
+			EXAMPLE:
+				You want to authorise a mobile node which has for MAC ADDRESS 123456789ABC and give it the following IPv6 network prefix: 2001::/64. You thus have to add to the "/etc/match" file :  								20010000000000000000000000000001 00000000000000000000123456789ABC
+
 ----------------------------------------------------------------
-	5)  How to run a simple experimentation
+5)  How to run a simple experimentation
 ----------------------------------------------------------------
 
-    In order to create a PMIP domain composed of 3 nodes (1 LMA + 2 MAGS) (see the picture "$THEGOODPATH/pmipv6-daemon-umip-0.4/src/pmip/docs/images/PMIPv6_schema_example_1LMA_2MRs.jpg"):
+      In order to create a PMIP domain composed of 3 nodes (1 LMA + 2 MAGS) :
 	
-	LMA, MAG1 and MAG2 are in the same network which has for IPv6 prefix 2001:100::/64
-	With LMA: Ethernet1=2001:100::1  /  MAG1: Ethernet1=2001:100::2 & Ethernet2=2001:1::2  /  MAG2: Ethernet1=2001:100::3 & Ethernet2=2001:1::3
+	They all three are in the network which has for IPv6 prefix 2001:100::/64
+	With LMA: nasmesh0=2001:100::1  /  MAG1: nasmesh0=2001:100::2 & eth0=2001:1::2  /  MAG2: nasmesh0=2001:100::3 & eth0=2001:1::3
 
-	On LMA execute ->  ./$THEGOODPATH/pmipv6-daemon-umip-0.4/extras/UMIP0.4_LMA_UBUNTU.10.04.sh
-	On MAG1 execute -> ./$THEGOODPATH/pmipv6-daemon-umip-0.4/extras/UMIP0.4_MAG1_UBUNTU.10.04.sh
-	On MAG2 execute -> ./$THEGOODPATH/pmipv6-daemon-umip-0.4/extras/UMIP0.4_MAG2_UBUNTU.10.04.sh
+	On LMA execute ->  pmip6d -c -i -L 2001:100::1
+	On MAG1 execute -> pmip6d -m -i -L 2001:100::1 -N 2001:1::3 -E 2001:100::2
+	On MAG2 execute -> pmip6d -m -i -L 2001:100::1 -N 2001:1::2 -E 2001:100::3
+
+	See the JPEG file called "PMIPv6_schema_example_1LMA_2MRs.jpg" in the "images" directory.

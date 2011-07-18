@@ -25,16 +25,7 @@ int N_P=0,N_R=0;
 char     bypass_tx_buffer[BYPASS_TX_BUFFER_SIZE];
 unsigned int Master_list_rx, Seq_nb;
 /***************************************************************************/
-mapping transport_names[] =
-{
-    {"WAIT PM TRANSPORT INFO", WAIT_PM_TRANSPORT_INFO},
-    {"WAIT SM TRANSPORT INFO", WAIT_SM_TRANSPORT_INFO},
-    {"SYNC TRANSPORT INFO", SYNC_TRANSPORT_INFO},
-    {"ENB_TRANSPORT INFO", ENB_TRANSPORT_INFO},
-    {"UE TRANSPORT INFO", UE_TRANSPORT_INFO},
-    {"RELEASE TRANSPORT INFO", RELEASE_TRANSPORT_INFO},
-    {NULL, -1}
-};
+
 
 /***************************************************************************/
 void bypass_init ( int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),int (*rx_handlerP) (unsigned char,char*,int)){
@@ -49,23 +40,22 @@ void bypass_init ( int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsig
   emu_rx_status = WAIT_SYNC_TRANSPORT;
 }
 /***************************************************************************/
-int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int next_slot){
+int bypass_rx_data (unsigned int last_slot, unsigned int next_slot){
 /***************************************************************************/
   bypass_msg_header_t *messg;
   bypass_proto2multicast_header_t *bypass_read_header;
   eNB_transport_info_t *eNB_info;
   UE_transport_info_t  *UE_info;
-  int ue_info_ix, enb_info_ix;
   int             tmp_byte_count;
   int             bytes_read = 0;
   int             bytes_data_to_read;
   int             num_flows;
   int             current_flow; 
-  int             m_id, n_enb, n_ue, n_dci, total_tbs=0, total_header=0;
-  
+  int             m_id, enb_id, ue_id;
+
   pthread_mutex_lock(&emul_low_mutex);
   if(emul_low_mutex_var){
-    //LOG_T(EMU, " WAIT BYPASS_PHY...\n");
+    LOG_T(EMU, " WAIT BYPASS_PHY...\n");
     pthread_cond_wait(&emul_low_cond, &emul_low_mutex); 
   }
   if(num_bytesP==0){
@@ -74,7 +64,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
     pthread_mutex_unlock(&emul_low_mutex);
   }
   else{
-    //LOG_T(EMU,"BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
+    LOG_T(EMU,"BYPASS_RX_DATA: IN, Num_bytesp=%d...\n",num_bytesP);
     bypass_read_header = (bypass_proto2multicast_header_t *) (&rx_bufferP[bytes_read]);
     bytes_read += sizeof (bypass_proto2multicast_header_t);
     bytes_data_to_read = bypass_read_header->size;
@@ -84,22 +74,14 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
     else{
       messg = (bypass_msg_header_t *) (&rx_bufferP[bytes_read]);
       bytes_read += sizeof (bypass_msg_header_t);
-      if ( (messg->frame != frame) || (messg->subframe != next_slot>>1) )
-	LOG_W(EMU, "Received %s from master %d for (frame %d,subframe %d) currently (frame %d,subframe %d)\n", 
-	      map_int_to_str(transport_names,messg->Message_type), messg->master_id,
-	      messg->frame, messg->subframe,
-	      frame, next_slot>>1);
+      LOG_I(EMU, "status is %d and last slot %d\n", messg->Message_type, messg->last_slot);
+      //sleep(1);//eNB_info = (eNB_transport_info_t *) (&rx_bufferP[bytes_read]);
       //chek if MASTER in my List
       // switch(Emulation_status){
       switch(messg->Message_type){	
 	//case WAIT_SYNC_TRANSPORT:
       
-      case WAIT_PM_TRANSPORT_INFO:
-	if (messg->master_id==0 )
-	  Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
-	break;
-      
-      case WAIT_SM_TRANSPORT_INFO:
+      case WAIT_TRANSPORT_INFO:
 	Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
 	break;
       case SYNC_TRANSPORT_INFO:
@@ -118,65 +100,45 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    emu_info.master[messg->master_id].first_enb+=emu_info.master[m_id].nb_enb;
 	  }
-	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state:  for master %d (first enb %d, totan enb %d)\n",
-	  	messg->master_id, 
-		emu_info.master[messg->master_id].first_enb,
-		emu_info.master[messg->master_id].nb_enb);	  
+	  LOG_T(EMU, "WAIT_SYNC_TRANSPORT state:  for master %d the first enb index is %d\n",
+		messg->master_id, emu_info.master[messg->master_id].first_enb);	  
 	}
 	// store param fo ue per master
 	if ((emu_info.master[messg->master_id].nb_ue  = messg->nb_ue) > 0){
 	  for (m_id=0;m_id < messg->master_id; m_id++ ){
 	    emu_info.master[messg->master_id].first_ue+=emu_info.master[m_id].nb_ue;
 	  }
-	  LOG_I(EMU, "WAIT_SYNC_TRANSPORT state: for master %d (first ue %d, total ue%d)\n",
-		messg->master_id, 
-		emu_info.master[messg->master_id].first_ue,
-		emu_info.master[messg->master_id].nb_ue );	
+	  LOG_T(EMU, "WAIT_SYNC_TRANSPORT state: for master %d the first ue index is %d\n",
+		messg->master_id, emu_info.master[messg->master_id].first_ue);	
 	}      
 	
 	Master_list_rx=((Master_list_rx) |(1<< messg->master_id));
 	if (Master_list_rx == emu_info.master_list) {
 	  emu_rx_status = SYNCED_TRANSPORT;
 	}
-	LOG_I(EMU,"WAIT_SYNC_TRANSPORT state: m_id %d total enb remote %d total ue remote %d \n", 
-	     messg->master_id,emu_info.nb_enb_remote, emu_info.nb_ue_remote );
+	LOG_T(EMU,"WAIT_SYNC_TRANSPORT state: m_id %d total enb remote %d total ue remote %d first enb index %d first ue index %d emu_rx_status %d\n", 
+	     messg->master_id,   emu_info.nb_enb_remote, emu_info.nb_ue_remote,
+	      emu_info.first_enb_local, emu_info.first_ue_local, emu_rx_status  );
 
 	break;
 
 	//case WAIT_ENB_TRANSPORT:
       case ENB_TRANSPORT_INFO:
-	//LOG_D(EMU," RX ENB_TRANSPORT INFO from master %d \n",messg->master_id);
-	clear_eNB_transport_info(emu_info.nb_enb_local+emu_info.nb_enb_remote);
-	
+	clear_UE_transport_info(emu_info.nb_ue_local+emu_info.nb_ue_remote);
+	LOG_T(EMU, "WAIT_ENB_TRANSPORT\n\n");
 	if (emu_info.master[messg->master_id].nb_enb > 0 ){
-	  enb_info_ix =0;
-	  total_header=0;
-	  total_header += sizeof(eNB_transport_info_t)-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
-	  
 	  eNB_info = (eNB_transport_info_t *) (&rx_bufferP[bytes_read]);
-	  for (n_enb = emu_info.master[messg->master_id].first_enb; 
-	       n_enb < emu_info.master[messg->master_id].first_enb+emu_info.master[messg->master_id].nb_enb ;
-	       n_enb ++) {
-	    total_tbs=0;
-	    for (n_dci = 0 ; 
-		 n_dci < (eNB_info[enb_info_ix].num_ue_spec_dci+eNB_info[enb_info_ix].num_common_dci);
-		 n_dci ++) { 
-	      total_tbs+=eNB_info[enb_info_ix].tbs[n_dci];
-	    }
-	    enb_info_ix++;
-	    if ( (total_tbs + total_header) > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){ 
-	      LOG_W(EMU,"RX eNB Transport buffer total size %d (header%d,tbs %d) \n",
-		    total_header+total_tbs, total_header,total_tbs);
-	    }
-	    memcpy (&eNB_transport_info[n_enb],eNB_info, total_header+total_tbs);
-	    eNB_info = (eNB_transport_info_t *)((unsigned int)eNB_info + total_header+total_tbs);
-	    bytes_read+=total_header+total_tbs;
+	  for (enb_id = emu_info.master[messg->master_id].first_enb; 
+	       enb_id < emu_info.master[messg->master_id].nb_enb ;
+	       enb_id ++) {
+	    memcpy (&eNB_transport_info[enb_id],
+		    &eNB_info[enb_id],
+		    sizeof(eNB_transport_info_t));
+	    fill_phy_enb_vars(enb_id,last_slot,next_slot);
+	    LOG_T(EMU,"WAIT_ENB_TRANSPORT rx eNB_transport_info from enb index %d pbch_flag is %d \n",
+		  enb_id, 
+		  eNB_transport_info[enb_id].cntl.pbch_flag);
 	  }
-	    
-	  for (n_enb = emu_info.master[messg->master_id].first_enb; 
-	       n_enb < emu_info.master[messg->master_id].first_enb+emu_info.master[messg->master_id].nb_enb ;
-	       n_enb ++) 
-	    fill_phy_enb_vars(n_enb,next_slot);
 	}
 	else{
 	  LOG_T(EMU,"WAIT_ENB_TRANSPORT state: no enb transport info from master %d \n", messg->master_id);
@@ -188,45 +150,29 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
 	}	
 	break;
 	
+	//      case WAIT_UE_TRANSPORT:
       case UE_TRANSPORT_INFO:
-	//LOG_D(EMU," RX UE TRANSPORT INFO from master %d\n",messg->master_id);
-	clear_UE_transport_info(emu_info.nb_ue_local+emu_info.nb_ue_remote);	
-
-	
-	if (emu_info.master[messg->master_id].nb_ue > 0 ){ //&& emu_info.nb_enb_local >0 ){
-	  // get the header first 
-	  ue_info_ix =0;
-	  total_header=0;
-	  total_header += sizeof(UE_transport_info_t)-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
+	clear_eNB_transport_info(emu_info.nb_enb_local+emu_info.nb_enb_remote);
+	LOG_T(EMU,"RX UE_TRANSPORT_INFO master id %d nb_ue %d \n", 
+	      messg->master_id,
+	      emu_info.master[messg->master_id].nb_ue);
+	if (emu_info.master[messg->master_id].nb_ue > 0 ){
 	  UE_info = (UE_transport_info_t *) (&rx_bufferP[bytes_read]);
-	  // get the total size of the transport blocks
-	  for (n_ue = emu_info.master[messg->master_id].first_ue; 
-	       n_ue < emu_info.master[messg->master_id].first_ue+emu_info.master[messg->master_id].nb_ue ;
-	       n_ue ++) {
-	    total_tbs=0;
-	    for (n_enb = 0;n_enb < UE_info[ue_info_ix].num_eNB; n_enb ++) { 
-	      total_tbs+=UE_info[ue_info_ix].tbs[n_enb];
-	    }
-	    ue_info_ix++;
-	    if (total_tbs + total_header > MAX_TRANSPORT_BLOCKS_BUFFER_SIZE ){
-	      LOG_W(EMU,"RX [UE %d] Total size of buffer is %d (header%d,tbs %d) \n",
-		    n_ue, total_header+total_tbs,total_header,total_tbs);
-	    }
-	    memcpy (&UE_transport_info[n_ue], UE_info, total_header+total_tbs);
-	    UE_info = (UE_transport_info_t *)((unsigned int)UE_info + total_header+total_tbs);
-	    bytes_read+=total_header+total_tbs;
-	  }
-	  /*for (n_enb=0; n_enb < UE_info[0].num_eNB; n_enb ++ )
+	  for (enb_id=0; enb_id <UE_info[0].num_eNB; enb_id++ )
 	    LOG_T(EMU,"dump ue transport info rnti %x enb_id %d, harq_id %d tbs %d\n", 
-		  UE_transport_info[0].rnti[n_enb],
-		  UE_transport_info[0].eNB_id[n_enb],
-		  UE_transport_info[0].harq_pid[n_enb],
-		  UE_transport_info[0].tbs[n_enb]);
-	  */
-	  for (n_ue = emu_info.master[messg->master_id].first_ue; 
-	       n_ue < emu_info.master[messg->master_id].first_ue + emu_info.master[messg->master_id].nb_ue ;
-	       n_ue ++) {
-	    fill_phy_ue_vars(n_ue,last_slot);
+		  UE_info[0].rnti[enb_id],
+		  UE_info[0].eNB_id[enb_id],
+		  UE_info[0].harq_pid[enb_id],
+		  UE_info[0].tbs[enb_id]);
+
+	  
+	  for (ue_id = emu_info.master[messg->master_id].first_ue; 
+	       ue_id < emu_info.master[messg->master_id].nb_ue ;
+	       ue_id ++) {
+	    memcpy (&UE_transport_info[ue_id],
+		    &UE_info[ue_id],
+		    sizeof(UE_transport_info_t));
+	    fill_phy_ue_vars(ue_id,last_slot);
 	  }
 	}
 	else{
@@ -254,7 +200,7 @@ int bypass_rx_data (unsigned int frame, unsigned int last_slot, unsigned int nex
     //msg("[BYPASS] CALLING_SIGNAL_HIGH_MAC\n");
     pthread_cond_signal(&emul_low_cond);
     pthread_mutex_unlock(&emul_low_mutex);
-    bypass_signal_mac_phy(frame,last_slot, next_slot);
+    bypass_signal_mac_phy(last_slot,next_slot);
 
 
   }
@@ -308,7 +254,7 @@ void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer){
 #endif //USER_MODE
 
 /******************************************************************************************************/ 
-void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot, unsigned int next_slot){
+void  bypass_signal_mac_phy(unsigned int last_slot, unsigned int next_slot){
 /******************************************************************************************************/ 
   char tt=1;   
 
@@ -316,7 +262,7 @@ void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot, unsigned
 #ifndef USER_MODE
     rtf_put(fifo_mac_bypass,&tt,1);  // the Rx window is still opened  (Re)signal bypass_phy (emulate MAC signal)  
 #endif //USER_MODE      
-    bypass_rx_data(frame,last_slot, next_slot);
+    bypass_rx_data(last_slot,next_slot);
   }
   else Master_list_rx=0;
 }
@@ -349,13 +295,12 @@ int multicast_link_write_sock (int groupP, char *dataP, unsigned int sizeP){
 #endif
 
 /***************************************************************************/
-void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
+void bypass_tx_data(char Type, unsigned int last_slot){
   /***************************************************************************/
   unsigned int         num_flows;
   bypass_msg_header_t *messg;
   unsigned int         byte_tx_count;
   eNB_transport_info_t *eNB_info;
-  int n_enb,n_ue, n_dci,total_tbs=0,total_size=0;
   messg = (bypass_msg_header_t *) (&bypass_tx_buffer[sizeof (bypass_proto2multicast_header_t)]);
   num_flows = 0;
   messg->master_id       = emu_info.master_id; //Master_id;
@@ -363,53 +308,48 @@ void bypass_tx_data(char Type, unsigned int frame, unsigned int next_slot){
   messg->nb_enb          = emu_info.nb_enb_local; //Master_id;
   messg->nb_ue           = emu_info.nb_ue_local; //Master_id;
   messg->nb_flow         = num_flows;
-  messg->frame           = frame;
-  messg->subframe        = next_slot>>1;
-
+  messg->last_slot       = last_slot;
   byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (bypass_proto2multicast_header_t);
   
-  if(Type==WAIT_PM_TRANSPORT){
-    messg->Message_type = WAIT_PM_TRANSPORT_INFO;
-    LOG_T(EMU,"[TX_DATA] WAIT SYNC PM TRANSPORT\n");
-  }
-  else if(Type==WAIT_SM_TRANSPORT){
-    messg->Message_type = WAIT_SM_TRANSPORT_INFO;
-    LOG_T(EMU,"[TX_DATA] WAIT SYNC SM TRANSPORT\n");
+  if(Type==WAIT_TRANSPORT){
+    messg->Message_type = WAIT_TRANSPORT_INFO;
+    LOG_T(EMU,"[TX_DATA] WAIT SYNC TRANSPORT\n");
   }
   else if(Type==SYNC_TRANSPORT){
     messg->Message_type = SYNC_TRANSPORT_INFO;
     LOG_T(EMU,"[TX_DATA] SYNC TRANSPORT\n");
   }
   else if(Type==ENB_TRANSPORT){
-    // LOG_T(EMU,"[TX_DATA] ENB TRANSPORT\n");
-     messg->Message_type = ENB_TRANSPORT_INFO;
-     total_size=0;
-     total_tbs=0;
-     for (n_enb=emu_info.first_enb_local;n_enb<(emu_info.first_enb_local+emu_info.nb_enb_local);n_enb++) {
-       total_tbs=0;
-       for (n_dci =0 ; 
-	    n_dci < (eNB_transport_info[n_enb].num_ue_spec_dci+ eNB_transport_info[n_enb].num_common_dci);
-	    n_dci++) {
-	 total_tbs +=eNB_transport_info[n_enb].tbs[n_dci];
-       }
-       total_size = sizeof(eNB_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
-       memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&eNB_transport_info[n_enb], total_size);
-       byte_tx_count +=total_size;
-     }
+    messg->Message_type = ENB_TRANSPORT_INFO;
+    memcpy(&bypass_tx_buffer[byte_tx_count], (char*)eNB_transport_info, sizeof(eNB_transport_info_t));
+    byte_tx_count +=sizeof(eNB_transport_info_t);
+    LOG_T(EMU," [TX_DATA] ENB TRANSPORT %d \n",sizeof(eNB_transport_info_t) );
+    LOG_I(EMU," TX ENB TRANSPORT dci spec %d common %d\n", 
+	  eNB_transport_info[0].num_common_dci,
+	  eNB_transport_info[0].num_ue_spec_dci);
   }
   else if (Type == UE_TRANSPORT){ 
-    //LOG_T(EMU,"[TX_DATA] UE TRANSPORT\n");
     messg->Message_type = UE_TRANSPORT_INFO;
-    total_size=0;
-    for (n_ue = emu_info.first_ue_local; n_ue < (emu_info.first_ue_local+emu_info.nb_ue_local);n_ue++){
-      total_tbs=0; // compute the actual size of transport_blocks
-      for (n_enb=0;n_enb<UE_transport_info[n_ue].num_eNB;n_enb++) {
-	total_tbs+=UE_transport_info[n_ue].tbs[n_enb];
-      }
-      total_size = sizeof(UE_transport_info_t)+total_tbs-MAX_TRANSPORT_BLOCKS_BUFFER_SIZE;
-      memcpy(&bypass_tx_buffer[byte_tx_count], (char*)&UE_transport_info[n_ue], total_size);
-      byte_tx_count +=total_size;
-    }
+    memcpy(&bypass_tx_buffer[byte_tx_count], (char*)UE_transport_info, sizeof(eNB_transport_info_t));
+    byte_tx_count +=sizeof(UE_transport_info_t);
+    LOG_T(EMU," [TX_DATA] UE TRANSPORT navid rnti is %x\n", UE_transport_info[0].rnti[0]);
+    LOG_T(EMU," [TX_DATA] UE TRANSPORT navid harq is %d\n", UE_transport_info[0].harq_pid[0]);
+    /*       LOG_T(EMU, "[TX_DATA] transport block %x,%x,%x,%x,%x,%x and tbs %d \n",
+	  UE_transport_info[0].transport_blocks[0],
+	  UE_transport_info[0].transport_blocks[1],
+	  UE_transport_info[0].transport_blocks[2],
+	  UE_transport_info[0].transport_blocks[3],
+	  UE_transport_info[0].transport_blocks[4],
+	     UE_transport_info[0].transport_blocks[5], 
+	     UE_transport_info[0].tbs[0]);
+    */
+    LOG_T(EMU," TX ue prach %d TRANSPORT ack (%d  %d)\n", 
+	  UE_transport_info[0].cntl.prach_flag,
+	  UE_transport_info[0].cntl.pusch_ack & 0x1,
+	  (UE_transport_info[0].cntl.pusch_ack>>1)& 0x1);
+    LOG_T(EMU," TX ue pucch flag %d payload %d \n", 
+	  UE_transport_info[0].cntl.pucch_flag,
+	  UE_transport_info[0].cntl.pucch_payload);
   } 
   else if (Type == RELEASE_TRANSPORT){
     messg->Message_type = RELEASE_TRANSPORT_INFO;

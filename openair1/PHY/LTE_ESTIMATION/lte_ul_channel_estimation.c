@@ -22,8 +22,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char l,
 			      unsigned char Ns,
 			      unsigned int N_rb_alloc,
-			      u8 cyclicShift,
-			      u8 cooperation_flag) {
+			      unsigned char relay_flag,
+			      unsigned char diversity_scheme) {
 
   unsigned short aa,b,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j,re_offset;
   unsigned short * Msc_idx_ptr;
@@ -31,15 +31,6 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   short alpha, beta;
   int *ul_ch1, *ul_ch2;
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
-  //s8 phase_shift;
-  //phase_shift = -(2*M_PI*cyclicShift)/12;
-  short *ul_ch_estimates_re,*ul_ch_estimates_im;
-
-  //msg("cyclic shift %d\n",cyclicShift);
-
-
-  s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
-  s16 alpha_im[12] = {0,     16383, 28377, 32767, 28377,   16383,     0,-16384,-28378,-32768,-28378,-16384};
 
   int *temp_out_ifft_ptr = (int*)0,*in_fft_ptr_0 = (int*)0,*in_fft_ptr_1 = (int*)0,
     *temp_out_fft_0_ptr = (int*)0,*out_fft_ptr_0 = (int*)0,*temp_out_fft_1_ptr = (int*)0,
@@ -73,7 +64,6 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   if (l == (3 - frame_parms->Ncp)) {
 
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
-    i = symbol_offset;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       //msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
@@ -82,23 +72,12 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			     (short*) &ul_ch_estimates[aa][symbol_offset],
 			     Msc_RS,
 			     15);
-               
-
-      if((cyclicShift != 0) &&(cooperation_flag != 2)){
-	// Compemsating for the phase shift introduced at the transmitter
-	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i++){
-	  ul_ch_estimates_re = ((short*) ul_ch_estimates[aa])[i<<1];
-	  ul_ch_estimates_im = ((short*) ul_ch_estimates[aa])[(i<<1)+1];
-	  ((short*) ul_ch_estimates[aa])[i<<1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) + (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
-	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -  (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
-	}
-      }
     }
-    
+
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
 
 
-      if(cooperation_flag == 2)// Memory Allocation for temporary pointers to Channel Estimates
+      if((relay_flag == 2) && (diversity_scheme == 2))// Memory Allocation for temporary pointers to Channel Estimates
 	{
 	  memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_fft_0,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
@@ -109,7 +88,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 
       //Extracting Channel Estimates for Distributed Alamouti Receiver Combining
-      if(cooperation_flag ==2)
+      if((relay_flag == 2) && (diversity_scheme == 2))
 	{
 	  
 
@@ -207,7 +186,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    }*/
 	
 
-	}//cooperation_flag == 2
+	}//relay_flag ==2 && diversity_scheme == 2
 
       if (Ns&1) {//we are in the second slot of the sub-frame, so do the interpolation
 
@@ -215,7 +194,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	ul_ch2 = &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*pilot_pos2];
 
 
-	if(cooperation_flag == 2)// For Distributed Alamouti
+	if((relay_flag == 2) && (diversity_scheme == 2))// For Distributed Alamouti
 	  {
 	    ul_ch1_0 = &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*pilot_pos1];
 	    ul_ch2_0 = &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*pilot_pos2];
@@ -244,7 +223,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    multadd_complex_vector_real_scalar((short*) ul_ch1,alpha,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
 	    multadd_complex_vector_real_scalar((short*) ul_ch2,beta ,(short*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
 	 
-	    if(cooperation_flag == 2)// For Distributed Alamouti
+	    if((relay_flag == 2) && (diversity_scheme == 2))// For Distributed Alamouti
 	      {
 		multadd_complex_vector_real_scalar((short*) ul_ch1_0,beta ,(short*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],1,N_rb_alloc*12);
 		multadd_complex_vector_real_scalar((short*) ul_ch2_0,alpha,(short*) &ul_ch_estimates_0[aa][frame_parms->N_RB_UL*12*k],0,N_rb_alloc*12);
@@ -260,7 +239,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	multadd_complex_vector_real_scalar((short*) ul_ch1,0x3FFF,(short*) ul_ch1,1,N_rb_alloc*12);
 	multadd_complex_vector_real_scalar((short*) ul_ch2,0x3FFF,(short*) ul_ch2,1,N_rb_alloc*12);
 
-	if(cooperation_flag == 2)// For Distributed Alamouti
+	if((relay_flag == 2) && (diversity_scheme == 2))// For Distributed Alamouti
 	  {
 	    multadd_complex_vector_real_scalar((short*) ul_ch1_0,0x3FFF,(short*) ul_ch1_0,1,N_rb_alloc*12);
 	    multadd_complex_vector_real_scalar((short*) ul_ch2_0,0x3FFF,(short*) ul_ch2_0,1,N_rb_alloc*12);
@@ -269,8 +248,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    multadd_complex_vector_real_scalar((short*) ul_ch2_1,0x3FFF,(short*) ul_ch2_1,1,N_rb_alloc*12);
 	  }
 
-	//write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
-		/*if(cooperation_flag == 2)// For Distributed Alamouti
+
+		/*if((relay_flag == 2) && (diversity_scheme == 2))// For Distributed Alamouti
 		{
 		write_output("drs_est.m","drsest",ul_ch_estimates[0],300*12,1,1);
 		write_output("drs_est0.m","drsest0",ul_ch_estimates_0[0],300*12,1,1);

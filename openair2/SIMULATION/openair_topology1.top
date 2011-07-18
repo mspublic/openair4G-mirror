@@ -1,0 +1,12 @@
+Nb_nodes 3
+Nodes_list
+00 08 09
+Rssi_matrix_entries
+000010 023162 023162 
+023162 000010 000010
+023162 000010 000010
+Nb_machines 1
+Machine_id 0
+Nb_inst 3
+Inst_list
+00 08 09

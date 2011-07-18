@@ -31,18 +31,19 @@ void lte_sync_time_free(void);
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
+\param length Length for correlation
 \param eNb_id return value with the eNb_id
 \return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
 */
-int lte_sync_time(int **rxdata, ///rx data in time domain
-		  LTE_DL_FRAME_PARMS *frame_parms,
-		  int *eNB_id);
+int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int length, int* eNb_id);
+
 
 /*! 
 \brief This function performs detection of the PRACH (=SRS) at the eNb to estimate the timing advance
 The algorithm uses a time domain correlation with a downsampled version of the received signal. 
 \param rxdata Received time domain data for all rx antennas
 \param frame_parms LTE DL frame parameter structure
+\param eNb_id return value with the eNb_id
 \param length Length for correlation
 \param peak_val pointer to value of returned peak 
 \param sync_corr_eNb pointer to correlation buffer
@@ -50,6 +51,7 @@ The algorithm uses a time domain correlation with a downsampled version of the r
 */
 int lte_sync_time_eNB(int **rxdata, 
 		      LTE_DL_FRAME_PARMS *frame_parms,
+		      int eNb_id,
 		      int length,
 		      int* peak_val,
 		      unsigned int* sync_corr_eNb);
@@ -62,16 +64,17 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
 \brief This function performs channel estimation including frequency and temporal interpolation
 \param dl_ch_estimates pointer to structure that holds channel estimates (one slot)
 \param rxdataF pointer to received data in freq domain
+\param eNb_id
 \param frame_parms pointer to LTE frame parameters
 \param Ns slot number (0..19)
 \param p antenna port 
 \param l symbol within slot
 \param symbol symbol within frame
 */
-int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
-			      u8 eNB_offset,
-			      int **dl_ch_estimates,
+int lte_dl_channel_estimation(int **dl_ch_estimates,
 			      int **rxdataF,
+			      unsigned char eNb_id,
+			      LTE_DL_FRAME_PARMS *frame_parms,
 			      unsigned char Ns,
 			      unsigned char p,
 			      unsigned char l,
@@ -117,6 +120,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 //! \brief this function fills the PHY_VARS_UE->PHY_measurement structure
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
+			 LTE_DL_FRAME_PARMS *frame_parms,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
 			 unsigned char init_averaging);
@@ -138,8 +142,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      unsigned char l,
 			      unsigned char Ns,
 			      unsigned int N_rb_alloc,
-			      u8 cyclicShift,
-			      u8 cooperation_flag);
+			      unsigned char relay_flag,
+			      unsigned char diversity_scheme);
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			       LTE_eNB_COMMON *eNb_common_vars,

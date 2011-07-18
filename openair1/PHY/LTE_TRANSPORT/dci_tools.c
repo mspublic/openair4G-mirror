@@ -110,7 +110,7 @@ void generate_RIV_tables() {
       if (RIV>RIV_max)
 	RIV_max = RIV;
 
-      //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
+      //printf("RIV %d (%d)\n",RIV,localRIV2alloc_LUT25[RIV]);
       localRIV2alloc_LUT25[RIV] = alloc;
       distRIV2alloc_LUT25[RIV]  = alloc_dist;
       RIV2nb_rb_LUT25[RIV]      = Lcrbs;
@@ -513,7 +513,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
 
 #ifdef DEBUG_DCI
-    msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
+  msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
 #endif
   switch (dci_format) {
 
@@ -1027,8 +1027,6 @@ u8 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   for (i=0;i<NUMBER_OF_SUBBANDS;i++) {
 
     diff_cqi = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]) - sinr2cqi(meas->subband_cqi_dB[eNB_id][i][0]);
-
-    // Note, this is Table 7.2.1-2 from 36.213
     if (diff_cqi<=-1)
       diff_cqi = 3;
     else if (diff_cqi>2)
@@ -1040,30 +1038,11 @@ u8 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   return(cqivect);
 }
 
-void fill_CQI(void *o,u8 tmode,PHY_MEASUREMENTS *meas,u8 eNB_id, int current_dlsch_cqi) {
+void fill_CQI(void *o,UCI_format fmt,PHY_MEASUREMENTS *meas,u8 eNB_id, int current_dlsch_cqi) {
 
   u8 rank;
-  UCI_format fmt;
 
   rank = meas->rank[eNB_id];
-
-  msg("[PHY][UE] Filling CQI for eNB %d, Transmission mode %d : meas->wideband_cqi_tot[%d] %d\n",
-      eNB_id,tmode,eNB_id,meas->wideband_cqi_tot[eNB_id]);
-  switch (tmode) {
-
-  case 1:
-  case 2:
-  case 3:
-  case 5:
-  case 6:
-  case 7:
-  default:
-    fmt = hlc_cqi;
-    break;
-  case 4:
-    fmt = wideband_cqi;
-    break;
-  }
 
   switch (fmt) {
 
@@ -1081,26 +1060,19 @@ void fill_CQI(void *o,u8 tmode,PHY_MEASUREMENTS *meas,u8 eNB_id, int current_dls
     }
     break;
   case hlc_cqi:
-    
-    if (tmode > 2) {
-      if (rank == 0) {
-	((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
-	((HLC_subband_cqi_rank1_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
-	((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNB_id);
-      }
-      else {
-	
-	// This has to be improved!!!
-	((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
-	((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
-	((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
-	((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id);
-	((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
-      }
+    if (rank == 0) {
+      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
+      ((HLC_subband_cqi_rank1_2A_5MHz *)o)->pmi      = quantize_wideband_pmi(meas,eNB_id);
     }
     else {
-      ((HLC_subband_cqi_nopmi_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_tot[eNB_id]);
-      ((HLC_subband_cqi_nopmi_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
+
+      // This has to be improved!!!
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi1     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1 = fill_subband_cqi(meas,eNB_id);
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->cqi2     = sinr2cqi(meas->wideband_cqi_dB[eNB_id][0]);
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2 = fill_subband_cqi(meas,eNB_id);
+      ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi      = quantize_subband_pmi(meas,eNB_id);
     }
     break;
   case ue_selected:
@@ -1125,7 +1097,6 @@ u32 pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,u8 wideband_pmi) {
 int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 				      u16 rnti,
 				      u8 subframe,
-				      u8 transmission_mode,
 				      DCI_format_t dci_format,
 				      LTE_UE_ULSCH_t *ulsch,
 				      LTE_UE_DLSCH_t **dlsch,
@@ -1141,8 +1112,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
   u8 harq_pid;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue ulsch params for rnti %x, dci_format %d, dci %x, subframe %d\n",
-      rnti,dci_format,*(u32 *)dci_pdu,subframe);
+  msg("dci_tools.c: Filling ue ulsch params (dci %x) -> ulsch %p : rnti %x, dci_format %d,subframe %d\n",*(u32 *)dci_pdu,ulsch,rnti,dci_format,subframe);
   msg("type %d, hopping %d, rballoc %d, mcs %d, ndi %d, TPC %d, cshift %d, dai %d, cqi_req %d\n",
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type,
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping,
@@ -1163,7 +1133,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = 0;
     else 
       harq_pid = subframe2harq_pid(frame_parms,(subframe+4)%10);
-    //    msg("harq_pid = %d\n",harq_pid);
+    //msg("harq_pid = %d\n",harq_pid);
 
     if (harq_pid == 255) {
       msg("dci_tools.c: frame %d, subframe %d, rnti %x, format %d: FATAL ERROR: generate_ue_ulsch_params_from_dci, illegal harq_pid!\n",
@@ -1185,32 +1155,23 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
-    printf("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
-	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
-      ulsch->n_DMRS2 = 0;
+      ulsch->cshift = 0;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 1)
-      ulsch->n_DMRS2 = 6;
+      ulsch->cshift = 6;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 2)
-      ulsch->n_DMRS2 = 3;
+      ulsch->cshift = 3;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 3)
-      ulsch->n_DMRS2 = 4;
+      ulsch->cshift = 4;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 4)
-      ulsch->n_DMRS2 = 2;
+      ulsch->cshift = 2;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 5)
-      ulsch->n_DMRS2 = 8;
+      ulsch->cshift = 8;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
-      ulsch->n_DMRS2 = 10;
-    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 7)
-      ulsch->n_DMRS2 = 9;
-
-    //reserved for cooperative communication
-    if(ulsch->n_DMRS2 == 6)
-      ulsch->cooperation_flag = 2;
+      ulsch->cshift = 10;
     else
-      ulsch->cooperation_flag = 0;
-
+      ulsch->cshift = 9;
 
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
@@ -1218,31 +1179,19 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (ulsch->harq_processes[harq_pid]->Ndi == 1)
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
-    if (meas->rank[eNB_id] == 0) {
-      ulsch->O_RI = 1;
-      if (transmission_mode == 4)
-	ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
-      else if (transmission_mode == 5)
-	ulsch->O                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
-      else
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+    ulsch->O_RI                                  = 1;
+    if (meas->rank[eNB_id] == 1) {
+      ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
       ulsch->o_RI[0]                             = 1;
     }
     else {
-      ulsch->O_RI = 2;
-      if (transmission_mode == 4)
-	ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
-      else if (transmission_mode < 3)
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-      else 
-	ulsch->O                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
-
+      ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
       ulsch->o_RI[0]                             = 0;
     }
 
 
-    fill_CQI(ulsch->o,transmission_mode,meas,eNB_id,current_dlsch_cqi);
-    print_CQI(ulsch->o,ulsch->o_RI,transmission_mode,eNB_id);
+    fill_CQI(ulsch->o,wideband_cqi,meas,eNB_id,current_dlsch_cqi);
+
     // save PUSCH pmi for later (transmission modes 4,5,6)
 
     //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
@@ -1250,7 +1199,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 #ifdef DEBUG_PHY
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
-      print_CQI(ulsch->o,ulsch->o_RI,transmission_mode,eNB_id);
+      print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNB_id);
 #endif
 
     ulsch->O_ACK                                  = 2;
@@ -1261,7 +1210,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(generate_srs==0?0:1);
-
+;
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
       ulsch->harq_processes[harq_pid]->rvidx = 0;
@@ -1281,7 +1230,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->harq_processes[harq_pid]->round++;
     }
 
-    // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+    ulsch->cshift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
     msg("ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
@@ -1290,8 +1239,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     msg("ulsch (ue): Ndi         %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
     msg("ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->Nsymb_pusch);
-    msg("ulsch (ue): cshift        %d\n",ulsch->n_DMRS2);
+    msg("ulsch (ue): Nsymb_pusch %d\n",ulsch->harq_processes[harq_pid]->Nsymb_initial);
+    msg("ulsch (eNB): cshift        %d\n",ulsch->cshift);
 #endif
     return(0);
   }
@@ -1306,7 +1255,6 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 				       u16 rnti,
 				       u8 subframe,
-				       u8 transmission_mode,
 				       DCI_format_t dci_format,
 				       LTE_eNB_ULSCH_t *ulsch,
 				       LTE_DL_FRAME_PARMS *frame_parms,
@@ -1319,8 +1267,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   u32 rb_alloc;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
-      rnti,dci_format,*(u32*)dci_pdu,subframe);
+  msg("[PHY][eNB] Subframe %d : filling ulsch params for dci format %d, dci %x\n",
+      subframe,dci_format,*(u32*)dci_pdu);
 #endif
 
   if (dci_format == format0) {
@@ -1341,19 +1289,8 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
-
-    if (transmission_mode == 4) {
-      ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
-      ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
-    }
-    else if (transmission_mode ==5 ) {
-      ulsch->Or2                                   = 0;
-      ulsch->Or1                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
-    }
-    else if (transmission_mode <3) {
-      ulsch->Or2                                   = 0;
-      ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-    }
+    ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+    ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
     ulsch->O_RI                                   = 1;
     ulsch->O_ACK                                  = 2;
     ulsch->beta_offset_cqi_times8                = 18;
@@ -1363,27 +1300,22 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
 
     
-    //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)
-      ulsch->n_DMRS2 = 0;
+      ulsch->cshift = 0;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 1)
-      ulsch->n_DMRS2 = 6;
+      ulsch->cshift = 1;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 2)
-      ulsch->n_DMRS2 = 3;
+      ulsch->cshift = 2;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 3)
-      ulsch->n_DMRS2 = 4;
+      ulsch->cshift = 3;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 4)
-      ulsch->n_DMRS2 = 2;
+      ulsch->cshift = 4;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 5)
-      ulsch->n_DMRS2 = 8;
+      ulsch->cshift = 5;
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 6)
-      ulsch->n_DMRS2 = 10;
-    else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 7)
-      ulsch->n_DMRS2 = 9;
-
-    //ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
-
-
+      ulsch->cshift = 6;
+    else
+      ulsch->cshift = 7;
 
 
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
@@ -1407,18 +1339,18 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
     ulsch->rnti = rnti;
 
-    ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+    ulsch->cshift = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    msg("ulsch (eNB): rballoc       %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     msg("ulsch (eNB): harq_pid      %d\n",harq_pid);
     msg("ulsch (eNB): Ndi           %d\n",ulsch->harq_processes[harq_pid]->Ndi);  
     msg("ulsch (eNB): TBS           %d\n",ulsch->harq_processes[harq_pid]->TBS);
     msg("ulsch (eNB): mcs           %d\n",ulsch->harq_processes[harq_pid]->mcs);
     msg("ulsch (eNB): Or1           %d\n",ulsch->Or1);
     msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
-    msg("ulsch (eNB): cshift        %d\n",ulsch->n_DMRS2);
+    msg("ulsch (eNB): cshift        %d\n",ulsch->cshift);
 #endif
     return(0);
   }

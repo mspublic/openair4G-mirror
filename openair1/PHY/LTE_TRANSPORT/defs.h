@@ -241,10 +241,8 @@ typedef struct {
   u8 beta_offset_harqack_times8;
   /// power_offset
   u8 power_offset;
-  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
-  u8 n_DMRS2;
-  // for cooperative communication
-  u8 cooperation_flag;
+  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
+  u32 cshift;
 } LTE_UE_ULSCH_t;
 
 typedef struct {
@@ -357,10 +355,8 @@ typedef struct {
   u32 RRCConnRequest_frame;
   /// RNTI attributed to this ULSCH
   u16 rnti;
-  /// n_DMRS2 for cyclic shift of DM RS ( 3GPP 36.211 Table 5.5.2.1.1-1)
-  u8 n_DMRS2;
-  /// cyclic shift for DM RS
-  u8 cyclicShift;
+  /// Cyclic Shift for Uplink Reference signals from DCI n_DMRS2
+  u32 cshift;
 } LTE_eNB_ULSCH_t;
 
 typedef struct {
@@ -408,43 +404,24 @@ typedef struct {
 
 
 typedef struct {
-  /// UL RSSI per receive antenna
   s32 UL_rssi[NB_ANTENNAS_RX];
-  /// DL Wideband CQI index (2 TBs)
   u8 DL_cqi[2];
-  /// DL Subband CQI index (from HLC feedback)
-  u8 DL_subband_cqi[2][13];
-  /// DL PMI Single Stream
+  u8 DL_diffcqi[2];
   u16 DL_pmi_single;
-  /// DL PMI Dual Stream
   u16 DL_pmi_dual;
-  /// Current RI
   u8 rank;
-  /// CRNTI of UE
   u16 crnti; ///user id (rnti) of connected UEs
-  /// Timing offset
   s32 UE_timing_offset; ///timing offset of connected UEs (for timing advance signalling)
-  /// Current mode of UE (NOT SYCHED, RAR, PUSCH)
   UE_MODE_t mode;
-  /// Current sector where UE is attached
   u8 sector;
-  /// 
   u32 dlsch_sliding_cnt;
-  ///
   u32 dlsch_NAK[8];
-  ///
   u32 dlsch_l2_errors;
-  ///
   u32 dlsch_trials[4];
-  ///
   u32 ulsch_errors[3];
-  ///
   u32 ulsch_consecutive_errors[3];
-  ///
   u32 ulsch_decoding_attempts[3][4];
-  ///
   u32 ulsch_round_errors[3][4];
-  ///
   s8 dlsch_mcs_offset;
   //  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;

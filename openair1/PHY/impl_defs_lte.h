@@ -25,7 +25,6 @@ ________________________________________________________________*/
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 
-#define SSS_AMP 1148
 typedef enum {
   normal=0,
   extended=1
@@ -353,7 +352,6 @@ typedef struct {
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
 
-
 typedef struct {
   /// Number of resource blocks (RB) in DL
   u8 N_RB_DL;                
@@ -423,7 +421,6 @@ typedef struct {
   u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
   u16 SIPeriod;
-
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -577,13 +574,6 @@ typedef struct {
   /// nCCE for PUCCH per subframe
   u8 nCCE[10];
 } LTE_UE_PDCCH;
-
-#define PBCH_A 24
-typedef struct {
-  u8 pbch_d[96+(3*(16+PBCH_A))];
-  u8 pbch_w[3*3*(16+PBCH_A)];
-  u8 pbch_e[1920]; 
-} LTE_eNB_PBCH;
 
 typedef struct {
   /// Pointers to extracted PBCH symbols in frequency-domain

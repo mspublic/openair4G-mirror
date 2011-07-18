@@ -1,0 +1,27 @@
+#OPENAIR2_DIR=../..	
+export OPENAIR2_DIR=/homes/anouar/openair2
+killall bypass_phy
+cd $OPENAIR2_DIR
+SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER/rt_emul 2
+sudo make remove_emul
+sudo make install_emul
+
+
+# UE
+sudo ifconfig nasmesh0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
+
+NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0.1.1 -r 4 
+NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z4 -s 10.0.1.5 -t 10.0.1.1 -r 5 
+
+cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER  
+./rt_emul 0 1 ../../TOPOLOGIES/eth_3nodes.top
+./rt_emul 1
+
+cd ../../..
+nice -15 SIMULATION/PHY_EMULATION/TRANSPORT/KERNEL_INTERFACE/bypass_phy	
+
+
+
+
+
+

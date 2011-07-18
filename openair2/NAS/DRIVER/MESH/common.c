@@ -28,14 +28,13 @@
 *******************************************************************************/
 
 /***************************************************************************
-/*! \file nas_common.c
-* \brief implementation of emultor tx and rx 
-* \author Navid Nikaein and Raymomd Knopp
-* \date 2011
-* \version 1.0 
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr
-*/ 
+                          nas_common.c  -  description
+                             -------------------
+    copyright            : (C) 2002 by Eurecom
+    email                : yan.moret@eurecom.fr
+                           michelle.wetterwald@eurecom.fr
+			   
+***************************************************************************/
 
 //#include "nas_common.h"
 #include "local.h"
@@ -45,9 +44,9 @@
 #include "rtai_fifos.h"
 #endif
 
-//#define NAS_DEBUG_RECEIVE 1
+#define NAS_DEBUG_RECEIVE 1
 //#define NAS_DEBUG_SEND 1
-//#define NAS_DEBUG_CLASS 1
+#define NAS_DEBUG_CLASS 1
 //#define NAS_ADDRESS_FIX 1
 
 #include <linux/inetdevice.h>
@@ -214,7 +213,7 @@ void nas_COMMON_receive(u16 dlen,
 	network_header->check = ip_fast_csum((unsigned char *) network_header,
 				 network_header->ihl);
 
-	//printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
+	printk("[NAS][COMMON][RECEIVE] IP Fast Checksum %x \n", network_header->check);
 #else
 	skb->nh.iph->check = 0;
 	skb->nh.iph->check = ip_fast_csum((unsigned char *)skb->data,

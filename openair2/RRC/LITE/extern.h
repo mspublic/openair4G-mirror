@@ -14,7 +14,7 @@ ________________________________________________________________*/
 #include "LAYER2/RLC/rlc.h"
 
 extern UE_RRC_INST *UE_rrc_inst;
-extern eNB_RRC_INST *eNB_rrc_inst;
+extern CH_RRC_INST *CH_rrc_inst;
 extern RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
 extern MAC_RLC_XFACE *Mac_rlc_xface;
@@ -36,11 +36,6 @@ extern unsigned short Header_read_idx,Data_read_idx,Header_size;
 extern unsigned short Data_to_read;
 #endif //NO_RRM
 
-extern u8 DRB2LCHAN[8];
-
-extern LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue;
-extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
-
 
 #ifndef PHY_EMUL
 #ifndef PHYSIM
@@ -48,7 +43,7 @@ extern LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue;
 #else
 extern unsigned char NB_INST;
 #endif
-extern unsigned char NB_eNB_INST;
+extern unsigned char NB_CH_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
 extern void* bigphys_malloc(int); 

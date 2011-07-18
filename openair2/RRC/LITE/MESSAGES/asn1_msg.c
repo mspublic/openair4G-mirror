@@ -10,8 +10,6 @@
 #include <linux/module.h>  /* Needed by all modules */
 #endif
 
-#include "RRC/LITE/defs.h"
-#include "COMMON/mac_rrc_primitives.h"
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -182,21 +180,20 @@ uint8_t do_SIB23(uint8_t *buffer,
   //  SystemInformationBlockType3_t *sib3;
 
 
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member sib2_part,sib3_part;
 
   asn_enc_rval_t enc_rval;
 
 
-  sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  sib2_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
-  sib3_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
+  memset(&sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  memset(&sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  *sib2 = &sib2_part->choice.sib2;
-  *sib3 = &sib3_part->choice.sib3;
+  sib2_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
+  sib3_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
+
+  *sib2 = &sib2_part.choice.sib2;
+  *sib3 = &sib3_part.choice.sib3;
 
 
   // sib2
@@ -356,8 +353,8 @@ uint8_t do_SIB23(uint8_t *buffer,
 
   //  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;  
   //  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib2_part);
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib3_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
 
 #ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
@@ -370,10 +367,8 @@ uint8_t do_SIB23(uint8_t *buffer,
   printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
-  if (enc_rval.encoded==-1) {
-    msg("[RRC] ASN1 : SI encoding failed for SIB23\n");
+  if (enc_rval.encoded==-1)
     return(-1);
-  }
   return((enc_rval.encoded+7)/8);
 }
 
@@ -381,7 +376,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
-  uint8_t ecause=0;
+  uint8_t ecause;
 
   UL_CCCH_Message_t ul_ccch_msg;
 
@@ -513,21 +508,20 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,
-			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated) {
 
 
   asn_enc_rval_t enc_rval;
-  uint8_t ecause=0;
+  uint8_t ecause;
   
 
 
   long *logicalchannelgroup;
   
-  struct SRB_ToAddMod *SRB1_config2,*SRB2_config2;
-  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config,*SRB2_rlc_config;
-  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config,*SRB2_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters,*SRB2_ul_SpecificParameters;
+  struct SRB_ToAddMod *SRB1_config2;
+  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config;
+  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
   SRB_ToAddModList_t *SRB_list;
 
   PhysicalConfigDedicated_t *physicalConfigDedicated2;
@@ -597,58 +591,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
-
-  /// SRB2
-  SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
-  *SRB2_config = SRB2_config2;
-
-  SRB2_config2->srb_Identity = 2;
-  SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
-  SRB2_config2->rlc_Config   = SRB2_rlc_config;
-  
-  SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
-  SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit,T_PollRetransmit_ms45);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit=T_PollRetransmit_ms45;
- 
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU,PollPDU_pInfinity);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU=PollPDU_pInfinity;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte,PollPDU_pInfinity);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte=PollPDU_pInfinity;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold,UL_AM_RLC__maxRetxThreshold_t4);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold=UL_AM_RLC__maxRetxThreshold_t4;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering,T_Reordering_ms35);
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering=T_Reordering_ms35;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit,T_StatusProhibit_ms0);
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
-  
-  SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
-  SRB2_config2->logicalChannelConfig   = SRB2_lchan_config;
-
-  SRB2_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-  SRB2_ul_SpecificParameters = CALLOC(1,sizeof(*SRB2_ul_SpecificParameters));
-
-  SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
-
-
-  SRB2_ul_SpecificParameters->priority = 1;
-
-  //assign_enum(&SRB2_ul_SpecificParameters->prioritisedBitRate,LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity);
-  SRB2_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-
-  //assign_enum(&SRB2_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
-  SRB2_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-  logicalchannelgroup = CALLOC(1,sizeof(long));
-  *logicalchannelgroup=0;
-  SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
-
-
-  ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
 
   // PhysicalConfigDedicated
 

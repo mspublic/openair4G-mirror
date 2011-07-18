@@ -16,19 +16,17 @@
 //-----------------------------------------------------------------------------
 //#include "openair_defs.h"
 
-#define WAIT_PM_TRANSPORT_INFO 0x1
-#define WAIT_SM_TRANSPORT_INFO 0x2
-#define SYNC_TRANSPORT_INFO 0x3
-#define ENB_TRANSPORT_INFO 0X4
-#define UE_TRANSPORT_INFO 0X5
-#define RELEASE_TRANSPORT_INFO 0x6
+#define WAIT_TRANSPORT_INFO 0x1
+#define SYNC_TRANSPORT_INFO 0x2
+#define ENB_TRANSPORT_INFO 0X3
+#define UE_TRANSPORT_INFO 0X4
+#define RELEASE_TRANSPORT_INFO 0x5
 
-#define WAIT_PM_TRANSPORT 1
-#define WAIT_SM_TRANSPORT 2
-#define SYNC_TRANSPORT 3
-#define ENB_TRANSPORT 4
-#define UE_TRANSPORT 5
-#define RELEASE_TRANSPORT 6
+#define WAIT_TRANSPORT 1
+#define SYNC_TRANSPORT 2
+#define ENB_TRANSPORT 3
+#define UE_TRANSPORT 4
+#define RELEASE_TRANSPORT 5
 
 #define WAIT_SYNC_TRANSPORT 1
 #define SYNCED_TRANSPORT 2
@@ -36,8 +34,10 @@
 //#define WAIT_UE_TRANSPORT 3
 
 
-#define BYPASS_RX_BUFFER_SIZE 64000
-#define BYPASS_TX_BUFFER_SIZE 64000
+//#define BYPASS_RX_BUFFER_SIZE 64000
+//#define BYPASS_TX_BUFFER_SIZE 64000
+#define BYPASS_RX_BUFFER_SIZE 4000
+#define BYPASS_TX_BUFFER_SIZE 4000
 
 
 /*************************************************************/
@@ -65,7 +65,9 @@ typedef struct  {
   u8 prach_flag:1;  // 0=none,1=active
   u8 prach_id:6;    // this is the PHY preamble index for the prach
 } UE_cntl;
-#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
+
+//#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
+#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 4048
 #define MAX_NUM_DCI 5
 typedef struct {
   eNB_cntl cntl;
@@ -77,7 +79,7 @@ typedef struct {
   u8 ue_id[MAX_NUM_DCI];
   u16 tbs[MAX_NUM_DCI*2];    // times 2 for dual-stream MIMO formats
   u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE]; 
-} __attribute__ ((__packed__)) eNB_transport_info_t ;
+} eNB_transport_info_t ;
 
 /*typedef struct {
   eNB_cntl cntl;
@@ -90,13 +92,13 @@ typedef struct {
 
 typedef struct {
   UE_cntl cntl;
-  u8 num_eNB;
   u16 rnti[NUMBER_OF_eNB_MAX];
+  u8 num_eNB;
   u8 eNB_id[NUMBER_OF_eNB_MAX]; 
   u8 harq_pid[NUMBER_OF_eNB_MAX];
   u16 tbs[NUMBER_OF_eNB_MAX];
   u8 transport_blocks[MAX_TRANSPORT_BLOCKS_BUFFER_SIZE];//*NUMBER_OF_eNB_MAX];
-} __attribute__ ((__packed__)) UE_transport_info_t ;
+} UE_transport_info_t ;
 
 /*! \brief */
 typedef struct bypass_msg_header {
@@ -106,9 +108,8 @@ typedef struct bypass_msg_header {
   unsigned int   nb_enb; /*! \brief */
   unsigned int   nb_ue; /*! \brief */
   unsigned int   nb_flow; /*! \brief */
-  unsigned int   frame;
-  unsigned int subframe;
-}__attribute__ ((__packed__)) bypass_msg_header_t;
+  unsigned int   last_slot;
+}bypass_msg_header_t;
 
 typedef struct bypass_proto2multicast_header_t {
   unsigned int      size;
@@ -141,19 +142,8 @@ typedef struct {
   unsigned int master_list;
   unsigned int is_primary_master;
   unsigned int ethernet_flag;
-  char local_server[128]; // for the oaisim -c option : 0 = EURECOM web portal; -1 = local; 1 - N or filename = running a specific XML configuration file 
-  unsigned int offset_ue_inst;
   unsigned char multicast_group;
-  unsigned char ocg_enabled;
-  unsigned char opt_enabled;
-  unsigned char otg_enabled;
-  unsigned char omg_model_enb;
-  unsigned char omg_model_ue;
-  unsigned int seed;
-  double time;	
-
 }emu_info_t; 
-
 
 #endif //
 

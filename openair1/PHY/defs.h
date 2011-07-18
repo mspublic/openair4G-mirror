@@ -78,7 +78,7 @@
 #ifdef EXPRESSMIMO_TARGET
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
 #endif //EXPRESSMiMO_TARGET
- 
+
 
 #include "spec_defs_top.h"
 #include "impl_defs_top.h"
@@ -86,10 +86,10 @@
 
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
-
+#include "PHY/MODULATION/defs.h"
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
-
+#include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 
 #define NUM_DCI_MAX 32
@@ -107,7 +107,6 @@ typedef struct
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_MAX]; /// Measurement variables 
   LTE_eNB_COMMON   lte_eNB_common_vars;
   LTE_eNB_SRS      lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PBCH     lte_eNB_pbch;
   LTE_eNB_ULSCH    *lte_eNB_ulsch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
   // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
@@ -115,11 +114,9 @@ typedef struct
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
 
-  /// cell-specific reference symbols
-  unsigned int lte_gold_table[20][2][14];
-
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
+  char eNB_generate_rag_ack;
 
   unsigned int max_peak_val; 
   int max_eNB_id, max_sync_pos;
@@ -208,10 +205,6 @@ typedef struct
 
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
 
-  /// cell-specific reference symbols
-  unsigned int lte_gold_table[3][20][2][14];
-
-
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
 
   unsigned char ulsch_ue_RRCConnReq_active[NUMBER_OF_eNB_MAX];
@@ -233,55 +226,49 @@ typedef struct
   unsigned char first_run_timing_advance[NUMBER_OF_eNB_MAX];
   u8               generate_prach;
   u8               prach_timer;
+  //unsigned char cooperation_flag; // for cooperative communication
+  unsigned char    is_secondary_ue; // primary by default
+  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
   int              rx_offset; // Timing offset
 
-  /// Flag to tell if UE is secondary user (cognitive mode)
-  unsigned char    is_secondary_ue; 
-  /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
-  unsigned char    has_valid_precoder; 
   /// hold the precoder for NULL beam to the primary eNB
   int              **ul_precoder_S_UE;
-  /// holds the maximum channel/precoder coefficient
-  char             log2_maxp; 
+  char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
-  /// sinr for all subcarriers of the current link (used only for abstraction)
-  short* sinr_dB;
   
-  /// PDSCH Varaibles
+  // PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];
 
-  /// PUSCH Varaibles
+  // PUSCH Varaibles
   PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_eNB_MAX];
 
-  /// PUCCH variables
+  // PUCCH variables
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_eNB_MAX];
 
   u8 ncs_cell[20][7];
 
-  /// UL-POWER-Control
+  // UL-POWER-Control
   UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_eNB_MAX];
 
-  /// TPC
+  // TPC
   TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_eNB_MAX];
   TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_eNB_MAX];
 
-  /// CQI reporting
+  // CQI reporting
   CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_eNB_MAX];
 
-  /// SRS Variables
+  // SRS Variables
   SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_eNB_MAX];
 
-  /// Scheduling Request Config
+  // Scheduling Request Config
   SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_eNB_MAX];
 
-  /// Transmission mode per eNB
+  // Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_eNB_MAX];
 
 } PHY_VARS_UE;
 
 #include "PHY/INIT/defs.h"
-#include "PHY/LTE_REFSIG/defs.h"
-#include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
 
 #ifndef OPENAIR_LTE

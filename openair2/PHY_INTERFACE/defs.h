@@ -153,9 +153,6 @@ typedef struct
     /// Function to retrieve rb_alloc bitmap from dci rballoc field and VRB type
     u32 (*get_rballoc)(u8 vrb_type,u8 rb_alloc_dci);
 
-    /// Function for UE MAC to retrieve current PHY connectivity mode (PRACH,RA_RESPONSE,PUSCH)
-    UE_MODE_t (*get_ue_mode)(u8 Mod_id,u8 eNB_index);
-
     LTE_eNB_UE_stats* (*get_eNB_UE_stats)(u8 Mod_id, u16 rnti);
 
     unsigned char is_cluster_head;
@@ -166,10 +163,6 @@ typedef struct
     /// PHY Frame Configuration
     LTE_DL_FRAME_PARMS *lte_frame_parms;
 
-    //ICIC algos
-    u8 (*get_SB_size)(u8 n_rb_dl);
-
-    //end ALU's algo
     
   } MAC_xface;
 

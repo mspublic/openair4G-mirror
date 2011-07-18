@@ -741,7 +741,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned short rb,nb_rb=0;
   unsigned char rb_alloc_ind;
-  unsigned char i,aarx,l,nsymb,skip_half=0,sss_symb,pss_symb;
+  unsigned char i,aarx,l,nsymb,skip_half=0;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
 
@@ -753,14 +753,6 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
   l=symbol;
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
-  if (frame_parms->frame_type == 1) {  // TDD
-    sss_symb = nsymb-1;
-  }
-  else {
-    sss_symb = (nsymb>>1)-2;
-    pss_symb = (nsymb>>1)-1;
-  }
-  
   if (symbol_mod==(4-frame_parms->Ncp))
     poffset=3;
 
@@ -844,28 +836,15 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	  skip_half=2;
 	
 	//SSS
-
-	if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb) ) {
+	if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
 	  rb_alloc_ind = 0;
 	}
 	//SSS 
-	if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
+	if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
 	  skip_half=1;
 	else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
 	  skip_half=2;
-
-	//PSS
-	if (frame_parms->frame_type == 0) {
-	  if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
-	    rb_alloc_ind = 0;
-	  }
-	  //PSS 
-	  if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
-	    skip_half=1;
-	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
-	    skip_half=2;
-	}
-
+	
 	if (rb_alloc_ind==1) {
 	  /*	  	  
 		 printf("rb %d\n",rb);
@@ -962,15 +941,10 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	rb_alloc_ind = 0;
       }
       //SSS
-      if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb) ) {
+      if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
 	rb_alloc_ind = 0;
       }
-      if (frame_parms->frame_type == 0) {
-      //PSS
-	if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
-	  rb_alloc_ind = 0;
-	}
-      }
+
       //	printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);      
       //      printf("DC rb %d (%p)\n",rb,rxF);
       if (rb_alloc_ind==1) {
@@ -1043,26 +1017,15 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
 	else if ((subframe==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4)))
 	  skip_half=2;
 	//SSS
-	if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb) ) {
+	if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1) ) {
 	  rb_alloc_ind = 0;
 	}
 	//SSS 
-	if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
+	if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==nsymb-1))
 	  skip_half=1;
-	else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb))
+	else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==nsymb-1))
 	  skip_half=2;
       
-	if (frame_parms->frame_type == 0) {
-	  //PSS
-	  if (((subframe==0)||(subframe==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
-	    rb_alloc_ind = 0;
-	  }
-	  //PSS 
-	  if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
-	    skip_half=1;
-	  else if (((subframe==0)||(subframe==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
-	    skip_half=2;
-	}
 	
 	if (rb_alloc_ind==1) {
 	  /*
@@ -2444,7 +2407,7 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
 				      first_symbol_flag,
 				      i_mod, 
 				      nb_rb,
-				      lte_ue_dlsch_vars[eNB_id]->log2_maxh);
+				      lte_ue_dlsch_vars[eNB_id_i]->log2_maxh);
   
 
       // compute correlation between precoded channel and channel precoded with opposite PMI
