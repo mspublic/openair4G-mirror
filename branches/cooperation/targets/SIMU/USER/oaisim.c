@@ -8,14 +8,14 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
-#ifdef OPENAIR2
+//#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "UTIL/LOG/log_if.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
-#endif
+//#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
@@ -52,7 +52,7 @@
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
 
-#ifdef OPENAIR2
+//#ifdef OPENAIR2
 u16 NODE_ID[1];
 u8 NB_INST=2;
 
@@ -87,7 +87,7 @@ log_mapping level_names[] =
 };
 
 
-#endif
+//#endif
 
 void help(void) {
   printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -d cooperation_flag\n");
@@ -390,12 +390,14 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
  
   
 #ifdef IFFT_FPGA
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  free(txdata[0]);
-  free(txdata[1]);
-  free(txdata);
+  if (abstraction_flag==0) {
+    free(txdataF2[0]);
+    free(txdataF2[1]);
+    free(txdataF2);
+    free(txdata[0]);
+    free(txdata[1]);
+    free(txdata);
+  }
 #endif 
   
 }
@@ -1183,7 +1185,7 @@ int main(int argc, char **argv) {
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
     PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0]=4;
   }// end navid 
  
@@ -1198,7 +1200,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-#ifdef OPENAIR2
+  //#ifdef OPENAIR2
   l2_init(&PHY_vars_eNB_g[0]->lte_frame_parms);
 
 
@@ -1210,7 +1212,7 @@ int main(int argc, char **argv) {
 #endif
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
     mac_xface->chbch_phy_sync_success(1+UE_id,0);
-#endif 
+  //#endif 
  
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
@@ -1253,11 +1255,6 @@ int main(int argc, char **argv) {
 	  //printf("[SIM] txdataF[0] %p\n",PHY_vars_UE_g[UE_id]->lte_ue_common_vars.txdataF[0]);
 	  //#endif
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
-
-	  if ((mac_xface->frame % 10) == 0) {
-	    dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
-	    printf("%s",stats_buffer);
-	  }
 	}
       if (ethernet_flag == 1){
 	if (((direction == SF_UL) && ((next_slot%2)==0)) || ((direction == SF_S) && ((last_slot%2)==1))){

@@ -6,36 +6,9 @@
 ________________________________________________________________*/
 
 /*!\brief Initilization and reconfiguration routines for generic MAC interface */
-#ifndef USER_MODE
-#define __NO_VERSION__
 
-
-#ifdef RTAI_ENABLED
-#include <asm/io.h>
-#include <asm/rtai.h>
-#include <rtai.h>
-#include <rtai_posix.h>
-#include <rtai_fifos.h>
-#endif //
-
-
-#else  // USER_MODE
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <pthread.h>
-#endif // USER_MODE
-
-#include "PHY/types.h"
-#include "PHY/extern.h"
-#include "PHY/defs.h"
-#include "SCHED/defs.h"
 #include "defs.h"
 #include "extern.h"
-
-#ifdef OPENAIR2
-#include "PHY_INTERFACE/defs.h"
-#endif
 
 
 int mac_init(void)

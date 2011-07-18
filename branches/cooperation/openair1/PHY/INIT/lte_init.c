@@ -542,6 +542,32 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 	return(-1);
       }
     }
+
+    ue_common_vars->rxdataF2 = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+    if (ue_common_vars->rxdataF2) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 allocated at %p\n", ue_common_vars->rxdataF2);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 not allocated\n");
+      return(-1);
+    }
+    
+    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+      //RK 2 times because of output format of FFT!  We should get rid of this
+      ue_common_vars->rxdataF2[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*10));
+      if (ue_common_vars->rxdataF2[i]) {
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] allocated at %p\n",i,ue_common_vars->rxdataF2[i]);
+#endif
+      }
+      else {
+	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] not allocated\n",i);
+	return(-1);
+      }
+    }
+
     
     // Channel estimates  
     for (eNB_id=0;eNB_id<3;eNB_id++) {

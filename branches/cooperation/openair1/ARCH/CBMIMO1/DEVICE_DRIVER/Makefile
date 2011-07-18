@@ -19,7 +19,7 @@ CCC = $(shell rtai-config --cc)
 RTAI_SUBVERSION=$(shell rtai-config --version | sed -e 's/^..\(.\).*$$/\1/')
 IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then echo true ; fi)
 
-EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
+EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
@@ -30,7 +30,7 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
-EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -76,7 +76,7 @@ ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 endif
 
-EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR) -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/MAC -I$(OPENAIR2_DIR)/LAYER2/PDCP -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0 -I$(OPENAIR2_DIR)/PHY_INTERFACE -I$(OPENAIR2_DIR)/RRC/L2_INTERFACE -I$(OPENAIR2_DIR)/RRC/LITE -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/UTIL/LOG -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/TIMER -I/usr/include 
+EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR) -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/MAC -I$(OPENAIR2_DIR)/LAYER2/PDCP -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0 -I$(OPENAIR2_DIR)/PHY_INTERFACE -I$(OPENAIR2_DIR)/RRC/L2_INTERFACE -I$(OPENAIR2_DIR)/RRC/LITE -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/UTIL/LOG -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/TIMER -I$(OPENAIR3_DIR)/MESH/RRM -I$(OPENAIR3_DIR)/MESH -I/usr/include -I/usr/realtime/include 
 
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -128,9 +128,9 @@ endif
 
 test:
 	echo $(openair_rf-objs)
+	echo $(obj-m)
 	echo $(CFLAGS)
 	echo $(EXTRA_CFLAGS)
-	echo $(L2_incl)
 
 clean:
 	rm -f $(openair_rf-objs) $(obj-m)

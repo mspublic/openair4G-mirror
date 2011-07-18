@@ -174,12 +174,12 @@ unsigned int  ulsch_decoding(s16 *ulsch_llr,
   Q_m = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   G = nb_rb * (12 * Q_m) * ulsch->Nsymb_pusch;
 
-  /* 
-  printf("ulsch_coding: Ndi %d, RV %d, mcs %d\n",
-	 ulsch->harq_processes[harq_pid]->Ndi,
-	 ulsch->harq_processes[harq_pid]->rvidx,
-	 ulsch->harq_processes[harq_pid]->mcs);
-  */
+#ifdef DEBUG_ULSCH_DECODING
+  msg("ulsch_coding: Ndi %d, RV %d, mcs %d\n",
+      ulsch->harq_processes[harq_pid]->Ndi,
+      ulsch->harq_processes[harq_pid]->rvidx,
+      ulsch->harq_processes[harq_pid]->mcs);
+#endif
 
   if (ulsch->harq_processes[harq_pid]->Ndi == 1) {
     // This is a new packet, so compute quantities regarding segmentation

@@ -20,11 +20,10 @@
 
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/vars.h"
-#ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
+#ifdef OPENAIR2
 #include "RRC/LITE/vars.h"
 #include "UTIL/LOG/log_if.h"
-//#include "PHY_INTERFACE/vars.h"
 #endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
@@ -371,13 +370,15 @@ static int __init openair_init_module( void )
   //printk("[openair][MODULE][INFO] IOCTL %d : %x\n",i,_IOR('o',i,long));
 
  		
-  printk("[openair][MODULE][INFO] Done init\n");
   fifo_printf_init();
 
 #ifdef OPENAIR2
   //logInit();
 #endif
 
+  printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
+
+  printk("[openair][MODULE][INFO] Done init\n");
   return 0;
 }
 

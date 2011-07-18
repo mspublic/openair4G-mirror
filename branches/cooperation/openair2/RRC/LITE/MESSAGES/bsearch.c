@@ -50,4 +50,4 @@ void *bsearch(const void *key, const void *base, size_t num, size_t size,
 
 	return NULL;
 }
-EXPORT_SYMBOL(bsearch);
+//EXPORT_SYMBOL(bsearch);

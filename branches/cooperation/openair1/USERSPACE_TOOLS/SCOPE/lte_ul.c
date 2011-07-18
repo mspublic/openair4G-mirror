@@ -175,7 +175,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,i,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-400,400);
+  //fl_set_xyplot_ybounds(form->demod_out,-400,400);
 
   // scatter_plot2 = ulsch_comp
   for(i=0;i<12*12*12;i++) {
@@ -184,8 +184,8 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,i,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-400,400);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-400,400);
+  //fl_set_xyplot_xbounds(form->scatter_plot2,-400,400);
+  //fl_set_xyplot_ybounds(form->scatter_plot2,-400,400);
 
   usleep(500000);
 }
