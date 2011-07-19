@@ -33,19 +33,19 @@ void emu_transport_sync(void){
   
   if (emu_info.is_primary_master==0){
 
-    bypass_tx_data(WAIT_TRANSPORT,0);
+    bypass_tx_data(WAIT_TRANSPORT,0,0);
   
-    bypass_rx_data(0,0);
+    bypass_rx_data(0,0,0);
   }
   else {
-    bypass_rx_data(0,0);
-    bypass_tx_data(WAIT_TRANSPORT,0);
+    bypass_rx_data(0,0,0);
+    bypass_tx_data(WAIT_TRANSPORT,0,0);
   }   
 
   if (emu_info.master_list!=0){
 
-    bypass_tx_data(SYNC_TRANSPORT,0);	
-    bypass_rx_data(0,0);
+    bypass_tx_data(SYNC_TRANSPORT,0,0);	
+    bypass_rx_data(0,0,0);
 
     if (emu_rx_status == SYNCED_TRANSPORT){ // i received the sync from all secondary masters 
       emu_tx_status = SYNCED_TRANSPORT;
@@ -56,55 +56,55 @@ void emu_transport_sync(void){
   
 }
 
-void emu_transport_DL(unsigned int last_slot, unsigned int next_slot) {
+void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int next_slot) {
 
-  LOG_T(EMU, "transport DL for last slot is %d\n", last_slot);
+  //LOG_T(EMU, "transport DL for frame %d subframe %d\n", frame, next_slot>>1);
   
   if (emu_info.is_primary_master==0){
     //  bypass_rx_data(last_slot);
     if (emu_info.nb_enb_local>0) // send in DL if 
-      bypass_tx_data(ENB_TRANSPORT,last_slot);
+      bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
-      bypass_tx_data(WAIT_TRANSPORT,last_slot);
+      bypass_tx_data(WAIT_TRANSPORT,frame,next_slot);
 
-    bypass_rx_data(last_slot, next_slot);
+    bypass_rx_data(frame, last_slot, next_slot);
   }
   else { // I am the master
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-    bypass_rx_data(last_slot,next_slot);
+    bypass_rx_data(frame,last_slot, next_slot);
     if (emu_info.nb_enb_local>0) // send in DL if 
-      bypass_tx_data(ENB_TRANSPORT,last_slot);
+      bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
-      bypass_tx_data(WAIT_TRANSPORT,last_slot);
+      bypass_tx_data(WAIT_TRANSPORT,frame, next_slot);
   }   
 
 }
 
-void emu_transport_UL(unsigned int last_slot, unsigned int next_slot) {
+void emu_transport_UL(unsigned int frame, unsigned int last_slot, unsigned int next_slot) {
    
-  LOG_I(EMU, "transport UL for last slot is %d\n", last_slot);
+  //LOG_T(EMU, "transport UL for frame %d subframe %d\n", frame, next_slot>>1);
   
   if (emu_info.is_primary_master==0){
     // bypass_rx_data(last_slot, next_slot);
     if (emu_info.nb_ue_local>0)
-      bypass_tx_data(UE_TRANSPORT,last_slot);
+      bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
-      bypass_tx_data(WAIT_TRANSPORT,last_slot);
-    bypass_rx_data(last_slot,next_slot);
+      bypass_tx_data(WAIT_TRANSPORT,frame, next_slot);
+    bypass_rx_data(frame,last_slot, next_slot);
   }
   else {  
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
-    bypass_rx_data(last_slot,next_slot);
+    bypass_rx_data(frame,last_slot, next_slot);
     if (emu_info.nb_ue_local>0)
-      bypass_tx_data(UE_TRANSPORT,last_slot);
+      bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
-      bypass_tx_data(WAIT_TRANSPORT,last_slot);
+      bypass_tx_data(WAIT_TRANSPORT,frame, next_slot);
   }
   
 }
 
 void emu_transport_release(void){
-  bypass_tx_data(RELEASE_TRANSPORT,0);
+  bypass_tx_data(RELEASE_TRANSPORT,0,0);
   LOG_E(EMU," tx RELEASE_TRANSPORT  \n");
 }
  
@@ -135,7 +135,7 @@ void clear_eNB_transport_info(u8 nb_eNB) {
     eNB_transport_info[eNB_id].num_common_dci=0;
     eNB_transport_info[eNB_id].num_ue_spec_dci=0;
   }
-  LOG_T(EMU, "EMUL clear_eNB_transport_info\n");
+  //  LOG_T(EMU, "EMUL clear_eNB_transport_info\n");
 }
 
 void clear_UE_transport_info(u8 nb_UE) {
@@ -145,11 +145,11 @@ void clear_UE_transport_info(u8 nb_UE) {
     UE_transport_info_TB_index[UE_id]=0;
     memset((void *)&UE_transport_info[UE_id].cntl,0,sizeof(UE_cntl));
   } 
-  LOG_T(EMU, "EMUL clear_UE_transport_info\n");
+  //  LOG_T(EMU, "EMUL clear_UE_transport_info\n");
 }
 
 
-void fill_phy_enb_vars(unsigned int enb_id, unsigned int last_slot,unsigned int next_slot) {
+void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
 
   int n_dci=0, n_dci_dl;
   int payload_offset = 0;
@@ -279,61 +279,40 @@ void fill_phy_ue_vars(unsigned int ue_id, unsigned int last_slot) {
 
    for (n_enb=0; n_enb < UE_transport_info[ue_id].num_eNB; n_enb++){
     
-    LOG_T(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
-
-    LOG_I(EMU,"PUCCH flag %d ncs1 %d sr %d payload %d \n", 
-	  UE_transport_info[ue_id].cntl.pucch_flag,
-	  UE_transport_info[ue_id].cntl.pucch_Ncs1,
-	  UE_transport_info[ue_id].cntl.sr,
-	  UE_transport_info[ue_id].cntl.pucch_payload);
-
-    pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
-    
-    PHY_vars_UE_g[ue_id]->sr=UE_transport_info[ue_id].cntl.sr;
-    
-    if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
-      PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
-    }
-    
-    rnti = UE_transport_info[ue_id].rnti[n_enb];
-    enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
-
-    PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
-    
-    
-    harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
-    
-    ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
-       
-    ulsch->o_RI[0]                          = ue_cntl_delay[subframe%2].pusch_ri & 0x1;
-    ulsch->o_RI[0]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
-    
-    ulsch->o_ACK[0]                          = ue_cntl_delay[subframe%2].pusch_ack & 0x1;
-    ulsch->o_ACK[1]                          = (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1;
-    
-    LOG_I(EMU, "rx subframe %d ack ue transport (%d %d) ue delayed ack (%d, %d)\n", 
-	  subframe,
-	  ue_cntl_delay[(subframe+1)%2].pusch_ack & 0x1,
-	  (ue_cntl_delay[(subframe+1)%2].pusch_ack>>1) & 0x1,
-	  ue_cntl_delay[subframe%2].pusch_ack & 0x1,
-	  (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1); 
-    
-    memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
-	   //memcpy(ulsch->harq_processes[harq_pid]->b,
-	   UE_transport_info[ue_id].transport_blocks,
-	   UE_transport_info[ue_id].tbs[enb_id]);
-      
-    LOG_T(EMU, "[RX_DATA] RRC transport block %x,%x,%x,%x,%x,%x ue  %d enb %d harq %d\n",
-	  PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[0],
-	  PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[1],
-	  PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[2],
-	  PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[3],
-	  PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[4],
-	    PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b[5], ue_id, enb_id, harq_pid);
-    
-    //ue_transport_info_index[enb_id]+=UE_transport_info[ue_id].tbs[enb_id];
-    
-    //UE_transport_info[ue_id].transport_blocks+=ue_transport_info_index[enb_id];
-    LOG_I(EMU,"ulsch tbs is %d\n", UE_transport_info[ue_id].tbs[enb_id]);
+     LOG_T(EMU,"Setting ulsch vars for ue %d rnti %x \n",ue_id, UE_transport_info[ue_id].rnti[n_enb]);
+     
+     pucch_format= UE_transport_info[ue_id].cntl.pucch_flag;
+     
+     PHY_vars_UE_g[ue_id]->sr=UE_transport_info[ue_id].cntl.sr;
+     
+     if ((pucch_format == pucch_format1a) || (pucch_format == pucch_format1b )){
+       PHY_vars_UE_g[ue_id]->pucch_payload[0] = UE_transport_info[ue_id].cntl.pucch_payload;
+     }
+     
+     rnti = UE_transport_info[ue_id].rnti[n_enb];
+     enb_id = UE_transport_info[ue_id].eNB_id[n_enb];
+     
+     PHY_vars_UE_g[ue_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
+     
+     
+     harq_pid = UE_transport_info[ue_id].harq_pid[n_enb];
+     
+     ulsch = PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id];
+     
+     ulsch->o_RI[0]                          = ue_cntl_delay[subframe%2].pusch_ri & 0x1;
+     ulsch->o_RI[0]                          = (ue_cntl_delay[subframe%2].pusch_ri>>1) & 0x1;
+     
+     ulsch->o_ACK[0]                          = ue_cntl_delay[subframe%2].pusch_ack & 0x1;
+     ulsch->o_ACK[1]                          = (ue_cntl_delay[subframe%2].pusch_ack>>1) & 0x1;
+     
+     
+     memcpy(PHY_vars_UE_g[ue_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
+	    UE_transport_info[ue_id].transport_blocks,
+	    UE_transport_info[ue_id].tbs[enb_id]);
+     
+     //ue_transport_info_index[enb_id]+=UE_transport_info[ue_id].tbs[enb_id];
+     
+     //UE_transport_info[ue_id].transport_blocks+=ue_transport_info_index[enb_id];
+     LOG_T(EMU,"ulsch tbs is %d\n", UE_transport_info[ue_id].tbs[enb_id]);
   }
 }
