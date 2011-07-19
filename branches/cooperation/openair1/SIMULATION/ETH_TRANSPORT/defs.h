@@ -34,10 +34,8 @@
 //#define WAIT_UE_TRANSPORT 3
 
 
-//#define BYPASS_RX_BUFFER_SIZE 64000
-//#define BYPASS_TX_BUFFER_SIZE 64000
-#define BYPASS_RX_BUFFER_SIZE 4000
-#define BYPASS_TX_BUFFER_SIZE 4000
+#define BYPASS_RX_BUFFER_SIZE 64000
+#define BYPASS_TX_BUFFER_SIZE 64000
 
 
 /*************************************************************/
@@ -65,9 +63,7 @@ typedef struct  {
   u8 prach_flag:1;  // 0=none,1=active
   u8 prach_id:6;    // this is the PHY preamble index for the prach
 } UE_cntl;
-
-//#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
-#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 4048
+#define MAX_TRANSPORT_BLOCKS_BUFFER_SIZE 16384
 #define MAX_NUM_DCI 5
 typedef struct {
   eNB_cntl cntl;
@@ -92,8 +88,8 @@ typedef struct {
 
 typedef struct {
   UE_cntl cntl;
-  u16 rnti[NUMBER_OF_eNB_MAX];
   u8 num_eNB;
+  u16 rnti[NUMBER_OF_eNB_MAX];
   u8 eNB_id[NUMBER_OF_eNB_MAX]; 
   u8 harq_pid[NUMBER_OF_eNB_MAX];
   u16 tbs[NUMBER_OF_eNB_MAX];
@@ -108,7 +104,8 @@ typedef struct bypass_msg_header {
   unsigned int   nb_enb; /*! \brief */
   unsigned int   nb_ue; /*! \brief */
   unsigned int   nb_flow; /*! \brief */
-  unsigned int   last_slot;
+  unsigned int   frame;
+  unsigned int subframe;
 }bypass_msg_header_t;
 
 typedef struct bypass_proto2multicast_header_t {
@@ -142,8 +139,15 @@ typedef struct {
   unsigned int master_list;
   unsigned int is_primary_master;
   unsigned int ethernet_flag;
+  char local_server[128]; // for the oaisim -c option : 0 = EURECOM web portal; 1 = local; filename = running a specific XML configuration file 
+  unsigned int offset_ue_inst;
   unsigned char multicast_group;
+  unsigned char ocg_enabled;
+  unsigned char opt_enabled;
+  unsigned char otg_enabled;
+  unsigned char omg_enabled;
 }emu_info_t; 
+
 
 #endif //
 
