@@ -195,18 +195,18 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   if (abstraction_flag == 0) {
 #ifdef IFFT_FPGA
     txdata    = (s32 **)malloc(2*sizeof(s32*));
-    txdata[0] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    txdata[1] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdata[0] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdata[1] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
 
-    bzero(txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    bzero(txdata[1],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdata[1],OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
     
     txdataF2    = (s32 **)malloc(2*sizeof(s32*));
-    txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
     
-    bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
 #endif
     
     
@@ -221,7 +221,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
 #ifdef IFFT_FPGA
       
-      slot_offset = (next_slot)*(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.N_RB_DL*12)*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7);
+      slot_offset = (next_slot)*(frame_parms->N_RB_DL*12)*((frame_parms->Ncp==1) ? 6 : 7);
       
       //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
       //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
@@ -423,18 +423,18 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   if (abstraction_flag==0) {
 #ifdef IFFT_FPGA
     txdata    = (s32 **)malloc(2*sizeof(s32*));
-    txdata[0] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    txdata[1] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdata[0] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdata[1] = (s32 *)malloc(OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
     
-    bzero(txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    bzero(txdata[1],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[0]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdata[1],OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
     
     txdataF2    = (s32 **)malloc(2*sizeof(s32*));
-    txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    txdataF2[1] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
     
-    bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
-    bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
+    bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));
 #endif
   }  
 
@@ -451,7 +451,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       
 #ifdef IFFT_FPGA
       
-      slot_offset = (next_slot)*(PHY_vars_UE_g[UE_id]->lte_frame_parms.N_RB_DL*12)*((PHY_vars_eNB_g[UE_id]->lte_frame_parms.Ncp==1) ? 6 : 7);
+      slot_offset = (next_slot)*(frame_parms->N_RB_DL*12)*((frame_parms->Ncp==1) ? 6 : 7);
       
       //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
       //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
@@ -485,7 +485,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	  normal_prefix_mod(txdataF2[aa],txdata[aa],7,frame_parms);
 	}
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsigF20.m","txsF20", txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+	write_output("UEtxsigF20.m","txsF20", txdataF2[0],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7),2,1);
       }
 #else //IFFT_FPGA
       
@@ -512,12 +512,12 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	}
       }
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsigF0.m","txsF0", &txdataF[0][slot_offset],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),2,1);
+	write_output("UEtxsigF0.m","txsF0", &txdataF[0][slot_offset],NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7),2,1);
       }
   
 #endif //IFFT_FPGA
       if ((next_slot==8) && (mac_xface->frame==4)) {
-	write_output("UEtxsig0.m","txs0", txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7),1,1);
+	write_output("UEtxsig0.m","txs0", txdata[0],OFDM_SYMBOL_SIZE_SAMPLES*((frame_parms->Ncp==1) ? 6 : 7),1,1);
       }
 
     }  // UE_id TX loop
