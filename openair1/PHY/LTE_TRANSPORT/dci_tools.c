@@ -1183,6 +1183,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->cooperation_flag = 0;
 
 
+
+
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
     
@@ -1328,7 +1330,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     else if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 7)
       ulsch->n_DMRS2 = 9;
 
-    //ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+
 
 
 
@@ -1354,7 +1356,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     }
     ulsch->rnti = rnti;
 
-    ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
+    //ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
     msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);

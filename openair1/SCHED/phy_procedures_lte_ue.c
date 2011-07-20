@@ -556,10 +556,18 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
       //      msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  input buffer (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8);
 
-      //if(phy_vars_ue->ulsch_e[eNB_id]->cooperation_flag == 2)
-      for (i=0;i<input_buffer_length;i++) {
-	ulsch_input_buffer[i]= (u8)(taus()&0xff);
-      }
+      if(phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag == 2)
+	{
+	  for (i=0;i<input_buffer_length;i++) {
+	    ulsch_input_buffer[i]= i;
+	  }
+	}
+      else
+	{
+	  for (i=0;i<input_buffer_length;i++) {
+	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
+	  }
+	}
 #ifdef DEBUG_PHY      
       debug_msg("[PHY][UE %d] Frame %d, Subframe %d ulsch harq_pid %d : O %d, O_ACK %d, O_RI %d, TBS %d\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1,harq_pid,phy_vars_ue->ulsch_ue[eNB_id]->O,phy_vars_ue->ulsch_ue[eNB_id]->O_ACK,phy_vars_ue->ulsch_ue[eNB_id]->O_RI,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS);
 #endif

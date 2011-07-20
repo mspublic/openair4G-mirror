@@ -1613,7 +1613,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,last_slot>>1);
 
-  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+  for (i=0;i<NUMBER_OF_UE_MAX;i++) { 
+
+    if((i == 1) && (phy_vars_eNB->cooperation_flag == 2))
+      break;
+
+
 
 #ifdef OPENAIR2
     if (phy_vars_eNB->eNB_UE_stats[i].mode == RA_RESPONSE)
@@ -1645,6 +1650,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       //#endif
 
       nPRS = 0;
+
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
       
       if (abstraction_flag==0) {
