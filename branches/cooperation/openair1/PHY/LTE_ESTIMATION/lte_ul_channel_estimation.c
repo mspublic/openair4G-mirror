@@ -197,7 +197,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  }
 
 
-	  /*	  if(aa == 0){
+	  /*	  if((aa == 0)&& (cooperation_flag == 2)){
 	    write_output("test1.m","t1",temp_in_ifft,512,1,1);
 	    write_output("test2.m","t2",temp_out_ifft,512*2,2,1);
 	    write_output("test3.m","t3",temp_in_fft_0,512,1,1);  

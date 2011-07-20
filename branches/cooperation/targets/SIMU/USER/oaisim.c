@@ -926,7 +926,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
   for (eNB_id=0; eNB_id<NB_CH_INST;eNB_id++){ 
     PHY_vars_eNB_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
     PHY_vars_eNB_g[eNB_id]->Mod_id=eNB_id;
-    PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
+    //PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
 
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
@@ -1246,6 +1246,14 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
     if (n_frames_flag == 0) // if n_frames not set bu the user then let the emulation run to infinity
       mac_xface->frame %=(n_frames-1);
     
+
+    // Handling the cooperation Flag
+    if (cooperation_flag == 2)
+      {
+	if ((PHY_vars_eNB_g[0]->eNB_UE_stats[0].mode == PUSCH) && (PHY_vars_eNB_g[0]->eNB_UE_stats[1].mode == PUSCH))
+	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
+      }
+
     for (slot=0 ; slot<20 ; slot++) {
       last_slot = (slot - 1)%20;
       if (last_slot <0)
