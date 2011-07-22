@@ -75,9 +75,11 @@
 		<RETURN>unsigned char </RETURN>
 		<PROTOPATH>openair1/PHY/LTE_TRANSPORT/proto.h</PROTOPATH>
 		<IMPLPATH>openair1/PHY/LTE_TRANSPORT/lte_mcs.c</IMPLPATH>
-		<DESC>return the number of PRB supported in a subband configuration</DESC> 
+		<DESC>return the number of PRB supported in a subband configuration.</DESC> 
 	</FUNCTION>
 </ICIC_API>
+
+
 	
 	
 		
