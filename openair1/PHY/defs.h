@@ -78,7 +78,7 @@
 #ifdef EXPRESSMIMO_TARGET
 #define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
 #endif //EXPRESSMiMO_TARGET
-
+ 
 
 #include "spec_defs_top.h"
 #include "impl_defs_top.h"
@@ -86,10 +86,10 @@
 
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
-#include "PHY/MODULATION/defs.h"
+
 
 //#include "PHY/LTE_ESTIMATION/defs.h"
-#include "PHY/LTE_REFSIG/defs.h"
+
 #include "PHY/LTE_TRANSPORT/defs.h"
 
 #define NUM_DCI_MAX 32
@@ -114,6 +114,9 @@ typedef struct
   LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
+
+  /// cell-specific reference symbols
+  unsigned int lte_gold_table[20][2][14];
 
   u8 pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
@@ -205,6 +208,10 @@ typedef struct
 
   UE_MODE_t        UE_mode[NUMBER_OF_eNB_MAX];
 
+  /// cell-specific reference symbols
+  unsigned int lte_gold_table[3][20][2][14];
+
+
   char ulsch_no_allocation_counter[NUMBER_OF_eNB_MAX];
 
   unsigned char ulsch_ue_RRCConnReq_active[NUMBER_OF_eNB_MAX];
@@ -273,6 +280,8 @@ typedef struct
 } PHY_VARS_UE;
 
 #include "PHY/INIT/defs.h"
+#include "PHY/LTE_REFSIG/defs.h"
+#include "PHY/MODULATION/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
 
 #ifndef OPENAIR_LTE

@@ -45,9 +45,9 @@ for Nid2=0:2,
 end
 fd = fopen("sss.h","w");
 fprintf(fd,"s16 d0_sss[504*62] = [");
-fprintf(fd,"%d,",d0);
+fprintf(fd,"%d,",d0');
 fprintf(fd,"];\n\n");
 fprintf(fd,"s16 d5_sss[504*62] = [");
-fprintf(fd,"%d,",d0);
+fprintf(fd,"%d,",d5');
 fprintf(fd,"];\n\n");
 fclose(fd);

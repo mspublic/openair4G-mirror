@@ -288,3 +288,19 @@ unsigned char SE2I_TBS(float SE,
   }
   return I_TBS;
 }
+
+//added for ALU icic purpose
+
+u8 Get_SB_size(u8 n_rb_dl){
+
+	if(n_rb_dl<27)
+		return 4;
+	else
+		if(n_rb_dl<64)
+			return 6;
+		else
+			return 8;
+	}
+
+
+//end ALU's algo

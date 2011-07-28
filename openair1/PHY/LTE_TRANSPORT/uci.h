@@ -22,6 +22,7 @@ typedef struct __attribute__((packed)) {
 #define sizeof_wideband_cqi_rank2_2A_5MHz 15
 
 typedef struct __attribute__((packed)) { 
+  u32 padding:14;
   u32 diffcqi1:14;   
   u32 cqi1:4;
 } HLC_subband_cqi_nopmi_5MHz;
