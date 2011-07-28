@@ -371,10 +371,12 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.cqi_req = 1;
   UL_alloc_pdu.cshift  = 0;
 
+  PHY_vars_UE->PHY_measurements.rank[0] = 1;
 
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
 				    C_RNTI,
 				    (subframe<4)?(subframe+6):(subframe-4),
+				    2,  // transmission_mode 
 				    format0,
 				    PHY_vars_UE->ulsch_ue[0],
 				    PHY_vars_UE->dlsch_ue[0],
@@ -392,6 +394,7 @@ int main(int argc, char **argv) {
   generate_eNB_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				     SI_RNTI,
 				     (subframe<4)?(subframe+6):(subframe-4),
+				     2, // transmission modex
 				     format0,
 				     PHY_vars_eNB->ulsch_eNB[0],
 				     &PHY_vars_eNB->lte_frame_parms,
@@ -457,6 +460,7 @@ int main(int argc, char **argv) {
 			   &PHY_vars_UE->lte_frame_parms,
 			   PHY_vars_UE->ulsch_ue[0],
 			   harq_pid,
+			   2, // transmission mode
 			   control_only_flag)==-1) {
 	  printf("ulsim.c Problem with ulsch_encoding\n");
 	  exit(-1);
@@ -465,7 +469,7 @@ int main(int argc, char **argv) {
 #ifdef OFDMA_ULSCH
 	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
 #else  
-	printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
+	//	printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
 	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],
 			 subframe,&PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->ulsch_ue[0],cooperation_flag);

@@ -39,6 +39,7 @@
 #include "oaisim.h"
 
 #define RF
+#define DEBUG_SIM
 
 void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX], u16 next_slot,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
@@ -57,7 +58,6 @@ s32 att_eNB_id;//Abstraction changes
   s32 rx_pwr2;
   u32 i;
   u32 slot_offset;
-  double nf[2] = {3.0,3.0}; //currently unused
     
   if (abstraction_flag == 0) {
 #ifdef IFFT_FPGA
@@ -190,8 +190,7 @@ s32 att_eNB_id;//Abstraction changes
 				frame_parms->nb_antennas_tx,
 				frame_parms->samples_per_tti>>1,
 				14,
-				
-				18); 
+				enb_data[eNB_id]->tx_power_dBm); 
 #ifdef DEBUG_SIM
 	printf("[SIM][DL] tx_pwr eNB %d %f dB for slot %d (subframe %d)\n",eNB_id,10*log10(tx_pwr),next_slot,next_slot>>1);
 #endif
@@ -227,10 +226,10 @@ s32 att_eNB_id;//Abstraction changes
 	      0,
 	      frame_parms->nb_antennas_rx,
 	      frame_parms->samples_per_tti>>1,
-	      (eNB_id==0) ? (1.0/7.68e6 * 1e9) : 1e9,  // sampling time (ns)
+	      1/eNB2UE[eNB_id][UE_id]->BW,  // sampling time (ns)
 	      0.0,               // freq offset (Hz) (-20kHz..20kHz)
 	      0.0,               // drift (Hz) NOT YET IMPLEMENTED
-	      nf,                // noise_figure NOT YET IMPLEMENTED
+	      ue_data[UE_id]->rx_noise_level,                // noise_figure NOT YET IMPLEMENTED
 	      (double)PHY_vars_UE_g[UE_id]->rx_total_gain_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 	      200,               // IP3_dBm (dBm)
 	      &eNB2UE[eNB_id][UE_id]->ip,               // initial phase
@@ -305,7 +304,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
   s32 rx_pwr2;
   u32 i;
   u32 slot_offset;
-  double nf[2] = {3.0,3.0}; //currently unused
+  double nf = 0; //currently unused
 
   if (abstraction_flag==0) {
 #ifdef IFFT_FPGA
@@ -462,7 +461,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	*/ 
     
 	/*
-	if (eNB_id == (UE_id % 3))
+	if (eNB_id == (UE_id % NB_eNB_INST))
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
 	else
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + sinr_dB - 10;

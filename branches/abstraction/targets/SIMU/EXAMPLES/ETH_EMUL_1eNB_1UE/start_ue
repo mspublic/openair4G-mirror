@@ -10,5 +10,7 @@ sudo ifconfig oai0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0.1.1 -r 3
 
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -b0 -M1 -p2 > /dev/null
+echo "to see UE stats, pleasae run : watch_ue script"
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2  > /dev/null"
+$OPENAIR_TARGETS/SIMU/USER/oaisim  -b0 -M1 -p2  > /dev/null
 echo "End"

@@ -18,22 +18,27 @@ c_init = 2^1 * (7(n_s + 1) + l + 1)*(2N_{ID}^{cell} + 1) + 2*N_{ID}^{cell} + N_C
 N_{ID}^{cell = 0..503
 */
 
-unsigned int lte_gold_table[20][2][14];  // need 55 bytes for sequence
+//unsigned int lte_gold_table[3][20][2][14];  // need 55 bytes for sequence
 // slot index x pilot within slot x sequence
 
-void lte_gold(LTE_DL_FRAME_PARMS *frame_parms) {
+void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u8 offset) {
 
   unsigned char ns,l,Ncp=1-frame_parms->Ncp;
   unsigned int n,x1,x2;//,x1tmp,x2tmp;
+  u16 Nid_cell = frame_parms->Nid_cell;
+  u8 Nid1 = Nid_cell/3,Nid2=Nid_cell%3;
+  
+  Nid2 = (Nid2+offset)%3;
+  Nid_cell = (3*Nid1)+Nid2;
 
   for (ns=0;ns<20;ns++) {
 
     for (l=0;l<2;l++) {
       
       x2 = Ncp + 
-	(frame_parms->Nid_cell<<1) + 
-	(((1+(frame_parms->Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
-      //x2 = frame_parms->Ncp + (frame_parms->Nid_cell<<1) + (1+(frame_parms->Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
+	(Nid_cell<<1) + 
+	(((1+(Nid_cell<<1))*(1 + ((frame_parms->Ncp==0?4:3)*l) + (7*(1+ns))))<<10); //cinit
+      //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
       //      printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
       x1 = 1+ (1<<31);

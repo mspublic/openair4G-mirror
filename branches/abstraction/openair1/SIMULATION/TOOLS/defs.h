@@ -64,7 +64,7 @@ typedef struct {
   /// Number of sectors
   u8 n_sectors;
   /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
-  double alpha_rad[NUMBER_OF_eNB_MAX];
+  double alpha_rad[3];
   /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas)
   double phi_rad;
   /// Antenna gain (dBi)

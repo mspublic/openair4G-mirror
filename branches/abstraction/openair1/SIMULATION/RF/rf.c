@@ -22,7 +22,7 @@ void rf_rx(double **r_re,
 	   double s_time,
 	   double f_off,
 	   double drift,
-	   double *noise_figure,
+	   double noise_figure,
 	   double rx_gain_dB,
 	   int IP3_dBm,
 	   double *initial_phase,
@@ -91,11 +91,13 @@ void rf_rx(double **r_re,
   printf("pn_a0 = %f, pn_b1=%f,pn_b2=%f\n",pn_a0,pn_b1,pn_b2);
 #endif
 
+  /*
   for (i=0;i<nb_rx_antennas;i++) 
     if (noise_figure[i] < 1.0) {
       printf("rf.c: Illegal noise_figure %d %f\n",i,noise_figure[i]);
       exit(-1);
     }
+  */
 
   //Loop over input
 #ifdef DEBUG_RF

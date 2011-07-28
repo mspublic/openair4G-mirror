@@ -39,15 +39,10 @@
 
 #include "oaisim.h"
 
-#define RF
-
-
 #define PI 3.1416
 #define Am 20
 #define MCS_COUNT 23
-#define MCL 70 /*minimum coupling loss (MCL) in dB*/
-#define theta_3dB (65*PI/180)
-enum sector {SEC1, SEC2, SEC3};
+#define MCL (-70) /*minimum coupling loss (MCL) in dB*/
 double sinr[NUMBER_OF_eNB_MAX][2*25];
 extern double sinr_bler_map[MCS_COUNT][2][9];
 
@@ -64,33 +59,67 @@ void extract_position (Node_list input_node_list, node_desc_t **node_data) {
   }
 }
 
-void init_ue(node_desc_t  *ue_data) {//changed from node_struct
+void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant) {//changed from node_struct
+
+  ue_data->n_sectors = 1;
   ue_data->phi_rad = 2 * PI;
-  ue_data->tx_power_dBm = 20;
-  ue_data->ant_gain_dBi = 0;
-  ue_data->rx_noise_level = 9; //value in db
-  //ue_data->x=0;// just for the test 
-  //ue_data->y=0;
+  ue_data->ant_gain_dBi = ue_ant.antenna_gain_dBi;
+  ue_data->tx_power_dBm = ue_ant.tx_power_dBm;
+  ue_data->rx_noise_level = ue_ant.rx_noise_level; //value in db
+
 }
 
-void init_enb(node_desc_t  *enb_data) {//changed from node_struct
-  enb_data->tx_power_dBm = 40;
-  enb_data->ant_gain_dBi = 15;
-  enb_data->rx_noise_level = 5; //value in db
-  enb_data->n_sectors = 3;
-  //enb_data->x=0;// just for the test 
-  //enb_data->y=0;	
+void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_struct
+
+  int i;
+  double sect_angle[3]={0,2*PI/3,4*PI/3};
+
+  enb_data->n_sectors = enb_ant.number_of_sectors;
+  for (i=0;i<3;i++) 
+    enb_data->alpha_rad[i] = sect_angle[i]; //enb_ant.alpha_rad[i]; 
+  enb_data->phi_rad = enb_ant.beam_width;
+  enb_data->ant_gain_dBi = enb_ant.antenna_gain_dBi;
+  enb_data->tx_power_dBm = enb_ant.tx_power_dBm;
+  enb_data->rx_noise_level = enb_ant.rx_noise_level; 
+
 }
 
-void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *ch_desc) {  
+void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t *ch_desc, Environment_System_Config env_desc) {  
+
   double dist; 
-  //dist = sqrt(pow((node_tx->X_pos - node_rx->X_pos), 2) + pow((node_tx->Y_pos - node_rx->Y_pos), 2));
-  dist = sqrt(pow((node_tx->x - node_rx->x), 2) + pow((node_tx->y - node_rx->y), 2));
+  double path_loss;
+  double gain_max;
+  double gain_sec[3];
+  double alpha, theta;
+  int count;
+
+  dist = sqrt(pow((enb_data->x - ue_data->x), 2) + pow((enb_data->y - ue_data->y), 2));
   
-  /* conversion of distance into KM 3gpp (36-942) */
-  ch_desc->path_loss_dB = -(128.1 + 37.6 * log10(dist/1000)); 
-  //ch_desc->path_loss_dB = (128.1 + 10*(scenario->path_loss_exponent) * log10(dist/1000)); 
-  printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
+  path_loss = -(env_desc.fading.freespace_propagation.pathloss_parameters.pathloss_0 + 
+		10*env_desc.fading.freespace_propagation.pathloss_parameters.pathloss_exponent * log10(dist/1000)); 
+  //printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
+
+  /* Calculating the angle in the range -pi to pi from the slope */
+  alpha = atan2((ue_data->x - enb_data->x), (ue_data->y - enb_data->y));
+  //printf("angle is tan %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
+      
+  if (alpha < 0) {
+    alpha += 2*PI; 
+    //printf("angle in radians is %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
+  }
+      
+  gain_max = -1000;
+  for(count = 0; count < enb_data->n_sectors; count++) {
+    theta = enb_data->alpha_rad[count] - alpha;
+    /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
+    gain_sec[count] = -(Am < (12 * pow((theta/enb_data->phi_rad),2)) ? Am : (12 * pow((theta/enb_data->phi_rad),2)));
+    if (gain_sec[count]>gain_max)
+      gain_max = gain_sec[count];
+  }
+
+  path_loss += enb_data->ant_gain_dBi + gain_max + ue_data->ant_gain_dBi;
+
+  ch_desc->path_loss_dB = MCL < path_loss ?  MCL : path_loss;
 }
 
 
@@ -99,60 +128,28 @@ void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *
 
 void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, s32 UE_id,s32 eNB_id) {
 
-  double sect_angle[3]={0,2*PI/3,4*PI/3};
-  double gain_max;
-  double theta;
-  int count;
   int return_value;
   u16 nb_rb = 25; //No. of resource blocks
-  //double sinr[NUMBER_OF_eNB_MAX][2*nb_rb];
-  
-  double gain_sec[3];
   double thermal_noise;
-  double coupling;
-
-  ////////////////////////////////////////////////////////////
-  /* Calculating the angle in the range -pi to pi from the slope */
-  //(ue_data[UE_id])->alpha_rad[eNB_id] = (double)(atan2((ue_data[UE_id]->x - enb_data[eNB_id]->x), (ue_data[UE_id]->y - enb_data[eNB_id]->y)));
-  ue_data->alpha_rad[eNB_id] = atan2((ue_data->x - enb_data->x), (ue_data->y - enb_data->y));
-  //printf("angle is tan %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
-      
-  if ((ue_data->alpha_rad[eNB_id]) < 0) {
-    ue_data->alpha_rad[eNB_id] = 2*PI + ue_data->alpha_rad[eNB_id]; 
-    //printf("angle in radians is %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
-  }
-      
-  for(count = 0; count < enb_data->n_sectors; count++) {
-    theta = sect_angle[count] - ue_data->alpha_rad[eNB_id];
-    gain_sec[count] = -(Am < (12 * pow((theta/theta_3dB),2)) ? Am : (12 * pow((theta/theta_3dB),2)));
-  }
-      
-  /* gain = -min(Am , 12 * (theta/theta_3dB)^2) */
-  gain_max = (gain_sec[SEC1] > gain_sec[SEC2]) ? ((gain_sec[SEC1] > gain_sec[SEC3]) ? gain_sec[SEC1]:gain_sec[SEC3]) : 
-                                                  ((gain_sec[SEC2] > gain_sec[SEC3]) ? gain_sec[SEC2]:gain_sec[SEC3]); 
-
-  
+  int count;
       
   //printf("Path loss for link between ue %d and enb %d is %lf and gain is %lf \n", UE_id, eNB_id, eNB2UE[UE_id][eNB_id]->path_loss_dB, gain_max); 
   return_value = random_channel(eNB2UE);
       
-  /* Thermal noise is calculated using 10log10(K*T*B) K = BoltzmannŽs constant T = room temperature B = bandwidth */
-  /* Taken as constant for the time being since the BW is not changing */
-  thermal_noise = -105; //value in dBm 
+  /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
+  thermal_noise = -174 + 10*log10(eNB2UE->BW); //value in dBm 
       
   if (0 == return_value) {
     //freq_channel(ul_channel[UE_id][eNB_id], nb_rb);
     freq_channel(eNB2UE, nb_rb);
-    coupling = MCL > (-eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max)) ?
-               MCL : (-eNB2UE->path_loss_dB-(enb_data->ant_gain_dBi + gain_max));   
     //printf ("coupling factor is %lf\n", coupling); 
     for (count = 0; count < (2 * nb_rb); count++) {
       sinr[eNB_id][count] = enb_data->tx_power_dBm 
-		            - coupling  
-                            - (thermal_noise + ue_data->rx_noise_level)  
-                            + 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
-                            + pow(eNB2UE->chF[0][count].y, 2));
-      //printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
+	+ eNB2UE->path_loss_dB
+	- (thermal_noise + ue_data->rx_noise_level)  
+	+ 10 * log10 (pow(eNB2UE->chF[0][count].x, 2) 
+		      + pow(eNB2UE->chF[0][count].y, 2));
+      printf("Dl_link SNR for res. block %d is %lf\n", count, sinr[eNB_id][count]);
     }
   } 
 }//function ends

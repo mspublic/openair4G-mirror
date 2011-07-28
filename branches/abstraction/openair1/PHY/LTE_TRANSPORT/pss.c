@@ -27,8 +27,9 @@ int generate_pss(mod_sym_t **txdataF,
   short *primary_sync;
 #endif
 
-  //debug_msg("[PSS] Using sequence %d\n",eNb_id);
   Nid2 = frame_parms->Nid_cell % 3;
+  msg("[PHY][PSS] Using sequence %d\n",Nid2);
+
   switch (Nid2) {
   case 0:
 #ifdef IFFT_FPGA
@@ -98,6 +99,8 @@ int generate_pss(mod_sym_t **txdataF,
       (amp * primary_sync[2*m+1]) >> 15;
 #endif
 #else
+    //    printf("generate_pss: offset is %d (Nsymb %d)\n",slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
+    //	   symbol*frame_parms->ofdm_symbol_size,Nsymb);
     ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			    symbol*frame_parms->ofdm_symbol_size + k)] = 
       (amp * primary_sync[2*m]) >> 15; 

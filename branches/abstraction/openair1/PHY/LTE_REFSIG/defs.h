@@ -17,55 +17,42 @@
 unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char reset);
 
 
-/*! \fn void lte_gold(LTE_DL_FRAME_PARMS *frame_parms)
-\brief This function generates the LTE Gold sequence (36-211, Sec 7.2)
+/*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL reference signals.
 @param frame_parms LTE DL Frame parameters
-*/
-void lte_gold(LTE_DL_FRAME_PARMS *frame_parms);
+@param lte_gold_table pointer to table where sequences are stored
+@param offset offset for Nid2 (to compute sequences and cell Ids of adjacent cells sharing the same Nid1*/
 
-/*!
-\fn void lte_dl_cell_spec(mod_sym_t *output,
-		      short amp,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      unsigned char eNb_id,
-		      unsigned char Ns,
-		      unsigned char l,
-		      unsigned char p)
-\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1)
+void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,u32 lte_gold_table[20][2][14],u8 offset);
+
+/*! \brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1)
+@param phy_vars_eNB Pointer to eNB variables
 @param output Output vector for OFDM symbol (Frequency Domain)
 @param amp Q15 amplitude
-@param frame_parms LTE DL Frame Parameters
-@param eNb_id Nid2 (0,1,2)
 @param Ns Slot number (0..19)
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
 */
-int lte_dl_cell_spec(mod_sym_t *output,
+int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
+		     mod_sym_t *output,
 		     short amp,
-		     LTE_DL_FRAME_PARMS *frame_parms,
-		     unsigned char eNb_id,
 		     unsigned char Ns,
 		     unsigned char l,
 		     unsigned char p);
 
-/*!
-\fn void lte_dl_cell_spec_rx(int *output,
-			 LTE_DL_FRAME_PARMS *frame_parms,
-			 unsigned char Ns,
-			 unsigned char l,
-			 unsigned char p)
-\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
+/*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
+@param phy_vars_ue Pointer to UE variables
+@param eNB_offset offset with respect to Nid_cell in frame_parms of current eNB (to estimate channels of adjacent eNBs)
 @param output Output vector for OFDM symbol (Frequency Domain)
-@param frame_parms LTE DL Frame Parameters
 @param Ns Slot number (0..19)
 @param l symbol (0,1) - Note 1 means 3!
 @param p antenna intex
 */
-int lte_dl_cell_spec_rx(int *output,
-			 LTE_DL_FRAME_PARMS *frame_parms,
-			 unsigned char Ns,
-			 unsigned char l,
-			 unsigned char p);
+int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
+			u8 eNB_offset,
+			int *output,
+			unsigned char Ns,
+			unsigned char l,
+			unsigned char p);
 
 void generate_ul_ref_sigs(void);
 void generate_ul_ref_sigs_rx(void);

@@ -15,6 +15,7 @@ First, you must have all four openair SW directories, openair1, openair2, openai
 
         - libblas and libblas-dev
         - libxml2 and libxml2-dev
+        - libforms-bin libforms-dev
         - asn1c and the LTE ASN1 files (for more information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
 
 Makefile - This Makefile does basic checks of the code to verify that everything is properly installed, just run make to see what your options are.
@@ -44,7 +45,9 @@ The 3 folders have the following structures
     export OPENAIR3_DIR=$OPENAIR_HOME/openair4G/openair3
     export OPENAIR_TARGETS=$OPENAIR_HOME/openair4G/targets/
     
-   - checkout and compile the asn1 messages : 
-     make install 
+   - checkout and compile the asn1 messages 
+     follow the README.txt in OPENAIR2_DIR/RRC/LITE/MESSAGES to checkou the ASN.1 RRC messages
+     follow the OPENAIR2_DIR/RRC/LITE/MESSAGE/asn1c/asn1c/INSTALL to install the asn1c
+     go back to $OPENAIR_TARGET and make install 
    - cd $OPENAIR_TARGET, and make a sanity check by doing make check   
    - Check out simple examples in $OPENAIR_TARGET/SIMU/EXAMPLES   
