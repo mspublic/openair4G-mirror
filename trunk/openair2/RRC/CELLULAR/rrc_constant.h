@@ -65,7 +65,7 @@
 #define RATIO_RSSI0 100
 #define SHIFT_RSSI0 110
 //#define NB_ANTENNAS 2   // A Revoir
-#define numANTENNAS   NB_ANTENNAS
+// #define numANTENNAS   NB_ANTENNAS
 
 #ifdef NODE_RG
 #define RRC_RG_MAX_RB   maxRB*maxUsers
