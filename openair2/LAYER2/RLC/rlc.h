@@ -78,14 +78,6 @@
 
 
 
-typedef volatile struct {
-  u16_t max_retx_threshold;
-  u16_t poll_pdu;
-  u16_t poll_byte;
-  u32_t t_poll_retransmit;
-  u32_t t_reordering;
-  u32_t t_status_prohibit;
-} rlc_am_info_t;
 
 typedef volatile struct {
   u32_t             e_r;
@@ -137,7 +129,7 @@ typedef struct {
 
 
 
-protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , rb_id_t , sdu_size_t , mem_block_t* );)
+protected_rlc(void            (*rlc_rrc_data_ind)  (module_id_t , rb_id_t , sdu_size_t , char* );)
 protected_rlc(void            (*rlc_rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t );)
 
 typedef struct rlc_pointer_t {
@@ -167,7 +159,7 @@ private_rlc_rrc(rlc_op_status_t rrc_rlc_add_rlc      (module_id_t, rb_id_t, rlc_
 public_rlc_rrc( rlc_op_status_t rrc_rlc_config_req   (module_id_t, config_action_t, rb_id_t, rb_type_t, rlc_info_t );)
 public_rlc_rrc( rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);)
 public_rlc_rrc( void   rrc_rlc_register_rrc ( void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*),
- void            (*rrc_data_conf) (module_id_t , rb_id_t , mui_t) );)
+                void (*rrc_data_conf) (module_id_t , rb_id_t , mui_t, rlc_tx_status_t) );)
 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH MPLS
