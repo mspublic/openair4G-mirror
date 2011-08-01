@@ -40,7 +40,19 @@
 #ifdef USER_MODE
 //#        include "rlc_am_very_simple_test.h"
 #endif
+
+typedef volatile struct {
+	u16_t max_retx_threshold;
+	u16_t poll_pdu;
+	u16_t poll_byte;
+	u32_t t_poll_retransmit;
+	u32_t t_reordering;
+	u32_t t_status_prohibit;
+} rlc_am_info_t;
+
+
 public_rlc_am(void     rlc_am_release (rlc_am_entity_t *rlcP);)
+public_rlc_am(void     config_req_rlc_am (rlc_am_entity_t *rlcP, module_id_t module_idP, rlc_am_info_t * config_amP, u8_t rb_idP, rb_type_t rb_typeP);)
 public_rlc_am(void     rlc_am_stat_req     (rlc_am_entity_t *rlcP,
                               unsigned int* tx_pdcp_sdu,
                               unsigned int* tx_pdcp_sdu_discarded,

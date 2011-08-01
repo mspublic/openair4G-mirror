@@ -31,14 +31,16 @@ typedef struct rlc_am_entity {
   // TX BUFFERS
   //---------------------------------------------------------------------
   // sdu communication;
-  rlc_am_tx_sdu_management_t   input_sdus[RLC_AM_SDU_CONTROL_BUFFER_SIZE];
+  mem_block_t*                 input_sdus_alloc;
+  rlc_am_tx_sdu_management_t   *input_sdus;//[RLC_AM_SDU_CONTROL_BUFFER_SIZE];
   signed int      nb_sdu;               // total number of valid rlc_am_tx_sdu_management_t in input_sdus[]
   signed int      nb_sdu_no_segmented;  // include SDUs partially segmented
   signed int      next_sdu_index;       // next location of incoming sdu
   signed int      current_sdu_index;
 
 
-  rlc_am_tx_data_pdu_management_t pdu_retrans_buffer[RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
+  mem_block_t*                    pdu_retrans_buffer_alloc;
+  rlc_am_tx_data_pdu_management_t *pdu_retrans_buffer;//[RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE];
   signed int      retrans_num_pdus;
   signed int      retrans_num_bytes; // num bytes in the retransmission buffer
   signed int      retrans_num_bytes_to_retransmit; // num bytes of the retransmission buffer to retransmit
