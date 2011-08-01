@@ -96,17 +96,33 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 
 #    define MEM_MNGT_MB8_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*256
                                                                 // 16384
-#    define MEM_MNGT_MB8_NB_BLOCKS      16 * MEM_SCALE   // LG WAS 16
+#    define MEM_MNGT_MB8_NB_BLOCKS      16 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID8           8
 
 #    define MEM_MNGT_MB9_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*512
                                                                 // 32768
-#    define MEM_MNGT_MB9_NB_BLOCKS      8 * MEM_SCALE   // WAS 8
+#    define MEM_MNGT_MB9_NB_BLOCKS      8 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID9           9
 
+#    define MEM_MNGT_MB10_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*1024
+                                                                // 65536
+#    define MEM_MNGT_MB10_NB_BLOCKS     0 * MEM_SCALE
+#    define MEM_MNGT_POOL_ID10          10
+
+#    define MEM_MNGT_MB11_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*2048
+                                                                // 131072
+#    define MEM_MNGT_MB11_NB_BLOCKS     0 * MEM_SCALE
+#    define MEM_MNGT_POOL_ID11          11
+
+#    define MEM_MNGT_MB12_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*4096
+                                                                // 262144
+#    define MEM_MNGT_MB12_NB_BLOCKS     32 * MEM_SCALE
+#    define MEM_MNGT_POOL_ID12          12
+
+
 #    define MEM_MNGT_MBCOPY_NB_BLOCKS   1024
-#    define MEM_MNGT_NB_ELEMENTS        MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS + MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MBCOPY_NB_BLOCKS
-#    define MEM_MNGT_POOL_ID_COPY       10
+#    define MEM_MNGT_NB_ELEMENTS        MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS + MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MB10_NB_BLOCKS + MEM_MNGT_MB11_NB_BLOCKS + MEM_MNGT_MB12_NB_BLOCKS + MEM_MNGT_MBCOPY_NB_BLOCKS
+#    define MEM_MNGT_POOL_ID_COPY        13
 
 
 
@@ -124,8 +140,11 @@ private_mem_block(typedef struct {
   char              mem_pool7[MEM_MNGT_MB7_NB_BLOCKS][MEM_MNGT_MB7_BLOCK_SIZE];
   char              mem_pool8[MEM_MNGT_MB8_NB_BLOCKS][MEM_MNGT_MB8_BLOCK_SIZE];
   char              mem_pool9[MEM_MNGT_MB9_NB_BLOCKS][MEM_MNGT_MB9_BLOCK_SIZE];
+  char              mem_pool10[MEM_MNGT_MB10_NB_BLOCKS][MEM_MNGT_MB10_BLOCK_SIZE];
+  char              mem_pool11[MEM_MNGT_MB11_NB_BLOCKS][MEM_MNGT_MB11_BLOCK_SIZE];
+  char              mem_pool12[MEM_MNGT_MB12_NB_BLOCKS][MEM_MNGT_MB12_BLOCK_SIZE];
   mem_block_t     mem_blocks[MEM_MNGT_NB_ELEMENTS];
-  list_t          mem_lists[11];
+  list_t          mem_lists[14];
 
 } mem_pool;)
 
