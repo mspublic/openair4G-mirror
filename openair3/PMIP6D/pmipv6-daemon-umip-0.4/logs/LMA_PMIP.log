@@ -1,0 +1,302 @@
+ioctl: No such device
+ioctl: No such device
+ERROR: Module ip6_tunnel does not exist in /proc/modules
+ERROR: Module tunnel6 does not exist in /proc/modules
+RTNETLINK answers: File exists
+access control disabled, clients can connect from any host
+pmip6d[6055]: MIPL Mobile IPv6 for Linux v2.0.2-umip-0.4 started (Local Mobility Anchor)
+Thu Jun 30 10:24:25 main: MIPL Mobile IPv6 for Linux started in debug mode, not detaching from terminal
+Thu Jun 30 10:24:25 conf_show: config_file = /usr/local/src/mipv6-daemon-umip-0.4/extras/example-lma.conf
+Thu Jun 30 10:24:25 conf_show: mip6_entity = 4
+Thu Jun 30 10:24:25 conf_show: debug_level = 10
+Thu Jun 30 10:24:25 conf_show: debug_log_file = stderr
+Thu Jun 30 10:24:25 conf_show: PolicyModulePath = [internal]
+Thu Jun 30 10:24:25 conf_show: DefaultBindingAclPolicy = 0
+Thu Jun 30 10:24:25 conf_show: NonVolatileBindingCache = disabled
+Thu Jun 30 10:24:25 conf_show: KeyMngMobCapability = disabled
+Thu Jun 30 10:24:25 conf_show: UseMnHaIPsec = disabled
+Thu Jun 30 10:24:25 conf_show: MnMaxHaBindingLife = 262140
+Thu Jun 30 10:24:25 conf_show: MnMaxCnBindingLife = 420
+Thu Jun 30 10:24:25 conf_show: MnRouterProbes = 0
+Thu Jun 30 10:24:25 conf_show: MnRouterProbeTimeout = 0.000000
+Thu Jun 30 10:24:25 conf_show: InitialBindackTimeoutFirstReg = 1.500000
+Thu Jun 30 10:24:25 conf_show: InitialBindackTimeoutReReg = 1.000000
+Thu Jun 30 10:24:25 conf_show: UseCnBuAck = disabled
+Thu Jun 30 10:24:25 conf_show: DoRouteOptimizationMN = disabled
+Thu Jun 30 10:24:25 conf_show: MnUseAllInterfaces = disabled
+Thu Jun 30 10:24:25 conf_show: MnDiscardHaParamProb = disabled
+Thu Jun 30 10:24:25 conf_show: SendMobPfxSols = enabled
+Thu Jun 30 10:24:25 conf_show: OptimisticHandoff = disabled
+Thu Jun 30 10:24:25 conf_show: SendMobPfxAdvs = enabled
+Thu Jun 30 10:24:25 conf_show: SendUnsolMobPfxAdvs = enabled
+Thu Jun 30 10:24:25 conf_show: MaxMobPfxAdvInterval = 86400
+Thu Jun 30 10:24:25 conf_show: MinMobPfxAdvInterval = 600
+Thu Jun 30 10:24:25 conf_show: HaMaxBindingLife = 262140
+Thu Jun 30 10:24:25 conf_show: DoRouteOptimizationCN = disabled
+Thu Jun 30 10:24:25 conf_show: AllLmaMulticastAddress    = 0:0:0:0:0:0:0:0
+Thu Jun 30 10:24:25 conf_show: LmaAddress                = 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:24:25 conf_show: OurAddress                = 0:0:0:0:0:0:0:1
+Thu Jun 30 10:24:25 conf_show: HomeNetworkPrefix         = 0:0:0:0:0:0:0:0
+Thu Jun 30 10:24:25 conf_show: PBULifeTime               = 1000 seconds
+Thu Jun 30 10:24:25 conf_show: PBALifeTime               = 1000 seconds
+Thu Jun 30 10:24:25 conf_show: NRetransmissionTime       = 5 seconds
+Thu Jun 30 10:24:25 conf_show: MaxMessageRetransmissions = 5
+Thu Jun 30 10:24:25 conf_show: TunnelingEnabled          = enabled
+Thu Jun 30 10:24:25 conf_show: DynamicTunnelingEnabled   = disabled
+Thu Jun 30 10:24:25 conf_show: RadiusClientConfigFile    = 
+Thu Jun 30 10:24:25 conf_show: RadiusPassword            = 
+Thu Jun 30 10:24:25 xfrm_cn_init: Adding policies and states for CN
+Thu Jun 30 10:24:25 pmip_common_init: PMIP Binding Cache is initialized!
+Thu Jun 30 10:24:25 pmip_common_init: Add default rule for RT6_TABLE_MIP6
+Thu Jun 30 10:24:25 pmip_lma_init: Entity Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:24:25 pmip_lma_init: Initializing the PBU handler
+Thu Jun 30 10:24:49 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:24:49 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:24:49 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:24:49 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:24:49 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:24:49 mh_pbu_parse: PBU Lifetime: 64000 (1000 s)
+Thu Jun 30 10:24:49 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:24:49 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:24:49 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:24:49 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:24:49 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:24:49 pmip_cache_get: PMIP cache entry is NOT found for 2001:100:0:0:0:0:0:1 <-> 0:0:0:0:0:14:6c53:180a
+Thu Jun 30 10:24:49 lma_fsm: No PMIP entry found for 0:0:0:0:214:6cff:fe53:180a ... 
+Thu Jun 30 10:24:49 lma_fsm: PBU for a new MN ... Location Registration starting now...
+Thu Jun 30 10:24:49 pmip_cache_alloc: PMIP cache entry is allocated..
+Thu Jun 30 10:24:49 pmip_insert_into_hnp_cache: new entry in cache 2001:100:6:5000:0:0:0:0 -> 0:0:0:0:0:14:6c53:180a
+Thu Jun 30 10:24:49 lma_update_binding_entry: Store Binding Entry
+Thu Jun 30 10:24:49 lma_update_binding_entry: searching for the prefix for a new BCE entry...
+Thu Jun 30 10:24:49 lma_mnid_hnp_map: Entering the address match . . Thu Jun 30 10:24:49 lma_mnid_hnp_map: Searching for MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:24:49 lma_mnid_hnp_map: Comparing with MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:24:49 lma_mnid_hnp_map: 2001:100:6:5000:0:0:0:0 found the prefix 
+Thu Jun 30 10:24:49 lma_update_binding_entry: found the prefix  2001:100:6:5000:0:0:0:0 in lma_update_binding entry 
+Thu Jun 30 10:24:49 lma_remove_route: Delete old route for: 2001:100:6:5000:214:6cff:fe53:180a from table 252
+RTNETLINK answers: No such process
+Thu Jun 30 10:24:49 pmip_tunnel_del: Decrease reference number of tunnel 0
+Thu Jun 30 10:24:49 lma_update_binding_entry: Deleting the old tunnel 
+Thu Jun 30 10:24:49 lma_update_binding_entry: Finished updating the binding cache
+Thu Jun 30 10:24:49 pmip_tunnel_add: Creating IP-in-IP tunnel link 3 from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2...
+Thu Jun 30 10:24:49 __tunnel_add: created tunnel ip6tnl1 (8) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2 user count 1
+Thu Jun 30 10:24:49 lma_setup_route: Forward: Add new route for 2001:100:6:5000:214:6cff:fe53:180a in table 252
+Thu Jun 30 10:24:49 pmip_cache_start: PMIP cache start is initialized.. 
+Thu Jun 30 10:24:49 lma_reg: Create PBA to new Serving MAG...
+Thu Jun 30 10:24:49 mh_send_pba: Create PBA options....
+Thu Jun 30 10:24:49 mh_send_pba: Send PBA...
+Thu Jun 30 10:24:49 pmip_mh_send: Sending MH type 6
+from 2001:100:0:0:0:0:0:1
+to 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:24:49 pmip_mh_send: MH is sent....
+Thu Jun 30 10:24:49 pmip_cache_add: inside pmip_cache_add
+Thu Jun 30 10:24:49 pmip_cache_add: after assertion
+Thu Jun 30 10:24:49 __pmipcache_insert: PMIP cache entry is inserted for: 2001:100:0:0:0:0:0:1 <-> 0:0:0:0:0:14:6c53:180a
+Thu Jun 30 10:24:49 pmip_cache_add: Making Entry
+Thu Jun 30 10:24:49 pmip_cache_add: PMIP cache entry for: 0:0:0:0:0:14:6c53:180a with type 5 is added
+Thu Jun 30 10:24:49 pmip_cache_add: Retransmissions counter intialized: 5
+Thu Jun 30 10:24:49 pmip_cache_start: PMIP cache start is initialized.. 
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:12 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:12 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:12 mh_pbu_parse: PBU Lifetime: 64000 (1000 s)
+Thu Jun 30 10:25:12 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:12 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:12 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:12 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:12 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:12 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:12 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:12 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:12 lma_fsm: PBU for an existing MN ... update serving MAG
+Thu Jun 30 10:25:12 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:12 lma_update_binding_entry: Store Binding Entry
+Thu Jun 30 10:25:12 lma_update_binding_entry: searching for the prefix for a new BCE entry...
+Thu Jun 30 10:25:12 lma_mnid_hnp_map: Entering the address match . . Thu Jun 30 10:25:12 lma_mnid_hnp_map: Searching for MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:12 lma_mnid_hnp_map: Comparing with MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:12 lma_mnid_hnp_map: 2001:100:6:5000:0:0:0:0 found the prefix 
+Thu Jun 30 10:25:12 lma_update_binding_entry: found the prefix  2001:100:6:5000:0:0:0:0 in lma_update_binding entry 
+Thu Jun 30 10:25:12 lma_remove_route: Delete old route for: 2001:100:6:5000:214:6cff:fe53:180a from table 252
+Thu Jun 30 10:25:12 pmip_tunnel_del: Decrease reference number of tunnel 8
+Thu Jun 30 10:25:12 pmip_tunnel_del: Completely delete the tunnel.... 
+Thu Jun 30 10:25:12 __tunnel_del: tunnel ip6tnl1 (8) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2 user count decreased to 0
+Thu Jun 30 10:25:12 __tunnel_del: tunnel deleted
+Thu Jun 30 10:25:12 lma_update_binding_entry: Deleting the old tunnel 
+Thu Jun 30 10:25:12 lma_update_binding_entry: Finished updating the binding cache
+Thu Jun 30 10:25:12 pmip_tunnel_add: Creating IP-in-IP tunnel link 3 from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3...
+Thu Jun 30 10:25:12 __tunnel_add: created tunnel ip6tnl1 (9) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3 user count 1
+Thu Jun 30 10:25:12 lma_setup_route: Forward: Add new route for 2001:100:6:5000:214:6cff:fe53:180a in table 252
+Thu Jun 30 10:25:12 pmip_cache_start: PMIP cache start is initialized.. 
+Thu Jun 30 10:25:12 lma_reg: Create PBA to new Serving MAG...
+Thu Jun 30 10:25:12 mh_send_pba: Create PBA options....
+Thu Jun 30 10:25:12 mh_send_pba: Send PBA...
+Thu Jun 30 10:25:12 pmip_mh_send: Sending MH type 6
+from 2001:100:0:0:0:0:0:1
+to 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:12 pmip_mh_send: MH is sent....
+Thu Jun 30 10:25:12 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:12 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:12 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:12 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:12 mh_pbu_parse: PBU Lifetime: 0 (0 s)
+Thu Jun 30 10:25:12 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:12 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:12 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:12 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:12 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:12 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:12 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:12 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:12 lma_fsm: PBU with Lifetime = 0... start Location Deregistration
+Thu Jun 30 10:25:12 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:12 lma_fsm: Deregistration for an already deregistered MAG
+Thu Jun 30 10:25:12 lma_dereg: Doing nothing....
+Thu Jun 30 10:25:12 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:23 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:23 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:23 mh_pbu_parse: PBU Lifetime: 64000 (1000 s)
+Thu Jun 30 10:25:23 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:23 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:23 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:23 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:23 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:23 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:23 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:23 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:23 lma_fsm: PBU for an existing MN ... update serving MAG
+Thu Jun 30 10:25:23 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:23 lma_update_binding_entry: Store Binding Entry
+Thu Jun 30 10:25:23 lma_update_binding_entry: searching for the prefix for a new BCE entry...
+Thu Jun 30 10:25:23 lma_mnid_hnp_map: Entering the address match . . Thu Jun 30 10:25:23 lma_mnid_hnp_map: Searching for MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:23 lma_mnid_hnp_map: Comparing with MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:23 lma_mnid_hnp_map: 2001:100:6:5000:0:0:0:0 found the prefix 
+Thu Jun 30 10:25:23 lma_update_binding_entry: found the prefix  2001:100:6:5000:0:0:0:0 in lma_update_binding entry 
+Thu Jun 30 10:25:23 lma_remove_route: Delete old route for: 2001:100:6:5000:214:6cff:fe53:180a from table 252
+Thu Jun 30 10:25:23 pmip_tunnel_del: Decrease reference number of tunnel 9
+Thu Jun 30 10:25:23 pmip_tunnel_del: Completely delete the tunnel.... 
+Thu Jun 30 10:25:23 __tunnel_del: tunnel ip6tnl1 (9) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3 user count decreased to 0
+Thu Jun 30 10:25:23 __tunnel_del: tunnel deleted
+Thu Jun 30 10:25:23 lma_update_binding_entry: Deleting the old tunnel 
+Thu Jun 30 10:25:23 lma_update_binding_entry: Finished updating the binding cache
+Thu Jun 30 10:25:23 pmip_tunnel_add: Creating IP-in-IP tunnel link 3 from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2...
+Thu Jun 30 10:25:23 __tunnel_add: created tunnel ip6tnl1 (10) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2 user count 1
+Thu Jun 30 10:25:23 lma_setup_route: Forward: Add new route for 2001:100:6:5000:214:6cff:fe53:180a in table 252
+Thu Jun 30 10:25:23 pmip_cache_start: PMIP cache start is initialized.. 
+Thu Jun 30 10:25:23 lma_reg: Create PBA to new Serving MAG...
+Thu Jun 30 10:25:23 mh_send_pba: Create PBA options....
+Thu Jun 30 10:25:23 mh_send_pba: Send PBA...
+Thu Jun 30 10:25:23 pmip_mh_send: Sending MH type 6
+from 2001:100:0:0:0:0:0:1
+to 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:23 pmip_mh_send: MH is sent....
+Thu Jun 30 10:25:23 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:23 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:23 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:23 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:23 mh_pbu_parse: PBU Lifetime: 0 (0 s)
+Thu Jun 30 10:25:23 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:23 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:23 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:23 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:23 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:23 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:23 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:23 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:23 lma_fsm: PBU with Lifetime = 0... start Location Deregistration
+Thu Jun 30 10:25:23 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:23 lma_fsm: Deregistration for an already deregistered MAG
+Thu Jun 30 10:25:23 lma_dereg: Doing nothing....
+Thu Jun 30 10:25:23 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:34 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:34 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:34 mh_pbu_parse: PBU Lifetime: 64000 (1000 s)
+Thu Jun 30 10:25:34 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:34 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:34 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:34 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:34 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:34 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:34 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:34 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:34 lma_fsm: PBU for an existing MN ... update serving MAG
+Thu Jun 30 10:25:34 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:34 lma_update_binding_entry: Store Binding Entry
+Thu Jun 30 10:25:34 lma_update_binding_entry: searching for the prefix for a new BCE entry...
+Thu Jun 30 10:25:34 lma_mnid_hnp_map: Entering the address match . . Thu Jun 30 10:25:34 lma_mnid_hnp_map: Searching for MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:34 lma_mnid_hnp_map: Comparing with MNID  0:0:0:0:0:14:6c53:180a  
+Thu Jun 30 10:25:34 lma_mnid_hnp_map: 2001:100:6:5000:0:0:0:0 found the prefix 
+Thu Jun 30 10:25:34 lma_update_binding_entry: found the prefix  2001:100:6:5000:0:0:0:0 in lma_update_binding entry 
+Thu Jun 30 10:25:34 lma_remove_route: Delete old route for: 2001:100:6:5000:214:6cff:fe53:180a from table 252
+Thu Jun 30 10:25:34 pmip_tunnel_del: Decrease reference number of tunnel 10
+Thu Jun 30 10:25:34 pmip_tunnel_del: Completely delete the tunnel.... 
+Thu Jun 30 10:25:34 __tunnel_del: tunnel ip6tnl1 (10) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:2 user count decreased to 0
+Thu Jun 30 10:25:34 __tunnel_del: tunnel deleted
+Thu Jun 30 10:25:34 lma_update_binding_entry: Deleting the old tunnel 
+Thu Jun 30 10:25:34 lma_update_binding_entry: Finished updating the binding cache
+Thu Jun 30 10:25:34 pmip_tunnel_add: Creating IP-in-IP tunnel link 3 from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3...
+Thu Jun 30 10:25:34 __tunnel_add: created tunnel ip6tnl1 (11) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3 user count 1
+Thu Jun 30 10:25:34 lma_setup_route: Forward: Add new route for 2001:100:6:5000:214:6cff:fe53:180a in table 252
+Thu Jun 30 10:25:34 pmip_cache_start: PMIP cache start is initialized.. 
+Thu Jun 30 10:25:34 lma_reg: Create PBA to new Serving MAG...
+Thu Jun 30 10:25:34 mh_send_pba: Create PBA options....
+Thu Jun 30 10:25:34 mh_send_pba: Send PBA...
+Thu Jun 30 10:25:34 pmip_mh_send: Sending MH type 6
+from 2001:100:0:0:0:0:0:1
+to 2001:100:0:0:0:0:0:3
+Thu Jun 30 10:25:34 pmip_mh_send: MH is sent....
+Thu Jun 30 10:25:34 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Proxy Binding Update (PBU) Received
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Received PBU Src Addr: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:34 pmip_lma_recv_pbu: Received PBU Dst addr: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:34 mh_pbu_parse: Serving MAG Address: 2001:100:0:0:0:0:0:2
+Thu Jun 30 10:25:34 mh_pbu_parse: Our Address: 2001:100:0:0:0:0:0:1
+Thu Jun 30 10:25:34 mh_pbu_parse: PBU Lifetime: 0 (0 s)
+Thu Jun 30 10:25:34 mh_pbu_parse: PBU Sequence No: 0
+Thu Jun 30 10:25:34 mh_pbu_parse: MN Home Network Prefix: 2001:100:6:5000:0:0:0:0
+Thu Jun 30 10:25:34 mh_pbu_parse: MN IID: 0:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:34 mh_pbu_parse: MN Link Local Address: fe80:0:0:0:214:6cff:fe53:180a
+Thu Jun 30 10:25:34 mh_pbu_parse: FSM Message Event: 8
+Thu Jun 30 10:25:34 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:34 pmip_cache_exists: PMIP cache entry does exist with type: 5
+Thu Jun 30 10:25:34 pmipcache_release_entry: PMIP cache entry is released
+Thu Jun 30 10:25:34 lma_fsm: PBU with Lifetime = 0... start Location Deregistration
+Thu Jun 30 10:25:34 pmip_cache_get: PMIP cache entry is found for: 0:0:0:0:0:14:6c53:180a with type 5
+Thu Jun 30 10:25:34 lma_fsm: Deregistration for an already deregistered MAG
+Thu Jun 30 10:25:34 lma_dereg: Doing nothing....
+Thu Jun 30 10:25:34 pmipcache_release_entry: PMIP cache entry is released
+pmip6d[6055]: terminated (SIGINT)
+Thu Jun 30 10:25:45 terminate: got SIGINT, exiting
+Thu Jun 30 10:25:45 pmip_cleanup: Release all occupied resources...
+Thu Jun 30 10:25:45 pmip_cleanup: Remove default rule...
+Thu Jun 30 10:25:45 pmip_cleanup: Release pmip_cache...
+Thu Jun 30 10:25:45 lma_remove_route: Delete old route for: 2001:100:6:5000:214:6cff:fe53:180a from table 252
+Thu Jun 30 10:25:45 pmip_tunnel_del: Decrease reference number of tunnel 11
+Thu Jun 30 10:25:45 pmip_tunnel_del: Completely delete the tunnel.... 
+Thu Jun 30 10:25:45 __tunnel_del: tunnel ip6tnl1 (11) from 2001:100:0:0:0:0:0:1 to 2001:100:0:0:0:0:0:3 user count decreased to 0
+Thu Jun 30 10:25:45 __tunnel_del: tunnel deleted
+Thu Jun 30 10:25:45 pmipcache_free: PMIP cache entry is free
+Thu Jun 30 10:25:45 pmip_bce_delete: PMIP cache entry is deleted!
+Thu Jun 30 10:25:45 pmip_cleanup: Release all occupied resources...
+Thu Jun 30 10:25:45 pmip_cleanup: Remove default rule...
+RTNETLINK answers: No such file or directory
+Thu Jun 30 10:25:45 pmip_cleanup: Release pmip_cache...
+Thu Jun 30 10:25:45 xfrm_cn_cleanup: Deleting policies and states for CN
+pmip6d[6055]: MIPL Mobile IPv6 for Linux v2.0.2-umip-0.4 stopped (Local Mobility Anchor)
+=====================================
+=====================================
+=====================================
+=====================================
+=====================================
+=====================================
+=====================================
