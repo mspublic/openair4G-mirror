@@ -1,2 +1,0 @@
-xterm -e IALdummy &
-xterm -e tdcdma_gui
