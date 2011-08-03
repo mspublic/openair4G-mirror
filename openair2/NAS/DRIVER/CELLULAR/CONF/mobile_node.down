@@ -1,0 +1,6 @@
+ifconfig graal0 down
+
+#ifconfig eth0 up
+route add default 192.168.12.100
+#service netfs start
+#service ypbind start

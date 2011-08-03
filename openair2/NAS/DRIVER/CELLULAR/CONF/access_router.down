@@ -1,0 +1,4 @@
+
+kill `cat /var/run/radvd.pid`
+
+ifconfig graal0 down
