@@ -1,0 +1,19 @@
+  UMTS-TDD MT Tools
+
+Contact information : michelle.wetterwald@eurecom.fr
+
+This tool is for fast testing of the UMTS-TDD platform only. It takes the place of the
+RAL-CDMA/RAL-UMTS and must not be installed together with this module.
+
+ It helps testing the connection/deconnection of the MT and provides all sorts of
+reporting : connection status, radio bearer status, measurement, IP packets statistics
+from the MT point of view.
+
+ First install : directory /opt/eurecom/ipc/ must exist to create the socket
+
+ Execution : ./launch
+
+ Running environment : the tool executes successfully on RH7.3/linux2.4 or
+MDK10.0/linux2.6
+
+ Only compiled version is provided.
