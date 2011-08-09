@@ -1607,7 +1607,9 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
 
   //  msg("[PDCCH] n_pdcch_symbols from PCFICH =%d\n",n_pdcch_symbols);
 
+#ifdef DEBUG_DCI_DECODING
   debug_msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
+#endif
 
   pdcch_demapping(lte_ue_pdcch_vars[eNB_id]->llr,
 		  lte_ue_pdcch_vars[eNB_id]->wbar,

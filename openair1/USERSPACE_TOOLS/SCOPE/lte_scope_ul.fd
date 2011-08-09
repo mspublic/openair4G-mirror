@@ -10,7 +10,7 @@ Unit of measure: FL_COORD_PIXEL
 Name: lte_scope
 Width: 830
 Height: 650
-Number of Objects: 8
+Number of Objects: 9
 
 --------------------
 class: FL_BOX
@@ -69,7 +69,7 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: IMPULSE_XYPLOT
-box: 30 260 770 90
+box: 30 260 370 90
 boxtype: FL_EMBOSSED_BOX
 colors: FL_BLACK FL_RED
 alignment: FL_ALIGN_BOTTOM
@@ -80,7 +80,7 @@ label: Frequency Bin Response
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: channel_f
+name: channel_drs_time
 callback: 
 argument: 
 
@@ -153,6 +153,24 @@ shortcut:
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
 name: channel_srs
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: IMPULSE_XYPLOT
+box: 430 260 370 90
+boxtype: FL_EMBOSSED_BOX
+colors: FL_BLACK FL_RED
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_BLACK
+label: Frequency Bin Response
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: channel_drs
 callback: 
 argument: 
 

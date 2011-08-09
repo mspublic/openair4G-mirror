@@ -109,6 +109,23 @@ mmap: openair_device_mmap
 };
 #endif
 
+int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
+
+  RT_TASK *rt_task;
+  
+  rt_task = rt_smp_current[rtai_cpuid()];
+
+  printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, frame %d, slot %d\n", 
+	 vec, signo, rt_task, mac_xface->frame, openair_daq_vars.slot_count);
+
+  openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
+
+  rt_task_suspend(rt_task);
+
+  return 1;
+
+}
+
 
 
 #ifdef KERNEL2_6 
@@ -286,6 +303,7 @@ static int __init openair_init_module( void )
     }
       
     bigphys_current = bigphys_ptr;
+    memset(bigphys_ptr,0,BIGPHYS_NUMPAGES*PAGE_SIZE);
   }
 
 #endif //BIGPHYSAREA
@@ -378,6 +396,10 @@ static int __init openair_init_module( void )
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
 
+
+  // set default trap handler
+  rt_set_trap_handler(oai_trap_handler);
+
   printk("[openair][MODULE][INFO] Done init\n");
   return 0;
 }
@@ -414,6 +436,10 @@ static void  openair_cleanup(void) {
 #ifndef PHY_EMUL
 
   openair_sched_cleanup();
+
+#ifdef DLSCH_THREAD
+  cleanup_dlsch_threads();
+#endif
 
   udelay(1000);
 

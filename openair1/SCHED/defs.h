@@ -105,6 +105,8 @@ s32 openair_sched_init(void);
 void openair_sched_cleanup(void);
 void openair_sched_exit(char *);
 void openair1_restart(void);
+s32 init_dlsch_threads(void); 
+void cleanup_dlsch_threads(void); 
 #endif //USER_MODE
 
 #ifdef OPENAIR_LTE

@@ -4,7 +4,7 @@ TOP_DIR = ../..
 OPENAIR2_DIR = ../../../openair2
 OPENAIR2_TOP = $(OPENAIR2_DIR)
 
-CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -msse4 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES
+CFLAGS = -Wall -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DMAX_MODULES=1 -DPHY_CONTEXT=1  -g -mtune=pentium4 -mmmx -msse2 -mssse3 -O -funroll-loops -I$(TOP_DIR) -I/usr/realtime/include/ -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 #-DICC 
 
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc

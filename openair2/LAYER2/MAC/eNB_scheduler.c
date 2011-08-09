@@ -811,7 +811,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
   u8 round;
   u8 harq_pid;
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci;
-  LTE_eNB_UE_stats* eNB_UE_stats;
+  LTE_eNB_UE_stats* eNB_UE_stats,eNB_UE_stats2;
   DCI_PDU *DCI_pdu= &CH_mac_inst[Mod_id].DCI_pdu;
 
   granted_UEs = find_ulgranted_UEs(Mod_id);
@@ -872,22 +872,20 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 	  harq_pid,round,ULSCH_dci->ndi,ULSCH_dci->mcs,next_ue*4);
 #endif
 
-      // schedule 4 RBs for UL
-      if((cooperation_flag ==2) && (next_ue == 1))// Allocation on same set of RBs
-	{
-	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						     ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
-						     4);//openair_daq_vars.ue_ul_nb_rb);
-	}
-      else
-	{
-	  ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
-						     (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
-						     4);//openair_daq_vars.ue_ul_nb_rb);
-	}
-
+      if ((cooperation_flag > 0) && (next_ue==1)) {
+	//Allocation on same set of RBs
+	ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						   ((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
+						   4);//openair_daq_vars.ue_ul_nb_rb);
+      }
+      else {
+	ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
+						   (next_ue*4),//openair_daq_vars.ue_ul_nb_rb),
+						   4);//openair_daq_vars.ue_ul_nb_rb);
+      }
+      
       // Cyclic shift for DM RS
-      if(cooperation_flag == 2)
+      if (cooperation_flag == 2)
 	{
 	  if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
 	    ULSCH_dci->cshift = 1;
@@ -1322,7 +1320,9 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  eNB_UE_stats->dlsch_mcs1,nb_available_rb);
 #endif
       rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
-				      (TBS-header_len_dcch)); // transport block set size
+				      (TBS-header_len_dcch)/DCCH_LCHAN_DESC.transport_block_size,
+				      DCCH_LCHAN_DESC.transport_block_size); // transport block set size
+
 
       sdu_lengths[0]=0;
       loop_count=0;
@@ -1341,7 +1341,8 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	msg("[MAC][eNB %d] DCCH has %d bytes to send (buffer %d, header %d)\n",Mod_id,rlc_status.bytes_in_buffer,sdu_lengths[0],header_len_dcch);
 #endif
 	rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
-					(TBS-header_len_dcch-sdu_lengths[0]));
+					(TBS-header_len_dcch-sdu_lengths[0])/DCCH_LCHAN_DESC.transport_block_size,
+					DCCH_LCHAN_DESC.transport_block_size);
 
 	sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id,
 							  DCCH+(MAX_NUM_RB*next_ue),
@@ -1378,6 +1379,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
       header_len_dtch = 3; // 3 bytes DTCH SDU subheader
 
       rlc_status = mac_rlc_status_ind(Mod_id,DTCH+(MAX_NUM_RB*next_ue),
+				      0,
 				      TBS-header_len_dcch-sdu_length_total-header_len_dtch);
 
       if (rlc_status.bytes_in_buffer > 0) {

@@ -33,8 +33,8 @@ unsigned int mbox;
 
 PCI_interface_t *pci_interface[4];
 
-unsigned short NODE_ID[1];
-EXPORT_SYMBOL(NODE_ID);
+//unsigned short NODE_ID[1];
+//EXPORT_SYMBOL(NODE_ID);
 
 #endif
 

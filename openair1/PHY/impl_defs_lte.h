@@ -461,16 +461,19 @@ typedef struct{
 } LTE_eNB_SRS;
 
 typedef struct{
-  ///holds the received data in the frequency domain for the allocated RBs
+  ///holds the received data in the frequency domain for the allocated RBs in repeated format
   s32 **rxdataF_ext[3];       
-
+  ///holds the received data in the frequency domain for the allocated RBs in normal format
   s32 **rxdataF_ext2[3];       
+  /// hold the channel estimates in time domain based on DRS   
+  s32 **drs_ch_estimates_time[3]; 
   /// hold the channel estimates in frequency domain based on DRS   
   s32 **drs_ch_estimates[3]; 
   /// hold the channel estimates for UE0 in case of Distributed Alamouti Scheme
   s32 **drs_ch_estimates_0[3];
   /// hold the channel estimates for UE1 in case of Distributed Almouti Scheme 
   s32 **drs_ch_estimates_1[3];
+  /// holds the compensated signal
   s32 **rxdataF_comp[3];
   /// hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme
   s32 **rxdataF_comp_0[3];

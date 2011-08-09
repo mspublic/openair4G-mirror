@@ -232,7 +232,7 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
       return(-1);
     }
 
-    msg("DCI: Setting subframe_tx for subframe %d\n",subframe);
+    // msg("DCI: Setting subframe_tx for subframe %d\n",subframe);
     dlsch[0]->subframe_tx[subframe] = 1;
 
     dlsch[0]->rb_alloc[0]                         = conv_rballoc(((DCI1_5MHz_TDD_t *)dci_pdu)->rah,
@@ -545,8 +545,10 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       NPRB      = RIV2nb_rb_LUT25[rballoc];
     }
 
-    if (NPRB==0)
+    if (NPRB==0) {
+      msg("dci_tools.c: ERROR: Format 1A: NPRB=0\n");
       return(-1);
+    }
 
     if (((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs > 7) {
       msg("dci_tools.c: ERROR: Format 1A: unlikely mcs for format 1A (%d)\n",((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs);
@@ -601,8 +603,10 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     NPRB      = dlsch[0]->nb_rb;
     
 
-    if (NPRB==0)
+    if (NPRB==0) {
+      msg("dci_tools.c: ERROR: Format 1A: NPRB=0\n");
       return(-1);
+    }
 
     //    printf("NPRB %d\n",NPRB);
     dlsch[0]->harq_processes[harq_pid]->rvidx     = ((DCI1_5MHz_TDD_t *)dci_pdu)->rv;
@@ -728,6 +732,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
+      msg("dci_tools.c: ERROR: Unsupported TPMI\n");
       return(-1);
       break;
     }

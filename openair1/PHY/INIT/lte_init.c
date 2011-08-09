@@ -1293,6 +1293,36 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
+	// Channel estimates for time domain DRS
+	eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+	if (eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id]) {
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d] allocated at %p\n",UE_id,eNB_id,
+	      eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id]);
+#endif
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d] not allocated\n",UE_id,eNB_id);
+	  return(-1);
+	}
+	
+	
+	for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	  eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = 
+	    (int *)malloc16(2*sizeof(int)*frame_parms->ofdm_symbol_size);
+	  if (eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]) {
+#ifdef DEBUG_PHY
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d][%d] allocated at %p\n",UE_id,eNB_id,i,
+		eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]);
+#endif
+	    
+	    memset(eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i],0,sizeof(int)*frame_parms->ofdm_symbol_size);
+	  }
+	  else {
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d][%d] not allocated\n",UE_id,eNB_id,i);
+	    return(-1);
+	  }
+	}
 	
 	
 	// In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
