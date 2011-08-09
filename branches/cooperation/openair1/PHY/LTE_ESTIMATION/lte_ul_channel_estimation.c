@@ -15,6 +15,7 @@ static int temp_in_fft_1[2048*2] __attribute__((aligned(16)));
 
 
 int lte_ul_channel_estimation(int **ul_ch_estimates,
+			      int **ul_ch_estimates_time,
 			      int **ul_ch_estimates_0,
 			      int **ul_ch_estimates_1,
 			      int **rxdataF_ext,
@@ -25,7 +26,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 			      u8 cyclicShift,
 			      u8 cooperation_flag) {
 
-  unsigned short aa,b,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j,re_offset;
+  unsigned short aa,b,k,Msc_RS,Msc_RS_idx,symbol_offset,i,j;
   unsigned short * Msc_idx_ptr;
   unsigned short pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
   short alpha, beta;
@@ -33,7 +34,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   int *ul_ch1_0,*ul_ch2_0,*ul_ch1_1,*ul_ch2_1;
   //s8 phase_shift;
   //phase_shift = -(2*M_PI*cyclicShift)/12;
-  short *ul_ch_estimates_re,*ul_ch_estimates_im;
+  short ul_ch_estimates_re,ul_ch_estimates_im;
 
   //msg("cyclic shift %d\n",cyclicShift);
 
@@ -73,7 +74,6 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   if (l == (3 - frame_parms->Ncp)) {
 
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
-    i = symbol_offset;
 
     for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
       //msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
@@ -89,13 +89,27 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	for(i=symbol_offset;i<symbol_offset+frame_parms->N_RB_UL*12;i++){
 	  ul_ch_estimates_re = ((short*) ul_ch_estimates[aa])[i<<1];
 	  ul_ch_estimates_im = ((short*) ul_ch_estimates[aa])[(i<<1)+1];
-	  ((short*) ul_ch_estimates[aa])[i<<1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) + (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
-	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -  (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
+	  ((short*) ul_ch_estimates[aa])[i<<1] = 
+	    (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_re) + 
+		      (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_im))>>15);
+	  ((short*) ul_ch_estimates[aa])[(i<<1)+1] = 
+	    (short) (((int) (alpha_re[cyclicShift]) * (int) (ul_ch_estimates_im) -  
+		      (int) (alpha_im[cyclicShift]) * (int) (ul_ch_estimates_re))>>15);
 	}
       }
-    }
-    
-    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++){
+      
+      // Convert to time domain for visualization
+      for(i=0;i<frame_parms->N_RB_UL*12;i++)
+	temp_in_ifft[i] = ul_ch_estimates[aa][symbol_offset+i];
+	    
+	  
+      fft( (short*) temp_in_ifft,                          
+	   (short*) ul_ch_estimates_time[aa],
+	   frame_parms->twiddle_ifft,
+	   frame_parms->rev,
+	   (frame_parms->log2_symbol_size),
+	   (frame_parms->log2_symbol_size)/2,
+	   0);
 
 
       if(cooperation_flag == 2)// Memory Allocation for temporary pointers to Channel Estimates
@@ -103,17 +117,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_fft_0,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
 	  memset(temp_in_fft_1,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
-	}
-  
 
-
-
-      //Extracting Channel Estimates for Distributed Alamouti Receiver Combining
-      if(cooperation_flag ==2)
-	{
+	  //Extracting Channel Estimates for Distributed Alamouti Receiver Combining
 	  
-
-	  re_offset = frame_parms->ofdm_symbol_size - frame_parms->N_RB_UL*12;
 	  temp_in_ifft_ptr = &temp_in_ifft[0];
 	
 	  i = symbol_offset;
@@ -124,8 +130,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  }
 
 
-	  fft((short*) &temp_in_ifft[0],                          // Perfomring IFFT on Combined Channel Estimates
+	  fft((short*) &temp_in_ifft[0],                          // Performing IFFT on Combined Channel Estimates
 	      temp_out_ifft, 
+	      //ul_ch_estimates_time[aa],
 	      frame_parms->twiddle_ifft,
 	      frame_parms->rev,
 	      (frame_parms->log2_symbol_size),
@@ -138,6 +145,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  in_fft_ptr_0 = &temp_in_fft_0[0];
 	  temp_out_ifft_ptr = (int*)temp_out_ifft;
+	  //temp_out_ifft_ptr = (int*)ul_ch_estimates_time[aa];
 	 
 	  for(j= 0;j<(1<<(frame_parms->log2_symbol_size))/2;j++)
 	    {
@@ -169,7 +177,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  	     
 	  in_fft_ptr_1 = &temp_in_fft_1[0];
 	  temp_out_ifft_ptr = (int*)temp_out_ifft;
-	  
+	  //temp_out_ifft_ptr = (int*)ul_ch_estimates_time[aa];
 
 	  for(j=(1<<frame_parms->log2_symbol_size)/2;j<(1<<(frame_parms->log2_symbol_size));j++)
 	    {
@@ -196,16 +204,17 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    i++;
 	  }
 
-
-	  /*	  if((aa == 0)&& (cooperation_flag == 2)){
+	  /*
+	  if((aa == 0)&& (cooperation_flag == 2)){
 	    write_output("test1.m","t1",temp_in_ifft,512,1,1);
 	    write_output("test2.m","t2",temp_out_ifft,512*2,2,1);
+	    //write_output("test2.m","t2",ul_ch_estimates_time[aa],512*2,2,1);
 	    write_output("test3.m","t3",temp_in_fft_0,512,1,1);  
 	    write_output("test4.m","t4",temp_out_fft_0,512,1,1);
 	    write_output("test5.m","t5",temp_in_fft_1,512,1,1);  
 	    write_output("test6.m","t6",temp_out_fft_1,512,1,1);
-	    }*/
-	
+	  }
+	  */
 
 	}//cooperation_flag == 2
 

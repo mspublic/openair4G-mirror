@@ -30,7 +30,8 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
-EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+#EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -40,7 +41,7 @@ CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAX_MODULES=1 -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -UDLSCH_THREAD -DPHY_ABSTRACTION
+EXTRA_CFLAGS += -DMAX_MODULES=1 -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD -DPHY_ABSTRACTION
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -82,11 +83,11 @@ EXTRA_CFLAGS += -I$(OPENAIR1_DIR)
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 
-ifeq ($(OPENAIR2),1)
+#ifeq ($(OPENAIR2),1)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
-else
+#else
 include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
-endif
+#endif
 
 EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(L2_incl))
 
@@ -103,11 +104,10 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 # MAC Interface
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
-openair_rf-objs += $(MAC_XFACE_OBJS)
 
 # Sched 
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
-#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
 
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
@@ -126,6 +126,8 @@ endif
 #include files for OPENAIR2
 ifeq ($(OPENAIR2),1)
 openair_rf-objs += $(L2_OBJS)
+else
+openair_rf-objs += $(MAC_XFACE_OBJS)
 endif
 
 test:

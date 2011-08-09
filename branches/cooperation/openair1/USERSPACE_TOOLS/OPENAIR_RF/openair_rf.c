@@ -98,6 +98,7 @@ int main (int argc, char **argv) {
     printf("[openair][INFO] Action 31 : Start UE Rate Adaptation param 0/1\n");
     printf("[openair][INFO] Action 32 : Set DLSCH Transmission Mode param 1-7\n");
     printf("[openair][INFO] Action 33 : Set ULSCH Allocation Mode param 0-2\n");
+    printf("[openair][INFO] Action 35 : Set cooperation flag (0=no coop, 1=delay diversity, 2=distrib Alamouti)\n");
     exit (-1);
   }
 
@@ -620,6 +621,12 @@ case 24 :
   case 34:
 
     result = ioctl(openair_fd,openair_SET_RRC_CONN_SETUP, NULL);
+    break;
+
+  case 35: 
+
+    fc = atoi(argv[3]);
+    result = ioctl(openair_fd,openair_SET_COOPERATION_FLAG, &fc);
     break;
 	
   default: 

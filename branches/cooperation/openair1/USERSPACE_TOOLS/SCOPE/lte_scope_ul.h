@@ -1,4 +1,4 @@
-/** Header file generated with fdesign on Mon May  3 17:57:50 2010.**/
+/** Header file generated with fdesign on Mon Aug  8 17:24:22 2011.**/
 
 #ifndef FD_lte_scope_h_
 #define FD_lte_scope_h_
@@ -14,11 +14,12 @@ typedef struct {
 	long  ldata;
 	FL_OBJECT *channel_t_re;
 	FL_OBJECT *demod_out;
-	FL_OBJECT *channel_f;
+	FL_OBJECT *channel_drs_time;
 	FL_OBJECT *channel_t_im;
 	FL_OBJECT *scatter_plot2;
 	FL_OBJECT *channel_srs_time;
 	FL_OBJECT *channel_srs;
+	FL_OBJECT *channel_drs;
 } FD_lte_scope;
 
 extern FD_lte_scope * create_form_lte_scope(void);

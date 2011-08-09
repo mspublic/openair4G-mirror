@@ -1089,9 +1089,9 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned char Qm = get_Qm(ulsch->harq_processes[harq_pid]->mcs);
   unsigned short rx_power_correction;
 
-#ifdef DEBUG_ULSCH
-  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNB_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb);
-#endif //DEBUG_ULSCH
+  //#ifdef DEBUG_ULSCH
+  debug_msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, cooperation %d\n",eNB_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb, cooperation_flag);
+  //#endif //DEBUG_ULSCH
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
        (frame_parms->ofdm_symbol_size == 512) )
@@ -1118,6 +1118,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			     frame_parms);
     
     lte_ul_channel_estimation(eNB_ulsch_vars->drs_ch_estimates[eNB_id],
+			      eNB_ulsch_vars->drs_ch_estimates_time[eNB_id],
 			      eNB_ulsch_vars->drs_ch_estimates_0[eNB_id],
 			      eNB_ulsch_vars->drs_ch_estimates_1[eNB_id],
 			      eNB_ulsch_vars->rxdataF_ext[eNB_id],

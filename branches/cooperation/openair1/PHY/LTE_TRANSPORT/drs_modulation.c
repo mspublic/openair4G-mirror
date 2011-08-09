@@ -56,7 +56,7 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     
 #ifdef DEBUG_DRS
-    msg("generate_drs_puch: symbol_offset %d, subframe offset %d\n",symbol_offset,sub_frame_offset);
+    msg("generate_drs_puch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,sub_frame_offset,cyclic_shift);
 #endif
 
     for (rb=0;rb<frame_parms->N_RB_UL;rb++) {

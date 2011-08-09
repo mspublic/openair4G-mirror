@@ -12,10 +12,12 @@
 #    define NB_MODULES_MAX 32
 #else
 #    define NB_MODULES_MAX 4
-#endif //PHY_EMUL
+#endif
 #    define NB_NODE_MAX    64
 #    define MAX_IP_PACKET_SIZE         4096
-#    define MAX_MODULES                NB_MODULES_MAX
+#    ifndef MAX_MODULES
+#        define MAX_MODULES            NB_MODULES_MAX
+#    endif
 #    define MAX_RG                     2
 
 #    define MAX_MOBILES_PER_RG         32 

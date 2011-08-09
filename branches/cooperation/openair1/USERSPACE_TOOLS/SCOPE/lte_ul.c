@@ -44,7 +44,7 @@ PHY_VARS_eNB *PHY_vars_eNB;
 //short channel_f[2048];
 //char demod_data[2048];
 
-short *channel_drs[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
+short *channel_drs[4],*channel_drs_time[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
 unsigned int* sync_corr;
 
 int length,offset;
@@ -144,7 +144,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_ybounds(form->channel_t_im,30,80);
   fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
 
-  // channel_f = drs
+  // channel_drs = drs
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
@@ -164,8 +164,27 @@ void lte_scope_idle_callback(void) {
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
   //fl_set_xyplot_ybounds(form->channel_f,30,70);
-  fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
+  fl_set_xyplot_data(form->channel_drs,sig_time,mag_sig,ind,"","","");
   //fl_set_xyplot_data(form->decoder_input,sig_time,mag_sig,ind,"","","");
+
+  // channel_drs_time = drs_time
+  cum_avg = 0;
+  ind = 0;
+  for (k=0;k<1;k++){
+    for (j=0;j<1;j++) {
+      
+      for (i=0;i<frame_parms->ofdm_symbol_size;i++){
+	sig_time[ind] = (float)ind;
+	Re = (float)(channel_drs_time[k+2*j][4*i]);
+	Im = (float)(channel_drs_time[k+2*j][4*i+1]);
+	mag_sig[ind] = (double)(Re*Re + Im*Im); 
+	ind++;
+      }
+    }
+  }
+
+  //fl_set_xyplot_ybounds(form->channel_f,30,70);
+  fl_set_xyplot_data(form->channel_drs_time,sig_time,mag_sig,ind,"","","");
 
   // demod_out = ulsch_llr
   for(i=0;i<12*12*12;i++) {
@@ -306,6 +325,12 @@ int main(int argc, char *argv[]) {
 			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[eNb_id] + 
 			      nb_ant_rx*sizeof(int*) + 
 			      i*(frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12) - 
+			      bigphys_top);
+
+    channel_drs_time[i] = (short*)(mem_base + 
+			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates_time[eNb_id] + 
+			      nb_ant_rx*sizeof(int*) + 
+			      i*(2*sizeof(int)*frame_parms->ofdm_symbol_size) - 
 			      bigphys_top);
 
     ulsch_ext[i] = (short*)(mem_base + 

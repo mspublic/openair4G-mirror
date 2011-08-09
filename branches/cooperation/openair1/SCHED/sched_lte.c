@@ -177,7 +177,7 @@ static void * openair_thread(void *param) {
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
   // run on CPU 1, which should be reserved only for this (by adding isolcpus=1 noirqbalance to the kernel options). Also use IsolCpusMaks=0x2 when loading rtai_hal
-  // rt_set_runnable_on_cpuid(pthread_self(),1);
+  rt_set_runnable_on_cpuid(pthread_self(),0);
   rt_sleep(nano2count(NS_PER_SLOT));
 
 
@@ -193,7 +193,7 @@ static void * openair_thread(void *param) {
   pthread_attr_setschedpolicy (&attr_threads[OPENAIR_THREAD_INDEX], SCHED_FIFO);
 #endif
   
-  msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
+  printk("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
   if (mac_xface->is_primary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
@@ -278,7 +278,7 @@ static void * openair_thread(void *param) {
 	    diff,
 	    openair_daq_vars.scheduler_interval_ns);
 	//openair1_restart();
-	exit_openair = 1;
+	//exit_openair = 1;
       }
 
       /*
@@ -551,6 +551,7 @@ void openair_sync(void) {
 	  mac_xface->frame = (((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]&0x03))<<8);
 	  mac_xface->frame += ((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1]&0xfc));
 	  mac_xface->frame += frame_mod4;
+	  mac_xface->frame += 1; // RT acquisition will only start next frame
 
 	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,
@@ -1079,10 +1080,6 @@ s32 openair_sched_init(void) {
   printk("[openair][SCHED][INIT] Created rx_sig_fifo handler, error_code %d\n",error_code);
 #endif //NOCARD_TEST
 
-  //if (mac_xface->is_cluster_head == 0) 
-  //FK mac_xface->is_cluster_head not initialized at this stage
-  //  error_code = init_dlsch_threads();
-
   tmp = rt_malloc(sizeof(int));
   printk("[openair][SCHED][INIT] tmp= %p\n",tmp);
   rt_free(tmp);
@@ -1091,7 +1088,7 @@ s32 openair_sched_init(void) {
 
 }
 
-void openair_sched_cleanup() {
+void openair_sched_cleanup(void) {
 
   int error_code;
 
@@ -1116,10 +1113,6 @@ void openair_sched_cleanup() {
   error_code = rtf_destroy(CHANSOUNDER_FIFO_MINOR);
   printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
-
-  //if (mac_xface->is_cluster_head == 0)
-  //FK: mac_xface->is_cluster_head not initialized at this stage
-  //  cleanup_dlsch_threads();
 
   //rtheap_destroy(rt_heap);
 

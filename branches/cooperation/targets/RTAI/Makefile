@@ -22,7 +22,7 @@ endif
 all: openair_rf_cbmimo1_softmodem.ko asn1_msg_kern.ko nasmesh.ko rb_tool openair_rf
 
 openair_rf_cbmimo1_softmodem.ko:  
-	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=0 M=`pwd` RTAI=1 CBMIMO1=1 && mv openair_rf.ko openair_rf_softmodem.ko)
+	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 && mv openair_rf.ko openair_rf_softmodem.ko)
 
 asn1_msg_kern.ko:
 	(cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES && $(MAKE) -C /usr/src/linux V=0 M=`pwd` RTAI=1 -j2)

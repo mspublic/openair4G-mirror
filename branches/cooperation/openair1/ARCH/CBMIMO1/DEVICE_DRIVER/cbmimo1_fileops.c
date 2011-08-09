@@ -181,6 +181,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
   TX_VARS dummy_tx_vars;
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
+  unsigned short node_id;
 
   u8 buffer[100];
   u8 size;
@@ -283,7 +284,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       mac_xface->cluster_head_index = 0;
 
 
-      printk("[openair][DUMP][CONFIG] Setting up registers\n");
+      printk("[openair][IOCTL] Setting up registers\n");
       for (i=0;i<number_of_cards;i++) { 
 	ret = setup_regs(i,frame_parms);
 	
@@ -294,9 +295,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       // usleep(10);
       ret = openair_sched_init();
       if (ret != 0)
-	printk("[openair][DUMP][CONFIG] Error in starting scheduler\n");
+	printk("[openair][IOCTL] Error in starting scheduler\n");
       else
-	printk("[openair][DUMP][CONFIG] Scheduler started\n");
+	printk("[openair][IOCTL] Scheduler started\n");
 
       // add Layer 1 stats in /proc/openair	
       add_openair1_stats();
@@ -348,6 +349,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 			       PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
 			       0,
 			       PHY_vars_eNB_g[0],
+			       2, //this will allocate memory for cooperation
 			       0)) {
 	  printk("[openair][IOCTL] phy_init_lte_eNB error\n");
 	  break;
@@ -419,7 +421,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	// Initialize MAC layer
 
 #ifdef OPENAIR2
-	NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
+	//NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
 	NB_CH_INST=1;
 	NB_UE_INST=0;
 	openair_daq_vars.mac_registered = 
@@ -451,6 +453,16 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	}
 	*/
       } // eNB Configuration check
+
+      for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+	clean_eNb_dlsch(PHY_vars_eNB_g[0]->dlsch_eNB[i][0],0);
+	clean_eNb_dlsch(PHY_vars_eNB_g[0]->dlsch_eNB[i][1],0);
+	clean_eNb_ulsch(PHY_vars_eNB_g[0]->ulsch_eNB[i],0);
+	memset(&(PHY_vars_eNB_g[0]->eNB_UE_stats[i]),0,sizeof(LTE_eNB_UE_stats));
+      }
+      clean_eNb_dlsch(PHY_vars_eNB_g[0]->dlsch_eNB_SI,0);
+      clean_eNb_dlsch(PHY_vars_eNB_g[0]->dlsch_eNB_ra,0);
+
 
       mac_xface->is_cluster_head = 1;
       mac_xface->is_primary_cluster_head = 1;
@@ -645,23 +657,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_configured = 3;
 	msg("[openair][IOCTL] phy_init_lte_ue done: %d\n",openair_daq_vars.node_configured);
 
-	for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
-	  PHY_vars_UE_g[0]->lte_ue_pbch_vars[i]->pdu_errors_conseq=0;
-	  PHY_vars_UE_g[0]->lte_ue_pbch_vars[i]->pdu_errors=0;
-	  
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_errors = 0;
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_missed = 0;
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_false  = 0;    
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_received = 0;    
-
-	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = 0x1235;
-	  PHY_vars_UE_g[0]->UE_mode[i] = NOT_SYNCHED;
-	} 
-	
 #endif 
 
 #ifdef OPENAIR2	
-	NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
+	//NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
 	NB_CH_INST=0;
 	NB_UE_INST=1;
 	openair_daq_vars.mac_registered =
@@ -686,6 +685,28 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	*/
       }  
 
+	for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
+	  PHY_vars_UE_g[0]->lte_ue_pbch_vars[i]->pdu_errors_conseq=0;
+	  PHY_vars_UE_g[0]->lte_ue_pbch_vars[i]->pdu_errors=0;
+	  
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_errors = 0;
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_missed = 0;
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_false  = 0;    
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->dci_received = 0;    
+
+	  node_id = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
+	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = (node_id>0 ? 0x1236 : 0x1235);
+	  PHY_vars_UE_g[0]->UE_mode[i] = NOT_SYNCHED;
+
+	  /*
+	  clean_ue_dlsch(PHY_vars_UE_g[0]->lte_ue_dlsch[i][0],0);
+	  clean_ue_dlsch(PHY_vars_UE_g[0]->lte_ue_dlsch[i][1],0);
+	  clean_ue_dlsch(PHY_vars_UE_g[0]->lte_ue_dlsch_SI[i],0);
+	  clean_ue_dlsch(PHY_vars_UE_g[0]->lte_ue_dlsch_ra[i],0);
+	  clean_ue_ulsch(PHY_vars_UE_g[0]->lte_ue_ulsch[i],0);
+	  */
+	} 
+	
       mac_xface->is_cluster_head = 0;
       mac_xface->is_primary_cluster_head = 0;
       mac_xface->is_secondary_cluster_head = 0;
@@ -712,22 +733,30 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
       
-      msg("[openair][START_NODE] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
+      msg("[openair][IOCTL] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
 	  RX_DMA_BUFFER[0],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],
 	  RX_DMA_BUFFER[1],
 	  PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[1]);
+
+#ifdef DLSCH_THREAD
+      ret = init_dlsch_threads();
+      if (ret != 0)
+	printk("[openair][IOCTL] Error in starting DLSCH thread\n");
+      else
+	printk("[openair][IOCTL] DLSCH thread started\n");
+#endif
       
       udelay(10000);
       
       ret = setup_regs(0,frame_parms);
       if (ret == 0) {
 	openair_daq_vars.node_running = 1;
-	printk("[openair][START_NODE] Process initialization return code %d\n",ret);
+	printk("[openair][IOCTL] Process initialization return code %d\n",ret);
       }
     }
     else {
-      printk("[openair][START_CLUSTERHEAD] Radio not configured\n");
+      printk("[openair][IOCTL] Radio not configured\n");
     }
 #endif // RTAI_ENABLED
     break;
@@ -1640,18 +1669,18 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef OPENAIR2
     RRC_CONNECTION_FLAG = 1;
     printk("[IOCTL] Setting RRC_CONNECTION_FLAG\n");
-
-    size = do_RRCConnectionReconfiguration(buffer,
-					   0,
-					   0,
-					   &CH_rrc_inst[0].SRB2_config[0],
-					   &CH_rrc_inst[0].DRB_config[0][0],
-					   &CH_rrc_inst[0].physicalConfigDedicated[0]);
-    
-    rrc_ue_decode_dcch(0,&buffer[0],0);
-
 #endif
   break;
+
+  case openair_SET_COOPERATION_FLAG:
+    if (PHY_vars_eNB_g && PHY_vars_eNB_g[0]) {
+      PHY_vars_eNB_g[0]->cooperation_flag = ((unsigned int *)arg)[0];
+      printk("[IOCTL] Setting cooperation flag to %d\n",PHY_vars_eNB_g[0]->cooperation_flag);
+    }
+    else
+      printk("[IOCTL] Cooperation flag not set, PHY_vars_eNB_g not allocated!!!\n");
+    break;
+
 
   default:
     //----------------------

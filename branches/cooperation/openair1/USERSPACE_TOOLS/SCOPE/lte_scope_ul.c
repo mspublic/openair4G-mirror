@@ -18,7 +18,7 @@ FD_lte_scope *create_form_lte_scope(void)
   fdui->demod_out = obj = fl_add_xyplot(FL_POINTS_XYPLOT,30,370,600,170,"Demodulator Output");
     fl_set_object_boxtype(obj,FL_EMBOSSED_BOX);
     fl_set_object_color(obj,FL_BLACK,FL_YELLOW);
-  fdui->channel_f = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,30,260,770,90,"Frequency Bin Response");
+  fdui->channel_drs_time = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,30,260,370,90,"Frequency Bin Response");
     fl_set_object_boxtype(obj,FL_EMBOSSED_BOX);
     fl_set_object_color(obj,FL_BLACK,FL_RED);
   fdui->channel_t_im = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,430,20,370,100,"Time-Domain Channel (Imaginaryl Component)");
@@ -33,6 +33,9 @@ FD_lte_scope *create_form_lte_scope(void)
   fdui->channel_srs = obj = fl_add_xyplot(FL_NORMAL_XYPLOT,430,140,370,100,"Time-Domain Channel (Imaginaryl Component)");
     fl_set_object_boxtype(obj,FL_EMBOSSED_BOX);
     fl_set_object_color(obj,FL_BLACK,FL_BLUE);
+  fdui->channel_drs = obj = fl_add_xyplot(FL_IMPULSE_XYPLOT,430,260,370,90,"Frequency Bin Response");
+    fl_set_object_boxtype(obj,FL_EMBOSSED_BOX);
+    fl_set_object_color(obj,FL_BLACK,FL_RED);
   fl_end_form();
 
   fdui->lte_scope->fdui = fdui;
