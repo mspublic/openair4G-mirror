@@ -274,26 +274,26 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	  ((short*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 0)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
 	  ((short*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 0)? (gain_lin_QPSK) : -gain_lin_QPSK;
 #else
-	  qpsk_table_offset = 1;// UE1, -x1*
-	  if (ulsch->b_tilde[j] == 1)
+	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;// UE1, -x1*
+	  if (ulsch->b_tilde[j] == 0)
 	    {}
 	  else
-	    qpsk_table_offset+=1;
-
-	  if (ulsch->b_tilde[j+1] == 1) 
 	    qpsk_table_offset+=2;
+
+	  if (ulsch->b_tilde[j+1] == 0) 
+	    qpsk_table_offset+=1;
       
 	  ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
 
-	  qpsk_table_offset = 1;//UE1,x0*
+	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;//UE1,x0*
 
-	  if (ulsch->b_tilde[j-2] == 1)
-	    qpsk_table_offset+=1;
+	  if (ulsch->b_tilde[j-2] == 0)
+	    qpsk_table_offset+=2;
 
-	  if(ulsch->b_tilde[j-1] == 1)
+	  if(ulsch->b_tilde[j-1] == 0)
 	    {}
 	  else
-	    qpsk_table_offset+=2;
+	    qpsk_table_offset+=1;
 
 	  ulsch->d[i+1] = (mod_sym_t) qpsk_table_offset;
 #endif    
@@ -509,9 +509,9 @@ void ulsch_modulation(mod_sym_t **txdataF,
 	  //	printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((short*)&ulsch->d[i])[0],((short*)&ulsch->d[i])[1]);
 #else
 	  qpsk_table_offset = MOD_TABLE_QPSK_OFFSET;
-	  if (ulsch->b_tilde[j] == 0)
+	  if (ulsch->b_tilde[j] == 0) //real
 	    qpsk_table_offset+=2;
-	  if (ulsch->b_tilde[j+1] == 0) 
+	  if (ulsch->b_tilde[j+1] == 0) //imag
 	    qpsk_table_offset+=1;
       
 	  ulsch->d[i] = (mod_sym_t) qpsk_table_offset;
