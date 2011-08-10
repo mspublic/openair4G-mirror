@@ -289,7 +289,7 @@ typedef struct {
 ///subband bitmap coniguration (for ALU icic algo purpose), in test phase
 
 typedef struct{
-	u8 sbmap[13]; //13 = number of SB MAX for 100 PRB
+	u8 sbmap[NUMBER_OF_SUBBANDS]; //13 = number of SB MAX for 100 PRB
 	u8 periodicity;
 	u8 first_subframe;
 	u8 sb_size;
@@ -391,7 +391,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 */
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe);
+void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
@@ -426,8 +426,10 @@ void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
 u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
-void Get_Cell_SBMap(u8 Mod_id);
+u32 Get_Cell_SBMap(u8 Mod_id);
+void UpdateSBnumber(unsigned char Mod_id);
 //end ALU's algo
+
 
 
 
