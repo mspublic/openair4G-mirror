@@ -124,22 +124,24 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 	    ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
 	    
 	  }
+	  /*
 	  else if(cyclic_shift == 6)
 	    {
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
 
-	    }
+	      }
+	  */
 	  else // Cyclic Shift to DMRS
 	    {
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = 
-		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
-			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
+		(short)	(((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
+			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
 			  ((int) amp))>>15);
 	      
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1]   = 
-		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
-			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
+		(short) (((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
+			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
 			  ((int) amp))>>15);
 	    }
 	  re_offset++;
