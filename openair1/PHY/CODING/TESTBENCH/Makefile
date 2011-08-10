@@ -7,27 +7,27 @@ CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi
 CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 
-TOP_DIR                    = ../../..
+TOP_DIR = $(OPENAIR1_DIR)
+OPENAIR1_TOP = $(OPENAIR1_DIR)
+OPENAIR2_TOP = $(OPENAIR2_DIR)
+OPENAIR3 = $(OPENAIR3_DIR)
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
 
-PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o $(TOP_DIR)/PHY/TOOLS/cdot_prod.o $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o $(TOP_DIR)/SIMULATION/TOOLS/taus.o $(TOP_DIR)/PHY/TOOLS/file_output.o $(TOP_DIR)/PHY/INIT/lte_init.o $(TOP_DIR)/PHY/INIT/init_top.o $(TOP_DIR)/PHY/LTE_REFSIG/lte_gold.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_coding.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_modulation.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dlsch_decoding.o $(TOP_DIR)/PHY/LTE_TRANSPORT/dci_tools.o $(TOP_DIR)/PHY/LTE_TRANSPORT/lte_mcs.o $(TOP_DIR)/PHY/CODING/lte_rate_matching.o $(TOP_DIR)/PHY/CODING/lte_segmentation.o $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_sync_time.o 
+CFLAGS = -Wall -O5 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
 
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/srs_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/drs_modulation.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/phich.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/pcfich.o
+ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_ul_ref.o
-PHY_OBJS += $(TOP_DIR)/PHY/LTE_TRANSPORT/uci_tools.o
+CFLAGS += -DOPENAIR2 -DNO_RRM -DPHY_ABSTRACTION -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3)
 
-PHY_OBJS += $(TOP_DIR)/PHY/CODING/viterbi.o $(TOP_DIR)/PHY/CODING/3gpplte_turbo_decoder_sse.o $(TOP_DIR)/PHY/CODING/3gpplte.o $(TOP_DIR)/PHY/CODING/ccoding_byte.o $(TOP_DIR)/PHY/CODING/crc_byte.o $(TOP_DIR)/PHY/CODING/viterbi_lte.o $(TOP_DIR)/PHY/CODING/ccoding_byte_lte.o 
-PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/log2_approx.o
+include $(TOP_DIR)/PHY/Makefile.inc
+include $(TOP_DIR)/SCHED/Makefile.inc
+include $(TOP_DIR)/SIMULATION/Makefile.inc
+include $(TOP_DIR)/../openair2/LAYER2/Makefile.inc
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
-#OPENAIR0_OBJS = $(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder/decoder.o $(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder/decoder_api.o $(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder/3gpp_intlv.o $(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder/3gpp_encoder.o $(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder/lte_intlv.o
+LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
-OBJ = $(PHY_OBJS) #$(OPENAIR0_OBJS)
-
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) #$(ASN1_MSG_OBJS) 
 
 all: ltetest
 
@@ -38,13 +38,12 @@ $(OBJ) : %.o : %.c
 	$(CC) -c -O2 $(CFLAGS) -Wall -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o $@ $<
 
 ltetest: $(OBJ) ltetest.c
-	$(CC) ltetest.c -O2 -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o ltetest $(CFLAGS) $(OBJ) -lm -DOPENAIR_LTE
+	$(CC) ltetest.c -O2 -I$(TOP_DIR) -I$(TOP_DIR)/PHY/CODING -I$(OPENAIR0_DIR)/express-mimo/simulator/baseband/C/channel_decoder -o ltetest $(CFLAGS) $(OBJ) -lm -DOPENAIR_LTE -lblas
 
 pdcch_test: $(OBJ) pdcch_test.c
-	$(CC) pdcch_test.c -I$(TOP_DIR) -o pdcch_test $(CFLAGS) $(PHY_OBJS) -lm
-
+	$(CC) pdcch_test.c -I$(TOP_DIR) -o pdcch_test $(CFLAGS) $(PHY_OBJS) -lm -lblas
 viterbi_test: $(OBJ) viterbi_test.c
-	$(CC) viterbi_test.c -I$(TOP_DIR) -o viterbi_test $(CFLAGS) $(PHY_OBJS) -lm
+	$(CC) viterbi_test.c -I$(TOP_DIR) -o viterbi_test $(CFLAGS) $(PHY_OBJS) -lm -lblas
 
 clean: 
 	rm -f $(TOP_DIR)/PHY/CODING/*.o
