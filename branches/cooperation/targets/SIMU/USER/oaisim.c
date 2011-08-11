@@ -633,9 +633,9 @@ int main(int argc, char **argv) {
   char c;
   s32 i,j;
   double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
-  double amps[1] = {1};//{0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=.0000000000001,Td=.8,forgetting_factor=.999,maxDoppler=0;
-  u8 channel_length,nb_taps=1;
+  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+  double aoa=.03,ricean_factor=1,Td=.8,forgetting_factor=0,maxDoppler=0;
+  u8 channel_length,nb_taps=8;
 
 
   s32 n_errors;
@@ -974,7 +974,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
 		     0,
 		     PHY_vars_eNB_g[eNB_id],
-		     cooperation_flag,
+		     2, //cooperation_flag,
 		     abstraction_flag);
     
     /*
@@ -1186,6 +1186,11 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 					       0);
 
       UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;// - 20;
+      /*
+      if ((UE_id==0) && (eNB_id==0)) 
+	UE2eNB[UE_id][eNB_id]->path_loss_dB = -200;
+      */
+
 #ifdef DEBUG_SIM
       printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
       printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
@@ -1213,7 +1218,7 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=140;
     PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235+UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0]=4;
   }// end navid 
  
@@ -1393,6 +1398,11 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
       }
       */ 
+      if ((last_slot==5) && (abstraction_flag==0)) {
+	write_output("ulsch_rxF_comp.m","ulsch_comp",PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_comp[0][0],300*12,1,1);
+	write_output("ulsch_rxF_comp0.m","ulsch_comp0",PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_comp_0[0][0],300*12,1,1);
+	write_output("ulsch_rxF_comp1.m","ulsch_comp1",PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_comp_1[0][0],300*12,1,1);
+      }
     }
 
     if ((mac_xface->frame==1)&&(abstraction_flag==0)) {
