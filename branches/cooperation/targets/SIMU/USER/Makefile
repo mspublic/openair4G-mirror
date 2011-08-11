@@ -17,7 +17,7 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE -DOPENAIR2
+CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE #-DOPENAIR2
 
 # does not work under linux
 ifndef cygwin # forget about OCG, libxml doesn't work the same way as under linux

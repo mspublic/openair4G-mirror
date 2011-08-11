@@ -30,13 +30,6 @@ inline unsigned int taus() {
 
 void set_taus_seed(unsigned int seed_init) {
   
-  //s0 = (unsigned int)time(NULL);// 0x1e23d852;
-  //s1 = (unsigned int)time(NULL); //0x81f38a1c;
-  //s2 = (unsigned int)time(NULL); //0xfe1a133e;
-  s0 = (unsigned int) 0x1e23d852;
-  s1 = (unsigned int) 0x81f38a1c;
-  s2 = (unsigned int) 0xfe1a133e;
-
   if (seed_init == 0) {
     s0 = (unsigned int)time(NULL); 
     s1 = (unsigned int)time(NULL); 

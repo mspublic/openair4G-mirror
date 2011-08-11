@@ -1188,8 +1188,6 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->cooperation_flag = 0;
 
 
-
-
     if ((ulsch->harq_processes[harq_pid]->nb_rb>0) && (ulsch->harq_processes[harq_pid]->nb_rb < 25))
       ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb-1];
     

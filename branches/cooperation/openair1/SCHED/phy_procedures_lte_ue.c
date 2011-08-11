@@ -554,21 +554,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	generate_drs_pusch(&phy_vars_ue->lte_frame_parms,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],next_slot>>1,first_rb,nb_rb,cyclic_shift);
 #endif
       }      
-      input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
-      //      msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  input buffer (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8);
 
-      if(phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag > 0)
-	{
-	  for (i=0;i<input_buffer_length;i++) {
-	    ulsch_input_buffer[i]= i;
-	  }
-	}
-      else
-	{
-	  for (i=0;i<input_buffer_length;i++) {
-	    ulsch_input_buffer[i]= (u8)(taus()&0xff);
-	  }
-	}
 #ifdef DEBUG_PHY      
       debug_msg("[PHY][UE %d] Frame %d, Subframe %d ulsch harq_pid %d : O %d, O_ACK %d, O_RI %d, TBS %d\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1,harq_pid,phy_vars_ue->ulsch_ue[eNB_id]->O,phy_vars_ue->ulsch_ue[eNB_id]->O_ACK,phy_vars_ue->ulsch_ue[eNB_id]->O_RI,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS);
 #endif
@@ -589,6 +575,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  ulsch_encoding_emul(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],phy_vars_ue,eNB_id,harq_pid,0);
 	}
       else {
+	input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
+	//      msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  input buffer (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8);
 #ifdef OPENAIR2
 	debug_msg("[PHY][UE %d] ULSCH : Searching for MAC SDUs\n",phy_vars_ue->Mod_id);
 	if (phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->Ndi==1)
@@ -599,12 +587,23 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  debug_msg("%x.",ulsch_input_buffer[i]);
 	debug_msg("\n");
 #endif
-#endif
-	if (abstraction_flag==0)
-	  ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
-	else
-	  ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
+#else
+	for (i=0;i<input_buffer_length;i++)
+	  ulsch_input_buffer[i]= i;
+	memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
+	memset(phy_vars_ue->ulsch_ue[eNB_id]->o_RI ,0,2*sizeof(u8));
+	memset(phy_vars_ue->ulsch_ue[eNB_id]->o_ACK,0,4*sizeof(u8));
+	/*
+	for (i=0;i<input_buffer_length;i++) 
+	  ulsch_input_buffer[i]= (u8)(taus()&0xff);
+	*/
       }
+#endif
+      if (abstraction_flag==0)
+	ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
+      else
+	ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
+
       if (abstraction_flag == 0) {
 #ifdef OFDMA_ULSCH
 	ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,AMP,(next_slot>>1),&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],phy_vars_ue->ulsch_ue[eNB_id]->cooperation_flag);
