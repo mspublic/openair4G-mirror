@@ -631,7 +631,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,6,4);
+    UL_alloc_pdu.rballoc = computeRIV(25,0,10);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;
@@ -649,9 +649,9 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
     if (cooperation_flag==0)
-      UL_alloc_pdu.rballoc = computeRIV(25,10,4);
+      UL_alloc_pdu.rballoc = computeRIV(25,10,10);
     else 
-      UL_alloc_pdu.rballoc = computeRIV(25,6,4);
+      UL_alloc_pdu.rballoc = computeRIV(25,0,10);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;
@@ -1667,7 +1667,6 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,last_slot>>1);
-  round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
 #ifdef OPENAIR2
   if ((phy_vars_eNB->eNB_UE_stats[0].mode == PUSCH) && (phy_vars_eNB->eNB_UE_stats[1].mode == PUSCH))
@@ -1698,6 +1697,8 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	(phy_vars_eNB->ulsch_eNB[i]->rnti>0) &&
 	(phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1) && 
 	((last_slot%2)==1)) {
+
+      round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
 #ifdef DEBUG_PHY
       debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: Scheduling ULSCH %d Reception for rnti %x harq_pid %d\n",mac_xface->frame,last_slot,last_slot>>1,i,phy_vars_eNB->ulsch_eNB[i]->rnti,harq_pid);
@@ -1839,7 +1840,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	}
       
-	  debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status,phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
+	  msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status,phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
 	  
 	  // process HARQ feedback
 #ifdef DEBUG_PHY

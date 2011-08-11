@@ -92,7 +92,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		   0,
 		   PHY_vars_eNB,
 		   0,
-		   0,
 		   0);
 
   
@@ -329,17 +328,17 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.srs_Bandwidth = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.transmissionComb = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated.freqDomainPosition = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].srs_ConfigIndex = 1;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].srs_Bandwidth = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].transmissionComb = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].freqDomainPosition = 0;
 
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].srs_ConfigIndex = 1;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].srs_Bandwidth = 0;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].transmissionComb = 0;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].freqDomainPosition = 0;
 
   //  PHY_vars_eNB->eNB_UE_stats[0].SRS_parameters = PHY_vars_UE->SRS_parameters;
   

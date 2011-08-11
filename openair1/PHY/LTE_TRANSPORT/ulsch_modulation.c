@@ -241,10 +241,14 @@ void ulsch_modulation(mod_sym_t **txdataF,
   msg("ulsch_modulation.c: Doing modulation for G=%d bits, nb_rb %d, Q_m %d, Nsymb_pusch %d\n",
       G,ulsch->harq_processes[harq_pid]->nb_rb,Q_m, ulsch->Nsymb_pusch);
 #endif
+
   // scrambling (Note the placeholding bits are handled in ulsch_coding.c directly!)
+  //msg("ulsch bits: ");
   for (i=0;i<G;i++) {
     ulsch->b_tilde[i] = ulsch->h[i];  // put Gold scrambling here later
+    //msg("%d,", ulsch->b_tilde[i]);
   }
+  //msg("\n");
 
 #ifndef IFFT_FPGA_UE
   gain_lin_QPSK = (short)((amp*ONE_OVER_SQRT2_Q15)>>15);
@@ -255,7 +259,6 @@ void ulsch_modulation(mod_sym_t **txdataF,
   Msymb = G/Q_m;
   if(cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
-    // TODO: change modulation here (both for IFFT_FPGA on and off)!!! 
     {
       for (i=0,j=Q_m;i<Msymb;i+=2,j+=2*Q_m) {
 

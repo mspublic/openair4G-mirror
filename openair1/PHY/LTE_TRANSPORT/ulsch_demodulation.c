@@ -682,9 +682,10 @@ void ulsch_channel_compensation_alamouti(int **rxdataF_ext,                 // F
   //    printf("comp: symbol %d\n",symbol);
 
   
-  if (Qm == 4)
-    {  QAM_amp128U_0 = _mm_set1_epi16(QAM16_n1);
-      QAM_amp128U_1 = _mm_set1_epi16(QAM16_n1);}
+  if (Qm == 4) {  
+    QAM_amp128U_0 = _mm_set1_epi16(QAM16_n1);
+    QAM_amp128U_1 = _mm_set1_epi16(QAM16_n1);
+  }
   else if (Qm == 6) {
     QAM_amp128U_0  = _mm_set1_epi16(QAM64_n1);
     QAM_amp128bU_0 = _mm_set1_epi16(QAM64_n2);

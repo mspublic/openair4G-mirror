@@ -1,5 +1,5 @@
 #include "PHY/defs.h"
-#include "extern.h"
+#include "PHY/extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
 //#define DEBUG_DRS
@@ -55,9 +55,9 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
     symbol_offset = sub_frame_offset + frame_parms->ofdm_symbol_size*l;
 #endif
     
-#ifdef DEBUG_DRS
-    msg("generate_drs_puch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,sub_frame_offset,cyclic_shift);
-#endif
+    //#ifdef DEBUG_DRS
+    debug_msg("generate_drs_puch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,sub_frame_offset,cyclic_shift);
+    //#endif
 
     for (rb=0;rb<frame_parms->N_RB_UL;rb++) {
 
@@ -132,7 +132,8 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 
 	      }
 	  */
-	  else // Cyclic Shift to DMRS
+	  
+	  else if(cyclic_shift == 6) // Cyclic Shift to DMRS
 	    {
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = 
 		(short)	(((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
