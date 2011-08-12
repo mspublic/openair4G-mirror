@@ -33,7 +33,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
   // noise measurements
   // for the moment we measure the noise on the 7th OFDM symbol (in S subframe) 
   
-phy_measurements->n0_power_tot = 0;
+  phy_measurements->n0_power_tot = 0;
 
   /*  printf("rxdataF0 %p, rxdataF1 %p\n",
 	 (&eNB_common_vars->rxdataF[0][0][(frame_parms->ofdm_symbol_size + frame_parms->first_carrier_offset)<<1 ]),

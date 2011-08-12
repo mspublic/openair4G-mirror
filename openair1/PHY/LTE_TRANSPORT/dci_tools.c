@@ -587,8 +587,8 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
   case format1:
     harq_pid  = ((DCI1_5MHz_TDD_t *)dci_pdu)->harq_pid;
     
-    if (harq_pid>8) {
-      msg("dci_tools.c: ERROR: Format 1: harq_pid > 8\n");
+    if (harq_pid>=8) {
+      msg("dci_tools.c: ERROR: Format 1: harq_pid >= 8\n");
       return(-1);
     }
     dlsch[0]->current_harq_pid = harq_pid;
@@ -604,7 +604,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     
 
     if (NPRB==0) {
-      msg("dci_tools.c: ERROR: Format 1A: NPRB=0\n");
+      msg("dci_tools.c: ERROR: Format 1: NPRB=0\n");
       return(-1);
     }
 

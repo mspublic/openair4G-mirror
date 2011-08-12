@@ -29,7 +29,7 @@
 //#endif
 
 #ifndef OPENAIR2
-#define DIAG_PHY
+//#define DIAG_PHY
 #endif
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -569,7 +569,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][4],
 	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][5]);
 	if (abstraction_flag==0)
-	  ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
+	  if (ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0)!=0) {
+	    msg("ulsch_coding.c: FATAL ERROR: returning\n");
+	    return;
+	  }
 
 	else
 	  ulsch_encoding_emul(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],phy_vars_ue,eNB_id,harq_pid,0);
