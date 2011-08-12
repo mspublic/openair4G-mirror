@@ -920,7 +920,7 @@ void init_transport_channels(u8);
 void generate_RIV_tables(void);
 
 
-s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+void rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH *eNB_ulsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      u32 subframe,
@@ -928,7 +928,7 @@ s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH_t *ulsch,
 	      u8 cooperation_flag);
 
-int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
+void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 subframe,
 		   u8 sect_id,
 		   u8 UE_index);

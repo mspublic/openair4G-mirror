@@ -488,7 +488,14 @@ typedef struct{
   /// hold the channel mag for UE1 in case of Distributed Alamouti Scheme
   s32 **ul_ch_mag_1[3];   
   /// hold the channel magb for UE1 in case of Distributed Alamouti Scheme
-  s32 **ul_ch_magb_1[3];  
+  s32 **ul_ch_magb_1[3]; 
+  /// measured RX power based on DRS
+  int ulsch_power[2];
+  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
+  int ulsch_power_0[2];
+  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
+  int ulsch_power_1[2];
+  /// llr values
   s16 *llr;
 } LTE_eNB_ULSCH;
 

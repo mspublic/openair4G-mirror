@@ -631,7 +631,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,0,10);
+    UL_alloc_pdu.rballoc = computeRIV(25,5,10);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;
@@ -649,9 +649,9 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
     if (cooperation_flag==0)
-      UL_alloc_pdu.rballoc = computeRIV(25,10,10);
+      UL_alloc_pdu.rballoc = computeRIV(25,15,10);
     else 
-      UL_alloc_pdu.rballoc = computeRIV(25,0,10);
+      UL_alloc_pdu.rballoc = computeRIV(25,5,10);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;
@@ -1609,6 +1609,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
     
     sect_id = 0;
+    /*
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
       
       if ((phy_vars_eNB->eNB_UE_stats[UE_id].mode>PRACH) && (last_slot%2==1)) {
@@ -1662,7 +1663,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 		  phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset);
       }
     }
-      	
+   */   	
   }
 
   // Check for active processes in current subframe
@@ -1718,24 +1719,20 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       phy_vars_eNB->ulsch_eNB[i]->cyclicShift = (phy_vars_eNB->ulsch_eNB[i]->n_DMRS2 + phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS)%12;
       
       if (abstraction_flag==0) {
-	ulsch_power = rx_ulsch(&phy_vars_eNB->lte_eNB_common_vars,
-			       phy_vars_eNB->lte_eNB_ulsch_vars[i],  
-			       &phy_vars_eNB->lte_frame_parms,
-			       last_slot>>1,
-			       phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
-			       phy_vars_eNB->ulsch_eNB[i],
-			       (two_ues_connected==1 ? phy_vars_eNB->cooperation_flag : 0));
+	rx_ulsch(&phy_vars_eNB->lte_eNB_common_vars,
+		 phy_vars_eNB->lte_eNB_ulsch_vars[i],  
+		 &phy_vars_eNB->lte_frame_parms,
+		 last_slot>>1,
+		 phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
+		 phy_vars_eNB->ulsch_eNB[i],
+		 (two_ues_connected==1 ? phy_vars_eNB->cooperation_flag : 0));
       }
       else {
-	ulsch_power = rx_ulsch_emul(phy_vars_eNB,
-				    last_slot>>1,
-				    phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
-				    i);
+	rx_ulsch_emul(phy_vars_eNB,
+		      last_slot>>1,
+		      phy_vars_eNB->eNB_UE_stats[i].sector,  // this is the effective sector id
+		      i);
       }
-
-
-      for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
-	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
 
       if (abstraction_flag == 0) {
 	ret = ulsch_decoding(phy_vars_eNB->lte_eNB_ulsch_vars[i]->llr,
@@ -1749,9 +1746,36 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				  last_slot>>1,
 				  i);
       }
+
+      if ((two_ues_connected==1) && (phy_vars_eNB->cooperation_flag==2)) {
+	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++) {
+	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[j]) 
+	    - phy_vars_eNB->rx_total_gain_eNB_dB;
+	  phy_vars_eNB->eNB_UE_stats[i+1].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[j]) 
+	    - phy_vars_eNB->rx_total_gain_eNB_dB;
+	}
 #ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
+	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power UE0 (%d,%d) dB RX power UE1 (%d,%d)\n",
+		  mac_xface->frame,last_slot,last_slot>>1,i,
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[1]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[1]));
 #endif
+      }
+      else {
+	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
+	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) 
+	    - phy_vars_eNB->rx_total_gain_eNB_dB;
+#ifdef DEBUG_PHY
+	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",
+		  mac_xface->frame,last_slot,last_slot>>1,i,
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]),
+		  phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
+#endif
+      }
+      
     
       phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round]++;
  
@@ -1840,9 +1864,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #endif
 	}
       
-	  msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status,phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
-	  
-	  // process HARQ feedback
+	// process HARQ feedback
 #ifdef DEBUG_PHY
 	  debug_msg("[PHY_PROCEDURES_eNB] eNB %d Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,i);
 #endif
@@ -1855,6 +1877,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				0);
       
       }  // ulsch not in error
+
+#ifdef DEBUG_PHY
+      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status,phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
+#endif
+
+
       if (mac_xface->frame % 100 == 0) {
 	if ((phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][round] - 
 	     phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_pid][round]) != 0)

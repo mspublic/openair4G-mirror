@@ -1198,8 +1198,8 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
     }
   }
     
-  randominit(0);
-  set_taus_seed(0);
+  randominit(1);
+  set_taus_seed(1);
 
   number_of_cards = 1;
 

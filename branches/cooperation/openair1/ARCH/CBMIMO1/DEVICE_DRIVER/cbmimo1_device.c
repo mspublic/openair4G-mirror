@@ -115,8 +115,8 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
   
   rt_task = rt_smp_current[rtai_cpuid()];
 
-  printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, frame %d, slot %d\n", 
-	 vec, signo, rt_task, mac_xface->frame, openair_daq_vars.slot_count);
+  printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, ip %04x, frame %d, slot %d\n", 
+	 vec, signo, rt_task, regs->ip, mac_xface->frame, openair_daq_vars.slot_count);
 
   openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
 
@@ -399,6 +399,8 @@ static int __init openair_init_module( void )
 
   // set default trap handler
   rt_set_trap_handler(oai_trap_handler);
+
+  printk("[openair][MODULE][INFO] &bigphys_malloc = %p\n",&bigphys_malloc);
 
   printk("[openair][MODULE][INFO] Done init\n");
   return 0;

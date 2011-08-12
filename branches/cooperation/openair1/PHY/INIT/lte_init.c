@@ -1718,6 +1718,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       } //for(eNB_id...
     }
   }
+
+  for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
+    phy_vars_eNB->eNB_UE_stats_ptr[UE_id] = &phy_vars_eNB->eNB_UE_stats[UE_id];
+
   return (0);  
 }
     

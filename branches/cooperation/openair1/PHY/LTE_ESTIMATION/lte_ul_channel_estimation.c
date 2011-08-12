@@ -35,8 +35,9 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
   //s8 phase_shift;
   //phase_shift = -(2*M_PI*cyclicShift)/12;
   short ul_ch_estimates_re,ul_ch_estimates_im;
+  int rx_power_correction;
 
-  debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
+  //debug_msg("lte_ul_channel_estimation: cyclic shift %d\n",cyclicShift);
 
 
   s16 alpha_re[12] = {32767, 28377, 16383,     0,-16384,  -28378,-32768,-28378,-16384,    -1, 16383, 28377};
@@ -70,6 +71,12 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 #endif
 #endif
 #endif
+
+  if ( (frame_parms->ofdm_symbol_size == 128) ||
+       (frame_parms->ofdm_symbol_size == 512) )
+    rx_power_correction = 2;
+  else
+    rx_power_correction = 1;
 
   if (l == (3 - frame_parms->Ncp)) {
 
@@ -119,7 +126,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	  */
 	}
       }
-      
+
+      /*      
       // Convert to time domain for visualization
       memset(temp_in_ifft,0,frame_parms->ofdm_symbol_size*sizeof(int*)*2);
       for(i=0;i<frame_parms->N_RB_UL*12;i++)
@@ -138,6 +146,7 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
       if (aa==0)
 	write_output("drs_est2.m","drs2",ul_ch_estimates_time[aa],512*2,2,1);
 #endif
+      */
 
       if(cooperation_flag == 2)// Memory Allocation for temporary pointers to Channel Estimates
 	{
@@ -169,14 +178,15 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 
 
-
+	  // because the ifft is not power preserving, we should apply the factor sqrt(power_correction) here, but we rather apply power_correction here and nothing after the next fft
 	  in_fft_ptr_0 = &temp_in_fft_0[0];
 	  temp_out_ifft_ptr = (int*)temp_out_ifft;
 	  //temp_out_ifft_ptr = (int*)ul_ch_estimates_time[aa];
 	 
 	  for(j= 0;j<(1<<(frame_parms->log2_symbol_size))/2;j++)
 	    {
-	      in_fft_ptr_0[j] = temp_out_ifft_ptr[2*j];
+	      ((short*)in_fft_ptr_0)[2*j] = ((short*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
+	      ((short*)in_fft_ptr_0)[2*j+1] = ((short*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
 	    }
 	  
 	 
@@ -198,7 +208,6 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 	    out_fft_ptr_0[i] = temp_out_fft_0_ptr[2*j];
 	    i++;
 	  }
-	  
 
 	  
 	  	     
@@ -208,7 +217,8 @@ int lte_ul_channel_estimation(int **ul_ch_estimates,
 
 	  for(j=(1<<frame_parms->log2_symbol_size)/2;j<(1<<(frame_parms->log2_symbol_size));j++)
 	    {
-	      in_fft_ptr_1[j] = temp_out_ifft_ptr[2*j];
+	      ((short*)in_fft_ptr_1)[2*j] = ((short*)temp_out_ifft_ptr)[4*j]*rx_power_correction;
+	      ((short*)in_fft_ptr_1)[2*j+1] = ((short*)temp_out_ifft_ptr)[4*j+1]*rx_power_correction;
 	    }
 	  
 	 
