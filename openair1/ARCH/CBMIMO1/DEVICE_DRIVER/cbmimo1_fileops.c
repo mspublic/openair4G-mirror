@@ -273,7 +273,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       else
 	openair_daq_vars.dlsch_transmission_mode = 2;
       openair_daq_vars.target_ue_dl_mcs = 4;
-      openair_daq_vars.target_ue_ul_mcs = 0;
+      openair_daq_vars.target_ue_ul_mcs = 4;
       openair_daq_vars.dlsch_rate_adaptation = 0;
       openair_daq_vars.ue_ul_nb_rb = 4;
       openair_daq_vars.ulsch_allocation_mode = 0;
