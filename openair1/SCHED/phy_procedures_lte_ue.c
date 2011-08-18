@@ -29,7 +29,7 @@
 //#endif
 
 #ifndef OPENAIR2
-//#define DIAG_PHY
+#define DIAG_PHY
 #endif
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
@@ -840,8 +840,8 @@ void phy_procedures_emos_UE_RX(u8 last_slot,u8 eNB_id) {
     emos_dump_UE.UE_mode = phy_vars_ue->UE_mode;
     emos_dump_UE.freq_offset = lte_ue_common_vars->freq_offset;
     emos_dump_UE.timing_advance = openair_daq_vars.timing_advance;
-    emos_dump_UE.timing_offset  = PHY_vars->rx_offset;
-    emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
+    emos_dump_UE.timing_offset  = PHY_vars_eNB_g->rx_offset;
+    emos_dump_UE.rx_total_gain_dB = PHY_vars_eNB_g->rx_total_gain_dB;
     emos_dump_UE.eNB_id = lte_ue_common_vars->eNB_id;
   }
   if (last_slot==1) {

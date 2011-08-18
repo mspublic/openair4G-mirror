@@ -11,4 +11,4 @@ $OPENAIR1_DIR/USERSPACE_TOOLS/OPENAIR_RF/openair_rf_cbmimo1_lte 0 6 100 100 100 
 $OPENAIR1_DIR/USERSPACE_TOOLS/OPENAIR_RF/openair_rf_cbmimo1_lte 0 14 0 #RF mode 0 = mixer low gain, lna off
 #./openair_rf_cbmimo1_lte 0 14 1 #RF mode 1 = mixer low gain, lna on
 #./openair_rf_cbmimo1_lte 0 14 2 #RF mode 2 = mixer high gain, lna on
-$OPENAIR1_DIR/USERSPACE_TOOLS/OPENAIR_RF/openair_rf_cbmimo1_lte 0 3 1 0
+$OPENAIR1_DIR/USERSPACE_TOOLS/OPENAIR_RF/openair_rf_cbmimo1_lte 0 3 1 1

@@ -274,7 +274,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.target_ue_dl_mcs = 4;
       openair_daq_vars.target_ue_ul_mcs = 0;
       openair_daq_vars.dlsch_rate_adaptation = 0;
-      openair_daq_vars.ue_ul_nb_rb = 2;
+      openair_daq_vars.ue_ul_nb_rb = 4;
       openair_daq_vars.ulsch_allocation_mode = 0;
 
       //mac_xface->slots_per_frame = SLOTS_PER_FRAME;
@@ -403,8 +403,6 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	    msg("ulsch_eNB[%d] => %p\n",i,PHY_vars_eNB_g[0]->ulsch_eNB[i]);
 	  }
 	}
-
-	openair_daq_vars.target_ue_ul_mcs    = 1;
 
 	//init_transport_channels(openair_daq_vars.dlsch_transmission_mode);
 
