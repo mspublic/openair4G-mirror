@@ -813,19 +813,18 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 		       0,
 		       16384);
 
-    //if (openair_daq_vars.auto_freq_correction == 1) 
-    /*
-      if (mac_xface->frame % 100 == 0) {
-      if ((ue_common_vars->freq_offset>100) && (openair_daq_vars.freq_offset < 500)) {
-      openair_daq_vars.freq_offset+=100;
-      openair_set_freq_offset(0,penair_daq_vars.freq_offset);
+    if (openair_daq_vars.auto_freq_correction == 1) {
+    if (mac_xface->frame % 100 == 0) {
+      if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
+	openair_daq_vars.freq_offset+=100;
+	openair_set_freq_offset(0,openair_daq_vars.freq_offset);
       }
-      else if ((ue_common_vars->freq_offset<-100) && (openair_daq_vars.freq_offset > -500)) {
-      openair_daq_vars.freq_offset-=100;
-      openair_set_freq_offset(0,penair_daq_vars.freq_offset);
+      else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
+	openair_daq_vars.freq_offset-=100;
+	openair_set_freq_offset(0,openair_daq_vars.freq_offset);
       }
-      }
-    */
+    }
+    }
   }
 }
 

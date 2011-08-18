@@ -265,6 +265,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.mode    = openair_NOT_SYNCHED;
       openair_daq_vars.node_running = 0;
       
+      openair_daq_vars.auto_freq_correction = 1;
       openair_daq_vars.manual_timing_advance = 0;
       openair_daq_vars.timing_advance = 19;
       if (frame_parms->mode1_flag)
@@ -1610,6 +1611,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_FREQ_OFFSET:
 
     openair_daq_vars.freq_offset = ((int *)arg)[0];
+    openair_daq_vars.auto_freq_correction = 0;
     if (openair_set_freq_offset(0,((int *)arg)[0]) == 0)
       msg("[openair][IOCTL] Set frequency offset to %d\n",((int *)arg)[0]);
     else 

@@ -81,6 +81,7 @@ typedef struct {
   u32  rx_gain_val;
   u32  rx_gain_mode;
   u32  tcxo_dac;
+  u32  auto_freq_correction;
   s32  freq_offset;
   u32  tx_rx_switch_point;
   u32  manual_timing_advance;  /// 1 to override automatic timing advance
