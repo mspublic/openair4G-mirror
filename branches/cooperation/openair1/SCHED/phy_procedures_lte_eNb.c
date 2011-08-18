@@ -477,29 +477,29 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
   unsigned char sect_id,i,aa;
 
   if (last_slot%2==1) {
-    memcpy(&emos_dump_eNB.phy_vars_eNB->eNB_UE_stats[(last_slot>>1)-2],&phy_vars_eNB->eNB_UE_stats,sizeof(LTE_phy_vars_eNB->eNB_UE_stats));
+    memcpy(&emos_dump_eNB.phy_vars_eNB->eNB_UE_stats[(last_slot>>1)-2],&PHY_vars_eNB_g->eNB_UE_stats,sizeof(PHY_vars_eNB_g->eNB_UE_stats));
   }
 
   if (last_slot==4) {
-    emos_dump_eNB.rx_total_gain_dB = PHY_vars->rx_total_gain_eNB_dB;
+    emos_dump_eNB.rx_total_gain_dB = PHY_vars_eNB_g->rx_total_gain_eNB_dB;
     emos_dump_eNB.mimo_mode = openair_daq_vars.dlsch_transmission_mode;
   }
 
   if (last_slot==8) {
-    emos_dump_eNB.ulsch_errors = phy_vars_eNB->eNB_UE_stats[1].ulsch_errors;
+    emos_dump_eNB.ulsch_errors = PHY_vars_eNB_g->eNB_UE_stats[1].ulsch_errors;
     for (sect_id = 0; sect_id<3; sect_id++)  
       memcpy(&emos_dump_eNB.PHY_measurements_eNB[sect_id],
-	     &PHY_vars->PHY_measurements_eNB[sect_id],
+	     &PHY_vars_eNB_g->PHY_measurements_eNB[sect_id],
 	     sizeof(PHY_MEASUREMENTS_eNB));
 
   }
 
   if (last_slot%2==1) {
     for (sect_id = 0; sect_id<3; sect_id++)  
-      for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) 
+      for (aa=0; aa<PHY_vars_eNB_g->lte_frame_parms.nb_antennas_rx; aa++) 
 	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],
-	       phy_vars_eNB->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
-	       phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*sizeof(int));
+	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
+	       PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
   }
 
 }
@@ -631,7 +631,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,5,10);
+    UL_alloc_pdu.rballoc = computeRIV(25,4,openair_daq_vars.ue_ul_nb_rb);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;
@@ -649,9 +649,9 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
     UL_alloc_pdu.type    = 0;
     UL_alloc_pdu.hopping = 0;
     if (cooperation_flag==0)
-      UL_alloc_pdu.rballoc = computeRIV(25,15,10);
+      UL_alloc_pdu.rballoc = computeRIV(25,4+openair_daq_vars.ue_ul_nb_rb,openair_daq_vars.ue_ul_nb_rb);
     else 
-      UL_alloc_pdu.rballoc = computeRIV(25,5,10);
+      UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
     UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
     UL_alloc_pdu.ndi     = 1;
     UL_alloc_pdu.TPC     = 0;

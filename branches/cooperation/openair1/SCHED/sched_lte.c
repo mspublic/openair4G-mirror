@@ -612,10 +612,10 @@ void openair_sync(void) {
     }
 
 #ifdef EMOS
-    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
+    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars_UE_g[0]->PHY_measurements, sizeof(PHY_MEASUREMENTS));
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.UE_mode = UE_mode;
-    emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
+    emos_dump_UE.rx_total_gain_dB = PHY_vars_UE_g[0]->rx_total_gain_dB;
 
     debug_msg("[SCHED_LTE] Writing EMOS data to FIFO\n");
     if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {

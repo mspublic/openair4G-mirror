@@ -1300,7 +1300,8 @@ printf("UE = %d\n", emulation_scen->topo_config.number_of_UE);
 	  phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
 	  if ((next_slot==5) && (abstraction_flag==0)) {
 	    write_output("ulsch_txF0.m","ulsch_txF0",PHY_vars_UE_g[0]->lte_ue_common_vars.txdataF[0],300*12*12,1,4);
-	    write_output("ulsch_txF1.m","ulsch_txF1",PHY_vars_UE_g[1]->lte_ue_common_vars.txdataF[0],300*12*12,1,4);
+	    if (UE_id > 0)
+	      write_output("ulsch_txF1.m","ulsch_txF1",PHY_vars_UE_g[1]->lte_ue_common_vars.txdataF[0],300*12*12,1,4);
 	  }
 	  //if ((mac_xface->frame % 10) == 0) {
 	  len=dump_ue_stats(PHY_vars_UE_g[UE_id],stats_buffer,0);
