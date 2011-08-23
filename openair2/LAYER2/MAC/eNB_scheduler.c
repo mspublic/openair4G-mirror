@@ -2109,9 +2109,9 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
 	Rrc_xface->Frame_index=Mac_rlc_xface->frame;
 
 	Mac_rlc_xface->pdcp_run();
-
-	UpdateSBnumber(Mod_id);
-	u32 RBalloc=Get_Cell_SBMap(Mod_id);
+	// navid: the following 2 functions does not work properly when there is user-plane traffic 
+	//UpdateSBnumber(Mod_id);
+	u32 RBalloc=0;//Get_Cell_SBMap(Mod_id);
 
 	switch (subframe) {
 	case 0:

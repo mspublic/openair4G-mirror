@@ -26,6 +26,7 @@ ________________________________________________________________*/
 #include "COMMON/platform_constants.h"
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
+#include "MeasGapConfig.h"
 #include "TDD-Config.h"
 
 //#ifdef PHY_EMUL
@@ -45,15 +46,13 @@ ________________________________________________________________*/
 #define CCCH 0
 #define DCCH 1
 #define DCCH1 2
-#define DTCH_BD 2
-#define DTCH    3
-#define DTCH_OFFSET DTCH+NB_RAB_MAX 
+#define DTCH  3 // DTCH + lcid < 11
 
 #ifdef USER_MODE
 #define printk printf
 #endif //USER_MODE
 
-
+#define MAX_NUM_LCID 11
 #define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
 
@@ -299,7 +298,6 @@ typedef struct{
 
 //end ALU's algo
 
-
 typedef struct{
   /// 
   u16 Node_id;
@@ -323,20 +321,36 @@ typedef struct{
 }eNB_MAC_INST;
 
 typedef struct {
+  /// pointer to RRC PHY configuration 
+  struct PhysicalConfigDedicated *physicalConfigDedicated;
   /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *config;
+  MAC_MainConfig_t *macConfig;
+  /// Pointer to RRC Measurement gap configuration
+  MeasGapConfig_t  *measGapConfig;
   /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[11];
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
   /// LCHAN buffer status
-  u16 buffer_status[16];
+  u8 buffer_status[MAX_NUM_LCID]; // should be more for mesh topology
+  /// BSR active in the current  MAC SDU
+  u8 BSR_active;
   /// SR pending as defined in 36.321
   u8 SR_pending;
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
-  /// retxBSR-Timer
+  /// retxBSR-Timer, default value is sf2560
   u16 retxBSR_Timer;
-  /// periodicBSR-Timer
-  u16 periodicBSR_Timer;
+  /// periodicBSR-Timer, default to infinity
+  u16 periodicBSR_Timer; 
+  /// default value is 0
+  u16 sr_ProhibitTimer;
+  ///  default value to n5
+  u16 maxHARQ_tx; 
+  /// default value is false
+  u16 ttiBundling;
+  /// default value is release 
+  u8 *drx_config;
+  /// default value is release
+  u8 *phr_config;
 } UE_SCHEDULING_INFO;
 
 typedef struct{
@@ -361,6 +375,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
+		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
@@ -470,9 +485,10 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 @param Mod_id Instance id of UE in machine
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
+@param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
@@ -545,7 +561,21 @@ int mac_init(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
+/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe)
+   \brief UE scehdular where all the ue background tasks are done
+\param[in] Mod_id instance of the UE
+\param[in] subframe the subframe number
+*/
 void ue_scheduler(u8 Mod_id, u8 subframe);
+
+/*! \fn  locate (int *table, int size, int value)
+   \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
+\param[in] *table Pointer to BSR table
+\param[in] size Size of the table
+\param[in] value Value of the buffer 
+\return the index in the BSR_LEVEL table
+*/
+u8 locate (const u32 *table, int size, int value);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

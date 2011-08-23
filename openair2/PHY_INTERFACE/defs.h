@@ -104,7 +104,7 @@ typedef struct
     u16 (*ue_process_rar)(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
 
     /// Get SR payload (0,1) from UE MAC
-    u32 (*ue_get_SR)(u8 Mod_id,u8 eNB_id,u16 rnti);
+    u32 (*ue_get_SR)(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
 
     /// Indicate synchronization with valid PBCH
     void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);

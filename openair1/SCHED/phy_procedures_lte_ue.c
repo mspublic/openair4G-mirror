@@ -630,7 +630,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
 	SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
 					  eNB_id,
-					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti);
+					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					  next_slot>>1); // subframe used for meas gap
       }
       else
 	SR_payload=0;

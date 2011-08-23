@@ -17,6 +17,7 @@
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
+#include "UTIL/LOG/log_if.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
@@ -36,6 +37,15 @@
 #define msg debug_msg
 #endif
 */
+
+#define BSR_TABLE_SIZE 64
+const u32 BSR_TABLE[BSR_TABLE_SIZE]={0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
+			       105,125,146,171,200,234,274,321,376,440,515,603,706,826,967,1132,
+			       1326,1552,1817,2127,2490,2915,3413,3995,4677,5467,6411,7505,8787,10287,12043,14099,
+			       16507,19325,22624,26487,31009,36304,42502,49759,58255,68201,79846,93479,109439, 128125,150000, 300000};
+
+//u32 EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
+
 
 unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned char *num_ce,
@@ -91,9 +101,46 @@ unsigned char *parse_header(unsigned char *mac_header,
 
 
 
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti) {
-
-  return(0);
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
+  
+  // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
+  int MGL=6;// measurement gap length in ms
+  int MGRP=0; // measurement gap repition period in ms
+  int gapOffset=-1;
+  int T=0; 
+  int sfn=0;
+  // determin the measurement gap
+  if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig !=NULL){
+    if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
+      MGRP= 40;
+      gapOffset= UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.choice.gp0;
+    }else if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1){
+      MGRP= 80;
+      gapOffset= UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.choice.gp1;
+    }else{
+      LOG_W(MAC, "Measurement GAP offset is unknown");
+    }
+  }
+  T=MGRP/10;
+  //check the measurement gap amd sr prohibit timer
+  if ((subframe ==  gapOffset %10) && ((mac_xface->frame %T) == (floor(gapOffset/10)))){
+    //&& (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer==0)){ -- rel 9 and above
+    UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
+    return(0);
+  }
+  if (UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER < 
+      UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax){
+    UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER++;
+    // start the sr-prohibittimer : rel 9 and above
+    return(1);
+  }
+  else{
+    // notify RRC to relase PUCCH/SRS
+    // clear any configured dl/ul
+    // initiate RA
+    UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    return(0);
+  }
 }
 
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
@@ -597,19 +644,65 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     }
 }
 
-
+// called at each slot (next_slot%2==0)
 void ue_scheduler(u8 Mod_id, u8 subframe) {
+
+  int lcid; // lcid index
+  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+
 
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
-
-  // Get RLC status info for all lcids that are active
-
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
 
+  // Get RLC status info for all lcids that are active
+  for (lcid=0; lcid < MAX_NUM_LCID; lcid++ ) { // ccch, dcch, dtch, bcch
+    rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
+					  lcid,
+					  0);//tb_size does not reauire when requesting the status
+    //set the bsr for all lcid by searching the table to find the bsr level 
+    UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
+    
+  }
+ 
+  // UE has no valid phy config dedicated ||  no valid/released  SR 
+  if ((UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated == NULL) || 
+      (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig == NULL) ||
+      (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig->present == SchedulingRequestConfig_PR_release)){
+
+    // initiate RA with CRNTI included in msg3 (no contention) as descibed in 36.321 sec 5.1.5
+    
+    // cancel all pending SRs
+    UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+  }
+   
   // Call PHR procedure as described in Section 5.4.6 in 36.321
 }
 
+
+u8 locate (const u32 *table, int size, int value){
+  
+  u8 ju, jm, jl; 
+  int ascend;
+  
+  if (value == 0) return 0; //elseif (value > 150000) return 63;
+  
+  jl = 0;      // lower bound
+  ju = size  ;// upper bound
+  ascend = (table[ju] >= table[jl]) ? 1 : 0; // determine the order of the the table:  1 if ascending order of table, 0 otherwise
+  
+  while (ju-jl > 1) { //If we are not yet done,
+    jm = (ju+jl) >> 1; //compute a midpoint,
+    if ((value >= table[jm]) == ascend)
+      jl=jm; // replace the lower limit
+    else
+      ju=jm; //replace the upper limit
+    LOG_D(MAC,"[UE] searching BSR index %d for (value%d < BSR%d)\n", jm, table[jm], value);	
+  }
+  if (value == table[jl]) return jl;
+  else                    return jl+1; //equally  ju
+  
+}
 
