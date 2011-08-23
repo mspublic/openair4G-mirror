@@ -90,6 +90,7 @@ void init_SI(u8 Mod_id) {
 				      (MAC_MainConfig_t *)NULL,
 				      0,
 				      (struct LogicalChannelConfig *)NULL,
+				      (MeasGapConfig_t *)NULL,
 				      eNB_rrc_inst[Mod_id].sib1.tdd_Config,
 				      &SIwindowsize,
 				      &SIperiod);
@@ -216,13 +217,16 @@ void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_
       break;
     case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
       break;
-    case UL_DCCH_MessageType__c1_PR_spare1:
-    case UL_DCCH_MessageType__c1_PR_spare2:
-    case UL_DCCH_MessageType__c1_PR_spare3:
-    case UL_DCCH_MessageType__c1_PR_spare4:
-    case UL_DCCH_MessageType__c1_PR_spare5:
+    case UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
       break;
-
+    case UL_DCCH_MessageType__c1_PR_proximityIndication_r9:
+      break;
+    case UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
+      break;
+    case UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
+      break;
+    case UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
+      break;
     }
   }
 }
@@ -388,6 +392,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
 				    eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 				    1,
 				    SRB1_logicalChannelConfig,
+				    UE_rrc_inst[Mod_id].measGapConfig[UE_index],
 				    (TDD_Config_t *)NULL,
 				    (u8 *)NULL,
 				    (u16 *)NULL);
@@ -401,7 +406,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
     }
   }
   else {
-    SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
+    SRB2_logicalChannelConfig  = &SRB2_logicalChannelConfig_defaultValue;
   }
    
   Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
@@ -410,6 +415,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
 				    eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 				    2,
 				    SRB2_logicalChannelConfig,
+				    UE_rrc_inst[Mod_id].measGapConfig[UE_index],
 				    (TDD_Config_t *)NULL,
 				    (u8 *)NULL,
 				    (u16 *)NULL);
@@ -423,7 +429,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
   int i;
 
   // Loop through DRBs and establish if necessary
-  for (i=0;i<8;i++) {
+  for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
       msg("[RRC][eNB %d] Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,UE_index,
 	  (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity,
@@ -456,6 +462,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 					eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 					DRB2LCHAN[i],
 					eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelConfig,
+					UE_rrc_inst[Mod_id].measGapConfig[UE_index],
 					(TDD_Config_t *)NULL,
 					(u8 *)NULL,
 					(u16 *)NULL);
@@ -474,7 +481,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 					eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 					eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
 					DRB2LCHAN[i],
-					(struct LogicalChannelConfig_t *)NULL,
+					(LogicalChannelConfig_t *)NULL,
+					(MeasGapConfig_t *)NULL,
 					(TDD_Config_t *)NULL,
 					(u8 *)NULL,
 					(u16 *)NULL);

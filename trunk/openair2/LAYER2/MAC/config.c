@@ -2,9 +2,11 @@
 #include "COMMON/platform_constants.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
+#include "MeasGapConfig.h"
 #include "TDD-Config.h"
 #include "defs.h"
 #include "extern.h"
+#include "UTIL/LOG/log_if.h"
 
 int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
@@ -12,6 +14,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 		       MAC_MainConfig_t *mac_MainConfig,
 		       long logicalChannelIdentity,
 		       LogicalChannelConfig_t *logicalChannelConfig,
+		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod) {
@@ -64,11 +67,37 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon);
 
   }
+  
+  if (logicalChannelConfig!= NULL) {
+    if (eNB_flag==0)
+      UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
+  }
 
-  if (physicalConfigDedicated) {
+  if (eNB_flag==0){
+    UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
+    UE_mac_inst[Mod_id].scheduling_info.measGapConfig=measGapConfig;
+    if (mac_MainConfig!= NULL) {
+      LOG_I(MAC,"[UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
+      //UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
+    }else{ // default values as deined in 36.331 sec 9.2.2
+      LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",Mod_id);
+      //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;
+      UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+      UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer=0;
+      UE_mac_inst[Mod_id].scheduling_info.maxHARQ_tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+      UE_mac_inst[Mod_id].scheduling_info.ttiBundling=0;
+      UE_mac_inst[Mod_id].scheduling_info.drx_config=DRX_Config_PR_release;
+      UE_mac_inst[Mod_id].scheduling_info.phr_config=MAC_MainConfig__phr_Config_PR_release;
+    }
+  }
+
+  if (physicalConfigDedicated != NULL) {
     if (eNB_flag==1)
       mac_xface->phy_config_dedicated_eNB(Mod_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
-    else
+    else{
       mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
+      UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated=physicalConfigDedicated; // for SR proc
+    }
   }
 }
