@@ -868,11 +868,11 @@ s32 rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[phy_vars_eNB->Mod_id]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti)
       break;
   }
   if (UE_id==NB_UE_INST) {
-    msg("ulsch_decoding_emul: FATAL, didn't find UE with rnti %x\n",rnti);
+    msg("rx_pucch_emul: FATAL, didn't find UE with rnti %x\n",rnti);
     return(-1);
   }
 

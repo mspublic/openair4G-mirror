@@ -346,6 +346,11 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 
 #ifdef PHY_ABSTRACTION
 #include "SIMULATION/TOOLS/defs.h"
+#ifdef OPENAIR2
+#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
+#endif
+
 extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 int dlsch_abstraction(short* sinr_dB, u32 rb_alloc[4], u8 mcs) {
   return(1);
@@ -359,16 +364,26 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   LTE_UE_DLSCH_t *dlsch_ue;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 harq_pid;
-  int i;
+  u8 eNB_id2,i;
 
-  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id,dlsch_id);
+  for (eNB_id2=0;eNB_id2<NB_eNB_INST;eNB_id2++) {
+    if (PHY_vars_eNB_g[eNB_id2]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
+      break;
+  }
+  if (eNB_id2==NB_eNB_INST) {
+    msg("phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DLSCH emulation !!!!\n");
+    mac_xface->macphy_exit("");
+  }
+
+  msg("[PHY] EMUL UE dlsch_decoding_emul : subframe %d, eNB_id %d, dlsch_id %d\n",subframe,eNB_id2,dlsch_id);
 
   //  printf("dlsch_eNB_ra->harq_processes[0] %p\n",PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra->harq_processes[0]);
+
 
   switch (dlsch_id) {
   case 0: // SI
     dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI;
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_SI;
     msg("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
@@ -377,13 +392,16 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
   case 1: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra;
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
     break;
   case 2: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id])][0];
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2])][0];
+    for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
+      msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
+    msg("\n");
 
     if (dlsch_abstraction(phy_vars_ue->sinr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
       // reset HARQ 
@@ -412,8 +430,8 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   case 3: // TB1
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][1];
     harq_pid = dlsch_ue->current_harq_pid;
-    dlsch_eNB = PHY_vars_eNB_g[eNB_id]->dlsch_eNB[find_ue((s16)dlsch_ue->rnti,PHY_vars_eNB_g[eNB_id])][1];
-    // reset HARQ 
+    dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2])][1];
+     // reset HARQ 
     dlsch_ue->harq_processes[harq_pid]->status = SCH_IDLE;
     dlsch_ue->harq_processes[harq_pid]->round  = 0;
     dlsch_ue->harq_ack[subframe].ack = 1;

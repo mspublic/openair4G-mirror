@@ -302,6 +302,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
   // int payload_offset = 0;
   unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned short i;
 
   if (dlsch->harq_processes[harq_pid]->Ndi == 1) {
     memcpy(dlsch->harq_processes[harq_pid]->b,
@@ -310,7 +311,11 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     msg("[PHY] EMUL eNB %d dlsch_encoding_emul, tbs is %d\n", 
 	phy_vars_eNB->Mod_id,
 	dlsch->harq_processes[harq_pid]->TBS>>3);
-    
+
+    for (i=0;i<dlsch->harq_processes[harq_pid]->TBS>>3;i++)
+      printf("%x.",DLSCH_pdu[i]);
+    printf("\n");
+
     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
 	   //memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],
     	   DLSCH_pdu,
