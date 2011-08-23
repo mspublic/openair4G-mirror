@@ -13,7 +13,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-//#define DEBUG_PHY_PROC
+#define DEBUG_PHY_PROC
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -1060,12 +1060,16 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
     }
   
     if (phy_vars_eNB->dlsch_eNB_ra->active == 1) {
+      msg("[PHY][eNB%d] Frame %d, slot %d, RA active, filling RAR:\n",
+	  phy_vars_eNB->Mod_id,mac_xface->frame, next_slot);
       input_buffer_length = phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->TBS/8;
       crnti = mac_xface->fill_rar(phy_vars_eNB->Mod_id,
 				  dlsch_input_buffer,
 				  phy_vars_eNB->lte_frame_parms.N_RB_UL,
 				  input_buffer_length);
-
+      for (i=0;i<input_buffer_length;i++)
+	printf("%x.",dlsch_input_buffer[i]);
+      printf("\n");
       UE_id = add_ue(crnti,phy_vars_eNB);
       if (UE_id==-1) {
 	mac_xface->macphy_exit("[PHY][eNB] Max user count reached.\n");
@@ -1085,9 +1089,6 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			   mac_xface->frame,
 			   &phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_frame,
 			   &phy_vars_eNB->ulsch_eNB[UE_id]->RRCConnRequest_subframe);
-      
-      //      for (i=0;i<input_buffer_length;i++)
-      //	dlsch_input_buffer[i]= (unsigned char)(taus()&0xff);
       
 #ifdef DEBUG_PHY_PROC
       msg("[PHY][eNB%d] Frame %d, next slot %d: Calling generate_dlsch (RA) with input size = %d,RRCConnRequest frame %d, RRCConnRequest subframe %d\n",

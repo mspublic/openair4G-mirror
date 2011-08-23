@@ -21,6 +21,7 @@
 
 #include "LAYER2/MAC/defs.h"
 #include "PHY_INTERFACE/defs.h"
+#include "LAYER2/MAC/vars.h"
 
 #define BW 5.0
 
@@ -151,7 +152,7 @@ void lte_param_init(unsigned char N_tx,
 
   phy_init_lte_top(lte_frame_parms);
 
-  for (i=0;i<NB_UE_INST;i++) {
+  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
     for (j=0;j<2;j++) {
       PHY_vars_eNB_g[0]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,0);
       if (!PHY_vars_eNB_g[0]->dlsch_eNB[i][j]) {
@@ -200,7 +201,6 @@ void lte_param_init(unsigned char N_tx,
 		   PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars,
 		   0,
 		   PHY_vars_eNB_g[0],
-		   0,
 		   0,
 		   0);
 
