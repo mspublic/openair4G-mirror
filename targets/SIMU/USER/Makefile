@@ -18,8 +18,8 @@ ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
 
 # activate OCG and libxml only under linux
-ifdef linux 
-CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 
+ifeq ($(linux),1) 
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm 
 OCG_FLAG = 1
 CFLAGS += -DOCG_FLAG 
 cygwin=0
@@ -107,7 +107,7 @@ $(L2_OBJS) : %.o : %.c
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
 	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
 endif

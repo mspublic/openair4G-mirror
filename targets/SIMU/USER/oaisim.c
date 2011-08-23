@@ -40,7 +40,7 @@
 
 #define RF
 
-//#define DEBUG_SIM 
+#define DEBUG_SIM 
 
 #define BW 7.68
 
@@ -209,8 +209,8 @@ int main(int argc, char **argv) {
 	double snr_dB, sinr_dB,snr_dB2,sinr_dB2;
 
 	// Pairwise Channel Descriptors
-	channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
-	channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
+	//	channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+	//	channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
 	// Framing variables
 	u16 n_frames, n_frames_flag;
@@ -499,7 +499,7 @@ int main(int argc, char **argv) {
 					0,
 					0);
 
-			eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
+			eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + ((eNB_id == (UE_id%3)) ? snr_dB : sinr_dB);
 
 			UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 					PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
@@ -517,7 +517,7 @@ int main(int argc, char **argv) {
 					0,
 					0);
 
-			UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB;// - 20;
+			UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + ((eNB_id == (UE_id%3)) ? snr_dB : sinr_dB);
 #ifdef DEBUG_SIM
 printf("[SIM] Path loss from eNB %d to UE %d => %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
 printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
