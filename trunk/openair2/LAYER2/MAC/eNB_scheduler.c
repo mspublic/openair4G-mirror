@@ -21,9 +21,9 @@
 //static char eNB_generate_rar     = 0;  // flag to indicate start of RA procedure
 //static char eNB_generate_rrcconnsetup = 0;  // flag to indicate termination of RA procedure (mirror response)
 
-#define DEBUG_eNB_SCHEDULER 1
-#define DEBUG_HEADER_PARSING 1
-#define DEBUG_PACKET_TRACE 1
+//#define DEBUG_eNB_SCHEDULER 0
+//#define DEBUG_HEADER_PARSING 0
+//#define DEBUG_PACKET_TRACE 0
 
 /*
 #ifndef USER_MODE
