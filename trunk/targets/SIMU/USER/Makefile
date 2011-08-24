@@ -19,7 +19,7 @@ CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
-CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm 
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt
 OCG_FLAG = 1
 CFLAGS += -DOCG_FLAG 
 cygwin=0
