@@ -25,6 +25,8 @@
 //#define DEBUG_HEADER_PARSING 0
 //#define DEBUG_PACKET_TRACE 0
 
+//#define ICIC 0
+
 /*
 #ifndef USER_MODE
 #define msg debug_msg
@@ -1247,7 +1249,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 	void *DLSCH_dci=NULL;
 	DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
 	int i;
-
+#ifdef ICIC
 	FILE *DCIi;
 	DCIi = fopen("dci.txt","a");
 	int b;
@@ -1258,7 +1260,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 		fprintf(DCIi,"%d",(buff>>b)&1);
 	fprintf(DCIi,"\n");
 
-
+#endif 
 
 	// clear vrb_map
 	memset(vrb_map,0,100);
@@ -1451,7 +1453,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 						2,//aggregation,
 						sizeof_DCI1_5MHz_TDD_t,
 						format1);
-
+#ifdef ICIC
 				buff=rballoc;
 				fprintf(DCIi,"eNB: %d|rballoc DLSCH:\t\t\t\t\t",Mod_id);
 				for (b=31;b>=0;b--)
@@ -1463,7 +1465,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 				for (b=31;b>=0;b--)
 					fprintf(DCIi,"%d",(buff>>b)&1);
 				fprintf(DCIi,"\n");
-
+#endif
 
 
 				break;
@@ -1504,7 +1506,9 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 
 
 	}
+#ifdef ICIC
 	fclose(DCIi);
+#endif 
 
 }
 
@@ -2091,7 +2095,7 @@ void UpdateSBnumber(unsigned char Mod_id){
 void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_flag,unsigned char subframe) {
 
 	unsigned char nprb=0,nCCE=0;
-
+	u32 RBalloc=0;
 
 	DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
 #ifdef DEBUG_eNB_SCHEDULER
@@ -2109,10 +2113,11 @@ void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_fl
 	Rrc_xface->Frame_index=Mac_rlc_xface->frame;
 
 	Mac_rlc_xface->pdcp_run();
+#ifdef ICIC
 	// navid: the following 2 functions does not work properly when there is user-plane traffic 
-	//UpdateSBnumber(Mod_id);
-	u32 RBalloc=0;//Get_Cell_SBMap(Mod_id);
-
+	UpdateSBnumber(Mod_id);
+	RBalloc=Get_Cell_SBMap(Mod_id);
+#endif 
 	switch (subframe) {
 	case 0:
 		//test navid

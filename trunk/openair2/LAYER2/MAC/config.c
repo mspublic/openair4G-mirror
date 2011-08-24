@@ -85,6 +85,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
       UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
       UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer=0;
+      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=0;
       UE_mac_inst[Mod_id].scheduling_info.maxHARQ_tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       UE_mac_inst[Mod_id].scheduling_info.ttiBundling=0;
       UE_mac_inst[Mod_id].scheduling_info.drx_config=DRX_Config_PR_release;
