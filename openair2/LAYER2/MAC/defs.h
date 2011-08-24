@@ -341,8 +341,10 @@ typedef struct {
   u16 retxBSR_Timer;
   /// periodicBSR-Timer, default to infinity
   u16 periodicBSR_Timer; 
-  /// default value is 0
+  /// default value is 0: not configured
   u16 sr_ProhibitTimer;
+  /// sr ProhibitTime running
+  u8 sr_ProhibitTimer_Running;
   ///  default value to n5
   u16 maxHARQ_tx; 
   /// default value is false

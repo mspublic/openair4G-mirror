@@ -120,19 +120,23 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
     }else{
       LOG_W(MAC, "Measurement GAP offset is unknown");
     }
-  }
-  T=MGRP/10;
-  //check the measurement gap amd sr prohibit timer
-  if ((subframe ==  gapOffset %10) && ((mac_xface->frame %T) == (floor(gapOffset/10)))){
-    //&& (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer==0)){ -- rel 9 and above
-    UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
-    return(0);
+    T=MGRP/10;
+    //check the measurement gap amd sr prohibit timer
+    if ((subframe ==  gapOffset %10) && ((mac_xface->frame %T) == (floor(gapOffset/10))) 
+	&& (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running =0)){
+      UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
+      return(0);
+    }
   }
   if (UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER < 
       UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig->choice.setup.dsr_TransMax){
     UE_mac_inst[Mod_id].scheduling_info.SR_COUNTER++;
     // start the sr-prohibittimer : rel 9 and above
-    return(1);
+    if (UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer > 0) { // timer configured 
+      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer--;
+      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer_Running=1;
+    }
+    return(1); //instruct phy to signal SR
   }
   else{
     // notify RRC to relase PUCCH/SRS
