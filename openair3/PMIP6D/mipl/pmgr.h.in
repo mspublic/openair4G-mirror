@@ -1,0 +1,23 @@
+/* $Id: pmgr.h.in,v 1.1.1.1 2008/04/23 13:21:04 nguyenhn Exp $ */
+
+#ifndef __PMGR_H__
+#define __PMGR_H__ 1
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <limits.h>
+#include "policy.h"
+
+struct pmgr_cb {
+/* ##INSERT_FUNCTIONPOINTERS## */
+        char so_path[_POSIX_PATH_MAX + 1];
+        void *handle;
+        struct pmgr_cb *old;
+};
+
+int pmgr_init(char *libpath, struct pmgr_cb *lb);
+
+int pmgr_close(struct pmgr_cb *lb);
+
+#endif

@@ -136,7 +136,9 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 
-  u8 eNB,UE_id,i;
+  u8 eNB,UE_id,i,j;
+  u32 ulsch_errors=0;
+  u32 ulsch_round_attempts[4]={0,0,0,0},ulsch_round_errors[4]={0,0,0,0};
 
   if (phy_vars_eNB==NULL)
     return 0;
@@ -159,7 +161,9 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
   }
   
   for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
+#ifdef OPENAIR2
     if (phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->rnti>0) {
+#endif
       len += sprintf(&buffer[len],"[eNB PROC] UE %d (%x) RSSI: (%d,%d) dBm, Sector %d, DLSCH Mode %d, DLSCH Rate adaptation %d, ULSCH Allocation mode %d, UE_DL_mcs %d, UE_UL_MCS %d, UE_UL_NB_RB %d\n",
 		     UE_id,
 		     phy_vars_eNB->eNB_UE_stats[UE_id].crnti,
@@ -196,7 +200,33 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
 		     phy_vars_eNB->eNB_UE_stats[UE_id].mode);
       
+#ifdef OPENAIR2
       if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH) {
+#endif
+	for (i=0;i<3;i++) {
+	  ulsch_errors += phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_errors[i];
+	  for (j=0;j<4;j++) {
+	    ulsch_round_attempts[j] += phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[i][j];
+	    ulsch_round_errors[j] += phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_errors[i][j];
+	  }
+	}
+
+	len += sprintf(&buffer[len],"[eNB PROC] ULSCH FER per round (%d, %d, %d, %d) : (%d, %d, %d, %d) : (%d, %d, %d, %d)  \n",
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][0],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][1],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][2],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[0][3],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[1][0],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[1][1],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[1][2],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[1][3],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[2][0],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[2][1],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[2][2],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_fer[2][3]);
+
+		       
+
 	len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) : %d/%d(%d,%d,%d,%d) \n",
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_errors[0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[0][0],
@@ -228,8 +258,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]);
 	
+#ifdef OPENAIR2
       }
     }
+#endif
   }
   buffer[len]='\0';
   

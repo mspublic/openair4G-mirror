@@ -13,7 +13,7 @@ ________________________________________________________________*/
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
-eNB_RRC_INST *eNB_rrc_inst;
+CH_RRC_INST *CH_rrc_inst;
 UE_RRC_INST *UE_rrc_inst;
 RRC_XFACE *Rrc_xface;
 #ifndef USER_MODE
@@ -38,30 +38,9 @@ unsigned short Header_read_idx,Data_read_idx,Header_size;
 unsigned short Data_to_read;
 #endif //NO_RRM
 
-u8 DRB2LCHAN[8];
-
-long logicalChannelGroup0 = 0;
-long  logicalChannelSR_Mask_r9=0;
-
-struct LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
-							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-							      0,
-							      &logicalChannelGroup0};
-struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
-							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-							      0,
-							      &logicalChannelGroup0};
-
-
-// These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
-LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {&LCSRB1,
-								  &logicalChannelSR_Mask_r9};
-
-LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2,
-								 &logicalChannelSR_Mask_r9};
-
 //CONSTANTS
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
+//u8 RACH_TIME_ALLOC;
 u16 RACH_FREQ_ALLOC;
 //u8 NB_RACH;
 LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;

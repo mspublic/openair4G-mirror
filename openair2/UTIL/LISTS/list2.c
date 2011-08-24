@@ -8,7 +8,9 @@
  ***************************************************************************/
 #define LIST2_C
 #include "list.h"
+#ifdef USER_MODE
 #include <assert.h>
+#endif
 #define NULL 0
 
 //-----------------------------------------------------------------------------
@@ -276,7 +278,9 @@ list2_display (list2_t * listP)
         nb_elements++;
       }
       msg (" found nb_elements %d nb_elements %d\n", nb_elements, listP->nb_elements);
+#ifdef USER_MODE
       assert(nb_elements == listP->nb_elements);
+#endif
     }
   } else {
     msg ("[SDU_MNGT][WARNING] display_cnt_dbl_lk_list_up() : list is NULL\n");

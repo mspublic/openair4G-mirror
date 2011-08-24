@@ -81,6 +81,7 @@ typedef struct {
   u32  rx_gain_val;
   u32  rx_gain_mode;
   u32  tcxo_dac;
+  u32  auto_freq_correction;
   s32  freq_offset;
   u32  tx_rx_switch_point;
   u32  manual_timing_advance;  /// 1 to override automatic timing advance
@@ -105,6 +106,8 @@ s32 openair_sched_init(void);
 void openair_sched_cleanup(void);
 void openair_sched_exit(char *);
 void openair1_restart(void);
+s32 init_dlsch_threads(void); 
+void cleanup_dlsch_threads(void); 
 #endif //USER_MODE
 
 #ifdef OPENAIR_LTE
@@ -338,15 +341,6 @@ void process_HARQ_feedback(u8 UE_id,
 			   u8 *pucch_payload, 
 			   u8 pucch_sel,
 			   u8 SR_payload);
-
-/*!
-  \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.
-  @param Mod_id Local UE index on which to act
-  @param eNB_index ID of eNB
-  @returns UE mode
-*/ 
-UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index);
-
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti);
 int get_ue_active_harq_pid(u8 Mod_id,u16 rnti,u8 subframe,u8 *harq_pid,u8 *round,u8 ul_flag);

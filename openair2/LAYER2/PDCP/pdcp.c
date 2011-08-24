@@ -1,40 +1,11 @@
-/*******************************************************************************
+/*
+                                  pdcp.c
+                             -------------------
+  AUTHOR  : Lionel GAUTHIER
+  COMPANY : EURECOM
+  EMAIL   : Lionel.Gauthier@eurecom.fr
 
-  Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2011 Eurecom
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms and conditions of the GNU General Public License,
-  version 2, as published by the Free Software Foundation.
-
-  This program is distributed in the hope it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
-
-  The full GNU General Public License is included in this distribution in
-  the file called "COPYING".
-
-  Contact Information
-  Openair Admin: openair_admin@eurecom.fr
-  Openair Tech : openair_tech@eurecom.fr
-  Forums       : http://forums.eurecom.fsr/openairinterface
-  Address      : Eurecom, 2229, route des crêtes, 06560 Valbonne Sophia Antipolis, France
-
-*******************************************************************************/
-
-/*! \file pdcp.c
-* \brief pdcp interface with RLC
-* \author  Lionel GAUTHIER and Navid Nikaein
-* \date 2009
-* \version 0.5
-
-*/
-
+ ***************************************************************************/
 #define PDCP_C
 //#include "rtos_header.h"
 #ifndef USER_MODE
@@ -47,8 +18,8 @@
 //#include "mpls.h"
 //#include "w3g4free_extern.h"
 
-#define PDCP_DATA_REQ_DEBUG 1
-#define PDCP_DATA_IND_DEBUG 1
+//#define PDCP_DATA_REQ_DEBUG 1
+//#define PDCP_DATA_IND_DEBUG 1
 
 //#define IDROMEL_NEMO 1
 
@@ -84,12 +55,12 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 
 	    rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, data_sizeP, new_sdu);
 	    if(Mac_rlc_xface->Is_cluster_head[module_idP]==1){
-	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
+	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]++;
+	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]+=data_sizeP;
 	    }
 	    else{
-	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
+	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]++;
+	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]+=data_sizeP; 
 	      
 	    }
 
@@ -147,12 +118,12 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
       memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], &sduP->data[0], data_sizeP);
       list_add_tail_eurecom (new_sdu, &pdcp_sdu_list);
       if(Mac_rlc_xface->Is_cluster_head[module_idP]==1){
-	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
+	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]++;
+	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]+=data_sizeP;
       }
       else{
-	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
+	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]++;
+	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH_BD]+=data_sizeP; 
 	
       }
     }

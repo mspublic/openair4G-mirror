@@ -132,6 +132,8 @@ extern pthread_cond_t dlsch_cond[8];
 
 unsigned char first_sync_call;
 
+rtheap_t rt_heap;
+
 void openair1_restart(void) {
 
   int i;
@@ -175,7 +177,7 @@ static void * openair_thread(void *param) {
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
 
   // run on CPU 1, which should be reserved only for this (by adding isolcpus=1 noirqbalance to the kernel options). Also use IsolCpusMaks=0x2 when loading rtai_hal
-  // rt_set_runnable_on_cpuid(pthread_self(),1);
+  rt_set_runnable_on_cpuid(pthread_self(),0);
   rt_sleep(nano2count(NS_PER_SLOT));
 
 
@@ -191,7 +193,7 @@ static void * openair_thread(void *param) {
   pthread_attr_setschedpolicy (&attr_threads[OPENAIR_THREAD_INDEX], SCHED_FIFO);
 #endif
   
-  msg("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
+  printk("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
   if (mac_xface->is_primary_cluster_head == 1) {
     msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
@@ -276,7 +278,7 @@ static void * openair_thread(void *param) {
 	    diff,
 	    openair_daq_vars.scheduler_interval_ns);
 	//openair1_restart();
-	exit_openair = 1;
+	//exit_openair = 1;
       }
 
       /*
@@ -546,8 +548,10 @@ void openair_sync(void) {
 	    break;
 	  }
 
-	  mac_xface->frame = 	(((PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]&3)<<6) + (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1]>>2))<<2;
+	  mac_xface->frame = (((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]&0x03))<<8);
+	  mac_xface->frame += ((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1]&0xfc));
 	  mac_xface->frame += frame_mod4;
+	  mac_xface->frame += 1; // RT acquisition will only start next frame
 
 	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
 	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,
@@ -563,9 +567,9 @@ void openair_sync(void) {
 	    pci_interface[0]->frame_offset = PHY_vars_UE_g[0]->rx_offset;
 	    
 	    openair_daq_vars.mode = openair_SYNCHED;
-	    mac_xface->frame = 0;
+
 #ifdef OPENAIR2
-	    msg("[openair][SCHED][SYNCH] Clearing MAC Interface\n");
+	    msg("[openair][SCHED][SYNCH] Calling chbch_phy_sync_success\n");
 	    //mac_resynch();
 	    mac_xface->chbch_phy_sync_success(0,0);
 #endif //OPENAIR2
@@ -573,9 +577,6 @@ void openair_sync(void) {
 	    openair_daq_vars.last_adac_cnt=-1;            
 
 	    PHY_vars_UE_g[0]->UE_mode[0] = PRACH;
-#ifdef OPENAIR2
-	    mac_xface->chbch_phy_sync_success(0,0);	    
-#endif
 	  }
 	  
 	}
@@ -611,10 +612,10 @@ void openair_sync(void) {
     }
 
 #ifdef EMOS
-    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars->PHY_measurements, sizeof(PHY_MEASUREMENTS));
+    memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars_UE_g[0]->PHY_measurements, sizeof(PHY_MEASUREMENTS));
     emos_dump_UE.timestamp = rt_get_time_ns();
     emos_dump_UE.UE_mode = UE_mode;
-    emos_dump_UE.rx_total_gain_dB = PHY_vars->rx_total_gain_dB;
+    emos_dump_UE.rx_total_gain_dB = PHY_vars_UE_g[0]->rx_total_gain_dB;
 
     debug_msg("[SCHED_LTE] Writing EMOS data to FIFO\n");
     if (rtf_put(CHANSOUNDER_FIFO_MINOR, &emos_dump_UE, sizeof(fifo_dump_emos_UE))!=sizeof(fifo_dump_emos_UE)) {
@@ -668,6 +669,16 @@ static void * top_level_scheduler(void *param) {
 
   // Do initialization routines that use SSE here. They should not be run from the main kernel module because they might screw up the floating point unit when interrupted.
   lte_sync_time_init(frame_parms);
+
+  /*
+  // Init the heap
+  if (rtheap_init(&rt_heap, NULL, 4096, 4096) == 0) {
+    msg("[OPENAIR][SCHED] Heap initialized successfully\n");
+  }
+  else  {
+    openair_sched_exit("[OPENAIR][SCHED] Cannot initialized heap\n"); 
+  }
+  */
 
 #ifdef RTAI_ENABLED
   msg("[OPENAIR][SCHED] Sleeping %d ns (MODE = %d)\n",2*NS_PER_SLOT,openair_daq_vars.mode);
@@ -744,6 +755,7 @@ static void * top_level_scheduler(void *param) {
 
     }
     else {    // We're in synch with the CH or are a 1ary clusterhead
+
 #ifndef NOCARD_TEST
 
       if (openair_daq_vars.sync_state == 0) { // This means we're a CH, so start RT acquisition!!
@@ -762,7 +774,13 @@ static void * top_level_scheduler(void *param) {
 	}
 #endif //CBMIMO1
 
+#ifdef OPENAIR2
+      if (openair_daq_vars.node_id == PRIMARY_CH) {
+	msg("[openair][SCHED][SYNCH] Calling mrbch_phy_sync_failure\n");
+	mac_xface->mrbch_phy_sync_failure(0,0);
 	mac_xface->frame = 0;
+      }
+#endif
   
 	openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
 	
@@ -900,7 +918,7 @@ static void * top_level_scheduler(void *param) {
     }  // in synch
   }    // exit_openair = 0
 
-  msg("[openair][SCHED][top_level_thread] Exiting ... openair_daq_vars.sched_cnt = %d\n",openair_daq_vars.sched_cnt);
+  msg("[openair][SCHED][top_level_thread] Frame %d: Exiting ... openair_daq_vars.sched_cnt = %d\n",mac_xface->frame, openair_daq_vars.sched_cnt);
   openair_daq_vars.mode = openair_SCHED_EXIT;
   // schedule openair_thread to exit
   msg("[openair][SCHED][top_level_thread] Scheduling openair_thread to exit ... \n");
@@ -953,6 +971,7 @@ int rx_sig_fifo_handler(unsigned int fifo, int rw) {
 s32 openair_sched_init(void) {
   
   int error_code;
+  int* tmp;
   
   LTE_DL_FRAME_PARMS *frame_parms = lte_frame_parms_g;
   
@@ -1061,15 +1080,15 @@ s32 openair_sched_init(void) {
   printk("[openair][SCHED][INIT] Created rx_sig_fifo handler, error_code %d\n",error_code);
 #endif //NOCARD_TEST
 
-  //if (mac_xface->is_cluster_head == 0) 
-  //FK mac_xface->is_cluster_head not initialized at this stage
-  //  error_code = init_dlsch_threads();
+  tmp = rt_malloc(sizeof(int));
+  printk("[openair][SCHED][INIT] tmp= %p\n",tmp);
+  rt_free(tmp);
 
   return(error_code);
 
 }
 
-void openair_sched_cleanup() {
+void openair_sched_cleanup(void) {
 
   int error_code;
 
@@ -1095,9 +1114,7 @@ void openair_sched_cleanup() {
   printk("[OPENAIR][SCHED][CLEANUP] EMOS FIFO closed, error_code %d\n", error_code);
 #endif
 
-  //if (mac_xface->is_cluster_head == 0)
-  //FK: mac_xface->is_cluster_head not initialized at this stage
-  //  cleanup_dlsch_threads();
+  //rtheap_destroy(rt_heap);
 
   printk("[openair][SCHED][CLEANUP] Done!\n");
 }

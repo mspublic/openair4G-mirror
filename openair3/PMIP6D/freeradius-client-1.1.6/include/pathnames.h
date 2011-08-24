@@ -22,7 +22,7 @@
 
 /* normally defined in the Makefile */
 #ifndef _PATH_ETC_RADIUSCLIENT_CONF
-#define _PATH_ETC_RADIUSCLIENT_CONF       "/etc/radiusclient.conf"
+#define _PATH_ETC_RADIUSCLIENT_CONF       "/usr/local/etc/radiusclient.conf"
 #endif
 
 #endif /* PATHNAMES_H */

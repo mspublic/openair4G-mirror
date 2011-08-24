@@ -114,12 +114,9 @@ int rc_read_dictionary (rc_handle *rh, const char *filename)
 				type = PW_TYPE_INTEGER;
 			}
 			else if (strcmp (typestr, "ipaddr") == 0)
-            {
-                type = PW_TYPE_IPADDR;
-            }else if (strcmp (typestr, "ipv6addr") == 0)
-            {
-                type = PW_TYPE_IPV6ADDR;
-            }
+			{
+				type = PW_TYPE_IPADDR;
+			}
 			else if (strcmp (typestr, "date") == 0)
 			{
 				type = PW_TYPE_DATE;
@@ -168,7 +165,7 @@ int rc_read_dictionary (rc_handle *rh, const char *filename)
 
 			if (dvend != NULL)
 				attr->value |= (dvend->vendorpec << 16);
-            //rc_log(LOG_ERR, "rc_read_dictionary: ADD ATTRIBUTE Name %s Value %d Type %d",attr->name, attr->value, attr->type);
+
 			/* Insert it into the list */
 			attr->next = rh->dictionary_attributes;
 			rh->dictionary_attributes = attr;
@@ -228,7 +225,6 @@ int rc_read_dictionary (rc_handle *rh, const char *filename)
 			strcpy (dval->name, namestr);
 			dval->value = value;
 
-            //rc_log(LOG_ERR, "rc_read_dictionary: ADD VALUE Name %s Value %s Type %d",dval->attrname, dval->name, dval->value);
 			/* Insert it into the list */
 			dval->next = rh->dictionary_values;
 			rh->dictionary_values = dval;
@@ -330,12 +326,10 @@ DICT_ATTR *rc_dict_getattr (const rc_handle *rh, int attribute)
 	{
 		if (attr->value == attribute)
 		{
-            //rc_log(LOG_CRIT, "rc_dict_getattr: Found Name %s Value %d Type %d",attr->name, attr->value, attr->type);
 			return attr;
 		}
 		attr = attr->next;
 	}
-    rc_log(LOG_CRIT, "rc_dict_getattr: attribute %d not found",attribute);
 	return NULL;
 }
 

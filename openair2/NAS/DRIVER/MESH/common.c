@@ -28,14 +28,13 @@
 *******************************************************************************/
 
 /***************************************************************************
-/*! \file nas_common.c
-* \brief implementation of emultor tx and rx 
-* \author Navid Nikaein and Raymomd Knopp
-* \date 2011
-* \version 1.0 
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr
-*/ 
+                          nas_common.c  -  description
+                             -------------------
+    copyright            : (C) 2002 by Eurecom
+    email                : yan.moret@eurecom.fr
+                           michelle.wetterwald@eurecom.fr
+			   
+***************************************************************************/
 
 //#include "nas_common.h"
 #include "local.h"

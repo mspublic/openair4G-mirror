@@ -16,7 +16,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 /*
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
@@ -109,28 +109,14 @@ void phy_config_sib2_eNB(u8 Mod_id,
   
 
   lte_frame_parms->pusch_config_common.n_SB                                         = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
-  msg("pusch_config_common.n_SB = %d\n",lte_frame_parms->pusch_config_common.n_SB );
-
   lte_frame_parms->pusch_config_common.hoppingMode                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
-  msg("pusch_config_common.hoppingMode = %d\n",lte_frame_parms->pusch_config_common.hoppingMode);
-
   lte_frame_parms->pusch_config_common.pusch_HoppingOffset                          = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
-  msg("pusch_config_common.pusch_HoppingOffset = %d\n",lte_frame_parms->pusch_config_common.pusch_HoppingOffset);
-
   lte_frame_parms->pusch_config_common.enable64QAM                                  = radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM;
-  msg("pusch_config_common.enable64QAM = %d\n",lte_frame_parms->pusch_config_common.enable64QAM );
-
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled    = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled;
-  msg("pusch_config_common.groupHoppingEnabled = %d\n",lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
-
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH   = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-  msg("pusch_config_common.groupAssignmentPUSCH = %d\n",lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
-
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled;
-  msg("pusch_config_common.sequenceHoppingEnabled = %d\n",lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
-
   lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift            = radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
-  msg("pusch_config_common.enable64QAM = %d\n",lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift);  
+  
   
   lte_frame_parms->soundingrs_ul_config_common.enabled_flag                        = 0;
 
@@ -434,7 +420,7 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   phy_generate_viterbi_tables_lte();
 #endif //EXPRESSMIMO_TARGET
 
-
+  lte_gold(lte_frame_parms);
 
 #ifdef USER_MODE
   lte_sync_time_init(lte_frame_parms);
@@ -449,6 +435,8 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms) {
   generate_16qam_table();
   generate_RIV_tables();
   
+  generate_pcfich_reg_mapping(lte_frame_parms);
+  generate_phich_reg_mapping(lte_frame_parms);
 
   //set_taus_seed(1328);
   
@@ -554,6 +542,32 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
 	return(-1);
       }
     }
+
+    ue_common_vars->rxdataF2 = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+    if (ue_common_vars->rxdataF2) {
+#ifdef DEBUG_PHY
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 allocated at %p\n", ue_common_vars->rxdataF2);
+#endif
+    }
+    else {
+      msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2 not allocated\n");
+      return(-1);
+    }
+    
+    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+      //RK 2 times because of output format of FFT!  We should get rid of this
+      ue_common_vars->rxdataF2[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*10));
+      if (ue_common_vars->rxdataF2[i]) {
+#ifdef DEBUG_PHY
+	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] allocated at %p\n",i,ue_common_vars->rxdataF2[i]);
+#endif
+      }
+      else {
+	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF2[%d] not allocated\n",i);
+	return(-1);
+      }
+    }
+
     
     // Channel estimates  
     for (eNB_id=0;eNB_id<3;eNB_id++) {
@@ -936,11 +950,9 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
     ue_dlsch_vars[NUMBER_OF_eNB_MAX]->llr128 = (short **)malloc16(sizeof(short **));
     
+    
+    
   }
-  else { //abstraction == 1
-    phy_vars_ue->sinr_dB = (short*) malloc16(frame_parms->N_RB_DL*2*sizeof(short));
-  }
-
   return(0);
 }
 
@@ -958,15 +970,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   int i, j, eNB_id, UE_id;
 
 
-  lte_gold(frame_parms,phy_vars_eNB->lte_gold_table,0);
-  generate_pcfich_reg_mapping(frame_parms);
-  generate_phich_reg_mapping(frame_parms);
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     phy_vars_eNB->first_run_timing_advance[UE_id] = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
-
-    memset(&phy_vars_eNB->eNB_UE_stats[UE_id],0,sizeof(LTE_eNB_UE_stats));
-  }
   phy_vars_eNB->first_run_I0_measurements = 1; ///This flag used to be static. With multiple eNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
 
   for (eNB_id=0; eNB_id<3; eNB_id++) {
@@ -1288,6 +1293,36 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 	  }
 	}
 	
+	// Channel estimates for time domain DRS
+	eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id] = (int **)malloc16(frame_parms->nb_antennas_rx*sizeof(int*));
+	if (eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id]) {
+#ifdef DEBUG_PHY
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d] allocated at %p\n",UE_id,eNB_id,
+	      eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id]);
+#endif
+	}
+	else {
+	  msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d] not allocated\n",UE_id,eNB_id);
+	  return(-1);
+	}
+	
+	
+	for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	  eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i] = 
+	    (int *)malloc16(2*sizeof(int)*frame_parms->ofdm_symbol_size);
+	  if (eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]) {
+#ifdef DEBUG_PHY
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d][%d] allocated at %p\n",UE_id,eNB_id,i,
+		eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i]);
+#endif
+	    
+	    memset(eNB_ulsch_vars[UE_id]->drs_ch_estimates_time[eNB_id][i],0,sizeof(int)*frame_parms->ofdm_symbol_size);
+	  }
+	  else {
+	    msg("[openair][LTE_PHY][INIT] lte_eNB_ulsch_vars[%d]->drs_ch_estimates_time[%d][%d] not allocated\n",UE_id,eNB_id,i);
+	    return(-1);
+	  }
+	}
 	
 	
 	// In case of Distributed Alamouti Collabrative scheme separate channel estimates are required for both the UEs
@@ -1683,6 +1718,10 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       } //for(eNB_id...
     }
   }
+
+  for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++)
+    phy_vars_eNB->eNB_UE_stats_ptr[UE_id] = &phy_vars_eNB->eNB_UE_stats[UE_id];
+
   return (0);  
 }
     

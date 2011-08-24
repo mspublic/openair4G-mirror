@@ -25,7 +25,6 @@ ________________________________________________________________*/
 
 #define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
 
-#define SSS_AMP 1148
 typedef enum {
   normal=0,
   extended=1
@@ -353,7 +352,6 @@ typedef struct {
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
 
-
 typedef struct {
   /// Number of resource blocks (RB) in DL
   u8 N_RB_DL;                
@@ -423,7 +421,6 @@ typedef struct {
   u8 SIwindowsize;
   /// Period of SI windows used for repetition of one SI message (in frames)
   u16 SIPeriod;
-
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -464,16 +461,19 @@ typedef struct{
 } LTE_eNB_SRS;
 
 typedef struct{
-  ///holds the received data in the frequency domain for the allocated RBs
+  ///holds the received data in the frequency domain for the allocated RBs in repeated format
   s32 **rxdataF_ext[3];       
-
+  ///holds the received data in the frequency domain for the allocated RBs in normal format
   s32 **rxdataF_ext2[3];       
+  /// hold the channel estimates in time domain based on DRS   
+  s32 **drs_ch_estimates_time[3]; 
   /// hold the channel estimates in frequency domain based on DRS   
   s32 **drs_ch_estimates[3]; 
   /// hold the channel estimates for UE0 in case of Distributed Alamouti Scheme
   s32 **drs_ch_estimates_0[3];
   /// hold the channel estimates for UE1 in case of Distributed Almouti Scheme 
   s32 **drs_ch_estimates_1[3];
+  /// holds the compensated signal
   s32 **rxdataF_comp[3];
   /// hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme
   s32 **rxdataF_comp_0[3];
@@ -488,12 +488,19 @@ typedef struct{
   /// hold the channel mag for UE1 in case of Distributed Alamouti Scheme
   s32 **ul_ch_mag_1[3];   
   /// hold the channel magb for UE1 in case of Distributed Alamouti Scheme
-  s32 **ul_ch_magb_1[3];  
+  s32 **ul_ch_magb_1[3]; 
+  /// measured RX power based on DRS
+  int ulsch_power[2];
+  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
+  int ulsch_power_0[2];
+  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
+  int ulsch_power_1[2];
+  /// llr values
   s16 *llr;
 } LTE_eNB_ULSCH;
 
 typedef struct {
-  ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER)
+  ///holds the transmit data in time domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   s32 **txdata;           
   ///holds the transmit data in the frequency domain (for IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER)
   mod_sym_t **txdataF;    
@@ -501,6 +508,7 @@ typedef struct {
   s32 **rxdata;          
   ///holds the received data in the frequency domain
   s32 **rxdataF;         
+  s32 **rxdataF2;         
   /// hold the channel estimates in frequency domain
   s32 **dl_ch_estimates[3];  
   /// hold the channel estimates in time domain (used for tracking)
@@ -577,13 +585,6 @@ typedef struct {
   /// nCCE for PUCCH per subframe
   u8 nCCE[10];
 } LTE_UE_PDCCH;
-
-#define PBCH_A 24
-typedef struct {
-  u8 pbch_d[96+(3*(16+PBCH_A))];
-  u8 pbch_w[3*3*(16+PBCH_A)];
-  u8 pbch_e[1920]; 
-} LTE_eNB_PBCH;
 
 typedef struct {
   /// Pointers to extracted PBCH symbols in frequency-domain

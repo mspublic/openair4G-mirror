@@ -26,5 +26,4 @@ extern int generate_report_OK; /*!< \brief value: -9999, -1 or 0 */
 /* @}*/
 
 extern OAI_Emulation oai_emulation;
-
 #endif

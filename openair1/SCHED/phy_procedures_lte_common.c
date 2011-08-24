@@ -276,7 +276,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	o_ACK[0] = harq_ack[7].ack;
 	o_ACK[1] = harq_ack[8].ack;
 	status = harq_ack[7].send_harq_status + (harq_ack[8].send_harq_status<<1);
-	printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
+	//printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
       }
       else if (subframe == 4) {  // ACK subframes 9 and 0
 	o_ACK[0] = harq_ack[9].ack;
@@ -292,7 +292,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
     
     }
   }
-  printf("status %d\n",status);
+  //printf("status %d\n",status);
 
   return(status);
 }

@@ -26,7 +26,6 @@ ________________________________________________________________*/
 #include "COMMON/platform_constants.h"
 #include "RadioResourceConfigCommon.h"
 #include "RadioResourceConfigDedicated.h"
-#include "MeasGapConfig.h"
 #include "TDD-Config.h"
 
 //#ifdef PHY_EMUL
@@ -45,63 +44,64 @@ ________________________________________________________________*/
 #define BCCH 3
 #define CCCH 0
 #define DCCH 1
-#define DCCH1 2
-#define DTCH  3 // DTCH + lcid < 11
+#define DTCH_BD 2
+#define DTCH    3
+#define DTCH_OFFSET DTCH+NB_RAB_MAX 
 
 #ifdef USER_MODE
 #define printk printf
 #endif //USER_MODE
 
-#define MAX_NUM_LCID 11
+
 #define MAX_NUM_RB 8
 #define MAX_NUM_CE 5
+
+/*! \brief  DCI_PDU Primitive.  This data structure reflects the DL control-plane traffic for the current miniframe.*/
 
 #define NB_RA_PROC_MAX 4
 
 typedef struct {
-  u8 RAPID:6;
-  u8 T:1;
   u8 E:1;
+  u8 T:1;
+  u8 RAPID:6;
 } __attribute__((__packed__))RA_HEADER_RAPID;
 
 typedef struct {
-  u8 BI:4;
-  u8 R:2;
-  u8 T:1;
   u8 E:1;
+  u8 T:1;
+  u8 R:2;
+  u8 BI:4;
 } __attribute__((__packed__))RA_HEADER_BI;
 
 typedef struct {
-  u64 t_crnti:16;
-  u64 hopping_flag:1;
-  u64 rb_alloc:10;
-  u64 mcs:4;
-  u64 TPC:3;
-  u64 UL_delay:1;
-  u64 cqi_req:1;
-  u64 Timing_Advance_Command:11;  // first/2nd octet LSB
-  u64 R:1;                        // octet MSB
-  u64 padding:16;
+  u8 R:1;
+  u16 Timing_Advance_Command:11;
+  u8 hopping_flag:1;
+  u16 rb_alloc:10;
+  u8 mcs:4;
+  u8 TPC:3;
+  u8 UL_delay:1;
+  u8 cqi_req:1;
+  u16 t_crnti;
 } __attribute__((__packed__))RAR_PDU;
-#define sizeof_RAR_PDU 6
 
 typedef struct {
-  u16 LCID:5;  // octet 1 LSB
-  u16 E:1;
-  u16 R:2;     // octet 1 MSB
-  u16 L:7;     // octet 2 LSB
-  u16 F:1;     // octet 2 MSB
+  u8 LCID:5;
+  u8 E:1;
+  u8 R:2;
+  u8 L:7;
+  u8 F:1;
 } __attribute__((__packed__))SCH_SUBHEADER_SHORT;
 
 typedef struct {
-  u32 LCID:5;   // octet 1 LSB
-  u32 E:1;
-  u32 R:2;      // octet 1 MSB
-  u32 L:15;      // octet 3/2 LSB
-  u32 F:1;      // octet 2 MSB     
-  u32 padding:8; 
+  u8 LCID:5;
+  u8 E:1;
+  u8 R:2;
+  u16 L:7;
+  u8 F:1;
+  u8 L2:8;
 } __attribute__((__packed__))SCH_SUBHEADER_LONG;
- 
+
 typedef struct {
   u8 LCID:5;
   u8 E:1;
@@ -109,18 +109,17 @@ typedef struct {
 } __attribute__((__packed__))SCH_SUBHEADER_FIXED;
 
 typedef struct {
-  u8 Buffer_size:6;  // octet 1 LSB
-  u8 LCGID:2;        // octet 1 MSB
+  u8 Buffer_size:6;
+  u8 LCGID:2;
 } __attribute__((__packed__))BSR_SHORT;
 
 typedef BSR_SHORT BSR_TRUNCATED;
 
 typedef struct {
-  u32 Buffer_size3:6;
-  u32 Buffer_size2:6;
-  u32 Buffer_size1:6;
-  u32 Buffer_size0:6;
-  u32 padding:8;
+  u8 Buffer_size0:6;
+  u8 Buffer_size1:6;
+  u8 Buffer_size2:6;
+  u8 Buffer_size3:6;
 } __attribute__((__packed__))BSR_LONG;
 
 typedef struct {
@@ -284,20 +283,6 @@ typedef struct {
   s16 RRC_timer;
 } RA_TEMPLATE;
 
-
-///subband bitmap coniguration (for ALU icic algo purpose), in test phase
-
-typedef struct{
-	u8 sbmap[NUMBER_OF_SUBBANDS]; //13 = number of SB MAX for 100 PRB
-	u8 periodicity;
-	u8 first_subframe;
-	u8 sb_size;
-	u8 nb_active_sb;
-
-}SBMAP_CONF;
-
-//end ALU's algo
-
 typedef struct{
   /// 
   u16 Node_id;
@@ -315,48 +300,13 @@ typedef struct{
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
   /// BCCH active flag
   u8 bcch_active;
-  ///subband bitmap configuration
-  SBMAP_CONF sbmap_conf;
+}CH_MAC_INST;
 
-}eNB_MAC_INST;
 
-typedef struct {
-  /// pointer to RRC PHY configuration 
-  struct PhysicalConfigDedicated *physicalConfigDedicated;
-  /// Pointer to RRC MAC configuration
-  MAC_MainConfig_t *macConfig;
-  /// Pointer to RRC Measurement gap configuration
-  MeasGapConfig_t  *measGapConfig;
-  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
-  /// LCHAN buffer status
-  u8 buffer_status[MAX_NUM_LCID]; // should be more for mesh topology
-  /// BSR active in the current  MAC SDU
-  u8 BSR_active;
-  /// SR pending as defined in 36.321
-  u8 SR_pending;
-  /// SR_COUNTER as defined in 36.321
-  u16 SR_COUNTER;
-  /// retxBSR-Timer, default value is sf2560
-  u16 retxBSR_Timer;
-  /// periodicBSR-Timer, default to infinity
-  u16 periodicBSR_Timer; 
-  /// default value is 0
-  u16 sr_ProhibitTimer;
-  ///  default value to n5
-  u16 maxHARQ_tx; 
-  /// default value is false
-  u16 ttiBundling;
-  /// default value is release 
-  u8 *drx_config;
-  /// default value is release
-  u8 *phr_config;
-} UE_SCHEDULING_INFO;
+
 
 typedef struct{
   u16 Node_id;
-  /// Scheduling Information 
-  UE_SCHEDULING_INFO scheduling_info;
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   /// Incoming DLSCH pdu for PHY
@@ -372,10 +322,6 @@ typedef struct{
 int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
-		       MAC_MainConfig_t *mac_MainConfig,
-		       long logicalChannelIdentity,
-		       LogicalChannelConfig_t *logicalChannelConfig,
-		       MeasGapConfig_t *measGapConfig,
 		       TDD_Config_t *tdd_Config,
 		       u8 *SIwindowsize,
 		       u16 *SIperiod);
@@ -406,7 +352,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 */
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe,u32 rballoc);
+void fill_DLSCH_dci(u8 Mod_id,u8 subframe);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
@@ -422,8 +368,8 @@ void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 int mac_top_init(void);
-char layer2_init_UE(u8 Mod_id);
-char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
+char layer2_init_mr(u8 Mod_id);
+char layer2_init_ch(u8 Mod_id, u8 Free_ch_index); 
 void mac_switch_node_function(u8 Mod_id);
 int mac_init_global_param(void);
 void mac_top_cleanup();
@@ -440,13 +386,6 @@ void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
 void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
 DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
 u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
-//added for ALU icic purpose
-u32 Get_Cell_SBMap(u8 Mod_id);
-void UpdateSBnumber(unsigned char Mod_id);
-//end ALU's algo
-
-
-
 
 void init_ue_sched_info(void);
 void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_ULSCH_STATUS status);
@@ -485,10 +424,9 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 @param Mod_id Instance id of UE in machine
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
-@param subframe subframe number
 @returns 0 for no SR, 1 for SR
 */
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti,u8 subframe);
+u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
@@ -496,86 +434,16 @@ u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 void out_of_sync_ind(u8 Mod_id,u16);
 void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
 void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
-
 void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
-/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH
-mode for a particular eNB index, this is assumed to be an RRCConnectionRequest message and MAC attempts to retrieves the CCCH
-message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not
-activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 
-36.321)
-@param Mod_id Index of UE instance
-@param eNB_index Index of eNB from which to act
- */
-u8* ue_get_rach(u8 Mod_id,u8 eNB_index);
-
+u8* ue_get_rach(u8 Mod_id,u8 CH_index);
 u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
-
-/* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
-in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
-in the ULSCH buffer.
-@param mac_header Pointer to the first byte of the MAC header (UL-SCH buffer)
-@param num_sdus Number of SDUs in the payload
-@param short_padding Number of bytes for short padding (0,1,2)
-@param sdu_lengths Pointer to array of SDU lengths
-@param sdu_lcids Pointer to array of LCIDs (the order must be the same as the SDU length array)
-@param power_headroom Pointer to power headroom command (NULL means not present in payload)
-@param crnti Pointer to CRNTI command (NULL means not present in payload)
-@param truncated_bsr Pointer to Truncated BSR command (NULL means not present in payload)
-@param short_bsr Pointer to Short BSR command (NULL means not present in payload)
-@param long_bsr Pointer to Long BSR command (NULL means not present in payload)
-@returns Number of bytes used for header
-*/
-unsigned char generate_ulsch_header(u8 *mac_header,
-				    u8 num_sdus,
-				    u8 short_padding,
-				    u16 *sdu_lengths,
-				    u8 *sdu_lcids,
-				    POWER_HEADROOM_CMD *power_headroom,
-				    u16 *crnti,
-				    BSR_SHORT *truncated_bsr,
-				    BSR_SHORT *short_bsr,
-				    BSR_LONG *long_bsr);
-
-/* \brief Parse header for UL-SCH.  This function parses the received UL-SCH header as described
-in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
-in the ULSCH buffer.
-@param mac_header Pointer to the first byte of the MAC header (UL-SCH buffer)
-@param num_ces Number of SDUs in the payload
-@param num_sdu Number of SDUs in the payload
-@param rx_ces Pointer to received CEs in the header
-@param rx_lcids Pointer to array of LCIDs (the order must be the same as the SDU length array)
-@param rx_lengths Pointer to array of SDU lengths
-@returns Pointer to payload following header
-*/
-u8 *parse_ulsch_header(u8 *mac_header,
-		       u8 *num_ce,
-		       u8 *num_sdu,
-		       u8 *rx_ces,
-		       u8 *rx_lcids,
-		       u16 *rx_lengths);
-
-
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
 int mac_init(void);
 
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe)
-   \brief UE scehdular where all the ue background tasks are done
-\param[in] Mod_id instance of the UE
-\param[in] subframe the subframe number
-*/
 void ue_scheduler(u8 Mod_id, u8 subframe);
-
-/*! \fn  locate (int *table, int size, int value)
-   \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
-\param[in] *table Pointer to BSR table
-\param[in] size Size of the table
-\param[in] value Value of the buffer 
-\return the index in the BSR_LEVEL table
-*/
-u8 locate (const u32 *table, int size, int value);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 

@@ -144,70 +144,6 @@ enum {
 /* @}*/
 
 // the OSD_basic : 
-						typedef struct {
-							char *selected_option;
-							int urban;
-							int rural;
-						}Pathloss_Model;
-  
-						typedef struct {
-							double pathloss_exponent;
-							double pathloss_0;
-						}Pathloss_Parameters;
-  
-				typedef struct {
-					Pathloss_Model pathloss_model;
-					Pathloss_Parameters pathloss_parameters;
-				}Freespace_Propagation;
-
-				typedef struct {
-					char *selected_option;
-					int SCM_A; //3GPP 36.384 Spatial channel model A
-					int SCM_B;
-					int SCM_C;
-					int SCM_D;
-				}Small_Scale;
-
-		typedef struct {
-			Freespace_Propagation freespace_propagation;
-			Small_Scale small_scale;
-		}Fading;
-
-				typedef struct {
-					int number_of_sectors; /// Number of sectors (1-3), for UE always 1
-					double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
-					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
-					double tx_power_dBm; /// Tx power (dBm)
-					double rx_noise_level; /// Rx noise level (dB)
-				}eNB_Antenna;
-
-				typedef struct {
-					int number_of_sectors; /// Number of sectors (1-3), for UE always 1
-					double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
-					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
-					double tx_power_dBm; /// Tx power (dBm)
-					double rx_noise_level; /// Rx noise level (dB)
-				}UE_Antenna;
-
-		typedef struct {
-			eNB_Antenna eNB_antenna;
-			UE_Antenna UE_antenna;
-		}Antenna;
-
-/** @defgroup _envi_config Environment Configuration
- *  @ingroup _OSD_basic
- *  @brief Including simulation area, geography, topography, fading information, etc
- * @{*/ 
-typedef struct {
-	Fading fading;
-	double wall_penetration_loss;
-	double system_bandwidth;
-	double UE_frequency;
-	Antenna antenna;
-}Environment_System_Config;
-/* @}*/
-
-
 		typedef struct {
 			double x;
 			double y;
@@ -215,9 +151,62 @@ typedef struct {
 
 		typedef struct {
 			char *selected_option;
+			int home;
+			int urban;
+			int rural;
+		}Geography;
+
+		typedef struct {
+			char *selected_option;
+			int flat;
+			int obstructed;
+			int hilly;
+		}Topography;
+
+				typedef struct {
+					double pathloss_exponent;
+					double pathloss_0;
+				}Free_Space_Propagation;
+
+						typedef struct {
+							double delay_spread;
+						}Rayleigh;
+					
+						typedef struct {
+							double delay_spread;
+						}Rician;
+					
+				typedef struct {
+					char *selected_option;
+					Rayleigh rayleigh;
+					Rician rician;
+				}Small_Scale;
+
+		typedef struct {
+			Free_Space_Propagation free_space_propagation;
+			Small_Scale small_scale;
+		}Fading;
+
+/** @defgroup _envi_config Environment Configuration
+ *  @ingroup _OSD_basic
+ *  @brief Including simulation area, geography, topography, fading information, etc
+ * @{*/ 
+typedef struct {
+	Area area;
+	Geography geography;
+	Topography topography;
+	Fading fading;
+	int wall_penetration_loss;
+	double noise_power;
+}Envi_Config;
+/* @}*/
+
+		typedef struct {
+			char *selected_option;
 			int homogeneous;
 			int heterogeneous;
-		}Network_Type;
+		}Net_Type;
+
 			
 		typedef struct {
 			char *selected_option;
@@ -230,129 +219,63 @@ typedef struct {
 		typedef struct {
 			int number_of_relays;
 		}Relay; // may not exist in the XML if RELAY is not selected by the user 
-
-						typedef struct {
-							char *selected_option;
-							int fixed; // static
-							int random_waypoint;
-							int random_walk;
-							int grid_walk;
-						}UE_Mobility_Type;
-
-						////// options of UE_Mobility_Type
-								typedef struct {
-									int horizontal_grid;
-									int vertical_grid;
-								}Grid_Map;
-
-								typedef struct {
-									char *selected_option;
-									int random_destination; // TRIP_RANDOM
-									int random_turn; // TRIP_NONE
-								}Grid_Trip_Type;
-
-						typedef struct {
-							Grid_Map grid_map;
-							Grid_Trip_Type grid_trip_type; // JHNote: modificaiton
-						}Grid_Walk;
-						//////
-
-						typedef struct {
-							char *selected_option;
-							int random;
-							int concentrated;
-							int grid;
-						}UE_Initial_Distribution;
-
-						////// options of UE_Initial_Distribution
-						typedef struct {
-							int number_of_nodes;
-						}Random_UE_Distribution;
-
-						typedef struct {
-							int number_of_nodes;
-						}Concentrated_UE_Distribution;
-
-								typedef struct {
-									int number_of_nodes;
-								}Random_Grid;
-
-								typedef struct {
-									int number_of_nodes;
-								}Border_Grid;
-
-						typedef struct {
-							char *selected_option;
-							Random_Grid random_grid; // random choice of vertex in Grid_Graph mobility
-							Border_Grid border_grid; // random choice of vertex located on the border in Grid_Graph mobility		
-						}Grid_UE_Distribution;
-						//////
-
-						typedef struct {
-							double min_speed;
-							double max_speed;
-							double min_pause_time;
-							double max_pause_time;
-							double min_journey_time;
-							double max_journey_time;
-						}UE_Moving_Dynamics; // now, we use uniform distribution for these dynamics
+			
+				typedef struct {
+					int x;
+					int y;
+				}Grid;
+			
+				typedef struct {
+					int number_of_cells;
+				}Hexagonal;
+	
+				typedef struct {
+					int number_of_eNB;
+				}Totally_Random;
+			
+		typedef struct {
+			char *selected_option;
+			Grid grid;
+			Hexagonal hexagonal;
+			Totally_Random totally_random;
+		}eNB_Topology;
 
 				typedef struct {
-					UE_Mobility_Type UE_mobility_type;
-					// ! Note: Grid_Walk is a UE_Mobility_Type, we put it here for the sake of simplicity of the XML file
-					Grid_Walk grid_walk; 
-
-					UE_Initial_Distribution UE_initial_distribution;
-					// ! Note: the following three options are for UE_Initial_Distribution, we put them here for the sake of simplicity of the XML file
-					Random_UE_Distribution random_UE_distribution; 
-					Concentrated_UE_Distribution concentrated_UE_distribution;
-					Grid_UE_Distribution grid_UE_distribution;
-
-					UE_Moving_Dynamics UE_moving_dynamics;
-				}UE_Mobility;
-
-						typedef struct {
-							char *selected_option;
-							int fixed;
-							int mobile; // at this moment, it is OMG who decides this mobility type, so there is even no config of moving dynamics for eNB
-						}eNB_Mobility_Type;
-
-						typedef struct {
-							char *selected_option;
-							int random;
-							int hexagonal;
-							int grid;
-						}eNB_Initial_Distribution;
-
-						////// options of eNB_Initial_Distribution
-						typedef struct {
-							int number_of_cells;
-						}Random_eNB_Distribution;
-
-						typedef struct {
-							int number_of_cells;
-							double inter_eNB_distance;
-						}Hexagonal_eNB_Distribution;
-
-						typedef struct {
-							int number_of_grid_x;
-							int number_of_grid_y;
-						}Grid_eNB_Distribution; // inter_eNB_distance = (x/num_x) and (y/num_y) for horizontal and vertical dimensions
-						//////
-
-				typedef struct {
-					eNB_Mobility_Type eNB_mobility_type;
-
-					eNB_Initial_Distribution eNB_initial_distribution;
-					// ! Note: the following three options are for eNB_Initial_Distribution, we put them here for the sake of simplicity of the XML file
-					Random_eNB_Distribution random_eNB_distribution;
-					Hexagonal_eNB_Distribution hexagonal_eNB_distribution;
-					Grid_eNB_Distribution grid_eNB_distribution;
-				}eNB_Mobility;
+					double inter_block_distance;
+				}Grid_Map;
 
 		typedef struct {
-			UE_Mobility UE_mobility;
-			eNB_Mobility eNB_mobility;
+			char *selected_option;
+			Grid_Map grid_map;
+		}UE_Distribution;
+
+				typedef struct {
+					char *selected_option;
+					int fixed;
+					int random_waypoint;
+					int random_walk;
+					int grid_walk;
+				}Mobility_Type;
+				
+				typedef struct {
+					double min_speed;
+					double max_speed;
+					double min_pause_time;
+					double max_pause_time;
+				}Moving_Dynamics;
+
+					typedef struct {
+						int seed_value;
+					}User_Seed;
+				typedef struct {
+					char *selected_option;
+					int oai_seed;
+					User_Seed user_seed;
+				}Random_Seed;
+		typedef struct {
+			Mobility_Type mobility_type;
+			Moving_Dynamics moving_dynamics;
+			Random_Seed random_seed;
 		}Mobility;
 
 /** @defgroup _topo_config Topology Configuration
@@ -360,80 +283,64 @@ typedef struct {
  *  @brief Including cell type, eNB topology, UE distribution, mobility information, etc
  * @{*/ 
 typedef struct {
-	Area area;
-	Network_Type network_type;
+	Net_Type net_type;
 	Cell_Type cell_type;
 	Relay relay;
+	eNB_Topology eNB_topology;
+	double inter_eNB_distance;
+	UE_Distribution UE_distribution;
+	int number_of_eNB; // calculated in OCG_parse_XML.c, not from the web portal directly
+	int number_of_UE;
+	double system_bandwidth;
+	double UE_frequency;
 	Mobility mobility;
-}Topology_Config;
+	int *positions; // to be revised based on OMG. should have a structure {eNB_pos, UE_pos}
+}Topo_Config;
 /* @}*/
-
 
 		typedef struct {
 			char *selected_option;
 			int cbr;
 			int gaming;
 			int m2m;
-		}Application_Type;
+		}App_Type;
 
 				typedef struct {
 					char *selected_option;
 					int udp;
 					int tcp;
 				}Transport_Protocol;
+
+						typedef struct {
+							double fixed_value;
+						}Fixed;
+					
+						typedef struct {
+							double min_value;
+							double max_value;
+						}Uniform;
+					
+						typedef struct {
+							double expected_inter_arrival_time;
+						}Poisson;
 					
 				typedef struct {
 					char *selected_option;
-					int fixed;
-					int uniform;
+					Fixed fixed;
+					Uniform uniform;
 				}Packet_Size;	/*!< \brief Distribution of packet size  */
 
-				////// options of Packet_Size
-				typedef struct {
-					double fixed_value;
-				}Fixed_Packet_Size;
-					
-				typedef struct {
-					double min_value;
-					double max_value;
-				}Uniform_Packet_Size;
-				//////
-
 				typedef struct {
 					char *selected_option;
-					int fixed;
-					int uniform;
-					int poisson;
+					Fixed fixed;
+					Uniform uniform;
+					Poisson poisson;
 				}Inter_Arrival_Time;	/*!< \brief Distribution of packet's inter-arrival time */
-
-				////// options of Inter_Arrival_Time
-				typedef struct {
-					double fixed_value;
-				}Fixed_Inter_Arrival_Time;
-					
-				typedef struct {
-					double min_value;
-					double max_value;
-				}Uniform_Inter_Arrival_Time;
-					
-				typedef struct {
-					double expected_inter_arrival_time;
-				}Poisson_Inter_Arrival_Time;
-				//////
 
 		typedef struct {
 			Transport_Protocol transport_protocol;
-
 			Packet_Size packet_size;
-			// ! Note: the following two options are for Packet_Size, we put them here for the sake of simplicity of the XML file
-			Fixed_Packet_Size fixed_packet_size;
-			Uniform_Packet_Size uniform_packet_size;
-
 			Inter_Arrival_Time inter_arrival_time; 
-			// ! Note: the following three options are for Inter_Arrival_Time, we put them here for the sake of simplicity of the XML file
-			Fixed_Inter_Arrival_Time fixed_inter_arrival_time;
-			Uniform_Inter_Arrival_Time uniform_inter_arrival_time;
-			Poisson_Inter_Arrival_Time poisson_inter_arrival_time;
 		}Traffic;
 
 /** @defgroup _app_config Application Configuration
@@ -441,16 +348,16 @@ typedef struct {
  *  @brief Including application type and traffic information
  * @{*/ 
 typedef struct {
-	Application_Type application_type;
+	App_Type app_type;
 	Traffic traffic;
-}Application_Config;
+}App_Config;
 /* @}*/
 
 				typedef struct {
 					int throughput;
 					int latency;
 					int signalling_overhead;
-				}Metrics;
+				}Metric;
 
 				typedef struct {
 					int mac;
@@ -470,36 +377,20 @@ typedef struct {
 				}Packet_Trace;
 				
 		typedef struct {
-			Metrics metrics;
+			Metric metric;
 			Layer layer;
 			Log_Emu log_emu;
 			Packet_Trace packet_trace;
 		}Performance;
-
-		typedef struct {
-			char *selected_option;
-			int oai_seed;
-			int user_seed;
-		}Seed;
-
-		////// option of Seed
-		typedef struct {
-			int seed_value;
-		}User_Seed;
-		//////
-
+		
 /** @defgroup _emu_config Emulation Configuration
  *  @ingroup _OSD_basic
  *  @brief Including emulation time and performance output
  * @{*/ 
 typedef struct {
-	double emulation_time;
+	double emu_time;
 	Performance performance;
-
-	Seed seed;
-	// ! Note: the following option is for Seed, we put it here for the sake of simplicity of the XML file
-	User_Seed user_seed;
-}Emulation_Config;
+}Emu_Config;
 /* @}*/
 
 /** @defgroup  _OSD_basic Basic OpenAirInterface Scenario Descriptor
@@ -508,10 +399,8 @@ typedef struct {
  * @{*/ 
 typedef struct {
 	char *output_path;	/*!< \brief The path where we generate all the emulation results */
-	int ocg_ok;
-	int number_of_UE; // ! Note: calculated in OCG_parse_XML.c, not from the web portal directly
-	int number_of_eNB; // calculated in OCG_parse_XML.c, not from the web portal directly
-}Info;
+	int OCG_OK;
+}Useful_Info;
 /* @}*/
 
 /** @defgroup  _OSD_basic Basic OpenAirInterface Scenario Descriptor
@@ -519,11 +408,11 @@ typedef struct {
  *  @brief OAI Emulation struct for OSD_basic
  * @{*/ 
 typedef struct {
-	Environment_System_Config environment_system_config;	/*!< \brief Evironment configuration */
-	Topology_Config topology_config;	/*!< \brief Topology configuration */
-	Application_Config application_config;	/*!< \brief Applications configuration */
-	Emulation_Config emulation_config;	/*!< \brief Emulation configuration */
-	Info info;	/*!< \brief Some important information which should be able to be reached by OAISIM */
+	Envi_Config envi_config;	/*!< \brief Evironment configuration */
+	Topo_Config topo_config;	/*!< \brief Topology configuration */
+	App_Config app_config;	/*!< \brief Applications configuration */
+	Emu_Config emu_config;	/*!< \brief Emulation configuration */
+	Useful_Info useful_info;	/*!< \brief Some important information which should be able to be reached by OAISIM */
 	char *profile;
 }OAI_Emulation;
 /* @}*/
@@ -552,7 +441,6 @@ typedef struct {
 
 OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
-void init_oai_emulation(void);
 #include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus

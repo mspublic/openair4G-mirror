@@ -5,8 +5,6 @@
 */
 
 #include "PHY/defs.h"
-#include "PHY/extern.h"
-
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -125,7 +123,6 @@ u32 ulsch_encoding(u8 *a,
 		   LTE_DL_FRAME_PARMS *frame_parms,
 		   LTE_UE_ULSCH_t *ulsch,
 		   u8 harq_pid,
-		   u8 tmode,
 		   u8 control_only_flag) {
   
   unsigned short offset;
@@ -205,10 +202,7 @@ u32 ulsch_encoding(u8 *a,
     //    ulsch->o[i] = i;
     msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
   }
-  if ((tmode != 4))
-    print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
-  else
-    print_CQI(ulsch->o,ulsch->o_RI,hlc_cqi,0);
+  print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,0);
 #endif
     
     if (ulsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
@@ -256,19 +250,16 @@ u32 ulsch_encoding(u8 *a,
 	
 	
 #ifdef DEBUG_ULSCH_CODING
-  msg("Generating Code Segment %d (%d bits)\n",r,Kr);
-  // generate codewords
-  
-  msg("bits_per_codeword (Kr)= %d\n",Kr);
-  msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("Ncp %d\n",frame_parms->Ncp);
-  msg("Qm %d\n",Q_m);
+	msg("Generating Code Segment %d (%d bits)\n",r,Kr);
+	// generate codewords
+	
+	msg("bits_per_codeword (Kr)= %d\n",Kr);
+	msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+	msg("Ncp %d\n",frame_parms->Ncp);
+	msg("Qm %d\n",Q_m);
 #endif
 	
 	offset=0;
-	
-	
-	
 	
 	
 #ifdef DEBUG_ULSCH_CODING    
@@ -643,10 +634,6 @@ u32 ulsch_encoding(u8 *a,
 
 
 #ifdef PHY_ABSTRACTION
-#ifdef OPENAIR2
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
-#endif
 int ulsch_encoding_emul(u8 *ulsch_buffer,
 			PHY_VARS_UE *phy_vars_ue,
 			u8 eNB_id,
@@ -654,10 +641,8 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 			u8 control_only_flag) {
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
-
+  
   msg("[PHY] EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
-
-
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);
@@ -678,10 +663,9 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
   
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_flag = 1;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_uci = *(u8 *)ulsch->o;
-  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
+  UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+(ulsch->o_RI[1]&1)<<1;
   UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
   msg("ack is %d %d %d\n",UE_transport_info[phy_vars_ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
-  return(0);
   
 }
 #endif

@@ -13,12 +13,20 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
 
 //#define AWGN
 //#define NO_DCI
 
 #define BW 7.68
+
+
+
+#define RBmask0 0x00fc00fc
+#define RBmask1 0x0
+#define RBmask2 0x0
+#define RBmask3 0x0
+
+unsigned char dlsch_cqi;
 
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
@@ -53,7 +61,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->kTC = 0;
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
   init_frame_parms(lte_frame_parms,osf);
   
@@ -93,18 +100,14 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 }
 
-
-
-/*
+DCI0_5MHz_TDD_1_6_t          UL_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
 DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
-*/
 
-//#define UL_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,18);
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
-#define DLSCH_RB_ALLOC 0x1fff // igore DC component,RB13
+#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x1f0f // igore DC component,RB13
 
 
@@ -123,6 +126,7 @@ int main(int argc, char **argv) {
   int **txdataF2;
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
+  //LTE_UE_COMMON      *lte_ue_common_vars = (LTE_UE_COMMON *)malloc(sizeof(LTE_UE_COMMON));
   double **s_re,**s_im,**r_re,**r_im;
   double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
   double aoa=.03;
@@ -133,9 +137,11 @@ int main(int argc, char **argv) {
   u8 extended_prefix_flag=0;
 
   int eNB_id = 0, eNB_id_i = 1;
-  int UE_id = 0;
-  unsigned char nb_rb=2,first_rb=0,mcs=4,awgn_flag=0,round=0;
+  unsigned char nb_rb=2,first_rb=0,mcs,dual_stream_UE = 0,awgn_flag=0,round=0;
   unsigned char Ns,l,m;
+
+
+  //  unsigned char *input_data,*decoded_output;
 
   unsigned char *input_buffer,harq_pid;
   unsigned short input_buffer_length;
@@ -143,14 +149,16 @@ int main(int argc, char **argv) {
   unsigned int coded_bits_per_codeword,nsymb;
   int subframe=2;
 
-  unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0};
+  unsigned int tx_lev,tx_lev_dB,trials,errs[4]={0,0,0,0},round_trials[4]={0,0,0,0},num_layers;
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[20];
 
+  //  unsigned char pbch_pdu[6];
+
   //  FILE *rx_frame_file;
 
-  int n_frames=100;
+  int n_frames;
 
   channel_desc_t *UE2eNB;
 
@@ -158,16 +166,26 @@ int main(int argc, char **argv) {
   int *ulsch_power;
   u8 control_only_flag = 0;
 
-  u8 srs_flag = 0;
+  u8 srs_flag = 1;
 
   u8 N_RB_DL=25,osf=1;
 
-  u8 cyclic_shift = 0;
-  u8 cooperation_flag = 0; //0 no cooperation, 1 delay diversity, 2 Alamouti
 
   channel_length = (int) 11+2*BW*Td;
 
-  while ((c = getopt (argc, argv, "hapm:n:s:t:c:r:f:c:o")) != -1) {
+
+
+  num_layers = 1;
+  //int cont=0;
+  // default parameters
+  //for (cont =0;cont<29;cont++){
+
+  mcs = 0;
+  n_frames = 1000;
+  snr0 = 0;
+  //if(snr0>0)
+  // snr0 = 0;
+  while ((c = getopt (argc, argv, "hapm:n:s:t:c:r:f:")) != -1) {
     switch (c)
       {
       case 'a':
@@ -194,15 +212,9 @@ int main(int argc, char **argv) {
       case 'f':
 	first_rb = atoi(optarg);
 	break;
-      case 'c':
-	cyclic_shift = atoi(optarg);
-	break;
-      case 'o':
-	srs_flag = 1;
-	break;
       case 'h':
       default:
-	printf("%s -h(elp) -a(wgn on) -m mcs -n n_frames -s snr0 -t delay_spread -p (extended prefix on) -r nb_rb -f first_rb -c cyclic_shift -o (srs on)\n",argv[0]);
+	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -m mcs -n n_frames -s snr0\n",argv[0]);
 	exit(1);
 	break;
       }
@@ -211,6 +223,12 @@ int main(int argc, char **argv) {
   lte_param_init(1,1,1,extended_prefix_flag,N_RB_DL,osf);  
   printf("Setting mcs = %d\n",mcs);
   printf("n_frames = %d\n",n_frames);
+
+  /*  
+      snr0 = -8 + mcs;
+      if(snr0>0)
+      snr0 = 7;
+  */
 
   snr1 = snr0+25.0;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
@@ -254,6 +272,7 @@ int main(int argc, char **argv) {
   //  r_im0 = malloc(2*sizeof(double*));
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+
   
   coded_bits_per_codeword = nb_rb * (12 * get_Qm(mcs)) * nsymb;
 
@@ -309,18 +328,18 @@ int main(int argc, char **argv) {
 
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_UE->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].srs_Bandwidth = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].transmissionComb = 0;
-  PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id].freqDomainPosition = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].srs_ConfigIndex = 1;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].srs_Bandwidth = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].transmissionComb = 0;
+  PHY_vars_UE->soundingrs_ul_config_dedicated[0].freqDomainPosition = 0;
 
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig = 2;
   PHY_vars_eNB->lte_frame_parms.soundingrs_ul_config_common.srs_SubframeConfig = 7;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].srs_ConfigIndex = 1;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].srs_Bandwidth = 0;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].transmissionComb = 0;
+  PHY_vars_eNB->soundingrs_ul_config_dedicated[0].freqDomainPosition = 0;
 
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_ConfigIndex = 1;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].srs_Bandwidth = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].transmissionComb = 0;
-  PHY_vars_eNB->soundingrs_ul_config_dedicated[UE_id].freqDomainPosition = 0;
-  PHY_vars_eNB->cooperation_flag = cooperation_flag;
   //  PHY_vars_eNB->eNB_UE_stats[0].SRS_parameters = PHY_vars_UE->SRS_parameters;
   
   UE2eNB = new_channel_desc(1,
@@ -364,19 +383,16 @@ int main(int argc, char **argv) {
   
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.rballoc = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-  printf("rballoc %d (dci %x)\n",UL_alloc_pdu.rballoc,*(u32 *)&UL_alloc_pdu);
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
-  UL_alloc_pdu.cshift  = 0;
 
-  PHY_vars_UE->PHY_measurements.rank[0] = 1;
 
-  generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
+
+  generate_ue_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				    C_RNTI,
-				    (subframe<4)?(subframe+6):(subframe-4),
-				    2,  // transmission_mode 
+				    8,
 				    format0,
 				    PHY_vars_UE->ulsch_ue[0],
 				    PHY_vars_UE->dlsch_ue[0],
@@ -393,8 +409,7 @@ int main(int argc, char **argv) {
 
   generate_eNB_ulsch_params_from_dci((DCI0_5MHz_TDD_1_6_t *)&UL_alloc_pdu,
 				     SI_RNTI,
-				     (subframe<4)?(subframe+6):(subframe-4),
-				     2, // transmission modex
+				     8,
 				     format0,
 				     PHY_vars_eNB->ulsch_eNB[0],
 				     &PHY_vars_eNB->lte_frame_parms,
@@ -446,33 +461,25 @@ int main(int argc, char **argv) {
 	  PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->rvidx = round>>1;
 	}
 #ifdef OFDMA_ULSCH
-	if (srs_flag)
-	  generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id],PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe);
-	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe,first_rb,nb_rb,cyclic_shift);
+	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe);
+	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],AMP,subframe,first_rb,nb_rb,0,0,0);
 
 #else
-	if (srs_flag)
-	  generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated[eNB_id],PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe);
-	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->first_rb,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb,cyclic_shift);
+	generate_srs_tx(&PHY_vars_UE->lte_frame_parms,&PHY_vars_UE->soundingrs_ul_config_dedicated,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe);
+	generate_drs_pusch(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->lte_ue_common_vars.txdataF[0],scfdma_amps[nb_rb],subframe,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->first_rb,PHY_vars_UE->ulsch_ue[0]->harq_processes[0]->nb_rb,0,0,0);
 #endif	
 
-	if (ulsch_encoding(input_buffer,
-			   &PHY_vars_UE->lte_frame_parms,
-			   PHY_vars_UE->ulsch_ue[0],
-			   harq_pid,
-			   2, // transmission mode
-			   control_only_flag)==-1) {
-	  printf("ulsim.c Problem with ulsch_encoding\n");
-	  exit(-1);
-	}
+	ulsch_encoding(input_buffer,
+		       &PHY_vars_UE->lte_frame_parms,
+		       PHY_vars_UE->ulsch_ue[0],
+		       harq_pid,
+		       control_only_flag);
       
 #ifdef OFDMA_ULSCH
-	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],cooperation_flag);
+	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,AMP,subframe,&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->ulsch_ue[0],0,0,0);
 #else  
-	//	printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,scfdma_amps[nb_rb],nb_rb);
-	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],
-			 subframe,&PHY_vars_UE->lte_frame_parms,
-			 PHY_vars_UE->ulsch_ue[0],cooperation_flag);
+	ulsch_modulation(PHY_vars_UE->lte_ue_common_vars.txdataF,scfdma_amps[nb_rb],subframe,&PHY_vars_UE->lte_frame_parms,
+			 PHY_vars_UE->ulsch_ue[0],0,0,0);
 #endif
       
 #ifdef IFFT_FPGA_UE
@@ -516,7 +523,7 @@ int main(int argc, char **argv) {
 #else
 	if (n_frames==1) {
 	  write_output("txsigF0.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][512*nsymb*subframe],512*nsymb,1,1);
-	  //write_output("txsigF1.m","txsF1", PHY_vars_UE->lte_ue_common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+	  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 	}
 	tx_lev=0;
 	for (aa=0; aa<1; aa++) {
@@ -603,15 +610,15 @@ int main(int argc, char **argv) {
 		      0,
 		      0);
 	}
-
-	PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
+      
 	ulsch_power = rx_ulsch(&PHY_vars_eNB->lte_eNB_common_vars,
 			       PHY_vars_eNB->lte_eNB_ulsch_vars[0],
 			       &PHY_vars_eNB->lte_frame_parms,
 			       subframe,
 			       0,  // this is the effective sector id
 			       PHY_vars_eNB->ulsch_eNB[0],
-			       cooperation_flag);
+			       0,
+			       0);
       
 	
 	ret= ulsch_decoding(PHY_vars_eNB->lte_eNB_ulsch_vars[0]->llr,
@@ -672,7 +679,7 @@ int main(int argc, char **argv) {
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
 	   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
     
-    fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
+    fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
 	    SNR,
 	    mcs,
 	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,

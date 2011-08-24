@@ -10,8 +10,6 @@
 #include <linux/module.h>  /* Needed by all modules */
 #endif
 
-#include "RRC/LITE/defs.h"
-#include "COMMON/mac_rrc_primitives.h"
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -38,9 +36,12 @@
 
 //#include "PHY/defs.h"
 #ifndef USER_MODE
+#define msg printk
 #ifndef errno
 int errno;
 #endif
+#else
+#define msg printf
 #endif
 
 /*
@@ -89,7 +90,6 @@ uint8_t do_SIB1(uint8_t *buffer,
 
   asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;  
 
-
   dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
   dummy=6;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
   dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
@@ -100,7 +100,6 @@ uint8_t do_SIB1(uint8_t *buffer,
   dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
   //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved); 
   PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
-
 
   ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
 
@@ -182,30 +181,26 @@ uint8_t do_SIB23(uint8_t *buffer,
   //  SystemInformationBlockType3_t *sib3;
 
 
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib2_part,*sib3_part;
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member sib2_part,sib3_part;
 
   asn_enc_rval_t enc_rval;
 
 
-  sib2_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  sib3_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  sib2_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
-  sib3_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
+  memset(&sib2_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  memset(&sib3_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
 
-  *sib2 = &sib2_part->choice.sib2;
-  *sib3 = &sib3_part->choice.sib3;
+  sib2_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2;
+  sib3_part.present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3;
+
+  *sib2 = &sib2_part.choice.sib2;
+  *sib3 = &sib3_part.choice.sib3;
 
 
   // sib2
 
   (*sib2)->ac_BarringInfo = NULL;
-  (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
-  (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
-  (*sib2)->ac_BarringForCSFB_r10 = NULL;
-   
+
   //assign_enum(&(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles,RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64);
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL; 
@@ -324,10 +319,6 @@ uint8_t do_SIB23(uint8_t *buffer,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
-  (*sib3)->s_IntraSearch_v920=NULL;
-  (*sib3)->s_NonIntraSearch_v920=NULL;
-  (*sib3)->q_QualMin_r9=NULL;
-  (*sib3)->threshServingLowQ_r9=NULL; 
   //  assign_enum(&(*sib3)->cellReselectionInfoCommon.q_Hyst,SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4);
   (*sib3)->cellReselectionInfoCommon.q_Hyst=SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4;
 
@@ -363,8 +354,8 @@ uint8_t do_SIB23(uint8_t *buffer,
 
   //  asn_set_empty(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list);//.size=0;  
   //  systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count=0;
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib2_part);
-  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib3_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib2_part);
+  ASN_SEQUENCE_ADD(&systemInformation->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,&sib3_part);
 
 #ifdef USER_MODE
   xer_fprint(stdout, &asn_DEF_SystemInformation, (void*)systemInformation);
@@ -377,10 +368,8 @@ uint8_t do_SIB23(uint8_t *buffer,
   printf("[RRC][eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
-  if (enc_rval.encoded==-1) {
-    msg("[RRC] ASN1 : SI encoding failed for SIB23\n");
+  if (enc_rval.encoded==-1)
     return(-1);
-  }
   return((enc_rval.encoded+7)/8);
 }
 
@@ -388,7 +377,7 @@ uint8_t do_RRCConnectionRequest(uint8_t *buffer,uint8_t *rv) {
 
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
-  uint8_t ecause=0;
+  uint8_t ecause;
 
   UL_CCCH_Message_t ul_ccch_msg;
 
@@ -496,15 +485,12 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 
   RRCConnectionReconfigurationComplete_t *rrcConnectionReconfigurationComplete;
 
-  memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
-
   ul_dcch_msg.message.present                     = UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1.present           = UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete;
   rrcConnectionReconfigurationComplete            = &ul_dcch_msg.message.choice.c1.choice.rrcConnectionReconfigurationComplete;
   
   rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = 0x2; 
   rrcConnectionReconfigurationComplete->criticalExtensions.present = RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
-  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
 
  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
 				   (void*)&ul_dcch_msg,
@@ -523,21 +509,20 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 			      uint8_t UE_id,
 			      uint8_t Transaction_id,
 			      struct SRB_ToAddMod **SRB1_config,
-			      struct SRB_ToAddMod **SRB2_config,
 			      struct PhysicalConfigDedicated  **physicalConfigDedicated) {
 
 
   asn_enc_rval_t enc_rval;
-  uint8_t ecause=0;
+  uint8_t ecause;
   
 
 
   long *logicalchannelgroup;
   
-  struct SRB_ToAddMod *SRB1_config2,*SRB2_config2;
-  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config,*SRB2_rlc_config;
-  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config,*SRB2_lchan_config;
-  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters,*SRB2_ul_SpecificParameters;
+  struct SRB_ToAddMod *SRB1_config2;
+  struct SRB_ToAddMod__rlc_Config *SRB1_rlc_config;
+  struct SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config;
+  struct LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters;
   SRB_ToAddModList_t *SRB_list;
 
   PhysicalConfigDedicated_t *physicalConfigDedicated2;
@@ -608,58 +593,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
 
   ASN_SEQUENCE_ADD(&SRB_list->list,SRB1_config2);
 
-  /// SRB2
-  SRB2_config2 = CALLOC(1,sizeof(*SRB2_config2));
-  *SRB2_config = SRB2_config2;
-
-  SRB2_config2->srb_Identity = 2;
-  SRB2_rlc_config = CALLOC(1,sizeof(*SRB2_rlc_config));
-  SRB2_config2->rlc_Config   = SRB2_rlc_config;
-  
-  SRB2_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
-  SRB2_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit,T_PollRetransmit_ms45);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit=T_PollRetransmit_ms45;
- 
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU,PollPDU_pInfinity);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU=PollPDU_pInfinity;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte,PollPDU_pInfinity);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte=PollPDU_pInfinity;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold,UL_AM_RLC__maxRetxThreshold_t4);
-  SRB2_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold=UL_AM_RLC__maxRetxThreshold_t4;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering,T_Reordering_ms35);
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering=T_Reordering_ms35;
-
-  //assign_enum(&SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit,T_StatusProhibit_ms0);
-  SRB2_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit=T_StatusProhibit_ms0;
-  
-  SRB2_lchan_config = CALLOC(1,sizeof(*SRB2_lchan_config));
-  SRB2_config2->logicalChannelConfig   = SRB2_lchan_config;
-
-  SRB2_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
-  SRB2_ul_SpecificParameters = CALLOC(1,sizeof(*SRB2_ul_SpecificParameters));
-
-  SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
-
-
-  SRB2_ul_SpecificParameters->priority = 1;
-
-  //assign_enum(&SRB2_ul_SpecificParameters->prioritisedBitRate,LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity);
-  SRB2_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-
-  //assign_enum(&SRB2_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
-  SRB2_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
-
-  logicalchannelgroup = CALLOC(1,sizeof(long));
-  *logicalchannelgroup=0;
-  SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
-
-
-  ASN_SEQUENCE_ADD(&SRB_list->list,SRB2_config2);
-
   // PhysicalConfigDedicated
 
   physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
@@ -675,7 +608,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
-  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola = NULL;
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
@@ -783,7 +715,6 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
-  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_RA_ConfigList_rlola = NULL;
 
 
 
@@ -828,11 +759,12 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
 
-
   DL_DCCH_Message_t dl_dcch_msg;
 
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
   long *lcid;
+
+  int i;
 
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
@@ -951,7 +883,6 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = NULL;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
@@ -963,9 +894,13 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 				   buffer,
 				   100);
 
-#ifdef USER_MODE
-  printf("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
+  //#ifdef USER_MODE
+  msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  for (i=0;i<30;i++)
+    msg("%x.",buffer[i]);
+  msg("\n");
+  
+  //#endif
 
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);
@@ -995,4 +930,12 @@ EXPORT_SYMBOL(do_RRCConnectionSetupComplete);
 EXPORT_SYMBOL(do_RRCConnectionReconfigurationComplete);
 EXPORT_SYMBOL(do_RRCConnectionSetup);
 EXPORT_SYMBOL(do_RRCConnectionReconfiguration);
+EXPORT_SYMBOL(asn_DEF_UL_DCCH_Message);
+EXPORT_SYMBOL(asn_DEF_UL_CCCH_Message);
+EXPORT_SYMBOL(asn_DEF_SystemInformation);
+EXPORT_SYMBOL(asn_DEF_DL_DCCH_Message);
+EXPORT_SYMBOL(asn_DEF_SystemInformationBlockType1);
+EXPORT_SYMBOL(asn_DEF_DL_CCCH_Message);
+EXPORT_SYMBOL(uper_decode_complete);
+EXPORT_SYMBOL(uper_decode);
 #endif

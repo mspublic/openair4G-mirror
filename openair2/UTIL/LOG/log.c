@@ -89,6 +89,29 @@ void logInit (int g_log_level) {
     g_log->log_component[MAC].level = LOG_INFO;
     g_log->log_component[MAC].flag =  LOG_MED_ONLINE;
 
+    g_log->log_component[MAC_RA].name = "MAC_RA";
+    g_log->log_component[MAC_RA].level = LOG_INFO;
+    g_log->log_component[MAC_RA].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_UL].name = "MAC_UL";
+    g_log->log_component[MAC_UL].level = LOG_INFO;
+    g_log->log_component[MAC_UL].flag = LOG_DEF_ONLINE;
+
+    g_log->log_component[MAC_DL].name = "MAC_DL";
+    g_log->log_component[MAC_DL].level = LOG_INFO;
+    g_log->log_component[MAC_DL].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_UE].name = "MAC_UE";
+    g_log->log_component[MAC_UE].level = LOG_INFO;
+    g_log->log_component[MAC_UE].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_RAR].name = "MAC_RAR";
+    g_log->log_component[MAC_RAR].level = LOG_INFO;
+    g_log->log_component[MAC_RAR].flag = LOG_DEF_ONLINE;
+    
+    g_log->log_component[MAC_L2].name = "MAC_L2";
+    g_log->log_component[MAC_L2].level = LOG_INFO;
+    g_log->log_component[MAC_L2].flag = LOG_DEF_ONLINE;
     
     g_log->log_component[OPT].name = "OPT";
     g_log->log_component[OPT].level = LOG_INFO;
@@ -100,11 +123,7 @@ void logInit (int g_log_level) {
     
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
-    g_log->log_component[EMU].flag =  LOG_MED_ONLINE; 
-
-    g_log->log_component[OMG].name = "OMG";
-    g_log->log_component[OMG].level = LOG_INFO;
-    g_log->log_component[OMG].flag =  LOG_MED_ONLINE;
+    g_log->log_component[EMU].flag =  LOG_MED_ONLINE;
      
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
@@ -113,10 +132,6 @@ void logInit (int g_log_level) {
     g_log->log_component[PERF].name = "PERF";
     g_log->log_component[PERF].level = LOG_INFO;
     g_log->log_component[PERF].flag =  LOG_MED_ONLINE;
-
-    g_log->log_component[RB].name = "RB";
-    g_log->log_component[RB].level = LOG_INFO;
-    g_log->log_component[RB].flag =  LOG_MED_ONLINE;
 
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
@@ -140,7 +155,7 @@ void logInit (int g_log_level) {
   g_log->config.audit_facility = LOG_LOCAL6;
   g_log->config.format         = 0x00; // online debug inactive
   
-  g_log->log_file_name = "/tmp/openair.log";
+  g_log->log_file_name = "openair.log";
 #else
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
@@ -249,7 +264,7 @@ void logRecord( const char *file, const char *func,
 }
 
 int  set_comp_log(int component, int level, int flag) {
-  if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
+  if (component >=MIN_LOG_COMPONENTS && component < MAX_LOG_COMPONENTS){
     g_log->log_component[component].flag = flag;
     g_log->log_component[component].level = level;
     return 0;

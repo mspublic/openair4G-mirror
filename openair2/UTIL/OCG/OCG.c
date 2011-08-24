@@ -45,7 +45,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <math.h>
 #include "OCG.h"
 #include "OCG_vars.h"
 #include "OCG_detect_file.h"
@@ -66,7 +65,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 #endif  
 	int state = STATE_START_OCG;
 	char web_XML_folder[DIR_LENGTH_MAX] = "";
-	char output_dir[DIR_LENGTH_MAX] = ""; // the output folder during the OCG procedure. Change step by step
+	char output_dir[DIR_LENGTH_MAX] = "";
 
 	char *OPENAIR_TARGETS=getenv("OPENAIR_TARGETS");
 	if (OPENAIR_TARGETS == NULL) {
@@ -93,7 +92,6 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 
 	LOG_I(OCG, "Folder for detecting the XML configuration file is %s\n", web_XML_folder);
 	LOG_I(OCG, "Folder for generating the results is %s\n", output_dir);
-
 
 	while(state != STATE_END) {
 	
@@ -150,11 +148,8 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				parse_XML_OK = MODULE_NOT_PROCESSED;
 				save_XML_OK = MODULE_NOT_PROCESSED;
 				call_emu_OK = MODULE_NOT_PROCESSED;
-				//config_mobi_OK = MODULE_NOT_PROCESSED;
+				config_mobi_OK = MODULE_NOT_PROCESSED;
 				generate_report_OK = MODULE_NOT_PROCESSED;
-
-				init_oai_emulation(); // to initialize the oai_emulation structure
-
 				LOG_I(OCG, "An emulation for file %s is initiated\n", filename);
 				state = STATE_PARSE_FILENAME;
 				break;
@@ -173,12 +168,12 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 			case STATE_CREATE_DIR :
 				if ((create_dir_OK = create_dir(output_dir, user_name, file_date)) == MODULE_OK) {
 					state = STATE_PARSE_XML;
-					strcat(output_dir, user_name);
-					strcat(output_dir, "/");
-					strcat(output_dir, file_date);
-					strcat(output_dir, "/");
 					strcpy(dst_dir, output_dir);
-					oai_emulation.info.output_path = &dst_dir; // information for other modules within OAI
+					strcat(dst_dir, user_name);
+					strcat(dst_dir, "/");
+					strcat(dst_dir, file_date);
+					strcat(dst_dir, "/");
+					oai_emulation.useful_info.output_path = &dst_dir; // information for other modules within OAI
 				} else state = STATE_GENERATE_REPORT;
 				break;
 				
@@ -191,7 +186,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				break;
 				
 			case STATE_SAVE_XML :
-			  if ((save_XML_OK = save_XML(copy_or_move, src_file, output_dir, filename)) == MODULE_OK) 
+			  if ((save_XML_OK = save_XML(copy_or_move, src_file, dst_dir, filename)) == MODULE_OK) 
 				state = STATE_CALL_EMU;
 			  else state = STATE_GENERATE_REPORT;
 			  break;
@@ -200,11 +195,11 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 
 				if ((detect_file_OK == MODULE_OK) && (parse_filename_OK == MODULE_OK) && (create_dir_OK == MODULE_OK) && (parse_XML_OK == MODULE_OK) && (save_XML_OK == MODULE_OK)) { 
 				// if the above tasks are all successful, we could tell the oaisim.c that everything is ready before running the emulation
-					oai_emulation.info.ocg_ok = 1;
+					oai_emulation.useful_info.OCG_OK = 1;
 				}
 #ifdef TEST_OCG				
-				call_emu_OK = call_emu(output_dir);
-				// config_mobi_OK = config_mobi("RWMEmulator.xml", filename); // generate the XML for Mobigen
+				call_emu_OK = call_emu(dst_dir);
+				config_mobi_OK = config_mobi("RWMEmulator.xml", filename); // generate the XML for Mobigen
 #endif
 				state = STATE_GENERATE_REPORT;
 				break;
@@ -212,19 +207,19 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 			case STATE_GENERATE_REPORT :
 				if (create_dir_OK != MODULE_OK) {
 					// a temp folder is required when the output folder could not be correctly generated
-					strcpy(output_dir, OPENAIR_TARGETS);
-					strcat(output_dir, "SIMU/EXAMPLES/OSD/");
-					strcat(output_dir, TEMP_OUTPUT_DIR);
+					strcpy(dst_dir, OPENAIR_TARGETS);
+					strcat(dst_dir, "SIMU/EXAMPLES/OSD/");
+					strcat(dst_dir, TEMP_OUTPUT_DIR);
 					struct stat st;
-					if(stat(output_dir, &st) != 0) { // if temp output directory does not exist, we create it here
-						mkdir(output_dir, S_IRWXU | S_IRWXG | S_IRWXO);
-						LOG_I(OCG, "temp output directory %s is created", output_dir);
+					if(stat(dst_dir, &st) != 0) { // if temp output directory does not exist, we create it here
+						mkdir(dst_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+						LOG_I(OCG, "temp output directory %s is created", dst_dir);
 					}
 				} else {
-					strcat(output_dir, "SCENARIO/STATE/");
+					strcat(dst_dir, "SCENARIO/STATE/");
 				}
 
-				generate_report(output_dir, "OCG_report.xml");
+				generate_report(dst_dir, "OCG_report.xml");
 				if (copy_or_move == 1) state = STATE_END;
 				else state = STATE_END;
 				//else state = STATE_DETECT_FILE;
@@ -242,94 +237,3 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 	return &oai_emulation;
 #endif
 }
-
-void init_oai_emulation() {
-
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_model.selected_option = "urban";
-	
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_exponent = 2;
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_0 = 0;
-
-	oai_emulation.environment_system_config.fading.small_scale.selected_option = "SCM_A";
-
-	oai_emulation.environment_system_config.wall_penetration_loss = 0;
-	oai_emulation.environment_system_config.system_bandwidth = 20;
-	oai_emulation.environment_system_config.UE_frequency = 900;
-
-	oai_emulation.environment_system_config.antenna.eNB_antenna.number_of_sectors = 1;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.beam_width = 2 * M_PI;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_gain_dBi = 3;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.tx_power_dBm = 0;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.rx_noise_level = -90;
-
-	oai_emulation.environment_system_config.antenna.UE_antenna.number_of_sectors = 1;
-	oai_emulation.environment_system_config.antenna.UE_antenna.beam_width = 2 * M_PI;
-	oai_emulation.environment_system_config.antenna.UE_antenna.antenna_gain_dBi = 3;
-	oai_emulation.environment_system_config.antenna.UE_antenna.tx_power_dBm = 0;
-	oai_emulation.environment_system_config.antenna.UE_antenna.rx_noise_level = -90;
-
-
-	oai_emulation.topology_config.area.x = 100;
-	oai_emulation.topology_config.area.y = 100;
-
-	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
-	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
-
-	oai_emulation.topology_config.relay.number_of_relays = 0;
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "fixed";
-
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = "random_destination";
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_initial_distribution.selected_option = "random";
-
-	oai_emulation.topology_config.mobility.UE_mobility.random_UE_distribution.number_of_nodes = 1;
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_journey_time = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_journey_time = 1;
-
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = "fixed";
-
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_initial_distribution.selected_option = "random";
-
-	oai_emulation.topology_config.mobility.eNB_mobility.random_eNB_distribution.number_of_cells = 1;
-
-
-	oai_emulation.application_config.application_type.selected_option = "cbr";
-
-	oai_emulation.application_config.traffic.transport_protocol.selected_option = "udp";
-
-	oai_emulation.application_config.traffic.packet_size.selected_option = "fixed";
-	oai_emulation.application_config.traffic.fixed_packet_size.fixed_value = 10;
-
-	oai_emulation.application_config.traffic.inter_arrival_time.selected_option = "fixed";
-	oai_emulation.application_config.traffic.fixed_inter_arrival_time.fixed_value = 10;
-
-
-	oai_emulation.emulation_config.emulation_time = 20;
-	oai_emulation.emulation_config.performance.metrics.throughput = 0;
-	oai_emulation.emulation_config.performance.metrics.latency = 0;
-	oai_emulation.emulation_config.performance.metrics.signalling_overhead = 0;
-	oai_emulation.emulation_config.performance.layer.mac = 0;
-	oai_emulation.emulation_config.performance.layer.rlc = 0;
-	oai_emulation.emulation_config.performance.layer.pdcp = 0;
-	oai_emulation.emulation_config.performance.log_emu.debug = 0;
-	oai_emulation.emulation_config.performance.log_emu.info = 0;
-	oai_emulation.emulation_config.performance.log_emu.warning = 0;
-	oai_emulation.emulation_config.performance.log_emu.error = 0;
-	oai_emulation.emulation_config.performance.packet_trace.mac = 0;
-
-	oai_emulation.emulation_config.seed.selected_option = "oai_seed";
-
-
-	oai_emulation.info.ocg_ok = 0;
-	
-	oai_emulation.profile = "EURECOM";
-}
-

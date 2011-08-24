@@ -42,48 +42,56 @@ ________________________________________________________________*/
 
 
 /***********************************************************************/
-void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //init as MR
+void chbch_phy_sync_success(unsigned char Mod_id,unsigned char CH_index){  //init as MR
 /***********************************************************************/
-  // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
-  if( (layer2_init_UE(Mod_id)==-1) || (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
+  // msg("[MAC]Node %d, PHY SYNC to CH_index %d\n",NODE_ID[Mod_id],CH_index);
+  if( (layer2_init_mr(Mod_id)==-1) || (Rrc_xface->openair_rrc_mr_init(Mod_id,CH_index)==-1) )
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
 
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Active=1;
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Bcch_lchan[CH_index].Lchan_info.Lchan_id.Index=BCCH;
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Active=1;  
+  //  UE_mac_inst[Mod_id-NB_CH_INST].Ccch_lchan[CH_index].Lchan_info.Lchan_id.Index=CCCH;
 }
 
 /***********************************************************************/
 void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){//init as CH 
   /***********************************************************************/
-  msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
-  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
+  msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to CH\n",mac_xface->frame,NODE_ID[Mod_id]);
+  if((layer2_init_ch(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_ch_init(Mod_id)==-1))
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
   
 }
 
 /***********************************************************************/
-char layer2_init_eNB(unsigned char Mod_id, unsigned char eNB_index){
+char layer2_init_ch(unsigned char Mod_id, unsigned char CH_index){
 /***********************************************************************/
 
   Mac_rlc_xface->Is_cluster_head[Mod_id]=1;
   
-  //  msg("\nMAC: INIT eNB %d Successful \n\n",Mod_id);
+  msg("\nMAC: INIT CH %d Successful \n\n",NODE_ID[Mod_id]);
 
   return 0;
   
 }
 
 /***********************************************************************/
-char layer2_init_UE(unsigned char Mod_id){
+char layer2_init_mr(unsigned char Mod_id){
   /***********************************************************************/
-  Mac_rlc_xface->Is_cluster_head[NB_eNB_INST + Mod_id]=0;
+  unsigned char Nb_mod;
+  Nb_mod=Mod_id-NB_CH_INST;
+  Mac_rlc_xface->Is_cluster_head[Mod_id]=0;
   
   return 0;
 }
 
 /***********************************************************************/
-void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short eNB_index){
+void mac_UE_out_of_sync_ind(unsigned char Mod_id, unsigned short CH_index){
 /***********************************************************************/
 
-  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,eNB_index);
+  Mod_id-=NB_CH_INST;
+
+  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id,CH_index);
 }
  
 
@@ -93,33 +101,23 @@ int mac_top_init(){
   unsigned char  Mod_id,i,j;  
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
-  u8 SB_size;
 
   msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
-#if ((PHY_EMUL==1)||(PHYSIM==1))
-  UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-  msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
-  bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-  eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
-  msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
-  bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
-#else 
-  //  if(NODE_ID[0]<NB_eNB_MAX){
-  if(NODE_ID[0]<NUMBER_OF_eNB_MAX){
-    eNB_mac_inst = (eNB_MAC_INST*)malloc16(sizeof(eNB_MAC_INST));
-    msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
-    bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
-    NB_eNB_INST=1;
-    NB_UE_INST=0;
-  }
-  else{
-    UE_mac_inst = (UE_MAC_INST*)malloc16(sizeof(UE_MAC_INST));
-    msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
+  if (NB_UE_INST>0) {
+    UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
+    msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-    NB_eNB_INST=0;
-    NB_UE_INST=1;
   }
-#endif
+  else 
+    UE_mac_inst = NULL;
+  if (NB_CH_INST>0) {
+    CH_mac_inst = (CH_MAC_INST*)malloc16(NB_CH_INST*sizeof(CH_MAC_INST));
+    msg("ALLOCATE %d Bytes for CH_MAC_INST @ %p\n",NB_CH_INST*sizeof(CH_MAC_INST),CH_mac_inst);
+    bzero(CH_mac_inst,NB_CH_INST*sizeof(CH_MAC_INST));
+  }
+  else
+    CH_mac_inst = NULL;
+  
   msg("init---------------------\n");
   for(Mod_id=0;Mod_id<NB_INST;Mod_id++){
 
@@ -151,49 +149,26 @@ int mac_top_init(){
   init_transport_channels(2); 
 
   // Set up DCIs for TDD 5MHz Config 1..6
-  for (i=0;i<NB_eNB_INST;i++) {
-    msg("[MAC][eNB %d] initializing RA_template\n",i);
-    RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
+  for (i=0;i<NB_CH_INST;i++) {
+    RA_template = (RA_TEMPLATE *)&CH_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
       memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
       memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      RA_template[j].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-      RA_template[j].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[j].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      RA_template[j].RA_dci_fmt1        = format1A;
-      RA_template[j].RA_dci_fmt2        = format1A;
+      RA_template[i].RA_dci_size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[i].RA_dci_size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+      RA_template[i].RA_dci_size_bits1  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[i].RA_dci_size_bits2  = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      RA_template[i].RA_dci_fmt1        = format1A;
+      RA_template[i].RA_dci_fmt2        = format1A;
     }
 
 
-    UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_template[0];
-    for (j=0;j<NB_CNX_eNB;j++) {
+    UE_template = (UE_TEMPLATE *)&CH_mac_inst[i].UE_template[0];
+    for (j=0;j<NB_CNX_CH;j++) {
       UE_template->rnti=0;
     }    
   }
-
-
-  //ICIC init param
-
-  SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
-
-  srand (time(NULL));
-
-  for(j=0;j<NB_eNB_INST;j++){
-	  eNB_mac_inst[j].sbmap_conf.first_subframe=0;
-	  eNB_mac_inst[j].sbmap_conf.periodicity=10;
-	  eNB_mac_inst[j].sbmap_conf.sb_size=SB_size;
-	  eNB_mac_inst[j].sbmap_conf.nb_active_sb=1;
-	  for(i=0;i<NUMBER_OF_SUBBANDS;i++)
-		  eNB_mac_inst[j].sbmap_conf.sbmap[i]=1;
-
-	  eNB_mac_inst[j].sbmap_conf.sbmap[rand()%NUMBER_OF_SUBBANDS]=0;
-
-  }
-
-   //end ALU's algo
-
-   msg("[OPENAIR][MAC][INIT] Init function finished\n");
+  msg("[OPENAIR][MAC][INIT] Init function finished\n");
   
   return(0);
   
@@ -214,6 +189,7 @@ int mac_init_global_param(){
   msg("[MAC] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
   
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
+  bzero(Mac_rlc_xface,sizeof(MAC_RLC_XFACE));
   
   if(Mac_rlc_xface == NULL){
     msg("[MAC] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
@@ -304,9 +280,6 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size	      	   = Get_SB_size;
-
-
 
   //UE MAC functions    
   mac_xface->ue_decode_si              = ue_decode_si;
@@ -326,7 +299,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS                = get_TBS;
   mac_xface->get_nCCE_max           = get_nCCE_max;
-  mac_xface->get_ue_mode            = get_ue_mode;
+
   mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;
   mac_xface->phy_config_sib1_ue    = phy_config_sib1_ue;
 

@@ -39,12 +39,13 @@ FD_lte_scope *form;
 
 LTE_DL_FRAME_PARMS *frame_parms;
 PHY_VARS_eNB *PHY_vars_eNB;
+LTE_eNB_UE_stats *lte_eNb_ue_stats;
 
 //short channel[2048];
 //short channel_f[2048];
 //char demod_data[2048];
 
-short *channel_drs[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
+short *channel_drs[4],*channel_drs_time[4],*channel_srs[4],*channel_srs_time[4],*rx_sig[4],*ulsch_ext[2],*ulsch_comp,*ulsch_llr,**rx_sig_ptr;
 unsigned int* sync_corr;
 
 int length,offset;
@@ -56,6 +57,7 @@ unsigned char nb_ant_tx, nb_ant_rx;
 void lte_scope_idle_callback(void) {
 
   int i,j,ind,k,s;
+  static int t=0;
 
   float Re,Im;
   float mag_sig[NB_ANTENNAS_RX*NB_ANTENNAS_TX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
@@ -69,7 +71,10 @@ void lte_scope_idle_callback(void) {
     llr_time[25*12*4*7];
 
   float cum_avg;
+
+  char text[64];
   
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<640*3; i++)  {
     sig2[i] = (float)(10.0*log10(1.0 + sync_corr[i]));
@@ -79,6 +84,27 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_ybounds(form->channel_t_re,50,100);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,640*3,"","","");
+  */
+
+  // channel_t_re = rx_sig[0]
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+    sig2[i] = (float) (10.0*log10((double)rx_sig[0][2*i]*(double)rx_sig[0][2*i] + 
+				  (double)rx_sig[0][1+(2*i)]*(double)rx_sig[0][1+(2*i)]));
+    time2[i] = (float) i;
+  }
+
+  fl_set_xyplot_ybounds(form->channel_t_re,30,80);
+  fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+
+  // channel_t_im = rx_sig[1]
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+    sig2[i] = (float) (10.0*log10((double)rx_sig[1][2*i]*(double)rx_sig[1][2*i] + 
+				  (double)rx_sig[1][1+(2*i)]*(double)rx_sig[1][1+(2*i)]));
+    time2[i] = (float) i;
+  }
+
+  fl_set_xyplot_ybounds(form->channel_t_im,30,80);
+  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
 
   // channel_srs
   cum_avg = 0;
@@ -135,37 +161,47 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_srs_time,sig_time,mag_sig,ind,"","","");
 
 
-  // channel_t_im = rx_sig
-  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
-    sig2[i] = (float) (10.0*log10((double)rx_sig[0][2*i]*(double)rx_sig[0][2*i] + (double)rx_sig[0][1+(2*i)]*(double)rx_sig[0][1+(2*i)] + (double)rx_sig[1][2*i]*(double)rx_sig[1][2*i] + (double)rx_sig[1][1+(2*i)]*(double)rx_sig[1][1+(2*i)]));
-    time2[i] = (float) i;
-  }
+  // channel_drs = drs
+  cum_avg = 0;
+  ind = 0;
+  //for (k=0;k<1;k++){
+  //  for (j=0;j<1;j++) {
+      
+      for (i=0;i<frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti;i++){
+	sig_time[ind] = (float)ind;
+	Re = (float)(channel_drs[1][2*i]);
+	Im = (float)(channel_drs[1][2*i+1]);
+	mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
+	cum_avg += sqrt((double)Re*Re + (double)Im*Im) ;
+	ind++;
+      }
+      //  }
+      // }
 
-  fl_set_xyplot_ybounds(form->channel_t_im,30,80);
-  fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
+  avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  // channel_f = drs
+  //fl_set_xyplot_ybounds(form->channel_f,30,70);
+  fl_set_xyplot_data(form->channel_drs,sig_time,mag_sig,ind,"","","");
+  //fl_set_xyplot_data(form->decoder_input,sig_time,mag_sig,ind,"","","");
+
+  // channel_drs_time = drs_time
   cum_avg = 0;
   ind = 0;
   for (k=0;k<1;k++){
     for (j=0;j<1;j++) {
       
-      for (i=0;i<frame_parms->N_RB_UL*12*frame_parms->symbols_per_tti;i++){
+      for (i=0;i<frame_parms->ofdm_symbol_size;i++){
 	sig_time[ind] = (float)ind;
-	Re = (float)(channel_drs[k+2*j][2*i]);
-	Im = (float)(channel_drs[k+2*j][2*i+1]);
-	mag_sig[ind] = (short)10*log10(1.0+((double)Re*Re + (double)Im*Im)); 
-	cum_avg += sqrt((double)Re*Re + (double)Im*Im) ;
+	Re = (float)(channel_drs_time[k+2*j][4*i]);
+	Im = (float)(channel_drs_time[k+2*j][4*i+1]);
+	mag_sig[ind] = (double)(Re*Re + Im*Im); 
 	ind++;
       }
     }
   }
 
-  avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
-
   //fl_set_xyplot_ybounds(form->channel_f,30,70);
-  fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
-  //fl_set_xyplot_data(form->decoder_input,sig_time,mag_sig,ind,"","","");
+  fl_set_xyplot_data(form->channel_drs_time,sig_time,mag_sig,ind,"","","");
 
   // demod_out = ulsch_llr
   for(i=0;i<12*12*12;i++) {
@@ -175,7 +211,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,i,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-400,400);
+  //fl_set_xyplot_ybounds(form->demod_out,-400,400);
 
   // scatter_plot2 = ulsch_comp
   for(i=0;i<12*12*12;i++) {
@@ -184,8 +220,18 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,i,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-400,400);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-400,400);
+  //fl_set_xyplot_xbounds(form->scatter_plot2,-400,400);
+  //fl_set_xyplot_ybounds(form->scatter_plot2,-400,400);
+
+  sprintf(text, "RSSI = (%d, %d) dB",lte_eNb_ue_stats->UL_rssi[0],lte_eNb_ue_stats->UL_rssi[0]);
+  //printf("%s\n",text);
+  fl_set_object_label(form->rssi,text);
+  //fl_redraw_object(form->rssi);
+
+  sprintf(text, "FER = %d %%",lte_eNb_ue_stats->ulsch_round_fer [0][0]);
+  //printf("%s\n",text);
+  fl_set_object_label(form->fer,text);
+  //fl_redraw_form(form);
 
   usleep(500000);
 }
@@ -208,10 +254,10 @@ int main(int argc, char *argv[]) {
 
   int openair_fd,i;
   unsigned int mem_base;
-  char title[20];
+  char title[64];
   unsigned int     bigphys_top;
   LTE_eNB_ULSCH *lte_eNb_ulsch;
-  unsigned char eNb_id, UE_id=0;
+  unsigned char eNb_id=0, UE_id=0;
 
   if (argc>1) {
     eNb_id = atoi(argv[1]);
@@ -222,6 +268,17 @@ int main(int argc, char *argv[]) {
   }
   else {
     eNb_id = 0;
+  }
+
+  if (argc>2) {
+    UE_id = atoi(argv[2]);
+    if (UE_id >1) {
+      printf("UE_id has to be <=1!\n");
+      exit(-1);
+    }
+  }
+  else {
+    UE_id = 0;
   }
 
   //PHY_vars = malloc(sizeof(PHY_VARS));
@@ -287,6 +344,15 @@ int main(int argc, char *argv[]) {
 
   printf("lte_eNb_ulsch = %p\n",lte_eNb_ulsch);
 
+  
+  lte_eNb_ue_stats = (LTE_eNB_UE_stats *)  (mem_base + 
+					    (unsigned int)PHY_vars_eNB->eNB_UE_stats_ptr[UE_id] - 
+					    bigphys_top);
+
+    
+  printf("lte_eNb_ue_stats= %p\n",lte_eNb_ue_stats);
+
+
 
   for (i=0;i<nb_ant_rx;i++) {
 
@@ -306,6 +372,12 @@ int main(int argc, char *argv[]) {
 			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates[eNb_id] + 
 			      nb_ant_rx*sizeof(int*) + 
 			      i*(frame_parms->symbols_per_tti*sizeof(int)*frame_parms->N_RB_UL*12) - 
+			      bigphys_top);
+
+    channel_drs_time[i] = (short*)(mem_base + 
+			      (unsigned int)lte_eNb_ulsch->drs_ch_estimates_time[eNb_id] + 
+			      nb_ant_rx*sizeof(int*) + 
+			      i*(2*sizeof(int)*frame_parms->ofdm_symbol_size) - 
 			      bigphys_top);
 
     ulsch_ext[i] = (short*)(mem_base + 
@@ -335,7 +407,7 @@ int main(int argc, char *argv[]) {
 		       (unsigned int)lte_eNb_ulsch->llr -
 			bigphys_top);
 
-  sprintf(title, "LTE SCOPE %d", eNb_id),
+  sprintf(title, "LTE SCOPE eNB %d UE %d", eNb_id, UE_id),
 
   fl_initialize(&argc, argv, title, 0, 0);    /* SIGSCOPE */
   form = create_form_lte_scope();                 /* SIGSCOPE */
