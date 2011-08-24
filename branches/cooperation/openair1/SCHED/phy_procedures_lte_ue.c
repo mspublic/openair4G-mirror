@@ -560,23 +560,23 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #endif
       
       if (RRCConnReq_flag == 1) {
-	msg("[PHY][UE %d] Frame %d, Subframe %d next slot %d Generating RRCConnReq (nb_rb %d, first_rb %d) : %x,%x,%x,%x,%x,%x\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1, next_slot, 
-	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb,		     
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][0],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][1],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][2],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][3],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][4],
-	    phy_vars_ue->RRCConnectionRequest_ptr[eNB_id][5]);
-	if (abstraction_flag==0)
+#ifdef OPENAIR2
+	msg("[PHY][UE %d] Frame %d, Subframe %d next slot %d Generating RRCConnReq (nb_rb %d, first_rb %d)\n",
+	    phy_vars_ue->Mod_id,mac_xface->frame,next_slot>>1, next_slot, 
+	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->nb_rb,
+	    phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->first_rb);
+
+	if (abstraction_flag==0) {
 	  if (ulsch_encoding(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0)!=0) {
 	    msg("ulsch_coding.c: FATAL ERROR: returning\n");
 	    return;
 	  }
-
-	else
+	}
+	else {
 	  ulsch_encoding_emul(phy_vars_ue->RRCConnectionRequest_ptr[eNB_id],phy_vars_ue,eNB_id,harq_pid,0);
 	}
+#endif
+      }
       else {
 	input_buffer_length = phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8;
 	//      msg("[PHY][UE] Frame %d, subframe %d : ULSCH SDU (TX)  input buffer (%d bytes) : ",mac_xface->frame,next_slot>>1,phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS/8);
@@ -590,7 +590,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  debug_msg("%x.",ulsch_input_buffer[i]);
 	debug_msg("\n");
 #endif
-#else
+#else //OPENAIR2
 	for (i=0;i<input_buffer_length;i++)
 	  ulsch_input_buffer[i]= i;
 	memset(phy_vars_ue->ulsch_ue[eNB_id]->o    ,0,MAX_CQI_BYTES*sizeof(u8));
@@ -600,12 +600,18 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	for (i=0;i<input_buffer_length;i++) 
 	  ulsch_input_buffer[i]= (u8)(taus()&0xff);
 	*/
+      
+#endif //OPENAIR2
+	if (abstraction_flag==0) {
+	  if (ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0)!=0) {
+	    msg("ulsch_coding.c: FATAL ERROR: returning\n");
+	    return;
+	  }
+	}
+	else {
+	  ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
+	}
       }
-#endif
-      if (abstraction_flag==0)
-	ulsch_encoding(ulsch_input_buffer,&phy_vars_ue->lte_frame_parms,phy_vars_ue->ulsch_ue[eNB_id],harq_pid,0);
-      else
-	ulsch_encoding_emul(ulsch_input_buffer,phy_vars_ue,eNB_id,harq_pid,0);
 
       if (abstraction_flag == 0) {
 #ifdef OFDMA_ULSCH
@@ -817,11 +823,15 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     if (mac_xface->frame % 100 == 0) {
       if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
 	openair_daq_vars.freq_offset+=100;
+#ifndef USER_MODE
 	openair_set_freq_offset(0,openair_daq_vars.freq_offset);
+#endif
       }
       else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
 	openair_daq_vars.freq_offset-=100;
+#ifndef USER_MODE
 	openair_set_freq_offset(0,openair_daq_vars.freq_offset);
+#endif
       }
     }
     }

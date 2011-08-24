@@ -19,6 +19,10 @@ ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE #-DOPENAIR2
 
+ifndef OPENAIR2
+export OPENAIR2=1
+endif
+
 # does not work under linux
 ifndef cygwin # forget about OCG, libxml doesn't work the same way as under linux
 CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 

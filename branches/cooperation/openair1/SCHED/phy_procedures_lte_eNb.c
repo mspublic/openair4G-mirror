@@ -1348,7 +1348,7 @@ void process_HARQ_feedback(u8 UE_id,
       dlsch_ACK[0] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[0];
     else
       dlsch_ACK[0] = pucch_payload[0];
-    msg("[MAC][eNB %d] Frame %d: Received ACK/NAK %d for subframe %d\n",phy_vars_eNB->Mod_id,
+    debug_msg("[MAC][eNB %d] Frame %d: Received ACK/NAK %d for subframe %d\n",phy_vars_eNB->Mod_id,
 	mac_xface->frame,dlsch_ACK[0],subframe_m4);
   }
   else {  // TDD Handle M=1,2 cases only
@@ -1358,7 +1358,9 @@ void process_HARQ_feedback(u8 UE_id,
     // Now derive ACK information for TDD
     if (pusch_flag == 1) { // Do PUSCH ACK/NAK first
       // detect missing DAI
-      
+      //FK: this code is just a guess
+       dlsch_ACK[0] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[0];
+       dlsch_ACK[1] = phy_vars_eNB->ulsch_eNB[(u8)UE_id]->o_ACK[1];
     }
 
     else {
@@ -1388,10 +1390,10 @@ void process_HARQ_feedback(u8 UE_id,
       if (dl_harq_pid[m]<dlsch->Mdlharq) {
 	dlsch_harq_proc = dlsch->harq_processes[dl_harq_pid[m]];
 #ifdef DEBUG_PHY	
-	msg("[PHY] eNB %d Process %d status %d, round %d\n",phy_vars_eNB->Mod_id,dl_harq_pid[m],dlsch_harq_proc->status,dlsch_harq_proc->round);
+	debug_msg("[PHY] eNB %d Process %d status %d, round %d\n",phy_vars_eNB->Mod_id,dl_harq_pid[m],dlsch_harq_proc->status,dlsch_harq_proc->round);
 #endif
 	if ((dl_harq_pid[m]<dlsch->Mdlharq) &&
-	    (dlsch->harq_processes[dl_harq_pid[m]]->status == ACTIVE)) {
+	    (dlsch_harq_proc->status == ACTIVE)) {
 	  // dl_harq_pid of DLSCH is still active
 	  
 	  //	  msg("[PHY] eNB %d Process %d is active (%d)\n",phy_vars_eNB->Mod_id,dl_harq_pid[m],dlsch_ACK[m]);
@@ -1408,11 +1410,12 @@ void process_HARQ_feedback(u8 UE_id,
 	      // This was the last round for DLSCH so reset round and increment l2_error counter
 	      dlsch_harq_proc->round = 0;
 	      ue_stats->dlsch_l2_errors++;
+	      dlsch_harq_proc->status == SCH_IDLE;
 	    }
 	  }
 	  else {
 #ifdef DEBUG_PHY	
-	    msg("[PHY][eNB] ACK Received in round %d for harq_pid %d, resetting process\n",dlsch_harq_proc->round,dl_harq_pid[m]);
+	    debug_msg("[PHY][eNB] ACK Received in round %d for harq_pid %d, resetting process\n",dlsch_harq_proc->round,dl_harq_pid[m]);
 #endif
 	    // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
 	    dlsch_harq_proc->round  = 0;
@@ -1428,8 +1431,8 @@ void process_HARQ_feedback(u8 UE_id,
 	      ue_stats->dlsch_mcs_offset=-1;
 	  }
 #ifdef DEBUG_PHY	  
-	  msg("[PHY][process_HARQ_feedback] Frame %d Setting round to %d for pid %d (subframe %d)\n",mac_xface->frame,
-		 dlsch_harq_proc->round,dl_harq_pid,subframe);
+	  debug_msg("[PHY][process_HARQ_feedback] Frame %d Setting round to %d for pid %d (subframe %d)\n",mac_xface->frame,
+		 dlsch_harq_proc->round,dl_harq_pid[m],subframe);
 #endif
 	  
 	  // Clear NAK stats and adjust mcs offset
@@ -1768,11 +1771,10 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
 #ifdef DEBUG_PHY
-	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d)\n",
+	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB\n",
 		  mac_xface->frame,last_slot,last_slot>>1,i,
 		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),
-		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]),
-		  phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1]);
+		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]));
 #endif
       }
       
@@ -1796,6 +1798,11 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 1;
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_ACK = 0;
 	phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round++;
+
+	phy_vars_eNB->ulsch_eNB[i]->o_ACK[0] = 0;
+	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1] = 0;
+
+
 	if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round==
 	    phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
 	  phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round=0;
@@ -1863,23 +1870,23 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  mac_xface->rx_sdu(phy_vars_eNB->Mod_id,phy_vars_eNB->ulsch_eNB[i]->rnti,phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b);
 #endif
 	}
-      
-	// process HARQ feedback
-#ifdef DEBUG_PHY
-	  debug_msg("[PHY_PROCEDURES_eNB] eNB %d Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,i);
-#endif
-	  process_HARQ_feedback(i,
-				last_slot>>1,
-				phy_vars_eNB,
-				1, // pusch_flag
-				0,
-				0,
-				0);
-      
       }  // ulsch not in error
+      
+      // process HARQ feedback
+#ifdef DEBUG_PHY
+      debug_msg("[PHY_PROCEDURES_eNB] eNB %d Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,i);
+#endif
+      process_HARQ_feedback(i,
+			    last_slot>>1,
+			    phy_vars_eNB,
+			    1, // pusch_flag
+			    0,
+			    0,
+			    0);
+      
 
 #ifdef DEBUG_PHY
-      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status,phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
+      debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status, phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1], phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
 #endif
 
 
