@@ -11,7 +11,7 @@ sudo rmmod nasmesh
 cd -
 sudo insmod $OPENAIR2_DIR/NAS/DRIVER/MESH/nasmesh.ko 
 
-sudo ifconfig nasmesh0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
+sudo ifconfig oai0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
 
 $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0.1.1 -r 3 
 

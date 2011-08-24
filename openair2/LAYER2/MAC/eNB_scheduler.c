@@ -1274,7 +1274,7 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round&3;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	  msg("[MAC] Retransmission : harq_pid %d, round %d, dai %d, mcs %d\n",harq_pid,round,(CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1),((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs);
+	  debug_msg("[MAC] Retransmission : harq_pid %d, round %d, dai %d, mcs %d\n",harq_pid,round,(CH_mac_inst[Mod_id].UE_template[next_ue].DAI-1),((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs);
 	  break;
 	case 4:
 	  if (nb_rb>10) {
@@ -1572,7 +1572,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
   switch (subframe) {
 
   case 0:
-    //schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+    schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
 
   case 1:
@@ -1593,6 +1593,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
     break;
 
   case 6:
+    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+    fill_DLSCH_dci(Mod_id,subframe);
     break;
 
   case 7:
@@ -1601,11 +1603,8 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
     break;
 
   case 8:
-    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
-    //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
-    fill_DLSCH_dci(Mod_id,subframe);
     // Schedule UL subframe
-    //schedule_ulsch(Mod_id,subframe,&nCCE);
+    schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
     break;
 
   case 9:
