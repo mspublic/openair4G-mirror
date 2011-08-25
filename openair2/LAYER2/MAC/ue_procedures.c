@@ -566,7 +566,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     sdu_lcids[num_sdus] = DCCH1;
     msg("[MAC][UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
     num_sdus++;
-    dcch_header_len +=2;
+    dcch_header_len +=2; // include dcch1
   }
 
   dtch_header_len = 3;
@@ -605,6 +605,10 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
     }
   }
+  // regular BSR
+  //  if (UE_mac_inst[Mod_id].scheduling_info.macConfig 
+  //   UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer 
+  
     // Generate header
   if (num_sdus>0) {
     payload_offset = generate_ulsch_header(ulsch_buffer,  // mac header
@@ -659,19 +663,25 @@ void ue_scheduler(u8 Mod_id, u8 subframe) {
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
+      
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
-
+  
   // Get RLC status info for all lcids that are active
   for (lcid=0; lcid < MAX_NUM_LCID; lcid++ ) { // ccch, dcch, dtch, bcch
     rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 					  lcid,
 					  0);//tb_size does not reauire when requesting the status
-    //set the bsr for all lcid by searching the table to find the bsr level 
-    UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
-    
+    if (rlc_status[lcid].bytes_in_buffer > 0 ) {
+      //set the bsr for all lcid by searching the table to find the bsr level 
+      UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
+      UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
+      msg("[MAC][UE %d] SR is pending for LCID %d with BSR level %d \n", 
+	  Mod_id, lcid, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
+    } else {
+      UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]=0;
+    }
   }
- 
   // UE has no valid phy config dedicated ||  no valid/released  SR 
   if ((UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated == NULL) || 
       (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig == NULL) ||
@@ -681,6 +691,7 @@ void ue_scheduler(u8 Mod_id, u8 subframe) {
     
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
+    msg("[MAC][UE %d] Release all SRs \n", Mod_id);
   }
    
   // Call PHR procedure as described in Section 5.4.6 in 36.321
@@ -710,4 +721,55 @@ u8 locate (const u32 *table, int size, int value){
   else                    return jl+1; //equally  ju
   
 }
+
+u8 numsf_periodicBSR(u8 sf_offset){
+   
+  switch (sf_offset) {
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5: 
+       return 5;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10: 
+       return 10;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16: 
+       return 16;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20: 
+       return 20;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32: 
+       return 32;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40: 
+       return 40;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64: 
+       return 64;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80: 
+       return 80;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128: 
+       return 128;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160: 
+       return 160;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320: 
+       return 320;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640: 
+       return 640;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280: 
+       return 1280;
+       break;
+     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560: 
+       return 2560;
+       break;
+     default:
+       return 0;
+       break;
+     }
+ }
 

@@ -438,7 +438,7 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNB,
   *sync_val = 0;
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     msg("[PHY] EMUL : eNB %d checking UE %d (PRACH %d) PL %d dB\n",phy_vars_eNB->Mod_id,UE_id,PHY_vars_UE_g[UE_id]->generate_prach,UE2eNB[UE_id][phy_vars_eNB->Mod_id]->path_loss_dB);
-    if ((PHY_vars_UE_g[UE_id]->generate_prach == 1) && (phy_vars_eNB->Mod_id == (UE_id % 3))) {
+    if ((PHY_vars_UE_g[UE_id]->generate_prach == 1) && (phy_vars_eNB->Mod_id == (UE_id % NB_eNB_INST))) {
       *sync_val = 1;
       return(0);
     }
