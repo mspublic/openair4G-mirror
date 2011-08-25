@@ -1039,7 +1039,7 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 	break;
     }
     if (i==NB_eNB_INST) {
-      msg("phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation !!!!\n");
+      msg("[PHY][UE %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
       mac_xface->macphy_exit("");
     }
 

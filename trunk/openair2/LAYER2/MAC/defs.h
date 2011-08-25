@@ -353,6 +353,10 @@ typedef struct {
   u8 *drx_config;
   /// default value is release
   u8 *phr_config;
+  //Bj bucket usage per  lcid
+  u16 Bj[MAX_NUM_LCID];
+  // Bucket size per lcid
+  u16 bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 
 typedef struct{

@@ -69,8 +69,12 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
   }
   
   if (logicalChannelConfig!= NULL) {
-    if (eNB_flag==0)
+    if (eNB_flag==0){
       UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
+      UE_mac_inst[Mod_id].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
+      UE_mac_inst[Mod_id].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
+	logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size 
+    }
   }
 
   if (eNB_flag==0){
@@ -78,7 +82,10 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     UE_mac_inst[Mod_id].scheduling_info.measGapConfig=measGapConfig;
     if (mac_MainConfig!= NULL) {
       LOG_I(MAC,"[UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
-      //UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
+      UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
+      UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = mac_MainConfig->sr_ProhibitTimer_r9;
+       //UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
     }else{ // default values as deined in 36.331 sec 9.2.2
       LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",Mod_id);
       //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;

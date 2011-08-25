@@ -220,13 +220,14 @@ void rlcrrc_lite_data_ind( unsigned char Mod_id, u32 Srb_id, u32 sdu_size,u8 *Bu
     //------------------------------------------------------------------------------------------------------------------//
 
   u8 UE_index=(Srb_id-1)/MAX_NUM_RB;
+  u8 DCCH_index = Srb_id % MAX_NUM_RB;
 
-  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, Size %d\n",Rrc_xface->Frame_index,
-        Srb_id,sdu_size);
+  msg("[RRC] Frame %d: RECEIVED MSG ON DCCH %d, UE %d, Size %d\n",Rrc_xface->Frame_index,
+      DCCH_index,UE_index,sdu_size);
   if(Mac_rlc_xface->Is_cluster_head[Mod_id]==1)
-    rrc_eNB_decode_dcch(Mod_id,Srb_id,UE_index,Buffer,sdu_size);
+    rrc_eNB_decode_dcch(Mod_id,DCCH_index,UE_index,Buffer,sdu_size);
   else
-    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,Srb_id,Buffer,UE_index);
+    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,DCCH_index,Buffer,UE_index);
   
 } 
  
