@@ -18,7 +18,7 @@
 #include "tmmintrin.h"
 #else
 #define abs_pi16(x,zero,res,sign)     sign=_mm_cmpgt_pi16(zero,x) ; res=_mm_xor_si64(x,sign);   //negate negatives
-static short zero[8]={0,0,0,0,0,0,0,0};
+static short zero[8]  __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0} ;
 #define _mm_abs_epi16(xmmx) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(*(__m128i *)&zero[0],(xmmx)))
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(*(__m128i *)&zero[0],(xmmy)))
 #endif
@@ -214,6 +214,8 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
       // mtmp = [m11(0) m11(0) m10(0) m10(0) m10(0) m10(0) m11(0) m11(0)]
       //      print_shorts("shuffle) mtmp",&mtmp);
 
+      //mtop_g[inst][k] = _mm_xor_si128(mtmp[inst],mtmp[inst]);
+      mtop_g[inst][k] = _mm_cmpgt_epi16(*(__m128i *)&zero[0],mtmp[inst]);
       mtop_g[inst][k] = _mm_sign_epi16(mtmp[inst],TOP);
       mbot_g[inst][k] = _mm_sign_epi16(mtmp[inst],BOT);
 
