@@ -76,6 +76,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->N_RB_DL            = N_RB_DL;
   (*frame_parms)->N_RB_UL            = (*frame_parms)->N_RB_DL;
   (*frame_parms)->phich_config_common.phich_resource = oneSixth;
+  (*frame_parms)->phich_config_common.phich_duration = normal;
   (*frame_parms)->Ncp                = extended_prefix_flag;
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
