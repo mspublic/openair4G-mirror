@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <cblas.h>
 
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
@@ -11,6 +12,7 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "MAC_INTERFACE/extern.h"
+#include "oaisim_config.h"
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
@@ -84,15 +86,19 @@ void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_
 
 }
 
-void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t *ch_desc, Environment_System_Config env_desc) {  
+
+
+void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t *ch_desc, Environment_System_Config env_desc, double Shad_Fad) {  
 
   double dist; 
   double path_loss;
   double gain_max;
   double gain_sec[3];
   double alpha, theta;
+  
   int count;
 
+ 
   dist = sqrt(pow((enb_data->x - ue_data->x), 2) + pow((enb_data->y - ue_data->y), 2));
   
   path_loss = -(env_desc.fading.freespace_propagation.pathloss_parameters.pathloss_0 + 
@@ -120,6 +126,8 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
   path_loss += enb_data->ant_gain_dBi + gain_max + ue_data->ant_gain_dBi;
 
   ch_desc->path_loss_dB = MCL < path_loss ?  MCL : path_loss;
+  ch_desc->path_loss_dB += Shad_Fad;
+  printf("x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
 }
 
 

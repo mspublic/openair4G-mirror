@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <cblas.h>
 
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
@@ -39,6 +40,8 @@
 
 #include "oaisim.h"
 #include "UTIL/OCG/OCG_extern.h"
+#include "cor_SF_sim.h"
+
 
 #define RF
 
@@ -58,6 +61,10 @@
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
+#define DECOR_DIST 100
+#define SF_VAR 10
+
+
 
 #ifdef OPENAIR2
 u16 NODE_ID[1];
@@ -178,6 +185,7 @@ void do_forms(FD_phy_procedures_sim *form, LTE_UE_DLSCH **lte_ue_dlsch_vars,LTE_
 }
 #endif
 
+
 int main(int argc, char **argv) {
 
  
@@ -190,6 +198,8 @@ int main(int argc, char **argv) {
   //double amps[1] = {1};
   double aoa=.03,ricean_factor=1,Td=.8,forgetting_factor=0,maxDoppler=0;
   u8 channel_length,nb_taps=8;
+  int map1,map2;
+  double **ShaF= NULL;
 
   // Framing variables
   u16 n_frames, n_frames_flag;
@@ -474,6 +484,18 @@ int main(int argc, char **argv) {
     init_ue(ue_data[UE_id],oai_emulation.environment_system_config.antenna.UE_antenna);
   } 
 
+  // init SF map here!!!
+  map1 =(int)oai_emulation.topology_config.area.x;
+  map2 =(int)oai_emulation.topology_config.area.y;
+  //ShaF = createMat(map1,map2); -> memory is allocated within init_SF
+  ShaF = init_SF(map1,map2,DECOR_DIST,SF_VAR);
+
+  // size of area to generate shadow fading map
+  printf("Simulation area x=%f, y=%f\n",
+	 oai_emulation.topology_config.area.x,
+	 oai_emulation.topology_config.area.y);
+ 
+  
   // initialize channel descriptors
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
@@ -575,7 +597,7 @@ int main(int argc, char **argv) {
       mac_xface->chbch_phy_sync_success(UE_id,0);//UE_id%NB_eNB_INST);
   }
 #endif 
- 
+
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     
     update_nodes(emu_info.time);  
@@ -629,7 +651,7 @@ int main(int argc, char **argv) {
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config);
+	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
 	  printf("[CHANNEL_SIM] Pathloss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f\n",
 		 eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
@@ -637,6 +659,7 @@ int main(int argc, char **argv) {
 	}
       }
     }
+
     else {
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
@@ -808,6 +831,9 @@ int main(int argc, char **argv) {
   fclose(UE_stats);
   fclose(eNB_stats);
 #endif
+
+  destroyMat(ShaF,map1, map2);
+
   return(0);
 }
    
