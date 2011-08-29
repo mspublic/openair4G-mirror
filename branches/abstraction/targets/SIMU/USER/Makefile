@@ -87,8 +87,9 @@ OAISIM_OBJS = channel_sim.o
 OAISIM_OBJS += init_lte.o 
 OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
+OAISIM_OBJS += cor_SF_sim.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS) 
 #oaisim_config.o 
 
 all: oaisim
@@ -110,7 +111,7 @@ $(L2_OBJS) : %.o : %.c
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
 	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread -llapack_atlas 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
 endif

@@ -234,7 +234,7 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	//		  printf("ch(%d,%d)[%d] : (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->ch[0][i]);
 
 	printf("[SIM][DL] Channel eNB %d => UE %d : gain %f dB (%f)\n",eNB_id,UE_id,10*log10(rx_pwr),rx_pwr);  
-	printf("[SIM][DL] Channel eNB %d => UE %d : path_loss %f dB\n",eNB_id,UE_id,eNB2UE[eNB_id][UE_id]->path_loss_dB);
+	printf("[SIM][DL] Channel eNB %d => UE %d : x_cordinate %f y_coordinate %f path_loss %f dB\n",eNB_id,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,eNB2UE[eNB_id][UE_id]->path_loss_dB);
 #endif
 	rx_pwr = signal_energy_fp(r_re0,r_im0,frame_parms->nb_antennas_rx,frame_parms->samples_per_tti>>1,0);
 #ifdef DEBUG_SIM      
