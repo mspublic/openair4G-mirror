@@ -88,7 +88,7 @@ MobilityPtr create_mobility(void) {
 
 
 Node_list add_entry(NodePtr node, Node_list Node_Vector){
-    Node_list entry = malloc(sizeof(Node_list));
+    Node_list entry = malloc(sizeof(node_list_struct));
     entry->node = node;
     entry->next = NULL;
     if (Node_Vector == NULL) {

@@ -630,7 +630,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
 	SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,
 					  eNB_id,
-					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti);
+					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					  next_slot>>1); // subframe used for meas gap
       }
       else
 	SR_payload=0;
@@ -1032,10 +1033,20 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }
 
   else {
+
+    for (i=0;i<NB_eNB_INST;i++) {
+      if (PHY_vars_eNB_g[i]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
+	break;
+    }
+    if (i==NB_eNB_INST) {
+      msg("[PHY][UE %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
+      mac_xface->macphy_exit("");
+    }
+
     dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
-					  PHY_vars_eNB_g[eNB_id]->num_ue_spec_dci[(last_slot>>1)&1],
-					  PHY_vars_eNB_g[eNB_id]->num_common_dci[(last_slot>>1)&1],
-					  PHY_vars_eNB_g[eNB_id]->dci_alloc[(last_slot>>1)&1],
+					  PHY_vars_eNB_g[i]->num_ue_spec_dci[(last_slot>>1)&1],
+					  PHY_vars_eNB_g[i]->num_common_dci[(last_slot>>1)&1],
+					  PHY_vars_eNB_g[i]->dci_alloc[(last_slot>>1)&1],
 					  dci_alloc_rx,
 					  eNB_id);
   }

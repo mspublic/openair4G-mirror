@@ -192,14 +192,14 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
     // Do FFTs for SSS/PSS
     // SSS
     slot_fep(phy_vars_ue,
-	     (frame_parms->symbols_per_tti/2)-2,
-	     0,
+	     (frame_parms->symbols_per_tti/2)-2, // second to last symbol of 
+	     0,                                  // slot 0
 	     phy_vars_ue->rx_offset,
 	     0);
     // PSS
     slot_fep(phy_vars_ue,
-	     (frame_parms->symbols_per_tti/2)-1,
-	     0,
+	     (frame_parms->symbols_per_tti/2)-1, // last symbol of
+	     0,                                  // slot 0
 	     phy_vars_ue->rx_offset,
 	     0);
   }
@@ -210,14 +210,14 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,s32 *tot_metric,u8 *flip_max,u8 *phase_max) 
       msg("[PHY][UE%d] Doing SSS for TDD Extended Prefix\n",phy_vars_ue->Mod_id);
     // SSS
     slot_fep(phy_vars_ue,
-	     (frame_parms->symbols_per_tti>>1)-1,
-	     1,
+	     (frame_parms->symbols_per_tti>>1)-1,  // last symbol of 
+	     1,                                    // slot 1
 	     phy_vars_ue->rx_offset,
 	     0);
     // PSS
     slot_fep(phy_vars_ue,
-	     2,
-	     2,
+	     2,                                   // symbol 2 of
+	     2,                                   // slot 2
 	     phy_vars_ue->rx_offset,
 	     0);
   }

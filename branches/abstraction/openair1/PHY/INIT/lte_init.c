@@ -16,7 +16,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 /*
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {

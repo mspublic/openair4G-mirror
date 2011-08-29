@@ -16,6 +16,7 @@
 #include "DL-CCCH-Message.h"
 #include "UL-DCCH-Message.h"
 #include "DL-DCCH-Message.h"
+#include "MeasGapConfig.h"
 #include "TDD-Config.h"
 #include "RRC/NAS/nas_config.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
@@ -300,6 +301,18 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u8 eNB_index,
 }
 
 
+void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
+
+  if (measConfig->measGapConfig !=NULL) {
+    if (UE_rrc_inst[Mod_id].measGapConfig[eNB_index]) {
+      memcpy((char*)UE_rrc_inst[Mod_id].measGapConfig[eNB_index],(char*)measConfig->measGapConfig,
+	     sizeof(MeasGapConfig_t));
+    }
+    else {
+      UE_rrc_inst[Mod_id].measGapConfig[eNB_index] = measConfig->measGapConfig;
+    }
+  }
+}
 
 
 void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
@@ -377,6 +390,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 					    1,
 					    SRB1_logicalChannelConfig,
+					    (struct MeasConfigGap_t *)NULL,
 					    NULL,
 					    NULL,
 					    NULL);
@@ -410,6 +424,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 					    2,
 					    SRB2_logicalChannelConfig,
+					    UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 					    (TDD_Config_t *)NULL,
 					    (u8 *)NULL,
 					    (u16 *)NULL);
@@ -438,6 +453,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 					  UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 					  *UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelIdentity,
 					  UE_rrc_inst[Mod_id].DRB_config[eNB_index][DRB_id]->logicalChannelConfig,
+					  UE_rrc_inst[Mod_id].measGapConfig[eNB_index],
 					  (TDD_Config_t*)NULL,
 					  (u8 *)NULL,
 					  (u16 *)NULL);
@@ -458,6 +474,11 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
+    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
+     
+
+
+    }
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
       rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
@@ -530,13 +551,16 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
 	break;
       case DL_DCCH_MessageType__c1_PR_counterCheck:
 	break;
+      case DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
+	break;
+      case DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r10:
+	break;
+      case DL_DCCH_MessageType__c1_PR_rnReconfiguration_r10:
+	break;
       case DL_DCCH_MessageType__c1_PR_spare1:
       case DL_DCCH_MessageType__c1_PR_spare2:
       case DL_DCCH_MessageType__c1_PR_spare3:
       case DL_DCCH_MessageType__c1_PR_spare4:
-      case DL_DCCH_MessageType__c1_PR_spare5:
-      case DL_DCCH_MessageType__c1_PR_spare6:
-      case DL_DCCH_MessageType__c1_PR_spare7:
 	break;
       }
     }
@@ -592,6 +616,7 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
 				    (MAC_MainConfig_t *)NULL,
 				    0,
 				    (struct LogicalChannelConfig *)NULL,
+				    (MeasGapConfig_t *)NULL,
 				    UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
@@ -728,6 +753,7 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
 					(MAC_MainConfig_t *)NULL,
 					0,
 					(struct LogicalChannelConfig *)NULL,
+					(MeasGapConfig_t *)NULL,
 					(TDD_Config_t *)NULL,
 					NULL,
 					NULL);

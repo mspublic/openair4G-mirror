@@ -23,7 +23,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) { 
   u32 padding:14;
-  u32 diffcqi1:14;   
+  u32 diffcqi1:14;
   u32 cqi1:4;
 } HLC_subband_cqi_nopmi_5MHz;
 #define sizeof_HLC_subband_cqi_nopmi_5MHz 18

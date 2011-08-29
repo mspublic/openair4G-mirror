@@ -5,6 +5,8 @@
 */
 
 #include "PHY/defs.h"
+#include "PHY/extern.h"
+
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
@@ -641,6 +643,10 @@ u32 ulsch_encoding(u8 *a,
 
 
 #ifdef PHY_ABSTRACTION
+#ifdef OPENAIR2
+#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/defs.h"
+#endif
 int ulsch_encoding_emul(u8 *ulsch_buffer,
 			PHY_VARS_UE *phy_vars_ue,
 			u8 eNB_id,
@@ -648,8 +654,10 @@ int ulsch_encoding_emul(u8 *ulsch_buffer,
 			u8 control_only_flag) {
 
   LTE_UE_ULSCH_t *ulsch = phy_vars_ue->ulsch_ue[eNB_id];
-  
+
   msg("[PHY] EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",eNB_id,phy_vars_ue->Mod_id, harq_pid, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
+
+
   memcpy(phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->b,
 	 ulsch_buffer,
 	 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->TBS>>3);

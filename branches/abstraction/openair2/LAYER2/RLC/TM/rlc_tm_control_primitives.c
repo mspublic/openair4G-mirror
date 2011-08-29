@@ -17,7 +17,7 @@
 #include "mem_block.h"
 #include "rrm_config_structs.h"
 //-----------------------------------------------------------------------------
-void            config_req_rlc_tm (struct rlc_tm_entity *rlcP, module_id_t module_idP, rlc_tm_info_t * config_tmP, u8_t rb_idP, rb_type_t rb_typeP);
+void            config_req_rlc_tm (struct rlc_tm_entity *rlcP, module_id_t module_idP, rlc_tm_info_t * config_tmP, rb_id_t rb_idP, rb_type_t rb_typeP);
 void            send_rlc_tm_control_primitive (struct rlc_tm_entity *rlcP, module_id_t module_idP, mem_block_t *cprimitiveP);
 void            init_rlc_tm (struct rlc_tm_entity *rlcP);
 void            rlc_tm_reset_state_variables (struct rlc_tm_entity *rlcP);
@@ -25,7 +25,7 @@ void            rlc_tm_free_all_resources (struct rlc_tm_entity *rlcP);
 void            rlc_tm_set_configured_parameters (struct rlc_tm_entity *rlcP, mem_block_t *cprimitiveP);
 //-----------------------------------------------------------------------------
 void
-config_req_rlc_tm (struct rlc_tm_entity *rlcP, module_id_t module_idP, rlc_tm_info_t * config_tmP, u8_t rb_idP, rb_type_t rb_typeP)
+config_req_rlc_tm (struct rlc_tm_entity *rlcP, module_id_t module_idP, rlc_tm_info_t * config_tmP, rb_id_t rb_idP, rb_type_t rb_typeP)
 {
 //-----------------------------------------------------------------------------
   mem_block_t *mb;

@@ -202,7 +202,10 @@ uint8_t do_SIB23(uint8_t *buffer,
   // sib2
 
   (*sib2)->ac_BarringInfo = NULL;
-
+  (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
+  (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
+  (*sib2)->ac_BarringForCSFB_r10 = NULL;
+   
   //assign_enum(&(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles,RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64);
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.numberOfRA_Preambles=RACH_ConfigCommon__preambleInfo__numberOfRA_Preambles_n64;
   (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.preambleInfo.preamblesGroupAConfig = NULL; 
@@ -321,6 +324,10 @@ uint8_t do_SIB23(uint8_t *buffer,
   (*sib2)->timeAlignmentTimerCommon=TimeAlignmentTimer_sf5120;
 
   /// (*SIB3)
+  (*sib3)->s_IntraSearch_v920=NULL;
+  (*sib3)->s_NonIntraSearch_v920=NULL;
+  (*sib3)->q_QualMin_r9=NULL;
+  (*sib3)->threshServingLowQ_r9=NULL; 
   //  assign_enum(&(*sib3)->cellReselectionInfoCommon.q_Hyst,SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4);
   (*sib3)->cellReselectionInfoCommon.q_Hyst=SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4;
 
@@ -489,12 +496,15 @@ uint8_t do_RRCConnectionReconfigurationComplete(uint8_t *buffer) {
 
   RRCConnectionReconfigurationComplete_t *rrcConnectionReconfigurationComplete;
 
+  memset((void *)&ul_dcch_msg,0,sizeof(UL_DCCH_Message_t));
+
   ul_dcch_msg.message.present                     = UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1.present           = UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete;
   rrcConnectionReconfigurationComplete            = &ul_dcch_msg.message.choice.c1.choice.rrcConnectionReconfigurationComplete;
   
   rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = 0x2; 
   rrcConnectionReconfigurationComplete->criticalExtensions.present = RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
+  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
 
  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
 				   (void*)&ul_dcch_msg,
@@ -665,6 +675,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;//CALLOC(1,sizeof(*physicalConfigDedicated2->soundingRS_UL_ConfigDedicated));
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
+  physicalConfigDedicated2->pusch_CAConfigDedicated_vlola = NULL;
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //	      PDSCH_ConfigDedicated__p_a_dB0);
@@ -772,6 +783,7 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_RA_ConfigList_rlola = NULL;
 
 
 
@@ -939,6 +951,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_Config = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->physicalConfigDedicated = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->mac_MainConfig = NULL;
+  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->sps_RA_ConfigList_rlola = NULL;
 
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig           = NULL;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;

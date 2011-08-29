@@ -111,8 +111,8 @@ DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
-//#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
-#define DLSCH_RB_ALLOC 0x1fff // all 25 RBs
+#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
+//#define DLSCH_RB_ALLOC 0x1fff // all 25 RBs
 
 int main(int argc, char **argv) {
 
@@ -1142,24 +1142,18 @@ int main(int argc, char **argv) {
 	      for (l=0;l<pilot2;l++) {
 		if (n_frames==1)
 		  printf("Ns %d, l %d\n",Ns,l);
-		/*
-		  This function implements the OFDM front end processor (FEP).
-		  
-		  Parameters:
-		  frame_parms 	LTE DL Frame Parameters
-		  ue_common_vars 	LTE UE Common Vars
-		  l 	symbol within slot (0..6/7)
-		  Ns 	Slot number (0..19)
-		  sample_offset 	offset within rxdata (points to beginning of subframe)
-		  no_prefix 	if 1 prefix is removed by HW 
-		  
-		*/
-		//	slot_fep(eNB_id,
-		// &PHY_vars_UE->lte_frame_parms,
-		// &PHY_vars_UE->lte_ue_common_vars,
-		// l,
-		// Ns%20,
-		// 0);
+	  /*
+	      This function implements the OFDM front end processor (FEP).
+	      
+	      Parameters:
+	      frame_parms 	LTE DL Frame Parameters
+	      ue_common_vars 	LTE UE Common Vars
+	      l 	symbol within slot (0..6/7)
+	      Ns 	Slot number (0..19)
+	      sample_offset 	offset within rxdata (points to beginning of subframe)
+	      no_prefix 	if 1 prefix is removed by HW 
+	      
+	    */
 		slot_fep(PHY_vars_UE,
 			 l,
 			 Ns%20,
@@ -1555,7 +1549,7 @@ int main(int argc, char **argv) {
 	fprintf(csv_fd,"%e;\n",blerr);
       } //ABStraction
     
-      if (((double)errs[0]/(round_trials[0]))<1e-2) 
+      if (((double)errs[0]/(round_trials[0]))<1e-3) 
 	break;
     }// SNR
   

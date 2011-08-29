@@ -1,5 +1,7 @@
+#ifdef __SSE2__
 #include <emmintrin.h>
 #include <xmmintrin.h>
+#endif
 #ifdef __SSE3__
 #include <pmmintrin.h>
 #include <tmmintrin.h>
