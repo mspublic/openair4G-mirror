@@ -39,12 +39,13 @@ pool_buffer_init ()
 
   u32_t             index, mb_index, pool_index;
   mem_pool       *memory = (mem_pool *) &mem_block_var;
-  int             pool_sizes[11] = { MEM_MNGT_MB0_NB_BLOCKS, MEM_MNGT_MB1_NB_BLOCKS,
+  int             pool_sizes[14] = { MEM_MNGT_MB0_NB_BLOCKS, MEM_MNGT_MB1_NB_BLOCKS,
     MEM_MNGT_MB2_NB_BLOCKS, MEM_MNGT_MB3_NB_BLOCKS,
     MEM_MNGT_MB4_NB_BLOCKS, MEM_MNGT_MB5_NB_BLOCKS,
     MEM_MNGT_MB6_NB_BLOCKS, MEM_MNGT_MB7_NB_BLOCKS,
     MEM_MNGT_MB8_NB_BLOCKS, MEM_MNGT_MB9_NB_BLOCKS,
-    MEM_MNGT_MBCOPY_NB_BLOCKS
+    MEM_MNGT_MB10_NB_BLOCKS, MEM_MNGT_MB11_NB_BLOCKS,
+    MEM_MNGT_MB12_NB_BLOCKS, MEM_MNGT_MBCOPY_NB_BLOCKS
   };
 
   memset (memory, 0, sizeof (mem_pool));
@@ -83,10 +84,19 @@ pool_buffer_init ()
           case 8:
             memory->mem_blocks[mb_index + index].data = &(memory->mem_pool8[index][0]);
             break;
-          case 9:
-            memory->mem_blocks[mb_index + index].data = &(memory->mem_pool9[index][0]);
-            break;
-          default:;
+		  case 9:
+			  memory->mem_blocks[mb_index + index].data = &(memory->mem_pool9[index][0]);
+			  break;
+		  case 10:
+			  memory->mem_blocks[mb_index + index].data = &(memory->mem_pool10[index][0]);
+			  break;
+		  case 11:
+			  memory->mem_blocks[mb_index + index].data = &(memory->mem_pool11[index][0]);
+			  break;
+		  case 12:
+			  memory->mem_blocks[mb_index + index].data = &(memory->mem_pool12[index][0]);
+			  break;
+		  default:;
             memory->mem_blocks[mb_index + index].data = NULL;   // pool copy
 
       }
@@ -229,8 +239,8 @@ get_free_mem_block (u16_t sizeP)
   int             pool_selected;
   int             size;
 
-  if (sizeP > MEM_MNGT_MB9_BLOCK_SIZE) {
-    msg ("[MEM_MNGT][ERROR][FATAL] size requested out of bounds\n");
+  if (sizeP > MEM_MNGT_MB12_BLOCK_SIZE) {
+	  msg ("[MEM_MNGT][ERROR][FATAL] size requested %d out of bounds\n", sizeP);
 
 
     display_mem_load ();
@@ -266,7 +276,7 @@ get_free_mem_block (u16_t sizeP)
     //    check_mem_area ((void *)&mem_block_var);
 #    endif
 #endif
-  } while (pool_selected++ < 9);
+  } while (pool_selected++ < 12);
 
   //  Mac_rlc_xface->mac_rlc_exit();
   //wcdma_handle_error (WCDMA_ERROR_OUT_OF_MEM_BLOCK);
@@ -342,6 +352,12 @@ display_mem_load (void)
   list_display (&memory->mem_lists[MEM_MNGT_POOL_ID8]);
   msg ("POOL 9 (%d elements of %d Bytes): ", MEM_MNGT_MB9_NB_BLOCKS, MEM_MNGT_MB9_BLOCK_SIZE);
   list_display (&memory->mem_lists[MEM_MNGT_POOL_ID9]);
+  msg ("POOL 10 (%d elements of %d Bytes): ", MEM_MNGT_MB10_NB_BLOCKS, MEM_MNGT_MB10_BLOCK_SIZE);
+  list_display (&memory->mem_lists[MEM_MNGT_POOL_ID10]);
+  msg ("POOL 11 (%d elements of %d Bytes): ", MEM_MNGT_MB11_NB_BLOCKS, MEM_MNGT_MB11_BLOCK_SIZE);
+  list_display (&memory->mem_lists[MEM_MNGT_POOL_ID11]);
+  msg ("POOL 12 (%d elements of %d Bytes): ", MEM_MNGT_MB12_NB_BLOCKS, MEM_MNGT_MB12_BLOCK_SIZE);
+  list_display (&memory->mem_lists[MEM_MNGT_POOL_ID12]);
   msg ("POOL C (%d elements): ", MEM_MNGT_MBCOPY_NB_BLOCKS);
   list_display (&memory->mem_lists[MEM_MNGT_POOL_ID_COPY]);
 }
@@ -414,10 +430,28 @@ check_mem_area (void *arg)
     }
   }
   mb_index += MEM_MNGT_MB9_NB_BLOCKS;
+  for (index = mb_index; index < MEM_MNGT_MB10_NB_BLOCKS; index++) {
+	  if ((memory->mem_blocks[mb_index + index].data != &(memory->mem_pool10[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID10)) {
+		  msg ("[MEM] ERROR POOL10 block index %d\n", index);
+	  }
+  }
+  mb_index += MEM_MNGT_MB10_NB_BLOCKS;
+  for (index = mb_index; index < MEM_MNGT_MB11_NB_BLOCKS; index++) {
+	  if ((memory->mem_blocks[mb_index + index].data != &(memory->mem_pool11[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID11)) {
+		  msg ("[MEM] ERROR POOL11 block index %d\n", index);
+	  }
+  }
+  mb_index += MEM_MNGT_MB11_NB_BLOCKS;
+  for (index = mb_index; index < MEM_MNGT_MB12_NB_BLOCKS; index++) {
+	  if ((memory->mem_blocks[mb_index + index].data != &(memory->mem_pool12[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID12)) {
+		  msg ("[MEM] ERROR POOL12 block index %d\n", index);
+	  }
+  }
+  mb_index += MEM_MNGT_MB12_NB_BLOCKS;
   for (index = mb_index; index < MEM_MNGT_NB_ELEMENTS; index++) {
-    if ((memory->mem_blocks[index].data != NULL) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID_COPY)) {
-      msg ("[MEM] ERROR POOL COPY block index %d\n", index);
-    }
+	  if ((memory->mem_blocks[index].data != NULL) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID_COPY)) {
+		  msg ("[MEM] ERROR POOL COPY block index %d\n", index);
+	  }
   }
 }
 
@@ -476,8 +510,24 @@ check_free_mem_block (mem_block_t * leP)
       if ((leP->data != &(mem_block_var.mem_pool9[block_index][0])) && (leP->pool_id != MEM_MNGT_POOL_ID9)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
-    }
-
+	} else if (block_index <
+		MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS +
+		MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MB10_NB_BLOCKS) {
+		if ((leP->data != &(mem_block_var.mem_pool10[block_index][0])) && (leP->pool_id != MEM_MNGT_POOL_ID10)) {
+			msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
+		}
+	} else if (block_index <
+		MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS +
+		MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MB10_NB_BLOCKS + MEM_MNGT_MB11_NB_BLOCKS) {
+		if ((leP->data != &(mem_block_var.mem_pool11[block_index][0])) && (leP->pool_id != MEM_MNGT_POOL_ID11)) {
+			msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
+		}
+	}  else if (block_index <
+		MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS + MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MB10_NB_BLOCKS+ MEM_MNGT_MB11_NB_BLOCKS+ MEM_MNGT_MB12_NB_BLOCKS) {
+		if ((leP->data != &(mem_block_var.mem_pool12[block_index][0])) && (leP->pool_id != MEM_MNGT_POOL_ID12)) {
+			msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
+		}
+	}
   } else {
     msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
   }

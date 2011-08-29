@@ -23,8 +23,8 @@ c = 1 - 2*x;
 d0 = zeros(504,62);
 d5 = zeros(504,62);
 for Nid2=0:2,
-  c0 = [c((1+Nid2) : end) s(1:Nid2)];
-  c1 = [c((4+Nid2) : end) s(1:(3+Nid2))];
+  c0 = [c((1+Nid2) : end) c(1:Nid2)];
+  c1 = [c((4+Nid2) : end) c(1:(3+Nid2))];
   for Nid1=0:167,
     qprime = floor(Nid1/30);
     q      = floor((Nid1+qprime*(qprime+1)/2)/30);
@@ -44,10 +44,10 @@ for Nid2=0:2,
  end
 end
 fd = fopen("sss.h","w");
-fprintf(fd,"s16 d0_sss[504*62] = [");
-fprintf(fd,"%d,",d0');
-fprintf(fd,"];\n\n");
-fprintf(fd,"s16 d5_sss[504*62] = [");
-fprintf(fd,"%d,",d5');
-fprintf(fd,"];\n\n");
+fprintf(fd,"s16 d0_sss[504*62] = {");
+fprintf(fd,"%d,",d0);
+fprintf(fd,"};\n\n");
+fprintf(fd,"s16 d5_sss[504*62] = {");
+fprintf(fd,"%d,",d5);
+fprintf(fd,"};\n\n");
 fclose(fd);

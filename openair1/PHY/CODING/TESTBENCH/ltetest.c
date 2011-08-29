@@ -5,9 +5,14 @@
 
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
+#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
+
 #include "PHY/CODING/defs.h"
+#include "SCHED/defs.h"
+#include "SCHED/vars.h"
+#include "LAYER2/MAC/vars.h"
+
 //#include "PHY/CODING/lte_interleaver.h"
 //#include "PHY/CODING/lte_interleaver_inline.h"
 
@@ -26,7 +31,7 @@
 
 int current_dlsch_cqi;
 
-PHY_VARS_eNB *PHY_vars_eNb;
+PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
 
@@ -37,16 +42,15 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   printf("Start lte_param_init (Nid_cell %d, extended_prefix %d, transmission_mode %d, N_tx %d, N_rx %d)\n",
 	 Nid_cell, extended_prefix_flag,transmission_mode,N_tx,N_rx);
-  PHY_vars_eNb = malloc(sizeof(PHY_VARS_eNB));
+  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
 
   PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
   randominit(0);
   set_taus_seed(0);
   
-  lte_frame_parms = &(PHY_vars_eNb->lte_frame_parms);
+  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
 
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
   lte_frame_parms->N_RB_UL            = 25;   
@@ -55,7 +59,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nushift            = 0;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->Ng_times6          = 1;
   lte_frame_parms->tdd_config         = tdd_config;
 
   //  lte_frame_parms->Csrs = 2;
@@ -64,11 +67,11 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   //  lte_frame_parms->n_RRC = 0;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
 
-  init_frame_parms(lte_frame_parms);
+  init_frame_parms(lte_frame_parms,1);
   
-  copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
+  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   
-  phy_init_top(N_tx,lte_frame_parms); //allocation
+  phy_init_top(lte_frame_parms); //allocation
 
    
   lte_frame_parms->twiddle_fft      = twiddle_fft;
@@ -87,13 +90,13 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 		  PHY_vars_UE->lte_ue_dlsch_vars_ra,
 		  PHY_vars_UE->lte_ue_pbch_vars,
 		  PHY_vars_UE->lte_ue_pdcch_vars,
-		  PHY_vars_UE);
+		  PHY_vars_UE,0);
 
-  phy_init_lte_eNB(&PHY_vars_eNb->lte_frame_parms,
-		   &PHY_vars_eNb->lte_eNB_common_vars,
-		   PHY_vars_eNb->lte_eNB_ulsch_vars,
+  phy_init_lte_eNB(&PHY_vars_eNB->lte_frame_parms,
+		   &PHY_vars_eNB->lte_eNB_common_vars,
+		   PHY_vars_eNB->lte_eNB_ulsch_vars,
 		   0,
-		   PHY_vars_eNb,
+		   PHY_vars_eNB,
 		   0,
 		   0);
 
@@ -155,7 +158,7 @@ char quantize(double D,double x,unsigned char B) {
 static char channel_output[2*MAX_BLOCK_LENGTH]__attribute__ ((aligned(16)));
 static unsigned char decoded_output[MAX_BLOCK_LENGTH/8];
 
-int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
+int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 		 LTE_UE_DLSCH_t *dlsch_ue,
 		 unsigned int coded_bits,
 		 unsigned char NB_RB,
@@ -193,7 +196,7 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
 
 
 
-  printf("dlsch_eNb->TBS= %d\n",dlsch_eNb->harq_processes[0]->TBS);
+  //  printf("dlsch_eNB->TBS= %d\n",dlsch_eNB->harq_processes[0]->TBS);
 
   while (trial++ < ntrials) {
 
@@ -204,16 +207,16 @@ int test_logmap8(LTE_eNb_DLSCH_t *dlsch_eNb,
     }
 
     dlsch_encoding(test_input,
-		   &PHY_vars_eNb->lte_frame_parms,
+		   &PHY_vars_eNB->lte_frame_parms,
 		   1,
-		   PHY_vars_eNb->dlsch_eNb[0][0],
+		   PHY_vars_eNB->dlsch_eNB[0][0],
 		   6);
 
     uerr=0;
 
 
     for (i = 0; i < coded_bits; i++){
-      channel_output[i] = (short)quantize(sigma/4.0,(2.0*PHY_vars_eNb->dlsch_eNb[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
+      channel_output[i] = (short)quantize(sigma/4.0,(2.0*PHY_vars_eNB->dlsch_eNB[0][0]->e[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
     }
 
 
@@ -553,9 +556,9 @@ int main(int argc, char *argv[]) {
 
   lte_param_init(1,1,1,0,0,3);
 
-  PHY_vars_eNb->dlsch_eNb[0][0] = new_eNb_dlsch(1,8,0);
+  PHY_vars_eNB->dlsch_eNB[0][0] = new_eNB_dlsch(1,8,0);
   PHY_vars_UE->dlsch_ue[0][0]  = new_ue_dlsch(1,8,0);
-  PHY_vars_eNb->dlsch_eNb[0][1] = new_eNb_dlsch(1,8,0);
+  PHY_vars_eNB->dlsch_eNB[0][1] = new_eNB_dlsch(1,8,0);
   PHY_vars_UE->dlsch_ue[0][1]  = new_ue_dlsch(1,8,0);
 
   if (argc>1)
@@ -581,12 +584,12 @@ int main(int argc, char *argv[]) {
 
   printf("Quantization bits %d\n",qbits);
 
-  generate_eNb_dlsch_params_from_dci(0,
+  generate_eNB_dlsch_params_from_dci(0,
                                      &DLSCH_alloc_pdu2,
 				     0x1234,
 				     format2_2A_M10PRB,
-				     PHY_vars_eNb->dlsch_eNb[0],
-				     &PHY_vars_eNb->lte_frame_parms,
+				     PHY_vars_eNB->dlsch_eNB[0],
+				     &PHY_vars_eNB->lte_frame_parms,
 				     SI_RNTI,
 				     RA_RNTI,
 				     P_RNTI,
@@ -601,7 +604,7 @@ int main(int argc, char *argv[]) {
 				    RA_RNTI,
 				    P_RNTI);
   
-  coded_bits = 	get_G(&PHY_vars_eNb->lte_frame_parms,NB_RB,PHY_vars_eNb->dlsch_eNb[0][0]->rb_alloc,
+  coded_bits = 	get_G(&PHY_vars_eNB->lte_frame_parms,NB_RB,PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
 		      get_Qm(mcs),1,6);
 
   printf("Coded_bits (G) = %d\n",coded_bits);
@@ -621,10 +624,10 @@ int main(int argc, char *argv[]) {
 
 
 
-  for (SNR=-2;SNR<16;SNR+=.2) {
+  for (SNR=-6;SNR<16;SNR+=.1) {
 
 
-    printf("\n\nSNR %f dB\n",SNR);
+    //    printf("\n\nSNR %f dB\n",SNR);
 
     sigma = pow(10.0,-.05*SNR);
 
@@ -639,7 +642,7 @@ int main(int argc, char *argv[]) {
     
 
     
-    ret = test_logmap8(PHY_vars_eNb->dlsch_eNb[0][0],
+    ret = test_logmap8(PHY_vars_eNB->dlsch_eNB[0][0],
 		       PHY_vars_UE->dlsch_ue[0][0],
 		       coded_bits,
 		       NB_RB,
@@ -654,8 +657,8 @@ int main(int argc, char *argv[]) {
 		       &iterations);
 
     if (ret>=0)
-      printf("ref: Errors %d (%f), Uerrors %d (%f), CRC Misses %d (%f), Avg iterations %f\n",errors,(double)errors/trials,uerrors,(double)uerrors/trials,crc_misses,(double)crc_misses/trials,(double)iterations/trials);
-    
+      //      printf("ref: Errors %d (%f), Uerrors %d (%f), CRC Misses %d (%f), Avg iterations %f\n",errors,(double)errors/trials,uerrors,(double)uerrors/trials,crc_misses,(double)crc_misses/trials,(double)iterations/trials);
+      printf("%f,%f,%f,%f\n",SNR,(double)errors/trials,(double)crc_misses/trials,(double)iterations/trials);
     if (((double)errors/trials) < 1e-2)
       done0=1;
     } 

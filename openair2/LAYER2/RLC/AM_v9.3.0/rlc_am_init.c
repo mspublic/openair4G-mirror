@@ -19,6 +19,13 @@ void rlc_am_init(rlc_am_entity_t *rlcP)
     list_init(&rlcP->control_pdu_list,      "CONTROL PDU LIST");
     list_init(&rlcP->segmentation_pdu_list, "SEGMENTATION PDU LIST");
 
+    rlcP->input_sdus_alloc         = get_free_mem_block(RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
+    rlcP->input_sdus               = (rlc_am_tx_sdu_management_t*)((rlcP->input_sdus_alloc)->data);
+    rlcP->pdu_retrans_buffer_alloc = get_free_mem_block(RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*sizeof(rlc_am_tx_data_pdu_management_t));
+    rlcP->pdu_retrans_buffer       = (rlc_am_tx_data_pdu_management_t*)((rlcP->pdu_retrans_buffer_alloc)->data);
+	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] input_sdus[] = %p  element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->input_sdus,sizeof(rlc_am_tx_sdu_management_t));
+	msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INIT] pdu_retrans_buffer[] = %p element size=%d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->pdu_retrans_buffer,sizeof(rlc_am_tx_data_pdu_management_t));
+
     // TX state variables
     rlcP->vt_a    = 0;
     rlcP->vt_ms   = rlcP->vt_a + RLC_AM_WINDOW_SIZE;
@@ -54,17 +61,27 @@ void rlc_am_cleanup(rlc_am_entity_t *rlcP)
         rlcP->output_sdu_in_construction = NULL;
     }
     unsigned int i;
-    for (i=0; i < RLC_AM_SDU_CONTROL_BUFFER_SIZE; i++) {
-        if (rlcP->input_sdus[i].mem_block != NULL) {
-            free_mem_block(rlcP->input_sdus[i].mem_block);
-            rlcP->input_sdus[i].mem_block = NULL;
+    if (rlcP->input_sdus_alloc != NULL) {
+        for (i=0; i < RLC_AM_SDU_CONTROL_BUFFER_SIZE; i++) {
+            if (rlcP->input_sdus[i].mem_block != NULL) {
+                free_mem_block(rlcP->input_sdus[i].mem_block);
+                rlcP->input_sdus[i].mem_block = NULL;
+            }
         }
+        free_mem_block(rlcP->input_sdus_alloc);
+        rlcP->input_sdus_alloc = NULL;
+        rlcP->input_sdus       = NULL;
     }
-    for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
-        if (rlcP->pdu_retrans_buffer[i].mem_block != NULL) {
-            free_mem_block(rlcP->pdu_retrans_buffer[i].mem_block);
-            rlcP->pdu_retrans_buffer[i].mem_block = NULL;
+    if (rlcP->pdu_retrans_buffer_alloc != NULL) {
+        for (i=0; i < RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE; i++) {
+            if (rlcP->pdu_retrans_buffer[i].mem_block != NULL) {
+                free_mem_block(rlcP->pdu_retrans_buffer[i].mem_block);
+                rlcP->pdu_retrans_buffer[i].mem_block = NULL;
+            }
         }
+        free_mem_block(rlcP->pdu_retrans_buffer_alloc);
+        rlcP->pdu_retrans_buffer_alloc = NULL;
+        rlcP->pdu_retrans_buffer       = NULL;
     }
 }
 //-----------------------------------------------------------------------------

@@ -217,7 +217,7 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	memcpy(&Mac_config_req.Lchan_desc[0],&p->Lchan_desc,LCHAN_DESC_SIZE); //0 rx, 1 tx
 	memcpy(&Mac_config_req.Lchan_desc[1],&p->Lchan_desc,LCHAN_DESC_SIZE); //0 rx, 1 tx
 	In_idx=find_free_dtch_position(Mod_id,UE_index);
-	Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH_BD + In_idx;
+	Mac_config_req.Lchan_id.Index=(UE_index << RAB_SHIFT2) + DTCH + In_idx;
 	Idx = Mac_rlc_xface->mac_config_req(Mod_id,ADD_LC,&Mac_config_req);
 	CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Active = 1;
 	CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Next_check_frame = Rrc_xface->Frame_index + 250;
@@ -233,7 +233,7 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	//msg("[OPENAIR][RRC] CALLING RLC CONFIG RADIO BEARER %d\n",Idx);
 	
 	//	if(p->Mac_rlc_meas_desc !=NULL){
-	if(p->Lchan_desc.Lchan_t!=DTCH_BD){
+	if(p->Lchan_desc.Lchan_t!=DTCH){
 	  Mac_meas_req.Lchan_id.Index = Idx;
 	  Mac_meas_req.UE_CH_index = UE_index;
 	  Mac_meas_req.Meas_trigger = p->Mac_rlc_meas_desc.Meas_trigger;
@@ -248,7 +248,7 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	}	  
 	
       
-	if(p->Lchan_desc.Lchan_t==DTCH_BD){
+	if(p->Lchan_desc.Lchan_t==DTCH){
 	  CH_rrc_inst[Mod_id].Rab[In_idx][UE_index].Status = RADIO_CONFIG_OK;//RADIO CFG
 	  Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,RADIO_ACCESS_BEARER,Rlc_info_um);
 	  CH_rrc_inst[Mod_id].IP_addr_type = p->L3_info_t;
@@ -260,7 +260,7 @@ void rrc_config_req(Instance_t Mod_id, void *smsg, unsigned char Action,Transact
 	else
 	  Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx,RADIO_ACCESS_BEARER,Rlc_info_am_config);
       }
-      if(p->Lchan_desc.Lchan_t==DTCH_BD)
+      if(p->Lchan_desc.Lchan_t==DTCH)
 	send_msg(&S_rrc,msg_rrc_rb_establish_cfm(Mod_id,Idx,0,Trans_id));
       else
 	send_msg(&S_rrc,msg_rrc_rb_establish_cfm(Mod_id,Idx,1,Trans_id));
