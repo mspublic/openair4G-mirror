@@ -107,12 +107,10 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
   /* Calculating the angle in the range -pi to pi from the slope */
   alpha = atan2((ue_data->x - enb_data->x), (ue_data->y - enb_data->y));
-  //printf("angle is tan %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
-      
-  if (alpha < 0) {
+  if (alpha < 0)
     alpha += 2*PI; 
-    //printf("angle in radians is %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
-  }
+  //printf("angle in radians is %lf\n", ue_data[UE_id]->alpha_rad[eNB_id]);
+  ch_desc->aoa = alpha;
       
   gain_max = -1000;
   for(count = 0; count < enb_data->n_sectors; count++) {
@@ -127,7 +125,7 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
   ch_desc->path_loss_dB = MCL < path_loss ?  MCL : path_loss;
   ch_desc->path_loss_dB += Shad_Fad;
-  printf("x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
+  //printf("x_coordinate\t%f\t,y_coordinate\t%f\t, path_loss %f\n",ue_data->x,ue_data->y,ch_desc->path_loss_dB);
 }
 
 

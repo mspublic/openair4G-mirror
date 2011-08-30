@@ -124,7 +124,11 @@ typedef enum {
   SCM_D,
   EPA,
   EVA,
-  ETU
+  ETU,
+  Rayleigh8,
+  Rayleigh1,
+  Rice8,
+  Rice1,
 } SCM_t;
 
 /** 

@@ -59,6 +59,7 @@
 #define CCCH_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
+
 #define DECOR_DIST 100
 #define SF_VAR 10
 
@@ -209,10 +210,8 @@ main (int argc, char **argv)
   int new_omg_model;
   // pointers signal buffers (s = transmit, r,r0 = receive)
   double **s_re, **s_im, **r_re, **r_im, **r_re0, **r_im0;
-  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  //double amps[1] = {1};
-  double aoa=.03,ricean_factor=1,Td=.8,forgetting_factor=0,maxDoppler=0;
-  u8 channel_length,nb_taps=8;
+  SCM_t channel_model;
+  double forgetting_factor=0;
   int map1,map2;
   double **ShaF= NULL;
 
@@ -252,7 +251,7 @@ main (int argc, char **argv)
 
   FILE *UE_stats, *eNB_stats;
   int len;
-  int mod_path_loss = 0;
+
   remove ("dci.txt");
 
 
@@ -276,9 +275,9 @@ main (int argc, char **argv)
   emu_info.nb_ue_local= 1;//default 1 UE
   emu_info.nb_enb_local= 1;//default 1 eNB
   emu_info.ethernet_flag=0;
-  strcpy(emu_info.local_server, ""); // this is the web portal version, ie. the httpd server is remote 
+  strcpy(emu_info.local_server, "5"); // this is the web portal version, ie. the httpd server is remote 
   emu_info.multicast_group=0;
-  emu_info.ocg_enabled=0;// flag c
+  emu_info.ocg_enabled=1;// flag c
   emu_info.opt_enabled=0; // P flag
   emu_info.omg_model_enb=STATIC; //default to static mobility model
   emu_info.omg_model_ue=STATIC; //default to static mobility model
@@ -291,8 +290,12 @@ main (int argc, char **argv)
   n_frames = 0xffff;		//100;
   n_frames_flag = 0;
   snr_dB = 30;
-
   cooperation_flag = 0;		// default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
+
+  // configure oaisim with OCG
+  oaisim_config(&n_frames, g_log_level); // config OMG and OCG, OPT, OTG, OLG
+
+
   // get command-line options
   while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:"))
 	 != -1) {
@@ -344,10 +347,14 @@ main (int argc, char **argv)
       set_sinr = 1;
       break;
     case 'k':
-      ricean_factor = atof (optarg);
+      //ricean_factor = atof (optarg);
+      printf("[SIM] Option k is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
+      exit(-1);
       break;
     case 't':
-      Td = atof (optarg);
+      //Td = atof (optarg);
+      printf("[SIM] Option t is no longer supported on the command line. Please specify your channel model in the xml template\n"); 
+      exit(-1);
       break;
     case 'f':
       forgetting_factor = atof (optarg);
@@ -357,20 +364,12 @@ main (int argc, char **argv)
       break;
     case 'u':
       emu_info.nb_ue_local = atoi (optarg);
-      if (emu_info.nb_ue_local > 8) {
-	printf ("Enter fewer than 8 UEs for the moment\n");
-	exit (-1);
-      }
       break;
       //      case 'U':
       //nb_ue_remote = atoi(optarg);
       //break;
     case 'b':
       emu_info.nb_enb_local = atoi (optarg);
-      if (emu_info.nb_enb_local > 3) {
-	printf ("Enter fewer than 4 eNBs for the moment\n");
-	exit (-1);
-      }
       break;
       //      case 'B':
       // nb_eNB_remote = atoi(optarg);
@@ -395,11 +394,13 @@ main (int argc, char **argv)
       g_log_level = optarg;
       break;
     case 'c':
-      strcpy(emu_info.local_server, optarg);
-      emu_info.ocg_enabled=1;
+      printf("[SIM] OCG is already enabled by default and using template_%s.xml!\n",emu_info.local_server); 
+      exit(-1);
+      //strcpy(emu_info.local_server, optarg);
+      //emu_info.ocg_enabled=1;
       //abstraction_flag=1;
       //extended_prefix_flag=1;
-      n_frames_flag=1;
+      //n_frames_flag=1;
       //transmission_mode = 1;
       break;
     case 'g':
@@ -420,9 +421,6 @@ main (int argc, char **argv)
     case 'E':
       emu_info.seed = atoi (optarg);
       break;
-    case 'o':
-      mod_path_loss = 5;
-      break;
     default:
       help ();
       exit (-1);
@@ -430,18 +428,23 @@ main (int argc, char **argv)
     }
   }
 
+  if (emu_info.nb_ue_local > 8) {
+    printf ("Enter fewer than 8 UEs for the moment\n");
+    exit (-1);
+  }
+  if (emu_info.nb_enb_local > 3) {
+    printf ("Enter fewer than 4 eNBs for the moment\n");
+    exit (-1);
+  }
+
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
   ethernet_flag = 0;
-
 #endif
 
   if (set_sinr == 0)
     sinr_dB = snr_dB - 20;
-
-
-  oaisim_config(&n_frames, g_log_level); // config OMG and OCG, OPT, OTG, OLG
 
   // setup ntedevice interface (netlink socket)
 #ifndef CYGWIN
@@ -474,7 +477,7 @@ main (int argc, char **argv)
 #ifndef NAS_NETLINK
   UE_stats = fopen ("UE_stats.txt", "w");
   eNB_stats = fopen ("eNB_stats.txt", "w");
-  printf ("UE_stats=%d, eNB_stats=%d\n", UE_stats, eNB_stats);
+  printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 #endif
   NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
   NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
@@ -528,39 +531,50 @@ main (int argc, char **argv)
 
       // if (emu_info.ocg_enabled == 1)
       // TODO: add channel model based on scen descriptor here
+      if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_A")==0) 
+	channel_model = SCM_A;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_B")==0) 
+	channel_model = SCM_B;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_C")==0) 
+	channel_model = SCM_C;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_D")==0) 
+	channel_model = SCM_D;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_A")==0) 
+	channel_model = SCM_A;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"EPA")==0) 
+	channel_model = EPA;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"EVA")==0) 
+	channel_model = EVA;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"ETU")==0) 
+	channel_model = ETU;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rayleigh8")==0) 
+	channel_model = Rayleigh8;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rayleigh1")==0) 
+	channel_model = Rayleigh1;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rice8")==0) 
+	channel_model = Rice8;
+      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rice1")==0) 
+	channel_model = Rice1;
+      else {
+	printf("[SIM] Unknown channel model %s, Exiting.\n",oai_emulation.environment_system_config.fading.small_scale.selected_option);
+	exit(-1);
+      }
 
-      channel_length = (u8) (11+2*oai_emulation.environment_system_config.system_bandwidth*Td);
-      eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-					       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-					       nb_taps,
-					       channel_length,
-					       amps,
-					       NULL,
-					       NULL,
-					       Td,
-					       oai_emulation.environment_system_config.system_bandwidth,
-					       ricean_factor,
-					       aoa,
-					       forgetting_factor,
-					       maxDoppler,
-					       0,
-					       0);
+      eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						   PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						   channel_model,
+						   oai_emulation.environment_system_config.system_bandwidth,
+						   forgetting_factor,
+						   0,
+						   0);
       
-      UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
-					       PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
-					       nb_taps,
-					       channel_length,
-					       amps,
-					       NULL,
-					       NULL,
-					       Td,
-					       oai_emulation.environment_system_config.system_bandwidth,
-					       ricean_factor,
-					       aoa,
-					       forgetting_factor,
-					       maxDoppler,
-					       0,
-					       0);
+      UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
+						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
+						   channel_model,
+						   oai_emulation.environment_system_config.system_bandwidth,
+						   forgetting_factor,
+						   0,
+						   0);
       
     }
   }
