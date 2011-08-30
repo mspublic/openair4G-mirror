@@ -52,7 +52,7 @@ int start_rwp_generator(omg_global_param omg_param_list) {
   //omg_omg_param_list.seed= time(NULL); 
   srand(omg_param_list.seed + RWP);
   
-  double cur_time = 1.0; 
+  double cur_time = 0.0; 
   NodePtr node = NULL;
   MobilityPtr mobility = NULL;
   

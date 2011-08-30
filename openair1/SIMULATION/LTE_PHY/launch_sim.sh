@@ -3,7 +3,7 @@
 #PBS -m abe 
 #PBS -d /homes/kaltenbe/Devel/openair_lte/openair1/SIMULATION/LTE_PHY
 
-MCS="0 5 9 10 16 17 20 24"
+MCS=" 5 " 
 
 #QPSK
 #MCS="0 1 2 3 4 5 6 7 8 9"
@@ -15,5 +15,5 @@ MCS="0 5 9 10 16 17 20 24"
 
 for M in $MCS
 do
-    ./dlsim -m$M -s$(($M-10)) -x6 -y2 -z1 -a
+    ./dlsim   -m$M -ga -s-1 -x1 -y1 -z1  -M1 -N20 -f0.2
 done

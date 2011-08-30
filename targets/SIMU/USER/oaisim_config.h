@@ -4,7 +4,7 @@
 #include "UTIL/OMG/omg.h"
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 
-void oaisim_config(OAI_Emulation * emulation_scen, u16 * n_frames, char * g_log_level);
+void oaisim_config(u16 * n_frames, char * g_log_level);
 
 void olg_config(char * g_log_level);
 void ocg_config_omg(OAI_Emulation * emulation_scen);

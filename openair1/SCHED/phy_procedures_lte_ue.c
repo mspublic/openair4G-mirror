@@ -795,19 +795,19 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 	debug_msg("[PHY][UE %d] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
 		  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
-		phy_vars_ue->rx_total_gain_dB);
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
+		  phy_vars_ue->rx_total_gain_dB);
       
-      debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
-		phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
-		dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
-		phy_vars_ue->PHY_measurements.n0_power_dB[0],
-		phy_vars_ue->PHY_measurements.n0_power_dB[1],
-		phy_vars_ue->PHY_measurements.n0_power[0],
-		phy_vars_ue->PHY_measurements.n0_power[1]);
+	debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
+		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
+		  dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		  phy_vars_ue->PHY_measurements.n0_power_dB[1],
+		  phy_vars_ue->PHY_measurements.n0_power[0],
+		  phy_vars_ue->PHY_measurements.n0_power[1]);
     }
 #endif
   }
