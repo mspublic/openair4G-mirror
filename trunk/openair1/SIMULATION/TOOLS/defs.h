@@ -1,3 +1,5 @@
+#ifndef __SIMULATION_TOOLS_DEFS_H__
+#define __SIMULATION_TOOLS_DEFS_H__
 #include "PHY/TOOLS/defs.h"
 
 /** @defgroup _numerical_ Useful Numerical Functions
@@ -62,7 +64,7 @@ typedef struct {
   /// Number of sectors
   u8 n_sectors;
   /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
-  double alpha_rad[NUMBER_OF_eNB_MAX];
+  double alpha_rad[3];
   /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas)
   double phi_rad;
   /// Antenna gain (dBi)
@@ -122,7 +124,11 @@ typedef enum {
   SCM_D,
   EPA,
   EVA,
-  ETU
+  ETU,
+  Rayleigh8,
+  Rayleigh1,
+  Rice8,
+  Rice1,
 } SCM_t;
 
 /** 
@@ -295,9 +301,10 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
+void freq_channel(channel_desc_t *desc,u16 nb_rb);
 
 /**@} */
 /**@} */
-
+#endif
 
 

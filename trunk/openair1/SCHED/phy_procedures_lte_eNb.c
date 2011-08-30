@@ -584,7 +584,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  break;
 	}
 	((u8*) pbch_pdu)[0] = (((u8*) pbch_pdu)[0]&0xef) | 
-	  (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_duration << 4);
+	  ((phy_vars_eNB->lte_frame_parms.phich_config_common.phich_duration << 4)&0x10);
 
 	switch (phy_vars_eNB->lte_frame_parms.phich_config_common.phich_resource) {
 	case oneSixth:
@@ -703,7 +703,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef OPENAIR2
   if ((next_slot % 2)==0) {
 #ifdef DEBUG_PHY_PROC
-    msg("UE %d: Mode %s\n",0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
+    msg("[PHY][eNB %d] UE %d: Mode %s\n",phy_vars_eNB->Mod_id,0,mode_string[phy_vars_eNB->eNB_UE_stats[0].mode]);
 #endif
     mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,phy_vars_eNB->cooperation_flag,next_slot>>1);
 

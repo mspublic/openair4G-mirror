@@ -28,7 +28,7 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb) {
 	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*desc->delays[l])+
 						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*desc->delays[l]));
 	  }
-	  //	  	  	  printf("chF(%f) => (%f,%f)\n",freq,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  	  	  	  //printf("chF(%f) => (%f,%f)\n",freq,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	}
       }
   }

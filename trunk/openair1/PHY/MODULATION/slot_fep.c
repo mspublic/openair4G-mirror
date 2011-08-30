@@ -41,7 +41,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   debug_msg("slot_fep: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d\n", Ns, symbol, nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset);
 #endif
   
+
   for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+    memset(&ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],0,2*frame_parms->ofdm_symbol_size*sizeof(int));
+
     if (l==0) {
       fft((short *)&ue_common_vars->rxdata[aa][sample_offset +
 					       slot_offset +

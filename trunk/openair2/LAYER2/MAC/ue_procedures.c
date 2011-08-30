@@ -30,7 +30,7 @@
 //#define DEBUG_RACH_MAC
 //#define DEBUG_RACH_RRC
 //#define DEBUG_SI_RRC
-#define DEBUG_HEADER_PARSING
+//#define DEBUG_HEADER_PARSING
 
 /*
 #ifndef USER_MODE

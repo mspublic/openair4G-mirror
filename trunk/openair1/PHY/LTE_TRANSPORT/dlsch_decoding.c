@@ -350,10 +350,67 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #endif
+#define MCS_COUNT 23
 
-extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
-int dlsch_abstraction(short* sinr_dB, u32 rb_alloc[4], u8 mcs) {
-  return(1);
+//extern  channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
+//extern  double ABS_SINR_eff_BLER_table[MCS_COUNT][9][9];
+//extern  double ABS_beta[MCS_COUNT];
+extern double sinr_bler_map[MCS_COUNT][2][9];
+double beta[MCS_COUNT] = {1, 1, 1, 1, 1, 0.9459960937499999, 1.2912109374999994, 1.0133789062499998, 1.000390625,
+                          1.02392578125, 1.8595703124999998, 2.424389648437498, 2.3946533203124982, 2.5790039062499988,
+                          2.4084960937499984, 2.782617187499999, 2.7868652343749996, 3.92099609375, 4.0392578125,
+                          4.56109619140625, 5.03338623046875, 5.810888671875, 6.449108886718749};
+
+
+int dlsch_abstraction(double* sinr_dB, u32 rb_alloc[4], u8 mcs) {
+
+  int index;
+  double sinr_eff = 0;
+  int rb_count = 0;
+  int offset;
+  double bler = 0;
+  for (offset = 0; offset <= 24; offset++) {
+    if (rb_alloc[0] & (1<<offset)) {
+      rb_count++;
+      sinr_eff += exp(-(pow(10, 0.1*(sinr_dB[offset*2])))/beta[mcs]);
+      //printf("sinr_eff1 = %f, power %lf\n",sinr_eff, exp(-pow(10,6.8)));
+
+      sinr_eff += exp(-(pow(10, (sinr_dB[offset*2+1])/10))/beta[mcs]);
+      //printf("sinr_dB[%d]=%f\n",offset,sinr_dB[offset*2]);
+    }
+  }       
+  //printf("sinr_eff1 = %f\n",sinr_eff);
+  sinr_eff =  -beta[mcs] *log((sinr_eff)/(2*rb_count));
+  sinr_eff = 10 * log10(sinr_eff);
+  printf("sinr_eff2 = %f\n",sinr_eff);
+
+  // table lookup
+  sinr_eff *= 10;
+  sinr_eff = floor(sinr_eff);
+  if ((int)sinr_eff%2) {
+    sinr_eff += 1;
+  }
+  sinr_eff /= 10;
+  printf("sinr_eff after rounding = %f\n",sinr_eff);
+  for (index = 0; index < 9; index++) {
+    if(index == 0) {
+      if (sinr_eff < sinr_bler_map[mcs][0][index]) {
+        bler = 1;
+        break;
+      }
+    }
+    if (sinr_eff == sinr_bler_map[mcs][0][index]) {
+        bler = sinr_bler_map[mcs][1][index];
+    }
+  }
+  if (uniformrandom() < bler) {
+    printf("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(0);
+  }
+  else {
+    printf("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
+    return(1);
+  }
 }
 
 u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,

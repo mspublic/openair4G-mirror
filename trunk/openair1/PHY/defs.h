@@ -246,7 +246,7 @@ typedef struct
   char             log2_maxp; 
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
-  short* sinr_dB;
+  double *sinr_dB;
   
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];

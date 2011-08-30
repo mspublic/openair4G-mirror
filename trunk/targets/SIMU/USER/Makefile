@@ -50,7 +50,7 @@ endif
 ifdef NAS_NETLINK
 CFLAGS += -DNAS_NETLINK -DLINUX
 NAS_FLAG=1
-#CFLAGS += -DDEBUG_OMG
+CFLAGS += -DDEBUG_OMG
 else
 NAS_FLAG=0
 endif
@@ -75,17 +75,21 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/random_channel.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/taus.o  
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/multipath_channel.o
+SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/abstraction.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
 ASN1_MSG_OBJS2 := $(foreach file, $(ASN1_MSG_OBJS), $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/$(file))
 
-OAISIM_OBJS  = channel_sim.o 
+
+OAISIM_OBJS = channel_sim.o 
 OAISIM_OBJS += init_lte.o 
 OAISIM_OBJS += oaisim_config.o
+OAISIM_OBJS += sinr_sim.o 
+OAISIM_OBJS += cor_SF_sim.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS)
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS) 
 #oaisim_config.o 
 
 all: oaisim
@@ -107,7 +111,7 @@ $(L2_OBJS) : %.o : %.c
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
 	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread
+	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread -llapack_atlas
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
