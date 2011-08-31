@@ -208,7 +208,7 @@ typedef struct{
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(void);
-char openair_rrc_eNB_init(u8 Mod_id);
+char openair_rrc_eNB_init(u8 Mod_id,u8 CC_id);
 char openair_rrc_ue_init(u8 Mod_id,u8 CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, u8 Lchan_type, u8 Role);
 void openair_rrc_on(u8 Mod_id);
@@ -220,14 +220,14 @@ void openair_rrc_on(u8 Mod_id);
     \param Mod_id Instance ID of UE
     \param Srb_info Pointer to SRB_INFO structure (SRB0)
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info,u8 CH_index);
+void rrc_ue_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info,u8 CH_index);
 
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param Mod_id Instance ID of UE
     \param Srb_id Index of Srb (1,2)
     \param Buffer Pointer to received SDU
     \param CH_index Index of corresponding CH/eNB*/
-void rrc_ue_decode_dcch(u8 Mod_id, u8 Srb_id, u8* Buffer,u8 CH_index);
+void rrc_ue_decode_dcch(u8 Mod_id, u8 CC_id,u8 Srb_id, u8* Buffer,u8 CH_index);
 
 /** \brief Generate/Encodes RRCConnnectionRequest message at UE 
     \param Mod_id Instance ID of UE
@@ -265,7 +265,7 @@ s32  rrc_ue_establish_drb(u8 Mod_id,u8 CH_index,struct DRB_ToAddMod *DRB_config)
     \param Mod_id Instance of UE on which to act
     \param CH_index Index of corresponding CH/eNB
     \param radioResourceConfigDedicated Pointer to RadioResourceConfigDedicated IE from configuration*/
-void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CH_index,
+void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 CH_index,
 						 RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
 
 // eNB/CH RRC Procedures
@@ -280,7 +280,7 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
    \param UE_index Index of UE sending the message
    \param Rx_sdu Pointer Received Message
    \param sdu_size Size of incoming SDU*/
-void rrc_eNB_decode_dcch(u8 Mod_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
+void rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id,u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
 
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param Mod_id Instance ID for eNB/CH
@@ -291,18 +291,18 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the message
    \param rrcConnectionSetupComplete Pointer to RRCConnectionSetupComplete message*/
-void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
+void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 CC_id,u8 UE_index, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete);
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE transmitting the messages
    \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
-void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
+void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 CC_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete);
 
 
 //L2_interface.c
 u8 mac_rrc_lite_data_req( u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
-u8 mac_rrc_lite_data_ind( u8 Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
+u8 mac_rrc_lite_data_ind( u8 Mod_id,u8 CC_id, unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
 void rlcrrc_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_out_of_sync_ind(u8 Mod_id, unsigned short CH_index);
@@ -378,9 +378,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 					struct DRB_ToAddMod **DRB_config,
 					struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
-void decode_SIB1(u8 Mod_id,u8 CH_index);
+void decode_SIB1(u8 Mod_id,u8 CC_id,u8 CH_index);
 
-void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
+void decode_SI(u8 Mod_id,u8 CC_id,u8 CH_index,u8 si_window);
 
 #endif
 

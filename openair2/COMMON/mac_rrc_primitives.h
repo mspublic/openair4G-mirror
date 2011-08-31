@@ -316,10 +316,10 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   u8 UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
 #endif
   void (*openair_rrc_top_init)(void); 
-  char (*openair_rrc_eNB_init)(u8 ); 
-  char (*openair_rrc_UE_init)(u8, u8); 
+  char (*openair_rrc_eNB_init)(u8,u8); 
+  char (*openair_rrc_UE_init)(u8,u8); 
   void (*rrc_rx_tx)(u8 ); 
-  u8 (*mac_rrc_data_ind)(u8,unsigned short,char *,unsigned short,u8 eNB_flag, u8 eNB_index);
+  u8 (*mac_rrc_data_ind)(u8,u8,unsigned short,char *,unsigned short,u8 eNB_flag, u8 eNB_index);
   u8 (*mac_rrc_data_req)(u8,unsigned short,u8,char *,u8 eNB_flag, u8 eNB_index);
   void (*mac_rrc_meas_ind)(u8,MAC_MEAS_REQ_ENTRY*);
   void  (*def_meas_ind)(u8, u8);
@@ -346,7 +346,7 @@ typedef struct{
   void (*pdcp_run)();
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);	
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
-  int (*rrc_mac_config_req)(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
+  int (*rrc_mac_config_req)(u8 Mod_id,u8 CC_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
 			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated,
 			    MAC_MainConfig_t *mac_MainConfig,
@@ -364,8 +364,8 @@ typedef struct{
   //rlc_op_status_t rrc_rlc_config_req   (module_id_t, rb_id_t, rb_type_t, rlc_info_t );
   //rlc_op_status_t rrc_rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
   //void   rrc_rlc_register_rrc ( void(*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , mem_block_t*),void(*rrc_data_conf) (module_id_t , rb_id_t , mui_t) );
-  void (*mrbch_phy_sync_failure) (u8 Mod_id, u8 Free_ch_index);
-  void (*chbch_phy_sync_success) (u8 Mod_id, u8 eNB_index);
+  void (*mrbch_phy_sync_failure) (u8 Mod_id, u8 CC_id,u8 Free_ch_index);
+  void (*chbch_phy_sync_success) (u8 Mod_id, u8 CC_id,u8 eNB_index);
 }MAC_RLC_XFACE;
 
 

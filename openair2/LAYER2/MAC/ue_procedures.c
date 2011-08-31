@@ -91,12 +91,12 @@ unsigned char *parse_header(unsigned char *mac_header,
 
 
 
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti) {
+u32 ue_get_SR(u8 Mod_id,u8 CC_id,u8 eNB_id,u16 rnti) {
 
   return(0);
 }
 
-void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
+void ue_send_sdu(u8 Mod_id,u8 CC_id,u8 *sdu,u8 eNB_index) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
@@ -149,6 +149,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 
       msg("[MAC][UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
       Rrc_xface->mac_rrc_data_ind(Mod_id,
+				  CC_id,
 				  CCCH,
 				  (char *)payload_ptr,rx_lengths[i],0,eNB_index);
 
@@ -184,23 +185,28 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
   }
 }
 
-void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
+void ue_decode_si(u8 Mod_id, u8 CC_id,u8 eNB_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
   msg("[MAC][UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
 #endif
 
-  Rrc_xface->mac_rrc_data_ind(Mod_id,BCCH,(char *)pdu,len,0,eNB_index);
+  Rrc_xface->mac_rrc_data_ind(Mod_id,CC_id,BCCH,(char *)pdu,len,0,eNB_index);
 
 }
 
-unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
+
+
+unsigned char *ue_get_rach(u8 Mod_id,u8 CC_id,u8 eNB_index){
 
 
   u8 Size=0;
-  UE_MODE_t UE_mode = mac_xface->get_ue_mode(Mod_id,eNB_index);
+
+
+  UE_MODE_t UE_mode = mac_xface->get_ue_mode(Mod_id,CC_id,eNB_index);
   u8 lcid = CCCH,payload_offset;
   u16 Size16;
+
 
   if (UE_mode == PRACH) {
     if (Is_rrc_registered == 1) {
@@ -453,7 +459,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
 }
 // generate BSR
-void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
+void ue_get_sdu(u8 Mod_id,u8 CC_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
   u8 dcch_header_len,dtch_header_len;
@@ -598,7 +604,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 }
 
 
-void ue_scheduler(u8 Mod_id, u8 subframe) {
+void ue_scheduler(u8 Mod_id,u8 CC_id, u8 subframe) {
 
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;

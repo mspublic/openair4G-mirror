@@ -37,6 +37,7 @@
 #endif
 
 
+
 #define RF
 
 void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double **s_re,double **s_im,channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX],u16 next_slot,double *nf,double snr_dB,double sinr_dB,u8 abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms) {
@@ -48,7 +49,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif
   s32 **txdata,**rxdata;
   
-  u8 eNB_id=0,UE_id=0,aa;
+  u8 eNB_id=0,UE_id=0,CC_id=0,aa;
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
   u32 i;
@@ -71,19 +72,19 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
     bzero(txdataF2[1],NUMBER_OF_OFDM_CARRIERS*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7)*sizeof(s32));
 #endif
     
-    
+    for (CC_id=0;CC_id<NUMBER_OF_CC_MAX;CC_id++) { 
     for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
       
-      frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
+      frame_parms = &PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms;
       
-      txdataF = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0];
+      txdataF = PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_common_vars.txdataF[0];
 #ifndef IFFT_FPGA
-      txdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0];
+      txdata = PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_common_vars.txdata[0];
 #endif
 
 #ifdef IFFT_FPGA
       
-      slot_offset = (next_slot)*(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.N_RB_DL*12)*((PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Ncp==1) ? 6 : 7);
+      slot_offset = (next_slot)*(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL*12)*((PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Ncp==1) ? 6 : 7);
       
       //write_output("eNB_txsigF0.m","eNB_txsF0", lte_eNB_common_vars->txdataF[eNB_id][0],300*120,1,4);
       //write_output("eNB_txsigF1.m","eNB_txsF1", lte_eNB_common_vars->txdataF[eNB_id][1],300*120,1,4);
@@ -143,7 +144,10 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif //IFFT_FPGA
       
     }
+    }
   }
+
+  CC_id=0;
 
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     
@@ -162,8 +166,8 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
       }
       // Compute RX signal for UE = UE_id
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-	frame_parms = &PHY_vars_eNB_g[eNB_id]->lte_frame_parms;
-	txdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0];
+	frame_parms = &PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms;
+	txdata = PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_common_vars.txdata[0];
 	tx_pwr = dac_fixed_gain(s_re,
 				s_im,
 				txdata,
@@ -263,8 +267,7 @@ void do_DL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif
     } // abstraction_flag==0    
   } // UE_index loop
- 
-  
+
 #ifdef IFFT_FPGA
   free(txdataF2[0]);
   free(txdataF2[1]);
@@ -285,7 +288,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #endif
   s32 **txdata,**rxdata;
 
-  u8 UE_id=0,eNB_id=0,aa;
+  u8 UE_id=0,eNB_id=0,CC_id=0,aa;
   double tx_pwr, rx_pwr;
   s32 rx_pwr2;
   u32 i;
@@ -394,7 +397,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
     }  // UE_id TX loop
   } // abstraction_flag
 
- 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 
     if (abstraction_flag!=0) {
@@ -437,13 +439,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 #ifdef DEBUG_SIM    
 	printf("[SIM][UL] eNB %d : eNB in %f dB for slot %d (subframe %d), sptti %d\n",eNB_id,10*log10(rx_pwr),next_slot,next_slot>>1,frame_parms->samples_per_tti);  
 #endif
-	/*
-	u8 aarx,aatx,k;
-	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	printf("BMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/ 
     
 	if (eNB_id == (UE_id % NB_eNB_INST))
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = -105 + snr_dB - 10;
@@ -452,12 +447,6 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
 	multipath_channel(UE2eNB[UE_id][eNB_id],s_re,s_im,r_re0,r_im0,
 			  frame_parms->samples_per_tti>>1,0);
-	/*
-	for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-	for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-	for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-	printf("AMP(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-	*/
 
 	rx_pwr = signal_energy_fp2(UE2eNB[UE_id][eNB_id]->ch[0],UE2eNB[UE_id][eNB_id]->channel_length);
 #ifdef DEBUG_SIM
@@ -485,7 +474,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 	      0.0,               // freq offset (Hz) (-20kHz..20kHz)
 	      0.0,               // drift (Hz) NOT YET IMPLEMENTED
 	      nf,                // noise_figure NOT YET IMPLEMENTED
-	      (double)PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
+	      (double)PHY_vars_eNB_g[eNB_id][CC_id]->rx_total_gain_eNB_dB - 66.227,   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later),note CC_id set to 0 at the beginning of the file!
 	      200,               // IP3_dBm (dBm)
 	      &UE2eNB[UE_id][eNB_id]->ip,               // initial phase
 	      30.0e3,            // pn_cutoff (kHz)
@@ -509,7 +498,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
 
     
     
-      rxdata = PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.rxdata[0];
+      rxdata = PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_common_vars.rxdata[0];
     
       slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
       

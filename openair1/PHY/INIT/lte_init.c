@@ -55,12 +55,12 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
   lte_frame_parms->phich_config_common.phich_duration = phich_config->phich_duration;
 }
 
-void phy_config_sib1_eNB(u8 Mod_id,
+void phy_config_sib1_eNB(u8 Mod_id,u8 CC_id,
 			 TDD_Config_t *tdd_Config,
 			 u8 SIwindowsize,
 			 u16 SIPeriod) {
    
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][0]->lte_frame_parms;
 
   lte_frame_parms->tdd_config    = tdd_Config->subframeAssignment;
   lte_frame_parms->tdd_config_S  = tdd_Config->specialSubframePatterns;  
@@ -68,7 +68,7 @@ void phy_config_sib1_eNB(u8 Mod_id,
   lte_frame_parms->SIPeriod      = SIPeriod;
 }
 
-void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
+void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 			 TDD_Config_t *tdd_Config,
 			 u8 SIwindowsize,
 			 u16 SIperiod) {
@@ -81,10 +81,10 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
   lte_frame_parms->SIPeriod      = SIperiod;
 }
 
-void phy_config_sib2_eNB(u8 Mod_id,
+void phy_config_sib2_eNB(u8 Mod_id,u8 CC_id,
 			 RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
-  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id]->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][0]->lte_frame_parms;
 
   msg("[PHY][eNB%d] Frame %d: Applying radioResourceConfigCommon\n",Mod_id,mac_xface->frame);
 
@@ -159,12 +159,12 @@ void phy_config_sib2_eNB(u8 Mod_id,
 
   // PUCCH
 
-  init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id]->ncs_cell);
+  init_ncs_cell(lte_frame_parms,PHY_vars_eNB_g[Mod_id][0]->ncs_cell);
 
 
 }
 
-void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
+void phy_config_sib2_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon) {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_UE_g[Mod_id]->lte_frame_parms;
@@ -232,10 +232,10 @@ void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 }
 
 
-void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
+void phy_config_dedicated_eNB(u8 Mod_id,u8 CC_id,u16 rnti,
 			      struct PhysicalConfigDedicated *physicalConfigDedicated) {
 
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id];
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][0];
   u8 UE_id = find_ue(rnti,phy_vars_eNB);
   
 
@@ -326,7 +326,7 @@ void phy_config_dedicated_eNB(u8 Mod_id,u16 rnti,
   
 }
 
-void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
+void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
 			     struct PhysicalConfigDedicated *physicalConfigDedicated ) {
 
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id];

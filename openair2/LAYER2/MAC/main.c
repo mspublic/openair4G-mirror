@@ -42,7 +42,7 @@ ________________________________________________________________*/
 
 
 /***********************************************************************/
-void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //init as MR
+void chbch_phy_sync_success(unsigned char Mod_id,u8 CC_id, unsigned char eNB_index){  //init as MR
 /***********************************************************************/
   // msg("[MAC]Node %d, PHY SYNC to eNB_index %d\n",NODE_ID[Mod_id],eNB_index);
   if( (layer2_init_UE(Mod_id)==-1) || (Rrc_xface->openair_rrc_UE_init(Mod_id,eNB_index)==-1) )
@@ -51,7 +51,7 @@ void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //in
 }
 
 /***********************************************************************/
-void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){//init as CH 
+void mrbch_phy_sync_failure(unsigned char Mod_id,u8 CC_id, unsigned char Free_ch_index){//init as CH 
   /***********************************************************************/
   msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
@@ -197,7 +197,6 @@ int mac_top_init(){
   
 }
 
-
 /***********************************************************************/
 int mac_init_global_param(){
   /***********************************************************************/
@@ -291,7 +290,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   
   //eNB MAC functions    
   mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
-  mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
+  mac_xface->get_dci_sdu               = get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
   mac_xface->terminate_ra_proc         = terminate_ra_proc;
   mac_xface->initiate_ra_proc          = initiate_ra_proc;

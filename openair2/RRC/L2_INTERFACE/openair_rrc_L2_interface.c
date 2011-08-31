@@ -66,12 +66,12 @@ u8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 e
 }   
    
 /********************************************************************************************************************/
-u8 mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
+u8 mac_rrc_data_ind(unsigned  char Mod_id, u8 CC_id,unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
   rrc_L2_mac_data_ind_rx();
 #else 
-  mac_rrc_lite_data_ind(Mod_id,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index);
+  mac_rrc_lite_data_ind(Mod_id,CC_id,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index);
 #endif //CELLULAR
 }
 

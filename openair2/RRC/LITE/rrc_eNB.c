@@ -32,7 +32,7 @@ extern void *bigphys_malloc(int);
 #endif
 
 extern inline unsigned int taus(void);
-void init_SI(u8 Mod_id) {
+void init_SI(u8 Mod_id,u8 CC_id) {
 
   u8 SIwindowsize=1;
   u16 SIperiod=8;
@@ -84,7 +84,7 @@ void init_SI(u8 Mod_id) {
     
     msg("pusch_config_common.cyclicShift  = %ld\n",eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);  
     
-    Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,0,0,
+    Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,1,0,0,
 				      (RadioResourceConfigCommonSIB_t *)&eNB_rrc_inst[Mod_id].sib2->radioResourceConfigCommon,
 				      (struct PhysicalConfigDedicated *)NULL,
 				      (MAC_MainConfig_t *)NULL,
@@ -101,7 +101,7 @@ void init_SI(u8 Mod_id) {
 }
 
 /*------------------------------------------------------------------------------*/
-char openair_rrc_eNB_init(u8 Mod_id){
+char openair_rrc_eNB_init(u8 Mod_id,u8 CC_id){
   /*-----------------------------------------------------------------------------*/
 
   unsigned char j;
@@ -117,7 +117,7 @@ char openair_rrc_eNB_init(u8 Mod_id){
   }
 
   /// System Information INIT
-  init_SI(Mod_id);
+  init_SI(Mod_id,CC_id);
 
   msg("[OPENAIR][RRC][INIT] INIT OK for eNB %d\n",Mod_id);
 
@@ -161,7 +161,7 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 }
 
 /*------------------------------------------------------------------------------*/
-void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
+void rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
@@ -195,14 +195,14 @@ void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
       msg("[RRC][eNB %d] Processing RRCConnectionReconfigurationComplete message\n",Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8)
-	rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
+	rrc_eNB_process_RRCConnectionReconfigurationComplete(Mod_id,CC_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8);
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
       msg("[RRC][eNB %d] Processing RRCConnectionSetupComplete message\n",Mod_id);
       if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8)
-	rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
+	rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,CC_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
       break;
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
       break;
@@ -364,7 +364,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
 
 }
 
-void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
+void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 CC_id,u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
 
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
 
@@ -382,7 +382,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
     SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
   }
   
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
+  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,1,UE_index,0,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
 				    eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 				    eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -404,7 +404,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
     SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
   }
    
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
+  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,1,UE_index,0,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
 				    eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 				    eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -419,7 +419,7 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
   
 }
 
-void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){
+void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 CC_id,u8 UE_index,RRCConnectionReconfigurationComplete_r8_IEs_t *rrcConnectionReconfigurationComplete){
   int i;
 
   // Loop through DRBs and establish if necessary
@@ -450,7 +450,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
       }
 
       DRB2LCHAN[i] = (u8)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity;
-      Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
+      Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,1,UE_index,0,
 					(RadioResourceConfigCommonSIB_t *)NULL,
 					eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 					eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -469,7 +469,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 					  RADIO_ACCESS_BEARER,Rlc_info_um);
       }
       eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 0;	
-      Mac_rlc_xface->rrc_mac_config_req(Mod_id,1,UE_index,0,
+      Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,1,UE_index,0,
 					(RadioResourceConfigCommonSIB_t *)NULL,
 					eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index],
 					eNB_rrc_inst[Mod_id].mac_MainConfig[UE_index],
@@ -499,14 +499,14 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
 }
 
 
-void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,
+void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 CH_index) {
 
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CH_index,
+      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,CH_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
 
