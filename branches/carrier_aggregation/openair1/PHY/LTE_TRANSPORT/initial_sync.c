@@ -4,6 +4,8 @@
 #include "defs.h"
 #include "extern.h"
 
+#include "../defs.h" //for passing phy_vars_eNB->CC_id
+
 int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 
   u8 l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
@@ -320,12 +322,12 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
   // Now do PBCH detection
   if (pbch_detection(phy_vars_ue)==0) {
 
-#ifdef OPENAIR2
+
     msg("[openair][SCHED][SYNCH] Sending synch status to higher layers\n");
     //mac_resynch();
-    mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+    mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id),added parameter CC_id;
     phy_vars_ue->UE_mode[0] = PRACH;
-#endif //OPENAIR2
+
   }
   
 }

@@ -14,7 +14,7 @@ extern unsigned short RIV2first_rb_LUT25[512];
 
 extern inline unsigned int taus(void);
 
-unsigned short fill_rar(u8 Mod_id,
+unsigned short fill_rar(u8 Mod_id, u8 CC_id,
 			u8 *dlsch_buffer,
 			u16 N_RB_UL,
 			u8  input_buffer_length) {
@@ -42,7 +42,7 @@ unsigned short fill_rar(u8 Mod_id,
   return(rar->t_crnti);
 }
 
-u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti) {
+u16 ue_process_rar(u8 Mod_id,u8 CC_id,u8 *dlsch_buffer,u16 *t_crnti) {
 
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);

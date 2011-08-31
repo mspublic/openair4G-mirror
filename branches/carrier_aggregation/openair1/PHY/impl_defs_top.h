@@ -305,6 +305,7 @@ typedef struct {
 #define NUMBER_OF_eNB_MAX 3
 #define NUMBER_OF_UE_MAX 8
 #define NUMBER_OF_SUBBANDS 7
+#define NUMBER_OF_CC_MAX 2
 
 typedef struct
 {

@@ -31,8 +31,6 @@
 #include "SCHED/vars.h"
 
 #ifdef XFORMS
-
-
 #include "forms.h"
 #include "phy_procedures_sim_form.h"
 #endif
@@ -226,7 +224,7 @@ int main(int argc, char **argv) {
   u16 ethernet_id;
   u8 frame_type=1, tdd_config=3, extended_prefix_flag=0, N_RB_DL=25;
   u16 Nid_cell=0;
-  s32 UE_id,eNB_id,ret; 
+  s32 UE_id,eNB_id,CC_id,ret; 
 
   char * g_log_level="trace"; // by default global log level is set to trace 
   lte_subframe_t direction;
@@ -255,7 +253,7 @@ int main(int argc, char **argv) {
   emu_info.first_enb_local=0;
   emu_info.master_id=0;
   emu_info.nb_master =0;
-  emu_info.nb_ue_local= 1;//default 1 UE
+  emu_info.nb_ue_local= 1;//default 1 UE, NOTE!!!!!
   emu_info.nb_enb_local= 1;//default 1 eNB
   emu_info.ethernet_flag=0;
   strcpy(emu_info.local_server, ""); // this is the web portal version, ie. the httpd server is remote 
@@ -424,7 +422,9 @@ int main(int argc, char **argv) {
 
   // setup netdevice interface (netlink socket)
 #ifndef CYGWIN 
+#ifdef PHY_ABSTRACTION
   ret=netlink_init();
+#endif
 #endif
   
   if (ethernet_flag==1){
@@ -446,12 +446,16 @@ int main(int argc, char **argv) {
 #ifdef LINUX    
     init_bypass();
 #endif
-    
+   
+#ifdef PHY_ABSTRACTION 
     while (emu_tx_status != SYNCED_TRANSPORT ) {
       LOG_I(EMU, " Waiting for EMU Transport to be synced\n"); 
       emu_transport_sync();//emulation_tx_rx();
     }
+#endif
+
   }// ethernet flag
+
 #ifndef NAS_NETLINK  
   UE_stats = fopen("UE_stats.txt", "w");
   eNB_stats = fopen("eNB_stats.txt", "w");
@@ -481,7 +485,7 @@ int main(int argc, char **argv) {
 #ifdef DEBUG_SIM
       printf("[SIM] Initializing channel from eNB %d to UE %d\n",eNB_id,UE_id);
 #endif
-      eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+      eNB2UE[eNB_id][UE_id] = new_channel_desc(PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.nb_antennas_tx,
 					       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
 					       nb_taps,
 					       channel_length,
@@ -500,7 +504,7 @@ int main(int argc, char **argv) {
       eNB2UE[eNB_id][UE_id]->path_loss_dB = -105 + snr_dB;
 
       UE2eNB[UE_id][eNB_id] = new_channel_desc(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
-					       PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
+					       PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.nb_antennas_rx,
 					       nb_taps,
 					       channel_length,
 					       amps,
@@ -563,22 +567,19 @@ int main(int argc, char **argv) {
 #endif
 
 
-#ifdef OPENAIR2
-  l2_init(&PHY_vars_eNB_g[0]->lte_frame_parms);
 
-
+  l2_init(&PHY_vars_eNB_g[0][0]->lte_frame_parms);
 
   for (i=0;i<NB_eNB_INST;i++)
-    mac_xface->mrbch_phy_sync_failure(i,i);
+    mac_xface->mrbch_phy_sync_failure(i,PHY_vars_eNB_g[0][0]->CC_id,i);
 #ifdef DEBUG_SIM
   printf("[SIM] Synching to eNB\n");
 #endif
   if (abstraction_flag==1) {
     for (UE_id=0;UE_id<NB_UE_INST;UE_id++)
-      mac_xface->chbch_phy_sync_success(UE_id,0);//UE_id%NB_eNB_INST);
+      mac_xface->chbch_phy_sync_success(UE_id,PHY_vars_eNB_g[0][0]->CC_id,0);//UE_id%NB_eNB_INST);
   }
-#endif 
- 
+
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     
@@ -631,28 +632,36 @@ int main(int argc, char **argv) {
   
       direction = subframe_select(frame_parms,next_slot>>1);
       
-      if((next_slot %2) ==0)
-	clear_eNB_transport_info(emu_info.nb_enb_local);
-      
+#ifdef PHY_ABSTRACTION
+      if((next_slot %2) ==0) //minimum resource block to be assigned to a UE: one subframe
+	clear_eNB_transport_info(emu_info.nb_enb_local); 
+#endif
+
       for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
-	//#ifdef DEBUG_SIM
-	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",eNB_id,mac_xface->frame,slot,next_slot>>1,PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext,PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
-	//#endif
-	phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id],abstraction_flag);
+	for (CC_id=0; CC_id<NUMBER_OF_CC_MAX; CC_id++) {
+	  //#ifdef DEBUG_SIM
+	  printf("[SIM] EMU PHY procedures eNB %d, CC %d (Nid_cell %d) for frame %d, slot %d (subframe %d)\n",
+		 eNB_id,CC_id,PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell,
+		 mac_xface->frame,slot,next_slot>>1);
+	  //#endif
+	  phy_procedures_eNB_lte(last_slot,next_slot,PHY_vars_eNB_g[eNB_id][CC_id],abstraction_flag);
 #ifndef NAS_NETLINK	
-	if ((mac_xface->frame % 10) == 0) {
-	  len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id],stats_buffer,0);
-	  rewind(eNB_stats);
-	  fwrite(stats_buffer,1,len,eNB_stats);
-	}
+	  if ((mac_xface->frame % 10) == 0) {
+	    len = dump_eNB_stats(PHY_vars_eNB_g[eNB_id][CC_id],stats_buffer,0);
+	    rewind(eNB_stats);
+	    fwrite(stats_buffer,1,len,eNB_stats);
+	  }
 #endif 
+	}
       }
 
+#ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
 
       // Call ETHERNET emulation here
       if((next_slot %2) == 0) 
 	clear_UE_transport_info(emu_info.nb_ue_local);
+#endif 
 
       for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
@@ -674,7 +683,11 @@ int main(int argc, char **argv) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	  }
 	}
+
+#ifdef PHY_ABSTRACTION
       emu_transport (frame, last_slot, next_slot,direction, ethernet_flag);
+#endif
+
       if (mod_path_loss && ((mac_xface->frame % 150) >= 100)){
 	snr_dB2 = -20;
 	sinr_dB2 = -40;
@@ -683,6 +696,7 @@ int main(int argc, char **argv) {
 	snr_dB2 = snr_dB;
 	sinr_dB2 = sinr_dB;
       }
+
       if (direction  == SF_DL) {
 	do_DL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,eNB2UE,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
       }
@@ -697,6 +711,7 @@ int main(int argc, char **argv) {
 	  do_UL_sig(r_re0,r_im0,r_re,r_im,s_re,s_im,UE2eNB,next_slot,nf,snr_dB2,sinr_dB2,abstraction_flag,frame_parms);
 	}
       }
+      
       if ((last_slot==1) && (mac_xface->frame==0) && (abstraction_flag==0) && (n_frames==1)) {
 	write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	write_output("dlchan1.m","dlch1",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -714,7 +729,9 @@ int main(int argc, char **argv) {
 
     if ((mac_xface->frame==1)&&(abstraction_flag==0)) {
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      write_output("eNBtxsig1.m","txs1", PHY_vars_eNB_g[0][1]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     }
 
 #ifdef XFORMS
@@ -725,9 +742,16 @@ int main(int argc, char **argv) {
 #endif
       
   }
+
+
+//test:the following line should be deleted afterwards
+ printf("total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
+
+#ifdef PHY_ABSTRACTIOB
   // relase all rx state
-  if (ethernet_flag==1){ emu_transport_release();}
-  
+  if (ethernet_flag==1){emu_transport_release();}
+#endif
+
   if (abstraction_flag==0) {
     /*
 #ifdef IFFT_FPGA

@@ -101,6 +101,8 @@ typedef struct
 {
   /// Module ID indicator for this instance
   u8 Mod_id;
+  /// Component carrier ID
+  u8 CC_id;
   u8 local_flag;
   unsigned int rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS  lte_frame_parms;
@@ -141,8 +143,8 @@ typedef struct
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
   /// For emulation only (used by UE abstraction to retrieve DCI)
-  u8 num_common_dci[2];                         // num_dci in even/odd subframes
-  u8 num_ue_spec_dci[2];                         // num_dci in even/odd subframes
+  u8 Num_common_dci[2];                         // num_dci in even/odd subframes
+  u8 Num_ue_spec_dci[2];                         // num_dci in even/odd subframes
   DCI_ALLOC_t dci_alloc[2][NUM_DCI_MAX]; // dci_alloc from even/odd subframes
 
 
@@ -189,6 +191,7 @@ typedef struct
 {
   /// Module ID indicator for this instance
   u8 Mod_id;
+  u8 CC_id;
   u8 local_flag;
   unsigned int tx_total_gain_dB;
   unsigned int rx_total_gain_dB;

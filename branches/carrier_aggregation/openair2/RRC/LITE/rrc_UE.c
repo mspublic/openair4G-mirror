@@ -145,7 +145,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 eNB_index
 
 
 /*------------------------------------------------------------------------------*/
-void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
+void rrc_ue_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
   DL_CCCH_Message_t dlccchmsg;
@@ -192,7 +192,7 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 	// Get configuration
 
 
-	rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
+	rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,eNB_index,
 						    &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated);
 
 	rrc_ue_generate_RRCConnectionSetupComplete(Mod_id,eNB_index);
@@ -302,7 +302,7 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u8 eNB_index,
 
 
 
-void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
+void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
 
   long SRB_id,DRB_id;
@@ -371,7 +371,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
 	  }
 	  
-	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
 					    (RadioResourceConfigCommonSIB_t *)NULL,
 					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -404,7 +404,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 	    SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
 	  }
 	  
-	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
 					    (RadioResourceConfigCommonSIB_t *)NULL,
 					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -432,7 +432,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 
 	ret = rrc_ue_establish_drb(Mod_id,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
 	// MAC/PHY Configuration
-	Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+	Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
 					  (RadioResourceConfigCommonSIB_t *)NULL,
 					  UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					  UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -452,14 +452,14 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 }
   
 
-void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
+void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-      rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
+      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,eNB_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
 
@@ -470,7 +470,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 }
   
 /*------------------------------------------------------------------------------------------*/
-void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
+void  rrc_ue_decode_dcch(u8 Mod_id,u8 CC_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
   DL_DCCH_Message_t dldcchmsg;
@@ -519,7 +519,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
 
 	msg("[RRC][UE] Frame %d: Processing RRCConnectionReconfiguration from eNB %d\n",
 	    Mac_rlc_xface->frame,eNB_index);
-	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,CC_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
@@ -552,7 +552,7 @@ const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","Sp0\0","Sp1\0","Sp2\0","Sp3\0","Sp4\0"};
 const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
 
-void decode_SIB1(u8 Mod_id,u8 eNB_index) {
+void decode_SIB1(u8 Mod_id,u8 CC_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
@@ -586,7 +586,7 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
   UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod    =8<<((int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity);
   UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize=siWindowLength_int[(int)*(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]];
 
-  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
 				    (RadioResourceConfigCommonSIB_t *)NULL,
 				    (struct PhysicalConfigDedicated *)NULL,
 				    (MAC_MainConfig_t *)NULL,
@@ -687,7 +687,7 @@ void dump_sib3(SystemInformationBlockType3_t *sib3) {
 }
 
 //const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
-void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
+void decode_SI(u8 Mod_id,u8 CC_id,u8 eNB_index,u8 si_window) {
 
   asn_dec_rval_t dec_rval;
   SystemInformation_t **si=&UE_rrc_inst[Mod_id].si[eNB_index][si_window];
@@ -722,7 +722,7 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
       UE_rrc_inst[Mod_id].sib2[eNB_index] = &typeandinfo->choice.sib2;
       msg("[RRC][UE %d] Found SIB2 from eNB %d\n",Mod_id,eNB_index);
       dump_sib2(UE_rrc_inst[Mod_id].sib2[eNB_index]);
-      Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,eNB_index,
+      Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
 					&UE_rrc_inst[Mod_id].sib2[eNB_index]->radioResourceConfigCommon,
 					(struct PhysicalConfigDedicated *)NULL,
 					(MAC_MainConfig_t *)NULL,

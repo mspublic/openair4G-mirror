@@ -1024,7 +1024,7 @@ u16 get_nquad(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi);
 
 u8 get_mi(LTE_DL_FRAME_PARMS *frame,u8 subframe);
 
-u16 get_nCCE_max(u8 Mod_id);
+u16 get_nCCE_max(u8 Mod_id,u8 CC_id);
 
 u8 get_num_pdcch_symbols(u8 num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *frame_parms,u8 subframe);
 

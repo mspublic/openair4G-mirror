@@ -47,15 +47,18 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 		   u16 Nid_cell,
 		   u8 cooperation_flag,u8 transmission_mode,u8 abstraction_flag) {
 
-  u8 eNB_id,UE_id;
+  u8 eNB_id,UE_id,CC_id;
   int i,j;
 
-  PHY_vars_eNB_g = malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB*));
-  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){ 
-    PHY_vars_eNB_g[eNB_id] = malloc(sizeof(PHY_VARS_eNB));
-    PHY_vars_eNB_g[eNB_id]->Mod_id=eNB_id;
-    PHY_vars_eNB_g[eNB_id]->cooperation_flag=cooperation_flag;
-
+  PHY_vars_eNB_g = malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB**));
+  for (eNB_id=0; eNB_id<NB_eNB_INST;eNB_id++){
+    PHY_vars_eNB_g[eNB_id] = malloc(NUMBER_OF_CC_MAX*sizeof(PHY_VARS_eNB*));
+    for (CC_id=0; CC_id<NUMBER_OF_CC_MAX; CC_id++) {
+      PHY_vars_eNB_g[eNB_id][CC_id] = malloc(sizeof(PHY_VARS_eNB));
+      PHY_vars_eNB_g[eNB_id][CC_id]->Mod_id=eNB_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->CC_id=CC_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->cooperation_flag=cooperation_flag;
+    }
   }
   //  PHY_VARS_UE *PHY_vars_UE; 
   PHY_vars_UE_g = malloc(NB_UE_INST*sizeof(PHY_VARS_UE*));
@@ -98,16 +101,17 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   // init all eNB vars
 
   for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-    memcpy(&(PHY_vars_eNB_g[eNB_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
-    PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell%6;
-    phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id]->lte_frame_parms,
-		     &PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars,
-		     PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
-		     0,
-		     PHY_vars_eNB_g[eNB_id],
-		     cooperation_flag,
-		     abstraction_flag);
+    for (CC_id=0; CC_id<NUMBER_OF_CC_MAX; CC_id++) {
+      memcpy(&(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms), (*frame_parms), sizeof(LTE_DL_FRAME_PARMS));
+      PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
+      PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.Nid_cell%6;
+      phy_init_lte_eNB(&PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms,
+		       &PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_common_vars,
+		       PHY_vars_eNB_g[eNB_id][CC_id]->lte_eNB_ulsch_vars,
+		       0,
+		       PHY_vars_eNB_g[eNB_id][CC_id],
+		       cooperation_flag,
+		       abstraction_flag);
     
     /*
       PHY_vars_eNB_g[eNB_id]->dlsch_eNB[0] = (LTE_eNB_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNB_DLSCH_t*));
@@ -117,18 +121,18 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
-	PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
-	if (!PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]) {
+	PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,abstraction_flag);
+	if (!PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]) {
 	  msg("Can't get eNB dlsch structures\n");
 	  exit(-1);
 	}
 	else {
-	  msg("dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]);
-	  PHY_vars_eNB_g[eNB_id]->dlsch_eNB[i][j]->rnti=0;
+	  msg("dlsch_eNB[%d][%d] => %p\n",i,j,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]);
+	  PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB[i][j]->rnti=0;
 	}
       }
-      PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i] = new_eNB_ulsch(3,abstraction_flag);
-      if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[1+i]) {
+      PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[1+i] = new_eNB_ulsch(3,abstraction_flag);
+      if (!PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[1+i]) {
 	msg("Can't get eNB ulsch structures\n");
 	exit(-1);
       }
@@ -136,20 +140,20 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     }
 
     // ULSCH for RA
-    PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0] = new_eNB_ulsch(3,abstraction_flag);
-    if (!PHY_vars_eNB_g[eNB_id]->ulsch_eNB[0]) {
+    PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[0] = new_eNB_ulsch(3,abstraction_flag);
+    if (!PHY_vars_eNB_g[eNB_id][CC_id]->ulsch_eNB[0]) {
       msg("Can't get eNB ulsch structures\n");
       exit(-1);
     }
 
-    PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
-    printf("eNB %d : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_SI);
-    PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
-    printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra);
+    PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_SI  = new_eNB_dlsch(1,1,abstraction_flag);
+    printf("eNB %d : SI %p\n",eNB_id,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_SI);
+    PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_ra  = new_eNB_dlsch(1,1,abstraction_flag);
+    printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id][CC_id]->dlsch_eNB_ra);
 
-    PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB=150;
+    PHY_vars_eNB_g[eNB_id][CC_id]->rx_total_gain_eNB_dB=150;
   }
-
+  }
   // init all UE vars
 
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 

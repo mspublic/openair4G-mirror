@@ -148,7 +148,7 @@ u8 schedule_next_dlue(u8 Mod_id, u8 subframe){
 
 }
 
-void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id) {
+void initiate_ra_proc(u8 Mod_id, u8 CC_id,u16 preamble_index,s16 timing_offset,u8 sect_id) {
   u8 i;
   msg("[MAC][eNB %d] Initiating RA procedure for index %d\n",Mod_id,preamble_index);
 
@@ -169,7 +169,7 @@ void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id
   }
 }
 
-void cancel_ra_proc(u8 Mod_id, u16 preamble_index) {
+void cancel_ra_proc(u8 Mod_id, u8 CC_id,u16 preamble_index) {
   u8 i=0;
   msg("[MAC][eNB Proc] Cancelling RA procedure for index %d\n",preamble_index);
 
@@ -184,7 +184,7 @@ void cancel_ra_proc(u8 Mod_id, u16 preamble_index) {
   //}
 }
 
-void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
+void terminate_ra_proc(u8 Mod_id,u8 CC_id,u16 rnti,unsigned char *l3msg) {
   
   u8 rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr,j;
   u8 rx_lcids[MAX_NUM_RB];
@@ -205,7 +205,7 @@ void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
 	memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],payload_ptr,6);
 	
 	if (Is_rrc_registered == 1)
-	  Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
+	  Rrc_xface->mac_rrc_data_ind(Mod_id,CC_id,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
       }
       else if (num_ce >0) {  // handle l3msg which is not RRCConnectionRequest
 	//	process_ra_message(l3msg,num_ce,rx_lcids,rx_ces);
@@ -220,7 +220,7 @@ void terminate_ra_proc(u8 Mod_id,u16 rnti,unsigned char *l3msg) {
   } // loop on RA processes
 }
 
-DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe) {
+DCI_PDU *get_dci_sdu(u8 Mod_id,u8 CC_id,u8 subframe) {
 
   return(&eNB_mac_inst[Mod_id].DCI_pdu);
 
@@ -245,7 +245,8 @@ s16 find_UE_RNTI(u8 Mod_id, u8 UE_id) {
 
 }
 
-s8 find_active_UEs(u8 Mod_id){
+
+s8 find_active_UEs(u8 Mod_id,u8 CC_id){
 
   u8 UE_id;
   u16 rnti;
@@ -255,7 +256,7 @@ s8 find_active_UEs(u8 Mod_id){
 
     if ((rnti=eNB_mac_inst[Mod_id].UE_template[UE_id].rnti) !=0){
 
-      if (mac_xface->get_eNB_UE_stats(Mod_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
+      if (mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti) != NULL){ // check at the phy enb_ue state for this rnti
 	nb_active_ue++;
       }
       else { // this ue is removed at the phy => remove it at the mac as well
@@ -267,17 +268,17 @@ s8 find_active_UEs(u8 Mod_id){
 }
 
 // function for determining which active ue should be granted resources in uplink based on BSR+QoS
-u16 find_ulgranted_UEs(u8 Mod_id){
+u16 find_ulgranted_UEs(u8 Mod_id,u8 CC_id){
 
   // all active users should be granted
-  return(find_active_UEs(Mod_id));
+  return(find_active_UEs(Mod_id,CC_id));
 }
 
 // function for determining which active ue should be granted resources in downlink based on CQI, SI, and BSR
-u16 find_dlgranted_UEs(u8 Mod_id){
+u16 find_dlgranted_UEs(u8 Mod_id,u8 CC_id){
 
   // all active users should be granted
-  return(find_active_UEs(Mod_id));
+  return(find_active_UEs(Mod_id,CC_id));
 }
 // get aggregatiob form phy for a give UE
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id) {
@@ -315,7 +316,7 @@ s8 mac_remove_ue(u8 Mod_id, u8 UE_id) {
   return(1);
 }
 
-u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex) {
+u8 *get_dlsch_sdu(u8 Mod_id,u8 CC_id,u16 rnti,u8 TBindex) {
 
   u8 UE_id;
 
@@ -385,7 +386,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return(mac_header_ptr);
 }
 
-void rx_sdu(u8 Mod_id,u16 rnti,u8 *sdu) {
+void rx_sdu(u8 Mod_id,u8 CC_id,u16 rnti,u8 *sdu) {
 
   unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr,j;
   unsigned char rx_lcids[MAX_NUM_RB];
@@ -696,7 +697,7 @@ void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE) {
 }
 
 // First stage of Random-Access Scheduling
-void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
+void schedule_RA(u8 Mod_id,u8 CC_id,u8 subframe,u8 *nprb,u8 *nCCE) {
 
   RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&eNB_mac_inst[Mod_id].RA_template[0];
   u8 i,j,harq_pid,round;
@@ -818,7 +819,7 @@ void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
 	msg("[MAC][eNB] Frame %d, subframe %d: Checking if RRCConnectionSetup was acknowledged :",mac_xface->frame,subframe);
 #endif
 	// Get candidate harq_pid from PHY
-	mac_xface->get_ue_active_harq_pid(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
+	mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
 	if (round>0) {
 	  *nprb= (*nprb) + 3;
 	  *nCCE = (*nCCE) + 4;
@@ -828,7 +829,7 @@ void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE) {
   }
 }
 
-void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
+void schedule_ulsch(u8 Mod_id,u8 CC_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
 
   u8 UE_id;
   u8 next_ue;
@@ -842,8 +843,8 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
   LTE_eNB_UE_stats* eNB_UE_stats;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
 
-  granted_UEs = find_ulgranted_UEs(Mod_id);
-  nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
+  granted_UEs = find_ulgranted_UEs(Mod_id,CC_id);
+  nCCE_available = mac_xface->get_nCCE_max(Mod_id,CC_id) - *nCCE;
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to maximum aggregation level
 
@@ -865,7 +866,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
     aggregation = process_ue_cqi(Mod_id,next_ue);
     //    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
 
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
@@ -876,7 +877,7 @@ void schedule_ulsch(u8 Mod_id,u8 cooperation_flag,u8 subframe,u8 *nCCE) {
     if (eNB_UE_stats->mode == PUSCH) {
 
       // Get candidate harq_pid from PHY
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,1);
+      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,1);
 
       // Note this code is still for a specific DCI format
       ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)eNB_mac_inst[Mod_id].UE_template[next_ue].ULSCH_DCI[harq_pid];
@@ -975,7 +976,7 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc) {
   return(rballoc_dci);
 }
 
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe) {
+void fill_DLSCH_dci(u8 Mod_id,u8 CC_id,u8 subframe) {
   // loop over all allocated UEs and compute frequency allocations for PDSCH
 
   u8 UE_id,first_rb,nb_rb;
@@ -1102,7 +1103,7 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
       msg("[MAC][eNB] Frame %d, subframe %d: Checking if RRCConnectionSetup was acknowledged :",mac_xface->frame,subframe);
 #endif
       // Get candidate harq_pid from PHY
-      mac_xface->get_ue_active_harq_pid(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,eNB_mac_inst[Mod_id].RA_template[i].rnti,subframe,&harq_pid,&round,0);
       if (round>0) {
 	// we have to schedule a retransmission
 	((DCI1A_5MHz_TDD_1_6_t*)&eNB_mac_inst[Mod_id].RA_template[i].RA_alloc_pdu2[0])->ndi=0;
@@ -1156,7 +1157,7 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
       // clear scheduling flag
       eNB_dlsch_info[Mod_id][UE_id].status = S_DL_WAITING;
       rnti = find_UE_RNTI(Mod_id,UE_id);
-      mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,0);
       nb_rb = eNB_mac_inst[Mod_id].UE_template[UE_id].nb_rb[harq_pid];
 
       DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[UE_id].DLSCH_DCI[harq_pid];
@@ -1215,7 +1216,7 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
 }
 
 
- void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used) {
+ void schedule_ue_spec(u8 Mod_id,u8 CC_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used) {
 
   u8 UE_id;
   u8 next_ue;
@@ -1235,7 +1236,7 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
   u8 loop_count;
   u8 DAI;
 
-  granted_UEs = find_dlgranted_UEs(Mod_id);
+  granted_UEs = find_dlgranted_UEs(Mod_id,CC_id);
   //weight = get_ue_weight(Mod_id,UE_id);
   aggregation = 2; // set to the maximum aggregation level
 
@@ -1248,7 +1249,7 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
 
   // set current available nb_rb and nCCE to maximum
   nb_available_rb = mac_xface->lte_frame_parms->N_RB_DL - nb_rb_used0;
-  nCCE = mac_xface->get_nCCE_max(Mod_id) - nCCE_used;
+  nCCE = mac_xface->get_nCCE_max(Mod_id,CC_id) - nCCE_used;
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
     if ((nb_available_rb == 0) || (nCCE < aggregation))
@@ -1295,13 +1296,13 @@ if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
 
     // This is an allocated UE_id
     rnti = find_UE_RNTI(Mod_id,next_ue);
-    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti);
 
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 
     // Get candidate harq_pid from PHY
-    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,subframe,&harq_pid,&round,0);
     printf("Got harq_pid %d, round %d\n",harq_pid,round);
 
     // Note this code is for a specific DCI format
@@ -1634,7 +1635,7 @@ void Get_Cell_SBMap(u8 Mod_id){
 
 //end ALU's algo
 
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 CC_id,u8 cooperation_flag,u8 subframe) {
 
   u8 nprb=0,nCCE=0;
 
@@ -1662,7 +1663,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
     //add_common_dci(DCI_PDU *DCI_pdu,void *pdu,u16 rnti,u8 dci_size_bytes,u8 aggregation,u8 dci_size_bits,u8 dci_fmt)
 
 
-    schedule_ulsch(Mod_id,cooperation_flag,subframe,&nCCE);
+    schedule_ulsch(Mod_id,CC_id,cooperation_flag,subframe,&nCCE);
     break;
   case 1:
     break;
@@ -1678,7 +1679,7 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
   case 5:
 
     schedule_SI(Mod_id,&nprb,&nCCE);
-    fill_DLSCH_dci(Mod_id,subframe);
+    fill_DLSCH_dci(Mod_id,CC_id,subframe);
 
     break;
 
@@ -1688,17 +1689,17 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
 
   case 7:
 
-    schedule_ue_spec(Mod_id,subframe,0,0);
-    fill_DLSCH_dci(Mod_id,subframe);
+    schedule_ue_spec(Mod_id,CC_id,subframe,0,0);
+    fill_DLSCH_dci(Mod_id,CC_id,subframe);
     break;
 
 
 
   case 8:
 
-    schedule_RA(Mod_id,subframe,&nprb,&nCCE);
+    schedule_RA(Mod_id,CC_id,subframe,&nprb,&nCCE);
     //    schedule_ue_spec(Mod_id,subframe,nprb,nCCE);
-    fill_DLSCH_dci(Mod_id,subframe);
+    fill_DLSCH_dci(Mod_id,CC_id,subframe);
     // Schedule UL subframe
     //schedule_ulsch(Mod_id,subframe,&nCCE);
 
@@ -1715,3 +1716,4 @@ void eNB_dlsch_ulsch_scheduler(u8 Mod_id,u8 cooperation_flag,u8 subframe) {
   }
 
 }
+

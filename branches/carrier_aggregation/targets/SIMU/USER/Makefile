@@ -60,7 +60,7 @@ ifdef ADDCONF
 CFLAGS+=-DADDRCONF
 endif
 
-CFLAGS += -DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
+CFLAGS += #-DPHY_ABSTRACTION  #-DEMIT_ASN_DEBUG=1
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
@@ -85,8 +85,7 @@ OAISIM_OBJS  = channel_sim.o
 OAISIM_OBJS += init_lte.o 
 OAISIM_OBJS += oaisim_config.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS)
-#oaisim_config.o 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS)  $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS) #$(ETHERNET_TRANSPORT_OBJS)
 
 all: oaisim
 

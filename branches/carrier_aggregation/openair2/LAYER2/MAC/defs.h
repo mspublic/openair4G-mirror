@@ -355,7 +355,7 @@ typedef struct{
 
 
 
-int rrc_mac_config_req(u8 Mod_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
+int rrc_mac_config_req(u8 Mod_id,u8 CC_id,u8 CH_flag,u8 UE_id,u8 CH_index, 
 		       RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
 		       struct PhysicalConfigDedicated *physicalConfigDedicated,
 		       MAC_MainConfig_t *mac_MainConfig,
@@ -372,7 +372,7 @@ for the message.
 @param nprb Pointer to current PRB count
 @param nCCE Pointer to current nCCE count
 */
-void schedule_RA(u8 Mod_id,u8 subframe,u8 *nprb,u8 *nCCE);
+void schedule_RA(u8 Mod_id,u8 CC_id,u8 subframe,u8 *nprb,u8 *nCCE);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
@@ -387,11 +387,11 @@ void schedule_SI(u8 Mod_id,u8 *nprb,u8 *nCCE);
 @param subframe Subframe number on which to act
 @param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(u8 Mod_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
+void schedule_ulsch(u8 Mod_id,u8 CC_id,u8 cooperation_flag, u8 subframe,u8 *nCCE);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4. 
 */
-void fill_DLSCH_dci(u8 Mod_id,u8 subframe);
+void fill_DLSCH_dci(u8 Mod_id,u8 CC_id,u8 subframe);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies 
 @param Mod_id Instance ID of eNB
@@ -399,13 +399,13 @@ void fill_DLSCH_dci(u8 Mod_id,u8 subframe);
 @param nb_rb_used0 Number of PRB used by SI/RA
 @param nCCE_used Number of CCE used by SI/RA
 */
-void schedule_ue_spec(u8 Mod_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
+void schedule_ue_spec(u8 Mod_id,u8 CC_id,u8 subframe,u16 nb_rb_used0,u8 nCCE_used);
 
 
 //main.c
 
-void chbch_phy_sync_success(u8 Mod_id,u8 CH_index);
-void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
+void chbch_phy_sync_success(u8 Mod_id,u8 CC_id, u8 CH_index);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 CC_id,u8 Free_ch_index);
 int mac_top_init(void);
 char layer2_init_UE(u8 Mod_id);
 char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
@@ -416,15 +416,15 @@ void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 
 // eNB functions
-void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 cooperation_flag, u8 subframe); 
-u16  fill_rar(u8 Mod_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
-void terminate_ra_proc(u8 Mod_id,u16 UE_id, u8 *l3msg);
-void initiate_ra_proc(u8 Mod_id, u16 preamble_index,s16 timing_offset,u8 sect_id);
-void cancel_ra_proc(u8 Mod_id, u16 preamble_index);
-void rx_sdu(u8 Mod_id,u16 rnti, u8 *sdu);
-void mrbch_phy_sync_failure(u8 Mod_id,u8 Free_ch_index);
-DCI_PDU *get_dci_sdu(u8 Mod_id,u8 subframe);
-u8 *get_dlsch_sdu(u8 Mod_id,u16 rnti,u8 TBindex);
+void eNB_dlsch_ulsch_scheduler(u8 Mod_id, u8 CC_id, u8 cooperation_flag, u8 subframe); 
+u16  fill_rar(u8 Mod_id,u8 CC_id,u8 *dlsch_buffer,u16 N_RB_UL, u8 input_buffer_length);
+void terminate_ra_proc(u8 Mod_id,u8 CC_id,u16 UE_id, u8 *l3msg);
+void initiate_ra_proc(u8 Mod_id,u8 CC_id, u16 preamble_index,s16 timing_offset,u8 sect_id);
+void cancel_ra_proc(u8 Mod_id,u8 CC_id, u16 preamble_index);
+void rx_sdu(u8 Mod_id,u8 CC_id,u16 rnti, u8 *sdu);
+void mrbch_phy_sync_failure(u8 Mod_id,u8 CC_id,u8 Free_ch_index);
+DCI_PDU *get_dci_sdu(u8 Mod_id,u8 CC_id,u8 subframe);
+u8 *get_dlsch_sdu(u8 Mod_id,u8 CC_id,u16 rnti,u8 TBindex);
 //added for ALU icic purpose
 void Get_Cell_SBMap(u8 Mod_id);
 //end ALU's algo
@@ -436,9 +436,9 @@ void add_ue_ulsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_ULSCH_STATUS status);
 void add_ue_dlsch_info(u8 Mod_id, u8 UE_id, u8 subframe,UE_DLSCH_STATUS status);
 s8 find_UE_id(u8 Mod_id,u16 rnti) ;
 s16 find_UE_RNTI(u8 Mod_id, u8 UE_id);
-s8 find_active_UEs(u8 Mod_id);
-u16 find_ulgranted_UEs(u8 Mod_id);
-u16 find_dlgranted_UEs(u8 Mod_id);
+s8 find_active_UEs(u8 Mod_id,u8 CC_id);
+u16 find_ulgranted_UEs(u8 Mod_id,u8 CC_id);
+u16 find_dlgranted_UEs(u8 Mod_id,u8 CC_id);
 u8 process_ue_cqi (u8 Mod_id, u8 UE_id);
 
 /** \brief Round-robin scheduler for ULSCH traffic.
@@ -470,16 +470,16 @@ u32 allocate_prbs(u8 UE_id,u8 nb_rb, u32 *rballoc);
 @param rnti C_RNTI of UE
 @returns 0 for no SR, 1 for SR
 */
-u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti);
+u32 ue_get_SR(u8 Mod_id,u8 CC_id,u8 eNB_id,u16 rnti);
 
 u8 get_ue_weight(u8 Mod_id, u8 UE_id);
 
 // UE functions
-void out_of_sync_ind(u8 Mod_id,u16);
-void ue_decode_si(u8 Mod_id, u8 CH_index, void *pdu, u16 len);
-void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 CH_index);
+void out_of_sync_ind(u8 Mod_id,u8 CC_id,u16);
+void ue_decode_si(u8 Mod_id,u8 CC_id, u8 CH_index, void *pdu, u16 len);
+void ue_send_sdu(u8 Mod_id,u8 CC_id,u8 *sdu,u8 CH_index);
 
-void ue_get_sdu(u8 Mod_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
+void ue_get_sdu(u8 Mod_id,u8 CC_id,u8 CH_index,u8 *ulsch_buffer,u16 buflen);
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH
 mode for a particular eNB index, this is assumed to be an RRCConnectionRequest message and MAC attempts to retrieves the CCCH
 message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not
@@ -488,9 +488,9 @@ activated, the MAC may use this resource for random-access to transmit a BSR alo
 @param Mod_id Index of UE instance
 @param eNB_index Index of eNB from which to act
  */
-u8* ue_get_rach(u8 Mod_id,u8 eNB_index);
+u8* ue_get_rach(u8 Mod_id,u8 CC_id,u8 eNB_index);
 
-u16 ue_process_rar(u8 Mod_id,u8 *dlsch_buffer,u16 *t_crnti);
+u16 ue_process_rar(u8 Mod_id,u8 CC_id,u8 *dlsch_buffer,u16 *t_crnti);
 
 /* \brief Generate header for UL-SCH.  This function parses the desired control elements and sdus and generates the header as described
 in 36-321 MAC layer specifications.  It returns the number of bytes used for the header to be used as an offset for the payload 
@@ -543,7 +543,7 @@ int mac_init(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-void ue_scheduler(u8 Mod_id, u8 subframe);
+void ue_scheduler(u8 Mod_id, u8 CC_id,u8 subframe);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
