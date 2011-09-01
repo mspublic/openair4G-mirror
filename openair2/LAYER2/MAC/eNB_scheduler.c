@@ -393,7 +393,8 @@ void rx_sdu(unsigned char Mod_id,u16 rnti,unsigned char *sdu) {
 	unsigned char rx_lcids[MAX_NUM_RB];
 	unsigned short rx_lengths[MAX_NUM_RB];
 	unsigned char UE_id = find_UE_id(Mod_id,rnti);
-	int rack;
+	int rack,ii;
+	for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
 #ifdef DEBUG_HEADER_PARSING
 	msg("[MAC][eNB RX] Received ulsch sdu from L1 (rnti %x, UE_id %d), parsing header\n",rnti,UE_id);
