@@ -100,6 +100,9 @@ OMG_OBJS +=  $(OMG_DIR)/job.o
 OMG_OBJS +=  $(OMG_DIR)/static.o
 OMG_OBJS +=  $(OMG_DIR)/rwp.o
 OMG_OBJS +=  $(OMG_DIR)/rwalk.o
+OMG_OBJS +=  $(OMG_DIR)/hashtable.o
+OMG_OBJS +=  $(OMG_DIR)/mobility_parser.o
+OMG_OBJS +=  $(OMG_DIR)/trace.o
 
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o

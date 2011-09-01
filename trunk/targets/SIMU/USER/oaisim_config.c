@@ -86,6 +86,8 @@ void config_omg(){
 	omg_param_list.nodes_type = UE;
 	omg_param_list.nodes = emu_info.nb_ue_local;
 	omg_param_list.seed = emu_info.seed + emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
+	omg_param_list.mobility_file = "../../../UTIL/OMG/mobility.txt"; // default trace-driven mobility file
+
 	init_mobility_generator(omg_param_list);
 
 }
@@ -120,7 +122,10 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 	omg_param_list.nodes_type = eNB;  //eNB
 	omg_param_list.nodes = emu_info.nb_enb_local;
  	omg_param_list.seed = emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
+	
+	omg_param_list.mobility_file = "../../../UTIL/OMG/mobility.txt"; // default trace-driven mobility file
 
+	
 	// at this moment, we use the above moving dynamics for mobile eNB
 
 	init_mobility_generator(omg_param_list);
@@ -128,13 +133,15 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 
 	
 	// init OMG for UE
-	// input of OMG: STATIC: 0, RWP: 1 or RWALK 2
+	// input of OMG: STATIC: 0, RWP: 1, RWALK 2, or TRACE 3
 	if (!strcmp(emulation_scen->topology_config.mobility.UE_mobility.UE_mobility_type.selected_option, "fixed")) {
 		emu_info.omg_model_ue = STATIC;
 	} else if (!strcmp(emulation_scen->topology_config.mobility.UE_mobility.UE_mobility_type.selected_option, "random_waypoint")) {
 		emu_info.omg_model_ue = RWP;
 	} else if (!strcmp(emulation_scen->topology_config.mobility.UE_mobility.UE_mobility_type.selected_option, "random_walk")) {
 		emu_info.omg_model_ue = RWALK;
+	} else if (!strcmp(emulation_scen->topology_config.mobility.UE_mobility.UE_mobility_type.selected_option, "trace_driven")) {
+		emu_info.omg_model_ue = TRACE;
 	} else {
 		emu_info.omg_model_ue = STATIC;
 	}
@@ -156,6 +163,8 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 
 	omg_param_list.min_sleep = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time;
 	omg_param_list.max_sleep = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time;
+	
+	omg_param_list.mobility_file = "../../../UTIL/OMG/mobility.txt"; // default trace-driven mobility file
 
 	init_mobility_generator(omg_param_list);
 
