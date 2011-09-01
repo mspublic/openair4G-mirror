@@ -16,6 +16,7 @@ help:
 	@echo '  "make staticOMG" to compile the STATIC version'
 	@echo '  "make rwpOMG" to compile the RWP version'
 	@echo '  "make rwalkOMG" to compile the RWALK version'
+	@echo '  "make traceOMG" to compile the TRACE version'
 	@echo '  "make clean" to remove the generated files and restore the original distribution'
 	@echo '  "make OMG" to compile the complete version'
 
@@ -28,6 +29,8 @@ rwpOMG:	${OBJrwp}
 	${CC} ${OBJrwalk} -lm -o rwpOMG $(CFLAGS)
 	@#-lm: used to link to math lib
 	 
+traceOMG:${OBJtrace} 
+	${CC} ${OBJtrace} -lm -o traceOMG $(CFLAGS)
 
 rwalkOMG:	${OBJrwp} 
 	${CC} ${OBJrwalk} -lm -o rwalkOMG $(CFLAGS)
@@ -42,6 +45,7 @@ clean:
 	@rm OMG
 	@#rm rwpOMG
 	@#rm rwalkOMG
+	@#rm traceOMG
 	@#rm staticOMG
 
 else
@@ -105,7 +109,7 @@ $(OBJ) : %.o : %.c
 $(L2_OBJS) : %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -o $@ $<
 
-physim : $(OBJ) $(L2_OBJS) OMG.c common.c static.c job.c rwp.c rwalk.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
+physim : $(OBJ) $(L2_OBJS) OMG.c common.c static.c job.c rwp.c rwalk.c hashtable.c mobility_parser.c trace.c -I$(TOP_DIR) $(L2_incl) -o physim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lforms -L/usr/local/lib -lforms -lX11 -L/usr/X11R6/lib -lXpm -lblas -lpthread
 
 clean:
 	rm -f physim

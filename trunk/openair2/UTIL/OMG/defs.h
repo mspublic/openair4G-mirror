@@ -109,6 +109,7 @@ typedef struct omg_global_param{
 	int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
 	int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
   	int seed; /*!< The seed used to generate the random positions*/
+	char* mobility_file; /*!< The mobility file name */
 }omg_global_param; 
 
 /* PROTOTYPES */

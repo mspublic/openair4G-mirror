@@ -50,7 +50,7 @@
 #include "static.h"
 #include "rwp.h"
 #include "rwalk.h"
-
+#include "trace.h"
 
 //#define STANDALONE
 
@@ -80,7 +80,15 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n"); 
     display_job_list(Job_Vector);
     break;
-    
+
+  case TRACE:
+      start_trace_generator(omg_param_list);
+      LOG_D(OMG," --------DISPLAY JOB LIST-------- \n");
+      display_job_list(Job_Vector);
+      Job_Vector = quick_sort (Job_Vector);
+      LOG_D(OMG,"--------DISPLAY JOB LIST AFTER SORTING--------\n");
+      display_job_list(Job_Vector);
+      break;    
     
   case RWALK: 
     start_rwalk_generator(omg_param_list);
@@ -116,7 +124,9 @@ void update_node_vector(int mobility_type, double cur_time){
   case RWP:
     update_rwp_nodes(cur_time);
     break;
-     
+  case TRACE:
+      update_trace_nodes(cur_time);
+      break;     
   case RWALK:
     update_rwalk_nodes(cur_time);
     break;
@@ -134,7 +144,10 @@ Node_list get_current_positions(int mobility_type, int node_type, double cur_tim
       get_rwp_positions_updated(cur_time);
       Vector = Node_Vector[RWP];
       break;
-    
+    case TRACE:
+      get_trace_positions_updated(cur_time);
+      Vector = Node_Vector[TRACE];
+      break;   
     case STATIC:
       LOG_D(OMG,"get_static_positions\n");
       Vector = (Node_list)Node_Vector[STATIC];
