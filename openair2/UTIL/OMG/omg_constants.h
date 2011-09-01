@@ -43,6 +43,7 @@ typedef enum {
 STATIC=0,  /*!< STATIC mobility model */
 RWP,  /*!< Random Way Point mobility model */
 RWALK, /*!< Random Walk mobility model */
+TRACE,  /*!< Trace-based Mobility description file */
 MAX_NUM_MOB_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
 }mobility_types;
 

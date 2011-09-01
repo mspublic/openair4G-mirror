@@ -65,6 +65,7 @@ mapping mob_type[] =
     {"STATIC", STATIC},
     {"RWP", RWP},
 	 {"RWALK", RWALK},
+	 {"TRACE", TRACE},
     {NULL, -1}
 };
 #endif
