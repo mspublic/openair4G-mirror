@@ -67,7 +67,6 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe) {
       if (seg==7)
 	len>>=1;
 
-#ifdef __SSE3__
       txptr128 = (__m128i *)&txdata[aa][subframe_offset + (seg*len)];
       kHz7_5ptr128 = (__m128i *)&kHz7_5ptr;
       // apply 7.5 kHz
@@ -104,7 +103,5 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,u8 subframe) {
 	}
       }
     }
-#else
-#endif
   }
 }
