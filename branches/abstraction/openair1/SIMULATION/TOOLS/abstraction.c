@@ -8,27 +8,28 @@
 #include "PHY/TOOLS/defs.h"
 #include "defs.h"
 
-void freq_channel(channel_desc_t *desc,u16 nb_rb) {
+void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
-  double delta_f = 90e3,freq;  // 90 kHz spacing
+  double delta_f,freq;  // 90 kHz spacing
   s16 f;
   u8 aarx,aatx,l;
 
-  for (f=-nb_rb;f<nb_rb;f++) {
-    freq=delta_f*(double)f*1e-6;
-
+  delta_f = nb_rb*180000/(n_samples-1);
+  //write_output("channel.m","a",desc->a[0],desc->nb_taps,1,8);
+  for (f=-n_samples/2;f<n_samples/2;f++) {
+    freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
 
       for (aarx=0;aarx<desc->nb_rx;aarx++) {
 	for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].x=0.0;
-	  desc->chF[aarx+(aatx*desc->nb_rx)][nb_rb+f].y=0.0;
+	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x=0.0;
+	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y=0.0;
 	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*desc->delays[l])+
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*desc->delays[l])+
 						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*desc->delays[l]));
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+nb_rb].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*desc->delays[l])+
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*desc->delays[l])+
 						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*desc->delays[l]));
 	  }
-	  	  	  	  //printf("chF(%f) => (%f,%f)\n",freq,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
+	  	  	  	// printf("chF(%d) => (%f,%f)\n",n_samples/2+f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	}
       }
   }

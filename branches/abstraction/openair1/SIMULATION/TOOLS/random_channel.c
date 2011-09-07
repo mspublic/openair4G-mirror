@@ -69,7 +69,7 @@ channel_desc_t *new_channel_desc(u8 nb_tx,
     chan_desc->ch[i] = (struct complex*) malloc(channel_length * sizeof(struct complex)); 
 
   for (i = 0; i<nb_tx*nb_rx; i++) 
-    chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex));  // allocate for up to 100 RBs, 2 samples per RB
+    chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex));  // allocate for up to 100 RBs, 12 samples per RB
 
   msg("[CHANNEL] Filling a (nb_taps %d)\n",nb_taps);
   for (i = 0; i<nb_taps; i++) {
