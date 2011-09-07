@@ -411,6 +411,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 #ifdef EMOS
 void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
   u8 harq_pid;
+  
 
   if (next_slot%2==0) {      
     // get harq_pid from subframe relationship
@@ -440,6 +441,7 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   
   u16 first_rb, nb_rb;
+ 
   u8 harq_pid;
   unsigned int input_buffer_length;
   unsigned int i, aa;
@@ -674,8 +676,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
   int aa, card_id;
-
+  
   //  printf("S_TX: txdataF[0] %p\n",phy_vars_ue->lte_ue_common_vars.txdataF[0]);
+
+
   if (next_slot%2==1) {
     for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++){
       //  printf("Clearing TX buffer\n");
@@ -782,10 +786,17 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size+phy_vars_ue->lte_frame_parms.nb_prefix_samples),
 #endif
 			  (last_slot == 2) ? 1 : 2,
-			  1);
+			  1,
+			  0);
     }
     else {
-      lte_ue_measurements_emul(phy_vars_ue,last_slot,eNB_id);
+     
+      
+       lte_ue_measurements(phy_vars_ue,
+			   0,
+			   0,
+			   1,
+			   1);
     }
 #ifdef DEBUG_PHY_PROC    
     if (last_slot == 0) {
@@ -803,7 +814,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
       
 	debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
 		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
-		  dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		  phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		  phy_vars_ue->PHY_measurements.n0_power_dB[1],
 		  phy_vars_ue->PHY_measurements.n0_power[0],

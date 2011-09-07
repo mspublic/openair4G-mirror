@@ -301,7 +301,7 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
-void freq_channel(channel_desc_t *desc,u16 nb_rb);
+void freq_channel(channel_desc_t *desc,u16 nb_rb, s16 n_samples);
 
 /**@} */
 /**@} */

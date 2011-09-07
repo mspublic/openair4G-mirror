@@ -49,7 +49,8 @@ __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
-			 unsigned char init_averaging){
+			 unsigned char init_averaging,
+			 unsigned char abstraction_flag){
 
 
   int aarx,aatx,eNB_id=0,rx_power_correction,gain_offset;
@@ -76,8 +77,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   }
 
   // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
-  if ( (frame_parms->ofdm_symbol_size == 128) ||
-       (frame_parms->ofdm_symbol_size == 512) )
+  if ( (abstraction_flag==0) && ((frame_parms->ofdm_symbol_size == 128) ||
+				 (frame_parms->ofdm_symbol_size == 512)) )
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
@@ -85,14 +86,19 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   
   // noise measurements
   // for the moment we measure the noise on the third OFDM symbol (e.g. S subframe) 
-  if (N0_symbol == 1)
-    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
+  phy_vars_ue->PHY_measurements.n0_power_tot = 0;
   
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    if (N0_symbol == 0) {
-      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = -105 + phy_vars_ue->rx_total_gain_dB;
+  if ((N0_symbol == 0) || (abstraction_flag!=0)) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = pow(10.0,phy_vars_ue->N0/10.0)*pow(10.0,((double)phy_vars_ue->rx_total_gain_dB)/10.0);
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = ((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB;
+      phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     } 
-    else if (N0_symbol == 1) {
+    phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) (((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB);
+    phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB;
+  }
+  else if (N0_symbol == 1) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       
 #ifdef USER_MODE
       phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
@@ -102,16 +108,13 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
       phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     }
-  }
-  
-  if (N0_symbol == 1) {
+
     phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot);
     phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB + gain_offset;
     //    printf("PHY measurements UE %d: n0_power %d (%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.n0_power_tot_dBm,phy_vars_ue->PHY_measurements.n0_power_tot_dB);
   }
   
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       for (eNB_id=0;eNB_id<3;eNB_id++) {
 	
