@@ -24,7 +24,7 @@ int start_trace_generator(omg_global_param omg_param_list) {
 
   //read the mobility file here
 
-  char* file_name = "/home/training/OpenAir4G/openair4G/trunk/openair2/UTIL/OMG/mobility.txt";
+  char* file_name = "mobility.txt";
   table=read_mobility_file(file_name); // JHNOTE: in order to debug, please give and change name here...
 
   //table=read_mobility_file(omg_param_list.mobility_file); // need a parameter here to pass mobility file

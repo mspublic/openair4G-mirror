@@ -102,7 +102,8 @@ int mac_top_init(){
   bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
   eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
   msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
-  bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
+  bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST)); 
+  ue_init_mac();
 #else 
   //  if(NODE_ID[0]<NB_eNB_MAX){
   if(NODE_ID[0]<NUMBER_OF_eNB_MAX){
@@ -117,7 +118,8 @@ int mac_top_init(){
     msg("ALLOCATE %d Bytes for UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),UE_mac_inst);
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
     NB_eNB_INST=0;
-    NB_UE_INST=1;
+    NB_UE_INST=1; 
+    ue_init_mac();
   }
 #endif
   msg("init---------------------\n");

@@ -475,15 +475,13 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
-     
-
-
+      rrc_ue_process_measConfig(Mod_id,eNB_index,
+				rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
     }
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
       rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
-
-
+      
     }
 
     // check other fields for

@@ -47,6 +47,31 @@ const u32 BSR_TABLE[BSR_TABLE_SIZE]={0,10,12,14,17,19,22,26,31,36,42,49,57,67,78
 //u32 EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
 
+void ue_init_mac(){
+  int i,j;
+  for (i=0 ; i < NB_UE_INST; i++){
+    // default values as deined in 36.331 sec 9.2.2
+    LOG_I(MAC,"[UE%d] Applying default macMainConfig\n",i);
+    //UE_mac_inst[Mod_id].scheduling_info.macConfig=NULL;
+    UE_mac_inst[i].scheduling_info.retxBSR_Timer= MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+    UE_mac_inst[i].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+    UE_mac_inst[i].scheduling_info.sr_ProhibitTimer=0;
+    UE_mac_inst[i].scheduling_info.sr_ProhibitTimer_Running=0;
+    UE_mac_inst[i].scheduling_info.maxHARQ_tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+    UE_mac_inst[i].scheduling_info.ttiBundling=0;
+    UE_mac_inst[i].scheduling_info.drx_config=DRX_Config_PR_release;
+    UE_mac_inst[i].scheduling_info.phr_config=MAC_MainConfig__phr_Config_PR_release;
+    UE_mac_inst[i].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[i].scheduling_info.periodicBSR_Timer);
+    UE_mac_inst[i].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
+    
+    for (j=0; j < MAX_NUM_LCID; j++){
+      LOG_I(MAC,"[UE%d] Applying default logical channel config for lcid %d\n",i,j);
+      UE_mac_inst[i].scheduling_info.Bj[j]=-1; 
+      UE_mac_inst[i].scheduling_info.bucket_size[j]=-1;
+    }
+  }
+}
+
 unsigned char *parse_header(unsigned char *mac_header,
 			    unsigned char *num_ce,
 			    unsigned char *num_sdu,
@@ -508,15 +533,14 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
-  u8 dcch_header_len,dtch_header_len;
+  u8 dcch_header_len,dtch_header_len,ce_header_len;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
-
+  u8 lcid;
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
   u16 sdu_length_total=0;
 
   BSR_SHORT bsr;
-
   // Compute header length
   // check for UL bandwidth requests and add SR control element
   dcch_header_len = 2;
@@ -548,7 +572,6 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
     dcch_header_len=0;
     num_sdus = 0;
   }
-
   // DCCH1
   rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 				  DCCH1,
@@ -654,27 +677,44 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 }
 
 // called at each slot (next_slot%2==0)
-void ue_scheduler(u8 Mod_id, u8 subframe) {
+void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
 
   int lcid; // lcid index
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
-
+  int TTI= 1;
+  int bucketsizeduration;
+  int bucketsizeduration_max;
 
   Mac_rlc_xface->frame=mac_xface->frame;
   Rrc_xface->Frame_index=Mac_rlc_xface->frame;
   Mac_rlc_xface->pdcp_run();
-      
+  
   // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
   // outlined in Sections 5.4.4 an 5.4.5 of 36.321
   
-  // Get RLC status info for all lcids that are active
+  UE_mac_inst[Mod_id].scheduling_info.num_BSR=0;
+      
+    // Get RLC status info and update Bj for all lcids that are active 
   for (lcid=0; lcid < MAX_NUM_LCID; lcid++ ) { // ccch, dcch, dtch, bcch
+    // meausre the Bj 
+    if ((direction == SF_UL)&& (UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] >= 0)){
+      bucketsizeduration = UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[lcid]->ul_SpecificParameters->prioritisedBitRate * TTI;
+      bucketsizeduration_max = get_ms_bucketsizeduration(UE_mac_inst[Mod_id].scheduling_info.logicalChannelConfig[lcid]->ul_SpecificParameters->bucketSizeDuration);
+      if ( UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] > bucketsizeduration_max )
+	UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration_max;
+      else
+	UE_mac_inst[Mod_id].scheduling_info.Bj[lcid] = bucketsizeduration;
+    }
+    // measure the buffer size 
     rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 					  lcid,
 					  0);//tb_size does not reauire when requesting the status
+    //msg("[MAC][UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n", 
+    //    Mod_id, lcid, rlc_status[lcid].bytes_in_buffer, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
     if (rlc_status[lcid].bytes_in_buffer > 0 ) {
       //set the bsr for all lcid by searching the table to find the bsr level 
       UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
+      UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
       UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
       msg("[MAC][UE %d] SR is pending for LCID %d with BSR level %d \n", 
 	  Mod_id, lcid, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
@@ -682,6 +722,7 @@ void ue_scheduler(u8 Mod_id, u8 subframe) {
       UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]=0;
     }
   }
+ 
   // UE has no valid phy config dedicated ||  no valid/released  SR 
   if ((UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated == NULL) || 
       (UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated->schedulingRequestConfig == NULL) ||
@@ -722,54 +763,107 @@ u8 locate (const u32 *table, int size, int value){
   
 }
 
-u8 numsf_periodicBSR(u8 sf_offset){
+int get_sf_periodicBSRTimer(u8 sf_offset){
    
   switch (sf_offset) {
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5: 
-       return 5;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10: 
-       return 10;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16: 
-       return 16;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20: 
-       return 20;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32: 
-       return 32;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40: 
-       return 40;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64: 
-       return 64;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80: 
-       return 80;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128: 
-       return 128;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160: 
-       return 160;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320: 
-       return 320;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640: 
-       return 640;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280: 
-       return 1280;
-       break;
-     case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560: 
-       return 2560;
-       break;
-     default:
-       return 0;
-       break;
-     }
- }
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5: 
+    return 5;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10: 
+    return 10;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16: 
+    return 16;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20: 
+    return 20;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32: 
+    return 32;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40: 
+    return 40;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64: 
+    return 64;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80: 
+    return 80;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128: 
+    return 128;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160: 
+    return 160;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320: 
+    return 320;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640: 
+    return 640;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280: 
+    return 1280;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560: 
+    return 2560;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity:
+  default:
+    return -1;
+    break;
+  }
+}
 
+int get_sf_retxBSRTimer(u8 sf_offset){
+   
+  switch (sf_offset) {
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320:
+    return 320;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640:
+    return 640;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280:
+    return 1280;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560:
+    return 2560;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120:
+    return 5120;
+    break;
+  case MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240:
+    return 10240;
+    break;
+  default:
+    return -1;
+    break;
+  }
+}
+int get_ms_bucketsizeduration(u8 bucketsizeduration){
+   
+  switch (bucketsizeduration) {
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
+    return 50;
+    break;
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
+    return 100;
+    break;
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
+    return 150;
+    break;
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
+    return 300;
+    break;
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
+    return 500;
+    break;
+  case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
+    return 1000;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}

@@ -68,7 +68,7 @@ extern "C" {
 friend_log_if( log_t *g_log;)
 
 public_log_if( void logInit (int g_log_level);)
-public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
+public_log_if( inline void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
 public_log_if( int set_comp_log(int component, int level, int flag);)
 public_log_if( void set_log_flag(int flag);)
 public_log_if( void set_log_syslog(int value);)

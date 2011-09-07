@@ -331,16 +331,20 @@ typedef struct {
   LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
   /// LCHAN buffer status
   u8 buffer_status[MAX_NUM_LCID]; // should be more for mesh topology
-  /// BSR active in the current  MAC SDU
-  u8 BSR_active;
+  /// number of BSR: unknown 0, short 1 or long > 1
+  u8 num_BSR;
   /// SR pending as defined in 36.321
   u8 SR_pending;
   /// SR_COUNTER as defined in 36.321
   u16 SR_COUNTER;
   /// retxBSR-Timer, default value is sf2560
   u16 retxBSR_Timer;
+  /// retxBSR_SF, number of subframe before triggering a regular BSR 
+  s16 retxBSR_SF;
   /// periodicBSR-Timer, default to infinity
-  u16 periodicBSR_Timer; 
+  u16 periodicBSR_Timer;
+  /// periodicBSR_SF, number of subframe before triggering a periodic BSR 
+  s16 periodicBSR_SF;  
   /// default value is 0: not configured
   u16 sr_ProhibitTimer;
   /// sr ProhibitTime running
@@ -354,9 +358,9 @@ typedef struct {
   /// default value is release
   u8 *phr_config;
   //Bj bucket usage per  lcid
-  u16 Bj[MAX_NUM_LCID];
+  s16 Bj[MAX_NUM_LCID];
   // Bucket size per lcid
-  u16 bucket_size[MAX_NUM_LCID];
+  s16 bucket_size[MAX_NUM_LCID];
 } UE_SCHEDULING_INFO;
 
 typedef struct{
@@ -563,16 +567,17 @@ u8 *parse_ulsch_header(u8 *mac_header,
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms);
 int mac_init(void);
-
+void ue_init_mac(void);
 s8 add_new_ue(u8 Mod_id, u16 rnti);
 s8 mac_remove_ue(u8 Mod_id, u8 UE_id);
 
-/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe)
+/*! \fn  void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction)
    \brief UE scehdular where all the ue background tasks are done
 \param[in] Mod_id instance of the UE
 \param[in] subframe the subframe number
+\param[in] direction subframe direction
 */
-void ue_scheduler(u8 Mod_id, u8 subframe);
+void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction);
 
 /*! \fn  locate (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table. 
@@ -583,6 +588,27 @@ void ue_scheduler(u8 Mod_id, u8 subframe);
 */
 u8 locate (const u32 *table, int size, int value);
 
+
+/*! \fn  int get_sf_periodicBSRTimer(u8 periodicBSR_Timer)
+   \brief get the number of subframe from the periodic BSR timer configured by the higher layers
+\param[in] periodicBSR_Timer timer for periodic BSR
+\return the number of subframe
+*/
+int get_sf_periodicBSRTimer(u8 bucketSize);
+
+/*! \fn  int get_ms_bucketsizeduration(u8 bucketSize)
+   \brief get the time in ms form the bucket size duration configured by the higher layer
+\param[in]  bucketSize the bucket size duration
+\return the time in ms
+*/
+int get_ms_bucketsizeduration(u8 bucketsizeduration);
+
+/*! \fn  int get_sf_retxBSRTimer(u8 retxBSR_Timer)
+   \brief get the number of subframe form the bucket size duration configured by the higher layer
+\param[in]  retxBSR_Timer timer for regular BSR
+\return the time in ms
+*/
+int get_sf_retxBSRTimer(u8 retxBSR_Timer);
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */ 
 
