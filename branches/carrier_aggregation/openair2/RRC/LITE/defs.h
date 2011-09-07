@@ -202,6 +202,7 @@ typedef struct{
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_UE];
   struct SPS_Config               *sps_Config[NB_CNX_UE];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_UE];
+  MeasGapConfig_t                 *measGapConfig[NB_CNX_UE];
 }UE_RRC_INST;
 
 //main.c
@@ -260,6 +261,12 @@ s32  rrc_ue_establish_srb2(u8 Mod_id,u8 CH_index,struct SRB_ToAddMod *SRB_config
     \param DRB_config Pointer to DRB_ToAddMod IE from configuration
     @returns 0 on success */
 s32  rrc_ue_establish_drb(u8 Mod_id,u8 CH_index,struct DRB_ToAddMod *DRB_config);
+
+/** \brief Process a measConfig Message and configure PHY/MAC
+    \param Mod_id Instance of UE on which to act
+    \param CH_index Index of corresponding CH/eNB
+    \param  measConfig Pointer to MeasConfig  IE from configuration*/
+void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig);
 
 /** \brief Process a RadioResourceConfigDedicated Message and configure PHY/MAC
     \param Mod_id Instance of UE on which to act

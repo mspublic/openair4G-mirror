@@ -17,7 +17,7 @@ ROOT_PORT_ID=8086:3b48
 # Disable ASPM on root port
 setpci -d $ROOT_PORT_ID 50.W=0040
 
-# XIO2000 Prefetch 4x, threshold disabled
+# XIO2000 Prefetch 4x and threshold disabled
 setpci -d $XIO_ADAPTER_ID c0.B=00
 
 # XIO2000 L1 Latency 4us
@@ -26,9 +26,10 @@ setpci -d $XIO_ADAPTER_ID C4.L=00108108
 # XIO2000 common reference clock, ASPM disabled
 setpci -d $XIO_ADAPTER_ID A0.W=0040
 
+# XIO2000 25ms Configuration retry, force_mrm=1, 512ns-1us L0s latency, 1-2us L1 latency
 setpci -d $XIO_ADAPTER_ID d4.L=83042000
 
-setpci -d $XIO_ADAPTER_ID CACHE_LINE_SIZE=20
+setpci -d $XIO_ADAPTER_ID CACHE_LINE_SIZE=10
 
 setpci -d $XIO_ADAPTER_ID SEC_LATENCY_TIMER=10
 

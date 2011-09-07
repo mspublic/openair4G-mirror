@@ -41,16 +41,24 @@ unsigned short Data_to_read;
 u8 DRB2LCHAN[8];
 
 long logicalChannelGroup0 = 0;
-// These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
-LogicalChannelConfig_t SRB1_logicalChannelConfig_defaultValue = {1,
-								 LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-								 0,
-								 &logicalChannelGroup0};
+long  logicalChannelSR_Mask_r9=0;
 
-LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {3,
-								 LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-								 0,
-								 &logicalChannelGroup0};
+struct LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
+							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+							      0,
+							      &logicalChannelGroup0};
+struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
+							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+							      0,
+							      &logicalChannelGroup0};
+
+
+// These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
+LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {&LCSRB1,
+								  &logicalChannelSR_Mask_r9};
+
+LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2,
+								 &logicalChannelSR_Mask_r9};
 
 //CONSTANTS
 rlc_info_t Rlc_info_um,Rlc_info_am_config;

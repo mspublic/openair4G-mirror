@@ -176,14 +176,15 @@ enum {
 				typedef struct {
 					int number_of_sectors; /// Number of sectors (1-3), for UE always 1
 					double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
+				        double alpha_rad[3];   /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
 					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
 					double tx_power_dBm; /// Tx power (dBm)
 					double rx_noise_level; /// Rx noise level (dB)
 				}eNB_Antenna;
 
 				typedef struct {
-					int number_of_sectors; /// Number of sectors (1-3), for UE always 1
-					double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
+				        int number_of_sectors; /// Number of sectors (1-3), for UE always 1
+				        double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
 					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
 					double tx_power_dBm; /// Tx power (dBm)
 					double rx_noise_level; /// Rx noise level (dB)

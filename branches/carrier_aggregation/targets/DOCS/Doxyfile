@@ -83,7 +83,9 @@ INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
 			 $(OPENAIR2_DIR)/PHY_INTERFACE/defs.h \
 			 $(OPENAIR2_DIR)/NAS/DRIVER/MESH/proto_extern.h \
 			 $(OPENAIR2_DIR)/RRC/LITE/defs.h \
-			 $(OPENAIR2_DIR)/UTIL/OCG/OCG.h
+			 $(OPENAIR2_DIR)/UTIL/OCG/OCG.h \
+			 $(OPENAIR2_DIR)/UTIL/OMG/omg.h \
+			 $(OPENAIR2_DIR)/UTIL/OMG/defs.h
 
 FILE_PATTERNS          = *.h
 RECURSIVE              = NO

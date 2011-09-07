@@ -22,8 +22,10 @@ mapping log_level_names[] =
 };
 
 
-void oaisim_config(OAI_Emulation * emulation_scen, u16 * n_frames, char * g_log_level) {
- 
+void oaisim_config(u16 *n_frames, char *g_log_level) 
+{
+  OAI_Emulation *emulation_scen = NULL;
+
   olg_config(g_log_level);
 
 #ifdef OCG_FLAG
@@ -60,9 +62,9 @@ void config_omg(){
 	// setup params for openair mobility generator
 	//common params
 	omg_param_list.min_X = 0;
-	omg_param_list.max_X = 1000;
+	omg_param_list.max_X = 500;
 	omg_param_list.min_Y = 0;
-	omg_param_list.max_Y = 1000;
+	omg_param_list.max_Y = 500;
 	omg_param_list.min_speed = 1.0;
 	omg_param_list.max_speed = 20.0;
 	omg_param_list.min_journey_time = 1.0;

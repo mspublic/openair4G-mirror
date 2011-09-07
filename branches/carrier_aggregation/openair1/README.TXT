@@ -41,8 +41,6 @@ General remarks: every directory contains at least defs.h (for declaration of st
 
 |   |-- CODING		   // turbo and convolutional (de-)coder
 |   |   `-- TESTBENCH      // This contains unitary testbenches for the different channel coders/decoders
-|   |-- CONFIG		   // contains different configuration files (.cfg, .scn) and userspace code to read them
-|   |-- ESTIMATION	   // contains synchronization, channel estimation, gain control
 |   |-- INIT		   // variables defined in vars.h are initialzed here (memory allocation)
 |   |-- LTE_ESTIMATION     // estimation for LTE
 |   |-- LTE_REFSIG 	   // reference signals for LTE (sync and pilot sequences) reference signals from 36-211 (DL)
@@ -50,7 +48,6 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |-- MODULATION	   // modulation and demodulation includes FFT/SC-FDMA front-end processing from 36-211
 |   |-- TOOLS		   // tools like (I)FFT, vector operations, matrix multiplication, etc.
 |   |   `-- FFTTEST        // unitary testbench for FFT routines
-|   `-- TRANSPORT	   // openair transport channels (non-LTE openairinterface)
 |   |-- defs.h		  // top level defs.h (includes spec_defs, impl_defs and all defs.h of subdirectories)
 |   |-- extern.h
 |   |-- impl_defs.h       // non-LTE openair implementation
@@ -80,10 +77,6 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |   |-- ulsim.c         // PUSCH simulation testbench
 |   |   |-- pucchsim.c      // PUCCH simulation testbench
 |   |-- LTE_PHY_L2       // LTE simulation testbench for full system simulation (PHY,MAC,RLC,RRC,PDCP)
-|   |-- PHY              // non-LTE simulation testbenches for openair transport channels
-|   |   |-- CHBCH
-|   |   |-- SACH
-|   |   `-- SYNC
 |   `-- TOOLS
 |   |-- RF
 |-- USERSPACE_TOOLS     // tools that run in userspace (not kernel)
