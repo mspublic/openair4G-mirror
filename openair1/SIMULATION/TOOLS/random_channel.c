@@ -117,6 +117,9 @@ double eva_amps_dB[] = {0.0,-1.5,-1.4,-3.6,-0.6,-9.1,-7.0,-12.0,-16.9};
 double etu_delays[] = { 0,.05,.12,.2,.23,.5,1.6,2.3,5.0};
 double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
 
+double default_amps_lin[] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
+double default_amp_lin[] = {1};
+
 channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
@@ -128,6 +131,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   u16 i,j;
   double sum_amps;
+  double aoa,ricean_factor,Td,maxDoppler;
+  int channel_length,nb_taps;
 
   chan_desc->nb_tx          = nb_tx;
   chan_desc->nb_rx          = nb_rx;
@@ -315,6 +320,103 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       }
     }
     break;
+  case Rayleigh8:
+      nb_taps = 8;
+      Td = 0.8;
+      channel_length = (int)11+2*BW*Td;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amps_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+      break;
+  case Rice8:
+      nb_taps = 8;
+      Td = 0.8;
+      channel_length = (int)11+2*BW*Td;
+      ricean_factor = 0;
+      aoa = .03;
+      maxDoppler = 0;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amps_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+      break;
+  case Rayleigh1:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+      break;
+  case Rice1:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 0;
+      aoa = .03;
+      maxDoppler = 0;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+      break;
+
   default:
     msg("channel model not yet supported\n");
     free(chan_desc);

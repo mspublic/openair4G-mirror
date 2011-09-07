@@ -21,7 +21,7 @@ ________________________________________________________________*/
 #endif
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
-
+#include "MeasGapConfig.h"
 //#include "rrm_config_structs.h"
 //#include "platform_types.h"
 /** @defgroup _mac_rrc_primitives_ MAC Layer Primitives for Communications with RRC 
@@ -352,6 +352,7 @@ typedef struct{
 			    MAC_MainConfig_t *mac_MainConfig,
 			    long logicalChannelIdentity,
 			    LogicalChannelConfig_t *logicalChannelConfig,
+			    MeasGapConfig_t *measGapConfig, 
 			    TDD_Config_t *tdd_Config,
 			    u8 *SIwindowsize,
 			    u16 *SIperiod);

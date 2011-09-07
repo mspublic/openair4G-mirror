@@ -36,6 +36,7 @@
 #include "phy_procedures_sim_form.h"
 #endif
 
+#include "oaisim.h"
 
 #define RF
 
@@ -78,6 +79,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->N_RB_DL            = N_RB_DL;
   (*frame_parms)->N_RB_UL            = (*frame_parms)->N_RB_DL;
   (*frame_parms)->phich_config_common.phich_resource = oneSixth;
+  (*frame_parms)->phich_config_common.phich_duration = normal;
   (*frame_parms)->Ncp                = extended_prefix_flag;
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
@@ -159,8 +161,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     memcpy(&(PHY_vars_UE_g[UE_id]->lte_frame_parms), *frame_parms, sizeof(LTE_DL_FRAME_PARMS));
     // Do this until SSS detection is finished
-    PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = UE_id%3;
-    PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = UE_id%3;
+    PHY_vars_UE_g[UE_id]->lte_frame_parms.Nid_cell = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.Nid_cell;
+    PHY_vars_UE_g[UE_id]->lte_frame_parms.nushift = PHY_vars_eNB_g[UE_id%NB_eNB_INST][0]->lte_frame_parms.nushift;
 
     phy_init_lte_ue(&PHY_vars_UE_g[UE_id]->lte_frame_parms,
 		    &PHY_vars_UE_g[UE_id]->lte_ue_common_vars,

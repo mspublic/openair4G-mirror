@@ -54,7 +54,7 @@ void chbch_phy_sync_success(unsigned char Mod_id,u8 CC_id, unsigned char eNB_ind
 void mrbch_phy_sync_failure(unsigned char Mod_id,u8 CC_id, unsigned char Free_ch_index){//init as CH 
   /***********************************************************************/
   msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
-  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
+  if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id,CC_id)==-1))
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
   
 }
@@ -184,8 +184,10 @@ int mac_top_init(){
 	  eNB_mac_inst[j].sbmap_conf.periodicity=10;
 	  eNB_mac_inst[j].sbmap_conf.sb_size=SB_size;
 	  eNB_mac_inst[j].sbmap_conf.nb_active_sb=1;
-	  bzero(eNB_mac_inst[j].sbmap_conf.sbmap,13*sizeof(u8));
-	  eNB_mac_inst[j].sbmap_conf.sbmap[rand()%14]=1;
+	  for(i=0;i<NUMBER_OF_SUBBANDS;i++)
+		  eNB_mac_inst[j].sbmap_conf.sbmap[i]=1;
+
+	  eNB_mac_inst[j].sbmap_conf.sbmap[rand()%NUMBER_OF_SUBBANDS]=0;
 
   }
 
@@ -301,7 +303,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->get_transmission_mode     = (u8 (*)(u16))get_transmission_mode;
   mac_xface->get_rballoc               = (u32 (*)(u8,u8))get_rballoc;
   mac_xface->get_nb_rb                 = (u16 (*)(u8,u32))conv_nprb;
-  mac_xface->get_SB_size	       = Get_SB_size;
+  mac_xface->get_SB_size	      	   = Get_SB_size;
 
 
 

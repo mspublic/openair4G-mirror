@@ -636,7 +636,8 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
       if (is_SR_TXOp(phy_vars_ue,eNB_id,next_slot>>1)==1) {
 	SR_payload = mac_xface->ue_get_SR(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,
 					  eNB_id,
-					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti);
+					  phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					  next_slot>>1); // subframe used for meas gap
       }
 
       else
@@ -801,19 +802,19 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 	debug_msg("[PHY][UE %d] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
 		  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
-		phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
-		phy_vars_ue->rx_total_gain_dB);
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
+		  phy_vars_ue->rx_total_gain_dB);
       
-      debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
-		phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
-		dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
-		phy_vars_ue->PHY_measurements.n0_power_dB[0],
-		phy_vars_ue->PHY_measurements.n0_power_dB[1],
-		phy_vars_ue->PHY_measurements.n0_power[0],
-		phy_vars_ue->PHY_measurements.n0_power[1]);
+	debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
+		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
+		  dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		  phy_vars_ue->PHY_measurements.n0_power_dB[1],
+		  phy_vars_ue->PHY_measurements.n0_power[0],
+		  phy_vars_ue->PHY_measurements.n0_power[1]);
     }
 #endif
   }
@@ -1039,7 +1040,17 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
   }
 
   else {
-   /* dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
+
+    for (i=0;i<NB_eNB_INST;i++) {
+      if (PHY_vars_eNB_g[i][0]->lte_frame_parms.Nid_cell == phy_vars_ue->lte_frame_parms.Nid_cell)
+	break;
+    }
+    if (i==NB_eNB_INST) {
+      msg("[PHY][UE %d] phy_procedures_lte_ue.c: FATAL : Could not find attached eNB for DCI emulation (Nid_cell %d)!!!!\n",phy_vars_ue->Mod_id,phy_vars_ue->lte_frame_parms.Nid_cell);
+      mac_xface->macphy_exit("");
+    }
+
+    /* dci_cnt = dci_decoding_procedure_emul(phy_vars_ue->lte_ue_pdcch_vars,
 					  PHY_vars_eNB_g[eNB_id][0]->num_ue_spec_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[eNB_id][0]->num_common_dci[(last_slot>>1)&1],
 					  PHY_vars_eNB_g[eNB_id][0]->dci_alloc[(last_slot>>1)&1],

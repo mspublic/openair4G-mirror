@@ -203,6 +203,7 @@ typedef struct
   LTE_UE_DLSCH     *lte_ue_dlsch_vars_ra[NUMBER_OF_eNB_MAX];
   LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_eNB_MAX];
+  //  LTE_UE_PRACH_t   *lte_ue_prach_vars[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_eNB_MAX][2];
   LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_eNB_MAX];
@@ -248,7 +249,7 @@ typedef struct
   char             log2_maxp; 
 
   /// sinr for all subcarriers of the current link (used only for abstraction)
-  short* sinr_dB;
+  double *sinr_dB;
   
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];
