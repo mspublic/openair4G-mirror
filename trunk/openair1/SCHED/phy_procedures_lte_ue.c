@@ -1888,6 +1888,6 @@ void phy_procedures_UE_lte(u8 last_slot, u8 next_slot, PHY_VARS_UE *phy_vars_ue,
 
 #ifdef OPENAIR2
     if (last_slot%2==0)
-       mac_xface->ue_scheduler(phy_vars_ue->Mod_id, last_slot>>1);
+      mac_xface->ue_scheduler(phy_vars_ue->Mod_id, last_slot>>1, subframe_select(&phy_vars_ue->lte_frame_parms,next_slot>>1));
 #endif
 }

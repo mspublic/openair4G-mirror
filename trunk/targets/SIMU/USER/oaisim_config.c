@@ -221,7 +221,6 @@ void set_app(OAI_Emulation * emulation_scen) {
 
 void set_emu(OAI_Emulation * emulation_scen, u16 * n_frames) {
 	*n_frames  =  (int) emulation_scen->emulation_config.emulation_time / 10; // configure the number of frame
-
 	LOG_I(OCG, "emulation is set\n");
 }
 

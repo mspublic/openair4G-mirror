@@ -148,7 +148,7 @@ void logInit (int g_log_level) {
   
 }
 
-void logRecord( const char *file, const char *func,
+inline void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    

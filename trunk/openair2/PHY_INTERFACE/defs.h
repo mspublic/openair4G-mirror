@@ -110,7 +110,7 @@ typedef struct
     void (*chbch_phy_sync_success) (u8 Mod_id, u8 CH_index);
 
     /// Only calls the PDCP for now
-    void (*ue_scheduler)(u8 Mod_id, u8 subframe);
+    void (*ue_scheduler)(u8 Mod_id, u8 subframe, lte_subframe_t direction);
 
     /// PHY-Config-Dedicated UE
     void (*phy_config_dedicated_ue)(u8 Mod_id,u8 CH_index,

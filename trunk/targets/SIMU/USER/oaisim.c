@@ -287,8 +287,8 @@ main (int argc, char **argv)
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
-  n_frames = 0xffff;		//100;
-  n_frames_flag = 0;
+  n_frames = 0xffff;//1024;		//100;
+  n_frames_flag = 1;//fixme
   snr_dB = 30;
   cooperation_flag = 0;		// default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
@@ -336,6 +336,7 @@ main (int argc, char **argv)
       break;
     case 'n':
       n_frames = atoi (optarg);
+      //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
       n_frames_flag = 1;
       break;
     case 's':
