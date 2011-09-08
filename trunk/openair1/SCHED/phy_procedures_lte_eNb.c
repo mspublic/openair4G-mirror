@@ -1817,12 +1817,12 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 
 
       for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
-	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
+	phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) - phy_vars_eNB->rx_total_gain_eNB_dB;
 
 #ifdef DEBUG_PHY_PROC
       msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: ULSCH RX power (%d,%d) dB\n",
 	  phy_vars_eNB->Mod_id,
-	  mac_xface->frame,last_slot,last_slot>>1,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]));
+	  mac_xface->frame,last_slot,last_slot>>1,dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]));
 #endif
 
       if (abstraction_flag == 0) {
@@ -1840,7 +1840,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 #ifdef DEBUG_PHY_PROC
       msg("[PHY][eNB%d] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB ACK (%d,%d), decoding ret %d\n",
 	  phy_vars_eNB->Mod_id,
-	  mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(ulsch_power[0]),dB_fixed(ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],ret);
+	  mac_xface->frame,last_slot,last_slot>>1,i,dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[1]),phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],phy_vars_eNB->ulsch_eNB[i]->o_ACK[1],ret);
 #endif //DEBUG_PHY_PROC
       if ((two_ues_connected==1) && (phy_vars_eNB->cooperation_flag==2)) {
 	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++) {
