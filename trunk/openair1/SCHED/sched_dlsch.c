@@ -46,6 +46,7 @@
 #include "PHY/extern.h"
 #include "extern.h"
 
+#define DEBUG_PHY
 
 /// Mutex for instance count on dlsch scheduling 
 pthread_mutex_t dlsch_mutex[8];
@@ -63,124 +64,146 @@ int dlsch_cpuid[8];
 int dlsch_subframe[8];
 
 extern int exit_openair;
+
+/*
 extern int dlsch_errors;
 extern int dlsch_received;
 extern int dlsch_errors_last;
 extern int dlsch_received_last;
 extern int dlsch_fer;
 extern int current_dlsch_cqi;
-
+*/
 
 /** DLSCH Decoding Thread */
 static void * dlsch_thread(void *param) {
-#ifndef USER_MODE
-
-
-#endif //  /* USER_MODE */
-
 
   unsigned long cpuid = rtai_cpuid();
-  unsigned int harq_pid = *((int *)param);
+  unsigned int dlsch_thread_index = 0; //*((int *)param);
   unsigned int ret;
+  u8 harq_pid;
 
   int time_in,time_out;
 
-  msg("[openair][SCHED][DLSCH] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
-      harq_pid,
+  int eNB_id = 0, UE_id = 0;
+  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[UE_id];
+
+  rt_set_runnable_on_cpuid(pthread_self(),1);
+
+  printk("[openair][SCHED][DLSCH] dlsch_thread for process %d started with id %x, fpu_flag = %x, cpu %d\n",
+      dlsch_thread_index,
       (unsigned int)pthread_self(),
       pthread_self()->uses_fpu,
       cpuid);
 
-  if ((harq_pid <0) || (harq_pid>7)) {
-    msg("[openair][SCHED][DLSCH] Illegal harq_pid %d!!!!\n",harq_pid);
+  if ((dlsch_thread_index <0) || (dlsch_thread_index>7)) {
+    msg("[openair][SCHED][DLSCH] Illegal dlsch_thread_index %d!!!!\n",dlsch_thread_index);
     return;
   }
 
-  dlsch_cpuid[harq_pid] = cpuid;
+  dlsch_cpuid[dlsch_thread_index] = cpuid;
 
   while (exit_openair == 0){
     
-    pthread_mutex_lock(&dlsch_mutex[harq_pid]);
+    pthread_mutex_lock(&dlsch_mutex[dlsch_thread_index]);
 
-    while (dlsch_instance_cnt[harq_pid] < 0) {
-      pthread_cond_wait(&dlsch_cond[harq_pid],&dlsch_mutex[harq_pid]);
+    while (dlsch_instance_cnt[dlsch_thread_index] < 0) {
+      pthread_cond_wait(&dlsch_cond[dlsch_thread_index],&dlsch_mutex[dlsch_thread_index]);
     }
 
 
-    dlsch_instance_cnt[harq_pid]--;
-    pthread_mutex_unlock(&dlsch_mutex[harq_pid]);	
+    dlsch_instance_cnt[dlsch_thread_index]--;
+    pthread_mutex_unlock(&dlsch_mutex[dlsch_thread_index]);	
 
-#ifdef DEBUG_PHY
-    if ((mac_xface->frame % 100) == 0)
-      msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with harq_pid = %d from cpu %d\n",mac_xface->frame,harq_pid,rtai_cpuid());
-#endif
+    debug_msg("[openair][SCHED][DLSCH] Frame %d: Calling dlsch_decoding with dlsch_thread_index = %d from cpu %d\n",mac_xface->frame,dlsch_thread_index,rtai_cpuid());
 
     time_in = openair_get_mbox();
 
-    if (mac_xface->frame < dlsch_errors) {
-      dlsch_errors=0;
-      dlsch_received = 0;
+    if (mac_xface->frame < phy_vars_ue->dlsch_errors[eNB_id]) {
+      phy_vars_ue->dlsch_errors[eNB_id]=0;
+      phy_vars_ue->dlsch_received[eNB_id] = 0;
     }
 
-    if (dlsch_ue) 
-      if (dlsch_ue[harq_pid]) {
-	ret = dlsch_decoding(lte_ue_dlsch_vars[0]->llr[0],		 
-			     lte_frame_parms,
-			     dlsch_ue[0],
-			     dlsch_subframe[harq_pid]);
+    if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
+      harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
+
+      dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
+			 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			 phy_vars_ue->dlsch_ue[0][0],
+			 get_G(&phy_vars_ue->lte_frame_parms,
+			       phy_vars_ue->dlsch_ue[eNB_id][0]->nb_rb,
+			       phy_vars_ue->dlsch_ue[eNB_id][0]->rb_alloc,
+			       get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
+			       phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
+			       dlsch_subframe[dlsch_thread_index]),
+			 phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
+			 0,
+			 dlsch_subframe[dlsch_thread_index]<<1);
+      debug_msg("[PHY][UE %d] Calling dlsch_decoding for subframe %d\n",phy_vars_ue->Mod_id,dlsch_subframe[dlsch_thread_index]);
+      ret = dlsch_decoding(phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->llr[0],
+			   &phy_vars_ue->lte_frame_parms,
+				 phy_vars_ue->dlsch_ue[eNB_id][0],
+			   dlsch_subframe[dlsch_thread_index],
+			   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
       
-    
-	//NB allocated RBs
-	time_out = openair_get_mbox();
-	if (ret == (1+MAX_TURBO_ITERATIONS))
-	  dlsch_errors++;
-
-	if (mac_xface->frame % 100 == 0) {
-	  if (dlsch_received - dlsch_received_last != 0)
-	    dlsch_fer = (100*(dlsch_errors - dlsch_errors_last))/(dlsch_received - dlsch_received_last);
-	  dlsch_errors_last = dlsch_errors;
-	  dlsch_received_last = dlsch_received;
-
-	  if ((dlsch_fer > 10) && (current_dlsch_cqi>0))
-	    current_dlsch_cqi--;
-	  if ((dlsch_fer == 0) && (current_dlsch_cqi<7))
-	    current_dlsch_cqi++;
-
-	}
-   
+      
+      
+      time_out = openair_get_mbox();
+      if (ret == (1+MAX_TURBO_ITERATIONS)) {
+	phy_vars_ue->dlsch_errors[eNB_id]++;
 	
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_decoding: in %d, out %d, ret %d (mcs %d, TBS %d)\n",
-		  mac_xface->frame,
-		  time_in,time_out,
-		  ret,
-		  dlsch_ue[0]->harq_processes[0]->mcs,
-		  dlsch_ue[0]->harq_processes[0]->TBS);
-	debug_msg("[PHY_PROCEDURES_LTE] Frame %d, dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
-		  mac_xface->frame,
-		  dlsch_errors,
-		  dlsch_received,
-		  dlsch_fer,
-		  current_dlsch_cqi);
-
+#ifdef DEBUG_PHY
+	msg("DLSCH (rv %d,mcs %d) in error\n",phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
+	    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+#endif
       }
+      else {
+	
+#ifdef OPENAIR2
+	mac_xface->ue_send_sdu(phy_vars_ue->Mod_id,
+			       phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
+			       0);
+#endif
+      }
+    }
+    
+    if (mac_xface->frame % 100 == 0) {
+      if ((phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]) != 0) 
+	phy_vars_ue->dlsch_fer[eNB_id] = (100*(phy_vars_ue->dlsch_errors[eNB_id] - phy_vars_ue->dlsch_errors_last[eNB_id]))/(phy_vars_ue->dlsch_received[eNB_id] - phy_vars_ue->dlsch_received_last[eNB_id]);
+      phy_vars_ue->dlsch_errors_last[eNB_id] = phy_vars_ue->dlsch_errors[eNB_id];
+      phy_vars_ue->dlsch_received_last[eNB_id] = phy_vars_ue->dlsch_received[eNB_id];
+      
+    }
+    
+    
+    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_decoding ret %d (mcs %d, TBS %d)\n",
+	      phy_vars_ue->Mod_id,mac_xface->frame,dlsch_subframe[dlsch_thread_index],ret,
+	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->mcs,
+	      phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[0]->TBS);
+    debug_msg("[PHY][UE %d] Frame %d, subframe %d: dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
+	      phy_vars_ue->Mod_id,mac_xface->frame,dlsch_subframe[dlsch_thread_index],
+	      phy_vars_ue->dlsch_errors[eNB_id],
+	      phy_vars_ue->dlsch_received[eNB_id],
+	      phy_vars_ue->dlsch_fer[eNB_id],
+	      phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id]);
+    
   }
-  msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",harq_pid);
-  dlsch_instance_cnt[harq_pid] = 99;
+  
+  msg("[openair][SCHED][DLSCH] DLSCH thread %d exiting\n",dlsch_thread_index);
+  dlsch_instance_cnt[dlsch_thread_index] = 99;
 }
-
-static int harq_pid;
 
 int init_dlsch_threads(void) {
 
   int error_code;
   struct sched_param p;
+  int dlsch_thread_index;
 
   // later loop on all harq_pids, do 0 for now
-  harq_pid=0;
+  dlsch_thread_index=0;
 
-  pthread_mutex_init(&dlsch_mutex[harq_pid],NULL);
+  pthread_mutex_init(&dlsch_mutex[dlsch_thread_index],NULL);
   
-  pthread_cond_init(&dlsch_cond[harq_pid],NULL);
+  pthread_cond_init(&dlsch_cond[dlsch_thread_index],NULL);
 
   pthread_attr_init (&attr_dlsch_threads);
   pthread_attr_setstacksize(&attr_dlsch_threads,OPENAIR_THREAD_STACK_SIZE);
@@ -193,19 +216,19 @@ int init_dlsch_threads(void) {
   pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
 #endif
 
-  dlsch_instance_cnt[harq_pid] = -1;
-  printk("[openair][SCHED][DLSCH][INIT] Allocating DLSCH thread for harq_pid %d\n",harq_pid);
-  error_code = pthread_create(&dlsch_threads[harq_pid],
+  dlsch_instance_cnt[dlsch_thread_index] = -1;
+  printk("[openair][SCHED][DLSCH][INIT] Allocating DLSCH thread for dlsch_thread_index %d\n",dlsch_thread_index);
+  error_code = pthread_create(&dlsch_threads[dlsch_thread_index],
   			      &attr_dlsch_threads,
   			      dlsch_thread,
-  			      (void *)&harq_pid);
+  			      (void *)&dlsch_thread_index);
 
   if (error_code!= 0) {
-    printk("[openair][SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",harq_pid,error_code);
+    printk("[openair][SCHED][DLSCH][INIT] Could not allocate dlsch_thread %d, error %d\n",dlsch_thread_index,error_code);
     return(error_code);
   }
   else {
-    printk("[openair][SCHED][DLSCH][INIT] Allocate dlsch_thread %d successful\n",harq_pid);
+    printk("[openair][SCHED][DLSCH][INIT] Allocate dlsch_thread %d successful\n",dlsch_thread_index);
     return(0);
   }
    
@@ -213,20 +236,20 @@ int init_dlsch_threads(void) {
 
 void cleanup_dlsch_threads(void) {
 
-  int harq_pid = 0;
+  int dlsch_thread_index = 0;
 
   // later loop on all harq_pid's
 
-  //  pthread_exit(&dlsch_threads[harq_pid]);
-  printk("[openair][SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",harq_pid);
+  //  pthread_exit(&dlsch_threads[dlsch_thread_index]);
+  printk("[openair][SCHED][DLSCH] Scheduling dlsch_thread %d to exit\n",dlsch_thread_index);
 
-  dlsch_instance_cnt[harq_pid] = 0;
-  if (pthread_cond_signal(&dlsch_cond[harq_pid]) != 0)
-    msg("[openair][SCHED][DLSCH] ERROR pthread_cond_signal\n");
+  dlsch_instance_cnt[dlsch_thread_index] = 0;
+  if (pthread_cond_signal(&dlsch_cond[dlsch_thread_index]) != 0)
+    printk("[openair][SCHED][DLSCH] ERROR pthread_cond_signal\n");
   else
-    msg("[openair][SCHED][DLSCH] Signalled dlsch_thread %d to exit\n",harq_pid);
+    printk("[openair][SCHED][DLSCH] Signalled dlsch_thread %d to exit\n",dlsch_thread_index);
     
   printk("[openair][SCHED][DLSCH] Exiting ...\n");
-  pthread_cond_destroy(&dlsch_cond[harq_pid]);
-  pthread_mutex_destroy(&dlsch_mutex[harq_pid]);
+  pthread_cond_destroy(&dlsch_cond[dlsch_thread_index]);
+  pthread_mutex_destroy(&dlsch_mutex[dlsch_thread_index]);
 }

@@ -1,5 +1,5 @@
 #include "PHY/defs.h"
-#include "extern.h"
+#include "PHY/extern.h"
 #include <emmintrin.h>
 #include <xmmintrin.h>
 //#define DEBUG_DRS
@@ -56,7 +56,7 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     
 #ifdef DEBUG_DRS
-    msg("generate_drs_puch: symbol_offset %d, subframe offset %d\n",symbol_offset,sub_frame_offset);
+    debug_msg("generate_drs_puch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,sub_frame_offset,cyclic_shift);
 #endif
 
     for (rb=0;rb<frame_parms->N_RB_UL;rb++) {
@@ -68,21 +68,55 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 
 #ifdef IFFT_FPGA_UE
-	for (k=0;k<12;k++) {
-	  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
-	  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
-	    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
-	  re_offset++;
-	  drs_offset++;
-	  if (re_offset >= frame_parms->N_RB_UL*12)
-	    re_offset=0;
-	}
-      
+	if(cyclic_shift == 0)
+	  {
+	    for (k=0;k<12;k++) {
+	      if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+	      else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->N_RB_UL*12)
+		re_offset=0;
+	    }
+	  }
+	else if(cyclic_shift == 6 )
+	  {
+	    for (k=0;k<12;k++) {
+	      if(k%2 == 0)
+		{
+		  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+		}
+	      else
+		{
+		  if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] >= 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+		  else if ((ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] < 0)) 
+		    txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+		}
+
+	      re_offset++;
+	      drs_offset++;
+	      if (re_offset >= frame_parms->N_RB_UL*12)
+		re_offset=0;
+	    }
+	  }
 #else
 	for (k=0;k<12;k++) {
 	  if(cyclic_shift == 0){
@@ -90,16 +124,25 @@ int generate_drs_pusch(LTE_DL_FRAME_PARMS *frame_parms,
 	    ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
 	    
 	  }
-	  else // Cyclic Shift to DMRS
+	  /*
+	  else if(cyclic_shift == 6)
+	    {
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15);
+	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1] = pow(-1,k+1) * (short) (((int) amp * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15);
+
+	      }
+	  */
+	  
+	  else if(cyclic_shift == 6) // Cyclic Shift to DMRS
 	    {
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)]   = 
-		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
-			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
+		(short)	(((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1] - 
+			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1])>>15) *
 			  ((int) amp))>>15);
 	      
 	      ((short*) txdataF)[2*(symbol_offset + re_offset)+1]   = 
-		(short)	(((((int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
-			    (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
+		(short) (((((int) (k%2 == 1? 1:-1) * (int) alpha_re[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][(drs_offset<<1)+1] + 
+			    (int) (k%2 == 1? 1:-1) * (int) alpha_im[cyclic_shift] * (int) ul_ref_sigs[0][0][Msc_RS_idx][drs_offset<<1])>>15) *
 			  ((int) amp))>>15);
 	    }
 	  re_offset++;

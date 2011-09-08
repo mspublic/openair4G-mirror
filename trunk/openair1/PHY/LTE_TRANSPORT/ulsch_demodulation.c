@@ -682,9 +682,10 @@ void ulsch_channel_compensation_alamouti(int **rxdataF_ext,                 // F
   //    printf("comp: symbol %d\n",symbol);
 
   
-  if (Qm == 4)
-    {  QAM_amp128U_0 = _mm_set1_epi16(QAM16_n1);
-      QAM_amp128U_1 = _mm_set1_epi16(QAM16_n1);}
+  if (Qm == 4) {  
+    QAM_amp128U_0 = _mm_set1_epi16(QAM16_n1);
+    QAM_amp128U_1 = _mm_set1_epi16(QAM16_n1);
+  }
   else if (Qm == 6) {
     QAM_amp128U_0  = _mm_set1_epi16(QAM64_n1);
     QAM_amp128bU_0 = _mm_set1_epi16(QAM64_n2);
@@ -1064,10 +1065,12 @@ void ulsch_channel_level(int **drs_ch_estimates_ext,
 
 int avgU[2];
 int avgU_0[2],avgU_1[2]; // For the Distributed Alamouti Scheme
+/* --> moved to LTE_eNB_ULSCH structure
 int ulsch_power[2];
 int ulsch_power_0[2],ulsch_power_1[2];// For the distributed Alamouti Scheme
+*/
 
-int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+void rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH *eNB_ulsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      unsigned int subframe,
@@ -1090,7 +1093,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
   unsigned short rx_power_correction;
 
 #ifdef DEBUG_ULSCH
-  msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d\n",eNB_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb);
+  debug_msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, cooperation %d\n",eNB_id,harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,ulsch->harq_processes[harq_pid]->first_rb, cooperation_flag);
 #endif //DEBUG_ULSCH
 
   if ( (frame_parms->ofdm_symbol_size == 128) ||
@@ -1118,6 +1121,7 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 			     frame_parms);
     
     lte_ul_channel_estimation(eNB_ulsch_vars->drs_ch_estimates[eNB_id],
+			      eNB_ulsch_vars->drs_ch_estimates_time[eNB_id],
 			      eNB_ulsch_vars->drs_ch_estimates_0[eNB_id],
 			      eNB_ulsch_vars->drs_ch_estimates_1[eNB_id],
 			      eNB_ulsch_vars->rxdataF_ext[eNB_id],
@@ -1139,16 +1143,16 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     if(cooperation_flag == 2)
       {
 	for (i=0;i<frame_parms->nb_antennas_rx;i++){
-	  ulsch_power_0[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_0[eNB_id][i],
+	  eNB_ulsch_vars->ulsch_power_0[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_0[eNB_id][i],
 						ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
-	  ulsch_power_1[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_1[eNB_id][i],
+	  eNB_ulsch_vars->ulsch_power_1[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates_1[eNB_id][i],
 						ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
 	}
       }
     else
       {
 	for (i=0;i<frame_parms->nb_antennas_rx;i++)
-	  ulsch_power[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNB_id][i],
+	  eNB_ulsch_vars->ulsch_power[i] = signal_energy_nodc(eNB_ulsch_vars->drs_ch_estimates[eNB_id][i],
 					      ulsch->harq_processes[harq_pid]->nb_rb*12)*rx_power_correction;
       }
   }
@@ -1332,17 +1336,16 @@ int *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
     }
   }
 
-  return(&ulsch_power[0]);
 }
 
-int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
+void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 subframe,
 		   u8 sect_id,
 		   u8 UE_index) {
   msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",phy_vars_eNB->Mod_id,subframe,sect_id,UE_index);
-  ulsch_power[0] = 45;
-  ulsch_power[1] = 45;
-  return(&ulsch_power[0]);
+  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[0] = 45;
+  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[1] = 45;
+
 }
 
 #ifdef USER_MODE

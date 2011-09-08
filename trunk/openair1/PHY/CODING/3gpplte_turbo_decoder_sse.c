@@ -168,7 +168,7 @@ void compute_alpha(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_len
 
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_alpha\n");
+  msg("compute_alpha(%x,%x,%x,%d,%d,%d)\n",alpha,m_11,m10,frame_length,F,inst);
 #endif
   
   THRES128 = _mm_set1_epi16(THRES);
@@ -724,6 +724,11 @@ unsigned char phy_threegpplte_turbo_decoder(llr_t *y,
   if (crc_type > 3) {
     msg("Illegal crc length!\n");
     return 255;
+  }
+
+  if (inst>=MAX_DECODING_THREADS) {
+    msg("inst>=MAX_DECODING_THREADS\n");
+    return(255);
   }
 
   if (decoder_in_use[inst]) {

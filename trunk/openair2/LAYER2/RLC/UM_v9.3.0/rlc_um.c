@@ -11,11 +11,11 @@
 
 //#define RLC_UM_TEST_TRAFFIC
 
-#define DEBUG_RLC_UM_DATA_REQUEST
-#define DEBUG_RLC_UM_MAC_DATA_REQUEST
-#define DEBUG_RLC_UM_MAC_DATA_INDICATION
-#define DEBUG_RLC_UM_TX_STATUS
-#define DEBUG_RLC_UM_DISCARD_SDU
+//#define DEBUG_RLC_UM_DATA_REQUEST
+//#define DEBUG_RLC_UM_MAC_DATA_REQUEST
+//#define DEBUG_RLC_UM_MAC_DATA_INDICATION
+//#define DEBUG_RLC_UM_TX_STATUS
+//#define DEBUG_RLC_UM_DISCARD_SDU
 //-----------------------------------------------------------------------------
 void
 rlc_um_stat_req     (rlc_um_entity_t *rlcP,

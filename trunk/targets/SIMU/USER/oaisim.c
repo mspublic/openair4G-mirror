@@ -14,12 +14,12 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
-#ifdef OPENAIR2
+//#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#endif
+//#endif
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
@@ -604,7 +604,7 @@ main (int argc, char **argv)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
     else
       PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0xBEEF;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235+UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 4;
   }				// end navid
 
@@ -623,8 +623,6 @@ main (int argc, char **argv)
 #ifdef OPENAIR2
   l2_init (&PHY_vars_eNB_g[0]->lte_frame_parms);
 
-
-
   for (i = 0; i < NB_eNB_INST; i++)
     mac_xface->mrbch_phy_sync_failure (i, i);
 #ifdef DEBUG_SIM
@@ -635,6 +633,8 @@ main (int argc, char **argv)
       mac_xface->chbch_phy_sync_success (UE_id, 0);	//UE_id%NB_eNB_INST);
   }
 #endif
+
+
   // time calibration for OAI 
   clock_gettime (CLOCK_REALTIME, &time_spec);
   time_now = (unsigned long) time_spec.tv_nsec;
@@ -644,6 +644,16 @@ main (int argc, char **argv)
 
   for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
     
+
+    /*
+    // Handling the cooperation Flag
+    if (cooperation_flag == 2)
+      {
+	if ((PHY_vars_eNB_g[0]->eNB_UE_stats[0].mode == PUSCH) && (PHY_vars_eNB_g[0]->eNB_UE_stats[1].mode == PUSCH))
+	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
+      }
+    */
+
     update_nodes(emu_info.time);  
 
     enb_node_list = get_current_positions(emu_info.omg_model_enb, eNB, emu_info.time);

@@ -37,8 +37,10 @@
 #include "ARCH/COMMON/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 
-#define msg fifo_printf//rt_printk
-#define msg_nrt printk
+#define msg fifo_printf
+//#define msg(x...) rt_printk(KERN_ALERT x)
+
+#define msg_nrt printk(KERN_ALERT x)
 
 #ifdef BIGPHYSAREA
 
@@ -114,6 +116,7 @@ typedef struct
   LTE_eNB_ULSCH_t  *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t  *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_UE_stats eNB_UE_stats[NUMBER_OF_UE_MAX];
+  LTE_eNB_UE_stats *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
 
   /// cell-specific reference symbols
   unsigned int lte_gold_table[20][2][14];
@@ -177,12 +180,8 @@ typedef struct
 
 } PHY_VARS_eNB;
 
-#ifndef USER_MODE
-#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) fifo_printf
-#else
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) msg
-#endif
-
+//#define debug_msg msg
 
 /// Top-level PHY Data Structure for UE 
 typedef struct

@@ -86,12 +86,13 @@ void lte_scope_idle_callback(void) {
   // Channel frequency response
   cum_avg = 0;
   ind = 0;
-  //for (j=0; j<4; j++) { 
-  //  for (i=0;i<nb_ant_rx;i++) {
-  for (j=0; j<1; j++) { 
-    for (i=0;i<1;i++) {
+  for (j=0; j<4; j++) { 
+    for (i=0;i<nb_ant_rx;i++) {
+  //for (j=0; j<1; j++) { 
+  //  for (i=0;i<1;i++) {
       
-      for (k=0;k<frame_parms->symbols_per_tti*NUMBER_OF_OFDM_CARRIERS;k++){
+      //for (k=0;k<frame_parms->symbols_per_tti*NUMBER_OF_OFDM_CARRIERS;k++){
+      for (k=0;k<NUMBER_OF_OFDM_CARRIERS;k++){
 	sig_time[ind] = (float)ind;
 	Re = (float)(channel_f[(j<<1)+i][2*k]);
 	Im = (float)(channel_f[(j<<1)+i][2*k+1]);
@@ -143,28 +144,28 @@ void lte_scope_idle_callback(void) {
 
   /*
   // channel_t_re = rx_sig[0]
-  //for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
-  for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
-    sig2[i] = (float) (rx_sig_f[0][4*i]);
+  for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
+    //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
+    sig2[i] = 10*log10(1.0+(double) ((rx_sig_f[0][4*i])*(rx_sig_f[0][4*i])+(rx_sig_f[0][4*i+1])*(rx_sig_f[0][4*i+1])));
     time2[i] = (float) i;
-    } 
+  } 
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
-  //fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-  fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
+  fl_set_xyplot_data(form->channel_t_re,&time2[512*12*9],&sig2[512*12*9],512*12,"","","");
+  //fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
   */
 
   // channel_t_im = rx_sig[1]
-  if (nb_ant_tx>1) {
-    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
+  if (nb_ant_rx>1) {
+    for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
       //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
-      sig2[i] = (float) (rx_sig[1][2*i]);
+      sig2[i] = 10*log10(1.0+(double) ((rx_sig[1][2*i])*(rx_sig[1][2*i])+(rx_sig[1][2*i+1])*(rx_sig[1][2*i+1])));
       time2[i] = (float) i;
     }
 
     //fl_set_xyplot_ybounds(form->channel_t_im,0,100);
-    fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
-    //fl_set_xyplot_data(form->channel_t_im,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
+    //fl_set_xyplot_data(form->channel_t_im,&time2[512*12*9],&sig2[512*12*9],512*12,"","","");
+    fl_set_xyplot_data(form->channel_t_im,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,"","","");
   }
 
   // PBCH LLR
@@ -228,7 +229,7 @@ void lte_scope_idle_callback(void) {
 
   fl_set_xyplot_data(form->demod_out,llr_time,llr,12*12*7*2,"","","");
   //  fl_set_xyplot_data(form->demod_out,time2,llr,25*12*4,"","","");
-  fl_set_xyplot_ybounds(form->demod_out,-100,100);
+  //fl_set_xyplot_ybounds(form->demod_out,-100,100);
 
   // DLSCH I/Q
   j=0;
@@ -247,8 +248,8 @@ void lte_scope_idle_callback(void) {
   }
 
   fl_set_xyplot_data(form->scatter_plot2,I,Q,j,"","","");
-  fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
-  fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
+  //fl_set_xyplot_xbounds(form->scatter_plot2,-100,100);
+  //fl_set_xyplot_ybounds(form->scatter_plot2,-100,100);
 
   usleep(500000);
 }
@@ -359,7 +360,7 @@ int main(int argc, char *argv[]) {
 			  bigphys_top); 
 
     rx_sig_f_ptr = (short **)(mem_base + 
-			    (unsigned int)PHY_vars_UE->lte_ue_common_vars.rxdataF -
+			    (unsigned int)PHY_vars_UE->lte_ue_common_vars.rxdataF2 -
 			    bigphys_top);
     rx_sig_f[i] = (short *)(mem_base + 
 			  (unsigned int)rx_sig_f_ptr[i] -

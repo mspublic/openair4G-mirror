@@ -72,6 +72,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 	  0);
     }
 
+    memcpy(&ue_common_vars->rxdataF2[aa][2*subframe_offset+2*frame_parms->ofdm_symbol_size*symbol],
+	   &ue_common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
+	   2*frame_parms->ofdm_symbol_size*sizeof(int));
+
   }
     
 

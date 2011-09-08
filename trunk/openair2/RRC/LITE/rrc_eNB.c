@@ -162,7 +162,7 @@ u8 get_next_UE_index(u8 Mod_id,u8 *UE_identity) {
 }
 
 /*------------------------------------------------------------------------------*/
-void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
+int rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size) {
   /*------------------------------------------------------------------------------*/
 
   asn_dec_rval_t dec_rval;
@@ -182,6 +182,11 @@ void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_
 			 (void**)&ul_dcch_msg,
 			 Rx_sdu,
 			 100,0,0);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+    msg("[RRC][UE %d] Frame %d : Failed to decode UL-DCCH (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
+    return -1;
+  }
 
   if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
 
@@ -227,7 +232,15 @@ void rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_
       break;
     case UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
       break;
+    default:
+     msg("[RRC][UE %d] Frame %d : Unkown message\n",Mod_id,Mac_rlc_xface->frame);
+     return -1;
     }
+    return 0;
+  }
+  else {
+    msg("[RRC][UE %d] Frame %d : Unkown error\n",Mod_id,Mac_rlc_xface->frame);
+    return -1;
   }
 }
 
@@ -371,6 +384,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
 void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
 
   LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
+
+  msg("[RRC][eNB %d] Frame %d : processing RRCConnectionSetupComplete (configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE)\n",Mod_id,Mac_rlc_xface->frame);
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
 

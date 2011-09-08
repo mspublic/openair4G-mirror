@@ -11,7 +11,7 @@
 #ifdef USER_MODE
 #    define NB_MODULES_MAX 32
 #else
-#    define NB_MODULES_MAX 4
+#    define NB_MODULES_MAX 1
 #endif //PHY_EMUL
 #    define NB_NODE_MAX    64
 #    define MAX_IP_PACKET_SIZE         4096

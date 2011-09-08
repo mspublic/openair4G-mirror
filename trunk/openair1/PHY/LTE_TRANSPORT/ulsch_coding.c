@@ -256,19 +256,16 @@ u32 ulsch_encoding(u8 *a,
 	
 	
 #ifdef DEBUG_ULSCH_CODING
-  msg("Generating Code Segment %d (%d bits)\n",r,Kr);
-  // generate codewords
-  
-  msg("bits_per_codeword (Kr)= %d\n",Kr);
-  msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-  msg("Ncp %d\n",frame_parms->Ncp);
-  msg("Qm %d\n",Q_m);
+	msg("Generating Code Segment %d (%d bits)\n",r,Kr);
+	// generate codewords
+	
+	msg("bits_per_codeword (Kr)= %d\n",Kr);
+	msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+	msg("Ncp %d\n",frame_parms->Ncp);
+	msg("Qm %d\n",Q_m);
 #endif
 	
 	offset=0;
-	
-	
-	
 	
 	
 #ifdef DEBUG_ULSCH_CODING    

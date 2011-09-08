@@ -89,7 +89,7 @@ u8 *get_DLSCH_pdu(u8 Mod_id,u16 rnti,u8 abstraction_flag) {
   return(DLSCH_pdu);
 }
 
-u8 NB_UE_INST = 3;
+//u8 NB_UE_INST = 3;
 
 void lte_param_init(unsigned char N_tx, 
 		    unsigned char N_rx,

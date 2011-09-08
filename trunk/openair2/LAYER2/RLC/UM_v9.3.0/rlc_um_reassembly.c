@@ -101,7 +101,7 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
       rlcP->rx_sdus += 1;
 #endif
         msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_in_construction->data);
-#ifdef RLC_UM_TEST_TRAFFIC
+#ifdef USER_MODE
         if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
         } else if (strncmp(voip_sdu, rlcP->output_sdu_in_construction->data, strlen(voip_sdu)) == 0) {

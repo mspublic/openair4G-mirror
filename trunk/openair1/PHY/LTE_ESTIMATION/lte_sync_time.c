@@ -423,7 +423,7 @@ int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 
 }
 
-//#ifdef PHY_ABSTRACTION
+#ifdef PHY_ABSTRACTION
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
 extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -445,4 +445,4 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNB,
   }
   return(-1);
 }
-//#endif
+#endif

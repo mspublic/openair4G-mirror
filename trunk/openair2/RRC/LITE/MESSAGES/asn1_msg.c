@@ -38,9 +38,12 @@
 
 //#include "PHY/defs.h"
 #ifndef USER_MODE
+#define msg printk
 #ifndef errno
 int errno;
 #endif
+#else
+#define msg printf
 #endif
 
 /*
@@ -89,7 +92,6 @@ uint8_t do_SIB1(uint8_t *buffer,
 
   asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;  
 
-
   dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
   dummy=6;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
   dummy=2;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy);
@@ -100,7 +102,6 @@ uint8_t do_SIB1(uint8_t *buffer,
   dummy=0;ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy);
   //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved); 
   PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
-
 
   ASN_SEQUENCE_ADD(&sib1->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
 
@@ -828,11 +829,12 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   long *logicalchannelgroup,*logicalchannelgroup_drb;
 
-
   DL_DCCH_Message_t dl_dcch_msg;
 
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
   long *lcid;
+
+  int i;
 
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
@@ -973,9 +975,13 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 				   buffer,
 				   100);
 
-#ifdef USER_MODE
-  printf("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
+  //#ifdef USER_MODE
+  msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  for (i=0;i<30;i++)
+    msg("%x.",buffer[i]);
+  msg("\n");
+  
+  //#endif
 
   FREEMEM(SRB_list);
   FREEMEM(DRB_list);
@@ -1005,4 +1011,12 @@ EXPORT_SYMBOL(do_RRCConnectionSetupComplete);
 EXPORT_SYMBOL(do_RRCConnectionReconfigurationComplete);
 EXPORT_SYMBOL(do_RRCConnectionSetup);
 EXPORT_SYMBOL(do_RRCConnectionReconfiguration);
+EXPORT_SYMBOL(asn_DEF_UL_DCCH_Message);
+EXPORT_SYMBOL(asn_DEF_UL_CCCH_Message);
+EXPORT_SYMBOL(asn_DEF_SystemInformation);
+EXPORT_SYMBOL(asn_DEF_DL_DCCH_Message);
+EXPORT_SYMBOL(asn_DEF_SystemInformationBlockType1);
+EXPORT_SYMBOL(asn_DEF_DL_CCCH_Message);
+EXPORT_SYMBOL(uper_decode_complete);
+EXPORT_SYMBOL(uper_decode);
 #endif
