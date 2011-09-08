@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.cqi_req = 1;
   UL_alloc_pdu.cshift  = 0;
 
-  PHY_vars_UE->PHY_measurements.rank[0] = 1;
+  PHY_vars_UE->PHY_measurements.rank[0] = 0;
 
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
 				    C_RNTI,
@@ -491,7 +491,7 @@ int main(int argc, char **argv) {
 	      txdataF2[aa][i] = ((int*)mod_table)[PHY_vars_UE->lte_ue_common_vars.txdataF[aa][l++]];
 	    else 
 	      txdataF2[aa][i] = 0;
-	  printf("l=%d\n",l);
+	  //printf("l=%d\n",l);
 	}
 	if (n_frames==1) {
 	  write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
@@ -605,14 +605,14 @@ int main(int argc, char **argv) {
 	}
 
 	PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
-	ulsch_power = rx_ulsch(&PHY_vars_eNB->lte_eNB_common_vars,
-			       PHY_vars_eNB->lte_eNB_ulsch_vars[0],
-			       &PHY_vars_eNB->lte_frame_parms,
-			       subframe,
-			       0,  // this is the effective sector id
-			       PHY_vars_eNB->ulsch_eNB[0],
-			       cooperation_flag);
-      
+	rx_ulsch(&PHY_vars_eNB->lte_eNB_common_vars,
+		 PHY_vars_eNB->lte_eNB_ulsch_vars[0],
+		 &PHY_vars_eNB->lte_frame_parms,
+		 subframe,
+		 0,  // this is the effective sector id
+		 PHY_vars_eNB->ulsch_eNB[0],
+		 cooperation_flag);
+	
 	
 	ret= ulsch_decoding(PHY_vars_eNB->lte_eNB_ulsch_vars[0]->llr,
 			    &PHY_vars_eNB->lte_frame_parms,

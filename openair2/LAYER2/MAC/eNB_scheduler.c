@@ -864,6 +864,8 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 		next_ue = UE_id;//schedule_next_ulue(Mod_id,UE_id,subframe);
 		//    msg("[MAC][eNB] subframe %d: next ue %d\n",subframe,next_ue);
 		rnti = find_UE_RNTI(Mod_id,next_ue);
+		if (rnti==0)
+		  continue;
 		//    msg("[MAC][eNB] subframe %d: rnti %x\n",subframe,rnti);
 		aggregation = process_ue_cqi(Mod_id,next_ue);
 		//    msg("[MAC][eNB] subframe %d: aggregation %d\n",subframe,aggregation);
@@ -902,7 +904,7 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 #endif
 
 			// schedule 4 RBs for UL
-			if((cooperation_flag ==2) && (next_ue == 1))// Allocation on same set of RBs
+			if((cooperation_flag > 0) && (next_ue == 1))// Allocation on same set of RBs
 			{
 				ULSCH_dci->rballoc = mac_xface->computeRIV(mac_xface->lte_frame_parms->N_RB_UL,
 						((next_ue-1)*4),//openair_daq_vars.ue_ul_nb_rb),
@@ -916,14 +918,14 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 			}
 
 			// Cyclic shift for DM RS
-			if(cooperation_flag == 2)
-			{if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
-				ULSCH_dci->cshift = 1;
-			else
-				ULSCH_dci->cshift = 0;
+			if(cooperation_flag == 2) {
+			  if(next_ue == 1)// For Distriibuted Alamouti, cyclic shift applied to 2nd UE
+			    ULSCH_dci->cshift = 1;
+			  else
+			    ULSCH_dci->cshift = 0;
 			}
 			else
-				ULSCH_dci->cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+			  ULSCH_dci->cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
 
 			add_ue_spec_dci(DCI_pdu,
 					ULSCH_dci,
@@ -1595,10 +1597,15 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 
 		// This is an allocated UE_id
 		rnti = find_UE_RNTI(Mod_id,next_ue);
+		if (rnti==0)
+		  continue;
+
 		eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 
 		if (eNB_UE_stats==NULL)
 			mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+
+		eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
 
 		// Get candidate harq_pid from PHY
 		mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);

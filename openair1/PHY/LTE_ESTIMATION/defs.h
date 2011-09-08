@@ -131,6 +131,7 @@ void phy_adjust_gain (unsigned char clear,
 
 
 int lte_ul_channel_estimation(int **ul_ch_estimates,
+			      int **ul_ch_estimates_time,
 			      int **ul_ch_estimates_0,
 			      int **ul_ch_estimates_1,
 			      int **rxdataF_ext,

@@ -10,7 +10,7 @@ Unit of measure: FL_COORD_PIXEL
 Name: lte_scope
 Width: 830
 Height: 650
-Number of Objects: 8
+Number of Objects: 11
 
 --------------------
 class: FL_BOX
@@ -31,16 +31,34 @@ callback:
 argument: 
 
 --------------------
+class: FL_TEXT
+type: NORMAL_TEXT
+box: 180 570 190 50
+boxtype: FL_FLAT_BOX
+colors: FL_BLACK FL_LEFT_BCOL
+alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+style: FL_NORMAL_STYLE
+size: FL_MEDIUM_SIZE
+lcol: FL_WHITE
+label: FER =
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: fer
+callback: 
+argument: 
+
+--------------------
 class: FL_XYPLOT
 type: NORMAL_XYPLOT
 box: 30 20 370 100
 boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_BLUE
+colors: FL_BLACK FL_RED
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
-label: Time-Domain Channel (Real Component)
+lcol: FL_RED
+label: RX Signal Antenna 0
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
@@ -57,7 +75,7 @@ colors: FL_BLACK FL_YELLOW
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
+lcol: FL_YELLOW
 label: Demodulator Output
 shortcut: 
 resize: FL_RESIZE_ALL
@@ -69,18 +87,18 @@ argument:
 --------------------
 class: FL_XYPLOT
 type: IMPULSE_XYPLOT
-box: 30 260 770 90
+box: 30 260 370 90
 boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_RED
+colors: FL_BLACK FL_BLUE
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
-label: Frequency Bin Response
+lcol: FL_BLUE
+label: DRS Time Response
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: channel_f
+name: channel_drs_time
 callback: 
 argument: 
 
@@ -89,12 +107,12 @@ class: FL_XYPLOT
 type: NORMAL_XYPLOT
 box: 430 20 370 100
 boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_BLUE
+colors: FL_BLACK FL_RED
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
-label: Time-Domain Channel (Imaginaryl Component)
+lcol: FL_RED
+label: RX Signal Antenna 0
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
@@ -107,11 +125,11 @@ class: FL_XYPLOT
 type: POINTS_XYPLOT
 box: 640 370 160 170
 boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_GREEN
+colors: FL_BLACK FL_YELLOW
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
+lcol: FL_YELLOW
 label: Scatter Plot
 shortcut: 
 resize: FL_RESIZE_ALL
@@ -122,15 +140,15 @@ argument:
 
 --------------------
 class: FL_XYPLOT
-type: NORMAL_XYPLOT
+type: IMPULSE_XYPLOT
 box: 30 140 370 100
 boxtype: FL_EMBOSSED_BOX
-colors: FL_BLACK FL_BLUE
+colors: FL_BLACK FL_GREEN
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
-label: 
+lcol: FL_GREEN
+label: SRS Time Response
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
@@ -140,19 +158,55 @@ argument:
 
 --------------------
 class: FL_XYPLOT
-type: NORMAL_XYPLOT
+type: IMPULSE_XYPLOT
 box: 430 140 370 100
+boxtype: FL_EMBOSSED_BOX
+colors: FL_BLACK FL_GREEN
+alignment: FL_ALIGN_BOTTOM
+style: FL_NORMAL_STYLE
+size: FL_TINY_SIZE
+lcol: FL_GREEN
+label: SRS Frequency Response
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: channel_srs
+callback: 
+argument: 
+
+--------------------
+class: FL_XYPLOT
+type: IMPULSE_XYPLOT
+box: 430 260 370 90
 boxtype: FL_EMBOSSED_BOX
 colors: FL_BLACK FL_BLUE
 alignment: FL_ALIGN_BOTTOM
 style: FL_NORMAL_STYLE
 size: FL_TINY_SIZE
-lcol: FL_BLACK
-label: Time-Domain Channel (Imaginaryl Component)
+lcol: FL_BLUE
+label: DRS Frequency Response
 shortcut: 
 resize: FL_RESIZE_ALL
 gravity: FL_NoGravity FL_NoGravity
-name: channel_srs
+name: channel_drs
+callback: 
+argument: 
+
+--------------------
+class: FL_TEXT
+type: NORMAL_TEXT
+box: 460 570 200 50
+boxtype: FL_FLAT_BOX
+colors: FL_BLACK FL_MCOL
+alignment: FL_ALIGN_LEFT|FL_ALIGN_INSIDE
+style: FL_NORMAL_STYLE
+size: FL_MEDIUM_SIZE
+lcol: FL_WHITE
+label: RSSI =
+shortcut: 
+resize: FL_RESIZE_ALL
+gravity: FL_NoGravity FL_NoGravity
+name: rssi
 callback: 
 argument: 
 

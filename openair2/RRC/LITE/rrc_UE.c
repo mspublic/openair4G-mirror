@@ -146,7 +146,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 eNB_index
 
 
 /*------------------------------------------------------------------------------*/
-void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
+int rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
   DL_CCCH_Message_t dlccchmsg;
@@ -166,6 +166,12 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 	 		 (uint8_t*)Srb_info->Rx_buffer.Payload,
 			 100,0,0);
 
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+    msg("[RRC][UE %d] Frame %d : Failed to decode SIB 1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
+    return -1;
+  }
+  
+
   if (dl_ccch_msg->message.present == DL_CCCH_MessageType_PR_c1) {
 
     if (UE_rrc_inst[Mod_id].Info[eNB_index].Status == RRC_PRE_SYNCHRO) {
@@ -174,19 +180,19 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 
       case DL_CCCH_MessageType__c1_PR_NOTHING :
 	msg("[RRC][UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
-	return;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
 	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReestablishment on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
-	return;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
 	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReestablishmentReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
-	return;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
 	msg("[RRC][UE%d] Frame %d : Received RRCConnectionReject on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
-	return;
+	return 0;
 	break;
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
 	msg("[RRC][UE%d] Frame %d : Received RRCConnectionSetup on DL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
@@ -198,11 +204,16 @@ void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
 
 	rrc_ue_generate_RRCConnectionSetupComplete(Mod_id,eNB_index);
 
-	return;
+	return 0;
 	break;
+      default:
+	msg("[RRC][UE%d] Frame %d : Unknown message\n",Mod_id,Mac_rlc_xface->frame);
+	return -1;
       }
     }
   }
+
+  return 0;
 }
 
 
@@ -390,7 +401,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
 					    1,
 					    SRB1_logicalChannelConfig,
-					    (struct MeasConfigGap_t *)NULL,
+					    (MeasGapConfig_t *)NULL,
 					    NULL,
 					    NULL,
 					    NULL);
@@ -574,7 +585,7 @@ const char siWindowLength_int[7] = {1,2,5,10,15,20,40};
 const char SIBType[16][6] ={"SIB3\0","SIB4\0","SIB5\0","SIB6\0","SIB7\0","SIB8\0","SIB9\0","SIB10\0","SIB11\0","Sp0\0","Sp1\0","Sp2\0","Sp3\0","Sp4\0"};
 const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
 
-void decode_SIB1(u8 Mod_id,u8 eNB_index) {
+int decode_SIB1(u8 Mod_id,u8 eNB_index) {
   asn_dec_rval_t dec_rval;
   SystemInformationBlockType1_t **sib1=&UE_rrc_inst[Mod_id].sib1[eNB_index];
   int i;
@@ -585,6 +596,12 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
 			 (void**)sib1,
 			 (uint8_t*)UE_rrc_inst[Mod_id].SIB1[eNB_index],
 			 100,0,0);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed==0)) {
+    msg("[RRC][UE %d] Frame %d : Failed to decode SIB 1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
+    return -1;
+  }
+
   msg("[RRC][UE %d] Frame %d : Dumping SIB 1 (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
   for (i=0;i<18;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SIB1[eNB_index][i]);
@@ -599,8 +616,19 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
   msg("cellSelectionInfo.q_RxLevMin       : %d\n",(int)(*sib1)->cellSelectionInfo.q_RxLevMin);
   msg("freqBandIndicator                  : %d\n",(int)(*sib1)->freqBandIndicator);
   msg("siWindowLength                     : %s\n",siWindowLength[(*sib1)->si_WindowLength]);
-  msg("siSchedulingInfoSIBType[0]         : %s\n",SIBType[(int)*(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0]]);
-  msg("siSchedulingInfoPeriod[0]          : %s\n",SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity]);
+  if ((*sib1)->schedulingInfoList.list.count) {
+    msg("siSchedulingInfoPeriod[0]          : %s\n",SIBPeriod[(int)(*sib1)->schedulingInfoList.list.array[0]->si_Periodicity]);
+    if ((*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count)
+      msg("siSchedulingInfoSIBType[0]         : %s\n",SIBType[(int)(*(*sib1)->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[0])]);
+    else {
+      msg("siSchedulingInfoSIBType[0]         : PROBLEM!!!\n");
+      return -1;
+    }
+  }
+  else {
+    msg("siSchedulingInfoPeriod[0]          : PROBLEM!!!\n");
+   return -1;
+  }
 
   if ((*sib1)->tdd_Config)
     msg("TDD subframe assignment            : %d\nS-Subframe Config                  : %d\n",(int)(*sib1)->tdd_Config->subframeAssignment,(int)(*sib1)->tdd_Config->specialSubframePatterns);
@@ -618,6 +646,9 @@ void decode_SIB1(u8 Mod_id,u8 eNB_index) {
 				    UE_rrc_inst[Mod_id].sib1[eNB_index]->tdd_Config,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIwindowsize,
 				    &UE_rrc_inst[Mod_id].Info[eNB_index].SIperiod);
+
+  return 0;
+
 }
 
   
@@ -710,7 +741,7 @@ void dump_sib3(SystemInformationBlockType3_t *sib3) {
 }
 
 //const char SIBPeriod[7][7]= {"80ms\0","160ms\0","320ms\0","640ms\0","1280ms\0","2560ms\0","5120ms\0"};
-void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
+int decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
 
   asn_dec_rval_t dec_rval;
   SystemInformation_t **si=&UE_rrc_inst[Mod_id].si[eNB_index][si_window];
@@ -719,7 +750,7 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
 
   if (si_window>8) {
     msg("[RRC][UE], not enough windows (%d>8)\n",si_window);
-    return;
+    return -1;
   }
   memset(*si,0,sizeof(SystemInformation_t));
   dec_rval = uper_decode(NULL,
@@ -727,19 +758,32 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
 			 (void**)si,
 			 (uint8_t*)UE_rrc_inst[Mod_id].SI[eNB_index],
 			 100,0,0);
+
+  if ((dec_rval.code != RC_OK) || (dec_rval.consumed==0)) {
+    msg("[RRC][UE %d] Frame %d : Failed to decode SI (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,dec_rval.consumed);
+    return -1;
+  }
+
+
   msg("[RRC][UE %d] Frame %d : Dumping SI from window %d (%d bytes)\n",Mod_id,Mac_rlc_xface->frame,si_window,dec_rval.consumed);
   for (i=0;i<30;i++)
     msg("%x.",UE_rrc_inst[Mod_id].SI[eNB_index][i]);
   msg("\n");
 
   // Dump contents
-  if ((*si)->criticalExtensions.present==SystemInformation__criticalExtensions_PR_systemInformation_r8)
-    typeandinfo=(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[0];
+  if ((*si)->criticalExtensions.present==SystemInformation__criticalExtensions_PR_systemInformation_r8) {
+    msg("(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count %d\n",
+       (*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count);
+  }
   else {
     msg("[RRC][UE] Unknown criticalExtension version (not Rel8)\n");
-    return;
+    return -1;
   }
-  for (i=0;(typeandinfo!=NULL);i++) {
+
+  for (i=0;i<(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count;i++) {
+
+    typeandinfo=(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[i];
+
     switch(typeandinfo->present) {
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
       UE_rrc_inst[Mod_id].sib2[eNB_index] = &typeandinfo->choice.sib2;
@@ -797,9 +841,9 @@ void decode_SI(u8 Mod_id,u8 eNB_index,u8 si_window) {
       break;
     }
     
-    typeandinfo=(*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[1+i];
-
   }
+
+  return 0;
 }
 
 

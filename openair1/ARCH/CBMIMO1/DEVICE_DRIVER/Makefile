@@ -19,7 +19,7 @@ CCC = $(shell rtai-config --cc)
 RTAI_SUBVERSION=$(shell rtai-config --version | sed -e 's/^..\(.\).*$$/\1/')
 IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then echo true ; fi)
 
-EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -g -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -Wall -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
+EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -ggdb -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
@@ -30,17 +30,18 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
-EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+#EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
-SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
+#SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 -m32 
 CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
+#CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAX_MODULES=1 -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -UDLSCH_THREAD -DPHY_ABSTRACTION
+EXTRA_CFLAGS += -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD -DPHY_ABSTRACTION
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -76,17 +77,19 @@ ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 endif
 
-EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I$(OPENAIR2_DIR) -I$(OPENAIR2_DIR)/COMMON -I$(OPENAIR2_DIR)/LAYER2/MAC -I$(OPENAIR2_DIR)/LAYER2/PDCP -I$(OPENAIR2_DIR)/LAYER2/RLC -I$(OPENAIR2_DIR)/LAYER2/RLC/AM -I$(OPENAIR2_DIR)/LAYER2/RLC/TM -I$(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0 -I$(OPENAIR2_DIR)/PHY_INTERFACE -I$(OPENAIR2_DIR)/RRC/L2_INTERFACE -I$(OPENAIR2_DIR)/RRC/LITE -I$(OPENAIR2_DIR)/RRC/LITE/MESSAGES -I$(OPENAIR2_DIR)/UTIL/LISTS -I$(OPENAIR2_DIR)/UTIL/LOG -I$(OPENAIR2_DIR)/UTIL/MATH -I$(OPENAIR2_DIR)/UTIL/MEM -I$(OPENAIR2_DIR)/UTIL/TIMER -I/usr/include 
+EXTRA_CFLAGS += -I/usr/include -I/usr/realtime/include 
+EXTRA_CFLAGS += -I$(OPENAIR1_DIR) 
 
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 
-ifeq ($(OPENAIR2),1)
+#ifeq ($(OPENAIR2),1)
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc
-else
+#else
 include $(OPENAIR1_DIR)/MAC_INTERFACE/Makefile.inc
-endif
+#endif
 
+EXTRA_CFLAGS += $(subst $(OPENAIR2_TOP), $(OPENAIR2_DIR), $(L2_incl))
 
 obj-m += openair_rf.o
 
@@ -101,11 +104,10 @@ openair_rf-objs += cbmimo1_device.o cbmimo1_rf_cntl.o cbmimo1_init.o cbmimo1_dma
 # MAC Interface
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/register.o
 #openair_rf-objs += $(OPENAIR1_TOP)/MAC_INTERFACE/init.o
-openair_rf-objs += $(MAC_XFACE_OBJS)
 
 # Sched 
 openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_lte.o
-#openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
+openair_rf-objs += $(OPENAIR1_TOP)/SCHED/sched_dlsch.o
 
 # Init
 openair_rf-objs += $(OPENAIR1_TOP)/PHY/INIT/init_top.o
@@ -124,13 +126,15 @@ endif
 #include files for OPENAIR2
 ifeq ($(OPENAIR2),1)
 openair_rf-objs += $(L2_OBJS)
+else
+openair_rf-objs += $(MAC_XFACE_OBJS)
 endif
 
 test:
 	echo $(openair_rf-objs)
+	echo $(obj-m)
 	echo $(CFLAGS)
 	echo $(EXTRA_CFLAGS)
-	echo $(L2_incl)
 
 clean:
 	rm -f $(openair_rf-objs) $(obj-m)

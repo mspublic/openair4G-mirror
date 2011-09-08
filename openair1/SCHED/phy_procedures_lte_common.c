@@ -276,7 +276,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
 	o_ACK[0] = harq_ack[7].ack;
 	o_ACK[1] = harq_ack[8].ack;
 	status = harq_ack[7].send_harq_status + (harq_ack[8].send_harq_status<<1);
-	printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
+	//printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);
       }
       else if (subframe == 4) {  // ACK subframes 9 and 0
 	o_ACK[0] = harq_ack[9].ack;
@@ -292,7 +292,7 @@ u8 get_ack(LTE_DL_FRAME_PARMS *frame_parms,
     
     }
   }
-  printf("status %d\n",status);
+  //printf("status %d\n",status);
 
   return(status);
 }
@@ -410,5 +410,18 @@ LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id, u16 rnti) {
     return NULL;
   }
   return(&PHY_vars_eNB_g[Mod_id]->eNB_UE_stats[UE_id]);
+}
+
+s8 find_ue(u16 rnti, PHY_VARS_eNB *phy_vars_eNB) {
+  u8 i;
+
+  for (i=0;i<NUMBER_OF_UE_MAX;i++) {
+    if ((phy_vars_eNB->dlsch_eNB[i]) && 
+	(phy_vars_eNB->dlsch_eNB[i][0]) && 
+	(phy_vars_eNB->dlsch_eNB[i][0]->rnti==rnti)) {
+      return(i);
+    }
+  }
+  return(-1);
 }
 

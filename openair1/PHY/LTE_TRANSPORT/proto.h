@@ -936,7 +936,7 @@ parameters are know, the routine calls some basic initialization routines (cell-
 */
 void initial_sync(PHY_VARS_UE *phy_vars_ue);
 
-s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
+void rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH *eNB_ulsch_vars,
 	      LTE_DL_FRAME_PARMS *frame_parms,
 	      u32 subframe,
@@ -944,7 +944,7 @@ s32 *rx_ulsch(LTE_eNB_COMMON *eNB_common_vars,
 	      LTE_eNB_ULSCH_t *ulsch,
 	      u8 cooperation_flag);
 
-int *rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
+void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 subframe,
 		   u8 sect_id,
 		   u8 UE_index);

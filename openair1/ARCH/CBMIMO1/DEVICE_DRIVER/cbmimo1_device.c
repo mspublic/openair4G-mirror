@@ -20,11 +20,10 @@
 
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/vars.h"
-#ifdef OPENAIR2
 #include "LAYER2/MAC/vars.h"
+#ifdef OPENAIR2
 #include "RRC/LITE/vars.h"
 #include "UTIL/LOG/log_if.h"
-//#include "PHY_INTERFACE/vars.h"
 #endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
@@ -109,6 +108,23 @@ release:openair_device_release,
 mmap: openair_device_mmap
 };
 #endif
+
+int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
+
+  RT_TASK *rt_task;
+  
+  rt_task = rt_smp_current[rtai_cpuid()];
+
+  printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, ip %04x (%04x), frame %d, slot %d\n", 
+	 vec, signo, rt_task, regs->ip, regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+
+  openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
+
+  rt_task_suspend(rt_task);
+
+  return 1;
+
+}
 
 
 
@@ -287,6 +303,7 @@ static int __init openair_init_module( void )
     }
       
     bigphys_current = bigphys_ptr;
+    memset(bigphys_ptr,0,BIGPHYS_NUMPAGES*PAGE_SIZE);
   }
 
 #endif //BIGPHYSAREA
@@ -371,13 +388,21 @@ static int __init openair_init_module( void )
   //printk("[openair][MODULE][INFO] IOCTL %d : %x\n",i,_IOR('o',i,long));
 
  		
-  printk("[openair][MODULE][INFO] Done init\n");
   fifo_printf_init();
 
 #ifdef OPENAIR2
   //logInit();
 #endif
 
+  printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);
+
+
+  // set default trap handler
+  rt_set_trap_handler(oai_trap_handler);
+
+  printk("[openair][MODULE][INFO] &bigphys_malloc = %p\n",&bigphys_malloc);
+
+  printk("[openair][MODULE][INFO] Done init\n");
   return 0;
 }
 
@@ -413,6 +438,10 @@ static void  openair_cleanup(void) {
 #ifndef PHY_EMUL
 
   openair_sched_cleanup();
+
+#ifdef DLSCH_THREAD
+  cleanup_dlsch_threads();
+#endif
 
   udelay(1000);
 

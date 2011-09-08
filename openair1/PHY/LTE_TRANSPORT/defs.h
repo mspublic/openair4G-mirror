@@ -361,6 +361,8 @@ typedef struct {
   u8 n_DMRS2;
   /// cyclic shift for DM RS
   u8 cyclicShift;
+  /// cooperation flag
+  u8 cooperation_flag;
 } LTE_eNB_ULSCH_t;
 
 typedef struct {
@@ -444,8 +446,14 @@ typedef struct {
   u32 ulsch_decoding_attempts[3][4];
   ///
   u32 ulsch_round_errors[3][4];
-  ///
+  u32 ulsch_decoding_attempts_last[3][4];
+  u32 ulsch_round_errors_last[3][4];
+  u32 ulsch_round_fer[3][4];
   s8 dlsch_mcs_offset;
+  /// Target mcs1 after rate-adaptation (used by MAC layer scheduler)
+  u8 dlsch_mcs1;
+  /// Target mcs2 after rate-adaptation (used by MAC layer scheduler)
+  u8 dlsch_mcs2;
   //  SRS_param_t SRS_parameters;
 } LTE_eNB_UE_stats;
 

@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
   u8 abstraction_flag=0,calibration_flag=0;
   double pucch_sinr;
   u8 osf=1,N_RB_DL=25;
-  u32 pucch_payload_tx=0,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
+  u32 pucch_payload_tx,pucch_payload_rx,pucch_tx=0,pucch1_missed=0,pucch1_false=0,sig;
   PUCCH_FMT_t pucch_format = pucch_format1;
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated;
   u8 subframe=3;
@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
 		 37, //n1_pucch,
 		 0, //n2_pucch,
 		 0, //shortened_format,
-		 (u8*) &pucch_payload_tx, //payload,
+		 1, //payload,
 		 scfdma_amps[1], //amp,
 		 subframe); //subframe
 #ifdef IFFT_FPGA_UE  
@@ -637,7 +637,7 @@ int main(int argc, char **argv) {
 	       37, //n1_pucch,
 	       0, //n2_pucch,
 	       0, //shortened_format,
-	       (u8*) &pucch_payload_rx, //payload,
+	       &pucch_payload_rx, //payload,
 	       subframe); //subframe	       
       if (pucch_format==pucch_format1) {
 	pucch1_missed = (pucch_payload_rx == 0) && (sig==1) ? (pucch1_missed+1) : pucch1_missed;

@@ -118,7 +118,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
   }
 
   harq_pid = dlsch->current_harq_pid;
-  if (harq_pid > 1) {
+  if (harq_pid >= 8) {
     msg("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
     return(MAX_TURBO_ITERATIONS);
   }
@@ -279,7 +279,7 @@ unsigned int  dlsch_decoding(short *dlsch_llr,
 					  harq_pid+1);
     }
 
-    if (ret==(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
+    if (ret>=(1+MAX_TURBO_ITERATIONS)) {// a Code segment is in error so break;
       //      msg("CRC failed\n");
       err_flag = 1;
     }

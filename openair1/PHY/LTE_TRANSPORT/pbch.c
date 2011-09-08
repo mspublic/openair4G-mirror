@@ -26,10 +26,6 @@ extern __m128i zero;
 
 #define PBCH_A 24
 
-#ifndef USER_MODE
-#define msg debug_msg
-#endif
-
 //u8 pbch_d[96+(3*(16+PBCH_A))], pbch_w[3*3*(16+PBCH_A)],pbch_e[1920];  //one bit per byte
 int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 		  mod_sym_t **txdataF,

@@ -11,11 +11,15 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
-CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
 CFLAGS += -DOPENAIR_LTE -DOPENAIR2 #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
+
+ifndef OPENAIR2
+export OPENAIR2=1
+endif
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
@@ -80,8 +84,9 @@ SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/rf.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/adc.o
 SIMULATION_OBJS += $(TOP_DIR)/SIMULATION/RF/dac.o
 
-ASN1_MSG_OBJS2 := $(foreach file, $(ASN1_MSG_OBJS), $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/$(file))
-
+ASN1_MSG_OBJS1=$(addprefix $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/, $(ASN1_MSG_OBJS))
+#L2_OBJS =
+#EXTRA_CFLAGS =
 
 OAISIM_OBJS = channel_sim.o 
 OAISIM_OBJS += init_lte.o 
@@ -89,7 +94,7 @@ OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS2) $(OAISIM_OBJS) $(NAS_OBJS) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) 
 #oaisim_config.o 
 
 all: oaisim
@@ -103,10 +108,10 @@ printvars:
 	@echo OAI NETLINK FLAG is $(NAS_FLAG)
 	@echo SSE3 proc is $(SSE3PROC)
 
-$(OBJ) : %.o : %.c
+$(OBJ): %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
-$(L2_OBJS) : %.o : %.c
+$(L2_OBJS): %.o : %.c
 	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
@@ -144,6 +149,7 @@ cleanl1:
 	rm -f $(OBJ)
 	rm -f *.o
 	rm -f *.exe
+
 cleanl2:
 	rm -f $(L2_OBJS)
 

@@ -221,7 +221,7 @@ void openair_rrc_on(u8 Mod_id);
     \param Mod_id Instance ID of UE
     \param Srb_info Pointer to SRB_INFO structure (SRB0)
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info,u8 CH_index);
+int rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info,u8 CH_index);
 
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param Mod_id Instance ID of UE
@@ -280,14 +280,14 @@ void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CH_index,
 /**\brief Entry routine to decode a UL-CCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
-void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
+int rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param UE_index Index of UE sending the message
    \param Rx_sdu Pointer Received Message
    \param sdu_size Size of incoming SDU*/
-void rrc_eNB_decode_dcch(u8 Mod_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
+int rrc_eNB_decode_dcch(u8 Mod_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_size);  
 
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param Mod_id Instance ID for eNB/CH
@@ -385,9 +385,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 					struct DRB_ToAddMod **DRB_config,
 					struct PhysicalConfigDedicated  **physicalConfigDedicated);
 
-void decode_SIB1(u8 Mod_id,u8 CH_index);
+int decode_SIB1(u8 Mod_id,u8 CH_index);
 
-void decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
+int decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
 
 #endif
 
