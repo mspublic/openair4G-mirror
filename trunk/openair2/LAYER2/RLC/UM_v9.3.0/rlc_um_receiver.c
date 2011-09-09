@@ -20,8 +20,8 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 //-----------------------------------------------------------------------------
 
     mem_block_t        *tb;
-    u8_t               *first_byte;
-    u8_t                tb_size_in_bytes;
+    u16_t               *first_byte;
+    u16_t                tb_size_in_bytes;
 
     while ((tb = list_remove_head (&data_indP.data))) {
 #ifdef DEBUG_RLC_STATS
