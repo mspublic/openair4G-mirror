@@ -16,7 +16,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 
-//#define DEBUG_PHY
+#define DEBUG_PHY
 
 /*
 void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parms, PHY_FRAMING *phy_framing) {
@@ -540,7 +540,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       //RK 2 times because of output format of FFT!  We should get rid of this
-      ue_common_vars->rxdataF[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti));
+      ue_common_vars->rxdataF[i] = (int *)malloc16(2*sizeof(int)*(frame_parms->ofdm_symbol_size*14));
       if (ue_common_vars->rxdataF[i]) {
 #ifdef DEBUG_PHY
 	msg("[openair][LTE_PHY][INIT] ue_common_vars->rxdataF[%d] allocated at %p\n",i,ue_common_vars->rxdataF[i]);

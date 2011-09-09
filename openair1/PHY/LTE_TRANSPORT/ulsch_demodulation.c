@@ -1343,8 +1343,8 @@ void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
 		   u8 sect_id,
 		   u8 UE_index) {
   msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",phy_vars_eNB->Mod_id,subframe,sect_id,UE_index);
-  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[0] = 45;
-  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[1] = 45;
+  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[0] = 31622; //=45dB;
+  phy_vars_eNB->lte_eNB_ulsch_vars[UE_index]->ulsch_power[1] = 31622; //=45dB;
 
 }
 

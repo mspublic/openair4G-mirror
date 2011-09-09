@@ -19,10 +19,6 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softregs.h"
 
-//#define DEBUG_PHY
-//#undef OPENAIR2
-
-
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
@@ -353,7 +349,7 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
 				   phy_vars_eNB->lte_eNB_common_vars.sync_corr[sect_id]);
       
 #ifdef USER_MODE
-#ifdef DEBUG_PHY    
+#ifdef DEBUG_PHY_PROC    
       if (sect_id==0)
       	write_output("sync_corr_eNB.m","synccorr",phy_vars_eNB->lte_eNB_common_vars.sync_corr[sect_id],
       		     (phy_vars_eNB->lte_frame_parms.symbols_per_tti/2 - PRACH_SYMBOL) * 
@@ -449,7 +445,6 @@ void phy_procedures_eNB_S_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,
 	sprintf(vname,"rxsF1_%d",sect_id);
 	write_output(fname,vname, &phy_vars_eNB->lte_eNB_common_vars.rxdataF[sect_id][1][(19*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size)<<1],512*2,2,1);
       */
-
       if (abstraction_flag == 0) {
 	lte_eNB_I0_measurements(phy_vars_eNB,
 				sect_id,
@@ -492,8 +487,7 @@ void phy_procedures_emos_eNB_RX(unsigned char last_slot) {
   if (last_slot%2==1) {
     for (sect_id = 0; sect_id<3; sect_id++)  
       for (aa=0; aa<PHY_vars_eNB_g->lte_frame_parms.nb_antennas_rx; aa++) 
-	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],
-	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
+	memcpy(&emos_dump_eNB.channel[(last_slot>>1)-2][sect_id][aa][0],	       PHY_vars_eNB_g->lte_eNB_common_vars.srs_ch_estimates[sect_id][aa],
 	       PHY_vars_eNB_g->lte_frame_parms.ofdm_symbol_size*sizeof(int));
   }
 
@@ -988,9 +982,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       
       else { // this is a DLSCH allocation
 
-#ifdef DEBUG_PHY_PROC
-
 #ifdef OPENAIR2
+#ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY][eNB] Searching for RNTI %x\n",DCI_pdu->dci_alloc[i].rnti);
 #endif
 	UE_id = find_ue((s16)DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB);
@@ -1170,7 +1163,7 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	}
 	phy_vars_eNB->dlsch_eNB[(u8)UE_id][0]->active = 0;
 	
-#ifdef DEBUG_PHY    
+#ifdef DEBUG_PHY_PROC   
 	msg("[PHY][eNB%d] Frame %d, slot %d, DLSCH re_allocated = %d mod id %d\n",
 	    phy_vars_eNB->Mod_id,mac_xface->frame, next_slot, re_allocated, phy_vars_eNB->Mod_id);
 #endif
@@ -1484,7 +1477,7 @@ void process_HARQ_feedback(u8 UE_id,
 	    else
 	      ue_stats->dlsch_mcs_offset=-1;
 	  }
-#ifdef DEBUG_PHY	  
+#ifdef DEBUG_PHY_PROC	  
 	  debug_msg("[PHY][process_HARQ_feedback] Frame %d Setting round to %d for pid %d (subframe %d)\n",mac_xface->frame,
 		 dlsch_harq_proc->round,dl_harq_pid[m],subframe);
 #endif
@@ -1849,7 +1842,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	  phy_vars_eNB->eNB_UE_stats[i+1].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_1[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
 	}
-#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power UE0 (%d,%d) dB RX power UE1 (%d,%d)\n",
 		  mac_xface->frame,last_slot,last_slot>>1,i,
 		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power_0[0]),
@@ -1862,7 +1855,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 	for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++)
 	  phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] = dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[j]) 
 	    - phy_vars_eNB->rx_total_gain_eNB_dB;
-#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY_PROC
 	debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d: ULSCH %d RX power (%d,%d) dB\n",
 		  mac_xface->frame,last_slot,last_slot>>1,i,
 		  dB_fixed(phy_vars_eNB->lte_eNB_ulsch_vars[i]->ulsch_power[0]),
@@ -1967,7 +1960,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       }  // ulsch not in error
       
       // process HARQ feedback
-#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY_PROC
       debug_msg("[PHY_PROCEDURES_eNB] eNB %d Processing HARQ feedback for UE %d\n",phy_vars_eNB->Mod_id,i);
 #endif
       process_HARQ_feedback(i,
@@ -1979,7 +1972,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 			    0);
       
 
-#ifdef DEBUG_PHY
+#ifdef DEBUG_PHY_PROC
       debug_msg("[PHY_PROCEDURES_eNB] frame %d, slot %d, subframe %d, sect %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",mac_xface->frame, last_slot, last_slot>>1, phy_vars_eNB->eNB_UE_stats[i].sector, harq_pid, i, ret, phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status, phy_vars_eNB->ulsch_eNB[i]->o_ACK[0],	phy_vars_eNB->ulsch_eNB[i]->o_ACK[1], phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
 #endif
 
