@@ -187,14 +187,8 @@ do_forms (FD_phy_procedures_sim * form,
   if (j > 0)
     fl_set_xyplot_data (form->pusch_constellation, I2, Q2, j, "", "", "");
 
-<<<<<<< .mine
-
   fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
   fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
-=======
-  fl_set_xyplot_xbounds (form->pusch_constellation, -800, 800);
-  fl_set_xyplot_ybounds (form->pusch_constellation, -800, 800);
->>>>>>> .r1394
 
   for (j = 0; j < ch_len; j++) {
 
@@ -212,17 +206,6 @@ int
 main (int argc, char **argv)
 {
   char c;
-<<<<<<< .mine
-  s32 i,j;
-  int new_omg_model;	
-  // pointers signal buffers (s = transmit, r,r0 = receive) 
-  double **s_re,**s_im,**r_re,**r_im,**r_re0,**r_im0;
-  //double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double amps[1] = {1};
-  double aoa=.03,ricean_factor=0,Td=.8,forgetting_factor=0,maxDoppler=0;
-  u8 channel_length,nb_taps=1;
-  int map1,map2,ind;
-=======
   s32 i, j;
   int new_omg_model;
   // pointers signal buffers (s = transmit, r,r0 = receive)
@@ -230,7 +213,6 @@ main (int argc, char **argv)
   SCM_t channel_model;
   double forgetting_factor=0;
   int map1,map2;
->>>>>>> .r1394
   double **ShaF= NULL;
 
   // Framing variables
@@ -780,21 +762,13 @@ main (int argc, char **argv)
 	if (mac_xface->frame >= (UE_id * 10)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
-	  printf
-	    ("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
+	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, mac_xface->frame, slot, next_slot >> 1);
 #endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-<<<<<<< .mine
-	    phy_procedures_UE_lte(last_slot,next_slot,PHY_vars_UE_g[UE_id],0,abstraction_flag);
-	    if ((mac_xface->frame==1) && (last_slot==0))
-	      write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-#ifndef NAS_NETLINK	   
-=======
 	    phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 #ifndef NAS_NETLINK
->>>>>>> .r1394
 	    if ((mac_xface->frame % 10) == 0) {
 	      len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 	      rewind (UE_stats);

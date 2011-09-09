@@ -24,7 +24,8 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
-		      1);
+		      1,
+		      0);
   
 
   
