@@ -21,7 +21,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
 
-#include "SIMULATION/simulation_defs.h"
+//#include "SIMULATION/simulation_defs.h"
 //extern EMULATION_VARS *Emul_vars;
 //extern CH_MAC_INST *CH_mac_inst;
 //extern UE_MAC_INST *UE_mac_inst;
@@ -136,8 +136,8 @@ int rrc_init_global_param(void){
   //  Nb_mod=0;
 #ifdef USER_MODE
   Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-#endif //USRE_MODE
-  Rrc_xface->openair_rrc_mr_init = rrc_ue_init;
+#endif //USER_MODE
+  Rrc_xface->openair_rrc_UE_init = rrc_ue_init;
   Rrc_xface->mac_rrc_data_ind = mac_rrc_data_ind;
   Rrc_xface->mac_rrc_data_req = mac_rrc_data_req;
   Rrc_xface->rrc_data_indP    = rlcrrc_data_ind;
