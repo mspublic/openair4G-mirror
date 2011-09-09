@@ -116,11 +116,7 @@ void cholDec (double **L, int nbr, int nbc)
 
  void destroyMat(double **mat1,int row,int col)
 {
-  int indr;
-  for(indr=0;indr<row;indr++)
-    {
-      free(mat1[indr]);
-    }
+ free(mat1[0]);
  free(mat1);
 }
   double **init_SF (int map_length, int map_height, double decor_dist,
