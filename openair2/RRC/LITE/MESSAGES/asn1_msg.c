@@ -834,7 +834,7 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
   RRCConnectionReconfiguration_t *rrcConnectionReconfiguration;
   long *lcid;
 
-  int i;
+  //  int i;
 
   dl_dcch_msg.message.present           = DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1.present = DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration;
@@ -977,9 +977,9 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 
   //#ifdef USER_MODE
   msg("RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-  for (i=0;i<30;i++)
-    msg("%x.",buffer[i]);
-  msg("\n");
+  // for (i=0;i<30;i++)
+  //    msg("%x.",buffer[i]);
+  // msg("\n");
   
   //#endif
 
