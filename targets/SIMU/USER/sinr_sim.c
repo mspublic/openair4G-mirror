@@ -54,7 +54,9 @@ extern double sinr_bler_map[MCS_COUNT][2][9];
 void extract_position (Node_list input_node_list, node_desc_t **node_data) {    
     
   int index = 0;
-  while (input_node_list != NULL) {
+  while ((input_node_list != NULL) && 
+	 (node_data[index] != NULL) &&
+	 (node_data[index+1] != NULL)){
     node_data[index]->x = input_node_list->node->X_pos;
     node_data[index++]->y = input_node_list->node->Y_pos;
     input_node_list = input_node_list->next;

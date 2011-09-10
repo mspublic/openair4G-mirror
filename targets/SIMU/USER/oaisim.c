@@ -485,8 +485,8 @@ main (int argc, char **argv)
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
-  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
-  	 1+frame_type, Nid_cell, N_RB_DL, extended_prefix_flag, transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames);
+  printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d\n",
+  	 1+frame_type, Nid_cell, N_RB_DL, extended_prefix_flag, transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames,abstraction_flag);
   
 
   init_lte_vars (&frame_parms, frame_type, tdd_config, extended_prefix_flag,
