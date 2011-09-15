@@ -121,9 +121,10 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 
 	omg_param_list.nodes_type = eNB;  //eNB
 	omg_param_list.nodes = emu_info.nb_enb_local;
- 	omg_param_list.seed = emu_info.nb_enb_local; // specific seed for enb and ue to avoid node overlapping
+ 	omg_param_list.seed = emu_info.seed; // specific seed for enb and ue to avoid node overlapping
 	
-	omg_param_list.mobility_file = "../../../UTIL/OMG/mobility.txt"; // default trace-driven mobility file
+	omg_param_list.mobility_file = (char*) malloc(256);
+	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
 	
 	// at this moment, we use the above moving dynamics for mobile eNB
@@ -149,8 +150,7 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 
 	omg_param_list.nodes_type = UE;//UE
 	omg_param_list.nodes = emu_info.nb_ue_local;
-	omg_param_list.seed = emu_info.nb_ue_local; // specific seed for enb and ue to avoid node overlapping
-	omg_param_list.seed = emu_info.nb_ue_local+1;// specific seed for enb and ue to avoid node overlapping
+	omg_param_list.seed = emu_info.seed; // specific seed for enb and ue to avoid node overlapping
 
 	omg_param_list.min_speed = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed;
 	omg_param_list.max_speed = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed;
@@ -164,7 +164,8 @@ void ocg_config_omg(OAI_Emulation * emulation_scen){
 	omg_param_list.min_sleep = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time;
 	omg_param_list.max_sleep = (emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time == 0) ? 0.1 : emulation_scen->topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time;
 	
-	omg_param_list.mobility_file = "../../../UTIL/OMG/mobility.txt"; // default trace-driven mobility file
+	omg_param_list.mobility_file = (char*) malloc(256);
+	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
 	init_mobility_generator(omg_param_list);
 

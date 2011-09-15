@@ -526,7 +526,7 @@ void fill_dci(DCI_PDU *DCI_pdu, u8 subframe, u8 cooperation_flag) {
 
     BCCH_alloc_pdu.type              = 1;
     BCCH_alloc_pdu.vrb_type          = 0;
-    BCCH_alloc_pdu.rballoc           = computeRIV(25,10,4);
+    BCCH_alloc_pdu.rballoc           = computeRIV(25,10,3);
     BCCH_alloc_pdu.ndi               = 1;
     BCCH_alloc_pdu.rv                = 1;
     BCCH_alloc_pdu.mcs               = 1;

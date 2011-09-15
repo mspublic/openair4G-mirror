@@ -283,7 +283,7 @@ main (int argc, char **argv)
   emu_info.omg_model_ue=STATIC; //default to static mobility model
   emu_info.otg_enabled=0;// T flag
   emu_info.time = 0;	// time of emulation 
-  emu_info.seed = time(NULL); // time-based random seed 
+  emu_info.seed = 1; //time(NULL); // time-based random seed 
   transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
@@ -709,9 +709,10 @@ main (int argc, char **argv)
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
 	  calc_path_loss (enb_data[eNB_id], ue_data[UE_id], eNB2UE[eNB_id][UE_id], oai_emulation.environment_system_config,ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	  UE2eNB[UE_id][eNB_id]->path_loss_dB = eNB2UE[eNB_id][UE_id]->path_loss_dB;
-	  printf("[CHANNEL_SIM] Pathloss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f\n",
+	  printf("[CHANNEL_SIM] Pathloss bw enB %d at (%f,%f) and UE%d at (%f,%f) is %f (ShaF %f)\n",
 		 eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
-		 eNB2UE[eNB_id][UE_id]->path_loss_dB);
+		 eNB2UE[eNB_id][UE_id]->path_loss_dB,
+		 ShaF[(int)ue_data[UE_id]->x][(int)ue_data[UE_id]->y]);
 	}
       }
     }
@@ -791,9 +792,11 @@ main (int argc, char **argv)
 	  else {
 	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
-	      write_output("dlchan0.m","dlch0",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("dlchan1.m","dlch1",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("dlchan2.m","dlch2",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      write_output("dlchan10.m","dlch10",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][2][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      write_output("rxsig.m","rxs",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,1,1);
 	      write_output("rxsigF.m","rxsF",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],2*PHY_vars_UE_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size,2,1);
 	      write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);
 	      write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);

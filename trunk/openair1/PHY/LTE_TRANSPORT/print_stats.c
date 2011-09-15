@@ -227,7 +227,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 
 		       
 
-	len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors (%d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) : %d/%d(%d,%d,%d,%d) \n",
+	len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors %d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) : %d/%d (%d,%d,%d,%d) \n",
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_errors[0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[0][0],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_errors[0][0],

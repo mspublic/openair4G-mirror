@@ -1803,9 +1803,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 
 				// Now compute number of required RBs for total sdu length
 				// Assume RAH format 2
-				nb_rb = 2;
+				nb_rb = nb_available_rb;
 				TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 
+				/*
 				while (TBS < (sdu_length_total + offset))  {
 					nb_rb += 2;  // to be replaced with RA allocation size for other than 25 PRBs!!!!!!!
 					if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
@@ -1816,6 +1817,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 					}
 					TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 				}
+				*/
 
 #ifdef DEBUG_eNB_SCHEDULER
 				msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",

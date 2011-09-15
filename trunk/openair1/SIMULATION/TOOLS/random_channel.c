@@ -348,7 +348,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       nb_taps = 8;
       Td = 0.8;
       channel_length = (int)11+2*BW*Td;
-      ricean_factor = 0;
+      ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;
 
