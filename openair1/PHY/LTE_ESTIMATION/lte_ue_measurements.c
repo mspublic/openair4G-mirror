@@ -17,8 +17,8 @@ __m128i zeroPMI;
 #endif
 
 //#define k1 1000
-#define k1 1
-#define k2 (1024-k1)
+#define k1 ((long long int) 512)
+#define k2 ((long long int) (1024-k1))
 
 #ifdef USER_MODE
 void print_shorts(char *s,__m128i *x) {
@@ -100,6 +100,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   // otherwise do not update the noise measurements 
   
   if (abstraction_flag!=0) {
+    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       phy_vars_ue->PHY_measurements.n0_power[aarx] = pow(10.0,phy_vars_ue->N0/10.0)*pow(10.0,((double)phy_vars_ue->rx_total_gain_dB)/10.0);
       phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = ((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB;
@@ -109,8 +110,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB;
   }
   else if (N0_symbol != 0) {
+    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      
 #ifdef USER_MODE
       phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 #else
@@ -161,8 +162,12 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   // filter to remove jitter
   if (phy_vars_ue->init_averaging == 0) {
     for (eNB_id = 0; eNB_id < 3; eNB_id++)
-      phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = ((k1*phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]) + (k2*rx_power[eNB_id]))>>10;
-    phy_vars_ue->PHY_measurements.n0_power_avg = ((k1*phy_vars_ue->PHY_measurements.n0_power_avg) + (k2*phy_vars_ue->PHY_measurements.n0_power_tot))>>10;
+      phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = (int) 
+	(((k1*((long long int)(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]))) + 
+	  (k2*((long long int)(rx_power[eNB_id]))))>>10);
+    phy_vars_ue->PHY_measurements.n0_power_avg = (int)
+      (((k1*((long long int) (phy_vars_ue->PHY_measurements.n0_power_avg))) + 
+	(k2*((long long int) (phy_vars_ue->PHY_measurements.n0_power_tot))))>>10);
   }
   else {
     for (eNB_id = 0; eNB_id < 3; eNB_id++)
