@@ -319,14 +319,23 @@ typedef struct
   unsigned short n0_power_dB[NB_ANTENNAS_RX];                     
   //! total estimated noise power (linear)
   unsigned int   n0_power_tot;                                    
-  //! estimated avg noise power (dB)
-  unsigned short n0_power_tot_dB;                                 
+  //! total estimated noise power (dB)
+  unsigned short n0_power_tot_dB;     
+  //! average estimated noise power (linear)
+  unsigned short n0_power_avg;     
+  //! average estimated noise power (dB)
+  unsigned short n0_power_avg_dB;     
+  //! total estimated noise power (dBm)                            
   short n0_power_tot_dBm;
   // UE measurements
   //! estimated received spatial signal power (linear)
   unsigned int   rx_spatial_power[NUMBER_OF_eNB_MAX][2][2];       
   //! estimated received spatial signal power (dB) 
   unsigned short rx_spatial_power_dB[NUMBER_OF_eNB_MAX][2][2];    
+  //! estimated received signal power (sum of all TX/RX antennas)
+  int            rx_power_avg[NUMBER_OF_eNB_MAX];                                 
+  //! estimated received signal power (sum of all TX/RX antennas, in dB)
+  int            rx_power_avg_dB[NUMBER_OF_eNB_MAX];                                 
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_eNB_MAX];                  
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
@@ -340,6 +349,8 @@ typedef struct
   int            wideband_cqi_dB[NUMBER_OF_eNB_MAX][NB_ANTENNAS_RX];                  
   /// Wideband CQI (sum of all RX antennas, in dB)
   int            wideband_cqi_tot[NUMBER_OF_eNB_MAX];                                 
+  /// Wideband CQI (average, in dB)
+  int            wideband_cqi_avg[NUMBER_OF_eNB_MAX];                                 
   /// Wideband CQI (sum of all RX antennas, in dB, for precoded transmission modes (4,5,6), up to 4 spatial streams)
   int            precoded_cqi_dB[NUMBER_OF_eNB_MAX+1][4];                               
   /// Subband CQI per RX antenna (= SINR)

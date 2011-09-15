@@ -32,8 +32,8 @@ int signal_energy(int *input,unsigned int length) {
     mm1 = in[i]; 
     mm2 = mm1;
     mm1 = _m_pmaddwd(mm1,mm1);
-    mm1 = _m_psradi(mm1,shift);
-    mm0 = _m_paddd(mm0,mm1);
+    mm1 = _m_psradi(mm1,shift);// shift any 32 bits blocs of the word by the value shift
+    mm0 = _m_paddd(mm0,mm1);// add the two 64 bits words 4 bytes by 4 bytes
     //    temp2 = mm0;
     //    printf("%d %d\n",((int *)&temp2)[0],((int *)&temp2)[1]);
 
@@ -42,7 +42,7 @@ int signal_energy(int *input,unsigned int length) {
     //    printf("mm2 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
 
     mm2 = _m_psrawi(mm2,shift_DC);
-    mm3 = _m_paddw(mm3,mm2);
+    mm3 = _m_paddw(mm3,mm2);// add the two 64 bits words 2 bytes by 2 bytes
 
     //    printb = (short *)&mm3;
     //    printf("mm3 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
@@ -112,7 +112,7 @@ int signal_energy_nodc(int *input,unsigned int length) {
     
     mm1 = in[i]; 
     mm2 = mm1;
-    mm1 = _m_pmaddwd(mm1,mm1);
+    mm1 = _m_pmaddwd(mm1,mm1);// SIMD complex multiplication
     mm1 = _m_psradi(mm1,shift);
     mm0 = _m_paddd(mm0,mm1);
     //    temp2 = mm0;
@@ -198,7 +198,7 @@ main(int argc,char **argv) {
   short s=1,i;
   int amp;
 
-  amp = atoi(argv[1]);
+  amp = atoi(argv[1]);// arguments to integer
   if (argc>1)
     printf("Amp = %d\n",amp);
 

@@ -187,8 +187,8 @@ do_forms (FD_phy_procedures_sim * form,
   if (j > 0)
     fl_set_xyplot_data (form->pusch_constellation, I2, Q2, j, "", "", "");
 
-  fl_set_xyplot_xbounds (form->pusch_constellation, -800, 800);
-  fl_set_xyplot_ybounds (form->pusch_constellation, -800, 800);
+  fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
+  fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
 
   for (j = 0; j < ch_len; j++) {
 
@@ -702,8 +702,8 @@ main (int argc, char **argv)
 
     /* Added for PHY abstraction */
     if (emu_info.ocg_enabled == 1) {
-      extract_position(enb_node_list, enb_data);
-      extract_position(ue_node_list, ue_data);
+      extract_position(enb_node_list, enb_data, NB_eNB_INST);
+      extract_position(ue_node_list, ue_data, NB_UE_INST);
       
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 	for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
@@ -773,8 +773,7 @@ main (int argc, char **argv)
 	if (mac_xface->frame >= (UE_id * 10)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
-	  printf
-	    ("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
+	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",
 	     UE_id, mac_xface->frame, slot, next_slot >> 1);
 #endif
 
@@ -949,7 +948,7 @@ main (int argc, char **argv)
 
 #endif
 
-  destroyMat(ShaF,map1, map2);
+ destroyMat(ShaF,map1, map2);
 
   return(0);
 }

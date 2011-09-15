@@ -119,15 +119,13 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
-			 unsigned char init_averaging);
+			 unsigned char abstraction_flag);
 
 void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,u8 last_slot,u8 eNB_id);
 
 //! Automatic gain control
-void phy_adjust_gain (unsigned char clear,
-		      short coef,
-		      unsigned char chsch_ind,
-		      PHY_VARS_UE *phy_vars_ue);
+void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
+		      unsigned char eNB_id);
 
 
 int lte_ul_channel_estimation(int **ul_ch_estimates,
