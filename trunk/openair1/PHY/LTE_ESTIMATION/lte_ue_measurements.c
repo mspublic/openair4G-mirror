@@ -20,8 +20,6 @@ __m128i zeroPMI;
 #define k1 1
 #define k2 (1024-k1)
 
-int rx_power_avg[3];
-
 #ifdef USER_MODE
 void print_shorts(char *s,__m128i *x) {
 
@@ -49,7 +47,7 @@ __m128i mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
 void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 			 unsigned int subframe_offset,
 			 unsigned char N0_symbol,
-			 unsigned char init_averaging){
+			 unsigned char abstraction_flag){
 
 
   int aarx,aatx,eNB_id=0,rx_power_correction,gain_offset;
@@ -69,30 +67,49 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   zeroPMI = _mm_xor_si128(zeroPMI,zeroPMI);
 #endif
   
-  for (eNB_id=0;eNB_id<3;eNB_id++) {
-    if (init_averaging == 1)
-      rx_power_avg[eNB_id] = 0;
-    rx_power[eNB_id] = 0;
+  if (phy_vars_ue->init_averaging == 1) {
+    for (eNB_id=0;eNB_id<3;eNB_id++) {
+      phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = 0;
+    }
+
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = 0;
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = 0;
+    }
+    
+    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
+    phy_vars_ue->PHY_measurements.n0_power_tot_dB = 0;
+    phy_vars_ue->PHY_measurements.n0_power_avg = 0;
+    phy_vars_ue->PHY_measurements.n0_power_avg_dB = 0;
   }
 
+  for (eNB_id=0;eNB_id<3;eNB_id++) 
+    rx_power[eNB_id] = 0;
+
   // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
-  if ( (frame_parms->ofdm_symbol_size == 128) ||
-       (frame_parms->ofdm_symbol_size == 512) )
+  if ( (abstraction_flag==0) && ((frame_parms->ofdm_symbol_size == 128) ||
+				 (frame_parms->ofdm_symbol_size == 512)) )
     rx_power_correction = 2;
   else
     rx_power_correction = 1;
   
   
   // noise measurements
-  // for the moment we measure the noise on the third OFDM symbol (e.g. S subframe) 
-  if (N0_symbol == 1)
-    phy_vars_ue->PHY_measurements.n0_power_tot = 0;
+  // for abstraction we do noise measurements based on the precalculated phy_vars_ue->N0
+  // otherwise if there is a symbol where we can take noise measurements on, we measure there
+  // otherwise do not update the noise measurements 
   
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    if (N0_symbol == 0) {
-      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = -105 + phy_vars_ue->rx_total_gain_dB;
+  if (abstraction_flag!=0) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      phy_vars_ue->PHY_measurements.n0_power[aarx] = pow(10.0,phy_vars_ue->N0/10.0)*pow(10.0,((double)phy_vars_ue->rx_total_gain_dB)/10.0);
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = ((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB;
+      phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     } 
-    else if (N0_symbol == 1) {
+    phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) (((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB);
+    phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB;
+  }
+  else if (N0_symbol != 0) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       
 #ifdef USER_MODE
       phy_vars_ue->PHY_measurements.n0_power[aarx] = signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][subframe_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples],frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
@@ -102,16 +119,17 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
       phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     }
-  }
-  
-  if (N0_symbol == 1) {
+
     phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot);
     phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB + gain_offset;
     //    printf("PHY measurements UE %d: n0_power %d (%d)\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.n0_power_tot_dBm,phy_vars_ue->PHY_measurements.n0_power_tot_dB);
   }
-  
+  else {
+    phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB;
+  }
+
+  // signal measurements  
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
       for (eNB_id=0;eNB_id<3;eNB_id++) {
 	
@@ -130,7 +148,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	  phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx] += phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx];
       }
     }
-
+  
     for (eNB_id = 0; eNB_id < 3; eNB_id++){
       //      phy_measurements->rx_power[eNB_id][aarx]/=frame_parms->nb_antennas_tx;
       phy_vars_ue->PHY_measurements.wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx]);
@@ -140,21 +158,28 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
   }
 
-  for (eNB_id = 0; eNB_id < 3; eNB_id++){
-    //    phy_vars_ue->PHY_measurements.rx_avg_power_dB[eNB_id]/=frame_parms->nb_antennas_rx;
-    if (init_averaging == 0)
-      rx_power_avg[eNB_id] = ((k1*rx_power_avg[eNB_id]) + (k2*rx_power[eNB_id]))>>10;
-    else
-      rx_power_avg[eNB_id] = rx_power[eNB_id];
+  // filter to remove jitter
+  if (phy_vars_ue->init_averaging == 0) {
+    for (eNB_id = 0; eNB_id < 3; eNB_id++)
+      phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = ((k1*phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]) + (k2*rx_power[eNB_id]))>>10;
+    phy_vars_ue->PHY_measurements.n0_power_avg = ((k1*phy_vars_ue->PHY_measurements.n0_power_avg) + (k2*phy_vars_ue->PHY_measurements.n0_power_tot))>>10;
+  }
+  else {
+    for (eNB_id = 0; eNB_id < 3; eNB_id++)
+      phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = rx_power[eNB_id];
+    phy_vars_ue->PHY_measurements.n0_power_avg = phy_vars_ue->PHY_measurements.n0_power_tot;
+    phy_vars_ue->init_averaging = 0;
+  }
 
+  for (eNB_id = 0; eNB_id < 3; eNB_id++) {
+    phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id] = dB_fixed( phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]);
     phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_vars_ue->PHY_measurements.n0_power_tot);
+    phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id],phy_vars_ue->PHY_measurements.n0_power_avg);
+    phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id] = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id] - phy_vars_ue->rx_total_gain_dB + gain_offset;
+  }
+  phy_vars_ue->PHY_measurements.n0_power_avg_dB = dB_fixed( phy_vars_ue->PHY_measurements.n0_power_avg);
 
-    phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id] = (int)dB_fixed(rx_power_avg[eNB_id])- phy_vars_ue->rx_total_gain_dB + gain_offset;
- 
-    //    if (eNB_id == 0)
-    //    printf("rx_power_avg[%d] %d (%d,%d)\n",eNB_id,rx_power_avg[eNB_id],phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id],phy_vars_ue->PHY_measurements.rx_rssi_dBm[eNB_id]);
- 
-
+  for (eNB_id = 0; eNB_id < 3; eNB_id++) {
     if (frame_parms->mode1_flag==0) {
       // cqi/pmi information
       

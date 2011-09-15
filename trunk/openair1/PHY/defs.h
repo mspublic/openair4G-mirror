@@ -244,8 +244,14 @@ typedef struct
   /// holds the maximum channel/precoder coefficient
   char             log2_maxp; 
 
+  /// Flag to initialize averaging of PHY measurements
+  int init_averaging; 
+
   /// sinr for all subcarriers of the current link (used only for abstraction)
   double *sinr_dB;
+
+  /// N0 (used for abstraction)
+  double N0;
   
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_eNB_MAX];

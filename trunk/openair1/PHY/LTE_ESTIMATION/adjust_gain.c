@@ -11,31 +11,13 @@
 #endif
 
 void
-phy_adjust_gain (unsigned char clear,short coef,unsigned char chsch_ind,PHY_VARS_UE *phy_vars_ue)
+phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, unsigned char eNB_id)
 {
   int i;
-  int ncoef;
   int rx_power;
-  static int rx_power_fil = 0;
   unsigned short rx_power_fil_dB;
 
-  ncoef = 1024 - coef;
-  
-  // Find average received power across RX antennas (in dB) 
-  rx_power = phy_vars_ue->PHY_measurements.wideband_cqi[chsch_ind][0];
-
-  for (i=1;i<NB_ANTENNAS_RX;i++)
-    if (phy_vars_ue->PHY_measurements.wideband_cqi[chsch_ind][i] > rx_power)
-      rx_power = phy_vars_ue->PHY_measurements.wideband_cqi[chsch_ind][i];
-
-
-  // filter rx_power to reduce measurement noise		 
-  if (clear == 1)
-    rx_power_fil = rx_power;
-  else
-    rx_power_fil = ((rx_power_fil * coef) + (rx_power * ncoef)) >> 10;
-
-  rx_power_fil_dB = dB_fixed(rx_power_fil);
+  rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
 
   // Gain control with hysterisis
   // Adjust gain in phy_vars_ue->rx_vars[0].rx_total_gain_dB

@@ -412,6 +412,7 @@ u16 get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 #ifdef EMOS
 void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
   u8 harq_pid;
+  
 
   if (next_slot%2==0) {      
     // get harq_pid from subframe relationship
@@ -441,6 +442,7 @@ void phy_procedures_emos_UE_TX(u8 next_slot,u8 eNB_id) {
 void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
   
   u16 first_rb, nb_rb;
+ 
   u8 harq_pid;
   unsigned int input_buffer_length;
   unsigned int i, aa;
@@ -703,8 +705,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 void phy_procedures_UE_S_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
   int aa, card_id;
-
+  
   //  printf("S_TX: txdataF[0] %p\n",phy_vars_ue->lte_ue_common_vars.txdataF[0]);
+
+
   if (next_slot%2==1) {
     for (aa=0;aa<phy_vars_ue->lte_frame_parms.nb_antennas_tx;aa++){
       //  printf("Clearing TX buffer\n");
@@ -789,33 +793,42 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
 #else
 			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*(phy_vars_ue->lte_frame_parms.ofdm_symbol_size+phy_vars_ue->lte_frame_parms.nb_prefix_samples),
 #endif
-			  (last_slot == 2) ? 1 : 2,
-			  1);
+			  (last_slot == 2) ? 1 : 0,
+			  0);
     }
     else {
-      lte_ue_measurements_emul(phy_vars_ue,last_slot,eNB_id);
+     
+      
+       lte_ue_measurements(phy_vars_ue,
+			   0,
+			   0,
+			   1);
     }
 #ifdef DEBUG_PHY_PROC    
     if (last_slot == 0) {
 	
 	debug_msg("[PHY][UE %d] frame %d, slot %d, freq_offset_filt = %d \n",phy_vars_ue->Mod_id,mac_xface->frame, last_slot, phy_vars_ue->lte_ue_common_vars.freq_offset);
 	
-	debug_msg("[PHY][UE %d] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), RX gain %d dB\n",
+	debug_msg("[PHY][UE %d] frame %d, slot %d, RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
 		  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
 		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
 		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
 		  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
-		  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],		  
+		  phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
+		  phy_vars_ue->PHY_measurements.rx_power_avg[0],
 		  phy_vars_ue->rx_total_gain_dB);
       
-	debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d)\n",
+	debug_msg("[PHY][UE %d] frame %d, slot %d, N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
 		  phy_vars_ue->Mod_id,mac_xface->frame, last_slot,
-		  dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot/phy_vars_ue->lte_frame_parms.nb_antennas_rx) - (int)phy_vars_ue->rx_total_gain_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
 		  phy_vars_ue->PHY_measurements.n0_power_dB[0],
 		  phy_vars_ue->PHY_measurements.n0_power_dB[1],
 		  phy_vars_ue->PHY_measurements.n0_power[0],
-		  phy_vars_ue->PHY_measurements.n0_power[1]);
+		  phy_vars_ue->PHY_measurements.n0_power[1],
+		  phy_vars_ue->PHY_measurements.n0_power_avg_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_avg);
     }
 #endif
   }
@@ -827,7 +840,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
     // AGC
     if (openair_daq_vars.rx_gain_mode == DAQ_AGC_ON)
       //      if (mac_xface->frame % 10 == 0)
-      phy_adjust_gain (0,512,0,phy_vars_ue);
+      phy_adjust_gain (phy_vars_ue,0);
     
     eNB_id = 0;
     if (abstraction_flag == 0) 

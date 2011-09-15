@@ -51,15 +51,19 @@ extern double sinr_bler_map[MCS_COUNT][2][9];
 
 // Extract the positions of UE and ENB from the mobility model 
 
-void extract_position (Node_list input_node_list, node_desc_t **node_data) {    
+void extract_position (Node_list input_node_list, node_desc_t **node_data, int nb_nodes) {    
     
-  int index = 0;
-  while ((input_node_list != NULL) && 
-	 (node_data[index] != NULL) &&
-	 (node_data[index+1] != NULL)){
-    node_data[index]->x = input_node_list->node->X_pos;
-    node_data[index++]->y = input_node_list->node->Y_pos;
-    input_node_list = input_node_list->next;
+  int i;
+  for (i=0;i<nb_nodes;i++) {
+    if ((input_node_list != NULL) &&  (node_data[i] != NULL)) {
+      node_data[i]->x = input_node_list->node->X_pos;
+      node_data[i]->y = input_node_list->node->Y_pos;
+      input_node_list = input_node_list->next;
+    }
+    else {
+      printf("extract_position: Null pointer!!!\n");
+      exit(-1);
+    }
   }
 }
 
@@ -134,22 +138,25 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
 
 
-void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB) {
+void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0) {
 
   int return_value;
   u16 nb_rb = 25; //No. of resource blocks
   double thermal_noise;
   int count;
+  int aarx;
       
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
   thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm 
+
+  //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
+    *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
       
-  /*
-  printf("[CHANNEL_SIM] ue %d -> enb %d: path loss %lf, thermal_noise %lf, snr %lf\n", UE_id, eNB_id, eNB2UE->path_loss_dB, thermal_noise,
-	 enb_data->tx_power_dBm 
-	 + eNB2UE->path_loss_dB
-	 - (thermal_noise + ue_data->rx_noise_level)  ); 
-  */
+  printf("[CHANNEL_SIM] path loss %lf, noise %lf, signal %lf, snr %lf\n", 
+	 eNB2UE->path_loss_dB, 
+	 thermal_noise + ue_data->rx_noise_level,
+	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB,
+	 enb_data->tx_power_dBm + eNB2UE->path_loss_dB - (thermal_noise + ue_data->rx_noise_level));
 
     //printf ("coupling factor is %lf\n", coupling); 
     for (count = 0; count < (2 * nb_rb); count++) {

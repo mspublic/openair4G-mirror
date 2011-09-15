@@ -24,9 +24,28 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
-		      1);
+		      0);
   
-
+	msg("[PHY][UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
+		  phy_vars_ue->Mod_id,
+		  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi_dB[0][1],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][0],
+		  phy_vars_ue->PHY_measurements.wideband_cqi[0][1],		  
+		  phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],
+		  phy_vars_ue->PHY_measurements.rx_power_avg[0],
+		  phy_vars_ue->rx_total_gain_dB);
+      
+	msg("[PHY][UE %d][initial sync] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
+		  phy_vars_ue->Mod_id,
+		  phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		  phy_vars_ue->PHY_measurements.n0_power_dB[0],
+		  phy_vars_ue->PHY_measurements.n0_power_dB[1],
+		  phy_vars_ue->PHY_measurements.n0_power[0],
+		  phy_vars_ue->PHY_measurements.n0_power[1],
+		  phy_vars_ue->PHY_measurements.n0_power_avg_dB,
+		  phy_vars_ue->PHY_measurements.n0_power_avg);
   
   pbch_decoded = 0;
   for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
@@ -327,5 +346,7 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
     phy_vars_ue->UE_mode[0] = PRACH;
 #endif //OPENAIR2
   }
+
+  phy_adjust_gain(phy_vars_ue,0);
   
 }
