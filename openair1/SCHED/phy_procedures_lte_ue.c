@@ -786,7 +786,7 @@ void lte_ue_measurement_procedures(u8 last_slot, u16 l, PHY_VARS_UE *phy_vars_ue
   if (l==0) {
     // UE measurements 
     if (abstraction_flag==0) {
-      printf("Calling measurements with rxdata %p\n",phy_vars_ue->lte_ue_common_vars.rxdata);
+
       lte_ue_measurements(phy_vars_ue,
 #ifndef USER_MODE
 			  (last_slot>>1)*phy_vars_ue->lte_frame_parms.symbols_per_tti*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,

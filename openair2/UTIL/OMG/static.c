@@ -99,7 +99,7 @@ void place_static_node(NodePtr node) {
 	LOG_D(OMG, " --------INITIALIZE STATIC NODE--------\n ");
 	LOG_I(OMG, "Initial position of node ID: %d type(UE, eNB): %d (X = %.2f, Y = %.2f) speed = 0.0\n", node->ID, node->type, node->X_pos, node->Y_pos);  
 	Node_Vector[STATIC] = (Node_list) add_entry(node, Node_Vector[STATIC]);
-   Node_Vector_len[STATIC]++;
+	Node_Vector_len[STATIC]++;
 	//Initial_Node_Vector_len[STATIC]++;
  
 }

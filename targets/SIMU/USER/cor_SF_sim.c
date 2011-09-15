@@ -125,7 +125,7 @@
 	  unc_SF[i][j] = gaussdouble (0.0, variance);
       }
     SF[0][0] = unc_SF[0][0];
-    printf ("%f", SF[0][0]);
+    //printf ("%f", SF[0][0]);
     for (aa = 0; aa < 2; aa++)
       {
 	temp[aa] = L1[1][aa];

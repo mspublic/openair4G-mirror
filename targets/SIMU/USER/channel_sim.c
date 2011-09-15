@@ -39,7 +39,7 @@
 #include "oaisim.h"
 
 #define RF
-#define DEBUG_SIM
+//#define DEBUG_SIM
 
 void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_PARMS *frame_parms) {
 
