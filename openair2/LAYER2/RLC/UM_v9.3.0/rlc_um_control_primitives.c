@@ -99,7 +99,7 @@ rlc_um_reset_state_variables (rlc_um_entity_t *rlcP)
 }
 //-----------------------------------------------------------------------------
 void
-rlc_um_free_all_resources (rlc_um_entity_t *rlcP)
+rlc_um_cleanup (rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
   int             index;

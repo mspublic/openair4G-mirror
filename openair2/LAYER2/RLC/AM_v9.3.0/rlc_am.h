@@ -35,7 +35,7 @@
 #        include "rlc_am_rx_list.h"
 #        include "rlc_am_reassembly.h"
 #        include "rlc_am_init.h"
-#        include "rlc_am_test.h"
+//#        include "rlc_am_test.h"
 
 #ifdef USER_MODE
 //#        include "rlc_am_very_simple_test.h"

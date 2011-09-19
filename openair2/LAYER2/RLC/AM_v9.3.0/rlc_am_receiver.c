@@ -1,6 +1,5 @@
 #define RLC_AM_MODULE
 #define RLC_AM_RECEIVER_C
-#include <string.h>
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
@@ -67,7 +66,7 @@ signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_si
                 sum_li += pdu_infoP->li_list[pdu_infoP->num_li];
                 pdu_infoP->num_li = pdu_infoP->num_li + 1;
                 if (pdu_infoP->num_li > RLC_AM_MAX_SDU_IN_PDU) {
-                    printf("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
+                    msg("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET PDU INFO]  SN %04d TOO MANY LIs ", mac_xface->frame, pdu_infoP->sn);
                     return -2;
                 }
             }
@@ -83,7 +82,7 @@ signed int rlc_am_get_data_pdu_infos(rlc_am_pdu_sn_10_t* headerP, s16_t total_si
         }
         return 0;
     } else {
-        printf("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET DATA PDU INFO]  SN %04d ERROR CONTROL PDU ", mac_xface->frame,  pdu_infoP->sn);
+        msg("[FRAME %05d][RLC_AM][MOD XX][RB XX][GET DATA PDU INFO]  SN %04d ERROR CONTROL PDU ", mac_xface->frame,  pdu_infoP->sn);
         return -1;
     }
 }
@@ -95,19 +94,19 @@ void rlc_am_display_data_pdu_infos(rlc_am_entity_t *rlcP, rlc_am_pdu_info_t* pdu
 
     if (pdu_infoP->d_c) {
         if (pdu_infoP->rf) {
-            printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] RX DATA PDU SN %04d FI %1d SO %05d LSF %01d POLL %1d ", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_infoP->sn, pdu_infoP->fi, pdu_infoP->so, pdu_infoP->lsf, pdu_infoP->p);
+            msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] RX DATA PDU SN %04d FI %1d SO %05d LSF %01d POLL %1d ", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_infoP->sn, pdu_infoP->fi, pdu_infoP->so, pdu_infoP->lsf, pdu_infoP->p);
         } else {
-            printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] RX DATA PDU SN %04d FI %1d POLL %1d ", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_infoP->sn, pdu_infoP->fi, pdu_infoP->p);
+            msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] RX DATA PDU SN %04d FI %1d POLL %1d ", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_infoP->sn, pdu_infoP->fi, pdu_infoP->p);
         }
         for (num_li = 0; num_li < pdu_infoP->num_li; num_li++) {
-            printf("LI %05d ",  pdu_infoP->li_list[num_li]);
+            msg("LI %05d ",  pdu_infoP->li_list[num_li]);
         }
         if (pdu_infoP->hidden_size > 0) {
-            printf("hidden size %05d ",  pdu_infoP->hidden_size);
+            msg("hidden size %05d ",  pdu_infoP->hidden_size);
         }
-        printf("\n");
+        msg("\n");
     } else {
-        printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] ERROR RX CONTROL PDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
+        msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][DISPLAY DATA PDU] ERROR RX CONTROL PDU\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id);
     }
 }
 // assumed the sn of the tb is equal to VR(MS)
