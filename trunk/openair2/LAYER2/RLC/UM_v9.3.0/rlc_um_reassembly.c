@@ -38,7 +38,11 @@ rlc_um_reassembly (u8_t * srcP, s32_t lengthP, rlc_um_entity_t *rlcP)
   msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][REASSEMBLY] reassembly()  %d bytes\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, lengthP);
 #endif
 
-  if ((rlcP->data_plane)) {
+  if (lengthP <= 0) {
+      return;
+  }
+
+  if ((rlcP->is_data_plane)) {
     sdu_max_size = RLC_SDU_MAX_SIZE_DATA_PLANE;
   } else {
     sdu_max_size = RLC_SDU_MAX_SIZE_CONTROL_PLANE;
@@ -98,10 +102,10 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
 #endif
     if (rlcP->output_sdu_size_to_write > 0) {
 #ifdef DEBUG_RLC_STATS
-      rlcP->rx_sdus += 1;
+        rlcP->rx_sdus += 1;
 #endif
         msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ASCII=%s\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->output_sdu_in_construction->data);
-#ifdef USER_MODE
+/*#ifdef USER_MODE
         if (strncmp(tcip_sdu, (char*)(&rlcP->output_sdu_in_construction->data[0]), strlen(tcip_sdu)) == 0) {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] OK SDU TCP-IP\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
         } else if (strncmp(voip_sdu, rlcP->output_sdu_in_construction->data, strlen(voip_sdu)) == 0) {
@@ -111,10 +115,15 @@ rlc_um_send_sdu (rlc_um_entity_t *rlcP)
         } else {
             msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] UNKNOWN SDU\n\n\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
         }
+#endif*/
+#ifdef TEST_RLC_UM
+        rlc_um_v9_3_0_test_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write,
+							 rlcP->output_sdu_in_construction);
+#else
+        // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->output_sdu_size_to_write);
+        rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction,rlcP->is_data_plane);
 #endif
-      // msg("[RLC] DATA IND ON MOD_ID %d RB ID %d, size %d\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame,rlcP->output_sdu_size_to_write);
-	rlc_data_ind (rlcP->module_id, rlcP->rb_id, rlcP->output_sdu_size_to_write, rlcP->output_sdu_in_construction,rlcP->data_plane);
-      rlcP->output_sdu_in_construction = NULL;
+        rlcP->output_sdu_in_construction = NULL;
     } else {
 
       msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d][SEND_SDU] ERROR SIZE <= 0 ... DO NOTHING, SET SDU SIZE TO 0\n",rlcP->module_id, rlcP->rb_id, mac_xface->frame);

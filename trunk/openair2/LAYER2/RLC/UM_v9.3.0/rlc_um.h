@@ -1,5 +1,5 @@
-#    ifndef __RLC_UM_PROTO_EXTERN_H__
-#        define __RLC_UM_PROTO_EXTERN_H__
+#    ifndef __RLC_UM_H__
+#        define __RLC_UM_H__
 #        ifdef RLC_UM_C
 #            define private_rlc_um(x)
 #            define protected_rlc_um(x)
@@ -28,9 +28,17 @@
 #        include "rlc_um_reassembly.h"
 #        include "rlc_um_receiver.h"
 #        include "rlc_um_segment.h"
+#        include "rlc_um_test.h"
 #ifdef USER_MODE
-#        include "rlc_um_very_simple_test.h"
+//#        include "rlc_um_very_simple_test.h"
 #endif
+
+typedef volatile struct {
+    u32_t             timer_reordering;
+    u32_t             sn_field_length; // 5 or 10
+    u32_t             is_mXch; // boolean, true if configured for MTCH or MCCH
+} rlc_um_info_t;
+
 public_rlc_um( void     rlc_um_stat_req     (struct rlc_um_entity *rlcP,
 							  unsigned int* tx_pdcp_sdu,
 							  unsigned int* tx_pdcp_sdu_discarded,

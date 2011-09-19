@@ -1,10 +1,12 @@
 #define RLC_UM_MODULE
 #define RLC_UM_C
+//-----------------------------------------------------------------------------
 #include "rtos_header.h"
 #include "platform_types.h"
-
-#include "list.h"
+#include "platform_constants.h"
+//-----------------------------------------------------------------------------
 #include "rlc_um.h"
+#include "list.h"
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "LAYER2/MAC/extern.h"

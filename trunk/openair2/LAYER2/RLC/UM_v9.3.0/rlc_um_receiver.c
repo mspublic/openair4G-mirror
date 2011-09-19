@@ -20,8 +20,8 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 //-----------------------------------------------------------------------------
 
     mem_block_t        *tb;
-    u16_t               *first_byte;
-    u16_t                tb_size_in_bytes;
+    u8_t               *first_byte;
+    u16_t               tb_size_in_bytes;
 
     while ((tb = list_remove_head (&data_indP.data))) {
 #ifdef DEBUG_RLC_STATS
@@ -39,8 +39,8 @@ rlc_um_receive (struct rlc_um_entity *rlcP, struct mac_data_ind data_indP)
 #ifdef RLC_UM_GENERATE_ERRORS
             if (random() % 10 == 4) {
                 ((struct mac_tb_ind *) (tb->data))->error_indication = 1;
-                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, mac_xface->frame);                
-            } 
+                msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d]  RX PDU GENERATE ERROR", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
+            }
 #endif
 
         if (!(((struct mac_tb_ind *) (tb->data))->error_indication)) {
