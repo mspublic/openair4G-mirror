@@ -1,6 +1,5 @@
 #define RLC_AM_MODULE
 #define RLC_AM_REASSEMBLY_C
-#include <string.h>
 #include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------

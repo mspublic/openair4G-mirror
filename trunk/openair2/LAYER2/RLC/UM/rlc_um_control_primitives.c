@@ -288,6 +288,7 @@ POSSIBILITY OF SUCH DAMAGES.
 		     END OF TERMS AND CONDITIONS
 
  ***************************************************************************/
+
 #ifndef USER_MODE
 #    define __NO_VERSION__
 
@@ -331,13 +332,9 @@ POSSIBILITY OF SUCH DAMAGES.
 #include "lists_proto_extern.h"
 #include "rrm_config_structs.h"
 #include "debug_l2.h"
+
 //-----------------------------------------------------------------------------
-void            config_req_rlc_um (struct rlc_um_entity *rlcP, UM * config_umP, void *upper_layerP, void *(*data_indP) (void *, struct mem_block * sduP), u8_t rb_idP);
-void            send_rlc_um_control_primitive (struct rlc_um_entity *rlcP, struct mem_block *cprimitiveP);
-void            init_rlc_um (struct rlc_um_entity *rlcP);
-void            rlc_um_reset_state_variables (struct rlc_um_entity *rlcP);
-void            rlc_um_free_all_resources (struct rlc_um_entity *rlcP);
-void            rlc_um_set_configured_parameters (struct rlc_um_entity *rlcP, struct mem_block *cprimitiveP);
+
 //-----------------------------------------------------------------------------
 void
 config_req_rlc_um (struct rlc_um_entity *rlcP, UM * config_umP, void *upper_layerP, void *(*data_indP) (void *, struct mem_block * sduP), u8_t rb_idP)

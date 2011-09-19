@@ -34,17 +34,8 @@ rlc_op_status_t
 rb_release_rlc_um (struct rlc_um_entity *rlcP, module_id_t module_idP)
 {
 //-----------------------------------------------------------------------------
-  mem_block_t      *mb;
-
-  if ((mb = get_free_mem_block (sizeof (struct crlc_primitive)))) {
-    ((struct crlc_primitive *) mb->data)->type = CRLC_CONFIG_REQ;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.e_r = RLC_E_R_RELEASE;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.stop = 1;
-    ((struct crlc_primitive *) mb->data)->primitive.c_config_req.parameters.um_parameters.cont = 0;
-    send_rlc_um_control_primitive (rlcP, module_idP, mb);
-    return RLC_OP_STATUS_OK;
-  }
-  return RLC_OP_STATUS_OUT_OF_RESSOURCES;
+  rlc_um_cleanup(rlcP);
+  return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t

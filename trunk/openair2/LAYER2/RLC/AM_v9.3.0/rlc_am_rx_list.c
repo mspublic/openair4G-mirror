@@ -39,23 +39,23 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                             pdu_info_previous_cursor = &((rlc_am_rx_pdu_management_t*)(previous_cursor->data))->pdu_info;
                             if ((pdu_info_previous_cursor->sn == pdu_info->sn)) {
                                 if (pdu_info->rf != pdu_info_previous_cursor->rf) {
-                                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                     return -2;
                                 } else if (pdu_info->rf == 1) {
                                     if ((pdu_info_previous_cursor->so + pdu_info_previous_cursor->payload_size - 1) >= pdu_info->so) {
-                                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                         return -2;
                                     }
                                 }
                             }
                         }
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                         return 0;
 
                     } else if (pdu_info->sn == pdu_info_cursor->sn) {
                         if (pdu_info_cursor->rf == 0) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         } else if (pdu_info->rf == 1) {
                             if ((pdu_info->so + pdu_info->payload_size - 1) < pdu_info_cursor->so) {
@@ -65,25 +65,25 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                                     if ((pdu_info_previous_cursor->sn == pdu_info_cursor->sn)) {
                                         if ((pdu_info_previous_cursor->so + pdu_info_previous_cursor->payload_size - 1) < pdu_info->so) {
 
-                                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
                                             list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                                             return 0;
                                         } else {
-                                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                             return -2;
                                         }
                                     }
                                 }
-                                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
                                 list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                                 return 0;
 
                             } else if (pdu_info->so <= pdu_info_cursor->so) {
-                                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                 return -2;
                             }
                         } else {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         }
                     }
@@ -94,30 +94,30 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                     }
                 }
                 if (cursor != NULL) {
-                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                     list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                     return 0;
                 } else {
                     if (pdu_info_cursor->rf == 0) {
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         list2_add_tail(tbP, &rlcP->receiver_buffer);
                         return 0;
                     } else if ((pdu_info->rf == 1) && (pdu_info_cursor->rf == 1) && (pdu_info->sn == pdu_info_cursor->sn)) {
                         if ((pdu_info_cursor->so + pdu_info_cursor->payload_size - 1) < pdu_info->so) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             list2_add_tail(tbP, &rlcP->receiver_buffer);
                             return 0;
                         } else {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         }
                     } else if (pdu_info->sn != pdu_info_cursor->sn) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             list2_add_tail(tbP, &rlcP->receiver_buffer);
                             return 0;
                     }
                 }
-                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                 return -2;
             } else { // (pdu_info->sn < rlcP->vr_r)
                 cursor = rlcP->receiver_buffer.tail;
@@ -129,22 +129,22 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                             pdu_info_previous_cursor = &((rlc_am_rx_pdu_management_t*)(previous_cursor->data))->pdu_info;
                             if ((pdu_info_previous_cursor->sn == pdu_info_cursor->sn)) {
                                 if (pdu_info->rf != pdu_info_previous_cursor->rf) {
-                                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                     return -2;
                                 } else if (pdu_info->rf == 1) {
                                     if ((pdu_info->so + pdu_info->payload_size - 1) >= pdu_info_previous_cursor->so) {
-                                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) < vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                         return -2;
                                     }
                                 }
                             }
                         }
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         list2_insert_after_element(tbP, cursor, &rlcP->receiver_buffer);
                         return 0;
                     } else if (pdu_info->sn == pdu_info_cursor->sn) {
                         if (pdu_info_cursor->rf == 0) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         } else if (pdu_info->rf == 1) {
                             if ((pdu_info_cursor->so + pdu_info_cursor->payload_size - 1) < pdu_info->so) {
@@ -154,25 +154,25 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                                     if ((pdu_info_previous_cursor->sn == pdu_info_cursor->sn)) {
                                         if ((pdu_info->so + pdu_info->payload_size - 1) < pdu_info_previous_cursor->so) {
 
-                                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
                                             list2_insert_after_element(tbP, cursor, &rlcP->receiver_buffer);
                                             return 0;
                                         } else {
-                                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                             return -2;
                                         }
                                     }
                                 }
-                                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
                                 list2_insert_after_element(tbP, cursor, &rlcP->receiver_buffer);
                                 return 0;
 
                             } else if (pdu_info_cursor->so <= pdu_info->so) {
-                                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                 return -2;
                             }
                         } else {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         }
                     }
@@ -183,36 +183,36 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                     }
                 }
                 if (cursor != NULL) {
-                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and sn < vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                     list2_insert_after_element(tbP, cursor, &rlcP->receiver_buffer);
                     return 0;
                 } else {
                     if (pdu_info_cursor->rf == 0) {
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         list2_add_tail(tbP, &rlcP->receiver_buffer);
                         return 0;
                     } else if ((pdu_info->rf == 1) && (pdu_info_cursor->rf == 1) && (pdu_info->sn == pdu_info_cursor->sn)) {
                         if ((pdu_info_cursor->so + pdu_info_cursor->payload_size - 1) < pdu_info->so) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             list2_add_tail(tbP, &rlcP->receiver_buffer);
                             return 0;
                         } else {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         }
                     } else if (pdu_info->sn != pdu_info_cursor->sn) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) < vr(r) and vr(h) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             list2_add_tail(tbP, &rlcP->receiver_buffer);
                             return 0;
                     }
                 }
-                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                 return -2;
             }
         } else { // (pdu_info->vr_mr > rlcP->vr_r), > and not >=
             // FAR MORE SIMPLE CASE
             while (cursor != NULL){
-                //printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d cursor %p\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, cursor);
+                //msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d cursor %p\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, cursor);
                 pdu_info_cursor = &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
                 if (pdu_info->sn < pdu_info_cursor->sn) {
 
@@ -220,23 +220,23 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                         pdu_info_previous_cursor = &((rlc_am_rx_pdu_management_t*)(previous_cursor->data))->pdu_info;
                         if ((pdu_info_previous_cursor->sn == pdu_info->sn)) {
                             if (pdu_info->rf != pdu_info_previous_cursor->rf) {
-                                printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                 return -2;
                             } else if (pdu_info->rf == 1) {
                                 if ((pdu_info_previous_cursor->so + pdu_info_previous_cursor->payload_size - 1) >= pdu_info->so) {
-                                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SO OVERLAP -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                     return -2;
                                 }
                             }
                         }
                     }
-                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                     list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                     return 0;
 
                 } else if (pdu_info->sn == pdu_info_cursor->sn) {
                     if (pdu_info_cursor->rf == 0) {
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d WRONG RF -> DROPPED (vr(mr) > vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         return -2;
                     } else if (pdu_info->rf == 1) {
 
@@ -247,39 +247,39 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                                 if ((pdu_info_previous_cursor->sn == pdu_info_cursor->sn)) {
                                     if ((pdu_info_previous_cursor->so + pdu_info_previous_cursor->payload_size - 1) < pdu_info->so) {
 
-                                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
-                                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] PREVIOUS SO %d PAYLOAD SIZE %d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info_previous_cursor->so, pdu_info_previous_cursor->payload_size);
+                                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] PREVIOUS SO %d PAYLOAD SIZE %d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, pdu_info_previous_cursor->so, pdu_info_previous_cursor->payload_size);
                                         list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                                         return 0;
                                     } else {
-                                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP PREVIOUS SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                                         return -2;
                                     }
                                 }
                             }
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d SEGMENT OFFSET %05d (vr(mr) > vr(r) and sn >= vr(r))\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn, pdu_info->so);
                             list2_insert_before_element(tbP, cursor, &rlcP->receiver_buffer);
                             return 0;
                         } else if (pdu_info->so <= pdu_info_cursor->so) {
-                            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                             return -2;
                         }
                     } else {
-                        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                         return -2;
                     }
                 }
                 previous_cursor = cursor;
                 cursor = cursor->next;
             }
-            printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))(last inserted)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+            msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (vr(mr) > vr(r))(last inserted)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
             // pdu_info_cursor can not be NULL here
             if  (pdu_info->sn == pdu_info_cursor->sn) {
                 if ((pdu_info_cursor->so + pdu_info_cursor->payload_size - 1) < pdu_info->so) {
                     list2_add_tail(tbP, &rlcP->receiver_buffer);
                     return 0;
                 } else {
-                    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+                    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d OVERLAP SO DUPLICATE -> DROPPED\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
                     return -2;
                 }
             } else {
@@ -288,11 +288,11 @@ signed int rlc_am_rx_list_insert_pdu(rlc_am_entity_t* rlcP, mem_block_t* tbP)
             }
         }
     } else {
-        printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (only inserted)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+        msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d (only inserted)\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
         list2_add_head(tbP, &rlcP->receiver_buffer);
         return 0;
     }
-    printf ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED @4\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
+    msg ("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][INSERT PDU] LINE %d RX PDU SN %04d DROPPED @4\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, __LINE__, pdu_info->sn);
     return -1;
 }
 //-----------------------------------------------------------------------------
@@ -307,7 +307,7 @@ void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, mem_block_t* tbP)
     u16_t              next_waited_so;
     u16_t              last_end_so;
 
-    printf("rlc_am_rx_check_all_byte_segments(%d) @0\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @0\n",sn);
     if (pdu_info->rf == 0) {
         ((rlc_am_rx_pdu_management_t*)(tbP->data))->all_segments_received = 1;
         return;
@@ -316,14 +316,14 @@ void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, mem_block_t* tbP)
     cursor = tbP;
     //list2_init(&list, NULL);
     //list2_add_head(cursor, &list);
-    printf("rlc_am_rx_check_all_byte_segments(%d) @1\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @1\n",sn);
 
     // get all previous PDU with same SN
     while (cursor->previous != NULL) {
         if (((rlc_am_rx_pdu_management_t*)(cursor->previous->data))->pdu_info.sn == sn) {
             //list2_add_head(cursor->previous, &list);
             cursor = cursor->previous;
-    printf("rlc_am_rx_check_all_byte_segments(%d) @2\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @2\n",sn);
         } else {
             break;
         }
@@ -335,13 +335,13 @@ void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, mem_block_t* tbP)
     if (pdu_info->so != 0) {
         return;
     }
-    printf("rlc_am_rx_check_all_byte_segments(%d) @3\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @3\n",sn);
     next_waited_so = pdu_info->payload_size;
     first_cursor = cursor;
     // then check if all segments are contiguous
     last_end_so = pdu_info->payload_size;
     while (cursor->next != NULL) {
-    printf("rlc_am_rx_check_all_byte_segments(%d) @4\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @4\n",sn);
         cursor = cursor->next;
         pdu_info = &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
 
@@ -351,24 +351,24 @@ void rlc_am_rx_check_all_byte_segments(rlc_am_entity_t* rlcP, mem_block_t* tbP)
                 !(pdu_info->rf == 1) ||
                 !(pdu_info->so <= last_end_so)
                 ) {
-    printf("rlc_am_rx_check_all_byte_segments(%d) @5 pdu_info->rf %d pdu_info->so %d\n",sn, pdu_info->rf, pdu_info->so);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @5 pdu_info->rf %d pdu_info->so %d\n",sn, pdu_info->rf, pdu_info->so);
                     return;
             } else {
                 if (pdu_info->so == next_waited_so) {
                     next_waited_so = next_waited_so + pdu_info->payload_size;
-    printf("rlc_am_rx_check_all_byte_segments(%d) @6\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @6\n",sn);
                 } else { // assumed pdu_info->so + pdu_info->payload_size > next_waited_so
                     next_waited_so = (next_waited_so + pdu_info->payload_size) - (next_waited_so - pdu_info->so);
-    printf("rlc_am_rx_check_all_byte_segments(%d) @7\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @7\n",sn);
                 }
                 if (pdu_info->lsf > 0) {
-    printf("rlc_am_rx_check_all_byte_segments(%d) @8\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @8\n",sn);
                     rlc_am_rx_mark_all_segments_received(rlcP, first_cursor);
                 }
             }
             last_end_so = pdu_info->so + pdu_info->payload_size;
         } else {
-    printf("rlc_am_rx_check_all_byte_segments(%d) @9\n",sn);
+    msg("rlc_am_rx_check_all_byte_segments(%d) @9\n",sn);
             return;
         }
     }
@@ -431,7 +431,7 @@ mem_block_t *
 list2_insert_before_element (mem_block_t * element_to_insertP, mem_block_t * elementP, list2_t * listP)
 //-----------------------------------------------------------------------------
 {
-    printf ("list2_insert_before_element\n");
+    msg ("list2_insert_before_element\n");
     //check_mem_area(NULL);
     if ((element_to_insertP != NULL) && (elementP != NULL)) {
         listP->nb_elements = listP->nb_elements + 1;
@@ -456,7 +456,7 @@ mem_block_t *
 list2_insert_after_element (mem_block_t * element_to_insertP, mem_block_t * elementP, list2_t * listP)
 //-----------------------------------------------------------------------------
 {
-    printf ("list2_insert_after_element\n");
+    msg ("list2_insert_after_element\n");
     //check_mem_area(NULL);
 
     if ((element_to_insertP != NULL) && (elementP != NULL)) {
@@ -486,31 +486,31 @@ void rlc_am_rx_list_display (rlc_am_entity_t* rlcP, char* messageP)
 
     cursor = rlcP->receiver_buffer.head;
     if (messageP) {
-        printf ("Display list %s %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, messageP, rlcP->vr_r);
+        msg ("Display list %s %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, messageP, rlcP->vr_r);
     } else {
-        printf ("Display list %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, rlcP->vr_r);
+        msg ("Display list %s VR(R)=%04d:\n", rlcP->receiver_buffer.name, rlcP->vr_r);
     }
     if (cursor) {
     // almost one element
         while (cursor != NULL) {
             //if (((loop % 16) == 0) && (loop > 0)) {
             if ((loop % 4) == 0) {
-                printf ("\nRX SN:\t");
+                msg ("\nRX SN:\t");
             }
             if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.rf) {
                 if (((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.lsf) {
-                    printf ("%04d (%04d->%04d LSF)\t",
+                    msg ("%04d (%04d->%04d LSF)\t",
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so + ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size - 1);
                 } else {
-                    printf ("%04d (%04d->%04d)\t",
+                    msg ("%04d (%04d->%04d)\t",
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so,
                         ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.so + ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size - 1);
                 }
             } else {
-                printf ("%04d (%04d NOSEG)\t",
+                msg ("%04d (%04d NOSEG)\t",
                     ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.sn,
                     ((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info.payload_size);
             }
@@ -521,8 +521,8 @@ void rlc_am_rx_list_display (rlc_am_entity_t* rlcP, char* messageP)
             cursor = cursor->next;
             loop++;
         }
-        printf ("\n");
+        msg ("\n");
     } else {
-        printf ("\nNO ELEMENTS\n");
+        msg ("\nNO ELEMENTS\n");
     }
 }

@@ -179,7 +179,7 @@ public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (module_id_t, chan_id_
 //-----------------------------------------------------------------------------
 public_rlc(rlc_op_status_t rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);)
 public_rlc(void            rlc_data_ind     (module_id_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t);)
-protected_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
+public_rlc(void            rlc_data_conf    (module_id_t, rb_id_t, mui_t, rlc_tx_status_t, boolean_t );)
 
 
 public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
@@ -198,5 +198,6 @@ public_rlc(rlc_op_status_t rlc_stat_req     (module_id_t module_idP,
 							  unsigned int* rx_control_pdu) ;)
 
 public_rlc(int rlc_module_init(void);)
+
 
 #endif

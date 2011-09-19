@@ -1,7 +1,6 @@
 #define RLC_AM_MODULE
 #define RLC_AM_RETRANSMIT_C
 //-----------------------------------------------------------------------------
-#include <string.h>
 #include "rtos_header.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
@@ -79,9 +78,9 @@ void rlc_am_nack_pdu (rlc_am_entity_t *rlcP, u16_t snP, u16_t so_startP, u16_t s
                 rlcP->input_sdus[sdu_index].nb_pdus_ack += 1;
                 if (rlcP->input_sdus[sdu_index].nb_pdus_ack == rlcP->input_sdus[sdu_index].nb_pdus) {
 #ifdef TEST_RLC_AM
-                    rlc_am_v9_3_0_test_data_conf (rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO);
+		  rlc_am_v9_3_0_test_data_conf (rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO);
 #else
-                    rlc_data_conf(rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO);
+		  rlc_data_conf(rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO, rlcP->is_data_plane);
 #endif
                     rlc_am_free_in_sdu(rlcP, sdu_index);
                 }
@@ -129,7 +128,7 @@ void rlc_am_ack_pdu (rlc_am_entity_t *rlcP, u16_t snP)
 #ifdef TEST_RLC_AM
                 rlc_am_v9_3_0_test_data_conf (rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES);
 #else
-                rlc_data_conf(rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES);
+                rlc_data_conf(rlcP->module_id, rlcP->rb_id, rlcP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_YES, rlcP->is_data_plane);
 #endif
                 rlc_am_free_in_sdu(rlcP, sdu_index);
             }
@@ -626,34 +625,34 @@ void rlc_am_tx_buffer_display (rlc_am_entity_t* rlcP, char* messageP)
     int         i, loop = 0;
 
     if (messageP) {
-        printf ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer %s VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, messageP, rlcP->vt_a, rlcP->vt_s);
+        msg ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer %s VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, messageP, rlcP->vt_a, rlcP->vt_s);
     } else {
-        printf ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_s);
+        msg ("\n[FRAME %05d][RLC_AM][MOD %02d][RB %02d] Retransmission buffer VT(A)=%04d VT(S)=%04d:", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vt_a, rlcP->vt_s);
     }
 
     while (rlcP->vt_s != sn) {
         if (rlcP->pdu_retrans_buffer[sn].mem_block) {
             if ((loop % 1) == 0) {
-                printf ("\nTX SN:\t");
+                msg ("\nTX SN:\t");
             }
             if (rlcP->pdu_retrans_buffer[sn].flags.retransmit) {
-                printf ("%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
+                msg ("%04d %d/%d Bytes (NACK RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
             } else {
-                printf ("%04d %d/%d Bytes (RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
+                msg ("%04d %d/%d Bytes (RTX:%02d ",sn, rlcP->pdu_retrans_buffer[sn].header_and_payload_size, rlcP->pdu_retrans_buffer[sn].payload_size, rlcP->pdu_retrans_buffer[sn].retx_count);
             }
             if (rlcP->pdu_retrans_buffer[sn].num_holes == 0) {
-                printf ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].nack_so_start, rlcP->pdu_retrans_buffer[sn].nack_so_stop);
+               msg ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].nack_so_start, rlcP->pdu_retrans_buffer[sn].nack_so_stop);
             } else {
                 for (i=0; i<rlcP->pdu_retrans_buffer[sn].num_holes;i++){
                     assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
-                    printf ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].hole_so_start[i], rlcP->pdu_retrans_buffer[sn].hole_so_stop[i]);
+                    msg ("SO:%04d->%04d)\t", rlcP->pdu_retrans_buffer[sn].hole_so_start[i], rlcP->pdu_retrans_buffer[sn].hole_so_stop[i]);
                 }
             }
             loop++;
         }
         sn = (sn + 1) & RLC_AM_SN_MASK;
     }
-    printf ("\n");
+   msg ("\n");
 }
 //-----------------------------------------------------------------------------
 void rlc_am_retransmit_any_pdu(rlc_am_entity_t* rlcP)

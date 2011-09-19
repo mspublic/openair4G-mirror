@@ -47,13 +47,13 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
                     }
                     cursor = cursor->next;
                 } while (cursor != NULL);
-                printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms);
+                msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT UPDATED VR(MS) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_ms);
             }
 
             if (rlc_am_sn_gt_vr_ms(rlcP, rlcP->vr_h)) {
                 rlcP->vr_x = rlcP->vr_h;
                 rlcP->t_reordering.frame_time_out = mac_xface->frame + rlcP->t_reordering.time_out;
-                printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT, RESTARTED T-REORDERING, UPDATED VR(X) to VR(R) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_x);
+                msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] TIME-OUT, RESTARTED T-REORDERING, UPDATED VR(X) to VR(R) %04d\n", mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->vr_x);
             }
 
             rlcP->status_requested = 1;
@@ -64,7 +64,7 @@ void rlc_am_check_timer_reordering(rlc_am_entity_t *rlcP)
 void rlc_am_stop_and_reset_timer_reordering(rlc_am_entity_t *rlcP)
 //-----------------------------------------------------------------------------
 {
-    printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STOPPED AND RESET\n", mac_xface->frame,
+    msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STOPPED AND RESET\n", mac_xface->frame,
                         rlcP->module_id, rlcP->rb_id);
     rlcP->t_reordering.running         = 0;
     rlcP->t_reordering.frame_time_out  = 0;
@@ -77,7 +77,7 @@ void rlc_am_start_timer_reordering(rlc_am_entity_t *rlcP)
     rlcP->t_reordering.running         = 1;
     rlcP->t_reordering.frame_time_out  = mac_xface->frame + rlcP->t_reordering.time_out;
     rlcP->t_reordering.timed_out       = 0;
-    printf("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STARTED (TIME-OUT = FRAME %05d)\n",
+    msg("[FRAME %05d][RLC_AM][MOD %02d][RB %02d][T-REORDERING] STARTED (TIME-OUT = FRAME %05d)\n",
             mac_xface->frame, rlcP->module_id, rlcP->rb_id, rlcP->t_reordering.frame_time_out);
 }
 //-----------------------------------------------------------------------------

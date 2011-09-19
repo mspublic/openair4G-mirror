@@ -1,7 +1,5 @@
 #define RLC_AM_MODULE
 #define RLC_AM_SEGMENT_HOLES_C
-//-----------------------------------------------------------------------------
-#include <string.h>
 #include "rtos_header.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"

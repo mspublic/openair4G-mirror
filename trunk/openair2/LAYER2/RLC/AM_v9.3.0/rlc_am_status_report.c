@@ -142,20 +142,20 @@ void rlc_am_display_control_pdu_infos(rlc_am_control_pdu_info_t* pdu_infoP)
     int num_nack;
 
     if (!pdu_infoP->d_c) {
-        printf("CONTROL PDU ACK SN %04d", pdu_infoP->ack_sn);
+        msg("CONTROL PDU ACK SN %04d", pdu_infoP->ack_sn);
 
         for (num_nack = 0; num_nack < pdu_infoP->num_nack; num_nack++) {
             if (pdu_infoP->nack_list[num_nack].e2) {
-                printf("\n\tNACK SN %04d SO START %05d SO END %05d",  pdu_infoP->nack_list[num_nack].nack_sn,
+                msg("\n\tNACK SN %04d SO START %05d SO END %05d",  pdu_infoP->nack_list[num_nack].nack_sn,
                                                       pdu_infoP->nack_list[num_nack].so_start,
                                                       pdu_infoP->nack_list[num_nack].so_end);
             } else {
-                printf("\n\tNACK SN %04d",  pdu_infoP->nack_list[num_nack].nack_sn);
+                msg("\n\tNACK SN %04d",  pdu_infoP->nack_list[num_nack].nack_sn);
             }
         }
-        printf("\n");
+        msg("\n");
     } else {
-        printf("CAN'T DISPLAY CONTROL INFO: PDU IS DATA PDU\n");
+        msg("CAN'T DISPLAY CONTROL INFO: PDU IS DATA PDU\n");
     }
 }
 //-----------------------------------------------------------------------------
