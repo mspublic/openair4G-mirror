@@ -87,13 +87,6 @@ typedef volatile struct {
   u32_t             delivery_of_erroneous_sdu;
 } rlc_tm_info_t;
 
-typedef volatile struct {
-  u32_t             e_r;
-  u32_t             timer_discard;
-  u32_t             sdu_discard_mode;
-} rlc_um_info_t;
-
-
 
 typedef volatile struct {
   rlc_mode_t             rlc_mode;
