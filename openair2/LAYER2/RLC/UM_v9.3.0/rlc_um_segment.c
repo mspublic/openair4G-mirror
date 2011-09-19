@@ -1,10 +1,13 @@
 #define RLC_UM_MODULE
 #define RLC_UM_SEGMENT_C
+//-----------------------------------------------------------------------------
+#include "rtos_header.h"
+#include "platform_types.h"
+#include "platform_constants.h"
+//-----------------------------------------------------------------------------
 #ifdef USER_MODE
 #include <assert.h>
 #endif
-#include "rtos_header.h"
-#include "platform_types.h"
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
@@ -44,6 +47,10 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
     unsigned int       fi;
     unsigned int       max_li_overhead;
 
+    if (nb_bytes_to_transmit < 3) {
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] NO SEGMENTATION nb_bytes to transmit = %d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, nb_bytes_to_transmit);
+        return;
+    }
     msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] SEGMENT\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame);
     list_init (&pdus, NULL);    // param string identifying the list is NULL
     pdu_mem = NULL;
@@ -279,14 +286,15 @@ rlc_um_segment_10 (struct rlc_um_entity *rlcP)
         if (!fi_last_byte_pdu_is_last_byte_sdu) {
             fi = fi + 1;
         }
-        pdu->b1 = pdu->b1 | (fi << 3);
+        pdu->b1 =  (fi << 3); //pdu->b1 |
 
         // set fist e bit
         if (fill_num_li > 0) {
             pdu->b1 = pdu->b1 | 0x04;
         }
         //pdu->sn = rlcP->vt_us;
-        pdu->b1 = pdu->b1 | (rlcP->vt_us >> 8);
+        //pdu->b1 = pdu->b1 | (rlcP->vt_us >> 8);
+        pdu->b1 = pdu->b1 | ((rlcP->vt_us >> 8) & 0x03);
         pdu->b2 = rlcP->vt_us & 0xFF;
         rlcP->vt_us = rlcP->vt_us+1;
 

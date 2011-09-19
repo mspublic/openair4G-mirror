@@ -26,24 +26,27 @@
 #define TEST3
 #define TEST4
 #define TEST5
-#define TEST6
-#define TEST7
 
 #define TEST_MAX_SEND_SDU 8192
-static int  random_sdu;
-static int  random_nb_frames;
-static int  random_tx_pdu_size;
-static int  random_rx_pdu_size;
-static int  tx_packets = 0;
-static int  dropped_tx_packets = 0;
-static int  rx_packets = 0;
-static int  dropped_rx_packets = 0;
-static int  drop_rx = 0;
-static int  drop_tx = 0;
-static int  send_sdu_ids[TEST_MAX_SEND_SDU][2];
-static int  send_id_write_index[2];
-static int  send_id_read_index[2];
-static s8_t *sdus[] = {"En dépit de son volontarisme affiché, le premier ministre est de plus en plus décrié pour son incompétence. La tension politique et dans l'opinion publique est encore montée d'un cran au Japon, sur fond d'inquiétantes nouvelles, avec du plutonium détecté dans le sol autour de la centrale de Fukushima. Le premier ministre Naoto Kan a solennellement déclaré que son gouvernement était «en état d'alerte maximum». Tout en reconnaissant que la situation restait «imprévisible». Ce volontarisme affiché par le premier ministre - que Nicolas Sarkozy rencontrera demain lors d'une visite au Japon - ne l'a pas empêché d'être la cible de violentes critiques de la part de parlementaires sur sa gestion de la crise. Attaqué sur le manque de transparence, il a assuré qu'il rendait publiques toutes les informations en sa possession. Un député de l'opposition, Yosuke Isozaki, a aussi reproché à Naoto Kan de ne pas avoir ordonné l'évacuation des populations dans la zone comprise entre 20 et 30 km autour de la centrale. «Peut-il y avoir quelque chose de plus irresponsable que cela ?», a-t-il lancé. Pour l'heure, la zone d'évacuation est limitée à un rayon de 20 km, seul le confinement étant recommandé pour les 10 km suivants. Sur ce sujet, les autorités japonaises ont été fragilisées mardi par les déclarations de Greenpeace, affirmant que ses experts avaient détecté une radioactivité dangereuse à 40 km de la centrale. L'organisation écologiste a appelé à une extension de la zone d'évacuation, exhortant Tokyo à «cesser de privilégier la politique aux dépens de la science». L'Agence japonaise de sûreté nucléaire a balayé ces critiques.",
+#define TARGET_MAX_RX_ERROR_RATE 10
+#define TARGET_MAX_TX_ERROR_RATE 10
+static int  g_error_on_phy = 0;
+static int  g_random_sdu;
+static int  g_random_nb_frames;
+static int  g_random_tx_pdu_size;
+static int  g_random_rx_pdu_size;
+static int  g_target_tx_error_rate;
+static int  g_target_rx_error_rate;
+static int  g_tx_packets = 0;
+static int  g_dropped_tx_packets = 0;
+static int  g_rx_packets = 0;
+static int  g_dropped_rx_packets = 0;
+static int  g_drop_rx = 0;
+static int  g_drop_tx = 0;
+static int  g_send_sdu_ids[TEST_MAX_SEND_SDU][2];
+static int  g_send_id_write_index[2];
+static int  g_send_id_read_index[2];
+static s8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier ministre est de plus en plus décrié pour son incompétence. La tension politique et dans l'opinion publique est encore montée d'un cran au Japon, sur fond d'inquiétantes nouvelles, avec du plutonium détecté dans le sol autour de la centrale de Fukushima. Le premier ministre Naoto Kan a solennellement déclaré que son gouvernement était «en état d'alerte maximum». Tout en reconnaissant que la situation restait «imprévisible». Ce volontarisme affiché par le premier ministre - que Nicolas Sarkozy rencontrera demain lors d'une visite au Japon - ne l'a pas empêché d'être la cible de violentes critiques de la part de parlementaires sur sa gestion de la crise. Attaqué sur le manque de transparence, il a assuré qu'il rendait publiques toutes les informations en sa possession. Un député de l'opposition, Yosuke Isozaki, a aussi reproché à Naoto Kan de ne pas avoir ordonné l'évacuation des populations dans la zone comprise entre 20 et 30 km autour de la centrale. «Peut-il y avoir quelque chose de plus irresponsable que cela ?», a-t-il lancé. Pour l'heure, la zone d'évacuation est limitée à un rayon de 20 km, seul le confinement étant recommandé pour les 10 km suivants. Sur ce sujet, les autorités japonaises ont été fragilisées mardi par les déclarations de Greenpeace, affirmant que ses experts avaient détecté une radioactivité dangereuse à 40 km de la centrale. L'organisation écologiste a appelé à une extension de la zone d'évacuation, exhortant Tokyo à «cesser de privilégier la politique aux dépens de la science». L'Agence japonaise de sûreté nucléaire a balayé ces critiques.",
 
 "La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
 
@@ -143,10 +146,10 @@ void rlc_um_v9_3_0_test_reset_sdus()
     int i, j;
     for (j = 0; j < 2; j++) {
         for (i = 0; i < TEST_MAX_SEND_SDU; i++) {
-           send_sdu_ids[i][j]= -1;
+           g_send_sdu_ids[i][j]= -1;
         }
-        send_id_write_index[j] = 0;
-        send_id_read_index[j]  = 0;
+        g_send_id_write_index[j] = 0;
+        g_send_id_read_index[j]  = 0;
     }
 }
 //-----------------------------------------------------------------------------
@@ -154,20 +157,20 @@ void rlc_um_v9_3_0_test_send_sdu(rlc_um_entity_t *um_txP, int sdu_indexP)
 //-----------------------------------------------------------------------------
 {
   mem_block_t *sdu;
-  sdu = get_free_mem_block (strlen(sdus[sdu_indexP]) + 1 + sizeof (struct rlc_um_data_req_alloc));
+  sdu = get_free_mem_block (strlen(g_sdus[sdu_indexP]) + 1 + sizeof (struct rlc_um_data_req_alloc));
 
   if (sdu != NULL) {
       // PROCESS OF COMPRESSION HERE:
-      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",mac_xface->frame,um_txP->module_id, um_txP->rb_id, sdu_indexP, strlen(sdus[sdu_indexP]) + 1);
+      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",mac_xface->frame,um_txP->module_id, um_txP->rb_id, sdu_indexP, strlen(g_sdus[sdu_indexP]) + 1);
       memset (sdu->data, 0, sizeof (struct rlc_um_data_req_alloc));
-      strcpy (&sdu->data[sizeof (struct rlc_um_data_req_alloc)],sdus[sdu_indexP]);
+      strcpy (&sdu->data[sizeof (struct rlc_um_data_req_alloc)],g_sdus[sdu_indexP]);
 
-      ((struct rlc_um_data_req *) (sdu->data))->data_size = strlen(sdus[sdu_indexP])+ 1;
+      ((struct rlc_um_data_req *) (sdu->data))->data_size = strlen(g_sdus[sdu_indexP])+ 1;
       ((struct rlc_um_data_req *) (sdu->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
       rlc_um_data_req(um_txP, sdu);
 
-      send_sdu_ids[send_id_write_index[um_txP->rb_id]++][um_txP->rb_id] = sdu_indexP;
-      assert(send_id_write_index[um_txP->rb_id] < TEST_MAX_SEND_SDU);
+      g_send_sdu_ids[g_send_id_write_index[um_txP->rb_id]++][um_txP->rb_id] = sdu_indexP;
+      assert(g_send_id_write_index[um_txP->rb_id] < TEST_MAX_SEND_SDU);
   } else {
     printf("Out of memory error\n");
     exit(-1);
@@ -252,8 +255,8 @@ void rlc_um_v9_3_0_test_exchange_pdus(rlc_um_entity_t *um_txP,
   data_request_rx        = rlc_um_mac_data_request(um_rxP);
 
 
-  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &drop_tx, &tx_packets, &dropped_tx_packets);
-  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &drop_rx, &rx_packets, &dropped_rx_packets);
+  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
+  rlc_um_v9_3_0_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
   rlc_um_mac_data_indication(um_rxP, data_ind_rx);
   rlc_um_mac_data_indication(um_txP, data_ind_tx);
   mac_xface->frame += 1;
@@ -281,31 +284,46 @@ void rlc_um_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_si
 //-----------------------------------------------------------------------------
 {
     int i;
-    for (i = 0; i < 37; i++) {
-        if (strcmp(sdus[i], sduP->data) == 0) {
-            printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",mac_xface->frame,module_idP, rb_idP, i, sizeP);
-            assert(TEST_MAX_SEND_SDU > send_id_read_index[rb_idP]);
-            assert(send_id_write_index[rb_idP^1] > send_id_read_index[rb_idP]);
+    if (g_error_on_phy == 0) {
+        for (i = 0; i < 37; i++) {
+            if (strcmp(g_sdus[i], sduP->data) == 0) {
+                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",mac_xface->frame,module_idP, rb_idP, i, sizeP);
+                assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
+                assert(g_send_id_write_index[rb_idP^1] > g_send_id_read_index[rb_idP]);
 
-            if (send_sdu_ids[send_id_read_index[rb_idP]][rb_idP^1] != i) {
+                if (g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] != i) {
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  send_id_read_index[rb_idP]-2, send_sdu_ids[send_id_read_index[rb_idP]-2][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-2, g_send_sdu_ids[g_send_id_read_index[rb_idP]-2][rb_idP^1]);
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  send_id_read_index[rb_idP]-1, send_sdu_ids[send_id_read_index[rb_idP]-1][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-1, g_send_sdu_ids[g_send_id_read_index[rb_idP]-1][rb_idP^1]);
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  send_id_read_index[rb_idP], send_sdu_ids[send_id_read_index[rb_idP]][rb_idP^1]);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1]);
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] send_id_read_index = %d sdu sent = %d\n",mac_xface->frame,module_idP, rb_idP,  send_id_read_index[rb_idP], i);
+                    printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_id_read_index = %d sdu sent = %d\n",mac_xface->frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], i);
+                }
+                assert(g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] == i);
+                g_send_id_read_index[rb_idP] += 1;
+                free_mem_block(sduP);
+                return;
             }
-            assert(send_sdu_ids[send_id_read_index[rb_idP]][rb_idP^1] == i);
-            send_id_read_index[rb_idP] += 1;
-            free_mem_block(sduP);
-            return;
         }
+        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",mac_xface->frame,module_idP, rb_idP,  sizeP);
+        free_mem_block(sduP);
+        assert(1==2);
+    } else {
+        for (i = 0; i < 37; i++) {
+            if (strcmp(g_sdus[i], sduP->data) == 0) {
+                printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",mac_xface->frame,module_idP, rb_idP, i, sizeP);
+                assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
+                g_send_id_read_index[rb_idP] += 1;
+                free_mem_block(sduP);
+                return;
+            }
+        }
+        printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",mac_xface->frame,module_idP, rb_idP,  sizeP);
+        free_mem_block(sduP);
+        return;
     }
-    printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",mac_xface->frame,module_idP, rb_idP,  sizeP);
-    free_mem_block(sduP);
-    assert(1==2);
 }
 //-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test_tx_rx()
@@ -347,12 +365,12 @@ void rlc_um_v9_3_0_test_tx_rx()
   rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
   rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 1000, 200);
 
-  assert (send_id_read_index[1] == send_id_write_index[0]);
+  assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
     printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 1: END OF SIMPLE TEST SEVERAL SDUs IN PDU\n\n\n\n");
     sleep(2);
     rlc_um_v9_3_0_test_reset_sdus();
     // RANDOM TESTS
-    for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-12; i++) {
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-12; i++) {
         rlc_um_v9_3_0_test_send_sdu(&um_tx, 1);
         rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
         rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 8000, 200);
@@ -370,10 +388,10 @@ void rlc_um_v9_3_0_test_tx_rx()
         for (i = 0; i < 50; i++) {
             rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 200, 200);
         }
-        assert (send_id_read_index[1] == send_id_write_index[0]);
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
     }
 
-    assert (send_id_read_index[1] == send_id_write_index[0]);
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
     printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 1: END OF TEST SEVERAL SDUs IN PDU\n\n\n\n");
     sleep(2);
 #endif
@@ -452,76 +470,142 @@ void rlc_um_v9_3_0_test_tx_rx()
       rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 2000, 200);
   }
 
-  assert (send_id_read_index[1] == send_id_write_index[0]);
+  assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
   printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 2: END OF TEST BIG SDU SMALL PDUs\n\n\n\n");
-  sleep(2);
 #endif
-  for (r = 0; r < 128; r++) {
-    srand (r);
-    #ifdef TEST6
-            tx_packets = 0;
-            rx_packets = 0;
-            rlc_um_v9_3_0_test_reset_sdus();
-            // RANDOM TESTS
-            for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-                printf("UM.TX SDU %d\n", um_tx.nb_sdu);
-                if (um_tx.nb_sdu < (um_tx.size_input_sdus_buffer - 2)) {
-                    random_sdu = rand() % 37;
-                    rlc_um_v9_3_0_test_send_sdu(&um_tx, random_sdu);
-                }
-                random_nb_frames   = (rand() % 10) + 1;
-                //random_nb_frames   = 1;
-                for (j = 0; j < random_nb_frames; j++) {
-                    random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, random_tx_pdu_size, random_rx_pdu_size);
-                }
-            }
-            for (j = 0; j < 400; j++) {
-                rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 500, 500);
-            }
-            printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 6: END OF TEST RANDOM (SEED=%d ) TX ONLY :\n\n\n\n",r);
-            assert (send_id_read_index[1] == send_id_write_index[0]);
+  for (r = 0; r < 32; r++) {
+  //for (r = 0; r < 1024; r++) {
+        srand (r);
+    #ifdef TEST3
+    g_error_on_phy = 0;
+    g_tx_packets = 0;
+    g_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    // RANDOM TESTS
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+        printf("UM.TX SDU %d\n", um_tx.nb_sdu);
+        if (um_tx.nb_sdu < (um_tx.size_input_sdus_buffer - 2)) {
+                    g_random_sdu = rand() % 37;
+                    rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+        }
+        g_random_nb_frames   = (rand() % 10) + 1;
+        //g_random_nb_frames   = 1;
+        for (j = 0; j < g_random_nb_frames; j++) {
+                    g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+        }
+    }
+    for (j = 0; j < 400; j++) {
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, 500, 500);
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 3: END OF TEST RANDOM (SEED=%d ) TX ONLY :\n\n\n\n",r);
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
     #endif
-    #ifdef TEST7
-            tx_packets = 0;
-            rx_packets = 0;
+    #ifdef TEST4
+    g_error_on_phy = 0;
+    g_tx_packets = 0;
+    g_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+        if (um_tx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+            g_random_sdu = rand() % 37;
+            rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+            if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+            } else {
+                i = i-1;
+            }
+        } else {
+            if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+            } else {
+                i = i-1;
+            }
+        }
+        g_random_nb_frames   = rand() % 4;
+        for (j = 0; j < g_random_nb_frames; j++) {
+            g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+        }
+    }
+    for (j = 0; j < 100; j++) {
+        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+    }
+    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 4: END OF TEST RANDOM (SEED=%d) TX RX:\n\n\n\n",r);
+    assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+    assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
+    #endif
+  }
+  #ifdef TEST5
+  for (r = 0; r < 1024; r++) {
+    srand (r);
+    g_error_on_phy = 1;
+    for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
+        for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
+            g_tx_packets = 0;
+            g_dropped_tx_packets = 0;
+            g_rx_packets = 0;
+            g_dropped_rx_packets = 0;
             rlc_um_v9_3_0_test_reset_sdus();
-            for (i = send_id_write_index[0]; send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-                if (um_tx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
-                    random_sdu = rand() % 37;
-                    rlc_um_v9_3_0_test_send_sdu(&um_tx, random_sdu);
-                    if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
-                        random_sdu = rand() % 37;
-                        rlc_um_v9_3_0_test_send_sdu(&um_rx, random_sdu);
-                    } else {
-                        i = i-1;
-                    }
-                } else {
-                    if (um_rx.nb_sdu < (um_rx.size_input_sdus_buffer - 2)) {
-                        random_sdu = rand() % 37;
-                        rlc_um_v9_3_0_test_send_sdu(&um_rx, random_sdu);
-                    } else {
-                        i = i-1;
+            for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_tx, g_random_sdu);
+                g_random_sdu = rand() % 37;
+                rlc_um_v9_3_0_test_send_sdu(&um_rx, g_random_sdu);
+
+                g_random_nb_frames   = rand() % 4;
+                for (j = 0; j < g_random_nb_frames; j++) {
+                    g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+                }
+                int dropped = (rand() % 3);
+                if ((dropped == 0) && (g_tx_packets > 0)){
+                    if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
+                        g_drop_tx = 1;
                     }
                 }
-                random_nb_frames   = rand() % 4;
-                for (j = 0; j < random_nb_frames; j++) {
-                    random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, random_tx_pdu_size, random_rx_pdu_size);
+                dropped = (rand() % 3);
+                if ((dropped == 0) && (g_rx_packets > 0)){
+                    if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
+                        g_drop_rx = 1;
+                    }
                 }
             }
             for (j = 0; j < 100; j++) {
-                random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, random_tx_pdu_size, random_rx_pdu_size);
+                g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+                rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
             }
-            printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 7: END OF TEST RANDOM (SEED=%d) TX RX:\n\n\n\n",r);
-            assert (send_id_read_index[1] == send_id_write_index[0]);
-            assert (send_id_read_index[0] == send_id_write_index[1]);
-    #endif
+            printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_um_v9_3_0_test 5: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",r, g_target_tx_error_rate, g_target_rx_error_rate);
+            //assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+            //assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
+            printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate, (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
+
+        }
+    }
+    g_drop_tx = 0;
+    g_drop_rx = 0;
+    g_tx_packets = 0;
+    g_dropped_tx_packets = 0;
+    g_rx_packets = 0;
+    g_dropped_rx_packets = 0;
+    rlc_um_v9_3_0_test_reset_sdus();
+    for (j = 0; j < 100; j++) {
+        rlc_um_v9_3_0_test_send_sdu(&um_rx, 1);
+        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+        rlc_um_v9_3_0_test_exchange_pdus(&um_tx, &um_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+    }
   }
+  g_error_on_phy = 0;
+  #endif
 }
 //-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test_print_trace (void)
@@ -536,13 +620,11 @@ void rlc_um_v9_3_0_test_print_trace (void)
   strings = backtrace_symbols (array, size);
 
   printf ("Obtained %d stack frames.\n", size);
-
   for (i = 0; i < size; i++)
     printf ("%s\n", strings[i]);
 
   free (strings);
 }
-
 //-----------------------------------------------------------------------------
 void rlc_um_v9_3_0_test(void)
 //-----------------------------------------------------------------------------

@@ -12,7 +12,7 @@ typedef struct rlc_um_entity {
   u8_t              allocation;
   u8_t              protocol_state;
   // for stats and trace purpose :
-  u16_t             data_plane;   // act as a boolean
+  u16_t             is_data_plane;   // act as a boolean
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------
@@ -60,17 +60,8 @@ typedef struct rlc_um_entity {
   signed int        sn_modulo;
   signed int        um_window_size;
 
-  #define           UM_SN_10_BITS_MODULO      1024
-  #define           UM_SN_5_BITS_MODULO       32
-  #define           UM_WINDOW_SIZE_SN_10_BITS 512
-  #define           UM_WINDOW_SIZE_SN_5_BITS  16
-  // This constant is used by the receiving UM RLC entity to define SNs of those
-  // UMD PDUs that can be received without causing an advancement of the
-  // receiving window. UM_Window_Size = 16 when a 5 bit SN is configured,
-  // UM_Window_Size = 512 when a 10 bit SN is configured and UM_Window_Size = 0
-  // when the receiving UM RLC entity is configured for MCCH or MTCH.
 
-  u32_t            *frame_tick_milliseconds;      // pointer on this tick variable handled by RRC : READ ONLY
+  //u32_t            *frame_tick_milliseconds;      // pointer on this tick variable handled by RRC : READ ONLY
   //-----------------------------
   // tranmission
   //-----------------------------

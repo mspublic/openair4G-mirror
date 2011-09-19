@@ -26,9 +26,10 @@
 #        endif
 
 public_rlc_um_control_primitives(void config_req_rlc_um (rlc_um_entity_t *rlcP, module_id_t module_idP, rlc_um_info_t * config_umP, u8_t rb_idP, rb_type_t rb_typeP);)
-public_rlc_um_control_primitives(void send_rlc_um_control_primitive (rlc_um_entity_t *rlcP, module_id_t module_idP, mem_block_t *cprimitiveP);)
-protected_rlc_um_control_primitives(void init_rlc_um (rlc_um_entity_t *rlcP);)
+protected_rlc_um_control_primitives(void rlc_um_init (rlc_um_entity_t *rlcP);)
 protected_rlc_um_control_primitives(void rlc_um_reset_state_variables (rlc_um_entity_t *rlcP);)
 protected_rlc_um_control_primitives(void rlc_um_free_all_resources (rlc_um_entity_t *rlcP);)
-protected_rlc_um_control_primitives(void rlc_um_set_configured_parameters (rlc_um_entity_t *rlcP, mem_block_t *cprimitiveP);)
+protected_rlc_um_control_primitives(void rlc_um_configure(rlc_um_entity_t *rlcP, u32_t timer_reorderingP, u32_t sn_field_lengthP, u32_t is_mXchP);)
+protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(rlc_um_entity_t *rlcP, module_id_t module_idP, rb_id_t rb_idP, rb_type_t rb_typeP);)
+
 #    endif

@@ -11,7 +11,7 @@
 #include "MAC_INTERFACE/extern.h"
 
 #define DEBUG_RLC_UM_RX_DECODE
-#define DEBUG_RLC_UM_RX
+//#define DEBUG_RLC_UM_RX
 //-----------------------------------------------------------------------------
 int rlc_um_read_length_indicators(unsigned char**dataP, rlc_um_e_li_t* e_liP, unsigned int* li_arrayP, unsigned int *num_liP, unsigned int *data_sizeP) {
 //-----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
     int reassembly_start_index;
 
     if (snP < 0) snP = snP + rlcP->sn_modulo;
-    
+
 #ifdef DEBUG_RLC_UM_RX
     msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, rlcP->last_reassemblied_sn, snP);
 #endif
@@ -201,7 +201,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             }
                             msg(" remaining size %d\n",size);
 #endif
-                            if (rlcP->reassembly_missing_sn_detected) { 
+                            if (rlcP->reassembly_missing_sn_detected) {
                                 reassembly_start_index = 1;
                                 data = &data[li_array[0]];
                             } else {
@@ -229,7 +229,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             }
                             msg(" remaining size %d\n",size);
 #endif
-                            if (rlcP->reassembly_missing_sn_detected) { 
+                            if (rlcP->reassembly_missing_sn_detected) {
 #ifdef DEBUG_RLC_UM_RX_DECODE
                                 msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] DISCARD FIRST LI %d", rlcP->module_id, rlcP->rb_id, mac_xface->frame, li_array[0]);
 #endif
@@ -238,7 +238,7 @@ void rlc_um_try_reassembly(rlc_um_entity_t *rlcP, signed int snP) {
                             } else {
                                 reassembly_start_index = 0;
                             }
-                            
+
                             for (i = reassembly_start_index; i < num_li; i++) {
                                 rlc_um_reassembly (data, li_array[i], rlcP);
                                 rlc_um_send_sdu(rlcP);
@@ -419,13 +419,22 @@ signed int sn = snP;
     if ( 0 <= snP) {
         if (snP < rlcP->um_window_size) {
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, modulus, rlcP->vr_uh);
+            msg ("[RL^C_UM][MOD %d][RB %d][FRAME %05d] %d IN REORDERING WINDOW[%03d:%03d[ SN %d IN [%03d:%03d[ VR(UR)=%03d VR(UH)=%03d\n",
+                 rlcP->module_id, rlcP->rb_id, mac_xface->frame, snP, 0, rlcP->um_window_size,
+                                                                 sn, (signed int)rlcP->vr_uh - rlcP->um_window_size, rlcP->vr_uh,
+                                                                 rlcP->vr_ur, rlcP->vr_uh);
 #endif
             return 0;
         }
     }
 #ifdef DEBUG_RLC_UM_RX
-        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d NOT IN REORDERING WINDOW[%03d:%03d]\n", rlcP->module_id, rlcP->rb_id, mac_xface->frame, sn, modulus, rlcP->vr_uh);
+    if (modulus < 0) {
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d NOT IN REORDERING WINDOW[%03d:%03d[ SN %d NOT IN [%03d:%03d[ VR(UR)=%03d VR(UH)=%03d\n",
+             rlcP->module_id, rlcP->rb_id, mac_xface->frame, snP, modulus + 1024, rlcP->um_window_size, sn, modulus + 1024 , rlcP->vr_uh, rlcP->vr_ur, rlcP->vr_uh);
+    } else {
+        msg ("[RLC_UM][MOD %d][RB %d][FRAME %05d] %d NOT IN REORDERING WINDOW[%03d:%03d[ SN %d NOT IN [%03d:%03d[ VR(UR)=%03d VR(UH)=%03d\n",
+             rlcP->module_id, rlcP->rb_id, mac_xface->frame, snP, modulus, rlcP->um_window_size, sn, modulus , rlcP->vr_uh, rlcP->vr_ur, rlcP->vr_uh);
+    }
 #endif
     return -1;
 }
