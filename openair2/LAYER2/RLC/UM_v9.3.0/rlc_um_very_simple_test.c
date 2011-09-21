@@ -10,6 +10,7 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "LAYER2/MAC/extern.h"
+#include "rlc_um_very_simple_test.h"
 
 
 
