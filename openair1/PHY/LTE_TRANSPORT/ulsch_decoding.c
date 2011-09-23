@@ -748,6 +748,11 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
   // Do abstraction of PUSCH feedback
   msg("[PHY] EMUL eNB %d : subframe %d : o_ACK %d %d\n",phy_vars_eNB->Mod_id,subframe,phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[0],phy_vars_eNB->ulsch_eNB[UE_index]->o_ACK[1]); 
 
+  phy_vars_eNB->ulsch_eNB[UE_index]->Or1 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
+  phy_vars_eNB->ulsch_eNB[UE_index]->Or2 = PHY_vars_UE_g[UE_id]->ulsch_ue[0]->O;
+  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o,MAX_CQI_BYTES); 
+  memcpy(phy_vars_eNB->ulsch_eNB[UE_index]->o_RI,PHY_vars_UE_g[UE_id]->ulsch_ue[0]->o_RI,2); 
+
   phy_vars_eNB->ulsch_eNB[UE_index]->cqi_crc_status = 1;
   return(1);
 }
