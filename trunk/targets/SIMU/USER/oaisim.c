@@ -319,14 +319,20 @@ main (int argc, char **argv)
       }
     case 'N':
       Nid_cell = atoi (optarg);
-      if (Nid_cell > 503)
+      if (Nid_cell > 503) {
 	msg ("Illegal Nid_cell %d (should be 0 ... 503)\n", Nid_cell);
+	exit(-1);
+      }
       break;
     case 'h':
       help ();
       exit (1);
     case 'x':
       transmission_mode = atoi (optarg);
+      if ((transmission_mode != 1) ||  (transmission_mode != 2) || (transmission_mode != 5) || (transmission_mode != 6)) {
+	msg("Unsupported transmission mode %d\n",transmission_mode);
+	exit(-1);
+      }
       break;
     case 'm':
       target_dl_mcs = atoi (optarg);
@@ -588,16 +594,13 @@ main (int argc, char **argv)
   openair_daq_vars.rx_rf_mode = 1;
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-  if ((transmission_mode != 1) && (transmission_mode != 6))
-    openair_daq_vars.dlsch_transmission_mode = 2;
-  else
-    openair_daq_vars.dlsch_transmission_mode = transmission_mode;
+  openair_daq_vars.dlsch_transmission_mode = transmission_mode;
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
   openair_daq_vars.ue_ul_nb_rb = 2;
 
-  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ // begin navid
+  for (UE_id=0; UE_id<NB_UE_INST;UE_id++){ 
     PHY_vars_UE_g[UE_id]->rx_total_gain_dB=110;
     // update UE_mode for each eNB_id not just 0
     if (abstraction_flag == 0)
@@ -605,8 +608,8 @@ main (int argc, char **argv)
     else
       PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235+UE_id;
-    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 4;
-  }				// end navid
+    PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
+  }
 
 
 #ifdef XFORMS
@@ -779,15 +782,16 @@ main (int argc, char **argv)
 #endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
-	    phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
+	    if (mac_xface->frame>0) {
+	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 #ifndef NAS_NETLINK
-	    if ((mac_xface->frame % 10) == 0) {
-	      len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
-	      rewind (UE_stats);
-	      fwrite (stats_buffer, 1, len, UE_stats);
-
-	    }
+	      if ((mac_xface->frame % 10) == 0) {
+		len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
+		rewind (UE_stats);
+		fwrite (stats_buffer, 1, len, UE_stats);
+	      }
 #endif
+	    }
 	  }
 	  else {
 	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1))) {

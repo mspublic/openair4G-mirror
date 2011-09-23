@@ -173,7 +173,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
     for (i = 0; i<nb_tx*nb_rx; i++) 
-      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
     if (nb_tx==2 && nb_rx==2) {
@@ -218,7 +218,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
     for (i = 0; i<nb_tx*nb_rx; i++) 
-      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
     if (nb_tx==2 && nb_rx==2) {
@@ -259,7 +259,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
     for (i = 0; i<nb_tx*nb_rx; i++) 
-      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
     if (nb_tx==2 && nb_rx==2) {
@@ -300,7 +300,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
     for (i = 0; i<nb_tx*nb_rx; i++) 
       chan_desc->ch[i] = (struct complex*) malloc(chan_desc->channel_length * sizeof(struct complex)); 
     for (i = 0; i<nb_tx*nb_rx; i++) 
-      chan_desc->chF[i] = (struct complex*) malloc(200 * sizeof(struct complex)); 
+      chan_desc->chF[i] = (struct complex*) malloc(1200 * sizeof(struct complex)); 
     for (i = 0; i<chan_desc->nb_taps; i++) 
       chan_desc->a[i]         = (struct complex*) malloc(nb_tx*nb_rx * sizeof(struct complex));
     if (nb_tx==2 && nb_rx==2) {

@@ -68,7 +68,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 #endif
   
   if (phy_vars_ue->init_averaging == 1) {
-    for (eNB_id=0;eNB_id<3;eNB_id++) {
+    for (eNB_id=0;eNB_id<NUMBER_OF_eNB_MAX;eNB_id++) {
       phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = 0;
     }
 
@@ -83,7 +83,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->PHY_measurements.n0_power_avg_dB = 0;
   }
 
-  for (eNB_id=0;eNB_id<3;eNB_id++) 
+  for (eNB_id=0;eNB_id<NUMBER_OF_eNB_MAX;eNB_id++) 
     rx_power[eNB_id] = 0;
 
   // if the fft size an odd power of 2, the output of the fft is shifted one too much, so we need to compensate for that
@@ -103,10 +103,10 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
     phy_vars_ue->PHY_measurements.n0_power_tot = 0;
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       phy_vars_ue->PHY_measurements.n0_power[aarx] = pow(10.0,phy_vars_ue->N0/10.0)*pow(10.0,((double)phy_vars_ue->rx_total_gain_dB)/10.0);
-      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = ((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB;
+      phy_vars_ue->PHY_measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power[aarx]);
       phy_vars_ue->PHY_measurements.n0_power_tot +=  phy_vars_ue->PHY_measurements.n0_power[aarx];
     } 
-    phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) (((int) phy_vars_ue->N0) + phy_vars_ue->rx_total_gain_dB);
+    phy_vars_ue->PHY_measurements.n0_power_tot_dB = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.n0_power_tot);
     phy_vars_ue->PHY_measurements.n0_power_tot_dBm = phy_vars_ue->PHY_measurements.n0_power_tot_dB - phy_vars_ue->rx_total_gain_dB;
   }
   else if (N0_symbol != 0) {
@@ -132,7 +132,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   // signal measurements  
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++) {
-      for (eNB_id=0;eNB_id<3;eNB_id++) {
+      for (eNB_id=0;eNB_id<NUMBER_OF_eNB_MAX;eNB_id++) {
 	
 	phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
 	  (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx*frame_parms->nb_antennas_tx) + aarx][8],(frame_parms->N_RB_DL*12)-8)*rx_power_correction) - 
@@ -150,7 +150,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       }
     }
   
-    for (eNB_id = 0; eNB_id < 3; eNB_id++){
+    for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++){
       //      phy_measurements->rx_power[eNB_id][aarx]/=frame_parms->nb_antennas_tx;
       phy_vars_ue->PHY_measurements.wideband_cqi_dB[eNB_id][aarx] = (unsigned short) dB_fixed(phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx]);
       rx_power[eNB_id] += phy_vars_ue->PHY_measurements.wideband_cqi[eNB_id][aarx];
@@ -161,7 +161,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
   // filter to remove jitter
   if (phy_vars_ue->init_averaging == 0) {
-    for (eNB_id = 0; eNB_id < 3; eNB_id++)
+    for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++)
       phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = (int) 
 	(((k1*((long long int)(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]))) + 
 	  (k2*((long long int)(rx_power[eNB_id]))))>>10);
@@ -170,13 +170,13 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	(k2*((long long int) (phy_vars_ue->PHY_measurements.n0_power_tot))))>>10);
   }
   else {
-    for (eNB_id = 0; eNB_id < 3; eNB_id++)
+    for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++)
       phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id] = rx_power[eNB_id];
     phy_vars_ue->PHY_measurements.n0_power_avg = phy_vars_ue->PHY_measurements.n0_power_tot;
     phy_vars_ue->init_averaging = 0;
   }
 
-  for (eNB_id = 0; eNB_id < 3; eNB_id++) {
+  for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) {
     phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id] = dB_fixed( phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id]);
     phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(rx_power[eNB_id],phy_vars_ue->PHY_measurements.n0_power_tot);
     phy_vars_ue->PHY_measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(phy_vars_ue->PHY_measurements.rx_power_avg[eNB_id],phy_vars_ue->PHY_measurements.n0_power_avg);
@@ -184,7 +184,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
   }
   phy_vars_ue->PHY_measurements.n0_power_avg_dB = dB_fixed( phy_vars_ue->PHY_measurements.n0_power_avg);
 
-  for (eNB_id = 0; eNB_id < 3; eNB_id++) {
+  for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) {
     if (frame_parms->mode1_flag==0) {
       // cqi/pmi information
       

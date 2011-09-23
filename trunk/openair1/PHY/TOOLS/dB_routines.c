@@ -325,8 +325,9 @@ char dB_fixed2(unsigned int x, unsigned int y) {
       return(dB_fixed(x/y));
     else
       return(-dB_fixed(y/x));
-  else
+  else if (y==0)
+    return(127);
+  else if (x==0)
     return(-128);
-
   
 }
