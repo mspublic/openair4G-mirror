@@ -208,8 +208,8 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 		{ 
 		  for (count1=0;count1<frame_parms->N_RB_DL*12;count1++)
 		    { 
-		      ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count1+(count*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(desc1->chF[a_tx+(a_rx*frame_parms->nb_antennas_rx)][count1].x*scale);
-		      ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count1+1+(count*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(desc1->chF[a_tx+(a_tx*frame_parms->nb_antennas_rx)][count1].y*scale) ;
+		      ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count1+(count*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(desc1->chF[a_rx+(a_tx*frame_parms->nb_antennas_rx)][count1].x*scale);
+		      ((s16 *) dl_channel_est[(a_tx<<1)+a_rx])[2*count1+1+(count*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(s16)(desc1->chF[a_rx+(a_tx*frame_parms->nb_antennas_rx)][count1].y*scale) ;
 		    }
 		}
 	    }
