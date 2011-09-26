@@ -53,7 +53,6 @@
 #include "OCG_create_dir.h"
 #include "OCG_parse_XML.h"
 #include "OCG_save_XML.h"
-#include "OCG_set_params.h"
 #include "OCG_generate_report.h"
 /*----------------------------------------------------------------------------*/
 //#define TEST_OCG
@@ -201,8 +200,7 @@ int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				// if the above tasks are all successful, we could tell the oaisim.c that everything is ready before running the emulation
 					oai_emulation.info.ocg_ok = 1;
 				}
-				set_params();
-				
+							
 #ifdef TEST_OCG				
 				call_emu_OK = call_emu(output_dir);
 				// config_mobi_OK = config_mobi("RWMEmulator.xml", filename); // generate the XML for Mobigen
