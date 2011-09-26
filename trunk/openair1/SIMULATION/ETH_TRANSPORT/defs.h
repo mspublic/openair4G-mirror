@@ -10,6 +10,8 @@
 
 #include "SCHED/defs.h"
 #include "proto.h"
+//#include "UTIL/OCG/OCG.h"
+
 
 #ifndef __BYPASS_SESSION_LAYER_DEFS_H__
 #    define __BYPASS_SESSION_LAYER_DEFS_H__
@@ -115,10 +117,11 @@ typedef struct bypass_proto2multicast_header_t {
 } bypass_proto2multicast_header_t;
 
 
-
+/* // replaced to OCG.h
 #define NUMBER_OF_MASTER_MAX   20
 //#define NUMBER_OF_eNB_MAX 3
 //#define NUMBER_OF_UE_MAX 32
+
 
 typedef struct {
   unsigned char nb_ue;
@@ -126,7 +129,6 @@ typedef struct {
   unsigned char nb_enb;
   unsigned char first_enb;
 }master_info_t;
-
 
 typedef struct {
   master_info_t master[NUMBER_OF_MASTER_MAX];
@@ -153,6 +155,7 @@ typedef struct {
   double time;	
 
 }emu_info_t; 
+*/
 
 
 #endif //

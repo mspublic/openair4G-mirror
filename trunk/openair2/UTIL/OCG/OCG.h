@@ -38,6 +38,9 @@
 * \warning
 */
 
+#include "SIMULATION/TOOLS/defs.h"
+
+
 #ifndef __OCG_H__
 #define __OCG_H__
 
@@ -65,6 +68,8 @@ extern "C" {
 #define DIR_LENGTH_MAX 128 /*!< \brief the maximum length of the path name */
 #define MOBI_XML_FOLDER "mobi_XML/" /*!< \brief the folder that mobigen generate XML files in */
 #define DIR_TO_MOBIGEN "XML_to_mobigen/" /*!< \brief the folder that mobigen detects XML file from OCG */
+
+#define NUMBER_OF_MASTER_MAX   20
 /* @}*/ 
 
 
@@ -144,21 +149,21 @@ enum {
 /* @}*/
 
 // the OSD_basic : 
-						typedef struct {
-							char *selected_option;
-							int urban;
-							int rural;
-						}Pathloss_Model;
   
-						typedef struct {
-							double pathloss_exponent;
-							double pathloss_0;
-						}Pathloss_Parameters;
+
   
 				typedef struct {
-					Pathloss_Model pathloss_model;
-					Pathloss_Parameters pathloss_parameters;
-				}Freespace_Propagation;
+					char *selected_option;
+					int free_space;
+					int urban;
+					int rural;
+				}Large_Scale;
+
+				////// options of generic
+				typedef struct {
+					double pathloss_exponent; // default 2
+					double pathloss_0_dB; // default -50 dB
+				}Free_Space_Model_Parameters;
 
 				typedef struct {
 					char *selected_option;
@@ -166,28 +171,45 @@ enum {
 					int SCM_B;
 					int SCM_C;
 					int SCM_D;
+					int rayleigh_8tap; // updated to advanced
+					int ricean_8tap;
+					int EPA;
+					int EVA;
+					int ETU;
 				}Small_Scale;
 
+				////// options of Ricean_8Tap
+				typedef struct {
+					int rice_factor_dB; // default 10 dB	
+				}Ricean_8Tap;
+
+				typedef struct {
+					double decorrelation_distance_m;// (m), default 100m					double variance_dB;// (dB), default 10dB					double inter_site_correlation;// (0...1), default 1, not yet implemented
+				}Shadowing;
+
 		typedef struct {
-			Freespace_Propagation freespace_propagation;
+			Large_Scale large_scale;
 			Small_Scale small_scale;
+			Shadowing shadowing;
+
+			Free_Space_Model_Parameters free_space_model_parameters;
+			Ricean_8Tap ricean_8tap;
 		}Fading;
 
 				typedef struct {
 					int number_of_sectors; /// Number of sectors (1-3), for UE always 1
-					double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
+					double beam_width_dB; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
 				        double alpha_rad[3];   /// Antenna orientation for each sector (for non-omnidirectional antennas) in radians wrt north
 					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
 					double tx_power_dBm; /// Tx power (dBm)
-					double rx_noise_level; /// Rx noise level (dB)
+					double rx_noise_level_dB; /// Rx noise level (dB)
+					double antenna_orientation_degree[3]; // 3 is the number of sectors for OpenAir // we need think about how to parse it from the XML ??????
 				}eNB_Antenna;
 
 				typedef struct {
-				        int number_of_sectors; /// Number of sectors (1-3), for UE always 1
-				        double beam_width; /// Antenna 3dB beam width (in radians) (set to 2*M_PI for onmidirectional antennas), for UE always 2*M_PI
 					double antenna_gain_dBi; /// Antenna gain (dBi) (same for Tx and Rx)
 					double tx_power_dBm; /// Tx power (dBm)
-					double rx_noise_level; /// Rx noise level (dB)
+					double rx_noise_level_dB; /// Rx noise level (dB)
 				}UE_Antenna;
 
 		typedef struct {
@@ -201,17 +223,18 @@ enum {
  * @{*/ 
 typedef struct {
 	Fading fading;
-	double wall_penetration_loss;
-	double system_bandwidth;
-	double UE_frequency;
+	double wall_penetration_loss_dB;
+	double system_bandwidth_MB;
+	double system_frequency_GHz;
 	Antenna antenna;
 }Environment_System_Config;
 /* @}*/
 
 
 		typedef struct {
-			double x;
-			double y;
+			double x_km;
+			double y_km;
+			//double zz; // for test
 		}Area;
 
 		typedef struct {
@@ -290,12 +313,12 @@ typedef struct {
 						//////
 
 						typedef struct {
-							double min_speed;
-							double max_speed;
-							double min_pause_time;
-							double max_pause_time;
-							double min_journey_time;
-							double max_journey_time;
+							double min_speed_mps; // m/s
+							double max_speed_mps;
+							double min_sleep_ms;
+							double max_sleep_ms;
+							double min_journey_time_ms;
+							double max_journey_time_ms;
 						}UE_Moving_Dynamics; // now, we use uniform distribution for these dynamics
 
 				typedef struct {
@@ -332,7 +355,7 @@ typedef struct {
 
 						typedef struct {
 							int number_of_cells;
-							double inter_eNB_distance;
+							double inter_eNB_distance_km;
 						}Hexagonal_eNB_Distribution;
 
 						typedef struct {
@@ -391,12 +414,12 @@ typedef struct {
 
 				////// options of Packet_Size
 				typedef struct {
-					double fixed_value;
+					double fixed_value_byte;
 				}Fixed_Packet_Size;
 					
 				typedef struct {
-					double min_value;
-					double max_value;
+					double min_value_byte;
+					double max_value_byte;
 				}Uniform_Packet_Size;
 				//////
 
@@ -409,16 +432,16 @@ typedef struct {
 
 				////// options of Inter_Arrival_Time
 				typedef struct {
-					double fixed_value;
+					double fixed_value_ms;
 				}Fixed_Inter_Arrival_Time;
 					
 				typedef struct {
-					double min_value;
-					double max_value;
+					double min_value_ms;
+					double max_value_ms;
 				}Uniform_Inter_Arrival_Time;
 					
 				typedef struct {
-					double expected_inter_arrival_time;
+					double expected_inter_arrival_time_ms;
 				}Poisson_Inter_Arrival_Time;
 				//////
 
@@ -454,6 +477,8 @@ typedef struct {
 				}Metrics;
 
 				typedef struct {
+					int phy;
+					int rrc;
 					int mac;
 					int rlc;
 					int pdcp;
@@ -494,12 +519,13 @@ typedef struct {
  *  @brief Including emulation time and performance output
  * @{*/ 
 typedef struct {
-	double emulation_time;
+	double emulation_time_ms;
 	Performance performance;
 
 	Seed seed;
 	// ! Note: the following option is for Seed, we put it here for the sake of simplicity of the XML file
 	User_Seed user_seed;
+	char g_log_level[20];
 }Emulation_Config;
 /* @}*/
 
@@ -507,11 +533,56 @@ typedef struct {
  *  @ingroup _OCG
  *  @brief OAI Emulation struct for OSD_basic
  * @{*/ 
+
+
+		typedef struct {
+			unsigned char nb_ue;
+			unsigned char first_ue;
+			unsigned char nb_enb;
+			unsigned char first_enb;
+		}master_info_t;
+
 typedef struct {
 	char *output_path;	/*!< \brief The path where we generate all the emulation results */
-	int ocg_ok;
-	int number_of_UE; // ! Note: calculated in OCG_parse_XML.c, not from the web portal directly
-	int number_of_eNB; // calculated in OCG_parse_XML.c, not from the web portal directly
+	int ocg_ok;	
+
+	// distributed emulation params 
+	master_info_t master[NUMBER_OF_MASTER_MAX];
+	unsigned char nb_ue_local;
+	unsigned char nb_ue_remote;
+	unsigned char nb_enb_local;
+	unsigned char nb_enb_remote;
+	unsigned char first_enb_local;
+	unsigned char first_ue_local;
+	unsigned short master_id;
+	unsigned char nb_master;
+	unsigned int master_list;
+	unsigned int is_primary_master;
+	unsigned int ethernet_id;
+	char local_server[128]; // for the oaisim -c option : 0 = EURECOM web portal; -1 = local; 1 - N or filename = running a specific XML configuration file 
+	unsigned char ethernet_flag; 
+	unsigned char multicast_group;
+	// status
+	unsigned char ocg_enabled;
+	unsigned char opt_enabled;
+	unsigned char otg_enabled;
+	unsigned char omg_model_enb;
+	unsigned char omg_model_ue;
+	unsigned char omg_model_ue_current; // when mixed mbility is used 
+	// emu related 
+	unsigned int seed;
+	double time;	
+	char global_log_level[20];
+	// phy related params
+	unsigned int n_frames;
+	unsigned int n_frames_flag; // if set, then let the emulation goes to infinity
+	unsigned char frame_type;
+	unsigned char tdd_config;
+	unsigned char extended_prefix_flag;
+	unsigned char N_RB_DL;
+	unsigned char transmission_mode;
+	
+	SCM_t channel_model;
 }Info;
 /* @}*/
 
@@ -551,7 +622,7 @@ typedef struct {
 //#define LOG_T printf("OCG: "); printf /*!< \brief trace */
 /* @}*/ 
 
-OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
+int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
 void init_oai_emulation(void);
 #include "UTIL/LOG/log.h"

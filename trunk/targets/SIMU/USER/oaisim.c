@@ -7,7 +7,7 @@
 #include <time.h>
 #include <cblas.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
@@ -73,7 +73,6 @@
 u16 NODE_ID[1];
 u8 NB_INST = 2;
 #endif //OPENAIR2
-
 char stats_buffer[16384];
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -83,6 +82,23 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 double sinr_bler_map[MCS_COUNT][2][9];
 
 //OAI_Emulation * emulation_scen;
+mapping small_scale_names[] =
+{
+    {"custom", 0},
+    {"SCM_A", 1},
+    {"SCM_B", 2},
+    {"SCM_C", 3},
+    {"SCM_D", 4},
+    {"EPA", 5},
+    {"EVA", 6},
+    {"ETU", 7},
+    {"Rayleigh8", 8},
+    {"Rayleigh1", 9},
+    {"Rice8", 10},
+    {"Rice1", 11},
+    {NULL, -1}
+};
+
 
 #ifdef LINUX
 void
@@ -207,16 +223,14 @@ main (int argc, char **argv)
 {
   char c;
   s32 i, j;
-  int new_omg_model;
+  int new_omg_model; // goto ocg in oai_emulation.info.
   // pointers signal buffers (s = transmit, r,r0 = receive)
   double **s_re, **s_im, **r_re, **r_im, **r_re0, **r_im0;
-  SCM_t channel_model;
   double forgetting_factor=0;
   int map1,map2;
   double **ShaF= NULL;
 
   // Framing variables
-  u16 n_frames, n_frames_flag;
   s32 slot, last_slot, next_slot;
 
   // variables/flags which are set by user on command-line
@@ -227,10 +241,9 @@ main (int argc, char **argv)
   u8 target_dl_mcs = 4;
   u8 target_ul_mcs = 2;
   u8 rate_adaptation_flag;
-  u8 transmission_mode;
+
   u8 abstraction_flag = 0, ethernet_flag = 0;
-  u16 ethernet_id;
-  u8 frame_type = 1, tdd_config = 3, extended_prefix_flag = 0, N_RB_DL = 25;
+
   u16 Nid_cell = 0;
   s32 UE_id, eNB_id, ret;
 
@@ -242,8 +255,7 @@ main (int argc, char **argv)
   char *g_log_level = "trace";	// by default global log level is set to trace
   lte_subframe_t direction;
 
-  Init_OPT(0,"outfile.dump","127.0.0.1",1234);
-#ifdef XFORMS
+ #ifdef XFORMS
   FD_phy_procedures_sim *form[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
   char title[255];
 #endif
@@ -251,9 +263,9 @@ main (int argc, char **argv)
 
   FILE *UE_stats, *eNB_stats;
   int len;
-
+#ifdef ICIC
   remove ("dci.txt");
-
+#endif
 
   //time_t t0,t1;
   clock_t start, stop;
@@ -263,58 +275,37 @@ main (int argc, char **argv)
   Node_list enb_node_list = NULL;
  
   //default parameters
-  emu_info.is_primary_master=0;
-  emu_info.master_list=0;
-  emu_info.nb_ue_remote=0;
-  emu_info.nb_enb_remote=0;
-  emu_info.first_ue_local=0;
-  emu_info.offset_ue_inst=0;
-  emu_info.first_enb_local=0;
-  emu_info.master_id=0;
-  emu_info.nb_master =0;
-  emu_info.nb_ue_local= 1;//default 1 UE
-  emu_info.nb_enb_local= 1;//default 1 eNB
-  emu_info.ethernet_flag=0;
-  strcpy(emu_info.local_server, "5"); // this is the web portal version, ie. the httpd server is remote 
-  emu_info.multicast_group=0;
-  emu_info.ocg_enabled=1;// flag c
-  emu_info.opt_enabled=0; // P flag
-  emu_info.omg_model_enb=STATIC; //default to static mobility model
-  emu_info.omg_model_ue=STATIC; //default to static mobility model
-  emu_info.otg_enabled=0;// T flag
-  emu_info.time = 0;	// time of emulation 
-  emu_info.seed = 1; //time(NULL); // time-based random seed 
-  transmission_mode = 2;
   target_dl_mcs = 0;
   rate_adaptation_flag = 0;
-  n_frames = 0xffff;//1024;		//100;
-  n_frames_flag = 1;//fixme
+  oai_emulation.info.n_frames = 0xffff;//1024;		//100;
+  oai_emulation.info.n_frames_flag = 0;//fixme
   snr_dB = 30;
   cooperation_flag = 0;		// default value 0 for no cooperation, 1 for Delay diversity, 2 for Distributed Alamouti
 
-  // configure oaisim with OCG
-  oaisim_config(&n_frames, g_log_level); // config OMG and OCG, OPT, OTG, OLG
+
+   init_oai_emulation(); // to initialize everything !!!
 
 
-  // get command-line options
+   // get command-line options
   while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:"))
 	 != -1) {
+
     switch (c) {
     case 'F':			// set FDD
-      frame_type = 0;
+      oai_emulation.info.frame_type = 0;
       break;
     case 'C':
-      tdd_config = atoi (optarg);
-      if (tdd_config > 6) {
-	msg ("Illegal tdd_config %d (should be 0-6)\n", tdd_config);
+      oai_emulation.info.tdd_config = atoi (optarg);
+      if (oai_emulation.info.tdd_config > 6) {
+	msg ("Illegal tdd_config %d (should be 0-6)\n", oai_emulation.info.tdd_config);
 	exit (-1);
       }
       break;
     case 'R':
-      N_RB_DL = atoi (optarg);
-      if ((N_RB_DL != 6) && (N_RB_DL != 15) && (N_RB_DL != 25)
-	  && (N_RB_DL != 50) && (N_RB_DL != 75) && (N_RB_DL != 100)) {
-	msg ("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", N_RB_DL);
+      oai_emulation.info.N_RB_DL = atoi (optarg);
+      if ((oai_emulation.info.N_RB_DL != 6) && (oai_emulation.info.N_RB_DL != 15) && (oai_emulation.info.N_RB_DL != 25)
+	  && (oai_emulation.info.N_RB_DL != 50) && (oai_emulation.info.N_RB_DL != 75) && (oai_emulation.info.N_RB_DL != 100)) {
+	msg ("Illegal N_RB_DL %d (should be one of 6,15,25,50,75,100)\n", oai_emulation.info.N_RB_DL);
 	exit (-1);
       }
     case 'N':
@@ -328,9 +319,9 @@ main (int argc, char **argv)
       help ();
       exit (1);
     case 'x':
-      transmission_mode = atoi (optarg);
-      if ((transmission_mode != 1) ||  (transmission_mode != 2) || (transmission_mode != 5) || (transmission_mode != 6)) {
-	msg("Unsupported transmission mode %d\n",transmission_mode);
+      oai_emulation.info.transmission_mode = atoi (optarg);
+      if ((oai_emulation.info.transmission_mode != 1) ||  (oai_emulation.info.transmission_mode != 2) || (oai_emulation.info.transmission_mode != 5) || (oai_emulation.info.transmission_mode != 6)) {
+	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
       break;
@@ -341,9 +332,9 @@ main (int argc, char **argv)
       rate_adaptation_flag = 1;
       break;
     case 'n':
-      n_frames = atoi (optarg);
+      oai_emulation.info.n_frames = atoi (optarg);
       //n_frames = (n_frames >1024) ? 1024: n_frames; // adjust the n_frames if higher that 1024
-      n_frames_flag = 1;
+      oai_emulation.info.n_frames_flag = 1;
       break;
     case 's':
       snr_dB = atoi (optarg);
@@ -370,63 +361,53 @@ main (int argc, char **argv)
       cooperation_flag = atoi (optarg);
       break;
     case 'u':
-      emu_info.nb_ue_local = atoi (optarg);
+      oai_emulation.info.nb_ue_local = atoi (optarg);
       break;
-      //      case 'U':
-      //nb_ue_remote = atoi(optarg);
-      //break;
     case 'b':
-      emu_info.nb_enb_local = atoi (optarg);
+      oai_emulation.info.nb_enb_local = atoi (optarg);
       break;
-      //      case 'B':
-      // nb_eNB_remote = atoi(optarg);
-      //break;
     case 'a':
       abstraction_flag = 1;
       break;
     case 'p':
-      emu_info.nb_master = atoi (optarg);
+      oai_emulation.info.nb_master = atoi (optarg);
       break;
     case 'M':
       abstraction_flag = 1;
       ethernet_flag = 1;
-      ethernet_id = atoi (optarg);
-      emu_info.master_id = ethernet_id;
-      emu_info.ethernet_flag = 1;
+      oai_emulation.info.ethernet_id = atoi (optarg);
+      oai_emulation.info.master_id = oai_emulation.info.ethernet_id;
+      oai_emulation.info.ethernet_flag = 1;
       break;
     case 'e':
-      extended_prefix_flag = 1;
+      oai_emulation.info.extended_prefix_flag = 1;
       break;
     case 'l':
       g_log_level = optarg;
       break;
     case 'c':
-      printf("[SIM] OCG is already enabled by default and using template_%s.xml!\n",emu_info.local_server); 
-      exit(-1);
-      //strcpy(emu_info.local_server, optarg);
-      //emu_info.ocg_enabled=1;
-      //abstraction_flag=1;
-      //extended_prefix_flag=1;
-      //n_frames_flag=1;
-      //transmission_mode = 1;
+ /*    printf("[SIM] OCG is already enabled by default and using template_%s.xml!\n",oai_emulation.info.local_server); 
+     exit(-1); */
+      strcpy(oai_emulation.info.local_server, optarg);
+      oai_emulation.info.ocg_enabled=1;
       break;
     case 'g':
-      emu_info.multicast_group = atoi (optarg);
+      oai_emulation.info.multicast_group = atoi (optarg);
       break;
     case 'B':
-      emu_info.omg_model_enb = atoi (optarg);
+      oai_emulation.info.omg_model_enb = atoi (optarg);
       break;
     case 'U':
-      emu_info.omg_model_ue = atoi (optarg);
+      oai_emulation.info.omg_model_ue = atoi (optarg);
       break;
     case 'T':
-      emu_info.otg_enabled = 1;
+      oai_emulation.info.otg_enabled = 1;
       break;
     case 'P':
-      emu_info.opt_enabled = 1;
+      oai_emulation.info.opt_enabled = 1;
       break;
     case 'E':
-      emu_info.seed = atoi (optarg);
+      oai_emulation.info.seed = atoi (optarg);
       break;
     default:
       help ();
@@ -435,15 +416,18 @@ main (int argc, char **argv)
     }
   }
 
-  if (emu_info.nb_ue_local > 8) {
-    printf ("Enter fewer than 8 UEs for the moment\n");
-    exit (-1);
-  }
-  if (emu_info.nb_enb_local > 3) {
-    printf ("Enter fewer than 4 eNBs for the moment\n");
-    exit (-1);
-  }
+  // configure oaisim with OCG
+  oaisim_config(g_log_level); // config OMG and OCG, OPT, OTG, OLG
 
+  if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
+    printf ("Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
+    exit (-1);
+  }
+  if (oai_emulation.info.nb_enb_local > NUMBER_OF_eNB_MAX) {
+    printf ("Enter fewer than %d eNBs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_eNB_MAX);
+    exit (-1);
+  }
+	
   // fix ethernet and abstraction with RRC_CELLULAR Flag
 #ifdef RRC_CELLULAR
   abstraction_flag = 1;
@@ -459,19 +443,19 @@ main (int argc, char **argv)
 #endif
 
   if (ethernet_flag == 1) {
-    emu_info.master[emu_info.master_id].nb_ue = emu_info.nb_ue_local;
-    emu_info.master[emu_info.master_id].nb_enb = emu_info.nb_enb_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue = oai_emulation.info.nb_ue_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb = oai_emulation.info.nb_enb_local;
 
-    if (!emu_info.master_id)
-      emu_info.is_primary_master = 1;
+    if (!oai_emulation.info.master_id)
+      oai_emulation.info.is_primary_master = 1;
     j = 1;
-    for (i = 0; i < emu_info.nb_master; i++) {
-      if (i != emu_info.master_id)
-	emu_info.master_list = emu_info.master_list + j;
-      LOG_I (EMU, "Index of master id i=%d  MASTER_LIST %d\n", i, emu_info.master_list);
+    for (i = 0; i < oai_emulation.info.nb_master; i++) {
+      if (i != oai_emulation.info.master_id)
+	oai_emulation.info.master_list = oai_emulation.info.master_list + j;
+      LOG_I (EMU, "Index of master id i=%d  MASTER_LIST %d\n", i, oai_emulation.info.master_list);
       j *= 2;
     }
-    LOG_I (EMU, " Total number of master %d my master id %d\n", emu_info.nb_master, emu_info.master_id);
+    LOG_I (EMU, " Total number of master %d my master id %d\n", oai_emulation.info.nb_master, oai_emulation.info.master_id);
 #ifdef LINUX
     init_bypass ();
 #endif
@@ -486,17 +470,17 @@ main (int argc, char **argv)
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 #endif
-  NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
-  NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
+  NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
+  NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
       
-  LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,emu_info.nb_ue_local,emu_info.nb_ue_remote);
-  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,emu_info.nb_enb_local,emu_info.nb_enb_remote);
+  LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
+  LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
   printf("Running with frame_type %d, Nid_cell %d, N_RB_DL %d, EP %d, mode %d, target dl_mcs %d, rate adaptation %d, nframes %d, abstraction %d\n",
-  	 1+frame_type, Nid_cell, N_RB_DL, extended_prefix_flag, transmission_mode,target_dl_mcs,rate_adaptation_flag,n_frames,abstraction_flag);
+  	 1+oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag);
   
 
-  init_lte_vars (&frame_parms, frame_type, tdd_config, extended_prefix_flag,
-		 N_RB_DL, Nid_cell, cooperation_flag, transmission_mode, abstraction_flag);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.extended_prefix_flag,
+		 oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   printf ("Nid_cell %d\n", frame_parms->Nid_cell);
 
@@ -515,15 +499,15 @@ main (int argc, char **argv)
   } 
 
   // init SF map here!!!
-  map1 =(int)oai_emulation.topology_config.area.x;
-  map2 =(int)oai_emulation.topology_config.area.y;
+  map1 =(int)oai_emulation.topology_config.area.x_km;
+  map2 =(int)oai_emulation.topology_config.area.y_km;
   //ShaF = createMat(map1,map2); -> memory is allocated within init_SF
   ShaF = init_SF(map1,map2,DECOR_DIST,SF_VAR);
 
   // size of area to generate shadow fading map
   printf("Simulation area x=%f, y=%f\n",
-	 oai_emulation.topology_config.area.x,
-	 oai_emulation.topology_config.area.y);
+	 oai_emulation.topology_config.area.x_km,
+	 oai_emulation.topology_config.area.y_km);
  
   
   if (abstraction_flag == 0)
@@ -536,49 +520,18 @@ main (int argc, char **argv)
       printf ("[SIM] Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
 #endif
 
-      // if (emu_info.ocg_enabled == 1)
-      // TODO: add channel model based on scen descriptor here
-      if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_A")==0) 
-	channel_model = SCM_A;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_B")==0) 
-	channel_model = SCM_B;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_C")==0) 
-	channel_model = SCM_C;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_D")==0) 
-	channel_model = SCM_D;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"SCM_A")==0) 
-	channel_model = SCM_A;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"EPA")==0) 
-	channel_model = EPA;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"EVA")==0) 
-	channel_model = EVA;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"ETU")==0) 
-	channel_model = ETU;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rayleigh8")==0) 
-	channel_model = Rayleigh8;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rayleigh1")==0) 
-	channel_model = Rayleigh1;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rice8")==0) 
-	channel_model = Rice8;
-      else if (strcmp(oai_emulation.environment_system_config.fading.small_scale.selected_option,"Rice1")==0) 
-	channel_model = Rice1;
-      else {
-	printf("[SIM] Unknown channel model %s, Exiting.\n",oai_emulation.environment_system_config.fading.small_scale.selected_option);
-	exit(-1);
-      }
-
-      eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+     eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						   channel_model,
-						   oai_emulation.environment_system_config.system_bandwidth,
+						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
 						   0,
 						   0);
       
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
-						   channel_model,
-						   oai_emulation.environment_system_config.system_bandwidth,
+						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
 						   0,
 						   0);
@@ -594,7 +547,7 @@ main (int argc, char **argv)
   openair_daq_vars.rx_rf_mode = 1;
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-  openair_daq_vars.dlsch_transmission_mode = transmission_mode;
+  openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode;
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
@@ -607,10 +560,9 @@ main (int argc, char **argv)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = NOT_SYNCHED;
     else
       PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235+UE_id;
+    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
   }
-
 
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
@@ -645,7 +597,7 @@ main (int argc, char **argv)
   sleep_time_us = SLEEP_STEP_US;
   td_avg = TARGET_SF_TIME_NS;
 
-  for (mac_xface->frame=0; mac_xface->frame<n_frames; mac_xface->frame++) {
+  for (mac_xface->frame=0; mac_xface->frame<oai_emulation.info.n_frames; mac_xface->frame++) {
     
 
     /*
@@ -657,54 +609,54 @@ main (int argc, char **argv)
       }
     */
 
-    update_nodes(emu_info.time);  
+    update_nodes(oai_emulation.info.time);  
 
-    enb_node_list = get_current_positions(emu_info.omg_model_enb, eNB, emu_info.time);
-    ue_node_list = get_current_positions(emu_info.omg_model_ue, UE, emu_info.time);
+    enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
+    ue_node_list = get_current_positions(oai_emulation.info.omg_model_ue, UE, oai_emulation.info.time);
 
     // update the position of all the nodes (eNB/CH, and UE/MR) every frame 
-    if (((int)emu_info.time % 10) == 0 ) {
+    if (((int)oai_emulation.info.time % 10) == 0 ) {
       display_node_list(enb_node_list);
       display_node_list(ue_node_list);
-      if (emu_info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
-	for(UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++){
+      if (oai_emulation.info.omg_model_ue >= MAX_NUM_MOB_TYPES){ // mix mobility model
+	for(UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++){
 	  new_omg_model = randomGen(STATIC, MAX_NUM_MOB_TYPES); 
 	  LOG_D(OMG, "[UE] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (UE_id, UE, new_omg_model, emu_info.time);
+	  set_new_mob_type (UE_id, UE, new_omg_model, oai_emulation.info.time);
 	}
       }
 
-      if (emu_info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
-	for (eNB_id = emu_info.first_enb_local; eNB_id < (emu_info.first_enb_local + emu_info.nb_enb_local); eNB_id++) {
+      if (oai_emulation.info.omg_model_enb >= MAX_NUM_MOB_TYPES) {	// mix mobility model
+	for (eNB_id = oai_emulation.info.first_enb_local; eNB_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local); eNB_id++) {
 	  new_omg_model = randomGen (STATIC, MAX_NUM_MOB_TYPES);
 	  LOG_D (OMG, "[eNB] Node of ID %d is changing mobility generator ->%d \n", UE_id, new_omg_model);
 	  // reset the mobility model for a specific node
-	  set_new_mob_type (eNB_id, eNB, new_omg_model, emu_info.time);
+	  set_new_mob_type (eNB_id, eNB, new_omg_model, oai_emulation.info.time);
 	}
       }
     }
 
 #ifdef DEBUG_OMG
-    if ((((int) emu_info.time) % 100) == 0) {
-      for (UE_id = emu_info.first_ue_local; UE_id < (emu_info.first_ue_local + emu_info.nb_ue_local); UE_id++) {
+    if ((((int) oai_emulation.info.time) % 100) == 0) {
+      for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++) {
 	get_node_position (UE, UE_id);
       }
     }
 #endif 
 
-    if (n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
-      mac_xface->frame %=(n_frames-1);
+    if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
+      mac_xface->frame %=(oai_emulation.info.n_frames-1);
       // set the emulation time based on 1ms subframe number
-      emu_info.time += 0.01; // emu time in s 
+      oai_emulation.info.time += 0.01; // emu time in s 
     }
     else { // user set the number of frames for the emulation
       // let the time go faster to see the effect of mobility
-      emu_info.time += 0.1; 
+      oai_emulation.info.time += 0.1; 
     } 
 
     /* Added for PHY abstraction */
-    if (emu_info.ocg_enabled == 1) {
+    if (oai_emulation.info.ocg_enabled == 1) {
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
       extract_position(ue_node_list, ue_data, NB_UE_INST);
       
@@ -747,9 +699,9 @@ main (int argc, char **argv)
       direction = subframe_select(frame_parms,next_slot>>1);
       
       if((next_slot %2) ==0)
-	clear_eNB_transport_info(emu_info.nb_enb_local);
+	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
       
-      for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
+      for (eNB_id=oai_emulation.info.first_enb_local;eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local);eNB_id++) {
 	//#ifdef DEBUG_SIM
 	printf
 	  ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",
@@ -771,9 +723,9 @@ main (int argc, char **argv)
 
       // Call ETHERNET emulation here
       if ((next_slot % 2) == 0)
-	clear_UE_transport_info (emu_info.nb_ue_local);
+	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
 
-      for (UE_id = emu_info.first_ue_local; UE_id < (emu_info.first_ue_local + emu_info.nb_ue_local); UE_id++)
+      for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++)
 	if (mac_xface->frame >= (UE_id * 10)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
@@ -839,7 +791,7 @@ main (int argc, char **argv)
       }
 
       if ((last_slot == 1) && (mac_xface->frame == 0)
-	  && (abstraction_flag == 0) && (n_frames == 1)) {
+	  && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
 	write_output ("dlchan0.m", "dlch0",
 		      &(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
@@ -940,7 +892,7 @@ main (int argc, char **argv)
   }
 
   // added for PHY abstraction
-  if (emu_info.ocg_enabled == 1) {
+  if (oai_emulation.info.ocg_enabled == 1) {
     for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) 
       free(enb_data[eNB_id]); 
     

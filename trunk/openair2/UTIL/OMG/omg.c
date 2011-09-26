@@ -101,7 +101,7 @@ void init_mobility_generator(omg_global_param omg_param_list) {
     break;
   
   default:
-    LOG_N(OMG, "Unsupported generator %c \n", omg_param_list.mobility_type);
+    LOG_N(OMG, "Unsupported generator %d \n", omg_param_list.mobility_type);
   }
 }
 

@@ -16,6 +16,7 @@
 #include "PHY_INTERFACE/vars.h"
 #ifdef OCG
 #include "UTIL/OCG/OCG.h"
+#include "OCG_extern.h"
 #endif 
 #endif
 
@@ -714,18 +715,18 @@ int main(int argc, char **argv) {
   RRC_CONNECTION_FLAG = 1;
   
   //default parameters
-  emu_info.is_primary_master=0;
-  emu_info.master_list=0;
-  emu_info.nb_ue_remote=0;
-  emu_info.nb_enb_remote=0;
-  emu_info.first_ue_local=0;
-  emu_info.first_enb_local=0;
-  emu_info.master_id=0;
-  emu_info.nb_master =0;
-  emu_info.nb_ue_local= 1;
-  emu_info.nb_enb_local= 1;
-  emu_info.ethernet_flag=0;
-  emu_info.multicast_group=0;
+  oai_emulation.info.is_primary_master=0;
+  oai_emulation.info.master_list=0;
+  oai_emulation.info.nb_ue_remote=0;
+  oai_emulation.info.nb_enb_remote=0;
+  oai_emulation.info.first_ue_local=0;
+  oai_emulation.info.first_enb_local=0;
+  oai_emulation.info.master_id=0;
+  oai_emulation.info.nb_master =0;
+  oai_emulation.info.nb_ue_local= 1;
+  oai_emulation.info.nb_enb_local= 1;
+  oai_emulation.info.ethernet_flag=0;
+  oai_emulation.info.multicast_group=0;
   
   transmission_mode = 1;
   target_dl_mcs = 0;
@@ -766,13 +767,13 @@ int main(int argc, char **argv) {
 	  forgetting_factor = atof(optarg);
 	  break;
 	case 'u':
-	  emu_info.nb_ue_local = atoi(optarg);
+	  oai_emulation.info.nb_ue_local = atoi(optarg);
 	  break;
 	  //	case 'U':
 	  //nb_ue_remote = atoi(optarg);
 	  //break;
 	case 'b':
-	  emu_info.nb_enb_local = atoi(optarg);
+	  oai_emulation.info.nb_enb_local = atoi(optarg);
 	  break;
 	  //	case 'B':
 	  // nb_eNB_remote = atoi(optarg);
@@ -781,14 +782,14 @@ int main(int argc, char **argv) {
 	  abstraction_flag=1;
 	  break;
 	case 'p':
-	  emu_info.nb_master = atoi(optarg);
+	  oai_emulation.info.nb_master = atoi(optarg);
 	  break;
 	case 'M':
 	  abstraction_flag=1;
 	  ethernet_flag=1;
 	  ethernet_id = atoi(optarg);
-	  emu_info.master_id=ethernet_id;
-	  emu_info.ethernet_flag=1;
+	  oai_emulation.info.master_id=ethernet_id;
+	  oai_emulation.info.ethernet_flag=1;
 	  break;
 	case 'e':
 	  extended_prefix_flag=1;
@@ -800,7 +801,7 @@ int main(int argc, char **argv) {
 	  OCG_flag=1;
 	  break;
 	case 'g':
-	  emu_info.multicast_group=atoi(optarg);
+	  oai_emulation.info.multicast_group=atoi(optarg);
 	  break;	
 	default:
 	  help ();
@@ -823,14 +824,14 @@ int main(int argc, char **argv) {
       abstraction_flag=1;
       extended_prefix_flag=1;
 
-      emu_info.nb_ue_local  = emulation_scen->topo_config.number_of_UE;
+      oai_emulation.info.nb_ue_local  = emulation_scen->topo_config.number_of_UE;
 
       if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "random")) {
-         emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
+         oai_emulation.info.nb_enb_local = emulation_scen->topo_config.eNB_topology.totally_random.number_of_eNB;
       } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "hexagonal")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
+	oai_emulation.info.nb_enb_local = emulation_scen->topo_config.eNB_topology.hexagonal.number_of_cells;
       } else if (!strcmp(emulation_scen->topo_config.eNB_topology.selected_option, "grid")) {
-	emu_info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
+	oai_emulation.info.nb_enb_local = emulation_scen->topo_config.eNB_topology.grid.x * emulation_scen->topo_config.eNB_topology.grid.y;
       } 
       n_frames  =  (int) emulation_scen->emu_config.emu_time * 60 * 100;
       transmission_mode = 1;
@@ -845,23 +846,23 @@ int main(int argc, char **argv) {
   ret=netlink_init();
   
   if (ethernet_flag==1){
-    emu_info.master[emu_info.master_id].nb_ue=emu_info.nb_ue_local;
-    emu_info.master[emu_info.master_id].nb_enb=emu_info.nb_enb_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_ue=oai_emulation.info.nb_ue_local;
+    oai_emulation.info.master[oai_emulation.info.master_id].nb_enb=oai_emulation.info.nb_enb_local;
 
-    if(!emu_info.master_id) 
-      emu_info.is_primary_master=1;
+    if(!oai_emulation.info.master_id) 
+      oai_emulation.info.is_primary_master=1;
     j=1;
-    for(i=0;i<emu_info.nb_master;i++){
-      if(i!=emu_info.master_id)
-	emu_info.master_list=emu_info.master_list+j;
-      LOG_T(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,emu_info.master_list);
+    for(i=0;i<oai_emulation.info.nb_master;i++){
+      if(i!=oai_emulation.info.master_id)
+	oai_emulation.info.master_list=oai_emulation.info.master_list+j;
+      LOG_T(EMU, "Index of master id i=%d  MASTER_LIST %d\n",i,oai_emulation.info.master_list);
       j*=2;
     }
     LOG_T(EMU,"nb_ue_local %d nb_enb_local %d nb_master %d master id %d\n", 
-	  emu_info.nb_ue_local, 
-	  emu_info.nb_enb_local,
-	  emu_info.nb_master,
-	  emu_info.master_id);
+	  oai_emulation.info.nb_ue_local, 
+	  oai_emulation.info.nb_enb_local,
+	  oai_emulation.info.nb_master,
+	  oai_emulation.info.master_id);
     
     //ret=netlink_init();
     init_bypass();
@@ -872,8 +873,8 @@ int main(int argc, char **argv) {
     }
   }// ethernet flag
 
-  NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
-  NB_CH_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
+  NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
+  NB_CH_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
    
    
   printf("Running with mode %d, target dl_mcs %d, rate adaptation %d, nframes %d\n",
@@ -1210,8 +1211,8 @@ int main(int argc, char **argv) {
       next_slot = (slot + 1)%20;
 
       if(next_slot %2 ==0)
-	clear_eNB_transport_info(emu_info.nb_enb_local);
-      for (eNB_id=emu_info.first_enb_local;eNB_id<(emu_info.first_enb_local+emu_info.nb_enb_local);eNB_id++) {
+	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
+      for (eNB_id=oai_emulation.info.first_enb_local;eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local);eNB_id++) {
 	//#ifdef DEBUG_SIM
 	printf("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d)\n",eNB_id,mac_xface->frame,slot,next_slot>>1);
 	//#endif
@@ -1227,8 +1228,8 @@ int main(int argc, char **argv) {
       }
       // Call ETHERNET emulation here
       if((next_slot %2) == 0) 
-	clear_UE_transport_info(emu_info.nb_ue_local);
-      for (UE_id=emu_info.first_ue_local; UE_id<(emu_info.first_ue_local+emu_info.nb_ue_local);UE_id++)
+	clear_UE_transport_info(oai_emulation.info.nb_ue_local);
+      for (UE_id=oai_emulation.info.first_ue_local; UE_id<(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local);UE_id++)
 	if (mac_xface->frame >= (UE_id*10)) { // activate UE only after 10*UE_id frames so that different UEs turn on separately
 	  //#ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n", UE_id,mac_xface->frame,slot, next_slot>>1);

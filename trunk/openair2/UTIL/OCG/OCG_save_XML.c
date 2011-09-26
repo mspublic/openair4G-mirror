@@ -55,7 +55,7 @@ int save_XML(int copy_or_move, char *src_file, char *output_dir, char *filename)
 	char XML_saving_dir[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 32] = "";
 	
 	strcpy(dst_file, output_dir);
-	strcat(dst_file, "SCENARIO/XML/");
+	//strcat(dst_file, "SCENARIO/XML/");
 	strcpy(XML_saving_dir, dst_file);
 	strcat(dst_file, filename);
 	fs = fopen(src_file, "r");

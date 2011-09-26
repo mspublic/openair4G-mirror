@@ -1,4 +1,5 @@
 //#include "defs.h"
+
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/CODING/extern.h"
@@ -13,6 +14,8 @@
 #include "PHY_INTERFACE/extern.h"
 #endif
 //#define DEBUG_ULSCH_DECODING
+#include "UTIL/OCG/OCG.h"
+#include "UTIL/OCG/OCG_extern.h"
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
 
@@ -736,7 +739,7 @@ u32 ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	 PHY_vars_UE_g[UE_id]->ulsch_ue[0]->harq_processes[harq_pid]->b,
 	 phy_vars_eNB->ulsch_eNB[UE_index]->harq_processes[harq_pid]->TBS>>3);
   // get local ue's ack 	 
-  if ((UE_index >= emu_info.first_ue_local) ||(UE_index <(emu_info.first_ue_local+emu_info.nb_ue_local))){
+  if ((UE_index >= oai_emulation.info.first_ue_local) ||(UE_index <(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local))){
     get_ack(&phy_vars_eNB->lte_frame_parms,
 	    PHY_vars_UE_g[UE_id]->dlsch_ue[0][0]->harq_ack,
 	    subframe,

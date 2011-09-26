@@ -53,6 +53,7 @@
 #include "OCG_create_dir.h"
 #include "OCG_parse_XML.h"
 #include "OCG_save_XML.h"
+#include "OCG_set_params.h"
 #include "OCG_generate_report.h"
 /*----------------------------------------------------------------------------*/
 //#define TEST_OCG
@@ -62,7 +63,7 @@
 #ifdef TEST_OCG 
 int main(int argc, char *argv[]) {
 #else
-OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) { 
+int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) { 
 #endif  
 	int state = STATE_START_OCG;
 	char web_XML_folder[DIR_LENGTH_MAX] = "";
@@ -149,11 +150,9 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				create_dir_OK = MODULE_NOT_PROCESSED;
 				parse_XML_OK = MODULE_NOT_PROCESSED;
 				save_XML_OK = MODULE_NOT_PROCESSED;
-				call_emu_OK = MODULE_NOT_PROCESSED;
+//				call_emu_OK = MODULE_NOT_PROCESSED;
 				//config_mobi_OK = MODULE_NOT_PROCESSED;
 				generate_report_OK = MODULE_NOT_PROCESSED;
-
-				init_oai_emulation(); // to initialize the oai_emulation structure
 
 				LOG_I(OCG, "An emulation for file %s is initiated\n", filename);
 				state = STATE_PARSE_FILENAME;
@@ -196,12 +195,14 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 			  else state = STATE_GENERATE_REPORT;
 			  break;
 			  
-		        case STATE_CALL_EMU :
+		        case STATE_CALL_EMU : // change this state to set_params
 
 				if ((detect_file_OK == MODULE_OK) && (parse_filename_OK == MODULE_OK) && (create_dir_OK == MODULE_OK) && (parse_XML_OK == MODULE_OK) && (save_XML_OK == MODULE_OK)) { 
 				// if the above tasks are all successful, we could tell the oaisim.c that everything is ready before running the emulation
 					oai_emulation.info.ocg_ok = 1;
 				}
+				set_params();
+				
 #ifdef TEST_OCG				
 				call_emu_OK = call_emu(output_dir);
 				// config_mobi_OK = config_mobi("RWMEmulator.xml", filename); // generate the XML for Mobigen
@@ -221,9 +222,9 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 						LOG_I(OCG, "temp output directory %s is created", output_dir);
 					}
 				} else {
-					strcat(output_dir, "SCENARIO/STATE/");
+					//strcat(output_dir, "SCENARIO/STATE/"); // if needeed the outpur directory can be further set
+					LOG_I(OCG, "Output directory is %s \n", output_dir);
 				}
-
 				generate_report(output_dir, "OCG_report.xml");
 				if (copy_or_move == 1) state = STATE_END;
 				else state = STATE_END;
@@ -239,97 +240,7 @@ OAI_Emulation * OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 #ifdef TEST_OCG
 	return 0;
 #else
-	return &oai_emulation;
+	return 1;
 #endif
-}
-
-void init_oai_emulation() {
-
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_model.selected_option = "urban";
-	
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_exponent = 2;
-	oai_emulation.environment_system_config.fading.freespace_propagation.pathloss_parameters.pathloss_0 = 0;
-
-	oai_emulation.environment_system_config.fading.small_scale.selected_option = "SCM_A";
-
-	oai_emulation.environment_system_config.wall_penetration_loss = 0;
-	oai_emulation.environment_system_config.system_bandwidth = 20;
-	oai_emulation.environment_system_config.UE_frequency = 900;
-
-	oai_emulation.environment_system_config.antenna.eNB_antenna.number_of_sectors = 1;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.beam_width = 2 * M_PI;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.antenna_gain_dBi = 3;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.tx_power_dBm = 0;
-	oai_emulation.environment_system_config.antenna.eNB_antenna.rx_noise_level = -90;
-
-	oai_emulation.environment_system_config.antenna.UE_antenna.number_of_sectors = 1;
-	oai_emulation.environment_system_config.antenna.UE_antenna.beam_width = 2 * M_PI;
-	oai_emulation.environment_system_config.antenna.UE_antenna.antenna_gain_dBi = 3;
-	oai_emulation.environment_system_config.antenna.UE_antenna.tx_power_dBm = 0;
-	oai_emulation.environment_system_config.antenna.UE_antenna.rx_noise_level = -90;
-
-
-	oai_emulation.topology_config.area.x = 100;
-	oai_emulation.topology_config.area.y = 100;
-
-	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
-	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
-
-	oai_emulation.topology_config.relay.number_of_relays = 0;
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "fixed";
-
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = "random_destination";
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_initial_distribution.selected_option = "random";
-
-	oai_emulation.topology_config.mobility.UE_mobility.random_UE_distribution.number_of_nodes = 1;
-
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_pause_time = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_pause_time = 1;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_journey_time = 0.01;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_journey_time = 1;
-
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_mobility_type.selected_option = "fixed";
-
-	oai_emulation.topology_config.mobility.eNB_mobility.eNB_initial_distribution.selected_option = "random";
-
-	oai_emulation.topology_config.mobility.eNB_mobility.random_eNB_distribution.number_of_cells = 1;
-
-
-	oai_emulation.application_config.application_type.selected_option = "cbr";
-
-	oai_emulation.application_config.traffic.transport_protocol.selected_option = "udp";
-
-	oai_emulation.application_config.traffic.packet_size.selected_option = "fixed";
-	oai_emulation.application_config.traffic.fixed_packet_size.fixed_value = 10;
-
-	oai_emulation.application_config.traffic.inter_arrival_time.selected_option = "fixed";
-	oai_emulation.application_config.traffic.fixed_inter_arrival_time.fixed_value = 10;
-
-
-	oai_emulation.emulation_config.emulation_time = 20;
-	oai_emulation.emulation_config.performance.metrics.throughput = 0;
-	oai_emulation.emulation_config.performance.metrics.latency = 0;
-	oai_emulation.emulation_config.performance.metrics.signalling_overhead = 0;
-	oai_emulation.emulation_config.performance.layer.mac = 0;
-	oai_emulation.emulation_config.performance.layer.rlc = 0;
-	oai_emulation.emulation_config.performance.layer.pdcp = 0;
-	oai_emulation.emulation_config.performance.log_emu.debug = 0;
-	oai_emulation.emulation_config.performance.log_emu.info = 0;
-	oai_emulation.emulation_config.performance.log_emu.warning = 0;
-	oai_emulation.emulation_config.performance.log_emu.error = 0;
-	oai_emulation.emulation_config.performance.packet_trace.mac = 0;
-
-	oai_emulation.emulation_config.seed.selected_option = "oai_seed";
-
-
-	oai_emulation.info.ocg_ok = 0;
-	
-	oai_emulation.profile = "EURECOM";
 }
 

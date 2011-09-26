@@ -73,7 +73,7 @@ void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant) {//changed from node_stru
   ue_data->phi_rad = 2 * PI;
   ue_data->ant_gain_dBi = ue_ant.antenna_gain_dBi;
   ue_data->tx_power_dBm = ue_ant.tx_power_dBm;
-  ue_data->rx_noise_level = ue_ant.rx_noise_level; //value in db
+  ue_data->rx_noise_level = ue_ant.rx_noise_level_dB; //value in db
 
 }
 
@@ -85,10 +85,10 @@ void init_enb(node_desc_t  *enb_data, eNB_Antenna enb_ant) {//changed from node_
   enb_data->n_sectors = enb_ant.number_of_sectors;
   for (i=0;i<3;i++) 
     enb_data->alpha_rad[i] = sect_angle[i]; //enb_ant.alpha_rad[i]; 
-  enb_data->phi_rad = enb_ant.beam_width;
+  enb_data->phi_rad = enb_ant.beam_width_dB;
   enb_data->ant_gain_dBi = enb_ant.antenna_gain_dBi;
   enb_data->tx_power_dBm = enb_ant.tx_power_dBm;
-  enb_data->rx_noise_level = enb_ant.rx_noise_level; 
+  enb_data->rx_noise_level = enb_ant.rx_noise_level_dB; 
 
 }
 
@@ -107,8 +107,8 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
  
   dist = sqrt(pow((enb_data->x - ue_data->x), 2) + pow((enb_data->y - ue_data->y), 2));
   
-  path_loss = -(env_desc.fading.freespace_propagation.pathloss_parameters.pathloss_0 + 
-		10*env_desc.fading.freespace_propagation.pathloss_parameters.pathloss_exponent * log10(dist/1000)); 
+  path_loss = -(env_desc.fading.free_space_model_parameters.pathloss_0_dB + 
+		10*env_desc.fading.free_space_model_parameters.pathloss_exponent * log10(dist/1000)); 
   //printf("dist %f, Path Loss %f\n",dist,ch_desc->path_loss_dB);
 
   /* Calculating the angle in the range -pi to pi from the slope */
