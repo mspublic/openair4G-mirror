@@ -12,6 +12,8 @@
 #include "PHY/extern.h"
 #include "defs.h"
 #include "extern.h"
+#include "UTIL/OCG/OCG.h"
+#include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log_if.h"
 
 extern unsigned int   Master_list_rx;
@@ -30,10 +32,10 @@ char is_node_local_neighbor(unsigned short Node_id){
 
 void emu_transport_sync(void){
  
-  if (emu_info.is_primary_master==0){
+  if (oai_emulation.info.is_primary_master==0){
 
     bypass_tx_data(WAIT_SM_TRANSPORT,0,0);
-    Master_list_rx=emu_info.master_list-1; // just wait to recieve the  master 0 msg
+    Master_list_rx=oai_emulation.info.master_list-1; // just wait to recieve the  master 0 msg
     bypass_rx_data(0,0,0);
   }
   else {
@@ -41,7 +43,7 @@ void emu_transport_sync(void){
     bypass_tx_data(WAIT_PM_TRANSPORT,0,0);
   }   
 
-  if (emu_info.master_list!=0){
+  if (oai_emulation.info.master_list!=0){
 
     bypass_tx_data(SYNC_TRANSPORT,0,0);	
     bypass_rx_data(0,0,0);
@@ -83,9 +85,9 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
 
 void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int next_slot) {
 
-   if (emu_info.is_primary_master==0){
+   if (oai_emulation.info.is_primary_master==0){
     //  bypass_rx_data(last_slot);
-    if (emu_info.nb_enb_local>0) // send in DL if 
+    if (oai_emulation.info.nb_enb_local>0) // send in DL if 
       bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame,next_slot);
@@ -95,7 +97,7 @@ void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int n
   else { // I am the master
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
     bypass_rx_data(frame,last_slot, next_slot);
-    if (emu_info.nb_enb_local>0) // send in DL if 
+    if (oai_emulation.info.nb_enb_local>0) // send in DL if 
       bypass_tx_data(ENB_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
@@ -106,9 +108,9 @@ void emu_transport_DL(unsigned int frame, unsigned int last_slot, unsigned int n
 void emu_transport_UL(unsigned int frame, unsigned int last_slot, unsigned int next_slot) {
    
     
-  if (emu_info.is_primary_master==0){
+  if (oai_emulation.info.is_primary_master==0){
     // bypass_rx_data(last_slot, next_slot);
-    if (emu_info.nb_ue_local>0)
+    if (oai_emulation.info.nb_ue_local>0)
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);
@@ -117,7 +119,7 @@ void emu_transport_UL(unsigned int frame, unsigned int last_slot, unsigned int n
   else {  
     // bypass_tx_data(WAIT_TRANSPORT,last_slot);
     bypass_rx_data(frame,last_slot, next_slot);
-    if (emu_info.nb_ue_local>0)
+    if (oai_emulation.info.nb_ue_local>0)
       bypass_tx_data(UE_TRANSPORT,frame, next_slot);
     else
       bypass_tx_data(WAIT_SM_TRANSPORT,frame, next_slot);

@@ -42,6 +42,4 @@ extern u16 UE_transport_info_TB_index[NUMBER_OF_UE_MAX];
 
 extern UE_cntl ue_cntl_delay[2];
 
-extern emu_info_t emu_info;
-
 #endif

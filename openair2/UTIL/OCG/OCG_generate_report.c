@@ -74,7 +74,7 @@ int generate_report(char dst_dir[DIR_LENGTH_MAX], char filename[FILENAME_LENGTH_
 	xmlTextWriterWriteFormatElement(writer, "OCG_CREATE_DIR    ", "	%d	", create_dir_OK);
 	xmlTextWriterWriteFormatElement(writer, "OCG_PARSE_XML     ", "	%d	", parse_XML_OK);
 	xmlTextWriterWriteFormatElement(writer, "OCG_SAVE_XML      ", "	%d	", save_XML_OK);
-	xmlTextWriterWriteFormatElement(writer, "OCG_CALL_EMU      ", "	%d	", call_emu_OK);
+//	xmlTextWriterWriteFormatElement(writer, "OCG_CALL_EMU      ", "	%d	", call_emu_OK);
 
 	xmlTextWriterEndDocument(writer);
 

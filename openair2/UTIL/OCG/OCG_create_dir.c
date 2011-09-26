@@ -70,7 +70,7 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 	mkdir(directory, S_IRWXU | S_IRWXG |S_IRWXO);
 
 	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 64] = "";
-	strcpy(directory_extension, directory); // to create some more folders
+	/*strcpy(directory_extension, directory); // to create some more folders
 	strcat(directory_extension, "/LOGS");
 	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
 
@@ -89,7 +89,7 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 	strcpy(directory_extension, directory);
 	strcat(directory_extension, "/SCENARIO/STATE");
 	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
-
+*/
 	umask(process_mask);
 
 	LOG_I(OCG, "Directory for current emulation is created\n");

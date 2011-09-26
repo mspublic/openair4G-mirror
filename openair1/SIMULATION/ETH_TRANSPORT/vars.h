@@ -42,6 +42,4 @@ u16 UE_transport_info_TB_index[NUMBER_OF_UE_MAX];
 
 UE_cntl ue_cntl_delay[2];
 
-emu_info_t emu_info;
-
 #endif

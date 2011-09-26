@@ -65,13 +65,12 @@ extern "C" {
 
 /** @defgroup _log_if Interfaces of LOG
  * @{*/ 
-friend_log_if( log_t *g_log;)
-
+public_log_if( log_t *g_log;)
 public_log_if( void logInit (int g_log_level);)
 public_log_if( inline void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
 public_log_if( int set_comp_log(int component, int level, int flag);)
-public_log_if( void set_log_flag(int flag);)
-public_log_if( void set_log_syslog(int value);)
+public_log_if( void set_glog(int level, int flag);)
+public_log_if( void set_log_syslog(int enable);)
 public_log_if( int   map_str_to_int(mapping *map, const char *str);)
 public_log_if( char *map_int_to_str(mapping *map, int val);)
 public_log_if( void logClean (void); );
