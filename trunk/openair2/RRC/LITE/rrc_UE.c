@@ -18,11 +18,10 @@
 #include "DL-DCCH-Message.h"
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
-#include "RRC/NAS/nas_config.h"
-#include "SIMULATION/ETH_TRANSPORT/extern.h"
-#define DEBUG_RRC 1
+#include "UTIL/OCG/OCG.h"
+#include "UTIL/OCG/OCG_extern.h"
 #ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
+#include "RRC/NAS/nas_config.h"
 extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;
@@ -286,17 +285,17 @@ s32 rrc_ue_establish_drb(u8 Mod_id,u8 eNB_index,
 				      (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,
 				      RADIO_ACCESS_BEARER,Rlc_info_um);
 #ifdef NAS_NETLINK
-    nas_config(emu_info.nb_enb_local+Mod_id,// interface index
-	       emu_info.nb_enb_local+Mod_id+1, 
+    nas_config(oai_emulation.info.nb_enb_local+Mod_id,// interface index
+	       oai_emulation.info.nb_enb_local+Mod_id+1, 
 	       NB_eNB_INST+Mod_id+1);
-    printf ( "rb_conf_ipv4: Mod_id %d emu_info.nb_enb_local+Mod_id %d\n",  Mod_id,  emu_info.nb_enb_local+Mod_id);
+    printf ( "rb_conf_ipv4: Mod_id %d emu_info.nb_enb_local+Mod_id %d\n",  Mod_id,  oai_emulation.info.nb_enb_local+Mod_id);
     rb_conf_ipv4(0,//add
 		 Mod_id,//cx align with the UE index 
-		 emu_info.nb_enb_local+Mod_id,//inst num_ue+ue_index
+		 oai_emulation.info.nb_enb_local+Mod_id,//inst num_ue+ue_index
  		 (eNB_index * MAX_NUM_RB) + *DRB_config->logicalChannelIdentity,//rb
 		 0,//dscp
-		 ipv4_address(emu_info.nb_enb_local+Mod_id+1,NB_eNB_INST+Mod_id+1),//saddr
-		 ipv4_address(emu_info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
+		 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,NB_eNB_INST+Mod_id+1),//saddr
+		 ipv4_address(oai_emulation.info.nb_enb_local+Mod_id+1,eNB_index+1));//daddr
 		 
 #endif 
     break;
