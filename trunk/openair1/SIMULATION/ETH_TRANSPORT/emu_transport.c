@@ -63,8 +63,10 @@ void emu_transport(unsigned int frame, unsigned int last_slot, unsigned int next
     return;
   // LOG_D(EMU, "frame %d subframe %d slot %d direction %d ethernet flag %d\n", 
   //	mac_xface->frame, next_slot>>1, last_slot+1,direction,ethernet_flag);
+ 
   //DL
-  if ( ((direction == SF_DL) && ((next_slot%2)== 0)) || ((direction == SF_S) && (next_slot==1))){ 
+  //if ( ((direction == SF_DL) && ((next_slot%2)== 0)) || ((direction == SF_S) && (next_slot==1))){ 
+  if ( ((direction == SF_DL) && ((next_slot%2)== 0)) || (next_slot==1)){ 
     //LOG_T(EMU, "DL frame %d subframe %d slot %d \n", mac_xface->frame, next_slot>>1, slot);
     //assert((start = clock())!=-1);// t0= time(NULL);
     emu_transport_DL(mac_xface->frame, last_slot,next_slot);
@@ -181,19 +183,22 @@ void fill_phy_enb_vars(unsigned int enb_id, unsigned int next_slot) {
   LTE_eNB_DLSCH_t *dlsch_eNB;
   unsigned short ue_id;
   u8 nb_total_dci;
-  
+    
+
+  //LOG_I(EMU," pbch fill phy eNB %d vars for slot %d \n",enb_id, next_slot);
+   
   // eNB
   // PBCH : copy payload 
  
-  if (next_slot == 1){ 
+  //if (next_slot == 2){ 
     *(u32*)PHY_vars_eNB_g[enb_id]->pbch_pdu = eNB_transport_info[enb_id].cntl.pbch_payload;
-    /* LOG_D(EMU," RX slot %d ENB TRANSPORT pbch payload %d pdu[0] %d  pdu[0] %d \n", 
-	next_slot ,
-	eNB_transport_info[enb_id].cntl.pbch_payload,
-	((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[0],
-	((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[1]);
+    /*  LOG_I(EMU," RX slot %d ENB TRANSPORT pbch payload %d pdu[0] %d  pdu[0] %d \n", 
+	  next_slot ,
+	  eNB_transport_info[enb_id].cntl.pbch_payload,
+	  ((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[0],
+	  ((u8*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[1]);
     */
-  }
+    //  }
   //CFI
   // not needed yet
   

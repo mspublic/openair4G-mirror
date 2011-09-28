@@ -29,11 +29,11 @@
 
 /*! \file OCG.h
 * \brief Data structure for OCG of OpenAir emulator
-* \author Lusheng Wang
+* \author Lusheng Wang and Navid Nikaein
 * \date 2011
-* \version 0.1
+* \version 1.0
 * \company Eurecom
-* \email: lusheng.wang@eurecom.fr
+* \email: openair_tech@eurecom.fr
 * \note
 * \warning
 */
@@ -564,6 +564,7 @@ typedef struct {
 	unsigned char multicast_group;
 	// status
 	unsigned char ocg_enabled;
+	unsigned char ocm_enabled;
 	unsigned char opt_enabled;
 	unsigned char otg_enabled;
 	unsigned char omg_model_enb;
