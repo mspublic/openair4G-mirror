@@ -24,7 +24,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 #ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
+//#include "PHY/LTE_REFSIG/mod_table.h"
 #endif //IFFT_FPGA
 
 #include "SCHED/defs.h"
@@ -102,8 +102,7 @@ mapping small_scale_names[] =
 
 #ifdef LINUX
 void
-init_bypass ()
-{
+init_bypass (){
 
   msg ("[PHYSIM] INIT BYPASS\n");
   pthread_mutex_init (&Tx_mutex, NULL);
@@ -119,8 +118,7 @@ init_bypass ()
 
 
 void 
-help (void)
-{
+help (void) {
   printf
     ("Usage: oaisim -h -a -F -C tdd_config -R N_RB_DL -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor -z cooperation_flag -u nb_local_ue -U omg_model_ue -b nb_local_enb -B omg_model_enb -M ethernet_flag -p nb_master -g multicast_group -l log_level -c ocg_enable \n");
   printf ("-h provides this help message!\n");
@@ -132,7 +130,8 @@ help (void)
   printf ("-m Gives a fixed DL mcs\n");
   printf ("-r Activates rate adaptation (DL for now)\n");
   printf ("-n Set the number of frames for the simulation\n");
-  printf ("-s snr_dB set a fixed (average) SNR\n");
+  printf ("-s snr_dB set a fixed (average) SNR, this deactivate the openair channel model generator (OCM)\n");
+  printf ("-S snir_dB set a fixed (average) SNIR, this deactivate the openair channel model generator (OCM)\n");
   printf ("-k Set the Ricean factor (linear)\n");
   printf ("-t Set the delay spread (microseconds)\n");
   printf ("-f Set the forgetting factor for time-variation\n");
@@ -339,10 +338,12 @@ main (int argc, char **argv)
     case 's':
       snr_dB = atoi (optarg);
       set_snr = 1;
+      oai_emulation.info.ocm_enabled=0;
       break;
     case 'S':
       sinr_dB = atoi (optarg);
       set_sinr = 1;
+      oai_emulation.info.ocm_enabled=0;
       break;
     case 'k':
       //ricean_factor = atof (optarg);
@@ -386,8 +387,6 @@ main (int argc, char **argv)
       g_log_level = optarg;
       break;
     case 'c':
- /*    printf("[SIM] OCG is already enabled by default and using template_%s.xml!\n",oai_emulation.info.local_server); 
-     exit(-1); */
       strcpy(oai_emulation.info.local_server, optarg);
       oai_emulation.info.ocg_enabled=1;
       break;
@@ -479,8 +478,7 @@ main (int argc, char **argv)
   	 1+oai_emulation.info.frame_type, Nid_cell, oai_emulation.info.N_RB_DL, oai_emulation.info.extended_prefix_flag, oai_emulation.info.transmission_mode,target_dl_mcs,rate_adaptation_flag,oai_emulation.info.n_frames,abstraction_flag);
   
 
-  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.extended_prefix_flag,
-		 oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
+  init_lte_vars (&frame_parms, oai_emulation.info.frame_type, oai_emulation.info.tdd_config, oai_emulation.info.extended_prefix_flag,oai_emulation.info.N_RB_DL, Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode, abstraction_flag);
   
   printf ("Nid_cell %d\n", frame_parms->Nid_cell);
 
@@ -562,8 +560,11 @@ main (int argc, char **argv)
       PHY_vars_UE_g[UE_id]->UE_mode[0] = PRACH;
     PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
     PHY_vars_UE_g[UE_id]->current_dlsch_cqi[0] = 10;
+
+    LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0] );
   }
 
+  
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
@@ -596,10 +597,7 @@ main (int argc, char **argv)
   td_avg = 0;
   sleep_time_us = SLEEP_STEP_US;
   td_avg = TARGET_SF_TIME_NS;
-
   for (mac_xface->frame=0; mac_xface->frame<oai_emulation.info.n_frames; mac_xface->frame++) {
-    
-
     /*
     // Handling the cooperation Flag
     if (cooperation_flag == 2)
@@ -608,7 +606,8 @@ main (int argc, char **argv)
 	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
       }
     */
-
+    // for dubugging the frame counter
+    
     update_nodes(oai_emulation.info.time);  
 
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
@@ -655,8 +654,8 @@ main (int argc, char **argv)
       oai_emulation.info.time += 0.1; 
     } 
 
-    /* Added for PHY abstraction */
-    if (oai_emulation.info.ocg_enabled == 1) {
+    /* check if the openair channel model is activated used for PHY abstraction */
+    if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
       extract_position(ue_node_list, ue_data, NB_UE_INST);
       
@@ -746,6 +745,10 @@ main (int argc, char **argv)
 	    }
 	  }
 	  else {
+	    if (abstraction_flag==1){
+	      LOG_E(EMU, "sync not supported in abstraction mode (UE%d,mode%d)\n", UE_id, PHY_vars_UE_g[UE_id]->UE_mode[0]);
+	      exit(-1);
+	    }
 	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
@@ -825,11 +828,9 @@ main (int argc, char **argv)
 	}  
 	if (td_avg<(TARGET_SF_TIME_NS - SF_DEVIATION_OFFSET_NS)){
 	  sleep_time_us += SLEEP_STEP_US; 
-	  LOG_I(EMU,"increase sleep time by %d for frame %d\n",sleep_time_us, mac_xface->frame);	
 	}
 	else if (td_avg > (TARGET_SF_TIME_NS + SF_DEVIATION_OFFSET_NS)) {
 	  sleep_time_us-= SLEEP_STEP_US; 
-	  LOG_I(EMU,"decrease sleep time by %d for frame %d \n",sleep_time_us, mac_xface->frame);
 	}
       }// end if next_slot%2
     }				//end of slot
@@ -851,7 +852,7 @@ main (int argc, char **argv)
       }
 #endif	
     // calibrate at the end of each frame if there is some time  left
-    if(sleep_time_us > 0){
+    if((sleep_time_us > 0)&& (ethernet_flag ==0)){
       LOG_I(EMU,"Go to sleep for %dus\n",sleep_time_us);
       usleep(sleep_time_us);
       sleep_time_us=0; // reset the timer, could be done per n SF 
@@ -892,7 +893,7 @@ main (int argc, char **argv)
   }
 
   // added for PHY abstraction
-  if (oai_emulation.info.ocg_enabled == 1) {
+  if (oai_emulation.info.ocm_enabled == 1) {
     for (eNB_id = 0; eNB_id < NUMBER_OF_eNB_MAX; eNB_id++) 
       free(enb_data[eNB_id]); 
     
