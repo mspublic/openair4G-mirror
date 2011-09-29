@@ -393,6 +393,17 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
 					    unsigned char F,
 					    unsigned char inst);
 
+unsigned char phy_threegpplte_turbo_decoder_scalar(short *y,
+                                            unsigned char *decoded_bytes,
+                                            unsigned short n,
+                                            unsigned short interleaver_f1,
+                                            unsigned short interleaver_f2,
+                                            unsigned char max_iterations,
+                                            unsigned char crc_type,
+                                            unsigned char F,
+                                            unsigned char inst);
+
+
 
 /** @} */
 
