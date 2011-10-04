@@ -260,7 +260,8 @@ main (int argc, char **argv)
 #endif
   LTE_DL_FRAME_PARMS *frame_parms;
 
-  FILE *UE_stats, *eNB_stats;
+  FILE *UE_stats[NUMBER_OF_UE_MAX], *eNB_stats;
+  char UE_stats_filename[255];
   int len;
 #ifdef ICIC
   remove ("dci.txt");
@@ -319,7 +320,7 @@ main (int argc, char **argv)
       exit (1);
     case 'x':
       oai_emulation.info.transmission_mode = atoi (optarg);
-      if ((oai_emulation.info.transmission_mode != 1) ||  (oai_emulation.info.transmission_mode != 2) || (oai_emulation.info.transmission_mode != 5) || (oai_emulation.info.transmission_mode != 6)) {
+      if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
 	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
@@ -464,13 +465,16 @@ main (int argc, char **argv)
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
+  NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
+  NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
 #ifndef NAS_NETLINK
-  UE_stats = fopen ("UE_stats.txt", "w");
+  for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
+    sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
+    UE_stats[UE_id] = fopen (UE_stats_filename, "w");
+  }
   eNB_stats = fopen ("eNB_stats.txt", "w");
   printf ("UE_stats=%p, eNB_stats=%p\n", UE_stats, eNB_stats);
 #endif
-  NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
-  NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
       
   LOG_I(EMU, "total number of UE %d (local %d, remote %d) \n", NB_UE_INST,oai_emulation.info.nb_ue_local,oai_emulation.info.nb_ue_remote);
   LOG_I(EMU, "Total number of eNB %d (local %d, remote %d) \n", NB_eNB_INST,oai_emulation.info.nb_enb_local,oai_emulation.info.nb_enb_remote);
@@ -738,8 +742,8 @@ main (int argc, char **argv)
 #ifndef NAS_NETLINK
 	      if ((mac_xface->frame % 10) == 0) {
 		len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
-		rewind (UE_stats);
-		fwrite (stats_buffer, 1, len, UE_stats);
+		rewind (UE_stats[UE_id]);
+		fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
 	      }
 #endif
 	    }
@@ -902,10 +906,9 @@ main (int argc, char **argv)
   } //End of PHY abstraction changes
   
 #ifndef NAS_NETLINK
-  fclose (UE_stats);
+  for(UE_id=0;UE_id<NB_UE_INST;UE_id++)
+    fclose (UE_stats[UE_id]);
   fclose (eNB_stats);
-
-
 #endif
 
  destroyMat(ShaF,map1, map2);
