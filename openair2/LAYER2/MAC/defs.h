@@ -242,6 +242,9 @@ typedef struct{
   /// UL DAI
   u8 DAI_ul;
 
+  //Resource Block indication for each sub-band in MU-MIMO 
+  u8 rballoc_sub[8][7];
+
 
   // Logical channel info for link with RLC
 

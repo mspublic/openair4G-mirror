@@ -118,7 +118,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 		   pmi2hex_2Ar1(quantize_subband_pmi2(&phy_vars_ue->PHY_measurements,eNB,1)));
     
     
-    len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",openair_daq_vars.dlsch_transmission_mode,phy_vars_ue->lte_frame_parms.mode1_flag);
+    len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
     if (openair_daq_vars.dlsch_transmission_mode == 6)
       len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
     if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) 
@@ -127,6 +127,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
     len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",phy_vars_ue->dlsch_SI_received[0],phy_vars_ue->dlsch_SI_errors[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",phy_vars_ue->dlsch_ra_received[0],phy_vars_ue->dlsch_ra_errors[0]);
+    //len += sprintf(&buffer[len], "Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB]);
     
   }
   buffer[len]='\0';
@@ -257,6 +258,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[2],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]);
+	len += sprintf(&buffer[len],"Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
 	
 #ifdef OPENAIR2
       }

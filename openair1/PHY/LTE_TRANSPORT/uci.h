@@ -1,10 +1,18 @@
 #include "PHY/types.h"
 
+
+
 typedef enum {
   wideband_cqi,
   hlc_cqi,
-  ue_selected
-} UCI_format;
+  ue_selected,
+  wideband_cqi_rank1_2A, //wideband_cqi_rank1_2A,
+  wideband_cqi_rank2_2A, //wideband_cqi_rank2_2A,
+  HLC_subband_cqi_nopmi, //HLC_subband_cqi_nopmi,
+  HLC_subband_cqi_rank1_2A, //HLC_subband_cqi_rank1_2A,
+  HLC_subband_cqi_rank2_2A, //HLC_subband_cqi_rank2_2A,
+  HLC_subband_cqi_modes123 //HLC_subband_cqi_modes123
+} UCI_format_t;
 
 typedef struct __attribute__((packed)) {
   u32 padding:14;
@@ -52,6 +60,8 @@ typedef struct __attribute__((packed)) {
   u32 cqi1:4;
 } HLC_subband_cqi_modes123_5MHz;
 #define sizeof_HLC_subband_cqi_modes123_5MHz 18
+
+
 
 #define MAX_CQI_PAYLOAD (sizeof(HLC_subband_cqi_rank2_2A_5MHz)*8*20)
 #define MAX_CQI_BITS (sizeof(HLC_subband_cqi_rank2_2A_5MHz)*8)

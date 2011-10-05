@@ -368,7 +368,7 @@ int main(int argc, char **argv) {
   UL_alloc_pdu.mcs     = mcs;
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
-  UL_alloc_pdu.cqi_req = 1;
+  UL_alloc_pdu.cqi_req = 0;
   UL_alloc_pdu.cshift  = 0;
 
   PHY_vars_UE->PHY_measurements.rank[0] = 0;

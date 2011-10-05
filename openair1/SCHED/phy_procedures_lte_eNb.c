@@ -1640,7 +1640,7 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
   PUCCH_FMT_t format;
   u8 nPRS;
   u8 two_ues_connected = 0;
-  UCI_format feedback_fmt;
+  UCI_format_t feedback_fmt;
 
   //  msg("Running phy_procedures_eNB_RX(%d)\n",last_slot);
   if (abstraction_flag == 0) {
@@ -1872,9 +1872,9 @@ void phy_procedures_eNB_RX(unsigned char last_slot,PHY_VARS_eNB *phy_vars_eNB,u8
       if (phy_vars_eNB->ulsch_eNB[i]->cqi_crc_status == 1) {
 #ifdef DEBUG_PHY_PROC
 	if (((mac_xface->frame%10) == 0) || (mac_xface->frame < 50)) 
-	  print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->o_RI,phy_vars_eNB->transmission_mode[i],0);
+	  print_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,0);
 #endif
-	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->o_RI,phy_vars_eNB->transmission_mode[i],&phy_vars_eNB->eNB_UE_stats[i]);
+	extract_CQI(phy_vars_eNB->ulsch_eNB[i]->o,phy_vars_eNB->ulsch_eNB[i]->uci_format,&phy_vars_eNB->eNB_UE_stats[i]);
 	phy_vars_eNB->eNB_UE_stats[i].rank = phy_vars_eNB->ulsch_eNB[i]->o_RI[0];
       }
     

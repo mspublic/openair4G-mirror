@@ -107,9 +107,10 @@ char openair_rrc_eNB_init(u8 Mod_id){
 
   unsigned char j;
   msg("[OPENAIR][RRC][INIT eNB] Mod_id:%d\n",Mod_id);
-  eNB_rrc_inst[Mod_id].Info.Status = CH_READY;
-  eNB_rrc_inst[Mod_id].Info.Nb_ue=0;
+  for (j=0; j<NB_CNX_eNB; j++)
+    eNB_rrc_inst[Mod_id].Info.Status[j] = CH_READY;
 
+  eNB_rrc_inst[Mod_id].Info.Nb_ue=0;
 
   eNB_rrc_inst[Mod_id].Srb0.Active=0;
 
@@ -207,8 +208,10 @@ int rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_s
       break;
     case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
       msg("[RRC][eNB %d] Processing RRCConnectionSetupComplete message\n",Mod_id);
-      if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8)
+      if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.present == RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8){
 	rrc_eNB_process_RRCConnectionSetupComplete(Mod_id,UE_index,&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
+	eNB_rrc_inst[Mod_id].Info.Status[UE_index] = RRC_CONNECTED;
+      }
       break;
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
       break;
@@ -342,7 +345,6 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx+1,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 	msg("[OPENAIR][RRC] RLC AM allocation index@0 is %d\n",rlc[Mod_id].m_rlc_am_array[0].allocation);
 	msg("[OPENAIR][RRC] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
-	
 
 #endif //NO_RRM
 	break;

@@ -78,6 +78,7 @@ int rrc_init_global_param(void){
   Rrc_xface->rrc_data_indP=(void *)rlcrrc_data_ind;
   //  Rrc_xface->rrc_rx_tx=rrc_rx_tx;
   Rrc_xface->mac_rrc_meas_ind=mac_rrc_meas_ind;
+  Rrc_xface->get_rrc_status=get_rrc_status;
 
   //Rrc_xface->rrc_get_status = ...
 
@@ -220,3 +221,9 @@ Data_to_read=0;
 
 }
 
+int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 index){
+  if(eNB_flag == 1)
+    return(eNB_rrc_inst[Mod_id].Info.Status[index]);
+  else
+    return(UE_rrc_inst[Mod_id].Info[index].Status);
+}

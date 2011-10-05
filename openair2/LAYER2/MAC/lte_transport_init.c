@@ -8,6 +8,7 @@
 void init_transport_channels(unsigned char transmission_mode) {
 
   // init DCI structures for testing
+  
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
@@ -15,6 +16,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
+  
 
   BCCH_alloc_pdu.type               = 1;
   BCCH_alloc_pdu.vrb_type           = 0;
@@ -43,7 +45,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   RA_alloc_pdu.harq_pid = 0;
   RA_alloc_pdu.TPC      = 1;
 
-
+  
   DLSCH_alloc_pdu1.rballoc          = 0xf;
   DLSCH_alloc_pdu1.TPC              = 0;
   DLSCH_alloc_pdu1.dai              = 0;
@@ -72,5 +74,5 @@ void init_transport_channels(unsigned char transmission_mode) {
     DLSCH_alloc_pdu2.tpmi           = 5;  // PUSCH_PRECODING0
   else
     DLSCH_alloc_pdu2.tpmi             = 0;
-
+  
 }
