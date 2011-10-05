@@ -30,6 +30,7 @@ ________________________________________________________________*/
 #include "SCHED/defs.h"
 #include "LAYER2/PDCP/pdcp.h"
 #include "RRC/LITE/defs.h"
+#include "UTIL/LOG/log.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif //PHY_EMUL
@@ -53,7 +54,7 @@ void chbch_phy_sync_success(unsigned char Mod_id,unsigned char eNB_index){  //in
 /***********************************************************************/
 void mrbch_phy_sync_failure(unsigned char Mod_id, unsigned char Free_ch_index){//init as CH 
   /***********************************************************************/
-  msg("[MAC]FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
+  LOG_I(MAC,"FRAME %d: Node %d, NO PHY SYNC to master\n",mac_xface->frame,Mod_id);
   if((layer2_init_eNB(Mod_id, Free_ch_index)==-1) || ( Rrc_xface->openair_rrc_eNB_init(Mod_id)==-1))
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;
   
@@ -95,10 +96,10 @@ int mac_top_init(){
   UE_TEMPLATE *UE_template;
   u8 SB_size;
 
-  msg("[OPENAIR][MAC INIT] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
+  LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
   if (NB_UE_INST>0) {
     UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-    msg("ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
     bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
     ue_init_mac();
   }
@@ -106,13 +107,12 @@ int mac_top_init(){
     UE_mac_inst = NULL;
   if (NB_eNB_INST>0) {
     eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
-    msg("ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for eNB_MAC_INST @ %p\n",NB_eNB_INST*sizeof(eNB_MAC_INST),eNB_mac_inst);
     bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
   }
   else
     eNB_mac_inst = NULL;
   
-  msg("init---------------------\n");
   for(Mod_id=0;Mod_id<NB_INST;Mod_id++){
 
 #ifdef PHY_EMUL
@@ -125,17 +125,17 @@ int mac_top_init(){
   
   
   if (Is_rrc_registered == 1){
-    msg("calling RRC\n");
+    LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
     Rrc_xface->openair_rrc_top_init();
 #endif 
   }
     else {
-      msg("[OPENAIR][MAC] Running without an RRC\n");
+      LOG_I(MAC,"[MAIN] Running without an RRC\n");
     }
 #ifndef USER_MODE
 #ifndef PHY_EMUL
-  msg("add openair2 proc\n");
+  LOG_I(MAC,"[MAIN] add openair2 proc\n");
 ////  add_openair2_stats();
 #endif
 #endif  
@@ -144,7 +144,7 @@ int mac_top_init(){
 
   // Set up DCIs for TDD 5MHz Config 1..6
   for (i=0;i<NB_eNB_INST;i++) {
-    msg("[MAC][eNB %d] initializing RA_template\n",i);
+    LOG_D(MAC,"[MAIN][eNB %d] initializing RA_template\n",i);
     RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].RA_template[0];
     for (j=0;j<NB_RA_PROC_MAX;j++) {
       memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
@@ -165,8 +165,8 @@ int mac_top_init(){
   }
 
 
-  //ICIC init param
-
+ //ICIC init param
+#ifdef ICIC
   SB_size=mac_xface->get_SB_size(mac_xface->lte_frame_parms->N_RB_DL);
 
   srand (time(NULL));
@@ -182,10 +182,10 @@ int mac_top_init(){
 	  eNB_mac_inst[j].sbmap_conf.sbmap[rand()%NUMBER_OF_SUBBANDS]=0;
 
   }
+#endif
+//end ALU's algo
 
-   //end ALU's algo
-
-   msg("[OPENAIR][MAC][INIT] Init function finished\n");
+   LOG_I(MAC,"[MAIN][INIT] Init function finished\n");
   
   return(0);
   
@@ -198,23 +198,23 @@ int mac_init_global_param(){
 
   Is_rrc_registered=0;  
   Mac_rlc_xface = NULL;
-  msg("[MAC] CALLING RLC_MODULE_INIT...\n");	
+  LOG_I(MAC,"[MAIN] CALLING RLC_MODULE_INIT...\n");	
 
   if (rlc_module_init()!=0)
     return(-1);
 
-  msg("[MAC] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
+  LOG_I(MAC,"[MAIN] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");	
   
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
   bzero(Mac_rlc_xface,sizeof(MAC_RLC_XFACE));
   
   if(Mac_rlc_xface == NULL){
-    msg("[MAC] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
+    LOG_E(MAC,"[MAIN] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
     return (-1);
     
   }	
 
-  msg("[MAC] malloc16 OK, mac_rlc_xface @ %p\n",(void *)Mac_rlc_xface);  
+  LOG_I(MAC,"[MAIN] malloc16 OK, mac_rlc_xface @ %p\n",(void *)Mac_rlc_xface);  
 
   //  mac_xface->macphy_data_ind=macphy_data_ind;
   mac_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
@@ -229,7 +229,7 @@ int mac_init_global_param(){
 
   Mac_rlc_xface->rrc_mac_config_req=rrc_mac_config_req;
 
-  msg("[MAC]INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc); 
+  LOG_I(MAC,"[MAIN] INIT_GLOBAL_PARAM: Mac_rlc_xface=%p,rrc_rlc_register_rrc =%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc); 
   
   Mac_rlc_xface->mac_rlc_data_req=mac_rlc_data_req;
   Mac_rlc_xface->mac_rlc_data_ind=mac_rlc_data_ind;
@@ -238,9 +238,8 @@ int mac_init_global_param(){
   Mac_rlc_xface->pdcp_data_req=pdcp_data_req;	
   Mac_rlc_xface->mrbch_phy_sync_failure=mrbch_phy_sync_failure;
   Mac_rlc_xface->chbch_phy_sync_success=chbch_phy_sync_success;
-  msg("[MAC][RLC] interface setup\n");
 
-  msg("[MAC][GLOBAL_INIT] RRC_INIT_GLOBAL\n");
+  LOG_I(MAC,"[MAIN] RLC interface setup and init\n");
   rrc_init_global_param();
   Is_rrc_registered=1;
 #ifdef USER_MODE
@@ -249,7 +248,7 @@ int mac_init_global_param(){
   pdcp_module_init ();
 #endif
   mac_xface->out_of_sync_ind=mac_UE_out_of_sync_ind;  
-  msg("[MAC] Init Global Param Done\n");
+  LOG_I(MAC,"[MAIN] Init Global Param Done\n");
 
   return 0;
 }
@@ -269,7 +268,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   s32 ret;
   s32 ue_id;
 
-  msg("[MAIN]MAC_INIT_GLOBAL_PARAM IN...\n");
+  LOG_I(MAC,"[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
   //    NB_NODE=2; 
   //    NB_INST=2;
 
@@ -283,8 +282,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 #else
   mac_xface->macphy_exit=(void (*)(const char*)) exit;
 #endif
-  
-  //eNB MAC functions    
+  LOG_I(MAC,"[MAIN] init eNB MAC functions  \n");
   mac_xface->eNB_dlsch_ulsch_scheduler = (void *)eNB_dlsch_ulsch_scheduler;
   mac_xface->get_dci_sdu               = (DCI_PDU* (*)(u8,u8))get_dci_sdu;
   mac_xface->fill_rar                  = fill_rar;
@@ -301,7 +299,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
 
 
-  //UE MAC functions    
+  LOG_I(MAC,"[MAIN] init UE MAC functions \n");
   mac_xface->ue_decode_si              = ue_decode_si;
   mac_xface->ue_send_sdu               = ue_send_sdu;
   mac_xface->ue_get_SR                 = ue_get_SR;
@@ -311,10 +309,9 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->ue_scheduler              = ue_scheduler;  
 
   
-  // PHY Frame configuration
+  LOG_I(MAC,"[MAIN] PHY Frame configuration \n");
   mac_xface->lte_frame_parms = frame_parms;
   
-  // PHY Helper functions
   mac_xface->get_ue_active_harq_pid = get_ue_active_harq_pid;
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS                = get_TBS;
@@ -329,7 +326,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
   mac_xface->phy_config_dedicated_eNB   = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue    = phy_config_dedicated_ue;
 
-  msg("ALL INIT OK\n");
+  LOG_D(MAC,"[MAIN] ALL INIT OK\n");
    
   mac_xface->frame=0;
   

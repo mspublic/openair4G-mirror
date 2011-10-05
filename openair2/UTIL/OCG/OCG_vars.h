@@ -1,6 +1,8 @@
 #ifndef __OCG_VARS_H__
 #define __OCG_VARS_H__
 
+#include "OCG.h"
+
 /** @defgroup _main_val Main Variables
  *  @ingroup _OCG
  *  @brief Variables used by the main function
@@ -29,6 +31,7 @@ int config_mobi_OK; /*!< \brief value: -9999, -1 or 0 */
 int generate_report_OK; /*!< \brief value: -9999, -1 or 0 */
 
 OAI_Emulation oai_emulation;
+
 
 /* @}*/
 #endif

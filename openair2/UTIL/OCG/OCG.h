@@ -38,7 +38,7 @@
 * \warning
 */
 
-#include "SIMULATION/TOOLS/defs.h"
+//#include "SIMULATION/TOOLS/defs.h"
 
 
 #ifndef __OCG_H__
@@ -571,8 +571,9 @@ typedef struct {
 	unsigned char omg_model_ue;
 	unsigned char omg_model_ue_current; // when mixed mbility is used 
 	// emu related 
-	unsigned int seed;
-	double time;	
+  unsigned int seed;
+  unsigned int frame;	
+  double time;	
 	char global_log_level[20];
 	// phy related params
 	unsigned int n_frames;
@@ -582,8 +583,7 @@ typedef struct {
 	unsigned char extended_prefix_flag;
 	unsigned char N_RB_DL;
 	unsigned char transmission_mode;
-	
-	SCM_t channel_model;
+
 }Info;
 /* @}*/
 
@@ -626,7 +626,7 @@ typedef struct {
 int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]);
 
 void init_oai_emulation(void);
-#include "UTIL/LOG/log.h"
+  //#include "UTIL/LOG/log.h"
 
 #ifdef __cplusplus
 }

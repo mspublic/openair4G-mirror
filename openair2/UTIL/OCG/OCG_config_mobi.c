@@ -29,7 +29,7 @@
 
 /*! \file OCG_config_mobi.c
 * \brief Generate an XML to configure the mobility
-* \author Lusheng Wang
+* \author Lusheng Wang  & Navid Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom

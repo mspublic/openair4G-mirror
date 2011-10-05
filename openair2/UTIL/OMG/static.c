@@ -61,13 +61,13 @@ void start_static_generator(omg_global_param omg_param_list) {
   srand(omg_param_list.seed + STATIC); 
   // for (n_id = omg_param_list.first_ix; n_id< omg_param_list.first_ix + omg_param_list.nodes; n_id++) {
 
-	if (omg_param_list.nodes_type == eNB) {
-		LOG_I(OMG, "Node type has been set to eNB\n");
-	} else if (omg_param_list.nodes_type == UE) {
-		LOG_I(OMG, "Node type has been set to UE\n");
-	}
- 	LOG_I(OMG, "Number of static nodes has been set to %d\n", omg_param_list.nodes);
-
+  if (omg_param_list.nodes_type == eNB) {
+    LOG_I(OMG, "Node type has been set to eNB\n");
+  } else if (omg_param_list.nodes_type == UE) {
+    LOG_I(OMG, "Node type has been set to UE\n");
+  }
+  LOG_D(OMG, "Number of static nodes has been set to %d\n", omg_param_list.nodes);
+  
   for (n_id = 0; n_id< omg_param_list.nodes; n_id++) {
     
     node = (NodePtr) create_node();

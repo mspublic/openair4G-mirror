@@ -41,9 +41,10 @@
 /*--- INCLUDES ---------------------------------------------------------------*/
 #include <stdio.h>
 #include <string.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_parse_filename.h"
+#include "UTIL/LOG/log.h"
+
 /*----------------------------------------------------------------------------*/
 
 int parse_filename(char filename[FILENAME_LENGTH_MAX]) {

@@ -29,8 +29,8 @@
 /*! \file log.c
 * \brief log implementaion
 * \author Navid Nikaein
-* \date 2009
-* \version 0.3
+* \date 2011
+* \version 0.5
 * \warning This component can be run only in user-space
 * @ingroup routing
 
@@ -46,11 +46,12 @@
 //static unsigned char       fifo_print_buffer[FIFO_PRINTF_MAX_STRING_SIZE];
 
 #include "log.h"
-
+#include "UTIL/OCG/OCG.h"
+#include "UTIL/OCG/OCG_extern.h"
 #ifndef USER_MODE
 #include "PHY/defs.h"
 
-#    define FIFO_PRINTF_MAX_STRING_SIZE   500
+#    define FIFO_PRINTF_MAX_STRING_SIZE   1000
 #    define FIFO_PRINTF_NO              62
 #    define FIFO_PRINTF_SIZE            65536
 
@@ -62,7 +63,6 @@ static char g_buff_infos[MAX_LOG_TOTAL];
 static char g_buff_tmp  [MAX_LOG_ITEM];
 static char g_buff_debug[MAX_LOG_ITEM];
 
-static int thread_safe_debug_count = 0;
 
 //static char copyright_string[] __attribute__ ((unused)) =
 //  "Copyright (c) The www.openairinterface.org  2009, navid nikaein (navid.nikaein@eurecom.fr) All rights reserved.";
@@ -71,6 +71,9 @@ static int thread_safe_debug_count = 0;
 //static const char BUILD_DATE[] = "2011-01-15 16:42:14";
 //static const char BUILD_HOST[] = "LINUX";
 //static const char BUILD_TARGET[] = "OAI";
+//#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) msg
+
+static int fd;
 
 void logInit (int g_log_level) {
   
@@ -80,44 +83,58 @@ void logInit (int g_log_level) {
 #else
   g_log = kmalloc(sizeof(log_t),GFP_KERNEL);
 #endif
-
+  
     g_log->log_component[LOG].name = "LOG";
     g_log->log_component[LOG].level = LOG_INFO;
-    g_log->log_component[LOG].flag =  LOG_MED_ONLINE;
+    g_log->log_component[LOG].flag =  LOG_MED;
+    g_log->log_component[LOG].interval =  1; // in terms of ms or num frames
 
+    g_log->log_component[PHY].name = "PHY";
+    g_log->log_component[PHY].level = LOG_INFO;
+    g_log->log_component[PHY].flag =  LOG_MED;
+    g_log->log_component[PHY].interval =  1;
+ 
     g_log->log_component[MAC].name = "MAC";
     g_log->log_component[MAC].level = LOG_INFO;
-    g_log->log_component[MAC].flag =  LOG_MED_ONLINE;
-
-    
+    g_log->log_component[MAC].flag =  LOG_MED;
+    g_log->log_component[MAC].interval =  1;
+ 
     g_log->log_component[OPT].name = "OPT";
     g_log->log_component[OPT].level = LOG_INFO;
-    g_log->log_component[OPT].flag = LOG_DEF_ONLINE;
+    g_log->log_component[OPT].flag = LOG_MED;
+    g_log->log_component[OPT].interval =  1;
 
     g_log->log_component[RLC].name = "RLC";
     g_log->log_component[RLC].level = LOG_INFO;
-    g_log->log_component[RLC].flag = LOG_DEF_ONLINE;
-    
+    g_log->log_component[RLC].flag = LOG_MED;
+    g_log->log_component[RLC].interval =  1;
+
     g_log->log_component[EMU].name = "EMU";
     g_log->log_component[EMU].level = LOG_INFO;
-    g_log->log_component[EMU].flag =  LOG_MED_ONLINE; 
+    g_log->log_component[EMU].flag =  LOG_MED; 
+    g_log->log_component[EMU].interval =  1;
 
     g_log->log_component[OMG].name = "OMG";
     g_log->log_component[OMG].level = LOG_INFO;
-    g_log->log_component[OMG].flag =  LOG_MED_ONLINE;
+    g_log->log_component[OMG].flag =  LOG_MED;
+    g_log->log_component[OMG].interval =  1;
      
     g_log->log_component[OCG].name = "OCG";
     g_log->log_component[OCG].level = LOG_INFO;
-    g_log->log_component[OCG].flag =  LOG_MED_ONLINE;
+    g_log->log_component[OCG].flag =  LOG_MED;
+    g_log->log_component[OCG].interval =  1;
 
     g_log->log_component[PERF].name = "PERF";
     g_log->log_component[PERF].level = LOG_INFO;
-    g_log->log_component[PERF].flag =  LOG_MED_ONLINE;
+    g_log->log_component[PERF].flag =  LOG_MED;
+    g_log->log_component[PERF].interval =  1;
 
     g_log->log_component[RB].name = "RB";
     g_log->log_component[RB].level = LOG_INFO;
-    g_log->log_component[RB].flag =  LOG_MED_ONLINE;
+    g_log->log_component[RB].flag =  LOG_MED;
+    g_log->log_component[RB].interval =  1;
 
+ 
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
     g_log->level2string[LOG_CRIT]          = "C"; // CRITIC
@@ -128,9 +145,11 @@ void logInit (int g_log_level) {
     g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
     g_log->level2string[LOG_TRACE]         = "T"; // TRACE
 
-    g_log->syslog = 0;
+    g_log->onlinelog = 1; //online log file
+    g_log->syslog = 0; 
+    g_log->filelog   = 0;
     g_log->level  = g_log_level;
-    g_log->flag   = LOG_MED_ONLINE;
+    g_log->flag   = LOG_MED;
  
 #ifdef USER_MODE  
   g_log->config.remote_ip      = 0;
@@ -140,15 +159,28 @@ void logInit (int g_log_level) {
   g_log->config.audit_facility = LOG_LOCAL6;
   g_log->config.format         = 0x00; // online debug inactive
   
-  g_log->log_file_name = "/tmp/openair.log";
+  g_log->filelog_name = "/tmp/openair.log";
+ 
+  if (g_log->syslog) {
+    openlog(g_log->log_component[LOG].name, LOG_PID, g_log->config.facility);
+  } 
+  if (g_log->filelog) {
+    fd = open(g_log->filelog_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  }
+
 #else
+  g_log->syslog = 0; 
+  g_log->filelog   = 0;
   printk ("[OPENAIR2] LOG INIT\n");
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
   
+
+
 }
 
-inline void logRecord( const char *file, const char *func,
+//inline 
+void logRecord( const char *file, const char *func,
 		int line,  int comp, int level, 
 		char *format, ...) {
    
@@ -156,26 +188,21 @@ inline void logRecord( const char *file, const char *func,
   va_list args;
   log_component_t *c;
   
-  //#ifdef USER_MODE
-  //thread_safe_debug_count++;
   g_buff_infos[0] = '\0';
   c = &g_log->log_component[comp];
-
   
   // only log messages which are enabled and are below the global log level and component's level threshold
-  if (c->level > g_log->level || level > c->level ) {
-    thread_safe_debug_count--;
-      return;
-    }
-  
+  if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
+      (((oai_emulation.info.frame % c->interval) == 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
+    return;
+  }
   // adjust syslog level for TRACE messages
   if (g_log->syslog) {
     if (g_log->level > LOG_DEBUG) {
       g_log->level = LOG_DEBUG;
     }  
   }
-  //#endif 
-
+  
   va_start(args, format);
   len=vsnprintf(g_buff_info, MAX_LOG_TOTAL, format, args);
   va_end(args);
@@ -218,52 +245,61 @@ inline void logRecord( const char *file, const char *func,
   }
  
   strncat(g_buff_infos, g_buff_info, MAX_LOG_TOTAL);
-  strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
+  //  strncat(g_buff_infos, "\n", MAX_LOG_TOTAL);
 
 #ifdef USER_MODE
   // OAI printf compatibility 
-  if (g_log->flag & FLAG_ONLINE || c->flag & FLAG_ONLINE) 
+  if (g_log->onlinelog == 1) 
     printf("%s",g_buff_infos);
 
   if (g_log->syslog) {
-    openlog(c->name, LOG_PID, g_log->config.facility);
     syslog(g_log->level, g_buff_infos);
-    closelog();
-  } else {
-    int fd;
-    fd = open(g_log->log_file_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
+  } 
+  if (g_log->filelog) {
     write(fd, g_buff_infos, strlen(g_buff_infos));
-    close(fd);
   }
-  thread_safe_debug_count--;
 #else
   if (len > MAX_LOG_TOTAL) {
     rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
   }
   if (len <= 0) {
-    return 0;
+    return ;
   }
   rtf_put (FIFO_PRINTF_NO, g_buff_infos, len);
 #endif
 
 }
 
-int  set_comp_log(int component, int level, int flag) {
+int  set_comp_log(int component, int level, int flag, int interval) {
+  
   if ((component >=MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS)){
-    g_log->log_component[component].flag = flag;
-    g_log->log_component[component].level = level;
-    return 0;
+    if ((flag == LOG_NONE) || (flag == LOG_LOW) || (flag == LOG_MED) || (flag == LOG_FULL)) {
+      g_log->log_component[component].flag = flag; 
+    }
+    if ((level >=LOG_TRACE) && (component <= LOG_EMERG)){
+      g_log->log_component[component].level = level;
+    }
+   if ((interval > 0) && (interval <= 0xFFFF)){
+      g_log->log_component[component].interval = interval;
+   }
+   return 0;
   }
   else
-    return 1;
+    return -1;
 }
 
 void set_glog(int level, int flag) {
   g_log->level = level;
   g_log->flag = flag;
 }
-void set_log_syslog(int enable) {
+void set_glog_syslog(int enable) {
   g_log->syslog = enable;
+}
+void set_glog_onlinelog(int enable) {
+  g_log->onlinelog = enable;
+}
+void set_glog_filelog(int enable) {
+  g_log->filelog = enable;
 }
 
 
@@ -303,7 +339,15 @@ void logClean (void)
 {
 #ifndef USER_MODE
   rtf_destroy (FIFO_PRINTF_NO);
+#else
+if (g_log->syslog) {
+  closelog();
+ } 
+ if (g_log->filelog) {
+  close(fd);
+ }
 #endif
+
 }
 
 

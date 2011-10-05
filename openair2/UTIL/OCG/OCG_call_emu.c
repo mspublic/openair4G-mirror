@@ -41,9 +41,9 @@
 /*--- INCLUDES ---------------------------------------------------------------*/
 #include <stdio.h>
 #include <string.h>
-#include "OCG.h"
+#include "OCG_vars.h"
 #include "OCG_call_emu.h"
-//#include "../include/log.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 
 OAI_Emulation oai_emulation;

@@ -1,4 +1,6 @@
+ifeq ($(OPENAIR2),1)
 EXTRA_CFLAGS += -DOPENAIR2
+endif
 EXTRA_CFLAGS += -DASSERT
 EXTRA_CFLAGS += -DNO_RRM
 
@@ -63,7 +65,10 @@ SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_segment.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_reassembly.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_receiver.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_dar.c
+
+ifeq ($(OPENAIR_EMU),1)
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_very_simple_test.c
+endif
 
 SOURCES_L2 +=  $(RLC_DIR)/rlc_mac.c
 SOURCES_L2 +=  $(RLC_DIR)/rlc.c
@@ -82,6 +87,9 @@ MAC_OBJS += $(MAC_DIR)/rar_tools.o
 MAC_OBJS += $(MAC_DIR)/eNB_scheduler.o
 MAC_OBJS += $(MAC_DIR)/config.o
 
+LOG_OBJS =  $(LOG_DIR)/log.o
+
+ifeq ($(OPENAIR_EMU),1)
 OCG_OBJS  =  $(OCG_DIR)/OCG.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_create_dir.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_detect_file.o
@@ -89,8 +97,6 @@ OCG_OBJS +=  $(OCG_DIR)/OCG_generate_report.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_parse_filename.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_parse_XML.o
 OCG_OBJS +=  $(OCG_DIR)/OCG_save_XML.o
-
-LOG_OBJS =  $(LOG_DIR)/log.o
 
 OPT_OBJS =  $(OPT_DIR)/probe.o
 
@@ -103,15 +109,16 @@ OMG_OBJS +=  $(OMG_DIR)/rwalk.o
 OMG_OBJS +=  $(OMG_DIR)/hashtable.o
 OMG_OBJS +=  $(OMG_DIR)/mobility_parser.o
 OMG_OBJS +=  $(OMG_DIR)/trace.o
-
+endif
 
 L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 
-L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(LOG_OBJS) $(OPT_OBJS) $(OMG_OBJS)
-include $(RRC_CELL_DIR)/Makefile.inc
+L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS) $(LOG_OBJS) $(OCG_OBJS) $(OPT_OBJS) $(OMG_OBJS)
+
 L2_incl = -I$(OPENAIR2_TOP)  -I$(COMMON_DIR) -I$(RLC_DIR) -I$(RLC_AM_DIR) -I$(RLC_UM_DIR)  -I$(RLC_TM_DIR) -I$(PDCP_DIR) -I$(MEM_DIR) -I$(LIST_DIR) -I$(OCG_DIR) -I$(LOG_DIR) -I$(MATH_DIR) -I$(TIMER_DIR) -I$(OPENAIR3)/MESH  -I$(OPENAIR2_TOP)/RRC/LITE/MESSAGES -I$(OPENAIR3)/MESH/RRM -I$(OPT_DIR) -I$(OMG_DIR)
 
 ifeq ($(rrc_cellular),1)
+  include $(RRC_CELL_DIR)/Makefile.inc
   L2_OBJS += $(RRC_CELLULAR_OBJS)
   L2_incl += -I$(OPENAIR2_TOP)/RRC/CELLULAR
   EXTRA_CFLAGS += -DRRC_CELLULAR -DCELLULAR
@@ -119,15 +126,6 @@ else
   L2_OBJS += $(RRC_OBJS)
   L2_incl += -I$(OPENAIR2_TOP)/RRC/LITE
 endif
-
-#ifndef CBMIMO1
-ifdef OCG_FLAG
-L2_OBJS+=$(OCG_OBJS)
-endif
-#endif
-
-
-
 
 
 #EXTRA_CFLAGS += $(L2_incl)

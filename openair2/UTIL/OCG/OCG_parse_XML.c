@@ -29,7 +29,7 @@
 
 /*! \file OCG_parse_XML.c
 * \brief Parse the content of the XML configuration file
-* \author Lusheng Wang
+* \author Lusheng Wang  & Navid Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom
@@ -43,9 +43,9 @@
 #include <libxml/parser.h>
 #include <stdio.h>
 #include <string.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_parse_XML.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 
 

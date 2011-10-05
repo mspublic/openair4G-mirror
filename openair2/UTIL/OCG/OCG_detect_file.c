@@ -29,7 +29,7 @@
 
 /*! \file OCG_detect_file.c
 * \brief Detect if a new XML is generated from the web portal
-* \author Lusheng Wang
+* \author Lusheng Wang  & Navid Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom
@@ -43,9 +43,9 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_detect_file.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 
 
