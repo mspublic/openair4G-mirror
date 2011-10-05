@@ -34,11 +34,13 @@
 		</ANTENNA>
 	</ENVIRONMENT_SYSTEM_CONFIG>
 
+
 	<TOPOLOGY_CONFIG>	
 		<AREA>			
 		  <X_km>100</X_km>
 		  <Y_km>100</Y_km>	
 			
+
 		</AREA>
 
 		<NETWORK_TYPE>homogeneous</NETWORK_TYPE>

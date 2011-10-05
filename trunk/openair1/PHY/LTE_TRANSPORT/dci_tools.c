@@ -1503,9 +1503,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (ulsch->harq_processes[harq_pid]->Ndi == 1)
       ulsch->harq_processes[harq_pid]->status = ACTIVE;
 
+
     if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cqi_req == 1) {
-      ulsch->O_RI = 1; //we only support 2 antenna ports, so this is alwyas 1 according to 3GPP 36.213 Table 
-      switch(transmission_mode){ // The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
+      ulsch->O_RI = 1; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table 
+      switch(transmission_mode){ 
+	// The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
       case 1:
 	if(meas->rank[eNB_id] == 0){
 	  ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
@@ -1610,32 +1612,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       //ulsch->O = sizeof_HLC_subband_cqi_nopmi_5MHz;
     }
 
-    /*
-    if (meas->rank[eNB_id] == 0) {
-      if (transmission_mode == 4)
-	ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
-      else if (transmission_mode == 5)
-	ulsch->O                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
-      else
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-      ulsch->o_RI[0]                             = 1;
-    }
-    else {
-      if (transmission_mode == 4)
-	ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
-      else if (transmission_mode < 3)
-	ulsch->O                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-      else
-	ulsch->O                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
 
-      ulsch->o_RI[0]                             = 0;
-    }
-    }
-    else {
-      ulsch->O = sizeof_HLC_subband_cqi_nopmi_5MHz;
-      ulsch->O_RI = 1;
-    }
-    */
 
     fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
     print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
@@ -1738,26 +1715,61 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi         = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
+
+
+
     if (((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cqi_req == 1) {
-    if (transmission_mode == 4) {
-      ulsch->Or2                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
-      ulsch->Or1                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
-    }
-    else if (transmission_mode ==5 ) {
-      ulsch->Or2                                   = 0;
-      ulsch->Or1                                   = sizeof_HLC_subband_cqi_rank1_2A_5MHz;
-    }
-    else if (transmission_mode <3) {
-      ulsch->Or2                                   = 0;
-      ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
-    }
-    ulsch->O_RI                                   = 1;
+      ulsch->O_RI = 1; //we only support 2 antenna ports, so this is always 1 according to 3GPP 36.213 Table 
+      switch(transmission_mode){ 
+	// The aperiodic CQI reporting mode is fixed for every transmission mode instead of being configured by higher layer signaling
+      case 1:
+	ulsch->Or2                                   = 0;
+	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	break;
+      case 2:
+	ulsch->Or2                                   = 0;
+	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	break;
+      case 3:
+	ulsch->Or2                                   = 0;
+	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	break;
+      case 4:
+	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	break;
+      case 5:
+	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	break;
+      case 6:
+	ulsch->Or2                                 = sizeof_wideband_cqi_rank2_2A_5MHz;
+	ulsch->Or1                                 = sizeof_wideband_cqi_rank1_2A_5MHz;
+	ulsch->uci_format                          = wideband_cqi_rank1_2A;
+	break;
+      case 7:
+	ulsch->Or2                                   = 0;
+	ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+	ulsch->uci_format                            = HLC_subband_cqi_nopmi;
+	break;
+      default:
+	msg("Incorrect Transmission Mode \n");
+	break;
+      }
     }
     else {
-      ulsch->Or2 = 0;
-      ulsch->Or1 = sizeof_HLC_subband_cqi_nopmi_5MHz;
       ulsch->O_RI = 1;
+      ulsch->Or2                                   = 0;
+      ulsch->Or1                                   = sizeof_HLC_subband_cqi_nopmi_5MHz;
+      ulsch->uci_format                            = HLC_subband_cqi_nopmi;
     }
+
+
 
     ulsch->O_ACK                                  = 2;
     ulsch->beta_offset_cqi_times8                = 18;
