@@ -79,6 +79,8 @@ int rrc_init_global_param(void){
   //  Rrc_xface->rrc_rx_tx=rrc_rx_tx;
   Rrc_xface->mac_rrc_meas_ind=mac_rrc_meas_ind;
 
+  //Rrc_xface->rrc_get_status = ...
+
   Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
 
 #ifndef NO_RRM
@@ -196,7 +198,7 @@ void openair_rrc_top_init(void){
   msg("[OPENAIR][RRC INIT] Init function start:Nb_INST=%d\n",NB_INST);
 
   UE_rrc_inst = (UE_RRC_INST*)malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
-
+  memset(UE_rrc_inst,0,NB_UE_INST*sizeof(UE_RRC_INST));
   msg("ALLOCATE %d Bytes for UE_RRC_INST @ %p\n",(unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)),UE_rrc_inst);
 
   eNB_rrc_inst = (eNB_RRC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
