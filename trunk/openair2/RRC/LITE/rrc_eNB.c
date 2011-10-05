@@ -18,11 +18,9 @@
 #include "DL-DCCH-Message.h"
 #include "TDD-Config.h"
 #include "rlc.h"
-#include "RRC/NAS/nas_config.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
-#define DEBUG_RRC 1
 #ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
+#include "RRC/NAS/nas_config.h"
 extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;
@@ -249,7 +247,7 @@ int rrc_eNB_decode_dcch(u8 Mod_id,  u8 Srb_id, u8 UE_index, u8 *Rx_sdu, u8 sdu_s
 
 
 /*------------------------------------------------------------------------------*/
-void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
+int rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
   /*------------------------------------------------------------------------------*/
 
   u16 Idx,UE_index;
@@ -278,7 +276,7 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 			 100,0,0);
   if (dec_rval.consumed == 0) {
     msg("[RRC][eNB] FATAL Error in receiving CCCH\n");
-    exit(-1);
+    return -1; //mac_xface->macphy_exit(""); //exit(-1);
   }
   if (ul_ccch_msg->message.present == UL_CCCH_MessageType_PR_c1) {
 
@@ -286,7 +284,6 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 
     case UL_CCCH_MessageType__c1_PR_NOTHING :
       msg("[RRC][eNB %d] Frame %d : Received PR_NOTHING on UL-CCCH-Message\n",Mod_id,Mac_rlc_xface->frame);
-      return;
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest :
@@ -341,7 +338,7 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 	msg("[OPENAIR][RRC] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
 	
 	msg("[OPENAIR][RRC] CALLING RLC CONFIG SRB2 (rbid %d) for UE %d\n",
-	    Idx,UE_index);
+	    Idx+1,UE_index);
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,Idx+1,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
 	msg("[OPENAIR][RRC] RLC AM allocation index@0 is %d\n",rlc[Mod_id].m_rlc_am_array[0].allocation);
 	msg("[OPENAIR][RRC] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
@@ -353,9 +350,15 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
       msg("[RRC][eNB %d] Frame %d : RRCConnectionReestablishmentRequest not supported yet\n",Mod_id,Mac_rlc_xface->frame);
       break;
       }
+    default:
+      msg("[RRC][eNB %d] Frame %d : Unkown message\n",Mod_id,Mac_rlc_xface->frame);
+      return -1;
     }
-
-
+    return 0;
+  }
+  else{
+    msg("[RRC][eNB %d] Frame %d : Unkown error \n",Mod_id,Mac_rlc_xface->frame);
+      return -1;
   }
 
 }
@@ -368,6 +371,8 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
   u8 buffer[100];
   u8 size;
 
+
+  
   size = do_RRCConnectionReconfiguration(buffer,
 					 UE_index,
 					 0,
@@ -375,8 +380,7 @@ void rrc_eNB_generate_RRCConnectionReconfiguration(u8 Mod_id,u16 UE_index) {
 					 &eNB_rrc_inst[Mod_id].DRB_config[UE_index][0],
 					 &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
 
-  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH UE %d: 1 ",Mod_id,size,UE_index);
-
+  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionReconfiguration) for DCCH UE %d\n",Mod_id,size,UE_index);
   Mac_rlc_xface->rrc_rlc_data_req(Mod_id,(UE_index*MAX_NUM_RB)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
 
 
@@ -436,7 +440,6 @@ void rrc_eNB_process_RRCConnectionSetupComplete(u8 Mod_id, u8 UE_index,RRCConnec
 				    (TDD_Config_t *)NULL,
 				    (u8 *)NULL,
 				    (u16 *)NULL);
-
   rrc_eNB_generate_RRCConnectionReconfiguration(Mod_id,UE_index);
   
   
@@ -448,12 +451,13 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
   // Loop through DRBs and establish if necessary
   for (i=0;i<8;i++) { // num max DRB (11-3-8)
     if (eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]) {
-      msg("[RRC][eNB %d] Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",Mod_id,UE_index,
+      msg("[RRC][eNB %d] Received RRCConnectionReconfigurationComplete from UE %d, reconfiguring DRB %d/LCID %d\n",
+	  Mod_id,UE_index,
 	  (int)eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->drb_Identity,
-	  (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->logicalChannelIdentity);
+	  (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][0]->logicalChannelIdentity);
       if (eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] == 0) {
 	Mac_rlc_xface->rrc_rlc_config_req(Mod_id,ACTION_ADD,
-					  (UE_index * MAX_NUM_RB) + *eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
+					  (UE_index * MAX_NUM_RB) + (int)*eNB_rrc_inst[Mod_id].DRB_config[UE_index][i]->logicalChannelIdentity,
 					  RADIO_ACCESS_BEARER,Rlc_info_um);
 	eNB_rrc_inst[Mod_id].DRB_active[UE_index][i] = 1;
 
@@ -516,7 +520,7 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
 									   &eNB_rrc_inst[Mod_id].SRB2_config[UE_index],
 									   &eNB_rrc_inst[Mod_id].physicalConfigDedicated[UE_index]);
   
-  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH : 0 ",Mod_id,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,UE_index);
+  msg("[RRC][eNB %d] Generate %d bytes (RRCConnectionSetup for UE %d) for CCCH \n",Mod_id,eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size,UE_index);
 
 
 

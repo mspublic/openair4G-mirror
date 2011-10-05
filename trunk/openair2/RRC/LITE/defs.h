@@ -34,7 +34,7 @@ ________________________________________________________________*/
 #include "RRCConnectionSetupComplete.h"
 #include "RRCConnectionRequest.h"
 
-#include "L3_rrc_defs.h"
+//#include "L3_rrc_defs.h"
 #ifndef NO_RRM
 #include "L3_rrc_interface.h"
 #include "rrc_rrm_msg.h"
@@ -86,7 +86,7 @@ typedef struct{
   u8 Nb_rach_res; 
   u8 Rach_time_alloc;
   unsigned short Rach_freq_alloc;
-  L2_ID CH_mac_id;
+  //  L2_ID CH_mac_id;
 }UE_RRC_INFO;
 
 typedef struct{
@@ -280,7 +280,7 @@ void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CH_index,
 /**\brief Entry routine to decode a UL-CCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
-int rrc_ch_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
+int rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
@@ -311,8 +311,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 u8 mac_rrc_lite_data_req( u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
 u8 mac_rrc_lite_data_ind( u8 Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
-void rlcrrc_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
-void rrc_out_of_sync_ind(u8 Mod_id, unsigned short CH_index);
+void rlcrrc_lite_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
+void rrc_lite_out_of_sync_ind(u8 Mod_id, unsigned short eNB_index);
 
 //MESSAGES/asn1_msg.c
 /** 

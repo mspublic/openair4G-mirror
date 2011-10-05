@@ -21,6 +21,7 @@ asn1_msg_kern-objs = $(ASN1_CONVERTER_OBJS) $(ASN1_MODULE_OBJS) bsearch.o rtai_m
 
 clean:
 	rm -rf $(asn1_msg_kern-objs) $(obj-m)
+	rm -f Makefile.inc.generated
 
 test:
 	echo $(asn1_msg_kern-objs) $(obj-m)

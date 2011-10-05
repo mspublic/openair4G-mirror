@@ -389,8 +389,8 @@ pdcp_fifo_read_input_sdus ()
 #endif
   
       if (len<0) {
-	// nothing in pdcp NAS socket
-      }
+	//	printf("[PDCP][NETLINK %d] nothing in pdcp NAS socket\n", nas_sock_fd);
+       }
       else {
 #ifdef PDCP_DEBUG
 #ifdef LINUX

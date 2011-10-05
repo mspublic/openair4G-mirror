@@ -41,9 +41,9 @@
 /*--- INCLUDES ---------------------------------------------------------------*/
 #include <stdio.h>
 #include <string.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_save_XML.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 	
 //int save_XML(int copy_or_move, char src_file[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX], char dst_dir[DIR_LENGTH_MAX], char filename[FILENAME_LENGTH_MAX]) {

@@ -17,7 +17,7 @@
 #include "PHY_INTERFACE/extern.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 #ifdef PHY_EMUL
 #include "SIMULATION/simulation_defs.h"
 #endif
@@ -100,7 +100,7 @@ unsigned char *parse_header(unsigned char *mac_header,
 	mac_header_ptr += sizeof(SCH_SUBHEADER_LONG);
       }
 #ifdef DEBUG_HEADER_PARSING
-      msg("sdu %d lcid %d length %d\n",num_sdus,lcid,length);
+      LOG_T(MAC,"[UE] sdu %d lcid %d length %d\n",num_sdus,lcid,length);
 #endif
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
@@ -110,7 +110,7 @@ unsigned char *parse_header(unsigned char *mac_header,
       rx_ces[num_ces] = lcid;
       num_ces++;
 #ifdef DEBUG_HEADER_PARSING
-      msg("ce %d lcid %d\n",num_ces,lcid);
+      LOG_T(MAC,"[UE]ce %d lcid %d\n",num_ces,lcid);
 #endif
 
 
@@ -143,7 +143,7 @@ u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
       MGRP= 80;
       gapOffset= UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.choice.gp1;
     }else{
-      LOG_W(MAC, "Measurement GAP offset is unknown");
+      LOG_W(MAC, "Measurement GAP offset is unknown\n");
     }
     T=MGRP/10;
     //check the measurement gap amd sr prohibit timer
@@ -182,7 +182,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths);
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("[MAC][UE %d] ue_send_sdu : eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,eNB_index,num_ce,num_sdu);
+  LOG_D(MAC,"[UE %d] ue_send_sdu : eNB_index %d : num_ce %d num_sdu %d\n",Mod_id,eNB_index,num_ce,num_sdu);
 #endif
 
   for (i=0;i<num_ce;i++) {
@@ -190,29 +190,29 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
       switch (rx_ces[i]) {
       case UE_CONT_RES:
 #ifdef DEBUG_HEADER_PARSING
-	msg("[MAC][UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
-	msg("%x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
+	LOG_D(MAC,"[UE %d] CE %d : UE contention resolution for RRC :",Mod_id,i);
+	LOG_T(MAC, "[UE] %x,%x,%x,%x,%x,%x\n",payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4],payload_ptr[5]);
 	// Send to RRC here
 #endif
 	payload_ptr+=6;
 	break;
       case TIMING_ADV_CMD:
 #ifdef DEBUG_HEADER_PARSING
-	msg("CE %d : UE Timing Advance :",i);
-	msg("%d\n",payload_ptr[0]);
+	LOG_D(MAC,"[UE] CE %d : UE Timing Advance :",i);
+	LOG_T(MAC,"[UE] %d\n",payload_ptr[0]);
 #endif
 	process_timing_advance(payload_ptr[0]);
 	payload_ptr++;
 	break;
       case DRX_CMD:
 #ifdef DEBUG_HEADER_PARSING
-	msg("CE %d : UE DRX :",i);
+	LOG_D(MAC,"[UE] CE %d : UE DRX :",i);
 #endif
 	payload_ptr++;
 	break;
       case SHORT_PADDING:
 #ifdef DEBUG_HEADER_PARSING
-	msg("CE %d : UE 1 byte Padding :",i);
+	LOG_D(MAC,"[UE] CE %d : UE 1 byte Padding :",i);
 #endif
 	payload_ptr++;
 	break;
@@ -220,18 +220,18 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
   }
   for (i=0;i<num_sdu;i++) {
 #ifdef DEBUG_HEADER_PARSING
-    msg("SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
+    LOG_D(MAC,"[UE] SDU %d : LCID %d, length %d\n",i,rx_lcids[i],rx_lengths[i]);
 #endif
     if (rx_lcids[i] == CCCH) {
 
-      msg("[MAC][UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] RX CCCH -> RRC (%d bytes)\n",Mod_id,rx_lengths[i]);
       Rrc_xface->mac_rrc_data_ind(Mod_id,
 				  CCCH,
 				  (char *)payload_ptr,rx_lengths[i],0,eNB_index);
 
     }
     else if (rx_lcids[i] == DCCH) {
-      msg("[MAC][UE %d] RX  DCCH \n",Mod_id);
+      LOG_D(MAC,"[UE %d] RX  DCCH \n",Mod_id);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DCCH,
 				      (char *)payload_ptr,
@@ -240,7 +240,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 				      NULL);
     }
     else if (rx_lcids[i] == DCCH1) {
-      msg("[MAC][UE %d] RX  DCCH1 \n",Mod_id);
+      LOG_D(MAC,"[UE %d] RX  DCCH1 \n",Mod_id);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DCCH1,
 				      (char *)payload_ptr,
@@ -249,7 +249,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 				      NULL);
     }
     else if (rx_lcids[i] == DTCH) {
-      debug_msg("[MAC][UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] RX %d DTCH -> RLC \n",Mod_id,rx_lengths[i]);
       Mac_rlc_xface->mac_rlc_data_ind(Mod_id+NB_eNB_INST,
 				      DTCH,
 				      (char *)payload_ptr,
@@ -264,7 +264,7 @@ void ue_send_sdu(u8 Mod_id,u8 *sdu,u8 eNB_index) {
 void ue_decode_si(u8 Mod_id, u8 eNB_index, void *pdu,u16 len) {
 
 #ifdef DEBUG_SI_RRC
-  msg("[MAC][UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
+  LOG_D(MAC,"[UE %d] Frame %d Sending SI to RRC (Lchan Id %d)\n",Mod_id,mac_xface->frame,BCCH);
 #endif
 
   Rrc_xface->mac_rrc_data_ind(Mod_id,BCCH,(char *)pdu,len,0,eNB_index);
@@ -287,7 +287,7 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
 					 eNB_index);
       Size16 = (u16)Size;
 
-      msg("[MAC][UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
+      LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",Mod_id,mac_xface->frame,Size);
       if (Size>0) {
 	payload_offset = generate_ulsch_header((u8*)&UE_mac_inst[Mod_id].CCCH_pdu.payload[0],  // mac header
 					       1,      // num sdus
@@ -304,7 +304,7 @@ unsigned char *ue_get_rach(u8 Mod_id,u8 eNB_index){
     }
   }
   else if (UE_mode == PUSCH) {
-    msg("[MAC][UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...",Mod_id);
+    LOG_D(MAC,"[UE %d] FATAL: Should not have checked for RACH in PUSCH yet ...",Mod_id);
     mac_xface->macphy_exit("");
   } 
   return(NULL);
@@ -326,9 +326,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   unsigned char mac_header_control_elements[16],*ce_ptr;
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("[UE][MAC] Generate ULSCH : num_sdus %d\n",num_sdus);
+  LOG_D(MAC,"[UE] Generate ULSCH : num_sdus %d\n",num_sdus);
   for (i=0;i<num_sdus;i++)
-    msg("sdu %d : lcid %d length %d\n",i,sdu_lcids[i],sdu_lengths[i]);
+    LOG_T(MAC,"[UE] sdu %d : lcid %d length %d\n",i,sdu_lcids[i],sdu_lengths[i]);
 #endif
   ce_ptr = &mac_header_control_elements[0];
 
@@ -367,7 +367,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
   if (crnti) {
 #ifdef DEBUG_HEADER_PARSING
-    msg("CRNTI : %x (first_element %d)\n",*crnti,first_element);
+    LOG_D(MAC,"[UE] CRNTI : %x (first_element %d)\n",*crnti,first_element);
 #endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
@@ -400,7 +400,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
     }
 #ifdef DEBUG_HEADER_PARSING
-    msg("[MAC][UE] Scheduler Truncated BSR Header\n");
+    LOG_D(MAC,"[UE] Scheduler Truncated BSR Header\n");
 #endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
@@ -426,7 +426,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
     }
 #ifdef DEBUG_HEADER_PARSING
-    msg("[MAC][UE] Scheduler SHORT BSR Header\n");
+    LOG_D(MAC,"[UE] Scheduler SHORT BSR Header\n");
 #endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
@@ -452,7 +452,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       first_element=1;
     }
 #ifdef DEBUG_HEADER_PARSING
-    msg("[MAC][UE] Scheduler Long BSR Header\n");
+    LOG_D(MAC,"[UE] Scheduler Long BSR Header\n");
 #endif
     mac_header_ptr->R = 0;
     mac_header_ptr->E    = 0;
@@ -467,12 +467,12 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
   for (i=0;i<num_sdus;i++) {
 #ifdef DEBUG_HEADER_PARSING
-    msg("sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
+    LOG_T(MAC,"[UE]sdu subheader %d (lcid %d, %d bytes)\n",i,sdu_lcids[i],sdu_lengths[i]);
 #endif
     if (first_element>0) {
       mac_header_ptr->E = 1;
 #ifdef DEBUG_HEADER_PARSING
-      msg("last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
+      LOG_D(MAC,"[UE]last subheader : %x (R%d,E%d,LCID%d)\n",*(unsigned char*)mac_header_ptr,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->R,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->E,
 	  ((SCH_SUBHEADER_FIXED *)mac_header_ptr)->LCID);
@@ -492,8 +492,8 @@ unsigned char generate_ulsch_header(u8 *mac_header,
       ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->L    = (unsigned char)sdu_lengths[i];
       last_size=2;
 #ifdef DEBUG_HEADER_PARSING
-      msg("short sdu\n");
-      msg("last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
+      LOG_D(MAC,"[UE]short sdu\n");
+      LOG_T(MAC,"[UE]last subheader : %x (R%d,E%d,LCID%d,F%d,L%d)\n",
 	  ((u16*)mac_header_ptr)[0],
 	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->R,
 	  ((SCH_SUBHEADER_SHORT *)mac_header_ptr)->E,
@@ -511,7 +511,7 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 
       last_size=3;
 #ifdef DEBUG_HEADER_PARSING
-      msg("long sdu\n");
+      LOG_D(MAC,"[UE]long sdu\n");
 #endif
     }
   }
@@ -521,10 +521,10 @@ unsigned char generate_ulsch_header(u8 *mac_header,
   mac_header_ptr+=(unsigned char)(ce_ptr-mac_header_control_elements);
 
 #ifdef DEBUG_HEADER_PARSING
-  msg("MAC header : ");
+  LOG_T(MAC, "[UE] MAC header : ");
   for (i=0;i<((unsigned char*)mac_header_ptr - mac_header);i++) 
-    msg("%2x.",mac_header[i]);
-  msg("\n");
+    LOG_T(MAC,"%2x.",mac_header[i]);
+  LOG_T(MAC,"\n");
 #endif
   return((unsigned char*)mac_header_ptr - mac_header);
 
@@ -553,18 +553,18 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 				  DCCH,
 				  (buflen-dcch_header_len-sdu_length_total));
-  msg("[MAC][UE %d] RLC status for DCCH : %d\n",
+  LOG_D(MAC,"[UE %d] RLC status for DCCH : %d\n",
       Mod_id,rlc_status.bytes_in_buffer);
   
   if (rlc_status.bytes_in_buffer>0) {
-    msg("[MAC][UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total,Mod_id+NB_eNB_INST);
+    LOG_D(MAC,"[UE %d] DCCH has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len,sdu_length_total,Mod_id+NB_eNB_INST);
     
     sdu_lengths[0] += Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
 						      DCCH,
 						      (char *)&ulsch_buff[sdu_lengths[0]]);
     sdu_length_total += sdu_lengths[0];
     sdu_lcids[0] = DCCH;
-    msg("[MAC][UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
+    LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH\n",Mod_id,sdu_lengths[0]);
     num_sdus = 1;
     //header_len +=2;
   }
@@ -576,18 +576,18 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
   rlc_status = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 				  DCCH1,
 				  (buflen-dcch_header_len-2-sdu_length_total));
-  msg("[MAC][UE %d] RLC status for DCCH1 : %d\n",
+  LOG_D(MAC,"[UE %d] RLC status for DCCH1 : %d\n",
       Mod_id,rlc_status.bytes_in_buffer);
   
   if (rlc_status.bytes_in_buffer>0) {
-    msg("[MAC][UE %d] DCCH1 has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len+2,sdu_length_total,Mod_id+NB_eNB_INST);
+    LOG_D(MAC,"[UE %d] DCCH1 has %d bytes to send (buffer %d, header %d, sdu_length_total %d): Mod_id to RLC %d\n",Mod_id,rlc_status.bytes_in_buffer,buflen,dcch_header_len+2,sdu_length_total,Mod_id+NB_eNB_INST);
     
     sdu_lengths[num_sdus] = Mac_rlc_xface->mac_rlc_data_req(Mod_id+NB_eNB_INST,
 						     DCCH,
 							    (char *)&ulsch_buff[sdu_lengths[0]]);
     sdu_length_total += sdu_lengths[num_sdus];
     sdu_lcids[num_sdus] = DCCH1;
-    msg("[MAC][UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
+    LOG_D(MAC,"[UE %d] TX Got %d bytes for DCCH1\n",Mod_id,sdu_lengths[num_sdus]);
     num_sdus++;
     dcch_header_len +=2; // include dcch1
   }
@@ -602,7 +602,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 				    buflen - dcch_header_len - dtch_header_len - sdu_length_total);
 
     if (rlc_status.bytes_in_buffer > 0 ) { // get rlc pdu
-      debug_msg("[MAC][UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
+      LOG_D(MAC,"[UE %d] DTCH has %d bytes to send (buffer %d, header %d)\n",
 	  Mod_id,rlc_status.bytes_in_buffer,buflen,dtch_header_len);
 
 
@@ -617,7 +617,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 							      DTCH,
 							      (char *)&ulsch_buff[sdu_length_total]);
 
-      debug_msg("[MAC][UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
+      LOG_D(MAC,"[UE %d] TX Got %d bytes for DTCH\n",Mod_id,sdu_lengths[num_sdus]);
 
       sdu_lcids[num_sdus] = DTCH;
       sdu_length_total += sdu_lengths[num_sdus];
@@ -645,7 +645,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   NULL, // short bsr
 					   NULL); // long_bsr
 
-    debug_msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
+    LOG_D(MAC,"[UE %d] Payload offset %d sdu total length %d\n",
 	Mod_id,payload_offset, sdu_length_total);
 
     // cycle through SDUs and place in ulsch_buffer
@@ -666,7 +666,7 @@ void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 					   &bsr, // short bsr
 					   NULL); // long_bsr
 
-    debug_msg("[MAC][UE %d] Payload offset %d sdu total length %d\n",
+    LOG_D(MAC,"[UE %d] Payload offset %d sdu total length %d\n",
 	Mod_id,payload_offset, sdu_length_total);
 
     // cycle through SDUs and place in ulsch_buffer
@@ -709,14 +709,14 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
     rlc_status[lcid] = mac_rlc_status_ind(Mod_id+NB_eNB_INST,
 					  lcid,
 					  0);//tb_size does not reauire when requesting the status
-    //msg("[MAC][UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n", 
+    //LOG_D(MAC,"[UE %d] rlc buffer (lcid %d, byte %d)BSR level %d\n", 
     //    Mod_id, lcid, rlc_status[lcid].bytes_in_buffer, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
     if (rlc_status[lcid].bytes_in_buffer > 0 ) {
       //set the bsr for all lcid by searching the table to find the bsr level 
       UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid] = locate (BSR_TABLE,BSR_TABLE_SIZE, rlc_status[lcid].bytes_in_buffer);
       UE_mac_inst[Mod_id].scheduling_info.num_BSR++;
       UE_mac_inst[Mod_id].scheduling_info.SR_pending=1;
-      msg("[MAC][UE %d] SR is pending for LCID %d with BSR level %d \n", 
+      LOG_D(MAC,"[UE %d] SR is pending for LCID %d with BSR level %d \n", 
 	  Mod_id, lcid, UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]);
     } else {
       UE_mac_inst[Mod_id].scheduling_info.buffer_status[lcid]=0;
@@ -732,7 +732,7 @@ void ue_scheduler(u8 Mod_id, u8 subframe, lte_subframe_t direction) {
     
     // cancel all pending SRs
     UE_mac_inst[Mod_id].scheduling_info.SR_pending=0;
-    msg("[MAC][UE %d] Release all SRs \n", Mod_id);
+    LOG_D(MAC,"[UE %d] Release all SRs \n", Mod_id);
   }
    
   // Call PHR procedure as described in Section 5.4.6 in 36.321

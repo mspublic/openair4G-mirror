@@ -29,11 +29,11 @@
 
 /*! \file OCG.c
 * \brief Main function containing the FSM of OCG
-* \author Lusheng Wang
+* \author Lusheng Wang and Navid Nikaein
 * \date 2011
 * \version 0.1
 * \company Eurecom
-* \email: lusheng.wang@eurecom.fr
+* \email: lusheng.wang@eurecom.fr 
 * \note
 * \warning
 */
@@ -54,6 +54,7 @@
 #include "OCG_parse_XML.h"
 #include "OCG_save_XML.h"
 #include "OCG_generate_report.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 //#define TEST_OCG
 

@@ -439,7 +439,7 @@ char layer2_init_UE(u8 Mod_id);
 char layer2_init_eNB(u8 Mod_id, u8 Free_ch_index); 
 void mac_switch_node_function(u8 Mod_id);
 int mac_init_global_param(void);
-void mac_top_cleanup();
+void mac_top_cleanup(void);
 void mac_UE_out_of_sync_ind(u8 Mod_id, u16 CH_index);
 
 

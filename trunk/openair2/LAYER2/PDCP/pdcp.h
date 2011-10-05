@@ -63,7 +63,7 @@ public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 
 
-public_pdcp(void pdcp_run ();)
+public_pdcp(void pdcp_run (void);)
 public_pdcp(int pdcp_module_init ();)
 public_pdcp(void pdcp_module_cleanup ();)
 public_pdcp(void pdcp_layer_init ();)

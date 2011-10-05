@@ -42,9 +42,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_create_dir.h"
+#include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 
 int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_MAX / 2], char file_date[FILENAME_LENGTH_MAX / 2]) {

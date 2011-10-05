@@ -6,7 +6,7 @@
 
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
@@ -585,7 +585,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       ((SCH_SUBHEADER_LONG *)mac_header_ptr)->L    = sdu_lengths[i]&0x7fff;
 
       last_size=3;
-      printf("long sdu\n");
+      msg("long sdu\n");
     }
   }
 
@@ -3336,7 +3336,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    printf("Got harq_pid %d, round %d\n",harq_pid,round);
+    msg("Got harq_pid %d, round %d\n",harq_pid,round);
 	  
     // Note this code is for a specific DCI format
     DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
@@ -3680,7 +3680,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   }
 }
 
-
+#ifdef ICIC
 //added for ALU icic
 
 u32 Get_Cell_SBMap(unsigned char Mod_id){
@@ -3849,7 +3849,7 @@ void UpdateSBnumber(unsigned char Mod_id){
 
   }
 }
-
+#endif 
 //end ALU's algo
 
 void eNB_dlsch_ulsch_scheduler(unsigned char Mod_id,unsigned char cooperation_flag,unsigned char subframe) {

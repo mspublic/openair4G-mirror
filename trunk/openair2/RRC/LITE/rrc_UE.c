@@ -156,7 +156,7 @@ int rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
   memset(dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
   msg("[RRC][UE %d] Decoding DL-CCCH message (%d bytes)\n",Mod_id,Srb_info->Rx_buffer.payload_size);
   for (i=0;i<Srb_info->Rx_buffer.payload_size;i++)
-    msg("%x.",Srb_info->Rx_buffer.Payload[i]);
+    msg("%2x.",Srb_info->Rx_buffer.Payload[i]);
   msg("\n");
 
   dec_rval = uper_decode(NULL,

@@ -17,7 +17,7 @@ ________________________________________________________________*/
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #ifndef CELLULAR
-#include "L3_rrc_defs.h"
+//#include "L3_rrc_defs.h"
 #endif
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -344,7 +344,7 @@ typedef struct{
   //  void (*mac_rlc_exit)(void);
   //RLC_INTERFACE_FUNCTIONS
   //  void (*pdcp_run)(unsigned int);
-  void (*pdcp_run)();
+  void (*pdcp_run)(void);
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);	
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   int (*rrc_mac_config_req)(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,

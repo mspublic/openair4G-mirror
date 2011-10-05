@@ -163,7 +163,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
 }
 //-----------------------------------------------------------------------------
 void
-pdcp_run ()
+pdcp_run (void)
 {
 //-----------------------------------------------------------------------------
   // NAS -> PDCP traffic

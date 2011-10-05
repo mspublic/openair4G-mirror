@@ -43,9 +43,10 @@
 #include <string.h>
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
-#include "OCG.h"
-#include "OCG_extern.h"
+#include "OCG_vars.h"
 #include "OCG_generate_report.h"
+#include "UTIL/LOG/log.h"
+
 /*----------------------------------------------------------------------------*/
 
 	

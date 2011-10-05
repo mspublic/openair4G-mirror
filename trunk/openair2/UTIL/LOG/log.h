@@ -126,7 +126,7 @@ extern "C" {
 #ifdef USER_MODE
 #define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #else
-#define logIt(component, level, format, args...) do {logRecord(NULL,	 __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+#define logIt(component, level, format, args...) do {logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #endif
 /* @}*/ 
 
@@ -203,16 +203,12 @@ extern "C" {
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
-#define FLAG_ONLINE    0X080	/*!< \brief online printing */
 #define FLAG_LOG_TRACE 0x100 
 
-#define LOG_DISABLE     0x00
+#define LOG_NONE        0x00
+#define LOG_LOW         0x04
 #define LOG_MED         0x34
-#define LOG_MED_ONLINE  0xB4
-#define LOG_DEF         0x74
-
-#define LOG_DEF_ONLINE  0xB4	/*!< \brief compatibility with OAI */
-
+#define LOG_FULL        0x74
 
 #define OAI_OK 0		/*!< \brief all ok */
 #define OAI_ERR 1		/*!< \brief generic error */
@@ -225,7 +221,7 @@ static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, 
 
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PERF,RB, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PERF,RB, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 
@@ -239,6 +235,7 @@ typedef struct  {
     const char *name;
     int level;
     int flag;
+    int interval;
 }log_component_t;
 
 typedef struct  {
@@ -256,9 +253,11 @@ typedef struct {
   log_config_t            config;
   char*                   level2string[NUM_LOG_LEVEL];
   int                     level;
+  int                     onlinelog;
   int                     flag;
   int                     syslog;
-  char*                   log_file_name;
+  int                     filelog;
+  char*                   filelog_name;
 } log_t;
 
 
