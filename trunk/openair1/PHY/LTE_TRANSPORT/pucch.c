@@ -1,5 +1,6 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "LAYER2/MAC/extern.h"
 
 //u8 ncs_cell[20][7];
 //#define DEBUG_PUCCH

@@ -14,41 +14,25 @@ ifdef DEBUGPHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-ifdef PLATON
-CFLAGS += -DPLATON -DNB_ANTENNAS=2 -DNB_ANTENNAS_TX=4 
-FNAME = platon
-endif
-
-ifdef PHY_EMUL 
-CFLAGS += -DPHY_EMUL_IOCTL
-endif
-
-ifdef CBMIMO1
+ifeq ($(CBMIMO1),1)
 CFLAGS += -DHW_PREFIX_REMOVAL -DCBMIMO1 -DNB_ANTENNAS_RX=2 -DOPEN_OUTPUT_FILE 
 endif
 
-ifdef OPENAIR_LTE
+ifeq ($(OPENAIR_LTE), 1)
+CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA 
 FNAME = cbmimo1_lte
 else
 FNAME = cbmimo1
 endif
 
-ifdef OPENAIR_LTE
-CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA
-endif
+CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DNB_ANTENNAS_TXRX=2	
 
-ifdef IDROMEL_RF
-CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=1 -DNB_ANTENNAS_TXRX=2
-else
-CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=2 -DNB_ANTENNAS_TXRX=2 -DBIT8_TXMUX=1 -DBIT8_TX=1	
-endif
-
-ifdef EMOS
+ifeq ($(EMOS),1)
 CFLAGS += -DEMOS
 endif
 
 # PHY Initialization routines
-ifndef OPENAIR_LTE
+ifeq ($(OPENAIR_LTE), 0)
 PHY_OBJS        +=$(TOP_DIR)/PHY/INIT/init.o
 else
 PHY_OBJS	+=$(TOP_DIR)/PHY/INIT/init_top.o 
@@ -60,7 +44,7 @@ PHY_OBJS +=$(TOP_DIR)/PHY/TOOLS/fft.o
 
 USERRFOBJS += $(PHY_OBJS) openair_rf.o #openair_generate_ofdm.o
 
-all:	openair_rf
+all: openair_rf
 
 $(USERRFOBJS) : %.o : %.c
 	$(CCC) -c $(CFLAGS) -o $@ $<

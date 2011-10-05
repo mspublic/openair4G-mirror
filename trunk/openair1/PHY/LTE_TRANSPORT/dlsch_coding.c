@@ -229,16 +229,16 @@ int dlsch_encoding(unsigned char *a,
       printf("Generating Code Segment %d (%d bits)\n",r,Kr);
       // generate codewords
       
-      printf("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
-      printf("N_RB = %d\n",nb_rb);
-      printf("Ncp %d\n",frame_parms->Ncp);
-      printf("mod_order %d\n",mod_order);
+      msg("bits_per_codeword (Kr)= %d, A %d\n",Kr,A);
+      msg("N_RB = %d\n",nb_rb);
+      msg("Ncp %d\n",frame_parms->Ncp);
+      msg("mod_order %d\n",mod_order);
 #endif
       
       offset=0;
       
 #ifdef DEBUG_DLSCH_CODING    
-      printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
+      msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat[iind*2],f1f2mat[(iind*2)+1]);
 #endif
       
       threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
@@ -267,7 +267,7 @@ int dlsch_encoding(unsigned char *a,
 
   for (r=0;r<dlsch->harq_processes[harq_pid]->C;r++) {
 #ifdef DEBUG_DLSCH_CODING
-    printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+    msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
 	   r,
 	   G,
 	   Kr*3,
@@ -313,8 +313,8 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 	dlsch->harq_processes[harq_pid]->TBS>>3);
 
     for (i=0;i<dlsch->harq_processes[harq_pid]->TBS>>3;i++)
-      printf("%x.",DLSCH_pdu[i]);
-    printf("\n");
+      msg("%x.",DLSCH_pdu[i]);
+    msg("\n");
 
     memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[eNB_transport_info_TB_index[phy_vars_eNB->Mod_id]],
 	   //memcpy(&eNB_transport_info[phy_vars_eNB->Mod_id].transport_blocks[payload_offset],

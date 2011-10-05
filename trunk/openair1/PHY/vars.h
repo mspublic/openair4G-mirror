@@ -54,7 +54,7 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 #endif
 
 #ifndef OPENAIR2
-unsigned char NB_CH_INST=1;
+unsigned char NB_eNB_INST=1;
 unsigned char NB_UE_INST=1;
 #endif
 

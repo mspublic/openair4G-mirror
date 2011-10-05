@@ -28,7 +28,7 @@ int generate_pss(mod_sym_t **txdataF,
 #endif
 
   Nid2 = frame_parms->Nid_cell % 3;
-  msg("[PHY][PSS] Using sequence %d\n",Nid2);
+  debug_msg("[PHY][PSS] Using sequence %d\n",Nid2);
 
   switch (Nid2) {
   case 0:

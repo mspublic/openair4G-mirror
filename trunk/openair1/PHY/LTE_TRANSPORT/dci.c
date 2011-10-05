@@ -23,7 +23,7 @@
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
  
-#undef ALL_AGGREGATION
+//#undef ALL_AGGREGATION
 
 #ifndef __SSE3__
 __m128i zero2;
@@ -110,7 +110,7 @@ u16 extract_crc(u8 *dci,u8 dci_len) {
   printf("extract_crc: crc %x\n",crc);
   */
 #ifdef DEBUG_DCI_DECODING  
-  printf("dci_crc (%x,%x,%x), dci_len&0x7=%d\n",dci[dci_len>>3],dci[1+(dci_len>>3)],dci[2+(dci_len>>3)],
+  msg("dci_crc (%x,%x,%x), dci_len&0x7=%d\n",dci[dci_len>>3],dci[1+(dci_len>>3)],dci[2+(dci_len>>3)],
 	 dci_len&0x7);
 #endif
   if ((dci_len&0x7) > 0) {
@@ -123,7 +123,7 @@ u16 extract_crc(u8 *dci,u8 dci_len) {
   }
 
 #ifdef DEBUG_DCI_DECODING  
-  printf("dci_crc =>%x\n",crc16);
+  msg("dci_crc =>%x\n",crc16);
 #endif
 
   //  dci[(dci_len>>3)]&=(0xffff<<(dci_len&0xf));
@@ -1567,7 +1567,6 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
       
     }
   
-
     if (mimo_mode == SISO) 
       pdcch_siso(frame_parms,lte_ue_pdcch_vars[eNB_id]->rxdataF_comp,s);
     else
@@ -1613,7 +1612,7 @@ s32 rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   //  msg("[PDCCH] n_pdcch_symbols from PCFICH =%d\n",n_pdcch_symbols);
 
 #ifdef DEBUG_DCI_DECODING
-  debug_msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
+  msg("demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
 #endif
 
   pdcch_demapping(lte_ue_pdcch_vars[eNB_id]->llr,
@@ -1718,11 +1717,11 @@ u8 get_num_pdcch_symbols(u8 num_dci,
   }
 
   if ((9*numCCE) <= (frame_parms->N_RB_DL*2))
-    return(max(1,nCCEmin));
+    return(cmax(1,nCCEmin));
   else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 4 : 5)))
-    return(max(2,nCCEmin));
+    return(cmax(2,nCCEmin));
   else if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 7 : 8)))
-    return(max(3,nCCEmin));
+    return(cmax(3,nCCEmin));
   else if (frame_parms->N_RB_DL<=10) { 
     if (frame_parms->Ncp == 0) { // normal CP
       if ((9*numCCE) <= (frame_parms->N_RB_DL*((frame_parms->nb_antennas_tx==4) ? 10 : 11)))
@@ -2041,7 +2040,7 @@ u8 generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 num_common_dci,
 			 DCI_ALLOC_t *dci_alloc,
 			 u8 subframe){ 
-  int n_dci, n_dci_dl;;
+  int n_dci, n_dci_dl;
   u8 ue_id;
   LTE_eNB_DLSCH_t *dlsch_eNB;
   u8 num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,
@@ -2401,6 +2400,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap2);
   if (CCEmap0==0xffff)
     return(dci_cnt);
+#endif
 
   // Now check UE_SPEC format 1 search spaces at aggregation 1 
   old_dci_cnt=dci_cnt;
@@ -2541,7 +2541,6 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap2);
   if (CCEmap0==0xffff)
     return(dci_cnt);
-#endif
 
   // Now check UE_SPEC format 1 search spaces at aggregation 4 
   old_dci_cnt=dci_cnt;

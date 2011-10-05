@@ -21,11 +21,13 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 	     0);
   }
   
+  
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
 		      0);
   
+
 	msg("[PHY][UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,
 		  phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0), 
@@ -102,9 +104,15 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
       break;
     default:
       msg("[PHY][UE%d] Initial sync: PBCH decoding: Unknown N_RB_DL\n",phy_vars_ue->Mod_id);
-      mac_xface->macphy_exit("");
+      return -1;
       break;
     }
+#ifndef USER_MODE
+    if (frame_parms->N_RB_DL != 25) {
+      msg("[PHY][UE%d] Initial sync: PBCH decoding: Detected NB_RB %d, but CBMIMO1 can only handle NB_RB=25\n",phy_vars_ue->Mod_id,frame_parms->N_RB_DL);
+      return -1;
+    }
+#endif
     
     // now check for PHICH parameters
     frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((phy_vars_ue->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
@@ -121,6 +129,10 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
       break;
     case 3:
       frame_parms->phich_config_common.phich_resource = two;
+      break;
+    default:
+      msg("[PHY][UE%d] Initial sync: Unknown PHICH_DURATION\n",phy_vars_ue->Mod_id);
+      return -1;
       break;
     }
     
@@ -145,7 +157,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
   
 }
 
-void initial_sync(PHY_VARS_UE *phy_vars_ue) {
+int initial_sync(PHY_VARS_UE *phy_vars_ue) {
  
   u32 sync_pos,sync_pos_slot;
   u32 metric_fdd_ncp=0,metric_fdd_ecp=0,metric_tdd_ncp=0,metric_tdd_ecp=0,max_metric;
@@ -154,16 +166,16 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
   u16 Nid_cell_fdd_ncp,Nid_cell_fdd_ecp,Nid_cell_tdd_ncp,Nid_cell_tdd_ecp;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   u8 i;
+  int ret;
 
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata, 
 			   &phy_vars_ue->lte_frame_parms, 
 			   (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
   sync_pos -= phy_vars_ue->lte_frame_parms.nb_prefix_samples;
 
-  printf("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
+  msg("[PHY][UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
 
   // SSS detection
-
   // First try FDD normal prefix (one symbol before PSS)
   phy_vars_ue->lte_frame_parms.Ncp=0;
   phy_vars_ue->lte_frame_parms.frame_type=0;
@@ -171,7 +183,7 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
 
   // PSS is hypothesized in last symbol of first slot in Frame
   sync_pos_slot = (frame_parms->samples_per_tti>>1) - frame_parms->ofdm_symbol_size - frame_parms->nb_prefix_samples;
-  
+
   if (sync_pos >= sync_pos_slot)
     phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  
   else
@@ -261,6 +273,12 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
   max_metric = (metric_tdd_ncp>max_metric) ? metric_tdd_ncp : max_metric;
   max_metric = (metric_tdd_ecp>max_metric) ? metric_tdd_ecp : max_metric;
 
+  // frameware does not support sss, therefore, the frame params are hard coded to NCP=1 and TDD=1
+#ifdef IFFT_FPGA
+  max_metric = metric_tdd_ecp;
+  Nid_cell_tdd_ecp = 0;
+#endif
+
   if (max_metric == metric_fdd_ncp) {
     phy_vars_ue->lte_frame_parms.Ncp=0;
     phy_vars_ue->lte_frame_parms.frame_type=0;
@@ -313,7 +331,7 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
       phy_vars_ue->rx_offset = sync_pos - sync_pos_slot;  
     else
       phy_vars_ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos - sync_pos_slot;
-    msg("[PHY][UE%d] Initial sync: Found Cell ID %d for TDD Normal Prefix, rx_offset %d,sync_pos %d, sync_pos_slot %d\n",phy_vars_ue->Mod_id,Nid_cell_tdd_ncp,phy_vars_ue->rx_offset,sync_pos,sync_pos_slot);
+    msg("[PHY][UE%d] Initial sync : Found Cell ID %d for TDD Normal Prefix, rx_offset %d,sync_pos %d, sync_pos_slot %d\n",phy_vars_ue->Mod_id,Nid_cell_tdd_ncp,phy_vars_ue->rx_offset,sync_pos,sync_pos_slot);
 
   }
   else if (max_metric == metric_tdd_ecp) {
@@ -335,18 +353,19 @@ void initial_sync(PHY_VARS_UE *phy_vars_ue) {
     msg("[PHY][UE%d] Initial sync: Found Cell ID %d for TDD Extended Prefix, rx_offset %d,sync_pos %d, sync_pos_slot %d\n",phy_vars_ue->Mod_id,Nid_cell_tdd_ecp,phy_vars_ue->rx_offset,sync_pos,sync_pos_slot);
 
   }
-
+  msg("[PHY][UE%d] Initial sync: (max_metric %d, metric_tdd_ecp %d)\n", phy_vars_ue->Mod_id, max_metric, metric_tdd_ecp);
   // Now do PBCH detection
-  if (pbch_detection(phy_vars_ue)==0) {
-
+  ret = pbch_detection(phy_vars_ue);
+  if (ret==0) {
 #ifdef OPENAIR2
     msg("[openair][SCHED][SYNCH] Sending synch status to higher layers\n");
     //mac_resynch();
     mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
-    phy_vars_ue->UE_mode[0] = PRACH;
 #endif //OPENAIR2
+    phy_vars_ue->UE_mode[0] = PRACH;
   }
 
   phy_adjust_gain(phy_vars_ue,0);
   
+  return ret;
 }

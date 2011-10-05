@@ -116,8 +116,6 @@ void cleanup_dlsch_threads(void);
  */
 
 
-typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
-
 /*!
   \brief Top-level entry routine for eNB procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
   @param last_slot Index of last slot (0-19)

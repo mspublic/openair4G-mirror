@@ -17,7 +17,7 @@ extern __m128i zero;
 #define _mm_sign_epi16(xmmx,xmmy) _mm_xor_si128((xmmx),_mm_cmpgt_epi16(zero,(xmmy)))
 #endif
   
-//#define DEBUG_PBCH
+//#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2

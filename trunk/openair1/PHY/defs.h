@@ -298,8 +298,9 @@ typedef struct
   //#include "PHY/LTE_REFSIG/defs.h"
   //#include "PHY/LTE_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
-
+//#ifdef USER_MODE
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
+  //#endif
 #endif //  __PHY_DEFS__H__
 
 

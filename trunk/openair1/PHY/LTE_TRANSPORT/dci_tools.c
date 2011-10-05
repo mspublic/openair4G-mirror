@@ -1254,12 +1254,12 @@ u16 quantize_wideband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   u16 pmiq;
   u16 pmivect = 0;
   u8 rank = meas->rank[eNB_id];
-  int pmi;
+  //int pmi;
   int pmi_re,pmi_im;
 
   if (rank == 1) {
-    pmi =
-      pmi_re = meas->wideband_pmi_re[eNB_id][meas->selected_rx_antennas[eNB_id][0]];
+    //pmi =
+    pmi_re = meas->wideband_pmi_re[eNB_id][meas->selected_rx_antennas[eNB_id][0]];
     pmi_im = meas->wideband_pmi_im[eNB_id][meas->selected_rx_antennas[eNB_id][0]];
     if ((pmi_re > pmi_im) && (pmi_re > -pmi_im))
       pmiq = PMI_2A_11;
@@ -1470,7 +1470,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc];
     ulsch->harq_processes[harq_pid]->Ndi                                   = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->ndi;
 
-    printf("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
+    msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
 	   ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift == 0)

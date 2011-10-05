@@ -55,7 +55,7 @@
 #define RA_RB_ALLOC computeRIV(lte_frame_parms->N_RB_UL,0,3)
 #define DLSCH_RB_ALLOC 0x1fff
 
-#ifdef OPENAIR2
+
 u16 NODE_ID[1];
 u8 NB_INST=2;
 
@@ -86,7 +86,6 @@ log_mapping level_names[] =
 };
 
 
-#endif
 
 void help(void) {
   printf("Usage: physim -h -a -e -x transmission_mode -m target_dl_mcs -r(ate_adaptation) -n n_frames -s snr_dB -k ricean_factor -t max_delay -f forgetting factor\n");

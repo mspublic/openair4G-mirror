@@ -1,7 +1,11 @@
+#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#endif
+ 
+#include  "defs.h"
 
 static unsigned int seed, iy, ir[98];
 /*
@@ -19,7 +23,7 @@ void randominit(unsigned seed_init)
 {
   int i;
 
-  printf("Initializing random number generator, seed %x\n",seed_init);
+  msg("Initializing random number generator, seed %x\n",seed_init);
 
   if (seed_init == 0) {
     srand((unsigned)time(NULL));
@@ -41,7 +45,7 @@ void randominit(unsigned seed_init)
 
 /*!\brief Uniform linear congruential random number generator on \f$[0,1)\f$.  Returns a double-precision floating-point number.*/
 
-double uniformrandom()
+double uniformrandom(void)
 {
   #define a 1664525lu
   #define mod 4294967296.0                /* is 2**32 */

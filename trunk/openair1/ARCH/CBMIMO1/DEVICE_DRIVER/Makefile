@@ -31,7 +31,7 @@ EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
 #EXTRA_CFLAGS += -Wall -Wstrict-prototypes -fno-common -fno-strict-aliasing -fno-unit-at-a-time -march=i686 -fno-strength-reduce  -fno-exceptions -pipe -mmmx -msse -msse2 -falign-loops=2 -falign-jumps=2 -falign-functions=2 -fno-strict-aliasing -fno-common -ffreestanding -fomit-frame-pointer -nostdinc -DMODULE  -D_LOOSE_KERNEL_NAMES -O2
 
 #EXTRA_CFLAGS += -Wstrict-prototypes -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
-EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2
+EXTRA_CFLAGS += -fno-common -fno-strict-aliasing -pipe -mpreferred-stack-boundary=4 -freg-struct-return -ffreestanding -maccumulate-outgoing-args -funroll-loops -march=i686 -fomit-frame-pointer -nostdinc -O2 
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 #SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
@@ -41,7 +41,7 @@ CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DNO_RRM -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD -DPHY_ABSTRACTION
+EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD -DPHY_ABSTRACTION -D__NO_ASSERT_H__ 
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -59,9 +59,9 @@ ifdef DUALSTREAM
 EXTRA_CFLAGS += -DDUALSTREAM
 endif
 
-ifndef NO_TXMUX
-EXTRA_CFLAGS += -DBIT8_TXMUX -DBIT8_TX
-endif
+#ifndef NO_TXMUX
+#EXTRA_CFLAGS += -DBIT8_TXMUX -DBIT8_TX
+#endif
 
 ifdef IDROMEL_RF 
 EXTRA_CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=1 -DNB_ANTENNAS_TXRX=2
@@ -75,6 +75,10 @@ endif
 
 ifeq ($(OPENAIR_LTE),1)
 EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+endif
+
+ifeq ($(OPENAIR2),1)
+EXTRA_CFLAGS += -DOPENAIR2
 endif
 
 EXTRA_CFLAGS += -I/usr/include -I/usr/realtime/include 

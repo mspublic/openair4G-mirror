@@ -87,9 +87,9 @@ void lte_scope_idle_callback(void) {
   cum_avg = 0;
   ind = 0;
   for (j=0; j<4; j++) { 
-    for (i=0;i<nb_ant_rx;i++) {
-  //for (j=0; j<1; j++) { 
-  //  for (i=0;i<1;i++) {
+  for (i=0;i<nb_ant_rx;i++) {
+    //for (j=0; j<1; j++) { 
+    //for (i=0;i<1;i++) {
       
       //for (k=0;k<frame_parms->symbols_per_tti*NUMBER_OF_OFDM_CARRIERS;k++){
       for (k=0;k<NUMBER_OF_OFDM_CARRIERS;k++){
@@ -107,9 +107,10 @@ void lte_scope_idle_callback(void) {
 
   avg = cum_avg/NUMBER_OF_USEFUL_CARRIERS;
 
-  fl_set_xyplot_ybounds(form->channel_f,30,70);
+  //fl_set_xyplot_ybounds(form->channel_f,30,70);
   fl_set_xyplot_data(form->channel_f,sig_time,mag_sig,ind,"","","");
 
+  /*
   // channel_t_re = sync_corr
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES; i++)  {
     sig2[i] = (float) (sync_corr[i]);
@@ -118,6 +119,7 @@ void lte_scope_idle_callback(void) {
 
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,time2,sig2,FRAME_LENGTH_COMPLEX_SAMPLES,"","","");
+  */
 
   /*
   // channel time resonse
@@ -142,8 +144,7 @@ void lte_scope_idle_callback(void) {
   fl_set_xyplot_data(form->channel_t_im,sig_time,mag_sig,ind,"","","");
   */
 
-  /*
-  // channel_t_re = rx_sig[0]
+  // channel_t_re = rx_sig_f[0]
   for (i=0; i<FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX; i++)  {
     //for (i=0; i<NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2; i++)  {
     sig2[i] = 10*log10(1.0+(double) ((rx_sig_f[0][4*i])*(rx_sig_f[0][4*i])+(rx_sig_f[0][4*i+1])*(rx_sig_f[0][4*i+1])));
@@ -153,7 +154,7 @@ void lte_scope_idle_callback(void) {
   //fl_set_xyplot_ybounds(form->channel_t_re,10,90);
   fl_set_xyplot_data(form->channel_t_re,&time2[512*12*9],&sig2[512*12*9],512*12,"","","");
   //fl_set_xyplot_data(form->channel_t_re,time2,sig2,NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti/2,"","","");
-  */
+  
 
   // channel_t_im = rx_sig[1]
   if (nb_ant_rx>1) {
@@ -360,7 +361,7 @@ int main(int argc, char *argv[]) {
 			  bigphys_top); 
 
     rx_sig_f_ptr = (short **)(mem_base + 
-			    (unsigned int)PHY_vars_UE->lte_ue_common_vars.rxdataF2 -
+			    (unsigned int)PHY_vars_UE->lte_ue_common_vars.rxdataF -
 			    bigphys_top);
     rx_sig_f[i] = (short *)(mem_base + 
 			  (unsigned int)rx_sig_f_ptr[i] -

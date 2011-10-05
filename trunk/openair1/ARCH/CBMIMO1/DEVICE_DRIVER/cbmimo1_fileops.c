@@ -421,7 +421,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR2
 	//NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-	NB_CH_INST=1;
+	NB_eNB_INST=1;
 	NB_UE_INST=0;
 	openair_daq_vars.mac_registered = 
 	  l2_init(&PHY_vars_eNB_g[0]->lte_frame_parms);
@@ -493,7 +493,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 #ifdef OPENAIR_LTE
 	openair_daq_vars.mode = openair_SYNCHED;
 	for (ue=0;ue<NUMBER_OF_UE_MAX;ue++)
-	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].mode = PRACH;
+	  PHY_vars_eNB_g[0]->eNB_UE_stats[ue].mode = PRACH;// NOT_SYNCHED
 #else
 	openair_daq_vars.mode = openair_SYNCHED_TO_MRSCH;
 #endif
@@ -660,7 +660,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 #ifdef OPENAIR2	
 	//NODE_ID[0] = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
-	NB_CH_INST=0;
+	NB_eNB_INST=0;
 	NB_UE_INST=1;
 	openair_daq_vars.mac_registered =
 	  l2_init(&PHY_vars_UE_g[0]->lte_frame_parms); 
@@ -695,6 +695,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	  node_id = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
 	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = (node_id>0 ? 0x1236 : 0x1235);
+	  printk("[openair][IOCTL] Setting crnti to %x\n",PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti);
 	  PHY_vars_UE_g[0]->UE_mode[i] = NOT_SYNCHED;
 
 	  /*
