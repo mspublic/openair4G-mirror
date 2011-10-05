@@ -1007,7 +1007,7 @@ int main(int argc, char **argv) {
 				    2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,1);
 		}
 		
-		freq_channel(eNB2UE, 25);
+		freq_channel(eNB2UE, 25,51);
 		snr=pow(10.0,.1*SNR);
 		fprintf(csv_fd,"%f,",SNR);
 		
