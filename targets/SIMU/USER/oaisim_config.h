@@ -77,22 +77,10 @@ void oaisim_config(char * g_log_level);
  *  @ingroup _fn
  *  @brief There are the functions to configure different various modules in the emulator
  * @{*/ 
-void olg_config(char * g_log_level);
-void ocg_config_omg();
-void ocg_config();
-void ocg_config_opt();
-void ocg_config_otg();
-/* @}*/
-
-void config_omg();
-
-/** @defgroup _set_params Set parameters
- *  @ingroup _fn
- *  @brief Set the initial parameters from the XML file
- * @{*/ 
-void set_envi();
-void set_topo();
-void set_app();
-void set_emu();
+int olg_config(char * g_log_level);
+int ocg_config_omg();
+int ocg_config_topo();
+int ocg_config_app();
+int ocg_config_emu();
 /* @}*/
 

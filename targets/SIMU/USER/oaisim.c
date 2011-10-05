@@ -99,7 +99,6 @@ mapping small_scale_names[] =
     {NULL, -1}
 };
 
-
 extern int transmission_mode_rrc;//FIXME!!!
 
 #ifdef LINUX
@@ -326,8 +325,8 @@ main (int argc, char **argv)
 	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
-      if ((transmission_mode != 1) &&  (transmission_mode != 2) && (transmission_mode != 5) && (transmission_mode != 6)) {
-	msg("Unsupported transmission mode %d\n",transmission_mode);
+      if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
+	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
       break;
@@ -471,14 +470,10 @@ main (int argc, char **argv)
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
-<<<<<<< .mine
 
-  NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
-  NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
-=======
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
->>>>>>> .r1434
+
 #ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -515,7 +510,7 @@ main (int argc, char **argv)
   // init SF map here!!!
   map1 =(int)oai_emulation.topology_config.area.x_km;
   map2 =(int)oai_emulation.topology_config.area.y_km;
-  //ShaF = createMat(map1,map2); -> memory is allocated within init_SF
+  //ShaF = createMat(map1,map2); -> memory is allocated within init_SF, shadow fading
   ShaF = init_SF(map1,map2,DECOR_DIST,SF_VAR);
 
   // size of area to generate shadow fading map
@@ -561,12 +556,9 @@ main (int argc, char **argv)
   openair_daq_vars.rx_rf_mode = 1;
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-<<<<<<< .mine
-  openair_daq_vars.dlsch_transmission_mode = transmission_mode;
-  transmission_mode_rrc = transmission_mode;//FIXME!!!
-=======
   openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode;
->>>>>>> .r1434
+  transmission_mode_rrc = oai_emulation.info.transmission_mode;//FIXME!!!
+
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
@@ -627,8 +619,7 @@ main (int argc, char **argv)
 	  PHY_vars_eNB_g[0]->cooperation_flag = 2;
       }
     */
-    // for dubugging the frame counter
-    
+    oai_emulation.info.frame = mac_xface->frame; 
     update_nodes(oai_emulation.info.time);  
 
     enb_node_list = get_current_positions(oai_emulation.info.omg_model_enb, eNB, oai_emulation.info.time);
@@ -664,7 +655,7 @@ main (int argc, char **argv)
       }
     }
 #endif 
-
+   
     if (oai_emulation.info.n_frames_flag == 0){ // if n_frames not set by the user then let the emulation run to infinity
       mac_xface->frame %=(oai_emulation.info.n_frames-1);
       // set the emulation time based on 1ms subframe number
@@ -675,7 +666,7 @@ main (int argc, char **argv)
       oai_emulation.info.time += 0.1; 
     } 
 
-    /* check if the openair channel model is activated used for PHY abstraction */
+    /* check if the openair channel model is activated used for PHY abstraction : path loss*/
     if ((oai_emulation.info.ocm_enabled == 1)&& (ethernet_flag == 0 )) {
       extract_position(enb_node_list, enb_data, NB_eNB_INST);
       extract_position(ue_node_list, ue_data, NB_UE_INST);

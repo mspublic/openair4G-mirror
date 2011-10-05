@@ -70,7 +70,7 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
 	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
 	oai_emulation.topology_config.relay.number_of_relays = 0;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
+	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = "random_destination";
@@ -138,12 +138,14 @@ void init_oai_emulation() {
   oai_emulation.info.nb_ue_local= 1;//default 1 UE 
   oai_emulation.info.nb_enb_local= 1;//default 1 eNB
   oai_emulation.info.ethernet_flag=0;
+  oai_emulation.info.ocm_enabled=1;// flag c
   oai_emulation.info.ocg_enabled=0;// flag c
   oai_emulation.info.opt_enabled=0; // P flag
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
   oai_emulation.info.otg_enabled=0;// T flag
+  oai_emulation.info.frame = 0; // frame counter of emulation 
   oai_emulation.info.time = 0; // time of emulation 
   oai_emulation.info.seed = time(NULL); // time-based random seed , , included in ocg report
 
@@ -157,8 +159,7 @@ void init_oai_emulation() {
     oai_emulation.info.tdd_config=3;
     oai_emulation.info.extended_prefix_flag=0;
     oai_emulation.info.N_RB_DL=25;
-    oai_emulation.info.N_RB_DL=25;
-    oai_emulation.info.transmission_mode=2;
+     oai_emulation.info.transmission_mode=2;
 
     oai_emulation.profile = "EURECOM";
 	
@@ -189,16 +190,17 @@ void oaisim_config(char *g_log_level) {
   
 }
 
-void olg_config(char * g_log_level) {
+int olg_config(char * g_log_level) {
 
  //initialize the log generator 
   logInit(map_str_to_int(log_level_names, g_log_level));
-  // set_glog(LOG_DEBUG, LOG_MED_ONLINE); //g_glog
-  //set_comp_log(OCG,  LOG_INFO, 1);
-  // set_comp_log(OMG,  LOG_TRACE, 1);
+  set_glog(LOG_DEBUG, LOG_MED); //g_glog
+  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);
+  set_comp_log(OMG,  LOG_INFO, LOG_LOW, 10);
+  set_comp_log(EMU,  LOG_INFO, LOG_LOW, 10);
   
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
-  
+  return 1; 
 }
 
 int ocg_config_env() {
@@ -243,11 +245,9 @@ int ocg_config_topo() {
 	omg_param_list.mobility_file = (char*) malloc(256);
 	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
-	printf("OMG num nodes enb %d mob type %d\n",omg_param_list.nodes,
-	       omg_param_list.mobility_type);
 	// at this moment, we use the above moving dynamics for mobile eNB
-
-	init_mobility_generator(omg_param_list);
+	if (omg_param_list.nodes >0 ) 
+	  init_mobility_generator(omg_param_list);
 	
 	// init OMG for UE
 	// input of OMG: STATIC: 0, RWP: 1, RWALK 2, or TRACE 3
@@ -278,8 +278,9 @@ int ocg_config_topo() {
 	omg_param_list.mobility_file = (char*) malloc(256);
 	sprintf(omg_param_list.mobility_file,"%s/UTIL/OMG/mobility.txt",getenv("OPENAIR2_DIR")); // default trace-driven mobility file
 
-	init_mobility_generator(omg_param_list);
-
+	if (omg_param_list.nodes >0 ) 
+	  init_mobility_generator(omg_param_list);
+	
 
 
 return 1;

@@ -15,17 +15,20 @@ CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -D
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR_LTE -DOPENAIR2 -DPUCCH #-DOFDMA_ULSCH -DIFFT_FPGA -DIFFT_FPGA_UE 
+CFLAGS += -DOPENAIR_LTE -DPUCCH  #-DIFFT_FPGA -DIFFT_FPGA_UE #-DOFDMA_ULSCH
 
 ifndef OPENAIR2
-export OPENAIR2=1
+OPENAIR2=1
+endif
+
+ifndef OPENAIR_EMU
+OPENAIR_EMU=1
 endif
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
 CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -I/usr/include/atlas -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt
 OCG_FLAG = 1
-CFLAGS += -DOCG_FLAG 
 cygwin=0
 else
 cygwin=1
@@ -57,6 +60,12 @@ NAS_FLAG=1
 CFLAGS += -DDEBUG_OMG
 else
 NAS_FLAG=0
+endif
+# after the execution, a profiling output "gmon.out" will be created, 
+#then we need to run "gprof ./oaisim > gmon.txt" in the same directory as "gmon.out"
+# you could also use the script "grpof2dot.py gmon.txt" for visual diagrams 
+ifdef GPROF
+CFLAGS += -pg
 endif
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)

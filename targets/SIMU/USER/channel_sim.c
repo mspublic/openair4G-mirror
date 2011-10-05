@@ -25,7 +25,7 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 
 #ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
+//#include "PHY/LTE_REFSIG/mod_table.h"
 #endif
 
 #include "SCHED/defs.h"
@@ -47,7 +47,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, s32 **txdata, u16 next_slot, LTE_DL_FRAME_
 
 #ifdef IFFT_FPGA
   s32 **txdataF2;
-  int l;
+  int i, l;
 
   txdataF2    = (s32 **)malloc(2*sizeof(s32*));
   txdataF2[0] = (s32 *)malloc(NUMBER_OF_OFDM_CARRIERS*((frame_parms->Ncp==1) ? 6 : 7)*sizeof(s32));

@@ -27,10 +27,6 @@
 
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 
-#ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
-#endif
-
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
