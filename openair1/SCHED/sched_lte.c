@@ -140,7 +140,7 @@ void openair1_restart(void) {
   
   for (i=0;i<number_of_cards;i++)
     openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
-  //  openair_daq_vars.tx_test=0;
+    //  openair_daq_vars.tx_test=0;
   openair_daq_vars.sync_state = 0;
   mac_xface->frame = 0;
 
@@ -196,13 +196,13 @@ static void * openair_thread(void *param) {
   printk("[openair][SCHED][openair_thread] openair_thread started with id %x, fpu_flag = %x, cpuid = %d\n",(unsigned int)pthread_self(),pthread_self()->uses_fpu,rtai_cpuid());
 
   if (mac_xface->is_primary_cluster_head == 1) {
-    msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary clusterhead\n");
+    msg("[openair][SCHED][openair_thread] Configuring openair_thread for primary eNodeB/clusterhead\n");
   }
   else if (mac_xface->is_secondary_cluster_head == 1) {
-    msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary clusterhead\n");
+    msg("[openair][SCHED][openair_thread] Configuring openair_thread for secondary eNodeB/clusterhead\n");
   }
   else {
-    msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular node\n");
+    msg("[openair][SCHED][openair_thread] Configuring OPENAIR THREAD for regular UE/node\n");
   }
   
 
@@ -429,162 +429,22 @@ void openair_sync(void) {
     if (openair_daq_vars.node_configured == 3) { // the node has been cofigured as a UE
 
       msg("[openair][SCHED][SYNCH] starting sync\n");
-
-      // Do initial timing acquisition
-      sync_pos = lte_sync_time(PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata, 
-			       &PHY_vars_UE_g[0]->lte_frame_parms, 
-			       LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti,
-			       (int*) &PHY_vars_UE_g[0]->lte_ue_common_vars.eNb_id);
-      //sync_pos = 0;
-
-      // this is only for visualization in the scope
-      PHY_vars_UE_g[0]->lte_ue_common_vars.sync_corr = sync_corr_ue;
       
-      // the sync is in the 3rd (last_ symbol of the special subframe
-      // so the position wrt to the start of the frame is 
-      sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
-      
-      PHY_vars_UE_g[0]->rx_offset = sync_pos - sync_pos_slot;
-      
-      msg("[openair][SCHED][SYNCH] eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE_g[0]->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
-      
-      if (((sync_pos - sync_pos_slot) >=0 ) && 
-	  ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES/2 - frame_parms->samples_per_tti)) ) {
-	
-	for (l=0;l<frame_parms->symbols_per_tti/2;l++) {
+      if (initial_sync(PHY_vars_UE_g[0]) == 0) {
+
+	if (openair_daq_vars.node_running == 1) {
 	  
-	  slot_fep(&PHY_vars_UE_g[0]->lte_frame_parms,
-		   &PHY_vars_UE_g[0]->lte_ue_common_vars,
-		   l,
-		   1,
-		   sync_pos-sync_pos_slot,
-		   0);
-	}
-
-	lte_ue_measurements(PHY_vars_UE_g[0],
-			    &PHY_vars_UE_g[0]->lte_frame_parms,
-			    sync_pos-sync_pos_slot,
-			    0,
-			    0);
-
-	msg("[openair][SCHED][SYNCH] starting PBCH decode!\n");
-
-	pbch_decoded = 0;
-	for (frame_mod4=0;frame_mod4<4;frame_mod4++) {
-	  pbch_tx_ant = rx_pbch(&PHY_vars_UE_g[0]->lte_ue_common_vars,
-				PHY_vars_UE_g[0]->lte_ue_pbch_vars[0],
-				&PHY_vars_UE_g[0]->lte_frame_parms,
-				0,
-				SISO,
-				frame_mod4);
-	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
-	    pbch_decoded = 1;
-	    break;
-	  }
+	  pci_interface[0]->frame_offset = PHY_vars_UE_g[0]->rx_offset;
 	  
-	  pbch_tx_ant = rx_pbch(&PHY_vars_UE_g[0]->lte_ue_common_vars,
-				PHY_vars_UE_g[0]->lte_ue_pbch_vars[0],
-				&PHY_vars_UE_g[0]->lte_frame_parms,
-				0,
-				ALAMOUTI,
-				frame_mod4);
-	  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
-	    pbch_decoded = 1;
-	    break;
-	  }
-	}
-
-	  
-	if (pbch_decoded) {
-	  
-	  PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_tx = pbch_tx_ant;
-
-	  // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
-	  PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag = (pbch_tx_ant==1);
-	  // openair_daq_vars.dlsch_transmission_mode = (pbch_tx_ant>1) ? 2 : 1;
-
-	  // now check for Bandwidth of Cell
-	  dummy = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>5)&7;
-	  switch (dummy) {
-	    /*
-	  case 0 : 
-	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 6;
-	    break;
-	  case 1 : 
-	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 15;
-	    break;
-	    */
-	  case 2 : 
-	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 25;
-	    break;
-	    /*
-	  case 3 : 
-	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 50;
-	    break;
-	  case 4 : 
-	    PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL = 100;
-	    break;
-	    */
-	  default:
-	    openair_sched_exit("[openair][SCHED][SYNCH] PBCH decoding: Unknown N_RB_DL\n");
-	    break;
-	  }
-
-	  // now check for PHICH parameters
-	  PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_duration = (PHICH_DURATION_t)((PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>4)&1);
-	  dummy = (PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]>>2)&3;
-	  switch (dummy) {
-	  case 0:
-	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = oneSixth;
-	    break;
-	  case 1:
-	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = half;
-	    break;
-	  case 2:
-	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = one;
-	    break;
-	  case 3:
-	    PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource = two;
-	    break;
-	  }
-
-	  mac_xface->frame = (((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[0]&0x03))<<8);
-	  mac_xface->frame += ((int)(PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->decoded_output[1]&0xfc));
-	  mac_xface->frame += frame_mod4;
-	  mac_xface->frame += 1; // RT acquisition will only start next frame
-
-	  msg("[openair][SCHED][SYNCH] pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %d!\n",
-	      PHY_vars_UE_g[0]->lte_frame_parms.mode1_flag,
-	      pbch_tx_ant,
-	      mac_xface->frame,
-	      PHY_vars_UE_g[0]->lte_frame_parms.N_RB_DL,
-	      PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_duration,
-	      PHY_vars_UE_g[0]->lte_frame_parms.phich_config_common.phich_resource);
-
-	
-	  if (openair_daq_vars.node_running == 1) {
-      
-	    pci_interface[0]->frame_offset = PHY_vars_UE_g[0]->rx_offset;
-	    
-	    openair_daq_vars.mode = openair_SYNCHED;
-
-#ifdef OPENAIR2
-	    msg("[openair][SCHED][SYNCH] Calling chbch_phy_sync_success\n");
-	    //mac_resynch();
-	    mac_xface->chbch_phy_sync_success(0,0);
-#endif //OPENAIR2
-	    openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
-	    openair_daq_vars.last_adac_cnt=-1;            
-
-	    PHY_vars_UE_g[0]->UE_mode[0] = PRACH;
-	  }
-	  
-	}
-	else {
-	  msg("[openair][SCHED][SYNCH] PBCH not decoded!\n");
+	  openair_daq_vars.mode = openair_SYNCHED;
+	  openair_daq_vars.scheduler_interval_ns=NS_PER_SLOT;        // initial guess
+	  openair_daq_vars.last_adac_cnt=-1;            
+	  msg("[openair][SCHED][SYNCH] openair synched \n");
 	}
       }
-   
+    }
+  
+    /*
     // Measurements
     rx_power = 0;
     for (i=0;i<NB_ANTENNAS_RX; i++) {
@@ -609,7 +469,7 @@ void openair_sync(void) {
 	pci_interface[0]->tdd,
 	pci_interface[0]->dual_tx);
 
-    }
+    */
 
 #ifdef EMOS
     memcpy(&emos_dump_UE.PHY_measurements[0], &PHY_vars_UE_g[0]->PHY_measurements, sizeof(PHY_MEASUREMENTS));
@@ -623,9 +483,10 @@ void openair_sync(void) {
     }
 #endif
 
+    /*
     // Do AGC
     if (openair_daq_vars.node_configured==3 && openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) {
-      phy_adjust_gain(clear, 512, 0, PHY_vars_UE_g[0]);
+      phy_adjust_gain(PHY_vars_UE_g[0], 0);
       if (clear == 1)
 	clear = 0;
     }
@@ -639,6 +500,7 @@ void openair_sync(void) {
       if (clear2 == 1)
 	clear2 = 0;
     }
+    */
 
   }
 
@@ -989,13 +851,13 @@ s32 openair_sched_init(void) {
   
   
   if (mac_xface->is_primary_cluster_head == 1) {
-    printk("[openair][SCHED][init] Configuring primary clusterhead\n");
+    printk("[openair][SCHED][init] Configuring primary eNodeB/clusterhead\n");
   }
   else if (mac_xface->is_secondary_cluster_head == 1) {
-    printk("[openair][SCHED][init] Configuring secondary clusterhead\n");
+    printk("[openair][SCHED][init] Configuring secondary  eNodeB/clusterhead\n");
   }
   else {
-    printk("[openair][SCHED][init] Configuring regular node\n");
+    printk("[openair][SCHED][init] Configuring regular UE/node\n");
   }
 
   openair_daq_vars.mode = openair_NOT_SYNCHED;

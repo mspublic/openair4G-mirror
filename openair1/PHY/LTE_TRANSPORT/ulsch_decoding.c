@@ -12,10 +12,10 @@
 #include "LAYER2/MAC/extern.h"
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
-#endif
-//#define DEBUG_ULSCH_DECODING
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
+#endif
+//#define DEBUG_ULSCH_DECODING
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
 

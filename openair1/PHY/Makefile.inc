@@ -38,7 +38,7 @@ PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_est_freq_offset.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_ue_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_eNB_measurements.o
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/adjust_gain.o
-ifdef EMOS
+ifeq ($(EMOS),1) 
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_ESTIMATION/lte_dl_channel_estimation_emos.o
 endif
 PHY_OBJS += $(TOP_DIR)/PHY/LTE_REFSIG/lte_dl_cell_spec.o
@@ -66,3 +66,6 @@ PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cadd_vv.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/cdot_prod.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/signal_energy.o
 PHY_OBJS += $(TOP_DIR)/PHY/TOOLS/dB_routines.o
+
+#PHY_OBJS += $(TOP_DIR)/SIMULATION/TOOLS/rangen_double.o
+

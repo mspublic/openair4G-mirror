@@ -624,6 +624,7 @@ typedef enum {
   PUSCH=3
 } UE_MODE_t;
 
+typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
 #endif
 

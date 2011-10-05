@@ -1262,8 +1262,8 @@ void phy_procedures_eNB_TX(unsigned char next_slot,PHY_VARS_eNB *phy_vars_eNB,u8
 				  phy_vars_eNB->lte_frame_parms.N_RB_UL,
 				  input_buffer_length);
       for (i=0;i<input_buffer_length;i++)
-	printf("%x.",dlsch_input_buffer[i]);
-      printf("\n");
+	msg("%x.",dlsch_input_buffer[i]);
+      msg("\n");
       UE_id = add_ue(crnti,phy_vars_eNB);
       if (UE_id==-1) {
 	mac_xface->macphy_exit("[PHY][eNB] Max user count reached.\n");

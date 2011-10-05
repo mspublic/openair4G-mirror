@@ -14,7 +14,7 @@
 #include "extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 
 extern unsigned int   Master_list_rx;
 extern unsigned short NODE_ID[1];

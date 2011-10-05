@@ -332,7 +332,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 }
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 int lte_sync_time_eNB(int **rxdata, ///rx data in time domain
 		      LTE_DL_FRAME_PARMS *frame_parms,

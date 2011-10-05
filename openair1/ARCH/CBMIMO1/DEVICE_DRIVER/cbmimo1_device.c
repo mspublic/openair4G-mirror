@@ -23,7 +23,7 @@
 #include "LAYER2/MAC/vars.h"
 #ifdef OPENAIR2
 #include "RRC/LITE/vars.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 #endif
 //#ifndef PHY_EMUL
 #include "from_grlib_softconfig.h"
@@ -32,7 +32,6 @@
 #include "linux/moduleparam.h"
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
-
 
 
 /*------------------------------------------------*/
@@ -121,11 +120,10 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
   openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
 
   rt_task_suspend(rt_task);
-
+  
   return 1;
 
 }
-
 
 
 #ifdef KERNEL2_6 
@@ -391,7 +389,7 @@ static int __init openair_init_module( void )
   fifo_printf_init();
 
 #ifdef OPENAIR2
-  //logInit();
+  logInit(LOG_DEBUG);
 #endif
 
   printk("[openair][MODULE][INFO] &rtai_global_heap = %p\n",&rtai_global_heap);

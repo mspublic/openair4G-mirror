@@ -960,7 +960,7 @@ int phy_init_lte_ue(LTE_DL_FRAME_PARMS *frame_parms,
     
   }
   else { //abstraction == 1
-    phy_vars_ue->sinr_dB = (double*) malloc(frame_parms->N_RB_DL*2*sizeof(double));
+    phy_vars_ue->sinr_dB = (double*) malloc16(frame_parms->N_RB_DL*2*sizeof(double));
   }
 
   phy_vars_ue->init_averaging = 1;
