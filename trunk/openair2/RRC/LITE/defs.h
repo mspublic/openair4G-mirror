@@ -90,7 +90,7 @@ typedef struct{
 }UE_RRC_INFO;
 
 typedef struct{
-  u8 Status;
+  u8 Status[NB_CNX_eNB];
   u8 Nb_ue;
   //unsigned short UE_index_list[NB_CNX_eNB];
   //L2_ID UE_list[NB_CNX_eNB];
@@ -388,6 +388,8 @@ uint8_t do_RRCConnectionReconfiguration(uint8_t *buffer,
 int decode_SIB1(u8 Mod_id,u8 CH_index);
 
 int decode_SI(u8 Mod_id,u8 CH_index,u8 si_window);
+
+int get_rrc_status(u8 Mod_id,u8 eNB_flag,u8 eNB_index);
 
 #endif
 

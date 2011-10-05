@@ -100,6 +100,8 @@ mapping small_scale_names[] =
 };
 
 
+extern int transmission_mode_rrc;//FIXME!!!
+
 #ifdef LINUX
 void
 init_bypass (){
@@ -324,6 +326,10 @@ main (int argc, char **argv)
 	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
+      if ((transmission_mode != 1) &&  (transmission_mode != 2) && (transmission_mode != 5) && (transmission_mode != 6)) {
+	msg("Unsupported transmission mode %d\n",transmission_mode);
+	exit(-1);
+      }
       break;
     case 'm':
       target_dl_mcs = atoi (optarg);
@@ -465,8 +471,14 @@ main (int argc, char **argv)
       emu_transport_sync ();	//emulation_tx_rx();
     }
   }				// ethernet flag
+<<<<<<< .mine
+
+  NB_UE_INST = emu_info.nb_ue_local + emu_info.nb_ue_remote;
+  NB_eNB_INST = emu_info.nb_enb_local + emu_info.nb_enb_remote;
+=======
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
+>>>>>>> .r1434
 #ifndef NAS_NETLINK
   for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
     sprintf(UE_stats_filename,"UE_stats%d.txt",UE_id);
@@ -549,7 +561,12 @@ main (int argc, char **argv)
   openair_daq_vars.rx_rf_mode = 1;
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+<<<<<<< .mine
+  openair_daq_vars.dlsch_transmission_mode = transmission_mode;
+  transmission_mode_rrc = transmission_mode;//FIXME!!!
+=======
   openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode;
+>>>>>>> .r1434
   openair_daq_vars.target_ue_dl_mcs = target_dl_mcs;
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;

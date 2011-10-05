@@ -135,6 +135,10 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
 	exit(-1);
       }
 
+      // this is the transmission mode for the signalling channels
+      // this will be overwritten with the real transmission mode by the RRC once the UE is connected
+      //PHY_vars_eNB_g[eNB_id]->transmission_mode[i] = (transmission_mode==1?1:2);
+
     }
 
     // ULSCH for RA
@@ -202,6 +206,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       
       PHY_vars_UE_g[UE_id]->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,abstraction_flag);
       PHY_vars_UE_g[UE_id]->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,abstraction_flag);
+
+      //PHY_vars_UE_g[UE_id]->transmission_mode[i] = transmission_mode;
     }
 
   }

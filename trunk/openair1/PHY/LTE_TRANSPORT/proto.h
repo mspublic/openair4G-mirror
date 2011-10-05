@@ -723,7 +723,7 @@ u32 get_rballoc(u8 vrb_type,u16 rb_alloc_dci);
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
 @returns Transmission mode (1-7)
 */
-u8 get_transmission_mode(void);
+u8 get_transmission_mode(u16 Mod_id, u16 rnti);
 
 /* \brief 
 @param ra_header Header of resource allocation (0,1) (See sections 7.1.6.1/7.1.6.2 of 36.213 Rel8.6)
@@ -998,11 +998,11 @@ void generate_phich_emul(PHY_VARS_eNB *phy_vars_eNB,
 			 u8 subframe,
 			 LTE_eNB_ULSCH_t *ulsch_eNB);
 
-void print_CQI(void *o,u8 *o_RI,u8 transmission_mode,u8 eNB_id);
+void print_CQI(void *o,UCI_format_t uci_format,u8 eNB_id);
 
-void extract_CQI(void *o,u8 *o_RI,u8 transmission_mode,LTE_eNB_UE_stats *stats);
+void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats);
 
-void fill_CQI(void *o,u8 transmission_mode,PHY_MEASUREMENTS *meas,u8 eNB_id, s32 current_dlsch_cqi);
+void fill_CQI(void *o,UCI_format_t uci_format,PHY_MEASUREMENTS *meas,u8 eNB_id);
 
 u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id);
 u16 quantize_subband_pmi2(PHY_MEASUREMENTS *meas,u8 eNB_id,u8 a_id);

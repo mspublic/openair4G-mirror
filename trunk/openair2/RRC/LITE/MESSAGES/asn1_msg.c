@@ -66,12 +66,15 @@ void FREEMEM(void *ptr) {
 
 void *REALLOC(void *oldptr,size_t size) {
 
-	printf("Realloc\n");
-	if (oldptr)
-	   free(oldptr);
-	return(malloc(size));
+printf("Realloc\n");
+if (oldptr)
+free(oldptr);
+return(malloc(size));
 }
 */
+
+int transmission_mode_rrc;//
+
 uint8_t do_SIB1(uint8_t *buffer,
 		SystemInformationBlockType1_t *sib1) {
   
@@ -761,7 +764,30 @@ uint8_t do_RRCConnectionSetup(uint8_t *buffer,
   physicalConfigDedicated2->antennaInfo->present = PhysicalConfigDedicated__antennaInfo_PR_explicitValue;
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
-  physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+
+  // TODO: set transmission mode based on some external config
+  // for the moment use transmission_mode_rrc
+  //physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+  
+  switch (transmission_mode_rrc){
+  case 1:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm1;
+    break;
+  case 2:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm2;
+    break;
+  case 4:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm4;
+    break;
+  case 5:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm5;
+    break;
+  case 6:
+    physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode=     AntennaInfoDedicated__transmissionMode_tm6;
+    break;
+  }
+  
+ 
   physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.present = AntennaInfoDedicated__ue_TransmitAntennaSelection_PR_release;
   physicalConfigDedicated2->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.release = 0;
 

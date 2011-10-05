@@ -148,7 +148,7 @@ typedef struct
     u16 (*get_nb_rb)(u8 ra_header,u32 rb_alloc);
 
     /// Function to retrieve transmission mode for UE
-    u8 (*get_transmission_mode)(u16 rnti);
+    u8 (*get_transmission_mode)(u16 Mod_id,u16 rnti);
 
     /// Function to retrieve rb_alloc bitmap from dci rballoc field and VRB type
     u32 (*get_rballoc)(u8 vrb_type,u8 rb_alloc_dci);

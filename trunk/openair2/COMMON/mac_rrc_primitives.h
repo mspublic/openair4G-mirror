@@ -325,6 +325,7 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   void  (*def_meas_ind)(u8, u8);
   void (*rrc_data_indP)  (module_id_t , rb_id_t , sdu_size_t , char*);
   void (*fn_rrc)  (void);
+  u8 (*get_rrc_status)(u8 Mod_id,u8 eNB_flag,u8 eNB_index);  
 }RRC_XFACE;
 
 

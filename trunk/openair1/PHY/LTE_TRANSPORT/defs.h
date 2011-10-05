@@ -201,6 +201,8 @@ typedef struct {
   u8 o[MAX_CQI_BYTES];
   /// Length of CQI data (bits)
   u8 O;
+  /// Format of CQI data 
+  UCI_format_t uci_format;
   /// Rank information 
   u8 o_RI[2];
   /// Length of rank information (bits)
@@ -317,6 +319,8 @@ typedef struct {
   u8 cqi_crc_status;
   /// Pointer to CQI data
   u8 o[MAX_CQI_BYTES];
+  /// Format of CQI data 
+  UCI_format_t uci_format;
   /// Length of CQI data under RI=1 assumption(bits)
   u8 Or1;
   /// Length of CQI data under RI=2 assumption(bits)
@@ -513,6 +517,8 @@ typedef enum {format0,
 	      format1D,
 	      format2_2A_L10PRB,
 	      format2_2A_M10PRB,
+	      format2_2D_L10PRB,
+	      format2_2D_M10PRB,
 	      format2_4A_L10PRB,
 	      format2_4A_M10PRB,
 	      format2A_2A_L10PRB,

@@ -129,9 +129,9 @@ int generate_ue_ulsch_params_from_rar(unsigned char *rar_pdu,
     }
 
 
-    fill_CQI(ulsch->o,wideband_cqi,meas,eNB_id,current_dlsch_cqi);
+    fill_CQI(ulsch->o,ulsch->uci_format,meas,eNB_id);
     if (((mac_xface->frame % 100) == 0) || (mac_xface->frame < 10)) 
-      print_CQI(ulsch->o,ulsch->o_RI,wideband_cqi,eNB_id);
+      print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     ulsch->O_ACK                                  = 2;
 
