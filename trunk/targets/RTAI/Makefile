@@ -5,6 +5,7 @@
 
 ifndef OPENAIR_LTE
 export OPENAIR_LTE=1
+export OPENAIR_EMU=0
 endif
 
 ifndef OPENAIR1
@@ -15,11 +16,29 @@ ifndef OPENAIR2
 export OPENAIR2=1
 endif
 
+ifndef OPENAIR3
+export OPENAIR3=1
+endif
+
 ifndef EMOS
 export EMOS=0
 endif
 
-all: openair_rf_cbmimo1_softmodem.ko asn1_msg_kern.ko nasmesh.ko rb_tool openair_rf
+ifndef rrc_cellular
+export rrc_cellular = 0
+export rrc_cellular_eNB = 0
+export rrc_cellular_UE = 0
+else
+ export rrc_cellular = 1	
+  ifeq ($(eNB_flag),1)
+    export rrc_cellular_eNB=1
+  endif
+  ifeq ($(UE_flag),1)
+    export rrc_cellular_UE=1
+  endif
+endif
+
+all: openair_rf_cbmimo1_softmodem.ko asn1_msg_kern.ko nasmesh.ko rb_tool openair_rf scope
 
 openair_rf_cbmimo1_softmodem.ko:  
 	(cd $(OPENAIR1_DIR)/ARCH/CBMIMO1/DEVICE_DRIVER && $(MAKE) -C /usr/src/linux V=1 M=`pwd` RTAI=1 CBMIMO1=1 && mv openair_rf.ko openair_rf_softmodem.ko)
@@ -34,7 +53,10 @@ rb_tool:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
 
 openair_rf:
-	(cd $(OPENAIR1_DIR)/USERSPACE_TOOLS/OPENAIR_RF && $(MAKE) clean CBMIMO1=1 && $(MAKE) CBMIMO1=1 && $(MAKE) clean CBMIMO1=1)
+	(cd $(OPENAIR1_DIR)/USERSPACE_TOOLS/OPENAIR_RF && $(MAKE) clean CBMIMO1=1 && $(MAKE) all CBMIMO1=1 && $(MAKE) clean CBMIMO1=1)
+
+scope:
+	(cd $(OPENAIR1_DIR)/USERSPACE_TOOLS/SCOPE && $(MAKE) clean && $(MAKE) all && $(MAKE) clean )	
 
 #Remove all but source files
 cleanall: 
