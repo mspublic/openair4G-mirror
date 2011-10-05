@@ -19,7 +19,11 @@
 #define DLSCH_RB_ALLOC_6 0x0999  // skip DC RB (total 6/25 RBs)
 
 
-#define Pre_Processing 1   /// Pre processing for MU-MIMO
+
+//#define Pre_Processing 1   /// Pre processing for MU-MIMO
+
+//#define FULL_BUFFER 1      /// Fill BUffer for UEs
+
 
 
 //static char eNB_generate_rar     = 0;  // flag to indicate start of RA procedure
@@ -588,6 +592,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
       msg("long sdu\n");
     }
   }
+
 
   //  printf("last_size %d,mac_header_ptr %p\n",last_size,mac_header_ptr);
   /*
@@ -3336,7 +3341,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
-    msg("Got harq_pid %d, round %d\n",harq_pid,round);
+    printf("Got harq_pid %d, round %d\n",harq_pid,round);
 	  
     // Note this code is for a specific DCI format
     DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
@@ -3406,6 +3411,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    
       // check first for RLC data on DCCH
       header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
+
 #ifdef DEBUG_eNB_SCHEDULER
       msg("[MAC][eNB %d] Requesting %d bytes from RLC (mcs %d, nb_available_rb %d)\n",Mod_id,TBS-header_len_dcch,
 	  eNB_UE_stats->DL_cqi[0],nb_available_rb);

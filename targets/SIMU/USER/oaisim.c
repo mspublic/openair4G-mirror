@@ -325,10 +325,6 @@ main (int argc, char **argv)
 	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
 	exit(-1);
       }
-      if ((oai_emulation.info.transmission_mode != 1) &&  (oai_emulation.info.transmission_mode != 2) && (oai_emulation.info.transmission_mode != 5) && (oai_emulation.info.transmission_mode != 6)) {
-	msg("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode);
-	exit(-1);
-      }
       break;
     case 'm':
       target_dl_mcs = atoi (optarg);
@@ -471,6 +467,7 @@ main (int argc, char **argv)
     }
   }				// ethernet flag
 
+
   NB_UE_INST = oai_emulation.info.nb_ue_local + oai_emulation.info.nb_ue_remote;
   NB_eNB_INST = oai_emulation.info.nb_enb_local + oai_emulation.info.nb_enb_remote;
 
@@ -556,6 +553,7 @@ main (int argc, char **argv)
   openair_daq_vars.rx_rf_mode = 1;
   openair_daq_vars.tdd = 1;
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+
   openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode;
   transmission_mode_rrc = oai_emulation.info.transmission_mode;//FIXME!!!
 
