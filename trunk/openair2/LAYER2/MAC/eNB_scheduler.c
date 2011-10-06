@@ -20,7 +20,7 @@
 
 
 
-//#define Pre_Processing 1   /// Pre processing for MU-MIMO
+#define Pre_Processing 1   /// Pre processing for MU-MIMO
 
 //#define FULL_BUFFER 1      /// Fill BUffer for UEs
 
@@ -3404,11 +3404,14 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       }
     }
     else {  // This is a potentially new SDU opportunity
-	    
-	    // Now check RLC information to compute number of required RBs
-	    // get maximum TBS size for RLC request
+      
+      // calculate mcs
+
+
+      // Now check RLC information to compute number of required RBs
+      // get maximum TBS size for RLC request
       TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_available_rb);
-	    
+      
       // check first for RLC data on DCCH
       header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
 

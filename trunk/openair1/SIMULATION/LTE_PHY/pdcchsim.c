@@ -383,6 +383,8 @@ int main(int argc, char **argv) {
 	printf("                          12 - format2_2A_M10PRB,\n");
 	printf("                          13 - format2_4A_L10PRB,\n");
 	printf("                          14 - format2_4A_M10PRB\n");  
+	printf("                          15 - format2_2D_M10PRB\n");  
+	printf("                          16 - format2_2D_L10PRB\n");  
 	printf("-O Oversampling factor\n");
 	printf("-I Cell Id\n");
 	printf("-F Input sample stream\n");
@@ -477,6 +479,19 @@ int main(int argc, char **argv) {
     dci_length = sizeof_DCI2_5MHz_4A_M10PRB_TDD_t;
     dci_length_bytes = sizeof(DCI2_5MHz_4A_M10PRB_TDD_t);
     break;
+  case 15:
+    dlsch_pdu = (void*) &DLSCH_alloc_pdu2D;
+    format     = format2_2D_M10PRB;
+    dci_length = sizeof_DCI2_5MHz_2D_M10PRB_TDD_t;
+    dci_length_bytes = sizeof(DCI2_5MHz_2D_M10PRB_TDD_t);
+    break;
+    /*
+  case 16:
+    format     = format2_2D_L10PRB;
+    dci_length = sizeof_DCI2_5MHz_2D_L10PRB_TDD_t;
+    dci_length_bytes = sizeof(DCI2_5MHz_2D_L10PRB_TDD_t);
+    break;
+    */
   default:
     break;
   }

@@ -180,7 +180,7 @@ typedef struct
 
 } PHY_VARS_eNB;
 
-#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) msg
+#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 //#define debug_msg msg
 
 /// Top-level PHY Data Structure for UE 

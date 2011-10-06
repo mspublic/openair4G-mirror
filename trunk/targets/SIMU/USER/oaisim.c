@@ -720,12 +720,11 @@ main (int argc, char **argv)
 	phy_procedures_eNB_lte (last_slot, next_slot, PHY_vars_eNB_g[eNB_id], abstraction_flag);
 
 #ifndef NAS_NETLINK
-
-	if ((mac_xface->frame % 10) == 0) {
+	//if ((mac_xface->frame % 10) == 0) {
 	  len = dump_eNB_stats (PHY_vars_eNB_g[eNB_id], stats_buffer, 0);
 	  rewind (eNB_stats);
 	  fwrite (stats_buffer, 1, len, eNB_stats);
-	}
+	  //}
 #endif
       }
       emu_transport (frame, last_slot, next_slot, direction, ethernet_flag);
@@ -746,11 +745,11 @@ main (int argc, char **argv)
 	    if (mac_xface->frame>0) {
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 #ifndef NAS_NETLINK
-	      if ((mac_xface->frame % 10) == 0) {
+	      //if ((mac_xface->frame % 10) == 0) {
 		len = dump_ue_stats (PHY_vars_UE_g[UE_id], stats_buffer, 0);
 		rewind (UE_stats[UE_id]);
 		fwrite (stats_buffer, 1, len, UE_stats[UE_id]);
-	      }
+		//}
 #endif
 	    }
 	  }
