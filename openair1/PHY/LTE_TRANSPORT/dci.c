@@ -2636,6 +2636,67 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap1,
 			  &CCEmap2);
 #endif
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 1
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 2
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 4
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
   return(dci_cnt);
 }
 

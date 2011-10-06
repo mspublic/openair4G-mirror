@@ -3,8 +3,6 @@
 
 
 typedef enum {
-  wideband_cqi,
-  hlc_cqi,
   ue_selected,
   wideband_cqi_rank1_2A, //wideband_cqi_rank1_2A,
   wideband_cqi_rank2_2A, //wideband_cqi_rank2_2A,

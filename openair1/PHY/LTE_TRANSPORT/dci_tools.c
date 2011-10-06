@@ -132,7 +132,7 @@ u8 get_transmission_mode(u16 Mod_id, u16 rnti) {
   unsigned char UE_id;
 
   // find the UE_index corresponding to rnti
-  UE_id = find_ue(rnti,&PHY_vars_eNB_g[Mod_id]);
+  UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id]);
 
   return(PHY_vars_eNB_g[Mod_id]->transmission_mode[UE_id]);
 }
@@ -1280,24 +1280,20 @@ u16 quantize_wideband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
   return(pmivect);
 }
 
+u8 sinr2cqi(int sinr) {
+  if (sinr<-3)
+    return(0);
+  if (sinr>14)
+    return(10);
+  else
+    return(3+(sinr>>1));
+}
+
 //u8 sinr2cqi(int sinr) {
 //
-//
-//
-//	if (sinr<-3)
-//		return(0);
-//	if (sinr>14)
-//		return(10);
-//	else
-//		return(3+(sinr>>1));
+//  return(sinr+4.5);
 //
 //}
-
-u8 sinr2cqi(int sinr) {
-
-  return(sinr+4.5);
-
-}
 
 //u32 fill_subband_cqi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
 //
