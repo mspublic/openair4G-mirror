@@ -203,7 +203,7 @@ u8 mac_rrc_lite_data_ind(u8 Mod_id, u8 CC_id,u16 Srb_id, char *Sdu, unsigned sho
 	msg("\n");
 	memcpy(Srb_info->Rx_buffer.Payload,Sdu,Sdu_len);
 	Srb_info->Rx_buffer.payload_size = Sdu_len;
-	rrc_ue_decode_ccch(Mod_id,CC_id,Srb_info,eNB_index);
+	rrc_ue_decode_ccch(Mod_id,Srb_info,eNB_index);
 
       }
 
@@ -214,7 +214,7 @@ u8 mac_rrc_lite_data_ind(u8 Mod_id, u8 CC_id,u16 Srb_id, char *Sdu, unsigned sho
     Srb_info = &eNB_rrc_inst[Mod_id].Srb0;
     //    msg("\n***********************************INST %d Srb_info %p, Srb_id=%d**********************************\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     memcpy(Srb_info->Rx_buffer.Payload,Sdu,6);
-    rrc_eNB_decode_ccch(Mod_id,Srb_info);
+    rrc_eNB_decode_ccch(Mod_id,CC_id,Srb_info);
  }
   //  return Nb_tb;
   
@@ -241,7 +241,7 @@ void rlcrrc_lite_data_ind( unsigned char Mod_id, u8 CC_id,u32 Srb_id, u32 sdu_si
 
   else
 
-    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,CC_id,DCCH_index,Buffer,UE_index);
+    rrc_ue_decode_dcch(Mod_id-NB_eNB_INST,DCCH_index,Buffer,UE_index);
 
   
 } 

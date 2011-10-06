@@ -233,7 +233,7 @@ void rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id, u8 Srb_id, u8 UE_index, u8 *Rx_sdu
 
 
 /*------------------------------------------------------------------------------*/
-void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
+void rrc_eNB_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info){
   /*------------------------------------------------------------------------------*/
 
   u16 Idx,UE_index;
@@ -314,7 +314,7 @@ void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info){
 	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 	memcpy(&eNB_rrc_inst[Mod_id].Srb2[UE_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
-	rrc_eNB_generate_RRCConnectionSetup(Mod_id,UE_index);
+	rrc_eNB_generate_RRCConnectionSetup(Mod_id,CC_id,UE_index);
 
 	msg("[OPENAIR][RRC] RLC AM allocation index@0 is %d\n",rlc[Mod_id].m_rlc_am_array[0].allocation);
 	msg("[OPENAIR][RRC] RLC AM allocation index@1 is %d\n",rlc[Mod_id].m_rlc_am_array[1].allocation);
@@ -490,7 +490,7 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 CC_id,u8 
   }
 }
 
-void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
+void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u8 CC_id,u16 UE_index) {
 
 
   eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.payload_size = do_RRCConnectionSetup((u8 *)eNB_rrc_inst[Mod_id].Srb0.Tx_buffer.Payload,
@@ -507,14 +507,14 @@ void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index) {
 }
 
 
-void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
+void ue_rrc_process_rrcConnectionReconfiguration(u8 Mod_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 CH_index) {
 
   if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
 
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,CH_index,
+      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CH_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
 

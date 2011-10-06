@@ -146,7 +146,7 @@ void rrc_ue_generate_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 eNB_index
 
 
 /*------------------------------------------------------------------------------*/
-void rrc_ue_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info, u8 eNB_index){
+void rrc_ue_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info, u8 eNB_index){
   /*------------------------------------------------------------------------------*/
 
   DL_CCCH_Message_t dlccchmsg;
@@ -193,7 +193,7 @@ void rrc_ue_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info, u8 eNB_index){
 	// Get configuration
 
 
-	rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,eNB_index,
+	rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
 						    &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated);
 
 	rrc_ue_generate_RRCConnectionSetupComplete(Mod_id,eNB_index);
@@ -314,7 +314,7 @@ void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig){
   }
 }
 
-void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index,
+void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 eNB_index,
 						    RadioResourceConfigDedicated_t *radioResourceConfigDedicated) {
 
   long SRB_id,DRB_id;
@@ -383,7 +383,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index
 	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
 	  }
 	  
-	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,0,eNB_index,
 					    (RadioResourceConfigCommonSIB_t *)NULL,
 					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -417,7 +417,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index
 	    SRB2_logicalChannelConfig = &SRB2_logicalChannelConfig_defaultValue;
 	  }
 	  
-	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
+	  Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,0,eNB_index,
 					    (RadioResourceConfigCommonSIB_t *)NULL,
 					    UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					    UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -446,7 +446,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index
 
 	ret = rrc_ue_establish_drb(Mod_id,eNB_index,radioResourceConfigDedicated->drb_ToAddModList->list.array[i]);
 	// MAC/PHY Configuration
-	Mac_rlc_xface->rrc_mac_config_req(Mod_id,CC_id,0,0,eNB_index,
+	Mac_rlc_xface->rrc_mac_config_req(Mod_id,0,0,0,eNB_index,
 					  (RadioResourceConfigCommonSIB_t *)NULL,
 					  UE_rrc_inst[Mod_id].physicalConfigDedicated[eNB_index],
 					  UE_rrc_inst[Mod_id].mac_MainConfig[eNB_index],
@@ -467,7 +467,7 @@ void	rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 eNB_index
 }
   
 
-void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
+void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
@@ -479,7 +479,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
 
     }
     if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-      rrc_ue_process_radioResourceConfigDedicated(Mod_id,CC_id,eNB_index,
+      rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
 						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
 
 
@@ -490,7 +490,7 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,u8 CC_id,
 }
   
 /*------------------------------------------------------------------------------------------*/
-void  rrc_ue_decode_dcch(u8 Mod_id,u8 CC_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
+void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/
 
   DL_DCCH_Message_t dldcchmsg;
@@ -539,7 +539,7 @@ void  rrc_ue_decode_dcch(u8 Mod_id,u8 CC_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
 
 	msg("[RRC][UE] Frame %d: Processing RRCConnectionReconfiguration from eNB %d\n",
 	    Mac_rlc_xface->frame,eNB_index);
-	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,CC_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
+	rrc_ue_process_rrcConnectionReconfiguration(Mod_id,&dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration,eNB_index);
 	rrc_ue_generate_RRCConnectionReconfigurationComplete(Mod_id,eNB_index);
 	break;
       case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:

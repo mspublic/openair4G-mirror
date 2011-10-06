@@ -106,7 +106,7 @@ void phy_config_sib1_eNB(u8 Mod_id,u8 CC_id,
 @param tdd_Config TDD UL/DL and S-subframe configurations
 @param SIwindowsize Size of a SI window in frames where repetitions of a unique System Information message block is repeated 
 @param SIperiod Periodicity of System Information Messages (in multiples of a frame)*/
-void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
+void phy_config_sib1_ue(u8 Mod_id,u8 CH_index,
 			TDD_Config_t *tdd_Config,
 			u8 SIwindowsize,
 			u16 SIperiod);
@@ -120,7 +120,7 @@ void phy_config_sib1_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
   @param CH_index Index of CH to which UE is connected
   @param radioResourceConfigCommon Radio Configuration from SIB2
 */
-void phy_config_sib2_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
+void phy_config_sib2_ue(u8 Mod_id,u8 CH_index,
 			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon);
 
 /*!
@@ -143,7 +143,7 @@ void phy_config_sib2_eNB(u8 Mod_id,u8 CC_id,
 @param physicalConfigDedicated PHY Configuration information
 
 */
-void phy_config_dedicated_ue(u8 Mod_id,u8 CC_id,u8 CH_index,
+void phy_config_dedicated_ue(u8 Mod_id,u8 CH_index,
 			    struct PhysicalConfigDedicated *physicalConfigDedicated);
 
 /*!
