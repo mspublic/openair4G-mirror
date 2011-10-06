@@ -2203,7 +2203,7 @@ u16 get_nquad(u8 num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,u8 mi) {
 u16 get_nCCE_max(u8 Mod_id,u8 CC_id) {
 
   // check for eNB only !
-  return(get_nCCE(3,&PHY_vars_eNB_g[Mod_id][0]->lte_frame_parms,1)); // 5, 15,21
+  return(get_nCCE(3,&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,1)); // 5, 15,21
 }
 
 void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,u8 subframe,

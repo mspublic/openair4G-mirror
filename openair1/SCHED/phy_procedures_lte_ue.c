@@ -157,7 +157,7 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 subframe) {
 }
 #endif
 
-UE_MODE_t get_ue_mode(u8 Mod_id,u8 CC_id,u8 eNB_index) {
+UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index) {
 
   return(PHY_vars_UE_g[Mod_id]->UE_mode[eNB_index]);
 

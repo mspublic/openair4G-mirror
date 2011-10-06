@@ -36,7 +36,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CC_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     if (eNB_flag==1)
       mac_xface->phy_config_sib1_eNB(Mod_id,CC_id,tdd_Config,*SIwindowsize,*SIperiod);
     else
-      mac_xface->phy_config_sib1_ue(Mod_id,CC_id,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
+      mac_xface->phy_config_sib1_ue(Mod_id,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
   } 
 
   if (radioResourceConfigCommon) {
@@ -65,7 +65,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CC_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       mac_xface->phy_config_sib2_eNB(Mod_id,CC_id,radioResourceConfigCommon);
     }
     else
-      mac_xface->phy_config_sib2_ue(Mod_id,CC_id,eNB_index,radioResourceConfigCommon);
+      mac_xface->phy_config_sib2_ue(Mod_id,eNB_index,radioResourceConfigCommon);
 
   }
   
@@ -105,7 +105,7 @@ int rrc_mac_config_req(u8 Mod_id,u8 CC_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
     if (eNB_flag==1)
       mac_xface->phy_config_dedicated_eNB(Mod_id,CC_id,find_UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
     else{
-      mac_xface->phy_config_dedicated_ue(Mod_id,CC_id,eNB_index,physicalConfigDedicated);
+      mac_xface->phy_config_dedicated_ue(Mod_id,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }

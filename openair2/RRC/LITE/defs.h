@@ -221,14 +221,14 @@ void openair_rrc_on(u8 Mod_id);
     \param Mod_id Instance ID of UE
     \param Srb_info Pointer to SRB_INFO structure (SRB0)
     \param CH_index Index of corresponding eNB/CH*/
-void rrc_ue_decode_ccch(u8 Mod_id, u8 CC_id,SRB_INFO *Srb_info,u8 CH_index);
+void rrc_ue_decode_ccch(u8 Mod_id,SRB_INFO *Srb_info,u8 CH_index);
 
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param Mod_id Instance ID of UE
     \param Srb_id Index of Srb (1,2)
     \param Buffer Pointer to received SDU
     \param CH_index Index of corresponding CH/eNB*/
-void rrc_ue_decode_dcch(u8 Mod_id, u8 CC_id,u8 Srb_id, u8* Buffer,u8 CH_index);
+void rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8* Buffer,u8 CH_index);
 
 /** \brief Generate/Encodes RRCConnnectionRequest message at UE 
     \param Mod_id Instance ID of UE
@@ -272,7 +272,7 @@ void	rrc_ue_process_measConfig(u8 Mod_id,u8 eNB_index,MeasConfig_t *measConfig);
     \param Mod_id Instance of UE on which to act
     \param CH_index Index of corresponding CH/eNB
     \param radioResourceConfigDedicated Pointer to RadioResourceConfigDedicated IE from configuration*/
-void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 CH_index,
+void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CH_index,
 						 RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
 
 // eNB/CH RRC Procedures
@@ -280,7 +280,7 @@ void rrc_ue_process_radioResourceConfigDedicated(u8 Mod_id,u8 CC_id,u8 CH_index,
 /**\brief Entry routine to decode a UL-CCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
    \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
-void rrc_eNB_decode_ccch(u8 Mod_id, SRB_INFO *Srb_info);
+void rrc_eNB_decode_ccch(u8 Mod_id,u8 CC_id, SRB_INFO *Srb_info);
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param Mod_id Instance ID for CH/eNB
@@ -292,7 +292,7 @@ void rrc_eNB_decode_dcch(u8 Mod_id, u8 CC_id,u8 Srb_id, u8 UE_index, u8 *Rx_sdu,
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param Mod_id Instance ID for eNB/CH
    \param UE_index Index of UE receiving the message*/
-void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u16 UE_index);
+void rrc_eNB_generate_RRCConnectionSetup(u8 Mod_id,u8 CC_id,u16 UE_index);
 
 /**\brief Process the RRCConnectionSetupComplete based on information coming from UE
    \param Mod_id Instance ID for eNB/CH

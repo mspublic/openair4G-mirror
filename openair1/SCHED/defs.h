@@ -345,7 +345,7 @@ void process_HARQ_feedback(u8 UE_id,
   @param eNB_index ID of eNB
   @returns UE mode
 */ 
-UE_MODE_t get_ue_mode(u8 Mod_id,u8 CC_id,u8 eNB_index);
+UE_MODE_t get_ue_mode(u8 Mod_id,u8 eNB_index);
 
 
 LTE_eNB_UE_stats* get_eNB_UE_stats(u8 Mod_id,u8 CC_id, u16 rnti);
