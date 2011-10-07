@@ -2637,6 +2637,7 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap2);
 #endif
 
+  old_dci_cnt=dci_cnt;
   // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 1
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  subframe,
@@ -2656,6 +2657,11 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
 
   // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 2
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2677,6 +2683,11 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap1,
 			  &CCEmap2);
 
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
   // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 4
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  subframe,
@@ -2696,6 +2707,11 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
 
   return(dci_cnt);
 }

@@ -915,6 +915,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
 
+    dlsch0->active = 1;
+    dlsch1->active = 1;
+
     break;
     /*  case format2_2D_L10PRB:
     msg("dci_tools.c: format2_2D_L10PRB not yet implemented\n");
@@ -1058,6 +1061,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
+
+    dlsch0->active = 1;
+    dlsch1->active = 1;
 
     break;
   default:

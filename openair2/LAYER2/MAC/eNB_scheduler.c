@@ -1524,7 +1524,8 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 	break;
       case 4:
 
-	if (nb_rb>10) {
+	//if (nb_rb>10) {
+	// DCI format 2_2A_M10PRB can also be used for less than 10 PRB (it refers to the system bandwidth)
 	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
 	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 	  add_ue_spec_dci(DCI_pdu,
@@ -1534,7 +1535,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 			  2,//aggregation,
 			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
 			  format2_2A_M10PRB);
-	}
+	  /*}
 	else {
 	  ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
 	  add_ue_spec_dci(DCI_pdu,
@@ -1544,10 +1545,9 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 			  2,//aggregation,
 			  sizeof_DCI2_5MHz_2A_L10PRB_TDD_t,
 			  format2_2A_L10PRB);
-	}
+			  }*/
 	break;
       case 5:
-	if (nb_rb>10) {
 	  for(x=0;x<7;x++){
 	    for(y=0;y<2;y++){
 	      z = 2*x +y;
@@ -1563,7 +1563,6 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 			  2,//aggregation,
 			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
 			  format2_2D_M10PRB);
-	}
 	break;
       }
 
@@ -3624,7 +3623,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  }
 	  break;
 	case 5:
-	  if(nb_rb >10){
+
 	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
 	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
@@ -3634,7 +3633,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 				    
 	    for(i=0;i<7;i++) // for indicating the rballoc for each sub-band
 	      eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_sub[harq_pid][i] = rballoc_sub[next_ue][i];
-	  }
+
 	  break;
 	case 6:
 	  break;
