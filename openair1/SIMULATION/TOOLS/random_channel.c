@@ -120,6 +120,12 @@ double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
 double default_amps_lin[] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
 double default_amp_lin[] = {1};
 
+struct complex R_sqrt_21_corr[2][2] = {{{0.70711,0}, {0.70711,0}}, {{0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully correlated 2x1 channel (h1==h2)
+struct complex R_sqrt_21_anticorr[2][2] = {{{0.70711,0}, {-0.70711,0}}, {{-0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
+struct complex *R_sqrt_21_ptr[2];
+struct complex **R_sqrt_21_ptr2;
+
+
 channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
 				     u8 nb_rx, 
 				     SCM_t channel_model, 
@@ -383,6 +389,68 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   default_amp_lin,
 				   NULL,
 				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+  case Rayleigh1_corr:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 10;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      if ((nb_tx==2) && (nb_rx==1)) {
+	R_sqrt_21_ptr[0] = R_sqrt_21_corr[0];
+	R_sqrt_21_ptr[1] = R_sqrt_21_corr[1]; 
+	R_sqrt_21_ptr2 = &R_sqrt_21_ptr[0];
+      }
+      else
+	R_sqrt_21_ptr2 = NULL;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_21_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB);
+  case Rayleigh1_anticorr:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 10;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      if ((nb_tx==2) && (nb_rx==1)) {
+	R_sqrt_21_ptr[0] = R_sqrt_21_anticorr[0];
+	R_sqrt_21_ptr[1] = R_sqrt_21_anticorr[1]; 
+	R_sqrt_21_ptr2 = &R_sqrt_21_ptr[0];
+      }
+      else
+	R_sqrt_21_ptr2 = NULL;
+
+      chan_desc = new_channel_desc(nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_21_ptr2,
 				   Td,
 				   BW,
 				   ricean_factor,
