@@ -29,7 +29,9 @@ rlc_um_init (rlc_um_entity_t *rlcP)
 {
 //-----------------------------------------------------------------------------
 
+  int saved_allocation = rlcP->allocation;
   memset (rlcP, 0, sizeof (rlc_um_entity_t));
+  rlcP->allocation = saved_allocation;
   // TX SIDE
   list_init (&rlcP->pdus_to_mac_layer, NULL);
 
