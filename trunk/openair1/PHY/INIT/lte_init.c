@@ -1039,8 +1039,8 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifdef USER_MODE
-	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16(NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
-	bzero(eNB_common_vars->txdataF[eNB_id][i],NUMBER_OF_USEFUL_CARRIERS*NUMBER_OF_SYMBOLS_PER_FRAME*sizeof(mod_sym_t));
+	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+	bzero(eNB_common_vars->txdataF[eNB_id][i],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 #else //USER_MODE
 #ifdef IFFT_FPGA
 	eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)TX_DMA_BUFFER[eNB_id][i];
@@ -1049,8 +1049,9 @@ int phy_init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 #endif //IFFT_FPGA
 #endif //USER_MODE
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p\n",
-	    eNB_id,i,eNB_common_vars->txdataF[eNB_id][i]);
+	msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
+	    eNB_id,i,eNB_common_vars->txdataF[eNB_id][i],
+	    FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 #endif
       }
 

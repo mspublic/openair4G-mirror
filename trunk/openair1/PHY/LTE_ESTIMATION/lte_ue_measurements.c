@@ -135,7 +135,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       for (eNB_id=0;eNB_id<NUMBER_OF_eNB_MAX;eNB_id++) {
 	
 	phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx] = 
-	  (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aatx<<1 + aarx][8],(frame_parms->N_RB_DL*12)-8)*rx_power_correction) - 
+	  (signal_energy_nodc(&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][(aatx<<1) + aarx][8],(frame_parms->N_RB_DL*12)-8)*rx_power_correction) - 
 	  phy_vars_ue->PHY_measurements.n0_power[aarx];
 	
 	if (phy_vars_ue->PHY_measurements.rx_spatial_power[eNB_id][aatx][aarx]<0)
