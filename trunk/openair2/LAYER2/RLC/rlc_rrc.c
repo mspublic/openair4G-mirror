@@ -53,22 +53,22 @@ rlc_op_status_t rrc_rlc_remove_rlc   (module_id_t module_idP, rb_id_t rb_idP) {
   rlc_op_status_t status;
   switch (rlc_mode) {
   case RLC_AM:
-   msg("[RLC-AM][MOD_id %d] RELEASE RAB %d \n",module_idP,rb_idP);
+      msg("[RLC_RRC][MOD_id %d] RELEASE RAB AM %d \n",module_idP,rb_idP);
     status = rb_release_rlc_am(&rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
     rlc[module_idP].m_rlc_am_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
         break;
   case RLC_TM:
-  msg("[RLC-TM][MOD_id %d] RELEASE RAB %d \n",module_idP,rb_idP);
+      msg("[RLC_RRC][MOD_id %d] RELEASE RAB TM %d \n",module_idP,rb_idP);
     status = rb_release_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
     rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
     break;
   case RLC_UM:
-  msg("[RLC-UM][MOD_id %d] RELEASE RAB %d \n",module_idP,rb_idP);
+      msg("[RLC_RRC][MOD_id %d] RELEASE RAB UM %d \n",module_idP,rb_idP);
     status = rb_release_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index], module_idP);
     rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index].allocation = 0;
     break;
   default:
-    msg("[RLC][MOD_id %d] RELEASE RAB %d RLC_MODE %d INDEX %d\n",module_idP,rb_idP,rlc_mode, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index);
+      msg("[RLC_RRC][MOD_id %d] RELEASE RAB %d RLC_MODE %d INDEX %d\n",module_idP,rb_idP,rlc_mode, rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index);
     mac_xface->macphy_exit("[RLC]REMOVE RB ERROR: UNKNOWN RLC MODE");
     return RLC_OP_STATUS_BAD_PARAMETER;
     break;
@@ -118,10 +118,10 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
                     rlc[module_idP].m_rlc_tm_array[index].allocation = 1;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index  = index;
                     rlc[module_idP].m_rlc_pointer[rb_idP].rlc_type   = rlc_modeP;
-               //     msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB TM INDEX IS %d\n", module_idP, rb_idP, index);
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB TM INDEX IS %d\n", module_idP, rb_idP, index);
                     return RLC_OP_STATUS_OK;
                 } else {
-             //       msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB TM INDEX %d IS ALLOCATED\n", module_idP, rb_idP, index);
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] ADD RB TM INDEX %d IS ALLOCATED\n", module_idP, rb_idP, index);
                 }
             break;
             case RLC_UM:
@@ -142,7 +142,7 @@ rlc_op_status_t rrc_rlc_add_rlc   (module_id_t module_idP, rb_id_t rb_idP, rlc_m
               return RLC_OP_STATUS_BAD_PARAMETER;
         }
     }
-    msg("[rlc][ADD_RB] Out of Ressources\n");
+    msg("[RLC_RRC][ADD_RB] Out of Ressources\n");
     mac_xface->macphy_exit("");
 
     return RLC_OP_STATUS_OUT_OF_RESSOURCES;
@@ -170,12 +170,14 @@ rlc_op_status_t rrc_rlc_config_req   (module_id_t module_idP, config_action_t ac
                                     rb_idP, rb_typeP);
                     break;
                 case RLC_UM:
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] MODIFY RB UM\n", module_idP, rb_idP);
                     config_req_rlc_um(&rlc[module_idP].m_rlc_um_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
                                     module_idP,
                                     &rlc_infoP.rlc.rlc_um_info,
                                     rb_idP, rb_typeP);
                     break;
                 case RLC_TM:
+                    msg ("[RLC_RRC][MOD ID %d][RB %d] MODIFY RB TM\n", module_idP, rb_idP);
                     config_req_rlc_tm(&rlc[module_idP].m_rlc_tm_array[rlc[module_idP].m_rlc_pointer[rb_idP].rlc_index],
                                     module_idP,
                                     &rlc_infoP.rlc.rlc_tm_info,
