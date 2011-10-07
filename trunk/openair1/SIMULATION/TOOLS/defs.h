@@ -127,6 +127,8 @@ typedef enum {
   ETU,
   Rayleigh8,
   Rayleigh1,
+  Rayleigh1_corr,
+  Rayleigh1_anticorr,
   Rice8,
   Rice1,
 } SCM_t;
