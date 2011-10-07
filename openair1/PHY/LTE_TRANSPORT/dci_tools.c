@@ -856,6 +856,7 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
     case 5:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING0;
       // pmi stored from ulsch allocation routine
+      //msg("using PMI %x\n",pmi2hex_2Ar1(dlsch0->pmi_alloc));
       break;
     case 6:
       dlsch0->harq_processes[harq_pid]->mimo_mode   = PUSCH_PRECODING1;
@@ -1209,6 +1210,7 @@ u16 quantize_subband_pmi(PHY_MEASUREMENTS *meas,u8 eNB_id) {
     }
     else {
       // This needs to be done properly!!!
+      msg("PMI feedback for rank>1 not supported!\n");
       pmivect = 0;
     }
   }

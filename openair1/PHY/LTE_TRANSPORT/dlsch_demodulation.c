@@ -2570,7 +2570,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u16 coded_bits_per_codeword)
   char fname[32],vname[32];
 
   sprintf(fname,"dlsch%d_rxF_ext0.m",eNB_id);
-  sprintf(vname,"dl%d_rxF_ext0.m",eNB_id);
+  sprintf(vname,"dl%d_rxF_ext0",eNB_id);
   write_output(fname,vname,phy_vars_ue->lte_ue_dlsch_vars[eNB_id]->rxdataF_ext[0],300*nsymb,1,1);
   sprintf(fname,"dlsch%d_ch_ext00.m",eNB_id);
   sprintf(vname,"dl%d_ch_ext00",eNB_id);
