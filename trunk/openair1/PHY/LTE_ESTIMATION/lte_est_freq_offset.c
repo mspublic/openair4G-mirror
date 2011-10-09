@@ -10,7 +10,7 @@
 __m128i avg128F;
 
 //compute average channel_level on each (TX,RX) antenna pair
-int dl_channel_level(int *dl_ch,
+int dl_channel_level(short *dl_ch,
 		     LTE_DL_FRAME_PARMS *frame_parms) {
 
   short rb;

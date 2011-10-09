@@ -481,9 +481,9 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	debug_msg("[PHY][UE %d] Frame %d, slot %d: Generating SRS\n",phy_vars_ue->Mod_id,mac_xface->frame,next_slot);
 #endif
 #ifdef OFDMA_ULSCH
-	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated,phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
+	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id],phy_vars_ue->lte_ue_common_vars.txdataF[0],AMP,next_slot>>1);
 #else
-	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated,phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[12],next_slot>>1);
+	generate_srs_tx(&phy_vars_ue->lte_frame_parms,&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id],phy_vars_ue->lte_ue_common_vars.txdataF[0],scfdma_amps[12],next_slot>>1);
 #endif
       }
     }
@@ -683,7 +683,7 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 			 &phy_vars_ue->lte_frame_parms,
 			 phy_vars_ue->ncs_cell,
 			 format,
-			 &phy_vars_ue->pucch_config_dedicated,
+			 &phy_vars_ue->pucch_config_dedicated[eNB_id],
 			 n1_pucch,
 			 0,  // n2_pucch
 			 1,  // shortened format
