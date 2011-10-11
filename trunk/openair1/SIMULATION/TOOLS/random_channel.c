@@ -326,6 +326,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       }
     }
     break;
+
   case Rayleigh8:
       nb_taps = 8;
       Td = 0.8;
@@ -350,6 +351,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_offset, 
 				   path_loss_dB);
       break;
+
   case Rice8:
       nb_taps = 8;
       Td = 0.8;
@@ -374,6 +376,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_offset, 
 				   path_loss_dB);
       break;
+
   case Rayleigh1:
       nb_taps = 1;
       Td = 0;
@@ -397,6 +400,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   maxDoppler,
 				   channel_offset, 
 				   path_loss_dB);
+      break;
+
   case Rayleigh1_corr:
       nb_taps = 1;
       Td = 0;
@@ -428,6 +433,8 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   maxDoppler,
 				   channel_offset, 
 				   path_loss_dB);
+      break;
+
   case Rayleigh1_anticorr:
       nb_taps = 1;
       Td = 0;
@@ -460,6 +467,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_offset, 
 				   path_loss_dB);
       break;
+
   case Rice1:
       nb_taps = 1;
       Td = 0;
