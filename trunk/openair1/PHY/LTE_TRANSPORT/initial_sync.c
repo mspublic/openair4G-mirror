@@ -21,12 +21,10 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue) {
 	     0);
   }
   
-  
   lte_ue_measurements(phy_vars_ue,
 		      phy_vars_ue->rx_offset,
 		      0,
 		      0);
-  
 
 	msg("[PHY][UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
 		  phy_vars_ue->Mod_id,
@@ -353,6 +351,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     msg("[PHY][UE%d] Initial sync: Found Cell ID %d for TDD Extended Prefix, rx_offset %d,sync_pos %d, sync_pos_slot %d\n",phy_vars_ue->Mod_id,Nid_cell_tdd_ecp,phy_vars_ue->rx_offset,sync_pos,sync_pos_slot);
 
   }
+
   msg("[PHY][UE%d] Initial sync: (max_metric %d, metric_tdd_ecp %d)\n", phy_vars_ue->Mod_id, max_metric, metric_tdd_ecp);
   // Now do PBCH detection
   ret = pbch_detection(phy_vars_ue);
@@ -362,6 +361,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue) {
     //mac_resynch();
     mac_xface->chbch_phy_sync_success(phy_vars_ue->Mod_id,0);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
+
+    generate_pcfich_reg_mapping(frame_parms);
+    generate_phich_reg_mapping(frame_parms);
+    
     phy_vars_ue->UE_mode[0] = PRACH;
   }
 
