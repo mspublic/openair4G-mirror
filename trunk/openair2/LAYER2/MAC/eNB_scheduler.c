@@ -20,7 +20,7 @@
 
 
 
-#define Pre_Processing 1   /// Pre processing for MU-MIMO
+//#define Pre_Processing 1   /// Pre processing for MU-MIMO
 
 //#define FULL_BUFFER 1      /// Fill BUffer for UEs
 
@@ -1526,46 +1526,46 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 
 	//if (nb_rb>10) {
 	// DCI format 2_2A_M10PRB can also be used for less than 10 PRB (it refers to the system bandwidth)
-	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
-	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
-	  add_ue_spec_dci(DCI_pdu,
-			  DLSCH_dci,
-			  rnti,
-			  sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
-			  2,//aggregation,
-			  sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
-			  format2_2A_M10PRB);
-	  /*}
-	else {
+	((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
+	((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
+	add_ue_spec_dci(DCI_pdu,
+			DLSCH_dci,
+			rnti,
+			sizeof(DCI2_5MHz_2A_M10PRB_TDD_t),
+			2,//aggregation,
+			sizeof_DCI2_5MHz_2A_M10PRB_TDD_t,
+			format2_2A_M10PRB);
+	/*}
+	  else {
 	  ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs(UE_id,nb_rb,&rballoc);
 	  add_ue_spec_dci(DCI_pdu,
-			  DLSCH_dci,
-			  rnti,
-			  sizeof(DCI2_5MHz_2A_L10PRB_TDD_t),
-			  2,//aggregation,
-			  sizeof_DCI2_5MHz_2A_L10PRB_TDD_t,
-			  format2_2A_L10PRB);
-			  }*/
+	  DLSCH_dci,
+	  rnti,
+	  sizeof(DCI2_5MHz_2A_L10PRB_TDD_t),
+	  2,//aggregation,
+	  sizeof_DCI2_5MHz_2A_L10PRB_TDD_t,
+	  format2_2A_L10PRB);
+	  }*/
 	break;
       case 5:
-	  for(x=0;x<7;x++){
-	    for(y=0;y<2;y++){
-	      z = 2*x +y;
-	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
-	    }
+	for(x=0;x<7;x++){
+	  for(y=0;y<2;y++){
+	    z = 2*x +y;
+	    rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
 	  }
-	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,&rballoc_sub);
-	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
-	  add_ue_spec_dci(DCI_pdu,
-			  DLSCH_dci,
-			  rnti,
-			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
-			  2,//aggregation,
-			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
-			  format2_2D_M10PRB);
+	}
+	((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,&rballoc_sub[0]);
+	((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
+	add_ue_spec_dci(DCI_pdu,
+			DLSCH_dci,
+			rnti,
+			sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			2,//aggregation,
+			sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			format2_2D_M10PRB);
 	break;
       }
-
+      
 #ifdef    DEBUG_PACKET_TRACE
 
       if((DLSCH_dci!=NULL)&&(DLSCH_dci!=0))
@@ -1599,8 +1599,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   unsigned char sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,rnti_temp,rnti_k[2][7];
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  unsigned char round,round_temp,round_k;
-  unsigned char harq_pid,harq_pid_temp,harq_pid_k;
+  unsigned char round=0,round_temp=0,round_k=0;
+  unsigned char harq_pid=0,harq_pid_temp=0,harq_pid_k=0;
   void *DLSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
   LTE_eNB_UE_stats* eNB_UE_stats_temp;
@@ -1610,19 +1610,21 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   unsigned char DAI;
   unsigned char k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
   unsigned char i0=0,i1=0,i2=0,i3=0,i4=0,i5=0,i6=0;
-  unsigned char dl_pow_off[256];
+  unsigned char dl_pow_off[2];
   u16 i,ii;
-  unsigned char rballoc_sub[256][7];
-  int pre_nb_available_rbs[256];
+  unsigned char rballoc_sub[2][7];
+  u16 pre_nb_available_rbs[2];
   
   
 
 #ifdef Pre_Processing
   
-  for(i=0;i<256;i++)
+  for(i=0;i<2;i++)
     {
-      dl_pow_off[i] = 1;
+      dl_pow_off[i] = 2;
       pre_nb_available_rbs[i] = 0;
+      for(ii=0;ii<7;ii++)
+	rballoc_sub[i][ii]=0;
     }
   
    
@@ -1631,6 +1633,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       for(ii=0;ii<7;ii++)
 	ue[i][ii] = 256;
     }
+  
 #endif
 
 
@@ -1675,9 +1678,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       // Get candidate harq_pid from PHY
       mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
       
-      
-      
-      DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
+  
+      DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid_temp];
      
       //msg ("Transmission Mode %d \n",mac_xface->get_transmission_mode(Mod_id,rnti));
       //msg("mode 5 \n");
@@ -1722,8 +1724,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  //msg("entering mode 5\n");
 		  //exit(0);
 		  
-		  if(((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)<<14)== 0x4000)
+		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 0 \n");
+		      //exit(-1);
+
 		      if(k0 == 1)
 			{
 			  rnti_k[0][0] = find_UE_RNTI(Mod_id,ue[0][0]);
@@ -1757,8 +1762,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		    }
 		  
 		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>2)<<14)== 0x4000)
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>2)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 1 \n");
+		      //exit(-1);
+
 		      if(k1 == 1)
 			{
 			  rnti_k[0][1] = find_UE_RNTI(Mod_id,ue[0][1]);
@@ -1790,9 +1798,12 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		    }
 		  
 		  
-		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>4)<<14)== 0x4000)
+	    
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>4)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 2 \n");
+		      //exit(-1);
+
 		      if(k2 == 1)
 			{
 			  rnti_k[0][2] = find_UE_RNTI(Mod_id,ue[0][2]);
@@ -1826,8 +1837,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  
 		  
 		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>6)<<14)== 0x4000)
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>6)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 3\n");
+		      //exit(-1);
+		      
 		      if(k3 == 1)
 			{
 			  rnti_k[0][3] = find_UE_RNTI(Mod_id,ue[0][3]);
@@ -1860,8 +1874,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  
 		  
 		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>8)<<14)== 0x4000)
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>8)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 4\n");
+		      //exit(-1);
+
 		      if(k4 == 1)
 			{
 			  rnti_k[0][4] = find_UE_RNTI(Mod_id,ue[0][4]);
@@ -1894,8 +1911,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  
 		  
 		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>10)<<14)== 0x4000)
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>10)<<14)&0xc000)== 0x4000)
 		    {
+		      msg("SUCCESS 5 \n");
+		      //exit(-1);
+
 		      if(k5 == 1)
 			{
 			  rnti_k[0][5] = find_UE_RNTI(Mod_id,ue[0][5]);
@@ -1928,8 +1948,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  
 		  
 		  
-		  if((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>12)<<14)== 0x4000)
+		  if(((((eNB_UE_stats_temp->DL_pmi_single^eNB_UE_stats->DL_pmi_single)>>12)<<14)&0xc000)== 0x4000)
 		    {
+		      msg ("SUCCESS 6 \n");
+		      //exit(-1);
+
 		      if(k6 == 1)
 			{
 			  rnti_k[0][6] = find_UE_RNTI(Mod_id,ue[0][6]);
@@ -1972,695 +1995,702 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     }
 
 
-  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
-  case 1:break;
-  case 2:break;
-  case 4:break;
-  case 5:
-    if(k0==1)
-      {
-	dl_pow_off[ue[0][0]] = 0;
-	dl_pow_off[ue[1][0]] = 0;
-	pre_nb_available_rbs[ue[0][0]] = 4;
-	pre_nb_available_rbs[ue[1][0]] = 4;
-	rballoc_sub[ue[0][0]][0] = 1;
-	rballoc_sub[ue[1][0]][0] = 1;
+  //switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+  //case 1:break;
+  //case 2:break;
+  //case 4:break;
+  //case 5:
+  if(k0==1)
+    {
+      dl_pow_off[ue[0][0]] = 0;
+      dl_pow_off[ue[1][0]] = 0;
+      pre_nb_available_rbs[ue[0][0]] = 4;
+      pre_nb_available_rbs[ue[1][0]] = 4;
+      rballoc_sub[ue[0][0]][0] = 1;
+      rballoc_sub[ue[1][0]][0] = 1;
 	      
-      }
+    }
 
-    if(k1==1)
-      {
-	dl_pow_off[ue[0][1]] = 0;
-	dl_pow_off[ue[1][1]] = 0;
-	if ((ue[0][1] == ue[0][0]) || (ue[0][1] == ue[1][0]))
-	  pre_nb_available_rbs[ue[0][1]] = 8;
-	else
-	  pre_nb_available_rbs[ue[0][1]] = 4;
-	if((ue[1][1] == ue[0][0]) || (ue[1][1] == ue[1][0]))
-	  pre_nb_available_rbs[ue[1][1]] = 8;
-	else
-	  pre_nb_available_rbs[ue[1][1]] = 4;
-	rballoc_sub[ue[0][1]][1] = 1;
-	rballoc_sub[ue[1][1]][1] = 1;
-      }
+  if(k1==1)
+    {
+      dl_pow_off[ue[0][1]] = 0;
+      dl_pow_off[ue[1][1]] = 0;
+      if ((ue[0][1] == ue[0][0]) || (ue[0][1] == ue[1][0]))
+	pre_nb_available_rbs[ue[0][1]] = 8;
+      else
+	pre_nb_available_rbs[ue[0][1]] = 4;
+      if((ue[1][1] == ue[0][0]) || (ue[1][1] == ue[1][0]))
+	pre_nb_available_rbs[ue[1][1]] = 8;
+      else
+	pre_nb_available_rbs[ue[1][1]] = 4;
+      rballoc_sub[ue[0][1]][1] = 1;
+      rballoc_sub[ue[1][1]][1] = 1;
+    }
 
 
-    if(k2 == 1)
-      {
-	dl_pow_off[ue[0][2]] = 0;
-	dl_pow_off[ue[1][2]] = 0;
+  if(k2 == 1)
+    {
+      dl_pow_off[ue[0][2]] = 0;
+      dl_pow_off[ue[1][2]] = 0;
 	      
-	if (((ue[0][2] == ue[0][0])|| (ue[0][2] == ue[1][0]))&&((ue[0][2] == ue[0][1])|| (ue[0][2] == ue[1][1])))
-	  pre_nb_available_rbs[ue[0][2]] = 12;
+      if (((ue[0][2] == ue[0][0])|| (ue[0][2] == ue[1][0]))&&((ue[0][2] == ue[0][1])|| (ue[0][2] == ue[1][1])))
+	pre_nb_available_rbs[ue[0][2]] = 12;
+      else
+	if((ue[0][2] == ue[0][0]) || (ue[0][2] == ue[1][0]) || (ue[0][2] == ue[0][1]) || (ue[0][2] == ue[1][1]))
+	  pre_nb_available_rbs[ue[0][2]] = 8;
 	else
-	  if((ue[0][2] == ue[0][0]) || (ue[0][2] == ue[1][0]) || (ue[0][2] == ue[0][1]) || (ue[0][2] == ue[1][1]))
-	    pre_nb_available_rbs[ue[0][2]] = 8;
-	  else
-	    pre_nb_available_rbs[ue[0][2]] = 4;
+	  pre_nb_available_rbs[ue[0][2]] = 4;
 	      
-	if (((ue[1][2] == ue[0][0])|| (ue[1][2] == ue[1][0]))&&((ue[1][2] == ue[0][1])|| (ue[1][2] == ue[1][1])))
-	  pre_nb_available_rbs[ue[1][2]] = 12;
+      if (((ue[1][2] == ue[0][0])|| (ue[1][2] == ue[1][0]))&&((ue[1][2] == ue[0][1])|| (ue[1][2] == ue[1][1])))
+	pre_nb_available_rbs[ue[1][2]] = 12;
+      else
+	if((ue[1][2] == ue[0][0]) || (ue[1][2] == ue[1][0]) || (ue[1][2] == ue[0][1]) || (ue[1][2] == ue[1][1]))
+	  pre_nb_available_rbs[ue[1][2]] = 8;
 	else
-	  if((ue[1][2] == ue[0][0]) || (ue[1][2] == ue[1][0]) || (ue[1][2] == ue[0][1]) || (ue[1][2] == ue[1][1]))
-	    pre_nb_available_rbs[ue[1][2]] = 8;
-	  else
-	    pre_nb_available_rbs[ue[1][2]] = 4;
-	rballoc_sub[ue[0][2]][2] = 1;
-	rballoc_sub[ue[1][2]][2] = 1;
-      }
+	  pre_nb_available_rbs[ue[1][2]] = 4;
+      rballoc_sub[ue[0][2]][2] = 1;
+      rballoc_sub[ue[1][2]][2] = 1;
+    }
 
-    if(k3 == 1)
-      {
-	dl_pow_off[ue[0][3]] = 0;
-	dl_pow_off[ue[1][3]] = 0;
+  if(k3 == 1)
+    {
+      dl_pow_off[ue[0][3]] = 0;
+      dl_pow_off[ue[1][3]] = 0;
 	      
-	if(((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0]))&&
-	   ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1]))&& 
-	   ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
-	  pre_nb_available_rbs[ue[0][3]] = 16;
+      if(((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0]))&&
+	 ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1]))&& 
+	 ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
+	pre_nb_available_rbs[ue[0][3]] = 16;
+      else
+	if(((ue[0][3] == ue[0][0]) || (ue[0][3] == ue[1][0]))&&
+	   ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1])))
+	  pre_nb_available_rbs[ue[0][3]] = 12;
 	else
 	  if(((ue[0][3] == ue[0][0]) || (ue[0][3] == ue[1][0]))&&
-	     ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1])))
+	     ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
 	    pre_nb_available_rbs[ue[0][3]] = 12;
 	  else
-	    if(((ue[0][3] == ue[0][0]) || (ue[0][3] == ue[1][0]))&&
+	    if(((ue[0][3] == ue[0][1]) || (ue[0][3] == ue[1][1]))&&
 	       ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
 	      pre_nb_available_rbs[ue[0][3]] = 12;
 	    else
-	      if(((ue[0][3] == ue[0][1]) || (ue[0][3] == ue[1][1]))&&
-		 ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
-		pre_nb_available_rbs[ue[0][3]] = 12;
+	      if((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0])|| 
+		 (ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1])|| 
+		 (ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2]))
+		pre_nb_available_rbs[ue[0][3]] = 8;
 	      else
-		if((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0])|| 
-		   (ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1])|| 
-		   (ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2]))
-		  pre_nb_available_rbs[ue[0][3]] = 8;
-		else
-		  pre_nb_available_rbs[ue[0][3]] = 4;
+		pre_nb_available_rbs[ue[0][3]] = 4;
 	      
-	if(((ue[1][3] == ue[0][0])|| (ue[1][3] == ue[1][0]))&&
-	   ((ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1]))&& 
-	   ((ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2])))
-	  pre_nb_available_rbs[ue[1][3]] = 16;
+      if(((ue[1][3] == ue[0][0])|| (ue[1][3] == ue[1][0]))&&
+	 ((ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1]))&& 
+	 ((ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2])))
+	pre_nb_available_rbs[ue[1][3]] = 16;
+      else
+	if(((ue[1][3] == ue[0][0]) || (ue[1][3] == ue[1][0]))&&
+	   ((ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1])))
+	  pre_nb_available_rbs[ue[1][3]] = 12;
 	else
 	  if(((ue[1][3] == ue[0][0]) || (ue[1][3] == ue[1][0]))&&
-	     ((ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1])))
+	     ((ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2])))
 	    pre_nb_available_rbs[ue[1][3]] = 12;
 	  else
-	    if(((ue[1][3] == ue[0][0]) || (ue[1][3] == ue[1][0]))&&
+	    if(((ue[1][3] == ue[0][1]) || (ue[1][3] == ue[1][1]))&&
 	       ((ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2])))
 	      pre_nb_available_rbs[ue[1][3]] = 12;
 	    else
-	      if(((ue[1][3] == ue[0][1]) || (ue[1][3] == ue[1][1]))&&
-		 ((ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2])))
-		pre_nb_available_rbs[ue[1][3]] = 12;
+	      if((ue[1][3] == ue[0][0])|| (ue[1][3] == ue[1][0])|| 
+		 (ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1])|| 
+		 (ue[1][3] == ue[0][2])|| (ue[1][3] == ue[1][2]))
+		pre_nb_available_rbs[ue[1][3]] = 8;
 	      else
-		if((ue[1][3] == ue[0][0])|| (ue[1][3] == ue[1][0])|| 
-		   (ue[1][3] == ue[0][1])|| (ue[1][3] == ue[1][1])|| 
-		   (ue[1][3] == ue[0][2])|| (ue[0][3] == ue[1][2]))
-		  pre_nb_available_rbs[ue[1][3]] = 8;
-		else
-		  pre_nb_available_rbs[ue[1][3]] = 4;
+		pre_nb_available_rbs[ue[1][3]] = 4;
 	      
-	rballoc_sub[ue[0][3]][3] = 1;
-	rballoc_sub[ue[1][3]][3] = 1;
-      }
+      rballoc_sub[ue[0][3]][3] = 1;
+      rballoc_sub[ue[1][3]][3] = 1;
+    }
 
-    if(k4 == 1)
-      {
-	dl_pow_off[ue[0][4]] = 0;
-	dl_pow_off[ue[1][4]] = 0;
+  if(k4 == 1)
+    {
+      dl_pow_off[ue[0][4]] = 0;
+      dl_pow_off[ue[1][4]] = 0;
 	      
+      if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
+	 ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
+	 ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
+	 ((ue[0][4] == ue[0][3])|| (ue[0][4] == ue[1][3])))
+	pre_nb_available_rbs[ue[0][4]] = 20;
+      else
 	if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
 	   ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
-	   ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
-	   ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3])))
-	  pre_nb_available_rbs[ue[0][4]] = 20;
+	   ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])))
+	  pre_nb_available_rbs[ue[0][4]] = 16;
 	else
 	  if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
 	     ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
-	     ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])))
+	     ((ue[0][4] == ue[0][3])|| (ue[0][4] == ue[1][3])))
 	    pre_nb_available_rbs[ue[0][4]] = 16;
 	  else
 	    if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
-	       ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
+	       ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
 	       ((ue[0][4] == ue[0][3])|| (ue[0][4] == ue[1][3])))
 	      pre_nb_available_rbs[ue[0][4]] = 16;
 	    else
-	      if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
+	      if(((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1]))&&
 		 ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
 		 ((ue[0][4] == ue[0][3])|| (ue[0][4] == ue[1][3])))
 		pre_nb_available_rbs[ue[0][4]] = 16;
 	      else
-		if(((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1]))&&
-		   ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
-		   ((ue[0][4] == ue[0][3])|| (ue[0][4] == ue[1][3])))
-		  pre_nb_available_rbs[ue[0][4]] = 16;
+		if((((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1]))) || 
+		   (((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]))) || 
+		   (((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))) || 
+		   (((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1])) && ((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]))) || 
+		   (((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))) || 
+		   (((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))))
+		  pre_nb_available_rbs[ue[0][4]] = 12;
 		else
-		  if((((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1]))) || 
-		     (((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]))) || 
-		     (((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))) || 
-		     (((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1])) && ((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]))) || 
-		     (((ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))) || 
-		     (((ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2])) && ((ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))))
-		    pre_nb_available_rbs[ue[0][4]] = 12;
+		  if((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0]) ||
+		     (ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1]) ||
+		     (ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]) ||
+		     (ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))
+		    pre_nb_available_rbs[ue[0][4]] = 8;
 		  else
-		    if((ue[0][4] == ue[0][0]) || (ue[0][4] == ue[1][0]) ||
-		       (ue[0][4] == ue[0][1]) || (ue[0][4] == ue[1][1]) ||
-		       (ue[0][4] == ue[0][2]) || (ue[0][4] == ue[1][2]) ||
-		       (ue[0][4] == ue[0][3]) || (ue[0][4] == ue[1][3]))
-		      pre_nb_available_rbs[ue[0][4]] = 8;
-		    else
-		      pre_nb_available_rbs[ue[0][4]] = 4;
+		    pre_nb_available_rbs[ue[0][4]] = 4;
 	      
+      if(((ue[1][4] == ue[0][0])|| (ue[1][4] == ue[1][0]))&&
+	 ((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1])) && 
+	 ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])) && 
+	 ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
+	pre_nb_available_rbs[ue[1][4]] = 20;
+      else
 	if(((ue[1][4] == ue[0][0])|| (ue[1][4] == ue[1][0]))&&
 	   ((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1])) && 
-	   ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])) && 
-	   ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
-	  pre_nb_available_rbs[ue[1][4]] = 20;
+	   ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])))
+	  pre_nb_available_rbs[ue[1][4]] = 16;
 	else
 	  if(((ue[1][4] == ue[0][0])|| (ue[1][4] == ue[1][0]))&&
 	     ((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1])) && 
-	     ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])))
+	     ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
 	    pre_nb_available_rbs[ue[1][4]] = 16;
 	  else
 	    if(((ue[1][4] == ue[0][0])|| (ue[1][4] == ue[1][0]))&&
-	       ((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1])) && 
+	       ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])) && 
 	       ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
 	      pre_nb_available_rbs[ue[1][4]] = 16;
 	    else
-	      if(((ue[1][4] == ue[0][0])|| (ue[1][4] == ue[1][0]))&&
+	      if(((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1]))&&
 		 ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])) && 
 		 ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
 		pre_nb_available_rbs[ue[1][4]] = 16;
 	      else
-		if(((ue[1][4] == ue[0][1])|| (ue[1][4] == ue[1][1]))&&
-		   ((ue[1][4] == ue[0][2])|| (ue[1][4] == ue[1][2])) && 
-		   ((ue[1][4] == ue[0][3])|| (ue[1][4] == ue[1][3])))
-		  pre_nb_available_rbs[ue[1][4]] = 16;
+		if((((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1]))) || 
+		   (((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]))) || 
+		   (((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))) || 
+		   (((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1])) && ((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]))) || 
+		   (((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))) || 
+		   (((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))))
+		  pre_nb_available_rbs[ue[1][4]] = 12;
 		else
-		  if((((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1]))) || 
-		     (((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]))) || 
-		     (((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))) || 
-		     (((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1])) && ((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]))) || 
-		     (((ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))) || 
-		     (((ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2])) && ((ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))))
-		    pre_nb_available_rbs[ue[1][4]] = 12;
+		  if((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0]) ||
+		     (ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1]) ||
+		     (ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]) ||
+		     (ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))
+		    pre_nb_available_rbs[ue[1][4]] = 8;
 		  else
-		    if((ue[1][4] == ue[0][0]) || (ue[1][4] == ue[1][0]) ||
-		       (ue[1][4] == ue[0][1]) || (ue[1][4] == ue[1][1]) ||
-		       (ue[1][4] == ue[0][2]) || (ue[1][4] == ue[1][2]) ||
-		       (ue[1][4] == ue[0][3]) || (ue[1][4] == ue[1][3]))
-		      pre_nb_available_rbs[ue[1][4]] = 8;
-		    else
-		      pre_nb_available_rbs[ue[1][4]] = 4;
+		    pre_nb_available_rbs[ue[1][4]] = 4;
 	      
-	rballoc_sub[ue[0][4]][4] = 1;
-	rballoc_sub[ue[1][4]][4] = 1;
+      rballoc_sub[ue[0][4]][4] = 1;
+      rballoc_sub[ue[1][4]][4] = 1;
 	      
-      }
+    }
 
 
-    if(k5 == 1)
-      {
-	dl_pow_off[ue[0][5]] = 0;
-	dl_pow_off[ue[1][5]] = 0;
+  if(k5 == 1)
+    {
+      dl_pow_off[ue[0][5]] = 0;
+      dl_pow_off[ue[1][5]] = 0;
 	      
-	if(((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && 
-	   ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-	   ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-	   ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
-	   ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))
-	  pre_nb_available_rbs[ue[0][5]] = 24;
+      if(((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && 
+	 ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	 ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	 ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
+	 ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))
+	pre_nb_available_rbs[ue[0][5]] = 24;
+      else
+	if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	    ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
+	   (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	    ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	   (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	    ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	   (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	    ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	   (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	    ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
+	  pre_nb_available_rbs[ue[0][5]] = 20;
 	else
-	  if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
-	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-	     (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
-	    pre_nb_available_rbs[ue[0][5]] = 20;
+	  if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2]))) ||
+	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
+	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
+	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
+	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
+	     (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
+	     (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
+	     (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
+	     (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
+	     (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
+	      ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
+	      ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
+	    pre_nb_available_rbs[ue[0][5]] = 16;
 	  else
-	    if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2]))) ||
-	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
-	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
-	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
-	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
-	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
-	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]))) ||
-	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
-	       (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))) ||
-	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
-		((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) &&
-		((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
-	      pre_nb_available_rbs[ue[0][5]] = 16;
+	    if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])))||
+	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])))||
+	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
+	       (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])))||
+	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
+	       (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	       (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
+	       (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
+	       (((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
+	      pre_nb_available_rbs[ue[0][5]] = 12;
 	    else
-	      if((((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])))||
-		 (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])))||
-		 (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
-		 (((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-		 (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])))||
-		 (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
-		 (((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-		 (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])))||
-		 (((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4])))||
-		 (((ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3])) && ((ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))))
-		pre_nb_available_rbs[ue[0][5]] = 12;
+	      if((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0]) || 
+		 (ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1]) ||
+		 (ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2]) || 
+		 (ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]) ||
+		 (ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))
+		pre_nb_available_rbs[ue[0][5]] = 8;
 	      else
-		if((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0]) || 
-		   (ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1]) ||
-		   (ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2]) || 
-		   (ue[0][5] == ue[0][3]) || (ue[0][5] == ue[1][3]) ||
-		   (ue[0][5] == ue[0][4]) || (ue[0][5] == ue[1][4]))
-		  pre_nb_available_rbs[ue[0][5]] = 8;
-		else
-		  pre_nb_available_rbs[ue[0][5]] = 4;
+		pre_nb_available_rbs[ue[0][5]] = 4;
 	      
 	      
 	      
-	if(((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && 
-	   ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-	   ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-	   ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
-	   ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))
-	  pre_nb_available_rbs[ue[1][5]] = 24;
+      if(((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && 
+	 ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	 ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	 ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
+	 ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))
+	pre_nb_available_rbs[ue[1][5]] = 24;
+      else
+	if((((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	    ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
+	   (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	    ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	   (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	    ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	   (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	    ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	   (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	    ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
+	  pre_nb_available_rbs[ue[1][5]] = 20;
 	else
-	  if((((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
-	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-	     (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
-	    pre_nb_available_rbs[ue[1][5]] = 20;
+	  if((((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2]))) ||
+	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
+	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
+	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
+	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
+	     (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
+	     (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
+	     (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
+	     (((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
+	     (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
+	      ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
+	      ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
+	    pre_nb_available_rbs[ue[1][5]] = 16;
 	  else
-	    if((((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2]))) ||
-	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
-	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
-	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
-	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
-	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
-	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]))) ||
-	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
-	       (((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))) ||
-	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) &&
-		((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) &&
-		((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
-	      pre_nb_available_rbs[ue[1][5]] = 16;
+	    if((((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])))||
+	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])))||
+	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
+	       (((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])))||
+	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
+	       (((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	       (((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
+	       (((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
+	       (((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
+	      pre_nb_available_rbs[ue[1][5]] = 12;
 	    else
-	      if((((ue[1][5] == ue[0][0]) || (ue[1][5] = ue[1][0])) && ((ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1])))||
-		 (((ue[1][5] == ue[0][0]) || (ue[1][5] = ue[1][0])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])))||
-		 (((ue[1][5] == ue[0][0]) || (ue[1][5] = ue[1][0])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
-		 (((ue[1][5] == ue[0][0]) || (ue[1][5] = ue[1][0])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-		 (((ue[1][5] == ue[0][1]) || (ue[1][5] = ue[1][1])) && ((ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2])))||
-		 (((ue[1][5] == ue[0][1]) || (ue[1][5] = ue[1][1])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
-		 (((ue[1][5] == ue[0][1]) || (ue[1][5] = ue[1][1])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-		 (((ue[1][5] == ue[0][2]) || (ue[1][5] = ue[1][2])) && ((ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3])))||
-		 (((ue[1][5] == ue[0][2]) || (ue[1][5] = ue[1][2])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4])))||
-		 (((ue[1][5] == ue[0][3]) || (ue[1][5] = ue[1][3])) && ((ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))))
-		pre_nb_available_rbs[ue[1][5]] = 12;
+	      if((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0]) || 
+		 (ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1]) ||
+		 (ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2]) || 
+		 (ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]) ||
+		 (ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))
+		pre_nb_available_rbs[ue[1][5]] = 8;
 	      else
-		if((ue[1][5] == ue[0][0]) || (ue[1][5] == ue[1][0]) || 
-		   (ue[1][5] == ue[0][1]) || (ue[1][5] == ue[1][1]) ||
-		   (ue[1][5] == ue[0][2]) || (ue[1][5] == ue[1][2]) || 
-		   (ue[1][5] == ue[0][3]) || (ue[1][5] == ue[1][3]) ||
-		   (ue[1][5] == ue[0][4]) || (ue[1][5] == ue[1][4]))
-		  pre_nb_available_rbs[ue[1][5]] = 8;
-		else
-		  pre_nb_available_rbs[ue[1][5]] = 4;
+		pre_nb_available_rbs[ue[1][5]] = 4;
 	      
-	rballoc_sub[ue[0][5]][5] = 1;
-	rballoc_sub[ue[1][5]][5] = 1;
-      }
+      rballoc_sub[ue[0][5]][5] = 1;
+      rballoc_sub[ue[1][5]][5] = 1;
+    }
 
-    if(k6 == 1)
-      {
-	dl_pow_off[ue[0][6]] = 0;
-	dl_pow_off[ue[1][6]] = 0;
+  if(k6 == 1)
+    {
+      dl_pow_off[ue[0][6]] = 0;
+      dl_pow_off[ue[1][6]] = 0;
 	      
-	if(((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	   ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-	   ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-	   ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	   ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-	   ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))
-	  pre_nb_available_rbs[ue[0][6]] = 25;
+      if(((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	 ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	 ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	 ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	 ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+	 ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))
+	pre_nb_available_rbs[ue[0][6]] = 25;
+      else
+	if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	    ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	    ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && 
+	    ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	    ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))|| 
+	   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	    ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	    ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	    ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	    ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	    ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	    ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	    ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+	    ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	    ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	    ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	    ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+	    ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	   (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && 
+	    ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	    ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	    ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+	    ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
+	    ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	    ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	    ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+	    ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
+	  pre_nb_available_rbs[ue[0][6]] = 21;
 	else
-	  if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	      ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && 
-	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))|| 
-	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	      ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	      ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-	      ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	      ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-	      ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	     (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && 
-	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-	      ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
-	      ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-	      ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
-	    pre_nb_available_rbs[ue[0][6]] = 21;
+	  if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+	     (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+	      ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
+	    pre_nb_available_rbs[ue[0][6]] = 17;
 	  else
 	    if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])))||
+		((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])))||
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
 	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
 	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
-	       (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5])))||
+		((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
+	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
 	       (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
-	      pre_nb_available_rbs[ue[0][6]] = 17;
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+	       (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+	       (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+		((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+	       (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+	       (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
+		((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
+	      pre_nb_available_rbs[ue[0][6]] = 13;
 	    else
-	      if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		  ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		  ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) &&
-		  ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
-		pre_nb_available_rbs[ue[0][6]] = 13;
+	      if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1]))) ||
+		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
+		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
+		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+		 (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
+		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
+		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+		 (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
+		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+		 (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+		 (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
+		 (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
+		 (((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
+		pre_nb_available_rbs[ue[0][6]] = 9;
 	      else
-		if((((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1]))) ||
-		   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
-		   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		   (((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		   (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]))) ||
-		   (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		   (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		   (((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		   (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]))) ||
-		   (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		   (((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		   (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]))) ||
-		   (((ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))) ||
-		   (((ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4])) && ((ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))))
-		  pre_nb_available_rbs[ue[0][6]] = 9;
+		if((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0]) ||
+		   (ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1]) ||
+		   (ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]) ||
+		   (ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]) ||
+		   (ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]) ||
+		   (ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))
+		  pre_nb_available_rbs[ue[0][6]] = 5;
 		else
-		  if((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0]) ||
-		     (ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1]) ||
-		     (ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2]) ||
-		     (ue[0][6] == ue[0][3]) || (ue[0][6] == ue[1][3]) ||
-		     (ue[0][6] == ue[0][4]) || (ue[0][6] == ue[1][4]) ||
-		     (ue[0][6] == ue[0][5]) || (ue[0][6] == ue[1][5]))
-		    pre_nb_available_rbs[ue[0][6]] = 5;
-		  else
-		    pre_nb_available_rbs[ue[0][6]] = 1;
+		  pre_nb_available_rbs[ue[0][6]] = 1;
 	      
 	      
 
-	if(((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	   ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-	   ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-	   ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	   ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-	   ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))
-	  pre_nb_available_rbs[ue[1][6]] = 25;
+      if(((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	 ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	 ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	 ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	 ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+	 ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))
+	pre_nb_available_rbs[ue[1][6]] = 25;
+      else
+	if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	    ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	    ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && 
+	    ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	    ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))|| 
+	   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	    ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	    ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	    ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	    ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	    ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	    ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	    ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+	    ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	    ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	    ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	    ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+	    ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	   (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && 
+	    ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	    ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	    ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+	    ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
+	    ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	    ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	    ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+	    ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
+	  pre_nb_available_rbs[ue[1][6]] = 21;
 	else
-	  if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	      ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && 
-	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))|| 
-	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	      ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	      ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-	      ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	      ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-	      ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	     (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && 
-	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-	      ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && 
-	      ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-	      ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
-	    pre_nb_available_rbs[ue[1][6]] = 21;
+	  if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+	     (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+	      ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
+	    pre_nb_available_rbs[ue[1][6]] = 17;
 	  else
 	    if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])))||
+		((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])))||
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
 	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
 	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
-	       (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5])))||
+		((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
+	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
 	       (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
-	      pre_nb_available_rbs[ue[1][6]] = 17;
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+	       (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+	       (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+		((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+	       (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+	       (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
+		((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
+	      pre_nb_available_rbs[ue[1][6]] = 13;
 	    else
-	      if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		  ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		  ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) &&
-		  ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
-		pre_nb_available_rbs[ue[1][6]] = 13;
+	      if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1]))) ||
+		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
+		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
+		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+		 (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
+		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
+		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+		 (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
+		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+		 (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+		 (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
+		 (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
+		 (((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
+		pre_nb_available_rbs[ue[1][6]] = 9;
 	      else
-		if((((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1]))) ||
-		   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
-		   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		   (((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		   (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]))) ||
-		   (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		   (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		   (((ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		   (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]))) ||
-		   (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		   (((ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		   (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]))) ||
-		   (((ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))) ||
-		   (((ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4])) && ((ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))))
-		  pre_nb_available_rbs[ue[1][6]] = 9;
+		if((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0]) ||
+		   (ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1]) ||
+		   (ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]) ||
+		   (ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]) ||
+		   (ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]) ||
+		   (ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))
+		  pre_nb_available_rbs[ue[1][6]] = 5;
 		else
-		  if((ue[1][6] == ue[0][0]) || (ue[1][6] == ue[1][0]) ||
-		     (ue[1][6] == ue[0][1]) || (ue[1][6] == ue[1][1]) ||
-		     (ue[1][6] == ue[0][2]) || (ue[1][6] == ue[1][2]) ||
-		     (ue[1][6] == ue[0][3]) || (ue[1][6] == ue[1][3]) ||
-		     (ue[1][6] == ue[0][4]) || (ue[1][6] == ue[1][4]) ||
-		     (ue[1][6] == ue[0][5]) || (ue[1][6] == ue[1][5]))
-		    pre_nb_available_rbs[ue[1][6]] = 5;
-		  else
-		    pre_nb_available_rbs[ue[1][6]] = 1;
+		  pre_nb_available_rbs[ue[1][6]] = 1;
 	      
-	rballoc_sub[ue[0][6]][6] = 1;
-	rballoc_sub[ue[1][6]][6] = 1;
+      rballoc_sub[ue[0][6]][6] = 1;
+      rballoc_sub[ue[1][6]][6] = 1;
 	      
-      }
+    }
 
 
 
 
-    if (k0!=1)
-      {
+  if (k0!=1)
+    {
 	      
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
 		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
 		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 		  
+
+
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] != 0)
+		if(dl_pow_off[next_ue] != 0){
 		  if(i0 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][0]);
@@ -2673,48 +2703,58 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][0] = next_ue;
 		      i0 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i0 == 1){
 	dl_pow_off[ue[0][0]] = 1;
 	pre_nb_available_rbs[ue[0][0]] = 4;
 	rballoc_sub[ue[0][0]][0] = 1;
       }
+    }
 	  
 	  
 	  
 
 	  
-    if(k1!=1)
-      {
+  if(k1!=1)
+    {
+	
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
+	    
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
+	    
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	    
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	    
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
 	      
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
-		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
-		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i1 == 1)
 		    {
-		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][2]);
+		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][1]);
 		      eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
 		      if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0])
 			ue[0][1] = next_ue;
@@ -2724,48 +2764,61 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][1] = next_ue;
 		      i1 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i1 == 1){
 	if ((ue[0][1] == ue[0][0]) || (ue[0][1] == ue[1][0]))
 	  pre_nb_available_rbs[ue[0][1]]  = 8;
 	else
 	  pre_nb_available_rbs[ue[0][1]] = 4;
+	  
 	dl_pow_off[ue[0][1]] = 1;
+	  
 	rballoc_sub[ue[0][1]][1] = 1;
       }
+    }
+    
+    
+    
 	  
 	  
 	  
-	  
-	  
-	  
-    if(k2!=1)
-      {
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
+  if(k2!=1)
+    {
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
 		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
+	    
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	
+
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
+	  
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	    
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i2 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][2]);
@@ -2778,8 +2831,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][2] = next_ue;
 		      i2 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i2 == 1){
 	if (((ue[0][2] == ue[0][0])|| (ue[0][2] == ue[1][0]))&&((ue[0][2] == ue[0][1])|| (ue[0][2] == ue[1][1])))
 	  pre_nb_available_rbs[ue[0][2]] = 12;
 	else
@@ -2790,37 +2846,43 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	dl_pow_off[ue[0][2]] = 1;
 	rballoc_sub[ue[0][2]][2] = 1;
       }
+    } 
 	  
 	  
 	  
-	  
-    if(k3!=1)
-      {
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
+  if(k3!=1)
+    {
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
 		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
 		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+		
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
+	      
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i3 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][3]);
@@ -2833,8 +2895,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][3] = next_ue;
 		      i3 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i3 == 1){
 	if(((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0]))&&
 	   ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1]))&& 
 	   ((ue[0][3] == ue[0][2])|| (ue[0][3] == ue[1][2])))
@@ -2858,40 +2923,45 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  pre_nb_available_rbs[ue[0][3]] = 8;
 		else
 		  pre_nb_available_rbs[ue[0][3]] = 4;
-	dl_pow_off[ue[0][4]] = 1;
+	dl_pow_off[ue[0][3]] = 1;
 	rballoc_sub[ue[0][3]][3] = 1;
       }
+    }
 	  
 	  
 	  
-	  
-    if(k4!=1)
-      {
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
+  if(k4!=1)
+    {
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
 		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
-		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
+	    
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	    
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	    
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i4 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][4]);
@@ -2904,8 +2974,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][4] = next_ue;
 		      i4 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i4 == 1){
 	if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
 	   ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
 	   ((ue[0][4] == ue[0][2])|| (ue[0][4] == ue[1][2])) && 
@@ -2950,38 +3023,44 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	dl_pow_off[ue[0][4]] = 1;
 	rballoc_sub[ue[0][4]][4] = 1;
       }
-	  
+    }
 	  
 
 	  
 	  
-    if(k5!=1)
-      {
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
+  if(k5!=1)
+    {
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
 		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
 		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
 		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:
+	      
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i5 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][5]);
@@ -2994,8 +3073,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][5] = next_ue;
 		      i5 = 1;
 		    }
+		}
 	      }
 	  }
+	}
+      if(i5 == 1){
 	if(((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && 
 	   ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
 	   ((ue[0][5] == ue[0][2]) || (ue[0][5] == ue[1][2])) &&
@@ -3070,38 +3152,44 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	dl_pow_off[ue[0][5]] = 1;
 	rballoc_sub[ue[0][5]][5] = 1;    
       }
-	  
-	  
+    }
+  
 
 	  
 	  
-    if(k6!=1)
-      {
-	for (UE_id=0;UE_id<granted_UEs;UE_id++) 
-	  {
-	    if ((nb_available_rb == 0) || (nCCE < aggregation))
-	      break;
-		  
-	    next_ue = UE_id;
-	    // If nobody is left, exit while loop and go to next step
-	    if (next_ue == 255)
-	      break;
-		  
-	    // This is an allocated UE_id
-	    rnti = find_UE_RNTI(Mod_id,next_ue);
-	    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
-		  
-	    if (eNB_UE_stats==NULL)
-	      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
-		  
+  if(k6!=1)
+    {
+      for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+	{
+	  if ((nb_available_rb == 0) || (nCCE < aggregation))
+	    break;
+	    
+	  next_ue = UE_id;
+	  // If nobody is left, exit while loop and go to next step
+	  if (next_ue == 255)
+	    break;
+	    
+	  // This is an allocated UE_id
+	  rnti = find_UE_RNTI(Mod_id,next_ue);
+	  eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	    
+	  if (eNB_UE_stats==NULL)
+	    mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+
+	  switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	  case 1:break;
+	  case 2:break;
+	  case 4:break;
+	  case 5:		
+	      
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
-		  
+	      
 	    if(round_temp>0)
 	      break;
 	    else
 	      { 
-		if(dl_pow_off[next_ue] == 1)
+		if(dl_pow_off[next_ue] == 1){
 		  if(i6 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][6]);
@@ -3114,8 +3202,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      ue[0][6] = next_ue;
 		      i6 = 1;
 		    }
+		}
 	      }
-	  }	
+	  }
+	}
+      if(i6 == 1){
 	if(((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
 	   ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
 	   ((ue[0][6] == ue[0][2]) || (ue[0][6] == ue[1][2])) &&
@@ -3259,28 +3350,51 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	dl_pow_off[ue[0][6]] = 1;
 	rballoc_sub[ue[0][6]][6] = 1;
       }
-    break;
-  case 6:break;
-  case 7:
-    break;
-  default:
-    break;
+    }
+
+
+
+  for(UE_id=0;UE_id<granted_UEs;UE_id++){
+    msg("******************Scheduling Information for UE%d ************************\n",UE_id);
+    msg("dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
+    msg("***********RB Alloc for every subband for UE%d ***********\n",UE_id);
+    for(i=0;i<7;i++){
+      msg("RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
+    }
+    msg("Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
 
 #endif
-  
+
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
 	  
-	  
+    //msg("\n \n \n \n \n \n \n \nAvailable RBs for USER %d = %d\n\n \n \n \n \n \n \n \n",UE_id,pre_nb_available_rbs[UE_id]);
 #ifdef Pre_Processing // Number of pre-allocated PRBs allocated to each UE
     rnti = find_UE_RNTI(Mod_id,UE_id);
-    switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
-    case 5:
-      nb_available_rb = pre_nb_available_rbs[UE_id];
-      break;
-    default:
-      break;
+
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	  
+    if (eNB_UE_stats==NULL)
+      mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+	  
+    eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
+	  
+    // Get candidate harq_pid from PHY
+    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
+    printf("Got harq_pid %d, round %d\n",harq_pid,round);
+	  
+    // Note this code is for a specific DCI format
+    DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
+	  
+    if (round == 0) {
+      switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+      case 5:
+	nb_available_rb = pre_nb_available_rbs[UE_id];
+	break;
+      default:
+	break;
+      }
     }
 #endif
 	  
@@ -3336,10 +3450,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     if (eNB_UE_stats==NULL)
       mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
 	  
-    // this should eventually also exploit the subband feedback
-    //eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
-    eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->DL_cqi[0]*2+eNB_UE_stats->dlsch_mcs_offset;
-    eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->DL_cqi[1]*2+eNB_UE_stats->dlsch_mcs_offset;
+    eNB_UE_stats->dlsch_mcs1 = openair_daq_vars.target_ue_dl_mcs;
 	  
     // Get candidate harq_pid from PHY
     mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid,&round,0);
@@ -3370,24 +3481,25 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  msg("[MAC] Retransmission : harq_pid %d, round %d, dai %d, mcs %d\n",harq_pid,round,(eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1),((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs);
 	  break;
 	case 4:
-	  if (nb_rb>10) {
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	  }
-	  else {
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	  }
+	  //	  if (nb_rb>10) {
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  // }
+	  //else {
+	  //  ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
+	  // ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  // ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	  // ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  // }
 	  break;
 	case 5:
-	  if(nb_rb>10){
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	  }
+	  // if(nb_rb>10){
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 0;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[UE_id];
+	  // }
 	  break;
 	case 6:
 	  break;
@@ -3397,26 +3509,29 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 			  next_ue,
 			  subframe,
 			  S_DL_SCHEDULED);
-	      
+	
 	eNB_UE_stats->dlsch_trials[round]++;
-	      
+	
       }
       else { // don't schedule this UE, its retransmission takes more resources than we have
-	      
+	
       }
     }
     else {  // This is a potentially new SDU opportunity
       
+      // calculate mcs
+
+
       // Now check RLC information to compute number of required RBs
       // get maximum TBS size for RLC request
-      TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+      TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_available_rb);
       
       // check first for RLC data on DCCH
       header_len_dcch = 2+1+1; // 2 bytes DCCH SDU subheader + timing advance subheader + timing advance command
-
+      
 #ifdef DEBUG_eNB_SCHEDULER
       msg("[MAC][eNB %d] Requesting %d bytes from RLC (mcs %d, nb_available_rb %d)\n",Mod_id,TBS-header_len_dcch,
-	  eNB_UE_stats->dlsch_mcs1,nb_available_rb);
+	  eNB_UE_stats->DL_cqi[0],nb_available_rb);
 #endif
       rlc_status = mac_rlc_status_ind(Mod_id,DCCH+(MAX_NUM_RB*next_ue),
 				      (TBS-header_len_dcch)); // transport block set size
@@ -3454,7 +3569,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	sdu_length_total = sdu_lengths[0];
 	sdu_lcids[0] = DCCH;
 	num_sdus = 1;
-	      
+	
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Got %d bytes for DCCH :",Mod_id,sdu_lengths[0]);
 	for (j=0;j<sdu_lengths[0];j++)
@@ -3549,7 +3664,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	nb_rb = 2;
 #endif
 	
-	TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 	
 #ifndef FULL_BUFFER      
 	
@@ -3557,18 +3672,20 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  nb_rb += 2;  // to be replaced with RA allocation size for other than 25 PRBs!!!!!!!
 	  if (nb_rb>mac_xface->lte_frame_parms->N_RB_DL) { // if we've gone beyond the maximum number of RBs
 	    // (can happen if N_RB_DL is odd)
-	    TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,mac_xface->lte_frame_parms->N_RB_DL);
+	    TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],mac_xface->lte_frame_parms->N_RB_DL);
 	    nb_rb = mac_xface->lte_frame_parms->N_RB_DL;
 	    break;
 	  }
-	  TBS = mac_xface->get_TBS(eNB_UE_stats->dlsch_mcs1,nb_rb);
+	  TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0],nb_rb);
 	}
 #endif
 	
+	msg("CHECK1: RBs for UE%d = %d********************************\n\n",next_ue,nb_available_rb);
+	msg("CHECK2: RBs for UE%d = %d********************************\n\n",next_ue,nb_rb);
 	      
 #ifdef DEBUG_eNB_SCHEDULER
 	msg("[MAC][eNB %d] Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
-	    Mod_id,eNB_UE_stats->dlsch_mcs1,TBS,nb_rb);
+	    Mod_id,eNB_UE_stats->DL_cqi[0],TBS,nb_rb);
 	// msg("[MAC][eNB ] Reminder of DLSCH with random data %d %d %d %d \n",
 	//	TBS, sdu_length_total, offset, TBS-sdu_length_total-offset);
 #endif
@@ -3581,6 +3698,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	aggregation = process_ue_cqi(Mod_id,next_ue);
 	nCCE-=aggregation; // adjust the remaining nCCE
 	eNB_mac_inst[Mod_id].UE_template[next_ue].nb_rb[harq_pid] = nb_rb;
+
+	
 	      
 	add_ue_dlsch_info(Mod_id,
 			  next_ue,
@@ -3598,41 +3717,41 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	case 1:
 	case 2:
 	default:
-	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->dlsch_mcs1;
+	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs = eNB_UE_stats->DL_cqi[0];
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi = 1;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv = 0;
 	  ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
 	  break;
 	case 4:
-	  if (nb_rb>10) {
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
-	    ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  //  if (nb_rb>10) {
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	  ((DCI2_5MHz_2A_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
 				    
-	  }
-	  else {
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
-	    ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	  }
+	  //}
+	  /* else {
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->tpmi = 5;
+	     ((DCI2_5MHz_2A_L10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	     }*/
 	  break;
 	case 5:
 
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->dlsch_mcs1;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
-	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[UE_id];
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dai = (eNB_mac_inst[Mod_id].UE_template[next_ue].DAI-1)&3;
+	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->dl_power_off = dl_pow_off[UE_id];
 				    
-	    for(i=0;i<7;i++) // for indicating the rballoc for each sub-band
-	      eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_sub[harq_pid][i] = rballoc_sub[next_ue][i];
+	  for(i=0;i<7;i++) // for indicating the rballoc for each sub-band
+	    eNB_mac_inst[Mod_id].UE_template[next_ue].rballoc_sub[harq_pid][i] = rballoc_sub[next_ue][i];
 
 	  break;
 	case 6:
