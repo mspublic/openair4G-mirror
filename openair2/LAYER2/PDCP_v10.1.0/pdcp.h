@@ -101,6 +101,12 @@ typedef struct pdcp_t {
   // here ROHC variables for header compression/decompression
 } pdcp_t;
 
+/* PDCP limit values */
+#define PDCP_MAX_SDU_SIZE 8188 // octets, see 4.3.1 Services provided to upper layers
+#define PDCP_MAX_SN_5BIT  31   // 2^5-1
+#define PDCP_MAX_SN_7BIT  127  // 2^7-1
+#define PDCP_MAX_SN_12BIT 4095 // 2^12-1
+
 protected_pdcp(signed int             pdcp_2_nas_irq;)
 protected_pdcp(pdcp_t                 pdcp_array[MAX_MODULES][MAX_RAB];)
 protected_pdcp(sdu_size_t             pdcp_output_sdu_bytes_to_write;)
