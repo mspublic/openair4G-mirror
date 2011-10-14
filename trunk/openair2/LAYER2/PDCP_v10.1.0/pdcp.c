@@ -36,21 +36,15 @@
 */
 
 #define PDCP_C
-//#include "rtos_header.h"
 #ifndef USER_MODE
-#include <rtai_fifos.h>
+  #include <rtai_fifos.h>
 #endif
 #include "pdcp.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
 
-//#include "mpls.h"
-//#include "w3g4free_extern.h"
-
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
-
-//#define IDROMEL_NEMO 1
 
 extern rlc_op_status_t rlc_data_req     (module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, mem_block_t*);
 
@@ -59,49 +53,46 @@ void
 pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, char* sduP)
 {
 //-----------------------------------------------------------------------------
- 
-    mem_block_t      *new_sdu = NULL;
-    int i;
+  mem_block_t* pdcp_pdu = NULL;
+  u16 pdu_size = data_sizeP + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
-    if ((data_sizeP > 0)) {
-      if(data_sizeP > MAX_IP_PACKET_SIZE){
-	msg("[PDCP] REQ FOR  SIZE %d !!!Abort\n",data_sizeP);
-	mac_xface->macphy_exit("");
-      }
-        new_sdu = get_free_mem_block (data_sizeP);
-        if (new_sdu) {
-
-
-#ifdef PDCP_DATA_REQ_DEBUG
-	  msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
-
-	  //	  for (i=0;i<20;i++) 
-	  //	    msg("%02X.",((unsigned char*)sduP)[i]);
-	  //	  msg("\n");
-#endif PDCP_DATA_REQ_DEBUG
-            // PROCESS OF DECOMPRESSION HERE:
-            memcpy (&new_sdu->data[0], sduP, data_sizeP);
-
-	    rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, data_sizeP, new_sdu);
-	    if(Mac_rlc_xface->Is_cluster_head[module_idP]==1){
-	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
-	    }
-	    else{
-	      Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	      Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
-	      
-	    }
-
-        } else {
-	  msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ OUT OF MEMORY\n", rab_idP);
-        }
-	//	free_mem_block (sduP);
-	
-    } else {
-            msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ SDU SIZE %d\n", rab_idP, data_sizeP);
+  if (data_sizeP > 0) {
+    if (data_sizeP > MAX_IP_PACKET_SIZE) { // shouldn't this be MAX SDU size, which is 8188 bytes?
+      msg("[PDCP] REQ FOR  SIZE %d !!!Abort\n",data_sizeP);
+      mac_xface->macphy_exit("");
     }
+
+    // why do we allocate a new one? where an SDU is freed?
+    // Allocate a new block for the header and the payload
+    // Why does mem_block_t keep no size information?
+    pdcp_pdu = get_free_mem_block (pdu_size);
+
+    if (pdcp_pdu) {
+#ifdef PDCP_DATA_REQ_DEBUG
+      msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
+#endif
+
+      memcpy (&pdcp_pdu->data[0], sduP, data_sizeP);
+
+      // Ask sublayer to transmit data
+      rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdu_size, pdcp_pdu);
+
+      if (Mac_rlc_xface->Is_cluster_head[module_idP]==1) {
+        Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+        Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP;
+      }
+      else {
+        Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+        Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP; 
+      }
+    } else {
+      msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ OUT OF MEMORY\n", rab_idP);
+    }
+  } else {
+    msg("[PDCP][RAB %d][ERROR] PDCP_DATA_REQ SDU SIZE %d\n", rab_idP, data_sizeP);
+  }
 }
+
 //-----------------------------------------------------------------------------
 void
 pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP)
