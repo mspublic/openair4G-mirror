@@ -122,9 +122,10 @@ double default_amp_lin[] = {1};
 
 struct complex R_sqrt_21_corr[2][2] = {{{0.70711,0}, {0.70711,0}}, {{0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully correlated 2x1 channel (h1==h2)
 struct complex R_sqrt_21_anticorr[2][2] = {{{0.70711,0}, {-0.70711,0}}, {{-0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
-struct complex *R_sqrt_21_ptr[2];
-struct complex **R_sqrt_21_ptr2;
-
+struct complex *R_sqrt_21_ptr_corr[2];
+struct complex *R_sqrt_21_ptr_anticorr[2];
+struct complex **R_sqrt_21_ptr2_corr;
+struct complex **R_sqrt_21_ptr2_anticorr;
 
 channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
 				     u8 nb_rx, 
@@ -411,12 +412,12 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_21_ptr[0] = R_sqrt_21_corr[0];
-	R_sqrt_21_ptr[1] = R_sqrt_21_corr[1]; 
-	R_sqrt_21_ptr2 = &R_sqrt_21_ptr[0];
+	R_sqrt_21_ptr_corr[0] = R_sqrt_21_corr[0];
+	R_sqrt_21_ptr_corr[1] = R_sqrt_21_corr[1]; 
+	R_sqrt_21_ptr2_corr = &R_sqrt_21_ptr_corr[0];
       }
       else
-	R_sqrt_21_ptr2 = NULL;
+	R_sqrt_21_ptr2_corr = NULL;
 
       chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
@@ -424,7 +425,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_length,
 				   default_amp_lin,
 				   NULL,
-				   R_sqrt_21_ptr2,
+				   R_sqrt_21_ptr2_corr,
 				   Td,
 				   BW,
 				   ricean_factor,
@@ -444,12 +445,12 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_21_ptr[0] = R_sqrt_21_anticorr[0];
-	R_sqrt_21_ptr[1] = R_sqrt_21_anticorr[1]; 
-	R_sqrt_21_ptr2 = &R_sqrt_21_ptr[0];
+	R_sqrt_21_ptr_anticorr[0] = R_sqrt_21_anticorr[0];
+	R_sqrt_21_ptr_anticorr[1] = R_sqrt_21_anticorr[1]; 
+	R_sqrt_21_ptr2_anticorr = &R_sqrt_21_ptr_anticorr[0];
       }
       else
-	R_sqrt_21_ptr2 = NULL;
+	R_sqrt_21_ptr2_anticorr = NULL;
 
       chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
@@ -457,7 +458,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_length,
 				   default_amp_lin,
 				   NULL,
-				   R_sqrt_21_ptr2,
+				   R_sqrt_21_ptr2_anticorr,
 				   Td,
 				   BW,
 				   ricean_factor,

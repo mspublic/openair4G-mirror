@@ -906,7 +906,7 @@ typedef struct __attribute__ ((__packed__)){
 /// DCI Format Type 2 (5 MHz, TDD, 2 Antenna Ports, more than 10 PRBs, 43 bits)
 struct DCI2_5MHz_2D_M10PRB_TDD {
   /// padding to 64bits
-  u64 padding64:22;
+  u64 padding64:21;
   /// Redundancy version 2
   u64 rv2:2;
   /// New Data Indicator 2
@@ -934,12 +934,41 @@ struct DCI2_5MHz_2D_M10PRB_TDD {
   /// Resource Allocation Header
   u64 rah:1;
   /// Downlink Power offset for MU-MIMO
-  u64 dl_power_off:1;
+  u8 dl_power_off:1;
 } __attribute__ ((__packed__));
-
-
 typedef struct DCI2_5MHz_2D_M10PRB_TDD DCI2_5MHz_2D_M10PRB_TDD_t;
 #define sizeof_DCI2_5MHz_2D_M10PRB_TDD_t 43
+
+
+/// DCI Format Type 2D (5 MHz, FDD, 2 Antenna Ports, less than 10 PRBs, 39 bits)
+struct DCI2_5MHz_2D_L10PRB_FDD {
+  /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
+  unsigned short rballoc:13;
+  /// Power Control
+  unsigned char TPC:2;
+  /// HARQ Process
+  unsigned char harq_pid:3;
+  /// TB swap
+  unsigned char tb_swap:1;
+  /// Modulation and Coding Scheme and Redundancy Version 1
+  unsigned char mcs1:5;
+  /// New Data Indicator 1
+  unsigned char ndi1:1;
+  /// Redundancy version 1
+  unsigned char rv1:2;
+  /// Modulation and Coding Scheme and Redundancy Version 2
+  unsigned char mcs2:5;
+  /// New Data Indicator 2
+  unsigned char ndi2:1;
+  /// Redundancy version 2
+  unsigned char rv2:2;
+  /// TPMI information for precoding
+  unsigned char tpmi:3;
+  /// Downlink Power offset for MU-MIMO
+  u8 dl_power_off:1;
+} __attribute__ ((__packed__));
+typedef struct DCI2_5MHz_2D_L10PRB_FDD DCI2_5MHz_2D_L10PRB_FDD_t;
+#define sizeof_DCI2_5MHz_2D_L10PRB_FDD_t 39
 
 
 typedef struct __attribute__ ((__packed__)){

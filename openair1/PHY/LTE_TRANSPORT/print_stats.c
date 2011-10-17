@@ -6,7 +6,7 @@ extern u8 number_of_cards;
 
 int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
 
-  u8 eNB=0;
+  u8 eNB=0,i=0;
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -128,8 +128,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int len) {
     len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",phy_vars_ue->dlsch_SI_received[0],phy_vars_ue->dlsch_SI_errors[0]);
     len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",phy_vars_ue->dlsch_ra_received[0],phy_vars_ue->dlsch_ra_errors[0]);
-    //len += sprintf(&buffer[len], "Transmission Mode %d\n",phy_vars_ue->transmission_mode[eNB]);
-    
+
   }
   buffer[len]='\0';
 
@@ -159,6 +158,12 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
       len += sprintf(&buffer[len],"%2d ",
 		     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
     len += sprintf(&buffer[len],"\n");
+
+    if(phy_vars_eNB->transmission_mode[0] == 5){
+    len += sprintf(&buffer[len],"For TM5:MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+    
+    len += sprintf(&buffer[len],"For TM5:SU-MIMO Transmissions/Total Transmissions = %d/%d\n\n",phy_vars_eNB->check_for_SUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+    }
     
   }
   
@@ -260,7 +265,23 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int len) {
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[3],
 		       phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[3]);
 	len += sprintf(&buffer[len],"Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
-	
+ 
+	if(phy_vars_eNB->transmission_mode[UE_id] == 5){
+	    if(phy_vars_eNB->mu_mimo_mode[UE_id].dl_pow_off == 0)
+	      len += sprintf(&buffer[len],"****UE %d is in MU-MIMO mode****\n",UE_id);
+	    else if(phy_vars_eNB->mu_mimo_mode[UE_id].dl_pow_off == 1)
+	      len += sprintf(&buffer[len],"****UE %d is in SU-MIMO mode****\n",UE_id);
+	    else
+	      len += sprintf(&buffer[len],"****UE %d is not scheduled****\n",UE_id);
+	    
+	    for(i=0;i<7;i++){
+	      len += sprintf(&buffer[len],"RB Alloc in Subband%d = %d\n",i,phy_vars_eNB->mu_mimo_mode[UE_id].rballoc_sub[i]);
+	    }
+	    
+	    len += sprintf(&buffer[len],"Total Number of Allocated PRBs = %d\n\n",phy_vars_eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
+	  }
+
+    
 #ifdef OPENAIR2
       }
     }

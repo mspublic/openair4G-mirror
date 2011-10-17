@@ -94,8 +94,10 @@ mapping small_scale_names[] =
     {"ETU", 7},
     {"Rayleigh8", 8},
     {"Rayleigh1", 9},
-    {"Rice8", 10},
-    {"Rice1", 11},
+    {"Rayleigh1_corr", 10},
+    {"Rayleigh1_anticorr", 11},
+    {"Rice8", 12},
+    {"Rice1", 13},
     {NULL, -1}
 };
 
@@ -525,14 +527,25 @@ main (int argc, char **argv)
 #ifdef DEBUG_SIM
       printf ("[SIM] Initializing channel from eNB %d to UE %d\n", eNB_id, UE_id);
 #endif
-
-     eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-						   PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
-						   oai_emulation.environment_system_config.system_bandwidth_MB,
-						   forgetting_factor,
-						   0,
-						   0);
+      if (oai_emulation.info.transmission_mode == 5) {
+	  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						       (UE_id == 0)? Rayleigh8:Rayleigh8,
+						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						       oai_emulation.environment_system_config.system_bandwidth_MB,
+						       forgetting_factor,
+						       0,
+						       0);
+	}
+      else {
+	eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
+						     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+						     map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						     oai_emulation.environment_system_config.system_bandwidth_MB,
+						     forgetting_factor,
+						     0,
+						     0);
+      }
       
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
@@ -761,9 +774,11 @@ main (int argc, char **argv)
 	    if ((mac_xface->frame>0) && (last_slot == (SLOTS_PER_FRAME-1))) {
 	      initial_sync(PHY_vars_UE_g[UE_id]);
 	      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
+		write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      write_output("dlchan10.m","dlch10",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][2][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-	      write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
+	      if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
+		write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
 	      write_output("rxsig.m","rxs",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,1,1);
 	      write_output("rxsigF.m","rxsF",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],2*PHY_vars_UE_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size,2,1);
 	      write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);

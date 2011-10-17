@@ -617,6 +617,15 @@ typedef struct {
   u32 pdu_fer;             
 } LTE_UE_PBCH;
 
+typedef struct {
+  /// Downlink Power offset field
+  u8 dl_pow_off;
+  ///Subband resource allocation field
+  u8 rballoc_sub[7];
+  ///Total number of PRBs indicator
+  u8 pre_nb_available_rbs;
+}MU_MIMO_mode;
+
 typedef enum {
   NOT_SYNCHED=0,
   PRACH=1,

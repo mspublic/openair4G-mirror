@@ -178,6 +178,20 @@ typedef struct
   // Transmission mode per UE
   u8 transmission_mode[NUMBER_OF_UE_MAX];
 
+
+  /// Information regarding TM5
+  MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
+
+
+  ///check for Total Transmissions
+  u8 check_for_total_transmissions;
+
+  ///check for MU-MIMO Transmissions
+  u8 check_for_MUMIMO_transmissions;
+
+  ///check for SU-MIMO Transmissions
+  u8 check_for_SUMIMO_transmissions;
+
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
@@ -282,6 +296,7 @@ typedef struct
 
   /// Transmission mode per eNB
   u8 transmission_mode[NUMBER_OF_eNB_MAX];
+
 
 } PHY_VARS_UE;
 

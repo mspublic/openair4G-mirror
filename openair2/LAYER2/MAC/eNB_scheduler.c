@@ -853,7 +853,7 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
-  u8 status;
+  u8 status=0,status0=0,status1=0;
 
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
@@ -902,13 +902,21 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
 
       //msg("FAIL\n");
       status = Rrc_xface->get_rrc_status(Mod_id,1,next_ue);
+      //status0 = Rrc_xface->get_rrc_status(Mod_id,1,0);//next_ue);
+      //status1 = Rrc_xface->get_rrc_status(Mod_id,1,1);//next_ue+1);
+
       //msg("status of RRC %d\n",status);
       //exit(0);
 
-      if(status < RRC_CONNECTED)
-	ULSCH_dci->cqi_req = 0;
-      else
-	ULSCH_dci->cqi_req = 1;
+      //if((status0 >= RRC_CONNECTED) && (status1 >= RRC_CONNECTED))
+      //if(next_ue == 0){
+	if (status < RRC_CONNECTED)
+	  ULSCH_dci->cqi_req = 0;
+	else
+	  ULSCH_dci->cqi_req = 1;
+	//}
+	//else
+	//ULSCH_dci->cqi_req = 1;
 
 
       ULSCH_dci->type=0;
@@ -1268,18 +1276,21 @@ u32 allocate_prbs(unsigned char UE_id,unsigned char nb_rb, u32 *rballoc) {
 
 u32 allocate_prbs_sub(int nb_rb, u8 *rballoc) {
 
-  int i=0,k=0;
-  u32 rballoc_dci=0;
+  u8 check1=0,check2=0;
+  u16 rballoc_dci=0;
 
-
+  //msg("*****Check1RBALLOC****: %d%d%d%d\n",rballoc[3],rballoc[2],rballoc[1],rballoc[0]);
   while(nb_rb >0){
-    if(rballoc[k] == 1){
-      rballoc_dci |= (1<<(i>>1));
+    if(rballoc[check2] == 1){
+      rballoc_dci |= (1<<(check1>>1));
       nb_rb = nb_rb -2;
     }
-    k = k+1;
-    i = i+2;
+    check2 = check2+1;
+    check1 = check1+2;
   }
+  // rballoc_dci = (rballoc_dci)&(0x1fff);
+  //msg("*********RBALLOC : %x\n",rballoc_dci);
+  // exit(-1);
   return (rballoc_dci);
 }
 
@@ -1292,7 +1303,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
   unsigned char vrb_map[100];
 
   unsigned char x,y,z;
-  u8 rballoc_sub[25];
+  u8 rballoc_sub[14];
 
   u32 rballoc=RBalloc,buff;
 
@@ -1550,11 +1561,13 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
       case 5:
 	for(x=0;x<7;x++){
 	  for(y=0;y<2;y++){
-	    z = 2*x +y;
-	    rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
+	    if(z < (2*6 + 1)){
+	      z = 2*x + y;
+	      rballoc_sub[z] = eNB_mac_inst[Mod_id].UE_template[UE_id].rballoc_sub[harq_pid][x];
+	    }
 	  }
 	}
-	((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,&rballoc_sub[0]);
+	((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
 	((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rah = 0;
 	add_ue_spec_dci(DCI_pdu,
 			DLSCH_dci,
@@ -1589,6 +1602,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
 void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used0,unsigned char nCCE_used) {
 
   unsigned char UE_id,UE_id_temp;
+  u16 UE_SU_MIMO = 256;
   unsigned char next_ue, next_ue_temp;
   u16 ue[2][7];
   unsigned char granted_UEs;
@@ -1597,12 +1611,14 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   mac_rlc_status_resp_t rlc_status;
   unsigned char header_len_dcch,header_len_dtch;
   unsigned char sdu_lcids[11],offset,num_sdus=0;
-  u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,rnti_temp,rnti_k[2][7];
+  u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,rnti0=0,rnti1=0,rnti_temp,rnti_k[2][7];
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char round=0,round_temp=0,round_k=0;
   unsigned char harq_pid=0,harq_pid_temp=0,harq_pid_k=0;
   void *DLSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
+  LTE_eNB_UE_stats* eNB_UE_stats0;
+  LTE_eNB_UE_stats* eNB_UE_stats1;
   LTE_eNB_UE_stats* eNB_UE_stats_temp;
   LTE_eNB_UE_stats* eNB_UE_stats_k[2][7];
   u16 sdu_length_total=0;
@@ -1610,16 +1626,17 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   unsigned char DAI;
   unsigned char k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
   unsigned char i0=0,i1=0,i2=0,i3=0,i4=0,i5=0,i6=0;
-  unsigned char dl_pow_off[2];
-  u16 i,ii;
-  unsigned char rballoc_sub[2][7];
-  u16 pre_nb_available_rbs[2];
-  
+  u8 dl_pow_off[256];
+  u16 i=0,ii=0,check=0,total_rbs=0,jj=0;
+  unsigned char rballoc_sub[256][7];
+  u16 pre_nb_available_rbs[256];
+  u8 MIMO_mode_indicator[7];
+  u8 total_DL_cqi_MUMIMO = 0,total_DL_cqi_SUMIMO = 0;
   
 
 #ifdef Pre_Processing
   
-  for(i=0;i<2;i++)
+  for(i=0;i<256;i++)
     {
       dl_pow_off[i] = 2;
       pre_nb_available_rbs[i] = 0;
@@ -1630,8 +1647,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
    
   for(i=0;i<2;i++)
     {
-      for(ii=0;ii<7;ii++)
+      for(ii=0;ii<7;ii++){
+	MIMO_mode_indicator[ii] = 2;
 	ue[i][ii] = 256;
+      }
     }
   
 #endif
@@ -1693,10 +1712,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	//msg("mode 5 \n");
 	//exit(0);
 
-	if(round_temp > 0)// retransmitting UEs are not selected
-	  break;
-	else
-	  {
+	//	if(round_temp > 0)// retransmitting UEs are not selected
+	//  break;
+	//else
+	// {
 	    // if(next_ue == 0)// Selecting primary UE with maximum TBS
 	    for (UE_id_temp = UE_id+1;UE_id_temp < granted_UEs;UE_id_temp++) {
 	      
@@ -1717,10 +1736,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	      // Get candidate harq_pid from PHY
 	      mac_xface->get_ue_active_harq_pid(Mod_id,rnti_temp,subframe,&harq_pid_k,&round_k,0);
 	      
-	      if(round_k > 0)
-		break;
-	      else
-		{
+	      //    if(round_k > 0)
+	      //	break;
+	      //else
+	      //	{
 		  //msg("entering mode 5\n");
 		  //exit(0);
 		  
@@ -1982,10 +2001,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 			  k6= 1;
 			}
 		    }
-		}
+		  //}
+		  //}
 	    }
-	  }
-	break;
+	    break;
       case 6:break;
       case 7:
 	break;
@@ -1993,6 +2012,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	break;
       }
     }
+   
 
 
   //switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
@@ -2004,6 +2024,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][0]] = 0;
       dl_pow_off[ue[1][0]] = 0;
+      MIMO_mode_indicator[0] = 0;
+
       pre_nb_available_rbs[ue[0][0]] = 4;
       pre_nb_available_rbs[ue[1][0]] = 4;
       rballoc_sub[ue[0][0]][0] = 1;
@@ -2015,6 +2037,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][1]] = 0;
       dl_pow_off[ue[1][1]] = 0;
+      MIMO_mode_indicator[1] = 0;
+
       if ((ue[0][1] == ue[0][0]) || (ue[0][1] == ue[1][0]))
 	pre_nb_available_rbs[ue[0][1]] = 8;
       else
@@ -2032,6 +2056,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][2]] = 0;
       dl_pow_off[ue[1][2]] = 0;
+      MIMO_mode_indicator[2] = 0;
 	      
       if (((ue[0][2] == ue[0][0])|| (ue[0][2] == ue[1][0]))&&((ue[0][2] == ue[0][1])|| (ue[0][2] == ue[1][1])))
 	pre_nb_available_rbs[ue[0][2]] = 12;
@@ -2056,6 +2081,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][3]] = 0;
       dl_pow_off[ue[1][3]] = 0;
+      MIMO_mode_indicator[3] = 0;
 	      
       if(((ue[0][3] == ue[0][0])|| (ue[0][3] == ue[1][0]))&&
 	 ((ue[0][3] == ue[0][1])|| (ue[0][3] == ue[1][1]))&& 
@@ -2113,6 +2139,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][4]] = 0;
       dl_pow_off[ue[1][4]] = 0;
+      MIMO_mode_indicator[4] = 0;
 	      
       if(((ue[0][4] == ue[0][0])|| (ue[0][4] == ue[1][0]))&&
 	 ((ue[0][4] == ue[0][1])|| (ue[0][4] == ue[1][1])) && 
@@ -2208,6 +2235,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][5]] = 0;
       dl_pow_off[ue[1][5]] = 0;
+      MIMO_mode_indicator[5] = 0;
 	      
       if(((ue[0][5] == ue[0][0]) || (ue[0][5] == ue[1][0])) && 
 	 ((ue[0][5] == ue[0][1]) || (ue[0][5] == ue[1][1])) &&
@@ -2363,6 +2391,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     {
       dl_pow_off[ue[0][6]] = 0;
       dl_pow_off[ue[1][6]] = 0;
+      MIMO_mode_indicator[6] = 0;
 	      
       if(((ue[0][6] == ue[0][0]) || (ue[0][6] == ue[1][0])) && 
 	 ((ue[0][6] == ue[0][1]) || (ue[0][6] == ue[1][1])) &&
@@ -2686,10 +2715,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
+	    // if(round_temp>0)
+	    // break;
+	    //else
+	    // { 
 		if(dl_pow_off[next_ue] != 0){
 		  if(i0 == 1)
 		    {
@@ -2704,15 +2733,17 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i0 = 1;
 		    }
 		}
-	      }
+		//}
 	  }
 	}
       if(i0 == 1){
 	dl_pow_off[ue[0][0]] = 1;
 	pre_nb_available_rbs[ue[0][0]] = 4;
 	rballoc_sub[ue[0][0]][0] = 1;
+	MIMO_mode_indicator[0] = 1;
       }
     }
+  
 	  
 	  
 	  
@@ -2747,11 +2778,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //   if(round_temp>0)
+	    //  break;
+	    //else
+	    // { 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i1 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][1]);
@@ -2765,7 +2796,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i1 = 1;
 		    }
 		}
-	      }
+		//}
 	  }
 	}
       if(i1 == 1){
@@ -2775,8 +2806,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	  pre_nb_available_rbs[ue[0][1]] = 4;
 	  
 	dl_pow_off[ue[0][1]] = 1;
-	  
 	rballoc_sub[ue[0][1]][1] = 1;
+	MIMO_mode_indicator[1] = 1;
       }
     }
     
@@ -2814,11 +2845,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	    
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //    if(round_temp>0)
+	    // break;
+	    //else
+	    // { 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i2 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][2]);
@@ -2832,7 +2863,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i2 = 1;
 		    }
 		}
-	      }
+		// }
 	  }
 	}
       if(i2 == 1){
@@ -2845,6 +2876,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    pre_nb_available_rbs[ue[0][2]] = 4;
 	dl_pow_off[ue[0][2]] = 1;
 	rballoc_sub[ue[0][2]][2] = 1;
+	MIMO_mode_indicator[2] = 1;
       }
     } 
 	  
@@ -2878,11 +2910,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //    if(round_temp>0)
+	    //  break;
+	    //else
+	    //{ 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i3 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][3]);
@@ -2896,7 +2928,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i3 = 1;
 		    }
 		}
-	      }
+		// }
 	  }
 	}
       if(i3 == 1){
@@ -2925,6 +2957,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		  pre_nb_available_rbs[ue[0][3]] = 4;
 	dl_pow_off[ue[0][3]] = 1;
 	rballoc_sub[ue[0][3]][3] = 1;
+	MIMO_mode_indicator[3] = 1;
       }
     }
 	  
@@ -2957,11 +2990,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //   if(round_temp>0)
+	    // break;
+	    //else
+	    // { 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i4 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][4]);
@@ -2975,7 +3008,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i4 = 1;
 		    }
 		}
-	      }
+		// }
 	  }
 	}
       if(i4 == 1){
@@ -3022,6 +3055,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      pre_nb_available_rbs[ue[0][4]] = 4;
 	dl_pow_off[ue[0][4]] = 1;
 	rballoc_sub[ue[0][4]][4] = 1;
+	MIMO_mode_indicator[4] = 1;
       }
     }
 	  
@@ -3056,11 +3090,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //  if(round_temp>0)
+	    // break;
+	    //else
+	    //  { 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i5 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][5]);
@@ -3074,7 +3108,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i5 = 1;
 		    }
 		}
-	      }
+		//}
 	  }
 	}
       if(i5 == 1){
@@ -3150,9 +3184,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		else
 		  pre_nb_available_rbs[ue[0][5]] = 4; 
 	dl_pow_off[ue[0][5]] = 1;
-	rballoc_sub[ue[0][5]][5] = 1;    
+	rballoc_sub[ue[0][5]][5] = 1;  
+	MIMO_mode_indicator[5] = 1;  
       }
     }
+    
   
 
 	  
@@ -3185,11 +3221,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	    // Get candidate harq_pid from PHY
 	    mac_xface->get_ue_active_harq_pid(Mod_id,rnti,subframe,&harq_pid_temp,&round_temp,0);
 	      
-	    if(round_temp>0)
-	      break;
-	    else
-	      { 
-		if(dl_pow_off[next_ue] == 1){
+	    //  if(round_temp>0)
+	    //  break;
+	    //else
+	    // { 
+		if(dl_pow_off[next_ue] != 0){
 		  if(i6 == 1)
 		    {
 		      rnti_temp = find_UE_RNTI(Mod_id,ue[0][6]);
@@ -3203,7 +3239,7 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		      i6 = 1;
 		    }
 		}
-	      }
+		// }
 	  }
 	}
       if(i6 == 1){
@@ -3349,26 +3385,131 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 		    pre_nb_available_rbs[ue[0][6]] = 1;
 	dl_pow_off[ue[0][6]] = 1;
 	rballoc_sub[ue[0][6]][6] = 1;
+	MIMO_mode_indicator[6] = 1;
       }
     }
+  
+    
+    
+  for(i=0;i<7;i++){
+
+    if(MIMO_mode_indicator[i] == 0){
+      rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
+      rnti1 = find_UE_RNTI(Mod_id,ue[1][i]);
+      eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
+      eNB_UE_stats1 = mac_xface->get_eNB_UE_stats(Mod_id,rnti1);
+      total_DL_cqi_MUMIMO = total_DL_cqi_MUMIMO + eNB_UE_stats0->DL_cqi[0] + eNB_UE_stats1->DL_cqi[0];
+    }
+    else if (MIMO_mode_indicator[i] == 1){
+      rnti0 = find_UE_RNTI(Mod_id,ue[0][i]);
+      eNB_UE_stats0 = mac_xface->get_eNB_UE_stats(Mod_id,rnti0);
+      total_DL_cqi_SUMIMO = total_DL_cqi_SUMIMO + eNB_UE_stats0->DL_cqi[0];
+    }
+  }
 
 
 
+
+  if((MIMO_mode_indicator[0] == 0)|| (MIMO_mode_indicator[1] == 0) || (MIMO_mode_indicator[2] == 0) ||  (MIMO_mode_indicator[3] == 0) ||
+     (MIMO_mode_indicator[4] == 0)|| (MIMO_mode_indicator[5] == 0) || (MIMO_mode_indicator[6] == 0)){
+ 
+
+    for (UE_id=0;UE_id<granted_UEs;UE_id++) 
+      {
+
+	    
+	next_ue = UE_id;
+	// If nobody is left, exit while loop and go to next step
+	if (next_ue == 255)
+	  break;
+	    
+	// This is an allocated UE_id
+	rnti = find_UE_RNTI(Mod_id,next_ue);
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+	
+	if (eNB_UE_stats==NULL)
+	  mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
+
+	switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
+	case 1:break;
+	case 2:break;
+	case 4:break;
+	case 5:		
+	  if(check == 1)
+	    {
+	      rnti_temp = find_UE_RNTI(Mod_id,UE_SU_MIMO);
+	      eNB_UE_stats_temp = mac_xface->get_eNB_UE_stats(Mod_id,rnti_temp);
+	      if(eNB_UE_stats->DL_cqi[0] > eNB_UE_stats_temp->DL_cqi[0]){
+		UE_SU_MIMO = next_ue;
+	      }
+	    }
+	  else
+	    {
+	      UE_SU_MIMO = next_ue;
+	      check = 1;
+	    }
+	}
+      }
+    rnti = find_UE_RNTI(Mod_id,UE_SU_MIMO);
+    eNB_UE_stats = mac_xface->get_eNB_UE_stats(Mod_id,rnti);
+    if((7*eNB_UE_stats->DL_cqi[0]) > (total_DL_cqi_SUMIMO + total_DL_cqi_MUMIMO)){
+    
+      dl_pow_off[UE_SU_MIMO] = 1;
+      pre_nb_available_rbs[UE_SU_MIMO] = 25;
+
+      for(j=0;j<7;j++){
+	rballoc_sub[UE_SU_MIMO][j] = 1;
+	ue[0][j] = UE_SU_MIMO;
+	MIMO_mode_indicator[j] = 1;
+      }
+      
+      for(UE_id=0;UE_id<granted_UEs;UE_id++)
+	{
+	  if(UE_id!= UE_SU_MIMO){
+	    dl_pow_off[UE_id] = 2;
+	    pre_nb_available_rbs[UE_id] = 0;
+	    for(jj=0;jj<7;jj++){
+	      rballoc_sub[UE_id][jj]=0;
+	      ue[0][jj] = 256;
+	      ue[1][jj] = 256;
+	    }
+	  }
+	}
+    }
+  }
+  
+  
+  if((MIMO_mode_indicator[0] == 1)&& (MIMO_mode_indicator[1] == 1) && (MIMO_mode_indicator[2] == 1) && (MIMO_mode_indicator[3] == 1) &&
+     (MIMO_mode_indicator[4] == 1)&& (MIMO_mode_indicator[5] == 1) && (MIMO_mode_indicator[6] == 1))
+    PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_SUMIMO_transmissions + 1;
+  else
+    if((MIMO_mode_indicator[0] == 0)|| (MIMO_mode_indicator[1] == 0) || (MIMO_mode_indicator[2] == 0) ||  (MIMO_mode_indicator[3] == 0) ||
+       (MIMO_mode_indicator[4] == 0)|| (MIMO_mode_indicator[5] == 0) || (MIMO_mode_indicator[6] == 0))
+      PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_MUMIMO_transmissions + 1;
+  
+  PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions = PHY_vars_eNB_g[Mod_id]->check_for_total_transmissions + 1;
+
+  
+  
+  
   for(UE_id=0;UE_id<granted_UEs;UE_id++){
+    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
     msg("******************Scheduling Information for UE%d ************************\n",UE_id);
     msg("dl power offset UE%d = %d \n",UE_id,dl_pow_off[UE_id]);
     msg("***********RB Alloc for every subband for UE%d ***********\n",UE_id);
     for(i=0;i<7;i++){
+      PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub[UE_id][i];
       msg("RB Alloc for UE%d and Subband%d = %d\n",UE_id,i,rballoc_sub[UE_id][i]);
     }
+    PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[UE_id];
     msg("Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[UE_id]);
   }
-
+  
 #endif
 
 
   for (UE_id=0;UE_id<granted_UEs;UE_id++) {
-	  
+    	  
     //msg("\n \n \n \n \n \n \n \nAvailable RBs for USER %d = %d\n\n \n \n \n \n \n \n \n",UE_id,pre_nb_available_rbs[UE_id]);
 #ifdef Pre_Processing // Number of pre-allocated PRBs allocated to each UE
     rnti = find_UE_RNTI(Mod_id,UE_id);
@@ -3387,7 +3528,9 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
     // Note this code is for a specific DCI format
     DLSCH_dci = (void *)eNB_mac_inst[Mod_id].UE_template[next_ue].DLSCH_DCI[harq_pid];
 	  
-    if (round == 0) {
+    //if (round > 0) 
+    // break;
+    //else {
       switch (mac_xface->get_transmission_mode(Mod_id,rnti)) {
       case 5:
 	nb_available_rb = pre_nb_available_rbs[UE_id];
@@ -3395,9 +3538,9 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
       default:
 	break;
       }
-    }
+      //}
 #endif
-	  
+    	  
     if ((nb_available_rb == 0) || (nCCE < aggregation))
       break;
     sdu_length_total=0;
@@ -3744,6 +3887,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
 	case 5:
 
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = eNB_UE_stats->DL_cqi[0];
+	  if(((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 > 9)
+	    ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->mcs1 = 9;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->ndi1 = 1;
 	  ((DCI2_5MHz_2D_M10PRB_TDD_t*)DLSCH_dci)->rv1 = round&3;
