@@ -77,7 +77,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
   (*frame_parms)->Nid_cell           = Nid_cell;
   (*frame_parms)->nushift            = (Nid_cell%6);
   (*frame_parms)->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  (*frame_parms)->nb_antennas_rx     = 2;
+  (*frame_parms)->nb_antennas_rx     = 1;
   (*frame_parms)->mode1_flag = (transmission_mode == 1) ? 1 : 0;
   (*frame_parms)->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
 
@@ -112,6 +112,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       PHY_vars_eNB_g[eNB_id]->dlsch_eNB[1] = (LTE_eNB_DLSCH_t**) malloc16(NUMBER_OF_UE_MAX*sizeof(LTE_eNB_DLSCH_t*));
       PHY_vars_eNB_g[eNB_id]->ulsch_eNB = (LTE_eNB_ULSCH_t**) malloc16((1+NUMBER_OF_UE_MAX)*sizeof(LTE_eNB_ULSCH_t*));
     */
+
+
+
 
     for (i=0;i<NUMBER_OF_UE_MAX;i++) {
       for (j=0;j<2;j++) {
@@ -150,6 +153,15 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
     printf("eNB %d : RA %p\n",eNB_id,PHY_vars_eNB_g[eNB_id]->dlsch_eNB_ra);
 
     PHY_vars_eNB_g[eNB_id]->rx_total_gain_eNB_dB=150;
+
+    for(i=0;i<NUMBER_OF_UE_MAX;i++)
+      PHY_vars_eNB_g[eNB_id]->mu_mimo_mode[i].dl_pow_off = 2;
+
+    PHY_vars_eNB_g[eNB_id]->check_for_total_transmissions = 0;
+
+    PHY_vars_eNB_g[eNB_id]->check_for_MUMIMO_transmissions = 0;
+
+    PHY_vars_eNB_g[eNB_id]->check_for_SUMIMO_transmissions = 0;
   }
 
   // init all UE vars
@@ -181,6 +193,8 @@ void init_lte_vars(LTE_DL_FRAME_PARMS **frame_parms,
       PHY_vars_UE_g[UE_id]->dlsch_ue_SI = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
       PHY_vars_UE_g[UE_id]->dlsch_ue_ra = (LTE_UE_DLSCH_t**) malloc16(NUMBER_OF_eNB_MAX*sizeof(LTE_UE_DLSCH_t*));
     */
+
+
 
     for (i=0;i<NUMBER_OF_eNB_MAX;i++) {
       for (j=0;j<2;j++) {

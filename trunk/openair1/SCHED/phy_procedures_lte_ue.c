@@ -1333,7 +1333,8 @@ int lte_ue_pdcch_procedures(u8 eNB_id,u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 
 int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abstraction_flag) {
 
   u16 l,m,n_symb,i,j;
-  //  int eNB_id = 0, eNB_id_i = 1;
+  //  int eNB_id = 0, 
+  int eNB_id_i = 1;
   u8 dual_stream_UE = 0;
   int ret;
   u8 harq_pid;
@@ -1341,7 +1342,7 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
   unsigned int dlsch_buffer_length;
   u8 pilot1,pilot2,pilot3;
   u8 dlsch_thread_index = 0;
-
+  u8 i_mod = 0;
 
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
@@ -1413,6 +1414,17 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
     if (((last_slot%2)==0) && (l==0)) {
 
       if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1) {
+	if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+	  dual_stream_UE = 1;
+	  eNB_id_i = NUMBER_OF_eNB_MAX;
+	  i_mod = 2;
+	}
+	else {
+	  dual_stream_UE = 0;
+	  eNB_id_i = eNB_id+1;
+	  i_mod = 0;
+	}
+
 	// process symbols 10,11,12 and trigger DLSCH decoding
 	if (abstraction_flag == 0) {
 	  for (m=pilot3;m<phy_vars_ue->lte_frame_parms.symbols_per_tti;m++) {
@@ -1421,14 +1433,14 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 		     phy_vars_ue->lte_ue_dlsch_vars,
 		     &phy_vars_ue->lte_frame_parms,
 		     eNB_id,
-		     eNB_id+1,
+		     eNB_id_i,
 		     phy_vars_ue->dlsch_ue[eNB_id],
 		     (((last_slot>>1)==0) ? 9 : ((last_slot>>1)-1)),  // subframe
 		     m,                    // symbol
 		     0,                    // first_symbol_flag
 		     dual_stream_UE,
 		     &phy_vars_ue->PHY_measurements,
-		     phy_vars_ue->is_secondary_ue);
+		     i_mod);//phy_vars_ue->is_secondary_ue);
 	  }
 	}
 	
@@ -1805,20 +1817,30 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 	  debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod first slot (m %d)\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot,m);
 #endif
 	  
+	  if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+	    dual_stream_UE = 1;
+	    eNB_id_i = NUMBER_OF_eNB_MAX;
+	    i_mod = 2;
+	  }
+	  else {
+	    dual_stream_UE = 0;
+	    eNB_id_i = eNB_id+1;
+	    i_mod = 0;
+	  }
 	  // process DLSCH received in first slot
 	  
 	  rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		   phy_vars_ue->lte_ue_dlsch_vars,
 		   &phy_vars_ue->lte_frame_parms,
 		   eNB_id,
-		   eNB_id+1,
+		   eNB_id_i,
 		   phy_vars_ue->dlsch_ue[eNB_id],
 		   last_slot>>1,  // subframe,
 		   m,
 		   (m==phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols)?1:0,   // first_symbol_flag
 		   dual_stream_UE,
                    &phy_vars_ue->PHY_measurements,
-                   phy_vars_ue->is_secondary_ue);
+                   i_mod);//phy_vars_ue->is_secondary_ue);
 	  } // CRNTI active
 	  
 	  if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1)  {
@@ -1869,18 +1891,29 @@ int phy_procedures_UE_RX(u8 last_slot, PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 #ifdef DEBUG_PHY_PROC
 	    //debug_msg("[PHY][UE %d] Frame %d, slot %d: DLSCH demod between pilot 2 and 3 (2nd slot)\n",phy_vars_ue->Mod_id,mac_xface->frame,last_slot);
 #endif
+	    if ((phy_vars_ue->transmission_mode[eNB_id] == 5) && (phy_vars_ue->dlsch_ue[eNB_id][0]->dl_power_off==0)) {
+	      dual_stream_UE = 1;
+	      eNB_id_i = NUMBER_OF_eNB_MAX;
+	      i_mod = 2;
+	    }
+	    else {
+	      dual_stream_UE = 0;
+	      eNB_id_i = eNB_id+1;
+	      i_mod = 0;
+	    }
+
 	    rx_dlsch(&phy_vars_ue->lte_ue_common_vars,
 		     phy_vars_ue->lte_ue_dlsch_vars,
 		     &phy_vars_ue->lte_frame_parms,
 		     eNB_id,
-		     eNB_id+1,
+		     eNB_id_i,
 		     phy_vars_ue->dlsch_ue[eNB_id],
 		     last_slot>>1,  // subframe,
 		     m,
 		     0,
 		     dual_stream_UE,
 		     &phy_vars_ue->PHY_measurements,
-		     phy_vars_ue->is_secondary_ue);
+		     i_mod);//phy_vars_ue->is_secondary_ue);
 	  } // CRNTI active
 	  
 	  if(phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {

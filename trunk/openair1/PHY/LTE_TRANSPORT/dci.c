@@ -2450,6 +2450,33 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
 
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 1
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  0,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+  
   // Now check UE_SPEC format0 search spaces at aggregation 1 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
 			  subframe,
@@ -2469,7 +2496,8 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
-  if (CCEmap0==0xffff)
+  
+if (CCEmap0==0xffff)
     return(dci_cnt);
 
   // Now check UE_SPEC format 1 search spaces at aggregation 2 
@@ -2519,6 +2547,34 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     return(dci_cnt);
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
+
+
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 2
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  1,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
 
   // Now check UE_SPEC format 0 search spaces at aggregation 2 
   dci_decoding_procedure0(lte_ue_pdcch_vars,
@@ -2591,6 +2647,34 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
   if (dci_cnt>old_dci_cnt)
     return(dci_cnt);
 
+
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 4
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  2,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
+
+  if (CCEmap0==0xffff)
+    return(dci_cnt);
+  if (dci_cnt>old_dci_cnt)
+    return(dci_cnt);
+
+
 #ifdef ALL_AGGREGATION
   // Now check UE_SPEC format 1 search spaces at aggregation 8 
   old_dci_cnt=dci_cnt;
@@ -2635,83 +2719,28 @@ u16 dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
 			  &CCEmap0,
 			  &CCEmap1,
 			  &CCEmap2);
+
+
+  // Now check UE_SPEC format 2_2D_M10PRB search spaces at aggregation 8 
+  dci_decoding_procedure0(lte_ue_pdcch_vars,
+			  subframe,
+			  dci_alloc,
+			  eNB_id,
+			  frame_parms,
+			  mi,
+			  si_rnti,
+			  ra_rnti,
+			  3,
+			  format1A,
+			  format1A,
+			  format2_2D_M10PRB,
+			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
+			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
+			  &dci_cnt,
+			  &CCEmap0,
+			  &CCEmap1,
+			  &CCEmap2);
 #endif
-
-  old_dci_cnt=dci_cnt;
-  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 1
-  dci_decoding_procedure0(lte_ue_pdcch_vars,
-			  subframe,
-			  dci_alloc,
-			  eNB_id,
-			  frame_parms,
-			  mi,
-			  si_rnti,
-			  ra_rnti,
-			  0,
-			  format1A,
-			  format1A,
-			  format2_2D_M10PRB,
-			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
-			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
-			  &dci_cnt,
-			  &CCEmap0,
-			  &CCEmap1,
-			  &CCEmap2);
-
-  if (CCEmap0==0xffff)
-    return(dci_cnt);
-  if (dci_cnt>old_dci_cnt)
-    return(dci_cnt);
-
-  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 2
-  dci_decoding_procedure0(lte_ue_pdcch_vars,
-			  subframe,
-			  dci_alloc,
-			  eNB_id,
-			  frame_parms,
-			  mi,
-			  si_rnti,
-			  ra_rnti,
-			  1,
-			  format1A,
-			  format1A,
-			  format2_2D_M10PRB,
-			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
-			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
-			  &dci_cnt,
-			  &CCEmap0,
-			  &CCEmap1,
-			  &CCEmap2);
-
-  if (CCEmap0==0xffff)
-    return(dci_cnt);
-  if (dci_cnt>old_dci_cnt)
-    return(dci_cnt);
-
-  // Now check UE_SPEC format 2_2D_M10PRB search spaces aggregation 4
-  dci_decoding_procedure0(lte_ue_pdcch_vars,
-			  subframe,
-			  dci_alloc,
-			  eNB_id,
-			  frame_parms,
-			  mi,
-			  si_rnti,
-			  ra_rnti,
-			  2,
-			  format1A,
-			  format1A,
-			  format2_2D_M10PRB,
-			  sizeof_DCI2_5MHz_2D_M10PRB_TDD_t,
-			  sizeof(DCI2_5MHz_2D_M10PRB_TDD_t),
-			  &dci_cnt,
-			  &CCEmap0,
-			  &CCEmap1,
-			  &CCEmap2);
-
-  if (CCEmap0==0xffff)
-    return(dci_cnt);
-  if (dci_cnt>old_dci_cnt)
-    return(dci_cnt);
 
   return(dci_cnt);
 }

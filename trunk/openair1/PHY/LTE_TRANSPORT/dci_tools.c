@@ -432,6 +432,9 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch1->current_harq_pid = harq_pid;
     dlsch0->harq_ids[subframe] = harq_pid;
     dlsch1->harq_ids[subframe] = harq_pid;
+
+
+
     //    printf("Setting DLSCH harq id %d to subframe %d\n",harq_pid,subframe);
 
     dlsch0->rb_alloc[0]                         = conv_rballoc(((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->rah,
@@ -524,6 +527,9 @@ int generate_eNB_dlsch_params_from_dci(u8 subframe,
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
 
+    dlsch0->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
+    dlsch1->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
+
     break;
   default:
     msg("dci_tools.c: Unknown DCI format\n");
@@ -614,6 +620,25 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci) {
 	((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->tpmi,
 	((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi1,
 	((DCI2_5MHz_2A_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi2
+	);
+    break;
+  case format2_2D_M10PRB:
+    msg("DCI format2_2D_M10PRB, rnti %x (%8x %8x): harq_pid %d, tb_swap %d, rah %d, rb_alloc %x, mcs1 %d, mcs2 %d, rv1 %d, rv2 %d, tpmi %d, ndi1 %d, ndi2 %d, dl_power_offset %d\n",
+	dci->rnti,
+	((u32 *)&dci->dci_pdu)[1],
+	((u32 *)&dci->dci_pdu)[0],
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->harq_pid,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->tb_swap,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->rah,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->rballoc,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->mcs1,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->mcs2,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->rv1,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->rv2,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->tpmi,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi1,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->ndi2,
+	((DCI2_5MHz_2D_M10PRB_TDD_t *)&dci->dci_pdu[0])->dl_power_off
 	);
     break;
   default:
@@ -953,6 +978,9 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->harq_processes[harq_pid]->mcs       = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->mcs1;
 
+
+
+
     /*
       if (dlsch0->harq_processes[harq_pid]->mcs>20) {
       msg("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0->harq_processes[harq_pid]->mcs);
@@ -1064,6 +1092,10 @@ int generate_ue_dlsch_params_from_dci(u8 subframe,
 
     dlsch0->active = 1;
     dlsch1->active = 1;
+
+    dlsch0->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
+    dlsch1->dl_power_off = ((DCI2_5MHz_2D_M10PRB_TDD_t *)dci_pdu)->dl_power_off;
+
 
     break;
   default:
