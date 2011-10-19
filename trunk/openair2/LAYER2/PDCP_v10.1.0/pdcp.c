@@ -32,7 +32,6 @@
 * \author  Lionel GAUTHIER and Navid Nikaein
 * \date 2009
 * \version 0.5
-
 */
 
 #define PDCP_C
@@ -62,7 +61,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
       mac_xface->macphy_exit("");
     }
 
-    // why do we allocate a new one? where an SDU is freed?
+    // why do we allocate a new mem_block here? where an SDU is freed?
     // Allocate a new block for the header and the payload
     // Why does mem_block_t keep no size information?
     pdcp_pdu = get_free_mem_block (pdu_size);
@@ -72,11 +71,20 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
       msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
 #endif
 
-      memcpy (&pdcp_pdu->data[0], sduP, data_sizeP);
+      // Place User Plane PDCP Data PDU header first
+      pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
+      pdu_header.dc = PDCP_DATA_PDU;
+      pdu_header.sn = pdcp_get_next_tx_seq_number(&pdcp_array[module_idP][rab_idP]);
+      // XXX PDU header size here depends on the sequence number configuration!
+      memcpy(&pdcp_pdu->data[0], &pdu_header, PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
+      // Then append data...
+      memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sduP, data_sizeP);
 
       // Ask sublayer to transmit data
       rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdu_size, pdcp_pdu);
+      // XXX Return value? How do we know RLC was successful or not?
 
+      // XXX What is cluster_head?
       if (Mac_rlc_xface->Is_cluster_head[module_idP]==1) {
         Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
         Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP;
@@ -102,10 +110,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
   int i;
   
   if ((data_sizeP > 0)) {
-    
-    //   if(Mac_rlc_xface->Is_cluster_head[0]==1 && Mac_rlc_xface->frame%10==0)
-    //msg("[PDCP][RAB %d][INST %d] PDCP_DATA_IND size %d\n", rab_idP,module_idP,data_sizeP);  
-    
+
 #ifdef PDCP_DATA_IND_DEBUG
     msg("[PDCP][RAB %d][INST %d] TTI %d PDCP_DATA_IND size %d\n", 
 	rab_idP,module_idP,Mac_rlc_xface->frame,data_sizeP);  
@@ -148,7 +153,6 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
       }
     }
 
-    
     free_mem_block (sduP);
   }
 }
@@ -164,38 +168,10 @@ pdcp_run ()
 #define PDCP_DUMMY_BUFFER_SIZE 38
   unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
   
-
-  //msg("[PDCP] PDCP Run Id %d\n",modId);
-
-
-  /*
-  if(Mac_rlc_xface->frame %1 == 0 && (Mac_rlc_xface->frame > 30))  {
-    if (Mac_rlc_xface->Is_cluster_head[0] ==0){
-      pdcp_data_req(0,5,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-      pdcp_data_req(0,4,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-
-    //     pdcp_data_req(0,4,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    // pdcp_data_req(3,4,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    //pdcp_data_req(4,4,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    }
-    // if (Mac_rlc_xface->Is_cluster_head[modId] == 1 && Mac_rlc_xface->frame %20 == 0)  {
-    else{
-      pdcp_data_req(0,20,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-      pdcp_data_req(0,21,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-      pdcp_data_req(0,12,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-      pdcp_data_req(0,13,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-
-	  //pdcp_data_req(0,20,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    }
-    // pdcp_data_req(0,28,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    //       pdcp_data_req(0,36,PDCP_DUMMY_BUFFER_SIZE,pdcp_dummy_buffer);
-    
-    }*/
-
 #endif
 #endif
   unsigned int diff,i,k,j;
-  if((Mac_rlc_xface->frame%128)==0) { 
+  if ((Mac_rlc_xface->frame%128)==0) { 
     //    for(i=0;i<NB_INST;i++)
     for(i=0;i<NB_UE_INST;i++)
       for (j=0;j<NB_CNX_CH;j++)
@@ -232,6 +208,9 @@ pdcp_config_release (module_id_t module_idP, rb_id_t rab_idP)
     //msg ("[PDCP] pdcp_config_release()\n");
 }
 //-----------------------------------------------------------------------------
+
+// XXX What is the difference between pdcp_module_init() and pdcp_layer_init()? Is the former related with kernel module's init?
+
 int
 pdcp_module_init ()
 {
