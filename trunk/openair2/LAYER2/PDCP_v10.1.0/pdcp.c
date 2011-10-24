@@ -71,13 +71,16 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
       msg("[PDCP] TTI %d, INST %d: PDCP_DATA_REQ size %d RAB %d:\n",Mac_rlc_xface->frame,module_idP,data_sizeP,rab_idP);
 #endif
 
-      // Place User Plane PDCP Data PDU header first
+      /*
+       * Create a Data PDU with header and appended data
+       * Place User Plane PDCP Data PDU header first
+       */
       pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
       pdu_header.dc = PDCP_DATA_PDU;
       pdu_header.sn = pdcp_get_next_tx_seq_number(&pdcp_array[module_idP][rab_idP]);
       // XXX PDU header size here depends on the sequence number configuration!
       memcpy(&pdcp_pdu->data[0], &pdu_header, PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
-      // Then append data...
+      /* Then append data... */
       memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sduP, data_sizeP);
 
       // Ask sublayer to transmit data
@@ -105,36 +108,35 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 void
 pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP)
 {
-  //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
   mem_block_t      *new_sdu = NULL;
   int i;
   
-  if ((data_sizeP > 0)) {
+  if (data_sizeP > 0) {
 
 #ifdef PDCP_DATA_IND_DEBUG
     msg("[PDCP][RAB %d][INST %d] TTI %d PDCP_DATA_IND size %d\n", 
 	rab_idP,module_idP,Mac_rlc_xface->frame,data_sizeP);  
-    
+
     for (i=0;i<20;i++)
       msg("%02X.",(unsigned char)sduP->data[i]);
     msg("\n");
-
-#endif PDCP_DATA_IND_DEBUG
+#endif // PDCP_DATA_IND_DEBUG
 
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
-    
+
     if (new_sdu) {
       memset (new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rab_idP;
       ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = data_sizeP;
 
       // Here there is no virtualization possible
+      // XXX What does following part mean?
 #ifdef IDROMEL_NEMO
       if (Mac_rlc_xface->Is_cluster_head[module_idP] == 0)
 	((pdcp_data_ind_header_t *) new_sdu->data)->inst = rab_idP/8;
       else
 	((pdcp_data_ind_header_t *) new_sdu->data)->inst = 0;
-      
 #else
       ((pdcp_data_ind_header_t *) new_sdu->data)->inst = module_idP;
 #endif 
@@ -156,6 +158,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
     free_mem_block (sduP);
   }
 }
+
 //-----------------------------------------------------------------------------
 void
 pdcp_run ()
@@ -188,11 +191,12 @@ pdcp_run ()
   }
   
   pdcp_fifo_read_input_sdus();
-    // PDCP -> NAS traffic
+  // PDCP -> NAS traffic
   pdcp_fifo_flush_sdus();
   
 
 }
+
 //-----------------------------------------------------------------------------
 void
 pdcp_config_req (module_id_t module_idP, rb_id_t rab_idP)
@@ -200,6 +204,7 @@ pdcp_config_req (module_id_t module_idP, rb_id_t rab_idP)
 //-----------------------------------------------------------------------------
     //msg ("[PDCP] pdcp_confiq_req()\n");
 }
+
 //-----------------------------------------------------------------------------
 void
 pdcp_config_release (module_id_t module_idP, rb_id_t rab_idP)
@@ -219,15 +224,13 @@ pdcp_module_init ()
 //-----------------------------------------------------------------------------
 #ifndef USER_MODE
 
-
   ret=rtf_create(PDCP2NAS_FIFO,32768);
 
   if (ret < 0) {
     printk("[openair][MAC][INIT] Cannot create PDCP2NAS fifo %d (ERROR %d)\n",PDCP2NAS_FIFO,ret);
 
-    return(-1);
-  }
-  else{
+    return -1;
+  } else {
     printk("[openair][MAC][INIT] Created PDCP2NAS fifo %d\n",PDCP2NAS_FIFO);
     rtf_reset(PDCP2NAS_FIFO);
   }
@@ -237,7 +240,7 @@ pdcp_module_init ()
   if (ret < 0) {
     printk("[openair][MAC][INIT] Cannot create NAS2PDCP fifo %d (ERROR %d)\n",NAS2PDCP_FIFO,ret);
 
-    return(-1);
+    return -1;
   }
   else{
     printk("[openair][MAC][INIT] Created NAS2PDCP fifo %d\n",NAS2PDCP_FIFO);
@@ -249,9 +252,10 @@ pdcp_module_init ()
   pdcp_input_sdu_size_read=0;
 #endif
 
-  return(0);
+  return 0;
 
-} 
+}
+
 //-----------------------------------------------------------------------------
 void
 pdcp_module_cleanup ()
@@ -263,6 +267,7 @@ pdcp_module_cleanup ()
   rtf_destroy(PDCP2NAS_FIFO);
 #endif
 }
+
 //-----------------------------------------------------------------------------
 void
 pdcp_layer_init ()

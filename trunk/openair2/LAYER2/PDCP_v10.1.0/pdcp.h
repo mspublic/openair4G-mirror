@@ -78,6 +78,7 @@ protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes ();)
 protected_pdcp_fifo(int pdcp_fifo_read_input_sdus();)
 //-----------------------------------------------------------------------------
 
+// XXX Where are following two types utilized?
 typedef struct pdcp_data_req_header_t {
   rb_id_t             rb_id;
   sdu_size_t           data_size;
