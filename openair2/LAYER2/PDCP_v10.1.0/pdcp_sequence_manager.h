@@ -64,9 +64,9 @@ u16 pdcp_calculate_max_seq_num_for_given_size(u8 seq_num_size);
  */
 u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity);
 /**
- * Returns the next RX sequence number for given PDCP entity
+ * Advances the RX window state of given PDCP entity upon successfull receipt of a SDU
  */
-u16 pdcp_get_next_rx_seq_number(pdcp_t* pdcp_entity);
+BOOL pdcp_advance_rx_window(pdcp_t* pdcp_entity);
 /**
  * Checks if incoming PDU has a sequence number in accordance with the RX window
  * @return TRUE if it is valid, FALSE otherwise
