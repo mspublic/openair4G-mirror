@@ -26,6 +26,10 @@
 #    define CPDCP_RELOC_CNF   0x40
 //----------------------------------------------------------
 // primitives definition
+// XXX Following primitives are deprecated, they were defined in former 
+// versions of PDCP but now they're not present anymore, should they be deleted?
+// XXX If they're deleted where could the size information be fetched, since there is 
+// no size field in SDUs?
 //----------------------------------------------------------
 struct pdcp_data_req {
   u16             rb_id;
