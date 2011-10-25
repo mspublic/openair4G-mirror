@@ -109,7 +109,7 @@ void
 pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, mem_block_t * sduP)
 {
 //-----------------------------------------------------------------------------
-  mem_block_t      *new_sdu = NULL;
+  mem_block_t *new_sdu = NULL;
   int i;
   
   if (data_sizeP > 0) {
@@ -126,6 +126,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
 
     if (new_sdu) {
+      // XXX new_sdu is bigger than sizeof(pdcp_data_ind_header_t), why don't we reset all the bytes?
       memset (new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rab_idP;
       ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = data_sizeP;
@@ -144,14 +145,13 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
       // PROCESS OF DECOMPRESSION HERE:
       memcpy (&new_sdu->data[sizeof (pdcp_data_ind_header_t)], &sduP->data[0], data_sizeP);
       list_add_tail_eurecom (new_sdu, &pdcp_sdu_list);
-      if(Mac_rlc_xface->Is_cluster_head[module_idP]==1){
-	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
-      }
-      else{
-	Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
-	Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
-	
+
+      if (Mac_rlc_xface->Is_cluster_head[module_idP]==1) {
+        Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+        Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP;
+      } else {
+        Pdcp_stats_rx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
+        Pdcp_stats_rx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]+=data_sizeP; 
       }
     }
 
