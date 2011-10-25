@@ -30,11 +30,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#ifdef XFORMS
-#include "forms.h"
-#include "phy_procedures_sim_form.h"
-#endif
-
 #include "oaisim.h"
 
 #define PI 3.1416
