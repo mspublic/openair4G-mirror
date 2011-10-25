@@ -10,7 +10,6 @@
 #include "scm_corrmat.h"
 
 //#define DEBUG_CH
-#define NB_SAMPLES_CHANNEL_OFFSET 4
 
 channel_desc_t *new_channel_desc(u8 nb_tx,
 				 u8 nb_rx, 
@@ -120,12 +119,24 @@ double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
 double default_amps_lin[] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
 double default_amp_lin[] = {1};
 
-struct complex R_sqrt_21_corr[2][2] = {{{0.70711,0}, {0.70711,0}}, {{0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully correlated 2x1 channel (h1==h2)
-struct complex R_sqrt_21_anticorr[2][2] = {{{0.70711,0}, {-0.70711,0}}, {{-0.70711,0}, {0.70711,0}}}; //correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
-struct complex *R_sqrt_21_ptr_corr[2];
-struct complex *R_sqrt_21_ptr_anticorr[2];
-struct complex **R_sqrt_21_ptr2_corr;
-struct complex **R_sqrt_21_ptr2_anticorr;
+//correlation matrix for a 2x2 channel with full Tx correlation 
+struct complex R_sqrt_22_corr[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
+					{0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0},
+					{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
+					{0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0}};
+//correlation matrix for a fully correlated 2x1 channel (h1==h2)
+struct complex R_sqrt_21_corr[4] = {{0.70711,0}, {0.70711,0}, {0.70711,0}, {0.70711,0}}; 
+
+//correlation matrix for a 2x2 channel with full Tx anti-correlation 
+struct complex R_sqrt_22_anticorr[16] = {{0.70711,0}, {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, 
+					 {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {-0.70711,0},
+					 {-0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
+					 {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, {0.70711,0}};
+//correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
+struct complex R_sqrt_21_anticorr[4] = {{0.70711,0}, {-0.70711,0}, {-0.70711,0}, {0.70711,0}}; 
+struct complex *R_sqrt_ptr[1];
+struct complex **R_sqrt_ptr2;
+
 
 channel_desc_t *new_channel_desc_scm(u8 nb_tx, 
 				     u8 nb_rx, 
@@ -412,12 +423,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_21_ptr_corr[0] = R_sqrt_21_corr[0];
-	R_sqrt_21_ptr_corr[1] = R_sqrt_21_corr[1]; 
-	R_sqrt_21_ptr2_corr = &R_sqrt_21_ptr_corr[0];
+	R_sqrt_ptr[0] = &R_sqrt_21_corr[0];
+	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+      }
+      else if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr[0] = &R_sqrt_22_corr[0];
+	R_sqrt_ptr2 = &R_sqrt_ptr[0];
       }
       else
-	R_sqrt_21_ptr2_corr = NULL;
+	R_sqrt_ptr2 = NULL;
 
       chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
@@ -425,7 +439,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_length,
 				   default_amp_lin,
 				   NULL,
-				   R_sqrt_21_ptr2_corr,
+				   R_sqrt_ptr2,
 				   Td,
 				   BW,
 				   ricean_factor,
@@ -445,12 +459,15 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_21_ptr_anticorr[0] = R_sqrt_21_anticorr[0];
-	R_sqrt_21_ptr_anticorr[1] = R_sqrt_21_anticorr[1]; 
-	R_sqrt_21_ptr2_anticorr = &R_sqrt_21_ptr_anticorr[0];
+	R_sqrt_ptr[0] = &R_sqrt_21_anticorr[0];
+	R_sqrt_ptr2 = &R_sqrt_ptr[0];
       }
-      else
-	R_sqrt_21_ptr2_anticorr = NULL;
+      else if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr[0] = &R_sqrt_22_anticorr[0];
+	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
 
       chan_desc = new_channel_desc(nb_tx,
 				   nb_rx,
@@ -458,7 +475,7 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
 				   channel_length,
 				   default_amp_lin,
 				   NULL,
-				   R_sqrt_21_ptr2_anticorr,
+				   R_sqrt_ptr2,
 				   Td,
 				   BW,
 				   ricean_factor,
@@ -547,13 +564,12 @@ int random_channel(channel_desc_t *desc) {
     // for debugging set a=anew;
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].x = anew[aarx+(aatx*desc->nb_rx)].x;
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].y = anew[aarx+(aatx*desc->nb_rx)].y;
+	desc->a[i][aarx+(aatx*desc->nb_rx)].x = anew[aarx+(aatx*desc->nb_rx)].x;
+	desc->a[i][aarx+(aatx*desc->nb_rx)].y = anew[aarx+(aatx*desc->nb_rx)].y;
  	printf("anew(%d,%d) = %f+1j*%f\n",aatx,aarx,anew[aarx+(aatx*desc->nb_rx)].x, anew[aarx+(aatx*desc->nb_rx)].y);
      }
     }
     */
-
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
     alpha.x = 1.0;
@@ -567,8 +583,8 @@ int random_channel(channel_desc_t *desc) {
     /*
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
       for (aatx=0;aatx<desc->nb_tx;aatx++) {
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].x = acorr[aarx+(aatx*desc->nb_rx)].x;
-	//desc->a[i][aarx+(aatx*desc->nb_rx)].y = acorr[aarx+(aatx*desc->nb_rx)].y;
+	desc->a[i][aarx+(aatx*desc->nb_rx)].x = acorr[aarx+(aatx*desc->nb_rx)].x;
+	desc->a[i][aarx+(aatx*desc->nb_rx)].y = acorr[aarx+(aatx*desc->nb_rx)].y;
 	printf("tap %d, acorr1(%d,%d) = %f+1j*%f\n",i,aatx,aarx,acorr[aarx+(aatx*desc->nb_rx)].x, acorr[aarx+(aatx*desc->nb_rx)].y);
       }
     }
@@ -578,12 +594,15 @@ int random_channel(channel_desc_t *desc) {
       cblas_zcopy(desc->nb_tx*desc->nb_rx, (void*) acorr, 1, (void*) desc->a[i], 1);
     }
     else {
+      // a = alpha*acorr+beta*a
+      // a = beta*a
+      // a = a+alpha*acorr
       alpha.x = sqrt(1-desc->forgetting_factor);
       alpha.y = 0;
       beta.x = sqrt(desc->forgetting_factor);
       beta.y = 0;
-      cblas_zscal(desc->nb_tx*desc->nb_rx, (void*) &alpha, (void*) acorr, 1);
-      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void*) &beta,  (void*) desc->a[i], 1, (void*) acorr, 1);
+      cblas_zscal(desc->nb_tx*desc->nb_rx, (void*) &beta, (void*) desc->a[i], 1);
+      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void*) &alpha, (void*) acorr, 1, (void*) desc->a[i], 1);
 
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].x = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].x) + sqrt(1-desc->forgetting_factor)*anew.x;
       //  desc->a[i][aarx+(aatx*desc->nb_rx)].y = (sqrt(desc->forgetting_factor)*desc->a[i][aarx+(aatx*desc->nb_rx)].y) + sqrt(1-desc->forgetting_factor)*anew.y;
@@ -602,7 +621,7 @@ int random_channel(channel_desc_t *desc) {
   } //nb_taps      
 
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
-
+  
   for (aarx=0;aarx<desc->nb_rx;aarx++) {
     for (aatx=0;aatx<desc->nb_tx;aatx++) {
       for (k=0;k<(int)desc->channel_length;k++) {

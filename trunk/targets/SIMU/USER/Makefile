@@ -35,7 +35,9 @@ cygwin=1
 OCG_FLAG = 0
 endif
 
-#CFLAGS += -DXFORMS
+ifdef XFORMS
+CFLAGS += -DXFORMS
+endif
 
 ifndef rrc_cellular
 rrc_cellular = 0
@@ -102,6 +104,7 @@ OAISIM_OBJS += init_lte.o
 OAISIM_OBJS += oaisim_config.o
 OAISIM_OBJS += sinr_sim.o 
 OAISIM_OBJS += cor_SF_sim.o
+OAISIM_OBJS += phy_procedures_sim_form.o
 
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) 
 #oaisim_config.o 

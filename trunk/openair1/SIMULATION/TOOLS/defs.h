@@ -17,6 +17,8 @@ The present clause specifies several numerical functions for testing of digital 
 
 */
 
+#define NB_SAMPLES_CHANNEL_OFFSET 4
+
 typedef struct {
   ///Number of tx antennas
   u8 nb_tx; 

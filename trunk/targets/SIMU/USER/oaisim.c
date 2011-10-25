@@ -162,6 +162,7 @@ do_forms (FD_phy_procedures_sim * form,
   s32 j, s, i;
   float I[3600], Q[3600], I2[3600], Q2[3600], I3[300], Q3[300];
 
+  if (lte_ue_dlsch_vars[0]->rxdataF_comp) {
   j = 0;
   //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
   for (s = 4; s < 12; s++) {
@@ -184,8 +185,9 @@ do_forms (FD_phy_procedures_sim * form,
 
   //fl_set_xyplot_xbounds(form->pdsch_constellation,-800,800);
   //fl_set_xyplot_ybounds(form->pdsch_constellation,-800,800);
+  }
 
-
+  if (lte_eNB_ulsch_vars[0]->rxdataF_comp[0]) {
   j = 0;
   //  printf("rxdataF_comp %p, lte_ue_dlsch_vars[0] %p\n",lte_ue_dlsch_vars[0]->rxdataF_comp[0],lte_ue_dlsch_vars[0]);
   for (s = 0; s < 12; s++) {
@@ -207,11 +209,13 @@ do_forms (FD_phy_procedures_sim * form,
 
   fl_set_xyplot_xbounds(form->pusch_constellation,-800,800);
   fl_set_xyplot_ybounds(form->pusch_constellation,-800,800);
+  }
 
   for (j = 0; j < ch_len; j++) {
 
     I3[j] = j;
     Q3[j] = 10 * log10 (ch[0][j].x * ch[0][j].x + ch[0][j].y * ch[0][j].y);
+    //Q3[j] = (ch[0][j].x);
   }
 
   fl_set_xyplot_data (form->ch00, I3, Q3, ch_len, "", "", "");
@@ -228,7 +232,7 @@ main (int argc, char **argv)
   int new_omg_model; // goto ocg in oai_emulation.info.
   // pointers signal buffers (s = transmit, r,r0 = receive)
   double **s_re, **s_im, **r_re, **r_im, **r_re0, **r_im0;
-  double forgetting_factor=0;
+  double forgetting_factor=0.0;
   int map1,map2;
   double **ShaF= NULL;
 
@@ -530,7 +534,7 @@ main (int argc, char **argv)
       if (oai_emulation.info.transmission_mode == 5) {
 	  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
 						       PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
-						       (UE_id == 0)? Rayleigh8:Rayleigh8,
+						       (UE_id == 0)? Rayleigh1_corr:Rayleigh1_anticorr,
 						       //map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
 						       oai_emulation.environment_system_config.system_bandwidth_MB,
 						       forgetting_factor,
@@ -545,11 +549,15 @@ main (int argc, char **argv)
 						     forgetting_factor,
 						     0,
 						     0);
-      }
+	}
       
+#ifdef DEBUG_SIM
+     printf ("[SIM] Initializing channel from UE %d to eNB %d\n", UE_id, eNB_id);
+#endif
       UE2eNB[UE_id][eNB_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_tx,
 						   PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_rx,
 						   map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+						   //Rayleigh1,
 						   oai_emulation.environment_system_config.system_bandwidth_MB,
 						   forgetting_factor,
 						   0,
@@ -872,7 +880,7 @@ main (int argc, char **argv)
 	do_forms (form[eNB_id][UE_id],
 		  PHY_vars_UE_g[UE_id]->lte_ue_dlsch_vars,
 		  PHY_vars_eNB_g[eNB_id]->lte_eNB_ulsch_vars,
-		  eNB2UE[eNB_id][UE_id]->ch, eNB2UE[eNB_id][UE_id]->channel_length);
+		  eNB2UE[eNB_id][UE_id]->ch,eNB2UE[eNB_id][UE_id]->channel_length);
       }
 #endif	
     // calibrate at the end of each frame if there is some time  left

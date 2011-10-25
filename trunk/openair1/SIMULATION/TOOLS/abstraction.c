@@ -11,6 +11,7 @@
 void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 
   double delta_f,freq;  // 90 kHz spacing
+  double delay;
   s16 f;
   u8 aarx,aatx,l;
 
@@ -24,10 +25,11 @@ void freq_channel(channel_desc_t *desc,u16 nb_rb,s16 n_samples) {
 	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].x=0.0;
 	  desc->chF[aarx+(aatx*desc->nb_rx)][n_samples/2+f].y=0.0;
 	  for (l=0;l<(int)desc->nb_taps;l++) {
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*desc->delays[l])+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*desc->delays[l]));
-	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*desc->delays[l])+
-						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*desc->delays[l]));
+	    delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*delay)+
+						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*delay));
+	    desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*delay)+
+						      desc->a[l][aarx+(aatx*desc->nb_rx)].y*cos(2*M_PI*freq*delay));
 	  }
 	  	  	  	// printf("chF(%d) => (%f,%f)\n",n_samples/2+f,desc->chF[aarx+(aatx*desc->nb_rx)][f].x,desc->chF[aarx+(aatx*desc->nb_rx)][f].y);
 	}

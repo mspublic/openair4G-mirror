@@ -142,6 +142,10 @@ node_desc_t *enb_data[NUMBER_OF_eNB_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
       // calculate the random channel from each eNB
       for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
 	random_channel(eNB2UE[eNB_id][UE_id]);
+	/*
+	for (i=0;i<eNB2UE[eNB_id][UE_id]->nb_taps;i++)
+	  printf("eNB2UE[%d][%d]->a[0][%d] = (%f,%f)\n",eNB_id,UE_id,i,eNB2UE[eNB_id][UE_id]->a[0][i].x,eNB2UE[eNB_id][UE_id]->a[0][i].y);
+	*/
 	freq_channel(eNB2UE[eNB_id][UE_id], frame_parms->N_RB_DL,51);
       }
 
