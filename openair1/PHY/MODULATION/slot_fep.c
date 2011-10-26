@@ -78,10 +78,9 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
   }
     
-
   if ((l==0) || (l==(4-frame_parms->Ncp))) {
     for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-
+#ifndef PERFECT_CE
 #ifdef DEBUG_FEP
       debug_msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
@@ -104,7 +103,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 				aa,
 				l,
 				symbol);
-      
+#endif
+
       // do frequency offset estimation here!
       // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1}) 
 #ifdef DEBUG_FEP

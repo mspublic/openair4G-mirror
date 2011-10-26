@@ -120,21 +120,27 @@ double default_amps_lin[] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0
 double default_amp_lin[] = {1};
 
 //correlation matrix for a 2x2 channel with full Tx correlation 
-struct complex R_sqrt_22_corr[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
+struct complex R_sqrt_22_corr_tap[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
 					{0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0},
 					{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
 					{0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0}};
+struct complex *R_sqrt_22_corr[1]     = {R_sqrt_22_corr_tap};
+
 //correlation matrix for a fully correlated 2x1 channel (h1==h2)
-struct complex R_sqrt_21_corr[4] = {{0.70711,0}, {0.70711,0}, {0.70711,0}, {0.70711,0}}; 
+struct complex R_sqrt_21_corr_tap[4]  = {{0.70711,0}, {0.70711,0}, {0.70711,0}, {0.70711,0}}; 
+struct complex *R_sqrt_21_corr[1]      = {R_sqrt_21_corr_tap};
 
 //correlation matrix for a 2x2 channel with full Tx anti-correlation 
-struct complex R_sqrt_22_anticorr[16] = {{0.70711,0}, {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, 
-					 {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {-0.70711,0},
-					 {-0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
-					 {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, {0.70711,0}};
+struct complex R_sqrt_22_anticorr_tap[16] = {{0.70711,0}, {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, 
+					     {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {-0.70711,0},
+					     {-0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
+					     {0.0, 0.0}, {-0.70711,0}, {0.0, 0.0}, {0.70711,0}};
+struct complex *R_sqrt_22_anticorr[1]     = {R_sqrt_22_anticorr_tap};
+
 //correlation matrix for a fully anti-correlated 2x1 channel (h1==-h2)
-struct complex R_sqrt_21_anticorr[4] = {{0.70711,0}, {-0.70711,0}, {-0.70711,0}, {0.70711,0}}; 
-struct complex *R_sqrt_ptr[1];
+struct complex R_sqrt_21_anticorr_tap[4]  = {{0.70711,0}, {-0.70711,0}, {-0.70711,0}, {0.70711,0}}; 
+struct complex *R_sqrt_21_anticorr[1]     = {R_sqrt_21_anticorr_tap};
+
 struct complex **R_sqrt_ptr2;
 
 
@@ -423,12 +429,10 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_ptr[0] = &R_sqrt_21_corr[0];
-	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+	R_sqrt_ptr2 = R_sqrt_21_corr;
       }
       else if ((nb_tx==2) && (nb_rx==2)) {
-	R_sqrt_ptr[0] = &R_sqrt_22_corr[0];
-	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+	R_sqrt_ptr2 = R_sqrt_22_corr;
       }
       else
 	R_sqrt_ptr2 = NULL;
@@ -459,12 +463,10 @@ channel_desc_t *new_channel_desc_scm(u8 nb_tx,
       maxDoppler = 0;
 
       if ((nb_tx==2) && (nb_rx==1)) {
-	R_sqrt_ptr[0] = &R_sqrt_21_anticorr[0];
-	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+	R_sqrt_ptr2 = R_sqrt_21_anticorr;
       }
       else if ((nb_tx==2) && (nb_rx==2)) {
-	R_sqrt_ptr[0] = &R_sqrt_22_anticorr[0];
-	R_sqrt_ptr2 = &R_sqrt_ptr[0];
+	R_sqrt_ptr2 = R_sqrt_22_anticorr;
       }
       else 
 	R_sqrt_ptr2 = NULL;

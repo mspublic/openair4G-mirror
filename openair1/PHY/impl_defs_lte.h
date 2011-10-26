@@ -521,7 +521,7 @@ typedef struct {
   /// estimated frequency offset (in radians) for all subcarriers
   s32 freq_offset;
   /// eNb_id user is synched to          
-  u8 eNb_id;     
+  s32 eNb_id;     
 } LTE_UE_COMMON;
 
 typedef struct {

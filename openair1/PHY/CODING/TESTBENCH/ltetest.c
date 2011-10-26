@@ -171,7 +171,9 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 		 unsigned int *trials,
 		 unsigned int *uerrors,
 		 unsigned int *crc_misses,
-		 unsigned int *iterations) {
+		 unsigned int *iterations,
+		 unsigned int num_pdcch_symbols,
+		 unsigned int subframe) {
 
   unsigned char test_input[block_length+1];
   //_declspec(align(16))  char channel_output[512];
@@ -209,9 +211,9 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
 
     dlsch_encoding(test_input,
 		   &PHY_vars_eNB->lte_frame_parms,
-		   1,
+		   num_pdcch_symbols,
 		   PHY_vars_eNB->dlsch_eNB[0][0],
-		   6);
+		   subframe);
 
     uerr=0;
 
@@ -228,8 +230,8 @@ int test_logmap8(LTE_eNB_DLSCH_t *dlsch_eNB,
     ret = dlsch_decoding(channel_output,
 			 &PHY_vars_UE->lte_frame_parms,
 			 PHY_vars_UE->dlsch_ue[0][0],
-			 6,
-			 1);
+			 subframe,
+			 num_pdcch_symbols);
 
     /*    int diffs = 0,puncts=0;
     for (i=0;i<dlsch_ue->harq_processes[0]->Kplus*3;i++) {
@@ -551,7 +553,8 @@ int main(int argc, char *argv[]) {
   unsigned int coded_bits;
   unsigned char NB_RB=25;
 
-
+  int num_pdcch_symbols = 3;
+  int subframe = 6;
 
   randominit(0);
 
@@ -579,13 +582,13 @@ int main(int argc, char *argv[]) {
   DLSCH_alloc_pdu2.rv1              = 0;
 
   if (argc>2)
-    qbits = atoi(argv[3]);
+    qbits = atoi(argv[2]);
   else
     qbits = 4;
 
   printf("Quantization bits %d\n",qbits);
 
-  generate_eNB_dlsch_params_from_dci(0,
+  generate_eNB_dlsch_params_from_dci(subframe,
                                      &DLSCH_alloc_pdu2,
 				     0x1234,
 				     format2_2A_M10PRB,
@@ -595,7 +598,7 @@ int main(int argc, char *argv[]) {
 				     RA_RNTI,
 				     P_RNTI,
 				     0); //change this later
-  generate_ue_dlsch_params_from_dci(0,
+  generate_ue_dlsch_params_from_dci(subframe,
 				    &DLSCH_alloc_pdu2,
 				    C_RNTI,
 				    format2_2A_M10PRB,
@@ -606,7 +609,7 @@ int main(int argc, char *argv[]) {
 				    P_RNTI);
   
   coded_bits = 	get_G(&PHY_vars_eNB->lte_frame_parms,NB_RB,PHY_vars_eNB->dlsch_eNB[0][0]->rb_alloc,
-		      get_Qm(mcs),1,6);
+		      get_Qm(mcs),num_pdcch_symbols,subframe);
 
   printf("Coded_bits (G) = %d\n",coded_bits);
 
@@ -625,7 +628,7 @@ int main(int argc, char *argv[]) {
 
 
 
-  for (SNR=-6;SNR<16;SNR+=.1) {
+  for (SNR=-6;SNR<16;SNR+=.5) {
 
 
     //    printf("\n\nSNR %f dB\n",SNR);
@@ -655,7 +658,9 @@ int main(int argc, char *argv[]) {
 		       &trials,
 		       &uerrors,
 		       &crc_misses,
-		       &iterations);
+		       &iterations,
+		       num_pdcch_symbols,
+		       subframe);
 
     if (ret>=0)
       //      printf("ref: Errors %d (%f), Uerrors %d (%f), CRC Misses %d (%f), Avg iterations %f\n",errors,(double)errors/trials,uerrors,(double)uerrors/trials,crc_misses,(double)crc_misses/trials,(double)iterations/trials);

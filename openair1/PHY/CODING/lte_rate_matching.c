@@ -500,7 +500,8 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
   
   
   unsigned int Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
-  unsigned short *soft_input2;
+  short *soft_input2;
+  int w_tmp;
 
   if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
     msg("lte_rate_matching.c: invalid paramters\n");
@@ -550,7 +551,21 @@ int lte_rate_matching_turbo_rx(unsigned int RTC,
       printf("repetition %d (%d,%d,%d)\n",ind,rvidx,E,Ncb);
     */
     // Maximum-ratio combining of repeated bits and retransmissions
-    w[ind] += soft_input2[k];
+    w_tmp = (int) w[ind] + (int) soft_input2[k];
+    if (w_tmp > 32768) {
+#ifdef DEBUG_RM
+      printf("OVERFLOW!!!!!, w_tmp = %d\n",w_tmp);
+#endif
+      w[ind] = 32768;
+    }
+    else if (w_tmp < -32768) {
+#ifdef DEBUG_RM
+      printf("UNDERFLOW!!!!!, w_tmp = %d\n",w_tmp);
+#endif
+      w[ind] = -32768;
+    }
+    else
+      w[ind] += soft_input2[k];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
