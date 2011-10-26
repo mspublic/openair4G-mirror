@@ -5,7 +5,7 @@ SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`)
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
 CPUFLAGS = -mmmx -msse -msse2 -m32 #-mssse3 -msse4
 CPUFLAGS += $(shell if [ -z $(SSE3PROC) ]; then echo "" ; else echo "-mssse3"; fi)
-CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
+#CPUFLAGS += $(shell if [ -z $(SSE4PROC) ]; then echo "" ; else echo "-msse4"; fi)
 
 TOP_DIR = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -13,6 +13,8 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
 CFLAGS = -O2 -Wall -fno-common -mpreferred-stack-boundary=4 -fno-strict-aliasing -DPHYSIM -DNODE_RG -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DPHY_CONTEXT=1 -g -ggdb $(CPUFLAGS) # -Wno-packed-bitfield-compat
+
+LFLAGS = -lm -lblas
 
 GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 ifeq "$(GCCVERSION)" "4.4.3"
@@ -53,6 +55,15 @@ ifdef PBS_SIM
 CFLAGS += -DPBS_SIM
 endif
 
+ifdef XFORMS
+CFLAGS += -DXFORMS
+LFLAGS += -lforms
+endif
+
+ifdef PERFECT_CE
+CFLAGS += -DPERFECT_CE
+endif
+
 CFLAGS += -DNO_RRM #-DOPENAIR2 -DPHY_ABSTRACTION
 
 CFLAGS += -I/usr/include/X11 -I/usr/X11R6/include
@@ -76,6 +87,10 @@ LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) #$(ASN1_MSG_OBJS) 
 #OBJ2 = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS)  
 
+ifdef XFORMS
+OBJ += ../../USERSPACE_TOOLS/SCOPE/lte_scope.o
+endif
+
 all: dlsim pbchsim pdcchsim ulsim pucchsim
 
 test: $(SIMULATION_OBJS) $(TOOLS_OBJS) $(TOP_DIR)/PHY/INIT/lte_init.o test.c
@@ -85,7 +100,7 @@ $(OBJ) : %.o : %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 dlsim : $(OBJ) dlsim.c
-	$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) -lm -lblas 
+	$(CC) dlsim.c  -o dlsim $(CFLAGS) $(OBJ) $(LFLAGS) #-static -L/usr/lib/libblas
 
 framegen: $(OBJ) framegen.c
 	$(CC) framegen.c -o framegen $(CFLAGS) $(OBJ) -lm -lblas
@@ -115,9 +130,11 @@ physim_secsys : $(OBJ) phy_procedures_sim_secsys.c
 	$(CC)  phy_procedures_sim_secsys.c -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
 clean:
-	rm -f dlsim pbchsim pdcchsim ulsim pucchsim 
 	rm -f $(OBJ)
 	rm -f *.o
+
+cleanall: clean
+	rm -f dlsim pbchsim pdcchsim ulsim pucchsim 
 	rm -f *.exe*
 
 showcflags:

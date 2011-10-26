@@ -2,7 +2,7 @@ CC = $(shell if [ $$OSTYPE = "cygwin" ]; then echo "gcc-4";  else echo "gcc"; fi
 
 SSE3PROC = $(shell echo `grep ssse3 /proc/cpuinfo`) 
 SSE4PROC = $(shell echo `grep sse4 /proc/cpuinfo`) 
-CPUFLAGS = -mmmx -msse -msse2 -mssse3 -msse4 -m32 
+CPUFLAGS = -mmmx -msse -msse2 #-mssse3 -msse4 -m32 
 CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi)
 CPUFLAGS += $(shell if [ -z $(SSE4PROC)]; then echo "" ; else echo "-msse4"; fi)
 
@@ -13,18 +13,20 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3 = $(OPENAIR3_DIR)
 
 
-CFLAGS = -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
+CFLAGS += -Wall -O2 -fno-common -mpreferred-stack-boundary=4  -DNODE_RG -DUSER_MODE -DPC_TARGET -DNO_UL_REF -DIFFT_FPGA -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -DMAX_MODULES=1 -DPHY_CONTEXT=1 -DBIT8_TXMUX -DBIT8_TX -DOPENAIR_LTE -g $(CPUFLAGS)
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
-CFLAGS += -DOPENAIR2 -DNO_RRM -DPHY_ABSTRACTION -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3)
+CFLAGS += -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -I$(OPENAIR3)
+CFLAGS += -DNO_RRM
 
 ifeq ($(turbo_flag),1)
   CFLAGS += -DTURBO_S
 endif
 
 include $(TOP_DIR)/PHY/Makefile.inc
-include $(TOP_DIR)/SCHED/Makefile.inc
+#include $(TOP_DIR)/SCHED/Makefile.inc
+SCHED_OBJS = $(TOP_DIR)/SCHED/phy_procedures_lte_common.o
 include $(TOP_DIR)/SIMULATION/Makefile.inc
 include $(TOP_DIR)/../openair2/LAYER2/Makefile.inc
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
@@ -50,9 +52,7 @@ viterbi_test: $(OBJ) viterbi_test.c
 	$(CC) viterbi_test.c -I$(TOP_DIR) -o viterbi_test $(CFLAGS) $(PHY_OBJS) -lm -lblas
 
 clean: 
-	rm -f $(TOP_DIR)/PHY/CODING/*.o
-	rm -f $(TOP_DIR)/SIMULATION/TOOLS/*.o
-	rm -f $(TOP_DIR)/PHY/LTE_TRANSPORT/*.o
+	rm $(OBJ)
 	rm -f ltetest
 	rm -f *.m
 

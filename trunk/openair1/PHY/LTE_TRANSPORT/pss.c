@@ -74,7 +74,9 @@ int generate_pss(mod_sym_t **txdataF,
 
   Nsymb = (frame_parms->Ncp==0)?14:12;
 
-  for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+  //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+  aa = 0;
+
   // The PSS occupies the inner 6 RBs, which start at
 #ifdef IFFT_FPGA
 #ifndef RAW_IFFT
@@ -126,7 +128,7 @@ int generate_pss(mod_sym_t **txdataF,
     }
 #endif
   }
-  }
+  //}
   return(0);
 }
 

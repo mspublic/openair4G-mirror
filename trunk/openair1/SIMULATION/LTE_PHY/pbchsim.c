@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 
   char c;
 
-  int i,l,aa,aarx,sector;
+  int i,l,aa,aarx;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
   u8 snr1set=0;
   //mod_sym_t **txdataF;
@@ -141,9 +141,7 @@ int main(int argc, char **argv) {
 #endif
   int **txdata,**txdata1,**txdata2;
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
-  double amps[8] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
-  double aoa=.03,ricean_factor=0.0000005,Td=.8,iqim=0.0;
-  u8 channel_length,nb_taps=8;
+  double iqim = 0.0;
   unsigned char pbch_pdu[6];
   int sync_pos, sync_pos_slot;
   FILE *rx_frame_file,*output_fd;
@@ -158,9 +156,6 @@ int main(int argc, char **argv) {
   u16 Nid_cell=0;
 
   u8 awgn_flag=0;
-  double nf[2] = {3.0,3.0}; //currently unused
-  double ip =0.0;
-  double N0W, path_loss, path_loss_dB;
   int n_frames=1;
   channel_desc_t *eNB2UE,*eNB2UE1,*eNB2UE2;
   u32 nsymb,tx_lev,tx_lev_dB;
@@ -178,15 +173,13 @@ int main(int argc, char **argv) {
   u8 frame_mod4,num_pdcch_symbols;
   u16 NB_RB=25;
 
-  SCM_t channel_model=custom;
+  SCM_t channel_model=Rayleigh1_anticorr;
 
   DCI_ALLOC_t dci_alloc[8];
   u8 abstraction_flag=0,calibration_flag=0;
   double pbch_sinr;
   int pbch_tx_ant;
   u8 N_RB_DL=25,osf=1;
-
-  channel_length = (int) 11+2*BW*Td;
 
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
@@ -259,12 +252,15 @@ int main(int argc, char **argv) {
 	  snr1set=1;
 	  msg("Setting SNR1 to %f\n",snr1);
 	  break;
+	  /*
 	case 't':
 	  Td= atof(optarg);
 	  break;
+	  */
 	case 'p':
 	  extended_prefix_flag=1;
 	  break;
+	  /*
 	case 'r':
 	  ricean_factor = pow(10,-.1*atof(optarg));
 	  if (ricean_factor>1) {
@@ -272,6 +268,7 @@ int main(int argc, char **argv) {
 	    exit(-1);
 	  }
 	  break;
+	  */
 	case 'x':
 	  transmission_mode=atoi(optarg);
 	  if ((transmission_mode!=1) &&
@@ -426,87 +423,32 @@ int main(int argc, char **argv) {
   // Forget second codeword
   DLSCH_alloc_pdu2.tpmi             = (transmission_mode==6 ? 5 : 0) ;  // precoding
 
-  if (channel_model==custom) {
-    msg("[SIM] Using custom channel model\n");
+  eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
+				PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				channel_model,
+				BW,
+				0,
+				0,
+				0);
 
-    eNB2UE = new_channel_desc(n_tx,
-			      n_rx,
-			      nb_taps,
-			      channel_length,
-			      amps,
-			      NULL,
-			      NULL,
-			      Td,
-			      BW,
-			      ricean_factor,
-			      aoa,
-			      0,
-			      0,
-			      10,
-			      0);
-    
-    if (interf1>-20)
-      eNB2UE1 = new_channel_desc(n_tx,
-				 n_rx,
-				 nb_taps,
-				 channel_length,
-				 amps,
-				 NULL,
-				 NULL,
-				 Td,
-				 BW,
-				 ricean_factor,
-				 aoa,
-				 0,
-				 0,
-				 0,
-				 0);
-    if (interf2>-20)
-      eNB2UE2 = new_channel_desc(n_tx,
-				 n_rx,
-				 nb_taps,
-				 channel_length,
-				 amps,
-				 NULL,
-				 NULL,
-				 Td,
-				 BW,
-				 ricean_factor,
-				 aoa,
-				 0,
-				 0,
-				 0,
-				 0);
-  }
-  else {
-    msg("[SIM] Using SCM/101\n");
-    eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
-				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				  channel_model,
-				  BW,
-				  0,
-				  0,
-				  0);
-
-    if (interf1>-20)
-      eNB2UE1 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
-				  PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				  channel_model,
-				  BW,
-				  0,
-				  0,
-				  0);
-
-    if (interf2>-20)
-      eNB2UE2 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
-				    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
-				    channel_model,
-				    BW,
-				    0,
-				    0,
-				    0);
-
-  }
+  if (interf1>-20)
+    eNB2UE1 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
+				   PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				   channel_model,
+				   BW,
+				   0,
+				   0,
+				   0);
+  
+  if (interf2>-20)
+    eNB2UE2 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
+				   PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
+				   channel_model,
+				   BW,
+				   0,
+				   0,
+				   0);
+  
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -902,11 +844,11 @@ int main(int argc, char **argv) {
 			      2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
 	  
 	  if (abstraction_flag == 1) {
-	    freq_channel(eNB2UE,25);
+	    freq_channel(eNB2UE,25,51);
 	    if (interf1>-20) 
-	      freq_channel(eNB2UE1,25);
+	      freq_channel(eNB2UE1,25,51);
 	    if (interf2>-20) 
-	      freq_channel(eNB2UE2,25);
+	      freq_channel(eNB2UE2,25,51);
 	    pbch_sinr = compute_pbch_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25);
 	    printf("total_sinr %f\n",compute_sinr(eNB2UE,eNB2UE1,eNB2UE2,SNR,SNR+interf1,SNR+interf2,25));
 	    printf("pbch_sinr %f => BLER %f\n",pbch_sinr,pbch_bler(pbch_sinr));
@@ -970,20 +912,19 @@ int main(int argc, char **argv) {
 	}
 	
 	fclose(rx_frame_file);
+	*/
 
 	sync_pos = lte_sync_time(PHY_vars_UE->lte_ue_common_vars.rxdata, 
 				 &PHY_vars_UE->lte_frame_parms, 
-				 LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*PHY_vars_eNb->lte_frame_parms.samples_per_tti,
 				 &PHY_vars_UE->lte_ue_common_vars.eNb_id);
-	*/
 	
 	// the sync is in the 3rd (last_ symbol of the special subframe
 	// so the position wrt to the start of the frame is 
 	sync_pos_slot = OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*(NUMBER_OF_OFDM_SYMBOLS_PER_SLOT*2+2) + 10;
 	
-	sync_pos = sync_pos_slot;
+	//sync_pos = sync_pos_slot;
 	
-	//msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
+	msg("eNb_id = %d, sync_pos = %d, sync_pos_slot =%d\n", PHY_vars_UE->lte_ue_common_vars.eNb_id, sync_pos, sync_pos_slot);
 	  
 	if (((sync_pos - sync_pos_slot) >=0 ) && 
 	    ((sync_pos - sync_pos_slot) < (FRAME_LENGTH_COMPLEX_SAMPLES - PHY_vars_eNb->lte_frame_parms.samples_per_tti)) ) {

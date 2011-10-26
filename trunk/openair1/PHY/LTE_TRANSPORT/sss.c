@@ -26,8 +26,8 @@ int generate_sss(mod_sym_t **txdataF,
   Nsymb = (frame_parms->Ncp==0)?14:12;
   k = frame_parms->ofdm_symbol_size-3*12+5;
   for (i=0;i<62;i++) {
-    for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-
+    //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+    aa=0;
 
       ((short*)txdataF[aa])[2*(slot_offset*Nsymb/2*frame_parms->ofdm_symbol_size +
 			       symbol*frame_parms->ofdm_symbol_size + k)] = 
@@ -41,7 +41,7 @@ int generate_sss(mod_sym_t **txdataF,
 	       symbol*frame_parms->ofdm_symbol_size + k,
 	       (amp * d[i]),0);
       */
-    }
+      //}
     k+=1;
     if (k >= frame_parms->ofdm_symbol_size) {
       k++;
