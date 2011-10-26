@@ -78,13 +78,14 @@ protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes ();)
 protected_pdcp_fifo(int pdcp_fifo_read_input_sdus();)
 //-----------------------------------------------------------------------------
 
-// XXX Where are following two types utilized?
+/*
+ * Following two types are utilized between NAS driver and PDCP
+ */
 typedef struct pdcp_data_req_header_t {
   rb_id_t             rb_id;
   sdu_size_t           data_size;
   int       inst;
 } pdcp_data_req_header_t;
-
 typedef struct pdcp_data_ind_header_t {
   rb_id_t             rb_id;
   sdu_size_t           data_size;
@@ -92,24 +93,32 @@ typedef struct pdcp_data_ind_header_t {
 } pdcp_data_ind_header_t;
 
 typedef struct pdcp_t {
-  char allocation;
   BOOL header_compression_active;
-  u8 seq_num_size; // XXX this is configured by who?
+  u8 seq_num_size;
 
-  /* Sequence number state variables */
-  // TX and RX window
+  /*
+   * Sequence number state variables
+   * 
+   * TX and RX window
+   */
   u16  next_pdcp_tx_sn;
   u16  next_pdcp_rx_sn;
-  // TX and RX Hyper Frame Numbers
+  /*
+   * TX and RX Hyper Frame Numbers
+   */
   u16  tx_hfn;
   u16  rx_hfn;
-  // SN of the last PDCP SDU delivered to upper layers
+  /*
+   * SN of the last PDCP SDU delivered to upper layers
+   */
   u16  last_submitted_pdcp_rx_sn;
 
   // here ROHC variables for header compression/decompression
 } pdcp_t;
 
-/* PDCP limit values */
+/*
+ * PDCP limit values
+ */
 #define PDCP_MAX_SDU_SIZE 8188 // octets, see 4.3.1 Services provided to upper layers
 #define PDCP_MAX_SN_5BIT  31   // 2^5-1
 #define PDCP_MAX_SN_7BIT  127  // 2^7-1

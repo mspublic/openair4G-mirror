@@ -61,9 +61,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
       mac_xface->macphy_exit("");
     }
 
-    // why do we allocate a new mem_block here? where an SDU is freed?
     // Allocate a new block for the header and the payload
-    // Why does mem_block_t keep no size information?
     pdcp_pdu = get_free_mem_block (pdu_size);
 
     if (pdcp_pdu) {
@@ -73,26 +71,33 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 
       /*
        * Create a Data PDU with header and appended data
+       *
        * Place User Plane PDCP Data PDU header first
        */
       pdcp_user_plane_data_pdu_header_with_long_sn pdu_header;
       pdu_header.dc = PDCP_DATA_PDU;
       pdu_header.sn = pdcp_get_next_tx_seq_number(&pdcp_array[module_idP][rab_idP]);
-      // XXX PDU header size here depends on the sequence number configuration!
       memcpy(&pdcp_pdu->data[0], &pdu_header, PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE);
       /* Then append data... */
       memcpy(&pdcp_pdu->data[PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE], sduP, data_sizeP);
 
-      // Ask sublayer to transmit data
-      rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdu_size, pdcp_pdu);
-      // XXX Return value? How do we know RLC was successful or not?
+      /*
+       * Ask sublayer to transmit data and check return value 
+       * to see if RLC succeeded
+       */
+      rlc_op_status_t rlc_status = rlc_data_req(module_idP, rab_idP, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pdu_size, pdcp_pdu);
+      switch (rlc_status) {
+        case RLC_OP_STATUS_OK: msg("[PDCP] Data sending request over RLC succeeded!\n");
+        case RLC_OP_STATUS_BAD_PARAMETER: msg("[PDCP] Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+        case RLC_OP_STATUS_INTERNAL_ERROR: msg("[PDCP] Data sending request over RLC failed with 'Internal Error' reason!\n");
+        case RLC_OP_STATUS_OUT_OF_RESSOURCES: msg("[PDCP] Data sending request over RLC failed with 'Out of Resources' reason!\n");
+        default: msg("[PDCP] RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+      }
 
-      // XXX What is cluster_head?
-      if (Mac_rlc_xface->Is_cluster_head[module_idP]==1) {
+      if (Mac_rlc_xface->Is_cluster_head[module_idP] == 1) {
         Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
         Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP;
-      }
-      else {
+      } else {
         Pdcp_stats_tx[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH]++;
         Pdcp_stats_tx_bytes[module_idP][(rab_idP & RAB_OFFSET2 )>> RAB_SHIFT2][(rab_idP & RAB_OFFSET)-DTCH] += data_sizeP; 
       }
@@ -123,16 +128,30 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
     msg("\n");
 #endif // PDCP_DATA_IND_DEBUG
 
+    /*
+     * Check if incoming SDU is long enough to carry a PDU header
+     */
+    if (data_sizeP < PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE) {
+      msg("[PDCP] Incoming SDU is short of size (size:%d)! Ignoring...\n", data_sizeP);
+      free_mem_block (sduP);
+
+      return;
+    }
+
+    /*
+     * Parse the PDU placed at the beginning of SDU to check
+     * if incoming SN is in line with RX window
+     */
+    if ((struct pdcp_user_plane_data_pdu_header_with_long_sn*) ... LEFT_HERE
+ 
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
 
     if (new_sdu) {
-      // XXX new_sdu is bigger than sizeof(pdcp_data_ind_header_t), why don't we reset all the bytes?
       memset (new_sdu->data, 0, sizeof (pdcp_data_ind_header_t));
       ((pdcp_data_ind_header_t *) new_sdu->data)->rb_id     = rab_idP;
       ((pdcp_data_ind_header_t *) new_sdu->data)->data_size = data_sizeP;
 
       // Here there is no virtualization possible
-      // XXX What does following part mean?
 #ifdef IDROMEL_NEMO
       if (Mac_rlc_xface->Is_cluster_head[module_idP] == 0)
 	((pdcp_data_ind_header_t *) new_sdu->data)->inst = rab_idP/8;
@@ -202,7 +221,17 @@ void
 pdcp_config_req (module_id_t module_idP, rb_id_t rab_idP)
 {
 //-----------------------------------------------------------------------------
-    //msg ("[PDCP] pdcp_confiq_req()\n");
+  /*
+   * Initialize sequence number state variables of relevant PDCP entity
+   */
+  pdcp_array[module_idP][rab_idP].next_pdcp_tx_sn = 0;
+  pdcp_array[module_idP][rab_idP].next_pdcp_rx_sn = 0;
+  pdcp_array[module_idP][rab_idP].tx_hfn = 0;
+  pdcp_array[module_idP][rab_idP].rx_hfn = 0;
+  /* SN of the last PDCP SDU delivered to upper layers */
+  pdcp_array[module_idP][rab_idP].last_submitted_pdcp_rx_sn = 4095;
+
+  msg("[PDCP] pdcp_confiq_req()\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -210,12 +239,11 @@ void
 pdcp_config_release (module_id_t module_idP, rb_id_t rab_idP)
 {
 //-----------------------------------------------------------------------------
-    //msg ("[PDCP] pdcp_config_release()\n");
+    msg ("[PDCP] pdcp_config_release()\n");
 }
 //-----------------------------------------------------------------------------
 
-// XXX What is the difference between pdcp_module_init() and pdcp_layer_init()? Is the former related with kernel module's init?
-
+// TODO PDCP module initialization code might be removed, PDCP's status of being a kernel module on its own should be learned
 int
 pdcp_module_init ()
 {
@@ -295,13 +323,6 @@ pdcp_layer_init ()
 	  Pdcp_stats_rx_rate[i][k][j]=0;
 	}
 
-  // Initialize sequence number state variables
-  next_pdcp_tx_sn = 0;
-  next_pdcp_rx_sn = 0;
-  tx_hfn = 0;
-  rx_hfn = 0;
-  // SN of the last PDCP SDU delivered to upper layers
-  u16  last_submitted_pdcp_rx_sn;
 }
 
 //-----------------------------------------------------------------------------
