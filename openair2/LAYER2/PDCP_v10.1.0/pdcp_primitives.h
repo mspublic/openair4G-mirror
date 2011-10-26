@@ -24,67 +24,70 @@
 #    define CPDCP_SN_REQ      0x10
 #    define CPDCP_RELOC_REQ   0x20
 #    define CPDCP_RELOC_CNF   0x40
-//----------------------------------------------------------
-// primitives definition
-// XXX Following primitives are deprecated, they were defined in former 
-// versions of PDCP but now they're not present anymore, should they be deleted?
-// XXX If they're deleted where could the size information be fetched, since there is 
-// no size field in SDUs?
-//----------------------------------------------------------
-struct pdcp_data_req {
-  u16             rb_id;
-  u16             data_size;
-};
-struct pdcp_data_ind {
-  u16             rb_id;
-  u16             data_size;
-};
 
-//----------------------------------------------------------
-// control primitives definition
-//----------------------------------------------------------
-// TO DO
-struct cpdcp_config_req {
-  void           *rlc_sap;
-  u8              rlc_type_sap; // am, um, tr
-  u8              header_compression_type;
-};
-struct cpdcp_release_req {
-  void           *rlc_sap;
-};
+#if 0 // Deprecated code, might be removed
+  //----------------------------------------------------------
+  // primitives definition
+  //----------------------------------------------------------
+  struct pdcp_data_req {
+    u16             rb_id;
+    u16             data_size;
+  };
+  struct pdcp_data_ind {
+    u16             rb_id;
+    u16             data_size;
+  };
 
-struct cpdcp_sn_req {
-  u32             sn;
-};
+  //----------------------------------------------------------
+  // control primitives definition
+  //----------------------------------------------------------
+  // TO DO
+  struct cpdcp_config_req {
+    void           *rlc_sap;
+    u8              rlc_type_sap; // am, um, tr
+    u8              header_compression_type;
+  };
+  struct cpdcp_release_req {
+    void           *rlc_sap;
+  };
 
-struct cpdcp_relloc_req {
-  u32             receive_sn;
-};
+  struct cpdcp_sn_req {
+    u32             sn;
+  };
 
-struct cpdcp_relloc_conf {
-  u32             receive_sn;
-  u32             send_sn;
-};
+  struct cpdcp_relloc_req {
+    u32             receive_sn;
+  };
 
-struct cpdcp_primitive {
-  u8              type;
-  union {
-    struct cpdcp_config_req config_req;
-    struct cpdcp_release_req release_req;
-    struct cpdcp_sn_req sn_req;
-    struct cpdcp_relloc_req relloc_req;
-    struct cpdcp_relloc_conf relloc_conf;
-  } primitive;
-};
+  struct cpdcp_relloc_conf {
+    u32             receive_sn;
+    u32             send_sn;
+  };
+
+  struct cpdcp_primitive {
+    u8              type;
+    union {
+      struct cpdcp_config_req config_req;
+      struct cpdcp_release_req release_req;
+      struct cpdcp_sn_req sn_req;
+      struct cpdcp_relloc_req relloc_req;
+      struct cpdcp_relloc_conf relloc_conf;
+    } primitive;
+  };
+#endif // DEPRECATED
 
 /*
  * 3GPP TS 36.323 V10.1.0 (2011-03)
  */
 
-// Data or control (1-bit, see 6.3.7)
+/*
+ * Data or control (1-bit, see 6.3.7)
+ */
 #define PDCP_CONTROL_PDU 0x01
 #define PDCP_DATA_PDU 0x00
-// PDU-type (3-bit, see 6.3.8)
+/*
+ * PDU-type (3-bit, see 6.3.8)
+ */
 #define PDCP_STATUS_REPORT 0x00
 #define INTERSPERSED_ROHC_FEEDBACK_PACKET 0x01
 
