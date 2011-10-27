@@ -153,7 +153,7 @@ BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity)
     // update PDCP status for next expected RX sequence number
     msg("[PDCP] Next expected SN arrived, advancing RX window\n");
 
-    return pdcp_update_rx_window(pdcp_entity);
+    return pdcp_advance_rx_window(pdcp_entity);
   } else {
     // XXX This is an error just because we don't have a reordering window!
     msg("[PDCP] D'oh! Incoming SN is not the one we expected to receive! (Incoming:%d, Expected:%d)\n", \
