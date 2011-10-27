@@ -78,6 +78,7 @@ static void openair_cleanup(void);
 extern char *bigphys_current,*bigphys_ptr;
 #endif
 
+extern int intr_in;
 /*------------------------------------------------*/
 
 #ifdef KERNEL2_4
@@ -108,6 +109,10 @@ mmap: openair_device_mmap
 };
 #endif
 
+extern int pci_enable_pcie_error_reporting(struct pci_dev *dev);
+extern int pci_cleanup_aer_uncorrect_error_status(struct pci_dev *dev);
+
+
 int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
 
   RT_TASK *rt_task;
@@ -115,15 +120,21 @@ int oai_trap_handler (int vec, int signo, struct pt_regs *regs, void *dummy) {
   rt_task = rt_smp_current[rtai_cpuid()];
 
   printk("[openair][TRAP_HANDLER] vec %d, signo %d, task %p, ip %04x (%04x), frame %d, slot %d\n", 
-	 vec, signo, rt_task, regs->ip, regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+         vec, signo, rt_task, regs->ip, regs->ip - (unsigned int) &bigphys_malloc, mac_xface->frame, openair_daq_vars.slot_count);
+
+  if (PHY_vars_eNB_g!=NULL)
+    dump_frame_parms(&PHY_vars_eNB_g[0]->lte_frame_parms);
+  else if (PHY_vars_UE_g!=NULL)
+    dump_frame_parms(&PHY_vars_UE_g[0]->lte_frame_parms);
 
   openair_sched_exit("[openair][TRAP_HANDLER] Exiting!");
 
   rt_task_suspend(rt_task);
-  
+
   return 1;
 
 }
+
 
 
 #ifdef KERNEL2_6 
@@ -139,7 +150,7 @@ static int __init openair_init_module( void )
   
   char *adr;
   int32_t temp_size;
-  
+  unsigned int readback;  
 
 #ifndef PHY_EMUL
 #ifndef NOCARD_TEST     
@@ -154,21 +165,35 @@ static int __init openair_init_module( void )
   pdev[0] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, NULL);
 
   if(pdev[0]) {
-    printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
+    printk("[openair][INIT_MODULE][INFO]:  openair card (CBMIMO1) %ld found, bus %x, primary %x, secondate %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
     i=1;
+    vid = FROM_GRLIB_CFG_PCIVID;
+    did = FROM_GRLIB_CFG_PCIDID;
   }
   else {
-    printk("[openair][INIT_MODULE][INFO]:  no card found:\n");
+    printk("[openair][INIT_MODULE][INFO]:  no CBMIMO1 card found, checking for Express MIMO:\n");
     
-    return -ENODEV;
+    pdev[0] = pci_get_device(XILINX_VENDOR, XILINX_ID, NULL);
+    if(pdev[0]) {
+      printk("[openair][INIT_MODULE][INFO]:  openair card (ExpressMIMO) %ld found, bus %x, primary %x, secondary %x\n",i,
+	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
+      i=1;
+      vid = XILINX_VENDOR;
+      did = XILINX_ID;
+      
+    }
+    else {
+      printk("[openair][INIT_MODULE][INFO]:  no card found, stopping.\n");
+      return -ENODEV;
+    }
   }
 
   // Now look for more cards on the same bus
   while (i<3) {
-    pdev[i] = pci_get_device(FROM_GRLIB_CFG_PCIVID, FROM_GRLIB_CFG_PCIDID, pdev[i-1]);
+    pdev[i] = pci_get_device(vid,did, pdev[i-1]);
     if(pdev[i]) {
-      printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondate %x\n",i,
+      printk("[openair][INIT_MODULE][INFO]:  openair card %ld found, bus %x, primary %x, secondary %x\n",i,
 	     pdev[i]->bus->number,pdev[i]->bus->primary,pdev[i]->bus->secondary);
       i++;
     }
@@ -187,8 +212,11 @@ static int __init openair_init_module( void )
       return -ENODEV;
     }
     else {
-	
-      printk("[openair][INIT_MODULE][INFO]: Device %ld (%p)enabled\n",i,pdev[i]);
+      //      pci_read_config_byte(pdev[i], PCI_INTERRUPT_PIN, &pdev[i]->pin);
+      //      if (pdev[i]->pin)
+      //	pci_read_config_byte(pdev[i], PCI_INTERRUPT_LINE, &pdev[i]->irq);
+
+      printk("[openair][INIT_MODULE][INFO]: Device %ld (%p)enabled, irq %d\n",i,pdev[i],pdev[i]->irq);
     }
       
       
@@ -196,38 +224,22 @@ static int __init openair_init_module( void )
     pci_set_master(pdev[i]);
       
       
-    //pci_module_init(pdev);
-      
-    // Now map the openair Memory Spaces
-      
-    // get PCI memory mapped I/O space base address from BARs
-  
-    //    bar_index = 0;
-    /*
-    mm_start = pci_resource_start(pdev[i], bar_index);
-    mm_end = pci_resource_end(pdev[i], bar_index);
-    mm_len = pci_resource_len(pdev[i], bar_index);
-    mm_flags = pci_resource_flags(pdev[i], bar_index);
 
-    bar[i] = (unsigned int)ioremap_nocache(mm_start,mm_len);
-    bar_len[i] = mm_len;
-    printk("[openair][INIT_MODULE][INFO]: BAR%d card %d = %p (%p), length %x bytes\n",bar_index,i,bar[i],mm_start,bar_len[i]);
-    */
 
   }
 
-
-  for (i=0;i<number_of_cards;i++) {
-    openair_readl(pdev[i], 
-		  FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
-		  &res);
-    if ((res & FROM_GRLIB_BOOT_GOK) != 0)
-      printk("[openair][INIT_MODULE][INFO]: LEON3 on card %ld is ok!\n",i);
-    else {
-      printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
-      return -ENODEV;
+  if (vid != XILINX_VENDOR) {
+    for (i=0;i<number_of_cards;i++) {
+      openair_readl(pdev[i], 
+		    FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, 
+		    &res);
+      if ((res & FROM_GRLIB_BOOT_GOK) != 0)
+	printk("[openair][INIT_MODULE][INFO]: LEON3 on card %ld is ok!\n",i);
+      else {
+	printk("[openair][INIT_MODULE][INFO]: Readback from LEON CMD %x\n",res);
+	return -ENODEV;
+      }
     }
-  }
   /* The boot strap of Leon is waiting for us, polling the HOK bit and 
    * waiting for us to assert it high.
    * If we also set the flag IRQ_FROM_PCI_IS_JUMP_USER_ENTRY in the PCI Irq field,
@@ -245,14 +257,55 @@ static int __init openair_init_module( void )
    * we ask for auto. jump to user firmware.
    * (for more information on how to transmit parameter to modules at insmod time,
    * refer to [LinuxDeviceDrivers, 3rd edition, by Corbet/Rubini/Kroah-Hartman] pp 35-36). */
-  for (i=0;i<number_of_cards;i++) {
-    if (!updatefirmware) {
-      printk("[openair][INIT_MODULE][INFO]: Card %ld Setting HOK bit with auto jump to user firmware.\n",i);
-      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
-    } else {
-      printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
-      openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+    for (i=0;i<number_of_cards;i++) {
+      if (!updatefirmware) {
+	printk("[openair][INIT_MODULE][INFO]: Card %ld Setting HOK bit with auto jump to user firmware.\n",i);
+	openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY);
+      } else {
+	printk("[openair][INIT_MODULE][INFO]: Setting HOK bit WITHOUT auto jump to user firmware.\n");
+	openair_writel(pdev[i], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK);
+      }
     }
+  }
+  else {
+
+    if (pci_enable_pcie_error_reporting(pdev[0]) > 0)
+      printk("[openair][INIT_MODULE][INFO]: Enabled PCIe error reporting\n");
+    else
+      printk("[openair][INIT_MODULE][INFO]: Failed to enable PCIe error reporting\n");
+
+    pci_cleanup_aer_uncorrect_error_status(pdev[0]);
+
+    
+    mmio_start = pci_resource_start(pdev[0], 0);
+
+    mmio_length = pci_resource_len(pdev[0], 0);
+    mmio_flags = pci_resource_flags(pdev[0], 0);
+
+    if (check_mem_region(mmio_start,256) < 0) {
+      printk("[openair][INIT_MODULE][FATAL] : Cannot get memory region 0, aborting\n");
+      return(-1);
+    }
+    request_mem_region(mmio_start,256,"openair_rf");
+    
+
+    bar[0] = pci_iomap(pdev[0],0,mmio_length);
+    //    bar_len[i] = mm_len;
+    printk("[openair][INIT_MODULE][INFO]: BAR0 card %d = %p (%p)\n",0,bar[0]);
+
+    printk("[openair][INIT_MODULE][INFO]: Writing %x to BAR0+0x1c (PCIBASE)\n",0x12345678);
+
+    iowrite32(0x12345678,(bar[0]+0x1c));
+
+    readback = ioread32(bar[0]+0x1c);
+    if (readback != 0x12345678) {
+      printk("[openair][INIT_MODULE][INFO]: Readback of FPGA register failed (%x)\n",readback);
+      release_mem_region(mmio_start,256);
+      return(-1);
+    }
+
+
+
   }
 #endif //NOCARD_TEST
 #endif //PHY_EMUL
@@ -413,6 +466,10 @@ static void __exit openair_cleanup_module(void)
 {
   printk("[openair][CLEANUP MODULE]\n");
 
+  if (vid == XILINX_VENDOR)
+    release_mem_region(mmio_start,256);
+
+
   openair_cleanup();
 
   fifo_printf_clean_up();
@@ -484,6 +541,8 @@ static void  openair_cleanup(void) {
   stop_rt_timer ();             //stop the timer
   printk("[openair][MODULE][INFO] RTAI Timer stopped\n");
 #endif //RTAI_ENABLED
+
+  printk("[openair] intr_in = %d\n",intr_in);
 
 }
 

@@ -13,15 +13,11 @@
 typedef struct  {
   int adc_head[2];            /// PCI addresses of ADC buffers in PC memory (Read by LEON during init)
   int dac_head[2];            /// PCI addresses of DAC buffers in PC memory (Read by LEON during init)
-  int ofdm_symbols_per_frame; /// Length of frame in OFDM Symbols (Read by LEON during init)
-  int log2_ofdm_symbol_size;  /// Length of OFDM symbols (log2!)
-  int cyclic_prefix_length;   /// Length of cyclic prefix
   int samples_per_frame;      /// Length of frame in samples
-  int rx_prefix_mode;         /// Receiver processing mode (0 no prefix removal, 1 prefix removal)
-  int tx_rx_switch_point;     /// TX/RX switch position (Read by LEON during init)
   int timing_advance;         /// TX/RX switch position (Read by LEON during init)
   int dual_tx;                /// 1 for dual-antenna TX, 0 for single-antenna TX
   int tdd;                    /// 1 for TDD mode, 0 for FDD mode
+  int tdd_config;
   int node_id;                /// Node type (Read by LEON during init)
   int freq_info;              /// Frequency info (Read by LEON during init)
   int frame_offset;           /// Frame offset (Read by LEON during init and on resynch procedure)
@@ -57,6 +53,59 @@ typedef struct  {
   unsigned int nb_posted_rfctl_SETTX;
   unsigned int nb_posted_rfctl_SETRX;
 } PCI_interface_t;
+
+
+typedef struct {
+  unsigned int global_top_dma_ahb_addr;
+  unsigned int one_dma_nbwords;
+  unsigned int dma_pci_addr;
+  unsigned int dma_ahb_addr;
+  unsigned int dma_busy;
+  unsigned int dma_direction;
+} exmimo_pcidma_t;
+
+typedef struct {
+  int adc_head[4];            // PCI addresses of ADC buffers in PC memory (Read by LEON during init)
+  int dac_head[4];            // PCI addresses of DAC buffers in PC memory (Read by LEON during init)
+  unsigned int rf_freq0;
+  unsigned int rf_freq1;
+  unsigned int rf_freq2;
+  unsigned int rf_freq3;
+  unsigned int tx_gain00;
+  unsigned int tx_gain01; 
+  unsigned int tx_gain10; 
+  unsigned int tx_gain11; 
+  unsigned int tx_gain20;
+  unsigned int tx_gain21; 
+  unsigned int tx_gain30; 
+  unsigned int tx_gain31; 
+  unsigned int rx_gain00;
+  unsigned int rx_gain01; 
+  unsigned int rx_gain10; 
+  unsigned int rx_gain11; 
+  unsigned int rx_gain20;
+  unsigned int rx_gain21; 
+  unsigned int rx_gain30; 
+  unsigned int rx_gain31; 
+  unsigned int rf_mode0;
+  unsigned int rf_mode1;
+  unsigned int rf_mode2;
+  unsigned int rf_mode3;
+} exmimo_rf_t;
+
+typedef struct {
+  unsigned int cyclic_prefix_mode;
+  unsigned int log2_ofdm_symbol_size;
+  unsigned int samples_per_frame;
+  unsigned int tx_rx_switch_point;
+  unsigned int timing_advance;
+  unsigned int frame_offset;
+} exmimo_framing_t;
+
+typedef struct {
+  exmimo_rf_t rf;
+  exmimo_framing_t framing;
+} exmimo_pci_interface_t;
 
 //#define PENDING_POSTED_RFCTL_LFSW     0x00000001
 //#define PENDING_POSTED_RFCTL_ADF4108  0x00000002

@@ -2,10 +2,11 @@
 #ifndef OPENAIR_DEVICE_H
 #define OPENAIR_DEVICE_H
 
-//#define XILINX_VENDOR 0x10ee
-//#define XILINX_ID 0x300
+#define XILINX_VENDOR 0x10ee
+#define XILINX_ID 0x0007
 #define GRLIB_VENDOR 0x16e3 
 #define GRLIB_ID 0x0210
+
 
 #define openair_MAJOR 127
 
@@ -120,23 +121,6 @@
 #define GRPCI_IOCONFIG_CTRL1       0x64
 #define GRPCI_IOCONFIG_CTRL2       0x68
 #define GRPCI_IOCONFIG_CTRL3       0x6c
-struct struct_NEWRF {
-  /* ADF4108 Freq. Synthesizer Registers */
-  unsigned int ADF4108_Func0;
-  unsigned int ADF4108_Ref_Cnt;
-  unsigned int ADF4108_N_Cnt;
-  unsigned int ADF4108_Func1;
-  unsigned int ADF4108_Init;
-  /* LFSW190410-50 Freq. Synthesizer Register */
-  char* LFSW190410_KHZ;
-  /* Control Switches of RF chain */
-  unsigned int RFswitches_onoff;
-  unsigned int RFswitches_mask;  
-  /* Control Switches & Gains of RF Tx chain
-     (together transmitted from upper (user-)world in a raw 32bits word) */
-  unsigned int settx_raw_word;
-  unsigned int setrx_raw_word;
-};
 
 #define NO_INFINITE_ACK_LOOP              (~0)
 /* Update firmware commands */

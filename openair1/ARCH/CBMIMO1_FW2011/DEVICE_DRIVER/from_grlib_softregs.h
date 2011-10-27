@@ -22,6 +22,7 @@
 #define FROM_GRLIB_SPARC_TBR          0x00000000
 
 /* Interface with Host PC */
+#define FROM_GRLIB_PCI_IRQ_ACK                          0x8
 #define FROM_GRLIB_BOOT_HOK                             0x4
 #define FROM_GRLIB_BOOT_GOK                             0x2
 #define FROM_GRLIB_IRQ_FROM_PCI                         0x1

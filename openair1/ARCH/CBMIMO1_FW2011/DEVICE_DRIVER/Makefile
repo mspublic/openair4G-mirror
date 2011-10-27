@@ -19,7 +19,7 @@ CCC = $(shell rtai-config --cc)
 RTAI_SUBVERSION=$(shell rtai-config --version | sed -e 's/^..\(.\).*$$/\1/')
 IS_RTAI_SUBVERSION_LESS_THAN_FIVE=$(shell if [ $(RTAI_SUBVERSION) -lt 5 ] ; then echo true ; fi)
 
-EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -ggdb -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -DHW_PREFIX_REMOVAL -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
+EXTRA_CFLAGS = -D__IN_RTAI__ $(shell rtai-config --module-cflags) -ggdb -march=pentium4 -DNODE_RG -DBIGPHYSAREA -DRTAI -DRTAI_ENABLED $(if $(IS_KERNEL_SUBVERSION_GREATER_THAN_20),-mregparm=3 -fno-stack-protector,) -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DWIDENS_DLC -I/lib/modules/$(shell uname -r)/build/include -I/lib/modules/$(shell uname -r)/build/include/asm/mach-default -include /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h $(if $(IS_RTAI_SUBVERSION_LESS_THAN_FIVE),-DRTAI_ISNT_POSIX,)
 endif
 
 EXTRA_CFLAGS +=   -DKERNEL$(KERNEL_MAIN_TYPE)
@@ -41,7 +41,7 @@ CPUFLAGS += $(shell if [ -z $(SSE3PROC)]; then echo "" ; else echo "-mssse3"; fi
 
 EXTRA_CFLAGS += $(CPUFLAGS)
 
-EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP -DDLSCH_THREAD -DPHY_ABSTRACTION -D__NO_ASSERT_H__ 
+EXTRA_CFLAGS += -DMAC_CONTEXT -DPHY_CONTEXT -DPC_TARGET -DPC_DSP #-DDLSCH_THREAD 
 
 ifdef DEBUG_PHY
 EXTRA_CFLAGS += -DDEBUG_PHY
@@ -59,9 +59,9 @@ ifdef DUALSTREAM
 EXTRA_CFLAGS += -DDUALSTREAM
 endif
 
-#ifndef NO_TXMUX
-#EXTRA_CFLAGS += -DBIT8_TXMUX -DBIT8_TX
-#endif
+ifdef BIT8_TX
+EXTRA_CFLAGS += -DBIT8_TX
+endif
 
 ifdef IDROMEL_RF 
 EXTRA_CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TX=1 -DNB_ANTENNAS_TXRX=2
@@ -73,8 +73,16 @@ ifdef CBMIMO1
 EXTRA_CFLAGS += -DCBMIMO1
 endif
 
+ifdef FIRMWARE2010
+EXTRA_CFLAGS += -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH -DHW_PREFIX_REMOVAL
+endif 
+
+ifdef FIRMWARE2011
+EXTRA_CFLAGS += -DBIT8_TX 
+endif
+
 ifeq ($(OPENAIR_LTE),1)
-EXTRA_CFLAGS += -DOPENAIR_LTE -DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
+EXTRA_CFLAGS += -DOPENAIR_LTE -DBIT8_TX #-DIFFT_FPGA -DIFFT_FPGA_UE -DOFDMA_ULSCH
 endif
 
 ifeq ($(OPENAIR2),1)
@@ -83,6 +91,7 @@ endif
 
 EXTRA_CFLAGS += -I/usr/include -I/usr/realtime/include 
 EXTRA_CFLAGS += -I$(OPENAIR1_DIR) 
+EXTRA_CFLAGS += -DEMIT_ASN_DEBUG=0
 
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
