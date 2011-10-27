@@ -41,6 +41,7 @@
 #include "pdcp.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
+#include "pdcp_primitives.h"
 
 #define PDCP_DATA_REQ_DEBUG 1
 #define PDCP_DATA_IND_DEBUG 1
@@ -142,8 +143,20 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
      * Parse the PDU placed at the beginning of SDU to check
      * if incoming SN is in line with RX window
      */
-    if ((struct pdcp_user_plane_data_pdu_header_with_long_sn*) ... LEFT_HERE
+    u16 sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn(sduP->data);
  
+    if (pdcp_is_rx_seq_number_valid(sequence_number, &pdcp_array[module_idP][rab_idP]) == TRUE) {
+      msg("[PDCP] Incoming SDU carries a PDU with a SN (%d) in accordance with RX window, yay!\n", sequence_number);
+      msg("[PDCP] Passing to NAS driver...\n");
+    } else {
+      msg("[PDCP] Incoming SDU carries a PDU with an unexpected SN (%d), RX windows snyc might have lost!\n", sequence_number);
+      msg("[PDCP] Ignoring SDU...\n");
+
+      free_mem_block(sduP);
+
+      return;
+    }
+
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
 
     if (new_sdu) {

@@ -104,28 +104,46 @@ typedef struct {
 /*
  * 6.2.3 User Plane PDCP Data PDU with long PDCP SN (12-bit)
  */
-#define PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE 2
 typedef struct {
   u8 dc;      // Data or control (see 6.3.7)
   u16 sn;     // 12-bit sequence number
 } pdcp_user_plane_data_pdu_header_with_long_sn;
+#define PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE 2
 
 /*
  * 6.2.4 User Plane PDCP Data PDU with short PDCP SN (7-bit)
  */
-#define PDCP_USER_PLANE_DATA_PDU_SHORT_SN_HEADER_SIZE 1
 typedef struct {
   u8 dc;
   u8 sn;      // 7-bit sequence number
 } pdcp_user_plane_data_pdu_header_with_short_sn;
+#define PDCP_USER_PLANE_DATA_PDU_SHORT_SN_HEADER_SIZE 1
 
 /*
  * 6.2.5 PDCP Control PDU for interspersed ROHC feedback packet
  */
-#define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
 typedef struct {
   u8 dc;
   u8 pdu_type; // PDU type (see 6.3.8)
 } pdcp_control_pdu_for_interspersed_rohc_feedback_packet_header;
+#define PDCP_CONTROL_PDU_INTERSPERSED_ROHC_FEEDBACK_HEADER_SIZE 1
+
+/*
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * long PDCP SN (12-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 12-bit sequence number
+ */
+u16 pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer);
+
+/*
+ * Parses sequence number out of buffer of User Plane PDCP Data PDU with 
+ * short PDCP SN (7-bit)
+ *
+ * @param pdu_buffer PDCP PDU buffer
+ * @return 7-bit sequence number
+ */
+u8 pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer);
 
 #endif
