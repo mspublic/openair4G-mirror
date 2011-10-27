@@ -22,6 +22,7 @@
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
+extern int transmission_mode_rrc; //fixme
 #endif
 
 #include "from_grlib_softconfig.h"
@@ -36,7 +37,6 @@ int dummy_cnt = 0;
 extern int bigphys_ptr;
 #endif
 
-struct struct_NEWRF openair_NEWRF_RFctrl;
 
 //-----------------------------------------------------------------------------
 int openair_device_open (struct inode *inode,struct file *filp) {
@@ -203,10 +203,11 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     //----------------------
     printk("[openair][IOCTL]     openair_DUMP_CONFIG\n");
     printk("[openair][IOCTL] sizeof(mod_sym_t)=%d\n",sizeof(mod_sym_t));
-
+    
     set_taus_seed();
-
+    
 #ifdef RTAI_ENABLED
+    
     if (openair_daq_vars.node_configured > 0) {
       printk("[openair][IOCTL] NODE ALREADY CONFIGURED (%d), DYNAMIC RECONFIGURATION NOT SUPPORTED YET!!!!!!!\n",openair_daq_vars.node_configured);
     }
@@ -214,7 +215,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       copy_from_user((void*)frame_parms,arg_ptr,sizeof(LTE_DL_FRAME_PARMS));
       dump_frame_parms(frame_parms);
       printk("[openair][IOCTL] Allocating frame_parms\n");
-
+      
 #ifdef OPENAIR_LTE
       openair_daq_vars.node_configured = phy_init_top(frame_parms);
       msg("[openair][IOCTL] phy_init_top done: %d\n",openair_daq_vars.node_configured);
@@ -235,7 +236,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       
       else {
 	printk("[openair][IOCTL] PHY Configuration successful\n");
-
+	
 #ifndef OPENAIR2	  
 	openair_daq_vars.mac_registered = mac_init();
 	if (openair_daq_vars.mac_registered != 1)
@@ -264,6 +265,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       openair_daq_vars.node_id = NODE;
       openair_daq_vars.mode    = openair_NOT_SYNCHED;
       openair_daq_vars.node_running = 0;
+      openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+      openair_daq_vars.rx_rf_mode = 0; //RF mode 0 = mixer low gain, lna off
       
       openair_daq_vars.auto_freq_correction = 1;
       openair_daq_vars.manual_timing_advance = 0;
@@ -288,9 +291,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       printk("[openair][IOCTL] Setting up registers\n");
       for (i=0;i<number_of_cards;i++) { 
 	ret = setup_regs(i,frame_parms);
-	
-	// Start LED dance with proper period
+	pci_interface[i]->freq_offset = 0;
 	openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
+	
       }
       
       // usleep(10);
@@ -392,6 +395,9 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	      PHY_vars_eNB_g[0]->dlsch_eNB[i][j]->rnti=0;
 	    }
 	  }
+	  // this will be overwritten with the real transmission mode by the RRC once the UE is connected
+	  PHY_vars_eNB_g[0]->transmission_mode[i] = openair_daq_vars.dlsch_transmission_mode;
+
 	}
 
 	for (i=0; i<NUMBER_OF_UE_MAX+1;i++){ //+1 because 0 is reserved for RA
@@ -500,6 +506,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_running = 1;
 	openair_daq_vars.sync_state = 0;
 	printk("[openair][IOCTL] Process initialization return code %d\n",ret);
+
+	// Take out later!!!!!!
+	for (i=0;i<number_of_cards;i++)
+	  openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
       }
 
     }
@@ -651,6 +661,10 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	    msg("[openair][IOCTL] Can't get ue dlsch (RA) structures\n");
 	    break;
 	  }
+
+	  // this will be overwritten with the real transmission mode by the RRC once the UE is connected
+	  PHY_vars_UE_g[0]->transmission_mode[i] = openair_daq_vars.dlsch_transmission_mode;
+
 	}
 
 	openair_daq_vars.node_configured = 3;
@@ -695,7 +709,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
 	  node_id = ((*((unsigned int *)arg_ptr))>>7)&0xFF;
 	  PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti = (node_id>0 ? 0x1236 : 0x1235);
-	  printk("[openair][IOCTL] Setting crnti to %x\n",PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti);
+	  msg("[openair][IOCTL] Setting crnti for eNB %d to %x\n",i,PHY_vars_UE_g[0]->lte_ue_pdcch_vars[i]->crnti);
 	  PHY_vars_UE_g[0]->UE_mode[i] = NOT_SYNCHED;
 
 	  /*
@@ -732,6 +746,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
       PHY_vars_UE_g[0]->rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_total_gain_dB = MIN_RF_GAIN;
       openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+      openair_set_rx_gain_cal_openair(0,PHY_vars_UE_g[0]->rx_total_gain_dB);
       
       msg("[openair][IOCTL] RX_DMA_BUFFER[0] = %p = %p RX_DMA_BUFFER[1] = %p = %p\n",
 	  RX_DMA_BUFFER[0],
@@ -754,6 +769,20 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 	openair_daq_vars.node_running = 1;
 	printk("[openair][IOCTL] Process initialization return code %d\n",ret);
       }
+
+      /*
+	    openair_daq_vars.mode = openair_SYNCHED;
+#ifdef OPENAIR2
+	    msg("[openair][SCHED][SYNCH] Calling chbch_phy_sync_success\n");
+	    //mac_resynch();
+	    mac_xface->chbch_phy_sync_success(0,0);
+#endif //OPENAIR2
+	    PHY_vars_UE_g[0]->UE_mode[0] = PRACH;
+
+	    msg("[openair][SCHED][SYNCH] Starting RT aquisition\n");
+	    openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+      */
+
     }
     else {
       printk("[openair][IOCTL] Radio not configured\n");
@@ -858,9 +887,13 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
       udelay(1000);
  #endif // NOCARD_TEST
- 
-      // for (i=0;i<16;i++)
-      //printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
+      if (vid == XILINX_VENDOR) { 
+	printk("ADC0 (%p) :",(unsigned int *)RX_DMA_BUFFER[0][0]);
+	for (i=0;i<128;i++) {
+	  printk("%x.",((unsigned int *)RX_DMA_BUFFER[0][0])[i]);
+	}
+      }
+      printk("\n");
     }
     else {
       printk("[openair][STOP][ERROR] Cannot stop, radio is not configured ...\n");
@@ -986,7 +1019,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_START_FS4_TEST:
     
     printk("[openair][IOCTL]     openair_START_FS4_TEST ...(%p)\n",(void *)arg);
-    openair_daq_vars.node_id = NODE;
+    openair_daq_vars.node_id = PRIMARY_CH;
 
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -1000,11 +1033,29 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     openair_daq_vars.tx_rx_switch_point = NUMBER_OF_SYMBOLS_PER_FRAME-2;
     
     openair_daq_vars.tx_test=1;
+
+#ifdef BIT8_TX
+    for (i=0;i<FRAME_LENGTH_COMPLEX_SAMPLES<<1;i+=8) {
+      ((char*) (TX_DMA_BUFFER[0][0]))[i] = 127;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+1] = 0;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+2] = 0;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+3] = 127;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+4] = -127;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+5] = 0;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+6] = 0;
+      ((char*) (TX_DMA_BUFFER[0][0]))[i+7] = -127;
+    }
+#endif
+
     for (i=0;i<number_of_cards;i++) {
       ret = setup_regs(i,frame_parms);
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_DMA_STOP);
       udelay(1000);
+#ifdef BIT8_TX
+      openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
+#else
       openair_dma(i,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_GEN_FS4);
+#endif
     }
 
     break;
@@ -1086,7 +1137,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_START_TX_SIG:
 
 
-    openair_daq_vars.node_id = NODE;
+    openair_daq_vars.node_id = PRIMARY_CH;
 
 #ifndef OPENAIR_LTE
     openair_daq_vars.freq = ((int)(PHY_config->PHY_framing.fc_khz - 1902600)/5000)&3;
@@ -1108,21 +1159,21 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     copy_from_user((unsigned char*)&dummy_tx_vars,
 		   (unsigned char*)arg,
 		   sizeof(TX_VARS));
-    
+        
     copy_from_user((unsigned char*)TX_DMA_BUFFER[0][0],
 		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[0],
 		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
     copy_from_user((unsigned char*)TX_DMA_BUFFER[0][1],
 		   (unsigned char*)dummy_tx_vars.TX_DMA_BUFFER[1],
 		   FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
-
-    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0],(void *)arg,FRAME_LENGTH_BYTES);
-    /*
-    for (i=0;i<256;i++) {
-      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[0])[i]);
-      printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned int *)TX_DMA_BUFFER[1])[i]);
+    
+    printk("TX_DMA_BUFFER[0] = %p, arg = %p, FRAMELENGTH_BYTES = %x\n",(void *)TX_DMA_BUFFER[0][0],(void *)arg,FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(mod_sym_t));
+    
+    for (i=0;i<128;i++) {
+      printk("TX_DMA_BUFFER[0][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][0])[i]);
+      printk("TX_DMA_BUFFER[1][%d] = %x\n",i,((unsigned short *)TX_DMA_BUFFER[0][1])[i]);
     }
-    */
+    
 
 
     openair_dma(0,FROM_GRLIB_IRQ_FROM_PCI_IS_ACQ_START_RT_ACQUISITION);
@@ -1159,307 +1210,34 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
     break;
 
 
-    /* Ioctls to control new (Idromel & E2R2) RF prototype chain:
-         o openair_NEWRF_ADF4108_WRITE_REG
-         o openair_NEWRF_ADF4108_INIT
-         o openair_NEWRF_LFSW190410_WRITE_KHZ
-         o openair_NEWRF_RF_SWITCH_CTRL
-         o openair_NEWRF_SETTX_SWITCH_GAIN
-         o and some POSTED eqauivalents.
-       (K. Khalfallah, May 10th, 2007) */
-  
-  case openair_NEWRF_ADF4108_WRITE_REG:
-    printk("[openair][IOCTL]     openair_NEWRF_ADF4108_WRITE_REG\n");
-    /********************************
-     * Writing registers of ADF4108 *
-     ********************************/
-    /* Get the values to write in the registers of ADF4108 frequency synthesizer
-       (see [ADF4108] pp 11-12) */
-    openair_NEWRF_RFctrl.ADF4108_Func0   = *((unsigned int*)arg);
-    openair_NEWRF_RFctrl.ADF4108_Ref_Cnt = *(((unsigned int*)arg)+1);
-    openair_NEWRF_RFctrl.ADF4108_N_Cnt   = *(((unsigned int*)arg)+2);
-    /* Same claptrap as for previous ioctl: not testing consistency of the value in arg */
-    /* Transmit the values in the CTRL0-2 registers. */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, openair_NEWRF_RFctrl.ADF4108_Func0);
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, openair_NEWRF_RFctrl.ADF4108_Ref_Cnt);
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL2_OFFSET, openair_NEWRF_RFctrl.ADF4108_N_Cnt);
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SET_ADF4108_REG | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* We wait for acknowledge of the irq by the Cardbus MIMO board firmware
-       (even if it may be dangerous for now, because we are in development phase,
-       we are obliged to do so, unless we may perform several writings without the
-       Cardbus MIMO board firmware having time to actually perform them... */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_ADF4108_INIT:
-    printk("[openair][IOCTL]     openair_NEWRF_ADF4108_INIT\n");
-    /************************************
-     * Writing INIT register of ADF4108 *
-     ************************************/
-    /* Get the value to write in the Initialization register of ADF4108 frequency synthesizer
-       (see [ADF4108] pp 11 & 15) */
-    openair_NEWRF_RFctrl.ADF4108_Init = (unsigned int)arg;
-    /* Same claptrap as for previous ioctl: not testing consistency of the value in arg */
-    /* Transmit the value in the CTRL0 register */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL3_OFFSET, openair_NEWRF_RFctrl.ADF4108_Init);
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_INIT_ADF4108 | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* We wait for acknowledge of the irq by the Cardbus MIMO board firmware
-       (even if it may be dangerous for now, because we are in development phase,
-       we are obliged to do so, unless we may perform several writings without the
-       Cardbus MIMO board firmware having time to actually perform them... */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_ADF4108_WRITE_REG_POSTED:
-    printk("[openair][IOCTL]     openair_NEWRF_ADF4108_WRITE_REG_POSTED\n");
-    if (!pci_interface[0]) {
-      printk("[openair][IOCTL]       Impossible to post ADF4108 config to card: pci_interface NOT yet allocated\n");
-      return -1;
-    }
-    /********************************
-     * Writing registers of ADF4108 *  (POSTED mode)
-     ********************************/
-    /* Get the values to write in the registers of ADF4108 frequency synthesizer
-       (see [ADF4108] pp 11-12) */
-    openair_NEWRF_RFctrl.ADF4108_Func0   = *((unsigned int*)arg);
-    openair_NEWRF_RFctrl.ADF4108_Ref_Cnt = *(((unsigned int*)arg)+1);
-    openair_NEWRF_RFctrl.ADF4108_N_Cnt   = *(((unsigned int*)arg)+2);
-    /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface[0]->ADF4108_Func0   = openair_NEWRF_RFctrl.ADF4108_Func0;
-    pci_interface[0]->ADF4108_Ref_Cnt = openair_NEWRF_RFctrl.ADF4108_Ref_Cnt;
-    pci_interface[0]->ADF4108_N_Cnt   = openair_NEWRF_RFctrl.ADF4108_N_Cnt;
-    pci_interface[0]->nb_posted_rfctl_ADF4108 += 1;
-    break;
-
-  case openair_NEWRF_LFSW190410_WRITE_KHZ:
-    printk("[openair][IOCTL]     openair_NEWRF_LFSW190410_WRITE_KHZ\n");
-    /*****************************************
-     * Writing KHZ Register of LFSW190410-50 *
-     *****************************************/
-    /* Get the value to write in KHZ register of LFSW190410-50 frequency synthesizer
-       (see [LFSW190410] & [AN7100A] p4) */
-    openair_NEWRF_RFctrl.LFSW190410_KHZ = (char*)arg;
-    /* Same remark as for R counter reg of ADF4108 (see above): we don't verify correctness
-       of the value passed in the arg parameter. */
-    /* Transmit the ASCII value in the CTRL0 & CTRL1 registers */
-    invert4(*((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ));     /* because Sparc is big endian */
-    invert4(*((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4))); /* because Sparc is big endian */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, 'K');
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, *((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ));
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL2_OFFSET, *((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4)));
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SET_LFSW190410_KHZ | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* Same remark as for R & N counter regs of ADF4108 (see above): we poll irq bit
-       (possibly blocking local machine!...) */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_LFSW190410_WRITE_KHZ_POSTED:
-    printk("[openair][IOCTL]     openair_NEWRF_LFSW190410_WRITE_KHZ_POSTED\n");
-    if (!pci_interface[0]) {
-      printk("[openair][IOCTL]       Impossible to post LFSW109410 config to card: pci_interface NOT yet allocated\n");
-      return -1;
-    }
-    /*****************************************
-     * Writing KHZ Register of LFSW190410-50 * (POSTED mode)
-     *****************************************/
-    /* Get the value to write in KHZ register of LFSW190410-50 frequency synthesizer
-       (see [LFSW190410] & [AN7100A] p4) */
-    openair_NEWRF_RFctrl.LFSW190410_KHZ = (char*)arg;
-    /* Same remark as for R counter reg of ADF4108 (see above): we don't verify correctness
-       of the value passed in the arg parameter. */
-    /* Transmit the ASCII value in the CTRL0 & CTRL1 registers */
-    invert4(*((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ));     /* because Sparc is big endian */
-    invert4(*((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4))); /* because Sparc is big endian */
-    /* Only write those values in the pci_interface[0]_t shared memory. */
-    pci_interface[0]->LFSW190410_CharCmd = 'K';
-    pci_interface[0]->LFSW190410_KHZ_0   = *((unsigned int*)openair_NEWRF_RFctrl.LFSW190410_KHZ);
-    pci_interface[0]->LFSW190410_KHZ_1   = *((unsigned int*)(openair_NEWRF_RFctrl.LFSW190410_KHZ+4));
-    pci_interface[0]->nb_posted_rfctl_LFSW += 1;
-    break;
-
-  case openair_NEWRF_RF_SWITCH_CTRL:
-    printk("[openair][IOCTL]     openair_NEWRF_RF_SWITCH_CTRL\n");
-    /***************************
-     * Configuring RF switches *
-     ***************************/
-    /* Get the values to write in the registers of ADF4108 frequency synthesizer
-       (see [ADF4108] pp 11-12) */
-    openair_NEWRF_RFctrl.RFswitches_onoff = *((unsigned int*)arg);
-    openair_NEWRF_RFctrl.RFswitches_mask = *(((unsigned int*)arg)+1);
-    /* Same claptrap as for previous ioctl: not testing consistency of the value in arg */
-    /* Transmit the value in the CTRL0 register */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, openair_NEWRF_RFctrl.RFswitches_onoff);
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, openair_NEWRF_RFctrl.RFswitches_mask);
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SET_RF_SWITCH | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* We wait for acknowledge of the irq by the Cardbus MIMO board firmware
-       (even if it may be dangerous for now, because we are in development phase,
-       we are obliged to do so, unless we may perform several writings without the
-       Cardbus MIMO board firmware having time to actually perform them... */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_RF_SWITCH_CTRL_POSTED:
-    printk("[openair][IOCTL]     openair_NEWRF_RF_SWITCH_CTRL_POSTED\n");
-    if (!pci_interface[0]) {
-      printk("[openair][IOCTL]     Impossible to post RF switches config to card: pci_interface NOT yet allocated\n");
-      return -1;
-    }
-    /***************************
-     * Configuring RF switches * (POSTED mode)
-     ***************************/
-    /* Get the values to write in the registers of ADF4108 frequency synthesizer
-       (see [ADF4108] pp 11-12) */
-    openair_NEWRF_RFctrl.RFswitches_onoff = *((unsigned int*)arg);
-    openair_NEWRF_RFctrl.RFswitches_mask = *(((unsigned int*)arg)+1);
-    /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface[0]->RFswitches_onoff   = openair_NEWRF_RFctrl.RFswitches_onoff;
-    pci_interface[0]->RFswitches_mask    = openair_NEWRF_RFctrl.RFswitches_mask;
-    pci_interface[0]->nb_posted_rfctl_RFSW += 1;
-    break;
-
-  case openair_NEWRF_SETTX_SWITCH_GAIN:
-    printk("[openair][IOCTL]     openair_NEWRF_SETTX_SWITCH_GAIN\n");
-    /***************************************************
-     * Configuring both RF switches & gain of Tx chain *
-     ***************************************************/
-    /* Get the 32bit raw word containing info of both TX gains & TX switches */
-    openair_NEWRF_RFctrl.settx_raw_word = *((unsigned int*)arg);
-    /* Same claptrap as for previous ioctl: not testing consistency of the value in arg */
-    /* Transmit the value in the CTRL0 register */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, openair_NEWRF_RFctrl.settx_raw_word);
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SETTX_GAIN_SWITCH | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* We wait for acknowledge of the irq by the Cardbus MIMO board firmware
-       (even if it may be dangerous for now, because we are in development phase,
-       we are obliged to do so, unless we may perform several writings without the
-       Cardbus MIMO board firmware having time to actually perform them... */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_SETTX_SWITCH_GAIN_POSTED:
-    printk("[openair][IOCTL]     openair_NEWRF_SETTX_SWITCH_GAIN_POSTED\n");
-    if (!pci_interface[0]) {
-      printk("[openair][IOCTL]     Impossible to post SETTX config to card: pci_interface NOT yet allocated\n");
-      return -1;
-    }
-    /***************************************************
-     * Configuring both RF switches & gain of Tx chain * (POSTED mode)
-     ***************************************************/
-    /* Get the 32bit raw word containing info of both TX gains & TX switches */
-    openair_NEWRF_RFctrl.settx_raw_word = *((unsigned int*)arg);
-    /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface[0]->settx_raw_word = openair_NEWRF_RFctrl.settx_raw_word;
-    pci_interface[0]->nb_posted_rfctl_SETTX += 1; // |= PENDING_POSTED_RFCTL_SETTX;
-    break;
-
-  case openair_NEWRF_SETRX_SWITCH_GAIN:
-    printk("[openair][IOCTL]     openair_NEWRF_SETRX_SWITCH_GAIN\n");
-    /***************************************************
-     * Configuring both RF switches & gain of Rx chain *
-     ***************************************************/
-    /* Get the 32bit raw word containing info of both RX gains & RX switches */
-    openair_NEWRF_RFctrl.setrx_raw_word = *((unsigned int*)arg);
-    /* Same claptrap as for previous ioctl: not testing consistency of the value in arg */
-    /* Transmit the value in the CTRL0 register */
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, openair_NEWRF_RFctrl.setrx_raw_word);
-    wmb();
-    openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_SETRX_GAIN_SWITCH | FROM_GRLIB_IRQ_FROM_PCI);
-    wmb();
-    /* We wait for acknowledge of the irq by the Cardbus MIMO board firmware
-       (even if it may be dangerous for now, because we are in development phase,
-       we are obliged to do so, unless we may perform several writings without the
-       Cardbus MIMO board firmware having time to actually perform them... */
-
-    /* So poll the IRQ bit */
-    do {
-      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-      rmb();
-    } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-    break;
-
-  case openair_NEWRF_SETRX_SWITCH_GAIN_POSTED:
-    printk("[openair][IOCTL]     openair_NEWRF_SETRX_SWITCH_GAIN_POSTED\n");
-    if (!pci_interface[0]) {
-      printk("[openair][IOCTL]     Impossible to post SETRX config to card: pci_interface NOT yet allocated\n");
-      return -1;
-    }
-    /***************************************************
-     * Configuring both RF switches & gain of Rx chain * (POSTED mode)
-     ***************************************************/
-    /* Get the 32bit raw word containing info of both RX gains & RX switches */
-    openair_NEWRF_RFctrl.setrx_raw_word = *((unsigned int*)arg);
-    /* Only write those values in the PCI_interface_t shared memory. */
-    pci_interface[0]->setrx_raw_word = openair_NEWRF_RFctrl.setrx_raw_word;
-         // /* Test if flag is CLEAR */
-         // ltmp = pci_interface->pending_posted_rfctl;
-         // if (ltmp & PENDING_POSTED_RFCTL_SETRX)
-         //   printk("[openair][IOCTL]       NO GOOD: RF ctl FLAG of SETRX is NOT RESET! (flags=0x%08x)\n", ltmp);
-    /* ... and raise a flag so that firmware knows that we have posted some RF ctl for RX switches & gains*/
-    pci_interface[0]->nb_posted_rfctl_SETRX += 1; // |= PENDING_POSTED_RFCTL_SETRX;
-    break;
-
-
   case openair_UPDATE_FIRMWARE:
-    printk("[openair][IOCTL]     openair_UPDATE_FIRMWARE\n");
-    /***************************************************
-     *   Updating the firmware of Cardbus-MIMO-1 SoC   *
-     ***************************************************/
-    /* 1st argument of this ioctl indicates the action to perform among these:
+    if (vid != XILINX_VENDOR) {
+      printk("[openair][IOCTL]     openair_UPDATE_FIRMWARE\n");
+      /***************************************************
+       *   Updating the firmware of Cardbus-MIMO-1 SoC   *
+       ***************************************************/
+      /* 1st argument of this ioctl indicates the action to perform among these:
          - Transfer a block of data at a specified address (given as the 2nd argument)
-           and for a specified length (given as the 3rd argument, in number of 32-bit words).
-           The USER-SPACE address where to find the block of data is given as the 4th
-           argument.
+	 and for a specified length (given as the 3rd argument, in number of 32-bit words).
+	 The USER-SPACE address where to find the block of data is given as the 4th
+	 argument.
          - Ask the Leon processor to clear the .bss section. In this case, the base
-           address of section .bss is given as the 2nd argument, and its size is
-           given as the 3rd one.
+	 address of section .bss is given as the 2nd argument, and its size is
+	 given as the 3rd one.
          - Ask the Leon processor to jump at a specified address (given as the 2nd
-           argument, most oftenly expected to be the top address of Ins, Scratch Pad
-           Ram), after having set the stack pointer (given as the 3rd argument).
-       For the openair_UPDATE_FIRMWARE ioctl, we perform a partial infinite loop
-       while acknowledging the PCI irq from Leon software: the max number of loop
-       is yielded by preprocessor constant MAX_IOCTL_ACK_CNT. This avoids handing
-       the kernel with an infinite polling loop. An exception is the case of clearing
-       the bss: it takes time to Leon3 to perform this operation, so we poll te
-       acknowledge with no limit */
+	 argument, most oftenly expected to be the top address of Ins, Scratch Pad
+	 Ram), after having set the stack pointer (given as the 3rd argument).
+	 For the openair_UPDATE_FIRMWARE ioctl, we perform a partial infinite loop
+	 while acknowledging the PCI irq from Leon software: the max number of loop
+	 is yielded by preprocessor constant MAX_IOCTL_ACK_CNT. This avoids handing
+	 the kernel with an infinite polling loop. An exception is the case of clearing
+	 the bss: it takes time to Leon3 to perform this operation, so we poll te
+	 acknowledge with no limit */
 #define MAX_IOCTL_ACK_CNT    500
-    update_firmware_command = *((unsigned int*)arg);
-
-    switch (update_firmware_command) {
-
+      update_firmware_command = *((unsigned int*)arg);
+      
+      switch (update_firmware_command) {
+	
       case UPDATE_FIRMWARE_TRANSFER_BLOCK:
         update_firmware_address   = ((unsigned int*)arg)[1];
         invert4(update_firmware_address); /* because Sparc is big endian */
@@ -1481,7 +1259,7 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
                              update_firmware_kbuffer, /* to   */
                              update_firmware_ubuffer, /* from */
                              lendian_length * 4       /* in bytes */
-                            );
+			     );
         if (tmp) {
           printk("[openair][IOCTL] Could NOT copy all data from user-space to kernel-space (%d bytes remained uncopied).\n", tmp);
           if (update_firmware_kbuffer)
@@ -1518,84 +1296,100 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
         sparc_tmp_0 = update_firmware_address; sparc_tmp_1 = update_firmware_length;
         invert4(sparc_tmp_0); invert4(sparc_tmp_1);
         printk("[openair][IOCTL] ok %u words copied at address 0x%08x (Leon ack after %u polling loops)\n",
-            sparc_tmp_1, sparc_tmp_0, ioctl_ack_cnt);
-        break;
+	       sparc_tmp_1, sparc_tmp_0, ioctl_ack_cnt);
+	
+	break;
+         
+    case UPDATE_FIRMWARE_CLEAR_BSS:
 
-      case UPDATE_FIRMWARE_CLEAR_BSS:
-        update_firmware_bss_address   = ((unsigned int*)arg)[1];
-        update_firmware_bss_size      = ((unsigned int*)arg)[2];
-        sparc_tmp_0 = update_firmware_bss_address;
-        sparc_tmp_1 = update_firmware_bss_size;
-        //printk("[openair][IOCTL]  BSS address passed to Leon3 = 0x%08x\n", sparc_tmp_0);
-        //printk("[openair][IOCTL]  BSS  size   passed to Leon3 = 0x%08x\n", sparc_tmp_1);
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
-        wmb();
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-                       FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_CLEAR_BSS | FROM_GRLIB_IRQ_FROM_PCI);
-        wmb();
-        /* Poll the IRQ bit */
-        do {
-          openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-          rmb();
-        } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
-        printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
-        break;
+      update_firmware_bss_address   = ((unsigned int*)arg)[1];
+      update_firmware_bss_size      = ((unsigned int*)arg)[2];
+      sparc_tmp_0 = update_firmware_bss_address;
+      sparc_tmp_1 = update_firmware_bss_size;
+      //printk("[openair][IOCTL]  BSS address passed to Leon3 = 0x%08x\n", sparc_tmp_0);
+      //printk("[openair][IOCTL]  BSS  size   passed to Leon3 = 0x%08x\n", sparc_tmp_1);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
+      wmb();
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_CLEAR_BSS | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* Poll the IRQ bit */
+      do {
+	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	rmb();
+      } while (tmp & FROM_GRLIB_IRQ_FROM_PCI);
+      printk("[openair][IOCTL] ok asked Leon to clear .bss (addr 0x%08x, size %d bytes)\n", sparc_tmp_0, sparc_tmp_1);
+      
+      
+      break;
+            
+    case UPDATE_FIRMWARE_START_EXECUTION:
+      update_firmware_start_address = ((unsigned int*)arg)[1];
+      update_firmware_stack_pointer = ((unsigned int*)arg)[2];
+      sparc_tmp_0 = update_firmware_start_address;
+      sparc_tmp_1 = update_firmware_stack_pointer;
+      //printk("[openair][IOCTL]  Entry point   passed to Leon3 = 0x%08x\n", sparc_tmp_0);
+      //printk("[openair][IOCTL]  Stack pointer passed to Leon3 = 0x%08x\n", sparc_tmp_1);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
+      wmb();
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* Poll the IRQ bit */
+      ioctl_ack_cnt = 0;
+      do {
+	openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+	rmb();
+      } while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
+      if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
+	printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'START_EXECUTION' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
+	return -1;
+	break;
+      }
+      printk("[openair][IOCTL] ok asked Leon to run firmware (ep = 0x%08x, sp = 0x%08x, Leon ack after %u polling loops)\n",
+	     sparc_tmp_0, sparc_tmp_1, ioctl_ack_cnt);
+      
+    break;
+          
+    case UPDATE_FIRMWARE_FORCE_REBOOT:
+      openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
+		     /*FROM_GRLIB_BOOT_HOK |*/ FROM_GRLIB_IRQ_FROM_PCI_IS_FORCE_REBOOT | FROM_GRLIB_IRQ_FROM_PCI);
+      wmb();
+      /* We don't wait for any acknowledge from Leon, because it can't acknowledge upon reboot */
+      printk("[openair][IOCTL] ok asked Leon to reboot.\n");
+      
+      break;
+    
+    case UPDATE_FIRMWARE_TEST_GOK:
+    /* No loop, just a single test (the polling loop should better be placed in user-space code). */
+      openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
+      rmb();
+      if (tmp & FROM_GRLIB_BOOT_GOK)
+	return 0;
+      else
+	return -1;
 
-      case UPDATE_FIRMWARE_START_EXECUTION:
-        update_firmware_start_address = ((unsigned int*)arg)[1];
-        update_firmware_stack_pointer = ((unsigned int*)arg)[2];
-        sparc_tmp_0 = update_firmware_start_address;
-        sparc_tmp_1 = update_firmware_stack_pointer;
-        //printk("[openair][IOCTL]  Entry point   passed to Leon3 = 0x%08x\n", sparc_tmp_0);
-        //printk("[openair][IOCTL]  Stack pointer passed to Leon3 = 0x%08x\n", sparc_tmp_1);
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL0_OFFSET, sparc_tmp_0);
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL1_OFFSET, sparc_tmp_1);
-        wmb();
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-                       FROM_GRLIB_BOOT_HOK | FROM_GRLIB_IRQ_FROM_PCI_IS_JUMP_USER_ENTRY | FROM_GRLIB_IRQ_FROM_PCI);
-        wmb();
-        /* Poll the IRQ bit */
-        ioctl_ack_cnt = 0;
-        do {
-          openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-          rmb();
-        } while ((tmp & FROM_GRLIB_IRQ_FROM_PCI) && (ioctl_ack_cnt++ < MAX_IOCTL_ACK_CNT));
-        if (tmp & FROM_GRLIB_IRQ_FROM_PCI) {
-          printk("[openair][IOCTL] ERROR: Leon did not acknowledge 'START_EXECUTION' irq (after a %u polling loop).\n", MAX_IOCTL_ACK_CNT);
-          return -1;
-          break;
-        }
-        printk("[openair][IOCTL] ok asked Leon to run firmware (ep = 0x%08x, sp = 0x%08x, Leon ack after %u polling loops)\n",
-            sparc_tmp_0, sparc_tmp_1, ioctl_ack_cnt);
-        break;
-
-      case UPDATE_FIRMWARE_FORCE_REBOOT:
-        openair_writel(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET,
-                       /*FROM_GRLIB_BOOT_HOK |*/ FROM_GRLIB_IRQ_FROM_PCI_IS_FORCE_REBOOT | FROM_GRLIB_IRQ_FROM_PCI);
-        wmb();
-        /* We don't wait for any acknowledge from Leon, because it can't acknowledge upon reboot */
-        printk("[openair][IOCTL] ok asked Leon to reboot.\n");
-        break;
-
-      case UPDATE_FIRMWARE_TEST_GOK:
-
-        /* No loop, just a single test (the polling loop should better be placed in user-space code). */
-        openair_readl(pdev[0], FROM_GRLIB_CFG_GRPCI_EUR_CTRL_OFFSET, &tmp);
-        rmb();
-        if (tmp & FROM_GRLIB_BOOT_GOK)
-          return 0;
-        else
-          return -1;
-        break;
-
+      break;
+    
       default:
-        return -1;
-        break;
-    }    break;
-
-
+	return -1;
+	break;
+	
+      }
+    }
+    else {
+      return -1;
+    }
+    break;
+  
   case openair_SET_TIMING_ADVANCE:
+
+    for (i=0;i<number_of_cards;i++) 
+      pci_interface[i]->frame_offset = ((unsigned int *)arg)[0];
+
+    /*
     openair_daq_vars.manual_timing_advance = 1;
     openair_daq_vars.timing_advance = ((unsigned int *)arg)[0]; 
 
@@ -1606,7 +1400,8 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
 
     if (ret != 0)
       msg("[openair][IOCTL] Failed to set timing advance\n");
-    
+    */
+
     break;
 
   case openair_SET_FREQ_OFFSET:
@@ -1649,8 +1444,12 @@ int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd
   case openair_SET_DLSCH_TRANSMISSION_MODE:
 
     if ( ((((unsigned int *)arg)[0]) > 0) && 
-	 ((((unsigned int *)arg)[0]) < 7) )
+	 ((((unsigned int *)arg)[0]) < 7) ) {
       openair_daq_vars.dlsch_transmission_mode = (unsigned char)(((unsigned int *)arg)[0]);
+#ifdef OPENAIR2
+      transmission_mode_rrc = (int)(((unsigned int *)arg)[0]);
+#endif
+    }
     if  ((PHY_vars_eNB_g != NULL) && (PHY_vars_eNB_g[0] != NULL))
       // if eNb is already configured, frame parms are local to it
       PHY_vars_eNB_g[0]->lte_frame_parms.mode1_flag = (openair_daq_vars.dlsch_transmission_mode==1);
