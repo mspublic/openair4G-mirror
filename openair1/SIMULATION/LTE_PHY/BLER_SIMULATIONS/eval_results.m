@@ -26,17 +26,28 @@ plot_style = {'b-*';'r-*';'g-*';'y-*';'k-*';...
 %%
 figure(1)
 hold off
+figure(2)
+hold off
 legend_str = {};
 i=1;
-for mcs=[0 5 9 10 16 17 20 23]
-    data = dlmread(fullfile(root_path,sprintf('bler_tx1_mcs%d.csv',mcs)),';',1,0);
+for mcs=0:27 %5 9 10 16 17 20 23]
+    data = dlmread(fullfile(root_path,sprintf('second_bler_tx1_mcs%d_chan8.csv',mcs)),';',1,0);
     snr = data(:,1);
     bler = data(:,5)./data(:,6); % round 1
     bler4 = data(:,11)./data(:,6); % round 4
     harq_adjust = data(:,6)./sum(data(:,6:2:12),2);
+    uncoded_ber = data(:,14);
+    if (length(snr)==1)
+    throughput_all(:,mcs+1) = (1-bler4).*harq_adjust.*get_tbs(mcs,25)*6*100;
+    else
     throughput_all(:,mcs+1) = interp1(snr, (1-bler4).*harq_adjust.*get_tbs(mcs,25)*6*100,snr_all,'nearest','extrap');
+    end
     throughput_all(1:find(snr_all==snr(1)),mcs+1) = 0;
+    figure(1)
     semilogy(snr,bler(:,1),plot_style{mcs+1});
+    hold on
+    figure(2)
+    semilogy(snr,uncoded_ber,plot_style{mcs+1});
     hold on
     legend_str{i} = sprintf('mcs %d',mcs);
     i=i+1;
@@ -48,15 +59,25 @@ end
 %        'mcs18(64QAM)','mcs19(64QAM)','mcs20(64QAM)','mcs21(64QAM)',...
 %        'mcs22(64QAM)','mcs23(64QAM)','mcs24(64QAM)','mcs25(64QAM)',...
 %        'mcs26(64QAM)','mcs27(64QAM)',
+figure(1)
 legend(legend_str,'location','westoutside');
 title 'BLER Vs. SNR for SISO LTE with respect to MCS'
 ylabel 'BLER'
 xlabel 'SNR'
-ylim([0.01 1])
+ylim([0.001 1])
 grid on
 
+figure(2)
+legend(legend_str,'location','westoutside');
+title 'uncoded BER Vs. SNR for SISO LTE with respect to MCS'
+ylabel 'BER'
+xlabel 'SNR'
+ylim([0.0001 1])
+grid on
+
+
 %%
-h_fig = figure(2);
+h_fig = figure(4);
 hold off
 plot(snr_all,smooth(max(throughput_all,[],2),5))
 %plot(snr_all,throughput_all)
