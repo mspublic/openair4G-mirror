@@ -30,8 +30,8 @@ figure(2)
 hold off
 legend_str = {};
 i=1;
-for mcs=0:27 %5 9 10 16 17 20 23]
-    data = dlmread(fullfile(root_path,sprintf('second_bler_tx1_mcs%d_chan8.csv',mcs)),';',1,0);
+for mcs=[0:9] %[0 5 9 10 16 17 20 23]
+    data = dlmread(fullfile(root_path,sprintf('second_bler_tx5_mcs%d_chan13.csv',mcs)),';',1,0);
     snr = data(:,1);
     bler = data(:,5)./data(:,6); % round 1
     bler4 = data(:,11)./data(:,6); % round 4
@@ -79,7 +79,7 @@ grid on
 %%
 h_fig = figure(4);
 hold off
-plot(snr_all,smooth(max(throughput_all,[],2),5))
+plot(snr_all,(max(throughput_all,[],2)))
 %plot(snr_all,throughput_all)
 hold on
 plot(SNR,max(bps_siso),'r--');

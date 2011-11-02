@@ -129,14 +129,14 @@ physim : $(OBJ) phy_procedures_sim.c
 physim_secsys : $(OBJ) phy_procedures_sim_secsys.c 
 	$(CC)  phy_procedures_sim_secsys.c -o physim_secsys $(CFLAGS) $(OBJ) -lm
 
-clean:
+clean :
 	rm -f $(OBJ)
 	rm -f *.o
 
-cleanall: clean
+cleanall : clean
 	rm -f dlsim pbchsim pdcchsim ulsim pucchsim 
 	rm -f *.exe*
 
-showcflags:
+showcflags :
 	@echo $(CFLAGS)
 
