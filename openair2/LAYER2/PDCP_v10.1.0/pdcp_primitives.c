@@ -33,7 +33,8 @@
 * \date 2011
 * \version 0.1
 */
-
+#include "platform_types.h"
+#include "platform_constants.h"
 #include "pdcp_primitives.h"
 
 /*

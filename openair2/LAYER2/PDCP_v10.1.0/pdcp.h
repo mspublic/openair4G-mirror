@@ -44,7 +44,9 @@
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
 
-#include "pdcp_sequence_manager.h"
+#define TRUE 0x01
+#define FALSE 0x00
+typedef unsigned char BOOL;
 
 public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
 public_pdcp(unsigned int Pdcp_stats_tx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
@@ -60,9 +62,6 @@ public_pdcp(void pdcp_data_ind       (module_id_t, rb_id_t, sdu_size_t, mem_bloc
 public_pdcp(void pdcp_config_req     (module_id_t, rb_id_t);)
 public_pdcp(void pdcp_config_release (module_id_t, rb_id_t);)
 
-#define TRUE 0x01
-#define FALSE 0x00
-typedef unsigned char BOOL;
 
 public_pdcp(void pdcp_run ();)
 public_pdcp(int pdcp_module_init ();)
