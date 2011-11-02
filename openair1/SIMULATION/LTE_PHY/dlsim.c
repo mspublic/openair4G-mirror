@@ -46,8 +46,8 @@ void do_forms(FD_lte_scope *form, LTE_DL_FRAME_PARMS *frame_parms, short **chann
   int i,j,ind,k,s;
 
   float Re,Im;
-  float mag_sig[NB_ANTENNAS_RX*NB_ANTENNAS_TX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
-    sig_time[NB_ANTENNAS_RX*NB_ANTENNAS_TX*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+  float mag_sig[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
+    sig_time[NB_ANTENNAS_RX*4*NUMBER_OF_OFDM_CARRIERS*NUMBER_OF_OFDM_SYMBOLS_PER_SLOT],
     sig2[FRAME_LENGTH_COMPLEX_SAMPLES],
     time2[FRAME_LENGTH_COMPLEX_SAMPLES],
     I[25*12*11*4], Q[25*12*11*4],
@@ -330,7 +330,7 @@ int main(int argc, char **argv) {
   u16 n_rnti=0x1234;
   int n_users = 1;
 
-  SCM_t channel_model=Rayleigh8;
+  SCM_t channel_model=Rayleigh1_corr;
   //  unsigned char *input_data,*decoded_output;
 
   unsigned char *input_buffer[2];
@@ -342,6 +342,8 @@ int main(int argc, char **argv) {
   int re_allocated;
   FILE *bler_fd;
   char bler_fname[256];
+  FILE *tikz_fd;
+  char tikz_fname[256];
 
   FILE *input_trch_fd;
   unsigned char input_trch_file=0;
@@ -478,6 +480,18 @@ int main(int argc, char **argv) {
 	  break;
 	case 'G': 
 	  channel_model=ETU;
+	case 'H':
+	  channel_model=Rayleigh8;
+	case 'I':
+	  channel_model=Rayleigh1;
+	case 'J':
+	  channel_model=Rayleigh1_corr;
+	case 'K':
+	  channel_model=Rayleigh1_anticorr;
+	case 'L':
+	  channel_model=Rice8;
+	case 'M':
+	  channel_model=Rice1;
 	  break;
 	default:
 	  msg("Unsupported channel model!\n");
@@ -542,7 +556,7 @@ int main(int argc, char **argv) {
       printf("-f step size of SNR, default value is 1.\n");
       printf("-t Delay spread for multipath channel\n");
       printf("-r Ricean factor (dB, 0 dB = Rayleigh, 100 dB = almost AWGN)\n");
-      printf("-g [A,B,C,D,E,F,G] Use 3GPP 25.814 SCM or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-g [A,B,C,D,E,F,G,H,I,J,K,L,M] Use 3GPP 25.814 SCM or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
@@ -629,6 +643,10 @@ int main(int argc, char **argv) {
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs);
   }
+
+  sprintf(tikz_fname, "second_bler_tx%d_mcs%d_chan%d_nsimus%d.tex",transmission_mode,mcs,channel_model,n_frames);
+  tikz_fd = fopen(tikz_fname,"w");
+  fprintf(tikz_fd,"\\addplot[color=red, mark=o] plot coordinates {");
 
   for (i=0;i<2;i++) {
     s_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
@@ -1255,6 +1273,7 @@ int main(int argc, char **argv) {
 	    pilot3 = 9;
 	  }
 	  
+	  i_mod = get_Qm(mcs);
 	  
 	  // Inner receiver scheduling for 3 slots
 	  for (Ns=(2*subframe);Ns<((2*subframe)+3);Ns++) {
@@ -1757,6 +1776,8 @@ int main(int argc, char **argv) {
 	      round_trials[3],
 	      dci_errors,
 	      avg_ber/round_trials[0]);
+
+      fprintf(tikz_fd,"(%f,%f)", SNR, (float)errs[0]/round_trials[0]);
     
       if(abstx){ //ABSTRACTION         
 	blerr= (double)errs[0]/(round_trials[0]);
@@ -1772,6 +1793,9 @@ int main(int argc, char **argv) {
   
   
   fclose(bler_fd);
+  fprintf(tikz_fd,"};");
+  fclose(tikz_fd);
+
   if (input_trch_file==1)
     fclose(input_trch_fd);
   if (input_file==1)
