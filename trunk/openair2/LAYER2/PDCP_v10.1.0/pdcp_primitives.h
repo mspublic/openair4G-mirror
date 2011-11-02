@@ -10,7 +10,7 @@
 #ifndef __PDCP_PRIMITIVES_H__
 #    define __PDCP_PRIMITIVES_H__
 
-#    include "platform.h"
+#    include "platform_types.h"
 //----------------------------------------------------------
 // primitives
 //----------------------------------------------------------
@@ -98,7 +98,7 @@
 typedef struct {
   u8 sn;      // PDCP sequence number will wrap around 2^5-1 so 
               // reserved field is unnecessary here
-  u32 mac-i;  // Integration protection is not implemented (pad with 0)
+  u32 mac_i;  // Integration protection is not implemented (pad with 0)
 } pdcp_control_plane_data_pdu_header;
 
 /*

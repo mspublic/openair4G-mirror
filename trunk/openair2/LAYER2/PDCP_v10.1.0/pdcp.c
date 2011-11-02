@@ -39,6 +39,7 @@
   #include <rtai_fifos.h>
 #endif
 #include "pdcp.h"
+#include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
 #include "pdcp_primitives.h"
@@ -57,7 +58,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
   u16 pdu_size = data_sizeP + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
   if (data_sizeP > 0) {
-    if (data_sizeP > MAX_IP_PACKET_SIZE) { // shouldn't this be MAX SDU size, which is 8188 bytes?
+    if (data_sizeP > MAX_IP_PACKET_SIZE) { // XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
       msg("[PDCP] REQ FOR  SIZE %d !!!Abort\n",data_sizeP);
       mac_xface->macphy_exit("");
     }
@@ -244,7 +245,7 @@ pdcp_config_req (module_id_t module_idP, rb_id_t rab_idP)
   /* SN of the last PDCP SDU delivered to upper layers */
   pdcp_array[module_idP][rab_idP].last_submitted_pdcp_rx_sn = 4095;
 
-  msg("[PDCP] pdcp_confiq_req()\n");
+  msg("[PDCP] PDCP entity of module %d, radio bearer %d configured\n", module_idP, rab_idP);
 }
 
 //-----------------------------------------------------------------------------
