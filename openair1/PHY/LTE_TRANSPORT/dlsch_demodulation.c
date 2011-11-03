@@ -1485,12 +1485,15 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 
   unsigned short rb;
   __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128;
-  unsigned char aarx,symbol_mod;
+  unsigned char aarx,symbol_mod,pilots=0;
 
   //  printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
+  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
+    pilots=1;
+  }
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
@@ -1503,7 +1506,6 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       // multiply by conjugated channel
       mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128i[0]);
       //	print_ints("re",&mmtmpD0);
-      
       // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
       mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
       mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
@@ -1537,37 +1539,40 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-      
-      
       dl_ch_rho128[1] =_mm_packs_epi32(mmtmpD2,mmtmpD3);
+
       //print_shorts("rx:",dl_ch128_2+1);
       //print_shorts("ch:",dl_ch128+1);
       //print_shorts("pack:",rho128+1);	
-      // multiply by conjugated channel
-      mmtmpD0 = _mm_madd_epi16(dl_ch128[2],dl_ch128i[2]);
-      // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-      mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128i[2]);
-      // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-      mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-      mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-      
-      dl_ch_rho128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-      //print_shorts("rx:",dl_ch128_2+2);
-      //print_shorts("ch:",dl_ch128+2);
-      //print_shorts("pack:",rho128+2);
-      
-      dl_ch128+=3;
-      dl_ch128i+=3;
-      dl_ch_rho128+=3;
-      
-      
-      
-      
+
+      if (pilots==0) {  
+	// multiply by conjugated channel
+	mmtmpD0 = _mm_madd_epi16(dl_ch128[2],dl_ch128i[2]);
+	// mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
+	mmtmpD1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
+	mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+	mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
+	mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128i[2]);
+	// mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
+	mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+	mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+	mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+	mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+	dl_ch_rho128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+	
+	//print_shorts("rx:",dl_ch128_2+2);
+	//print_shorts("ch:",dl_ch128+2);
+	//print_shorts("pack:",rho128+2);
+	
+	dl_ch128+=3;
+	dl_ch128i+=3;
+	dl_ch_rho128+=3;
+      }
+      else {      
+	dl_ch128+=2;
+	dl_ch128i+=2;
+	dl_ch_rho128+=2;
+      }
     }	
     
   }
@@ -1637,11 +1642,11 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 	  // get channel amplitude if not QPSK
 
 	  mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
-
 	  mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
 	  
 	  mmtmpD1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
 	  mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+
 	  mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
 	   
 	  dl_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
@@ -2324,13 +2329,22 @@ int rx_dlsch(LTE_UE_COMMON *lte_ue_common_vars,
     msg("[DLSCH] avg[0] %d\n",avg[0]);
 #endif
       
+    // the channel gain should be the effective gain of precoding + channel
+    // however lets be more conservative and set maxh = nb_tx*nb_rx*max(h_i)
+    // in case of precoding we add an additional factor of two for the precoding gain
     avgs = 0;
     for (aatx=0;aatx<frame_parms->nb_antennas_tx;aatx++)
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
 	avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
-    lte_ue_dlsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);//-1;
+
+    lte_ue_dlsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)
+      + log2_approx(frame_parms->nb_antennas_tx-1)
+      + log2_approx(frame_parms->nb_antennas_rx-1);
+    if (dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode>=UNIFORM_PRECODING11)
+      lte_ue_dlsch_vars[eNB_id]->log2_maxh++;
+
 #ifdef DEBUG_PHY
-    msg("[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_dlsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
+    msg("[DLSCH] log2_maxh = %d (%d,%d,%d)\n",lte_ue_dlsch_vars[eNB_id]->log2_maxh,avg[0],avgs,log2_approx(avgs)/2);
     msg("[DLSCH] mimo_mode = %d\n", dlsch_ue[0]->harq_processes[harq_pid0]->mimo_mode);
 #endif
   }
