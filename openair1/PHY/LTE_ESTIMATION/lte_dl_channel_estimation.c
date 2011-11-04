@@ -567,7 +567,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     }
     
     
-    
+#ifndef PERFECT_CE    
     // Temporal Interpolation
     // printf("ch_offset %d\n",ch_offset);
     
@@ -605,7 +605,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 	multadd_complex_vector_real_scalar(dl_ch,10923,dl_ch_prev+(2*((phy_vars_ue->lte_frame_parms.ofdm_symbol_size)<<1)),0,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
       } // pilot spacing 3 symbols (1/3,2/3 combination)
     }
-    
+#endif
     
   }
   return(0); 
