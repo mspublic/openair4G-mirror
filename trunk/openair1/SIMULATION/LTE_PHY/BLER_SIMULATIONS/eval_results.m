@@ -70,7 +70,7 @@ ylabel 'BLER'
 xlabel 'SNR'
 ylim([0.001 1])
 grid on
-saveas(h_fig,sprintf('tx_mode%d_channel%d_bler.fig',tx_mode,channel));
+saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_bler.fig',tx_mode,channel)));
 
 h_fig = figure(2);
 legend(legend_str,'location','westoutside');
@@ -79,13 +79,13 @@ ylabel 'uncoded BER'
 xlabel 'SNR'
 ylim([0.0001 1])
 grid on
-saveas(h_fig,sprintf('tx_mode%d_channel%d_ber.fig',tx_mode,channel));
+saveas(h_fig,fullfile(root_path,sprintf('tx_mode%d_channel%d_ber.fig',tx_mode,channel)));
 
 
 %%
 h_fig = figure(4);
 hold off
-plot(snr_all,(max(throughput_all,[],2),5))
+plot(snr_all,(max(throughput_all,[],2)))
 %plot(snr_all,throughput_all)
 hold on
 plot(SNR,max(bps_siso),'r--');
