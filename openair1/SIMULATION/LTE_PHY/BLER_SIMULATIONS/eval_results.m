@@ -3,6 +3,8 @@ set(0, 'Defaultaxesfontsize', 14);
 set(0, 'DefaultLineLineWidth', 2);
 
 root_path = '..';
+tx_mode = 6;
+channel = 10;
 
 %%
 addpath('../../../EMOS/LTE/POST_PROCESSING')
@@ -30,8 +32,15 @@ figure(2)
 hold off
 legend_str = {};
 i=1;
-for mcs=[0:9] %[0 5 9 10 16 17 20 23]
-    data = dlmread(fullfile(root_path,sprintf('second_bler_tx5_mcs%d_chan13.csv',mcs)),';',1,0);
+for mcs=0:28
+    file = fullfile(root_path,sprintf('second_bler_tx%d_mcs%d_chan%d.csv',tx_mode,mcs,channel));
+    try
+        data = dlmread(file,';',1,0);
+    catch exception
+        disp(sprintf('Problem with file %s:',file));
+        disp(exception.message);
+        continue
+    end
     snr = data(:,1);
     bler = data(:,5)./data(:,6); % round 1
     bler4 = data(:,11)./data(:,6); % round 4
@@ -52,34 +61,31 @@ for mcs=[0:9] %[0 5 9 10 16 17 20 23]
     legend_str{i} = sprintf('mcs %d',mcs);
     i=i+1;
 end
-% legend('mcs0(QPSK)','mcs1(QPSK)','mcs2(QPSK)','mcs3(QPSK)','mcs4(QPSK)',...
-%        'mcs5(QPSK)','mcs6(QPSK)','mcs7(QPSK)','mcs8(QPSK)','mcs9(QPSK)',...
-%        'mcs10(16QAM)','mcs11(16QAM)','mcs12(16QAM)','mcs13(16QAM)',...
-%        'mcs14(16QAM)','mcs15(16QAM)','mcs16(16QAM)','mcs17(64QAM)',...
-%        'mcs18(64QAM)','mcs19(64QAM)','mcs20(64QAM)','mcs21(64QAM)',...
-%        'mcs22(64QAM)','mcs23(64QAM)','mcs24(64QAM)','mcs25(64QAM)',...
-%        'mcs26(64QAM)','mcs27(64QAM)',
-figure(1)
+
+%%
+h_fig = figure(1);
 legend(legend_str,'location','westoutside');
-title 'BLER Vs. SNR for SISO LTE with respect to MCS'
+title(sprintf('Tx mode %d: BLER vs SNR',tx_mode));
 ylabel 'BLER'
 xlabel 'SNR'
 ylim([0.001 1])
 grid on
+saveas(h_fig,sprintf('tx_mode%d_channel%d_bler.fig',tx_mode,channel));
 
-figure(2)
+h_fig = figure(2);
 legend(legend_str,'location','westoutside');
-title 'uncoded BER Vs. SNR for SISO LTE with respect to MCS'
-ylabel 'BER'
+title(sprintf('Tx mode %d: uncoded BER vs SNR',tx_mode));
+ylabel 'uncoded BER'
 xlabel 'SNR'
 ylim([0.0001 1])
 grid on
+saveas(h_fig,sprintf('tx_mode%d_channel%d_ber.fig',tx_mode,channel));
 
 
 %%
 h_fig = figure(4);
 hold off
-plot(snr_all,(max(throughput_all,[],2)))
+plot(snr_all,(max(throughput_all,[],2),5))
 %plot(snr_all,throughput_all)
 hold on
 plot(SNR,max(bps_siso),'r--');
