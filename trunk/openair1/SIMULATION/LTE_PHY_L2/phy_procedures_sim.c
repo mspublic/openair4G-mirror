@@ -12,6 +12,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log_extern.h"
 #include "RRC/MESH/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #ifdef OCG

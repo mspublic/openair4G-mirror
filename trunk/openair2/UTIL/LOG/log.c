@@ -46,6 +46,7 @@
 //static unsigned char       fifo_print_buffer[FIFO_PRINTF_MAX_STRING_SIZE];
 
 #include "log.h"
+#include "log_vars.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #ifndef USER_MODE
@@ -63,15 +64,6 @@ static char g_buff_infos[MAX_LOG_TOTAL];
 static char g_buff_tmp  [MAX_LOG_ITEM];
 static char g_buff_debug[MAX_LOG_ITEM];
 
-
-//static char copyright_string[] __attribute__ ((unused)) =
-//  "Copyright (c) The www.openairinterface.org  2009, navid nikaein (navid.nikaein@eurecom.fr) All rights reserved.";
-
-//static const char BUILD_VERSION[] = "v0.1";
-//static const char BUILD_DATE[] = "2011-01-15 16:42:14";
-//static const char BUILD_HOST[] = "LINUX";
-//static const char BUILD_TARGET[] = "OAI";
-//#define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 20)) msg
 
 static int fd;
 

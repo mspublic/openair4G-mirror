@@ -1,6 +1,7 @@
 OPENAIR2_TOP = ../../..
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
+
 EXTRA_CFLAGS += -I$(OPENAIR1_DIR) -I/usr/realtime/include -D__need_Emath -D__NO_ASSERT_H__ 
 
 ifdef RTAI

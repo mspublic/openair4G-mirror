@@ -261,7 +261,6 @@ typedef struct {
 } log_t;
 
 
-log_t *g_log;
 
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log_if.h"

@@ -13,7 +13,7 @@ all: help
 oaisim: 
 	(cd $(OPENAIR_TARGETS)/SIMU/USER && make all ) 
 oaisim_nas: 
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && make clean && make all NAS_NETLINK=1) 
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && make all NAS_NETLINK=1) 
 nasmesh:
 	(cd $(OPENAIR2_DIR) && make nasmesh_netlink_address_fix.ko)
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make)

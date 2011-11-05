@@ -41,7 +41,7 @@ void init_oai_emulation() {
 	oai_emulation.environment_system_config.fading.large_scale.selected_option = "free_space";
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 2.0;
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -50;
-	oai_emulation.environment_system_config.fading.small_scale.selected_option = "Rayleigh8";
+	oai_emulation.environment_system_config.fading.small_scale.selected_option = "Rayleigh1";
 	oai_emulation.environment_system_config.fading.ricean_8tap.rice_factor_dB = 0;
 	oai_emulation.environment_system_config.fading.shadowing.decorrelation_distance_m = 0;
 	oai_emulation.environment_system_config.fading.shadowing.variance_dB = 0;
@@ -196,7 +196,7 @@ int olg_config(char * g_log_level) {
   logInit(map_str_to_int(log_level_names, g_log_level));
   set_glog(LOG_DEBUG, LOG_MED); //g_glog
   set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);
-  set_comp_log(OMG,  LOG_INFO, LOG_LOW, 10);
+  set_comp_log(OMG,  LOG_DEBUG, LOG_LOW, 10);
   set_comp_log(EMU,  LOG_INFO, LOG_LOW, 10);
   
   LOG_T(LOG,"global log level is set to %s \n",g_log_level );
@@ -261,7 +261,7 @@ int ocg_config_topo() {
 
 	omg_param_list.nodes_type = UE;//UE
 	omg_param_list.nodes = oai_emulation.info.nb_ue_local;
-	omg_param_list.seed = oai_emulation.info.seed; // specific seed for enb and ue to avoid node overlapping
+	omg_param_list.seed = oai_emulation.info.seed + oai_emulation.info.nb_ue_local; //fixme: specific seed for enb and ue to avoid node overlapping
 
 	omg_param_list.min_speed = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed_mps == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.min_speed_mps;
 	omg_param_list.max_speed = (oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed_mps == 0) ? 0.1 : oai_emulation.topology_config.mobility.UE_mobility.UE_moving_dynamics.max_speed_mps;
