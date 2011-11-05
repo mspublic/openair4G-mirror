@@ -13,7 +13,7 @@
 //#include "mac_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 
 #ifdef USER_MODE
 #include "multicast_link.h"

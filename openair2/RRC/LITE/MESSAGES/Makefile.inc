@@ -1,7 +1,7 @@
 
-tmp:=$(shell cd $(OPENAIR2_TOP)/RRC/LITE/MESSAGES ; if [ ! -s Makefile.inc.generated ] ; then asn1c -gen-PER -fcompound-names -fnative-types -fskeletons-copy ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; patch -p1 < asn1_patch ; awk '/converter-sample.c/ {exit} // {print}' Makefile.am.sample > Makefile.inc.generated ; fi )
+tmp:=$(shell cd $(OPENAIR2_DIR)/RRC/LITE/MESSAGES ; if [ ! -s Makefile.inc.generated ] ; then asn1c -gen-PER -fcompound-names -fnative-types -fskeletons-copy ./asn1c/ASN1_files/EUTRA-RRC-Definitions.asn ; patch -p1 < asn1_patch ; awk '/converter-sample.c/ {exit} // {print}' Makefile.am.sample > Makefile.inc.generated ; fi )
 
-include $(OPENAIR2_TOP)/RRC/LITE/MESSAGES/Makefile.inc.generated
+include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
 
 ASN_CONVERTER_SOURCES+=asn1_msg.c
  

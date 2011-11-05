@@ -9,9 +9,10 @@
 #else
 #include <linux/module.h>  /* Needed by all modules */
 #endif
-
-#include "RRC/LITE/defs.h"
-#include "COMMON/mac_rrc_primitives.h"
+//#ifdef USER_MODE
+//#include "RRC/LITE/defs.h"
+//#include "COMMON/mac_rrc_primitives.h"
+//#endif 
 #include <asn_application.h>
 #include <asn_internal.h>	/* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>

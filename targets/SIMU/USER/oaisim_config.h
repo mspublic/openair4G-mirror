@@ -53,6 +53,7 @@ The current sturcture of oaisim is shown by the figure.
 /* @}*/
 
 #include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
 #include "UTIL/OMG/omg.h"
