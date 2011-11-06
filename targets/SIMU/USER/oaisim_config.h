@@ -57,6 +57,7 @@ The current sturcture of oaisim is shown by the figure.
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
 #include "UTIL/OMG/omg.h"
+#include "UTIL/CLI/cli_if.h"
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 
 /** @defgroup _init_oai Initial oaisim
@@ -70,7 +71,7 @@ The current sturcture of oaisim is shown by the figure.
  *  @ingroup _fn
  *  @brief This is the function that calls all the other configuration functions
  * @{*/ 
-void oaisim_config(char * g_log_level);
+void oaisim_config();
 /* @}*/
 
 
@@ -78,7 +79,8 @@ void oaisim_config(char * g_log_level);
  *  @ingroup _fn
  *  @brief There are the functions to configure different various modules in the emulator
  * @{*/ 
-int olg_config(char * g_log_level);
+int olg_config();
+int ocg_config_env();
 int ocg_config_omg();
 int ocg_config_topo();
 int ocg_config_app();

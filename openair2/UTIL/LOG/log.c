@@ -67,7 +67,7 @@ static char g_buff_debug[MAX_LOG_ITEM];
 
 static int fd;
 
-void logInit (int g_log_level) {
+void logInit (void) {
   
 #ifdef USER_MODE
   g_log = calloc(1, sizeof(log_t));
@@ -126,6 +126,10 @@ void logInit (int g_log_level) {
     g_log->log_component[RB].flag =  LOG_MED;
     g_log->log_component[RB].interval =  1;
 
+    g_log->log_component[CLI].name = "CLI";
+    g_log->log_component[CLI].level = LOG_INFO;
+    g_log->log_component[CLI].flag =  LOG_MED;
+    g_log->log_component[CLI].interval =  1;
  
     g_log->level2string[LOG_EMERG]         = "G"; //EMERG
     g_log->level2string[LOG_ALERT]         = "A"; // ALERT
@@ -140,7 +144,7 @@ void logInit (int g_log_level) {
     g_log->onlinelog = 1; //online log file
     g_log->syslog = 0; 
     g_log->filelog   = 0;
-    g_log->level  = g_log_level;
+    g_log->level  = LOG_DEBUG;
     g_log->flag   = LOG_MED;
  
 #ifdef USER_MODE  
@@ -185,7 +189,7 @@ void logRecord( const char *file, const char *func,
   
   // only log messages which are enabled and are below the global log level and component's level threshold
   if ((c->level > g_log->level) || (level > c->level)|| (c->flag == LOG_NONE) || 
-      (((oai_emulation.info.frame % c->interval) == 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
+      (((oai_emulation.info.frame % c->interval) != 0) && (oai_emulation.info.frame > oai_emulation.info.nb_ue_local * 10))) { 
     return;
   }
   // adjust syslog level for TRACE messages
@@ -268,13 +272,13 @@ int  set_comp_log(int component, int level, int flag, int interval) {
     if ((flag == LOG_NONE) || (flag == LOG_LOW) || (flag == LOG_MED) || (flag == LOG_FULL)) {
       g_log->log_component[component].flag = flag; 
     }
-    if ((level >=LOG_TRACE) && (component <= LOG_EMERG)){
+    if ((level <= LOG_TRACE) && (component >= LOG_EMERG)){
       g_log->log_component[component].level = level;
     }
-   if ((interval > 0) && (interval <= 0xFFFF)){
+    if ((interval > 0) && (interval <= 0xFF)){
       g_log->log_component[component].interval = interval;
-   }
-   return 0;
+    }
+    return 0;
   }
   else
     return -1;

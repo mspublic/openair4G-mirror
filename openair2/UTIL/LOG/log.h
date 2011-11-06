@@ -37,9 +37,6 @@
 
 */
 
-/* for any problem of doxygen in this file, 
-contact Lusheng Wang by lusheng.wang@eurecom.fr */
-
 #ifndef __LOG_H__
 #    define __LOG_H__
 
@@ -221,7 +218,7 @@ static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, 
 
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
 
-  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PERF,RB, MAX_LOG_COMPONENTS} comp_name_t;
+  typedef enum {MIN_LOG_COMPONENTS=0, LOG, PHY, MAC, EMU, OCG, OMG,OPT,OTG, RLC, PERF,RB, CLI, MAX_LOG_COMPONENTS} comp_name_t;
 
   //#define msg printf
 
