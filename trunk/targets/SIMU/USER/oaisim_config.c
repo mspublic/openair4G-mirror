@@ -10,21 +10,6 @@
 #include "OCG_extern.h"
 #include "UTIL/OMG/omg.h"
 
-
-mapping log_level_names[] =
-{
-    {"emerg", LOG_EMERG},
-    {"alert", LOG_ALERT},
-    {"crit", LOG_CRIT},
-    {"err", LOG_ERR},
-    {"warn", LOG_WARNING},
-    {"notice", LOG_NOTICE},
-    {"info", LOG_INFO},
-    {"debug", LOG_DEBUG},
-    {"trace", LOG_TRACE},
-    {NULL, -1}
-};
-
 mapping omg_model_names[] =
 {
     {"STATIC", STATIC},
@@ -38,6 +23,8 @@ mapping omg_model_names[] =
 
 void init_oai_emulation() {
 
+  int i;
+  
 	oai_emulation.environment_system_config.fading.large_scale.selected_option = "free_space";
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_exponent = 2.0;
 	oai_emulation.environment_system_config.fading.free_space_model_parameters.pathloss_0_dB = -50;
@@ -70,7 +57,7 @@ void init_oai_emulation() {
 	oai_emulation.topology_config.network_type.selected_option = "homogeneous";
 	oai_emulation.topology_config.cell_type.selected_option = "macrocell";
 	oai_emulation.topology_config.relay.number_of_relays = 0;
-	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "STATIC";
+	oai_emulation.topology_config.mobility.UE_mobility.UE_mobility_type.selected_option = "RWP";
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.horizontal_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_map.vertical_grid = 1;
 	oai_emulation.topology_config.mobility.UE_mobility.grid_walk.grid_trip_type.selected_option = "random_destination";
@@ -109,11 +96,17 @@ void init_oai_emulation() {
 	oai_emulation.emulation_config.performance.metrics.throughput = 0;
 	oai_emulation.emulation_config.performance.metrics.latency = 0;
 	oai_emulation.emulation_config.performance.metrics.signalling_overhead = 0;
+	oai_emulation.emulation_config.performance.layer.phy = 0;
 	oai_emulation.emulation_config.performance.layer.mac = 0;
 	oai_emulation.emulation_config.performance.layer.rlc = 0;
 	oai_emulation.emulation_config.performance.layer.pdcp = 0;
+	oai_emulation.emulation_config.performance.layer.rrc = 0;
+	oai_emulation.emulation_config.performance.layer.omg = 0;
+	oai_emulation.emulation_config.performance.layer.otg = 0;
+	oai_emulation.emulation_config.performance.layer.emu = 1;
+
 	oai_emulation.emulation_config.performance.log_emu.debug = 0;
-	oai_emulation.emulation_config.performance.log_emu.info = 0;
+	oai_emulation.emulation_config.performance.log_emu.info = 1;
 	oai_emulation.emulation_config.performance.log_emu.warning = 0;
 	oai_emulation.emulation_config.performance.log_emu.error = 0;
 	oai_emulation.emulation_config.performance.packet_trace.mac = 0;
@@ -141,6 +134,7 @@ void init_oai_emulation() {
   oai_emulation.info.ocm_enabled=1;// flag c
   oai_emulation.info.ocg_enabled=0;// flag c
   oai_emulation.info.opt_enabled=0; // P flag
+  oai_emulation.info.cli_enabled=0;// I flag
   oai_emulation.info.omg_model_enb=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue=STATIC; //default to static mobility model
   oai_emulation.info.omg_model_ue_current=STATIC; //default to static mobility model
@@ -149,27 +143,37 @@ void init_oai_emulation() {
   oai_emulation.info.time = 0; // time of emulation 
   oai_emulation.info.seed = time(NULL); // time-based random seed , , included in ocg report
 
+  oai_emulation.info.cli_num_enb= NUMBER_OF_eNB_MAX;
+  oai_emulation.info.cli_num_ue= NUMBER_OF_UE_MAX;
+ 
+  for (i=0; i < oai_emulation.info.cli_num_enb; i++)
+    oai_emulation.info.cli_start_enb[i]=1;    
+  for (i=0; i < oai_emulation.info.cli_num_ue; i++)
+    oai_emulation.info.cli_start_ue[i]=1;
+  
    oai_emulation.info.nb_master =0;
    oai_emulation.info.ethernet_id=0;
    oai_emulation.info.multicast_group=0;
-   strcpy(&oai_emulation.info.global_log_level, "trace");
+   oai_emulation.info.g_log_level= LOG_DEBUG;
 	
     
     oai_emulation.info.frame_type=1;
     oai_emulation.info.tdd_config=3;
     oai_emulation.info.extended_prefix_flag=0;
     oai_emulation.info.N_RB_DL=25;
-     oai_emulation.info.transmission_mode=2;
+    oai_emulation.info.transmission_mode=2;
 
     oai_emulation.profile = "EURECOM";
 	
 }
 
 
-void oaisim_config(char *g_log_level) {
+void oaisim_config() {
 
   // init log gen first
-  olg_config(g_log_level);
+ //initialize the log generator 
+  logInit();
+
   // init ocg if enabled, otherwise take the params form the init_oai_emulation()
  //  and command line options given by the user
   if (oai_emulation.info.ocg_enabled == 1){ // activate OCG: xml-based scenario parser
@@ -181,25 +185,29 @@ void oaisim_config(char *g_log_level) {
      }
    } 
     // init other comps
-    ocg_config_env();// mobility gen
-    ocg_config_topo(); // packet tracer using wireshark
-    ocg_config_app(); // packet generator 
-    ocg_config_emu(); // packet generator 
+  olg_config();
+  ocg_config_env();// mobility gen
+  ocg_config_topo(); // packet tracer using wireshark
+  ocg_config_app(); // packet generator 
+  ocg_config_emu(); // packet generator 
 
 
   
 }
 
-int olg_config(char * g_log_level) {
+int olg_config() {
 
- //initialize the log generator 
-  logInit(map_str_to_int(log_level_names, g_log_level));
-  set_glog(LOG_DEBUG, LOG_MED); //g_glog
-  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);
-  set_comp_log(OMG,  LOG_DEBUG, LOG_LOW, 10);
-  set_comp_log(EMU,  LOG_INFO, LOG_LOW, 10);
+  set_glog(oai_emulation.info.g_log_level,LOG_MED); //g_glog
   
-  LOG_T(LOG,"global log level is set to %s \n",g_log_level );
+  if (oai_emulation.emulation_config.performance.layer.omg)
+    set_comp_log(OMG,  LOG_DEBUG, LOG_LOW, 10);
+  if (oai_emulation.emulation_config.performance.layer.emu)
+    set_comp_log(EMU,  LOG_DEBUG, LOG_LOW, 10);
+  
+  // for those not in XML file
+  set_comp_log(OCG,  LOG_INFO, LOG_LOW, 10);  
+  
+  LOG_T(LOG,"global log level is set to %d \n", oai_emulation.info.g_log_level );
   return 1; 
 }
 
@@ -294,23 +302,32 @@ return 1;
 
 int ocg_config_emu(){
 
-
-    if (oai_emulation.emulation_config.emulation_time_ms != 0) {
-	oai_emulation.info.n_frames  =  (int) oai_emulation.emulation_config.emulation_time_ms / 10; // configure the number of frame
-	oai_emulation.info.n_frames_flag = 1;
-	 LOG_I(OCG, "number of frames in emulation is set to %d\n", oai_emulation.info.n_frames);
-    } else
-	 LOG_I(OCG, "number of frames in emulation is set to infinity\n");
-
-    if (!strcmp(oai_emulation.emulation_config.seed.selected_option, "user_seed")) {
-	oai_emulation.info.seed = oai_emulation.emulation_config.user_seed.seed_value;
-     } // otherwise, keep the default value 
-
-      /* : TODO
-       LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
-      Init_OPT(0,"outfile.dump","127.0.0.1",1234); // Init_OPT(2, oai_emulation.info.output_path, NULL, 0);*/
-	
-
+  if (oai_emulation.emulation_config.emulation_time_ms != 0) {
+    oai_emulation.info.n_frames  =  (int) oai_emulation.emulation_config.emulation_time_ms / 10; // configure the number of frame
+    oai_emulation.info.n_frames_flag = 1;
+    LOG_I(OCG, "number of frames in emulation is set to %d\n", oai_emulation.info.n_frames);
+  } else
+    LOG_I(OCG, "number of frames in emulation is set to infinity\n");
+  
+  if (!strcmp(oai_emulation.emulation_config.seed.selected_option, "user_seed")) {
+    oai_emulation.info.seed = oai_emulation.emulation_config.user_seed.seed_value;
+  } // otherwise, keep the default value 
+  
+  if (oai_emulation.info.cli_enabled){
+    if (cli_server_init(cli_server_recv) < 0) {
+      LOG_E(EMU,"cli server init failed \n");
+      exit(-1);
+    }
+    LOG_I(EMU, "eNB start state is %d, UE start state %d\n", 
+	  oai_emulation.info.cli_start_enb[0],
+	  oai_emulation.info.cli_start_ue[0]);
+  }
+  
+  /* : TODO
+     LOG_I(OCG, "OPT output file directory = %s\n", oai_emulation.info.output_path);
+     Init_OPT(0,"outfile.dump","127.0.0.1",1234); // Init_OPT(2, oai_emulation.info.output_path, NULL, 0);*/
+  
+  
   return 1;  
 
 }

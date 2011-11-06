@@ -143,7 +143,7 @@ help (void) {
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-g Set multicast group ID (0,1,2,3) - valid if M is set\n");
-  printf ("-l Set the log level (trace, debug, info, warn, err) only valid for MAC layer\n");
+  printf ("-l Set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:err) \n");
   printf
     ("-c [1,2,3,4] Activate the config generator (OCG) to process the scenario descriptor, or give the scenario manually: -c template_1.xml \n");
   printf ("-x Set the transmission mode (1,2,6 supported for now)\n");
@@ -151,6 +151,7 @@ help (void) {
   printf ("-B Set the mobility model for eNB: 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
   printf ("-U Set the mobility model for UE : 0 for static, 1 for RWP, and 2 for RWalk, 3 for mixed\n");
   printf ("-E Random number generator seed\n");
+  printf ("-I Enable CLI interface (to connect use telnet localhost 1352)\n");
 }
 
 #ifdef XFORMS
@@ -258,7 +259,6 @@ main (int argc, char **argv)
   unsigned long time_last, time_now;
   int td, td_avg, sleep_time_us;
 
-  char *g_log_level = "trace";	// by default global log level is set to trace
   lte_subframe_t direction;
 
  #ifdef XFORMS
@@ -294,7 +294,7 @@ main (int argc, char **argv)
 
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePToFt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:"))
+  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:"))
 	 != -1) {
 
     switch (c) {
@@ -392,7 +392,7 @@ main (int argc, char **argv)
       oai_emulation.info.extended_prefix_flag = 1;
       break;
     case 'l':
-      g_log_level = optarg;
+      oai_emulation.info.g_log_level = atoi(optarg);
       break;
     case 'c':
       strcpy(oai_emulation.info.local_server, optarg);
@@ -416,6 +416,10 @@ main (int argc, char **argv)
     case 'E':
       oai_emulation.info.seed = atoi (optarg);
       break;
+    case 'I':
+      oai_emulation.info.cli_enabled = 1;
+      break;
+
     default:
       help ();
       exit (-1);
@@ -424,7 +428,7 @@ main (int argc, char **argv)
   }
 
   // configure oaisim with OCG
-  oaisim_config(g_log_level); // config OMG and OCG, OPT, OTG, OLG
+  oaisim_config(); // config OMG and OCG, OPT, OTG, OLG
 
   if (oai_emulation.info.nb_ue_local > NUMBER_OF_UE_MAX ) {
     printf ("Enter fewer than %d UEs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
@@ -731,10 +735,11 @@ main (int argc, char **argv)
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
       
-      for (eNB_id=oai_emulation.info.first_enb_local;eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local);eNB_id++) {
+      for (eNB_id=oai_emulation.info.first_enb_local;
+	   (eNB_id<(oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local)) && (oai_emulation.info.cli_start_enb[eNB_id]==1);
+	   eNB_id++) {
 	//#ifdef DEBUG_SIM
-	printf
-	  ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",
+	printf ("[SIM] EMU PHY procedures eNB %d for frame %d, slot %d (subframe %d) (rxdataF_ext %p) Nid_cell %d\n",
 	   eNB_id, mac_xface->frame, slot, next_slot >> 1,
 	   PHY_vars_eNB_g[0]->lte_eNB_ulsch_vars[0]->rxdataF_ext, PHY_vars_eNB_g[eNB_id]->lte_frame_parms.Nid_cell);
 	//#endif
@@ -754,7 +759,9 @@ main (int argc, char **argv)
       if ((next_slot % 2) == 0)
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
 
-      for (UE_id = oai_emulation.info.first_ue_local; UE_id < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_id++)
+      for (UE_id = oai_emulation.info.first_ue_local; 
+	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
+	   UE_id++)
 	if (mac_xface->frame >= (UE_id * 10)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
@@ -940,6 +947,8 @@ main (int argc, char **argv)
 #endif
 
  destroyMat(ShaF,map1, map2);
+ if (oai_emulation.info.cli_enabled)
+   cli_server_cleanup();
 
   return(0);
 }

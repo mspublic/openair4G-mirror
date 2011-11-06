@@ -44,6 +44,7 @@
 #ifndef __OCG_H__
 #define __OCG_H__
 
+#include "PHY/impl_defs_top.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -478,10 +479,13 @@ typedef struct {
 
 				typedef struct {
 					int phy;
-					int rrc;
-					int mac;
+				        int mac;
 					int rlc;
-					int pdcp;
+				        int rrc;
+				        int pdcp;
+				        int omg;
+				        int emu;
+				        int otg;
 				}Layer;
 
 				typedef struct {
@@ -512,6 +516,7 @@ typedef struct {
 		typedef struct {
 			int seed_value;
 		}User_Seed;
+	
 		//////
 
 /** @defgroup _emu_config Emulation Configuration
@@ -567,14 +572,20 @@ typedef struct {
 	unsigned char ocm_enabled;
 	unsigned char opt_enabled;
 	unsigned char otg_enabled;
-	unsigned char omg_model_enb;
+        unsigned char omg_model_enb;
 	unsigned char omg_model_ue;
 	unsigned char omg_model_ue_current; // when mixed mbility is used 
-	// emu related 
+  // control eNB/UE instance through CLI
+  unsigned char cli_enabled;
+  unsigned char cli_num_enb;
+  unsigned char cli_start_enb[NUMBER_OF_eNB_MAX];
+  unsigned char cli_num_ue;
+  unsigned char cli_start_ue[NUMBER_OF_UE_MAX];
+  // emu related 
   unsigned int seed;
   unsigned int frame;	
   double time;	
-	char global_log_level[20];
+	unsigned int g_log_level;
 	// phy related params
 	unsigned int n_frames;
 	unsigned int n_frames_flag; // if set, then let the emulation goes to infinity

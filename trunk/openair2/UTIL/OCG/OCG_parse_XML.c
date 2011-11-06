@@ -150,9 +150,14 @@ static int throughput_;
 static int latency_;
 static int signalling_overhead_;
 static int layer_;				/*!< \brief indicating that the parsing position is now within Layer_*/
+static int phy_;
 static int mac_;
 static int rlc_;
 static int pdcp_;
+static int rrc_;
+static int emu_;
+static int omg_;
+static int otg_;
 static int log_emu_;
 static int debug_;
 static int info_;
@@ -162,6 +167,11 @@ static int packet_trace_;
 static int seed_;
 static int user_seed_;
 static int seed_value_;
+
+static int cli_enabled_;
+static int cli_start_enb_;
+static int cli_start_ue_;
+
 
 static int profile_;
 
@@ -373,12 +383,22 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		signalling_overhead_ = 1;
 	} else if (!xmlStrcmp(name, "LAYER")) {
 		layer_ = 1;
+	} else if (!xmlStrcmp(name, "PHY")) {
+		phy_ = 1;
 	} else if (!xmlStrcmp(name, "MAC")) {
 		mac_ = 1;
 	} else if (!xmlStrcmp(name, "RLC")) {
 		rlc_ = 1;
 	} else if (!xmlStrcmp(name, "PDCP")) {
 		pdcp_ = 1;
+	} else if (!xmlStrcmp(name, "RRC")) {
+		rrc_ = 1;
+	} else if (!xmlStrcmp(name, "OMG")) {
+		omg_ = 1;
+	} else if (!xmlStrcmp(name, "OTG")) {
+		otg_ = 1;
+	} else if (!xmlStrcmp(name, "EMU")) {
+		emu_ = 1;
 	} else if (!xmlStrcmp(name, "LOG_EMU")) {
 		log_emu_ = 1;
 	} else if (!xmlStrcmp(name, "DEBUG")) {
@@ -397,6 +417,12 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 		user_seed_ = 1;
 	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
 		seed_value_ = 1;
+	} else if (!xmlStrcmp(name, "CLI")) {
+	  cli_enabled_ = 1;
+	} else if (!xmlStrcmp(name, "START_ENB")) {
+		cli_start_enb_ = 1;
+	} else if (!xmlStrcmp(name, "START_UE")) {
+		cli_start_ue_ = 1;
 
 	} else if (!xmlStrcmp(name, "PROFILE")) {
 		profile_ = 1;
@@ -604,12 +630,22 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		signalling_overhead_ = 0;
 	} else if (!xmlStrcmp(name, "LAYER")) {
 		layer_ = 0;
+	} else if (!xmlStrcmp(name, "PHY")) {
+		phy_ = 0;
 	} else if (!xmlStrcmp(name, "MAC")) {
 		mac_ = 0;
 	} else if (!xmlStrcmp(name, "RLC")) {
 		rlc_ = 0;
 	} else if (!xmlStrcmp(name, "PDCP")) {
 		pdcp_ = 0;
+	} else if (!xmlStrcmp(name, "RRC")) {
+		rrc_ = 0;
+	} else if (!xmlStrcmp(name, "OMG")) {
+		omg_ = 0;
+	} else if (!xmlStrcmp(name, "OTG")) {
+		otg_ = 0;
+	} else if (!xmlStrcmp(name, "EMU")) {
+		emu_ = 0;
 	} else if (!xmlStrcmp(name, "LOG_EMU")) {
 		log_emu_ = 0;
 	} else if (!xmlStrcmp(name, "DEBUG")) {
@@ -628,8 +664,12 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 		user_seed_ = 0;
 	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
 		seed_value_ = 0;
-
-
+	} else if (!xmlStrcmp(name, "CLI")) {
+		cli_enabled_ = 0;
+	} else if (!xmlStrcmp(name, "START_ENB")) {
+		cli_start_enb_ = 0;
+	} else if (!xmlStrcmp(name, "START_UE")) {
+		cli_start_ue_ = 0;
 	} else if (!xmlStrcmp(name, "PROFILE")) {
 		profile_ = 0;
 	}
@@ -637,6 +677,7 @@ void end_element(void *user_data, const xmlChar *name) { // called once at the e
 
 void characters(void *user_data, const xmlChar *ch, int len) { // called once when there is content in each element 
 
+  int i;
 	if (oai_emulation_) {
 		if (environment_system_config_) {
 			if (fading_) {
@@ -838,45 +879,68 @@ void characters(void *user_data, const xmlChar *ch, int len) { // called once wh
 
 		} else if (emulation_config_) {
 			if (emulation_time_ms_) {
-				oai_emulation.emulation_config.emulation_time_ms = atof(ch);
+			  oai_emulation.emulation_config.emulation_time_ms = atof(ch);
 			} else if (performance_) {
-				if (metrics_) {
-					if (throughput_) {
-						oai_emulation.emulation_config.performance.metrics.throughput = atoi(ch);
-					} else if (latency_) {
-						oai_emulation.emulation_config.performance.metrics.latency = atoi(ch);
-					} else if (signalling_overhead_) {
-						oai_emulation.emulation_config.performance.metrics.signalling_overhead = atoi(ch);
-					}
-				} else if (layer_) {
-					if (mac_) {
-						oai_emulation.emulation_config.performance.layer.mac = atoi(ch);
-					} else if (rlc_) {
-						oai_emulation.emulation_config.performance.layer.rlc = atoi(ch);
-					} else if (pdcp_) {
-						oai_emulation.emulation_config.performance.layer.pdcp = atoi(ch);
-					}
-				} else if (log_emu_) {
-					if (debug_) {
-						oai_emulation.emulation_config.performance.log_emu.debug = atoi(ch);
-					} else if (info_) {
-						oai_emulation.emulation_config.performance.log_emu.info = atoi(ch);
-					} else if (warning_) {
-						oai_emulation.emulation_config.performance.log_emu.warning = atoi(ch);
-					} else if (error_) {
-						oai_emulation.emulation_config.performance.log_emu.error = atoi(ch);
-					}
-				} else if (packet_trace_) {
-					if (mac_) {
-						oai_emulation.emulation_config.performance.packet_trace.mac = atoi(ch);
-					}
-				}
-			} else if (seed_) {
-				oai_emulation.emulation_config.seed.selected_option = strndup(ch, len);
-			} else if (user_seed_) {
-				oai_emulation.emulation_config.user_seed.seed_value = atoi(ch);
+			  if (metrics_) {
+			    if (throughput_) {
+			      oai_emulation.emulation_config.performance.metrics.throughput = atoi(ch);
+			    } else if (latency_) {
+			      oai_emulation.emulation_config.performance.metrics.latency = atoi(ch);
+			    } else if (signalling_overhead_) {
+			      oai_emulation.emulation_config.performance.metrics.signalling_overhead = atoi(ch);
+			    }
+			  } else if (layer_) {
+			    if (phy_) {
+			      oai_emulation.emulation_config.performance.layer.phy = atoi(ch);
+			    } else if (mac_) {
+			      oai_emulation.emulation_config.performance.layer.mac = atoi(ch);
+			    } else if (rlc_) {
+			      oai_emulation.emulation_config.performance.layer.rlc = atoi(ch);
+			    } else if (pdcp_) {
+			      oai_emulation.emulation_config.performance.layer.pdcp = atoi(ch);
+			    } else if (rrc_) {
+			      oai_emulation.emulation_config.performance.layer.rrc = atoi(ch);
+			    } else if (omg_) {
+			      oai_emulation.emulation_config.performance.layer.omg = atoi(ch);
+			    } else if (otg_) {
+			      oai_emulation.emulation_config.performance.layer.otg = atoi(ch);
+			    } else if (emu_) {
+			      oai_emulation.emulation_config.performance.layer.emu = atoi(ch);
+			    }
+			  } else if (log_emu_) {
+			    if (debug_) {
+			      oai_emulation.emulation_config.performance.log_emu.debug = atoi(ch);
+			      oai_emulation.info.g_log_level=LOG_DEBUG;
+			    } else if (info_) {
+			      oai_emulation.emulation_config.performance.log_emu.info = atoi(ch);
+			      oai_emulation.info.g_log_level=LOG_INFO;
+			    } else if (warning_) {
+			      oai_emulation.emulation_config.performance.log_emu.warning = atoi(ch);
+			      oai_emulation.info.g_log_level=LOG_WARNING;
+			    } else if (error_) {
+			      oai_emulation.emulation_config.performance.log_emu.error = atoi(ch);
+			      oai_emulation.info.g_log_level=LOG_ERR;
+			    }
+			  } else if (packet_trace_) {
+			    if (mac_) {
+			      oai_emulation.emulation_config.performance.packet_trace.mac = atoi(ch);
+			    }
+			  } else if (seed_) {
+			    oai_emulation.emulation_config.seed.selected_option = strndup(ch, len);
+			  } else if (user_seed_) {
+			    oai_emulation.emulation_config.user_seed.seed_value = atoi(ch);
+			  }
+			  else if (cli_enabled_) {
+			    oai_emulation.info.cli_enabled = 1;
+			    if (cli_start_enb_) {
+			      for (i=0; i < oai_emulation.info.cli_num_enb; i++)
+				oai_emulation.info.cli_start_enb[i] = atoi(ch);
+			    }else if (cli_start_ue_) {
+			      for (i=0; i < oai_emulation.info.cli_num_ue; i++)
+				oai_emulation.info.cli_start_ue[i] =  atoi(ch);
+			    }
+			  }
 			}
-
 		} else if (profile_) {
 			oai_emulation.profile = strndup(ch, len);
 		}

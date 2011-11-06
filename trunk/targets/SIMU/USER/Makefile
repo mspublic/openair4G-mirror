@@ -27,7 +27,7 @@ endif
 
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
-CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -I/usr/include/atlas -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt
+CFLAGS += -I/usr/include/libxml2 -L/usr/lib -lxml2 -lforms -L/usr/local/lib -I/usr/include/atlas -lforms -lX11 -L/usr/X11R6/lib -lXpm -lrt -lpthread
 OCG_FLAG = 1
 cygwin=0
 else
