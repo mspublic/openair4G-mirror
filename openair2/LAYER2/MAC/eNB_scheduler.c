@@ -29,7 +29,7 @@
 //static char eNB_generate_rar     = 0;  // flag to indicate start of RA procedure
 //static char eNB_generate_rrcconnsetup = 0;  // flag to indicate termination of RA procedure (mirror response)
 
-//#define DEBUG_eNB_SCHEDULER 0
+#define DEBUG_eNB_SCHEDULER 1
 //#define DEBUG_HEADER_PARSING 0
 //#define DEBUG_PACKET_TRACE 0
 
@@ -196,9 +196,10 @@ void cancel_ra_proc(unsigned char Mod_id, u16 preamble_index) {
 
 void terminate_ra_proc(unsigned char Mod_id,u16 rnti,unsigned char *l3msg) {
 
-  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr,j;
+  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
   u16 rx_lengths[MAX_NUM_RB];
+  s8 UE_id;
 
   msg("[MAC][eNB %d] Terminating RA procedure for UE rnti %x, Received l3msg %x,%x,%x,%x,%x,%x\n",Mod_id,rnti,
       l3msg[0],l3msg[1],l3msg[2],l3msg[3],l3msg[4],l3msg[5]);
@@ -214,8 +215,21 @@ void terminate_ra_proc(unsigned char Mod_id,u16 rnti,unsigned char *l3msg) {
 	msg("[MAC][eNB] : Received CCCH: length %d, offset %d\n",rx_lengths[0],payload_ptr-l3msg);
 	memcpy(&eNB_mac_inst[Mod_id].RA_template[i].cont_res_id[0],payload_ptr,6);
 
+	UE_id=add_new_ue(Mod_id,eNB_mac_inst[Mod_id].RA_template[i].rnti);
+	if (UE_id==-1) {
+	  mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
+	}
+	else {
+#ifdef DEBUG_eNB_SCHEDULER
+	  msg("[MAC][eNB] Added user with rnti %x => UE %d\n",eNB_mac_inst[Mod_id].RA_template[i].rnti,UE_id);
+#endif
+	}
+
 	if (Is_rrc_registered == 1)
 	  Rrc_xface->mac_rrc_data_ind(Mod_id,CCCH,(char *)payload_ptr,rx_lengths[0],1,Mod_id);
+	  // add_user.  This is needed to have the rnti for configuring UE (PHY). The UE is removed if RRC
+	  // doesn't provide a CCCH SDU
+
       }
       else if (num_ce >0) {  // handle l3msg which is not RRCConnectionRequest
 	//	process_ra_message(l3msg,num_ce,rx_lcids,rx_ces);
@@ -397,11 +411,11 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 
 void rx_sdu(unsigned char Mod_id,u16 rnti,unsigned char *sdu) {
 
-  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr,j;
+  unsigned char rx_ces[MAX_NUM_CE],num_ce,num_sdu,i,*payload_ptr;
   unsigned char rx_lcids[MAX_NUM_RB];
   unsigned short rx_lengths[MAX_NUM_RB];
   unsigned char UE_id = find_UE_id(Mod_id,rnti);
-  int rack,ii;
+  int ii;
   for(ii=0; ii<MAX_NUM_RB; ii++) rx_lengths[ii] = 0;
 
 #ifdef DEBUG_HEADER_PARSING
@@ -733,8 +747,9 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
       else if (RA_template[i].generate_rrcconnsetup == 1) {
 
 	// check for RRCConnSetup Message
-
+	UE_id = find_UE_id(Mod_id,RA_template[i].rnti);
 	if (Is_rrc_registered == 1) {
+
 	  rrc_sdu_length = Rrc_xface->mac_rrc_data_req(Mod_id,
 						       0,1,
 						       (char*)&eNB_mac_inst[Mod_id].CCCH_pdu.payload[0],
@@ -756,16 +771,7 @@ void schedule_RA(unsigned char Mod_id,unsigned char subframe,unsigned char *nprb
 	  msg("[MAC][eNB Scheduler] Frame %d, subframe %d: Generating RRCConnectionSetup (RA proc %d, RNTI %x)\n",mac_xface->frame, subframe,i,
 	      RA_template[i].rnti);
 #endif
-	  // add_user
-	  UE_id=add_new_ue(Mod_id,RA_template[i].rnti);
-	  if (UE_id==-1) {
-	    mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
-	  }
-	  else {
-#ifdef DEBUG_eNB_SCHEDULER
-	    msg("[MAC][eNB] Added user with rnti %x => UE %d\n",RA_template[i].rnti,UE_id);
-#endif
-	  }
+
 #ifdef DEBUG_eNB_SCHEDULER
 	  msg("[MAC][eNB] Frame %d, subframe %d: Received %d bytes for RRCConnectionSetup: \n",mac_xface->frame,subframe,rrc_sdu_length);
 	  for (j=0;j<rrc_sdu_length;j++)
@@ -851,11 +857,12 @@ void schedule_ulsch(unsigned char Mod_id,unsigned char cooperation_flag,unsigned
   unsigned char round;
   unsigned char harq_pid;
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci;
-  DCI0_5MHz_TDD_1_6_t *ULSCH_dci0;
-  DCI0_5MHz_TDD_1_6_t *ULSCH_dci1;
+  //  DCI0_5MHz_TDD_1_6_t *ULSCH_dci0;
+  //  DCI0_5MHz_TDD_1_6_t *ULSCH_dci1;
   LTE_eNB_UE_stats* eNB_UE_stats;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
-  u8 status=0,k=0;
+  u8 status=0;
+  //  u8 k=0;
 
   granted_UEs = find_ulgranted_UEs(Mod_id);
   nCCE_available = mac_xface->get_nCCE_max(Mod_id) - *nCCE;
@@ -1299,7 +1306,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
   unsigned char x,y,z;
   u8 rballoc_sub[14];
 
-  u32 rballoc=RBalloc,buff;
+  u32 rballoc=RBalloc;
 
   u32 test=0;
   unsigned char round;
@@ -1307,7 +1314,7 @@ void fill_DLSCH_dci(unsigned char Mod_id,unsigned char subframe,u32 RBalloc) {
   void *DLSCH_dci=NULL;
   DCI_PDU *DCI_pdu= &eNB_mac_inst[Mod_id].DCI_pdu;
   int i;
-  u8 status=0;
+  //  u8 status=0;
 #ifdef ICIC
   FILE *DCIi;
   DCIi = fopen("dci.txt","a");
@@ -1623,8 +1630,8 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   unsigned char sdu_lcids[11],offset,num_sdus=0;
   u16 nb_rb,nb_available_rb,TBS,j,sdu_lengths[11],rnti,rnti0=0,rnti1=0,rnti_temp,rnti_k[2][7];
   unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
-  unsigned char round=0,round_temp=0,round_k=0;
-  unsigned char harq_pid=0,harq_pid_temp=0,harq_pid_k=0;
+  unsigned char round=0;
+  unsigned char harq_pid=0;
   void *DLSCH_dci;
   LTE_eNB_UE_stats* eNB_UE_stats;
   LTE_eNB_UE_stats* eNB_UE_stats0;
@@ -1634,11 +1641,10 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   u16 sdu_length_total=0;
   unsigned char loop_count;
   unsigned char DAI;
-  unsigned char k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
-  unsigned char i0=0,i1=0,i2=0,i3=0,i4=0,i5=0,i6=0;
   u8 dl_pow_off[256];
-  u8 status=0;
-  u16 i=0,ii=0,check=0,total_rbs=0,jj=0;
+  //  u8 status=0;
+  u16 i=0,ii=0,check=0,jj=0;
+  //  u16 total_rbs;
   unsigned char rballoc_sub[256][7];
   u16 pre_nb_available_rbs[256];
   u8 MIMO_mode_indicator[7];
@@ -1646,6 +1652,11 @@ void schedule_ue_spec(unsigned char Mod_id,unsigned char subframe,u16 nb_rb_used
   
 
 #ifdef Pre_Processing
+  unsigned char k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
+  unsigned char i0=0,i1=0,i2=0,i3=0,i4=0,i5=0,i6=0;
+  unsigned char round_temp=0,round_k=0;
+  unsigned char harq_pid_temp=0,harq_pid_k=0;
+
   
   for(i=0;i<256;i++)
     {

@@ -482,22 +482,22 @@ void rrc_ue_process_rrcConnectionReconfiguration(u8 Mod_id,
 						 RRCConnectionReconfiguration_t *rrcConnectionReconfiguration,
 						 u8 eNB_index) {
 
-  if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
-
-    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
-      rrc_ue_process_measConfig(Mod_id,eNB_index,
-				rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
-    }
-    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
-      rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
-						  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
+  if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
+    if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present == RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
       
-    }
-
-    // check other fields for
-  }
+      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig != NULL) {
+	rrc_ue_process_measConfig(Mod_id,eNB_index,
+				  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig);
+      }
+      if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated) {
+	rrc_ue_process_radioResourceConfigDedicated(Mod_id,eNB_index,
+						    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated);
+	
+      }
+    } // c1 present
+  } // critical extensions present
 }
-  
+
 /*------------------------------------------------------------------------------------------*/
 void  rrc_ue_decode_dcch(u8 Mod_id,u8 Srb_id, u8 *Buffer,u8 eNB_index){
   /*------------------------------------------------------------------------------------------*/

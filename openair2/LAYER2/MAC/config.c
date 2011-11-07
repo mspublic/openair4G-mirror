@@ -83,11 +83,30 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
       UE_mac_inst[Mod_id].scheduling_info.macConfig=mac_MainConfig;
       UE_mac_inst[Mod_id].scheduling_info.measGapConfig=measGapConfig;
-      UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
-      UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
-      UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = mac_MainConfig->sr_ProhibitTimer_r9;
+      
+      if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer)
+	UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
+      else
+	UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (u16) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+
+      if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx)
+	UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+      else
+	UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (u16) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+
+      UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (u16) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+   
+      if (mac_MainConfig->sr_ProhibitTimer_r9) 
+	UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (u16) *mac_MainConfig->sr_ProhibitTimer_r9;
+      else
+	UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (u16) 0;
+
       UE_mac_inst[Mod_id].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer);
       UE_mac_inst[Mod_id].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer);
+      
+      UE_mac_inst[Mod_id].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
+      UE_mac_inst[Mod_id].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
+
     }
   }
   
@@ -99,4 +118,5 @@ int rrc_mac_config_req(u8 Mod_id,u8 eNB_flag,u8 UE_id,u8 eNB_index,
       UE_mac_inst[Mod_id].scheduling_info.physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }
+  return(0);
 }

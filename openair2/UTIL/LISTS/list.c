@@ -211,7 +211,7 @@ list_display (list_t * listP)
 //-----------------------------------------------------------------------------
 
   mem_block_t      *cursor;
-  unsigned short             nb_elements = 0;
+  //  unsigned short             nb_elements = 0;
 
   // test lists
   if (listP) {

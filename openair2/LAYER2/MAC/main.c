@@ -94,7 +94,6 @@ int mac_top_init(){
   unsigned char  Mod_id,i,j;  
   RA_TEMPLATE *RA_template;
   UE_TEMPLATE *UE_template;
-  u8 SB_size;
 
   LOG_I(MAC,"[MAIN] Init function start:Nb_INST=%d, NODE_ID[0]=%d\n",NB_INST,NODE_ID[0]);
   if (NB_UE_INST>0) {
@@ -265,8 +264,7 @@ void mac_top_cleanup(void){
 
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms) {
 
-  s32 ret;
-  s32 ue_id;
+  
 
   LOG_I(MAC,"[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
   //    NB_NODE=2; 

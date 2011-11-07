@@ -170,6 +170,7 @@ typedef struct{
   struct PhysicalConfigDedicated  *physicalConfigDedicated[NB_CNX_eNB];
   struct SPS_Config               *sps_Config[NB_CNX_eNB];
   MAC_MainConfig_t                *mac_MainConfig[NB_CNX_eNB];
+  MeasGapConfig_t                 *measGapConfig[NB_CNX_eNB];
 }eNB_RRC_INST;
 
 
@@ -308,8 +309,8 @@ void rrc_eNB_process_RRCConnectionReconfigurationComplete(u8 Mod_id,u8 UE_index,
 
 
 //L2_interface.c
-u8 mac_rrc_lite_data_req( u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
-u8 mac_rrc_lite_data_ind( u8 Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
+s8 mac_rrc_lite_data_req( u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index);
+s8 mac_rrc_lite_data_ind( u8 Mod_id,  unsigned short Srb_id, char *Sdu, unsigned short Sdu_len,u8 eNB_flag,u8 Mui);
 void mac_sync_ind( u8 Mod_id, u8 status);
 void rlcrrc_lite_data_ind( u8 Mod_id, u32 Rb_id, u32 sdu_size,u8 *Buffer);
 void rrc_lite_out_of_sync_ind(u8 Mod_id, unsigned short eNB_index);

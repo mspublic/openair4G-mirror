@@ -353,13 +353,13 @@ typedef struct {
   /// sr ProhibitTime running
   u8 sr_ProhibitTimer_Running;
   ///  default value to n5
-  u16 maxHARQ_tx; 
+  u16 maxHARQ_Tx; 
   /// default value is false
   u16 ttiBundling;
   /// default value is release 
-  u8 *drx_config;
+  struct DRX_Config *drx_config;
   /// default value is release
-  u8 *phr_config;
+  struct MAC_MainConfig__phr_Config *phr_config;
   //Bj bucket usage per  lcid
   s16 Bj[MAX_NUM_LCID];
   // Bucket size per lcid
