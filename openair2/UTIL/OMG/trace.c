@@ -14,13 +14,13 @@
 
 int start_trace_generator(omg_global_param omg_param_list) {
 
-  int n_id=0;
+  //int n_id=0;
   //omg_omg_param_list.seed= time(NULL);
   //srand(omg_param_list.seed + RWP); //<-------------------------------
 
   
   NodePtr node = NULL;
-  MobilityPtr mobility = NULL;
+  // MobilityPtr mobility = NULL;
 
   //read the mobility file here
 

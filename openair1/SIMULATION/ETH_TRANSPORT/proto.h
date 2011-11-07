@@ -39,3 +39,5 @@ void emu_transport_release(void);
 
 void clear_eNB_transport_info(u8);
 void clear_UE_transport_info(u8);
+int netlink_init(void);
+

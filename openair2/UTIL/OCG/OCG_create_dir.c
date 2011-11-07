@@ -69,7 +69,7 @@ int create_dir(char output_dir[DIR_LENGTH_MAX], char user_name[FILENAME_LENGTH_M
 
 	mkdir(directory, S_IRWXU | S_IRWXG |S_IRWXO);
 
-	char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 64] = "";
+	//char directory_extension[FILENAME_LENGTH_MAX + DIR_LENGTH_MAX + 64] = "";
 	/*strcpy(directory_extension, directory); // to create some more folders
 	strcat(directory_extension, "/LOGS");
 	mkdir(directory_extension, S_IRWXU | S_IRWXG |S_IRWXO);
