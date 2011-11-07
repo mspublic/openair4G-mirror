@@ -111,7 +111,19 @@ OAISIM_OBJS += sinr_sim.o
 OAISIM_OBJS += cor_SF_sim.o
 OAISIM_OBJS += phy_procedures_sim_form.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) 
+INT_OBJS =  $(OPENAIR_TARGETS)/SIMU/PROC/interface/Iface_Process.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_init_if.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_update.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/gm_pc_if.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/message_modules.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/message_transport.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/openair_inet_sockets.o
+INT_OBJS += $(OPENAIR_TARGETS)/SIMU/PROC/interface/openair_io_sync.o
+INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/channel_sim_proc.o
+INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/buffer_mmap.o
+INT_OBJS +=$(OPENAIR_TARGETS)/SIMU/PROC/Process.o
+
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(ETHERNET_TRANSPORT_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(STATS_OBJS) $(ASN1_MSG_OBJS1) $(OAISIM_OBJS) $(NAS_OBJS) $(INT_OBJS)
 #oaisim_config.o 
 
 all: oaisim

@@ -40,6 +40,13 @@
 #include "UTIL/OCG/OCG_extern.h"
 #include "cor_SF_sim.h"
 
+//ALU
+#include "../PROC/interface.h"
+#include "../PROC/channel_sim_proc.h"
+#include "../PROC/interface/definitions.h"
+#include "../PROC/Tsync.h"
+#include "../PROC/Process.h"
+
 
 #define RF
 
@@ -292,9 +299,13 @@ main (int argc, char **argv)
 
    init_oai_emulation(); // to initialize everything !!!
 
+   //ALU
+    int port,node_id=0,Process_Flag=0,wgt,Channel_Flag=0,temp;
+    double **s_re2[MAX_eNB+MAX_UE], **s_im2[MAX_eNB+MAX_UE], **r_re2[MAX_eNB+MAX_UE], **r_im2[MAX_eNB+MAX_UE], **r_re02, **r_im02;
+    double **r_re0_d[MAX_UE][MAX_eNB], **r_im0_d[MAX_UE][MAX_eNB], **r_re0_u[MAX_eNB][MAX_UE],**r_im0_u[MAX_eNB][MAX_UE];
 
    // get command-line options
-  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:"))
+  while ((c = getopt (argc, argv, "haePToFIt:C:N:k:x:m:rn:s:S:f:z:u:b:c:M:p:g:l:d:U:B:R:E:X:i:"))
 	 != -1) {
 
     switch (c) {
@@ -419,7 +430,20 @@ main (int argc, char **argv)
     case 'I':
       oai_emulation.info.cli_enabled = 1;
       break;
-
+    case 'X':
+      temp=atoi(optarg);
+      if(temp==0){
+      port=CHANNEL_PORT; Channel_Flag=1; Process_Flag=0; wgt=0; }
+      else if(temp==1){
+      port=eNB_PORT; wgt=0;}
+      else {
+      port=UE_PORT; wgt=MAX_eNB;}
+      break;
+    case 'i':
+     Process_Flag=1;
+     node_id = wgt+atoi(optarg);
+     port+=atoi(optarg);
+     break;
     default:
       help ();
       exit (-1);
@@ -526,8 +550,8 @@ main (int argc, char **argv)
 	 oai_emulation.topology_config.area.y_km);
  
   
-  if (abstraction_flag == 0)
-    init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
+  if (abstraction_flag == 0 && Process_Flag==0 && Channel_Flag==0)
+	  init_channel_vars (frame_parms, &s_re, &s_im, &r_re, &r_im, &r_re0, &r_im0);
 
   // initialize channel descriptors
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -633,6 +657,14 @@ main (int argc, char **argv)
   td_avg = 0;
   sleep_time_us = SLEEP_STEP_US;
   td_avg = TARGET_SF_TIME_NS;
+
+  if(Channel_Flag==1)
+	  Channel_Inst(node_id,port,s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms);
+
+  if(Process_Flag==1)
+      Process_Func(node_id,port,r_re02,r_im02,r_re2[0],r_im2[0],s_re2[0],s_im2[0],enb_data,ue_data,abstraction_flag,frame_parms);
+
+
   for (mac_xface->frame=0; mac_xface->frame<oai_emulation.info.n_frames; mac_xface->frame++) {
     /*
     // Handling the cooperation Flag
@@ -732,6 +764,10 @@ main (int argc, char **argv)
       
       direction = subframe_select(frame_parms,next_slot>>1);
       
+      if(Channel_Flag==1)
+          Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
+
+     if(Channel_Flag==0){
       if((next_slot %2) ==0)
 	clear_eNB_transport_info(oai_emulation.info.nb_enb_local);
       
@@ -875,9 +911,11 @@ main (int argc, char **argv)
 	  sleep_time_us-= SLEEP_STEP_US; 
 	}
       }// end if next_slot%2
+     }// if Channel_Flag==0
+
     }				//end of slot
 
-    if ((mac_xface->frame==1)&&(abstraction_flag==0)) {
+    if ((mac_xface->frame==1)&&(abstraction_flag==0)&&(Channel_Flag==0)) {
       write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("eNBtxsig0.m","txs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -902,13 +940,12 @@ main (int argc, char **argv)
   }	//end of frame
   
 
-
   // relase all rx state
   if (ethernet_flag == 1) {
     emu_transport_release ();
   }
 
-  if (abstraction_flag == 0) {
+  if (abstraction_flag == 0 && Channel_Flag==0 && Process_Flag==0) {
     /*
        #ifdef IFFT_FPGA
        free(txdataF2[0]);
@@ -955,5 +992,6 @@ main (int argc, char **argv)
 
   return(0);
 }
+
 
 // could be per mobility type : void update_node_vector(int mobility_type, double cur_time) ;
