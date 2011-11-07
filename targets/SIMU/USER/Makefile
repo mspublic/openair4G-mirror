@@ -11,7 +11,12 @@ OPENAIR2_TOP = $(OPENAIR2_DIR)
 OPENAIR3_TOP = $(OPENAIR3_DIR)
 OPENAIR3     = $(OPENAIR3_DIR)
 
+GCCVERSION = $(shell gcc --version | grep ^gcc | sed 's/^.* //g')
 CFLAGS = -Wall -fno-strict-aliasing -DPHYSIM -DUSER_MODE -DPC_TARGET -DPC_DSP -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 -g -ggdb $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+
+ifeq "$(GCCVERSION)" "4.5.2"
+    CFLAGS += -Wno-packed-bitfield-compat
+endif
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 
@@ -121,14 +126,16 @@ printvars:
 	@echo SSE3 proc is $(SSE3PROC)
 
 $(OBJ): %.o : %.c
-	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	@echo Compiling $<
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 $(L2_OBJS): %.o : %.c
-	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
+	@echo Compiling $<
+	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DMAC_CONTEXT=1 -DPHY_CONTEXT=1 -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o $@ $<
 
 oaisim : $(OBJ) $(L2_OBJS) oaisim.c  
-	echo CYGWIN variable is $(cygwin)
-	$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread -llapack_atlas
+	@echo "Compiling oaisim.c ..."
+	@$(CC)  oaisim.c -I$(TOP_DIR) $(L2_incl) -I$(ASN1_MSG_INC) -o oaisim $(CFLAGS) $(EXTRA_CFLAGS) $(OBJ) $(L2_OBJS) -lm -lblas -lpthread -llapack_atlas
 
 ifeq ($(rrc_cellular_eNB),1)
 	mv oaisim oaisim_eNB
