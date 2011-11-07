@@ -129,7 +129,7 @@ int OCG_main(char is_local_server[FILENAME_LENGTH_MAX]) {
 				break;
 #else
 				state = STATE_DETECT_FILE;
-				get_opt_OK == MODULE_OK;
+				//get_opt_OK == MODULE_OK;
 #endif
 
 			case STATE_DETECT_FILE :

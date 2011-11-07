@@ -43,11 +43,12 @@
 #include <stdlib.h>
 
 #include "omg.h"
+void place_static_node(NodePtr node);
 
 void start_static_generator(omg_global_param omg_param_list) {
   
   int n_id=0;
-  double cur_time = 1.0; 
+  //  double cur_time = 1.0; 
   NodePtr node = NULL;
   MobilityPtr mobility = NULL;
   

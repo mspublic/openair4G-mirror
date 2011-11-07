@@ -25,7 +25,7 @@ struct msghdr nas_msg;
 
 #define GRAAL_NETLINK_ID 31
 
-int netlink_init() {
+int netlink_init(void) {
 
 
   int ret;

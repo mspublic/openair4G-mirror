@@ -41,13 +41,17 @@
 /*--- INCLUDES ---------------------------------------------------------------*/
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
+//#include <stdlib.h>
 #include "OCG_vars.h"
 #include "OCG_parse_XML.h"
 #include "UTIL/LOG/log.h"
 /*----------------------------------------------------------------------------*/
 
+#ifndef HAVE_STRNDUP
+	char * strndup (const char *s, size_t size);
+#endif
 
 static int oai_emulation_;	/*!< \brief indicating that the parsing position is now within OAI_Emulation_*/
 
@@ -185,246 +189,246 @@ void end_document(void *user_data) {
 }
 
 void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) { // called once at the beginning of each element 
-	if (!xmlStrcmp(name, "OAI_EMULATION")) {
+	if (!xmlStrcmp(name,(unsigned char*) "OAI_EMULATION")) {
 		oai_emulation_ = 1;
 
-	} else if (!xmlStrcmp(name, "ENVIRONMENT_SYSTEM_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ENVIRONMENT_SYSTEM_CONFIG")) {
 		environment_system_config_ = 1;
-	} else if (!xmlStrcmp(name, "FADING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FADING")) {
 		fading_ = 1;
-	} else if (!xmlStrcmp(name, "LARGE_SCALE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LARGE_SCALE")) {
 		large_scale_ = 1;
-	} else if (!xmlStrcmp(name, "FREE_SPACE_MODEL_PARAMETERS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FREE_SPACE_MODEL_PARAMETERS")) {
 		free_space_model_parameters_ = 1;
-	} else if (!xmlStrcmp(name, "PATHLOSS_EXPONENT")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PATHLOSS_EXPONENT")) {
 		pathloss_exponent_ = 1;
-	} else if (!xmlStrcmp(name, "PATHLOSS_0_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PATHLOSS_0_dB")) {
 		pathloss_0_dB_ = 1;
-	} else if (!xmlStrcmp(name, "SMALL_SCALE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SMALL_SCALE")) {
 		small_scale_ = 1;
-	} else if (!xmlStrcmp(name, "RICEAN_8TAP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RICEAN_8TAP")) {
 		ricean_8tap_ = 1;
-	} else if (!xmlStrcmp(name, "RICE_FACTOR_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RICE_FACTOR_dB")) {
 		rice_factor_dB_ = 1;
-	} else if (!xmlStrcmp(name, "SHADOWING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SHADOWING")) {
 		shadowing_ = 1;
-	} else if (!xmlStrcmp(name, "DECORRELATION_DISTANCE_m")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "DECORRELATION_DISTANCE_m")) {
 		decorrelation_distance_m_ = 1;
-	} else if (!xmlStrcmp(name, "VARIANCE_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "VARIANCE_dB")) {
 		variance_dB_ = 1;
-	} else if (!xmlStrcmp(name, "INTER_SITE_CORRELATION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_SITE_CORRELATION")) {
 		inter_site_correlation_ = 1;
-	} else if (!xmlStrcmp(name, "WALL_PENETRATION_LOSS_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "WALL_PENETRATION_LOSS_dB")) {
 		wall_penetration_loss_dB_ = 1;
-	} else if (!xmlStrcmp(name, "SYSTEM_BANDWIDTH_MB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SYSTEM_BANDWIDTH_MB")) {
 		system_bandwidth_MB_ = 1;
-	} else if (!xmlStrcmp(name, "SYSTEM_FREQUENCY_GHz")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SYSTEM_FREQUENCY_GHz")) {
 		system_frequency_GHz_ = 1;
-	} else if (!xmlStrcmp(name, "ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA")) {
 		antenna_ = 1;
-	} else if (!xmlStrcmp(name, "eNB_ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_ANTENNA")) {
 		eNB_antenna_ = 1;
-	} else if (!xmlStrcmp(name, "UE_ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_ANTENNA")) {
 		UE_antenna_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_SECTORS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_SECTORS")) {
 		number_of_sectors_ = 1;
-	} else if (!xmlStrcmp(name, "BEAM_WIDTH_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "BEAM_WIDTH_dB")) {
 		beam_width_dB_ = 1;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_1")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_1")) {
 		alpha_rad_1_ = 1;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_2")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_2")) {
 		alpha_rad_2_ = 1;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_3")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_3")) {
 		alpha_rad_3_ = 1;
-	} else if (!xmlStrcmp(name, "ANTENNA_GAIN_dBi")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_GAIN_dBi")) {
 		antenna_gain_dBi_ = 1;
-	} else if (!xmlStrcmp(name, "TX_POWER_dBm")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TX_POWER_dBm")) {
 		tx_power_dBm_ = 1;
-	} else if (!xmlStrcmp(name, "RX_NOISE_LEVEL_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RX_NOISE_LEVEL_dB")) {
 		rx_noise_level_dB_ = 1;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree1")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree1")) {
 		antenna_orientation_degree_1_ = 1;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree2")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree2")) {
 		antenna_orientation_degree_2_ = 1;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree3")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree3")) {
 		antenna_orientation_degree_3_ = 1;
 
-	} else if (!xmlStrcmp(name, "TOPOLOGY_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TOPOLOGY_CONFIG")) {
 		topology_config_ = 1;
-	} else if (!xmlStrcmp(name, "AREA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "AREA")) {
 		area_ = 1;
-	} else if (!xmlStrcmp(name, "X_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "X_km")) {
 		x_km_ = 1;
-	} else if (!xmlStrcmp(name, "Y_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "Y_km")) {
 		y_km_ = 1;
-	} else if (!xmlStrcmp(name, "NETWORK_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NETWORK_TYPE")) {
 		network_type_ = 1;
-	} else if (!xmlStrcmp(name, "CELL_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CELL_TYPE")) {
 		cell_type_ = 1;
-	} else if (!xmlStrcmp(name, "RELAY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RELAY")) {
 		relay_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_RELAYS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_RELAYS")) {
 		number_of_relays_ = 1;
-	} else if (!xmlStrcmp(name, "MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MOBILITY")) {
 		mobility_ = 1;
-	} else if (!xmlStrcmp(name, "UE_MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOBILITY")) {
 		UE_mobility_ = 1;
-	} else if (!xmlStrcmp(name, "UE_MOBILITY_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOBILITY_TYPE")) {
 		UE_mobility_type_ = 1;
-	} else if (!xmlStrcmp(name, "GRID_WALK")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_WALK")) {
 		grid_walk_ = 1;
-	} else if (!xmlStrcmp(name, "GRID_MAP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_MAP")) {
 		grid_map_ = 1;
-	} else if (!xmlStrcmp(name, "HORIZONTAL_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "HORIZONTAL_GRID")) {
 		horizontal_grid_ = 1;
-	} else if (!xmlStrcmp(name, "VERTICAL_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "VERTICAL_GRID")) {
 		vertical_grid_ = 1;
-	} else if (!xmlStrcmp(name, "GRID_TRIP_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_TRIP_TYPE")) {
 		grid_trip_type_ = 1;
-	} else if (!xmlStrcmp(name, "UE_INITIAL_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_INITIAL_DISTRIBUTION")) {
 		UE_initial_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOM_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_UE_DISTRIBUTION")) {
 		random_UE_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_NODES")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_NODES")) {
 		number_of_nodes_ = 1;
-	} else if (!xmlStrcmp(name, "CONCENTRATED_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CONCENTRATED_UE_DISTRIBUTION")) {
 		concentrated_UE_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "GRID_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_UE_DISTRIBUTION")) {
 		grid_UE_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOM_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_GRID")) {
 		random_grid_ = 1;
-	} else if (!xmlStrcmp(name, "BORDER_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "BORDER_GRID")) {
 		border_grid_ = 1;
-	} else if (!xmlStrcmp(name, "UE_MOVING_DYNAMICS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOVING_DYNAMICS")) {
 		UE_moving_dynamics_ = 1;
-	} else if (!xmlStrcmp(name, "MIN_SPEED_mps")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_SPEED_mps")) {
 		min_speed_mps_ = 1;
-	} else if (!xmlStrcmp(name, "MAX_SPEED_mps")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_SPEED_mps")) {
 		max_speed_mps_ = 1;
-	} else if (!xmlStrcmp(name, "MIN_SLEEP_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_SLEEP_ms")) {
 		min_sleep_ms_ = 1;
-	} else if (!xmlStrcmp(name, "MAX_SLEEP_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_SLEEP_ms")) {
 		max_sleep_ms_ = 1;
-	} else if (!xmlStrcmp(name, "MIN_JOURNEY_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_JOURNEY_TIME_ms")) {
 		min_journey_time_ms_ = 1;
-	} else if (!xmlStrcmp(name, "MAX_JOURNEY_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_JOURNEY_TIME_ms")) {
 		max_journey_time_ms_ = 1;
-	} else if (!xmlStrcmp(name, "eNB_MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_MOBILITY")) {
 		eNB_mobility_ = 1;
-	} else if (!xmlStrcmp(name, "eNB_MOBILITY_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_MOBILITY_TYPE")) {
 		eNB_mobility_type_ = 1;
-	} else if (!xmlStrcmp(name, "eNB_INITIAL_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_INITIAL_DISTRIBUTION")) {
 		eNB_initial_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "RANDOM_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_eNB_DISTRIBUTION")) {
 		random_eNB_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_CELLS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_CELLS")) {
 		number_of_cells_ = 1;
-	} else if (!xmlStrcmp(name, "HEXAGONAL_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "HEXAGONAL_eNB_DISTRIBUTION")) {
 		hexagonal_eNB_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "INTER_eNB_DISTANCE_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_eNB_DISTANCE_km")) {
 		inter_eNB_distance_km_ = 1;
-	} else if (!xmlStrcmp(name, "GRID_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_eNB_DISTRIBUTION")) {
 		grid_eNB_distribution_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_X")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_X")) {
 		number_of_grid_x_ = 1;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_Y")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_Y")) {
 		number_of_grid_y_ = 1;
 
-	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_CONFIG")) {
 		application_config_ = 1;
-	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 1;
-	} else if (!xmlStrcmp(name, "TRAFFIC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TRAFFIC")) {
 		traffic_ = 1;
-	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 1;
-	} else if (!xmlStrcmp(name, "PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_SIZE")) {
 		packet_size_ = 1;
-	} else if (!xmlStrcmp(name, "FIXED_PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_PACKET_SIZE")) {
 		fixed_packet_size_ = 1;
-	} else if (!xmlStrcmp(name, "FIXED_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_byte")) {
 		fixed_value_byte_ = 1;
-	} else if (!xmlStrcmp(name, "UNIFORM_PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_PACKET_SIZE")) {
 		uniform_packet_size_ = 1;
-	} else if (!xmlStrcmp(name, "MIN_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_byte")) {
 		min_value_byte_ = 1;
-	} else if (!xmlStrcmp(name, "MAX_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_byte")) {
 		max_value_byte_ = 1;
-	} else if (!xmlStrcmp(name, "INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_ARRIVAL_TIME")) {
 		inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "FIXED_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_INTER_ARRIVAL_TIME")) {
 		fixed_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "FIXED_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_ms")) {
 		fixed_value_ms_ = 1;
-	} else if (!xmlStrcmp(name, "UNIFORM_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_INTER_ARRIVAL_TIME")) {
 		uniform_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "MIN_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_ms")) {
 		min_value_ms_ = 1;
-	} else if (!xmlStrcmp(name, "MAX_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_ms")) {
 		max_value_ms_ = 1;
-	} else if (!xmlStrcmp(name, "POISSON_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "POISSON_INTER_ARRIVAL_TIME")) {
 		poisson_inter_arrival_time_ = 1;
-	} else if (!xmlStrcmp(name, "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
 		expected_inter_arrival_time_ms_ = 1;
 
-	} else if (!xmlStrcmp(name, "EMULATION_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_CONFIG")) {
 		emulation_config_ = 1;
-	} else if (!xmlStrcmp(name, "EMULATION_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 1;
-	} else if (!xmlStrcmp(name, "PERFORMANCE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE")) {
 		performance_ = 1;
-	} else if (!xmlStrcmp(name, "METRICS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "METRICS")) {
 		metrics_ = 1;
-	} else if (!xmlStrcmp(name, "THROUGHPUT")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
 		throughput_ = 1;
-	} else if (!xmlStrcmp(name, "LATENCY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LATENCY")) {
 		latency_ = 1;
-	} else if (!xmlStrcmp(name, "SIGNALLING_OVERHEAD")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SIGNALLING_OVERHEAD")) {
 		signalling_overhead_ = 1;
-	} else if (!xmlStrcmp(name, "LAYER")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LAYER")) {
 		layer_ = 1;
-	} else if (!xmlStrcmp(name, "PHY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PHY")) {
 		phy_ = 1;
-	} else if (!xmlStrcmp(name, "MAC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAC")) {
 		mac_ = 1;
-	} else if (!xmlStrcmp(name, "RLC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RLC")) {
 		rlc_ = 1;
-	} else if (!xmlStrcmp(name, "PDCP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PDCP")) {
 		pdcp_ = 1;
-	} else if (!xmlStrcmp(name, "RRC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RRC")) {
 		rrc_ = 1;
-	} else if (!xmlStrcmp(name, "OMG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "OMG")) {
 		omg_ = 1;
-	} else if (!xmlStrcmp(name, "OTG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "OTG")) {
 		otg_ = 1;
-	} else if (!xmlStrcmp(name, "EMU")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMU")) {
 		emu_ = 1;
-	} else if (!xmlStrcmp(name, "LOG_EMU")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LOG_EMU")) {
 		log_emu_ = 1;
-	} else if (!xmlStrcmp(name, "DEBUG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "DEBUG")) {
 		debug_ = 1;
-	} else if (!xmlStrcmp(name, "INFO")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INFO")) {
 		info_ = 1;
-	} else if (!xmlStrcmp(name, "WARNING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "WARNING")) {
 		warning_ = 1;
-	} else if (!xmlStrcmp(name, "ERROR")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ERROR")) {
 		error_ = 1;
-	} else if (!xmlStrcmp(name, "PACKET_TRACE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_TRACE")) {
 		packet_trace_ = 1;
-	} else if (!xmlStrcmp(name, "SEED")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SEED")) {
 		seed_ = 1;
-	} else if (!xmlStrcmp(name, "USER_SEED")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "USER_SEED")) {
 		user_seed_ = 1;
-	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SEED_VALUE")) {
 		seed_value_ = 1;
-	} else if (!xmlStrcmp(name, "CLI")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CLI")) {
 	  cli_enabled_ = 1;
-	} else if (!xmlStrcmp(name, "START_ENB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "START_ENB")) {
 		cli_start_enb_ = 1;
-	} else if (!xmlStrcmp(name, "START_UE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "START_UE")) {
 		cli_start_ue_ = 1;
 
-	} else if (!xmlStrcmp(name, "PROFILE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PROFILE")) {
 		profile_ = 1;
 	} else {
 		LOG_W(OCG, "One element could not be parsed : unknown element name '%s'\n", name);
@@ -432,257 +436,260 @@ void start_element(void *user_data, const xmlChar *name, const xmlChar **attrs) 
 }
 
 void end_element(void *user_data, const xmlChar *name) { // called once at the end of each element 
-	if (!xmlStrcmp(name, "OAI_EMULATION")) {
+	if (!xmlStrcmp(name,(unsigned char*) "OAI_EMULATION")) {
 		oai_emulation_ = 0;
 
-	} else if (!xmlStrcmp(name, "ENVIRONMENT_SYSTEM_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ENVIRONMENT_SYSTEM_CONFIG")) {
 		environment_system_config_ = 0;
-	} else if (!xmlStrcmp(name, "FADING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FADING")) {
 		fading_ = 0;
-	} else if (!xmlStrcmp(name, "LARGE_SCALE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LARGE_SCALE")) {
 		large_scale_ = 0;
-	} else if (!xmlStrcmp(name, "FREE_SPACE_MODEL_PARAMETERS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FREE_SPACE_MODEL_PARAMETERS")) {
 		free_space_model_parameters_ = 0;
-	} else if (!xmlStrcmp(name, "PATHLOSS_EXPONENT")) { 
+	} else if (!xmlStrcmp(name,(unsigned char*) "PATHLOSS_EXPONENT")) { 
 		pathloss_exponent_ = 0;
-	} else if (!xmlStrcmp(name, "PATHLOSS_0_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PATHLOSS_0_dB")) {
 		pathloss_0_dB_ = 0;
-	} else if (!xmlStrcmp(name, "SMALL_SCALE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SMALL_SCALE")) {
 		small_scale_ = 0;
-	} else if (!xmlStrcmp(name, "RICEAN_8TAP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RICEAN_8TAP")) {
 		ricean_8tap_ = 0;
-	} else if (!xmlStrcmp(name, "RICE_FACTOR_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RICE_FACTOR_dB")) {
 		rice_factor_dB_ = 0;
-	} else if (!xmlStrcmp(name, "SHADOWING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SHADOWING")) {
 		shadowing_ = 0;
-	} else if (!xmlStrcmp(name, "DECORRELATION_DISTANCE_m")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "DECORRELATION_DISTANCE_m")) {
 		decorrelation_distance_m_ = 0;
-	} else if (!xmlStrcmp(name, "VARIANCE_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "VARIANCE_dB")) {
 		variance_dB_ = 0;
-	} else if (!xmlStrcmp(name, "INTER_SITE_CORRELATION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_SITE_CORRELATION")) {
 		inter_site_correlation_ = 0;
-	} else if (!xmlStrcmp(name, "WALL_PENETRATION_LOSS_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "WALL_PENETRATION_LOSS_dB")) {
 		wall_penetration_loss_dB_ = 0;
-	} else if (!xmlStrcmp(name, "SYSTEM_BANDWIDTH_MB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SYSTEM_BANDWIDTH_MB")) {
 		system_bandwidth_MB_ = 0;
-	} else if (!xmlStrcmp(name, "SYSTEM_FREQUENCY_GHz")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SYSTEM_FREQUENCY_GHz")) {
 		system_frequency_GHz_ = 0;
-	} else if (!xmlStrcmp(name, "ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA")) {
 		antenna_ = 0;
-	} else if (!xmlStrcmp(name, "eNB_ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_ANTENNA")) {
 		eNB_antenna_ = 0;
-	} else if (!xmlStrcmp(name, "UE_ANTENNA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_ANTENNA")) {
 		UE_antenna_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_SECTORS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_SECTORS")) {
 		number_of_sectors_ = 0;
-	} else if (!xmlStrcmp(name, "BEAM_WIDTH_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "BEAM_WIDTH_dB")) {
 		beam_width_dB_ = 0;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_1")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_1")) {
 		alpha_rad_1_ = 0;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_2")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_2")) {
 		alpha_rad_2_ = 0;
-	} else if (!xmlStrcmp(name, "ALPHA_RAD_3")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ALPHA_RAD_3")) {
 		alpha_rad_3_ = 0;
-	} else if (!xmlStrcmp(name, "ANTENNA_GAIN_dBi")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_GAIN_dBi")) {
 		antenna_gain_dBi_ = 0;
-	} else if (!xmlStrcmp(name, "TX_POWER_dBm")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TX_POWER_dBm")) {
 		tx_power_dBm_ = 0;
-	} else if (!xmlStrcmp(name, "RX_NOISE_LEVEL_dB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RX_NOISE_LEVEL_dB")) {
 		rx_noise_level_dB_ = 0;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree1")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree1")) {
 		antenna_orientation_degree_1_ = 0;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree2")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree2")) {
 		antenna_orientation_degree_2_ = 0;
-	} else if (!xmlStrcmp(name, "ANTENNA_ORIENTATION_degree3")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ANTENNA_ORIENTATION_degree3")) {
 		antenna_orientation_degree_3_ = 0;
 
-	} else if (!xmlStrcmp(name, "TOPOLOGY_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TOPOLOGY_CONFIG")) {
 		topology_config_ = 0;
-	} else if (!xmlStrcmp(name, "AREA")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "AREA")) {
 		area_ = 0;
-	} else if (!xmlStrcmp(name, "X_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "X_km")) {
 		x_km_ = 0;
-	} else if (!xmlStrcmp(name, "Y_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "Y_km")) {
 		y_km_ = 0;
-	} else if (!xmlStrcmp(name, "NETWORK_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NETWORK_TYPE")) {
 		network_type_ = 0;
-	} else if (!xmlStrcmp(name, "CELL_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CELL_TYPE")) {
 		cell_type_ = 0;
-	} else if (!xmlStrcmp(name, "RELAY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RELAY")) {
 		relay_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_RELAYS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_RELAYS")) {
 		number_of_relays_ = 0;
-	} else if (!xmlStrcmp(name, "MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MOBILITY")) {
 		mobility_ = 0;
-	} else if (!xmlStrcmp(name, "UE_MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOBILITY")) {
 		UE_mobility_ = 0;
-	} else if (!xmlStrcmp(name, "UE_MOBILITY_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOBILITY_TYPE")) {
 		UE_mobility_type_ = 0;
-	} else if (!xmlStrcmp(name, "GRID_WALK")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_WALK")) {
 		grid_walk_ = 0;
-	} else if (!xmlStrcmp(name, "GRID_MAP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_MAP")) {
 		grid_map_ = 0;
-	} else if (!xmlStrcmp(name, "HORIZONTAL_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "HORIZONTAL_GRID")) {
 		horizontal_grid_ = 0;
-	} else if (!xmlStrcmp(name, "VERTICAL_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "VERTICAL_GRID")) {
 		vertical_grid_ = 0;
-	} else if (!xmlStrcmp(name, "GRID_TRIP_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_TRIP_TYPE")) {
 		grid_trip_type_ = 0;
-	} else if (!xmlStrcmp(name, "UE_INITIAL_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_INITIAL_DISTRIBUTION")) {
 		UE_initial_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOM_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_UE_DISTRIBUTION")) {
 		random_UE_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_NODES")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_NODES")) {
 		number_of_nodes_ = 0;
-	} else if (!xmlStrcmp(name, "CONCENTRATED_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CONCENTRATED_UE_DISTRIBUTION")) {
 		concentrated_UE_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "GRID_UE_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_UE_DISTRIBUTION")) {
 		grid_UE_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOM_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_GRID")) {
 		random_grid_ = 0;
-	} else if (!xmlStrcmp(name, "BORDER_GRID")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "BORDER_GRID")) {
 		border_grid_ = 0;
-	} else if (!xmlStrcmp(name, "UE_MOVING_DYNAMICS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UE_MOVING_DYNAMICS")) {
 		UE_moving_dynamics_ = 0;
-	} else if (!xmlStrcmp(name, "MIN_SPEED_mps")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_SPEED_mps")) {
 		min_speed_mps_ = 0;
-	} else if (!xmlStrcmp(name, "MAX_SPEED_mps")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_SPEED_mps")) {
 		max_speed_mps_ = 0;
-	} else if (!xmlStrcmp(name, "MIN_SLEEP_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_SLEEP_ms")) {
 		min_sleep_ms_ = 0;
-	} else if (!xmlStrcmp(name, "MAX_SLEEP_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_SLEEP_ms")) {
 		max_sleep_ms_ = 0;
-	} else if (!xmlStrcmp(name, "MIN_JOURNEY_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_JOURNEY_TIME_ms")) {
 		min_journey_time_ms_ = 0;
-	} else if (!xmlStrcmp(name, "MAX_JOURNEY_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_JOURNEY_TIME_ms")) {
 		max_journey_time_ms_ = 0;
-	} else if (!xmlStrcmp(name, "eNB_MOBILITY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_MOBILITY")) {
 		eNB_mobility_ = 0;
-	} else if (!xmlStrcmp(name, "eNB_MOBILITY_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_MOBILITY_TYPE")) {
 		eNB_mobility_type_ = 0;
-	} else if (!xmlStrcmp(name, "eNB_INITIAL_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "eNB_INITIAL_DISTRIBUTION")) {
 		eNB_initial_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "RANDOM_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RANDOM_eNB_DISTRIBUTION")) {
 		random_eNB_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_CELLS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_CELLS")) {
 		number_of_cells_ = 0;
-	} else if (!xmlStrcmp(name, "HEXAGONAL_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "HEXAGONAL_eNB_DISTRIBUTION")) {
 		hexagonal_eNB_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "INTER_eNB_DISTANCE_km")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_eNB_DISTANCE_km")) {
 		inter_eNB_distance_km_ = 0;
-	} else if (!xmlStrcmp(name, "GRID_eNB_DISTRIBUTION")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "GRID_eNB_DISTRIBUTION")) {
 		grid_eNB_distribution_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_X")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_X")) {
 		number_of_grid_x_ = 0;
-	} else if (!xmlStrcmp(name, "NUMBER_OF_GRID_Y")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "NUMBER_OF_GRID_Y")) {
 		number_of_grid_y_ = 0;
 
-	} else if (!xmlStrcmp(name, "APPLICATION_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_CONFIG")) {
 		application_config_ = 0;
-	} else if (!xmlStrcmp(name, "APPLICATION_TYPE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "APPLICATION_TYPE")) {
 		application_type_ = 0;
-	} else if (!xmlStrcmp(name, "TRAFFIC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TRAFFIC")) {
 		traffic_ = 0;
-	} else if (!xmlStrcmp(name, "TRANSPORT_PROTOCOL")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "TRANSPORT_PROTOCOL")) {
 		transport_protocol_ = 0;
-	} else if (!xmlStrcmp(name, "PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_SIZE")) {
 		packet_size_ = 0;
-	} else if (!xmlStrcmp(name, "FIXED_PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_PACKET_SIZE")) {
 		fixed_packet_size_ = 0;
-	} else if (!xmlStrcmp(name, "FIXED_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_byte")) {
 		fixed_value_byte_ = 0;
-	} else if (!xmlStrcmp(name, "UNIFORM_PACKET_SIZE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_PACKET_SIZE")) {
 		uniform_packet_size_ = 0;
-	} else if (!xmlStrcmp(name, "MIN_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_byte")) {
 		min_value_byte_ = 0;
-	} else if (!xmlStrcmp(name, "MAX_VALUE_byte")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_byte")) {
 		max_value_byte_ = 0;
-	} else if (!xmlStrcmp(name, "INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INTER_ARRIVAL_TIME")) {
 		inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "FIXED_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_INTER_ARRIVAL_TIME")) {
 		fixed_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "FIXED_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "FIXED_VALUE_ms")) {
 		fixed_value_ms_ = 0;
-	} else if (!xmlStrcmp(name, "UNIFORM_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "UNIFORM_INTER_ARRIVAL_TIME")) {
 		uniform_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "MIN_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MIN_VALUE_ms")) {
 		min_value_ms_ = 0;
-	} else if (!xmlStrcmp(name, "MAX_VALUE_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAX_VALUE_ms")) {
 		max_value_ms_ = 0;
-	} else if (!xmlStrcmp(name, "POISSON_INTER_ARRIVAL_TIME")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "POISSON_INTER_ARRIVAL_TIME")) {
 		poisson_inter_arrival_time_ = 0;
-	} else if (!xmlStrcmp(name, "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EXPECTED_INTER_ARRIVAL_TIME_ms")) {
 		expected_inter_arrival_time_ms_ = 0;
 
-	} else if (!xmlStrcmp(name, "EMULATION_CONFIG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_CONFIG")) {
 		emulation_config_ = 0;
-	} else if (!xmlStrcmp(name, "EMULATION_TIME_ms")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMULATION_TIME_ms")) {
 		emulation_time_ms_ = 0;
-	} else if (!xmlStrcmp(name, "PERFORMANCE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PERFORMANCE")) {
 		performance_ = 0;
-	} else if (!xmlStrcmp(name, "METRICS")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "METRICS")) {
 		metrics_ = 0;
-	} else if (!xmlStrcmp(name, "THROUGHPUT")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "THROUGHPUT")) {
 		throughput_ = 0;
-	} else if (!xmlStrcmp(name, "LATENCY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LATENCY")) {
 		latency_ = 0;
-	} else if (!xmlStrcmp(name, "SIGNALLING_OVERHEAD")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SIGNALLING_OVERHEAD")) {
 		signalling_overhead_ = 0;
-	} else if (!xmlStrcmp(name, "LAYER")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LAYER")) {
 		layer_ = 0;
-	} else if (!xmlStrcmp(name, "PHY")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PHY")) {
 		phy_ = 0;
-	} else if (!xmlStrcmp(name, "MAC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "MAC")) {
 		mac_ = 0;
-	} else if (!xmlStrcmp(name, "RLC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RLC")) {
 		rlc_ = 0;
-	} else if (!xmlStrcmp(name, "PDCP")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PDCP")) {
 		pdcp_ = 0;
-	} else if (!xmlStrcmp(name, "RRC")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "RRC")) {
 		rrc_ = 0;
-	} else if (!xmlStrcmp(name, "OMG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "OMG")) {
 		omg_ = 0;
-	} else if (!xmlStrcmp(name, "OTG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "OTG")) {
 		otg_ = 0;
-	} else if (!xmlStrcmp(name, "EMU")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "EMU")) {
 		emu_ = 0;
-	} else if (!xmlStrcmp(name, "LOG_EMU")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "LOG_EMU")) {
 		log_emu_ = 0;
-	} else if (!xmlStrcmp(name, "DEBUG")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "DEBUG")) {
 		debug_ = 0;
-	} else if (!xmlStrcmp(name, "INFO")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "INFO")) {
 		info_ = 0;
-	} else if (!xmlStrcmp(name, "WARNING")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "WARNING")) {
 		warning_ = 0;
-	} else if (!xmlStrcmp(name, "ERROR")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "ERROR")) {
 		error_ = 0;
-	} else if (!xmlStrcmp(name, "PACKET_TRACE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PACKET_TRACE")) {
 		packet_trace_ = 0;
-	} else if (!xmlStrcmp(name, "SEED")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SEED")) {
 		seed_ = 0;
-	} else if (!xmlStrcmp(name, "USER_SEED")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "USER_SEED")) {
 		user_seed_ = 0;
-	} else if (!xmlStrcmp(name, "SEED_VALUE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "SEED_VALUE")) {
 		seed_value_ = 0;
-	} else if (!xmlStrcmp(name, "CLI")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "CLI")) {
 		cli_enabled_ = 0;
-	} else if (!xmlStrcmp(name, "START_ENB")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "START_ENB")) {
 		cli_start_enb_ = 0;
-	} else if (!xmlStrcmp(name, "START_UE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "START_UE")) {
 		cli_start_ue_ = 0;
-	} else if (!xmlStrcmp(name, "PROFILE")) {
+	} else if (!xmlStrcmp(name,(unsigned char*) "PROFILE")) {
 		profile_ = 0;
 	}
 }
 
-void characters(void *user_data, const xmlChar *ch, int len) { // called once when there is content in each element 
+void characters(void *user_data, const xmlChar *xmlch, int xmllen) { // called once when there is content in each element 
 
   int i;
+  const char *ch = (const char*) xmlch;
+  size_t len = (size_t) xmllen;
+
 	if (oai_emulation_) {
 		if (environment_system_config_) {
 			if (fading_) {
 				if (large_scale_) {
-					oai_emulation.environment_system_config.fading.large_scale.selected_option = strndup(ch, len);
+				  oai_emulation.environment_system_config.fading.large_scale.selected_option = strndup(ch, len);
 				} else if (small_scale_) {
 					oai_emulation.environment_system_config.fading.small_scale.selected_option = strndup(ch, len);
 				} else if (shadowing_) {
@@ -752,7 +759,7 @@ void characters(void *user_data, const xmlChar *ch, int len) { // called once wh
 					oai_emulation.topology_config.area.y_km = atof(ch);
 				}
 			} else if (network_type_) {
-				oai_emulation.topology_config.network_type.selected_option = strndup(ch, len);
+			  oai_emulation.topology_config.network_type.selected_option = strndup(ch, len);
 			} else if (cell_type_) {
 				oai_emulation.topology_config.cell_type.selected_option = strndup(ch, len);
 			} else if (relay_) {

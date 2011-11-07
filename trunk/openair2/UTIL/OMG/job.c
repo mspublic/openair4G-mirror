@@ -123,47 +123,50 @@ Job_list remove_job(Job_list list, int nID, int node_type){
   int found;
   Job_list  current, previous;
   //int cond=0;
-	int i=0;
-    if (list == NULL){  found = 1;} //false
-    else{                             //start search
-      current = list;
-if ((current != NULL) && (current->pair->b->ID == nID) && (current->pair->b->type == node_type )){LOG_D(OMG, "(current != NULL) && (current->pair->b->ID != nID) && (current->pair->b->type != node_type ");}
-      while ( (current != NULL) && (current->pair->b->ID != nID) || (current->pair->b->type != node_type )){
-		LOG_D(OMG, "current->pair->b->ID %d",current->pair->b->ID);
-		LOG_D(OMG, "nID %d",nID);
-		LOG_D(OMG, "current->pair->b->type  %d",current->pair->b->type ); // UE, eNB   1
-		LOG_D(OMG, "node_type  %d",node_type ); //UE, eNB  0
-		LOG_D(OMG, "current->pair->b->generator  %d",current->pair->b->generator );  //static
-
-       LOG_D(OMG, "i = %d", i);
-        previous = current;        //  previous hobbles after
-        current = current->next;
-        i++;
-		if (current ==NULL){LOG_D(OMG, "current ==NULL");}
-
-     }
-
-
-	//if (current->pair->b->ID == nID){LOG_D(OMG, "current->pair->b->ID == nID");}
-	//if (current->pair->b->type == node_type){LOG_D(OMG, "current->pair->b->type == node_type");}
-
-      if (current ==NULL) { 
-        found= 1  ;
-	     LOG_D(OMG," Job to remove is not found\n "); //LOG_N 
-        return NULL;
-      }              //value not found
-      else{
-        found = 0; // true                value found
-        if (current == list) {
-          list = current->next  ;
-          LOG_D(OMG,"Job to remove is found at the beginning\n");
-        }    
-        else {
-          previous->next = current->next;
-        }
-      }
-    return list;
-    }
+  int i=0;
+  if (list == NULL){  
+    found = 1; //false
+    return NULL;
   }
+  else{                             //start search
+    current = list;
+    if ((current != NULL) && (current->pair->b->ID == nID) && (current->pair->b->type == node_type )){LOG_D(OMG, "(current != NULL) && (current->pair->b->ID != nID) && (current->pair->b->type != node_type ");}
+    while ( (current != NULL) && ((current->pair->b->ID != nID) || (current->pair->b->type != node_type ))){
+      LOG_D(OMG, "current->pair->b->ID %d",current->pair->b->ID);
+      LOG_D(OMG, "nID %d",nID);
+      LOG_D(OMG, "current->pair->b->type  %d",current->pair->b->type ); // UE, eNB   1
+      LOG_D(OMG, "node_type  %d",node_type ); //UE, eNB  0
+      LOG_D(OMG, "current->pair->b->generator  %d",current->pair->b->generator );  //static
+      
+      LOG_D(OMG, "i = %d", i);
+      previous = current;        //  previous hobbles after
+      current = current->next;
+      i++;
+      if (current ==NULL){LOG_D(OMG, "current ==NULL");}
+      
+    }
+    
+    
+    //if (current->pair->b->ID == nID){LOG_D(OMG, "current->pair->b->ID == nID");}
+    //if (current->pair->b->type == node_type){LOG_D(OMG, "current->pair->b->type == node_type");}
+    
+    if (current ==NULL) { 
+      found= 1  ;
+      LOG_D(OMG," Job to remove is not found\n "); //LOG_N 
+      return NULL;
+    }              //value not found
+    else{
+      found = 0; // true                value found
+      if (current == list) {
+	list = current->next  ;
+	LOG_D(OMG,"Job to remove is found at the beginning\n");
+      }    
+      else {
+	previous->next = current->next;
+      }
+    }
+    return list;
+  }
+}
 
 

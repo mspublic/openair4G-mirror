@@ -275,7 +275,7 @@ main (int argc, char **argv)
 #endif
 
   //time_t t0,t1;
-  clock_t start, stop;
+  //clock_t start, stop;
 
   // Added for PHY abstraction
   Node_list ue_node_list = NULL;
@@ -762,7 +762,7 @@ main (int argc, char **argv)
       for (UE_id = oai_emulation.info.first_ue_local; 
 	   (UE_id < (oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local)) && (oai_emulation.info.cli_start_ue[UE_id]==1); 
 	   UE_id++)
-	if (mac_xface->frame >= (UE_id * 10)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
+	if (mac_xface->frame >= (UE_id * 20)) {	// activate UE only after 10*UE_id frames so that different UEs turn on separately
 
 #ifdef DEBUG_SIM
 	  printf("[SIM] EMU PHY procedures UE %d for frame %d, slot %d (subframe %d)\n",

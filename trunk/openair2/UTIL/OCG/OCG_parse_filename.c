@@ -49,7 +49,7 @@
 
 int parse_filename(char filename[FILENAME_LENGTH_MAX]) {
 	char *delim = "._";
-	char *result;
+	//char *result;
 	char tmp_filename[FILENAME_LENGTH_MAX];
 	char *fd_tmp;
 	char *un_tmp;

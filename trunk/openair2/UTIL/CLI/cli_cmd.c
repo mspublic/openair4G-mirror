@@ -159,6 +159,7 @@ int set(char *arg){
   }
   optc = token_argument(arg, optv);
   process_argument(optc, optv);
+  return OK;
 
 }
 /* Return non-zero if ARG is a valid argument for CALLER, else print

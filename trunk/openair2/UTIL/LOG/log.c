@@ -62,7 +62,6 @@
 static char g_buff_info [MAX_LOG_TOTAL];
 static char g_buff_infos[MAX_LOG_TOTAL];
 static char g_buff_tmp  [MAX_LOG_ITEM];
-static char g_buff_debug[MAX_LOG_ITEM];
 
 
 static int fd;

@@ -19,8 +19,9 @@
 #include "TDD-Config.h"
 #include "rlc.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
-#ifdef PHY_EMUL
 #include "RRC/NAS/nas_config.h"
+#include "RRC/NAS/rb_config.h"
+#ifdef PHY_EMUL
 extern EMULATION_VARS *Emul_vars;
 #endif
 extern eNB_MAC_INST *eNB_mac_inst;

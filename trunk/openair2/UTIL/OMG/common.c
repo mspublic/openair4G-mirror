@@ -162,36 +162,39 @@ Node_list remove_node(Node_list list, int nID, int node_type){
   int found;
   Node_list  current, previous;
   //int cond=0;
-	//int i=0;
-    if (list == NULL){  found = 1;} //false
-    else{                             //start search
-      current = list;
-      while ((current != NULL) && (current->node->ID != nID) || (current->node->type != node_type )){
-        previous = current;        //  previous hobbles after
-        current = current->next;
-      }
-      //holds: current = NULL or  type != node_type or.., but not both
-      if (current ==NULL) { 
-        found= 1  ;
-	LOG_E(OMG," Element to remove is not found\n "); 
-        return NULL;
-      }              //value not found
-      else{
-        found = 0; // true                value found
-        if (current == list) {
-          list = current->next  ;
-          LOG_D(OMG,"Element to remove is found at beginning\n");
-        }    
-          
-        else {
-          previous->next = current->next;
-
-        }
-        
-      }
-    return list;
+  //int i=0;
+  if (list == NULL){  
+    found = 1; //false
+    return NULL;
+  } 
+  else{                             //start search
+    current = list;
+    while ((current != NULL) && ((current->node->ID != nID) || (current->node->type != node_type ))){
+      previous = current;        //  previous hobbles after
+      current = current->next;
     }
+    //holds: current = NULL or  type != node_type or.., but not both
+    if (current ==NULL) { 
+      found= 1  ;
+      LOG_E(OMG," Element to remove is not found\n "); 
+      return NULL;
+    }              //value not found
+    else{
+      found = 0; // true                value found
+      if (current == list) {
+	list = current->next  ;
+	LOG_D(OMG,"Element to remove is found at beginning\n");
+      }    
+      
+      else {
+	previous->next = current->next;
+	
+      }
+      
+    }
+    return list;
   }
+}
 
 
 
