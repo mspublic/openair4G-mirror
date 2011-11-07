@@ -16,7 +16,6 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log_if.h"
-#include "UTIL/LOG/log_extern.h"
 #include "RRC/LITE/extern.h"
 #include "PHY_INTERFACE/extern.h"
 #include "UTIL/OCG/OCG.h"

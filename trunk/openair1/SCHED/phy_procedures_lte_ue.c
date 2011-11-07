@@ -675,8 +675,10 @@ void phy_procedures_UE_TX(u8 next_slot,PHY_VARS_UE *phy_vars_ue,u8 eNB_id,u8 abs
 				next_slot>>1,
 				pucch_ack_payload,
 				SR_payload); 
-	//msg("Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d\n",n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],
-	//   n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
+	msg("[PHY][UE %d] Frame %d, subframe %d: Generating PUCCH 1a/1b, n1_pucch %d, b[0]=%d,b[1]=%d\n",
+	    phy_vars_ue->Mod_id, mac_xface->frame, next_slot>>1,
+	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1],
+	    n1_pucch,pucch_ack_payload[0],pucch_ack_payload[1]);
 	
 	if (abstraction_flag == 0)
 	  generate_pucch(phy_vars_ue->lte_ue_common_vars.txdataF,

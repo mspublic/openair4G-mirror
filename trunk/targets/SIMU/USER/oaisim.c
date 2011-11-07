@@ -770,6 +770,9 @@ main (int argc, char **argv)
 #endif
 
 	  if (PHY_vars_UE_g[UE_id]->UE_mode[0] != NOT_SYNCHED) {
+	    /* if(UE_id == 1){
+	      msg("success \n");
+	      exit(-1);}*/
 	    if (mac_xface->frame>0) {
 	      phy_procedures_UE_lte (last_slot, next_slot, PHY_vars_UE_g[UE_id], 0, abstraction_flag);
 #ifndef NAS_NETLINK

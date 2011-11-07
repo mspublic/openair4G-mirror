@@ -459,9 +459,12 @@ u32 dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2]->dlsch_eNB[find_ue((s16)phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2])][0];
+
+#ifdef DEBUG_DLSCH_DECODING
     for (i=0;i<dlsch_ue->harq_processes[0]->TBS>>3;i++)
       msg("%x.",dlsch_eNB->harq_processes[0]->b[i]);
     msg("\n");
+#endif
 
     if (dlsch_abstraction(phy_vars_ue->sinr_dB, dlsch_eNB->rb_alloc, dlsch_eNB->harq_processes[harq_pid]->mcs) == 1) {
       // reset HARQ 
