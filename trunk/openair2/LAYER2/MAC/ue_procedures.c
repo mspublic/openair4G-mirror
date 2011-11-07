@@ -2,7 +2,7 @@
 
   Authors : Hicham Anouar, Raymond Knopp
   Company : EURECOM
-  Emails  : anouar@eurecom.fr,  knopp@eurecom.fr
+  Emails  : knopp@eurecom.fr
   ________________________________________________________________*/
 
 #include "extern.h"
@@ -57,10 +57,10 @@ void ue_init_mac(){
     UE_mac_inst[i].scheduling_info.periodicBSR_Timer=MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
     UE_mac_inst[i].scheduling_info.sr_ProhibitTimer=0;
     UE_mac_inst[i].scheduling_info.sr_ProhibitTimer_Running=0;
-    UE_mac_inst[i].scheduling_info.maxHARQ_tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+    UE_mac_inst[i].scheduling_info.maxHARQ_Tx=MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
     UE_mac_inst[i].scheduling_info.ttiBundling=0;
-    UE_mac_inst[i].scheduling_info.drx_config=DRX_Config_PR_release;
-    UE_mac_inst[i].scheduling_info.phr_config=MAC_MainConfig__phr_Config_PR_release;
+    UE_mac_inst[i].scheduling_info.drx_config=NULL;
+    UE_mac_inst[i].scheduling_info.phr_config=NULL;
     UE_mac_inst[i].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[i].scheduling_info.periodicBSR_Timer);
     UE_mac_inst[i].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[i].scheduling_info.retxBSR_Timer);
     
@@ -129,11 +129,11 @@ unsigned char *parse_header(unsigned char *mac_header,
 u32 ue_get_SR(u8 Mod_id,u8 eNB_id,u16 rnti, u8 subframe) {
   
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
-  int MGL=6;// measurement gap length in ms
+  //  int MGL=6;// measurement gap length in ms
   int MGRP=0; // measurement gap repition period in ms
   int gapOffset=-1;
   int T=0; 
-  int sfn=0;
+  //  int sfn=0;
   // determin the measurement gap
   if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig !=NULL){
     if (UE_mac_inst[Mod_id].scheduling_info.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0){
@@ -533,10 +533,9 @@ unsigned char generate_ulsch_header(u8 *mac_header,
 void ue_get_sdu(u8 Mod_id,u8 eNB_index,u8 *ulsch_buffer,u16 buflen) {
 
   mac_rlc_status_resp_t rlc_status;
-  u8 dcch_header_len,dtch_header_len,ce_header_len;
+  u8 dcch_header_len,dtch_header_len;
   u16 sdu_lengths[8];
   u8 sdu_lcids[8],payload_offset=0,num_sdus=0;
-  u8 lcid;
   u8 ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
   u16 sdu_length_total=0;
 

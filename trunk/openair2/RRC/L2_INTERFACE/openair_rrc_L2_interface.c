@@ -56,22 +56,22 @@ ________________________________________________________________*/
 #include "openair_rrc_L2_interface.h"
  
 /********************************************************************************************************************/
-u8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
+s8 mac_rrc_data_req(u8 Mod_id, unsigned short Srb_id, u8 Nb_tb,char *Buffer,u8 eNB_flag,u8 eNB_index){
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index);
+  return(rrc_L2_data_req_rx(Mod_id,Srb_id,Nb_tb,Buffer,eNB_index));
 #else 
-  mac_rrc_lite_data_req(Mod_id,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index);
+  return(mac_rrc_lite_data_req(Mod_id,Srb_id,Nb_tb,Buffer,eNB_flag,eNB_index));
 #endif //CELLULAR
 }   
    
 /********************************************************************************************************************/
-u8 mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
+s8 mac_rrc_data_ind(unsigned  char Mod_id, unsigned short Srb_id, char *Sdu,unsigned short Sdu_len,u8 eNB_flag, u8 eNB_index ){ 
 /********************************************************************************************************************/
 #ifdef CELLULAR
-  rrc_L2_mac_data_ind_rx();
+  return(rrc_L2_mac_data_ind_rx());
 #else 
-  mac_rrc_lite_data_ind(Mod_id,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index);
+  return(mac_rrc_lite_data_ind(Mod_id,Srb_id,Sdu,Sdu_len,eNB_flag,eNB_index));
 #endif //CELLULAR
 }
 

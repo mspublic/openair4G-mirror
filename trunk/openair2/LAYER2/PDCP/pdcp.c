@@ -61,7 +61,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 //-----------------------------------------------------------------------------
  
     mem_block_t      *new_sdu = NULL;
-    int i;
+    //    int i;
 
     if ((data_sizeP > 0)) {
       if(data_sizeP > MAX_IP_PACKET_SIZE){
@@ -78,7 +78,7 @@ pdcp_data_req (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, c
 	  //	  for (i=0;i<20;i++) 
 	  //	    msg("%02X.",((unsigned char*)sduP)[i]);
 	  //	  msg("\n");
-#endif PDCP_DATA_REQ_DEBUG
+#endif //PDCP_DATA_REQ_DEBUG
             // PROCESS OF DECOMPRESSION HERE:
             memcpy (&new_sdu->data[0], sduP, data_sizeP);
 
@@ -123,7 +123,7 @@ pdcp_data_ind (module_id_t module_idP, rb_id_t rab_idP, sdu_size_t data_sizeP, m
       msg("%02X.",(unsigned char)sduP->data[i]);
     msg("\n");
 
-#endif PDCP_DATA_IND_DEBUG
+#endif //PDCP_DATA_IND_DEBUG
 
     new_sdu = get_free_mem_block (data_sizeP + sizeof (pdcp_data_ind_header_t));
     
@@ -170,8 +170,8 @@ pdcp_run (void)
 
 #ifndef NAS_NETLINK
 #ifdef USER_MODE
-#define PDCP_DUMMY_BUFFER_SIZE 38
-  unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
+  //#define PDCP_DUMMY_BUFFER_SIZE 38
+  //  unsigned char pdcp_dummy_buffer[PDCP_DUMMY_BUFFER_SIZE];
   
 
   //msg("[PDCP] PDCP Run Id %d\n",modId);
@@ -244,7 +244,7 @@ pdcp_config_release (module_id_t module_idP, rb_id_t rab_idP)
 int
 pdcp_module_init ()
 {
-  int ret;
+  //  int ret;
 
 //-----------------------------------------------------------------------------
 #ifndef USER_MODE

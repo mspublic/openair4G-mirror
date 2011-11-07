@@ -67,6 +67,10 @@ static char g_buff_debug[MAX_LOG_ITEM];
 
 static int fd;
 
+static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
+
+static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
+
 void logInit (void) {
   
 #ifdef USER_MODE
